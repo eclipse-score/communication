@@ -625,7 +625,7 @@ TEST(GeneratedProxyHandleTest, GeneratedProxyUsesProxyBaseGetHandle)
 
 TEST(GeneratedProxyHandleTest, GeneratedProxyContainsPublicHandleTypeAlias)
 {
-    RecordProperty("Verifies", "SCR-14110936");
+    RecordProperty("lobster-tracing", "Communication.ProxyHandleTypeClass");
     RecordProperty("Description",
                    "Checks that a generated proxy contains a public alias to our implementation of HandleType.");
     RecordProperty("TestType", "Requirements-based test");

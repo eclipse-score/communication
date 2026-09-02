@@ -219,7 +219,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/14110936 */
             ScoreReq.CompReq ProxyHandleTypeClass {
                 description = '''The {{Proxy}} class shall contain a public member type {{HandleType}} which shall adhere to the .requirements of HandleType'''
                 safety = ScoreReq.Asil.B
