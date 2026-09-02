@@ -39,6 +39,7 @@ cc_args(
         "-fdata-sections",
         "-no-canonical-prefixes",
         "-pthread",
+        "-O2",
     ],
     visibility = ["//quality/compiler_warnings:__subpackages__"],
 )
