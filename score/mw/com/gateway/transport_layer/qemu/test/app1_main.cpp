@@ -31,6 +31,8 @@
 #include "score/mw/com/gateway/transport_layer/qemu/ivshmem/ivshmem_typed_memory_provider.h"
 #include "score/mw/com/gateway/transport_layer/qemu/qemu_hypervisor_transport.h"
 #include "score/mw/com/gateway/transport_layer/qemu/test/qemu_integration_test_helpers.h"
+#include "score/mw/com/gateway/transport_layer/sample/bidirectional_transport.h"
+#include "score/mw/com/gateway/transport_layer/sample/configuration/hypervisor_socket_configuration.h"
 #include "score/mw/com/gateway/transport_layer/sample/messages/gateway_messages.h"
 
 #include "score/memory/shared/i_shared_memory_resource.h"
@@ -44,15 +46,48 @@
 #include <memory>
 #include <thread>
 
+using score::mw::com::gateway::BidirectionalTransport;
+using score::mw::com::gateway::HyperVisorSocketConfiguration;
 using score::mw::com::gateway::QemuHypervisorTransport;
 using score::mw::com::gateway::ResolveInterVmShmPaths;
 using score::mw::com::gateway::qemu::ivshmem::DiscoverIvshmemBar;
 using score::mw::com::gateway::qemu::ivshmem::IvshmemTypedMemoryProvider;
 using score::mw::com::impl::InstanceSpecifier;
 
+namespace
+{
+
+// Static IPs of each VM on the "intervm" virtio-net NIC (see dual_qemu_transport_config.json's
+// intervm_network block, which bridges the two VMs via a QEMU socket netdev). vtnet1 arrives
+// unconfigured on both guests, so each app assigns its own static IP at startup — see
+// ConfigureIntervmNic() in qemu_integration_test_helpers.h.
+constexpr char kIntervmIpVmA[] = "10.0.3.1";  // This VM's (VM-A's) own static IP.
+constexpr char kIntervmIpVmB[] = "10.0.3.2";  // VM-B's static IP — this VM's transport peer.
+constexpr std::uint16_t kTransportPortVmA = 46001U;
+constexpr std::uint16_t kTransportPortVmB = 46002U;
+
+HyperVisorSocketConfiguration CreateConfiguration()
+{
+    HyperVisorSocketConfiguration config{};
+    config.remote_ip_ = score::os::Ipv4Address{kIntervmIpVmB};
+    config.local_port_ = kTransportPortVmA;
+    config.remote_port_ = kTransportPortVmB;
+    return config;
+}
+
+}  // namespace
+
 int main()
 {
     std::fprintf(stderr, "=== app1 (VM-A): bidirectional gateway transport test ===\n");
+
+    // Bring up the intervm NIC before touching BidirectionalTransport, which needs it ready
+    // for listen()/connect().
+    if (!ConfigureIntervmNic(kIntervmIpVmA))
+    {
+        std::fprintf(stderr, "app1: failed to configure intervm NIC\n");
+        return 1;
+    }
 
     // --- Setup: discover BAR, create provider, create transport ---
     std::uint64_t paddr = 0U;
@@ -72,9 +107,8 @@ int main()
     score::memory::shared::SharedMemoryFactory::SetInterVMMemoryProvider(provider);
 
     TestGatewayCore gateway_core;
-    auto test_transport = std::make_unique<TestBidirectionalTransport>();
-    auto* test_transport_ptr = test_transport.get();
-    QemuHypervisorTransport qemu_transport{gateway_core, std::move(test_transport), provider};
+    auto message_transport = std::make_unique<BidirectionalTransport>(CreateConfiguration());
+    QemuHypervisorTransport qemu_transport{gateway_core, std::move(message_transport), provider};
     if (!qemu_transport.Setup().has_value())
     {
         std::fprintf(stderr, "app1: QemuHypervisorTransport::Setup failed\n");
@@ -134,6 +168,18 @@ int main()
     ctrl_a_ptr->event_count = 1U;
     std::fprintf(stderr, "app1: wrote service_a [magic=0x%08x, 100, 200] and signalled via CTRL\n", kMagicA);
 
+    // Notify VM-B over the real intervm socket transport that service_a is available.
+    // This sends an actual ProvideServiceRequest and waits for its ACK (BidirectionalTransport
+    // retries internally); it does not, by itself, wait for VM-B to have processed it.
+    const auto provide_result =
+        qemu_transport.ProvideService(spec_a.value(), std::vector<score::mw::com::impl::EventInfo>{});
+    if (!provide_result.has_value())
+    {
+        std::fprintf(stderr, "app1: ProvideService for service_a failed to send\n");
+        return 1;
+    }
+    std::fprintf(stderr, "app1: sent ProvideServiceRequest for service_a to VM-B\n");
+
     // ========================================================================
     // DESTINATION SIDE: Wait for service_b's CTRL to signal data is ready, then read.
     // The transport must first make service_b's CTRL+DATA visible on this VM.
@@ -146,39 +192,12 @@ int main()
     }
     const auto paths_b = ResolveInterVmShmPaths(spec_b.value());
 
-    // Poll: wait until service_b's CTRL shm appears in the BAR directory.
-    // This means VM-B has created it. In production, the gateway message (ProvideServiceRequest)
-    // arrives to trigger this, but here we simulate waiting for VM-B's allocation to appear.
-    std::fprintf(stderr, "app1: waiting for service_b CTRL to appear in BAR directory...\n");
-    {
-        constexpr int kSleepMs = 50;
-        constexpr int kTimeoutMs = 60000;
-        int elapsed = 0;
-        while (!provider->LookupOffsetInDirectory(paths_b.control).has_value() && elapsed < kTimeoutMs)
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(kSleepMs));
-            elapsed += kSleepMs;
-            if (elapsed % 5000 == 0)
-            {
-                std::fprintf(stderr, "app1: still waiting for service_b CTRL... (%d/%d ms)\n", elapsed, kTimeoutMs);
-                std::fflush(stderr);
-            }
-        }
-        if (!provider->LookupOffsetInDirectory(paths_b.control).has_value())
-        {
-            std::fprintf(stderr, "app1: timed out waiting for service_b CTRL in directory after %d ms\n", elapsed);
-            return 1;
-        }
-    }
-    std::fprintf(stderr, "app1: service_b CTRL found in BAR directory\n");
-
-    // Simulate receiving ProvideServiceRequest from VM-B's gateway.
-    // The transport binds service_b's CTRL+DATA to local shm names at the correct BAR offsets.
-    auto request_b = std::make_unique<score::mw::com::gateway::ProvideServiceRequest>(
-        spec_b.value(), std::vector<score::mw::com::impl::EventInfo>{}, sizeof(ServiceControl), kShmSize);
-    test_transport_ptr->DeliverMessage(std::move(request_b));
-
-    if (!gateway_core.provide_service_called)
+    // Wait for VM-B's ProvideServiceRequest for service_b to arrive over the real transport.
+    // On arrival, QemuHypervisorTransport::OnMessageReceived binds service_b's CTRL+DATA to
+    // this VM's shm at the correct BAR offsets (via PreCreateInterVmSharedMemory) before
+    // calling GatewayCore::ProvideService.
+    std::fprintf(stderr, "app1: waiting for ProvideServiceRequest for service_b from VM-B...\n");
+    if (!WaitForFlag(gateway_core.provide_service_called))
     {
         std::fprintf(stderr, "app1: transport did not call GatewayCore::ProvideService for service_b\n");
         return 1;
