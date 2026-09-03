@@ -101,11 +101,13 @@ int main()
     TestGatewayCore gateway_core;
     auto message_transport = std::make_unique<BidirectionalTransport>(CreateConfiguration());
     QemuHypervisorTransport qemu_transport{gateway_core, std::move(message_transport), provider};
+    std::fprintf(stderr, "app2: starting transport setup\n");
     if (!qemu_transport.Setup().has_value())
     {
         std::fprintf(stderr, "app2: QemuHypervisorTransport::Setup failed\n");
         return 1;
     }
+    std::fprintf(stderr, "app2: transport setup complete\n");
 
     // ========================================================================
     // DESTINATION SIDE: Wait for service_a's data-ready notification, then read.
@@ -198,6 +200,7 @@ int main()
     const auto paths_b = ResolveInterVmShmPaths(spec_b.value());
 
     // Create CTRL shm for service_b — holds the ServiceControl signaling structure.
+    std::fprintf(stderr, "app2: creating service_b CTRL shm\n");
     auto ctrl_b = score::memory::shared::SharedMemoryFactory::Create(
         paths_b.control,
         [](std::shared_ptr<score::memory::shared::ISharedMemoryResource> /*res*/) {},
@@ -208,6 +211,7 @@ int main()
         std::fprintf(stderr, "app2: SharedMemoryFactory::Create for service_b CTRL failed\n");
         return 1;
     }
+    std::fprintf(stderr, "app2: service_b CTRL shm created\n");
 
     // Create DATA shm for service_b — holds the actual payload.
     auto data_b = score::memory::shared::SharedMemoryFactory::Create(
