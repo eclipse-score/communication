@@ -87,22 +87,6 @@ Camera App ──► [Video Frame] ──┬──► Display App
 
 ## Getting Started
 
-### Prerequisites
-- **C++ Compiler**: GCC 12+ with C++17 support
-- **Build System**: Bazel 6.0+
-- **Operating System**: Linux (Ubuntu 24.04+) or QNX
-- **Dependencies**: GoogleTest, Google Benchmark
-- **Virtualization**: Docker with user permissions or rootless mode
-
-### DevContainer Setup(Recommended)
-
->**Note**:
-> This repository offers a [DevContainer](https://containers.dev/).
-> For setting this up and enabling code completion read [eclipse-score/devcontainer/README.md#inside-the-container](https://github.com/eclipse-score/devcontainer/blob/main/README.md#inside-the-container).
-
->**Note**:
-> If you are using Docker on Windows **without `WSL2`** in between, you have to select the alternative container `eclipse-s-core-docker-on-windows`.
-
 ### Building the Project
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
