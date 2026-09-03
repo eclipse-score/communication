@@ -16,11 +16,36 @@
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
 
+cc_args(
+    name = "default_compile_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = [
+        "-pthread",
+        "-no-canonical-prefixes",
+    ],
+)
+
+cc_args(
+    name = "default_link_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "-pthread",
+        "-ldl",
+        "-no-canonical-prefixes",
+    ],
+)
+
 cc_feature(
     name = "default_flags",
     args = [
         "//quality/compiler_warnings:default_compile_args",
         "//quality/compiler_warnings:default_link_args",
+        ":default_compile_args",
+        ":default_link_args",
     ],
     feature_name = "score_communication_gcc_default_flags",
     visibility = ["//visibility:public"],
