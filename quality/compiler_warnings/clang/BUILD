@@ -23,8 +23,10 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
     args = [
+        "-pthread",
         "-ffp-model=strict",
         "-fbracket-depth=512",
+        "-no-canonical-prefixes",
     ],
 )
 
@@ -34,6 +36,9 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
     args = [
+        "-pthread",
+        "-ldl",
+        "-no-canonical-prefixes",
         "-Wl,--warn-execstack",
     ],
 )
