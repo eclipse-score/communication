@@ -169,7 +169,7 @@ class ProxyCreationFixture : public ::testing::Test
 
 TEST(GeneratedProxyTest, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-21290780");
+    RecordProperty("lobster-tracing", "Communication.ProxyCopySemantics");
     RecordProperty("Description", "Checks copy semantics for proxies");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -181,7 +181,7 @@ TEST(GeneratedProxyTest, NotCopyable)
 
 TEST(GeneratedProxyTest, IsMoveable)
 {
-    RecordProperty("Verifies", "SCR-21290799");
+    RecordProperty("lobster-tracing", "Communication.ProxyMoveSemantics");
     RecordProperty("Description", "Checks move semantics for proxies");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -194,7 +194,7 @@ TEST(GeneratedProxyTest, IsMoveable)
 using GeneratedProxyCreationTestFixture = ProxyCreationFixture;
 TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCreatingProxyWithValidBindings)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty("Description", "Proxy shall be created with Create function.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -235,7 +235,8 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCr
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458, SCR-31295722, SCR-32158471, SCR-32158442, SCR-33047276");
+    RecordProperty("Verifies", "SCR-31295722, SCR-32158471, SCR-32158442, SCR-33047276");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty(
         "Description",
         "Proxy shall be created with Create function which returns an error if the Proxy binding cannot be created.");
@@ -257,7 +258,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyBind
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyEventBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty("Description",
                    "Proxy shall be created with Create function which returns an error if a ProxyEvent binding cannot "
                    "be created.");
@@ -281,7 +282,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyEven
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFieldEventBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty(
         "Description",
         "Proxy shall be created with Create function which returns an error if a ProxyField's event binding cannot "
@@ -304,7 +305,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFiel
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFieldGetterBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty("Description",
                    "Proxy shall be created with Create function which returns an error if a ProxyMethods getter "
                    "binding cannot be created.");
@@ -326,7 +327,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFiel
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFieldSetterBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty("Description",
                    "Proxy shall be created with Create function which returns an error if a ProxyMethods setter "
                    "binding cannot be created.");
@@ -529,7 +530,7 @@ TEST_F(GeneratedProxyMoveConstructionFixture, DestroyingMovedFromProxyDoesNotCal
 
 TEST(GeneratedProxyFindServiceTest, GeneratedProxyUsesProxyBaseFindServiceWithInstanceSpecifier)
 {
-    RecordProperty("Verifies", "SCR-14110930");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceSpecifier");
     RecordProperty("Description", "Checks that a generated proxy uses FindService in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -545,7 +546,7 @@ TEST(GeneratedProxyFindServiceTest, GeneratedProxyUsesProxyBaseFindServiceWithIn
 
 TEST(GeneratedProxyFindServiceTest, GeneratedProxyUsesProxyBaseFindServiceWithInstanceIdentifier)
 {
-    RecordProperty("Verifies", "SCR-14110933");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceIdentifier");
     RecordProperty("Description", "Checks that a generated proxy uses FindService in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -561,7 +562,7 @@ TEST(GeneratedProxyFindServiceTest, GeneratedProxyUsesProxyBaseFindServiceWithIn
 
 TEST(GeneratedProxyStartFindServiceTest, GeneratedProxyUsesProxyBaseStartFindServiceWithInstanceSpecifier)
 {
-    RecordProperty("Verifies", "SCR-21792392");
+    RecordProperty("lobster-tracing", "Communication.ProxyStartFindServiceWithInstanceSpecifier");
     RecordProperty("Description",
                    "Checks that a generated proxy uses StartFindService with InstanceSpecifier in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
@@ -599,7 +600,7 @@ TEST(GeneratedProxyStartFindServiceTest, GeneratedProxyUsesProxyBaseStartFindSer
 
 TEST(GeneratedProxyStopFindServiceTest, GeneratedProxyUsesProxyBaseStopFindServiceWithInstanceIdentifier)
 {
-    RecordProperty("Verifies", "SCR-21792394");
+    RecordProperty("lobster-tracing", "Communication.ProxyStopFindService");
     RecordProperty("Description", "Checks that a generated proxy uses StopFindService in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -613,7 +614,7 @@ TEST(GeneratedProxyStopFindServiceTest, GeneratedProxyUsesProxyBaseStopFindServi
 
 TEST(GeneratedProxyHandleTest, GeneratedProxyUsesProxyBaseGetHandle)
 {
-    RecordProperty("Verifies", "SCR-14110935");
+    RecordProperty("lobster-tracing", "Communication.ProxyGetHandle");
     RecordProperty("Description", "Checks that a generated proxy uses GetHandle in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -624,7 +625,7 @@ TEST(GeneratedProxyHandleTest, GeneratedProxyUsesProxyBaseGetHandle)
 
 TEST(GeneratedProxyHandleTest, GeneratedProxyContainsPublicHandleTypeAlias)
 {
-    RecordProperty("Verifies", "SCR-14110936");
+    RecordProperty("lobster-tracing", "Communication.ProxyHandleTypeClass");
     RecordProperty("Description",
                    "Checks that a generated proxy contains a public alias to our implementation of HandleType.");
     RecordProperty("TestType", "Requirements-based test");

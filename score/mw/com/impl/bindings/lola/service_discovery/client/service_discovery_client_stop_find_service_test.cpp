@@ -98,7 +98,7 @@ TEST_F(ServiceDiscoveryClientStopFindServiceFixture, RemovesWatchOnStopFindServi
 
 TEST_F(ServiceDiscoveryClientStopFindServiceFixture, DoesNotCallHandlerIfFindServiceIsStopped)
 {
-    RecordProperty("ParentRequirement", "SCR-21792394");
+    RecordProperty("lobster-tracing", "Communication.ProxyStopFindService");
     RecordProperty("Description",
                    "Stops the asynchronous search for available services.After the call has returned no further calls "
                    "to the user provided FindServiceHandler takes place.");

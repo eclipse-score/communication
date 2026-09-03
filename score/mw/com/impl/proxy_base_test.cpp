@@ -144,7 +144,8 @@ TEST_F(ProxyBaseFixture, GetImplReturnsProxyBindingPassedToConstructor)
 
 TEST_F(ProxyBaseFixture, StoredHandleTypeEqualToSuppliedOne)
 {
-    RecordProperty("Verifies", "SCR-14030261, SCR-14110935");
+    RecordProperty("Verifies", "SCR-14030261");
+    RecordProperty("lobster-tracing", "Communication.ProxyGetHandle");
     RecordProperty("Description", "Checks that GetHandle gets the handle from which the ProxyBase has been created.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -163,7 +164,8 @@ TEST_F(ProxyBaseFixture, StoredHandleTypeEqualToSuppliedOne)
 using ProxyBaseFindServiceInstanceSpecifierFixture = ProxyBaseFixture;
 TEST_F(ProxyBaseFindServiceInstanceSpecifierFixture, FindServiceShouldReturnHandlesContainerIfRuntimeCanResolve)
 {
-    RecordProperty("ParentRequirement", "SCR-14005977, SCR-14110930, SCR-18804932");
+    RecordProperty("ParentRequirement", "SCR-14005977, SCR-18804932");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceSpecifier");
     RecordProperty("Description", "FindService can find a service using an instance specifier.");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -190,7 +192,8 @@ TEST_F(ProxyBaseFindServiceInstanceSpecifierFixture, FindServiceShouldReturnHand
 
 TEST_F(ProxyBaseFindServiceInstanceSpecifierFixture, FindServiceShouldReturnErrorIfBindingReturnsError)
 {
-    RecordProperty("ParentRequirement", "SCR-14005977, SCR-14110930, SCR-18804932");
+    RecordProperty("ParentRequirement", "SCR-14005977, SCR-18804932");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceSpecifier");
     RecordProperty("Description", "FindService can find a service using an instance specifier.");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -218,10 +221,12 @@ TEST_F(ProxyBaseFindServiceInstanceSpecifierFixture, FindServiceShouldReturnErro
 using ProxyBaseStartFindServiceInstanceSpecifierFixture = ProxyBaseFixture;
 TEST_F(ProxyBaseStartFindServiceInstanceSpecifierFixture, StartFindServiceWillDispatchToBinding)
 {
-    RecordProperty("ParentRequirement", "SCR-21792392, SCR-21788695");
-    RecordProperty("Description",
-                   "StartFindService with InstanceSpecifier will dispatch to the underlying Proxy binding for a "
-                   "regular Proxy (SCR-21792392) and a GenericProxy (SCR-21788695).");
+    RecordProperty("ParentRequirement", "SCR-21788695");
+    RecordProperty("lobster-tracing", "Communication.ProxyStartFindServiceWithInstanceSpecifier");
+    RecordProperty(
+        "Description",
+        "StartFindService with InstanceSpecifier will dispatch to the underlying Proxy binding for a "
+        "regular Proxy (Communication.ProxyStartFindServiceWithInstanceSpecifier) and a GenericProxy (SCR-21788695).");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
@@ -236,10 +241,12 @@ TEST_F(ProxyBaseStartFindServiceInstanceSpecifierFixture, StartFindServiceWillDi
 TEST_F(ProxyBaseStartFindServiceInstanceSpecifierFixture,
        StartFindServiceWillReturnFindServiceHandleFromBindingOnSuccess)
 {
-    RecordProperty("ParentRequirement", "SCR-21792392, SCR-21788695");
+    RecordProperty("ParentRequirement", "SCR-21788695");
+    RecordProperty("lobster-tracing", "Communication.ProxyStartFindServiceWithInstanceSpecifier");
     RecordProperty("Description",
                    "StartFindService with InstanceSpecifier will return a FindServiceHandle from the binding on "
-                   "success for a regular Proxy (SCR-21792392) and a GenericProxy (SCR-21788695).");
+                   "success for a regular Proxy (Communication.ProxyStartFindServiceWithInstanceSpecifier) and a "
+                   "GenericProxy (SCR-21788695).");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
@@ -257,11 +264,13 @@ TEST_F(ProxyBaseStartFindServiceInstanceSpecifierFixture,
 
 TEST_F(ProxyBaseStartFindServiceInstanceSpecifierFixture, StartFindServiceWillReturnPropagateErrorFromBinding)
 {
-    RecordProperty("ParentRequirement", "SCR-21792392, SCR-21788695");
+    RecordProperty("ParentRequirement", "SCR-21788695");
+    RecordProperty("lobster-tracing", "Communication.ProxyStartFindServiceWithInstanceSpecifier");
     RecordProperty(
         "Description",
         "StartFindService with InstanceSpecifier will return an error containing kFindServiceHandlerFailure if the "
-        "call to the binding returns an error for a regular Proxy (SCR-21792392) and a GenericProxy "
+        "call to the binding returns an error for a regular Proxy "
+        "(Communication.ProxyStartFindServiceWithInstanceSpecifier) and a GenericProxy "
         "(SCR-21788695).");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -281,10 +290,12 @@ TEST_F(ProxyBaseStartFindServiceInstanceSpecifierFixture, StartFindServiceWillRe
 using ProxyBaseStartFindServiceInstanceIdentifierFixture = ProxyBaseFixture;
 TEST_F(ProxyBaseStartFindServiceInstanceIdentifierFixture, StartFindServiceWillDispatchToBinding)
 {
-    RecordProperty("ParentRequirement", "SCR-21792393, SCR-21790264");
-    RecordProperty("Description",
-                   "StartFindService with InstanceIdentifier will dispatch to the underlying Proxy binding for a "
-                   "regular Proxy (SCR-21792393) and a GenericProxy (SCR-21790264).");
+    RecordProperty("ParentRequirement", "SCR-21790264");
+    RecordProperty("lobster-tracing", "Communication.ProxyStartFindServiceWithInstanceIdentifier");
+    RecordProperty(
+        "Description",
+        "StartFindService with InstanceIdentifier will dispatch to the underlying Proxy binding for a "
+        "regular Proxy (Communication.ProxyStartFindServiceWithInstanceIdentifier) and a GenericProxy (SCR-21790264).");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
@@ -299,10 +310,12 @@ TEST_F(ProxyBaseStartFindServiceInstanceIdentifierFixture, StartFindServiceWillD
 TEST_F(ProxyBaseStartFindServiceInstanceIdentifierFixture,
        StartFindServiceWillReturnFindServiceHandleFromBindingOnSuccess)
 {
-    RecordProperty("ParentRequirement", "SCR-21792393, SCR-21790264");
+    RecordProperty("ParentRequirement", "SCR-21790264");
+    RecordProperty("lobster-tracing", "Communication.ProxyStartFindServiceWithInstanceIdentifier");
     RecordProperty("Description",
                    "StartFindService with InstanceIdentifier will return a FindServiceHandle from the binding on "
-                   "success for a regular Proxy (SCR-21792393) and a GenericProxy (SCR-21790264).");
+                   "success for a regular Proxy (Communication.ProxyStartFindServiceWithInstanceIdentifier) and a "
+                   "GenericProxy (SCR-21790264).");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
@@ -320,11 +333,13 @@ TEST_F(ProxyBaseStartFindServiceInstanceIdentifierFixture,
 
 TEST_F(ProxyBaseStartFindServiceInstanceIdentifierFixture, StartFindServiceWillReturnPropagateErrorFromBinding)
 {
-    RecordProperty("ParentRequirement", "SCR-21792393, SCR-21790264");
+    RecordProperty("ParentRequirement", "SCR-21790264");
+    RecordProperty("lobster-tracing", "Communication.ProxyStartFindServiceWithInstanceIdentifier");
     RecordProperty("Description",
                    "StartFindService with InstanceIdentifier will return an error containing "
                    "kFindServiceHandlerFailure if the "
-                   "call to the binding returns an error for a regular Proxy (SCR-21792393) and a GenericProxy "
+                   "call to the binding returns an error for a regular Proxy "
+                   "(Communication.ProxyStartFindServiceWithInstanceIdentifier) and a GenericProxy "
                    "(SCR-21790264).");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -344,10 +359,11 @@ TEST_F(ProxyBaseStartFindServiceInstanceIdentifierFixture, StartFindServiceWillR
 using ProxyBaseStopFindServiceFixture = ProxyBaseFixture;
 TEST_F(ProxyBaseStopFindServiceFixture, StopFindServiceWillDispatchToBinding)
 {
-    RecordProperty("ParentRequirement", "SCR-21792394, SCR-21790756");
+    RecordProperty("ParentRequirement", "SCR-21790756");
+    RecordProperty("lobster-tracing", "Communication.ProxyStopFindService");
     RecordProperty("Description",
                    "StopFindService will dispatch to the underlying Proxy binding for a "
-                   "regular Proxy (SCR-21792394) and a GenericProxy (SCR-21790756).");
+                   "regular Proxy (Communication.ProxyStopFindService) and a GenericProxy (SCR-21790756).");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
@@ -361,10 +377,12 @@ TEST_F(ProxyBaseStopFindServiceFixture, StopFindServiceWillDispatchToBinding)
 
 TEST_F(ProxyBaseStopFindServiceFixture, StopFindServiceWillReturnValidResultOnSuccess)
 {
-    RecordProperty("ParentRequirement", "SCR-21792394, SCR-21790756");
-    RecordProperty("Description",
-                   "StopFindService will return a valid result from the binding on "
-                   "success for a regular Proxy (SCR-21792394) and a GenericProxy (SCR-21790756).");
+    RecordProperty("ParentRequirement", "SCR-21790756");
+    RecordProperty("lobster-tracing", "Communication.ProxyStopFindService");
+    RecordProperty(
+        "Description",
+        "StopFindService will return a valid result from the binding on "
+        "success for a regular Proxy (Communication.ProxyStopFindService) and a GenericProxy (SCR-21790756).");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
@@ -378,11 +396,13 @@ TEST_F(ProxyBaseStopFindServiceFixture, StopFindServiceWillReturnValidResultOnSu
 
 TEST_F(ProxyBaseStopFindServiceFixture, StopFindServiceWillReturnPropagateErrorFromBinding)
 {
-    RecordProperty("ParentRequirement", "SCR-21792394, SCR-21790756");
+    RecordProperty("ParentRequirement", "SCR-21790756");
+    RecordProperty("lobster-tracing", "Communication.ProxyStopFindService");
     RecordProperty("Description",
                    "StopFindService will return an error containing "
                    "kInvalidHandle if the "
-                   "call to the binding returns an error for a regular Proxy (SCR-21792394) and a GenericProxy "
+                   "call to the binding returns an error for a regular Proxy (Communication.ProxyStopFindService) and "
+                   "a GenericProxy "
                    "(SCR-21790756).");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -403,7 +423,8 @@ using ProxyBaseFindServiceInstanceIdentifierFixture = ProxyBaseFixture;
 TEST_F(ProxyBaseFindServiceInstanceIdentifierFixture,
        FindServiceWithInstanceIdentifierShouldReturnHandlesContainerIfServiceCanBeFound)
 {
-    RecordProperty("Verifies", "SCR-14005991, SCR-14110933, SCR-18804932");
+    RecordProperty("Verifies", "SCR-14005991, SCR-18804932");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceIdentifier");
     RecordProperty("Description", "Checks finding a service with instance identifier");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -431,7 +452,8 @@ TEST_F(ProxyBaseFindServiceInstanceIdentifierFixture,
 TEST_F(ProxyBaseFindServiceInstanceIdentifierFixture,
        FindServiceWithInstanceIdentifierShouldReturnErrorIfBindingReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14005991, SCR-14110933, SCR-18804932");
+    RecordProperty("Verifies", "SCR-14005991, SCR-18804932");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceIdentifier");
     RecordProperty("Description", "FindService returns a kBindingFailure error code if binding returns any error.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -704,7 +726,7 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveConstructingUpdatesReferenc
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesToServiceElements)
 {
-    RecordProperty("Verifies", "SCR-21290799");
+    RecordProperty("lobster-tracing", "Communication.ProxyMoveSemantics");
     RecordProperty("Description", "Proxy is move assignable");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
