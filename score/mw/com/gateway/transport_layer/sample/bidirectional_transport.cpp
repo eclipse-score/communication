@@ -91,9 +91,18 @@ score::Result<void> BidirectionalTransport::Setup()
                                                                  }));
 
     // we block the connection loop until the first connection is established to ensure that Setup() only returns once
-    // the transport is actually ready to send and receive messages
+    // the transport is actually ready to send and receive messages. Bounded so an unreachable peer fails Setup()
+    // instead of blocking the caller forever.
+    const auto setup_deadline =
+        std::chrono::steady_clock::now() + std::chrono::milliseconds(socket_config_.setup_timeout_ms_);
     while (!is_connected_ && !threads_.ShutdownRequested())
     {
+        if (std::chrono::steady_clock::now() >= setup_deadline)
+        {
+            ::score::mw::log::LogError() << "BidirectionalTransport: setup timed out after "
+                                         << socket_config_.setup_timeout_ms_ << " ms waiting for peer connection";
+            break;
+        }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 

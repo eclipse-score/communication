@@ -29,6 +29,8 @@ class HyperVisorSocketConfiguration
     std::uint16_t local_port_{0};
     std::uint16_t remote_port_{0};
     std::uint32_t request_timeout_ms_{5000};
+    // Bounds Setup()'s wait for the first peer connection; unreachable peers must not hang forever.
+    std::uint32_t setup_timeout_ms_{30000};
 };
 
 }  // namespace score::mw::com::gateway
