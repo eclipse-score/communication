@@ -43,6 +43,24 @@ def _collect_result(label, process):
     return rc, text
 
 
+def _stop_targets(target_a, target_b):
+    """Stop the local QEMU processes without requiring guest SSH connectivity."""
+    for target in [target_a, target_b]:
+        try:
+            target.kill_process()
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Failed to stop local QEMU process")
+
+
+def _collect_stopped_results(processes, results):
+    for label, process in processes.items():
+        try:
+            process.wait(timeout_s=5)
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Failed to collect stopped process %s", label)
+        results[label] = _collect_result(label, process)
+
+
 def test_qemu_ivshmem_transport(target_a, target_b):
     """Bidirectional: VM-A writes service_a and reads service_b; VM-B writes service_b and reads service_a."""
     processes = {
@@ -57,15 +75,18 @@ def test_qemu_ivshmem_transport(target_a, target_b):
                 results[label] = _collect_result(label, process)
                 del processes[label]
                 if results[label][0] != 0:
-                    for peer_process in processes.values():
-                        peer_process.stop()
+                    _stop_targets(target_a, target_b)
+                    _collect_stopped_results(processes, results)
+                    processes.clear()
                     break
         time.sleep(0.1)
 
     if processes:
-        for process in processes.values():
-            process.stop()
-        raise TimeoutError(f"Timed out after {TIMEOUT_SECONDS}s waiting for: {list(processes)}")
+        remaining_labels = list(processes)
+        _stop_targets(target_a, target_b)
+        _collect_stopped_results(processes, results)
+        processes.clear()
+        raise TimeoutError(f"Timed out after {TIMEOUT_SECONDS}s waiting for: {remaining_labels}")
 
     rc_a, text_a = results[VM_A_LABEL]
     rc_b, text_b = results[VM_B_LABEL]

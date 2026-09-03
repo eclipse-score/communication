@@ -31,7 +31,7 @@ from .ivshmem_qemu import IvshmemQemu
 logger = logging.getLogger(__name__)
 
 
-def _wait_for_ssh(target, total_timeout: int = 180, interval: int = 3, stable_successes: int = 3):
+def _wait_for_ssh(target, total_timeout: int = 60, interval: int = 1, stable_successes: int = 2):
     """Wait until the VM *stably* serves SSH.
 
     Early-boot sshd is briefly unstable, so require several consecutive successes to
@@ -42,7 +42,7 @@ def _wait_for_ssh(target, total_timeout: int = 180, interval: int = 3, stable_su
     consecutive = 0
     while time.monotonic() < deadline:
         try:
-            with target.ssh(timeout=10, n_retries=1, retry_interval=1) as ssh:
+            with target.ssh(timeout=5, n_retries=1, retry_interval=1) as ssh:
                 if ssh.execute_command("echo ready") == 0:
                     consecutive += 1
                     if consecutive >= stable_successes:
@@ -79,7 +79,7 @@ class DualQemuProcess(QemuProcess):
         intervm=None,
         vm_index=0,
         max_boot_attempts=3,
-        boot_timeout=180,
+        boot_timeout=60,
     ):
         super().__init__(
             path_to_qemu_image,
@@ -132,7 +132,7 @@ class DualQemuProcess(QemuProcess):
             f"VM never booted into a usable state after {self._max_boot_attempts} attempts: {last_error}"
         )
 
-    def ensure_responsive(self, timeout: int = 30, stable_successes: int = 2):
+    def ensure_responsive(self, timeout: int = 20, stable_successes: int = 2):
         """Re-verify the VM is still reachable; restart in place if not."""
         try:
             _wait_for_ssh(self._target, total_timeout=timeout, stable_successes=stable_successes)
