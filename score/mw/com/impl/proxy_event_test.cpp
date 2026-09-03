@@ -325,8 +325,8 @@ TYPED_TEST(ProxyEventGetNewSamplesFixture, GetNewSamplesDispatchesToBinding)
     using Base = ProxyEventGetNewSamplesFixture<TypeParam>;
 
     Base::RecordProperty("Verifies", "SCR-14034910, SCR-14035773, SCR-21350367");
-    Base::RecordProperty("lobster-tracing", "Communication.ProxyFieldGetNewSamples");
-    Base::RecordProperty("lobster-tracing", "Communication.ProxyEventGetNewSamples");
+    Base::RecordProperty("lobster-tracing",
+                         "Communication.ProxyFieldGetNewSamples, Communication.ProxyEventGetNewSamples");
     Base::RecordProperty("Description", "Checks that GetNewSamples dispatches to the binding");
     Base::RecordProperty("TestType", "Requirements-based test");
     Base::RecordProperty("Priority", "1");
@@ -359,8 +359,8 @@ TYPED_TEST(ProxyEventGetNewSamplesFixture, GetNewSamplesReturnsErrorIfMaxSamples
     using Base = ProxyEventGetNewSamplesFixture<TypeParam>;
 
     Base::RecordProperty("Verifies", "SCR-14034910, SCR-14035773, SCR-21350367");
-    Base::RecordProperty("lobster-tracing", "Communication.ProxyFieldGetNewSamples");
-    Base::RecordProperty("lobster-tracing", "Communication.ProxyEventGetNewSamples");
+    Base::RecordProperty("lobster-tracing",
+                         "Communication.ProxyFieldGetNewSamples, Communication.ProxyEventGetNewSamples");
     Base::RecordProperty("Description",
                          "Checks that GetNewSamples will return an error if the max samples has already been reached");
     Base::RecordProperty("TestType", "Requirements-based test");
@@ -389,8 +389,8 @@ TYPED_TEST(ProxyEventGetNewSamplesFixture, GetNewSamplesReturnsErrorIfNotSubscri
     using Base = ProxyEventGetNewSamplesFixture<TypeParam>;
 
     Base::RecordProperty("Verifies", "SCR-14034910");
-    Base::RecordProperty("lobster-tracing", "Communication.ProxyFieldGetNewSamples");
-    Base::RecordProperty("lobster-tracing", "Communication.ProxyEventGetNewSamples");
+    Base::RecordProperty("lobster-tracing",
+                         "Communication.ProxyFieldGetNewSamples, Communication.ProxyEventGetNewSamples");
     Base::RecordProperty("Description",
                          "Checks that GetNewSamples will forward an error kNotSubscribed from the binding");
     Base::RecordProperty("TestType", "Requirements-based test");
@@ -423,8 +423,8 @@ TYPED_TEST(ProxyEventGetNewSamplesFixture, GetNewSamplesReturnsErrorFromBinding)
     using Base = ProxyEventGetNewSamplesFixture<TypeParam>;
 
     Base::RecordProperty("Verifies", "SCR-14034910");
-    Base::RecordProperty("lobster-tracing", "Communication.ProxyFieldGetNewSamples");
-    Base::RecordProperty("lobster-tracing", "Communication.ProxyEventGetNewSamples");
+    Base::RecordProperty("lobster-tracing",
+                         "Communication.ProxyFieldGetNewSamples, Communication.ProxyEventGetNewSamples");
     Base::RecordProperty(
         "Description",
         "Checks that GetNewSamples will return kBindingFailure for a generic error code from the binding");
