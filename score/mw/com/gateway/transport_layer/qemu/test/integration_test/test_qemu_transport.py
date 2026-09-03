@@ -23,7 +23,6 @@ Both apps print "verified" on success.
 """
 
 import logging
-import threading
 import time
 
 logger = logging.getLogger(__name__)
@@ -32,39 +31,41 @@ APP1 = "/opt/qemu_transport_test/bin/app1"
 APP2 = "/opt/qemu_transport_test/bin/app2"
 VM_A_LABEL = "VM-A (src)"
 VM_B_LABEL = "VM-B (dest)"
-TIMEOUT_SECONDS = 180
+TIMEOUT_SECONDS = 90
 
 
-def _run(target, label, app_path, results):
-    rc, out = target.execute(app_path)
-    text = out.decode(errors="replace").strip()
+def _collect_result(label, process):
+    rc = process.get_exit_code()
+    text = process.get_output().strip()
     logger.info("==================== %s ====================", label)
     logger.info("%s (rc=%s)", text, rc)
     print(f"\n[{label}] {text} (rc={rc})")
-    results[label] = (rc, text)
+    return rc, text
 
 
 def test_qemu_ivshmem_transport(target_a, target_b):
     """Bidirectional: VM-A writes service_a and reads service_b; VM-B writes service_b and reads service_a."""
+    processes = {
+        VM_A_LABEL: target_a.execute_async(APP1),
+        VM_B_LABEL: target_b.execute_async(APP2),
+    }
     results = {}
-    threads = [
-        threading.Thread(target=_run, args=(target_a, VM_A_LABEL, APP1, results), name=VM_A_LABEL),
-        threading.Thread(target=_run, args=(target_b, VM_B_LABEL, APP2, results), name=VM_B_LABEL),
-    ]
-    for t in threads:
-        t.start()
     deadline = time.monotonic() + TIMEOUT_SECONDS
-    for t in threads:
-        remaining = deadline - time.monotonic()
-        if remaining > 0:
-            t.join(timeout=remaining)
-    alive_threads = [t.name for t in threads if t.is_alive()]
-    if alive_threads:
-        raise TimeoutError(f"Timed out after {TIMEOUT_SECONDS}s waiting for: {alive_threads}")
+    while processes and time.monotonic() < deadline:
+        for label, process in list(processes.items()):
+            if not process.is_running():
+                results[label] = _collect_result(label, process)
+                del processes[label]
+                if results[label][0] != 0:
+                    for peer_process in processes.values():
+                        peer_process.stop()
+                    break
+        time.sleep(0.1)
 
-    missing_results = [label for label in [VM_A_LABEL, VM_B_LABEL] if label not in results]
-    if missing_results:
-        raise AssertionError(f"Missing test results for: {missing_results}")
+    if processes:
+        for process in processes.values():
+            process.stop()
+        raise TimeoutError(f"Timed out after {TIMEOUT_SECONDS}s waiting for: {list(processes)}")
 
     rc_a, text_a = results[VM_A_LABEL]
     rc_b, text_b = results[VM_B_LABEL]

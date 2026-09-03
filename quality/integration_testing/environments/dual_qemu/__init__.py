@@ -125,6 +125,7 @@ def _targets(config, ivshmem_backend):
         ) as process_b:
             # Re-verify VM-A is still responsive (it may have gone quiet while VM-B booted).
             process_a.ensure_responsive()
+            process_b.ensure_responsive()
             yield [process_a.target, process_b.target]
 
 
