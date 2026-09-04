@@ -156,6 +156,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl/bindings/lola",
+        "//score/mw/com/impl/bindings/someip:someip",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/concurrency:executor",
     ],
@@ -282,7 +283,10 @@ cc_library(
     srcs = ["proxy_binding_factory_impl.cpp"],
     hdrs = ["proxy_binding_factory_impl.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["//score/mw/com/impl/bindings/lola"],
+    implementation_deps = [
+        "//score/mw/com/impl/bindings/lola",
+        "//score/mw/com/impl/bindings/someip:proxy_binding_factory",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/plumbing:__subpackages__",
@@ -329,6 +333,7 @@ cc_library(
         ":binding_factory_error",
         ":i_proxy_event_binding_factory",
         ":lola_proxy_element_building_blocks",
+        "//score/mw/com/impl/bindings/someip:event_binding_factory",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -378,6 +383,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/bindings/lola:partial_restart_path_builder",
         "//score/mw/com/impl/bindings/lola:shm_path_builder",
+        "//score/mw/com/impl/bindings/someip:skeleton_binding_factory",
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
@@ -397,6 +403,7 @@ cc_library(
         "//score/mw/com/impl:field_tags_store",
         "//score/mw/com/impl:skeleton_base",
         "//score/mw/com/impl/bindings/lola",
+        "//score/mw/com/impl/bindings/someip:skeleton",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -412,6 +419,7 @@ cc_library(
     deps = [
         ":i_skeleton_event_binding_factory",
         ":skeleton_service_element_binding_factory_impl",
+        "//score/mw/com/impl/bindings/someip:skeleton_event",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -427,6 +435,7 @@ cc_library(
         ":i_skeleton_field_binding_factory",
         ":skeleton_service_element_binding_factory_impl",
         "//score/mw/com/impl:field_tags",
+        "//score/mw/com/impl/bindings/someip:skeleton_event",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -714,6 +723,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl:runtime_interfaces",
         "//score/mw/com/impl/bindings/lola:runtime",
+        "//score/mw/com/impl/bindings/someip:someip",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config",
         "@score_baselibs//score/language/futurecpp",
@@ -923,6 +933,28 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":binding_factory_error",
+    ],
+)
+
+cc_unit_test(
+    name = "someip_binding_dispatch_test",
+    srcs = ["someip_binding_dispatch_test.cpp"],
+    features = COMPILER_WARNING_FEATURES + [
+        "aborts_upon_exception",
+    ],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":binding_factory_error",
+        ":plumbing",
+        ":proxy_event_binding_factory",
+        ":skeleton_event_binding_factory",
+        "//score/mw/com/impl:handle_type",
+        "//score/mw/com/impl:instance_identifier",
+        "//score/mw/com/impl/bindings/lola",
+        "//score/mw/com/impl/bindings/someip",
+        "//score/mw/com/impl/configuration",
     ],
 )
 

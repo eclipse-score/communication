@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_CONFIGURATION_BINDING_SERVICE_TYPE_DEPLOYMENT_H
 #define SCORE_MW_COM_IMPL_CONFIGURATION_BINDING_SERVICE_TYPE_DEPLOYMENT_H
 
+#include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/service_element_type.h"
 
 #include "score/json/json_parser.h"
@@ -24,7 +25,16 @@
 namespace score::mw::com::impl
 {
 
-template <typename EventIdType, typename FieldIdType, typename MethodIdType, typename ServiceIdType>
+/// \brief Service type deployment shared by all technical bindings.
+///
+/// \tparam binding_type Tag which makes the instantiation of each technical binding a distinct type. This is required
+/// since the instantiations are held as alternatives of ServiceTypeDeployment::BindingInformation and two bindings
+/// using the same id types would otherwise collapse into a single, non-distinguishable variant alternative.
+template <typename EventIdType,
+          typename FieldIdType,
+          typename MethodIdType,
+          typename ServiceIdType,
+          BindingType binding_type>
 class BindingServiceTypeDeployment
 {
   public:
@@ -77,15 +87,22 @@ template <ServiceElementType service_element_type,
           typename EventIdType,
           typename FieldIdType,
           typename MethodIdType,
-          typename ServiceIdType>
-auto GetServiceElementId(const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>&
-                             binding_service_type_deployment,
-                         const std::string& service_element_name);
+          typename ServiceIdType,
+          BindingType binding_type>
+auto GetServiceElementId(
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>&
+        binding_service_type_deployment,
+    const std::string& service_element_name);
 
-template <typename EventIdType, typename FieldIdType, typename MethodIdType, typename ServiceIdType>
+template <typename EventIdType,
+          typename FieldIdType,
+          typename MethodIdType,
+          typename ServiceIdType,
+          BindingType binding_type>
 bool operator==(
-    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>& lhs,
-    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>& rhs) noexcept;
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>& lhs,
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>&
+        rhs) noexcept;
 
 }  // namespace score::mw::com::impl
 

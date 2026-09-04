@@ -17,6 +17,7 @@ component(
     components = [
         "//score/mw/com/impl/bindings/lola:lola_component",
         "//score/mw/com/impl/bindings/mock_binding:mock_component",
+        "//score/mw/com/impl/bindings/someip:someip_component",
     ],
     requirements = [],
     target_compatible_with = ["@platforms//os:linux"],

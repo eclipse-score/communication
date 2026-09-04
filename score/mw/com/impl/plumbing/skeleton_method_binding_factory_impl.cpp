@@ -65,8 +65,13 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
         return std::make_unique<lola::SkeletonMethod>(*lola_parent, unique_method_identifier);
     };
 
-    auto deployment_info_visitor =
-        score::cpp::overload(lola_deployment_handler, [](const score::cpp::blank&) noexcept -> LambdaReturnType {
+    auto deployment_info_visitor = score::cpp::overload(
+        lola_deployment_handler,
+        [](const SomeIpServiceTypeDeployment&) noexcept -> LambdaReturnType {
+            score::mw::log::LogError("someip") << "Skeleton methods are not supported by the SOME/IP binding.";
+            return nullptr;
+        },
+        [](const score::cpp::blank&) noexcept -> LambdaReturnType {
             // coverage false positive. Covered by the test:
             // SkeletonMethodFactoryFixture.CannotConstructEventFromBlankBinding
             // inside score/mw/com/impl/plumbing/skeleton_method_binding_factory_test.cpp
