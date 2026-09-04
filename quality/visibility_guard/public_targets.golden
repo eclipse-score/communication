@@ -10,6 +10,12 @@
 //quality/compiler_warnings/gcc:strict_warnings
 //quality/compiler_warnings/gcc:strict_warnings_no_error
 //quality/compiler_warnings/gcc:third_party_warnings
+//quality/compiler_warnings/qcc:additional_warnings
+//quality/compiler_warnings/qcc:default_flags
+//quality/compiler_warnings/qcc:minimal_warnings
+//quality/compiler_warnings/qcc:strict_warnings
+//quality/compiler_warnings/qcc:strict_warnings_no_error
+//quality/compiler_warnings/qcc:third_party_warnings
 //quality/compiler_warnings:fortify_source
 //quality/compiler_warnings:minimal_warnings
 //quality/compiler_warnings:strict_warnings

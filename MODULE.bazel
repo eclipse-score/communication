@@ -20,7 +20,7 @@ bazel_dep(name = "boost.program_options", version = "1.83.0.bcr.4")
 bazel_dep(name = "download_utils", version = "1.2.2")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
-bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "rules_rust", version = "0.68.1-score")
@@ -82,64 +82,26 @@ gcc_toolchains.toolchain(
 )
 use_repo(gcc_toolchains, "gcc_toolchain_x86_64")
 
-bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.5.4", dev_dependency = True)
+bazel_dep(name = "score_bazel_cpp_toolchains", version = "1.0.3", dev_dependency = True)
 
 score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
-
-# Minimal warning baseline for the S-CORE GCC/QCC toolchains.
-# Mirrors //quality/compiler_warnings/gcc:minimal_warnings. The S-CORE GCC
-# toolchain extension does not consume cc_features, so the baseline is applied
-# directly as compiler flags. Warning-as-error enforcement stays in the
-# score_communication_* cc_features (currently consumed by the LLVM toolchain).
-SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
-    "-Wall",
-    "-Werror",
-    "-Wtype-limits",  # Helps to achieve MISRA C++:2023 Rule 0-0-2
-    "-Wunused-variable",  # Helps to achieve MISRA C++:2023 Rule 0-2-1
-    "-Wunused-local-typedefs",  # Helps to achieve MISRA C++:2023 Rule 0-2-3
-    "-Wunused-function",  # Helps to achieve MISRA C++:2023 Rule 0-2-4
-    "-Wtrigraphs",  # Helps to achieve MISRA C++:2023 Rule 5-0-1
-    "-Wcomment",  # Helps to achieve MISRA C++:2023 Rule 5-7-1 and 5-7-3
-    "-Wparentheses",  # Helps to achieve MISRA C++:2023 Rule 6-0-1, 8-0-1, and 8-18-2
-    "-Wshadow",  # Helps to achieve MISRA C++:2023 Rule 6-4-1
-    "-Wreturn-local-addr",  # Helps to achieve MISRA C++:2023 Rule 6-8-2
-    "-Wswitch-bool",  # Helps to achieve MISRA C++:2023 Rule 7-0-1
-    "-Wsign-compare",  # Helps to achieve MISRA C++:2023 Rule 7-0-5
-    # Enable once we have no warnings
-    # "-Wconversion",  # Helps to achieve MISRA C++:2023 Rule 7-0-5 and 7-0-6
-    "-Wfloat-conversion",  # Helps to achieve MISRA C++:2023 Rule 7-0-6
-    "-Waddress",  # Helps to achieve MISRA C++:2023 Rule 7-11-3
-    "-Wcast-function-type",  # Helps to achieve MISRA C++:2023 Rule 8-2-4
-    "-Wdangling-else",  # Helps to achieve MISRA C++:2023 Rule 9-3-1
-    "-Wmisleading-indentation",  # Helps to achieve MISRA C++:2023 Rule 9-3-1
-    "-Wreturn-type",  # Helps to achieve MISRA C++:2023 Rule 9-6-5
-    "-Wignored-qualifiers",  # Helps to achieve MISRA C++:2023 Rule 10-1-2
-    "-Wenum-compare",  # Helps to achieve MISRA C++:2023 Rule 10-2-3
-    "-Wuninitialized",  # Helps to achieve MISRA C++:2023 Rule 11-6-2
-    "-Wexpansion-to-defined",  # Helps to achieve MISRA C++:2023 Rule 19-1-1
-    "-Wno-error=deprecated-declarations",
-    "-Wno-error=cpp",
-    "-Wno-builtin-macro-redefined",
-    "-Wno-format-y2k",
-    "-Wno-free-nonheap-object",
-    "-Wno-maybe-uninitialized",
-    "-Wno-unused-macros",
-    "-Wunused-parameter",
-    "-Wunused-variable",
-    "-Wunused-but-set-parameter",
-]
-
-SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS = [
-    "-Wterminate",  # Helps to achieve MISRA C++:2023 Rule 18-5-1
-    "-Wdelete-incomplete",  # Helps to achieve MISRA C++:2023 Rule 21-6-5
-    "-Wno-literal-suffix",
-    "-Wno-noexcept-type",
-]
-
 score_gcc.toolchain(
     name = "score_gcc_x86_64_toolchain",
-    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
-    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
+    extra_enabled_features = [
+        "//quality/compiler_warnings/gcc:default_flags",
+        "//quality/compiler_warnings:fortify_source",
+        "//quality/compiler_warnings/gcc:minimal_warnings",
+    ],
+    extra_known_features = [
+        "@score_cpp_policies//sanitizers/features:debug_symbols",
+        "//quality/compiler_warnings:minimal_warnings",
+        "//quality/compiler_warnings:strict_warnings",
+        "//quality/compiler_warnings:treat_warnings_as_errors",
+        "//quality/compiler_warnings/gcc:additional_warnings",
+        "//quality/compiler_warnings/gcc:strict_warnings",
+        "//quality/compiler_warnings/gcc:strict_warnings_no_error",
+        "//quality/compiler_warnings/gcc:third_party_warnings",
+    ],
     target_cpu = "x86_64",
     target_os = "linux",
     use_base_constraints_only = True,
@@ -148,8 +110,21 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_gcc_aarch64_toolchain",
-    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
-    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
+    extra_enabled_features = [
+        "//quality/compiler_warnings/gcc:default_flags",
+        "//quality/compiler_warnings:fortify_source",
+        "//quality/compiler_warnings/gcc:minimal_warnings",
+    ],
+    extra_known_features = [
+        "@score_cpp_policies//sanitizers/features:debug_symbols",
+        "//quality/compiler_warnings:minimal_warnings",
+        "//quality/compiler_warnings:strict_warnings",
+        "//quality/compiler_warnings:treat_warnings_as_errors",
+        "//quality/compiler_warnings/gcc:additional_warnings",
+        "//quality/compiler_warnings/gcc:strict_warnings",
+        "//quality/compiler_warnings/gcc:strict_warnings_no_error",
+        "//quality/compiler_warnings/gcc:third_party_warnings",
+    ],
     target_cpu = "aarch64",
     target_os = "linux",
     use_base_constraints_only = True,
@@ -158,8 +133,21 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_x86_64_toolchain",
-    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
-    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
+    extra_enabled_features = [
+        "//quality/compiler_warnings/qcc:default_flags",
+        "//quality/compiler_warnings:fortify_source",
+        "//quality/compiler_warnings/qcc:minimal_warnings",
+    ],
+    extra_known_features = [
+        "@score_cpp_policies//sanitizers/features:debug_symbols",
+        "//quality/compiler_warnings:minimal_warnings",
+        "//quality/compiler_warnings:strict_warnings",
+        "//quality/compiler_warnings:treat_warnings_as_errors",
+        "//quality/compiler_warnings/qcc:additional_warnings",
+        "//quality/compiler_warnings/qcc:strict_warnings",
+        "//quality/compiler_warnings/qcc:strict_warnings_no_error",
+        "//quality/compiler_warnings/qcc:third_party_warnings",
+    ],
     sdp_version = "8.0.4",
     target_cpu = "x86_64",
     target_os = "qnx",
@@ -168,8 +156,21 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_aarch64_toolchain",
-    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
-    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
+    extra_enabled_features = [
+        "//quality/compiler_warnings/qcc:default_flags",
+        "//quality/compiler_warnings:fortify_source",
+        "//quality/compiler_warnings/qcc:minimal_warnings",
+    ],
+    extra_known_features = [
+        "@score_cpp_policies//sanitizers/features:debug_symbols",
+        "//quality/compiler_warnings:minimal_warnings",
+        "//quality/compiler_warnings:strict_warnings",
+        "//quality/compiler_warnings:treat_warnings_as_errors",
+        "//quality/compiler_warnings/qcc:additional_warnings",
+        "//quality/compiler_warnings/qcc:strict_warnings",
+        "//quality/compiler_warnings/qcc:strict_warnings_no_error",
+        "//quality/compiler_warnings/qcc:third_party_warnings",
+    ],
     sdp_version = "8.0.4",
     target_cpu = "aarch64",
     target_os = "qnx",

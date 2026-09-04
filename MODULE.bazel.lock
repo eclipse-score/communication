@@ -329,6 +329,7 @@
     "https://bcr.bazel.build/modules/opentracing-cpp/1.6.0/MODULE.bazel": "b3925269f63561b8b880ae7cf62ccf81f6ece55b62cd791eda9925147ae116ec",
     "https://bcr.bazel.build/modules/opentracing-cpp/1.6.0/source.json": "da1cb1add160f5e5074b7272e9db6fd8f1b3336c15032cd0a653af9d2f484aed",
     "https://bcr.bazel.build/modules/package_metadata/0.0.2/MODULE.bazel": "fb8d25550742674d63d7b250063d4580ca530499f045d70748b1b142081ebb92",
+    "https://bcr.bazel.build/modules/package_metadata/0.0.3/MODULE.bazel": "77890552ecea9e284b5424c9de827a58099348763a4359e975c359a83d4faa83",
     "https://bcr.bazel.build/modules/package_metadata/0.0.6/MODULE.bazel": "341dab6f417197494517d54c8e557c0baee1de7aec83543a4fbefe57900acb7e",
     "https://bcr.bazel.build/modules/package_metadata/0.0.7/MODULE.bazel": "7adb03933fc8401f495800cf4eafcff0edc6da0ff55c7db223ef69d19f689486",
     "https://bcr.bazel.build/modules/package_metadata/0.0.7/source.json": "50639625e937b56115012674c797cca7a05a96b4878c87d803c13dc2b31de8a0",
@@ -341,7 +342,8 @@
     "https://bcr.bazel.build/modules/platforms/0.0.8/MODULE.bazel": "9f142c03e348f6d263719f5074b21ef3adf0b139ee4c5133e2aa35664da9eb2d",
     "https://bcr.bazel.build/modules/platforms/0.0.9/MODULE.bazel": "4a87a60c927b56ddd67db50c89acaa62f4ce2a1d2149ccb63ffd871d5ce29ebc",
     "https://bcr.bazel.build/modules/platforms/1.0.0/MODULE.bazel": "f05feb42b48f1b3c225e4ccf351f367be0371411a803198ec34a389fb22aa580",
-    "https://bcr.bazel.build/modules/platforms/1.0.0/source.json": "f4ff1fd412e0246fd38c82328eb209130ead81d62dcd5a9e40910f867f733d96",
+    "https://bcr.bazel.build/modules/platforms/1.1.0/MODULE.bazel": "1c0c09f5bdcf4b3f924720d2478a3711cb39f4977019ca5988685e5b7e18b3d2",
+    "https://bcr.bazel.build/modules/platforms/1.1.0/source.json": "fcf351c47596c939140ab0d333dfdd08ed1ea6ce33c2fe70c12493a301cf1344",
     "https://bcr.bazel.build/modules/prometheus-cpp/1.2.4/MODULE.bazel": "0fbe5dcff66311947a3f6b86ebc6a6d9328e31a28413ca864debc4a043f371e5",
     "https://bcr.bazel.build/modules/prometheus-cpp/1.3.0/MODULE.bazel": "ce82e086bbc0b60267e970f6a54b2ca6d0f22d3eb6633e00e2cc2899c700f3d8",
     "https://bcr.bazel.build/modules/prometheus-cpp/1.3.0/source.json": "8cb66b4e535afc718e9d104a3db96ccb71a42ee816a100e50fd0d5ac843c0606",
@@ -837,6 +839,7 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/opentelemetry-proto/1.4.0.bcr.1/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/opentracing-cpp/1.6.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/package_metadata/0.0.2/MODULE.bazel": "not found",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/package_metadata/0.0.3/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/package_metadata/0.0.6/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/package_metadata/0.0.7/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/platforms/0.0.10/MODULE.bazel": "not found",
@@ -848,6 +851,7 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/platforms/0.0.8/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/platforms/0.0.9/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/platforms/1.0.0/MODULE.bazel": "not found",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/platforms/1.1.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/prometheus-cpp/1.2.4/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/prometheus-cpp/1.3.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/protobuf/21.7/MODULE.bazel": "not found",
@@ -1039,8 +1043,8 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_swift/2.1.1/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_baselibs/0.2.12/MODULE.bazel": "e3396c28702be662c4388578839e51e3a4842ca938f695eea2fe4cecc612a413",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_baselibs/0.2.12/source.json": "fb846e965bf17006af78fbd0976dfa8241be7bfbf695e2319522fce9b0bae96a",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_cpp_toolchains/0.5.4/MODULE.bazel": "5f14457f9b708302db05b5dc3c07bd41ae19b91cabf98a0dbffdca622bd6ac91",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_cpp_toolchains/0.5.4/source.json": "2946be24c6b978aa788c934643aa7ec68aac4a926bea4eaa81d512fd48e9f4a8",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_cpp_toolchains/1.0.3/MODULE.bazel": "599f3f1123bc1400ade5bdd0c7c5470531885cf2fa1fa30024f23d5d21e6d58d",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_cpp_toolchains/1.0.3/source.json": "47eab63b3a98244787a9ab611f825d9c62d48bfdb5000173144d2f9e24b521b8",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/0.0.3/MODULE.bazel": "14c96e378c08705a46abe0799d6236fe3095c342c34f83f8d1b3f6046ce00651",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/0.1.1/MODULE.bazel": "236e5bdff6f2d6de6f96cc4f5f4b1bf2cd6137547ce279668a2dd4c54cd4236c",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/0.1.2/MODULE.bazel": "d1889bf36241521c5d5c401aaf1e98242a60f9cab9d223f8190e5d7087956e83",
@@ -12595,8 +12599,8 @@
     },
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
-        "bzlTransitiveDigest": "B6oxR5SAFtgjCf88BJ6mxzjaNRt2oC3WzxFKX/oOkpc=",
-        "usagesDigest": "V3I3AqsAHmf7QiPnnEK5y0aFj3YSWRqC1C5T+/FYvWo=",
+        "bzlTransitiveDigest": "+vgTABLj64cvjmKGlkw+4AJ9S7iLJFRI20t6JpYfRzM=",
+        "usagesDigest": "KWPY8nPBHMDJDZ5AFFQhZuq4TYwHnexQ5knew3l85n8=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -12608,6 +12612,7 @@
                 "https://github.com/eclipse-score/toolchains_gcc_packages/releases/download/v0.0.4/x86_64-unknown-linux-gnu_gcc12.tar.gz"
               ],
               "build_file": "@@score_bazel_cpp_toolchains+//packages/linux/x86_64/gcc/12.2.0:gcc.BUILD",
+              "patch_cmds": [],
               "sha256": "e9b9a7a63a5f8271b76d6e2057906b95c7a244e4931a8e10edeaa241e9f7c11e",
               "strip_prefix": "x86_64-unknown-linux-gnu"
             }
@@ -12619,6 +12624,7 @@
                 "https://github.com/eclipse-score/toolchains_gcc_packages/releases/download/v0.0.4/aarch64-unknown-linux-gnu_gcc12.tar.gz"
               ],
               "build_file": "@@score_bazel_cpp_toolchains+//packages/linux/aarch64/gcc/12.2.0:gcc.BUILD",
+              "patch_cmds": [],
               "sha256": "7279b1adb50361b21f5266b001980b6febb35fa8d83170901196b9edae3f06d9",
               "strip_prefix": "aarch64-unknown-linux-gnu"
             }
@@ -12630,6 +12636,7 @@
                 "https://www.qnx.com/download/download/88447/installation_qnx_804_260520.tar.xz"
               ],
               "build_file": "@@score_bazel_cpp_toolchains+//packages/qnx/x86_64/sdp/8.0.0:sdp.BUILD",
+              "patch_cmds": [],
               "sha256": "146312c0bf22aab66e8294a06403f2ec6cfeeb074d8fa11549faffd84b7fe778",
               "strip_prefix": ""
             }
@@ -12641,6 +12648,7 @@
                 "https://www.qnx.com/download/download/88447/installation_qnx_804_260520.tar.xz"
               ],
               "build_file": "@@score_bazel_cpp_toolchains+//packages/qnx/aarch64/sdp/8.0.0:sdp.BUILD",
+              "patch_cmds": [],
               "sha256": "146312c0bf22aab66e8294a06403f2ec6cfeeb074d8fa11549faffd84b7fe778",
               "strip_prefix": ""
             }
@@ -12648,47 +12656,23 @@
           "score_gcc_x86_64_toolchain": {
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
-              "extra_compile_flags": [
-                "-Wall",
-                "-Werror",
-                "-Wtype-limits",
-                "-Wunused-variable",
-                "-Wunused-local-typedefs",
-                "-Wunused-function",
-                "-Wtrigraphs",
-                "-Wcomment",
-                "-Wparentheses",
-                "-Wshadow",
-                "-Wreturn-local-addr",
-                "-Wswitch-bool",
-                "-Wsign-compare",
-                "-Wfloat-conversion",
-                "-Waddress",
-                "-Wcast-function-type",
-                "-Wdangling-else",
-                "-Wmisleading-indentation",
-                "-Wreturn-type",
-                "-Wignored-qualifiers",
-                "-Wenum-compare",
-                "-Wuninitialized",
-                "-Wexpansion-to-defined",
-                "-Wno-error=deprecated-declarations",
-                "-Wno-error=cpp",
-                "-Wno-builtin-macro-redefined",
-                "-Wno-format-y2k",
-                "-Wno-free-nonheap-object",
-                "-Wno-maybe-uninitialized",
-                "-Wno-unused-macros",
-                "-Wunused-parameter",
-                "-Wunused-variable",
-                "-Wunused-but-set-parameter"
-              ],
+              "extra_compile_flags": [],
               "extra_c_compile_flags": [],
-              "extra_cxx_compile_flags": [
-                "-Wterminate",
-                "-Wdelete-incomplete",
-                "-Wno-literal-suffix",
-                "-Wno-noexcept-type"
+              "extra_cxx_compile_flags": [],
+              "extra_known_features": [
+                "@@score_cpp_policies+//sanitizers/features:debug_symbols",
+                "@@//quality/compiler_warnings:minimal_warnings",
+                "@@//quality/compiler_warnings:strict_warnings",
+                "@@//quality/compiler_warnings:treat_warnings_as_errors",
+                "@@//quality/compiler_warnings/gcc:additional_warnings",
+                "@@//quality/compiler_warnings/gcc:strict_warnings",
+                "@@//quality/compiler_warnings/gcc:strict_warnings_no_error",
+                "@@//quality/compiler_warnings/gcc:third_party_warnings"
+              ],
+              "extra_enabled_features": [
+                "@@//quality/compiler_warnings/gcc:default_flags",
+                "@@//quality/compiler_warnings:fortify_source",
+                "@@//quality/compiler_warnings/gcc:minimal_warnings"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",
@@ -12712,47 +12696,23 @@
           "score_gcc_aarch64_toolchain": {
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
-              "extra_compile_flags": [
-                "-Wall",
-                "-Werror",
-                "-Wtype-limits",
-                "-Wunused-variable",
-                "-Wunused-local-typedefs",
-                "-Wunused-function",
-                "-Wtrigraphs",
-                "-Wcomment",
-                "-Wparentheses",
-                "-Wshadow",
-                "-Wreturn-local-addr",
-                "-Wswitch-bool",
-                "-Wsign-compare",
-                "-Wfloat-conversion",
-                "-Waddress",
-                "-Wcast-function-type",
-                "-Wdangling-else",
-                "-Wmisleading-indentation",
-                "-Wreturn-type",
-                "-Wignored-qualifiers",
-                "-Wenum-compare",
-                "-Wuninitialized",
-                "-Wexpansion-to-defined",
-                "-Wno-error=deprecated-declarations",
-                "-Wno-error=cpp",
-                "-Wno-builtin-macro-redefined",
-                "-Wno-format-y2k",
-                "-Wno-free-nonheap-object",
-                "-Wno-maybe-uninitialized",
-                "-Wno-unused-macros",
-                "-Wunused-parameter",
-                "-Wunused-variable",
-                "-Wunused-but-set-parameter"
-              ],
+              "extra_compile_flags": [],
               "extra_c_compile_flags": [],
-              "extra_cxx_compile_flags": [
-                "-Wterminate",
-                "-Wdelete-incomplete",
-                "-Wno-literal-suffix",
-                "-Wno-noexcept-type"
+              "extra_cxx_compile_flags": [],
+              "extra_known_features": [
+                "@@score_cpp_policies+//sanitizers/features:debug_symbols",
+                "@@//quality/compiler_warnings:minimal_warnings",
+                "@@//quality/compiler_warnings:strict_warnings",
+                "@@//quality/compiler_warnings:treat_warnings_as_errors",
+                "@@//quality/compiler_warnings/gcc:additional_warnings",
+                "@@//quality/compiler_warnings/gcc:strict_warnings",
+                "@@//quality/compiler_warnings/gcc:strict_warnings_no_error",
+                "@@//quality/compiler_warnings/gcc:third_party_warnings"
+              ],
+              "extra_enabled_features": [
+                "@@//quality/compiler_warnings/gcc:default_flags",
+                "@@//quality/compiler_warnings:fortify_source",
+                "@@//quality/compiler_warnings/gcc:minimal_warnings"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",
@@ -12776,47 +12736,23 @@
           "score_qcc_x86_64_toolchain": {
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
-              "extra_compile_flags": [
-                "-Wall",
-                "-Werror",
-                "-Wtype-limits",
-                "-Wunused-variable",
-                "-Wunused-local-typedefs",
-                "-Wunused-function",
-                "-Wtrigraphs",
-                "-Wcomment",
-                "-Wparentheses",
-                "-Wshadow",
-                "-Wreturn-local-addr",
-                "-Wswitch-bool",
-                "-Wsign-compare",
-                "-Wfloat-conversion",
-                "-Waddress",
-                "-Wcast-function-type",
-                "-Wdangling-else",
-                "-Wmisleading-indentation",
-                "-Wreturn-type",
-                "-Wignored-qualifiers",
-                "-Wenum-compare",
-                "-Wuninitialized",
-                "-Wexpansion-to-defined",
-                "-Wno-error=deprecated-declarations",
-                "-Wno-error=cpp",
-                "-Wno-builtin-macro-redefined",
-                "-Wno-format-y2k",
-                "-Wno-free-nonheap-object",
-                "-Wno-maybe-uninitialized",
-                "-Wno-unused-macros",
-                "-Wunused-parameter",
-                "-Wunused-variable",
-                "-Wunused-but-set-parameter"
-              ],
+              "extra_compile_flags": [],
               "extra_c_compile_flags": [],
-              "extra_cxx_compile_flags": [
-                "-Wterminate",
-                "-Wdelete-incomplete",
-                "-Wno-literal-suffix",
-                "-Wno-noexcept-type"
+              "extra_cxx_compile_flags": [],
+              "extra_known_features": [
+                "@@score_cpp_policies+//sanitizers/features:debug_symbols",
+                "@@//quality/compiler_warnings:minimal_warnings",
+                "@@//quality/compiler_warnings:strict_warnings",
+                "@@//quality/compiler_warnings:treat_warnings_as_errors",
+                "@@//quality/compiler_warnings/qcc:additional_warnings",
+                "@@//quality/compiler_warnings/qcc:strict_warnings",
+                "@@//quality/compiler_warnings/qcc:strict_warnings_no_error",
+                "@@//quality/compiler_warnings/qcc:third_party_warnings"
+              ],
+              "extra_enabled_features": [
+                "@@//quality/compiler_warnings/qcc:default_flags",
+                "@@//quality/compiler_warnings:fortify_source",
+                "@@//quality/compiler_warnings/qcc:minimal_warnings"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",
@@ -12840,47 +12776,23 @@
           "score_qcc_aarch64_toolchain": {
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
-              "extra_compile_flags": [
-                "-Wall",
-                "-Werror",
-                "-Wtype-limits",
-                "-Wunused-variable",
-                "-Wunused-local-typedefs",
-                "-Wunused-function",
-                "-Wtrigraphs",
-                "-Wcomment",
-                "-Wparentheses",
-                "-Wshadow",
-                "-Wreturn-local-addr",
-                "-Wswitch-bool",
-                "-Wsign-compare",
-                "-Wfloat-conversion",
-                "-Waddress",
-                "-Wcast-function-type",
-                "-Wdangling-else",
-                "-Wmisleading-indentation",
-                "-Wreturn-type",
-                "-Wignored-qualifiers",
-                "-Wenum-compare",
-                "-Wuninitialized",
-                "-Wexpansion-to-defined",
-                "-Wno-error=deprecated-declarations",
-                "-Wno-error=cpp",
-                "-Wno-builtin-macro-redefined",
-                "-Wno-format-y2k",
-                "-Wno-free-nonheap-object",
-                "-Wno-maybe-uninitialized",
-                "-Wno-unused-macros",
-                "-Wunused-parameter",
-                "-Wunused-variable",
-                "-Wunused-but-set-parameter"
-              ],
+              "extra_compile_flags": [],
               "extra_c_compile_flags": [],
-              "extra_cxx_compile_flags": [
-                "-Wterminate",
-                "-Wdelete-incomplete",
-                "-Wno-literal-suffix",
-                "-Wno-noexcept-type"
+              "extra_cxx_compile_flags": [],
+              "extra_known_features": [
+                "@@score_cpp_policies+//sanitizers/features:debug_symbols",
+                "@@//quality/compiler_warnings:minimal_warnings",
+                "@@//quality/compiler_warnings:strict_warnings",
+                "@@//quality/compiler_warnings:treat_warnings_as_errors",
+                "@@//quality/compiler_warnings/qcc:additional_warnings",
+                "@@//quality/compiler_warnings/qcc:strict_warnings",
+                "@@//quality/compiler_warnings/qcc:strict_warnings_no_error",
+                "@@//quality/compiler_warnings/qcc:third_party_warnings"
+              ],
+              "extra_enabled_features": [
+                "@@//quality/compiler_warnings/qcc:default_flags",
+                "@@//quality/compiler_warnings:fortify_source",
+                "@@//quality/compiler_warnings/qcc:minimal_warnings"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",
@@ -12903,6 +12815,11 @@
           }
         },
         "recordedRepoMappingEntries": [
+          [
+            "",
+            "score_cpp_policies",
+            "score_cpp_policies+"
+          ],
           [
             "bazel_tools",
             "rules_cc",
