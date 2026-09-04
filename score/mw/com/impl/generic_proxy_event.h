@@ -78,11 +78,6 @@ class GenericProxyEvent : public ProxyEventBase
     template <typename F>
     Result<std::size_t> GetNewSamples(F&& receiver, std::size_t max_num_samples) noexcept;
 
-    /// \brief return the (aligned) size in bytes of the underlying event sample data type.
-    /// \return size in bytes.
-    [[deprecated("Use GetDataTypeSizeInfo() for size and alignment information, issue #975")]]
-    std::size_t GetSampleSize() const noexcept;
-
     /// \brief return the size and alignment information of the underlying event sample data type.
     memory::DataTypeSizeInfo GetDataTypeSizeInfo() const;
 

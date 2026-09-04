@@ -50,11 +50,6 @@ class GenericProxyEventBinding : public ProxyEventBindingBase
     /// \return Number of samples that were handed over to the callable.
     virtual Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) = 0;
 
-    /// \brief return the (aligned) size in bytes of the underlying event sample data type.
-    /// \return size in bytes.
-    [[deprecated("Use GetDataTypeSizeInfo() for size and alignment information, issue #975")]]
-    virtual std::size_t GetSampleSize() const noexcept = 0;
-
     /// \brief return the size and alignment information of the underlying event sample data type.
     virtual memory::DataTypeSizeInfo GetDataTypeSizeInfo() const = 0;
 
