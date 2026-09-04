@@ -112,7 +112,10 @@ def _targets(config, ivshmem_backend):
         intervm=intervm_roles[0],
         vm_index=0,
     ) as process_a:
-        with DualQemuProcess(
+        # VM-B is given VM-A as its peer up front so that if VM-B's own boot needs to
+        # retry, VM-A gets restarted too and the one-shot intervm socket netdev is
+        # re-paired on both sides (see DualQemuProcess.start()/restart_with_peer()).
+        process_b = DualQemuProcess(
             config.qemu_images[1],
             vms[1].qemu_ram_size,
             vms[1].qemu_num_cores,
@@ -122,11 +125,20 @@ def _targets(config, ivshmem_backend):
             ivshmem_size=dual_config.ivshmem.size,
             intervm=intervm_roles[1],
             vm_index=1,
-        ) as process_b:
+            peer=process_a if intervm.enabled else None,
+        )
+        try:
+            process_b.start()
+            # Only wired now: VM-B has already booted, so this cannot recurse back
+            # into VM-B's own boot-retry loop.
+            if intervm.enabled:
+                process_a.set_peer(process_b)
             # Re-verify VM-A is still responsive (it may have gone quiet while VM-B booted).
             process_a.ensure_responsive()
             process_b.ensure_responsive()
             yield [process_a.target, process_b.target]
+        finally:
+            process_b.stop()
 
 
 @pytest.fixture(scope="session")

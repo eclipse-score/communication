@@ -17,9 +17,14 @@ Subclasses ``QemuProcess`` and replaces its internal ``_qemu`` with an
 
 The ``start()`` method is self-healing: it waits for stable SSH, runs ``pre_tests_phase``,
 and restarts the QEMU process up to ``max_boot_attempts`` times if sshd never comes up.
+
+All timeouts/retry counts below can be overridden via environment variables (e.g. via Bazel's
+``--test_env``) without a code change, for CI hosts where nested virtualization makes the
+guest's SSH authentication handshake much slower than on bare-metal KVM.
 """
 
 import logging
+import os
 import time
 
 from score.itf.plugins.qemu.checks import pre_tests_phase
@@ -31,6 +36,14 @@ from .ivshmem_qemu import IvshmemQemu
 logger = logging.getLogger(__name__)
 
 
+def _env_int(name: str, default: int) -> int:
+    """Read an int from the environment, falling back to ``default`` if unset/invalid."""
+    try:
+        return int(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
 def _wait_for_ssh(target, total_timeout: int = 60, interval: int = 1, stable_successes: int = 2):
     """Wait until the VM *stably* serves SSH.
 
@@ -40,9 +53,10 @@ def _wait_for_ssh(target, total_timeout: int = 60, interval: int = 1, stable_suc
     deadline = time.monotonic() + total_timeout
     last_error = None
     consecutive = 0
+    ssh_probe_timeout = _env_int("DUAL_QEMU_SSH_PROBE_TIMEOUT_S", 5)
     while time.monotonic() < deadline:
         try:
-            with target.ssh(timeout=5, n_retries=1, retry_interval=1) as ssh:
+            with target.ssh(timeout=ssh_probe_timeout, n_retries=1, retry_interval=1) as ssh:
                 if ssh.execute_command("echo ready") == 0:
                     consecutive += 1
                     if consecutive >= stable_successes:
@@ -78,9 +92,12 @@ class DualQemuProcess(QemuProcess):
         ivshmem_size="4M",
         intervm=None,
         vm_index=0,
-        max_boot_attempts=3,
-        boot_timeout=60,
+        max_boot_attempts=None,
+        boot_timeout=None,
+        peer=None,
     ):
+        max_boot_attempts = max_boot_attempts or _env_int("DUAL_QEMU_MAX_BOOT_ATTEMPTS", 3)
+        boot_timeout = boot_timeout or _env_int("DUAL_QEMU_BOOT_TIMEOUT_S", 60)
         super().__init__(
             path_to_qemu_image,
             available_ram,
@@ -102,6 +119,13 @@ class DualQemuProcess(QemuProcess):
         self._max_boot_attempts = max_boot_attempts
         self._boot_timeout = boot_timeout
         self._target = None
+        # The intervm socket netdev pairs both VMs' host-side sockets once at QEMU
+        # process start; restarting only one side leaves the other stale.
+        self._peer = peer
+
+    def set_peer(self, peer):
+        """Set the intervm peer VM, restarted alongside this one when either goes bad."""
+        self._peer = peer
 
     def start(self):
         """Boot the VM, retrying up to ``max_boot_attempts`` times if sshd never serves."""
@@ -126,19 +150,44 @@ class DualQemuProcess(QemuProcess):
                 except Exception:  # pylint: disable=broad-except
                     logger.exception("Failed to stop the wedged QEMU before retrying")
                 if attempt < self._max_boot_attempts:
+                    if self._peer is not None:
+                        logger.info("Restarting intervm peer VM to re-pair its socket netdev")
+                        self._peer.restart()
                     logger.info("Waiting 5 s before next boot attempt to let resources settle")
                     time.sleep(5)
         raise RuntimeError(
             f"VM never booted into a usable state after {self._max_boot_attempts} attempts: {last_error}"
         )
 
-    def ensure_responsive(self, timeout: int = 20, stable_successes: int = 2):
-        """Re-verify the VM is still reachable; restart in place if not."""
+    def ensure_responsive(self, timeout: int = None, stable_successes: int = 2):
+        """Re-verify the VM is still reachable; restart (with its peer) in place if not."""
+        timeout = timeout or _env_int("DUAL_QEMU_ENSURE_RESPONSIVE_TIMEOUT_S", 20)
         try:
             _wait_for_ssh(self._target, total_timeout=timeout, stable_successes=stable_successes)
         except Exception as ex:  # pylint: disable=broad-except
             logger.warning("VM went unresponsive (%s); restarting", ex)
+            self.restart_with_peer()
+
+    def restart_with_peer(self):
+        """Restart this VM and, if an intervm peer is set, restart it too.
+
+        Both restarts must happen together so the one-shot intervm socket netdev is
+        re-paired on both sides; restarting only one side leaves the other stale.
+        """
+        peer = self._peer
+        self._peer = None
+        peer_saved = None
+        if peer is not None:
+            peer_saved = peer._peer  # pylint: disable=protected-access
+            peer._peer = None  # pylint: disable=protected-access
+        try:
             self.restart()
+            if peer is not None:
+                peer.restart()
+        finally:
+            self._peer = peer
+            if peer is not None:
+                peer._peer = peer_saved  # pylint: disable=protected-access
 
     @property
     def target(self):
