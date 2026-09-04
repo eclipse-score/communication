@@ -30,6 +30,7 @@ validate_json_schema_test(
 filegroup(
     name = "mw_com_gateway_config_schema",
     srcs = ["mw_com_gateway_config_schema.json"],
+    visibility = ["//config:__pkg__"],
 )
 
 cc_library(

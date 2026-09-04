@@ -29,6 +29,7 @@ filegroup(
     name = "comtrace_filter_config_schema",
     srcs = ["comtrace_config_schema.json"],
     visibility = [
+        "//config:__pkg__",
         "//score/mw/com:__pkg__",
         "//score/mw/com/impl/tracing/configuration:__pkg__",
     ],

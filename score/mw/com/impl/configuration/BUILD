@@ -28,6 +28,7 @@ filegroup(
     name = "mw_com_config_schema",
     srcs = ["mw_com_config_schema.json"],
     visibility = [
+        "//config:__pkg__",
         "//score/mw/com:__subpackages__",
         "//score/mw/com/impl/configuration/test:__subpackages__",
     ],
