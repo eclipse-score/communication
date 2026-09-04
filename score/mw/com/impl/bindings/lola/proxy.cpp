@@ -624,6 +624,29 @@ TransactionLogSet& Proxy::GetTransactionLogSet(const ElementFqId element_fq_id)
     return event_entry->second.transaction_log_set_;
 }
 
+const EventDataStorage& Proxy::GetEventDataStorage(const ElementFqId element_fq_id) const
+{
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        data_ != nullptr, "Proxy::GetEventDataStorage: Managed memory data pointer is Null");
+    auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
+    auto* const event_entry = service_data_storage.events_.find(element_fq_id);
+    if (event_entry == service_data_storage.events_.end())
+    {
+        score::mw::log::LogFatal("lola") << __func__ << __LINE__
+                                         << "Unable to find data storage for given event instance. Terminating.";
+        std::terminate();
+    }
+    // Suppress "AUTOSAR C++14 A5-3-2" rule finding. This rule declares: "Null pointers shall not be dereferenced.".
+    // The "event_entry" variable is an iterator of interprocess map returned by the "find" method.
+    // A check is made that the iterator is not equal to map.end(). Therefore, the call to "event_entry->"
+    // does not return nullptr.
+    // coverity[autosar_cpp14_a5_3_2_violation]
+    const auto* event_data_storage_ptr = event_entry->second.get();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_storage_ptr != nullptr,
+                                                "Could not get EventDataStorage from OffsetPtr");
+    return *event_data_storage_ptr;
+}
+
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
 // value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an

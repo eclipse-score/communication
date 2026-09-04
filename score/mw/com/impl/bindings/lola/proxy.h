@@ -143,6 +143,12 @@ class Proxy : public ProxyBinding
     /// Terminates if the event control structure cannot be found.
     TransactionLogSet& GetTransactionLogSet(const ElementFqId element_fq_id);
 
+    /// Retrieves a reference to the event data storage area for a given ElementFqId.
+    ///
+    /// \param element_fq_id The Event ID.
+    /// \return A reference to the EventDataStorage.
+    const EventDataStorage& GetEventDataStorage(const ElementFqId element_fq_id) const;
+
     /// Retrieves an event data meta info.
     ///
     /// The event meta info can be used to iterate over events in the event data storage when the type is not known e.g.

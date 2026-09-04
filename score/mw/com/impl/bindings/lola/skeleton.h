@@ -35,6 +35,7 @@
 #include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
+#include "score/mw/com/impl/initialize_sample_callback.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/skeleton_binding.h"
 
@@ -71,17 +72,9 @@ class Skeleton final : public SkeletonBinding
     friend class SkeletonAttorney;
 
   public:
-    template <typename SampleType>
     struct RegistrationResult
     {
-        EventDataStorage<SampleType>& event_data_storage;
-        EventControl& event_control_qm;
-        EventControl* event_control_asil_b;
-    };
-
-    struct GenericRegistrationResult
-    {
-        void* type_erased_event_data_storage_ptr;
+        EventDataStorage& event_data_storage;
         EventControl& event_control_qm;
         EventControl* event_control_asil_b;
     };
@@ -122,31 +115,26 @@ class Skeleton final : public SkeletonBinding
         return BindingType::kLoLa;
     };
 
-    /// \brief Enables dynamic registration of Generic (type-erased) Events at the Skeleton.
+    /// \brief Enables dynamic registration of Events (typed and generic) at the Skeleton.
     /// \param element_fq_id The full qualified ID of the element (event) that shall be registered.
     /// \param element_properties Properties of the element (e.g. number of slots, max subscribers).
-    /// \param sample_size The size of a single data sample in bytes.
-    /// \param sample_alignment The alignment requirement of the data sample in bytes.
-    /// \return A pair containing:
-    ///         - An type erased pointer to the allocated data storage (void*).
-    ///         - The EventDataControlComposite for managing the event's control data.
-    auto RegisterGeneric(const ElementFqId element_fq_id,
-                         const SkeletonEventProperties& element_properties,
-                         const size_t sample_size,
-                         const size_t sample_alignment) -> GenericRegistrationResult;
-
-    /// \brief Enables dynamic registration of Events at the Skeleton.
-    /// \tparam SampleType The type of the event
-    /// \param element_fq_id The full qualified of the element (event or field) that shall be registered
-    /// \param element_properties properties of the element, which are currently event specific properties.
+    /// \param data_type_size_info The size and alignment of a single data sample in bytes.
+    /// \param initialize_sample_callback Optional callback to initialize a sample in the underlying type-erased
+    ///        storage slots. Only used (forwarded to SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory()) in
+    ///        case the EventDataStorage is freshly created in this call. If instead an already existing
+    ///        EventDataStorage (of a previously offered instance) is (re-)opened, the callback is ignored, since
+    ///        re-initializing the slots would potentially tamper with event data that consumers of the previous
+    ///        instance offering might still be accessing.
     /// \return The registered data structures within the Skeleton
-    /// (first: where to store data, second: control data
-    ///         access) If PrepareOffer created the shared memory, then will create an EventDataControl (for QM and
+    ///         (first: where to store data, second: control data access)
+    ///         If PrepareOffer created the shared memory, then will create an EventDataControl (for QM and
     ///         optionally for ASIL B) and an EventDataStorage which will be returned. If PrepareOffer opened the
     ///         shared memory, then the opened event data from the existing shared memory will be returned.
-    template <typename SampleType>
-    auto Register(const ElementFqId element_fq_id, SkeletonEventProperties element_properties)
-        -> RegistrationResult<SampleType>;
+    auto Register(const ElementFqId element_fq_id,
+                  const SkeletonEventProperties& element_properties,
+                  const memory::DataTypeSizeInfo data_type_size_info,
+                  const std::optional<InitializeSampleCallback>& initialize_sample_callback = std::nullopt)
+        -> RegistrationResult;
 
     QualityType GetInstanceQualityType() const;
 
@@ -301,51 +289,6 @@ class Skeleton final : public SkeletonBinding
     /// this method.
     safecpp::Scope<> on_service_method_subscribed_handler_scope_;
 };
-
-template <typename SampleType>
-auto Skeleton::Register(const ElementFqId element_fq_id, SkeletonEventProperties element_properties)
-    -> RegistrationResult<SampleType>
-{
-    // If the skeleton previously crashed and there are active proxies connected to the old shared memory, then we
-    // re-open that shared memory in PrepareOffer(). In that case, we should retrieve the EventDataControl and
-    // EventDataStorage from the shared memory and attempt to rollback the Skeleton tracing transaction log.
-    // use_gateway_forwarded_shm_ is only ever set in inter-VM gateway setups, where a GenericSkeleton
-    // (type-erased) is used exclusively. A GenericSkeleton registers events via RegisterGeneric(), NOT
-    // via this typed template. Therefore reaching this function with use_gateway_forwarded_shm_ == true
-    // is a programming error: a typed Skeleton must never be used in a gateway-forwarding context.
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(!use_gateway_forwarded_shm_,
-                                                "Register<SampleType> must not be called for a gateway-forwarded "
-                                                "skeleton — use GenericSkeleton/RegisterGeneric instead");
-
-    if (was_old_shm_region_reopened_)
-    {
-        auto [event_data_control_qm, event_data_control_asil_b] =
-            memory_manager_.RetrieveEventControlsFromOpenedSharedMemory(element_fq_id);
-
-        // We can have transactions in the TransactionLogs relating to tracing (QM only) or field getter logic (QM and /
-        // or ASIL-B). We try rolling back all TransactionLogSets which are found.
-        // We rollback any transactions in the TransactionLog that correspond to the SkeletonEvent even if
-        // tracing is disabled in the current process. It's possible that we could have tracing disabled in this process
-        // but the crashed process had tracing enabled and therefore may have transactions that need to be rolled back.
-        // If tracing was also disabled in the previous process or if there are no transactions to rollback,
-        // RollbackSkeletonTracingTransactions will simply do nothing.
-        memory_manager_.RollbackSkeletonTracingTransactions(event_data_control_qm);
-        if (event_data_control_asil_b != nullptr)
-        {
-            memory_manager_.RollbackSkeletonTracingTransactions(*event_data_control_asil_b);
-        }
-
-        auto& event_data_storage = memory_manager_.RetrieveEventDataFromOpenedSharedMemory<SampleType>(element_fq_id);
-        return RegistrationResult<SampleType>{event_data_storage, event_data_control_qm, event_data_control_asil_b};
-    }
-
-    auto& event_data_storage =
-        memory_manager_.CreateEventDataInCreatedSharedMemory<SampleType>(element_fq_id, element_properties);
-    auto [event_data_control_qm, event_data_control_asil_b] =
-        memory_manager_.CreateEventControlsInCreatedSharedMemory(element_fq_id, element_properties);
-
-    return RegistrationResult<SampleType>{event_data_storage, event_data_control_qm, event_data_control_asil_b};
-}
 
 }  // namespace score::mw::com::impl::lola
 

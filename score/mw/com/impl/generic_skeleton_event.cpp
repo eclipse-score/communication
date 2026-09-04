@@ -12,19 +12,22 @@
  ********************************************************************************/
 #include "score/mw/com/impl/generic_skeleton_event.h"
 #include "score/mw/com/impl/com_error.h"
-#include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/skeleton_base.h"
+#include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
 
 #include <functional>
+#include <optional>
 
 namespace score::mw::com::impl
 {
 
 GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
                                            const std::string_view event_name,
-                                           std::unique_ptr<GenericSkeletonEventBinding> binding)
-    : SkeletonEventBase(event_name, std::move(binding))
+                                           std::unique_ptr<SkeletonEventBinding> binding)
+    // GenericSkeletonEvent is already type-erased on the binding independent layer (it has no concrete SampleType),
+    // so it cannot provide a type-correct InitializeSampleCallback and hands over an empty optional instead.
+    : SkeletonEventBase(event_name, std::nullopt, std::move(binding))
 {
     SkeletonBaseView{skeleton_base}.RegisterEvent(event_name, GetReferenceToMoveable());
 
@@ -32,14 +35,10 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
     {
         const SkeletonBaseView skeleton_base_view{skeleton_base};
         const auto& instance_identifier = skeleton_base_view.GetAssociatedInstanceIdentifier();
-        auto* const binding_ptr = static_cast<GenericSkeletonEventBinding*>(binding_.get());
-        if (binding_ptr)
-        {
-            const auto binding_type = binding_ptr->GetBindingType();
-            auto tracing_data =
-                tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
-            binding_ptr->SetSkeletonEventTracingData(tracing_data);
-        }
+        const auto binding_type = binding_->GetBindingType();
+        tracing_data_ =
+            tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
+        binding_->SetSkeletonEventTracingData(tracing_data_);
     }
 }
 
@@ -53,9 +52,10 @@ Result<void> GenericSkeletonEvent::Send(SampleAllocateePtr<void> sample) noexcep
     }
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ != nullptr, "Binding is not initialized!");
-    auto* const binding = static_cast<GenericSkeletonEventBinding*>(binding_.get());
+    auto* const binding = binding_.get();
 
-    const auto send_result = binding->Send(std::move(sample));
+    // For generic skeletons/skeleton events we do not support (yet) tracing -> SendTraceXCallback is a nullopt!
+    const auto send_result = binding->Send(std::move(sample), std::nullopt);
 
     if (!send_result.has_value())
     {
@@ -74,9 +74,8 @@ Result<SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
             << "GenericSkeletonEvent::Allocate failed as Event has not yet been offered or has been stop offered";
         return MakeUnexpected(ComErrc::kNotOffered);
     }
-    auto* const binding = static_cast<GenericSkeletonEventBinding*>(binding_.get());
 
-    auto result = binding->Allocate(sample_allocatee_tracker_->Allocate());
+    auto result = binding_->Allocate(sample_allocatee_tracker_->Allocate());
 
     if (!result.has_value())
     {
@@ -96,34 +95,28 @@ Result<void> GenericSkeletonEvent::Notify() noexcept
             << "GenericSkeletonEvent::Notify failed as Event has not yet been offered or has been stop offered";
         return MakeUnexpected(ComErrc::kNotOffered);
     }
-    auto* const binding = static_cast<GenericSkeletonEventBinding*>(binding_.get());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding != nullptr, "Binding is not initialized!");
-    return binding->Notify();
+
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ != nullptr, "Binding is not initialized!");
+    return binding_->Notify();
 }
 
 DataTypeMetaInfo GenericSkeletonEvent::GetSizeInfo() const noexcept
 {
-    const auto* const binding = static_cast<const GenericSkeletonEventBinding*>(binding_.get());
-    if (!binding)
-        return {};
-    const auto size_info_pair = binding->GetSizeInfo();
-    return {size_info_pair.first, size_info_pair.second};
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ != nullptr, "Binding is not initialized!");
+    const auto data_type_size_info = binding_->GetSizeInfo();
+    return {data_type_size_info.Size(), data_type_size_info.Alignment()};
 }
 
 Result<void> GenericSkeletonEvent::SetReceiveHandlerRegistrationChangedHandler(
     ReceiveHandlerRegistrationChangedCallback callback) noexcept
 {
-    auto* const binding = dynamic_cast<GenericSkeletonEventBinding*>(binding_.get());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding != nullptr, "Cast to GenericSkeletonEventBinding failed");
-
-    return binding->SetReceiveHandlerRegistrationChangedHandler(std::move(callback));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ != nullptr, "Binding is not initialized!");
+    return binding_->SetReceiveHandlerRegistrationChangedHandler(std::move(callback));
 }
 
 Result<void> GenericSkeletonEvent::UnsetReceiveHandlerRegistrationChangedHandler() noexcept
 {
-    auto* const binding = dynamic_cast<GenericSkeletonEventBinding*>(binding_.get());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding != nullptr, "Cast to GenericSkeletonEventBinding failed");
-
-    return binding->UnsetReceiveHandlerRegistrationChangedHandler();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ != nullptr, "Binding is not initialized!");
+    return binding_->UnsetReceiveHandlerRegistrationChangedHandler();
 }
 }  // namespace score::mw::com::impl
