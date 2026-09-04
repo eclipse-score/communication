@@ -12,12 +12,19 @@
 # *******************************************************************************
 
 load("@aspect_rules_lint//format:defs.bzl", "format_multirun", "format_test")
+
+# Loading this repo forces its dev_setup_check repository rule to (re-)run on
+# every Bazel invocation, verifying the developer machine setup.
+load("@dev_setup_check//:defs.bzl", "DEV_SETUP_OK")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@score_tooling//cr_checker:cr_checker.bzl", "copyright_checker")
 load("@score_tooling//skills_sync:sync_skills.bzl", "sync_skills")
 load("//tools/lint:linters.bzl", "use_clang_tidy_targets", "use_ruff_targets")
+
+# buildifier: disable=unused-variable
+_ = DEV_SETUP_OK
 
 exports_files(["MODULE.bazel"])
 

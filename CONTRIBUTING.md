@@ -34,13 +34,28 @@ To ensure a smooth contribution process, please follow the steps below:
 
 ## Development Setup
 
-### General Prerequisites
+We have an automated check when bazel is invoked in this project that verifies that the development setup matches
+the expectations stated below. See [tools/setup/dev_setup_check.bzl](tools/setup/dev_setup_check.bzl).
 
-- Bazel (Instructions for installing here: https://bazel.build/install)
+### DevContainer Setup
+
+>**Note**:
+> This repository offers a [DevContainer](https://containers.dev/).
+> For setting this up and enabling code completion read [eclipse-score/devcontainer/README.md#inside-the-container](https://github.com/eclipse-score/devcontainer/blob/main/README.md#inside-the-container).
+
+>**Note**:
+> If you are using Docker on Windows **without `WSL2`** in between, you have to select the alternative container `eclipse-s-core-docker-on-windows`.
+
+### Manual Setup
+
+#### General Prerequisites
+
+- Host machine runs Linux (Recommended Ubuntu 24.04+ - others likely work as well)
+- Bazel (Instructions for installing here: https://bazel.build/install - we recommend using `bazelisk`)
 - Docker (Instructions for installing here: https://docs.docker.com/engine/install/)
   - Note. Running Docker in rootless mode is not yet officially supported but may work. See https://docs.docker.com/engine/security/rootless/ for more information.
 
-### OS-specific Prerequisites
+#### OS-specific Prerequisites
 
 We strive to be independent of the host platform via bazel sandboxing.
 Some host platforms come with limitations that bazel cannot sandbox sufficiently.
@@ -50,7 +65,7 @@ Please be aware, that while we officially support Ubuntu 24.04 as the host platf
 While other platforms generally should work, we can give no such guarantee.
 Should you face issues with your host platform, feel free to raise an issue or discussion where we will try to support.
 
-#### Ubuntu 24.04 and newer
+##### Ubuntu 24.04 and newer
 
 Starting with Ubuntu 24.04 the security framework apparmor was introduced.
 The standard configuration of apparmor prohibits unprivileged user namespaces.

@@ -51,6 +51,15 @@ download_archive(
 
 bazel_dep(name = "score_tooling", version = "2.0.2")
 
+# Verifies the developer machine setup described in CONTRIBUTING.md
+# Re-checked on every invocation
+dev_setup_check = use_repo_rule("//tools/setup:dev_setup_check.bzl", "dev_setup_check")
+
+dev_setup_check(
+    name = "dev_setup_check",
+    dev_dependency = True,
+)
+
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
 bazel_dep(name = "gcc_toolchain", version = "0.10.0", dev_dependency = True)
 
