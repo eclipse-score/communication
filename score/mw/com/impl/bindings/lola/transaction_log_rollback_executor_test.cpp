@@ -109,7 +109,7 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
     {
         auto find_result = service_data_control_->event_controls_.find(element_fq_id);
         EXPECT_NE(find_result, service_data_control_->event_controls_.cend());
-        return {find_result->second.data_control};
+        return ConsumerEventDataControlLocalView<>{find_result->second.data_control};
     }
 
     TransactionLogSet& GetTransactionLogSet(const ElementFqId element_fq_id) noexcept

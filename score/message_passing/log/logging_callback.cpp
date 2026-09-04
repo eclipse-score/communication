@@ -59,6 +59,7 @@ class FixedBufferStreamBuf final : public std::streambuf
 
 LoggingCallback GetCerrLogger()
 {
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
     return [](LogSeverity /*severity*/, LogItems items) -> void {
         std::array<char, 1024U> buffer{};
         FixedBufferStreamBuf stream_buffer{buffer.data(), buffer.size()};

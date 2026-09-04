@@ -25,6 +25,7 @@ GenericProxyEvent::GenericProxyEvent(ProxyBase& base, const std::string_view eve
                                                              ProxyBaseView{base}.GetBinding(),
                                                              event_name,
                                                              ServiceElementType::EVENT)
+                         // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
                          .and_then([](std::unique_ptr<GenericProxyEventBinding> binding) {
                              return Result<std::unique_ptr<ProxyEventBindingBase>>{std::move(binding)};
                          })}

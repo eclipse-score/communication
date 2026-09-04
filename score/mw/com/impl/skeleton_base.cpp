@@ -209,6 +209,7 @@ auto SkeletonBase::OfferService() -> Result<void>
     // Since the service has been successfully offered, we release the offer guards so that they do not call
     // PrepareStopOffer() when they go out of scope.
     binding_offer_guard.Release();
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
     auto release_guards = [](auto& offer_guards) {
         for (auto& guard : offer_guards)
         {

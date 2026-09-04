@@ -44,6 +44,7 @@ class PolymorphicOffsetPtrAllocator
 
     // Non-explicit constructor is good enough for maintaining required implicit conversion
     // NOLINTNEXTLINE(google-explicit-constructor): Tolerated, discard explicit.
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(polymorphic-offset-ptr-allocator-resource-constructor)
     PolymorphicOffsetPtrAllocator(ManagedMemoryResource& resource) noexcept : proxy_{resource.getMemoryResourceProxy()}
     {
     }
@@ -52,6 +53,7 @@ class PolymorphicOffsetPtrAllocator
     // Non-explicit constructor is good enough for maintaining required implicit conversion.
     // In addition semantically is a copy constructor.
     // NOLINTNEXTLINE(google-explicit-constructor): Tolerated, discard explicit.
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(polymorphic-offset-ptr-allocator-rebind-constructor)
     PolymorphicOffsetPtrAllocator(const PolymorphicOffsetPtrAllocator<U>& rhs) : proxy_(rhs.getMemoryResourceProxy())
     {
     }
