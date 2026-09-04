@@ -702,7 +702,13 @@ bool SkeletonMemoryManager::CreateSharedMemoryForData(
     }
 
     const auto path = shm_path_builder_.GetDataChannelShmName(lola_instance_id_);
+#ifdef REQUIRE_TYPED_MEMORY
+    // We only use "typed memory", if REQUIRE_TYPED_MEMORY (set by the GTL) and IPC tracing is enabled/configured, which
+    // we can deduce from register_shm_object_trace_callback being set.
     const bool use_typed_memory = register_shm_object_trace_callback.has_value();
+#else
+    constexpr bool use_typed_memory = false;
+#endif
     const memory::shared::SharedMemoryFactory::UserPermissions user_permissions =
         ((permissions.empty()) && (!lola_service_instance_deployment.strict_permissions_))
             ? memory::shared::SharedMemoryFactory::WorldReadable{}
@@ -720,17 +726,17 @@ bool SkeletonMemoryManager::CreateSharedMemoryForData(
         return false;
     }
     data_storage_path_ = path;
-    if (register_shm_object_trace_callback.has_value() && memory_resource->IsShmInTypedMemory())
+    const auto is_tracing_enabled_for_shm_object = register_shm_object_trace_callback.has_value();
+    const auto is_typed_memory_required_and_successful_allocated =
+        use_typed_memory && memory_resource->IsShmInTypedMemory();
+    if (is_tracing_enabled_for_shm_object && (is_typed_memory_required_and_successful_allocated || !use_typed_memory))
     {
-        // only if the memory_resource could be successfully allocated in typed-memory, we call back the
-        // register_shm_object_trace_callback, because only then the shm-object can be accessed by tracing
-        // subsystem.
         // Since LoLa creates shm-objects on the granularity of whole service-instances (including ALL its service
         // elements), we call register_shm_object_trace_callback once and hand over a dummy element name/type!
         // Other bindings, which might create shm-objects per service-element would call
         // register_shm_object_trace_callback for each service-element and then use their "real" name and type ...
-        // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "I a function is declared to be
-        // , (true) or (<true condition>), then it shall not exit with an exception"
+        // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "If a function is declared to be
+        // noexcept, noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception"
         // we can't add  to score::cpp::callback signature.
         // coverity[autosar_cpp14_a15_4_2_violation]
         register_shm_object_trace_callback.value()(
