@@ -79,27 +79,31 @@ auto EventSubscriptionControl<AtomicIndirectorType>::Subscribe(SlotNumberType sl
 
         auto current_state = current_subscription_state_.load();
         const auto current_subscribers = GetSubscribersFromState(current_state);
-        if (current_subscribers >= max_subscribers_)
+        if (safe_math::CmpGreaterEqual(current_subscribers, max_subscribers_))
         {
             mw::log::LogInfo("lola")
                 << "EventSubscriptionControl<>::Subscribe() rejected as already max_subscribers_ are subscribed.";
             return SubscribeResult::kMaxSubscribersOverflow;
         }
         SlotNumberType current_subscribed_slots = GetSubscribedSamplesFromState(current_state);
-        if ((enforce_max_samples_) && ((current_subscribed_slots + slot_count) > max_subscribable_slots_))
+        if ((enforce_max_samples_) && safe_math::CmpGreater(safe_math::Add<safe_math::ReturnMode::kAbortOnError>(
+                                                                current_subscribed_slots, slot_count),
+                                                            max_subscribable_slots_))
         {
             mw::log::LogInfo("lola")
                 << "EventSubscriptionControl<>::Subscribe() rejected as max_subscribable_slots_ would overflow.";
             return SubscribeResult::kSlotOverflow;
         }
 
-        std::uint32_t new_state = CreateState(static_cast<SubscriberCountType>(current_subscribers + 1U),
-                                              // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An
-                                              // integer expression shall not lead to data loss.". The check above
-                                              // ensures that the addition result will not exceed its maximum value for
-                                              // std::uint16_t type.
-                                              // coverity[autosar_cpp14_a4_7_1_violation]
-                                              static_cast<SlotNumberType>(current_subscribed_slots + slot_count));
+        std::uint32_t new_state =
+            CreateState(static_cast<SubscriberCountType>(current_subscribers + 1U),
+                        // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An
+                        // integer expression shall not lead to data loss.". The check above
+                        // ensures that the addition result will not exceed its maximum value for
+                        // std::uint16_t type.
+                        // coverity[autosar_cpp14_a4_7_1_violation]
+                        static_cast<SlotNumberType>(safe_math::Add<safe_math::ReturnMode::kAbortOnError>(
+                            current_subscribed_slots, slot_count)));
         auto success = AtomicIndirectorType<std::uint32_t>::compare_exchange_weak(
             current_subscription_state_, current_state, new_state, std::memory_order_acq_rel);
         if (success)
@@ -138,7 +142,7 @@ auto EventSubscriptionControl<AtomicIndirectorType>::Unsubscribe(SlotNumberType 
             std::terminate();
         }
         SlotNumberType current_subscribed_slots = GetSubscribedSamplesFromState(current_state);
-        if (current_subscribed_slots < slot_count)
+        if (safe_math::CmpLess(current_subscribed_slots, slot_count))
         {
             mw::log::LogFatal("lola")
                 << "EventSubscriptionControl<>::Unsubscribe() rejected as currently subscribed slots "
@@ -146,8 +150,10 @@ auto EventSubscriptionControl<AtomicIndirectorType>::Unsubscribe(SlotNumberType 
             std::terminate();
         }
 
-        std::uint32_t new_state = CreateState(static_cast<SubscriberCountType>(current_subscribers - 1U),
-                                              static_cast<SlotNumberType>(current_subscribed_slots - slot_count));
+        std::uint32_t new_state =
+            CreateState(static_cast<SubscriberCountType>(current_subscribers - 1U),
+                        static_cast<SlotNumberType>(safe_math::Subtract<safe_math::ReturnMode::kAbortOnError>(
+                            current_subscribed_slots, slot_count)));
         auto success = AtomicIndirectorType<std::uint32_t>::compare_exchange_weak(
             current_subscription_state_, current_state, new_state, std::memory_order_acq_rel);
         if (success)
