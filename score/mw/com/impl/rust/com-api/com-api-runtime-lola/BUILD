@@ -21,7 +21,7 @@ rust_library(
         "producer.rs",
         "runtime.rs",
     ],
-    edition = "2024",
+    edition = "2021",
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
         "//score/mw/com/impl/plumbing/rust:sample_allocatee_ptr_rs",
@@ -37,7 +37,7 @@ rust_library(
 rust_test(
     name = "com-api-runtime-lola-tests",
     crate = ":com-api-runtime-lola",
-    edition = "2024",
+    edition = "2021",
     #tag will be removed wwhen sanitizer issue resolved for this
     tags = ["manual"],
     deps = [

@@ -14,13 +14,7 @@ use core::fmt::Debug;
 use std::mem::ManuallyDrop;
 
 use common_rs::{
-    BlankBinding, 
-    CxxOptional,
-    EventDataControl,
-    SlotIndexType,
-    TransactionLogIndex,
-    UniquePtr,
-    CustomDeleter,
+    BlankBinding, CustomDeleter, CxxOptional, EventDataControl, SlotIndexType, TransactionLogIndex, UniquePtr,
 };
 
 type MockBinding<T> = UniquePtr<T, CustomDeleter>;

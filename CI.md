@@ -115,6 +115,11 @@ The goal is not to ensure a specific format but to have consistency in the proje
 Ensure that the modified Python files are formatted following our decided style.
 The goal is not to ensure a specific format but to have consistency in the project.
 
+#### Formatting of Rust files
+
+Ensure that the modified Rust files are formatted following our decided style.
+The goal is not to ensure a specific format but to have consistency in the project.
+
 #### Build everything and run unit tests (x86-64 linux)
 
 Builds everything and runs all unit tests for all languages (C++, Rust, Python, etc.).

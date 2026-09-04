@@ -16,7 +16,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 rust_library(
     name = "com-api-runtime-mock",
     srcs = ["runtime.rs"],
-    edition = "2024",
+    edition = "2021",
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
         "//score/mw/com/rust/score_com_concept",

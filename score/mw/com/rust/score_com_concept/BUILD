@@ -17,7 +17,7 @@ load("//quality/unit_testing:unit_testing.bzl", "rust_unit_test")
 rust_library(
     name = "score_com_concept",
     srcs = glob(["**/*.rs"]),
-    edition = "2024",
+    edition = "2021",
     proc_macro_deps = [
         "//score/mw/com/rust/score_com_macros:score-com-macros",
         "@score_communication_crate_index//:paste",
@@ -36,7 +36,7 @@ rust_library(
 rust_test(
     name = "score_com_concept-test",
     crate = ":score_com_concept",
-    edition = "2024",
+    edition = "2021",
     tags = ["manual"],
     deps = [":score_com_concept"],
 )

@@ -41,20 +41,13 @@ pub struct NativeInstanceSpecifier {
 }
 
 unsafe extern "C" {
-    pub(crate) fn mw_com_impl_instance_specifier_create(
-        value: *const u8,
-        len: u32,
-    ) -> *mut NativeInstanceSpecifier;
+    pub(crate) fn mw_com_impl_instance_specifier_create(value: *const u8, len: u32) -> *mut NativeInstanceSpecifier;
     pub(crate) fn mw_com_impl_instance_specifier_clone(
         instance_specifier: *const NativeInstanceSpecifier,
     ) -> *mut NativeInstanceSpecifier;
-    pub(crate) fn mw_com_impl_instance_specifier_delete(
-        instance_specifier: *mut NativeInstanceSpecifier,
-    );
+    pub(crate) fn mw_com_impl_instance_specifier_delete(instance_specifier: *mut NativeInstanceSpecifier);
     pub(crate) fn mw_com_impl_handle_container_delete(container: *mut NativeHandleContainer);
-    pub(crate) fn mw_com_impl_handle_container_get_size(
-        container: *const NativeHandleContainer,
-    ) -> u32;
+    pub(crate) fn mw_com_impl_handle_container_get_size(container: *const NativeHandleContainer) -> u32;
     pub(crate) fn mw_com_impl_handle_container_get_handle_at(
         container: *const NativeHandleContainer,
         pos: u32,
@@ -84,8 +77,7 @@ impl TryFrom<&'_ str> for InstanceSpecifier {
 
     fn try_from(value: &'_ str) -> Result<Self, Self::Error> {
         // SAFETY: value points to a valid UTF-8 string; len matches the slice length.
-        let inner =
-            unsafe { mw_com_impl_instance_specifier_create(value.as_ptr(), value.len() as u32) };
+        let inner = unsafe { mw_com_impl_instance_specifier_create(value.as_ptr(), value.len() as u32) };
         if inner.is_null() {
             Err(())
         } else {
