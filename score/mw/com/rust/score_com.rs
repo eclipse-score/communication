@@ -130,16 +130,26 @@
 //! # Further reading
 //! - `score_com_concept` crate — trait definitions and full API documentation
 //! - `doc/high_level_design_detail.md` — internal architecture and layer details
+//!
+//! Note: Event APIs are fully supported with the Lola runtime.
+//! Method API traits exported from this crate reflect the intended design but are not yet backed
+//! by a Lola runtime implementation in Rust side, they serve as a demonstration of the planned interface.
+//! Method APIs development is tracked in
+//! https://github.com/eclipse-score/communication/issues/782
 
 pub use com_api_runtime_lola::LolaRuntimeImpl;
 pub use com_api_runtime_lola::RuntimeBuilderImpl as LolaRuntimeBuilderImpl;
 
 pub use score_com_concept::{
     interface, interface_common, interface_consumer, interface_producer, Builder, CommData,
-    Consumer, ConsumerBuilder, ConsumerDescriptor, Error, FindServiceSpecifier, InstanceSpecifier,
-    Interface, OfferedProducer, PlacementDefault, Producer, ProducerBuilder, ProviderInfo,
-    Publisher, Reloc, Result, Runtime, RuntimeBuilder, SampleContainer, SampleMaybeUninit,
-    SampleMut, ServiceDiscovery, Subscriber, Subscription,
+    Consumer, ConsumerBuilder, ConsumerDescriptor, Error, EventSampleMut as SampleMut,
+    FieldPublisher, FieldSampleMut, FieldSubscriber, FieldSubscription, FindServiceSpecifier,
+    HandlerNotSet, HandlerSet, Init, InstanceSpecifier, Interface, MethodArgs, MethodArgsAllocate,
+    MethodArgsPtrTuple, MethodCallInput, MethodCaller, MethodHandler, MethodHandlerCall,
+    MethodInArgAllocator, MethodInArgMaybeUninit, MethodInArgPtr, MethodReturnSample,
+    OfferedProducer, PlacementDefault, Producer, ProducerBuilder, ProviderInfo, Publisher, Reloc,
+    Result, Runtime, RuntimeBuilder, SampleContainer, SampleMaybeUninit, ServiceDiscovery,
+    Subscriber, Subscription, Uninit, WithGetter, WithNotifier, WithSetter, ZeroCopyArgs,
 };
 
 #[doc(hidden)]

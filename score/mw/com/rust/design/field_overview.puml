@@ -1,0 +1,39 @@
+@startuml
+
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+skinparam linetype ortho
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam packageStyle rectangle
+skinparam defaultTextAlignment center
+
+title Field — High-Level Block Overview
+
+[User Application\n(Producer / Consumer)] as APP
+
+[score_com_concept\n(FieldSubscriber, FieldSubscription,\nFieldPublisher, FieldSampleMut,\nFieldGetCaller = MethodCaller<(), T>,\nFieldSetCaller = MethodCaller<(T,), T>,\nWithGetter / WithSetter / WithNotifier tags)] as CONCEPT
+
+[interface!() macro\n+ type_state_validator\n(Generated consumer wrappers\n& producer Validator with\nupdate / register_set_handler\ntype-state guards)] as MACRO
+
+[com-api-runtime-lola\n(LolaFieldSubscriber,\nLolaFieldSubscription,\nLolaFieldPublisher,\nLolaFieldGetCaller,\nLolaFieldSetCaller)] as RUNTIME
+
+[FFI\n(Rust-C++ field\nget / set / update /\nsubscribe bindings)] as FFI
+
+APP --> MACRO : uses generated\nconsumer / producer API
+MACRO --> CONCEPT : generated code\nuses concept traits
+RUNTIME ..|> CONCEPT : implements
+MACRO --> RUNTIME : dispatches at runtime
+RUNTIME --> FFI : bridges via
+
+@enduml
