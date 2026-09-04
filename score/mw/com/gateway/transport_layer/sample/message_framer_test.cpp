@@ -486,4 +486,83 @@ TEST_F(MessageFramerFixture, ReceiveMessageReturnsNullptrWhenPayloadRecvReturnsP
     EXPECT_EQ(message, nullptr);
 }
 
+TEST_F(MessageFramerFixture, ReceivedEventInfoNameRemainsValidAfterNextReceiveMessageCall)
+{
+    // Given a first ProvideServiceRequest whose single event is named "SpeedEvent"
+    auto specifier_1 = score::mw::com::InstanceSpecifier::Create(std::string{"Svc/Inst"});
+    ASSERT_TRUE(specifier_1.has_value());
+    std::vector<score::mw::com::EventInfo> elements_1{
+        {"SpeedEvent", score::mw::com::DataTypeMetaInfo{64U, 8U}},
+    };
+    ProvideServiceRequest request_1{std::move(specifier_1).value(), elements_1};
+
+    std::array<std::uint8_t, MessageFramer::kMaxPayloadSize> payload_1{};
+    const auto payload_1_size = request_1.Serialize(payload_1);
+    ASSERT_GT(payload_1_size, 0U);
+    const MessageHeader header_1 =
+        CreateMessageHeader(MessageType::kProvideServiceRequest, 1U, static_cast<std::uint32_t>(payload_1_size));
+
+    // And a second ProvideServiceRequest, with the exact same wire layout (same specifier length, one
+    // event of the same name length), whose event is named "XXXXXXXXXX" instead -- so that its
+    // serialized bytes land at the exact same offsets in the framer's reused receive buffer.
+    auto specifier_2 = score::mw::com::InstanceSpecifier::Create(std::string{"Svc/Inst"});
+    ASSERT_TRUE(specifier_2.has_value());
+    std::vector<score::mw::com::EventInfo> elements_2{
+        {"XXXXXXXXXX", score::mw::com::DataTypeMetaInfo{64U, 8U}},
+    };
+    ProvideServiceRequest request_2{std::move(specifier_2).value(), elements_2};
+
+    std::array<std::uint8_t, MessageFramer::kMaxPayloadSize> payload_2{};
+    const auto payload_2_size = request_2.Serialize(payload_2);
+    ASSERT_GT(payload_2_size, 0U);
+    ASSERT_EQ(payload_1_size, payload_2_size) << "Both payloads must have identical wire layout";
+    const MessageHeader header_2 =
+        CreateMessageHeader(MessageType::kProvideServiceRequest, 2U, static_cast<std::uint32_t>(payload_2_size));
+
+    EXPECT_CALL(socket_mock_, recv(kSocketFd, _, _, _))
+        .WillOnce(Invoke(
+            [header_1](auto, void* buffer, const std::size_t, auto) -> score::cpp::expected<ssize_t, score::os::Error> {
+                header_1.SerializeToBuffer(static_cast<std::uint8_t*>(buffer));
+                return static_cast<ssize_t>(MessageHeader::kWireSize);
+            }))
+        .WillOnce(
+            Invoke([&payload_1, payload_1_size](
+                       auto, void* buffer, const std::size_t, auto) -> score::cpp::expected<ssize_t, score::os::Error> {
+                std::memcpy(buffer, payload_1.data(), payload_1_size);
+                return static_cast<ssize_t>(payload_1_size);
+            }))
+        .WillOnce(Invoke(
+            [header_2](auto, void* buffer, const std::size_t, auto) -> score::cpp::expected<ssize_t, score::os::Error> {
+                header_2.SerializeToBuffer(static_cast<std::uint8_t*>(buffer));
+                return static_cast<ssize_t>(MessageHeader::kWireSize);
+            }))
+        .WillOnce(
+            Invoke([&payload_2, payload_2_size](
+                       auto, void* buffer, const std::size_t, auto) -> score::cpp::expected<ssize_t, score::os::Error> {
+                std::memcpy(buffer, payload_2.data(), payload_2_size);
+                return static_cast<ssize_t>(payload_2_size);
+            }));
+
+    // When the first message is received, its EventInfo::name correctly reads "SpeedEvent"...
+    auto first_message = framer_.ReceiveMessage(kSocketFd);
+    ASSERT_NE(first_message, nullptr);
+    auto* first_provide_request = dynamic_cast<ProvideServiceRequest*>(first_message.get());
+    ASSERT_NE(first_provide_request, nullptr);
+    ASSERT_EQ(first_provide_request->GetServiceElements().size(), 1U);
+    ASSERT_EQ(first_provide_request->GetServiceElements()[0].name, "SpeedEvent");
+
+    // ...and receiving a second, unrelated message on the same framer must not affect it: a
+    // correctly-implemented ReceiveMessage() returns fully independent, owned messages.
+    auto second_message = framer_.ReceiveMessage(kSocketFd);
+    ASSERT_NE(second_message, nullptr);
+
+    // Then the *first* message's EventInfo::name must still read "SpeedEvent". If it no longer
+    // does, the name was deserialized as a view into the framer's reused receive buffer rather
+    // than into storage owned by the message -- i.e. the dangling-view bug is present.
+    EXPECT_EQ(first_provide_request->GetServiceElements()[0].name, "SpeedEvent")
+        << "EventInfo::name dangled: it was silently overwritten by the second ReceiveMessage() "
+           "call because it still views into MessageFramer::receive_buffer_ instead of "
+           "independently-owned storage.";
+}
+
 }  // namespace score::mw::com::gateway
