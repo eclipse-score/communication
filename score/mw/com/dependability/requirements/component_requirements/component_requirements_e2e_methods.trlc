@@ -1,0 +1,49 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+section "com" {
+
+    section "E2E" {
+
+        section "Method_E2E_Protection" {
+
+            ScoreReq.CompReq MethodE2EProtectCheckKeyedToCallHandle {
+                description = """For a {{Method}} with E2E protection enabled, the E2E protect and check functions shall be keyed to the individual request/response transaction rather than to a free-running per-instance counter."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EProtectionForMethods@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq PlainMethodE2EProfileHasNoClientDiscrimination {
+                description = """The plain, non-session-aware method E2E profile variant supported for {{Method}} request/response communication shall not attempt to distinguish which client sent a given request."""
+                safety = ScoreReq.Asil.B
+                note = "Client-specific failure modes (e.g. repetition or insertion originating from one of several clients) are only detectable when a session/client-aware profile variant is used instead."
+                derived_from = [Communication.E2EProtectionForMethods@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq MethodE2EStateMachineUpdatedOncePerCall {
+                description = """For a {{Method}} with E2E protection enabled, the E2E supervision state machine shall be updated once per completed request on the server side and once per completed response on the client side, instead of once per reception cycle."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EProtectionForMethods@1]
+                version = 1
+            }
+
+        }
+
+    }
+
+}

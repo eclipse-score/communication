@@ -1,0 +1,56 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+section "com" {
+
+    section "E2E" {
+
+        section "Skeleton_Side_Protect_State" {
+
+            ScoreReq.CompReq SkeletonEventOwnsE2EProtectContext {
+                description = """{{SkeletonEventBase}} shall own exactly one E2E protect context per {{SkeletonEvent}} or {{SkeletonField}} instance for which E2E protection is enabled."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EProtectionForEvents@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq E2EProtectContextNotReplicatedPerConsumer {
+                description = """The E2E protect context owned by a {{SkeletonEventBase}} shall be shared across all consumers of the corresponding event or field; it shall not be replicated or reset per subscribing {{ProxyEvent}} or {{ProxyField}}."""
+                safety = ScoreReq.Asil.B
+                note = "One event stream can be delivered to many consumers (multicast/pub-sub); replicating protect state per consumer would require a distinct frame per subscriber, defeating event distribution."
+                derived_from = [Communication.E2EProtectionForEvents@1, Communication.MixedCriticalityE2ESupervision@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq E2EProtectionInvokedBeforeBindingSend {
+                description = """{{SkeletonEventBase}} shall invoke E2E protection on a sample and produce the resulting E2E header bytes before delegating transmission of that sample to the {{SkeletonEventBinding}}."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EProtectionForEvents@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq BindingReceivesPrecomputedE2EHeader {
+                description = """The {{SkeletonEventBinding}} shall only place already-computed E2E header bytes into the outgoing message at the binding-specific offset; it shall not itself compute E2E protection."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EProtectionForEvents@1]
+                version = 1
+            }
+
+        }
+
+    }
+
+}

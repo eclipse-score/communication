@@ -1,0 +1,81 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+section "com" {
+
+    section "E2E" {
+
+        section "Proxy_Side_Check_State" {
+
+            ScoreReq.CompReq ProxyEventOwnsE2ECheckContext {
+                description = """{{ProxyEventBase}} shall own exactly one E2E check and state-machine context per consuming {{ProxyEvent}} or {{ProxyField}} instance for which E2E supervision is enabled."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EProtectionForEvents@1, Communication.MixedCriticalityE2ESupervision@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq E2ESupervisionInvokedOnEveryGetNewSamplesCall {
+                description = """{{ProxyEventBase}} shall run the E2E check and state-machine update on every call to {{GetNewSamples}}, whether or not a new sample was received in that call."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EProtectionForEvents@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq NoNewSampleFedAsNoNewDataToE2ECheck {
+                description = """When a call to {{GetNewSamples}} yields no new sample, {{ProxyEventBase}} shall feed a no-new-data indication into the E2E check for that cycle instead of skipping the check."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EProtectionForEvents@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq IndependentE2ESupervisionPerConsumer {
+                description = """The E2E state-machine outcome computed for one consuming {{ProxyEvent}} instance shall be independent of the samples observed or missed by any other consuming {{ProxyEvent}} instance of the same {{SkeletonEvent}}."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.MixedCriticalityE2ESupervision@1]
+                version = 1
+            }
+
+        }
+
+        section "Supervision_State_Machine" {
+
+            ScoreReq.CompReq E2EStateMachineStates {
+                description = """The E2E supervision state machine owned by {{ProxyEventBase}} shall represent at least the following states for a supervised {{Event}} or {{Field}}: not yet initialized, no data received, initial monitoring, valid, and invalid."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EProtectionForEvents@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq E2EStateMachineWindowedTransitions {
+                description = """Transitions of the E2E supervision state machine between its states shall be governed by a configurable count of consecutive valid and erroneous check outcomes observed within a configurable window, not by a single outcome."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EProtectionForEvents@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq NoNewDataAloneDoesNotInvalidateValidState {
+                description = """While the E2E supervision state machine is in the valid state, repeated no-new-data outcomes alone shall not transition it to the invalid state."""
+                safety = ScoreReq.Asil.B
+                note = "Stall or dead-sender detection is out of scope for the E2E state machine and remains the responsibility of mw::com's subscription/service-availability lifecycle."
+                derived_from = [Communication.E2EProtectionForEvents@1]
+                version = 1
+            }
+
+        }
+
+    }
+
+}

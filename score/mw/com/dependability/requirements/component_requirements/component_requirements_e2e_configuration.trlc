@@ -1,0 +1,42 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+section "com" {
+
+    section "E2E" {
+
+        section "Configuration" {
+
+            ScoreReq.CompReq E2EProfileConfigurablePerCommunicationElement {
+                description = """It shall be possible to configure the E2E profile, Data ID, and state-machine window/threshold parameters independently for each {{Event}}, {{Field}}, or {{Method}} for which E2E protection is enabled."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EProtectionForEvents@1, Communication.E2EProtectionForMethods@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq PerConsumerE2ECheckOptOut {
+                description = """It shall be possible for a consuming {{ProxyEvent}} instance to opt out of running E2E check/state-machine supervision for an E2E-configured {{Event}} or {{Field}}, without affecting E2E supervision performed by any other consumer of the same event or field."""
+                safety = ScoreReq.Asil.B
+                note = "Intended as a latency/CPU optimization for a consumer that does not need the E2E result, e.g. a high-rate QM-only consumer."
+                derived_from = [Communication.MixedCriticalityE2ESupervision@1]
+                version = 1
+            }
+
+        }
+
+    }
+
+}
