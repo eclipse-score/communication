@@ -459,10 +459,11 @@ impl<T: Default> MockPointerAllocator<T> {
     /// - `false` if the pointer was not found in tracked allocations
     pub fn free(&self, ptr: *mut T) -> bool {
         let mut allocs = self.locked();
-        allocs
+        let freed = allocs
             .extract_if(.., |b| std::ptr::eq(b.as_mut(), ptr))
             .next()
-            .is_some()
+            .is_some();
+        freed
     }
 
     /// Assert that all allocations have been freed (count is 0).
