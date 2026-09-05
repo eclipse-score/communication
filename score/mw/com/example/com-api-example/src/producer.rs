@@ -12,11 +12,10 @@
  ********************************************************************************/
 
 use crate::VehicleOfferedProducer;
-use score_com::{
-    Builder, InstanceSpecifier, OfferedProducer, Producer, Publisher, Result, Runtime,
-    SampleMaybeUninit, SampleMut,
-};
 use com_api_gen::{Tire, VehicleInterface};
+use score_com::{
+    Builder, InstanceSpecifier, OfferedProducer, Producer, Publisher, Result, Runtime, SampleMaybeUninit, SampleMut,
+};
 use std::thread;
 use std::time::Duration;
 
@@ -34,9 +33,7 @@ impl<R: Runtime> VehicleMonitorProducer<R> {
     /// Create a new VehicleMonitorProducer
     pub fn new(runtime: &R, service_id: InstanceSpecifier) -> Result<Self> {
         let producer_builder = runtime.producer_builder::<VehicleInterface>(service_id);
-        let producer = producer_builder
-            .build()
-            .expect("Failed to build producer instance");
+        let producer = producer_builder.build().expect("Failed to build producer instance");
         let producer = producer.offer().expect("Failed to offer producer instance");
         Ok(Self { producer })
     }

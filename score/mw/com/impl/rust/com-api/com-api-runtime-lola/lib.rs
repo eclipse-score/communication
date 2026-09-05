@@ -30,9 +30,7 @@ mod producer;
 mod runtime;
 
 pub use consumer::{LolaConsumerDiscovery, LolaConsumerInfo, LolaSample, LolaSubscribableImpl};
-pub use producer::{
-    LolaProducerBuilder, LolaProviderInfo, LolaPublisher, LolaSampleMaybeUninit, LolaSampleMut,
-};
+pub use producer::{LolaProducerBuilder, LolaProviderInfo, LolaPublisher, LolaSampleMaybeUninit, LolaSampleMut};
 pub use runtime::{LolaRuntimeImpl, RuntimeBuilderImpl};
 
 use core::fmt::Debug;

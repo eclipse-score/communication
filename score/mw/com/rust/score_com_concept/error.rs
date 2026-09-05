@@ -58,9 +58,7 @@ pub enum ConsumerFailedReason {
 /// Memory allocation error details
 #[derive(Debug, ScoreDebug, Error)]
 pub enum AllocationFailureReason {
-    #[error(
-        "Requested size exceeds available memory which is configured during subscription setup"
-    )]
+    #[error("Requested size exceeds available memory which is configured during subscription setup")]
     OutOfMemory,
     #[error("Invalid allocation request")]
     InvalidRequest,

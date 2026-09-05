@@ -30,14 +30,13 @@ use std::thread;
 use std::time::Duration;
 
 use bigdata_com_api_gen::{
-    ArrayStruct, BigDataInterface, ComplexStruct, ComplexStructInterface, MapApiLanesStamped,
-    MixedPrimitivesInterface, MixedPrimitivesPayload, NestedStruct, Point, Point3D, SensorData,
-    SimpleStruct, VehicleState,
+    ArrayStruct, BigDataInterface, ComplexStruct, ComplexStructInterface, MapApiLanesStamped, MixedPrimitivesInterface,
+    MixedPrimitivesPayload, NestedStruct, Point, Point3D, SensorData, SimpleStruct, VehicleState,
 };
 use clap::Parser;
 use score_com::{
-    Builder, InstanceSpecifier, LolaRuntimeBuilderImpl, Producer, Publisher, Runtime,
-    RuntimeBuilder, SampleMaybeUninit, SampleMut,
+    Builder, InstanceSpecifier, LolaRuntimeBuilderImpl, Producer, Publisher, Runtime, RuntimeBuilder,
+    SampleMaybeUninit, SampleMut,
 };
 
 const CONFIG_PATH: &str = "etc/config.json";
@@ -74,8 +73,8 @@ fn run_bigdata_test<R: Runtime>(runtime: &R, num_cycles: u32) {
         "[bigdata-producer] Starting bigdata test with num_cycles={}",
         num_cycles
     );
-    let instance_specifier = InstanceSpecifier::new("/score/cp60/MapApiLanesStamped")
-        .expect("Invalid instance specifier");
+    let instance_specifier =
+        InstanceSpecifier::new("/score/cp60/MapApiLanesStamped").expect("Invalid instance specifier");
     // Sleep to allow the consumer to start first and demonstrate service discovery retries.
     thread::sleep(SERVICE_OFFER_DELAY_MS);
 
@@ -89,8 +88,10 @@ fn run_bigdata_test<R: Runtime>(runtime: &R, num_cycles: u32) {
             .map_api_lanes_stamped_
             .allocate()
             .expect("Failed to allocate sample");
-        let mut sample = MapApiLanesStamped::default();
-        sample.x = x;
+        let sample = MapApiLanesStamped {
+            x,
+            ..Default::default()
+        };
         let ready = uninit.write(sample);
         ready.send().expect("Failed to send sample");
         println!("[bigdata-producer] Sent sample x={}", x);
@@ -102,8 +103,8 @@ fn run_mixed_primitives_test<R: Runtime>(runtime: &R, num_cycles: u32) {
         "[mixed-primitives-producer] Starting mixed_primitives test with num_cycles={}",
         num_cycles
     );
-    let instance_specifier = InstanceSpecifier::new("/IntegrationTest/MixedPrimitives")
-        .expect("Invalid instance specifier");
+    let instance_specifier =
+        InstanceSpecifier::new("/IntegrationTest/MixedPrimitives").expect("Invalid instance specifier");
     // Sleep to allow the consumer to start first and demonstrate service discovery retries.
     thread::sleep(SERVICE_OFFER_DELAY_MS);
 
@@ -113,10 +114,7 @@ fn run_mixed_primitives_test<R: Runtime>(runtime: &R, num_cycles: u32) {
 
     println!("[mixed-primitives-producer] Service offered, starting send loop");
     run_send_loop(num_cycles, |x| {
-        let uninit = offered
-            .mixed_event
-            .allocate()
-            .expect("Failed to allocate sample");
+        let uninit = offered.mixed_event.allocate().expect("Failed to allocate sample");
         let sample = MixedPrimitivesPayload {
             u64_val: u64::from(x),
             i64_val: i64::from(x),
@@ -140,8 +138,8 @@ fn run_complex_struct_test<R: Runtime>(runtime: &R, num_cycles: u32) {
         "[complex-struct-producer] Starting complex_struct test with num_cycles={}",
         num_cycles
     );
-    let instance_specifier = InstanceSpecifier::new("/UserDefinedTest/ComplexStruct")
-        .expect("Invalid instance specifier");
+    let instance_specifier =
+        InstanceSpecifier::new("/UserDefinedTest/ComplexStruct").expect("Invalid instance specifier");
     // Sleep to allow the consumer to start first and demonstrate service discovery retries.
     thread::sleep(SERVICE_OFFER_DELAY_MS);
 
@@ -151,10 +149,7 @@ fn run_complex_struct_test<R: Runtime>(runtime: &R, num_cycles: u32) {
 
     println!("[complex-struct-producer] Service offered, starting send loop");
     run_send_loop(num_cycles, |x| {
-        let uninit = offered
-            .complex_event
-            .allocate()
-            .expect("Failed to allocate sample");
+        let uninit = offered.complex_event.allocate().expect("Failed to allocate sample");
         let x_f32 = x as f32;
         let sample = ComplexStruct {
             count: x,
@@ -201,9 +196,7 @@ fn main() {
     // Initialise the Lola runtime.
     let mut runtime_builder: LolaRuntimeBuilderImpl = LolaRuntimeBuilderImpl::new();
     runtime_builder.load_config(Path::new(CONFIG_PATH));
-    let runtime = runtime_builder
-        .build()
-        .expect("Failed to build Lola runtime");
+    let runtime = runtime_builder.build().expect("Failed to build Lola runtime");
 
     match args.test_case {
         TestCase::Bigdata => run_bigdata_test(&runtime, num_cycles),
