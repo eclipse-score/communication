@@ -55,10 +55,11 @@ def _format_undocumented_symbols(data: dict) -> str:
     ]
     for symbol in undocumented:
         lines.append(f"  {symbol['qualified_name']} ({symbol['kind']})")
-        # Location is diagnostic only and not part of the lock entry format,
-        # so it may be absent.
-        if "file" in symbol:
-            lines.append(f"    at {symbol['file']}:{symbol.get('line', '?')}")
+        # Lock entries only carry the API shape (see to_lock_entry in
+        # extract_api.py), so location is normally absent. Print it only if a
+        # producer supplies both fields.
+        if "file" in symbol and "line" in symbol:
+            lines.append(f"    at {symbol['file']}:{symbol['line']}")
     lines.extend(
         [
             "",
