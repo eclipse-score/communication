@@ -25,21 +25,24 @@ ScoreReq.CompReq SafetyCertifiedTransportMechanismUnderQNX {
 
 ScoreReq.CompReq TransportMechanismOnLinux {
     description = "On the Linux operating system, the message passing component shall use unix domain-sockets as the underlying IPC mechanism."
-    safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SafetyCertifiedTransportMechanism@1, MessagePassing.OSIndependentAPI@1]
-    version = 1
+    note = "Lowered from ASIL B to QM: ASIL compliance is not currently pursued on Linux, which is used for host development and testing. The safety-certified transport for ASIL B is QNX-native messaging on QNX (see SafetyCertifiedTransportMechanismUnderQNX); this record therefore no longer derives from SafetyCertifiedTransportMechanism."
+    safety = ScoreReq.Asil.QM
+    derived_from = [MessagePassing.OSIndependentAPI@1]
+    version = 2
 }
 
 
-ScoreReq.CompReq OSProvidedSenderIdentity {
-    description = "The message passing server shall be able to identify the sender of each received message by the sender's OS-provided user ID (UID)."
+ScoreReq.CompReq OSProvidedClientIdentityPerConnection {
+    description = "The message passing server shall identify the client of a Server Connection once, when the connection is accepted, by the client's OS-provided process ID (PID), user ID (UID), and primary group ID (GID)."
+    note = "Replaces the retired OSProvidedSenderIdentity record: identification is established once per Server Connection, not re-derived per message, and now names all three OS-provided identifiers instead of only the UID."
     safety = ScoreReq.Asil.B
     derived_from = [MessagePassing.ServerInterface@1]
     version = 1
 }
 
-ScoreReq.CompReq UnforgableSenderIdentity {
-    description = "The transport mechanism shall ensure that the UID used to identify a message, cannot be forged by the client."
+ScoreReq.CompReq ConnectionIdentityIntegrityGuaranteed {
+    description = "The transport mechanism shall ensure that the client identity established for a Server Connection cannot be forged by the client and remains valid for the entire lifetime of that Server Connection."
+    note = "Replaces the retired UnforgableSenderIdentity record: the integrity guarantee covers the whole Server Connection lifetime, not just the message that established it."
     safety = ScoreReq.Asil.B
     derived_from = [MessagePassing.ServerInterface@1]
     version = 1

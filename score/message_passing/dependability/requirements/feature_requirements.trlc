@@ -96,3 +96,10 @@ ScoreReq.FeatReq AllowsResourceMockInjectionForTesting {
     derived_from = [MessagePassing.SystemMessagingProtocol@1]
     version = 1
 }
+
+ScoreReq.FeatReq ClientIdentificationForAccessControl {
+    description = "The message passing component shall provide the server-side application with the OS-provided identity of the client of each Server Connection, to support server-side client identification and access control decisions."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.SystemMessagingProtocol@1]
+    version = 1
+}
