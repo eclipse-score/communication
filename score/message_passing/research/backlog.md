@@ -35,6 +35,29 @@ a future cycle deliberately picks them up as its own change request.
   (`server_types.h`, `i_server_connection.h`) has since resolved these; if so, `client-server.md`
   is stale on this point.
 
+## From the 2026-09-01 client-identity-and-userdata-docs cycle
+
+- `dependability/requirements/external_component_requirements.trlc` is **not wired into any Bazel
+  target** — `dependability/requirements/BUILD`'s `component_requirements` target only lists
+  `component_requirements.trlc` in `srcs`. `trlc --verify` has never validated this file, and it is
+  not part of `dependable_element_message_passing`'s `requirements` list either. Deciding which
+  target/component should own it (a new `component_requirements` target of its own? folded into
+  the existing one? something else given it represents requirements *towards* the environment
+  rather than *of* a component) is a build-structure decision for a dedicated future cycle.
+- `TransportMechanismOnLinux` (`external_component_requirements.trlc`) was lowered from
+  `safety = ScoreReq.Asil.B` to `ScoreReq.Asil.QM` (`version` 1→2) in this cycle, per explicit
+  human confirmation, and no longer derives from `SafetyCertifiedTransportMechanism`. No longer an
+  open question.
+- The UDS-on-QNX backend's inability to report real client identity (`ClientIdentity{0,0,0}`,
+  confirmed in `unix_domain/unix_domain_server.cpp`, `#ifdef __QNX__`) is currently captured only as
+  a `note` on the `IServerConnectionGetClientIdentityAPI` `CompReq` and in `client-server.md`
+  prose. The human explicitly chose to defer formalizing it as a proper `AoU` wired into the
+  `ConnectionContextDataWrong` FTA (`fta_connection_context_data_wrong.puml`) to a future
+  safety-analysis-focused cycle — see
+  `changes/2026-09-01-client-identity-and-userdata-docs/change_request.md`, Open Question 2.
+- ~~`IServerConnection::GetUserData()` has the same gap...~~ — resolved: added the
+  `IServerConnectionGetUserDataAPI` `CompReq` in this same cycle, per explicit human confirmation.
+
 ## Nice to have vs backlog
 
 Anything that is a *possible future improvement* rather than an *observed inconsistency* goes in
