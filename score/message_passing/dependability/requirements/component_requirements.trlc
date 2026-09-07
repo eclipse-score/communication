@@ -146,6 +146,21 @@ ScoreReq.CompReq IClientConnectionGetStateAPI {
     version = 1
 }
 
+ScoreReq.CompReq IServerConnectionGetClientIdentityAPI {
+    description = "`IServerConnection` shall provide a `GetClientIdentity` method that returns the client's OS-provided process ID (PID), user ID (UID), and primary group ID (GID), established once when the connection was accepted."
+    note = "A PID identifies a client process uniquely only among processes running simultaneously; the OS may reuse a PID for a different process afterwards, so it shall not be used by itself as a persistent, long-term client identity. A UID identifies a client process uniquely only if the integrating system dedicates a UID to that client process. The UID and/or the primary GID may be used by the server-side application for access control decisions. On QNX, this data is only meaningful when the connection uses the QNX-native-messaging transport (see SafetyCertifiedTransportMechanismUnderQNX); the Unix Domain Sockets backend on QNX, used there for internal testing purposes only, cannot retrieve real peer credentials and reports pid=uid=gid=0 instead."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.ClientIdentificationForAccessControl@1]
+    version = 1
+}
+
+ScoreReq.CompReq IServerConnectionGetUserDataAPI {
+    description = "`IServerConnection` shall provide a `GetUserData` method that returns the `UserData` object associated with the connection, as returned by the connection callback when the connection was accepted."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.ServerInterface@1]
+    version = 1
+}
+
 }
 
 section "Server Unit Requirements" {

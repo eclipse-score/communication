@@ -83,6 +83,9 @@ SystemMessagingProtocol@1`
 - `SingletonFreeImplementation` (B) — no singletons in the design.
 - `AllowsBoundedMonotonicMemoryAllocation` (B) — bounded monotonic allocation.
 - `AllowsResourceMockInjectionForTesting` (B) — resource mock injection for tests.
+- `ClientIdentificationForAccessControl` (B) — server-side app gets OS-provided client identity per
+  Server Connection, for identification and access control. *(added in
+  changes/2026-09-01-client-identity-and-userdata-docs)*
 
 ### Component Requirements (`requirements/component_requirements.trlc`), grouped by section
 - *Behaviour Requirements*: `ServerCallbacksAreSequential`, `ServerProcessesSinglePendingRequest`,
@@ -93,7 +96,9 @@ SystemMessagingProtocol@1`
   `IClientConnectionSendAPI`, `IClientConnectionSendWaitReplyAPI`,
   `IClientConnectionSendWithCallbackAPI`, `IServerConnectionReplyAPI`,
   `IServerConnectionNotifyAPI`, `ClientFactoryCreateAPI`, `ServerFactoryCreateAPI`,
-  `IClientConnectionGetStateAPI`.
+  `IClientConnectionGetStateAPI`, `IServerConnectionGetClientIdentityAPI`,
+  `IServerConnectionGetUserDataAPI` *(both added in
+  changes/2026-09-01-client-identity-and-userdata-docs)*.
 - *Server Unit Requirements*: `ServerPreallocatesConnectionObjects`,
   `ServerRingBufferQueueSizeConfigurable`, `ServerConnectionRefusal`,
   `ServerIConnectionHandlerDispatch`.
@@ -106,9 +111,17 @@ SystemMessagingProtocol@1`
 ### External Component Requirements (`requirements/external_component_requirements.trlc`)
 (requirements towards the system / environment)
 - `SafetyCertifiedTransportMechanismUnderQNX` (B) — QNX uses QNX-message-passing.
-- `TransportMechanismOnLinux` (B) — Linux uses Unix Domain Sockets.
-- `OSProvidedSenderIdentity` (B) — server identifies sender by OS-provided UID.
-- `UnforgableSenderIdentity` (B) — UID used for identification cannot be forged by the client.
+- `TransportMechanismOnLinux` (QM, `version = 2`) — Linux uses Unix Domain Sockets. *(lowered from
+  B to QM in changes/2026-09-01-client-identity-and-userdata-docs — ASIL is not currently pursued
+  on Linux; no longer derives from `SafetyCertifiedTransportMechanism`)*
+- `OSProvidedClientIdentityPerConnection` (B) — server identifies the client of a Server Connection
+  once, at accept time, by PID/UID/primary GID. *(replaces retired `OSProvidedSenderIdentity` in
+  changes/2026-09-01-client-identity-and-userdata-docs)*
+- `ConnectionIdentityIntegrityGuaranteed` (B) — the established client identity cannot be forged
+  and remains valid for the Server Connection's whole lifetime. *(replaces retired
+  `UnforgableSenderIdentity` in changes/2026-09-01-client-identity-and-userdata-docs)*
+- **Note**: this file is not currently wired into any Bazel target (see `backlog.md`); its content
+  is not validated by `trlc --verify` today.
 
 ### Failure Modes (`safety_analysis/failure_modes.trlc`), all ASIL B, `version = 1`
 - `IpcChannelUnavailable` — channel cannot be established/maintained.
@@ -181,5 +194,10 @@ The other seven failure modes/FTAs (`IpcChannelUnavailable`, `NotificationNotDel
 
 ## Changelog
 
-(none yet — this section is appended to, never rewritten, per cycle that touches the narrative
-above; see `rules-score-actualize` SKILL.md "Keeping it current".)
+- **2026-09-01** (`changes/2026-09-01-client-identity-and-userdata-docs`): resolved the two
+  `TODO: TBD` markers in `client-server.md` (UserData variant shape, GetClientIdentity contents);
+  retired `OSProvidedSenderIdentity`/`UnforgableSenderIdentity` and replaced them with
+  `OSProvidedClientIdentityPerConnection`/`ConnectionIdentityIntegrityGuaranteed`; added the
+  `ClientIdentificationForAccessControl` `FeatReq` and the `IServerConnectionGetClientIdentityAPI`/
+  `IServerConnectionGetUserDataAPI` `CompReq`s; lowered `TransportMechanismOnLinux` from ASIL B to
+  QM (`version` 1→2). See that cycle's `evidence_bundle.md` for the full diff and rationale.
