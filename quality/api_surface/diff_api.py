@@ -55,7 +55,10 @@ def _format_undocumented_symbols(data: dict) -> str:
     ]
     for symbol in undocumented:
         lines.append(f"  {symbol['qualified_name']} ({symbol['kind']})")
-        lines.append(f"    at {symbol['file']}:{symbol['line']}")
+        # Location is diagnostic only and not part of the lock entry format,
+        # so it may be absent.
+        if "file" in symbol:
+            lines.append(f"    at {symbol['file']}:{symbol.get('line', '?')}")
     lines.extend(
         [
             "",
