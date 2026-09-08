@@ -20,4 +20,7 @@ dual_qemu_integration_test(
     dual_config = "dual_qemu_transport_config.json",
     filesystem_a = "//score/mw/com/gateway/transport_layer/qemu/test:qemu_transport_test_apps",
     filesystem_b = "//score/mw/com/gateway/transport_layer/qemu/test:qemu_transport_test_apps",
+    # Two nested-KVM VM pairs booting concurrently starve each other's CPU time, causing
+    # real (not just simulated) multi-second network stalls between the guests.
+    tags = ["exclusive"],
 )
