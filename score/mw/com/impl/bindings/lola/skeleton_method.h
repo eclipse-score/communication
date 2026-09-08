@@ -57,9 +57,11 @@ class SkeletonMethod : public SkeletonMethodBinding
         pid_t proxy_pid,
         const QualityType asil_level);
 
-    void OnProxyMethodUnsubscribe(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier);
-
-    void OnProxyMethodUnsubscribeFinished(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier);
+    // Returns true if a registration guard was erased, false if none existed. OnServiceMethodsUnsubscribed loops
+    // over all skeleton methods for a departing proxy, not just the ones it subscribed to, so a missing entry is
+    // expected there and the result can be ignored. Rollback of a just-inserted entry guarantees existence, so the
+    // result should be asserted there.
+    bool OnProxyMethodUnsubscribe(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier);
 
     bool IsRegistered() const;
 
