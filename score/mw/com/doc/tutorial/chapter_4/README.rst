@@ -175,7 +175,7 @@ phase change is due. On each phase change it either stops or (re-)starts offerin
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 107-121
+   :lines: 110-124
    :caption: provider/provider.cpp
 
 
@@ -183,7 +183,7 @@ Event updates (`SendSample()`) are only published while the service is currently
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 132-133
+   :lines: 135-136
    :caption: provider/provider.cpp
 
 
@@ -209,7 +209,7 @@ capture capacity):
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 113-138
+   :lines: 112-137
    :caption: consumer/consumer.cpp
 
 
@@ -225,7 +225,7 @@ called once, with a non-empty set:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 180-180
+   :lines: 178-178
    :caption: consumer/consumer.cpp
 
 
@@ -236,13 +236,13 @@ terminating:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 189-192
+   :lines: 188-191
    :caption: consumer/consumer.cpp
 
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 279-282
+   :lines: 278-281
    :caption: consumer/consumer.cpp
 
 
@@ -255,7 +255,7 @@ After subscribing, proxy_1 polls the subscription state **exactly once** via `Ge
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 198-214
+   :lines: 197-213
    :caption: consumer/consumer.cpp
 
 
@@ -264,7 +264,7 @@ subscription state:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 297-299
+   :lines: 296-298
    :caption: consumer/consumer.cpp
 
 
@@ -284,7 +284,7 @@ records the new state in an atomic and returns `true` to stay registered:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 237-252
+   :lines: 236-251
    :caption: consumer/consumer.cpp
 
 
@@ -294,7 +294,7 @@ state returns to `kSubscribed`:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 305-312
+   :lines: 304-311
    :caption: consumer/consumer.cpp
 
 

@@ -52,7 +52,7 @@ You can see that cut in the consumer application:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 44-67
+   :lines: 47-70
    :caption: consumer/consumer.cpp
 
 
@@ -60,7 +60,7 @@ You can see that cut in the consumer application:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 36-43
+   :lines: 39-46
    :caption: provider/provider.cpp
 
 
