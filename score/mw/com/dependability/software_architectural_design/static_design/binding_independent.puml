@@ -1,0 +1,50 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+@startuml safety_sentinel_binding_independent_design
+title "Binding Independent Static Architecture"
+
+package "Binding Independent" as binding_independent <<component>> {
+  component "Service Discovery" as service_discovery <<unit>> 
+  component "Mocks" as mocks <<unit>> 
+  component "Runtime" as runtime <<unit>> 
+
+  package "SkeletonAndServiceElements" as skeleton_and_service_elements <<component>>  {
+    component "Skeleton" as impl_skeleton <<unit>> 
+    component "SkeletonEvent" as impl_skeleton_event <<unit>> 
+    component "SkeletonMethod" as impl_skeleton_method <<unit>> 
+    component "SkeletonField" as impl_skeleton_field <<unit>> 
+  }
+
+  package "ProxyAndServiceElements" as proxy_and_service_elements <<component>>  {
+    component "Proxy" as impl_proxy <<unit>> 
+    component "ProxyEvent" as impl_proxy_event <<unit>> 
+    component "ProxyMethod" as impl_proxy_method <<unit>> 
+    component "ProxyField" as impl_proxy_field <<unit>> 
+  }
+
+  package "GenericSkeletonAndServiceElements" as generic_skeleton_and_service_elements <<component>>  {
+    component "GenericSkeleton" as impl_generic_skeleton <<unit>> 
+    component "GenericSkeletonEvent" as impl_generic_skeleton_event <<unit>> 
+    component "GenericSkeletonMethod" as impl_generic_skeleton_method <<unit>> 
+    component "GenericSkeletonField" as impl_generic_skeleton_field <<unit>> 
+  }
+
+  package "GenericProxyAndServiceElements" as generic_proxy_and_service_elements <<component>>  {
+    component "GenericProxy" as impl_generic_proxy <<unit>> 
+    component "GenericProxyEvent" as impl_generic_proxy_event <<unit>> 
+    component "GenericProxyMethod" as impl_generic_proxy_method <<unit>> 
+    component "GenericProxyField" as impl_generic_proxy_field <<unit>> 
+  }
+}
+
+@enduml

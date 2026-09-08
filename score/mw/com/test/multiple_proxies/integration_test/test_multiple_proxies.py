@@ -26,7 +26,11 @@ def multiple_proxies(target, mode, cycle_time=None, num_cycles=None, **kwargs):
         wait_on_exit = True
 
     return target.wrap_exec(
-        "bin/multiple_proxies", args, cwd="/opt/multiple_proxies", wait_on_exit=wait_on_exit, **kwargs
+        "bin/multiple_proxies",
+        args,
+        cwd="/opt/multiple_proxies",
+        wait_on_exit=wait_on_exit,
+        **kwargs,
     )
 
 

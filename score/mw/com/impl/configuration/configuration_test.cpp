@@ -26,11 +26,13 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <optional>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -49,6 +51,13 @@ ConfigurationStore kConfigStoreQm{
     LolaServiceInstanceId{1U},
 };
 
+}  // namespace
+
+// ConfigurationFixture is intentionally declared outside of the anonymous namespace above (and re-opened below):
+// Configuration declares "friend class ConfigurationFixture;" which refers to
+// score::mw::com::impl::ConfigurationFixture. Since an anonymous namespace introduces a distinct (uniquely-named) inner
+// scope, a ConfigurationFixture nested inside it would be a different, unrelated class and would NOT receive the
+// granted friendship.
 class ConfigurationFixture : public ::testing::Test
 {
   public:
@@ -89,8 +98,23 @@ class ConfigurationFixture : public ::testing::Test
         }
     }
 
+    /// \brief Helper method to access the configuration's private member to compare merge results
+    static Configuration::ServiceTypeDeployments GetServiceTypesSnapshot(const Configuration& configuration)
+    {
+        return configuration.GetServiceTypes();
+    }
+
+    /// \brief Helper method to access the configuration's private member to compare merge results
+    static Configuration::ServiceInstanceDeployments GetServiceInstancesSnapshot(const Configuration& configuration)
+    {
+        return configuration.GetServiceInstances();
+    }
+
     std::optional<Configuration> unit_{};
 };
+
+namespace
+{
 
 score::Result<std::string> GetStringFromJson(const json::Object& json_object)
 {
@@ -258,7 +282,6 @@ TEST_F(ConfigurationFixture,
 {
     // Given an empty configuration
     WithEmptyConfiguration();
-
     // When inserting a ServiceTypeDeployment with a unique ServiceIdentifierType
     const auto* const service_type_deployment_ptr = unit_.value().AddServiceTypeDeployment(
         kConfigStoreQm.service_identifier_, *kConfigStoreQm.service_type_deployment_);
@@ -297,6 +320,11 @@ ServiceIdentifierType MakeServiceIdentifier(const std::string& name = "/score/nc
 LolaEventInstanceDeployment MakeEventInstanceDeployment()
 {
     return LolaEventInstanceDeployment{std::nullopt, std::nullopt, std::nullopt, false, 0U};
+}
+
+LolaFieldInstanceDeployment MakeFieldInstanceDeployment()
+{
+    return LolaFieldInstanceDeployment{MakeEventInstanceDeployment(), false, false};
 }
 
 Configuration MakeConfigurationWithAsilLevel(const QualityType process_asil_level)
@@ -437,6 +465,61 @@ TEST(ConfigurationValidateCrosscheckServiceInstancesToTypes, InstanceEventNotInS
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(*result.error(),
               static_cast<int>(configuration_errc::configuration_invalid_event_reference_from_instance));
+}
+
+TEST(ConfigurationValidateCrosscheckServiceInstancesToTypes, InstanceFieldNotInServiceTypeReturnsError)
+{
+    using namespace validate_test;
+
+    // Given a Configuration where the service instance's field doesn't exist in the referenced service type
+    auto config = MakeConfigurationWithAsilLevel(QualityType::kASIL_QM);
+    const auto service_identifier = MakeServiceIdentifier();
+    const auto instance_specifier = InstanceSpecifier::Create(std::string{kValidInstanceSpecifier}).value();
+
+    // Service type deployment does not contain "field_a".
+    config.AddServiceTypeDeployment(service_identifier,
+                                    ServiceTypeDeployment{LolaServiceTypeDeployment{LolaServiceId{1234U}, {}, {}, {}}});
+
+    LolaServiceInstanceDeployment lola_instance{LolaServiceInstanceId{1U}};
+    lola_instance.fields_.emplace("field_a", MakeFieldInstanceDeployment());
+    config.AddServiceInstanceDeployments(
+        instance_specifier,
+        ServiceInstanceDeployment{service_identifier, lola_instance, QualityType::kASIL_QM, instance_specifier});
+
+    // When validating the configuration
+    const auto result = config.Validate();
+
+    // Then validation fails with the expected error code
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(*result.error(),
+              static_cast<int>(configuration_errc::configuration_invalid_field_reference_from_instance));
+}
+
+TEST(ConfigurationValidateCrosscheckServiceInstancesToTypes,
+     ServiceTypeWithoutLolaBindingReturnsUnsupportedTypeBindingError)
+{
+    using namespace validate_test;
+
+    // Given a Configuration where the referenced service type has no (LoLa) binding at all, while the service
+    // instance which references it declares an event.
+    auto config = MakeConfigurationWithAsilLevel(QualityType::kASIL_QM);
+    const auto service_identifier = MakeServiceIdentifier();
+    const auto instance_specifier = InstanceSpecifier::Create(std::string{kValidInstanceSpecifier}).value();
+
+    config.AddServiceTypeDeployment(service_identifier, ServiceTypeDeployment{score::cpp::blank{}});
+
+    LolaServiceInstanceDeployment lola_instance{LolaServiceInstanceId{1U}};
+    lola_instance.events_.emplace("event_a", MakeEventInstanceDeployment());
+    config.AddServiceInstanceDeployments(
+        instance_specifier,
+        ServiceInstanceDeployment{service_identifier, lola_instance, QualityType::kASIL_QM, instance_specifier});
+
+    // When validating the configuration
+    const auto result = config.Validate();
+
+    // Then validation fails because the referenced service type doesn't have a (LoLa) binding
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(*result.error(), static_cast<int>(configuration_errc::configuration_unsupported_type_binding));
 }
 
 TEST_F(ConfigurationFixture, HasLolaServiceDeploymentReturnsTrueIfLolaServiceTypeDeploymentExists)
@@ -650,6 +733,282 @@ TEST_F(ConfigurationFixture, GetInstancesOfServiceTypeReturnsCorrectInstanceSpec
     EXPECT_TRUE(result.find("abc/abc/TirePressurePort1") != result.end());
     EXPECT_TRUE(result.find("abc/abc/TirePressurePort3") != result.end());
 }
+
+TEST_F(ConfigurationFixture, MergingTwoConfigurationsWithUniqueServiceIdentifierTypesAndInstanceSpecifiersSucceeds)
+{
+    // Given a configuration with at lest one entry...
+    WithMinimalConfiguration();
+
+    LolaServiceId service_id{1U};
+    auto instance_specifier_string = InstanceSpecifier::Create(std::string{"/bla/blob/instance_specifier"}).value();
+    ConfigurationStore config_store{
+        instance_specifier_string,
+        make_ServiceIdentifierType("/bla/blob/one", 1U, 2U),
+        QualityType::kASIL_QM,
+        service_id,
+        LolaServiceInstanceId{1U},
+    };
+
+    // ... and a second configuration that has an identical service instance entry
+    Configuration::ServiceTypeDeployments type_deployments{};
+    type_deployments.insert({config_store.service_identifier_, *config_store.service_type_deployment_});
+    Configuration::ServiceInstanceDeployments instance_deployments{};
+    instance_deployments.emplace(config_store.instance_specifier_, *config_store.service_instance_deployment_);
+
+    auto addon_configuration =
+        Configuration{type_deployments, instance_deployments, GlobalConfiguration{}, TracingConfiguration{}};
+
+    // When merging the two configurations
+    const auto merge_result = unit_.value().MergeServiceEntries(std::move(addon_configuration));
+
+    // Then the error code should be the expected one
+    EXPECT_TRUE(merge_result.has_value());
+    EXPECT_EQ(unit_.value().GetNumberOfServiceTypes(), 2);
+    EXPECT_EQ(unit_.value().GetNumberOfServiceInstances(), 2);
+}
+
+TEST_F(ConfigurationFixture, MergingIntoEmptyConfigurationLeadsToResultingConfigEqualsIncomingConfig)
+{
+    // Given an empty configuration ...
+    WithEmptyConfiguration();
+
+    // ... and an add-on configuration with some entries
+    Configuration::ServiceTypeDeployments type_deployments{};
+    type_deployments.insert({kConfigStoreQm.service_identifier_, *kConfigStoreQm.service_type_deployment_});
+    Configuration::ServiceInstanceDeployments instance_deployments{};
+    instance_deployments.emplace(kConfigStoreQm.instance_specifier_, *kConfigStoreQm.service_instance_deployment_);
+
+    auto addon_config =
+        Configuration{type_deployments, instance_deployments, GlobalConfiguration{}, TracingConfiguration{}};
+
+    // When merging both configurations
+    const auto merge_result = unit_.value().MergeServiceEntries(std::move(addon_config));
+
+    // Then merging should be successful and the resulting config should have the same entries as the add-on
+    // configuration
+    EXPECT_TRUE(merge_result.has_value());
+
+    EXPECT_EQ(GetServiceTypesSnapshot(unit_.value()), type_deployments);
+    EXPECT_EQ(GetServiceInstancesSnapshot(unit_.value()), instance_deployments);
+}
+
+TEST_F(ConfigurationFixture, MergingEmptyConfigurationLeadsToResultingConfigEqualsInitialConfig)
+{
+    // Given a configuration with some entries
+    WithMinimalConfiguration();
+
+    const auto type_deployments_backup = GetServiceTypesSnapshot(unit_.value());
+    const auto instance_deployments_backup = GetServiceInstancesSnapshot(unit_.value());
+
+    // ... and an empty configuration that shall be merged
+    auto addon_configuration = Configuration{Configuration::ServiceTypeDeployments{},
+                                             Configuration::ServiceInstanceDeployments{},
+                                             GlobalConfiguration{},
+                                             TracingConfiguration{}};
+
+    // When merging these two configuration
+    const auto merge_result = unit_.value().MergeServiceEntries(std::move(addon_configuration));
+
+    // Then merging should be successful and the resulting config should have the same entries as the initial
+    // configuration
+    EXPECT_TRUE(merge_result.has_value());
+
+    EXPECT_EQ(GetServiceTypesSnapshot(unit_.value()), type_deployments_backup);
+    EXPECT_EQ(GetServiceInstancesSnapshot(unit_.value()), instance_deployments_backup);
+}
+
+TEST_F(ConfigurationFixture, MergingWithDuplicateServiceTypeEntriesLeadsToError)
+{
+    // Given a configuration with at lest one entry...
+    WithMinimalConfiguration();
+
+    // ... and a second configuration that has an identical service type entry
+    Configuration::ServiceTypeDeployments type_deployments{};
+    type_deployments.insert({kConfigStoreQm.service_identifier_, *kConfigStoreQm.service_type_deployment_});
+    Configuration::ServiceInstanceDeployments instance_deployments{};
+    instance_deployments.emplace(kConfigStoreQm.instance_specifier_, *kConfigStoreQm.service_instance_deployment_);
+
+    auto addon_configuration =
+        Configuration{type_deployments, instance_deployments, GlobalConfiguration{}, TracingConfiguration{}};
+
+    // When merging the two configurations
+    const auto merge_result = unit_.value().MergeServiceEntries(std::move(addon_configuration));
+
+    // Then the error code should be the expected one
+    EXPECT_FALSE(merge_result.has_value());
+    EXPECT_EQ(merge_result.error(), configuration_errc::configuration_merge_duplicate_service_type);
+}
+
+TEST_F(ConfigurationFixture, MergingWithDuplicateServiceInstanceEntriesLeadsToError)
+{
+    // Given a configuration with at lest one entry...
+    WithMinimalConfiguration();
+
+    LolaServiceId service_id{1U};
+    auto instance_specifier_string = InstanceSpecifier::Create(std::string{"/bla/blob/instance_specifier"}).value();
+    ConfigurationStore config_store{
+        instance_specifier_string,
+        make_ServiceIdentifierType("/bla/blob/one", 1U, 2U),
+        QualityType::kASIL_QM,
+        service_id,
+        LolaServiceInstanceId{1U},
+    };
+
+    // ... and a second configuration that has an identical service instance entry
+    Configuration::ServiceTypeDeployments type_deployments{};
+    type_deployments.insert({config_store.service_identifier_, *config_store.service_type_deployment_});
+    Configuration::ServiceInstanceDeployments instance_deployments{};
+    instance_deployments.emplace(kConfigStoreQm.instance_specifier_, *kConfigStoreQm.service_instance_deployment_);
+
+    auto addon_configuration =
+        Configuration{type_deployments, instance_deployments, GlobalConfiguration{}, TracingConfiguration{}};
+
+    // When merging the two configurations
+    const auto merge_result = unit_.value().MergeServiceEntries(std::move(addon_configuration));
+
+    // Then the error code should be the expected one
+    EXPECT_FALSE(merge_result.has_value());
+    EXPECT_EQ(merge_result.error(), configuration_errc::configuration_merge_duplicate_service_instance);
+}
+
+TEST_F(ConfigurationFixture, MergingConfigurationsFromTwoThreadsConcurrentlySucceeds)
+{
+    // Given an empty configuration ...
+    WithEmptyConfiguration();
+
+    constexpr std::size_t kMergesPerThread{50U};
+
+    // ... and a helper which merges kMergesPerThread uniquely-named addon configurations (identified via
+    // thread_index/entry_index) into unit_ and records whether each merge succeeded.
+    auto merge_worker = [this](std::size_t thread_index) {
+        std::vector<bool> results{};
+        results.reserve(kMergesPerThread);
+        for (std::size_t entry_index = 0U; entry_index < kMergesPerThread; ++entry_index)
+        {
+            const auto service_name =
+                "/thread" + std::to_string(thread_index) + "/service" + std::to_string(entry_index);
+            const auto instance_specifier_string = InstanceSpecifier::Create("/thread" + std::to_string(thread_index) +
+                                                                             "/instance" + std::to_string(entry_index))
+                                                       .value();
+
+            Configuration::ServiceTypeDeployments type_deployments{};
+            type_deployments.insert(
+                {make_ServiceIdentifierType(service_name, 1U, 0U), *kConfigStoreQm.service_type_deployment_});
+            Configuration::ServiceInstanceDeployments instance_deployments{};
+            instance_deployments.emplace(instance_specifier_string, *kConfigStoreQm.service_instance_deployment_);
+
+            Configuration addon_configuration{std::move(type_deployments),
+                                              std::move(instance_deployments),
+                                              GlobalConfiguration{},
+                                              TracingConfiguration{}};
+
+            const auto merge_result = unit_.value().MergeServiceEntries(addon_configuration);
+            results.push_back(merge_result.has_value());
+        }
+        return results;
+    };
+
+    // When merging configurations into the shared unit_ concurrently from two different threads, each with its own
+    // uniquely-named set of service types/instances (so no clashes can occur between the threads)
+    std::vector<bool> results_thread_0{};
+    std::vector<bool> results_thread_1{};
+    std::thread thread_0([&results_thread_0, &merge_worker]() {
+        results_thread_0 = merge_worker(0U);
+    });
+    std::thread thread_1([&results_thread_1, &merge_worker]() {
+        results_thread_1 = merge_worker(1U);
+    });
+    thread_0.join();
+    thread_1.join();
+
+    // Then every single merge should have succeeded ...
+    EXPECT_EQ(results_thread_0.size(), kMergesPerThread);
+    EXPECT_EQ(results_thread_1.size(), kMergesPerThread);
+    EXPECT_TRUE(std::all_of(results_thread_0.begin(), results_thread_0.end(), [](bool ok) {
+        return ok;
+    }));
+    EXPECT_TRUE(std::all_of(results_thread_1.begin(), results_thread_1.end(), [](bool ok) {
+        return ok;
+    }));
+
+    // ... and the resulting configuration should contain all entries from both threads, without any lost updates.
+    EXPECT_EQ(unit_.value().GetNumberOfServiceTypes(), 2U * kMergesPerThread);
+    EXPECT_EQ(unit_.value().GetNumberOfServiceInstances(), 2U * kMergesPerThread);
+}
+
+TEST_F(ConfigurationFixture, MergingConfigurationDoesNotBreakExistingReferences)
+{
+    // Given a minimal configuration with at least one entry, ...
+    WithMinimalConfiguration();
+    // ...for which we can store a reference to
+    const auto service_type_deployment =
+        unit_.value().GetServiceTypeDeployment(make_ServiceIdentifierType("/bla/blub/one", 1U, 2U)).value().get();
+    const auto service_instance_deployment =
+        unit_.value()
+            .GetServiceInstanceDeployment(
+                InstanceSpecifier::Create(std::string{"/bla/blub/instance_specifier"}).value())
+            .value()
+            .get();
+
+    // ... and a second configuration with another valid entry
+    LolaServiceId service_id{1U};
+    auto instance_specifier_string = InstanceSpecifier::Create(std::string{"/bla/blob/instance_specifier"}).value();
+    ConfigurationStore config_store{
+        instance_specifier_string,
+        make_ServiceIdentifierType("/bla/blob/one", 1U, 2U),
+        QualityType::kASIL_QM,
+        service_id,
+        LolaServiceInstanceId{1U},
+    };
+
+    Configuration::ServiceTypeDeployments type_deployments{};
+    type_deployments.insert({config_store.service_identifier_, *config_store.service_type_deployment_});
+    Configuration::ServiceInstanceDeployments instance_deployments{};
+    instance_deployments.emplace(config_store.instance_specifier_, *config_store.service_instance_deployment_);
+
+    auto addon_configuration =
+        Configuration{type_deployments, instance_deployments, GlobalConfiguration{}, TracingConfiguration{}};
+
+    // When merging the two configurations
+    const auto merge_result = unit_.value().MergeServiceEntries(std::move(addon_configuration));
+
+    const auto lola_service_type_deployment =
+        std::get<LolaServiceTypeDeployment>(service_type_deployment.binding_info_);
+
+    // Then the merge should be successful, and we should still be able to access the previously given reference
+    EXPECT_TRUE(merge_result.has_value());
+    EXPECT_EQ(lola_service_type_deployment.service_id_, 1);
+    EXPECT_EQ(service_instance_deployment.instance_specifier_.ToString(), "/bla/blub/instance_specifier");
+}
+
+TEST_F(ConfigurationFixture, MergingIntoConfigurationWithInvalidStateReturnsError)
+{
+    // Given a configuration with at least one entry, that has then been moved-from (leaving its internal service
+    // type / instance deployment pointers reset to null)...
+    WithMinimalConfiguration();
+    const Configuration configuration_moved_to{std::move(unit_.value())};
+
+    // Sanity check: the object moved into should be unaffected and still contain the original entries
+    EXPECT_EQ(configuration_moved_to.GetNumberOfServiceTypes(), 1);
+    EXPECT_EQ(configuration_moved_to.GetNumberOfServiceInstances(), 1);
+
+    // ... and a valid add-on configuration to merge in
+    Configuration::ServiceTypeDeployments type_deployments{};
+    type_deployments.insert({kConfigStoreQm.service_identifier_, *kConfigStoreQm.service_type_deployment_});
+    Configuration::ServiceInstanceDeployments instance_deployments{};
+    instance_deployments.emplace(kConfigStoreQm.instance_specifier_, *kConfigStoreQm.service_instance_deployment_);
+
+    auto addon_configuration =
+        Configuration{type_deployments, instance_deployments, GlobalConfiguration{}, TracingConfiguration{}};
+
+    // When attempting to merge the add-on configuration into the now invalid configuration
+    const auto merge_result = unit_.value().MergeServiceEntries(std::move(addon_configuration));
+
+    // Then the merge should fail with the expected error
+    EXPECT_FALSE(merge_result.has_value());
+    EXPECT_EQ(merge_result.error(), configuration_errc::configuration_merged_invalid_configuration_state);
+}
+
 using ConfigurationDeathTest = ConfigurationFixture;
 TEST_F(ConfigurationDeathTest, AddingAServiceTypeDeploymentWithDuplicateServiceIdentifierTypeTerminates)
 {

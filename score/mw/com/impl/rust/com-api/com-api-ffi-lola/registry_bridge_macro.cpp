@@ -59,7 +59,7 @@ ProxyEventBase* mw_com_get_event_from_proxy(ProxyBase* proxy_ptr, StringView int
     auto event = static_cast<std::string_view>(event_id);
     auto id = static_cast<std::string_view>(interface_id);
 
-    auto registry = GlobalRegistryMapping::FindMemberOperation(id, event);
+    auto* registry = GlobalRegistryMapping::FindMemberOperation(id, event);
 
     if (registry == nullptr)
     {
@@ -86,7 +86,7 @@ SkeletonEventBase* mw_com_get_event_from_skeleton(SkeletonBase* skeleton_ptr,
     auto event = static_cast<std::string_view>(event_id);
     auto id = static_cast<std::string_view>(interface_id);
 
-    auto registry = GlobalRegistryMapping::FindMemberOperation(id, event);
+    auto* registry = GlobalRegistryMapping::FindMemberOperation(id, event);
 
     if (registry == nullptr)
     {
@@ -125,12 +125,7 @@ bool mw_com_proxy_event_subscribe(ProxyEventBase* event_ptr, uint32_t max_sample
 
     auto result = event_ptr->Subscribe(max_sample_count);
 
-    if (!result.has_value())
-    {
-        return false;
-    }
-
-    return true;
+    return result.has_value();
 }
 
 /// \brief Unsubscribe from a proxy event to release sample buffers
@@ -157,7 +152,7 @@ ProxyBase* mw_com_create_proxy(StringView interface_id, const HandleType& handle
         return nullptr;
     }
     auto id = static_cast<std::string_view>(interface_id);
-    auto registry = GlobalRegistryMapping::FindInterfaceRegistry(id);
+    auto* registry = GlobalRegistryMapping::FindInterfaceRegistry(id);
 
     if (registry == nullptr)
     {
@@ -179,7 +174,7 @@ SkeletonBase* mw_com_create_skeleton(StringView interface_id, ::score::mw::com::
     }
 
     auto id = static_cast<std::string_view>(interface_id);
-    auto registry = GlobalRegistryMapping::FindInterfaceRegistry(id);
+    auto* registry = GlobalRegistryMapping::FindInterfaceRegistry(id);
 
     if (registry == nullptr)
     {
@@ -261,7 +256,7 @@ std::uint32_t mw_com_type_registry_get_samples_from_event(ProxyEventBase* event_
 
     auto result = type_ops->GetSamplesFromEvent(event_ptr, max_samples, *callback);
 
-    if (result.has_value() == false)
+    if (!result.has_value())
     {
         return std::numeric_limits<std::uint32_t>::max();
     }
@@ -368,11 +363,7 @@ bool mw_com_proxy_set_event_receive_handler(ProxyEventBase* event_ptr, const Fat
     }
 
     auto result = event_ptr->SetReceiveHandler(RustFnMutCallable<RustBoxedCallable>{*boxed_handler});
-    if (result.has_value() == false)
-    {
-        return false;
-    }
-    return true;
+    return result.has_value();
 }
 
 /// \brief Clear event receive handler for proxy event
@@ -466,7 +457,7 @@ const void* mw_com_get_type_ops_instance(StringView interface_id, StringView mem
     auto id = static_cast<std::string_view>(interface_id);
     auto member = static_cast<std::string_view>(member_name);
 
-    auto registry = GlobalRegistryMapping::FindMemberOperation(id, member);
+    auto* registry = GlobalRegistryMapping::FindMemberOperation(id, member);
 
     if (registry == nullptr)
     {

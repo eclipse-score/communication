@@ -29,9 +29,7 @@ EXCLUDED_PUBLIC_TARGETS = {
 # Matches the visibility() load-visibility built-in in .bzl files. Bazel
 # accepts both a list argument (e.g. visibility(["//foo", "public"])) and a
 # single string argument (e.g. visibility("//...")), so capture either form.
-_BZL_VISIBILITY_CALL_RE = re.compile(
-    r"\bvisibility\s*\(\s*(?P<items>\[.*?\]|['\"].*?['\"])\s*\)", re.DOTALL
-)
+_BZL_VISIBILITY_CALL_RE = re.compile(r"\bvisibility\s*\(\s*(?P<items>\[.*?\]|['\"].*?['\"])\s*\)", re.DOTALL)
 
 # Matches public entries inside the visibility() argument in .bzl files.
 _BZL_PUBLIC_VISIBILITY_ITEM_RE = re.compile(r'["\'](?:public|//visibility:public)["\']')
@@ -64,9 +62,7 @@ def _get_public_load_visibility_targets(repo_root):
         dirnames[:] = [
             d
             for d in dirnames
-            if d not in _SKIP_DIRS
-            and not d.startswith(".")
-            and not os.path.islink(os.path.join(dirpath, d))
+            if d not in _SKIP_DIRS and not d.startswith(".") and not os.path.islink(os.path.join(dirpath, d))
         ]
 
         for filename in filenames:
@@ -80,9 +76,7 @@ def _get_public_load_visibility_targets(repo_root):
                 continue
 
             # Strip comment lines before matching to avoid false positives.
-            non_comment_content = "\n".join(
-                line for line in content.splitlines() if not line.lstrip().startswith("#")
-            )
+            non_comment_content = "\n".join(line for line in content.splitlines() if not line.lstrip().startswith("#"))
             visibility_match = _BZL_VISIBILITY_CALL_RE.search(non_comment_content)
             if visibility_match:
                 visibility_items = visibility_match.group("items")

@@ -1,0 +1,122 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+section "com" {
+
+    section "Public_API_Specification" {
+
+        section "Generic_Skeleton" {
+
+            section "Generic_Skeleton_Event" {
+
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq GenericSkeletonEventClass {
+                    description = '''Event members within a GenericSkeleton class shall be of a {{GenericSkeletonEvent}} class, whose properties are defined in this section.
+
+                    The class {{GenericSkeletonEvent}} shall be provided in the namespace {{score::mw::com}}.
+
+                    The class {{GenericSkeletonEvent}} is essentially a SkeletonEvent class, where the concrete event data type/{{SampleType}} is unknown and therefore represented as {{void}}.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1, Communication.CommunicationInterfaces@1]
+                    version = 1
+                }
+
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq GenericSkeletonEventCopySemantics {
+                    description = '''The class {{GenericSkeletonEvent}} shall neither be copy-constructible nor copy-assignable.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1]
+                    version = 1
+                }
+
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq GenericSkeletonEventMoveSemantics {
+                    description = '''The {{GenericSkeletonEvent}} class shall be move-constructible as well as move-assignable'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForProgrammingLanguageIdioms@1, Communication.SupportForMultipleProgrammingLanguages@1]
+                    version = 1
+                }
+
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq GenericSkeletonEventSend {
+                    description = '''A {{GenericSkeletonEvent}} class shall provide a public method:
+
+                    {{{Result<void> GenericSkeletonEvent::Send(SampleAllocateePtr<void> sample) noexcept}}}
+
+                    Behaviour is described in Behaviour of Zero-Copy Update/Send [ReferencedRequirements.BehaviourOfZeroCopyUpdateSend].'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq GenericSkeletonEventAllocate {
+                    description = '''A {{GenericSkeletonEvent}} class shall provide a public method:
+
+                    {{{Result<SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept}}}
+
+                    Behaviour is described in Behaviour of Allocate.
+
+                    Return value is described in Return value of Allocate.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq GenericSkeletonEventGetSizeInfo {
+                    description = '''A {{GenericSkeletonEvent}} class shall provide a public method:
+
+                    {{{score::memory::DataTypeSizeInfo GetSizeInfo() const noexcept}}}
+
+                    which shall return the size and alignment information for this GenericSkeletonEvent.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq GenericSkeletonEventSetReceiveHandlerChangedHandler {
+                    description = '''A {{{GenericSkeletonEvent}}} class shall provide a public method:
+
+                    {{{score::Result<void> GenericSkeletonEvent::SetReceiveHandlerRegistrationChangedHandler(ReceiveHandlerRegistrationChangedCallback callback) noexcept}}}
+
+                    Behaviour: It shall allow setting a callback that will be called if the first {{ReceiveHandler}} has been registered or the last {{ReceiveHandler}}
+                    has been withdrawn for this event.
+
+                    Arguments:
+                    * callback: A function with one boolean argument (true = first ReceiveHandler registered, false = last ReceiveHandler withdrawn) and {{void}} as the return type.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Method@1]
+                    version = 1
+                }
+
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq GenericSkeletonEventUnsetReceiveHandlerChangedHandler {
+                    description = '''A {{{GenericSkeletonEvent}}} class shall provide a public method:
+
+                    {{{score::Result<void> UnsetReceiveHandlerRegistrationChangedHandler() noexcept;}}}
+
+                    Behaviour: It shall allow clearing a previously set callback for ReceiveHandler changes, see [GenericSkeletonEventSetReceiveHandlerChangedHandler].'''
+
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Method@1]
+                    version = 1
+                }
+            }
+        }
+    }
+}

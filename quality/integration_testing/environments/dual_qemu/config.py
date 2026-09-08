@@ -15,6 +15,7 @@
 Each VM is described by the ``QemuConfigModel``, so a dual config is just two
 ordinary QEMU configs plus a shared ``ivshmem`` block.
 """
+
 import json
 import logging
 

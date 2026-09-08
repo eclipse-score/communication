@@ -14,6 +14,11 @@
 #define SCORE_LIB_MEMORY_SHARED_I_SHARED_MEMORY_RESOURCE_H
 
 #include "score/memory/shared/managed_memory_resource.h"
+// Pulls in the MemoryResourceRegistry nifty-counter (see detail::nifty_counter_memory_resource_registry),
+// guaranteeing that MemoryResourceRegistry outlives any std::shared_ptr<ISharedMemoryResource>
+// a client stores in a static/long-lived context, since ~SharedMemoryResource() accesses
+// MemoryResourceRegistry::getInstance().
+#include "score/memory/shared/memory_resource_registry.h"
 #include "score/memory/shared/user_permission.h"
 
 #include "score/os/acl.h"

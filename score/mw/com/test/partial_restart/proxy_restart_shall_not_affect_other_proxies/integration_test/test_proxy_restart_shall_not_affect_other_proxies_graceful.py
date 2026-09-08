@@ -13,7 +13,9 @@
 
 """Integration test for proxy_restart_shall_not_affect_other_proxies (graceful)."""
 
-from proxy_restart_shall_not_affect_other_proxies_test_fixture import proxy_restart_shall_not_affect_other_proxies
+from proxy_restart_shall_not_affect_other_proxies_test_fixture import (
+    proxy_restart_shall_not_affect_other_proxies,
+)
 
 # Test configuration
 NUMBER_OF_CONSUMER_RESTARTS = 20

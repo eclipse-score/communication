@@ -39,7 +39,8 @@ int main(int argc, const char** argv)
               << score::mw::com::test::kNumberOfSamplesToSendPerOffer << " and number of send iterations"
               << num_send_iterations << std::endl;
 
-    auto consumer_future = std::async(score::mw::com::test::RunConsumer,
+    auto consumer_future = std::async(std::launch::async,
+                                      score::mw::com::test::RunConsumer,
                                       score::mw::com::test::kInstanceSpecifierMovedTo,
                                       score::mw::com::test::kNumberOfSamplesToSendPerOffer,
                                       num_send_iterations,

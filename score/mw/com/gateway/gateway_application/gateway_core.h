@@ -14,8 +14,8 @@
 #define SCORE_MW_COM_GATEWAY_GATEWAY_APPLICATION_GATEWAY_CORE_H
 
 #include "score/mw/com/gateway/transport_layer/transport.h"
-#include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/service_element_type.h"
+#include "score/mw/com/types.h"
 #include "score/result/result.h"
 
 #include <string>
@@ -39,19 +39,19 @@ class GatewayCore
     /// \param service_elements description of the service elements (events, fields, methods) which should be provided
     /// for the service instance, which will be realized as a Forwarding Skeleton (GenericSkeleton).
     /// \return result indicating success or failure.
-    virtual score::Result<void> ProvideService(impl::InstanceSpecifier service_instance_specifier,
-                                               std::vector<impl::EventInfo> service_elements) = 0;
+    virtual score::Result<void> ProvideService(score::mw::com::InstanceSpecifier service_instance_specifier,
+                                               std::vector<score::mw::com::EventInfo> service_elements) = 0;
 
     /// \brief Stop providing the given service instance locally within the destination domain.
     /// \param service_instance_specifier instance specifier of the service instance to stop offering. It is expected,
     /// that this specifier is configured/existent in the mw_com_config.json at the local gateway side.
-    virtual void StopOfferService(impl::InstanceSpecifier service_instance_specifier) = 0;
+    virtual void StopOfferService(score::mw::com::InstanceSpecifier service_instance_specifier) = 0;
 
     /// \brief Offer the given service instance locally within the destination domain.
     /// \param service_instance_specifier instance specifier of the service instance to offer. It is expected, that
     /// this specifier is configured/existent in the mw_com_config.json at the local gateway side.
     /// \return result indicating success or failure.
-    virtual score::Result<void> OfferService(impl::InstanceSpecifier service_instance_specifier) = 0;
+    virtual score::Result<void> OfferService(score::mw::com::InstanceSpecifier service_instance_specifier) = 0;
 
     /// \brief Register an event-update notification for the given service instance and element locally within the
     /// destination domain.
@@ -61,7 +61,7 @@ class GatewayCore
     /// \param element_type type of the service element (event, field, method). Currently only EVENT is supported.
     /// \param element_name name of the service element for which update notifications shall be registered.
     /// \return result indicating success or failure.
-    virtual score::Result<void> RegisterUpdateNotification(impl::InstanceSpecifier service_instance_specifier,
+    virtual score::Result<void> RegisterUpdateNotification(score::mw::com::InstanceSpecifier service_instance_specifier,
                                                            impl::ServiceElementType element_type,
                                                            std::string element_name) = 0;
 
@@ -73,9 +73,10 @@ class GatewayCore
     /// \param element_type type of the service element (event, field, method). Currently only EVENT is supported.
     /// \param element_name name of the service element for which update notifications shall be unregistered.
     /// \return result indicating success or failure.
-    virtual score::Result<void> UnregisterUpdateNotification(impl::InstanceSpecifier service_instance_specifier,
-                                                             impl::ServiceElementType element_type,
-                                                             std::string element_name) = 0;
+    virtual score::Result<void> UnregisterUpdateNotification(
+        score::mw::com::InstanceSpecifier service_instance_specifier,
+        impl::ServiceElementType element_type,
+        std::string element_name) = 0;
 
     /// \brief Notify an event update for the given service instance and element locally within the destination domain.
     /// \param service_instance_specifier instance specifier of the service instance, for which notification takes
@@ -85,7 +86,7 @@ class GatewayCore
     /// notified.
     /// \param updated_element_name name of the element (e.g. event name) for which an update shall be notified.
     /// \return result indicating success or failure.
-    virtual score::Result<void> NotifyUpdate(impl::InstanceSpecifier service_instance_specifier,
+    virtual score::Result<void> NotifyUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
                                              impl::ServiceElementType updated_element_type,
                                              std::string updated_element_name) = 0;
 };

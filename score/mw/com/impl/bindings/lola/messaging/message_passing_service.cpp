@@ -135,11 +135,11 @@ IMessagePassingServiceInstance& MessagePassingService::GetMessagePassingServiceI
         // coverity[autosar_cpp14_m6_4_5_violation] return instead of break
         case QualityType::kASIL_B:
             return *asil_b_;
-        // coverity[autosar_cpp14_m6_4_5_violation] SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE will terminate this
+        // coverity[autosar_cpp14_m6_4_5_violation] SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE will terminate this
         // switch clause
         case QualityType::kInvalid:
         default:
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Invalid asil level");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Invalid asil level");
     }
 }
 

@@ -37,11 +37,13 @@ def _load_results(results_dir):
     rows = []
     for path in sorted(Path(results_dir).glob("result-*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
-        rows.append({
-            "index": data["index"],
-            "versions": data["versions"],
-            "result": classify(data["build_status"], data.get("has_patches", False)),
-        })
+        rows.append(
+            {
+                "index": data["index"],
+                "versions": data["versions"],
+                "result": classify(data["build_status"], data.get("has_patches", False)),
+            }
+        )
     rows.sort(key=lambda r: r["index"])
     return rows
 
@@ -95,7 +97,11 @@ def main(argv=None) -> int:
     (out / "report.html").write_text(_render_html(report), encoding="utf-8")
     (out / "summary.json").write_text(
         json.dumps(
-            {"totals": report["totals"], "rows": report["rows"], "skipped": report["skipped"]},
+            {
+                "totals": report["totals"],
+                "rows": report["rows"],
+                "skipped": report["skipped"],
+            },
             indent=2,
         ),
         encoding="utf-8",

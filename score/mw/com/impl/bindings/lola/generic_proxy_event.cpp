@@ -82,6 +82,11 @@ std::size_t GenericProxyEvent::GetSampleSize() const noexcept
     return meta_info_.data_type_info_.Size();
 }
 
+memory::DataTypeSizeInfo GenericProxyEvent::GetDataTypeSizeInfo() const
+{
+    return meta_info_.data_type_info_;
+}
+
 bool GenericProxyEvent::HasSerializedFormat() const noexcept
 {
     // our shared-memory based binding does no serialization at all!

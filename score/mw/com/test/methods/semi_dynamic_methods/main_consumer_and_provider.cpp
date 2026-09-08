@@ -34,8 +34,8 @@ int main(int argc, const char** argv)
         std::cerr << "Unable to set signal handler for SIGINT and/or SIGTERM, cautiously continuing\n";
     }
 
-    auto provider_future = std::async(score::mw::com::test::run_provider, stop_source.get_token());
-    auto consumer_future = std::async(score::mw::com::test::run_consumer);
+    auto provider_future = std::async(std::launch::async, score::mw::com::test::run_provider, stop_source.get_token());
+    auto consumer_future = std::async(std::launch::async, score::mw::com::test::run_consumer);
 
     provider_future.get();
     consumer_future.get();

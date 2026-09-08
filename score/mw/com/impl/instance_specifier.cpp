@@ -69,11 +69,7 @@ bool IsShortNameValid(const std::string_view shortname) noexcept
     }
 
     constexpr auto invalid_char_seq = "//";
-    if (shortname.find(invalid_char_seq, 0U) != std::string_view::npos)
-    {
-        return false;
-    }
-    return true;
+    return shortname.find(invalid_char_seq, 0U) == std::string_view::npos;
 }
 
 }  // namespace

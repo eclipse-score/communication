@@ -1,0 +1,178 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Privileged apply stage for the review-checklists workflow.
+#
+# Triggered via `workflow_run` once "Review Checklists (Trigger)" completes.
+# `workflow_run` always executes using the base repository's workflow file
+# and permissions, regardless of which repository (including forks) raised
+# the original event — this is what lets this job safely hold a
+# pull-requests/statuses write token even though some of the original
+# events (pull_request_review, pull_request_review_comment on fork PRs)
+# would otherwise force a read-only GITHUB_TOKEN.
+#
+# This workflow does all the actual work: it derives the original event
+# name/head SHA entirely from the `workflow_run` context and the GitHub
+# API, and re-runs the checklist logic that the previous single-stage
+# workflow used to run directly on the untrusted events. The only value
+# carried over from the trigger stage is the PR number, downloaded from
+# the artifact the trigger stage uploaded (see review_checklists_trigger.yml
+# for why that value is safe to trust as-is). Nothing else is transferred
+# — not even the original event's `action` (opened/reopened/synchronize/
+# edited): `dismiss_sync` is simply run on every pull_request_target event
+# and self-determines whether anything actually changed (see below), so
+# there is nothing else stage 2 needs stage 1 to hand it.
+#
+# Keep review-checklists up to date on pull requests and report whether all
+# checklists have been acknowledged by every approving reviewer.
+#
+# Original events handled:
+#   pull_request_target (opened/reopened/synchronize/edited)
+#     -> Post or update checklist findings on the PR.
+#     -> Invalidate OKs for checklists affected by commits since the
+#        previous trigger run (dismiss_sync resolves the "before" SHA
+#        itself via run history and diffs against the current head; if
+#        the head SHA hasn't moved — e.g. on "edited"/"reopened" without
+#        a new push — the diff is empty and this is a no-op).
+#     -> On edited: refresh checklist evidence/notices after PR description changes.
+#     -> Re-check acknowledgements.
+#   pull_request_review_comment (created/edited/deleted)
+#     -> Restore checklist findings if they were tampered with or deleted.
+#     -> Re-check acknowledgements (this naturally also handles OK-comment
+#        edits/deletions — see check_acknowledgements.py).
+#   pull_request_review (submitted/dismissed)
+#     -> Re-check acknowledgements (approver set may have changed).
+#   merge_group (checks_requested)
+#     -> Resolve the originating PR (its number transferred from the
+#        trigger stage, parsed there from the merge-queue's synthetic head
+#        ref) and re-validate its checklist evidence from scratch against
+#        its current live state — not merely assumed OK because a required
+#        status check passed at some earlier point (see
+#        check_acknowledgements.py).
+#
+# When a PR is in merge queue, the "Check acknowledgements" step also
+# ensures:
+#   - a persistent PR comment notice, and
+#   - a standalone PR-description notice,
+# explaining that post-queue changes do not alter evidence recorded in git
+# history by the merge commit evidence flow.
+
+name: Review Checklists (Apply)
+
+on:
+  workflow_run:
+    workflows: ["Review Checklists (Trigger)"]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  statuses: write
+  actions: read
+
+concurrency:
+  group: >-
+    review-checklists-apply-${{ github.event.workflow_run.head_sha || github.event.workflow_run.id }}
+  # Multiple trigger-stage runs for the same head SHA can complete in quick
+  # succession (e.g. several review comments posted back-to-back), so let a
+  # newer run cancel an older, now-superseded one. Safe because this job only
+  # recomputes idempotent PR state (comments/statuses) from scratch each time.
+  cancel-in-progress: true
+
+jobs:
+  review-checklists:
+    name: Review Checklists
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      # Downloads the PR number from the artifact the trigger stage
+      # uploaded (see review_checklists_trigger.yml for why this value is
+      # safe to trust as-is). Requires actions: read to fetch artifacts
+      # from another workflow run via run-id.
+      #
+      # A missing/empty artifact (e.g. the trigger job failed before
+      # uploading, or ran before this artifact step existed) resolves to
+      # an empty pr_number, and downstream steps already tolerate that
+      # (they simply have nothing to act on).
+      - name: Download PR number
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: pr-number
+          path: pr-number
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Read PR number
+        id: resolve_pr
+        run: |
+          pr_number="$(cat pr-number/pr-number.txt 2>/dev/null || true)"
+          echo "Resolved PR number: ${pr_number}"
+          echo "pr_number=${pr_number}" >> "$GITHUB_OUTPUT"
+
+      # Step 1: Post or update checklist findings.
+      # Runs on PR open/reopen/sync, on PR description edits, and on
+      # review comment events so tampered checklist findings and notices
+      # are restored.
+      - name: Post / update checklist findings
+        if: >-
+          github.event.workflow_run.event == 'pull_request_target' ||
+          github.event.workflow_run.event == 'pull_request_review_comment'
+        uses: ./tools/review-checklists
+        with:
+          action: post
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-number: ${{ steps.resolve_pr.outputs.pr_number }}
+
+      # Step 2: Invalidate stale OKs for commits since the previous push.
+      # dismiss_sync resolves the "before" SHA itself (via the previous
+      # Trigger-workflow run for this branch) and diffs it against the
+      # current head, so it doesn't need to know which pull_request_target
+      # sub-action fired: if the head SHA hasn't moved since the previous
+      # trigger run (e.g. "edited"/"reopened" without a new push), the
+      # diff is empty and this step is a no-op.
+      - name: Invalidate stale acknowledgements
+        if: github.event.workflow_run.event == 'pull_request_target'
+        uses: ./tools/review-checklists
+        with:
+          action: dismiss_sync
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-number: ${{ steps.resolve_pr.outputs.pr_number }}
+          run-id: ${{ github.event.workflow_run.id }}
+          head-branch: ${{ github.event.workflow_run.head_branch }}
+
+      # Step 3: Always re-check acknowledgement status.
+      # The script sets the commit status context "review-checklists"
+      # to "pending"/"success"/"failure", and (as of this stateless
+      # redesign) also refreshes the merge-queue notice.  It always
+      # re-scans the live comment state, so it naturally also picks up
+      # OK-comment edits/deletions (there's no dedicated "dismiss_edit"
+      # action anymore). For merge_group it resolves the originating PR
+      # (via pr-number, transferred from the trigger stage above) and
+      # re-validates that PR's checklist evidence from scratch — needing
+      # only the original event name, head SHA, and PR number. Commit statuses
+      # with the same context on the same SHA are deduplicated, so the
+      # latest result from any trigger always wins. This job always has
+      # write access (it only ever runs via workflow_run) — branch
+      # protection must require the commit status context (not the
+      # workflow check run) to gate merges.
+      - name: Check acknowledgements
+        uses: ./tools/review-checklists
+        with:
+          action: check
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-number: ${{ steps.resolve_pr.outputs.pr_number }}
+          head-sha: ${{ github.event.workflow_run.head_sha }}
+          event-name: ${{ github.event.workflow_run.event }}

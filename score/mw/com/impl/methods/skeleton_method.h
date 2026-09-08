@@ -286,6 +286,8 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandlerImpl(Callab
                 }
                 else
                 {
+                    // When WithQuality != kYes it does not matter the quality type
+                    std::ignore = quality_type;
                     return stateless_type_erased_handler(
                         user_callback, std::optional<QualityType>{}, type_erased_in_args, type_erased_return);
                 }

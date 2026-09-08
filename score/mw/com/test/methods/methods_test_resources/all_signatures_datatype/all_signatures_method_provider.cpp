@@ -17,10 +17,10 @@
 namespace score::mw::com::test
 {
 
-void AllSignaturesMethodProvider::CreateSkeleton(InstanceSpecifier instance_specifier,
+void AllSignaturesMethodProvider::CreateSkeleton(const InstanceSpecifier& instance_specifier,
                                                  const std::string& failure_message_prefix)
 {
-    skeleton_container_.CreateSkeleton(std::move(instance_specifier), failure_message_prefix);
+    skeleton_container_.CreateSkeleton(instance_specifier, failure_message_prefix);
 }
 
 void AllSignaturesMethodProvider::OfferService(const std::string& failure_message_prefix)

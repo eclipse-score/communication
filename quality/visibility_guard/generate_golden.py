@@ -26,9 +26,7 @@ def main():
     else:
         # Fallback: navigate up from real script location
         repo_root = os.path.dirname(os.path.realpath(__file__))
-        while repo_root != "/" and not os.path.exists(
-            os.path.join(repo_root, "MODULE.bazel")
-        ):
+        while repo_root != "/" and not os.path.exists(os.path.join(repo_root, "MODULE.bazel")):
             repo_root = os.path.dirname(repo_root)
 
     if not os.path.exists(os.path.join(repo_root, "MODULE.bazel")):
@@ -37,9 +35,7 @@ def main():
 
     public_targets = get_all_public_targets(repo_root)
 
-    golden_path = os.path.join(
-        repo_root, "quality", "visibility_guard", "public_targets.golden"
-    )
+    golden_path = os.path.join(repo_root, "quality", "visibility_guard", "public_targets.golden")
     with open(golden_path, "w") as f:
         f.write("\n".join(public_targets) + "\n")
 

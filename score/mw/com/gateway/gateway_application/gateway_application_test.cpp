@@ -676,6 +676,9 @@ class GatewayApplicationFlowTest : public ::testing::Test
                 ON_CALL(*mock, GetSubscriptionState()).WillByDefault(::testing::Invoke([state]() {
                     return *state;
                 }));
+                // Provide a sensible default DataTypeSizeInfo so PropagateService can build EventInfo
+                ON_CALL(*mock, GetDataTypeSizeInfo())
+                    .WillByDefault(::testing::Return(score::memory::DataTypeSizeInfo{1U, 1U}));
                 ON_CALL(*mock, Subscribe(::testing::_)).WillByDefault(::testing::Invoke([state](std::size_t) {
                     *state = impl::SubscriptionState::kSubscribed;
                     return score::Result<void>{};

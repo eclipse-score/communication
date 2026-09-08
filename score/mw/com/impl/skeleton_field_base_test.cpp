@@ -250,7 +250,7 @@ TEST(SkeletonFieldBaseTest, PrepareOfferPropagatesErrorFromInitialValueUpdateCal
 
 TEST(SkeletonFieldBaseTests, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-18221574");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldCopySemantics");
     RecordProperty("Description", "Checks copy semantics for SkeletonFieldBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

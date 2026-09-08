@@ -46,8 +46,12 @@ jobs:
             bazel-config: clang-tidy
           - id: clippy
             bazel-config: clippy
+          - id: ruff
+            bazel-config: ruff
     steps:
       - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
 
       - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
         with:
@@ -121,7 +125,7 @@ jobs:
             -- //... 2>&1 | tee "${{ matrix.id }}_raw.log"
 
       - name: Collect SARIF reports
-        if: always() && inputs.fetch-only != 'true'
+        if: ${{ !cancelled() && inputs.fetch-only != 'true' }}
         id: sarif
         uses: ./.github/actions/00_infrastructure/merge_sarif_reports
         with:
@@ -129,7 +133,7 @@ jobs:
           output-file: ${{ matrix.id }}.sarif
 
       - name: Upload SARIF reports to GitHub Code Scanning
-        if: always() && inputs.fetch-only != 'true'
+        if: ${{ !cancelled() && inputs.fetch-only != 'true' }}
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: ${{ matrix.id }}.sarif
@@ -141,7 +145,7 @@ jobs:
           wait-for-processing: true
 
       - name: Upload ${{ matrix.id }} findings as artifact
-        if: always() && inputs.fetch-only != 'true'
+        if: ${{ !cancelled() && inputs.fetch-only != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.id }}-findings

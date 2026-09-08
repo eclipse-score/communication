@@ -23,12 +23,21 @@ def consumer(target, num_cycles, data_type=None, **kwargs):
     args = ["-n", str(num_cycles)]
     if data_type is not None:
         args += ["-t", data_type]
-    return target.wrap_exec("bin/bigdata-consumer", args, cwd="/opt/bigdata-com-api-sync", wait_on_exit=True, **kwargs)
+    return target.wrap_exec(
+        "bin/bigdata-consumer",
+        args,
+        cwd="/opt/bigdata-com-api-sync",
+        wait_on_exit=True,
+        **kwargs,
+    )
 
 
 def test_bigdata_exchange(target):
     # Sender runs for 30 cycles, Receiver receives 25 cycles
-    with producer(target, num_cycles=30), consumer(target, num_cycles=25, wait_timeout=120):
+    with (
+        producer(target, num_cycles=30),
+        consumer(target, num_cycles=25, wait_timeout=120),
+    ):
         pass
 
 

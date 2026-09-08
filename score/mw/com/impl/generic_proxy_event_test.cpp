@@ -162,6 +162,33 @@ TEST(GenericProxyEventGetSampleSizeTest, GetSampleSizeDispatchesToBinding)
     EXPECT_EQ(sample_size, expected_sample_size);
 }
 
+TEST(GenericProxyEventGetDataTypeSizeInfoTest, GetDataTypeSizeInfoDispatchesToBinding)
+{
+    RecordProperty("lobster-tracing", "GenericProxyEventGetDataTypeSizeInfo");
+    RecordProperty("Description",
+                   "Checks that GetDataTypeSizeInfo will return the data type size info from the binding");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    const score::memory::DataTypeSizeInfo expected_data_type_size_info{12U, 4U};
+
+    // Given a generic proxy event based on a mock binding
+    auto mock_proxy_event_ptr = std::make_unique<StrictMock<mock_binding::GenericProxyEvent>>();
+    auto& mock_proxy_event = *mock_proxy_event_ptr;
+    GenericProxyEvent proxy_event{kEventName,
+                                  std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
+
+    // Expect that GetDataTypeSizeInfo is called once on the binding
+    EXPECT_CALL(mock_proxy_event, GetDataTypeSizeInfo()).WillOnce(Return(expected_data_type_size_info));
+
+    // When GetDataTypeSizeInfo is called on the proxy_event
+    const auto data_type_size_info = proxy_event.GetDataTypeSizeInfo();
+
+    // Then the data type size info will be the same value returned by the binding
+    EXPECT_EQ(data_type_size_info, expected_data_type_size_info);
+}
+
 TEST(GenericProxyEventHasSerializedFormatTest, HasSerializedFormatDispatchesToBinding)
 {
     RecordProperty("Verifies", "SCR-14035199");

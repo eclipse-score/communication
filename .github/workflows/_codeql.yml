@@ -98,7 +98,7 @@ jobs:
           retention-days: 1
 
       - name: Upload MISRA compliance reports (Linux)
-        if: inputs.fetch-only != 'true' && always()
+        if: ${{ !cancelled() && inputs.fetch-only != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: codeql-misra-reports
@@ -164,7 +164,7 @@ jobs:
   merge:
     name: Merge & deduplicate findings (Linux ∪ QNX union)
     needs: [determine-qnx, codeql-linux, codeql-qnx]
-    if: always() && inputs.fetch-only != 'true' && needs.codeql-linux.result == 'success'
+    if: ${{ !cancelled() && inputs.fetch-only != 'true' && needs.codeql-linux.result == 'success' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -211,7 +211,7 @@ jobs:
       # and QNX findings (or just the deduplicated Linux findings when QNX was
       # not run).
       - name: Upload SARIF to GitHub Code Scanning
-        if: always() && steps.merge-codeql.outcome == 'success'
+        if: ${{ !cancelled() && steps.merge-codeql.outcome == 'success' }}
         continue-on-error: true
         uses: github/codeql-action/upload-sarif@v4
         with:
@@ -219,7 +219,7 @@ jobs:
           category: codeql-nightly
 
       - name: Upload SARIF results
-        if: always() && steps.merge-codeql.outcome == 'success'
+        if: ${{ !cancelled() && steps.merge-codeql.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: codeql-sarif-results

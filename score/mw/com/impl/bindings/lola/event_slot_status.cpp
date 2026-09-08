@@ -79,8 +79,7 @@ auto EventSlotStatus::IsTimeStampBetween(const EventTimeStamp min_timestamp,
     // This a false-positive, all operands are parenthesized.
     // A bug ticket has been created to track this: [Ticket-165315](broken_link_j/Ticket-165315)
     // coverity[autosar_cpp14_a5_2_6_violation : FALSE]
-    return ((IsInWriting() == false) && (IsInvalid() == false) && (GetTimeStamp() > min_timestamp) &&
-            (GetTimeStamp() < max_timestamp));
+    return ((!IsInWriting()) && (!IsInvalid()) && (GetTimeStamp() > min_timestamp) && (GetTimeStamp() < max_timestamp));
 }
 
 // Suppress "AUTOSAR C++14 A9-3-1" rule finding: "Member functions shall not return non-const “raw” pointers or

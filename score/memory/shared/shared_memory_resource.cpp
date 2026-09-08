@@ -261,6 +261,7 @@ void* do_allocation_algorithm(const void* const alloc_start,
     // (https://timsong-cpp.github.io/cppwp/n4659/ptr.align#lib:align) so the const_cast will not result in undefined
     // behaviour.
     // coverity[autosar_cpp14_a5_2_3_violation]
+    // Deviation of MISRA RULE-8-2-3: codeql::misra_deviation_next_line(shared-memory-align-const-cast)
     void* aligned_address = const_cast<void*>(alloc_start);
     auto buffer_space = static_cast<std::size_t>(SubtractPointersBytes(alloc_end, alloc_start));
     return std::align(alignment, bytes, aligned_address, buffer_space);
@@ -530,7 +531,7 @@ score::cpp::expected_blank<Error> SharedMemoryResource::CreateImpl(const std::si
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(file_descriptor_ >= 0, "No valid file descriptor");
 
-    const auto typed_memory_ptr = (is_shm_in_typed_memory_ ? typed_memory_ptr_.get() : nullptr);
+    auto* const typed_memory_ptr = (is_shm_in_typed_memory_ ? typed_memory_ptr_.get() : nullptr);
     const auto stat_values = GetShmObjectStatInfo(file_descriptor_, (path != nullptr), path, typed_memory_ptr);
     file_owner_uid_ = stat_values.owner_uid;
 
@@ -977,6 +978,7 @@ auto SharedMemoryResource::initializeControlBlock() noexcept -> void
     // base_address_ is the address we got back from mmap() call and it is therefore guaranteed to be page aligned!
     // Proper usage of the operator new according to Autosar rule A18-5-10.
     // NOLINTNEXTLINE(score-no-dynamic-raw-memory): Placement new is used.
+    // Deviation of MISRA RULE-21-6-3: codeql::misra_deviation_next_line(shared-memory-placement-new)
     this->control_block_ = new (this->base_address_) ControlBlock(memory_identifier_);
     // we want the memory region, where later further allocations start from, to be "worst case aligned".
     // The main reason: Reproducibility of memory needs for a deterministic set of allocations.

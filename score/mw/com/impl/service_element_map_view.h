@@ -44,6 +44,16 @@ class ServiceElementMapView
     using const_iterator = typename std::map<key, Value>::const_iterator;
     using size_type = typename std::map<key, Value>::size_type;
 
+    iterator begin() const noexcept
+    {
+        return elements_.get().begin();
+    }
+
+    iterator end() const noexcept
+    {
+        return elements_.get().end();
+    }
+
     const_iterator cbegin() const noexcept
     {
         return elements_.get().cbegin();

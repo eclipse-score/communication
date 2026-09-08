@@ -35,13 +35,16 @@ using HelloWorldProxy = score::mw::com::AsProxy<score::mw::com::tutorial::HelloW
 using MessageSampleType = decltype(HelloWorldProxy::message)::SampleType;
 using MessageSamplePtr = score::mw::com::SamplePtr<MessageSampleType>;
 
-static std::atomic<bool> g_running{true};
+namespace
+{
+std::atomic<bool> g_running{true};
 
-static void SignalHandler(int /*signum*/)
+void SignalHandler(int /*signum*/)
 {
     std::cout << "HelloWorld service consumer caught signal." << std::endl;
     g_running.store(false, std::memory_order_relaxed);
 }
+}  // namespace
 
 int main(int argc, const char** argv)
 {

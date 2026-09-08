@@ -13,9 +13,8 @@
 #ifndef SCORE_MW_COM_GATEWAY_TRANSPORT_LAYER_TRANSPORT_H
 #define SCORE_MW_COM_GATEWAY_TRANSPORT_LAYER_TRANSPORT_H
 
-#include "score/mw/com/impl/generic_skeleton.h"
-#include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/service_element_type.h"
+#include "score/mw/com/types.h"
 #include "score/result/result.h"
 
 #include <string>
@@ -53,8 +52,8 @@ class Transport
     /// \param service_elements configuration of the service elements (events, fields, methods) of the service to
     /// provide. This information is needed to create the (generic) skeleton on the destination gateway side.
     /// \return result indicating success or failure.
-    virtual score::Result<void> ProvideService(impl::InstanceSpecifier service_instance_specifier,
-                                               std::vector<impl::EventInfo> service_elements) = 0;
+    virtual score::Result<void> ProvideService(score::mw::com::InstanceSpecifier service_instance_specifier,
+                                               std::vector<score::mw::com::EventInfo> service_elements) = 0;
 
     /// \brief OfferService API to trigger service-instance offering at the destination gateway side.
     /// \details Transport layer implementation shall "forward" this call to the destination gateway and trigger the
@@ -62,7 +61,7 @@ class Transport
     /// already created at the destination gateway side, e.g. by a previous call to ProvideService().
     /// \param service_instance_specifier instance specifier of the service instance to offer.
     /// \return result indicating success or failure.
-    virtual score::Result<void> OfferService(impl::InstanceSpecifier service_instance_specifier) = 0;
+    virtual score::Result<void> OfferService(score::mw::com::InstanceSpecifier service_instance_specifier) = 0;
 
     /// \brief StopOfferService API to trigger service-instance stop-offer at the destination gateway side.
     /// \details Transport layer implementation shall "forward" this call to the destination gateway and trigger the
@@ -70,7 +69,7 @@ class Transport
     /// already created at the destination gateway side, e.g. by a previous call to ProvideService().
     /// \param service_instance_specifier instance specifier of the service instance to stop-offer.
     /// \return result indicating success or failure.
-    virtual score::Result<void> StopOfferService(impl::InstanceSpecifier service_instance_specifier) = 0;
+    virtual score::Result<void> StopOfferService(score::mw::com::InstanceSpecifier service_instance_specifier) = 0;
 
     /// \brief NotifyUpdate API to inform the destination gateway about updates of service elements of a service
     /// instance on the source gateway side.
@@ -85,7 +84,7 @@ class Transport
     /// is supported.
     /// \param updated_element_name name of the updated service element.
     /// \return result indicating success or failure.
-    virtual score::Result<void> NotifyUpdate(impl::InstanceSpecifier service_instance_specifier,
+    virtual score::Result<void> NotifyUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
                                              impl::ServiceElementType updated_element_type,
                                              std::string updated_element_name) = 0;
 
@@ -99,7 +98,7 @@ class Transport
     /// \param element_type type of the service element (event, field, method). Currently only EVENT is supported.
     /// \param element_name name of the service element.
     /// \return result indicating success or failure.
-    virtual score::Result<void> RegisterUpdateNotification(impl::InstanceSpecifier service_instance_specifier,
+    virtual score::Result<void> RegisterUpdateNotification(score::mw::com::InstanceSpecifier service_instance_specifier,
                                                            impl::ServiceElementType element_type,
                                                            std::string element_name) = 0;
 
@@ -111,9 +110,10 @@ class Transport
     /// \param element_type type of the service element (event, field, method). Currently only EVENT is supported.
     /// \param element_name name of the service element.
     /// \return result indicating success or failure.
-    virtual score::Result<void> UnregisterUpdateNotification(impl::InstanceSpecifier service_instance_specifier,
-                                                             impl::ServiceElementType element_type,
-                                                             std::string element_name) = 0;
+    virtual score::Result<void> UnregisterUpdateNotification(
+        score::mw::com::InstanceSpecifier service_instance_specifier,
+        impl::ServiceElementType element_type,
+        std::string element_name) = 0;
 };
 
 }  // namespace score::mw::com::gateway

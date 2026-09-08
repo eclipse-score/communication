@@ -50,6 +50,10 @@ class SkeletonEventBase : public EnableReferenceToMoveableFromThis<SkeletonEvent
 
     virtual ~SkeletonEventBase() = default;
 
+    /// \brief A SkeletonEventBase shall not be copyable
+    SkeletonEventBase(const SkeletonEventBase&) = delete;
+    SkeletonEventBase& operator=(const SkeletonEventBase&) & = delete;
+
     /// \brief Used to indicate that the event shall be available to consumer
     /// Performs binding independent functionality and then dispatches to the binding
     score::Result<void> PrepareOffer() noexcept
@@ -74,9 +78,6 @@ class SkeletonEventBase : public EnableReferenceToMoveableFromThis<SkeletonEvent
     }
 
   protected:
-    SkeletonEventBase(const SkeletonEventBase&) = delete;
-    SkeletonEventBase& operator=(const SkeletonEventBase&) & = delete;
-
     SkeletonEventBase(SkeletonEventBase&&) noexcept = default;
     SkeletonEventBase& operator=(SkeletonEventBase&&) & noexcept = default;
 

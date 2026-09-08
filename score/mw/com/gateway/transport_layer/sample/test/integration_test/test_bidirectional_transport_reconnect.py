@@ -18,4 +18,3 @@ def test_bidirectional_transport_reconnect(target):
     with target.wrap_exec("/app1", args=["reconnect"], wait_on_exit=True):
         with target.wrap_exec("/app2", args=["reconnect"], wait_on_exit=True):
             pass
-

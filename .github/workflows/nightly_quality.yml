@@ -37,6 +37,16 @@ on:
   schedule:
     - cron: "0 0 * * *" # every day at midnight UTC
   workflow_dispatch:
+  workflow_call:
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL:
+        required: false
+      SCORE_QNX_LICENSE:
+        required: false
+      SCORE_QNX_USER:
+        required: false
+      SCORE_QNX_PASSWORD:
+        required: false
 
 permissions:
   contents: write
@@ -90,7 +100,7 @@ jobs:
     needs: [run-coverage, run-linters, run-codeql]
     # Always run even if individual quality jobs fail, so the dashboard
     # still reflects which jobs passed and which failed.
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -134,7 +144,7 @@ jobs:
       # Download clang-tidy findings artifact
       # ------------------------------------------------------------------
       - name: Download clang-tidy findings
-        if: always()
+        if: ${{ !cancelled() }}
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
@@ -142,7 +152,7 @@ jobs:
           path: /tmp/clang_tidy
 
       - name: Copy clang-tidy SARIF into quality output
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/_quality"
           if [[ -f /tmp/clang_tidy/clang-tidy.sarif ]]; then
@@ -156,7 +166,7 @@ jobs:
       # Download clippy findings artifact
       # ------------------------------------------------------------------
       - name: Download clippy findings
-        if: always()
+        if: ${{ !cancelled() }}
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
@@ -164,7 +174,7 @@ jobs:
           path: /tmp/clippy
 
       - name: Copy clippy SARIF into quality output
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/_quality"
           if [[ -f /tmp/clippy/clippy.sarif ]]; then
@@ -178,7 +188,7 @@ jobs:
       # Download CodeQL SARIF artifact
       # ------------------------------------------------------------------
       - name: Download CodeQL SARIF artifact
-        if: always()
+        if: ${{ !cancelled() }}
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
@@ -186,7 +196,7 @@ jobs:
           path: /tmp/codeql
 
       - name: Copy CodeQL SARIF into quality output
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/_quality"
           if [[ -f /tmp/codeql/codeql-nightly.sarif ]]; then
@@ -198,7 +208,7 @@ jobs:
       # Download CodeQL MISRA compliance reports artifact
       # ------------------------------------------------------------------
       - name: Download CodeQL MISRA reports artifact
-        if: always()
+        if: ${{ !cancelled() }}
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
@@ -206,7 +216,7 @@ jobs:
           path: /tmp/codeql_reports
 
       - name: Copy CodeQL MISRA reports into quality output
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/_quality/codeql"
           find /tmp/codeql_reports -name '*.md' -type f -exec cp {} "${GITHUB_WORKSPACE}/_quality/codeql/" \;
@@ -215,7 +225,7 @@ jobs:
       # Generate coverage KPI dashboard via generate_dashboard py_binary
       # ------------------------------------------------------------------
       - name: Generate quality dashboard
-        if: always() && steps.setup.outcome == 'success'
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         run: |
           # Pass LCOV data and SARIF findings; generate_dashboard handles
           # absent files gracefully (shows N/A for that metric).
@@ -232,7 +242,7 @@ jobs:
       # pick up and deploy as part of the unified Sphinx site.
       # ------------------------------------------------------------------
       - name: Upload quality reports artifact
-        if: always() && steps.setup.outcome == 'success'
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: nightly-quality-reports
@@ -240,7 +250,7 @@ jobs:
           retention-days: 7
 
       - name: Print dashboard URL
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.event.repository.name }}"

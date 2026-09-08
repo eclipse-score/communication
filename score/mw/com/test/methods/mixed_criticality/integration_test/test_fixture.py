@@ -19,17 +19,23 @@ class Criticality(Enum):
     QM = "qm"
 
 
-def consumer(target, consumer_criticality: Criticality, consumer_expects_criticality: Criticality = None, **kwargs):
+def consumer(
+    target,
+    consumer_criticality: Criticality,
+    consumer_expects_criticality: Criticality = None,
+    **kwargs,
+):
     if consumer_expects_criticality is None:
         consumer_expects_criticality = consumer_criticality
 
     if consumer_criticality == consumer_expects_criticality:
-        consumer_config_name = (f"{consumer_criticality.value}_to_{consumer_criticality.value}_mw_com_config.json")
+        consumer_config_name = f"{consumer_criticality.value}_to_{consumer_criticality.value}_mw_com_config.json"
     else:
         # consumer app may be asil b but consume asil qm provider thus two separate
         # Criticality values need to be specified here
         consumer_config_name = (
-            f"consumer_{consumer_criticality.value}_to_{consumer_expects_criticality.value}_mw_com_config.json")
+            f"consumer_{consumer_criticality.value}_to_{consumer_expects_criticality.value}_mw_com_config.json"
+        )
 
     args = ["--service_instance_manifest", f"./etc/{consumer_config_name}"]
     return target.wrap_exec("bin/consumer_main", args, cwd="/opt/ConsumerApp", wait_on_exit=True, **kwargs)
@@ -38,9 +44,7 @@ def consumer(target, consumer_criticality: Criticality, consumer_expects_critica
 def provider(target, provider_criticality: Criticality, **kwargs):
     # For a provider the global app criticality and the
     # offered criticality is always the same
-    provider_config_name = (
-        f"{provider_criticality.value}_to_{provider_criticality.value}_mw_com_config.json")
+    provider_config_name = f"{provider_criticality.value}_to_{provider_criticality.value}_mw_com_config.json"
 
     args = ["--service_instance_manifest", f"./etc/{provider_config_name}"]
     return target.wrap_exec("bin/provider_main", args, cwd="/opt/ProviderApp", wait_on_exit=True, **kwargs)
-

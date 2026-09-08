@@ -15,14 +15,23 @@
 
 
 def data_slots_read_only(target, mode, should_modify_data_segment, cycle_time=None, num_cycles=None, **kwargs):
-    args = ["--mode", mode, "--should-modify-data-segment", "true" if should_modify_data_segment else "false"]
+    args = [
+        "--mode",
+        mode,
+        "--should-modify-data-segment",
+        "true" if should_modify_data_segment else "false",
+    ]
     if num_cycles is not None:
         args += ["--num-cycles", str(num_cycles)]
     if cycle_time is not None:
         args += ["--cycle-time", str(cycle_time)]
     wait_on_exit = num_cycles is not None
     return target.wrap_exec(
-        "bin/data_slots_read_only", args, cwd="/opt/data_slots_read_only", wait_on_exit=wait_on_exit, **kwargs
+        "bin/data_slots_read_only",
+        args,
+        cwd="/opt/data_slots_read_only",
+        wait_on_exit=wait_on_exit,
+        **kwargs,
     )
 
 
@@ -31,12 +40,27 @@ def test_data_slots_read_only(target):
     sigabort_return_code = 134
     sigsegv_return_code = 139
     sanitizer_error_code = 55
-    expected_return_codes = [sigabort_return_code, sigsegv_return_code, sanitizer_error_code]
+    expected_return_codes = [
+        sigabort_return_code,
+        sigsegv_return_code,
+        sanitizer_error_code,
+    ]
 
     # Running the test without modification of the data segment should pass
-    with data_slots_read_only(target, "send", should_modify_data_segment=False, cycle_time=10, num_cycles=100, wait_timeout=30):
+    with data_slots_read_only(
+        target,
+        "send",
+        should_modify_data_segment=False,
+        cycle_time=10,
+        num_cycles=100,
+        wait_timeout=30,
+    ):
         with data_slots_read_only(
-            target, "recv", should_modify_data_segment=False, num_cycles=25, wait_timeout=30
+            target,
+            "recv",
+            should_modify_data_segment=False,
+            num_cycles=25,
+            wait_timeout=30,
         ) as receiver:
             pass
 
@@ -45,10 +69,21 @@ def test_data_slots_read_only(target):
     # The sender may also fail (e.g. SIGPIPE) when the receiver's IPC endpoint dies.
     actual_return_code = None
     try:
-        with data_slots_read_only(target, "send", should_modify_data_segment=True, cycle_time=10, num_cycles=100, wait_timeout=60):
+        with data_slots_read_only(
+            target,
+            "send",
+            should_modify_data_segment=True,
+            cycle_time=10,
+            num_cycles=100,
+            wait_timeout=60,
+        ):
             try:
                 with data_slots_read_only(
-                    target, "recv", should_modify_data_segment=True, num_cycles=25, wait_timeout=60
+                    target,
+                    "recv",
+                    should_modify_data_segment=True,
+                    num_cycles=25,
+                    wait_timeout=60,
                 ) as receiver:
                     pass
             except RuntimeError:

@@ -245,7 +245,7 @@ auto MemoryRegionMapImpl<AtomicIndirectorType>::GetBoundsFromAddress(const std::
         std::terminate();
     }
 
-    auto& latest_known_regions =
+    const auto& latest_known_regions =
         known_regions_versions_.at(static_cast<std::size_t>(latest_regions_version_index.value().GetIndex()));
 
     if (latest_known_regions.empty())
@@ -289,7 +289,7 @@ size_t MemoryRegionMapImpl<AtomicIndirectorType>::GetSize() const noexcept
         std::terminate();
     }
 
-    auto& latest_known_regions =
+    const auto& latest_known_regions =
         known_regions_versions_.at(static_cast<std::size_t>(latest_regions_version_index.value().GetIndex()));
     return latest_known_regions.size();
 }

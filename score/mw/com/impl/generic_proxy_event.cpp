@@ -45,6 +45,14 @@ std::size_t GenericProxyEvent::GetSampleSize() const noexcept
     return proxy_event_binding->GetSampleSize();
 }
 
+memory::DataTypeSizeInfo GenericProxyEvent::GetDataTypeSizeInfo() const
+{
+    auto* const proxy_event_binding = dynamic_cast<GenericProxyEventBinding*>(binding_base_.get());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_event_binding != nullptr,
+                                                "Downcast to GenericProxyEventBinding failed!");
+    return proxy_event_binding->GetDataTypeSizeInfo();
+}
+
 bool GenericProxyEvent::HasSerializedFormat() const noexcept
 {
     auto* const proxy_event_binding = dynamic_cast<GenericProxyEventBinding*>(binding_base_.get());

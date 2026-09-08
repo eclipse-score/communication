@@ -55,7 +55,7 @@ auto MemoryResourceProxy::allocate(const std::size_t bytes, const std::size_t al
     {
         PerformBoundsCheck(memory_identifier_);
     }
-    auto memoryResource = MemoryResourceRegistry::getInstance().at(this->memory_identifier_);
+    auto* memoryResource = MemoryResourceRegistry::getInstance().at(this->memory_identifier_);
     // it is already ensured via bounds check, that the memory resource exists
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(memoryResource != nullptr);
     return memoryResource->allocate(bytes, alignment);
@@ -63,7 +63,7 @@ auto MemoryResourceProxy::allocate(const std::size_t bytes, const std::size_t al
 
 auto MemoryResourceProxy::deallocate(void* const memory, const std::size_t byte) const -> void
 {
-    auto memoryResource = MemoryResourceRegistry::getInstance().at(this->memory_identifier_);
+    auto* memoryResource = MemoryResourceRegistry::getInstance().at(this->memory_identifier_);
     if (memoryResource != nullptr)
     {
         return memoryResource->deallocate(memory, byte);

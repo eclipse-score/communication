@@ -25,7 +25,11 @@ def controller_process(target, number_restart_cycles, **kwargs):
         "etc/mw_com_config.json",
     ]
     return target.wrap_exec(
-        f"bin/{TEST_DIRECTORY_NAME}_application", args, cwd=f"/opt/{TEST_DIRECTORY_NAME}", wait_on_exit=True, **kwargs
+        f"bin/{TEST_DIRECTORY_NAME}_application",
+        args,
+        cwd=f"/opt/{TEST_DIRECTORY_NAME}",
+        wait_on_exit=True,
+        **kwargs,
     )
 
 

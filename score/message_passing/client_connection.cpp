@@ -351,7 +351,7 @@ void ClientConnection::TryConnect() noexcept
     SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(((stop_reason_ == StopReason::kNone) && (state_ == State::kStarting)) ||
                                         ((state_ == State::kStopping) && (stop_reason_ == StopReason::kUserRequested)));
 
-    auto& logger = engine_->GetLogger();
+    const auto& logger = engine_->GetLogger();
 
     LogInfo(logger, "TryOpenClientConnection ", identifier_);
     LogWarnOnTimeout delay_guard(

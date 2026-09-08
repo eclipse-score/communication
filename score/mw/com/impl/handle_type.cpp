@@ -50,7 +50,7 @@ ServiceInstanceId ExtractInstanceId(std::optional<ServiceInstanceId> instance_id
 }  // namespace
 
 HandleType::HandleType(InstanceIdentifier identifier, std::optional<ServiceInstanceId> instance_id)
-    : identifier_{std::move(identifier)}, instance_id_{ExtractInstanceId(instance_id, identifier_)}
+    : identifier_{std::move(identifier)}, instance_id_{ExtractInstanceId(std::move(instance_id), identifier_)}
 {
 }
 
@@ -83,7 +83,7 @@ auto operator<(const HandleType& lhs, const HandleType& rhs) -> bool
 
 auto make_HandleType(InstanceIdentifier identifier, std::optional<ServiceInstanceId> instance_id) -> HandleType
 {
-    return HandleType(std::move(identifier), instance_id);
+    return HandleType(std::move(identifier), std::move(instance_id));
 }
 
 }  // namespace score::mw::com::impl

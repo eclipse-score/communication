@@ -33,6 +33,12 @@ class IClientConnection
     ///          any of the connection's callbacks except for the StateCallback with the Stopped state as an argument.
     virtual ~IClientConnection() = default;
 
+    /// \brief An IClientConnection shall not be copyable or movable
+    IClientConnection(const IClientConnection&) = delete;
+    IClientConnection(IClientConnection&&) = delete;
+    IClientConnection& operator=(const IClientConnection&) = delete;
+    IClientConnection& operator=(IClientConnection&&) = delete;
+
     /// \brief Send a binary message to the respective server, don't expect a reply
     /// \details The call is non-blocking and will fail if it would otherwise block due to implementation details.
     ///          The call will likely fail with score::os::Error in State::Init and definitely fail in State::Stopped.
@@ -155,10 +161,6 @@ class IClientConnection
 
   protected:
     IClientConnection() noexcept = default;
-    IClientConnection(const IClientConnection&) = delete;
-    IClientConnection(IClientConnection&&) = delete;
-    IClientConnection& operator=(const IClientConnection&) = delete;
-    IClientConnection& operator=(IClientConnection&&) = delete;
 };
 
 }  // namespace score::message_passing

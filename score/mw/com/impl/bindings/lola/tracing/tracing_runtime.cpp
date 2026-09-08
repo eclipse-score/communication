@@ -268,7 +268,7 @@ analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServic
     // coverity[autosar_cpp14_a15_4_2_violation]
     const auto& service_instance_deployment =
         configuration_.GetServiceInstanceDeployment(instance_specifier).value().get();
-    auto* lola_service_instance_deployment =
+    const auto* lola_service_instance_deployment =
         std::get_if<LolaServiceInstanceDeployment>(&service_instance_deployment.bindingInfo_);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(lola_service_instance_deployment != nullptr);
 

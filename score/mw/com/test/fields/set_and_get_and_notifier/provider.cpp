@@ -386,8 +386,8 @@ void run_set_and_get_and_notifier_provider(const score::cpp::stop_token& stop_to
     // Step 7. Update field with updated values
     std::cout << "\nProvider: Step 7 - Update field with updated value" << std::endl;
     {
-        const std::vector<std::int32_t> values_to_send = {10, 100};
-        for (auto value_to_send : values_to_send)
+        const std::vector<std::int32_t> updated_values_to_send = {10, 100};
+        for (auto value_to_send : updated_values_to_send)
         {
             const auto update_result = service.set_and_get_and_notifier_enabled_field.Update(value_to_send);
             if (!update_result.has_value())

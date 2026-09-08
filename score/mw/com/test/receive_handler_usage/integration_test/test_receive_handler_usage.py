@@ -17,7 +17,11 @@
 def receive_handler_usage(target, **kwargs):
     args = []
     return target.wrap_exec(
-        "bin/receive_handler_usage", args, cwd="/opt/receive_handler_usage", wait_on_exit=True, **kwargs
+        "bin/receive_handler_usage",
+        args,
+        cwd="/opt/receive_handler_usage",
+        wait_on_exit=True,
+        **kwargs,
     )
 
 

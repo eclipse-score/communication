@@ -713,6 +713,18 @@ filegroup(
 )
 
 filegroup(
+    name = "mw_com_config_to_merge.json",
+    srcs = ["example/mw_com_config_to_merge.json"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+)
+
+filegroup(
+    name = "mw_com_config_to_merge_second.json",
+    srcs = ["example/mw_com_config_to_merge_second.json"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+)
+
+filegroup(
     name = "mw_com_config_invalid_trace_config_path.json",
     srcs = ["example/mw_com_config_invalid_trace_config_path.json"],
     visibility = ["//score/mw/com:__subpackages__"],

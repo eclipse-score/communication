@@ -60,21 +60,24 @@ def main() -> None:
     # Merge all per-test profdata files.
     merged_profdata = Path.cwd() / "merged_coverage.profdata"
     merge_inputs = sorted(set(valid_profdata_files))
-    run_command([
-        r.Rlocation("llvm_toolchain/llvm-profdata"), "merge",
-        "--output", str(merged_profdata),
-    ] + merge_inputs)
+    run_command(
+        [
+            r.Rlocation("llvm_toolchain/llvm-profdata"),
+            "merge",
+            "--output",
+            str(merged_profdata),
+        ]
+        + merge_inputs
+    )
 
     # Load baseline objects (production library archives) for zero-coverage baseline.
-    baseline_objects = load_baseline_objects(
-        r, args.baseline_objects, args.workspace_root)
+    baseline_objects = load_baseline_objects(r, args.baseline_objects, args.workspace_root)
 
     # Rust rlib archives (exposed as .a symlinks by rules_rust) start with a
     # lib.rmeta member, which makes llvm-cov reject the whole archive with
     # "no coverage data found" even though the .o members carry the covmap.
     # Expand such archives into their object members.
-    baseline_objects = expand_rlib_archives(
-        baseline_objects, Path.cwd() / "rlib_baseline_objects")
+    baseline_objects = expand_rlib_archives(baseline_objects, Path.cwd() / "rlib_baseline_objects")
 
     # Determine filter regexes: prefer allowlist-based filtering, fall back to manual regexes.
     workspace_root = args.workspace_root
@@ -86,15 +89,18 @@ def main() -> None:
     if args.coverage_allowlist:
         allowlist_files = load_coverage_allowlist(r, args.coverage_allowlist)
         if allowlist_files:
-            print(f"INFO: Using coverage allowlist with {len(allowlist_files)} source files.",
-                  file=sys.stderr)
+            print(
+                f"INFO: Using coverage allowlist with {len(allowlist_files)} source files.",
+                file=sys.stderr,
+            )
             allowlist_set = set(allowlist_files)
 
             # Get files covered by test binaries.
-            test_covered_files = get_covered_files(
-                llvm_bin_path, sorted_objects, str(merged_profdata), workspace_root)
-            print(f"INFO: Test binaries cover {len(test_covered_files)} files.",
-                  file=sys.stderr)
+            test_covered_files = get_covered_files(llvm_bin_path, sorted_objects, str(merged_profdata), workspace_root)
+            print(
+                f"INFO: Test binaries cover {len(test_covered_files)} files.",
+                file=sys.stderr,
+            )
 
             # Get files from baseline archives via a SEPARATE llvm-cov run.
             # Combining archives with test binaries in a single llvm-cov invocation
@@ -103,17 +109,21 @@ def main() -> None:
             # data"), so we iteratively remove bad ones.
             baseline_files = set()
             if baseline_objects:
-                baseline_files = get_covered_files(
-                    llvm_bin_path, baseline_objects, None, workspace_root)
-                print(f"INFO: Baseline archives contain {len(baseline_files)} files.",
-                      file=sys.stderr)
+                baseline_files = get_covered_files(llvm_bin_path, baseline_objects, None, workspace_root)
+                print(
+                    f"INFO: Baseline archives contain {len(baseline_files)} files.",
+                    file=sys.stderr,
+                )
 
             # Files only in baseline archives (not in any test binary).
             baseline_only_files = (baseline_files & allowlist_set) - test_covered_files
             baseline_only_archives = []
             if baseline_only_files:
-                print(f"INFO: {len(baseline_only_files)} allowlisted files only in baseline "
-                      f"(e.g., {sorted(baseline_only_files)[:5]})", file=sys.stderr)
+                print(
+                    f"INFO: {len(baseline_only_files)} allowlisted files only in baseline "
+                    f"(e.g., {sorted(baseline_only_files)[:5]})",
+                    file=sys.stderr,
+                )
                 # Use all valid baseline archives for LCOV generation.
                 # The _filter_lcov function will filter to only baseline-only files.
                 baseline_only_archives = list(baseline_objects)
@@ -122,11 +132,15 @@ def main() -> None:
             all_covered_files = test_covered_files | baseline_files
             files_to_exclude = all_covered_files - allowlist_set
             filter_regexes = [re.escape(f) + "$" for f in sorted(files_to_exclude)]
-            print(f"INFO: Excluding {len(filter_regexes)} files not in allowlist.",
-                  file=sys.stderr)
+            print(
+                f"INFO: Excluding {len(filter_regexes)} files not in allowlist.",
+                file=sys.stderr,
+            )
         else:
-            print("ERROR: Coverage allowlist is empty, falling back to filter_regexes.txt.",
-                  file=sys.stderr)
+            print(
+                "ERROR: Coverage allowlist is empty, falling back to filter_regexes.txt.",
+                file=sys.stderr,
+            )
             sys.exit(-1)
     common_args = {
         "llvm_bin_path": llvm_bin_path,
@@ -152,8 +166,10 @@ def main() -> None:
             )
         except SystemExit:
             # Some baseline archives caused llvm-cov show to fail; retry with test binaries only.
-            print("WARNING: HTML generation with baseline archives failed; "
-                  "falling back to test-only HTML.", file=sys.stderr)
+            print(
+                "WARNING: HTML generation with baseline archives failed; falling back to test-only HTML.",
+                file=sys.stderr,
+            )
             run_llvm_cov_show(
                 **common_args,
                 output_format="html",
@@ -187,8 +203,10 @@ def main() -> None:
             filtered_baseline = _filter_lcov(baseline_lcov.stdout, baseline_only_files)
             if filtered_baseline:
                 lcov_content += filtered_baseline
-                print(f"INFO: Merged baseline LCOV for {len(baseline_only_files)} files.",
-                      file=sys.stderr)
+                print(
+                    f"INFO: Merged baseline LCOV for {len(baseline_only_files)} files.",
+                    file=sys.stderr,
+                )
 
     with open(lcov_report_dir / "lcov.dat", "w", encoding="utf-8") as f:
         f.write(lcov_content)
@@ -209,7 +227,10 @@ def main() -> None:
         output_file=args.output_file,
     )
 
-    print(f"INFO: Coverage reporter completed. Output: {args.output_file}", file=sys.stderr)
+    print(
+        f"INFO: Coverage reporter completed. Output: {args.output_file}",
+        file=sys.stderr,
+    )
 
 
 def _filter_lcov(lcov_content: str, target_files: set) -> str:
@@ -286,14 +307,11 @@ def get_covered_files(
             # DISPLAYED path. Rust covmap paths are already exec-root relative.
             for prefix in (workspace_root, "/proc/self/cwd/"):
                 if filename.startswith(prefix):
-                    filename = filename[len(prefix):]
+                    filename = filename[len(prefix) :]
                     break
             files.add(filename)
 
     return files
-
-
-
 
 
 def run_llvm_cov_show(
@@ -444,6 +462,7 @@ def extract_reports(reports: List[str]) -> Tuple[Set[str], Set[str]]:
 
     return valid_profdata_files, valid_object_files
 
+
 def read_reports_file(reports_file: Path) -> List[str]:
     """Read the reports file listing all per-test coverage outputs."""
     with open(reports_file, encoding="utf-8") as f:
@@ -513,8 +532,10 @@ def expand_rlib_archives(objects: List[str], workdir: Path) -> List[str]:
                 result.append(str(out_path))
                 extracted += 1
     if extracted:
-        print(f"INFO: Expanded {extracted} object(s) from Rust rlib baseline archives.",
-              file=sys.stderr)
+        print(
+            f"INFO: Expanded {extracted} object(s) from Rust rlib baseline archives.",
+            file=sys.stderr,
+        )
     return result
 
 
@@ -555,7 +576,9 @@ def load_coverage_allowlist(runfiles: Runfiles, rlocation_path: str) -> List[str
 
 
 def load_baseline_objects(
-    runfiles: Runfiles, rlocation_path: str, workspace_root: str,
+    runfiles: Runfiles,
+    rlocation_path: str,
+    workspace_root: str,
 ) -> List[str]:
     """Load baseline object archive paths and resolve them to absolute paths.
 
@@ -568,7 +591,10 @@ def load_baseline_objects(
 
     path = runfiles.Rlocation(rlocation_path)
     if not path or not Path(path).exists():
-        print(f"WARNING: Baseline objects manifest not found: {rlocation_path}", file=sys.stderr)
+        print(
+            f"WARNING: Baseline objects manifest not found: {rlocation_path}",
+            file=sys.stderr,
+        )
         return []
 
     lines = Path(path).read_text(encoding="utf-8").splitlines()
@@ -628,14 +654,25 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="LLVM coverage reporter for Bazel")
     parser.add_argument("--output_file", type=Path, required=True)
     parser.add_argument("--reports_file", type=Path, required=True)
-    parser.add_argument("--coverage_allowlist", type=str, default=None,
-                        help="Rlocation path to the coverage allowlist file (preferred over filter_regexes)")
-    parser.add_argument("--baseline_objects", type=str, default=None,
-                        help="Rlocation path to the baseline objects manifest (archive .a files)")
-    parser.add_argument("--workspace_root", type=str, required=True,
-                        help="Real workspace root path for source path mapping")
+    parser.add_argument(
+        "--coverage_allowlist",
+        type=str,
+        default=None,
+        help="Rlocation path to the coverage allowlist file (preferred over filter_regexes)",
+    )
+    parser.add_argument(
+        "--baseline_objects",
+        type=str,
+        default=None,
+        help="Rlocation path to the baseline objects manifest (archive .a files)",
+    )
+    parser.add_argument(
+        "--workspace_root",
+        type=str,
+        required=True,
+        help="Real workspace root path for source path mapping",
+    )
     return parser.parse_args()
-
 
 
 if __name__ == "__main__":

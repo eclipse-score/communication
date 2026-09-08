@@ -83,17 +83,12 @@ def _build_markdown(
         lines.extend(["## Flaky targets", ""])
         for item in flaky_targets:
             configs = ", ".join(sorted(item["configs"]))
-            lines.append(
-                f"- `{item['target']}` — {item['failed_runs']}/{item['total_runs']} failed "
-                f"across [{configs}]"
-            )
+            lines.append(f"- `{item['target']}` — {item['failed_runs']}/{item['total_runs']} failed across [{configs}]")
         lines.append("")
     if not flaky_targets:
         lines.append(":white_check_mark: No flaky targets detected.")
     else:
-        lines.append(
-            ":warning: Flaky targets detected. GitHub issues have been created/updated for each."
-        )
+        lines.append(":warning: Flaky targets detected. GitHub issues have been created/updated for each.")
     lines.append("")
     return "\n".join(lines)
 

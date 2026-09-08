@@ -87,8 +87,7 @@ def _parse_dependency(key: str, raw: dict) -> Dependency:
         raise ConfigError(f"{key}: dependency must be a mapping")
     if key in _RESERVED_DEP_KEYS:
         raise ConfigError(
-            f"{key}: dependency name is reserved and collides with matrix "
-            f"metadata keys {sorted(_RESERVED_DEP_KEYS)}"
+            f"{key}: dependency name is reserved and collides with matrix metadata keys {sorted(_RESERVED_DEP_KEYS)}"
         )
     unknown = set(raw) - _ALLOWED_DEP_KEYS
     if unknown:

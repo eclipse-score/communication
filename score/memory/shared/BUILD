@@ -43,6 +43,7 @@ cc_library(
         "//visibility:public",  # platform_only
     ],
     deps = [
+        ":memory_resource_registry",
         ":types",
         ":user_permission",
         "@score_baselibs//score/language/futurecpp",
@@ -165,6 +166,7 @@ cc_library(
         "@score_baselibs//score/os:mman",
         "@score_baselibs//score/os:unistd",
         "@score_baselibs//score/os/utils/acl",
+        "@score_baselibs//score/utils:static_destruction_guard",
     ],
 )
 
@@ -178,7 +180,7 @@ cc_library(
         "@score_baselibs//score/mw/log:frontend",
         "@score_baselibs//score/os:errno_logging",
         "@score_baselibs//score/os:unistd",
-        "@score_baselibs//score/utils/meyer_singleton",
+        "@score_baselibs//score/utils:static_destruction_guard",
     ],
     tags = ["FFI"],
     deps = [
@@ -284,7 +286,7 @@ cc_library(
         ":memory_region_map",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
-        "@score_baselibs//score/utils/meyer_singleton",
+        "@score_baselibs//score/utils:static_destruction_guard",
     ],
 )
 

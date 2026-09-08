@@ -20,6 +20,8 @@
 
 #include <score/assert.hpp>
 
+#include <algorithm>
+#include <chrono>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -41,6 +43,11 @@ constexpr std::uint32_t kMaxReplySize{32U};
 
 constexpr std::uint32_t kStateTryAttempts{10U};
 constexpr std::chrono::milliseconds kStateRetryDelay{50};
+
+constexpr std::chrono::microseconds kConnectRetryDelayMin{50};
+constexpr std::chrono::microseconds kConnectRetryDelayMax{
+    std::chrono::duration_cast<std::chrono::microseconds>(kStateRetryDelay)};
+constexpr std::chrono::milliseconds kConnectTimeout{kStateTryAttempts * kStateRetryDelay};
 
 }  // namespace
 
@@ -129,7 +136,9 @@ std::shared_ptr<score::message_passing::IClientConnection> MessagePassingClientC
 
     new_sender->Start(score::message_passing::IClientConnection::StateCallback{},
                       score::message_passing::IClientConnection::NotifyCallback{});
-    for (std::uint32_t try_attempt{0U}; try_attempt < kStateTryAttempts; ++try_attempt)
+    auto retry_delay = kConnectRetryDelayMin;
+    const auto deadline = std::chrono::steady_clock::now() + kConnectTimeout;
+    for (;;)
     {
         const auto state = new_sender->GetState();
         if (state == score::message_passing::IClientConnection::State::kReady)
@@ -144,7 +153,12 @@ std::shared_ptr<score::message_passing::IClientConnection> MessagePassingClientC
                 << static_cast<std::uint32_t>(score::cpp::to_underlying(new_sender->GetStopReason()));
             return new_sender;
         }
-        std::this_thread::sleep_for(kStateRetryDelay);
+        if (std::chrono::steady_clock::now() >= deadline)
+        {
+            break;
+        }
+        std::this_thread::sleep_for(retry_delay);
+        retry_delay = std::min(retry_delay * 2, kConnectRetryDelayMax);
     }
 
     score::mw::log::LogError("lola") << "MessagePassingClientCache: Connection for " << service_identifier

@@ -13,7 +13,7 @@
 
 #include "score/mw/com/test/common_test_resources/child_process_guard.h"
 #include <sys/wait.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 #include <cerrno>
 #include <csignal>

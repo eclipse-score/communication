@@ -64,6 +64,7 @@ class GenericProxyEvent final : public GenericProxyEventBinding
     Result<std::size_t> GetNumNewSamplesAvailable() const override;
     Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) override;
     std::size_t GetSampleSize() const noexcept override;
+    memory::DataTypeSizeInfo GetDataTypeSizeInfo() const override;
     bool HasSerializedFormat() const noexcept override;
 
     Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override;

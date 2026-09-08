@@ -13,8 +13,6 @@
 #include "score/mw/com/gateway/transport_layer/sample/messages/gateway_messages.h"
 #include "score/mw/com/gateway/transport_layer/sample/messages/message_error.h"
 
-#include "score/mw/com/impl/instance_specifier.h"
-
 #include <gtest/gtest.h>
 
 #include <array>
@@ -32,12 +30,12 @@ constexpr std::size_t kTestBufferSize = 1024U;
 
 TEST(GatewayMessagesTest, ProvideServiceRequestRoundTrip)
 {
-    auto specifier = impl::InstanceSpecifier::Create(std::string{"SpeedService/Instance42"});
+    auto specifier = score::mw::com::InstanceSpecifier::Create(std::string{"SpeedService/Instance42"});
     ASSERT_TRUE(specifier.has_value());
 
-    std::vector<impl::EventInfo> elements{
-        {"SpeedEvent", impl::DataTypeMetaInfo{64U, 8U}},
-        {"SpeedField", impl::DataTypeMetaInfo{32U, 4U}},
+    std::vector<score::mw::com::EventInfo> elements{
+        {"SpeedEvent", score::mw::com::DataTypeMetaInfo{64U, 8U}},
+        {"SpeedField", score::mw::com::DataTypeMetaInfo{32U, 4U}},
     };
 
     ProvideServiceRequest original{std::move(specifier).value(), elements, 4U, 8U};
@@ -63,7 +61,7 @@ TEST(GatewayMessagesTest, ProvideServiceRequestRoundTrip)
 
 TEST(GatewayMessagesTest, ProvideServiceRequestEmptyElements)
 {
-    auto specifier = impl::InstanceSpecifier::Create(std::string{"EmptyService/Inst1"});
+    auto specifier = score::mw::com::InstanceSpecifier::Create(std::string{"EmptyService/Inst1"});
     ASSERT_TRUE(specifier.has_value());
 
     ProvideServiceRequest original{std::move(specifier).value(), {}};
@@ -81,7 +79,7 @@ TEST(GatewayMessagesTest, ProvideServiceRequestEmptyElements)
 
 TEST(GatewayMessagesTest, OfferServiceRequestRoundTrip)
 {
-    auto specifier = impl::InstanceSpecifier::Create(std::string{"SpeedService/Instance42"});
+    auto specifier = score::mw::com::InstanceSpecifier::Create(std::string{"SpeedService/Instance42"});
     ASSERT_TRUE(specifier.has_value());
 
     OfferServiceRequest original{std::move(specifier).value()};
@@ -98,7 +96,7 @@ TEST(GatewayMessagesTest, OfferServiceRequestRoundTrip)
 
 TEST(GatewayMessagesTest, StopOfferServiceRequestRoundTrip)
 {
-    auto specifier = impl::InstanceSpecifier::Create(std::string{"SpeedService/Instance42"});
+    auto specifier = score::mw::com::InstanceSpecifier::Create(std::string{"SpeedService/Instance42"});
     ASSERT_TRUE(specifier.has_value());
 
     StopOfferServiceRequest original{std::move(specifier).value()};
@@ -115,7 +113,7 @@ TEST(GatewayMessagesTest, StopOfferServiceRequestRoundTrip)
 
 TEST(GatewayMessagesTest, UpdateNotificationRoundTrip)
 {
-    auto specifier = impl::InstanceSpecifier::Create(std::string{"SpeedService/Instance1"});
+    auto specifier = score::mw::com::InstanceSpecifier::Create(std::string{"SpeedService/Instance1"});
     ASSERT_TRUE(specifier.has_value());
 
     UpdateNotification original{std::move(specifier).value(), impl::ServiceElementType::EVENT, "SpeedEvent"};
@@ -134,7 +132,7 @@ TEST(GatewayMessagesTest, UpdateNotificationRoundTrip)
 
 TEST(GatewayMessagesTest, RegisterNotificationRequestRoundTrip)
 {
-    auto specifier = impl::InstanceSpecifier::Create(std::string{"SpeedService/Instance1"});
+    auto specifier = score::mw::com::InstanceSpecifier::Create(std::string{"SpeedService/Instance1"});
     ASSERT_TRUE(specifier.has_value());
 
     RegisterNotificationRequest original{std::move(specifier).value(), impl::ServiceElementType::EVENT, "SpeedEvent"};
@@ -186,7 +184,7 @@ TEST(GatewayMessagesTest, SequenceNumberIsSetAndRetrievedCorrectly)
 {
     const auto sequence_number = 123U;
     // Given a ProvideServiceRequest with a specific instance specifier and empty service elements
-    ProvideServiceRequest request{impl::InstanceSpecifier::Create("TestService/Instance1").value(), {}};
+    ProvideServiceRequest request{score::mw::com::InstanceSpecifier::Create("TestService/Instance1").value(), {}};
     EXPECT_EQ(request.GetSequenceNumber(), 0U);
     // when setting the sequence number
     request.SetSequenceNumber(sequence_number);
@@ -197,7 +195,7 @@ TEST(GatewayMessagesTest, SequenceNumberIsSetAndRetrievedCorrectly)
 TEST(GatewayMessagesTest, MessageTypeCanBeRetrievedCorrectly)
 {
     // Given a ProvideServiceRequest
-    ProvideServiceRequest request{impl::InstanceSpecifier::Create("TestService/Instance1").value(), {}};
+    ProvideServiceRequest request{score::mw::com::InstanceSpecifier::Create("TestService/Instance1").value(), {}};
     // when retrieving the message type
     auto type = request.GetType();
     // then the message type is correct
@@ -207,7 +205,7 @@ TEST(GatewayMessagesTest, MessageTypeCanBeRetrievedCorrectly)
 TEST(GatewayMessagesTest, MessageHeaderCanBeRetrievedCorrectly)
 {
     // Given a ProvideServiceRequest with a specific instance specifier and empty service elements
-    ProvideServiceRequest request{impl::InstanceSpecifier::Create("TestService/Instance1").value(), {}};
+    ProvideServiceRequest request{score::mw::com::InstanceSpecifier::Create("TestService/Instance1").value(), {}};
     // when retrieving the message header
     const auto& header = request.GetHeader();
     // then the message header contains the correct type and default sequence and payload size
@@ -219,7 +217,7 @@ TEST(GatewayMessagesTest, MessageHeaderCanBeRetrievedCorrectly)
 TEST(GatewayMessagesTest, SerializeWithTooSmallBufferReturnsSizeZero)
 {
     // Given a ProvideServiceRequest with a specific instance specifier and empty service elements
-    auto specifier = impl::InstanceSpecifier::Create(std::string{"SpeedService/Instance42"});
+    auto specifier = score::mw::com::InstanceSpecifier::Create(std::string{"SpeedService/Instance42"});
     ASSERT_TRUE(specifier.has_value());
 
     ProvideServiceRequest service_request{std::move(specifier).value(), {}};
@@ -233,11 +231,12 @@ TEST(GatewayMessagesTest, SerializeWithTooSmallBufferReturnsSizeZero)
 TEST(GatewayMessagesTest, SerializeWithVectorExceedingUint16MaxReturnsZero)
 {
     // Given a ProvideServiceRequest with more than 65535 impl::EventInfo elements
-    auto specifier = impl::InstanceSpecifier::Create(std::string{"SpeedService/Instance42"});
+    auto specifier = score::mw::com::InstanceSpecifier::Create(std::string{"SpeedService/Instance42"});
     ASSERT_TRUE(specifier.has_value());
 
     constexpr std::size_t kTooManyElements = static_cast<std::size_t>(std::numeric_limits<std::uint16_t>::max()) + 1U;
-    std::vector<impl::EventInfo> elements(kTooManyElements, impl::EventInfo{"A", impl::DataTypeMetaInfo{8U, 8U}});
+    std::vector<score::mw::com::EventInfo> elements(
+        kTooManyElements, score::mw::com::EventInfo{"A", score::mw::com::DataTypeMetaInfo{8U, 8U}});
 
     ProvideServiceRequest request{std::move(specifier).value(), std::move(elements)};
 

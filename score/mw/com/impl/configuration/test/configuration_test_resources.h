@@ -62,7 +62,7 @@ LolaMethodInstanceDeployment MakeLolaMethodInstanceDeployment(
     const std::optional<LolaMethodInstanceDeployment::QueueSize> queue_size = 10U) noexcept;
 
 LolaServiceInstanceDeployment MakeLolaServiceInstanceDeployment(
-    const std::optional<LolaServiceInstanceId> instance_id = LolaServiceInstanceId{21U},
+    const std::optional<LolaServiceInstanceId>& instance_id = LolaServiceInstanceId{21U},
     const std::optional<std::size_t> shared_memory_size = 2000U,
     const std::optional<std::size_t> control_asil_b_memory_size = 3000U,
     const std::optional<std::size_t> control_qm_memory_size = 4000U) noexcept;

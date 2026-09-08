@@ -19,13 +19,16 @@
 #include <cstring>
 
 constexpr std::string_view kHelloWorld{"Hello World"};
-static std::atomic<bool> g_running{true};
+namespace
+{
+std::atomic<bool> g_running{true};
 
-static void SignalHandler(int /*signum*/)
+void SignalHandler(int /*signum*/)
 {
     std::cout << "HelloWorld service provider caught signal." << std::endl;
     g_running.store(false, std::memory_order_relaxed);
 }
+}  // namespace
 
 using HelloWorldSkeleton = score::mw::com::AsSkeleton<score::mw::com::tutorial::HelloWorldInterface>;
 

@@ -26,21 +26,21 @@ class GatewayCoreMock : public GatewayCore
   public:
     MOCK_METHOD((score::Result<void>),
                 ProvideService,
-                (impl::InstanceSpecifier, std::vector<impl::EventInfo>),
+                (score::mw::com::InstanceSpecifier, std::vector<score::mw::com::EventInfo>),
                 (override));
-    MOCK_METHOD((score::Result<void>), OfferService, (impl::InstanceSpecifier), (override));
-    MOCK_METHOD(void, StopOfferService, (impl::InstanceSpecifier), (override));
+    MOCK_METHOD((score::Result<void>), OfferService, (score::mw::com::InstanceSpecifier), (override));
+    MOCK_METHOD(void, StopOfferService, (score::mw::com::InstanceSpecifier), (override));
     MOCK_METHOD((score::Result<void>),
                 NotifyUpdate,
-                (impl::InstanceSpecifier, impl::ServiceElementType, std::string),
+                (score::mw::com::InstanceSpecifier, impl::ServiceElementType, std::string),
                 (override));
     MOCK_METHOD((score::Result<void>),
                 RegisterUpdateNotification,
-                (impl::InstanceSpecifier, impl::ServiceElementType, std::string),
+                (score::mw::com::InstanceSpecifier, impl::ServiceElementType, std::string),
                 (override));
     MOCK_METHOD((score::Result<void>),
                 UnregisterUpdateNotification,
-                (impl::InstanceSpecifier, impl::ServiceElementType, std::string),
+                (score::mw::com::InstanceSpecifier, impl::ServiceElementType, std::string),
                 (override));
 };
 

@@ -16,4 +16,3 @@ from test_fixture import consumer_and_provider, SkeletonMoveScenario
 def test_move_construct_offered_same_process(target):
     with consumer_and_provider(target, SkeletonMoveScenario.MOVE_CONSTRUCT_OFFERED):
         pass
-

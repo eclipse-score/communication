@@ -734,7 +734,7 @@ auto Skeleton::SubscribeMethods(const MethodData& method_data,
     const auto& method_call_queues = method_data.method_call_queues_;
     for (std::size_t method_idx = 0U; method_idx != method_call_queues.size(); method_idx++)
     {
-        auto& [unique_method_identifier, type_erased_call_queue] = method_call_queues[method_idx];
+        const auto& [unique_method_identifier, type_erased_call_queue] = method_call_queues[method_idx];
 
         // Defensive check for skeleton method population.
         // The skeleton_methods_ map is populated at skeleton construction time

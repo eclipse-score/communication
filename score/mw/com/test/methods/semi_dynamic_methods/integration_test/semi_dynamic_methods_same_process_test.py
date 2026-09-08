@@ -15,7 +15,11 @@
 def consumer_and_provider(target, **kwargs):
     args = []
     return target.wrap_exec(
-        "bin/main_consumer_and_provider", args, cwd="/opt/MainConsumerAndProviderApp", wait_on_exit=True, **kwargs
+        "bin/main_consumer_and_provider",
+        args,
+        cwd="/opt/MainConsumerAndProviderApp",
+        wait_on_exit=True,
+        **kwargs,
     )
 
 

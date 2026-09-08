@@ -50,7 +50,7 @@ std::string ToString(QualityType quality_type) noexcept
     }
 }
 
-QualityType FromString(std::string quality_type) noexcept
+QualityType FromString(const std::string& quality_type) noexcept
 {
     if (quality_type == kInvalidString)
     {

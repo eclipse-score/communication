@@ -16,7 +16,8 @@
 #include "score/memory/shared/shared_memory_error.h"
 
 #include "score/mw/log/logging.h"
-#include "score/utils/meyer_singleton/meyer_singleton.h"
+
+#include "score/utils/static_destruction_guard.h"
 
 #include <score/utility.hpp>
 
@@ -25,15 +26,12 @@
 
 auto score::memory::shared::MemoryResourceRegistry::getInstance() -> MemoryResourceRegistry&
 {
-    // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-    // constant-initialized.".
-    // Documentation and example for Rule A3-3-2 in
-    // https://www.autosar.org/fileadmin/standards/R20-11/AP/AUTOSAR_RS_CPP14Guidelines.pdf show that
-    // MemoryResourceRegistry would need a constexpr constructor to be compliant. This is not possible here
-    // because MemoryResourceRegistry contains a std::shared_time_mutex and std::unordered_map which don't have
-    // constexpr constructors.
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    return score::singleton::MeyerSingleton<MemoryResourceRegistry>::GetInstance();
+    // MemoryResourceRegistry is kept alive via the nifty-counter idiom (see
+    // detail::nifty_counter_memory_resource_registry) rather than a plain
+    // function-local static (Meyer's singleton), to avoid the static destruction order fiasco: a
+    // std::shared_ptr<ISharedMemoryResource> stored in some other static/long-lived
+    // context could otherwise be destroyed after this registry, and ~SharedMemoryResource() accesses this registry.
+    return ::score::utils::StaticDestructionGuard<MemoryResourceRegistry>::GetStorage();
 }
 
 auto score::memory::shared::MemoryResourceRegistry::at(const MemoryResourceIdentifier identifier) const noexcept
@@ -93,7 +91,7 @@ void score::memory::shared::MemoryResourceRegistry::remove_resource(const Memory
     {
         if (!resource_it->second->IsOffsetPtrBoundsCheckBypassingEnabled())
         {
-            const auto start_address = resource_it->second->getBaseAddress();
+            auto* const start_address = resource_it->second->getBaseAddress();
             const auto start_address_as_integer = CastPointerToInteger(start_address);
             region_map_.RemoveKnownRegion(start_address_as_integer);
         }

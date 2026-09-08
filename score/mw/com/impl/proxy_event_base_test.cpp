@@ -137,7 +137,7 @@ TYPED_TEST_SUITE(ProxyEventBaseGetNumNewSamplesAvailableFixture, MyTypes, );
 
 TEST(ProxyEventBaseTest, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-14137269");
+    RecordProperty("lobster-tracing", "Communication.ProxyEventCopySemantics");
     RecordProperty("Description", "Checks copy semantics for ProxyEventBases");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -155,7 +155,8 @@ TEST(ProxyEventBaseTest, IsMoveable)
 
 TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileSubscribedCallsUnsubscribeOnBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14033377, SCR-17292399, SCR-14137271, SCR-21286218");
+    this->RecordProperty("Verifies", "SCR-14033377, SCR-21286218");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldUnsubscribe, Communication.ProxyEventUnsubscribe");
     this->RecordProperty("Description", "Checks that unsubscribe will dispatch to binding if currently subscribed");
     this->RecordProperty("TestType", "Requirements-based test");
     this->RecordProperty("Priority", "1");
@@ -182,7 +183,8 @@ TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileSubscribedCa
 
 TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileSubscriptionIsPendingCallsUnsubscribeOnBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14033377, SCR-17292399, SCR-14137271, SCR-21286218");
+    this->RecordProperty("Verifies", "SCR-14033377, SCR-21286218");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldUnsubscribe, Communication.ProxyEventUnsubscribe");
     this->RecordProperty("Description",
                          "Checks that unsubscribe will dispatch to binding if subscription is currently pending");
     this->RecordProperty("TestType", "Requirements-based test");
@@ -210,7 +212,8 @@ TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileSubscription
 
 TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileNotSubscribedDoesNothing)
 {
-    this->RecordProperty("Verifies", "SCR-14033377, SCR-17292399, SCR-14137271, SCR-21286218");
+    this->RecordProperty("Verifies", "SCR-14033377, SCR-21286218");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldUnsubscribe, Communication.ProxyEventUnsubscribe");
     this->RecordProperty("Description", "Checks that unsubscribe will do nothing if not already subscribed");
     this->RecordProperty("TestType", "Requirements-based test");
     this->RecordProperty("Priority", "1");
@@ -358,7 +361,9 @@ TYPED_TEST(AServiceElement, CanBeConstructedWithAReceiveHandler)
 
 TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerThenItWillDispatchToTheBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14034916, SCR-17292404, SCR-14137274");
+    this->RecordProperty("Verifies", "SCR-14034916");
+    this->RecordProperty("lobster-tracing",
+                         "Communication.ProxyFieldSetReceiveHandler, Communication.ProxyEventSetReceiveHandler");
     this->RecordProperty("Description", "Checks whether a set receive handler is correctly forwarded to the binding.");
     this->RecordProperty("TestType", "Requirements-based test");
     this->RecordProperty("Priority", "1");
@@ -375,7 +380,9 @@ TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerThenItWillDispatchToTheBin
 
 TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerThenAValidResultWillBeReturned)
 {
-    this->RecordProperty("Verifies", "SCR-14034916, SCR-17292404, SCR-14137274");
+    this->RecordProperty("Verifies", "SCR-14034916");
+    this->RecordProperty("lobster-tracing",
+                         "Communication.ProxyFieldSetReceiveHandler, Communication.ProxyEventSetReceiveHandler");
     this->RecordProperty("Description", "Checks whether a set receive handler will return a valid result.");
     this->RecordProperty("TestType", "Requirements-based test");
     this->RecordProperty("Priority", "1");
@@ -392,7 +399,9 @@ TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerThenAValidResultWillBeRetu
 
 TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerTwiceThenItWillDispatchToTheBindingTwice)
 {
-    this->RecordProperty("Verifies", "SCR-14034916, SCR-17292404, SCR-14137274");
+    this->RecordProperty("Verifies", "SCR-14034916");
+    this->RecordProperty("lobster-tracing",
+                         "Communication.ProxyFieldSetReceiveHandler, Communication.ProxyEventSetReceiveHandler");
     this->RecordProperty("Description", "Checks whether a set receive handler is correctly forwarded");
     this->RecordProperty("TestType", "Requirements-based test");
     this->RecordProperty("Priority", "1");
@@ -412,7 +421,9 @@ TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerTwiceThenItWillDispatchToT
 
 TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerTwiceThenAValidResultWillBeReturnedTwice)
 {
-    this->RecordProperty("Verifies", "SCR-14034916, SCR-17292404, SCR-14137274");
+    this->RecordProperty("Verifies", "SCR-14034916");
+    this->RecordProperty("lobster-tracing",
+                         "Communication.ProxyFieldSetReceiveHandler, Communication.ProxyEventSetReceiveHandler");
     this->RecordProperty("Description", "Checks whether a set receive handler is correctly forwarded");
     this->RecordProperty("TestType", "Requirements-based test");
     this->RecordProperty("Priority", "1");
@@ -431,7 +442,9 @@ TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerTwiceThenAValidResultWillB
 
 TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerThenItWillPropagateAnErrorFromTheBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14034916, SCR-17292404, SCR-14137274");
+    this->RecordProperty("Verifies", "SCR-14034916");
+    this->RecordProperty("lobster-tracing",
+                         "Communication.ProxyFieldSetReceiveHandler, Communication.ProxyEventSetReceiveHandler");
     this->RecordProperty(
         "Description",
         "Checks that a set receive handler returns a kSetHandlerNotSet error code if binding returns any error.");
@@ -458,7 +471,8 @@ TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerThenItWillPropagateAnError
 
 TYPED_TEST(AServiceElement, WhenUnsettingAReceiveHandlerAfterSettingThenItWillDispatchToBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14035152, SCR-17292405, SCR-14137275");
+    this->RecordProperty("Verifies", "SCR-14035152, SCR-17292405");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyEventUnsetReceiveHandler");
     this->RecordProperty("Description", "Checks whether a unsetting receive handler is correctly forwarded");
     this->RecordProperty("TestType", "Requirements-based test");
     this->RecordProperty("Priority", "1");
@@ -476,7 +490,8 @@ TYPED_TEST(AServiceElement, WhenUnsettingAReceiveHandlerAfterSettingThenItWillDi
 
 TYPED_TEST(AServiceElement, WhenUnsettingReceiveHandlerAfterSettingThenItWillReturnAValidResult)
 {
-    this->RecordProperty("Verifies", "SCR-14035152, SCR-17292405, SCR-14137275");
+    this->RecordProperty("Verifies", "SCR-14035152, SCR-17292405");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyEventUnsetReceiveHandler");
     this->RecordProperty("Description", "Checks whether a unsetting receive handler is correctly forwarded");
     this->RecordProperty("TestType", "Requirements-based test");
     this->RecordProperty("Priority", "1");
@@ -519,7 +534,8 @@ TYPED_TEST(AServiceElement, WhenUnsettingAReceiveHandlerWithoutSettingThenItWill
 
 TYPED_TEST(AServiceElement, WhenUnsettingReceiveHandlerThenItWillPropagateErrorFromBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14035152, SCR-17292405, SCR-14137275");
+    this->RecordProperty("Verifies", "SCR-14035152, SCR-17292405");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyEventUnsetReceiveHandler");
     this->RecordProperty(
         "Description",
         "Checks that an unset receive handler returns a kUnsetFailure error code if binding returns any error.");
@@ -594,7 +610,8 @@ TYPED_TEST(AServiceElement,
 
 TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeWhileUnsubscribedDispatchesToBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14033248, SCR-17292398, SCR-14137270");
+    this->RecordProperty("Verifies", "SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe");
     this->RecordProperty("Description", "Checks that Subscribe will dispatch to binding if not already subscribed");
     this->RecordProperty("TestType", "Requirements-based test");
     this->RecordProperty("Priority", "1");
@@ -622,7 +639,8 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeWhileUnsubscribedDisp
 
 TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeTwiceWithSameMaxSamplesOnlyPerformsSubscriptionOnce)
 {
-    this->RecordProperty("Verifies", "SCR-14033248, SCR-17292398, SCR-14137270");
+    this->RecordProperty("Verifies", "SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe");
     this->RecordProperty("Description", "Checks that Subscribe will do nothing if subscription is pending");
     this->RecordProperty("TestType", "Requirements-based test");
     this->RecordProperty("Priority", "1");
@@ -656,7 +674,8 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeTwiceWithSameMaxSampl
 
 TYPED_TEST(ProxyEventBaseSubscribeFixture, SubscribeShouldReturnErrorIfBindingReturnsError)
 {
-    this->RecordProperty("Verifies", "SCR-14033248, SCR-17292398, SCR-14137270");
+    this->RecordProperty("Verifies", "SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe");
     this->RecordProperty("Description",
                          "Checks that Subscribe returns a kBindingFailure error code if binding returns any error.");
     this->RecordProperty("TestType", "Requirements-based test");
@@ -685,7 +704,8 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture, SubscribeShouldReturnErrorIfBindingRe
 
 TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeWithSameMaxSampleCountWhileSubscriptionIsPendingDoesNothing)
 {
-    this->RecordProperty("Verifies", "SCR-14033248, SCR-17292398, SCR-14137270");
+    this->RecordProperty("Verifies", "SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe");
     this->RecordProperty("Description",
                          "Checks that Subscribe will do nothing if subscribing again with same max sample count");
     this->RecordProperty("TestType", "Requirements-based test");
@@ -716,7 +736,8 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeWithSameMaxSampleCoun
 
 TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeWithSameMaxSampleCountWhileAlreadySubscribedDoesNothing)
 {
-    this->RecordProperty("Verifies", "SCR-14033248, SCR-17292398, SCR-14137270");
+    this->RecordProperty("Verifies", "SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe");
     this->RecordProperty("Description",
                          "Checks that Subscribe will do nothing if subscribing again with same max sample count");
     this->RecordProperty("TestType", "Requirements-based test");
@@ -748,7 +769,8 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeWithSameMaxSampleCoun
 TYPED_TEST(ProxyEventBaseSubscribeFixture,
            CallingSubscribeWithDifferentMaxSampleCountWhileSubscriptionIsPendingReturnsError)
 {
-    this->RecordProperty("Verifies", "SCR-14033248, SCR-17292398, SCR-14137270");
+    this->RecordProperty("Verifies", "SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe");
     this->RecordProperty(
         "Description",
         "Checks that Subscribe will return an error if subscribing again with a different max sample count");
@@ -783,7 +805,8 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture,
 TYPED_TEST(ProxyEventBaseSubscribeFixture,
            CallingSubscribeWithDifferentMaxSampleCountWhileAlreadySubscribedReturnsError)
 {
-    this->RecordProperty("Verifies", "SCR-14033248, SCR-17292398, SCR-14137270");
+    this->RecordProperty("Verifies", "SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe");
     this->RecordProperty(
         "Description",
         "Checks that Subscribe will return an error if subscribing again with a different max sample count");
@@ -817,7 +840,9 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture,
 
 TYPED_TEST(ProxyEventBaseGetSubscriptionStatefixture, GetSubscriptionStateDispatchesToBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14034825, SCR-17292400, SCR-14137272");
+    this->RecordProperty("Verifies", "SCR-14034825");
+    this->RecordProperty("lobster-tracing",
+                         "Communication.ProxyFieldGetSubscriptionState, Communication.ProxyEventGetSubscriptionState");
     this->RecordProperty("Description",
                          "Checks that GetSubscriptionState will return the free sample count returned by the binding");
     this->RecordProperty("TestType", "Requirements-based test");
@@ -851,7 +876,9 @@ TYPED_TEST(ProxyEventBaseGetSubscriptionStatefixture, GetSubscriptionStateDispat
 
 TYPED_TEST(ProxyEventBaseGetFreeSampleCountFixture, GetFreeSampleCountReturnsCountFromReferenceTracker)
 {
-    this->RecordProperty("Verifies", "SCR-14035121, SCR-17292402, SCR-14137276, SCR-21293991");
+    this->RecordProperty("Verifies", "SCR-14035121, SCR-21293991");
+    this->RecordProperty("lobster-tracing",
+                         "Communication.ProxyFieldGetFreeSampleCount, Communication.ProxyEventGetFreeSampleCount");
     this->RecordProperty(
         "Description",
         "Checks that GetFreeSampleCount will return the free sample count returned by the reference tracker.");
@@ -892,7 +919,10 @@ TYPED_TEST(ProxyEventBaseGetFreeSampleCountFixture, GetFreeSampleCountReturnsCou
 
 TYPED_TEST(ProxyEventBaseGetNumNewSamplesAvailableFixture, GetNumNewSamplesAvailableDispatchesToBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14035142, SCR-17292403, SCR-14137277");
+    this->RecordProperty("Verifies", "SCR-14035142");
+    this->RecordProperty(
+        "lobster-tracing",
+        "Communication.ProxyFieldGetNumNewSamplesAvailable, Communication.ProxyEventGetNumNewSamplesAvailable");
     this->RecordProperty(
         "Description",
         "Checks that GetNumNewSamplesAvailable will return the number of samples available returned by the binding");
@@ -919,7 +949,10 @@ TYPED_TEST(ProxyEventBaseGetNumNewSamplesAvailableFixture, GetNumNewSamplesAvail
 
 TYPED_TEST(ProxyEventBaseGetNumNewSamplesAvailableFixture, GetNumNewSamplesAvailableReturnsErrorIfNotSubscribed)
 {
-    this->RecordProperty("Verifies", "SCR-14035142, SCR-17292403, SCR-14137277");
+    this->RecordProperty("Verifies", "SCR-14035142");
+    this->RecordProperty(
+        "lobster-tracing",
+        "Communication.ProxyFieldGetNumNewSamplesAvailable, Communication.ProxyEventGetNumNewSamplesAvailable");
     this->RecordProperty("Description",
                          "Checks that GetNumNewSamplesAvailable will forward an error kNotSubscribed from the binding");
     this->RecordProperty("TestType", "Requirements-based test");
@@ -944,7 +977,10 @@ TYPED_TEST(ProxyEventBaseGetNumNewSamplesAvailableFixture, GetNumNewSamplesAvail
 
 TYPED_TEST(ProxyEventBaseGetNumNewSamplesAvailableFixture, GetNumNewSamplesAvailableReturnsErrorFromBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14035142, SCR-17292403, SCR-14137277");
+    this->RecordProperty("Verifies", "SCR-14035142");
+    this->RecordProperty(
+        "lobster-tracing",
+        "Communication.ProxyFieldGetNumNewSamplesAvailable, Communication.ProxyEventGetNumNewSamplesAvailable");
     this->RecordProperty(
         "Description",
         "Checks that GetNumNewSamplesAvailable will return kBindingFailure for a generic error code from the binding");

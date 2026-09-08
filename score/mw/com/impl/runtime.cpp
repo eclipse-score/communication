@@ -123,7 +123,46 @@ void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configurat
     }
 
     auto config = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
+    const auto validation_result = config.Validate();
+
+    if (!validation_result.has_value())
+    {
+        ::score::mw::log::LogFatal("lola") << validation_result.error().UserMessage();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
     score::cpp::ignore = initialization_config_.emplace(std::move(config));
+}
+
+Result<void> Runtime::InitializeRuntimeAddonConfiguration(const runtime::RuntimeConfiguration& runtime_configuration)
+{
+    auto config = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
+
+    return HandleAddonConfiguration(config);
+}
+
+Result<void> Runtime::InitializeRuntimeAddonConfiguration(score::json::Any json)
+{
+    auto config = configuration::Parse(std::move(json));
+
+    return HandleAddonConfiguration(config);
+}
+
+Result<void> Runtime::HandleAddonConfiguration(const Configuration& config) noexcept
+{
+    // TODO This check is not complete and should be extended
+    if (config.GetGlobalConfiguration().GetApplicationId().has_value())
+    {
+        mw::log::LogWarn("lola") << "Add-on configuration contains global configuration data that will be ignored. "
+                                    "Please remove global configuration from add-on configuration.";
+    }
+
+    const auto merge_result = Runtime::getInstanceInternal().MergeAdditionalConfiguration(std::move(config));
+    if (!merge_result.has_value())
+    {
+        mw::log::LogError("lola") << merge_result.error();
+        std::terminate();
+    }
+    return {};
 }
 
 auto Runtime::getInstance() -> IRuntime&
@@ -243,6 +282,25 @@ std::vector<InstanceIdentifier> Runtime::resolve(const InstanceSpecifier& specif
     }
 
     return result;
+}
+
+Result<void> Runtime::MergeAdditionalConfiguration(const Configuration& additional_configuration) noexcept
+{
+    const auto merge_result = configuration_.MergeServiceEntries(std::move(additional_configuration));
+    if (!merge_result.has_value())
+    {
+        return merge_result;
+    }
+
+    const auto validation_result = configuration_.Validate();
+
+    if (!validation_result.has_value())
+    {
+        ::score::mw::log::LogFatal("lola") << validation_result.error().UserMessage();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+
+    return {};
 }
 
 auto Runtime::GetBindingRuntime(const BindingType binding) const noexcept -> IBindingRuntime*

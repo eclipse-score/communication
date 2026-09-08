@@ -31,9 +31,7 @@ project = "{PROJECT_NAME}"
 author = "S-CORE"
 version = "1.0"
 release = "1.0.0"
-project_url = (
-    "https://github.com/eclipse-score"  # Required by score_metamodel extension
-)
+project_url = "https://github.com/eclipse-score"  # Required by score_metamodel extension
 
 # Sphinx extensions - comprehensive list for SCORE modules
 extensions = [
@@ -52,7 +50,7 @@ extensions = [
 #   -Dbreathe_projects.project_name=path/to/doxygen/xml
 breathe_projects = {}
 breathe_default_project = ""
-breathe_default_members = ('members',)
+breathe_default_members = ("members",)
 breathe_show_define_initializer = True
 breathe_show_enumvalue_initializer = True
 
@@ -69,46 +67,40 @@ source_suffix = {
 }
 
 # -- Options for HTML output --
-html_theme = 'pydata_sphinx_theme'
+html_theme = "pydata_sphinx_theme"
 
 html_css_files = ["css/default_custom.css"]
 
 # Professional theme configuration inspired by modern open-source projects
 html_theme_options = {
     # Navigation settings
-    'navigation_depth': 4,
-    'collapse_navigation': False,
-    'show_nav_level': 2,  # Depth of sidebar navigation
-    'show_toc_level': 2,  # Depth of page table of contents
-
+    "navigation_depth": 4,
+    "collapse_navigation": False,
+    "show_nav_level": 2,  # Depth of sidebar navigation
+    "show_toc_level": 2,  # Depth of page table of contents
     # Header layout
-    'navbar_align': 'left',
-    'navbar_start': ['navbar-logo'],
-    'navbar_center': ['navbar-nav'],
-    'navbar_end': ['navbar-icon-links', 'theme-switcher'],
-
+    "navbar_align": "left",
+    "navbar_start": ["navbar-logo"],
+    "navbar_center": ["navbar-nav"],
+    "navbar_end": ["navbar-icon-links", "theme-switcher"],
     # Search configuration
-    'search_bar_text': 'Search documentation...',
-
+    "search_bar_text": "Search documentation...",
     # Footer configuration
-    'footer_start': ['copyright'],
-    'footer_end': ['sphinx-version'],
-
+    "footer_start": ["copyright"],
+    "footer_end": ["sphinx-version"],
     # Navigation buttons
-    'show_prev_next': True,
-
+    "show_prev_next": True,
     # Logo configuration
-    'logo': {
-        'text': 'Eclipse S-CORE',
-        **({} if (Path(__file__).parent / "docs").is_dir() else {'link': '../index.html'}),
+    "logo": {
+        "text": "Eclipse S-CORE",
+        **({} if (Path(__file__).parent / "docs").is_dir() else {"link": "../index.html"}),
     },
-
     # External links - S-CORE GitHub
-    'icon_links': [
+    "icon_links": [
         {
-            'name': 'S-CORE GitHub',
-            'url': 'https://github.com/eclipse-score/communication',
-            'icon': 'fab fa-github',
+            "name": "S-CORE GitHub",
+            "url": "https://github.com/eclipse-score/communication",
+            "icon": "fab fa-github",
         }
     ],
 }

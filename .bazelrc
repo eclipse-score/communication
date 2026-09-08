@@ -63,6 +63,8 @@ build --per_file_copt=external/.*flatbuffers.*@-Wno-error=switch-enum
 build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=switch-enum
 build --per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
 build --host_per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
+build --per_file_copt=external/.*boost.*@-Wno-error=shadow
+build --host_per_file_copt=external/.*boost.*@-Wno-error=shadow
 
 # Places with warnings that we need to fix
 build --per_file_copt=score/mw/com/impl/bindings/lola/slot_decrementer.*@-w
@@ -91,8 +93,8 @@ common:linux_aarch64_score_gcc_12_2_0_posix --extra_toolchains=@score_toolchains
 # the acceptance page once.
 common:qnx_x86_64 --credential_helper_timeout="60s" # QNX credential helper can be slow
 common:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx-sdp_8.0.0-posix
-# @score_qnx_x86_64_ifs_toolchain and @score_qcc_x86_64_toolchain are registered
-# globally in MODULE.bazel, so they don't need to be repeated here.
+common:qnx_x86_64 --extra_toolchains=@score_qnx_x86_64_ifs_toolchain//:ifs-x86_64-qnx-sdp_8.0.0
+common:qnx_x86_64 --extra_toolchains=@score_qcc_x86_64_toolchain//:x86_64-qnx-sdp_8.0.0
 common:qnx_x86_64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_pc_nto_qnx800
 common:qnx_x86_64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
 common:qnx_x86_64 --sandbox_writable_path=/var/tmp
@@ -100,8 +102,8 @@ common:qnx_x86_64 --test_env=QEMU_CPU=Cascadelake-Server-v5
 
 common:qnx_arm64 --credential_helper_timeout="60s" # QNX credential helper can be slow
 common:qnx_arm64 --platforms=@score_bazel_platforms//:aarch64-qnx-sdp_8.0.0-posix
-# @score_qnx_aarch64_ifs_toolchain and @score_qcc_aarch64_toolchain are
-# registered globally in MODULE.bazel, so they don't need to be repeated here.
+common:qnx_arm64 --extra_toolchains=@score_qnx_aarch64_ifs_toolchain//:ifs-aarch64-qnx-sdp_8.0.0
+common:qnx_arm64 --extra_toolchains=@score_qcc_aarch64_toolchain//:aarch64-qnx-sdp_8.0.0
 common:qnx_arm64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_aarch64_unknown_nto_qnx800
 common:qnx_arm64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
 common:qnx_arm64 --sandbox_writable_path=/var/tmp

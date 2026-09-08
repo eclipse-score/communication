@@ -35,12 +35,9 @@ cc_library(
     ],
     deps = [
         ":gateway_core",
+        "//score/mw/com:types",
         "//score/mw/com/gateway/gateway_application/configuration:gateway_configuration",
         "//score/mw/com/gateway/transport_layer:transport",
-        "//score/mw/com/impl:find_service_handle",
-        "//score/mw/com/impl:generic_proxy",
-        "//score/mw/com/impl:generic_skeleton",
-        "//score/mw/com/impl:instance_specifier",
         "@score_baselibs//score/language/safecpp/scoped_function:move_only_scoped_function",
         "@score_baselibs//score/language/safecpp/scoped_function:scope",
     ],
@@ -55,8 +52,8 @@ cc_library(
         "//score/mw/com/gateway:__subpackages__",
     ],
     deps = [
+        "//score/mw/com:types",
         "//score/mw/com/gateway/transport_layer:transport",
-        "//score/mw/com/impl:instance_specifier",
         "//score/mw/com/impl:service_element_type",
         "@score_baselibs//score/result",
     ],

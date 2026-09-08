@@ -138,7 +138,7 @@ jobs:
       - flaky-tsan
       - flaky-qnx-unit
       - flaky-qnx-integration
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -165,11 +165,11 @@ jobs:
             --github-output "${GITHUB_OUTPUT}"
 
       - name: Add summary to workflow
-        if: always()
+        if: ${{ !cancelled() }}
         run: cat /tmp/nightly_flaky/merged/summary.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Sync flaky test issues
-        if: always()
+        if: ${{ !cancelled() }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -184,7 +184,7 @@ jobs:
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Upload consolidated artifact
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: nightly-flaky-summary-${{ github.run_id }}

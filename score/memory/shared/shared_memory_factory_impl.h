@@ -17,6 +17,8 @@
 #include "score/memory/shared/shared_memory_resource.h"
 #include "score/memory/shared/typedshm/typedshm_wrapper/typed_memory.h"
 
+#include "score/utils/static_destruction_guard.h"
+
 #include <score/span.hpp>
 
 #include <memory>
@@ -78,6 +80,20 @@ class SharedMemoryFactoryImpl final : public ISharedMemoryFactory
     std::shared_ptr<score::memory::shared::TypedMemory> typed_memory_ptr_{memory::shared::TypedMemory::Default()};
     std::shared_ptr<score::memory::shared::TypedMemory> intervm_memory_ptr_{nullptr};
 };
+
+namespace detail
+{
+
+/// \brief Nifty-counter (see score::utils::StaticDestructionGuard) keeping the SharedMemoryFactoryImpl singleton alive.
+/// \details Only translation units that include this (internal) header get a guard instance, i.e. this protects
+///          SharedMemoryFactoryImpl's own construction/destruction ordering against other statics within this
+///          library, analogous to the MemoryResourceRegistry nifty-counter. It is intentionally not exposed via the
+///          public shared_memory_factory.h to avoid pulling the concrete SharedMemoryResource/TypedMemory dependencies
+///          into that lightweight public header.
+// coverity[autosar_cpp14_a3_3_2_violation] non-trivial constructor is required to implement the nifty-counter idiom
+static ::score::utils::StaticDestructionGuard<SharedMemoryFactoryImpl> nifty_counter_shared_memory_factory_impl;
+
+}  // namespace detail
 
 }  // namespace score::memory::shared
 

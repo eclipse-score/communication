@@ -32,11 +32,13 @@ constexpr std::size_t kMaxSampleCount{5U};
 // The consumer is purely event-driven: it does no polling at all. The main thread just blocks on this condition
 // variable until a termination signal (SIGINT/SIGTERM) requests the shut down. The signal handler sets the flag and
 // notifies the condition variable.
-static std::mutex g_shutdown_mutex{};
-static std::condition_variable g_shutdown_cv{};
-static std::atomic<bool> g_shutdown_requested{false};
+namespace
+{
+std::mutex g_shutdown_mutex{};
+std::condition_variable g_shutdown_cv{};
+std::atomic<bool> g_shutdown_requested{false};
 
-static void SignalHandler(int /*signum*/)
+void SignalHandler(int /*signum*/)
 {
     g_shutdown_requested.store(true, std::memory_order_relaxed);
     g_shutdown_cv.notify_one();
@@ -47,9 +49,6 @@ using TirePressureProxy = score::mw::com::AsProxy<score::mw::com::tutorial::Tire
 // (impl-namespace) type directly - user applications must not reference score::mw::com::impl types. All four fields
 // have the same type, so any of them can be used here.
 using TirePressureField = decltype(TirePressureProxy::tire_pressure_front_left);
-
-namespace
-{
 
 // Returns a binding-independent, human-readable description of the service instance a handle refers to.
 //

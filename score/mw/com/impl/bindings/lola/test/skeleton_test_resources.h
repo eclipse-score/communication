@@ -61,11 +61,11 @@ namespace score::mw::com::impl::lola
 
 LolaServiceInstanceDeployment CreateLolaServiceInstanceDeployment(
     LolaServiceInstanceId::InstanceId instance_id,
-    std::vector<std::pair<std::string, LolaEventInstanceDeployment>> lola_event_inst_depls,
-    std::vector<std::pair<std::string, LolaFieldInstanceDeployment>> lola_field_inst_depls,
-    std::vector<std::pair<std::string, LolaMethodInstanceDeployment>> lola_method_inst_depls,
-    std::vector<uid_t> allowed_consumers_qm,
-    std::vector<uid_t> allowed_consumers_asil_b,
+    const std::vector<std::pair<std::string, LolaEventInstanceDeployment>>& lola_event_inst_depls,
+    const std::vector<std::pair<std::string, LolaFieldInstanceDeployment>>& lola_field_inst_depls,
+    const std::vector<std::pair<std::string, LolaMethodInstanceDeployment>>& lola_method_inst_depls,
+    const std::vector<uid_t>& allowed_consumers_qm,
+    const std::vector<uid_t>& allowed_consumers_asil_b,
     std::optional<std::size_t> size = std::nullopt,
     std::optional<std::size_t> control_asil_b_shm_size = std::nullopt,
     std::optional<std::size_t> control_qm_shm_size = std::nullopt);

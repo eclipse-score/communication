@@ -53,7 +53,7 @@ void MemoryRegionBounds::Reset() noexcept
 
 bool MemoryRegionBounds::has_value() const noexcept
 {
-    return !((start_address_ == kInvalidAddress) || (end_address_ == kInvalidAddress));
+    return (start_address_ != kInvalidAddress) && (end_address_ != kInvalidAddress);
 }
 
 std::uintptr_t MemoryRegionBounds::GetStartAddress() const noexcept

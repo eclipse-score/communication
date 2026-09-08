@@ -25,7 +25,7 @@ QnxResourcePath::QnxResourcePath(const std::string_view identifier) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION((identifier.size() > 0U) && (identifier.size() <= kMaxIdentifierLen));
 
-    auto identifier_begin = identifier.cbegin();
+    const auto* identifier_begin = identifier.cbegin();
     if (*identifier_begin == '/')
     {
         identifier_begin = std::next(identifier_begin);

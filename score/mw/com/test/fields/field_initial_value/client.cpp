@@ -56,7 +56,14 @@ void run_client(const std::size_t num_retries, const std::chrono::milliseconds r
     std::promise<std::vector<TestDataProxy::HandleType>> service_discovery_promise{};
     auto service_discovery_future = service_discovery_promise.get_future();
     auto lola_proxy_handles_result = TestDataProxy::StartFindService(
-        [moved_service_discovery_promise = std::move(service_discovery_promise)](auto handles, auto handle) mutable {
+        [moved_service_discovery_promise = std::move(service_discovery_promise)](
+            // The enclosing FindServiceHandler is a type-erased callback whose call signature takes this
+            // parameter by value; the caller already copies it into that fixed signature before invoking this
+            // lambda, so taking it by const& here would not avoid any copy - it would only (misleadingly) hide
+            // the fact that one already happened.
+            // NOLINTNEXTLINE(performance-unnecessary-value-param)
+            auto handles,
+            auto handle) mutable {
             moved_service_discovery_promise.set_value(handles);
             score::cpp::ignore = TestDataProxy::StopFindService(handle);
         },

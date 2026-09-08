@@ -157,7 +157,7 @@ jobs:
 
       - name: Collect flaky summary
         id: summary
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           REPORT_DIR="${RUNNER_TEMP}/nightly-flaky/${{ inputs.config-name }}"
           bazel run --config=ci //quality/scripts:collect_flaky_tests -- \
@@ -170,7 +170,7 @@ jobs:
             --github-output "${GITHUB_OUTPUT}"
 
       - name: Upload per-config flaky report
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: nightly-flaky-${{ inputs.config-name }}-${{ github.run_id }}

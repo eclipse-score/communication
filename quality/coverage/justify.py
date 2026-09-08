@@ -67,9 +67,7 @@ def main() -> None:
     # Filter justifications by platform if --platform is specified.
     if args.platform:
         justifications_by_id = {
-            jid: entry
-            for jid, entry in justifications_by_id.items()
-            if _matches_platform(entry, args.platform)
+            jid: entry for jid, entry in justifications_by_id.items() if _matches_platform(entry, args.platform)
         }
 
     # Resolve all justified lines
@@ -84,9 +82,7 @@ def main() -> None:
             full_path = Path(args.source_root) / file_path
 
             if not full_path.exists():
-                errors.append(
-                    f"File not found for justification '{entry['id']}': {file_path}"
-                )
+                errors.append(f"File not found for justification '{entry['id']}': {file_path}")
                 continue
 
             lines = resolve_location_lines(location)
@@ -103,9 +99,7 @@ def main() -> None:
     source_files = collect_source_files(args.source_root, args.file_filter)
     for source_file in source_files:
         rel_path = str(source_file.relative_to(args.source_root))
-        scan_warnings, scan_lines = scan_file_for_markers(
-            source_file, rel_path, justifications_by_id
-        )
+        scan_warnings, scan_lines = scan_file_for_markers(source_file, rel_path, justifications_by_id)
         warnings.extend(scan_warnings)
 
         if scan_lines:
@@ -119,8 +113,7 @@ def main() -> None:
         "version": 1,
         "source_root": str(args.source_root),
         "justified_files": {
-            filepath: {str(k): v for k, v in lines.items()}
-            for filepath, lines in sorted(resolved.items())
+            filepath: {str(k): v for k, v in lines.items()} for filepath, lines in sorted(resolved.items())
         },
         "warnings": warnings,
         "errors": errors,
@@ -134,8 +127,7 @@ def main() -> None:
     # Print diagnostics
     total_justified_lines = sum(len(lines) for lines in resolved.values())
     print(
-        f"INFO: Resolved {total_justified_lines} justified lines across "
-        f"{len(resolved)} files.",
+        f"INFO: Resolved {total_justified_lines} justified lines across {len(resolved)} files.",
         file=sys.stderr,
     )
     if warnings:
@@ -190,10 +182,7 @@ def scan_file_for_markers(
         if start_match:
             jid = start_match.group(1)
             if jid not in justifications_by_id:
-                warnings.append(
-                    f"{rel_path}:{line_num}: COV_JUSTIFIED_START references "
-                    f"unknown ID '{jid}'"
-                )
+                warnings.append(f"{rel_path}:{line_num}: COV_JUSTIFIED_START references unknown ID '{jid}'")
             else:
                 region_stack.append((line_num, jid))
             continue
@@ -202,9 +191,7 @@ def scan_file_for_markers(
         stop_match = COV_JUSTIFIED_STOP_RE.search(line)
         if stop_match:
             if not region_stack:
-                warnings.append(
-                    f"{rel_path}:{line_num}: COV_JUSTIFIED_STOP without matching START"
-                )
+                warnings.append(f"{rel_path}:{line_num}: COV_JUSTIFIED_STOP without matching START")
             else:
                 start_line, jid = region_stack.pop()
                 if jid in justifications_by_id:
@@ -223,10 +210,7 @@ def scan_file_for_markers(
             if line_match:
                 jid = line_match.group(1)
                 if jid not in justifications_by_id:
-                    warnings.append(
-                        f"{rel_path}:{line_num}: COV_JUSTIFIED references "
-                        f"unknown ID '{jid}'"
-                    )
+                    warnings.append(f"{rel_path}:{line_num}: COV_JUSTIFIED references unknown ID '{jid}'")
                 else:
                     entry = justifications_by_id[jid]
                     justified_lines[line_num] = {
@@ -237,9 +221,7 @@ def scan_file_for_markers(
 
     # Check for unclosed regions
     for start_line, jid in region_stack:
-        warnings.append(
-            f"{rel_path}:{start_line}: COV_JUSTIFIED_START '{jid}' without matching STOP"
-        )
+        warnings.append(f"{rel_path}:{start_line}: COV_JUSTIFIED_START '{jid}' without matching STOP")
 
     return warnings, justified_lines
 
@@ -292,9 +274,7 @@ def validate_yaml(data: Dict[str, Any]) -> None:
             sys.exit(1)
 
         if not isinstance(data["justifications"], list):
-            errors.append(
-                f"'justifications' must be a list, got {type(data['justifications']).__name__}"
-            )
+            errors.append(f"'justifications' must be a list, got {type(data['justifications']).__name__}")
             for e in errors:
                 print(f"ERROR: YAML validation: {e}", file=sys.stderr)
             sys.exit(1)
@@ -326,70 +306,45 @@ def validate_yaml(data: Dict[str, Any]) -> None:
             if "category" not in entry:
                 errors.append(f"{prefix}: missing 'category'")
             elif not isinstance(entry["category"], str):
-                errors.append(
-                    f"{prefix}: 'category' must be a string, "
-                    f"got {type(entry['category']).__name__}"
-                )
+                errors.append(f"{prefix}: 'category' must be a string, got {type(entry['category']).__name__}")
             elif entry["category"] not in VALID_CATEGORIES:
                 errors.append(
-                    f"{prefix}: invalid category '{entry['category']}'. "
-                    f"Must be one of: {sorted(VALID_CATEGORIES)}"
+                    f"{prefix}: invalid category '{entry['category']}'. Must be one of: {sorted(VALID_CATEGORIES)}"
                 )
 
             if "platforms" not in entry:
                 errors.append(f"{prefix}: missing 'platforms'")
             elif not isinstance(entry["platforms"], list):
-                errors.append(
-                    f"{prefix}: 'platforms' must be a list, "
-                    f"got {type(entry['platforms']).__name__}"
-                )
+                errors.append(f"{prefix}: 'platforms' must be a list, got {type(entry['platforms']).__name__}")
             elif not entry["platforms"]:
                 errors.append(f"{prefix}: 'platforms' must not be empty")
             else:
                 for p in entry["platforms"]:
                     if not isinstance(p, str):
-                        errors.append(
-                            f"{prefix}: 'platforms' entries must be strings, "
-                            f"got {type(p).__name__}"
-                        )
+                        errors.append(f"{prefix}: 'platforms' entries must be strings, got {type(p).__name__}")
                     elif p not in VALID_PLATFORMS:
-                        errors.append(
-                            f"{prefix}: invalid platform '{p}'. "
-                            f"Must be one of: {sorted(VALID_PLATFORMS)}"
-                        )
+                        errors.append(f"{prefix}: invalid platform '{p}'. Must be one of: {sorted(VALID_PLATFORMS)}")
 
             if "reason" not in entry:
                 errors.append(f"{prefix}: missing 'reason'")
             elif not isinstance(entry["reason"], str):
-                errors.append(
-                    f"{prefix}: 'reason' must be a string, "
-                    f"got {type(entry['reason']).__name__}"
-                )
+                errors.append(f"{prefix}: 'reason' must be a string, got {type(entry['reason']).__name__}")
             elif not entry["reason"].strip():
                 errors.append(f"{prefix}: 'reason' must not be empty")
 
             if "locations" in entry:
                 if not isinstance(entry["locations"], list):
-                    errors.append(
-                        f"{prefix}: 'locations' must be a list, "
-                        f"got {type(entry['locations']).__name__}"
-                    )
+                    errors.append(f"{prefix}: 'locations' must be a list, got {type(entry['locations']).__name__}")
                 else:
                     for j, loc in enumerate(entry["locations"]):
                         loc_prefix = f"{prefix}.locations[{j}]"
                         if not isinstance(loc, dict):
-                            errors.append(
-                                f"{loc_prefix}: must be a mapping, "
-                                f"got {type(loc).__name__}"
-                            )
+                            errors.append(f"{loc_prefix}: must be a mapping, got {type(loc).__name__}")
                             continue
                         if "file" not in loc:
                             errors.append(f"{loc_prefix}: missing 'file'")
                         elif not isinstance(loc["file"], str):
-                            errors.append(
-                                f"{loc_prefix}: 'file' must be a string, "
-                                f"got {type(loc['file']).__name__}"
-                            )
+                            errors.append(f"{loc_prefix}: 'file' must be a string, got {type(loc['file']).__name__}")
                         for int_field in ("line", "line_start", "line_end"):
                             if int_field in loc and not isinstance(loc[int_field], int):
                                 errors.append(
@@ -399,13 +354,10 @@ def validate_yaml(data: Dict[str, Any]) -> None:
                         if "lines" in loc:
                             if not isinstance(loc["lines"], list):
                                 errors.append(
-                                    f"{loc_prefix}: 'lines' must be a list, "
-                                    f"got {type(loc['lines']).__name__}"
+                                    f"{loc_prefix}: 'lines' must be a list, got {type(loc['lines']).__name__}"
                                 )
                             elif not all(isinstance(ln, int) for ln in loc["lines"]):
-                                errors.append(
-                                    f"{loc_prefix}: 'lines' must contain only integers"
-                                )
+                                errors.append(f"{loc_prefix}: 'lines' must contain only integers")
 
         if errors:
             for e in errors:
@@ -418,9 +370,7 @@ def validate_yaml(data: Dict[str, Any]) -> None:
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Coverage justification processor"
-    )
+    parser = argparse.ArgumentParser(description="Coverage justification processor")
     parser.add_argument(
         "--yaml",
         type=Path,

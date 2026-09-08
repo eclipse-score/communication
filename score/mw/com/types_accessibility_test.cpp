@@ -51,7 +51,7 @@ TEST(TypesAccessibilityTest, TypesExistInCorrectNamespaceWithCorrectInclude)
 
 TEST(TypesAccessibilityTest, GenericProxyExistInCorrectNamespaceWithCorrectInclude)
 {
-    RecordProperty("Verifies", "SCR-14005667");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyClass");
     RecordProperty(
         "Description",
         "Checks that the GenericProxy class is accessible in the mw::com namespace by including mw/com/types.h");

@@ -1,0 +1,32 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Review checklists configuration.
+# Each checklist has:
+#   id:        Unique identifier (used in markers and tracking)
+#   name:      Human-readable name shown in the PR conversation
+#   include:   List of glob patterns; a file must match at least one to be considered
+#   exclude:   (optional) List of glob patterns; a file matching any of these is excluded
+#   checklist: Markdown checklist body shown to reviewers
+
+checklists: []
+#  - id: example-review
+#    name: "Example checklist"
+#    include:
+#      - "**"
+#    exclude:
+#      - ".github/**"
+#    checklist: |
+#      - This is an example checklist item
+#      - Avoid checkmarks in the items since this makes it easy for users to accidentally modify the checklist
+#      - Modifying the checklist will reset all previous acknowledgments

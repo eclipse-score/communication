@@ -44,7 +44,7 @@ void WaitTillServiceDisappears(HandleNotificationData& handle_notification_data)
 bool WaitTillServiceAppears(HandleNotificationData& handle_notification_data,
                             const std::chrono::seconds max_handle_notification_time);
 
-void HandleReceivedNotification(const ServiceHandleContainer<TestServiceProxy::HandleType> service_handle_container,
+void HandleReceivedNotification(const ServiceHandleContainer<TestServiceProxy::HandleType>& service_handle_container,
                                 HandleNotificationData& handle_notification_data,
                                 CheckPointControl& check_point_control);
 

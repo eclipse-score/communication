@@ -254,8 +254,8 @@ class ResourceManagerMockHelper
     }
 
     /// Queues a pulse event to process in dispatch loop
-    score::cpp::expected_blank<score::os::Error> MsgSendPulse(const std::int32_t coid,
-                                                              const std::int32_t priority,
+    score::cpp::expected_blank<score::os::Error> MsgSendPulse(const std::int32_t /*coid*/,
+                                                              const std::int32_t /*priority*/,
                                                               const std::int32_t code,
                                                               const std::int32_t value) noexcept
     {

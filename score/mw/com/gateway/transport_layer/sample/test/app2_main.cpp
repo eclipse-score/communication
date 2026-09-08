@@ -47,6 +47,10 @@ void SendMessages(BidirectionalTransport& transport)
         score::mw::com::impl::ServiceElementType::EVENT,
         "TestEvent"};
     const auto notification_result = transport.SendNotification(notification);
+    if (!notification_result)
+    {
+        std::cerr << "Failed to send notification: " << notification_result.error() << std::endl;
+    }
 }
 
 int ExecuteWithRegularConnection()

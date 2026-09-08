@@ -108,7 +108,7 @@ jobs:
           fi
 
       - name: Write result JSON
-        if: always()
+        if: ${{ !cancelled() }}
         env:
           COMBO: ${{ toJSON(matrix) }}
         run: |
@@ -132,7 +132,7 @@ jobs:
           PY
 
       - name: Upload result
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: result-${{ matrix.index }}
@@ -143,7 +143,7 @@ jobs:
 
   report:
     needs: build-and-test
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -171,7 +171,7 @@ jobs:
             --fail-on never
 
       - name: Upload report
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: compatibility-report

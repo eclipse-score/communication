@@ -36,7 +36,7 @@ class GenericProxyAttorney;
 /// \todo The EventMap, events, needs to be populated with actual GenericProxyEvents.
 // Suppress "AUTOSAR C++14 A12-1-6" rule findings. This rule states: "Derived classes that do not need further
 // explicit initialization and require all the constructors from the base class shall use inheriting constructors.
-// As per requirement 14005999 constructor shall be private.
+// As per requirement Communication.GenericProxyConstructor constructor shall be private.
 // coverity[autosar_cpp14_a12_1_6_violation]
 /**
  * \api

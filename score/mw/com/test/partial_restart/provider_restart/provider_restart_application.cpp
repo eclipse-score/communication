@@ -120,7 +120,7 @@ int main(int argc, const char** argv)
         std::cerr << "Test Main: Running iteration " << test_iteration << " of "
                   << test_parameters.number_test_iterations << " of Provider-Restart-Test" << std::endl;
 
-        if (test_parameters.kill_provider == false)
+        if (!test_parameters.kill_provider)
         {
             if (test_parameters.create_proxy)
             {

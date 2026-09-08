@@ -30,5 +30,8 @@ def test_bigdata_exchange(target):
     """Test bigdata exchange between sender and receiver."""
     # Sender runs for continuous cycles at 40ms intervals, Receiver receives 25 cycles
     # num_cycles = 0 signifies that the sender will run untill interrupted
-    with bigdata(target, "send", cycle_time=40, num_cycles=0), bigdata(target, "recv", num_cycles=25, wait_timeout=120):
+    with (
+        bigdata(target, "send", cycle_time=40, num_cycles=0),
+        bigdata(target, "recv", num_cycles=25, wait_timeout=120),
+    ):
         pass

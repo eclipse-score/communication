@@ -180,7 +180,7 @@ int run_consumer()
         // The receiver callback operates on type-erased memory (SamplePtr<const void>)
         const auto get_new_samples_result = generic_event.GetNewSamples(
             [&](auto sample) {
-                auto* typed_sample = static_cast<const MyEventData*>(sample.get());
+                const auto* typed_sample = static_cast<const MyEventData*>(sample.get());
 
                 if (is_first_sample)
                 {

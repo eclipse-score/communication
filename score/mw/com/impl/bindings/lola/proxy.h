@@ -115,7 +115,7 @@ class Proxy : public ProxyBinding
     // coverity[autosar_cpp14_m3_2_4_violation]
     ~Proxy() override;
 
-    static std::unique_ptr<Proxy> Create(const HandleType handle);
+    static std::unique_ptr<Proxy> Create(const HandleType& handle);
 
     Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
           std::shared_ptr<memory::shared::ManagedMemoryResource> data,

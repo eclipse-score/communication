@@ -278,7 +278,7 @@ void* SkeletonMemoryManager::RetrieveGenericEventDataFromOpenedSharedMemory(
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(storage_ != nullptr, "Service data storage is not available.");
 
-    const auto event_meta_info_it = storage_->events_metainfo_.find(element_fq_id);
+    auto* const event_meta_info_it = storage_->events_metainfo_.find(element_fq_id);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_meta_info_it != storage_->events_metainfo_.cend(),
                                                 "Could not find element fq id in meta info map");
 
@@ -298,7 +298,7 @@ void* SkeletonMemoryManager::RetrieveGenericEventDataFromOpenedSharedMemory(
 auto SkeletonMemoryManager::RetrieveEventControlsFromOpenedSharedMemory(const ElementFqId element_fq_id)
     -> std::pair<std::reference_wrapper<EventControl>, EventControl*>
 {
-    const auto event_control_qm_it = control_qm_->event_controls_.find(element_fq_id);
+    auto* const event_control_qm_it = control_qm_->event_controls_.find(element_fq_id);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_control_qm_it != control_qm_->event_controls_.cend(),
                                                 "Could not find element fq id in map");
     EventControl& event_control_qm = event_control_qm_it->second;
@@ -307,7 +307,7 @@ auto SkeletonMemoryManager::RetrieveEventControlsFromOpenedSharedMemory(const El
         return {event_control_qm, nullptr};
     }
 
-    const auto event_control_asil_b_it = control_asil_b_->event_controls_.find(element_fq_id);
+    auto* const event_control_asil_b_it = control_asil_b_->event_controls_.find(element_fq_id);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_control_asil_b_it != control_asil_b_->event_controls_.cend(),
                                                 "Could not find asil b element fq id in map");
     EventControl& event_control_asil_b = event_control_asil_b_it->second;
@@ -704,7 +704,7 @@ bool SkeletonMemoryManager::CreateSharedMemoryForData(
     const auto path = shm_path_builder_.GetDataChannelShmName(lola_instance_id_);
     const bool use_typed_memory = register_shm_object_trace_callback.has_value();
     const memory::shared::SharedMemoryFactory::UserPermissions user_permissions =
-        ((permissions.empty()) && (lola_service_instance_deployment.strict_permissions_ == false))
+        ((permissions.empty()) && (!lola_service_instance_deployment.strict_permissions_))
             ? memory::shared::SharedMemoryFactory::WorldReadable{}
             : memory::shared::SharedMemoryFactory::UserPermissions{permissions};
     const auto memory_resource = score::memory::shared::SharedMemoryFactory::Create(
@@ -771,7 +771,7 @@ bool SkeletonMemoryManager::CreateSharedMemoryForControl(
     }
 
     const memory::shared::SharedMemoryFactory::UserPermissions user_permissions =
-        ((permissions.empty()) && (lola_service_instance_deployment.strict_permissions_ == false))
+        ((permissions.empty()) && (!lola_service_instance_deployment.strict_permissions_))
             ? memory::shared::SharedMemoryFactory::WorldWritable{}
             : memory::shared::SharedMemoryFactory::UserPermissions{permissions};
     control_resource = score::memory::shared::SharedMemoryFactory::Create(

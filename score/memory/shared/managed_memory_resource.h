@@ -77,6 +77,7 @@ class ManagedMemoryResource : public ::score::cpp::pmr::memory_resource
         void* const memory = this->allocate(sizeof(T), alignof(T));
         // Operator \c new doesn't allocate any new resources, instead of that preallocated buffer is
         // NOLINTNEXTLINE(score-no-dynamic-raw-memory): used by placement new
+        // Deviation of MISRA RULE-21-6-3: codeql::misra_deviation_next_line(shared-memory-placement-new)
         return new (memory) T(std::forward<Args>(args)...);
     }
 

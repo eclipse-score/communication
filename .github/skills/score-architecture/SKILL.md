@@ -1,3 +1,9 @@
+---
+name: score-architecture
+description: "Software architectural design for S-CORE SEooCs using the rules_score Bazel rules. USE FOR: writing PlantUML static/dynamic/public_api/internal_api diagrams, structuring dependable_element → component → unit hierarchies, wiring architectural_design / unit / unit_design / component / dependable_element targets, PlantUML stereotype and interface/port conventions, the declared-vs-implemented architecture consistency check, integrity levels, certified scope, and requirement allocation to architectural elements. Use when working on architecture, .puml files, component/unit structure, or the rules_score architecture rules."
+argument-hint: "component/unit or diagram to model"
+---
+
 <!-- ----------------------------------------------------------------------------
   Copyright (c) 2026 Contributors to the Eclipse Foundation
 
@@ -10,12 +16,6 @@
 
   SPDX-License-Identifier: Apache-2.0
 ----------------------------------------------------------------------------- -->
-
----
-name: score-architecture
-description: "Software architectural design for S-CORE SEooCs using the rules_score Bazel rules. USE FOR: writing PlantUML static/dynamic/public_api/internal_api diagrams, structuring dependable_element → component → unit hierarchies, wiring architectural_design / unit / unit_design / component / dependable_element targets, PlantUML stereotype and interface/port conventions, the declared-vs-implemented architecture consistency check, integrity levels, certified scope, and requirement allocation to architectural elements. Use when working on architecture, .puml files, component/unit structure, or the rules_score architecture rules."
-argument-hint: "component/unit or diagram to model"
----
 
 # S-CORE Architecture Skill
 

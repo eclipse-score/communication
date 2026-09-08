@@ -16,7 +16,6 @@ load(
     "component",
     "dependable_element",
 )
-load("//quality/unit_testing:test_on_qnx.bzl", "on_qnx_test")
 
 component(
     name = "component_message_passing",
@@ -62,7 +61,7 @@ dependable_element(
     tags = ["manual"],
     target_compatible_with = ["@platforms//os:linux"],
     tests = [
-        ":message_passing_unit_tests_qnx_ref",
+        "//score/message_passing:unit_tests",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -71,9 +70,4 @@ dependable_element(
         "//third_party/score_baselibs:futurecpp",
         "//third_party/score_baselibs:os",
     ],
-)
-
-on_qnx_test(
-    name = "message_passing_unit_tests_qnx_ref",
-    actual = "//score/message_passing:unit_tests",
 )

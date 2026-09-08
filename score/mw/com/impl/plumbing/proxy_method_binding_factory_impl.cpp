@@ -37,7 +37,7 @@ bool IsMethodOrFieldEnabled(const LolaServiceInstanceDeployment& lola_service_in
     return method_it->second.enabled_;
 }
 
-LolaMethodInstanceDeployment::QueueSize GetQueueSize(HandleType parent_handle,
+LolaMethodInstanceDeployment::QueueSize GetQueueSize(const HandleType& parent_handle,
                                                      const std::string& method_name_str,
                                                      MethodType method_type)
 {

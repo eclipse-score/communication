@@ -17,4 +17,3 @@ def test_move_construct_not_offered_same_process(target):
     with consumer(target, SkeletonMoveScenario.MOVE_CONSTRUCT_NOT_OFFERED):
         with provider(target, SkeletonMoveScenario.MOVE_CONSTRUCT_NOT_OFFERED):
             pass
-

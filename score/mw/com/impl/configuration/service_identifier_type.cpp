@@ -16,6 +16,7 @@
 
 #include <exception>
 #include <string_view>
+#include <utility>
 
 namespace score::mw::com::impl
 {
@@ -32,7 +33,9 @@ constexpr auto kVersionKeyServIdentType = "version";
 // False positive: Other constructors are delegated to this one, so this one can not be further delegated
 // coverity[autosar_cpp14_a12_1_5_violation] See above
 ServiceIdentifierType::ServiceIdentifierType(std::string serviceTypeName, ServiceVersionType version)
-    : serviceTypeName_{std::move(serviceTypeName)}, version_{version}, serialized_string_{ToStringImpl(Serialize())}
+    : serviceTypeName_{std::move(serviceTypeName)},
+      version_{std::move(version)},
+      serialized_string_{ToStringImpl(Serialize())}
 {
 }
 

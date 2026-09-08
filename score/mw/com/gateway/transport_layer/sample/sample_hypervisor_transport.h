@@ -34,9 +34,9 @@ struct ShmSizes
     std::uint32_t data;
 };
 
-ShmPaths ResolveShmPaths(const impl::InstanceSpecifier& specifier);
+ShmPaths ResolveShmPaths(const score::mw::com::InstanceSpecifier& specifier);
 
-ShmSizes GetShmSizes(const impl::InstanceSpecifier& specifier);
+ShmSizes GetShmSizes(const score::mw::com::InstanceSpecifier& specifier);
 
 class SampleHyperVisorTransport : public Transport
 {
@@ -56,18 +56,18 @@ class SampleHyperVisorTransport : public Transport
 
     // Methods to create the related TransportMessage and call SendMessage of BidirectionalTransport
 
-    Result<void> ProvideService(impl::InstanceSpecifier service_instance_specifier,
-                                std::vector<impl::EventInfo> service_elements) override;
-    Result<void> OfferService(impl::InstanceSpecifier service_instance_specifier) override;
-    Result<void> StopOfferService(impl::InstanceSpecifier service_instance_specifier) override;
+    Result<void> ProvideService(score::mw::com::InstanceSpecifier service_instance_specifier,
+                                std::vector<score::mw::com::EventInfo> service_elements) override;
+    Result<void> OfferService(score::mw::com::InstanceSpecifier service_instance_specifier) override;
+    Result<void> StopOfferService(score::mw::com::InstanceSpecifier service_instance_specifier) override;
 
-    Result<void> NotifyUpdate(impl::InstanceSpecifier service_instance_specifier,
+    Result<void> NotifyUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
                               impl::ServiceElementType updated_element_type,
                               std::string updated_element_name) override;
-    Result<void> RegisterUpdateNotification(impl::InstanceSpecifier service_instance_specifier,
+    Result<void> RegisterUpdateNotification(score::mw::com::InstanceSpecifier service_instance_specifier,
                                             impl::ServiceElementType element_type,
                                             std::string element_name) override;
-    Result<void> UnregisterUpdateNotification(impl::InstanceSpecifier service_instance_specifier,
+    Result<void> UnregisterUpdateNotification(score::mw::com::InstanceSpecifier service_instance_specifier,
                                               impl::ServiceElementType element_type,
                                               std::string element_name) override;
 
@@ -92,7 +92,7 @@ class SampleHyperVisorTransport : public Transport
     void OnMessageReceived(std::unique_ptr<TransportMessage> message);
     /// \brief Creates the shared memory region based on the given arguments, prior to the gateway application accessing
     /// the shared memory region, i.e. before ProvideService() has been called.
-    void PreCreateInterVmSharedMemory(const impl::InstanceSpecifier& specifier,
+    void PreCreateInterVmSharedMemory(const score::mw::com::InstanceSpecifier& specifier,
                                       std::uint32_t shm_control_size,
                                       std::uint32_t shm_data_size);
 

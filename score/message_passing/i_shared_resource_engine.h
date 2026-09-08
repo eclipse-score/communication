@@ -31,6 +31,12 @@ class ISharedResourceEngine
   public:
     virtual ~ISharedResourceEngine() noexcept = default;
 
+    /// \brief An ISharedResourceEngine shall not be copyable or movable
+    ISharedResourceEngine(const ISharedResourceEngine&) = delete;
+    ISharedResourceEngine(ISharedResourceEngine&&) = delete;
+    ISharedResourceEngine& operator=(const ISharedResourceEngine&) = delete;
+    ISharedResourceEngine& operator=(ISharedResourceEngine&&) = delete;
+
     virtual score::cpp::pmr::memory_resource* GetMemoryResource() noexcept = 0;
 
     virtual const LoggingCallback& GetLogger() & noexcept = 0;
@@ -87,10 +93,6 @@ class ISharedResourceEngine
 
   protected:
     ISharedResourceEngine() noexcept = default;
-    ISharedResourceEngine(const ISharedResourceEngine&) = delete;
-    ISharedResourceEngine(ISharedResourceEngine&&) = delete;
-    ISharedResourceEngine& operator=(const ISharedResourceEngine&) = delete;
-    ISharedResourceEngine& operator=(ISharedResourceEngine&&) = delete;
 };
 
 }  // namespace score::message_passing

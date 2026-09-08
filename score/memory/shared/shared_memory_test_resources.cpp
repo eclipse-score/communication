@@ -305,7 +305,7 @@ void SharedMemoryResourceTest::expectShmOpenWithCreateFlagReturns(
     const score::cpp::expected_blank<score::os::Error> typed_memory_allocation_ret_value)
 {
     auto oflag = Fcntl::Open::kReadWrite | Fcntl::Open::kCreate | Fcntl::Open::kExclusive;
-    if (prefer_typed_memory == true)
+    if (prefer_typed_memory)
     {
         if (typed_memory_allocation_ret_value.has_value())
         {
@@ -448,7 +448,7 @@ void SharedMemoryResourceTest::expectSharedMemorySuccessfullyCreated(
     expectCreateLockFileReturns(TestValues::sharedMemorySegmentLockPath, lock_file_descriptor);
 
     // Then we can create the shared memory and initialize it
-    if (prefer_typed_memory == false)
+    if (!prefer_typed_memory)
     {
         expectShmOpenWithCreateFlagReturns(TestValues::sharedMemorySegmentPath, file_descriptor);
         expectFstatReturns(file_descriptor);

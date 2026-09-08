@@ -17,7 +17,11 @@
 def subscribe_handler(target, mode):
     args = ["--mode", mode]
     return target.wrap_exec(
-        "bin/subscribe_handler", args, cwd="/opt/subscribe_handler", wait_on_exit=True, wait_timeout=15
+        "bin/subscribe_handler",
+        args,
+        cwd="/opt/subscribe_handler",
+        wait_on_exit=True,
+        wait_timeout=15,
     )
 
 

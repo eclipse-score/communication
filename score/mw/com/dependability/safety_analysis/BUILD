@@ -30,7 +30,7 @@ filegroup(
 
 fmea(
     name = "mw_com_fmea",
-    arch_design = "//score/mw/com/dependability/software_architectural_design:software_architectural_design",
+    arch_design = "//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design",
     controlmeasures = ["aou.trlc"],
     failuremodes = ["failure_modes.trlc"],
     root_causes = [":root_causes"],

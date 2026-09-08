@@ -1269,7 +1269,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, AllocateAfterCleanUp)
 
 TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIsRegistered)
 {
-    RecordProperty("ParentRequirement", "SCR-15601194");
+    RecordProperty("lobster-tracing", "Communication.EventTypeInfoSource");
     RecordProperty("Description", "Checks that the event meta info for an event is published by the Skeleton.");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");

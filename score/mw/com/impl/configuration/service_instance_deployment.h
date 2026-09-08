@@ -40,11 +40,11 @@ class ServiceInstanceDeployment
     using BindingInformation = std::variant<LolaServiceInstanceDeployment, score::cpp::blank>;
 
     explicit ServiceInstanceDeployment(const score::json::Object& json_object);
-    ServiceInstanceDeployment(const ServiceIdentifierType service,
+    ServiceInstanceDeployment(ServiceIdentifierType service,
                               BindingInformation binding,
                               const QualityType asil_level,
                               InstanceSpecifier instance_specifier)
-        : service_{service},
+        : service_{std::move(service)},
           bindingInfo_{std::move(binding)},
           asilLevel_{asil_level},
           instance_specifier_{std::move(instance_specifier)}

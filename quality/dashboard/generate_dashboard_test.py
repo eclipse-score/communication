@@ -132,7 +132,10 @@ class GenerateDashboardTest(unittest.TestCase):
                                 "results": [
                                     {
                                         "ruleIndex": 0,
-                                        "rule": {"id": "cpp/misra/no-c-style-or-functional-casts", "index": 0},
+                                        "rule": {
+                                            "id": "cpp/misra/no-c-style-or-functional-casts",
+                                            "index": 0,
+                                        },
                                         "message": {"text": "avoid C-style casts"},
                                         "locations": [
                                             {
@@ -145,7 +148,10 @@ class GenerateDashboardTest(unittest.TestCase):
                                     },
                                     {
                                         "ruleIndex": 1,
-                                        "rule": {"id": "cpp/misra/empty-loop-body", "index": 1},
+                                        "rule": {
+                                            "id": "cpp/misra/empty-loop-body",
+                                            "index": 1,
+                                        },
                                         "message": {"text": "empty loop body"},
                                         "locations": [
                                             {
@@ -218,8 +224,14 @@ class GenerateDashboardTest(unittest.TestCase):
                                         "locations": [
                                             {
                                                 "physicalLocation": {
-                                                    "artifactLocation": {"uri": "./src/demo.cc", "uriBaseId": "%SRCROOT%"},
-                                                    "region": {"startLine": 4, "startColumn": 2},
+                                                    "artifactLocation": {
+                                                        "uri": "./src/demo.cc",
+                                                        "uriBaseId": "%SRCROOT%",
+                                                    },
+                                                    "region": {
+                                                        "startLine": 4,
+                                                        "startColumn": 2,
+                                                    },
                                                 },
                                             },
                                         ],
@@ -230,8 +242,14 @@ class GenerateDashboardTest(unittest.TestCase):
                                         "locations": [
                                             {
                                                 "physicalLocation": {
-                                                    "artifactLocation": {"uri": "./src/demo.cc", "uriBaseId": "%SRCROOT%"},
-                                                    "region": {"startLine": 11, "startColumn": 6},
+                                                    "artifactLocation": {
+                                                        "uri": "./src/demo.cc",
+                                                        "uriBaseId": "%SRCROOT%",
+                                                    },
+                                                    "region": {
+                                                        "startLine": 11,
+                                                        "startColumn": 6,
+                                                    },
                                                 },
                                             },
                                         ],
@@ -415,6 +433,3 @@ class GenerateDashboardTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-
-

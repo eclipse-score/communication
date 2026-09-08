@@ -21,9 +21,9 @@
 
 #include "score/os/utils/interprocess/interprocess_notification.h"
 
-#include <stdint.h>
 #include <array>
 #include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <mutex>
 #include <optional>

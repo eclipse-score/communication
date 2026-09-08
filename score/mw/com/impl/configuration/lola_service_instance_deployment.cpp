@@ -53,7 +53,7 @@ std::unordered_map<QualityType, std::vector<uid_t>> ConvertJsonToUidMap(const js
     const auto& uid_map_json = GetValueFromJson<json::Object>(json_object, key);
 
     std::unordered_map<QualityType, std::vector<uid_t>> uid_map{};
-    for (auto& it : uid_map_json)
+    for (const auto& it : uid_map_json)
     {
         std::string quality_string{it.first.GetAsStringView().data(), it.first.GetAsStringView().size()};
         const QualityType quality_type{FromString(std::move(quality_string))};
@@ -65,7 +65,7 @@ std::unordered_map<QualityType, std::vector<uid_t>> ConvertJsonToUidMap(const js
         const auto& uids_json = uids_json_result.value().get();
 
         std::vector<uid_t> uids{};
-        for (auto& uid_json : uids_json)
+        for (const auto& uid_json : uids_json)
         {
             // Check if each individual UID element can be parsed to uid_t type
             const auto uid_result = uid_json.As<uid_t>();
@@ -101,7 +101,7 @@ json::Object ConvertUidMapToJson(const std::unordered_map<QualityType, std::vect
 
 auto areCompatible(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstanceDeployment& rhs) noexcept -> bool
 {
-    if (((lhs.instance_id_.has_value()) == false) || (rhs.instance_id_.has_value() == false))
+    if ((!lhs.instance_id_.has_value()) || (!rhs.instance_id_.has_value()))
     {
         return true;
     }
@@ -191,7 +191,7 @@ LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(const score::json::
 // Justification: This constructor is used by other constructors for delegation.
 // coverity[autosar_cpp14_a12_1_5_violation]
 LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(
-    const std::optional<LolaServiceInstanceId> instance_id,
+    const std::optional<LolaServiceInstanceId>& instance_id,
     EventInstanceMapping events,
     FieldInstanceMapping fields,
     MethodInstanceMapping methods,

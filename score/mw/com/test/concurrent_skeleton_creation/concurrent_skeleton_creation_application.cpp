@@ -79,9 +79,9 @@ int main(int argc, const char** argv)
         std::cerr << "Invalid instance specifier, terminating." << std::endl;
         return EXIT_FAILURE;
     }
-    auto& instance_specifier_1 = instance_specifier_result_1.value();
-    auto& instance_specifier_2 = instance_specifier_result_2.value();
-    auto& instance_specifier_3 = instance_specifier_result_3.value();
+    const auto& instance_specifier_1 = instance_specifier_result_1.value();
+    const auto& instance_specifier_2 = instance_specifier_result_2.value();
+    const auto& instance_specifier_3 = instance_specifier_result_3.value();
 
     std::atomic_bool success_flag{true};
     score::cpp::jthread skeletion_creation_and_offer_instance_1{[&success_flag, &instance_specifier_1]() {

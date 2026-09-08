@@ -217,7 +217,7 @@ TEST_F(GenericProxyFixture, CanSetupFixture) {}
 
 TEST_F(GenericProxyFixture, CreatingGenericProxyWithValidProxyBindingReturnsValidResult)
 {
-    RecordProperty("Verifies", "SCR-14005969");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyExceptionLessCreation");
     RecordProperty("Description",
                    "Checks that a valid GenericProxy can be created from a valid HandleType and binding.");
     RecordProperty("TestType", "Requirements-based test");
@@ -252,7 +252,7 @@ TEST_F(GenericProxyFixture, CreatingGenericProxyWithConfigurationContainingBlank
 
 TEST_F(GenericProxyFixture, CreatingGenericProxyReturnsErrorWhenBindingCreationReturnsNullptr)
 {
-    RecordProperty("Verifies", "SCR-14005969");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyExceptionLessCreation");
     RecordProperty(
         "Description",
         "Checks that creating a GenericProxy returns an error if the GenericProxy binding cannot be created.");
@@ -291,7 +291,7 @@ TEST_F(GenericProxyFixture, CreatingGenericProxyReturnsErrorWhenBindingCreationR
 
 TEST_F(GenericProxyFixture, CreatingGenericProxyWhenGenericProxyEventBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14005969");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyExceptionLessCreation");
     RecordProperty(
         "Description",
         "Checks that creating a GenericProxy returns an error if the GenericProxyEvent binding cannot be created.");
@@ -316,7 +316,7 @@ TEST_F(GenericProxyFixture, CreatingGenericProxyWhenGenericProxyEventBindingCrea
 
 TEST_F(GenericProxyFixture, GenericProxyWillCreateEventBindingsSpecifiedInHandleType)
 {
-    RecordProperty("Verifies", "SCR-15600146");
+    RecordProperty("lobster-tracing", "Communication.EventListSource");
     RecordProperty("Description",
                    "Checks that the GenericProxy will create a GenericProxyEvent binding for each event listed in the "
                    "HandleType used to "
@@ -345,12 +345,13 @@ TEST_F(GenericProxyFixture, GenericProxyWillCreateEventBindingsSpecifiedInHandle
 
 TEST_F(GenericProxyFixture, GenericProxyWillContainEventsSpecifiedInHandleType)
 {
-    RecordProperty("Verifies", "SCR-15600146, SCR-14006006");
+    RecordProperty("lobster-tracing", "Communication.EventListSource, Communication.GenericProxyGetEvents");
     RecordProperty(
         "Description",
         "Checks that the GenericProxy will contain a GenericProxyEvent for each event listed in the HandleType used to "
-        "create the GenericProxy (SCR-15600146). GetEvents will return the events contained in the GenericProxy "
-        "(SCR-14006006).");
+        "create the GenericProxy (Communication.EventListSource). GetEvents will return the events contained in the "
+        "GenericProxy "
+        "(Communication.GenericProxyGetEvents).");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -368,7 +369,7 @@ TEST_F(GenericProxyFixture, GenericProxyWillContainEventsSpecifiedInHandleType)
 
 TEST_F(GenericProxyFixture, GenericProxyWillOnlyCreateEventBindingsForEventsProvidedInSharedMemory)
 {
-    RecordProperty("Verifies", "SCR-15603826");
+    RecordProperty("lobster-tracing", "Communication.ReactionOnMissingEventTypeInfo");
     RecordProperty("Description",
                    "Checks that the GenericProxy will only create a GenericProxyEvent binding for events that are "
                    "provided in shared memory.");
@@ -401,11 +402,12 @@ TEST_F(GenericProxyFixture, GenericProxyWillOnlyCreateEventBindingsForEventsProv
 
 TEST_F(GenericProxyFixture, GenericProxyWillContainEventsForEventsProvidedInSharedMemory)
 {
-    RecordProperty("Verifies", "SCR-15603826, SCR-14006006");
+    RecordProperty("Verifies", "Communication.ReactionOnMissingEventTypeInfo, Communication.GenericProxyGetEvents");
     RecordProperty(
         "Description",
         "Checks that the GenericProxy will only contain a GenericProxyEvent for events that are provided in shared "
-        "memory (SCR-15603826). GetEvents will return the events contained in the GenericProxy (SCR-14006006).");
+        "memory (Communication.ReactionOnMissingEventTypeInfo). GetEvents will return the events contained in the "
+        "GenericProxy (Communication.GenericProxyGetEvents).");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -428,7 +430,7 @@ TEST_F(GenericProxyFixture, GenericProxyWillContainEventsForEventsProvidedInShar
 
 TEST_F(GenericProxyFixture, GenericProxyWillLogErrorMessageForEventsProvidedInConfigurationButNotInSharedMemory)
 {
-    RecordProperty("Verifies", "SCR-15603826");
+    RecordProperty("lobster-tracing", "Communication.ReactionOnMissingEventTypeInfo");
     RecordProperty("Description",
                    "Checks that the GenericProxy will log an error message if an event is provided in the "
                    "configuration but not in shared memory.");
@@ -495,7 +497,7 @@ TEST_F(GenericProxyFixture, MovingGenericProxyLeavesEventMapIntact)
 using GenericProxyDeathTest = GenericProxyFixture;
 TEST_F(GenericProxyDeathTest, FillingEventMapWithDuplicateEventNamesWillTerminate)
 {
-    RecordProperty("Verifies", "SCR-15603826");
+    RecordProperty("lobster-tracing", "Communication.ReactionOnMissingEventTypeInfo");
     RecordProperty("Description",
                    "Checks that the function used to add GenericProxyEvents to the event map of GenericProxy i.e. "
                    "FillEventMap() will terminate if an event list containing duplicate event names is provided.");

@@ -17,7 +17,11 @@
 def check_number_of_allocations(target, **kwargs):
     args = []
     return target.wrap_exec(
-        "bin/check_number_of_allocations", args, cwd="/opt/check_number_of_allocations", wait_on_exit=True, **kwargs
+        "bin/check_number_of_allocations",
+        args,
+        cwd="/opt/check_number_of_allocations",
+        wait_on_exit=True,
+        **kwargs,
     )
 
 

@@ -16,7 +16,8 @@
 #include "score/memory/shared/managed_memory_resource.h"
 #include "score/memory/shared/memory_region_bounds.h"
 #include "score/memory/shared/memory_region_map.h"
-#include "score/utils/meyer_singleton/meyer_singleton.h"
+
+#include "score/utils/static_destruction_guard.h"
 
 #include "score/result/result.h"
 
@@ -56,11 +57,13 @@ class MemoryResourceRegistry final
 {
     // Suppress "AUTOSAR C++14 A11-3-1"
     // The MemoryResourceRegistry class is intended to only be constructed as a singleton object. Therefore, the
-    // constructor should be private and the user should initialize the MemoryResourceRegistry via getInstance(). The
-    // MeyerSingleton class is used to create the MemoryResourceRegistry singleton. Therefore, MeyerSingleton needs
-    // access to the private MemoryResourceRegistry constructor.
+    // constructor should be private and the user should initialize the MemoryResourceRegistry via getInstance(). A
+    // nifty-counter (see score::utils::StaticDestructionGuard) is used to create the MemoryResourceRegistry singleton,
+    // so that it is guaranteed to outlive any std::shared_ptr<ISharedMemoryResource> that a client might keep alive in
+    // a static/long-lived context (see detail::nifty_counter_memory_resource_registry below). StaticDestructionGuard
+    // therefore needs access to the private MemoryResourceRegistry constructor.
     // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class singleton::MeyerSingleton<MemoryResourceRegistry>;
+    friend class ::score::utils::StaticDestructionGuard<MemoryResourceRegistry>;
 
   public:
     using MemoryResourceIdentifier = std::uint64_t;
@@ -125,6 +128,21 @@ class MemoryResourceRegistry final
 
     MemoryRegionMap region_map_{};
 };
+
+namespace detail
+{
+
+/// \brief Nifty-counter keeping the MemoryResourceRegistry singleton alive.
+/// \details Every translation unit that (transitively) includes this header gets its own instance of this guard.
+///          The guarded MemoryResourceRegistry is constructed on the very first such instance's construction and is
+///          only destroyed once the very last one is destroyed. This avoids the classic "static destruction order
+///          fiasco": ~SharedMemoryResource() accesses MemoryResourceRegistry::getInstance(), and a
+///          std::shared_ptr<ISharedMemoryResource> can end up stored in a static/long-lived context whose own
+///          destruction order relative to a plain function-local static singleton is otherwise unspecified.
+// coverity[autosar_cpp14_a3_3_2_violation] non-trivial constructor is required to implement the nifty-counter idiom
+static ::score::utils::StaticDestructionGuard<MemoryResourceRegistry> nifty_counter_memory_resource_registry;
+
+}  // namespace detail
 
 }  // namespace score::memory::shared
 

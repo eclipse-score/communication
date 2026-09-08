@@ -14,10 +14,12 @@
 name: "Merge rules_lint SARIF reports"
 description: >-
   Collects the per-file SARIF ".report" files emitted by rules_lint_machine
-  (discovered via a Bazel Build Event Protocol JSON stream) and merges them
-  into a single, valid SARIF document with one run per distinct tool, via the
-  official Microsoft SARIF SDK's `Sarif.Multitool merge` command, suitable
-  for uploading to GitHub Code Scanning via github/codeql-action/upload-sarif.
+  (discovered via a Bazel Build Event Protocol JSON stream), drops any that
+  are empty (0 bytes, meaning the linter never actually ran against that
+  target), and merges the rest into a single, valid SARIF document with one
+  run per distinct tool, via the official Microsoft SARIF SDK's
+  `Sarif.Multitool merge` command, suitable for uploading to GitHub Code
+  Scanning via github/codeql-action/upload-sarif.
 
 inputs:
   bep-json:
@@ -61,35 +63,35 @@ runs:
         # A ".report" file is completely empty (0 bytes) when
         # rules_lint_machine declared the output but the linter never
         # actually ran against the target (e.g. header-only cc_library
-        # targets with no srcs to compile/analyze). This is different from
-        # a clean, actually-linted file, which still produces a small but
-        # valid SARIF document (an empty `results` array). An empty file is
-        # not valid SARIF/JSON at all, so treat it as a hard failure rather
-        # than silently dropping it, since it usually indicates the linter
-        # was skipped/misconfigured for that target.
+        # targets with no srcs to compile/analyze, or py_* targets whose
+        # `srcs` resolve entirely to files owned by an external repository).
+        # This is different from a clean, actually-linted file, which still
+        # produces a small but valid SARIF document (an empty `results`
+        # array).
+        #
+        # We deliberately filter these out here instead of maintaining a
+        # local fork of each upstream lint aspect (clang-tidy, ruff, ...)
+        # that skips such targets at analysis time. An earlier iteration of
+        # this workflow did exactly that (see git history for
+        # tools/lint/clang_tidy_lint_gate.bzl), but duplicating aspect
+        # implementation logic per-linter is brittle: it silently drifts out
+        # of sync with upstream `aspect_rules_lint` (new rule kinds, changed
+        # `filter_srcs`/`should_visit` semantics, etc. would need to be
+        # mirrored by hand in every fork), and any *unintended* coverage gap
+        # it introduces (e.g. a target that should be linted but isn't) is
+        # invisible here — it would only ever surface indirectly, if at all,
+        # via our coverage metrics/dashboards flagging unexpectedly low
+        # linter coverage for a package. Filtering empty reports in CI
+        # keeps all targets flowing through the exact same upstream aspects
+        # everyone else uses, at the cost of only being able to detect gaps
+        # via those coverage metrics rather than failing the build outright.
         REPORTS=""
-        EMPTY_SOURCES=""
         for f in ${ALL_REPORTS}; do
           if [[ -s "${f}" ]]; then
             REPORTS+="${f}"$'\n'
-          else
-            # Recover the original linted source/header path from the
-            # report filename, e.g.
-            # ".../foo.cpp.AspectRulesLintClangTidy.report" -> ".../foo.cpp".
-            SOURCE_FILE=$(echo "${f}" | sed -E 's/\.AspectRulesLint[A-Za-z]*\.report$//')
-            EMPTY_SOURCES+="${SOURCE_FILE}"$'\n'
           fi
         done
         REPORTS=$(echo "${REPORTS}" | sed '/^$/d')
-        EMPTY_SOURCES=$(echo "${EMPTY_SOURCES}" | sed '/^$/d')
-
-        if [[ -n "${EMPTY_SOURCES}" ]]; then
-          echo "::error::Found empty (0-byte) rules_lint SARIF report(s), which indicates the linter did not actually run for these file(s):"
-          while IFS= read -r src; do
-            echo "::error file=${src}::Empty rules_lint SARIF report for file ${src}; the linter did not run against it (e.g. no compile action, misconfigured target)."
-          done <<< "${EMPTY_SOURCES}"
-          exit 1
-        fi
 
         if [[ -z "${REPORTS}" ]]; then
           echo "::error::No non-empty SARIF reports found; nothing to merge/upload."
@@ -106,6 +108,9 @@ runs:
         # `xargs jq -s ...`, which split into multiple invocations once the
         # report list exceeded xargs' default ~128KiB argument limit, each
         # appending a separate SARIF document to the same output file).
+        # `Sarif.Multitool` expands this glob itself (via .NET's
+        # Directory.EnumerateFiles filter matching), so it must stay quoted
+        # here to survive as one argv entry.
         i=0
         while IFS= read -r f; do
           i=$((i + 1))
@@ -118,8 +123,18 @@ runs:
         # (deduplicating identical results), which is required since GitHub
         # Code Scanning (as of 2025-07-22) rejects SARIF uploads containing
         # multiple runs that share the same tool/category.
+        #
+        # `--merge-empty-logs` is required: by default, `merge` silently
+        # *drops* any run whose `results` array is empty (i.e. a genuinely
+        # clean lint pass for that file) instead of including it with zero
+        # results. When every input report happens to be clean, that
+        # default produces a `{"runs": []}` document with *no* runs at all,
+        # which GitHub's SARIF upload API then rejects outright with
+        # "Invalid request. 1 item required; only 0 were supplied." rather
+        # than accepting it as "zero findings".
         npx --yes "@microsoft/sarif-multitool@${{ inputs.sarif-multitool-version }}" \
           merge "${STAGE_DIR}/*" \
+          --merge-empty-logs \
           --output-directory "$(dirname "${{ inputs.output-file }}")" \
           --output-file "$(basename "${{ inputs.output-file }}")"
 

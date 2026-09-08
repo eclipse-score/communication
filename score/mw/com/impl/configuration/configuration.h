@@ -25,6 +25,8 @@
 #include <score/overload.hpp>
 
 #include <cstdint>
+#include <list>
+#include <mutex>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -53,6 +55,11 @@ class Configuration final
     using ServiceInstanceDeployments = std::unordered_map<InstanceSpecifier, ServiceInstanceDeployment>;
     using BindingInformation = std::variant<LolaServiceTypeDeployment, score::cpp::blank>;
 
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
+    // Test only use to check internal state of configuration after (merge) operations.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend class ConfigurationFixture;
+
     Configuration(ServiceTypeDeployments service_types,
                   ServiceInstanceDeployments service_instances,
                   GlobalConfiguration global_configuration,
@@ -63,10 +70,16 @@ class Configuration final
      * \brief Class is moveable but not copyable
      */
     Configuration(const Configuration& other) = delete;
-    Configuration(Configuration&& other) noexcept = default;
+    Configuration(Configuration&& other) noexcept;
     Configuration& operator=(const Configuration& other) & = delete;
     Configuration& operator=(Configuration&& other) & = delete;
 
+  private:
+    /// \brief Delegate target used by the move constructor to hold `other.merge_mutex_` locked while the member-wise
+    /// moves happen, preventing race conditions with a concurrent 'write operations' on `other`.
+    Configuration(Configuration& other, const std::lock_guard<std::mutex>&) noexcept;
+
+  public:
     ServiceTypeDeployment* AddServiceTypeDeployment(ServiceIdentifierType service_identifier_type,
                                                     ServiceTypeDeployment service_type_deployment) noexcept;
     ServiceInstanceDeployment* AddServiceInstanceDeployments(
@@ -83,45 +96,29 @@ class Configuration final
     }
 
     std::optional<std::reference_wrapper<const ServiceTypeDeployment>> GetServiceTypeDeployment(
-        const ServiceIdentifierType& service_identifier_type) const noexcept
-    {
-        const auto it = service_types_.find(service_identifier_type);
-        if (it == service_types_.end())
-        {
-            return std::nullopt;
-        }
-        return std::cref(it->second);
-    }
+        const ServiceIdentifierType& service_identifier_type) const noexcept;
 
     std::optional<std::reference_wrapper<const ServiceInstanceDeployment>> GetServiceInstanceDeployment(
-        const InstanceSpecifier& specifier) const noexcept
-    {
-        const auto it = service_instances_.find(specifier);
-        if (it == service_instances_.end())
-        {
-            return std::nullopt;
-        }
-        return std::cref(it->second);
-    }
+        const InstanceSpecifier& specifier) const noexcept;
 
-    size_t GetNumberOfServiceTypes() const noexcept
-    {
-        return service_types_.size();
-    }
+    /// \brief Merge service types and instances into this configuration.
+    /// Checks for clashes in type names and instance names and will return error in this case.
+    /// \attention In case that the merge fails, the configuration will be left in an undefined state and should not be
+    /// used anymore.
+    Result<void> MergeServiceEntries(const Configuration& additional_configuration) noexcept;
+
+    size_t GetNumberOfServiceTypes() const noexcept;
 
     bool IsServiceTypesEmpty() const noexcept
     {
-        return service_types_.empty();
+        return GetNumberOfServiceTypes() == 0;
     }
 
-    size_t GetNumberOfServiceInstances() const noexcept
-    {
-        return service_instances_.size();
-    }
+    size_t GetNumberOfServiceInstances() const noexcept;
 
     bool IsServiceInstancesEmpty() const noexcept
     {
-        return service_instances_.empty();
+        return GetNumberOfServiceInstances() == 0;
     }
 
     /// \brief Public interface to trigger a validation of this configuration.
@@ -156,6 +153,84 @@ class Configuration final
     std::set<std::string_view> GetInstancesOfServiceType(std::string_view service_type) const noexcept;
 
   private:
+    /// \brief Returns a copy of the merged entries across all persisted maps of service type deployments.
+    /// \attention This returns an owned copy, so no references, pointers or string_views should be extracted and used
+    ///         beyond the copy's lifetime. For that use case, use ForEachServiceType() instead, which iterates directly
+    ///         over the persisted storage.
+    ServiceTypeDeployments GetServiceTypes() const noexcept;
+
+    /// \brief Returns a copy of the merged entries across all persisted maps of service isntance deployments.
+    /// \attention This returns an owned copy, so no references, pointers or string_views should be extracted and used
+    ///         beyond the copy's lifetime. For that use case, use ForEachServiceInstance() instead, which iterates
+    ///         directly over the persisted storage.
+    ServiceInstanceDeployments GetServiceInstances() const noexcept;
+
+    /// \brief Invokes a callback with a const reference to every service type deployment entry
+    ///        held across all persisted maps of service type deployments.
+    /// \attention This function was introduced to have a copy free access to the entries in those maps.  This makes it
+    ///            safe to extract references/string_views from the entries passed to callback and use them beyond
+    ///            the lifetime of a single call, as long as this Configuration outlives them.
+    template <typename Callback>
+    void ForEachServiceType(Callback&& callback) const noexcept
+    {
+        const auto current_list = std::atomic_load_explicit(&service_types_, std::memory_order_acquire);
+        if (current_list == nullptr)
+        {
+            return;
+        }
+        for (const auto& element : *current_list)
+        {
+            for (const auto& entry : *element)
+            {
+                callback(entry);
+            }
+        }
+    }
+
+    /// \brief Invokes a callback with a const reference to every service instance deployment entry
+    ///        held across all persisted maps of service instance deployments.
+    /// \attention Same lifetime guarantees as ForEachServiceType() above, but for service instance deployments.
+    template <typename Callback>
+    void ForEachServiceInstance(Callback&& callback) const noexcept
+    {
+        const auto current_list = std::atomic_load_explicit(&service_instances_, std::memory_order_acquire);
+        if (current_list == nullptr)
+        {
+            return;
+        }
+        for (const auto& element : *current_list)
+        {
+            for (const auto& entry : *element)
+            {
+                callback(entry);
+            }
+        }
+    }
+
+    /// \brief Get list of maps of service types. If list is not defined or empty, this function will terminate the
+    /// program.
+    std::shared_ptr<std::list<std::shared_ptr<ServiceTypeDeployments>>> GetListOfServiceTypeMaps() const;
+
+    /// \brief Get list of maps of service instances. If list is not defined or empty, this function will terminate the
+    /// program.
+    std::shared_ptr<std::list<std::shared_ptr<ServiceInstanceDeployments>>> GetListOfServiceInstanceMaps() const;
+
+    /// \brief Helper function to check if entry for this service_identifier is already stored in list of service type
+    /// deployments
+    static bool CheckServiceTypeExists(
+        const ServiceIdentifierType& service_identifier,
+        const std::shared_ptr<
+            std::list<std::shared_ptr<std::unordered_map<ServiceIdentifierType, ServiceTypeDeployment>>>>&
+            current_list);
+
+    /// \brief Helper function to check if entry for this instance_identifier is already stored in list of instance
+    /// deployments
+    static bool CheckServiceInstanceExists(
+        const InstanceSpecifier& instance_identifier,
+        const std::shared_ptr<
+            std::list<std::shared_ptr<std::unordered_map<InstanceSpecifier, ServiceInstanceDeployment>>>>&
+            current_list);
+
     /// \brief Validate if service ASIL levels match the application's assigned ASIL level.
     score::Result<void> CrossCheckAsilLevels() const noexcept;
     /// \brief Validate if service type definitions and service instance definitions fit together.
@@ -172,15 +247,35 @@ class Configuration final
                                       const QualityType asil_level) noexcept;
 
     /**
-     * @brief map containing all the configured ports/InstanceSpecifiers for an executable.
+     * @brief List of all generations of the map containing the configured service type deployments.
      *
-     * Key is the string representation of the InstanceSpecifier aka port name.
-     * Value is the ServiceIdentifierType, the port is typed with.
+     * Key is the ServiceIdentifierType, value is the ServiceTypeDeployment.
+     *
+     * Each write update, i.e. AddServiceTypeDeployment() and MergeServiceEntries() will create a new map
+     * that will be added to this list. The different versions are stored in a list so that the pointers to the elements
+     * in it, stay valid for the lifetime of this configuration. Stored as std::shared_ptr so that atomic updates can be
+     * done to the list of maps, while the previous generations are still accessible by readers.
      */
-    ServiceTypeDeployments service_types_;
-    ServiceInstanceDeployments service_instances_;
+    std::shared_ptr<std::list<std::shared_ptr<ServiceTypeDeployments>>> service_types_;
+
+    /**
+     * @brief List of all generations of the map containing the configured service instance deployments.
+     *
+     * Key is the InstanceSpecifier, value is the ServiceInstanceDeployment.
+     *
+     * Each write update, i.e. AddServiceInstanceDeployment() and MergeServiceEntries() will create a new map
+     * that will be added to this list. The different versions are stored in a list so that the pointers to the elements
+     * in it, stay valid for the lifetime of this configuration. Stored as std::shared_ptr so that atomic updates can be
+     * done to the list of maps, while the previous generations are still accessible by readers.
+     */
+    std::shared_ptr<std::list<std::shared_ptr<ServiceInstanceDeployments>>> service_instances_;
     GlobalConfiguration global_configuration_;
     TracingConfiguration tracing_configuration_;
+
+    /// This mutex is only used to avoid multiple simultaneous merges, i.e. calls of MergeServiceEntries(). On the read
+    /// path the usage of this mutex can be avoided because the list of configuration elements will be loaded via atomic
+    /// operations.
+    std::mutex merge_mutex_;
 };
 
 }  // namespace score::mw::com::impl

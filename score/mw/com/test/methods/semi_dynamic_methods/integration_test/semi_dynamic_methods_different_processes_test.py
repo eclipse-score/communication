@@ -14,12 +14,24 @@
 
 def provider(target, **kwargs):
     args = []
-    return target.wrap_exec("bin/main_provider", args, cwd="/opt/MainProviderApp", wait_on_exit=True, **kwargs)
+    return target.wrap_exec(
+        "bin/main_provider",
+        args,
+        cwd="/opt/MainProviderApp",
+        wait_on_exit=True,
+        **kwargs,
+    )
 
 
 def consumer(target, **kwargs):
     args = []
-    return target.wrap_exec("bin/main_consumer", args, cwd="/opt/MainConsumerApp", wait_on_exit=True, **kwargs)
+    return target.wrap_exec(
+        "bin/main_consumer",
+        args,
+        cwd="/opt/MainConsumerApp",
+        wait_on_exit=True,
+        **kwargs,
+    )
 
 
 def test_semi_dynamic_methods_different_processes_test(target):

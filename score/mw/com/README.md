@@ -16,8 +16,7 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Overview
 
-`LoLa`/`mw::com`: A high-level communication middleware as a partial implementation of the Adaptive AUTOSAR
-Communication Management specification. Also known as `ara::com` (as this is the related namespace in AUTOSAR).
+`LoLa`/`mw::com`: A high-level communication middleware providing a partial implementation of the Adaptive AUTOSAR Communication Management specification. Within the Adaptive AUTOSAR ecosystem, it is commonly known as `ara::com`, reflecting the namespace defined by the standard.
 
 ## General introduction
 
@@ -40,7 +39,7 @@ It is even common, that implementations of the `ara::com` standard come up with 
 If you are an adaptive application developer in the IPNEXT project, and you want to use `mw::com` to do local
 interprocess communication, you will find the user documentation here: LINK TODO.
 
-Documentation of `mw::com`s public API with usage examples can be found in `doc/user_facing_API_examples.md`.
+Documentation of `mw::com`s public API with usage examples can be found in [doc/user_facing_API_examples.md](doc/user_facing_API_examples.md).
 If you want to see an example app, which uses LoLa to establish shared-memory communication between a service and a
-client you can take a look at our macro benchmark app which resides in `performance_benchmarks/macro_benchmark`.
+client you can take a look at our macro benchmark app which resides in [performance_benchmarks/macro_benchmark](performance_benchmarks/macro_benchmark).
 

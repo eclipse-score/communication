@@ -31,7 +31,7 @@ IRuntime* RuntimeMockHolder::runtime_mock_{nullptr};
 
 }
 
-score::Result<InstanceIdentifierContainer> ResolveInstanceIDs(const impl::InstanceSpecifier model_name)
+score::Result<InstanceIdentifierContainer> ResolveInstanceIDs(const impl::InstanceSpecifier& model_name)
 {
     if (auto* const runtime_mock_holder = detail::RuntimeMockHolder::GetRuntimeMock())
     {
@@ -84,6 +84,16 @@ void InitializeRuntime(const RuntimeConfiguration& runtime_configuration)
     }
 
     impl::Runtime::Initialize(runtime_configuration);
+}
+
+Result<void> InitializeRuntimeAddonConfiguration(const RuntimeConfiguration& runtime_configuration)
+{
+    return impl::Runtime::InitializeRuntimeAddonConfiguration(runtime_configuration);
+}
+
+Result<void> InitializeRuntimeAddonConfiguration(score::json::Any json)
+{
+    return impl::Runtime::InitializeRuntimeAddonConfiguration(std::move(json));
 }
 
 }  // namespace score::mw::com::runtime

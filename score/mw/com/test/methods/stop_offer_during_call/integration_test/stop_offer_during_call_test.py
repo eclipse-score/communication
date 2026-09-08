@@ -11,10 +11,17 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+
 def consumer_and_provider(target, **kwargs):
     args = ["--service_instance_manifest", "./etc/mw_com_config.json"]
-    return target.wrap_exec("./bin/main_stop_offer_during_call",args,
-                           cwd="/opt/StopOfferDuringCallApp/", wait_on_exit=True, **kwargs)
+    return target.wrap_exec(
+        "./bin/main_stop_offer_during_call",
+        args,
+        cwd="/opt/StopOfferDuringCallApp/",
+        wait_on_exit=True,
+        **kwargs,
+    )
+
 
 def test_stop_offer_during_call(target, **kwargs):
     with consumer_and_provider(target, **kwargs):

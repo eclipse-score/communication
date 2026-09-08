@@ -15,12 +15,13 @@
 
 
 def concurrent_skeleton_creation(target, **kwargs):
-    args = [
-        "--service_instance_manifest",
-        "etc/mw_com_config.json"
-    ]
+    args = ["--service_instance_manifest", "etc/mw_com_config.json"]
     return target.wrap_exec(
-        "bin/concurrent_skeleton_creation", args, cwd="/opt/concurrent_skeleton_creation", wait_on_exit=True, **kwargs
+        "bin/concurrent_skeleton_creation",
+        args,
+        cwd="/opt/concurrent_skeleton_creation",
+        wait_on_exit=True,
+        **kwargs,
     )
 
 

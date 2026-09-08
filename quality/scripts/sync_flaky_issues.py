@@ -226,8 +226,7 @@ def render_body(stats: Stats) -> str:
 def render_run_comment(record: RunRecord, run_url: str, reopened: bool = False) -> str:
     """Render a per-run ledger comment (human text + machine-readable marker)."""
     config_bits = ", ".join(
-        f"{name} {vals['failed_runs']}/{vals['total_runs']}"
-        for name, vals in sorted(record.configs.items())
+        f"{name} {vals['failed_runs']}/{vals['total_runs']}" for name, vals in sorted(record.configs.items())
     )
     lines = []
     if reopened:
@@ -312,7 +311,13 @@ def sync(merged_summary: dict, client: GitHubClient, ctx: RunContext) -> list[di
         comments = client.list_run_comments(existing)
         existing_records = parse_run_records(comments)
         if any(r.run_id == ctx.run_id for r in existing_records):
-            actions.append({"target": target, "action": "skipped-duplicate", "issue": existing.number})
+            actions.append(
+                {
+                    "target": target,
+                    "action": "skipped-duplicate",
+                    "issue": existing.number,
+                }
+            )
             continue
 
         reopened = existing.state == "closed"
@@ -381,7 +386,11 @@ class RestGitHubClient:
                 self._request(
                     "POST",
                     f"/repos/{self._repo}/labels",
-                    {"name": name, "color": "d73a4a", "description": "Detected flaky test target"},
+                    {
+                        "name": name,
+                        "color": "d73a4a",
+                        "description": "Detected flaky test target",
+                    },
                 )
             except urllib.error.HTTPError as create_error:
                 if create_error.code != 422:  # already exists (race)
@@ -389,9 +398,7 @@ class RestGitHubClient:
 
     def search_issue(self, target: str) -> Issue | None:
         # Search open+closed issues carrying the label; match by body marker.
-        issues = self._paginate(
-            f"/repos/{self._repo}/issues?state=all&labels={FLAKY_LABEL}"
-        )
+        issues = self._paginate(f"/repos/{self._repo}/issues?state=all&labels={FLAKY_LABEL}")
         for raw in issues:
             if "pull_request" in raw:
                 continue
@@ -409,9 +416,7 @@ class RestGitHubClient:
         return None
 
     def list_run_comments(self, issue: Issue) -> list[str]:
-        comments = self._paginate(
-            f"/repos/{self._repo}/issues/{issue.number}/comments"
-        )
+        comments = self._paginate(f"/repos/{self._repo}/issues/{issue.number}/comments")
         return [c.get("body") or "" for c in comments]
 
     def create_issue(self, title: str, body: str, labels: list[str]) -> Issue:
@@ -432,7 +437,11 @@ class RestGitHubClient:
         issue.state = "open"
 
     def add_comment(self, issue: Issue, body: str) -> None:
-        self._request("POST", f"/repos/{self._repo}/issues/{issue.number}/comments", {"body": body})
+        self._request(
+            "POST",
+            f"/repos/{self._repo}/issues/{issue.number}/comments",
+            {"body": body},
+        )
 
 
 # --------------------------------------------------------------------------- #

@@ -208,7 +208,7 @@ bool IsMethodErrorRecoverable(const score::result::Error error)
 
 MessagePassingServiceInstance::MessagePassingServiceInstance(
     const ClientQualityType asil_level,
-    AsilSpecificCfg /*config*/,
+    const AsilSpecificCfg& /*config*/,
     score::message_passing::IServerFactory& server_factory,
     score::message_passing::IClientFactory& client_factory,
     score::concurrency::Executor& local_event_executor) noexcept
@@ -486,7 +486,7 @@ void MessagePassingServiceInstance::HandleRegisterNotificationMsg(const score::c
     if (search != event_update_interested_nodes_.end())
     {
         auto inserted = search->second.insert(sender_node_id);
-        already_registered = (inserted.second == false);
+        already_registered = (!inserted.second);
         notify_status_change = !already_registered && (search->second.size() == 1U);
     }
     else
@@ -918,7 +918,7 @@ void MessagePassingServiceInstance::NotifyEventRemote(const ElementFqId event_id
                     << " failed with error: " << result.error();
             }
         }
-        if (num_ids_copied.second == true)
+        if (num_ids_copied.second)
         {
             // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
             // data loss". std::set is a sorted set of unique objects so the biggest element is the last one, and the
@@ -937,7 +937,7 @@ void MessagePassingServiceInstance::NotifyEventRemote(const ElementFqId event_id
                 break;
             }
         }
-    } while (num_ids_copied.second == true);
+    } while (num_ids_copied.second);
 
     if (loop_count > 1U)
     {
@@ -1018,7 +1018,7 @@ void MessagePassingServiceInstance::NotifyEvent(const ElementFqId event_id) noex
     // handlers may have an unknown/non-deterministic long runtime.
     std::shared_lock<std::shared_mutex> read_lock(event_update_handlers_mutex_);
     auto search = event_update_handlers_.find(event_id);
-    if ((search != event_update_handlers_.end()) && (search->second.empty() == false))
+    if ((search != event_update_handlers_.end()) && (!search->second.empty()))
     {
         read_lock.unlock();
         // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "If a function is declared to be noexcept,
@@ -1335,7 +1335,7 @@ void MessagePassingServiceInstance::RegisterEventNotificationRemote(const Elemen
         event_update_remote_registrations_.emplace(std::piecewise_construct,
                                                    std::forward_as_tuple(event_id),
                                                    std::forward_as_tuple(NodeCounter{target_node_id, 1U}));
-    if (registration_count_inserted.second == false)
+    if (!registration_count_inserted.second)
     {
         if (registration_count_inserted.first->second.node_id != target_node_id)
         {

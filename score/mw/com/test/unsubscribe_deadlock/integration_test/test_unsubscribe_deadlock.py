@@ -17,7 +17,11 @@
 def unsubscribe_deadlock(target, **kwargs):
     args = []
     return target.wrap_exec(
-        "bin/unsubscribe_deadlock", args, cwd="/opt/unsubscribe_deadlock", wait_on_exit=True, **kwargs
+        "bin/unsubscribe_deadlock",
+        args,
+        cwd="/opt/unsubscribe_deadlock",
+        wait_on_exit=True,
+        **kwargs,
     )
 
 

@@ -194,7 +194,7 @@ A Node.js action (`using: node24`) with main/post lifecycle:
 - **`main`**: Saves inputs to action state, creates cache directories,
   restores caches via `@actions/cache` npm library, writes `~/.bazelrc`
   with `--repository_cache` and `--disk_cache` flags.
-- **`post`** (`post-if: always()`): Saves disk cache (if name non-empty),
+- **`post`** (`post-if: !cancelled()`): Saves disk cache (if name non-empty),
   saves repository cache (if mode is `recreate`/`recreate-update`),
   deletes old entries via GitHub API. Guaranteed to run even on
   job cancellation.

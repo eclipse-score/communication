@@ -64,7 +64,7 @@ runs:
         echo "log-count=${COUNT}" >> "${GITHUB_OUTPUT}"
 
     - name: Upload Bazel test logs artifact
-      if: always()
+      if: ${{ !cancelled() }}
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.artifact-name }}

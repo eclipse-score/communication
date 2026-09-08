@@ -49,10 +49,10 @@ cc_library(
         "//score/mw/com/gateway:__subpackages__",
     ],
     deps = [
+        "//score/mw/com:types",
         "//score/mw/com/gateway/transport_layer:transport",
         "//score/mw/com/gateway/transport_layer/sample/messages:serialization",
         "//score/mw/com/gateway/transport_layer/sample/messages:transport_message",
-        "//score/mw/com/impl:instance_specifier",
     ],
 )
 

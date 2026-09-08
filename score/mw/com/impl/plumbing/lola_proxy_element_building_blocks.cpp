@@ -50,8 +50,8 @@ lola::ElementFqId GetElementFqId(const HandleType& handle,
             case ServiceElementType::INVALID:
             default:
                 score::mw::log::LogFatal("lola") << "LookupLolaProxyElement called with invalid ServiceElementType.";
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-                    false, "LookupLolaProxyElement called with invalid ServiceElementType.");
+                SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE(
+                    "LookupLolaProxyElement called with invalid ServiceElementType.");
         }
     }()};
 

@@ -94,7 +94,8 @@ class RuntimeSingleTestPerProcessFixture : public singleton::test::SingleTestPer
     InstanceSpecifier tire_pressure_port_other_{
         InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePortOther"}).value()};
     std::string config_with_tire_pressure_port_other_{get_path("mw_com_config_other.json")};
-    bool tested_in_separate_process_{false};
+    std::string config_to_merge_{get_path("mw_com_config_to_merge.json")};
+    std::string config_to_merge_second_{get_path("mw_com_config_to_merge_second.json")};
 };
 
 std::vector<std::string_view> GetEventNameListFromHandle(const HandleType& handle_type) noexcept
@@ -263,6 +264,101 @@ TEST_F(RuntimeInitializationTest, ImplicitInitializationLoadsCorrectConfiguratio
     });
 }
 
+TEST_F(RuntimeInitializationTest, ConfigurationGetsMergedAndLoadedIfInitialConfigurationHasBeenLoadedEarlier)
+{
+    TestInSeparateProcess([this]() {
+        // Given an initial complete configuration has been loaded earlier
+        const auto configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other_};
+        Runtime::Initialize(configuration);
+
+        // When loading an add-on configuration with InitializeRuntimeAddonConfiguration
+        const auto addon_init_result =
+            Runtime::InitializeRuntimeAddonConfiguration(runtime::RuntimeConfiguration{config_to_merge_});
+
+        auto& updated_runtime = static_cast<Runtime&>(Runtime::getInstance());
+
+        const RuntimeAttorney attorney{updated_runtime};
+
+        // Then both configurations are loaded and merged into the runtime's configuration
+        EXPECT_TRUE(addon_init_result.has_value());
+        EXPECT_EQ(attorney.GetConfigurationAddress()->GetNumberOfServiceTypes(), 2);
+    });
+}
+
+TEST_F(RuntimeInitializationTest, ConcurrentAddonConfigurationInitializationSucceeds)
+{
+    TestInSeparateProcess([this]() {
+        // Given an initial configuration has been loaded
+        const auto configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other_};
+        Runtime::Initialize(configuration);
+
+        // When two threads concurrently add non-conflicting addon configurations
+        std::optional<Result<void>> result_thread_1{};
+        std::optional<Result<void>> result_thread_2{};
+
+        std::thread thread_1{[&result_thread_1, this]() {
+            result_thread_1 =
+                Runtime::InitializeRuntimeAddonConfiguration(runtime::RuntimeConfiguration{config_to_merge_});
+        }};
+
+        std::thread thread_2{[&result_thread_2, this]() {
+            result_thread_2 =
+                Runtime::InitializeRuntimeAddonConfiguration(runtime::RuntimeConfiguration{config_to_merge_second_});
+        }};
+
+        thread_1.join();
+        thread_2.join();
+
+        // Then both addon configurations are successfully merged
+        ASSERT_TRUE(result_thread_1.has_value());
+        ASSERT_TRUE(result_thread_2.has_value());
+        EXPECT_TRUE(result_thread_1->has_value());
+        EXPECT_TRUE(result_thread_2->has_value());
+
+        auto& runtime = static_cast<Runtime&>(Runtime::getInstance());
+        const RuntimeAttorney attorney{runtime};
+
+        // And all three configurations (initial + 2 addons) are present
+        EXPECT_EQ(attorney.GetConfigurationAddress()->GetNumberOfServiceTypes(), 3);
+    });
+}
+
+using RuntimeInitializationDeathTest = RuntimeInitializationTest;
+TEST_F(RuntimeInitializationDeathTest, InitializationFailsIfNoAppConfigurationHasBeenLoadedYet)
+{
+    // EXPECT_DEATH forks a child process and GTest only allows one stderr capturer at a time
+    tested_in_separate_process_ = true;
+
+    EXPECT_DEATH(
+        {
+            // Given no configuration has been loaded
+            const auto runtime_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
+            // When loading an add-on configuration via InitializeRuntimeAddonConfiguration()
+            std::ignore = Runtime::InitializeRuntimeAddonConfiguration(runtime_configuration);
+            // Then the process terminates via std::terminate()
+        },
+        ".*");
+}
+
+TEST_F(RuntimeInitializationDeathTest, AddOnConfigurationInitializationFailsIfMergingTheConfigurationFails)
+{
+    // EXPECT_DEATH forks a child process and GTest only allows one stderr capturer at a time
+    tested_in_separate_process_ = true;
+
+    EXPECT_DEATH(
+        {
+            // Given an add-on configuration has been loaded, and it is being locked by accessing the Runtime instance
+            const auto runtime_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
+            Runtime::Initialize(runtime_configuration);
+            std::ignore = static_cast<Runtime&>(Runtime::getInstance());
+            // When loading the same configuration via InitializeRuntimeAddonConfiguration()
+            const auto add_on_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
+            std::ignore = Runtime::InitializeRuntimeAddonConfiguration(add_on_configuration);
+            // Then the process terminates via std::terminate() because there is a clash of service identifiers
+        },
+        ".*");
+}
+
 using RuntimeTest = RuntimeSingleTestPerProcessFixture;
 
 TEST_F(RuntimeTest, CannotResolveUnknownInstanceSpecifier)
@@ -315,7 +411,7 @@ TEST_F(RuntimeTest, CannotRetrieveUnconfiguredBinding)
 
 TEST_F(RuntimeTest, HandleTypeContainsEventsSpecifiedInConfiguration)
 {
-    RecordProperty("Verifies", "SCR-15600146");
+    RecordProperty("lobster-tracing", "Communication.EventListSource");
     RecordProperty("Description",
                    "A HandleType containing the events in the Lola configuration file can be created from the "
                    "configuration file.");

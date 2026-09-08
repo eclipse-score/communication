@@ -28,7 +28,7 @@ using score::os::Socket;
 /// \brief Helper function to send the buffer's data over a socket.
 int SendAll(std::int32_t socket_fd, const void* data, std::size_t length)
 {
-    auto* ptr = static_cast<const char*>(data);
+    const auto* ptr = static_cast<const char*>(data);
     while (length > 0)
     {
         auto result = Socket::instance().sendto(socket_fd, ptr, length, Socket::MessageFlag::kNone, nullptr, 0);

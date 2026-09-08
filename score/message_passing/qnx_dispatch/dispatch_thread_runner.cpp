@@ -119,7 +119,7 @@ void DispatchThreadRunner::StartPostInit() noexcept
     score::cpp::ignore = signal_.PthreadSigMask(SIG_SETMASK, old_set);
 }
 
-DispatchThreadRunner::~DispatchThreadRunner() noexcept
+void DispatchThreadRunner::Stop() noexcept
 {
     if (dispatch_pointer_ == nullptr)
     {
@@ -134,6 +134,12 @@ DispatchThreadRunner::~DispatchThreadRunner() noexcept
     score::cpp::ignore = dispatch_.dispatch_destroy(dispatch_pointer_);
     // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
     dispatch_.dispatch_context_free(context_pointer_);
+    dispatch_pointer_ = nullptr;
+}
+
+DispatchThreadRunner::~DispatchThreadRunner() noexcept
+{
+    Stop();
 }
 
 void DispatchThreadRunner::RunOnThread() noexcept

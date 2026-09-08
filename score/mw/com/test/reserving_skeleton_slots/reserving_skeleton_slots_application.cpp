@@ -28,7 +28,7 @@ namespace
 using InstanceSpecifier = score::mw::com::InstanceSpecifier;
 
 std::uint16_t GetNumSkeletonSlotsFromConfig(const std::string& service_instance_manifest_path,
-                                            const InstanceSpecifier instance_specifier)
+                                            const InstanceSpecifier& instance_specifier)
 {
     const auto configuration = score::mw::com::impl::configuration::Parse(service_instance_manifest_path);
 

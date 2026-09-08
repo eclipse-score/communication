@@ -34,7 +34,7 @@ class ServiceTypeDeployment
 
     explicit ServiceTypeDeployment(const score::json::Object& json_object);
 
-    explicit ServiceTypeDeployment(const BindingInformation binding);
+    explicit ServiceTypeDeployment(BindingInformation binding);
 
     score::json::Object Serialize() const;
     std::string_view ToHashString() const noexcept;

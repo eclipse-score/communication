@@ -77,6 +77,25 @@ TEST_F(LolaGenericProxyEventFixture, GetSampleSize)
     EXPECT_EQ(generic_proxy_event_->GetSampleSize(), sizeof(SampleType));
 }
 
+TEST_F(LolaGenericProxyEventFixture, GetDataTypeSizeInfo)
+{
+    RecordProperty("lobster-tracing", "GenericProxyEventGetDataTypeSizeInfo");
+    RecordProperty(
+        "Description",
+        "Checks that GetDataTypeSizeInfo will return the data type size info of the underlying event data type.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a valid GenericProxyEvent
+    WithAGenericProxyEvent(element_fq_id_, event_name_);
+
+    // Expect, that asking about the Sample size, we get the sizeof the underlying event data type (which is
+    // std::uint32_t in case of LolaProxyEventResources)
+    EXPECT_EQ(generic_proxy_event_->GetDataTypeSizeInfo().Alignment(), alignof(SampleType));
+    EXPECT_EQ(generic_proxy_event_->GetDataTypeSizeInfo().Size(), sizeof(SampleType));
+}
+
 TEST_F(LolaGenericProxyEventFixture, HasSerializedFormat)
 {
     RecordProperty("Verifies", "SCR-14035199");

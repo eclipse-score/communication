@@ -78,7 +78,7 @@ SubscriptionState SubscriptionStateMachineStateToSubscriptionState(SubscriptionS
         // coverity[autosar_cpp14_m6_4_5_violation]
         case SubscriptionStateMachineState::STATE_COUNT:
         default:
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Invalid subscription state");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Invalid subscription state");
     }
 }
 

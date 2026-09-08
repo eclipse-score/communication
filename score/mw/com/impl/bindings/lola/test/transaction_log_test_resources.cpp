@@ -147,7 +147,7 @@ bool IsProxyTransactionLogIdRegistered(TransactionLogSet& transaction_log_set,
                                        const TransactionLogId& transaction_log_id) noexcept
 {
     auto& transaction_logs = TransactionLogSetAttorney{transaction_log_set}.GetProxyTransactionLogs();
-    const auto result =
+    auto* const result =
         std::find_if(transaction_logs.begin(), transaction_logs.end(), [&transaction_log_id](const auto& element) {
             return (element.IsActive() && (element.GetTransactionLogId() == transaction_log_id));
         });
@@ -156,7 +156,7 @@ bool IsProxyTransactionLogIdRegistered(TransactionLogSet& transaction_log_set,
 
 bool IsSkeletonTransactionLogRegistered(TransactionLogSet& transaction_log_set) noexcept
 {
-    auto& transaction_log = TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog();
+    const auto& transaction_log = TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog();
     return transaction_log.has_value();
 }
 

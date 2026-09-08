@@ -53,7 +53,7 @@ constexpr auto kSharedMemoryPathPrefix = "/dev/shm/";
 class ConfigParser
 {
   public:
-    ConfigParser(const std::string& service_instance_manifest_path, const InstanceSpecifier instance_specifier)
+    ConfigParser(const std::string& service_instance_manifest_path, const InstanceSpecifier& instance_specifier)
     {
         const auto configuration = score::mw::com::impl::configuration::Parse(service_instance_manifest_path);
 
@@ -100,7 +100,7 @@ class ConfigParser
 
     std::optional<std::string> GetShmName() const noexcept
     {
-        const auto lola_service_type_deployment =
+        const auto* const lola_service_type_deployment =
             std::get_if<score::mw::com::impl::LolaServiceTypeDeployment>(&type_deployment_.binding_info_);
         if (lola_service_type_deployment == nullptr)
         {

@@ -19,8 +19,7 @@ import json
 import shutil
 
 
-def clean_up(mw_com_config_path: str,
-             processes: Optional[List[subprocess.Popen]]=None):
+def clean_up(mw_com_config_path: str, processes: Optional[List[subprocess.Popen]] = None):
 
     with open(mw_com_config_path, "r") as mw_com_config_fp:
         mw_com_config = json.load(mw_com_config_fp)
@@ -47,12 +46,10 @@ def clean_up(mw_com_config_path: str,
 
 
 class CommandLineArguments:
-
     def __init__(self):
         # Parse command-line arguments
         if len(sys.argv) != 3:
-            print("Usage: python script.py <LOGGING_JSON_PATH>",
-                  "<path/to/config_dir> ")
+            print("Usage: python script.py <LOGGING_JSON_PATH>", "<path/to/config_dir> ")
             print("config_dir will usually be an output artifact of a bazel.")
             sys.exit(1)
 
@@ -71,29 +68,49 @@ class CommandLineArguments:
 
 def launch_processes(cla: CommandLineArguments()):
 
-    service_proc = subprocess.Popen([cla.service_path,
-                                     cla.service_config_path,
-                                     cla.client_mw_com_config_path])
+    service_proc = subprocess.Popen([cla.service_path, cla.service_config_path, cla.client_mw_com_config_path])
     service_pid = service_proc.pid
 
     service_perf = subprocess.Popen(
-            ["perf", "record", "-F", "99", "-a", "-g", "-p",
-             str(service_pid), "-o", "data_service.perf"])
+        [
+            "perf",
+            "record",
+            "-F",
+            "99",
+            "-a",
+            "-g",
+            "-p",
+            str(service_pid),
+            "-o",
+            "data_service.perf",
+        ]
+    )
 
-    client_proc = subprocess.Popen([cla.client_path,
-                                    cla.client_config_path,
-                                    cla.service_mw_com_config_path])
+    client_proc = subprocess.Popen([cla.client_path, cla.client_config_path, cla.service_mw_com_config_path])
     client_pid = client_proc.pid
 
     client_perf = subprocess.Popen(
-            ["perf", "record", "-F", "99", "-a", "-g", "-p",
-             str(client_pid), "-o", "data_client.perf"])
+        [
+            "perf",
+            "record",
+            "-F",
+            "99",
+            "-a",
+            "-g",
+            "-p",
+            str(client_pid),
+            "-o",
+            "data_client.perf",
+        ]
+    )
 
     service_proc.wait()
     client_proc.wait()
 
-    clean_up(cla.client_mw_com_config_path, [service_proc, client_proc,
-                                             service_perf, client_perf])
+    clean_up(
+        cla.client_mw_com_config_path,
+        [service_proc, client_proc, service_perf, client_perf],
+    )
     print("All Done")
 
 
@@ -104,6 +121,7 @@ def main():
         print("\nSIGINT received!")
         clean_up(cla.service_mw_com_config_path)
         sys.exit(0)
+
     signal.signal(signal.SIGINT, signal_handler)
 
     print("Running. Press Ctrl+C to exit early.")

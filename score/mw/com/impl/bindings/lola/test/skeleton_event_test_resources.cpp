@@ -73,7 +73,7 @@ EventControl* SkeletonEventFixture::GetEventControl(const ElementFqId element_fq
     {
         return nullptr;
     }
-    const auto event_entry = service_data_control->event_controls_.find(element_fq_id);
+    auto* const event_entry = service_data_control->event_controls_.find(element_fq_id);
     if (event_entry != service_data_control->event_controls_.end())
     {
         return &event_entry->second;

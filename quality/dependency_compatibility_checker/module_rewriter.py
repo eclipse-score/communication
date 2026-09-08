@@ -87,7 +87,7 @@ def _remove_override_blocks(lines, module_name: str):
         line = lines[i]
         if not _is_comment(line) and starts_re.match(line):
             end = _block_end(lines, i)
-            body = [ln for ln in lines[i:end + 1] if not _is_comment(ln)]
+            body = [ln for ln in lines[i : end + 1] if not _is_comment(ln)]
             if any(name_re.search(ln) for ln in body):
                 i = end + 1
                 # drop a single trailing blank line left by the removal

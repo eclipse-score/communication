@@ -14,7 +14,7 @@
 #include "score/memory/shared/i_shared_memory_factory.h"
 #include "score/memory/shared/shared_memory_factory_impl.h"
 
-#include "score/utils/meyer_singleton/meyer_singleton.h"
+#include "score/utils/static_destruction_guard.h"
 
 #include <score/span.hpp>
 
@@ -98,11 +98,11 @@ auto SharedMemoryFactory::instance() noexcept -> ISharedMemoryFactory&
         return *mock_;
     }
 
-    // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-    // constant-initialized.".
-    // Rationale: SharedMemoryFactoryImpl does not have a constexpr constructor.
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    return singleton::MeyerSingleton<SharedMemoryFactoryImpl>::GetInstance();
+    // SharedMemoryFactoryImpl is kept alive via the nifty-counter idiom (see
+    // detail::nifty_counter_shared_memory_factory_impl) rather than a plain
+    // function-local static (Meyer's singleton), for the same static destruction order reasons as
+    // MemoryResourceRegistry.
+    return ::score::utils::StaticDestructionGuard<SharedMemoryFactoryImpl>::GetStorage();
 }
 
 auto SharedMemoryFactory::InjectMock(ISharedMemoryFactory* mock) noexcept -> void

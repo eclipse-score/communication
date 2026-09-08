@@ -223,13 +223,13 @@ void ParseEvent(const score::json::Any& json,
                                                                                    instance))
         {
             // trace points for the proxy side
-            for (auto& [bool_prop_name, trace_point_type] : filter_property_proxy_event_mappings)
+            for (const auto& [bool_prop_name, trace_point_type] : filter_property_proxy_event_mappings)
             {
                 AddTracePoint(
                     object, bool_prop_name, service_type, event_name, instance, trace_point_type, filter_config);
             }
             // trace points for the skeleton side
-            for (auto& [bool_prop_name, trace_point_type] : filter_property_skeleton_event_mappings)
+            for (const auto& [bool_prop_name, trace_point_type] : filter_property_skeleton_event_mappings)
             {
                 AddTracePoint(
                     object, bool_prop_name, service_type, event_name, instance, trace_point_type, filter_config);
@@ -318,7 +318,7 @@ void AddTracePointsFromSubObject(const score::json::Object& json_object,
         auto block_result = block->second.As<score::json::Object>();
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(block_result.has_value(),
                                                           "Configuration corrupted, check with json schema");
-        auto& block_object = block_result.value().get();
+        const auto& block_object = block_result.value().get();
         // trace points for the proxy side
         for (auto& prop_mapping : property_name_trace_point_mappings)
         {
@@ -343,8 +343,9 @@ void WarnNotImplementedTracePointsFromSubObject(const score::json::Object& json_
         auto block_result = block->second.As<score::json::Object>();
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(block_result.has_value(),
                                                           "Configuration corrupted, check with json schema");
-        auto& block_object = block_result.value().get();
-        for (auto& not_implemented_property_name : service_element_notifier_filter_properties_not_implemented_array)
+        const auto& block_object = block_result.value().get();
+        for (const auto& not_implemented_property_name :
+             service_element_notifier_filter_properties_not_implemented_array)
         {
             if (IsOptionalBoolPropertyEnabled(block_object, not_implemented_property_name))
             {

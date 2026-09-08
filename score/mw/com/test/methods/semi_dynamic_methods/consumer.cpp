@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <iostream>
+#include <utility>
 
 namespace score::mw::com::test
 {
@@ -90,7 +91,7 @@ void SemiDynamicProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_sp
         proxy_creation_condition_variable_.notify_all();
     };
 
-    auto start_find_service_result = Proxy::StartFindService(find_service_callback, instance_specifier);
+    auto start_find_service_result = Proxy::StartFindService(find_service_callback, std::move(instance_specifier));
     if (!start_find_service_result.has_value())
     {
         FailTest(failure_message_prefix, " Consumer: StartFindService() failed: ", start_find_service_result.error());

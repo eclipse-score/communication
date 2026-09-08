@@ -48,6 +48,11 @@ class CyclicEventSender
     CyclicEventSender(const CyclicEventSender& other) = delete;
     CyclicEventSender& operator=(const CyclicEventSender& rhs) = delete;
 
+    // Not movable either: the send-thread captures `this`, so moving this object would leave the running
+    // thread referencing a stale/moved-from instance.
+    CyclicEventSender(CyclicEventSender&& other) = delete;
+    CyclicEventSender& operator=(CyclicEventSender&& rhs) = delete;
+
     void Start()
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(cyclic_send_thread_.joinable() == false,

@@ -27,7 +27,7 @@ class EventMetaInfo
 {
   public:
     EventMetaInfo(const memory::DataTypeSizeInfo data_type_info,
-                  const memory::shared::OffsetPtr<void> event_slots_raw_array)
+                  const memory::shared::OffsetPtr<void>& event_slots_raw_array)
         : data_type_info_(data_type_info), event_slots_raw_array_(event_slots_raw_array)
     {
     }

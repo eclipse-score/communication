@@ -18,6 +18,7 @@ Subclasses ``QemuProcess`` and replaces its internal ``_qemu`` with an
 The ``start()`` method is self-healing: it waits for stable SSH, runs ``pre_tests_phase``,
 and restarts the QEMU process up to ``max_boot_attempts`` times if sshd never comes up.
 """
+
 import logging
 import time
 
@@ -80,7 +81,12 @@ class DualQemuProcess(QemuProcess):
         max_boot_attempts=3,
         boot_timeout=100,
     ):
-        super().__init__(path_to_qemu_image, available_ram, available_cores, port_forwarding=port_forwarding)
+        super().__init__(
+            path_to_qemu_image,
+            available_ram,
+            available_cores,
+            port_forwarding=port_forwarding,
+        )
         # Replace the base's default Qemu with our ivshmem-capable subclass.
         self._qemu = IvshmemQemu(
             path_to_qemu_image,
