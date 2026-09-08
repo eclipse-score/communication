@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_TEST_METHODS_MIXED_CRITICALITY_COMMON_RESOURCES_H
-#define SCORE_MW_COM_TEST_METHODS_MIXED_CRITICALITY_COMMON_RESOURCES_H
+#ifndef SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_SERVICE_INSTANCE_MANIFEST_PARSER_H
+#define SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_SERVICE_INSTANCE_MANIFEST_PARSER_H
 
 #include <string>
 
@@ -27,4 +27,4 @@ std::string ParseServiceInstanceManifest(int argc, const char** argv);
 
 }  // namespace score::mw::com::test
 
-#endif  // SCORE_MW_COM_TEST_METHODS_MIXED_CRITICALITY_COMMON_RESOURCES_H
+#endif  // SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_SERVICE_INSTANCE_MANIFEST_PARSER_H

@@ -5,13 +5,22 @@
  * information regarding copyright ownership.
  *
  * This program and the accompanying materials are made available under the
- * terms of the Apache License Version 2.0 which is available at
+ * terms of the Apache License 2.0 which is available at
  * https://www.apache.org/licenses/LICENSE-2.0
  *
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#ifndef SCORE_MW_COM_TEST_SEPARATE_RECEPTION_THREADS_SEPARATE_RECEPTION_THREADS_APPLICATION_H
-#define SCORE_MW_COM_TEST_SEPARATE_RECEPTION_THREADS_SEPARATE_RECEPTION_THREADS_APPLICATION_H
+#ifndef SCORE_MW_COM_TEST_ALL_SERVICE_ELEMENTS_PROVIDER_H
+#define SCORE_MW_COM_TEST_ALL_SERVICE_ELEMENTS_PROVIDER_H
 
-#endif  // SCORE_MW_COM_TEST_SEPARATE_RECEPTION_THREADS_SEPARATE_RECEPTION_THREADS_APPLICATION_H
+#include <score/stop_token.hpp>
+
+namespace score::mw::com::test
+{
+
+void RunProvider(const score::cpp::stop_token& stop_token);
+
+}  // namespace score::mw::com::test
+
+#endif  // SCORE_MW_COM_TEST_ALL_SERVICE_ELEMENTS_PROVIDER_H

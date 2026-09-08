@@ -130,7 +130,7 @@ class SkeletonFieldTestFixture : public ::testing::Test
 
 TEST(SkeletonFieldTest, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-18221574");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldCopySemantics");
     RecordProperty("Description", "Checks copy constructors for SkeletonField");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -154,7 +154,7 @@ TEST(SkeletonFieldTest, IsMoveable)
 
 TEST(SkeletonFieldTest, ClassTypeDependsOnFieldDataType)
 {
-    RecordProperty("Verifies", "SCR-29235194");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldClassDefinition");
     RecordProperty("Description", "SkeletonFields with different field data types should be different classes.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -168,7 +168,7 @@ TEST(SkeletonFieldTest, ClassTypeDependsOnFieldDataType)
 
 TEST(SkeletonFieldTest, SkeletonFieldContainsPublicSampleType)
 {
-    RecordProperty("Verifies", "SCR-17433130");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldType");
     RecordProperty("Description",
                    "A SkeletonField contains a public member type FieldType which denotes the type of the field.");
     RecordProperty("TestType", "Requirements-based test");
@@ -258,7 +258,8 @@ TEST_F(SkeletonFieldCreationFixture,
 using SkeletonFieldCopyUpdateTest = SkeletonFieldTestFixture;
 TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServiceDefersCallToOfferService)
 {
-    RecordProperty("Verifies", "SCR-17434775, SCR-17563743, SCR-21553554");
+    RecordProperty("Verifies", "SCR-17563743, SCR-21553554");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldClassUpdate");
     RecordProperty("Description", "Checks that calling Update before offer service defers the call to OfferService().");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -303,7 +304,8 @@ TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServiceDefersCallToO
 // Update() before PrepareOffer() is called.
 TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServicePropagatesBindingFailureToOfferService)
 {
-    RecordProperty("Verifies", "SCR-17434775, SCR-21553554");
+    RecordProperty("Verifies", "SCR-21553554");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldClassUpdate");
     RecordProperty("Description", "Checks that calling Update before offer service defers the call to OfferService().");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -346,7 +348,8 @@ TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServicePropagatesBin
 
 TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateAfterOfferServiceDispatchesToBinding)
 {
-    RecordProperty("Verifies", "SCR-17434775, SCR-21553375");
+    RecordProperty("Verifies", "SCR-21553375");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldClassUpdate");
     RecordProperty("Description", "Checks that calling Update after offer service dispatches to the binding.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -387,7 +390,8 @@ TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateAfterOfferServiceDispatchesToBi
 
 TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateAfterOfferServicePropagatesBindingFail)
 {
-    RecordProperty("Verifies", "SCR-17434775, SCR-21553375");
+    RecordProperty("Verifies", "SCR-21553375");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldClassUpdate");
     RecordProperty("Description",
                    "Checks that calling Update after offer service returns kBindingFailure for a generic error code "
                    "from the binding.");
@@ -454,7 +458,8 @@ TEST_F(SkeletonFieldAllocateTest, CallingAllocateBeforePrepareOfferDoesNotReturn
 
 TEST_F(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferDispatchesToBinding)
 {
-    RecordProperty("Verifies", "SCR-17434933, SCR-21470600");
+    RecordProperty("Verifies", "SCR-21470600");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldAllocate");
     RecordProperty("Description", "Checks that calling allocate after prepare offer dispatches to the binding.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -494,7 +499,7 @@ TEST_F(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferDispatchesToBi
 
 TEST_F(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferFailsWhenBindingReturnsError)
 {
-    RecordProperty("Verifies", "SCR-17434933");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldAllocate");
     RecordProperty("Description",
                    "Checks that calling allocate after prepare offer propagates an error from the binding.");
     RecordProperty("TestType", "Requirements-based test");
@@ -540,7 +545,8 @@ using SkeletonFieldZeroCopyUpdateTest = SkeletonFieldTestFixture;
 
 TEST_F(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServiceDispatchesToBinding)
 {
-    RecordProperty("Verifies", "SCR-17434778, SCR-21553623");
+    RecordProperty("Verifies", "SCR-21553623");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldClassZeroCopyUpdate");
     RecordProperty("Description",
                    "Checks that calling zero copy Update after offer service dispatches to the binding.");
     RecordProperty("TestType", "Requirements-based test");
@@ -600,7 +606,7 @@ TEST_F(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServiceDi
 
 TEST_F(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServicePropagatesBindingFail)
 {
-    RecordProperty("Verifies", "SCR-17434778");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldClassZeroCopyUpdate");
     RecordProperty(
         "Description",
         "Checks that calling zero copy Update after offer service returns kBindingFailure for a generic error code "

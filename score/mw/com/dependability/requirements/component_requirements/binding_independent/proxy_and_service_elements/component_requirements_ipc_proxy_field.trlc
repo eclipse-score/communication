@@ -1,0 +1,222 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+section "com" {
+
+    section "Public_API_Specification" {
+
+        section "Typed_Proxy" {
+
+            section "Proxy_Field" {
+
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq ProxyFieldClass {
+                    description = '''Field members within a Proxy Class shall be of a {{ProxyField}} class, whose properties are defined in this section.
+
+                    The name and namespace of a {{ProxyField}} shall be defined by the {{mw::com}} implementation.
+
+                    Note: It is up to the {{mw::com}} implementation, whether it defines/generates different/explicit classes for each {{ProxyField}} or whether it uses a class template for {{ProxyField}} and uses the field data type ({{FieldType}}) as a template argument.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.CommunicationInterfaces@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyFieldClassDefinition {
+                    description = '''For different field data types also different {{ProxyField}}
+                    {{ProxyField}}
+
+                     classes shall be defined, since the field data type influences the signature of a  class. See for example the ProxyField Member type FieldType
+                    '''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.CommunicationInterfaces@1, Communication.ServiceInstanceNames@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyFieldMemberTypeFieldType {
+                    description = '''The {{ProxyField}} class shall have a public member type {{FieldType}}, which denotes the data type of a field.
+
+                    {{{using FieldType = <data type of field>}}}'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.CommunicationInterfaces@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyFieldCopySemantics {
+                    description = '''The {{ProxyField}}
+                     class shall neither be copy-constructible nor copy-assignable.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyFieldSubscribe {
+                    description = '''The {{ProxyField}} class shall provide a public method:
+
+                    {{{ bmw::Result<void> ProxyField::Subscribe(std::size\_t max\_sample\_count) noexcept; }}}
+
+                    Behaviour is described in Behaviour of Subscribe.
+
+                    Return value is described in Return value of Subscribe.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1, Communication.ProducerConsumerPattern@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyFieldUnsubscribe {
+                    description = '''A {{ProxyField}} class shall provide a public method:
+
+                    {{{void ProxyField::Unsubscribe() noexcept; }}}
+
+                    Behaviour is described in Behaviour of Unsubscribe'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SafeCommunication@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyFieldGetSubscriptionState {
+                    description = '''The {{ProxyField}} shall provide a public method:
+
+                    {{{SubscriptionState ProxyField::GetSubscriptionState() const noexcept; }}}
+
+                    Return value: returns the subscription state of an event.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.ProducerConsumerPattern@1]
+                    version = 1
+                }
+
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq ProxyFieldSetSubscriptionStateChangeHandler {
+                    description = '''The {{ProxyField}}
+                     class shall provide a public method:
+
+                    {{{bmw::Result<void> ProxyField::SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler subscription\_state\_change\_handler) noexcept; }}}
+
+                    Arguments:
+
+                    *  subscription\_state\_change\_handler: See progress-cursor SubscriptionStateChangeHandler for its definition.
+
+                    Behaviour: is described in default-cursor Behaviour of SetSubscriptionStateChangeHandler.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForTimeBasedArchitecture@1]
+                    version = 1
+                }
+
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq ProxyFieldUnsetSubscriptionStateChangeHandler {
+                    description = '''The {{ProxyField}}
+                     class shall provide a public method:
+
+                    {{{void ProxyField::UnsetSubscriptionStateChangeHandler() noexcept;}}}
+
+                    Behaviour: is described in Behaviour of UnsetSubscriptionStateChangeHandler.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Method@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyFieldGetNewSamples {
+                    description = '''The {{ProxyField}}
+                    shall provide a public method:
+
+                    {{{template <typename F>
+                    bmw::Result<std::size\_t> ProxyField::GetNewSamples(F&& receiver, std::size\_t max\_num\_samples) noexcept;}}}
+
+                    Arguments:
+
+                    *  receiver: Callable that fulfills the signature requirement in progress-cursor GetNewSamples receiver signature.
+
+                    *  max\_num\_samples: size\_t value whose behaviour is defined in Behaviour of GetNewSamples
+
+                    Behaviour is described in Behaviour of GetNewSamples
+
+                    Return value:{{bmw::Result}} returned  which contains
+
+                    *  on success, a value defined in Return value of successful GetNewSamples.
+
+                    *  or, a {{bmw::result::Error}} containing the value {{kMaxSamplesReached}} when the implementation has a new sample, but can't call the receiver callback, because the number of {{SamplePtr}} s currently held by the application has met the maximum number passed to the ProxyField Subscribe call.
+
+                    *  {{bmw::result::Error}}, according to or, a Error Codes relating to Active Subscription.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyFieldSetReceiveHandler {
+                    description = '''The {{ProxyField}}
+                     shall provide a public method:
+
+                    {{{bmw::Result<void> ProxyField::SetReceiveHandler(mw::com::EventReceiveHandler handler) noexcept;}}}
+
+                    Arguments:
+
+                    *  handler See default-cursor Event Receive Handler for its definition.
+
+                    Behaviour is described in default-cursor Behaviour of SetReceiveHandler.
+
+                    Return value: In case {{SetReceiveHandler()}} fails, {{ComErrc::kSetHandlerNotSet}} shall be returned in the {{Result}}.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Method@1]
+                    version = 1
+                }
+
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq ProxyFieldUnsetReceiveHandler {
+                    description = '''The {{ProxyField}}
+                     shall provide a public method:
+
+                    {{{bmw::Result<void> ProxyField::UnsetReceiveHandler() noexcept}}}
+
+                    Behaviour is described in progress-cursor Behaviour of UnsetReceiveHandler.
+
+                    Return value: {{UnsetReceiveHandler()}}{{ComErrc::kUnsetFailure}}{{Result}}In case  fails,  shall be returned in the '''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Method@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyFieldGetFreeSampleCount {
+                    description = '''The {{ProxyField}}
+                    shall provide a public method:
+
+                    {{{std::size\_t ProxyField::GetFreeSampleCount() const noexcept}}}
+
+                    Return value is described in Return value of GetFreeSampleCount.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SafeCommunication@1, Communication.ProducerConsumerPattern@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyFieldGetNumNewSamplesAvailable {
+                    description = '''The {{ProxyField}}
+                    shall provide a public method:
+
+                    {{{bmw::Result<std::size\_t> ProxyField::GetNumNewSamplesAvailable() const noexcept}}}
+
+                    Behaviour is described in progress-cursor Behaviour of GetNumNewSamplesAvailable.
+
+                    Return value:{{bmw::Result}} returned  which contains
+
+                    *  on success, number of new samples available as described in Behaviour of GetNumNewSamplesAvailable,
+
+                    *  or, a {{bmw::result::ErrorCode}}, according to Error Codes relating to Active Subscription.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataReordering@1]
+                    version = 1
+                }
+            }
+        }
+    }
+}

@@ -1,4 +1,4 @@
-/********************************************************************************
+/*******************************************************************************
  * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -9,8 +9,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  *
  * SPDX-License-Identifier: Apache-2.0
- ********************************************************************************/
-#include "score/mw/com/test/methods/mixed_criticality/common_resources.h"
+ *******************************************************************************/
+#include "score/mw/com/test/common_test_resources/service_instance_manifest_parser.h"
 
 #include "score/mw/com/test/common_test_resources/command_line_parser.h"
 

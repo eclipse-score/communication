@@ -218,7 +218,8 @@ TEST_F(SkeletonBaseCreationDeathTest, CreatingSkeletonTerminatesWhenBindingIsNul
 using SkeletonBaseOfferFixture = SkeletonBaseFixture;
 TEST_F(SkeletonBaseOfferFixture, OfferService)
 {
-    RecordProperty("Verifies", "SCR-5897815, SCR-17434118");  // SWS_CM_00101
+    RecordProperty("Verifies", "SCR-5897815");
+    RecordProperty("lobster-tracing", "Communication.SkeletonOfferService");  // SWS_CM_00101
     RecordProperty("Description", "Checks whether a service can be offered.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -266,7 +267,8 @@ TEST_F(SkeletonBaseOfferFixture, OfferServiceFailsIfAllMethodsHaveNotBeenRegiste
 
 TEST_F(SkeletonBaseOfferFixture, CallingPrepareOfferWhenSkeletonBindingPrepareOfferFailsReturnsError)
 {
-    RecordProperty("Verifies", "SCR-6222081, SCR-21856131, SCR-17434118");
+    RecordProperty("Verifies", "SCR-6222081, SCR-21856131");
+    RecordProperty("lobster-tracing", "Communication.SkeletonOfferService");
     RecordProperty("Description",
                    "Checks that service offering returns error when binding prepare offer fails as no events will be "
                    "offered, which violates req.");
@@ -311,7 +313,8 @@ TEST_F(SkeletonBaseOfferFixture, PrepareStopOfferIsNotCalledWhenSkeletonBindingP
 
 TEST_F(SkeletonBaseOfferFixture, CallingPrepareOfferWhenEventBindingFailsReturnsError)
 {
-    RecordProperty("Verifies", "SCR-6222081, SCR-21856131, SCR-17434118");
+    RecordProperty("Verifies", "SCR-6222081, SCR-21856131");
+    RecordProperty("lobster-tracing", "Communication.SkeletonOfferService");
     RecordProperty("Description",
                    "Checks that service offering returns error when event binding prepare offer fails as no events "
                    "will be offered, which violates req.");
@@ -361,7 +364,8 @@ TEST_F(SkeletonBaseOfferFixture,
 
 TEST_F(SkeletonBaseOfferFixture, CallingPrepareOfferWhenFieldValueNotSetReturnsError)
 {
-    RecordProperty("Verifies", "SCR-6222081, SCR-21856131, SCR-17434118");
+    RecordProperty("Verifies", "SCR-6222081, SCR-21856131");
+    RecordProperty("lobster-tracing", "Communication.SkeletonOfferService");
     RecordProperty("Description",
                    "Checks, that service offering leads to termination, when binding prepare offer service fails as "
                    "no events will be offered, which violates req.");
@@ -410,7 +414,8 @@ TEST_F(SkeletonBaseOfferFixture,
 
 TEST_F(SkeletonBaseOfferFixture, CallingPrepareOfferWhenFieldBindingFailsReturnsError)
 {
-    RecordProperty("Verifies", "SCR-6222081, SCR-21856131, SCR-17434118");
+    RecordProperty("Verifies", "SCR-6222081, SCR-21856131");
+    RecordProperty("lobster-tracing", "Communication.SkeletonOfferService");
     RecordProperty("Description",
                    "Checks, that service offering leads to termination, when binding prepare offer service fails as "
                    "no events will be offered, which violates req.");
@@ -487,7 +492,8 @@ TEST_F(SkeletonBaseOfferDeathTest, TerminateOnOfferWithNoBinding)
 using SkeletonBaseStopOfferFixture = SkeletonBaseFixture;
 TEST_F(SkeletonBaseStopOfferFixture, PrepareStopOffer)
 {
-    RecordProperty("Verifies", "SCR-5897820, SCR-17434265");  // SWS_CM_00111
+    RecordProperty("Verifies", "SCR-5897820");  // SWS_CM_00111
+    RecordProperty("lobster-tracing", "Communication.SkeletonStopOfferService");
     RecordProperty("Description", "Checks that PrepareStopOffer() actually stops a offered service");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -589,7 +595,7 @@ TEST_F(SkeletonBaseMoveFixture, SelfMovingAssignmentDoesNotCauseIssues)
 
 TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterMoveConstructingService)
 {
-    RecordProperty("Verifies", "SCR-17432457, SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonDestructor, Communication.SkeletonMoveSemantics");
     RecordProperty("Description",
                    "If the service provided by the skeleton is currently being offered at the time of the destruction, "
                    "the offering shall be stopped. And skeleton is move constructible");
@@ -906,7 +912,7 @@ TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveConstructingUpdatesRefer
 TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesToServiceElements)
 {
 
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "Skeleton is move assignable");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
