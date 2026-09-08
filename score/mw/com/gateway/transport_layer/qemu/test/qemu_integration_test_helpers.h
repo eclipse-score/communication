@@ -78,6 +78,36 @@ bool WaitForFlag(const std::atomic<bool>& flag, int timeout_ms = 60000)
     return flag.load(std::memory_order_acquire);
 }
 
+/// Calls `notify_update` up to `attempts` times, `interval_ms` apart.
+///
+/// BidirectionalTransport::SendNotification (used by NotifyUpdate) is fire-and-forget — no ack,
+/// no retry — so a notification can rarely be lost in transit with no error surfaced on the
+/// sender. Resending is safe here: the peer's handler (TestGatewayCore::NotifyUpdate) just
+/// (re-)sets an idempotent flag, so duplicates are harmless. Only the first attempt's failure
+/// is treated as fatal (a real send/connectivity error); later attempts are best-effort.
+template <typename NotifyFn>
+bool SendNotificationWithRetries(NotifyFn&& notify_update, const char* what, int attempts = 3, int interval_ms = 500)
+{
+    for (int attempt = 1; attempt <= attempts; ++attempt)
+    {
+        const auto result = notify_update();
+        if (!result.has_value())
+        {
+            std::fprintf(
+                stderr, "SendNotificationWithRetries: %s attempt %d/%d failed to send\n", what, attempt, attempts);
+            if (attempt == 1)
+            {
+                return false;
+            }
+        }
+        if (attempt < attempts)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));
+        }
+    }
+    return true;
+}
+
 /// Brings up the "intervm" virtio-net NIC (vtnet1) and assigns it the given static IP.
 ///
 /// This is the point-to-point link between the two dual_qemu VMs. QNX only auto-configures

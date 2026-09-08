@@ -179,9 +179,12 @@ int main()
     std::fprintf(stderr, "app2: service_a verified [magic=0x%08x, 100, 200] — read from VM-A OK\n", kMagicA);
 
     // Confirm back to VM-A over the transport that we verified its data.
-    const auto verified_result = qemu_transport.NotifyUpdate(
-        spec_a.value(), score::mw::com::impl::ServiceElementType::EVENT, kElementNameVerified);
-    if (!verified_result.has_value())
+    if (!SendNotificationWithRetries(
+            [&qemu_transport, &spec_a] {
+                return qemu_transport.NotifyUpdate(
+                    spec_a.value(), score::mw::com::impl::ServiceElementType::EVENT, kElementNameVerified);
+            },
+            "Verified for service_a"))
     {
         std::fprintf(stderr, "app2: Verified notification for service_a failed to send\n");
         return 1;
@@ -252,9 +255,12 @@ int main()
 
     // Notify VM-A (over the transport, not shared memory) that service_b's DATA is ready.
     // See app1_main.cpp for the FIFO-ordering argument that guarantees delivery order.
-    const auto notify_result = qemu_transport.NotifyUpdate(
-        spec_b.value(), score::mw::com::impl::ServiceElementType::EVENT, kElementNameDataReady);
-    if (!notify_result.has_value())
+    if (!SendNotificationWithRetries(
+            [&qemu_transport, &spec_b] {
+                return qemu_transport.NotifyUpdate(
+                    spec_b.value(), score::mw::com::impl::ServiceElementType::EVENT, kElementNameDataReady);
+            },
+            "DataReady for service_b"))
     {
         std::fprintf(stderr, "app2: DataReady notification for service_b failed to send\n");
         return 1;
