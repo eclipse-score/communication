@@ -65,6 +65,9 @@ HyperVisorSocketConfiguration CreateConfiguration()
     config.remote_ip_ = score::os::Ipv4Address{kIntervmIpVmA};
     config.local_port_ = kTransportPortVmB;
     config.remote_port_ = kTransportPortVmA;
+    // The default 30s budget can be exhausted if the fixture just self-healed a VM (see
+    // qnx-qemu-networking notes): the intervm link needs extra time to stabilize after a restart.
+    config.setup_timeout_ms_ = 90000U;
     return config;
 }
 
