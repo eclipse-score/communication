@@ -155,7 +155,7 @@ by const-reference. The handler writes the result into that out-parameter and re
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 61-92
+   :lines: 64-95
    :caption: provider/provider.cpp
 
 
@@ -183,7 +183,7 @@ const-reference**. The middleware allocates the argument slot, copies the argume
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 99-108
+   :lines: 98-107
    :caption: consumer/consumer.cpp
 
 
@@ -202,7 +202,7 @@ unnecessary copies matters. For this we use the second call-operator overload, w
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 119-126
+   :lines: 118-125
    :caption: consumer/consumer.cpp
 
 

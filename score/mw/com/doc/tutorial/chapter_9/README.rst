@@ -187,7 +187,7 @@ whenever it has to adjust a value:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 133-148
+   :lines: 136-151
    :caption: provider/provider.cpp
 
 
@@ -197,7 +197,7 @@ field, the provider must supply an **initial value for each field** before offer
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 153-169
+   :lines: 156-172
    :caption: provider/provider.cpp
 
 
@@ -208,7 +208,7 @@ carrying the affected tire (several warnings may be sent after a single cycle):
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 201-234
+   :lines: 204-237
    :caption: provider/provider.cpp
 
 
@@ -228,7 +228,7 @@ of chapter 7:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 242-260
+   :lines: 241-259
    :caption: consumer/consumer.cpp
 
 
@@ -236,7 +236,7 @@ The receive handler drains all new warning samples via ``GetNewSamples()`` and r
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 187-199
+   :lines: 186-198
    :caption: consumer/consumer.cpp
 
 
@@ -248,7 +248,7 @@ accepted (the provider may have clamped it):
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 133-183
+   :lines: 132-182
    :caption: consumer/consumer.cpp
 
 
