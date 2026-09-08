@@ -31,7 +31,9 @@ APP1 = "/opt/qemu_transport_test/bin/app1"
 APP2 = "/opt/qemu_transport_test/bin/app2"
 VM_A_LABEL = "VM-A (src)"
 VM_B_LABEL = "VM-B (dest)"
-TIMEOUT_SECONDS = 90
+# Must exceed HyperVisorSocketConfiguration::setup_timeout_ms_ (90s, see app1_main.cpp) plus
+# margin for the protocol exchange itself.
+TIMEOUT_SECONDS = 150
 
 
 def _collect_result(label, process):
@@ -61,11 +63,38 @@ def _collect_stopped_results(processes, results):
         results[label] = _collect_result(label, process)
 
 
+def _launch_with_retry(target, binary, label, grace_period_s=20, restart_attempts=2):
+    """Launches `binary` via SSH, giving sshd a grace period before restarting the VM.
+
+    A VM's sshd can go idle-dead at any point (not just during fixture setup, see
+    qnx-qemu-networking notes). A short blip often clears on its own, so retry once after a
+    grace wait before resorting to target.restart() (a full reboot + pre_tests_phase), which
+    re-runs DualQemuProcess's self-healing boot.
+    """
+    try:
+        return target.execute_async(binary)
+    except Exception as ex:  # pylint: disable=broad-except
+        last_error = ex
+        logger.warning("%s: execute_async failed: %s; waiting %ds before retrying", label, ex, grace_period_s)
+        time.sleep(grace_period_s)
+
+    for attempt in range(1, restart_attempts + 1):
+        try:
+            return target.execute_async(binary)
+        except Exception as ex:  # pylint: disable=broad-except
+            last_error = ex
+            logger.warning(
+                "%s: still unreachable (attempt %d/%d): %s; restarting VM", label, attempt, restart_attempts, ex
+            )
+            target.restart()
+    raise last_error
+
+
 def test_qemu_ivshmem_transport(target_a, target_b):
     """Bidirectional: VM-A writes service_a and reads service_b; VM-B writes service_b and reads service_a."""
     processes = {
-        VM_A_LABEL: target_a.execute_async(APP1),
-        VM_B_LABEL: target_b.execute_async(APP2),
+        VM_A_LABEL: _launch_with_retry(target_a, APP1, VM_A_LABEL),
+        VM_B_LABEL: _launch_with_retry(target_b, APP2, VM_B_LABEL),
     }
     results = {}
     deadline = time.monotonic() + TIMEOUT_SECONDS
