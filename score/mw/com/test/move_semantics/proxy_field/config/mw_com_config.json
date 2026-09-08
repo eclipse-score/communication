@@ -1,0 +1,105 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/test/proxy_field_move_semantics/MoveFieldInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 2300,
+          "fields": [
+            {
+              "fieldName": "moved_field",
+              "fieldId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "test/proxy_field_move_semantics/MoveFieldInterfaceMovedTo",
+      "serviceTypeName": "/test/proxy_field_move_semantics/MoveFieldInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "B",
+          "binding": "SHM",
+          "fields": [
+            {
+              "fieldName": "moved_field",
+              "numberOfSampleSlots": 4,
+              "maxSubscribers": 1
+            }
+          ],
+          "allowedConsumer": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "test/proxy_field_move_semantics/MoveFieldInterfaceMovedFrom",
+      "serviceTypeName": "/test/proxy_field_move_semantics/MoveFieldInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 2,
+          "asil-level": "B",
+          "binding": "SHM",
+          "fields": [
+            {
+              "fieldName": "moved_field",
+              "numberOfSampleSlots": 4,
+              "maxSubscribers": 1
+            }
+          ],
+          "allowedConsumer": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "B",
+    "applicationID": 4003
+  }
+}
