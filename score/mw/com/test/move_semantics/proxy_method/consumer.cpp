@@ -89,7 +89,7 @@ void RunConsumerMoveConstruct(const std::string& failure_message_prefix)
     std::cout << "\nConsumer: Step 1 - Find service and create proxy A" << std::endl;
     ProxyContainer<ProxyMethodMoveSemanticsProxy> proxy_a_container{};
     proxy_a_container.CreateProxy(kInstanceSpecifierMovedTo, failure_message_prefix);
-    auto proxy_a = proxy_a_container.Extract();
+    auto proxy_a = std::move(proxy_a_container).Extract();
 
     // Step 2. Call method via proxy A (iteration 0: proxy works before the move)
     std::cout << "\nConsumer: Step 2 - Call method via proxy A" << std::endl;
@@ -110,13 +110,13 @@ void RunConsumerMoveAssign(const std::string& failure_message_prefix)
     std::cout << "\nConsumer: Step 1 - Find service and create proxy A" << std::endl;
     ProxyContainer<ProxyMethodMoveSemanticsProxy> proxy_a_container{};
     proxy_a_container.CreateProxy(kInstanceSpecifierMovedFrom, failure_message_prefix);
-    auto proxy_a = proxy_a_container.Extract();
+    auto proxy_a = std::move(proxy_a_container).Extract();
 
     // Step 2. Find service and create proxy B (connected to the moved-to instance, which answers with a - b)
     std::cout << "\nConsumer: Step 2 - Find service and create proxy B" << std::endl;
     ProxyContainer<ProxyMethodMoveSemanticsProxy> proxy_b_container{};
     proxy_b_container.CreateProxy(kInstanceSpecifierMovedTo, failure_message_prefix);
-    auto proxy_b = proxy_b_container.Extract();
+    auto proxy_b = std::move(proxy_b_container).Extract();
 
     // Step 3. Call method via proxy A (iteration 0: proxy A works before the move, returns a + b)
     std::cout << "\nConsumer: Step 3 - Call method via proxy A" << std::endl;
