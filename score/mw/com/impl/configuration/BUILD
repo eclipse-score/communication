@@ -35,7 +35,7 @@ exports_files(
 # The rich JSON schema (mw_com_config_schema.json) is generated from it; schema_drift_test
 # guards that they never diverge.
 #
-# generate_cpp compiles the .fbs to a C++ header via baselibs' flatc rule. 
+# generate_cpp compiles the .fbs to a C++ header via baselibs' flatc rule.
 generate_cpp(
     name = "mw_com_config_fbs",
     output = "mw_com_config_generated.h",
@@ -62,7 +62,10 @@ generate_json_schema(
 py_binary(
     name = "generate_schema",
     srcs = ["generate_schema.py"],
-    args = ["--in", "$(location :mw_com_config_postproc_schema)"],
+    args = [
+        "--in",
+        "$(location :mw_com_config_postproc_schema)",
+    ],
     data = [":mw_com_config_postproc_schema"],
     main = "generate_schema.py",
 )
@@ -74,7 +77,10 @@ py_test(
         "generate_schema.py",
         "schema_drift_test.py",
     ],
-    args = ["--in", "$(location :mw_com_config_postproc_schema)"],
+    args = [
+        "--in",
+        "$(location :mw_com_config_postproc_schema)",
+    ],
     data = [
         "mw_com_config_schema.json",
         ":mw_com_config_postproc_schema",
