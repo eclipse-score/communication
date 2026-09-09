@@ -22,8 +22,10 @@
 
 #include <score/assert.hpp>
 
+#include <set>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -43,7 +45,49 @@ void EmplaceOrFatal(Map& map, Key&& key, Value&& value, std::string_view element
     }
 }
 
-void ValidateUniqueServiceElementIds(const LolaServiceTypeDeployment& deployment);
+/// \brief Validates that the event, field and method ids of a service type deployment are mutually unique.
+/// \details Templated on the concrete binding deployment, since LolaServiceTypeDeployment and
+///          SomeIpServiceTypeDeployment are distinct instantiations of the same BindingServiceTypeDeployment template.
+template <typename BindingServiceTypeDeploymentType>
+void ValidateUniqueServiceElementIds(const BindingServiceTypeDeploymentType& deployment)
+{
+    using EventIdType = typename BindingServiceTypeDeploymentType::EventIdMapping::mapped_type;
+    using FieldIdType = typename BindingServiceTypeDeploymentType::FieldIdMapping::mapped_type;
+    using MethodIdType = typename BindingServiceTypeDeploymentType::MethodIdMapping::mapped_type;
+    static_assert(std::is_same<EventIdType, FieldIdType>::value,
+                  "EventId and FieldId should have the same underlying type.");
+    static_assert(std::is_same<EventIdType, MethodIdType>::value,
+                  "EventId and MethodId should have the same underlying type.");
+    std::set<EventIdType> ids{};
+
+    for (const auto& event : deployment.events_)
+    {
+        if (!ids.insert(event.second).second)
+        {
+            score::mw::log::LogFatal("lola") << "Configuration cannot contain duplicate eventId, fieldId, or methodId.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+    }
+
+    for (const auto& field : deployment.fields_)
+    {
+        if (!ids.insert(field.second).second)
+        {
+            score::mw::log::LogFatal("lola") << "Configuration cannot contain duplicate eventId, fieldId, or methodId.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+    }
+
+    for (const auto& method : deployment.methods_)
+    {
+        if (!ids.insert(method.second).second)
+        {
+            score::mw::log::LogFatal("lola") << "Configuration cannot contain duplicate eventId, fieldId, or methodId.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+    }
+}
+
 InstanceSpecifier CreateValidInstanceSpecifier(std::string instance_specifier_name);
 
 template <typename Container>

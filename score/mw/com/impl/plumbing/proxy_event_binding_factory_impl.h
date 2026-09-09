@@ -92,6 +92,11 @@ inline Result<std::unique_ptr<ProxyEventBinding<SampleType>>> ProxyEventBindingF
                 parent_handle, lola_type_deployment, std::string{event_or_field_name}, service_element_type);
             return std::make_unique<lola::ProxyEvent<SampleType>>(*lola_proxy, element_fq_id, event_or_field_name);
         },
+        // The SOME/IP binding does not support proxy events (yet). It is listed explicitly (instead of being served
+        // by the score::cpp::blank arm) because std::visit requires an arm for every variant alternative.
+        [](const SomeIpServiceTypeDeployment&) noexcept -> ReturnType {
+            return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
+        },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
         });

@@ -523,6 +523,7 @@ cc_library(
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
+        "//score/mw/com/impl/bindings/someip:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -549,6 +550,7 @@ cc_library(
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
+        "//score/mw/com/impl/bindings/someip:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -578,6 +580,7 @@ cc_library(
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
+        "//score/mw/com/impl/bindings/someip:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -602,6 +605,7 @@ cc_library(
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
+        "//score/mw/com/impl/bindings/someip:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -632,6 +636,7 @@ cc_library(
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
+        "//score/mw/com/impl/bindings/someip:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
     ],

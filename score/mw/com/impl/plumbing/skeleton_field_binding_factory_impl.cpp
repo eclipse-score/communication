@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory_impl.h"
 
+#include "score/mw/com/impl/bindings/lola/skeleton_event.h"
+#include "score/mw/com/impl/bindings/someip/skeleton_event.h"
 #include "score/mw/com/impl/plumbing/skeleton_service_element_binding_factory_impl.h"
 
 namespace score::mw::com::impl
@@ -31,7 +33,10 @@ auto SkeletonFieldBindingFactoryImpl::CreateEventBinding(const InstanceIdentifie
                                                          const FieldTagsStore field_tags_store) noexcept
     -> std::unique_ptr<SkeletonEventBinding>
 {
-    return CreateSkeletonEventOrField<SkeletonEventBinding, lola::SkeletonEvent, ServiceElementType::FIELD>(
+    return CreateSkeletonEventOrField<SkeletonEventBinding,
+                                      lola::SkeletonEvent,
+                                      someip::SkeletonEvent,
+                                      ServiceElementType::FIELD>(
         identifier, parent_binding, field_name, sample_type_size_info, field_tags_store);
 }
 }  // namespace score::mw::com::impl

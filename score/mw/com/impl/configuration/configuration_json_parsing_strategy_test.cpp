@@ -13,6 +13,8 @@
 #include "score/mw/com/impl/configuration/configuration_json_parsing_strategy.h"
 
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/quality/compiler_warnings/warnings.h"
 
 #include <score/assert_support.hpp>
@@ -214,6 +216,96 @@ TEST_F(ConfigurationJsonParsingStrategyFixture, NoServiceTypesWillDie)
     // That the application will terminate
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
         score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+}
+
+TEST_F(ConfigurationJsonParsingStrategyFixture, ParseSomeIpBinding)
+{
+    // Given a JSON which configures a service type and a service instance with a SOME/IP binding
+    auto j2 = R"(
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "bindings": [
+        {
+          "binding": "SOMEIP",
+          "serviceId": 1234,
+          "events": [
+            {
+              "eventName": "CurrentPressureFrontLeft",
+              "eventId": 20
+            }
+          ],
+          "fields": []
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "abc/abc/TirePressurePort",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "instances": [
+        {
+          "instanceId": 1234,
+          "asil-level": "QM",
+          "binding": "SOMEIP",
+          "events": [
+            {
+              "eventName": "CurrentPressureFrontLeft",
+              "numberOfSampleSlots": 50,
+              "maxSubscribers": 5
+            }
+          ],
+          "fields": []
+        }
+      ]
+    }
+  ]
+}
+)"_json;
+
+    // When parsing the JSON
+    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+
+    // Then the service type deployment holds a SOME/IP binding with the configured ids
+    const auto& service_type_deployment =
+        config.GetServiceTypeDeployment(make_ServiceIdentifierType("/score/ncar/services/TirePressureService", 12U, 34U))
+            .value()
+            .get();
+    const auto* const someip_service_type_deployment =
+        std::get_if<SomeIpServiceTypeDeployment>(&service_type_deployment.binding_info_);
+    ASSERT_NE(someip_service_type_deployment, nullptr);
+    EXPECT_EQ(someip_service_type_deployment->service_id_, 1234U);
+    ASSERT_EQ(someip_service_type_deployment->events_.count("CurrentPressureFrontLeft"), 1U);
+    EXPECT_EQ(someip_service_type_deployment->events_.at("CurrentPressureFrontLeft"), 20U);
+
+    // And the service instance deployment holds a SOME/IP binding with the configured instance id and event
+    const auto& service_instance_deployment =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
+    EXPECT_EQ(service_instance_deployment.GetBindingType(), BindingType::kSomeIp);
+
+    const auto* const someip_service_instance_deployment =
+        std::get_if<SomeIpServiceInstanceDeployment>(&service_instance_deployment.bindingInfo_);
+    ASSERT_NE(someip_service_instance_deployment, nullptr);
+    ASSERT_TRUE(someip_service_instance_deployment->instance_id_.has_value());
+    EXPECT_EQ(someip_service_instance_deployment->instance_id_.value().GetId(), 1234U);
+    ASSERT_TRUE(someip_service_instance_deployment->ContainsEvent("CurrentPressureFrontLeft"));
+
+    const auto& event_instance_deployment =
+        someip_service_instance_deployment->events_.at("CurrentPressureFrontLeft");
+    EXPECT_EQ(event_instance_deployment.GetNumberOfSampleSlots().value(), 50U);
+    EXPECT_EQ(event_instance_deployment.max_subscribers_.value(), 5U);
 }
 
 TEST_F(ConfigurationJsonParsingStrategyFixture, NoServiceNameForServiceType)
