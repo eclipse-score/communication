@@ -47,26 +47,26 @@ def _env_int(name: str, default: int) -> int:
 def _wait_for_ssh(target, total_timeout: int = 60, interval: int = 1, stable_successes: int = 2):
     """Wait until the VM *stably* serves SSH.
 
-    Early-boot sshd is briefly unstable, so require several consecutive successes to
-    avoid the ``pre_tests_phase`` (5 retries) failing in that window.
+    Reuses a single connection across the consecutive checks instead of reconnecting every
+    time: this guest's sshd can fail to ever accept a *new* connection once one is already
+    open, so minimizing how often we reconnect reduces the chance of hitting that window.
     """
     deadline = time.monotonic() + total_timeout
     last_error = None
-    consecutive = 0
     ssh_probe_timeout = _env_int("DUAL_QEMU_SSH_PROBE_TIMEOUT_S", 5)
     while time.monotonic() < deadline:
+        consecutive = 0
         try:
             with target.ssh(timeout=ssh_probe_timeout, n_retries=1, retry_interval=1) as ssh:
-                if ssh.execute_command("echo ready") == 0:
+                while consecutive < stable_successes:
+                    if ssh.execute_command("echo ready") != 0:
+                        break
                     consecutive += 1
                     if consecutive >= stable_successes:
                         return
                     time.sleep(interval)
-                    continue
-            consecutive = 0
         except Exception as ex:  # pylint: disable=broad-except
             last_error = ex
-            consecutive = 0
         time.sleep(interval)
     raise TimeoutError(f"VM never became stably reachable via SSH within {total_timeout}s: {last_error}")
 
