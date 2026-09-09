@@ -719,8 +719,9 @@ Result<void> Skeleton::OnServiceMethodsUnsubscribed(const ProxyInstanceIdentifie
     for (auto& [method_id, skeleton_method_ref] : skeleton_methods_)
     {
         const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_instance_identifier, method_id};
-        // Loops over all skeleton methods for the departing proxy, not just the ones it actually subscribed
-        // to, so a missing entry is expected here and must not be asserted on.
+        // We are looping over all SkeletonMethods, not just the ones corresponding to the ProxyMethod which is
+        // unsubscribing. Therefore, it's expected that some of the calls to OnProxyMethodUnsubscribe will not
+        // unregister anything so we don't assert on the return.
         std::ignore = skeleton_method_ref.get().OnProxyMethodUnsubscribe(proxy_method_instance_identifier);
     }
 
@@ -787,7 +788,7 @@ void Skeleton::UnsubscribeMethods(const std::vector<UniqueMethodIdentifier>& met
     {
         auto& skeleton_method = skeleton_methods_.at(method_id);
         const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_instance_identifier, method_id};
-        // This rolls back a just-inserted registration guard, where the entry is guaranteed to exist.
+        // A precondition of this function is that all provided method_ids were successfully registered.
         const bool element_erased = skeleton_method.get().OnProxyMethodUnsubscribe(proxy_method_instance_identifier);
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(element_erased);
     }

@@ -445,12 +445,17 @@ TEST_F(SkeletonMethodOnProxyMethodUnsubscribedFixture, CallingBeforeSubscribingR
     EXPECT_FALSE(unit_->OnProxyMethodUnsubscribe(proxy_method_instance_identifier_));
 }
 
-TEST_F(SkeletonMethodOnProxyMethodUnsubscribedFixture, CallingTwiceWithSameIdentifierIsANoOp)
+TEST_F(SkeletonMethodOnProxyMethodUnsubscribedFixture, CallingASecondTimeWithSameIdentifierReturnsFalse)
 {
     GivenASkeletonMethod().WithARegisteredCallback();
 
+    // Expecting that RegisterMethodCallHandler will be called on message passing for the single call to
+    // OnProxyMethodSubscribeFinished
     EXPECT_CALL(message_passing_mock_,
                 RegisterMethodCallHandler(QualityType::kASIL_QM, proxy_method_instance_identifier_, _, _));
+
+    // And expecting that UnregisterMethodCallHandler is only called once, since the second OnProxyMethodUnsubscribe
+    // call has nothing left to unregister
     EXPECT_CALL(message_passing_mock_,
                 UnregisterMethodCallHandler(QualityType::kASIL_QM, proxy_method_instance_identifier_))
         .Times(1);  // Must fire exactly once — not on the second Unsubscribe call
@@ -474,7 +479,8 @@ TEST_F(SkeletonMethodOnProxyMethodUnsubscribedFixture, CallingTwiceWithSameIdent
     EXPECT_FALSE(unit_->OnProxyMethodUnsubscribe(proxy_method_instance_identifier_));
 }
 
-TEST_F(SkeletonMethodOnProxyMethodUnsubscribedFixture, CallingForOneProxyDoesNotAffectOtherProxyWithSameApplicationId)
+TEST_F(SkeletonMethodOnProxyMethodUnsubscribedFixture,
+       UnsubscribingOneProxyDoesNotAffectOtherProxyWithSameApplicationId)
 {
     // Two proxy instances from the SAME application (same application_id, different proxy_instance_counter)
     const ProxyInstanceIdentifier proxy_instance_identifier_same_app{kDummyProxyInstanceCounter + 1U,
@@ -484,17 +490,19 @@ TEST_F(SkeletonMethodOnProxyMethodUnsubscribedFixture, CallingForOneProxyDoesNot
 
     GivenASkeletonMethod().WithARegisteredCallback();
 
+    // Expecting that RegisterMethodCallHandler will be called on message passing for each of the two proxies when
+    // they subscribe below
     EXPECT_CALL(message_passing_mock_, RegisterMethodCallHandler(kAsilLevel, proxy_method_instance_identifier_, _, _));
     EXPECT_CALL(message_passing_mock_,
                 RegisterMethodCallHandler(kAsilLevel, proxy_method_instance_identifier_same_app, _, _));
 
-    // The first proxy's handler is removed by OnProxyMethodUnsubscribe — must not fire on destruction
+    // Expecting that the first proxy's handler is unregistered once by OnProxyMethodUnsubscribe below
     EXPECT_CALL(message_passing_mock_, UnregisterMethodCallHandler(kAsilLevel, proxy_method_instance_identifier_))
-        .Times(1);  // fired during OnProxyMethodUnsubscribe
-    // The second proxy's handler must still be present and unregistered on destruction
+        .Times(1);
+    // Expecting that the second proxy's handler is NOT unregistered as part of unsubscribing the first proxy
     EXPECT_CALL(message_passing_mock_,
                 UnregisterMethodCallHandler(kAsilLevel, proxy_method_instance_identifier_same_app))
-        .Times(1);  // fired on destruction
+        .Times(0);
 
     // Given both proxies from the same application subscribed
     ASSERT_TRUE(unit_
@@ -519,10 +527,67 @@ TEST_F(SkeletonMethodOnProxyMethodUnsubscribedFixture, CallingForOneProxyDoesNot
                     .has_value());
 
     // When OnProxyMethodUnsubscribe is called for only the first proxy
+    // Then only the first proxy's handler is unregistered, and the second proxy's handler is left untouched
+    EXPECT_TRUE(unit_->OnProxyMethodUnsubscribe(proxy_method_instance_identifier_));
+}
+
+TEST_F(SkeletonMethodOnProxyMethodUnsubscribedFixture, DestroyingUnregistersHandlerOfProxyWhichWasNeverUnsubscribed)
+{
+    // Two proxy instances from the SAME application (same application_id, different proxy_instance_counter)
+    const ProxyInstanceIdentifier proxy_instance_identifier_same_app{kDummyProxyInstanceCounter + 1U,
+                                                                     kDummyApplicationId};
+    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier_same_app{proxy_instance_identifier_same_app,
+                                                                                  unique_method_identifier_};
+
+    GivenASkeletonMethod().WithARegisteredCallback();
+
+    // Expecting that RegisterMethodCallHandler will be called on message passing for each of the two proxies when
+    // they subscribe below
+    EXPECT_CALL(message_passing_mock_, RegisterMethodCallHandler(kAsilLevel, proxy_method_instance_identifier_, _, _));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(kAsilLevel, proxy_method_instance_identifier_same_app, _, _));
+
+    // Expecting that the first proxy's handler is unregistered once by OnProxyMethodUnsubscribe below
+    EXPECT_CALL(message_passing_mock_, UnregisterMethodCallHandler(kAsilLevel, proxy_method_instance_identifier_))
+        .Times(1);
+    // Expecting that the second proxy's handler, which is never explicitly unsubscribed, is unregistered once on
+    // destruction
+    bool second_proxy_handler_unregistered{false};
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(kAsilLevel, proxy_method_instance_identifier_same_app))
+        .Times(1)
+        .WillOnce(Assign(&second_proxy_handler_unregistered, true));
+
+    // Given both proxies from the same application subscribed
+    ASSERT_TRUE(unit_
+                    ->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithNoInArgsOrReturn,
+                                                     kEmptyInArgStorage,
+                                                     kEmptyReturnStorage,
+                                                     proxy_method_instance_identifier_,
+                                                     method_call_handler_scope_,
+                                                     kAllowedProxyUid,
+                                                     kAllowedProxyPid,
+                                                     kAsilLevel)
+                    .has_value());
+    ASSERT_TRUE(unit_
+                    ->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithNoInArgsOrReturn,
+                                                     kEmptyInArgStorage,
+                                                     kEmptyReturnStorage,
+                                                     proxy_method_instance_identifier_same_app,
+                                                     method_call_handler_scope_,
+                                                     kAllowedProxyUid,
+                                                     kAllowedProxyPid,
+                                                     kAsilLevel)
+                    .has_value());
+
+    // and given that the first proxy has already unsubscribed
     score::cpp::ignore = unit_->OnProxyMethodUnsubscribe(proxy_method_instance_identifier_);
 
-    // Then the second proxy's handler is still registered and unregistered on destruction
+    // When destroying the SkeletonMethod
     unit_.reset();
+
+    // Then the second proxy's handler, which was never explicitly unsubscribed, is unregistered on destruction
+    EXPECT_TRUE(second_proxy_handler_unregistered);
 }
 
 using SkeletonMethodCallFixture = SkeletonMethodFixture;
