@@ -85,6 +85,9 @@ std::string ToHashStringImpl(const ServiceInstanceId::BindingInformation& bindin
         [](const LolaServiceInstanceId& instance_id) noexcept -> std::string_view {
             return instance_id.ToHashString();
         },
+        [](const SomeIpServiceInstanceId& instance_id) noexcept -> std::string_view {
+            return instance_id.ToHashString();
+        },
         [](const score::cpp::blank&) noexcept -> std::string_view {
             return "";
         });
@@ -93,6 +96,27 @@ std::string ToHashStringImpl(const ServiceInstanceId::BindingInformation& bindin
 
     std::string combined_hash_string = binding_index_string_stream.str() + binding_instance_id_hash_string;
     return combined_hash_string;
+}
+
+/// \brief Returns the position of the held binding within the ordering used by operator<.
+///
+/// \details score::cpp::blank ranks lowest so that the ordering of a ServiceInstanceId without a binding stays the
+/// same as before further bindings were added to BindingInformation.
+// coverity[autosar_cpp14_a2_10_4_violation] False positive, function is in anonymous namespace
+// coverity[autosar_cpp14_a15_5_3_violation]
+std::uint8_t GetBindingOrderingRank(const ServiceInstanceId::BindingInformation& binding_info) noexcept
+{
+    auto visitor = score::cpp::overload(
+        [](const score::cpp::blank&) noexcept -> std::uint8_t {
+            return 0U;
+        },
+        [](const LolaServiceInstanceId&) noexcept -> std::uint8_t {
+            return 1U;
+        },
+        [](const SomeIpServiceInstanceId&) noexcept -> std::uint8_t {
+            return 2U;
+        });
+    return std::visit(visitor, binding_info);
 }
 
 }  // namespace
@@ -132,6 +156,9 @@ score::json::Object ServiceInstanceId::Serialize() const
         [&json_object](const LolaServiceInstanceId& instance_id) {
             json_object[kBindingInfoKeySerInstID] = instance_id.Serialize();
         },
+        [&json_object](const SomeIpServiceInstanceId& instance_id) {
+            json_object[kBindingInfoKeySerInstID] = instance_id.Serialize();
+        },
         [](const score::cpp::blank&) noexcept {});
     std::visit(visitor, binding_info_);
     return json_object;
@@ -155,6 +182,14 @@ bool operator==(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs)
             }
             return lhs_lola == *rhs_lola;
         },
+        [&rhs](const SomeIpServiceInstanceId& lhs_someip) noexcept -> bool {
+            const auto* const rhs_someip = std::get_if<SomeIpServiceInstanceId>(&rhs.binding_info_);
+            if (rhs_someip == nullptr)
+            {
+                return false;
+            }
+            return lhs_someip == *rhs_someip;
+        },
         [&rhs](const score::cpp::blank&) noexcept -> bool {
             return std::holds_alternative<score::cpp::blank>(rhs.binding_info_);
         });
@@ -165,6 +200,18 @@ bool operator==(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs)
 // coverity[autosar_cpp14_a15_5_3_violation]
 bool operator<(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs)
 {
+    // ServiceInstanceIds holding different bindings are ordered by binding rank. Comparing the rank first is what
+    // makes this a strict weak ordering across bindings: without it, two ServiceInstanceIds holding different
+    // alternatives would compare as equivalent in both directions and would collapse into a single key in ordered
+    // containers. The rank is deliberately not the variant index, so that score::cpp::blank keeps sorting before
+    // every real binding as it did before further bindings were added.
+    const auto lhs_rank = GetBindingOrderingRank(lhs.binding_info_);
+    const auto rhs_rank = GetBindingOrderingRank(rhs.binding_info_);
+    if (lhs_rank != rhs_rank)
+    {
+        return lhs_rank < rhs_rank;
+    }
+
     auto visitor = score::cpp::overload(
         [&rhs](const LolaServiceInstanceId& lhs_lola) noexcept -> bool {
             const auto* const rhs_lola = std::get_if<LolaServiceInstanceId>(&rhs.binding_info_);
@@ -176,8 +223,18 @@ bool operator<(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs)
         },
         // FP: only one statement in this line
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [&rhs](const score::cpp::blank&) noexcept -> bool {
-            return !std::holds_alternative<score::cpp::blank>(rhs.binding_info_);
+        [&rhs](const SomeIpServiceInstanceId& lhs_someip) noexcept -> bool {
+            const auto* const rhs_someip = std::get_if<SomeIpServiceInstanceId>(&rhs.binding_info_);
+            if (rhs_someip == nullptr)
+            {
+                return false;
+            }
+            return lhs_someip < *rhs_someip;
+        },
+        // FP: only one statement in this line
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const score::cpp::blank&) noexcept -> bool {
+            return false;
         });
     return std::visit(visitor, lhs.binding_info_);
 }
