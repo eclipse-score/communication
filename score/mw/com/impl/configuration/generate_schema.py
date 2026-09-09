@@ -66,10 +66,7 @@ def _restore_node(node):
     out = {}
     for key, value in node.items():
         if key == "properties" and isinstance(value, dict):
-            out[key] = {
-                _restore_hyphens(prop): _restore_node(prop_node)
-                for prop, prop_node in value.items()
-            }
+            out[key] = {_restore_hyphens(prop): _restore_node(prop_node) for prop, prop_node in value.items()}
         elif key == "required" and isinstance(value, list):
             out[key] = [_restore_hyphens(entry) for entry in value]
         elif key == "enum" and isinstance(value, list):
@@ -111,9 +108,7 @@ def build_arg_parser():
     here = os.path.dirname(os.path.abspath(__file__))
     workspace = os.environ.get("BUILD_WORKSPACE_DIRECTORY")
     default_output = (
-        os.path.join(workspace, _SCHEMA_RELPATH)
-        if workspace
-        else os.path.join(here, "mw_com_config_schema.json")
+        os.path.join(workspace, _SCHEMA_RELPATH) if workspace else os.path.join(here, "mw_com_config_schema.json")
     )
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -125,8 +120,7 @@ def build_arg_parser():
     parser.add_argument(
         "--output",
         default=default_output,
-        help="Where to write the schema, or '-' for stdout "
-        "(default: the checked-in mw_com_config_schema.json).",
+        help="Where to write the schema, or '-' for stdout (default: the checked-in mw_com_config_schema.json).",
     )
     return parser
 
