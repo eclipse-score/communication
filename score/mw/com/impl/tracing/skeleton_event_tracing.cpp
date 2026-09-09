@@ -174,6 +174,17 @@ TracingData ExtractBindingTracingData(const impl::SampleAllocateePtr<void>& samp
         // Here we can't use a raw pointer / reference since we're using score::cpp::overload, and the function is not
         // replaceing the managed object, so this should be a const reference.
         // coverity[autosar_cpp14_a8_4_12_violation]
+        // The SOME/IP binding has no shared-memory slot timestamp which could serve as a trace point data id, so a
+        // fixed id is reported. Send tracing of the SOME/IP binding is not supported beyond recording the payload.
+        [&sample_type_size_info](const someip::SampleAllocateePtr& ptr) -> TracingData {
+            return {0U, {ptr.get(), sample_type_size_info.Size()}};
+        },
+        // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
+        // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
+        // the function replaces the managed object".
+        // Here we can't use a raw pointer / reference since we're using score::cpp::overload, and the function is not
+        // replaceing the managed object, so this should be a const reference.
+        // coverity[autosar_cpp14_a8_4_12_violation]
         [&sample_type_size_info](const mock_binding::SampleAllocateePtr& ptr) -> TracingData {
             return {0U, {ptr.get(), sample_type_size_info.Size()}};
         },
@@ -206,6 +217,13 @@ TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<void>& sa
 
             lola::SamplePtr<void> sample_ptr{managed_object, consumer_event_data_control_local, event_slot_index};
             return impl::tracing::TypeErasedSamplePtr{std::move(sample_ptr)};
+        },
+        // The SOME/IP binding does not keep the sample alive beyond Send(), so the type erased SamplePtr handed to
+        // tracing carries a no-op deleter, mirroring the mock binding arm below.
+        [](someip::SampleAllocateePtr& ptr) -> TypeErasedSamplePtr {
+            impl::tracing::TypeErasedSamplePtr type_erased_sample_ptr{
+                mock_binding::SamplePtr<void>{ptr.get(), [](void*) noexcept {}}};
+            return type_erased_sample_ptr;
         },
         [](mock_binding::SampleAllocateePtr& ptr) -> TypeErasedSamplePtr {
             impl::tracing::TypeErasedSamplePtr type_erased_sample_ptr{

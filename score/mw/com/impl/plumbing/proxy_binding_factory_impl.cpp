@@ -50,6 +50,13 @@ Result<std::unique_ptr<ProxyBinding>> ProxyBindingFactoryImpl::Create(const Hand
             }
             return std::move(proxy_creation_result);
         },
+        // The SOME/IP binding does not support this service element (yet). It is listed explicitly (instead of
+        // being served by the score::cpp::blank arm) because std::visit requires an arm for every variant
+        // alternative.
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const SomeIpServiceInstanceDeployment&) noexcept -> ReturnType {
+            return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
+        },
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);

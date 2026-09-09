@@ -62,10 +62,25 @@ struct LolaSampleAllocateePtrBinding<T> {
     _consumer_data_control_local_: *mut ConsumerEventDataControlLocalView,
 }
 
+/// Mirror of `someip::SampleAllocateePtr`. Unlike the LoLa counterpart it is not templated on the sample type on
+/// the C++ side, but the generic parameter is kept here so that all alternatives of the variant share one shape.
+#[repr(C)]
+struct SomeIpSampleAllocateePtrBinding<T> {
+    _managed_object: *mut T,
+    _event_slot_index: SlotIndexType,
+    _owning_event: *mut core::ffi::c_void,
+}
+
+#[repr(C)]
+union SomeIpSampleAllocateePtrVariant<T> {
+    _variant: ManuallyDrop<SomeIpSampleAllocateePtrBinding<T>>,
+    _mock_binding: ManuallyDrop<MockBindingVariant<T>>,
+}
+
 #[repr(C)]
 union LolaSampleAllocateePtrVariant<T> {
     _variant: ManuallyDrop<LolaSampleAllocateePtrBinding<T>>,
-    _mock_binding: ManuallyDrop<MockBindingVariant<T>>,
+    _someip_binding: ManuallyDrop<SomeIpSampleAllocateePtrVariant<T>>,
 }
 
 #[repr(C)]
@@ -92,10 +107,15 @@ unsafe impl<T> Send for SampleAllocateePtr<T> {}
 
 impl<T> Debug for SampleAllocateePtr<T> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        // Must match the alternative order of
+        // std::variant<score::cpp::blank, lola::SampleAllocateePtr, someip::SampleAllocateePtr,
+        //              mock_binding::SampleAllocateePtr>
+        // in score/mw/com/impl/plumbing/sample_allocatee_ptr.h.
         let state = match self._internal._index {
             0 => "Blank",
             1 => "LolaSampleAllocateePtr",
-            2 => "UniquePtr",
+            2 => "SomeIpSampleAllocateePtr",
+            3 => "UniquePtr",
             _ => "Unknown",
         };
 

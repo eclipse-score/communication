@@ -127,6 +127,9 @@ class Configuration final
     /// \brief Determine if any service with a LoLa binding is defined in this configuration
     score::Result<bool> HasLolaServiceDeployment() const noexcept;
 
+    /// \brief Returns whether the configuration contains at least one service type with a SOME/IP binding.
+    score::Result<bool> HasSomeIpServiceDeployment() const noexcept;
+
     /// \brief Returns the list of names (ToString()) of all configured ServiceIdentifierTypes
     std::set<std::string_view> GetServiceTypeNames() const noexcept;
 
