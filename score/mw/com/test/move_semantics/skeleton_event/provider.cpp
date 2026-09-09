@@ -28,7 +28,7 @@ namespace
 const std::string kInterprocessNotificationShmPath{"/skeleton_event_move_semantics_interprocess_notification"};
 
 void SendSamples(SkeletonMoveSemanticsSkeleton& skeleton,
-                 const std::size_t number_of_samples_to_send_per_offer,
+                 const std::uint32_t number_of_samples_to_send_per_offer,
                  const std::uint32_t initial_value)
 {
     std::cout << "\nProvider: Sending " << number_of_samples_to_send_per_offer << " samples" << std::endl;
@@ -44,7 +44,7 @@ void SendSamples(SkeletonMoveSemanticsSkeleton& skeleton,
 }
 
 void RunProviderMoveConstructNotOfferedSkeleton(const score::cpp::stop_token& stop_token,
-                                                const std::size_t number_of_samples_to_send_per_offer,
+                                                const std::uint32_t number_of_samples_to_send_per_offer,
                                                 ProcessSynchronizer& proxy_done_synchronizer)
 {
     // Step 1. Create skeleton
@@ -101,7 +101,7 @@ void RunProviderMoveConstructNotOfferedSkeleton(const score::cpp::stop_token& st
 }
 
 void RunProviderMoveConstructOfferedSkeleton(const score::cpp::stop_token& stop_token,
-                                             const std::size_t number_of_samples_to_send_per_offer,
+                                             const std::uint32_t number_of_samples_to_send_per_offer,
                                              ProcessSynchronizer& proxy_done_synchronizer)
 {
     // Step 1. Create skeleton
@@ -166,7 +166,7 @@ void RunProviderMoveConstructOfferedSkeleton(const score::cpp::stop_token& stop_
 }
 
 void RunProviderMoveAssignNotOfferedSkeleton(const score::cpp::stop_token& stop_token,
-                                             const std::size_t number_of_samples_to_send_per_offer,
+                                             const std::uint32_t number_of_samples_to_send_per_offer,
                                              ProcessSynchronizer& proxy_done_synchronizer)
 {
     // Step 1. Create two skeletons
@@ -227,7 +227,7 @@ void RunProviderMoveAssignNotOfferedSkeleton(const score::cpp::stop_token& stop_
 }
 
 void RunProviderMoveAssignOfferedSkeleton(const score::cpp::stop_token& stop_token,
-                                          const std::size_t number_of_samples_to_send_per_offer,
+                                          const std::uint32_t number_of_samples_to_send_per_offer,
                                           ProcessSynchronizer& moved_to_proxy_done_synchronizer_result,
                                           ProcessSynchronizer& moved_from_proxy_done_synchronizer_result)
 {
@@ -300,7 +300,7 @@ void RunProviderMoveAssignOfferedSkeleton(const score::cpp::stop_token& stop_tok
 }  // namespace
 
 void RunProvider(const SkeletonMoveScenario& scenario,
-                 const std::size_t num_samples_to_send,
+                 const std::uint32_t num_samples_to_send,
                  const score::cpp::stop_token& stop_token)
 {
     const auto moved_to_name = filesystem::Path{kInstanceSpecifierMovedTo.ToString()}.Filename().Native();
