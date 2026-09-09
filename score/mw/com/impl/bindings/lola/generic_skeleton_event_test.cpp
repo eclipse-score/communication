@@ -64,7 +64,7 @@ class GenericSkeletonEventFixture : public SkeletonEventFixture
 // Test: Construction
 TEST_F(GenericSkeletonEventFixture, CanConstructAGenericSkeletonEvent)
 {
-    RecordProperty("Verifies", "SCR-14035184");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyEventGetSampleSize");
     RecordProperty("Description", "Checks that a GenericSkeletonEvent can be constructed.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -85,7 +85,7 @@ TEST_F(GenericSkeletonEventFixture, CanConstructAGenericSkeletonEvent)
 // Test: GetBindingType
 TEST_F(GenericSkeletonEventFixture, GetBindingType)
 {
-    RecordProperty("Verifies", "SCR-14035184");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyEventGetSampleSize");
     RecordProperty("Description", "Checks that GetBindingType returns kLoLa for GenericSkeletonEvent.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -107,7 +107,7 @@ TEST_F(GenericSkeletonEventFixture, GetBindingType)
 // Test: GetSizeInfo
 TEST_F(GenericSkeletonEventFixture, GetSizeInfo)
 {
-    RecordProperty("Verifies", "SCR-14035184");
+
     RecordProperty("Description", "Checks that GetSizeInfo returns correct size and alignment.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -132,7 +132,7 @@ TEST_F(GenericSkeletonEventFixture, GetSizeInfo)
 // Test: GetMaxSize
 TEST_F(GenericSkeletonEventFixture, GetMaxSize)
 {
-    RecordProperty("Verifies", "SCR-14035184");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyEventGetSampleSize");
     RecordProperty("Description", "Checks that GetMaxSize returns correct maximum size.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -156,7 +156,7 @@ TEST_F(GenericSkeletonEventFixture, GetMaxSize)
 // Test: PrepareOffer
 TEST_F(GenericSkeletonEventFixture, PrepareOffer)
 {
-    RecordProperty("Verifies", "SCR-14035184");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyEventGetSampleSize");
     RecordProperty("Description", "Checks that PrepareOffer successfully initializes the event.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

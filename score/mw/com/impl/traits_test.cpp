@@ -458,7 +458,8 @@ TEST_F(GeneratedProxyDestructionFixture, CallsUnsubscribeOnDestruction)
     // SCR-20236391 and SCR-20237033 are split with UnsubscribingWillUnregisterEventHandler in
     // proxy_event_common_test.cpp. this test covers destruction triggering Unsubscribe on the events and
     // fields, the other covers Unsubscribe triggering UnregisterEventNotification.
-    RecordProperty("Verifies", "SCR-20236391, SCR-20237033");
+    RecordProperty("Verifies", "SCR-20236391");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyEventDestructor");
     RecordProperty("Description",
                    "Checks that destroying a proxy triggers Unsubscribe on its bindings, events, and fields.");
     RecordProperty("TestType", "Requirements-based test");

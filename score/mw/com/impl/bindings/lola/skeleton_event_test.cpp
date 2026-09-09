@@ -208,7 +208,9 @@ TEST_F(SkeletonEventPrepareOfferFixture, RegisterEventNotificationExistenceChang
 TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionsAcceptedIfMaxSamplesCanBeProvided)
 {
     RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-14033248");
-    RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe");
+    RecordProperty("lobster-tracing",
+                   "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe, "
+                   "Communication.GenericProxyEventSubscribe");
     RecordProperty("Description",
                    "Checks that a subscription will be accepted by the provider if the requested max_sample_count can "
                    "be provided.");
@@ -241,8 +243,11 @@ TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionsAcceptedIfMaxSamplesCanBeP
 
 TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionRejectedIfMaxSubscriptionCountOverflowOccurs)
 {
-    RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-14033248");
-    RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe");
+
+    RecordProperty("Verifies", "SCR-7088394, SCR-21269964");
+    RecordProperty("lobster-tracing",
+                   "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe, "
+                   "Communication.GenericProxyEventSubscribe");
     RecordProperty("Description",
                    "Checks that a subscription will be rejected if an 'over-subscription' occurs on the skeleton.");
     RecordProperty("TestType", "Requirements-based test");
@@ -274,8 +279,10 @@ TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionRejectedIfMaxSubscriptionCo
 
 TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionAcceptedIfOversubscriptionAllowedOnConstruction)
 {
-    RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-14033248");
-    RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe");
+    RecordProperty("Verifies", "SCR-7088394, SCR-21269964");
+    RecordProperty("lobster-tracing",
+                   "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe, "
+                   "Communication.GenericProxyEventSubscribe");
     RecordProperty("Description",
                    "Checks that a skeleton event allows 'over-subscription' in case it is constructed accordingly");
     RecordProperty("TestType", "Requirements-based test");
@@ -307,7 +314,9 @@ TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionAcceptedIfOversubscriptionA
 TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionRejectedIfNumberOfSubscriberExceedsLimit)
 {
     RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-14033248");
-    RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe");
+    RecordProperty("lobster-tracing",
+                   "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe, "
+                   "Communication.GenericProxyEventSubscribe");
     RecordProperty("Description",
                    "Checks that a subscription will be rejected if the number of subscriptions is already equal or "
                    "greater than the max number of subscribers allowed.");
@@ -348,8 +357,10 @@ TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionRejectedIfNumberOfSubscribe
 
 TEST_F(SkeletonEventPrepareOfferFixture, UnsubscribeIncreasesAvailableSampleSlots)
 {
-    RecordProperty("Verifies", "SCR-14033377, SCR-21286218");
-    RecordProperty("lobster-tracing", "Communication.ProxyFieldUnsubscribe, Communication.ProxyEventUnsubscribe");
+    RecordProperty("Verifies", "SCR-21286218");
+    RecordProperty("lobster-tracing",
+                   "Communication.ProxyFieldUnsubscribe, Communication.ProxyEventUnsubscribe, "
+                   "Communication.GenericProxyEventUnsubscribe");
     RecordProperty("Description",
                    "The available sample count will be incremented when an unsubscribe message is received.");
     RecordProperty("TestType", "Requirements-based test");
