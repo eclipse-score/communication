@@ -721,7 +721,7 @@ section "LoLa" {
                     version = 1
                     safety = ScoreReq.Asil.B
                     rationale = "A manipulated size is tackled, by \"Size information in read-only memory\". The right location is ensured via \"Location of type-meta-information information for Generic Proxy\" The wrong set size, is covered by \"The type-meta-information shall be calculated based on the provided event/field type"
-                    interface = "mw.com.GenericProxyEvent.GetSampleSize"
+                    interface = "mw.com.GenericProxyEvent.GetDataTypeSizeInfo"
                 }
 
                 // ID: 31545538
@@ -733,7 +733,7 @@ section "LoLa" {
                     safety = ScoreReq.Asil.B
                     rationale = "Potential faults and measures are the same as [ISSUE:Failuremode TheSizeReturnedIsBiggerThenTheActualValue]"
                     // potentialcause = "Same as [ISSUE:Failuremode TheSizeReturnedIsBiggerThenTheActualValue]"
-                    interface = "mw.com.GenericProxyEvent.GetSampleSize"
+                    interface = "mw.com.GenericProxyEvent.GetDataTypeSizeInfo"
                 }
 
                 // ID: 31545581
