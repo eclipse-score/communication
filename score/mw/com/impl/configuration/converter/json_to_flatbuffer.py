@@ -69,10 +69,7 @@ def _normalize(node, enum_symbols):
     form is a known enum symbol, so arbitrary strings (paths, names) are left untouched.
     """
     if isinstance(node, dict):
-        return {
-            key.replace("-", "_"): _normalize(value, enum_symbols)
-            for key, value in node.items()
-        }
+        return {key.replace("-", "_"): _normalize(value, enum_symbols) for key, value in node.items()}
     if isinstance(node, list):
         return [_normalize(item, enum_symbols) for item in node]
     if isinstance(node, str):
