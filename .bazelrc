@@ -49,6 +49,8 @@ build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch-enum
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch-enum
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=sign-conversion
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=sign-conversion
+build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=conversion
+build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=conversion
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=range-loop-construct
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=range-loop-construct
 build --per_file_copt=external/.*googletest.*@-Wno-error=switch-enum
@@ -65,6 +67,8 @@ build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=switch-enum
 # Enable the experimental FlatBuffers configuration path.
 build:flatbuffers --//score/mw/com/impl/configuration:experimental_enable_flatbuffers_configuration=True
 
+build --per_file_copt=external/.*flatbuffers.*@-Wno-error=conversion
+build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=conversion
 build --per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
 build --host_per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
 build --per_file_copt=external/.*boost.*@-Wno-error=shadow
