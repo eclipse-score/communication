@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
 #include "score/json/json_parser.h"
@@ -37,7 +38,8 @@ namespace score::mw::com::impl
 class ServiceInstanceDeployment
 {
   public:
-    using BindingInformation = std::variant<LolaServiceInstanceDeployment, score::cpp::blank>;
+    using BindingInformation =
+        std::variant<LolaServiceInstanceDeployment, SomeIpServiceInstanceDeployment, score::cpp::blank>;
 
     explicit ServiceInstanceDeployment(const score::json::Object& json_object);
     ServiceInstanceDeployment(ServiceIdentifierType service,
@@ -73,7 +75,10 @@ class ServiceInstanceDeployment
     QualityType asilLevel_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     InstanceSpecifier instance_specifier_;
-    constexpr static std::uint32_t serializationVersion = 1U;
+    /// \brief Bumped to 2 when SomeIpServiceInstanceDeployment was inserted into BindingInformation before
+    /// score::cpp::blank: that shifted the alternative indices which Serialize() writes as bindingInfoIndex, so
+    /// version 1 payloads must not be read back with this layout.
+    constexpr static std::uint32_t serializationVersion = 2U;
 };
 
 bool operator==(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs);

@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/bindings/mock_binding/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/bindings/someip/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/sample_allocatee_tracker.h"
 
 #include <score/blank.hpp>
@@ -182,7 +183,7 @@ class SampleAllocateePtr
 
     // We don't use the pimpl idiom because it would require dynamic memory allocation (that we want to avoid)
     // Stores either the LoLa pointer or the Mock Binding pointer (which handles void safely)
-    std::variant<score::cpp::blank, lola::SampleAllocateePtr, mock_binding::SampleAllocateePtr> internal_;
+    std::variant<score::cpp::blank, lola::SampleAllocateePtr, someip::SampleAllocateePtr, mock_binding::SampleAllocateePtr> internal_;
     /// \brief Guard that tracks this allocation's lifetime in the SampleAllocateeTracker.
     /// Stored in an optional to handle both cases default-constructed SampleAllocateePtr (which don't track any
     /// allocation) and allocated SampleAllocateePtr (which are tracked).
@@ -232,6 +233,10 @@ void SampleAllocateePtr<SampleType>::reset() noexcept
             internal_ptr.reset();
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
+        [](someip::SampleAllocateePtr& internal_ptr) noexcept -> void {
+            internal_ptr.reset();
+        },
+        // coverity[autosar_cpp14_a7_1_7_violation]
         [](mock_binding::SampleAllocateePtr& internal_ptr) noexcept -> void {
             internal_ptr.reset(nullptr);
         },
@@ -277,6 +282,10 @@ auto SampleAllocateePtr<SampleType>::Get() const noexcept -> pointer
         [](const lola::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
             return static_cast<SampleType*>(internal_ptr.get());
         },
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const someip::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
+            return static_cast<SampleType*>(internal_ptr.get());
+        },
         // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
         // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
         // the function replaces the managed object"
@@ -299,6 +308,10 @@ SampleAllocateePtr<SampleType>::operator bool() const noexcept
 {
     auto visitor = score::cpp::overload(
         [](const lola::SampleAllocateePtr& internal_ptr) noexcept -> bool {
+            return static_cast<bool>(internal_ptr);
+        },
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const someip::SampleAllocateePtr& internal_ptr) noexcept -> bool {
             return static_cast<bool>(internal_ptr);
         },
         // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
@@ -337,6 +350,10 @@ typename std::add_lvalue_reference<SampleType>::type SampleAllocateePtr<SampleTy
         [](const lola::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
             return *static_cast<SampleType*>(internal_ptr.get());
         },
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const someip::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
+            return *static_cast<SampleType*>(internal_ptr.get());
+        },
         // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
         // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
         // the function replaces the managed object"
@@ -367,6 +384,10 @@ auto SampleAllocateePtr<SampleType>::operator->() const noexcept -> pointer
         // clang formatting.
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const lola::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
+            return static_cast<SampleType*>(internal_ptr.get());
+        },
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const someip::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
             return static_cast<SampleType*>(internal_ptr.get());
         },
         // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
@@ -440,7 +461,7 @@ class SampleAllocateePtrView
         return std::get_if<T>(&ptr_.internal_);
     }
 
-    const std::variant<score::cpp::blank, lola::SampleAllocateePtr, mock_binding::SampleAllocateePtr>&
+    const std::variant<score::cpp::blank, lola::SampleAllocateePtr, someip::SampleAllocateePtr, mock_binding::SampleAllocateePtr>&
     GetUnderlyingVariant() const noexcept
     {
         return ptr_.internal_;
@@ -457,7 +478,7 @@ class SampleAllocateePtrMutableView
   public:
     explicit SampleAllocateePtrMutableView(SampleAllocateePtr<SampleType>& ptr) : ptr_{ptr} {}
 
-    std::variant<score::cpp::blank, lola::SampleAllocateePtr, mock_binding::SampleAllocateePtr>&
+    std::variant<score::cpp::blank, lola::SampleAllocateePtr, someip::SampleAllocateePtr, mock_binding::SampleAllocateePtr>&
     GetUnderlyingVariant() noexcept
     {
         // Suppress "AUTOSAR C++14 A9-3-1", The rule states: "Member functions shall not return non-const “raw” pointers

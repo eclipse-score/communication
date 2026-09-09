@@ -57,6 +57,12 @@ Result<std::unique_ptr<GenericProxyEventBinding>> GenericProxyEventBindingFactor
                 GetElementFqId(parent_handle, lola_type_deployment, std::string{event_name}, service_element_type);
             return std::make_unique<lola::GenericProxyEvent>(*lola_proxy, element_fq_id, event_name);
         },
+        // The SOME/IP binding does not support this service element (yet). It is listed explicitly (instead of
+        // being served by the score::cpp::blank arm) because std::visit requires an arm for every variant
+        // alternative.
+        [](const SomeIpServiceTypeDeployment&) noexcept -> ReturnType {
+            return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
+        },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
         });

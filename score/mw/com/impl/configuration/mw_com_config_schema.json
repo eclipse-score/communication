@@ -50,7 +50,8 @@
                                     "title": "Type of binding",
                                     "type": "string",
                                     "enum": [
-                                        "SHM"
+                                        "SHM",
+                                        "SOMEIP"
                                     ],
                                     "description": "Binding technology"
                                 },
@@ -214,7 +215,8 @@
                                 "binding": {
                                     "type": "string",
                                     "enum": [
-                                        "SHM"
+                                        "SHM",
+                                        "SOMEIP"
                                     ],
                                     "title": "Binding",
                                     "description": "Binding technology"

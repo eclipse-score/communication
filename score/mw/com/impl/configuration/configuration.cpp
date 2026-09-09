@@ -21,6 +21,57 @@
 namespace score::mw::com::impl
 {
 
+namespace
+{
+
+/// \brief Inserts the names of all events resp. fields of the given service type deployment into result.
+/// \details Templated on the concrete binding deployment, since LolaServiceTypeDeployment and
+///          SomeIpServiceTypeDeployment are distinct instantiations of the same BindingServiceTypeDeployment template
+///          and therefore expose the same events_/fields_ members.
+template <typename BindingServiceTypeDeploymentType>
+void InsertServiceElementNames(const BindingServiceTypeDeploymentType& service_deployment,
+                               const ServiceElementType element_type,
+                               std::set<std::string_view>& result) noexcept
+{
+    if (element_type == ServiceElementType::EVENT)
+    {
+        // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed"
+        // despite all lines within the loop being covered. We also have a test for the case where
+        // service_deployment.events_ is empty. Suppression can be removed when the tooling bug is fixed.)
+        for (const auto& event : service_deployment.events_)
+        // LCOV_EXCL_BR_STOP
+        {
+            score::cpp::ignore = result.insert(event.first);
+        }
+    }
+    // LCOV_EXCL_BR_START (Defensive programming: GetElementNamesOfServiceType is always called with either
+    // ServiceElementType::EVENT or ServiceElementType::FIELD. Entering the false branch of this check is
+    // therefore unreachable.
+    else if (element_type == ServiceElementType::FIELD)
+    // LCOV_EXCL_BR_STOP
+    {
+        // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed"
+        // despite all lines within the loop being covered. We also have a test for the case where
+        // service_deployment.fields_ is empty. Suppression can be removed when the tooling bug is fixed.)
+        for (const auto& field : service_deployment.fields_)
+        // LCOV_EXCL_BR_STOP
+        {
+            score::cpp::ignore = result.insert(field.first);
+        }
+    }
+    // LCOV_EXCL_START (Defensive programming: See comment directly above. This branch is only included to
+    // protect us from future programming mistakes)
+    else
+    {
+        score::mw::log::LogFatal("lola")
+            << "GetElementNamesOfServiceType called with unsupported ServiceElementType: " << element_type;
+        std::terminate();
+    }
+    // LCOV_EXCL_STOP
+}
+
+}  // namespace
+
 Configuration::Configuration(ServiceTypeDeployments service_types,
                              ServiceInstanceDeployments service_instances,
                              GlobalConfiguration global_configuration,
@@ -275,6 +326,32 @@ score::Result<bool> Configuration::HasLolaServiceDeployment() const noexcept
         [](const LolaServiceTypeDeployment&) {
             return true;
         },
+        [](const SomeIpServiceTypeDeployment&) noexcept {
+            return false;
+        },
+        [](const score::cpp::blank&) noexcept {
+            return false;
+        });
+
+    for (const auto& service_type : GetServiceTypes())
+    {
+        if (std::visit(deployment_info_visitor, service_type.second.binding_info_))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+score::Result<bool> Configuration::HasSomeIpServiceDeployment() const noexcept
+{
+    auto deployment_info_visitor = score::cpp::overload(
+        [](const LolaServiceTypeDeployment&) noexcept {
+            return false;
+        },
+        [](const SomeIpServiceTypeDeployment&) {
+            return true;
+        },
         [](const score::cpp::blank&) noexcept {
             return false;
         });
@@ -305,45 +382,14 @@ std::set<std::string_view> Configuration::GetElementNamesOfServiceType(const std
     std::set<std::string_view> result{};
     auto service_type_deployment_visitor = score::cpp::overload(
         [&result, element_type](const LolaServiceTypeDeployment& lola_service_deployment) {
-            if (element_type == ServiceElementType::EVENT)
-            {
-                // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed"
-                // despite all lines within the loop being covered. We also have a test for the case where
-                // lola_service_deployment.events_ is empty. Suppression can be removed when the tooling bug is fixed.)
-                for (const auto& event : lola_service_deployment.events_)
-                // LCOV_EXCL_BR_STOP
-                {
-                    score::cpp::ignore = result.insert(event.first);
-                }
-            }
-            // LCOV_EXCL_BR_START (Defensive programming: GetElementNamesOfServiceType is always called with either
-            // ServiceElementType::EVENT or ServiceElementType::FIELD. Entering the false branch of this check is
-            // therefore unreachable.
-            else if (element_type == ServiceElementType::FIELD)
-            // LCOV_EXCL_BR_STOP
-            {
-                // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed"
-                // despite all lines within the loop being covered. We also have a test for the case where
-                // lola_service_deployment.fields_ is empty. Suppression can be removed when the tooling bug is fixed.)
-                for (const auto& field : lola_service_deployment.fields_)
-                // LCOV_EXCL_BR_STOP
-                {
-                    score::cpp::ignore = result.insert(field.first);
-                }
-            }
-            // LCOV_EXCL_START (Defensive programming: See comment directly above. This branch is only included to
-            // protect us from future programming mistakes)
-            else
-            {
-                score::mw::log::LogFatal("lola")
-                    << "GetElementNamesOfServiceType called with unsupported ServiceElementType: " << element_type;
-                std::terminate();
-            }
-            // LCOV_EXCL_STOP
+            InsertServiceElementNames(lola_service_deployment, element_type, result);
+        },
+        [&result, element_type](const SomeIpServiceTypeDeployment& someip_service_deployment) {
+            InsertServiceElementNames(someip_service_deployment, element_type, result);
         },
         // LCOV_EXCL_START (Unreachable Code: GetElementNamesOfServiceType can only be called on an existing service
-        // type. I.e. The ServiceTypeDeployment must be LolaServiceTypeDeployment and can never be score::cpp::blank.
-        // This code is there because std::visitor must handle all std::variant types.
+        // type. I.e. The ServiceTypeDeployment can never be score::cpp::blank. This code is there because std::visit
+        // must handle all std::variant alternatives.
         [](const score::cpp::blank&) noexcept {
             return;
         }
