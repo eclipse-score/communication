@@ -81,7 +81,7 @@ int RunAddOnServiceOnlyTestCase(int argc, const char** argv)
     // consumer (that never merged the add-on configuration) signals that it has concluded its (expected to fail)
     // service discovery attempt.
     const auto service_instance_manifest_path = ParseServiceInstanceManifest(argc, argv, "addon_manifest");
-    const auto add_on_load_result = score::mw::com::runtime::InitializeRuntimeAddonConfiguration(
+    const auto add_on_load_result = score::mw::com::runtime::AddConfiguration(
         score::mw::com::runtime::RuntimeConfiguration{service_instance_manifest_path});
 
     if (!add_on_load_result.has_value())
@@ -129,7 +129,7 @@ int RunInvalidAddOnConfigTestCase(int argc, const char** argv)
     // in use. The runtime is expected to call std::terminate().
     const auto invalid_service_instance_manifest_path =
         ParseServiceInstanceManifest(argc, argv, "invalid_addon_manifest");
-    const auto invalid_add_on_load_result = score::mw::com::runtime::InitializeRuntimeAddonConfiguration(
+    const auto invalid_add_on_load_result = score::mw::com::runtime::AddConfiguration(
         score::mw::com::runtime::RuntimeConfiguration{invalid_service_instance_manifest_path});
 
     if (invalid_add_on_load_result.has_value())
@@ -190,7 +190,7 @@ int main(int argc, const char** argv)
     {
         const auto addon_manifest_path = ParseServiceInstanceManifest(argc, argv, "addon_manifest");
         mid_stream_callback = [addon_manifest_path]() {
-            const auto result = score::mw::com::runtime::InitializeRuntimeAddonConfiguration(
+            const auto result = score::mw::com::runtime::AddConfiguration(
                 score::mw::com::runtime::RuntimeConfiguration{addon_manifest_path});
             if (!result.has_value())
             {
@@ -213,7 +213,7 @@ int main(int argc, const char** argv)
     if (!merge_during_stream)
     {
         const auto service_instance_manifest_path = ParseServiceInstanceManifest(argc, argv, "addon_manifest");
-        const auto add_on_load_result = score::mw::com::runtime::InitializeRuntimeAddonConfiguration(
+        const auto add_on_load_result = score::mw::com::runtime::AddConfiguration(
             score::mw::com::runtime::RuntimeConfiguration{service_instance_manifest_path});
 
         if (!add_on_load_result.has_value())

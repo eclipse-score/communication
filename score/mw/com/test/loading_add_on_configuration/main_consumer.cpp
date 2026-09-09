@@ -71,7 +71,7 @@ int RunInvalidAddOnConfigTestCase(int argc, const char** argv)
     // in use. The runtime is expected to call std::terminate().
     const auto invalid_service_instance_manifest_path =
         ParseServiceInstanceManifest(argc, argv, "invalid_addon_manifest");
-    const auto invalid_add_on_load_result = score::mw::com::runtime::InitializeRuntimeAddonConfiguration(
+    const auto invalid_add_on_load_result = score::mw::com::runtime::AddConfiguration(
         score::mw::com::runtime::RuntimeConfiguration{invalid_service_instance_manifest_path});
 
     if (invalid_add_on_load_result.has_value())
@@ -162,7 +162,7 @@ int main(int argc, const char** argv)
 
     // 2nd step: Load add-on configuration and merge into existing configuration
     const auto service_instance_manifest_path = ParseServiceInstanceManifest(argc, argv, "addon_manifest");
-    const auto add_on_load_result = score::mw::com::runtime::InitializeRuntimeAddonConfiguration(
+    const auto add_on_load_result = score::mw::com::runtime::AddConfiguration(
         score::mw::com::runtime::RuntimeConfiguration{service_instance_manifest_path});
 
     if (!add_on_load_result.has_value())

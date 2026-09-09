@@ -82,7 +82,7 @@ class Runtime final : public IRuntime
     /// \attention This function will call std::terminate() in case no initial configuration has been loaded yet, or
     /// that the configuration is incompatible to the previously loaded one.
     /// \param runtime_configuration object containing service definitions which should be added to existing set
-    static Result<void> InitializeRuntimeAddonConfiguration(const runtime::RuntimeConfiguration& runtime_configuration);
+    static Result<void> AddConfiguration(const runtime::RuntimeConfiguration& runtime_configuration);
 
     /// \brief Extends mw::com subsystem with the given add-on configuration provided as a JSON object.
     /// \details This call is optional and shall allow loading additional mw::com configuration as an in-memory JSON
@@ -90,7 +90,7 @@ class Runtime final : public IRuntime
     /// \attention This function will call std::terminate() in case no initial configuration has been loaded yet, or
     /// that the configuration is incompatible to the previously loaded one.
     /// \param json object containing service definitions which should be added to existing set
-    static Result<void> InitializeRuntimeAddonConfiguration(score::json::Any json);
+    static Result<void> AddConfiguration(score::json::Any json);
 
     /// \brief get singleton.
     /// \details Might return either reference to a real Runtime instance or to a mock.

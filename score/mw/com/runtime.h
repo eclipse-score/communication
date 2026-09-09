@@ -126,7 +126,7 @@ void InitializeRuntime(const RuntimeConfiguration& runtime_configuration);
  * \attention This function will call std::terminate() in case that the configuration is incompatible to the previously
  * loaded one or if no complete mw::com configuration has been loaded previously.
  **/
-Result<void> InitializeRuntimeAddonConfiguration(const RuntimeConfiguration& runtime_configuration);
+Result<void> AddConfiguration(const RuntimeConfiguration& runtime_configuration);
 
 /**
  * \api
@@ -137,7 +137,7 @@ Result<void> InitializeRuntimeAddonConfiguration(const RuntimeConfiguration& run
  * loaded one or if no complete mw::com configuration has been loaded previously.
  * \param json The JSON object containing the add-on configuration.
  **/
-Result<void> InitializeRuntimeAddonConfiguration(score::json::Any json);
+Result<void> AddConfiguration(score::json::Any json);
 
 }  // namespace score::mw::com::runtime
 
