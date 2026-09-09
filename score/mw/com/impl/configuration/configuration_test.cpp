@@ -11,6 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/configuration.h"
+
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/config_parser.h"
 #include "score/mw/com/impl/configuration/configuration_error.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
@@ -542,6 +544,49 @@ TEST_F(ConfigurationFixture, HasLolaServiceDeploymentReturnsFalseIfNoLolaService
 
     // When checking if the configuration has a Lola service deployment
     const auto result = unit_.value().HasLolaServiceDeployment();
+
+    // Then the result should be false
+    ASSERT_TRUE(result.has_value());
+    EXPECT_FALSE(result.value());
+}
+
+TEST_F(ConfigurationFixture, HasSomeIpServiceDeploymentReturnsTrueIfSomeIpServiceTypeDeploymentExists)
+{
+    // Given a configuration containing a SomeIpServiceTypeDeployment
+    auto config = validate_test::MakeConfigurationWithAsilLevel(QualityType::kASIL_QM);
+    config.AddServiceTypeDeployment(validate_test::MakeServiceIdentifier(),
+                                    ServiceTypeDeployment{SomeIpServiceTypeDeployment{1U}});
+
+    // When checking if the configuration has a SOME/IP service deployment
+    const auto result = config.HasSomeIpServiceDeployment();
+
+    // Then the result should be true
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value());
+}
+
+TEST_F(ConfigurationFixture, HasSomeIpServiceDeploymentReturnsFalseForALolaOnlyConfiguration)
+{
+    // Given a configuration containing only a LolaServiceTypeDeployment
+    WithMinimalConfiguration();
+
+    // When checking if the configuration has a SOME/IP service deployment
+    const auto result = unit_.value().HasSomeIpServiceDeployment();
+
+    // Then the result should be false
+    ASSERT_TRUE(result.has_value());
+    EXPECT_FALSE(result.value());
+}
+
+TEST_F(ConfigurationFixture, HasLolaServiceDeploymentReturnsFalseForASomeIpOnlyConfiguration)
+{
+    // Given a configuration containing only a SomeIpServiceTypeDeployment
+    auto config = validate_test::MakeConfigurationWithAsilLevel(QualityType::kASIL_QM);
+    config.AddServiceTypeDeployment(validate_test::MakeServiceIdentifier(),
+                                    ServiceTypeDeployment{SomeIpServiceTypeDeployment{1U}});
+
+    // When checking if the configuration has a Lola service deployment
+    const auto result = config.HasLolaServiceDeployment();
 
     // Then the result should be false
     ASSERT_TRUE(result.has_value());
