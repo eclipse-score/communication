@@ -32,8 +32,35 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
     {
         const SkeletonBaseView skeleton_base_view{skeleton_base};
         const auto& instance_identifier = skeleton_base_view.GetAssociatedInstanceIdentifier();
-        auto* const binding_ptr = static_cast<GenericSkeletonEventBinding*>(binding_.get());
-        if (binding_ptr)
+        auto* const binding_ptr = dynamic_cast<GenericSkeletonEventBinding*>(binding_.get());
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ptr != nullptr,
+                                                    "Cast to GenericSkeletonEventBinding failed");
+        if (binding_ptr != nullptr)
+        {
+            const auto binding_type = binding_ptr->GetBindingType();
+            auto tracing_data =
+                tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
+            binding_ptr->SetSkeletonEventTracingData(tracing_data);
+        }
+    }
+}
+
+GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
+                                           const std::string_view event_name,
+                                           std::unique_ptr<GenericSkeletonEventBinding> binding,
+                                           FieldOnlyConstructorEnabler /*tag*/)
+    : SkeletonEventBase(event_name, std::move(binding))
+{
+    // Intentionally omitting SkeletonBaseView{skeleton_base}.RegisterEvent(event_name, *this);
+
+    if (binding_ != nullptr)
+    {
+        const SkeletonBaseView skeleton_base_view{skeleton_base};
+        const auto& instance_identifier = skeleton_base_view.GetAssociatedInstanceIdentifier();
+        auto* const binding_ptr = dynamic_cast<GenericSkeletonEventBinding*>(binding_.get());
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ptr != nullptr,
+                                                    "Cast to GenericSkeletonEventBinding failed");
+        if (binding_ptr != nullptr)
         {
             const auto binding_type = binding_ptr->GetBindingType();
             auto tracing_data =
@@ -53,7 +80,8 @@ Result<void> GenericSkeletonEvent::Send(SampleAllocateePtr<void> sample) noexcep
     }
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ != nullptr, "Binding is not initialized!");
-    auto* const binding = static_cast<GenericSkeletonEventBinding*>(binding_.get());
+    auto* const binding = dynamic_cast<GenericSkeletonEventBinding*>(binding_.get());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding != nullptr, "Cast to GenericSkeletonEventBinding failed");
 
     const auto send_result = binding->Send(std::move(sample));
 
@@ -74,7 +102,8 @@ Result<SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
             << "GenericSkeletonEvent::Allocate failed as Event has not yet been offered or has been stop offered";
         return MakeUnexpected(ComErrc::kNotOffered);
     }
-    auto* const binding = static_cast<GenericSkeletonEventBinding*>(binding_.get());
+    auto* const binding = dynamic_cast<GenericSkeletonEventBinding*>(binding_.get());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding != nullptr, "Cast to GenericSkeletonEventBinding failed");
 
     auto result = binding->Allocate(sample_allocatee_tracker_->Allocate());
 
@@ -96,16 +125,18 @@ Result<void> GenericSkeletonEvent::Notify() noexcept
             << "GenericSkeletonEvent::Notify failed as Event has not yet been offered or has been stop offered";
         return MakeUnexpected(ComErrc::kNotOffered);
     }
-    auto* const binding = static_cast<GenericSkeletonEventBinding*>(binding_.get());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding != nullptr, "Binding is not initialized!");
+    auto* const binding = dynamic_cast<GenericSkeletonEventBinding*>(binding_.get());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding != nullptr, "Cast to GenericSkeletonEventBinding failed");
     return binding->Notify();
 }
 
 DataTypeMetaInfo GenericSkeletonEvent::GetSizeInfo() const noexcept
 {
-    const auto* const binding = static_cast<const GenericSkeletonEventBinding*>(binding_.get());
-    if (!binding)
+    const auto* const binding = dynamic_cast<const GenericSkeletonEventBinding*>(binding_.get());
+    if (binding == nullptr)
+    {
         return {};
+    }
     const auto size_info_pair = binding->GetSizeInfo();
     return {size_info_pair.first, size_info_pair.second};
 }
