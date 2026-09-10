@@ -100,7 +100,7 @@ section "com" {
             ScoreReq.CompReq RecoverSubscriptionStateAfterSkeletonRestart {
                 description = '''After restarting a {{Skeleton}}, the previously subscribed events/fields shall still be subscribed, including their max-sample counts.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_ProducerConsumerPattern@1, Communication.FEAT_EventType@1]
+                derived_from = [Communication.FEAT_ProducerConsumerPattern@1, Communication.FEAT_EventTypeAccess@1]
                 version = 1
             }
 
@@ -108,7 +108,7 @@ section "com" {
             ScoreReq.CompReq RecoverSubscriptionCapacityAfterSkeletonRestart {
                 description = '''After restarting a {{Skeleton}}, it shall have the same capacity for new subscribers like it had before the restart.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_ProducerConsumerPattern@1, Communication.FEAT_EventType@1]
+                derived_from = [Communication.FEAT_ProducerConsumerPattern@1, Communication.FEAT_EventTypeAccess@1]
                 version = 1
             }
 
@@ -126,7 +126,7 @@ section "com" {
 
                 Note: Possible handlers are: {{EventUpdateNotificationHandler}}, {{SubscriptionStateChangeHandler}}'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_ProducerConsumerPattern@1, Communication.FEAT_EventType@1]
+                derived_from = [Communication.FEAT_ProducerConsumerPattern@1, Communication.FEAT_EventTypeAccess@1]
                 version = 1
             }
         }
