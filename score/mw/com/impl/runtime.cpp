@@ -133,14 +133,14 @@ void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configurat
     score::cpp::ignore = initialization_config_.emplace(std::move(config));
 }
 
-Result<void> Runtime::InitializeRuntimeAddonConfiguration(const runtime::RuntimeConfiguration& runtime_configuration)
+Result<void> Runtime::AddConfiguration(const runtime::RuntimeConfiguration& runtime_configuration)
 {
     auto config = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
 
     return HandleAddonConfiguration(config);
 }
 
-Result<void> Runtime::InitializeRuntimeAddonConfiguration(score::json::Any json)
+Result<void> Runtime::AddConfiguration(score::json::Any json)
 {
     auto config = configuration::Parse(std::move(json));
 

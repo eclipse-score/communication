@@ -16,7 +16,7 @@ This document contains examples of each mw::com user facing API.
 | [`RuntimeConfiguration(argc, argv)`](#example-3-using-runtimeconfiguration-for-configuration-management) |
 | [`RuntimeConfiguration(Path)`](#example-3-using-runtimeconfiguration-for-configuration-management) |
 | [`RuntimeConfiguration::GetConfigurationPath()`](#example-3-using-runtimeconfiguration-for-configuration-management) |
-| [`RuntimeConfiguration::InitializeRuntimeAddonConfiguration()`](#example-4-using-initializeruntimeaddonconfiguration-to-load-additional-mwcom-configurations) |
+| [`RuntimeConfiguration::AddConfiguration()`](#example-4-using-AddConfiguration-to-load-additional-mwcom-configurations) |
 | **Data Types** |
 | [`InstanceIdentifier::Create()`](#example-1-using-instanceidentifier-for-service-instance-management) |
 | [`InstanceIdentifier::ToString()`](#example-1-using-instanceidentifier-for-service-instance-management) |
@@ -276,9 +276,9 @@ const auto& config_path = default_config.GetConfigurationPath();
 ---
 
 
-### Example 4: Using `InitializeRuntimeAddonConfiguration` to load additional `mw::com` configurations
+### Example 4: Using `AddConfiguration` to load additional `mw::com` configurations
 
-`Runtime` provides the APIs `InitializeRuntimeAddonConfiguration(RuntimeConfiguration&)` and `InitializeRuntimeAddonConfiguration(score::json::Any)`
+`Runtime` provides the APIs `AddConfiguration(RuntimeConfiguration&)` and `AddConfiguration(score::json::Any)`
 to load additional configurations. For example, this can be used by libraries that also rely on mw::com to load their
 configuration in addition to the application's configuration. It is assumed that prior to that call a complete mw::com configuration has been
 loaded via `InitializeRuntime()`. If not this call will cause an application termination.
