@@ -50,14 +50,15 @@
                                     "title": "Type of binding",
                                     "type": "string",
                                     "enum": [
-                                        "SHM"
+                                        "SHM",
+                                        "SOME/IP"
                                     ],
                                     "description": "Binding technology"
                                 },
                                 "serviceId": {
                                     "type": "integer",
                                     "title": "Service Id",
-                                    "description": "Binding technology specific service id, it might be 16 or 64 bit. For LoLa/Shm we have 16 bit values."
+                                    "description": "Binding technology specific service id, it might be 16 or 64 bit. For LoLa/Shm and SOME/IP we have 16 bit values."
                                 },
                                 "events": {
                                     "type": "array",
@@ -214,7 +215,8 @@
                                 "binding": {
                                     "type": "string",
                                     "enum": [
-                                        "SHM"
+                                        "SHM",
+                                        "SOME/IP"
                                     ],
                                     "title": "Binding",
                                     "description": "Binding technology"

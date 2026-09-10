@@ -17,6 +17,8 @@
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 #include "score/mw/com/impl/test/dummy_instance_identifier_builder.h"
 
@@ -101,6 +103,28 @@ class BindingRuntimeFactoryFixture : public ::testing::Test
         return *this;
     }
 
+    BindingRuntimeFactoryFixture& WithAConfigurationContainingOneSomeIpBinding()
+    {
+        const ServiceTypeDeployment someip_type_deployment{SomeIpServiceTypeDeployment{kServiceId}};
+        const ServiceInstanceDeployment someip_instance_deployment{
+            make_ServiceIdentifierType("foo"),
+            SomeIpServiceInstanceDeployment{SomeIpServiceInstanceId{1U}},
+            QualityType::kASIL_QM,
+            kInstanceSpecifierString1};
+
+        Configuration::ServiceTypeDeployments service_type_deployments{
+            {kConfigStoreQm1.service_identifier_, someip_type_deployment},
+        };
+        Configuration::ServiceInstanceDeployments service_instance_deployments{
+            {kConfigStoreQm1.instance_specifier_, someip_instance_deployment},
+        };
+        configuration_ = std::make_unique<Configuration>(std::move(service_type_deployments),
+                                                         std::move(service_instance_deployments),
+                                                         GlobalConfiguration{},
+                                                         TracingConfiguration{});
+        return *this;
+    }
+
     concurrency::LongRunningThreadsContainer long_running_threads_{};
     std::unique_ptr<Configuration> configuration_{nullptr};
     DummyInstanceIdentifierBuilder dummy_instance_identifier_builder_{};
@@ -144,6 +168,32 @@ TEST_F(BindingRuntimeFactoryFixture, CannotCreateBlankBinding)
 
     // Then no runtime binding will be created
     EXPECT_TRUE(runtimes.empty());
+}
+
+TEST_F(BindingRuntimeFactoryFixture, CanCreateSomeIpBinding)
+{
+    // Given a configuration containing a single SOME/IP binding
+    WithAConfigurationContainingOneSomeIpBinding();
+
+    // When calling CreateBindingRuntimes
+    auto runtimes = BindingRuntimeFactory::CreateBindingRuntimes(*configuration_, long_running_threads_, {});
+
+    // Then a single SOME/IP runtime binding will be created
+    EXPECT_EQ(runtimes.size(), 1);
+    const auto& someip_runtime = runtimes[BindingType::kSomeIp];
+    EXPECT_EQ(someip_runtime->GetBindingType(), BindingType::kSomeIp);
+}
+
+TEST_F(BindingRuntimeFactoryFixture, DoesNotCreateSomeIpRuntimeForAConfigurationWithoutSomeIpServices)
+{
+    // Given a configuration which only contains a lola binding
+    WithAConfigurationContainingOneLolaBinding();
+
+    // When calling CreateBindingRuntimes
+    auto runtimes = BindingRuntimeFactory::CreateBindingRuntimes(*configuration_, long_running_threads_, {});
+
+    // Then no SOME/IP runtime binding will be created
+    EXPECT_EQ(runtimes.count(BindingType::kSomeIp), 0);
 }
 
 }  // namespace score::mw::com::impl

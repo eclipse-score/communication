@@ -13,6 +13,8 @@
 #include "score/mw/com/impl/configuration/configuration_json_parsing_strategy.h"
 
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/quality/compiler_warnings/warnings.h"
 
 #include <score/assert_support.hpp>
@@ -380,6 +382,272 @@ TEST_F(ConfigurationJsonParsingStrategyFixture, UnknownBindingIdentifierInServic
     // That the application will terminate
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
         score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+}
+
+TEST_F(ConfigurationJsonParsingStrategyFixture, SomeIpServiceTypeAndInstanceCanBeParsed)
+{
+    RecordProperty("Description",
+                   "Checks that a service type and service instance deployment using the SOME/IP binding are parsed "
+                   "into the SOME/IP specific deployment types.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a JSON in which the service type and the service instance select the SOME/IP binding
+    auto json = R"(
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "bindings": [
+        {
+          "binding": "SOME/IP",
+          "serviceId": 1234,
+          "events": [
+            {
+              "eventName": "CurrentPressureFrontLeft",
+              "eventId": 633
+            }
+          ],
+          "fields": [
+            {
+              "fieldName": "CurrentTemperatureFrontLeft",
+              "fieldId": 634
+            }
+          ],
+          "methods": [
+            {
+              "methodName": "SetPressure",
+              "methodId": 635
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "abc/abc/TirePressurePort",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "instances": [
+        {
+          "instanceId": 4321,
+          "asil-level": "QM",
+          "binding": "SOME/IP"
+        }
+      ]
+    }
+  ]
+}
+)"_json;
+
+    // When parsing the JSON
+    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(json));
+
+    // Then the service instance deployment holds the SOME/IP instance id
+    const auto& instance_deployment =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
+    const auto* const someip_instance_deployment =
+        std::get_if<SomeIpServiceInstanceDeployment>(&instance_deployment.bindingInfo_);
+    ASSERT_NE(someip_instance_deployment, nullptr);
+    ASSERT_TRUE(someip_instance_deployment->instance_id_.has_value());
+    EXPECT_EQ(someip_instance_deployment->instance_id_->GetId(), 4321U);
+    EXPECT_EQ(instance_deployment.GetBindingType(), BindingType::kSomeIp);
+
+    // And the service type deployment holds the SOME/IP service element ids
+    const auto& type_deployment = config.GetServiceTypeDeployment(instance_deployment.service_).value().get();
+    const auto* const someip_type_deployment = std::get_if<SomeIpServiceTypeDeployment>(&type_deployment.binding_info_);
+    ASSERT_NE(someip_type_deployment, nullptr);
+    EXPECT_EQ(someip_type_deployment->service_id_, 1234U);
+    EXPECT_EQ(someip_type_deployment->events_.at("CurrentPressureFrontLeft"), 633U);
+    EXPECT_EQ(someip_type_deployment->fields_.at("CurrentTemperatureFrontLeft"), 634U);
+    EXPECT_EQ(someip_type_deployment->methods_.at("SetPressure"), 635U);
+}
+
+TEST_F(ConfigurationJsonParsingStrategyFixture, SomeIpInstanceWithoutInstanceIdCanBeParsed)
+{
+    // Given a JSON with a SOME/IP service instance which does not select a concrete instance id
+    auto json = R"(
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "bindings": [
+        {
+          "binding": "SOME/IP",
+          "serviceId": 1234
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "abc/abc/TirePressurePort",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "instances": [
+        {
+          "asil-level": "QM",
+          "binding": "SOME/IP"
+        }
+      ]
+    }
+  ]
+}
+)"_json;
+
+    // When parsing the JSON
+    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(json));
+
+    // Then the instance deployment does not contain an instance id
+    const auto& instance_deployment =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
+    const auto* const someip_instance_deployment =
+        std::get_if<SomeIpServiceInstanceDeployment>(&instance_deployment.bindingInfo_);
+    ASSERT_NE(someip_instance_deployment, nullptr);
+    EXPECT_FALSE(someip_instance_deployment->instance_id_.has_value());
+}
+
+TEST_F(ConfigurationJsonParsingStrategyFixture, SomeIpInstanceWithSharedMemorySizeWillCauseTermination)
+{
+    // Given a JSON with a SOME/IP service instance which configures a LoLa specific shared memory size
+    auto json = R"(
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "bindings": [
+        {
+          "binding": "SOME/IP",
+          "serviceId": 1234
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "abc/abc/TirePressurePort",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "instances": [
+        {
+          "instanceId": 4321,
+          "asil-level": "QM",
+          "binding": "SOME/IP",
+          "shm-size": 10000
+        }
+      ]
+    }
+  ]
+}
+)"_json;
+
+    // When parsing the JSON
+    // That the application will terminate
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(json)));
+}
+
+TEST_F(ConfigurationJsonParsingStrategyFixture, DuplicateSomeIpServiceElementIdsWillCauseTermination)
+{
+    // Given a JSON in which a SOME/IP event and field use the same service element id
+    auto json = R"(
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "bindings": [
+        {
+          "binding": "SOME/IP",
+          "serviceId": 1234,
+          "events": [
+            {
+              "eventName": "CurrentPressureFrontLeft",
+              "eventId": 633
+            }
+          ],
+          "fields": [
+            {
+              "fieldName": "CurrentTemperatureFrontLeft",
+              "fieldId": 633
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": []
+}
+)"_json;
+
+    // When parsing the JSON
+    // That the application will terminate
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(json)));
+}
+
+TEST_F(ConfigurationJsonParsingStrategyFixture, MultipleBindingsForOneServiceTypeWillCauseTermination)
+{
+    // Given a JSON in which one service type is deployed on two bindings, which is not supported
+    auto json = R"(
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "bindings": [
+        {
+          "binding": "SOME/IP",
+          "serviceId": 1234
+        },
+        {
+          "binding": "SHM",
+          "serviceId": 1234
+        }
+      ]
+    }
+  ],
+  "serviceInstances": []
+}
+)"_json;
+
+    // When parsing the JSON
+    // That the application will terminate
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(json)));
 }
 
 TEST_F(ConfigurationJsonParsingStrategyFixture, NoEventNameWillCauseTermination)

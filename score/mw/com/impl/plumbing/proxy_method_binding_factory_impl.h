@@ -158,6 +158,10 @@ Result<std::unique_ptr<ProxyMethodBinding>> ProxyMethodBindingFactoryImpl<Return
             return std::make_unique<lola::ProxyMethod>(
                 *lola_proxy, proxy_method_instance_identifier, type_erased_element_info);
         },
+        [](const SomeIpServiceTypeDeployment&) noexcept -> LambdaReturnType {
+            score::mw::log::LogError("someip") << "Proxy methods are not supported by the SOME/IP binding.";
+            return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
+        },
         [](const score::cpp::blank&) noexcept -> LambdaReturnType {
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
         });

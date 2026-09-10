@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
 #include "score/json/json_parser.h"
@@ -37,7 +38,8 @@ namespace score::mw::com::impl
 class ServiceInstanceDeployment
 {
   public:
-    using BindingInformation = std::variant<LolaServiceInstanceDeployment, score::cpp::blank>;
+    using BindingInformation =
+        std::variant<LolaServiceInstanceDeployment, SomeIpServiceInstanceDeployment, score::cpp::blank>;
 
     explicit ServiceInstanceDeployment(const score::json::Object& json_object);
     ServiceInstanceDeployment(ServiceIdentifierType service,

@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
 
 #include "lola_service_id.h"
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_test_resources.h"
 
 #include <gmock/gmock.h>
@@ -47,6 +48,15 @@ TEST(ServiceTypeDeploymentTest, CanConstructFromBlankBindingDeployment)
     ASSERT_NE(binding_ptr, nullptr);
 }
 
+TEST(ServiceTypeDeploymentTest, CanConstructFromSomeIpServiceTypeDeployment)
+{
+    ServiceTypeDeployment unit{SomeIpServiceTypeDeployment{SomeIpServiceId{123U}, {{"my_event", 5U}}}};
+
+    const auto* const binding_ptr = std::get_if<SomeIpServiceTypeDeployment>(&unit.binding_info_);
+    ASSERT_NE(binding_ptr, nullptr);
+    EXPECT_EQ(binding_ptr->events_.at("my_event"), 5U);
+}
+
 using ServiceTypeDeploymentFixture = ConfigurationStructsFixture;
 TEST_F(ServiceTypeDeploymentFixture, CanCreateFromSerializedLolaObject)
 {
@@ -57,6 +67,26 @@ TEST_F(ServiceTypeDeploymentFixture, CanCreateFromSerializedLolaObject)
     ServiceTypeDeployment reconstructed_unit{serialized_unit};
 
     ExpectServiceTypeDeploymentObjectsEqual(reconstructed_unit, unit);
+}
+
+TEST_F(ServiceTypeDeploymentFixture, CanCreateFromSerializedSomeIpObject)
+{
+    ServiceTypeDeployment unit{SomeIpServiceTypeDeployment{SomeIpServiceId{123U}, {{"my_event", 5U}}}};
+
+    const auto serialized_unit{unit.Serialize()};
+
+    ServiceTypeDeployment reconstructed_unit{serialized_unit};
+
+    ExpectServiceTypeDeploymentObjectsEqual(reconstructed_unit, unit);
+}
+
+TEST_F(ServiceTypeDeploymentFixture, SomeIpAndLolaDeploymentsProduceDifferentHashStrings)
+{
+    const ServiceTypeDeployment lola_unit{MakeLolaServiceTypeDeployment(kLolaServiceId)};
+    const ServiceTypeDeployment someip_unit{SomeIpServiceTypeDeployment{SomeIpServiceId{kLolaServiceId}}};
+
+    EXPECT_NE(lola_unit.ToHashString(), someip_unit.ToHashString());
+    EXPECT_EQ(someip_unit.ToHashString().size(), ServiceTypeDeployment::hashStringSize);
 }
 
 TEST_F(ServiceTypeDeploymentFixture, ComparingSameDeploymentsReturnsTrue)

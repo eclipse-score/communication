@@ -15,6 +15,7 @@
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/someip/skeleton_binding_factory.h"
 
 #include "score/filesystem/filesystem.h"
 
@@ -68,6 +69,20 @@ auto SkeletonBindingFactoryImpl::Create(const InstanceIdentifier& identifier) no
                 GetLolaServiceTypeDeploymentFromInstanceIdentifier(identifier).service_id_);
             return lola::Skeleton::Create(
                 identifier, filesystem, std::move(shm_path_builder), std::move(partial_restart_path_builder));
+        },
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [&identifier_view](
+            const SomeIpServiceInstanceDeployment& someip_instance_deployment) -> std::unique_ptr<SkeletonBinding> {
+            const auto* const someip_type_deployment =
+                std::get_if<SomeIpServiceTypeDeployment>(&identifier_view.GetServiceTypeDeployment().binding_info_);
+            if (someip_type_deployment == nullptr)
+            {
+                score::mw::log::LogError("someip")
+                    << "Skeleton binding could not be created because the service instance deployment is a SOME/IP "
+                       "deployment while the service type deployment is not.";
+                return nullptr;
+            }
+            return someip::SkeletonBindingFactory::Create(someip_instance_deployment, *someip_type_deployment);
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> std::unique_ptr<SkeletonBinding> {

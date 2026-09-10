@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/bindings/someip/skeleton.h"
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
@@ -113,7 +114,11 @@ inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
 
 }  // namespace detail
 
-template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, ServiceElementType element_type>
+//TODO: can this be changed to not change all callsite for every added binding?
+template <typename SkeletonServiceElementBinding,
+          typename LolaSkeletonServiceElement,
+          typename SomeIpSkeletonServiceElement,
+          ServiceElementType element_type>
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
 // not be called implicitly.". std::visit Throws std::bad_variant_access if
 // as-variant(vars_i).valueless_by_exception() is true for any variant vars_i in vars. The variant may only become
@@ -175,11 +180,27 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
                                                   lola_service_instance_deployment.instance_id_.value().GetId(),
                                                   element_type};
 
-            return std::make_unique<SkeletonServiceElement>(*lola_parent,
-                                                            element_fq_id,
-                                                            service_element_name,
-                                                            skeleton_event_properties,
-                                                            impl::tracing::SkeletonEventTracingData{});
+            return std::make_unique<LolaSkeletonServiceElement>(*lola_parent,
+                                                                element_fq_id,
+                                                                service_element_name,
+                                                                skeleton_event_properties,
+                                                                impl::tracing::SkeletonEventTracingData{});
+        },
+        [&parent_binding, &service_element_name](
+            const SomeIpServiceTypeDeployment& someip_service_type_deployment) -> ReturnType {
+            auto* const someip_parent = dynamic_cast<someip::Skeleton*>(&parent_binding);
+            if (someip_parent == nullptr)
+            {
+                score::mw::log::LogFatal("someip") << "Skeleton service element could not be created because parent "
+                                                      "skeleton binding is not a SOME/IP binding.";
+                return nullptr;
+            }
+
+            const auto someip_service_element_id = GetServiceElementId<element_type>(
+                someip_service_type_deployment, std::string{service_element_name});
+
+            return std::make_unique<SomeIpSkeletonServiceElement>(
+                *someip_parent, someip_service_element_id, service_element_name);
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return nullptr;
@@ -237,6 +258,11 @@ auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
                                                             element_fq_id,
                                                             size_info,
                                                             tracing::SkeletonEventTracingData{});
+        },
+        [](const SomeIpServiceTypeDeployment&) noexcept -> ReturnType {
+            score::mw::log::LogError("someip") << "Generic skeleton service elements are not supported by the SOME/IP "
+                                                  "binding.";
+            return nullptr;
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return nullptr;

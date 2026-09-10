@@ -14,16 +14,19 @@
 #ifndef SCORE_MW_COM_IMPL_CONFIGURATION_CONFIG_VALIDATE_H
 #define SCORE_MW_COM_IMPL_CONFIGURATION_CONFIG_VALIDATE_H
 
+#include "score/mw/com/impl/binding_type.h"
+#include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/configuration.h"
-#include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
 
+#include <set>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -43,7 +46,48 @@ void EmplaceOrFatal(Map& map, Key&& key, Value&& value, std::string_view element
     }
 }
 
-void ValidateUniqueServiceElementIds(const LolaServiceTypeDeployment& deployment);
+/// \brief Checks that no service element id is used twice within one service type deployment.
+///
+/// The function is binding independent: every binding maps its events, fields and methods into one id space of the
+/// service interface, so a duplicate id would make the service elements indistinguishable on the wire.
+template <typename EventIdType,
+          typename FieldIdType,
+          typename MethodIdType,
+          typename ServiceIdType,
+          BindingType binding_type>
+void ValidateUniqueServiceElementIds(
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>& deployment)
+{
+    static_assert(std::is_same<EventIdType, FieldIdType>::value,
+                  "EventId and FieldId should have the same underlying type.");
+    static_assert(std::is_same<EventIdType, MethodIdType>::value,
+                  "EventId and MethodId should have the same underlying type.");
+    std::set<EventIdType> ids{};
+
+    const auto insert_or_fatal = [&ids](const EventIdType id) {
+        if (!ids.insert(id).second)
+        {
+            score::mw::log::LogFatal() << "Configuration cannot contain duplicate eventId, fieldId, or methodId.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+    };
+
+    for (const auto& event : deployment.events_)
+    {
+        insert_or_fatal(event.second);
+    }
+
+    for (const auto& field : deployment.fields_)
+    {
+        insert_or_fatal(field.second);
+    }
+
+    for (const auto& method : deployment.methods_)
+    {
+        insert_or_fatal(method.second);
+    }
+}
+
 InstanceSpecifier CreateValidInstanceSpecifier(std::string instance_specifier_name);
 
 template <typename Container>

@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event.h"
+#include "score/mw/com/impl/bindings/someip/event_binding_factory.h"
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/plumbing/binding_factory_error.h"
@@ -91,6 +92,22 @@ inline Result<std::unique_ptr<ProxyEventBinding<SampleType>>> ProxyEventBindingF
             const auto element_fq_id = GetElementFqId(
                 parent_handle, lola_type_deployment, std::string{event_or_field_name}, service_element_type);
             return std::make_unique<lola::ProxyEvent<SampleType>>(*lola_proxy, element_fq_id, event_or_field_name);
+        },
+        [&parent_binding, event_or_field_name, service_element_type](
+            const SomeIpServiceTypeDeployment& someip_type_deployment) -> ReturnType {
+            auto* const someip_proxy = dynamic_cast<someip::Proxy*>(&parent_binding);
+            if (someip_proxy == nullptr)
+            {
+                score::mw::log::LogError("someip")
+                    << "Proxy event binding could not be created for" << event_or_field_name
+                    << "because the parent proxy binding is not a SOME/IP binding.";
+                return MakeUnexpected(BindingFactoryErrorCode::kParentBindingTypeMismatch);
+            }
+
+            const auto event_id = someip::GetSomeIpServiceElementId(
+                someip_type_deployment, std::string{event_or_field_name}, service_element_type);
+            return someip::EventBindingFactory<SampleType>::CreateProxyEvent(
+                *someip_proxy, event_id, event_or_field_name);
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);

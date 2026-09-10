@@ -74,6 +74,11 @@ std::string ToHashStringImpl(const ServiceTypeDeployment::BindingInformation& bi
         },
         // FP: only one statement in this line
         // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const SomeIpServiceTypeDeployment& service_type_deployment) noexcept -> std::string_view {
+            return service_type_deployment.ToHashString();
+        },
+        // FP: only one statement in this line
+        // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> std::string_view {
             return "";
         });
@@ -124,6 +129,9 @@ score::json::Object ServiceTypeDeployment::Serialize() const
 
     auto visitor = score::cpp::overload(
         [&json_object](const LolaServiceTypeDeployment& deployment) {
+            json_object[kBindingInfoKey] = deployment.Serialize();
+        },
+        [&json_object](const SomeIpServiceTypeDeployment& deployment) {
             json_object[kBindingInfoKey] = deployment.Serialize();
         },
         [](const score::cpp::blank&) noexcept {});

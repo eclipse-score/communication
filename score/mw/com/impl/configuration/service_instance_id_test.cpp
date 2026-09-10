@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/service_instance_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_id.h"
 
 #include "score/mw/com/impl/configuration/test/configuration_test_resources.h"
 
@@ -111,6 +112,48 @@ TEST_F(ServiceInstanceIdFixture, CanCreateFromSerializedBlankObject)
     ServiceInstanceId reconstructed_unit{serialized_unit};
 }
 
+TEST_F(ServiceInstanceIdFixture, CanConstructFromSomeIpServiceInstanceId)
+{
+    SomeIpServiceInstanceId someip_service_instance_id{10U};
+    ServiceInstanceId unit{someip_service_instance_id};
+
+    const auto* const binding_ptr = std::get_if<SomeIpServiceInstanceId>(&unit.binding_info_);
+    ASSERT_NE(binding_ptr, nullptr);
+    EXPECT_EQ(binding_ptr->GetId(), someip_service_instance_id.GetId());
+}
+
+TEST_F(ServiceInstanceIdFixture, CanCreateFromSerializedSomeIpObject)
+{
+    SomeIpServiceInstanceId someip_service_instance_id{10U};
+
+    ServiceInstanceId unit{someip_service_instance_id};
+
+    const auto serialized_unit{unit.Serialize()};
+
+    ServiceInstanceId reconstructed_unit{serialized_unit};
+
+    ExpectServiceInstanceIdObjectsEqual(reconstructed_unit, unit);
+}
+
+TEST(ServiceInstanceIdTest, ComparingLolaAndSomeIpBindingsReturnsFalse)
+{
+    const auto unit = ServiceInstanceId{LolaServiceInstanceId{10U}};
+    const auto unit_2 = ServiceInstanceId{SomeIpServiceInstanceId{10U}};
+
+    // Note: The code being executed depends on the type of lhs. As a result we need to cover both "directions"
+    EXPECT_FALSE(unit == unit_2);
+    EXPECT_FALSE(unit_2 == unit);
+}
+
+TEST(ServiceInstanceIdTest, LessThanOperatorSomeIpServiceBindings)
+{
+    const auto unit = ServiceInstanceId{SomeIpServiceInstanceId{10U}};
+    const auto unit_2 = ServiceInstanceId{SomeIpServiceInstanceId{11U}};
+
+    EXPECT_TRUE(unit < unit_2);
+    EXPECT_FALSE(unit_2 < unit);
+}
+
 TEST(ServiceInstanceIdDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
 {
     const ServiceInstanceId unit{LolaServiceInstanceId{10U}};
@@ -148,7 +191,11 @@ const std::vector<std::tuple<ServiceInstanceId, std::string_view>> instance_id_t
     {ServiceInstanceId{LolaServiceInstanceId{1U}}, "00001"},
     {ServiceInstanceId{LolaServiceInstanceId{10U}}, "0000a"},
     {ServiceInstanceId{LolaServiceInstanceId{255U}}, "000ff"},
-    {ServiceInstanceId{LolaServiceInstanceId{std::numeric_limits<LolaServiceInstanceId::InstanceId>::max()}}, "0ffff"}};
+    {ServiceInstanceId{LolaServiceInstanceId{std::numeric_limits<LolaServiceInstanceId::InstanceId>::max()}}, "0ffff"},
+    {ServiceInstanceId{SomeIpServiceInstanceId{0U}}, "10000"},
+    {ServiceInstanceId{SomeIpServiceInstanceId{10U}}, "1000a"},
+    {ServiceInstanceId{SomeIpServiceInstanceId{std::numeric_limits<SomeIpServiceInstanceId::InstanceId>::max()}},
+     "1ffff"}};
 INSTANTIATE_TEST_SUITE_P(ServiceInstanceIdHashFixture,
                          ServiceInstanceIdHashFixture,
                          ::testing::ValuesIn(instance_id_to_hash_string_variations));

@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_test_resources.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
@@ -112,6 +113,53 @@ TEST_F(ServiceInstanceDeploymentFixture, CanCreateFromSerializedBlankObject)
     const auto serialized_unit{unit.Serialize()};
 
     ServiceInstanceDeployment reconstructed_unit{serialized_unit};
+}
+
+TEST_F(ServiceInstanceDeploymentFixture, CanCreateFromSerializedSomeIpObject)
+{
+    SomeIpServiceInstanceDeployment someip_service_instance_deployment{SomeIpServiceInstanceId{21U}};
+
+    ServiceInstanceDeployment unit{
+        kDummyService, someip_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
+
+    const auto serialized_unit{unit.Serialize()};
+
+    ServiceInstanceDeployment reconstructed_unit{serialized_unit};
+
+    ExpectServiceInstanceDeploymentObjectsEqual(reconstructed_unit, unit);
+}
+
+TEST(ServiceInstanceDeploymentTest, SomeIpDeploymentReportsSomeIpBindingType)
+{
+    const ServiceInstanceDeployment unit{kDummyService,
+                                         SomeIpServiceInstanceDeployment{SomeIpServiceInstanceId{21U}},
+                                         QualityType::kASIL_QM,
+                                         kInstanceSpecifier};
+
+    EXPECT_EQ(unit.GetBindingType(), BindingType::kSomeIp);
+}
+
+TEST(ServiceInstanceDeploymentTest, DifferentSomeIpBindingsWithTheSameInstanceIdAreCompatible)
+{
+    ASSERT_TRUE(areCompatible(ServiceInstanceDeployment{kDummyService,
+                                                        SomeIpServiceInstanceDeployment{SomeIpServiceInstanceId{21U}},
+                                                        QualityType::kASIL_QM,
+                                                        kInstanceSpecifier},
+                              ServiceInstanceDeployment{kDummyService,
+                                                        SomeIpServiceInstanceDeployment{SomeIpServiceInstanceId{21U}},
+                                                        QualityType::kASIL_QM,
+                                                        kInstanceSpecifier}));
+}
+
+TEST(ServiceInstanceDeploymentTest, LolaAndSomeIpBindingsAreNotCompatible)
+{
+    ASSERT_FALSE(areCompatible(
+        ServiceInstanceDeployment{
+            kDummyService, LolaServiceInstanceDeployment{}, QualityType::kASIL_QM, kInstanceSpecifier},
+        ServiceInstanceDeployment{kDummyService,
+                                  SomeIpServiceInstanceDeployment{SomeIpServiceInstanceId{21U}},
+                                  QualityType::kASIL_QM,
+                                  kInstanceSpecifier}));
 }
 
 TEST_F(ServiceInstanceDeploymentFixture, CanGetLolaBindingFromServiceInstanceDeploymentContainingLolaBinding)

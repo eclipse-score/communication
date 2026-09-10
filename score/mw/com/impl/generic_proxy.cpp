@@ -45,7 +45,16 @@ std::vector<std::string_view> GetEventNameList(const InstanceIdentifier& identif
 
     const auto& service_type_deployment = InstanceIdentifierView{identifier}.GetServiceTypeDeployment();
     auto visitor = score::cpp::overload(
+        //TODO: change to const auto& to cover all implemented bindings?
         [](const LolaServiceTypeDeployment& deployment) -> ReturnType {
+            ReturnType event_names;
+            for (const auto& event : deployment.events_)
+            {
+                event_names.push_back(std::string_view{event.first});
+            }
+            return event_names;
+        },
+        [](const SomeIpServiceTypeDeployment& deployment) -> ReturnType {
             ReturnType event_names;
             for (const auto& event : deployment.events_)
             {

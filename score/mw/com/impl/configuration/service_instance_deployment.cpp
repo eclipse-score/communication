@@ -83,12 +83,22 @@ auto operator<(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeploy
 
 auto areCompatible(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs) -> bool
 {
+    // TODO: refactor to reduce nesting
     bool bindingCompatible{false};
     const auto* const lhsShmBindingInfo = std::get_if<LolaServiceInstanceDeployment>(&lhs.bindingInfo_);
     const auto* const rhsShmBindingInfo = std::get_if<LolaServiceInstanceDeployment>(&rhs.bindingInfo_);
     if ((lhsShmBindingInfo != nullptr) && (rhsShmBindingInfo != nullptr))
     {
         bindingCompatible = areCompatible(*lhsShmBindingInfo, *rhsShmBindingInfo);
+    }
+    else
+    {
+        const auto* const lhsSomeIpBindingInfo = std::get_if<SomeIpServiceInstanceDeployment>(&lhs.bindingInfo_);
+        const auto* const rhsSomeIpBindingInfo = std::get_if<SomeIpServiceInstanceDeployment>(&rhs.bindingInfo_);
+        if ((lhsSomeIpBindingInfo != nullptr) && (rhsSomeIpBindingInfo != nullptr))
+        {
+            bindingCompatible = areCompatible(*lhsSomeIpBindingInfo, *rhsSomeIpBindingInfo);
+        }
     }
     return areCompatible(lhs.asilLevel_, rhs.asilLevel_) && bindingCompatible;
 }
@@ -129,6 +139,9 @@ score::json::Object ServiceInstanceDeployment::Serialize() const
         [&json_object](const LolaServiceInstanceDeployment& deployment) {
             json_object[kBindingInfoKey] = deployment.Serialize();
         },
+        [&json_object](const SomeIpServiceInstanceDeployment& deployment) {
+            json_object[kBindingInfoKey] = deployment.Serialize();
+        },
         [](const score::cpp::blank&) noexcept {});
     std::visit(visitor, bindingInfo_);
 
@@ -151,6 +164,11 @@ BindingType ServiceInstanceDeployment::GetBindingType() const
     auto visitor = score::cpp::overload(
         [](const LolaServiceInstanceDeployment&) noexcept {
             return BindingType::kLoLa;
+        },
+        // FP: only one statement in this line
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const SomeIpServiceInstanceDeployment&) noexcept {
+            return BindingType::kSomeIp;
         },
         // FP: only one statement in this line
         // coverity[autosar_cpp14_a7_1_7_violation]

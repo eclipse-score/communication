@@ -57,6 +57,11 @@ Result<std::unique_ptr<GenericProxyEventBinding>> GenericProxyEventBindingFactor
                 GetElementFqId(parent_handle, lola_type_deployment, std::string{event_name}, service_element_type);
             return std::make_unique<lola::GenericProxyEvent>(*lola_proxy, element_fq_id, event_name);
         },
+        [event_name](const SomeIpServiceTypeDeployment&) noexcept -> ReturnType {
+            score::mw::log::LogError("someip") << "Generic proxy event binding could not be created for" << event_name
+                                               << "because generic proxies are not supported by the SOME/IP binding.";
+            return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
+        },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
         });

@@ -14,12 +14,14 @@
 #define SCORE_MW_COM_IMPL_CONFIGURATION_SERVICE_INSTANCE_ID_H
 
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_id.h"
 
 #include "score/json/json_parser.h"
 #include "score/mw/log/logging.h"
 
 #include <score/blank.hpp>
 
+#include <algorithm>
 #include <exception>
 #include <string_view>
 #include <variant>
@@ -30,7 +32,7 @@ namespace score::mw::com::impl
 class ServiceInstanceId
 {
   public:
-    using BindingInformation = std::variant<LolaServiceInstanceId, score::cpp::blank>;
+    using BindingInformation = std::variant<LolaServiceInstanceId, SomeIpServiceInstanceId, score::cpp::blank>;
 
     explicit ServiceInstanceId(const score::json::Object& json_object);
     explicit ServiceInstanceId(BindingInformation binding_info);
@@ -53,7 +55,8 @@ class ServiceInstanceId
      */
     // Variable is used in a test case -> so this line is tested and prepared for easier reuse
     // coverity[autosar_cpp14_a0_1_1_violation]
-    constexpr static std::size_t hashStringSize{LolaServiceInstanceId::hashStringSize + 1U};
+    constexpr static std::size_t hashStringSize{
+        std::max(LolaServiceInstanceId::hashStringSize, SomeIpServiceInstanceId::hashStringSize) + 1U};
 
     constexpr static std::uint32_t serializationVersion = 1U;
 

@@ -69,6 +69,8 @@ cc_library(
         ":lola_service_instance_deployment",
         ":quality_type",
         ":service_type_deployment",
+        ":someip_service_instance_deployment",
+        ":someip_service_type_deployment",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/quality/compiler_warnings",
     ],
@@ -94,9 +96,9 @@ cc_library(
         "//score/mw/com/impl/configuration:__subpackages__",
     ],
     deps = [
+        ":binding_service_type_deployment",
         ":configuration_local",
-        ":lola_service_instance_deployment",
-        ":lola_service_type_deployment",
+        "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:instance_specifier",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
@@ -327,6 +329,61 @@ cc_library(
 )
 
 cc_library(
+    name = "someip_service_id",
+    hdrs = ["someip_service_id.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+)
+
+cc_library(
+    name = "someip_service_element_id",
+    hdrs = ["someip_service_element_id.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+)
+
+cc_library(
+    name = "someip_service_type_deployment",
+    hdrs = ["someip_service_type_deployment.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [
+        ":binding_service_type_deployment",
+        ":someip_service_element_id",
+        ":someip_service_id",
+        "//score/mw/com/impl:binding_type",
+    ],
+)
+
+cc_library(
+    name = "someip_service_instance_id",
+    srcs = ["someip_service_instance_id.cpp"],
+    hdrs = ["someip_service_instance_id.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [":configuration_common_resources"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = ["@score_baselibs//score/json"],
+)
+
+cc_library(
+    name = "someip_service_instance_deployment",
+    srcs = ["someip_service_instance_deployment.cpp"],
+    hdrs = ["someip_service_instance_deployment.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [":configuration_common_resources"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [
+        ":someip_service_instance_id",
+        "@score_baselibs//score/json",
+    ],
+)
+
+cc_library(
     name = "service_identifier_type",
     srcs = ["service_identifier_type.cpp"],
     hdrs = ["service_identifier_type.h"],
@@ -351,6 +408,7 @@ cc_library(
         ":lola_service_instance_deployment",
         ":quality_type",
         ":service_identifier_type",
+        ":someip_service_instance_deployment",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:instance_specifier",
@@ -368,6 +426,7 @@ cc_library(
     deps = [
         ":configuration_common_resources",
         ":lola_service_instance_id",
+        ":someip_service_instance_id",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -385,6 +444,7 @@ cc_library(
     deps = [
         ":configuration_common_resources",
         ":lola_service_type_deployment",
+        ":someip_service_type_deployment",
         "@score_baselibs//score/json",
     ],
 )
@@ -415,6 +475,7 @@ cc_library(
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
+        "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:service_element_type",
         "@score_baselibs//score/json",
     ],
@@ -490,6 +551,8 @@ cc_unit_test(
     ],
     deps = [
         ":configuration_json_parsing_strategy",
+        ":someip_service_instance_deployment",
+        ":someip_service_type_deployment",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
@@ -672,6 +735,26 @@ cc_unit_test(
     deps = [
         ":lola_service_instance_id",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
+    ],
+)
+
+cc_unit_test(
+    name = "someip_service_instance_id_test",
+    srcs = ["someip_service_instance_id_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":someip_service_instance_id",
+        "@score_baselibs//score/json",
+    ],
+)
+
+cc_unit_test(
+    name = "someip_service_instance_deployment_test",
+    srcs = ["someip_service_instance_deployment_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":someip_service_instance_deployment",
+        "@score_baselibs//score/json",
     ],
 )
 

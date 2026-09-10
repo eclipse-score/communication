@@ -244,6 +244,11 @@ void ConfigurationStructsFixture::ExpectServiceInstanceDeploymentObjectsEqual(
             ASSERT_NE(rhs_deployment, nullptr);
             ExpectLolaServiceInstanceDeploymentObjectsEqual(lhs_deployment, *rhs_deployment);
         },
+        [rhs](const SomeIpServiceInstanceDeployment& lhs_deployment) {
+            const auto* const rhs_deployment = std::get_if<SomeIpServiceInstanceDeployment>(&rhs.bindingInfo_);
+            ASSERT_NE(rhs_deployment, nullptr);
+            EXPECT_EQ(lhs_deployment, *rhs_deployment);
+        },
         [](const score::cpp::blank&) noexcept {});
     std::visit(visitor, lhs.bindingInfo_);
 }
@@ -289,6 +294,11 @@ void ConfigurationStructsFixture::ExpectServiceTypeDeploymentObjectsEqual(
             ASSERT_NE(rhs_deployment, nullptr);
             ExpectLolaServiceTypeDeploymentObjectsEqual(lhs_deployment, *rhs_deployment);
         },
+        [rhs](const SomeIpServiceTypeDeployment& lhs_deployment) {
+            const auto* const rhs_deployment = std::get_if<SomeIpServiceTypeDeployment>(&rhs.binding_info_);
+            ASSERT_NE(rhs_deployment, nullptr);
+            EXPECT_TRUE(lhs_deployment == *rhs_deployment);
+        },
         [](const score::cpp::blank&) noexcept {});
     std::visit(visitor, lhs.binding_info_);
 }
@@ -320,6 +330,11 @@ void ConfigurationStructsFixture::ExpectServiceInstanceIdObjectsEqual(const Serv
             const auto* const rhs_instance_id = std::get_if<LolaServiceInstanceId>(&rhs.binding_info_);
             ASSERT_NE(rhs_instance_id, nullptr);
             ExpectLolaServiceInstanceIdObjectsEqual(lhs_instance_id, *rhs_instance_id);
+        },
+        [rhs](const SomeIpServiceInstanceId& lhs_instance_id) {
+            const auto* const rhs_instance_id = std::get_if<SomeIpServiceInstanceId>(&rhs.binding_info_);
+            ASSERT_NE(rhs_instance_id, nullptr);
+            EXPECT_EQ(lhs_instance_id.GetId(), rhs_instance_id->GetId());
         },
         [](const score::cpp::blank&) noexcept {});
     std::visit(visitor, lhs.binding_info_);
