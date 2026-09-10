@@ -16,44 +16,6 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "un
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
-component(
-    name = "lola_component",
-    components = [
-        ":lola_sd",
-        ":lola_skeleton",
-        ":lola_proxy",
-    ],
-    requirements = [
-    ],
-    target_compatible_with = ["@platforms//os:linux"],
-    tests = [],
-    visibility = ["//score/mw/com/impl/bindings:__pkg__"],
-)
-
-unit(
-    name = "lola_sd",
-    scope = [],
-    tests = [],
-    unit_design = [],
-    implementation = [],
-)
-
-unit(
-    name = "lola_skeleton",
-    scope = [],
-    tests = [],
-    unit_design = [],
-    implementation = [],
-)
-
-unit(
-    name = "lola_proxy",
-    scope = [],
-    tests = [],
-    unit_design = [],
-    implementation = [],
-)
-
 cc_library(
     name = "lola",
     features = COMPILER_WARNING_FEATURES,
@@ -1133,7 +1095,7 @@ cc_unit_test(
         ":skeleton",
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/tracing:tracing_runtime_mock",
     ],
 )
@@ -1184,7 +1146,7 @@ cc_unit_test(
         ":shm_path_builder_mock",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/result",
