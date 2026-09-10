@@ -72,6 +72,7 @@ cc_library(
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         "//score/mw/com/impl/configuration:lola_event_instance_deployment",
+        "@score_baselibs//score/language/safecpp/safe_math",
     ],
 )
 

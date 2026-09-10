@@ -14,6 +14,7 @@
 
 #include "score/mw/com/impl/configuration/configuration_common_resources.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/mw/log/logging.h"
 
 #include <exception>
@@ -151,7 +152,8 @@ void LolaEventInstanceDeployment::SetNumberOfSampleSlots(SampleSlotCountType num
 bool operator==(const LolaEventInstanceDeployment& lhs, const LolaEventInstanceDeployment& rhs) noexcept
 {
     const bool number_of_sample_slots_equal = (lhs.number_of_sample_slots_ == rhs.number_of_sample_slots_);
-    const bool number_of_tracing_slots_equal = (lhs.number_of_tracing_slots_ == rhs.number_of_tracing_slots_);
+    const bool number_of_tracing_slots_equal =
+        safe_math::CmpEqual(lhs.number_of_tracing_slots_, rhs.number_of_tracing_slots_);
     const bool max_subscribers_equal = (lhs.max_subscribers_ == rhs.max_subscribers_);
     const bool max_concurrent_allocations_equal = (lhs.max_concurrent_allocations_ == rhs.max_concurrent_allocations_);
     const bool enforce_max_samples_equal = (lhs.enforce_max_samples_ == rhs.enforce_max_samples_);

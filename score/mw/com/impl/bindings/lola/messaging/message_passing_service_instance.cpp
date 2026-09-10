@@ -384,17 +384,22 @@ void MessagePassingServiceInstance::MessageCallback(const pid_t sender_pid,
         return;
     }
     const auto payload = message.subspan(1U);
+    // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(switch-enum-underlying-type-discriminant)
     switch (message.front())
     {
+        // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(switch-enum-underlying-type-discriminant)
         case score::cpp::to_underlying(MessageType::kRegisterEventNotifier):
             HandleRegisterNotificationMsg(payload, sender_pid);
             break;
+        // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(switch-enum-underlying-type-discriminant)
         case score::cpp::to_underlying(MessageType::kUnregisterEventNotifier):
             HandleUnregisterNotificationMsg(payload, sender_pid);
             break;
+        // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(switch-enum-underlying-type-discriminant)
         case score::cpp::to_underlying(MessageType::kNotifyEvent):
             HandleNotifyEventMsg(payload, sender_pid);
             break;
+        // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(switch-enum-underlying-type-discriminant)
         case score::cpp::to_underlying(MessageType::kOutdatedNodeId):
             HandleOutdatedNodeIdMsg(payload, sender_pid);
             break;
@@ -416,16 +421,20 @@ score::Result<void> MessagePassingServiceInstance::MessageCallbackWithReply(
         return MakeUnexpected(MethodErrc::kUnexpectedMessageSize);
     }
     const auto payload = message.subspan(1U);
+    // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(switch-enum-underlying-type-discriminant)
     switch (message.front())
     {
+        // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(switch-enum-underlying-type-discriminant)
         case score::cpp::to_underlying(MessageWithReplyType::kSubscribeServiceMethod):
         {
             return HandleSubscribeServiceMethodMsg(payload, sender_uid, sender_pid);
         }
+        // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(switch-enum-underlying-type-discriminant)
         case score::cpp::to_underlying(MessageWithReplyType::kUnsubscribeServiceMethod):
         {
             return HandleUnsubscribeServiceMethodMsg(payload, sender_pid);
         }
+        // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(switch-enum-underlying-type-discriminant)
         case score::cpp::to_underlying(MessageWithReplyType::kCallMethod):
         {
             return HandleCallMethodMsg(payload, sender_uid);
@@ -899,7 +908,7 @@ void MessagePassingServiceInstance::NotifyEventRemote(const ElementFqId event_id
                                              nodeIdentifiersTmp,
                                              start_node_id);
         // send NotifyEventUpdateMessage to each node_id in nodeIdentifiersTmp
-        for (std::uint8_t i = 0U; i < num_ids_copied.first; i++)
+        for (std::uint8_t i = 0U; score::safe_math::CmpLess(i, num_ids_copied.first); i++)
         {
             // Suppress "AUTOSAR C++14 M5-0-3" rule findings. This rule states: "A cvalue expression shall
             // not be implicitly converted to a different underlying type"
@@ -962,7 +971,7 @@ std::uint32_t MessagePassingServiceInstance::NotifyEventLocally(const ElementFqI
     // tmp-storage for all handlers (weak_ptrs), which will get filled under read-lock
     std::array<std::weak_ptr<ScopedEventReceiveHandler>, kMaxReceiveHandlersPerEvent> handler_weak_ptrs{
         {{}, {}, {}, {}, {}}};
-    std::uint8_t number_weak_ptrs_copied{0U};
+    std::uint32_t number_weak_ptrs_copied{0U};
     auto& handlers_for_event = search->second;
     auto handler_it = handlers_for_event.cbegin();
     // LCOV_EXCL_START: decision couldn't be analyzed; considered normal under 100% line coverage
@@ -988,7 +997,7 @@ std::uint32_t MessagePassingServiceInstance::NotifyEventLocally(const ElementFqI
     }
 
     // Call the handlers outside the read-lock
-    for (std::uint8_t i = 0U; i < number_weak_ptrs_copied; i++)
+    for (std::uint32_t i = 0U; i < number_weak_ptrs_copied; i++)
     {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index): "i" is assured to be within array bounds.
         if (auto current_handler = handler_weak_ptrs[i].lock())

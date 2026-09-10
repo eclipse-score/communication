@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 
@@ -79,7 +80,7 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::FindOldestUnusedSl
          // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
          // loss.". As the maximum number of slots is std::uint16_t, so there is no case for a data loss here.
          // coverity[autosar_cpp14_a4_7_1_violation]
-         slot_index < static_cast<SlotIndexType>(state_slots_.size());
+         safe_math::CmpLess(slot_index, static_cast<SlotIndexType>(state_slots_.size()));
          ++slot_index)
     {
         // coverity[autosar_cpp14_a5_3_2_violation]

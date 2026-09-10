@@ -212,13 +212,13 @@ auto FlagFileCrawler::CrawlAndWatchImpl(const EnrichedInstanceIdentifier& enrich
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto FlagFileCrawler::CrawlAndWatchWithRetry(const EnrichedInstanceIdentifier& enriched_instance_identifier,
-                                             const std::uint8_t max_number_of_retries)
+                                             const std::uint32_t max_number_of_retries)
     -> score::Result<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
                                 QualityAwareContainer<KnownInstancesContainer>>>
 {
     constexpr std::chrono::milliseconds wait_between_retries{50U};
 
-    std::uint8_t current_retry_count{0U};
+    std::uint32_t current_retry_count{0U};
     std::optional<score::result::Error> crawl_and_watch_error{};
     while (current_retry_count < max_number_of_retries)
     {

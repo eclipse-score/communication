@@ -12,12 +12,15 @@
  ********************************************************************************/
 #include "score/mw/com/impl/tracing/configuration/trace_point_key.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
+
 namespace score::mw::com::impl::tracing
 {
 
 bool operator==(const TracePointKey& lhs, const TracePointKey& rhs) noexcept
 {
-    return ((lhs.service_element == rhs.service_element) && (lhs.trace_point_type == rhs.trace_point_type));
+    return ((lhs.service_element == rhs.service_element) &&
+            safe_math::CmpEqual(lhs.trace_point_type, rhs.trace_point_type));
 }
 
 }  // namespace score::mw::com::impl::tracing

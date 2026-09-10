@@ -345,7 +345,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyCallsNoMoreThanMaxPo
         });
 
     // and handler being registered for event (max_receive_handlers_per_event + 2) times
-    for (auto i = 0; i < MessagePassingServiceInstanceAttorney::max_receive_handlers_per_event + 2; ++i)
+    for (auto i = 0U; i < MessagePassingServiceInstanceAttorney::max_receive_handlers_per_event + 2U; ++i)
     {
         instance.RegisterEventNotification(event_id_, handler, local_pid_);
     }

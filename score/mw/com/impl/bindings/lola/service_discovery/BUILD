@@ -112,6 +112,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl:enriched_instance_identifier",
         "//score/mw/com/impl/configuration",
+        "@score_baselibs//score/language/safecpp/safe_math",
     ],
 )
 

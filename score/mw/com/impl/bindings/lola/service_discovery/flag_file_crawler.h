@@ -44,7 +44,7 @@ class FlagFileCrawler
                                     QualityAwareContainer<KnownInstancesContainer>>>;
 
     auto CrawlAndWatchWithRetry(const EnrichedInstanceIdentifier& enriched_instance_identifier,
-                                const std::uint8_t max_number_of_retries)
+                                const std::uint32_t max_number_of_retries)
         -> score::Result<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
                                     QualityAwareContainer<KnownInstancesContainer>>>;
 

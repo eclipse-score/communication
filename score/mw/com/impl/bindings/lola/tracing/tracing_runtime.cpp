@@ -370,6 +370,7 @@ auto TracingRuntime::GetTraceContextIdRangeForServiceElement(
     // LCOV_EXCL_START (We don't have the infrastructure to test the failure case of this static assert at compile time.
     // This check is anyway defensive programming to prevent accidental changes that could be made to the code in
     // the future but currently has no way of failing in production.
+    // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(compile-time-static-assert-limit-check)
     static_assert(
         ((std::numeric_limits<decltype(range_start)>::max() + std::numeric_limits<decltype(range_size)>::max()) <=
          std::numeric_limits<TraceContextId>::max()),
@@ -405,8 +406,8 @@ auto TracingRuntime::GetTraceContextId(
 TracingRuntime::EmplaceTypeErasedSamplePtr(impl::tracing::TypeErasedSamplePtr type_erased_sample_ptr,
                                            const impl::tracing::ServiceElementTracingData service_element_tracing_data)
 {
-    if (service_element_tracing_data.service_element_range_start >=
-        next_available_position_for_new_service_element_range_start_)
+    if (score::safe_math::CmpGreaterEqual(service_element_tracing_data.service_element_range_start,
+                                          next_available_position_for_new_service_element_range_start_))
     {
         score::mw::log::LogFatal("lola")
             << "Cannot set type erased sample pointer as provided service element with range start at"

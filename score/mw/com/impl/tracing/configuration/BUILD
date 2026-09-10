@@ -177,6 +177,7 @@ cc_library(
     deps = [
         ":hash_helper_utility",
         ":service_element_identifier_view",
+        "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/mw/log",
     ],
 )

@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/mw/log/logging.h"
 
 #include <cstdint>
@@ -40,7 +41,7 @@ ElementFqId::ElementFqId(const ServiceId service_id,
     // range coverity[autosar_cpp14_a7_2_1_violation]
     : ElementFqId(service_id, element_id, instance_id, static_cast<ServiceElementType>(element_type))
 {
-    if (element_type > static_cast<std::uint8_t>(ServiceElementType::FIELD))
+    if (safe_math::CmpGreater(element_type, static_cast<std::uint8_t>(ServiceElementType::FIELD)))
     {
         score::mw::log::LogFatal("lola") << "ElementFqId::ElementFqId failed: Invalid ServiceElementType:"
                                          << element_type;
@@ -83,21 +84,22 @@ bool operator==(const ElementFqId& lhs, const ElementFqId& rhs) noexcept
     // This a false-positive, all operands are parenthesized.
     // A bug ticket has been created to track this: [Ticket-165315](broken_link_j/Ticket-165315)
     // coverity[autosar_cpp14_a5_2_6_violation : FALSE]
-    return ((lhs.service_id_ == rhs.service_id_) && (lhs.element_id_ == rhs.element_id_) &&
-            (lhs.instance_id_ == rhs.instance_id_));
+    return (safe_math::CmpEqual(lhs.service_id_, rhs.service_id_) &&
+            safe_math::CmpEqual(lhs.element_id_, rhs.element_id_) &&
+            safe_math::CmpEqual(lhs.instance_id_, rhs.instance_id_));
 }
 
 bool operator<(const ElementFqId& lhs, const ElementFqId& rhs) noexcept
 {
-    if (lhs.service_id_ == rhs.service_id_)
+    if (safe_math::CmpEqual(lhs.service_id_, rhs.service_id_))
     {
-        if (lhs.instance_id_ == rhs.instance_id_)
+        if (safe_math::CmpEqual(lhs.instance_id_, rhs.instance_id_))
         {
-            return lhs.element_id_ < rhs.element_id_;
+            return safe_math::CmpLess(lhs.element_id_, rhs.element_id_);
         }
-        return lhs.instance_id_ < rhs.instance_id_;
+        return safe_math::CmpLess(lhs.instance_id_, rhs.instance_id_);
     }
-    return lhs.service_id_ < rhs.service_id_;
+    return safe_math::CmpLess(lhs.service_id_, rhs.service_id_);
 }
 
 // Suppress "AUTOSAR C++14 A13-2-2" rule finding: "A binary arithmetic operator and a bitwise operator shall return

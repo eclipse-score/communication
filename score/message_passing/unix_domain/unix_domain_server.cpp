@@ -109,14 +109,17 @@ bool UnixDomainServer::ServerConnection::ProcessInput()
         return false;
     }
     auto message = message_expected.value();
+    // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(switch-enum-underlying-type-discriminant)
     switch (code)
     {
+        // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(switch-enum-underlying-type-discriminant)
         case score::cpp::to_underlying(ClientToServer::REQUEST):
             return (std::holds_alternative<HandlerPointerT>(user_data)
                         ? std::get<HandlerPointerT>(user_data)->OnMessageSentWithReply(*this, message)
                         : server_.sent_with_reply_callback_(*this, message))
                 .has_value();
 
+        // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(switch-enum-underlying-type-discriminant)
         case score::cpp::to_underlying(ClientToServer::SEND):
             return (std::holds_alternative<HandlerPointerT>(user_data)
                         ? std::get<HandlerPointerT>(user_data)->OnMessageSent(*this, message)

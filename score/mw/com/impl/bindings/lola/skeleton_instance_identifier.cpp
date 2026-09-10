@@ -12,12 +12,15 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
+
 namespace score::mw::com::impl::lola
 {
 
 bool operator==(const SkeletonInstanceIdentifier& lhs, const SkeletonInstanceIdentifier& rhs) noexcept
 {
-    return ((lhs.service_id == rhs.service_id) && (lhs.instance_id == rhs.instance_id));
+    return (safe_math::CmpEqual(lhs.service_id, rhs.service_id) &&
+            safe_math::CmpEqual(lhs.instance_id, rhs.instance_id));
 }
 
 mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const SkeletonInstanceIdentifier& value) noexcept

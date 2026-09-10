@@ -199,6 +199,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":configuration_common_resources",
+        "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
@@ -320,7 +321,10 @@ cc_library(
     srcs = ["lola_service_instance_id.cpp"],
     hdrs = ["lola_service_instance_id.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [":configuration_common_resources"],
+    implementation_deps = [
+        ":configuration_common_resources",
+        "@score_baselibs//score/language/safecpp/safe_math",
+    ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = ["@score_baselibs//score/json"],
@@ -417,6 +421,7 @@ cc_library(
         ":configuration_common_resources",
         "//score/mw/com/impl:service_element_type",
         "@score_baselibs//score/json",
+        "@score_baselibs//score/language/safecpp/safe_math",
     ],
 )
 

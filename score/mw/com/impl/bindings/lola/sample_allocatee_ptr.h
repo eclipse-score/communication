@@ -17,6 +17,8 @@
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
+
 #include <functional>
 #include <limits>
 #include <memory>
@@ -181,7 +183,7 @@ class SampleAllocateePtr
     void internal_delete()
     {
         managed_object_ = nullptr;
-        if (event_slot_index_ < kUninitialisedEventSlotIndex)
+        if (safe_math::CmpLess(event_slot_index_, kUninitialisedEventSlotIndex))
         {
             SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
                 event_data_control_ptr_ != nullptr,
