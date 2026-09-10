@@ -278,6 +278,17 @@ int main()
     }
     std::fprintf(stderr, "app1: VM-B verified service_a successfully!\n");
 
+    // Stay alive until VM-B confirms it read the Verified notification above. Returning here would
+    // run ~BidirectionalTransport, and closing a socket that still holds unread inbound data makes
+    // the kernel send RST rather than FIN, discarding whatever VM-B had not yet read.
+    std::fprintf(stderr, "app1: waiting for VM-B's Done acknowledgement...\n");
+    if (!WaitForFlag(gateway_core.done_notified))
+    {
+        std::fprintf(stderr, "app1: timed out waiting for VM-B's Done acknowledgement\n");
+        return 1;
+    }
+    std::fprintf(stderr, "app1: VM-B acknowledged Done\n");
+
     std::fprintf(stderr, "app1: both directions verified successfully!\n");
     std::printf("verified\n");
     return 0;

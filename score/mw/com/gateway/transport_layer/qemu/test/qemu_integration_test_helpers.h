@@ -50,10 +50,12 @@ constexpr std::uint32_t kMagicB = 0xDEADBEEFU;  // VM-B → VM-A
 constexpr char kServiceA[] = "service_a";  // produced by VM-A, consumed on VM-B
 constexpr char kServiceB[] = "service_b";  // produced by VM-B, consumed on VM-A
 
-// NotifyUpdate element names distinguishing the two notification purposes below. Each VM
+// NotifyUpdate element names distinguishing the notification purposes below. Each VM
 // receives at most one of each per run, so a plain string comparison is enough to route them.
 constexpr char kElementNameDataReady[] = "DataReady";
 constexpr char kElementNameVerified[] = "Verified";
+// Sent by VM-B once it has read VM-A's Verified notification, so VM-A knows it may close.
+constexpr char kElementNameDone[] = "Done";
 
 /// Control structure placed in each service's CTRL shm (a minimal stand-in for production's
 /// ServiceDataControl). Readiness is signalled to the peer over the transport
@@ -145,6 +147,7 @@ class TestGatewayCore final : public score::mw::com::gateway::GatewayCore
     std::atomic<bool> provide_service_called{false};
     std::atomic<bool> data_ready_notified{false};  // set when peer's "DataReady" NotifyUpdate arrives
     std::atomic<bool> verified_notified{false};    // set when peer's "Verified" NotifyUpdate arrives
+    std::atomic<bool> done_notified{false};        // set when peer's "Done" NotifyUpdate arrives
 
     score::Result<void> ProvideService(score::mw::com::impl::InstanceSpecifier /*s*/,
                                        std::vector<score::mw::com::impl::EventInfo> /*e*/) override
@@ -168,6 +171,10 @@ class TestGatewayCore final : public score::mw::com::gateway::GatewayCore
         else if (element_name == kElementNameVerified)
         {
             verified_notified.store(true, std::memory_order_release);
+        }
+        else if (element_name == kElementNameDone)
+        {
+            done_notified.store(true, std::memory_order_release);
         }
         return {};
     }

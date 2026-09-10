@@ -276,6 +276,19 @@ int main()
     }
     std::fprintf(stderr, "app2: VM-A verified service_b successfully!\n");
 
+    // Release VM-A, which is blocked waiting for this before it may tear down its sockets.
+    if (!SendNotificationWithRetries(
+            [&qemu_transport, &spec_a] {
+                return qemu_transport.NotifyUpdate(
+                    spec_a.value(), score::mw::com::impl::ServiceElementType::EVENT, kElementNameDone);
+            },
+            "Done for service_a"))
+    {
+        std::fprintf(stderr, "app2: Done acknowledgement failed to send\n");
+        return 1;
+    }
+    std::fprintf(stderr, "app2: sent Done acknowledgement to VM-A\n");
+
     std::fprintf(stderr, "app2: both directions verified successfully!\n");
     std::printf("verified\n");
     return 0;
