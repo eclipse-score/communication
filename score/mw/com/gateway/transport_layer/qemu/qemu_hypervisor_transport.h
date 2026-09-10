@@ -92,7 +92,7 @@ class QemuHypervisorTransport : public Transport
     /// Binds the inter-VM shm paths to the ivshmem BAR on the destination side.
     /// Looks up the source-side BAR offsets from the BAR-resident directory so that
     /// both VMs map the same physical sub-range regardless of local allocation order.
-    void PreCreateInterVmSharedMemory(const impl::InstanceSpecifier& specifier,
+    bool PreCreateInterVmSharedMemory(const impl::InstanceSpecifier& specifier,
                                       std::uint32_t shm_control_size,
                                       std::uint32_t shm_data_size);
 

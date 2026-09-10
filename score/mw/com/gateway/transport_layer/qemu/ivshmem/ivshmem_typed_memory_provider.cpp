@@ -300,11 +300,30 @@ score::cpp::expected_blank<score::os::Error> IvshmemTypedMemoryProvider::BindShm
 {
 #if defined(__QNXNTO__)
     const std::uint64_t alloc_size = AlignUp(static_cast<std::uint64_t>(shm_size), kPageSize);
+    if ((offset % kPageSize) != 0U || offset > usable_size_ || alloc_size > (usable_size_ - offset))
+    {
+        ::score::mw::log::LogError() << "IvshmemTypedMemoryProvider: invalid BAR binding for '" << shm_name
+                                     << "': offset=" << offset << ", size=" << alloc_size
+                                     << ", usable_size=" << usable_size_;
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EINVAL));
+    }
     const std::uint64_t sub_paddr = paddr_ + offset;
 
-    const auto shm_open_result = mman_qnx_->shm_open(shm_name.c_str(), O_RDWR | O_CREAT, mode_t{0666});
+    const auto shm_open_result = mman_qnx_->shm_open(shm_name.c_str(), O_RDWR | O_CREAT | O_EXCL, mode_t{0666});
     if (!shm_open_result.has_value())
     {
+        if (shm_open_result.error().GetOsDependentErrorCode() == EEXIST)
+        {
+            // SHMCTL_PHYS is a one-time operation on a new QNX shm object. An existing
+            // object has already been bound by this process or an earlier provider.
+            const auto existing_shm_result = mman_qnx_->shm_open(shm_name.c_str(), O_RDWR, mode_t{0666});
+            if (!existing_shm_result.has_value())
+            {
+                return score::cpp::make_unexpected(existing_shm_result.error());
+            }
+            std::ignore = ::close(static_cast<int>(existing_shm_result.value()));
+            return {};
+        }
         return score::cpp::make_unexpected(shm_open_result.error());
     }
     const std::int32_t fd = shm_open_result.value();
@@ -356,7 +375,12 @@ score::cpp::expected_blank<score::os::Error> IvshmemTypedMemoryProvider::Allocat
     auto it = allocations_.find(shm_name);
     if (it != allocations_.end())
     {
-        return BindShmToBar(shm_size, shm_name, it->second);
+        const auto result = BindShmToBar(shm_size, shm_name, it->second);
+        if (!result.has_value())
+        {
+            allocations_.erase(it);
+        }
+        return result;
     }
 
     const std::uint64_t alloc_size = AlignUp(static_cast<std::uint64_t>(shm_size), kPageSize);
@@ -382,7 +406,12 @@ score::cpp::expected_blank<score::os::Error> IvshmemTypedMemoryProvider::Allocat
     if (dir_offset.has_value())
     {
         allocations_[shm_name] = dir_offset.value();
-        return BindShmToBar(shm_size, shm_name, dir_offset.value());
+        const auto result = BindShmToBar(shm_size, shm_name, dir_offset.value());
+        if (!result.has_value())
+        {
+            allocations_.erase(shm_name);
+        }
+        return result;
     }
 
     // New allocation: scan ALL directory entries (from both VMs) to find the next free
@@ -401,8 +430,12 @@ score::cpp::expected_blank<score::os::Error> IvshmemTypedMemoryProvider::Allocat
     // Write to the BAR-resident directory so the other VM can discover this allocation.
     WriteDirectoryEntry(shm_name, offset, static_cast<std::uint32_t>(alloc_size));
     allocations_[shm_name] = offset;
-
-    return BindShmToBar(shm_size, shm_name, offset);
+    const auto result = BindShmToBar(shm_size, shm_name, offset);
+    if (!result.has_value())
+    {
+        allocations_.erase(shm_name);
+    }
+    return result;
 #else
     return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOSYS));
 #endif
@@ -429,6 +462,7 @@ score::cpp::expected_blank<score::os::Error> IvshmemTypedMemoryProvider::Allocat
 
     // Record locally (or verify consistency if already known).
     auto it = allocations_.find(shm_name);
+    const bool added_to_cache = it == allocations_.end();
     if (it != allocations_.end())
     {
         if (it->second != bar_offset)
@@ -444,7 +478,12 @@ score::cpp::expected_blank<score::os::Error> IvshmemTypedMemoryProvider::Allocat
         allocations_[shm_name] = bar_offset;
     }
 
-    return BindShmToBar(shm_size, shm_name, bar_offset);
+    const auto result = BindShmToBar(shm_size, shm_name, bar_offset);
+    if (!result.has_value() && added_to_cache)
+    {
+        allocations_.erase(shm_name);
+    }
+    return result;
 #else
     return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOSYS));
 #endif
