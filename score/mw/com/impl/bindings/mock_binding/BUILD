@@ -12,47 +12,104 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "unit")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+component(
+    name = "mock_binding",
+    components = [
+        ":proxy_and_service_elements",
+        ":skeleton_and_service_elements",
+    ],
+    requirements = [],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    visibility = ["//score/mw/com:__subpackages__"],
+)
+
+unit(
+    name = "proxy_and_service_elements",
+    testonly = True,
+    maturity = "development",  # TODO: Remove to treat scope violations as errors
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/bindings/mock_binding/dependability/proxy_and_service_elements:unit_design",
+    ],
+    implementation = [":proxy"],
+)
+
+unit(
+    name = "skeleton_and_service_elements",
+    testonly = True,
+    maturity = "development",  # TODO: Remove to treat scope violations as errors
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/bindings/mock_binding/dependability/skeleton_and_service_elements:unit_design",
+    ],
+    implementation = [":skeleton"],
+)
 
 cc_library(
     name = "mock_binding_lib",
     testonly = True,
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        ":generic_proxy_event",
+        ":generic_skeleton_event",
+        ":proxy",
+        ":skeleton",
+    ],
+)
+
+cc_library(
+    name = "skeleton",
+    testonly = True,
     srcs = [
-        "generic_proxy_event.cpp",
-        "generic_skeleton_event.cpp",
-        "proxy.cpp",
-        "proxy_event.cpp",
-        "proxy_method.cpp",
         "skeleton.cpp",
         "skeleton_event.cpp",
         "skeleton_method.cpp",
     ],
     hdrs = [
-        "generic_proxy_event.h",
-        "generic_skeleton_event.h",
-        "proxy.h",
-        "proxy_event.h",
-        "proxy_method.h",
         "skeleton.h",
         "skeleton_event.h",
         "skeleton_method.h",
     ],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//score/mw/com:__subpackages__",
-    ],
+    visibility = ["//score/mw/com:__subpackages__"],
     deps = [
         ":sample_ptr",
-        "//score/mw/com/impl:generic_proxy_event_binding",
-        "//score/mw/com/impl:generic_skeleton_event_binding",
-        "//score/mw/com/impl:proxy_binding",
-        "//score/mw/com/impl:proxy_event_binding",
         "//score/mw/com/impl:skeleton_binding",
         "//score/mw/com/impl:skeleton_event_binding",
-        "//score/mw/com/impl/methods:proxy_method_binding",
         "//score/mw/com/impl/methods:skeleton_method_binding",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
+        "@googletest//:gtest",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "proxy",
+    testonly = True,
+    srcs = [
+        "proxy.cpp",
+        "proxy_event.cpp",
+        "proxy_method.cpp",
+    ],
+    hdrs = [
+        "proxy.h",
+        "proxy_event.h",
+        "proxy_method.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        ":sample_ptr",
+        "//score/mw/com/impl:proxy_binding",
+        "//score/mw/com/impl:proxy_event_binding",
+        "//score/mw/com/impl/methods:proxy_method_binding",
         "@googletest//:gtest",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -67,6 +124,20 @@ cc_library(
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
         "//score/mw/com/impl:generic_skeleton_event_binding",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "generic_proxy_event",
+    testonly = True,
+    srcs = ["generic_proxy_event.cpp"],
+    hdrs = ["generic_proxy_event.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        ":sample_ptr",
+        "//score/mw/com/impl:generic_proxy_event_binding",
         "@googletest//:gtest",
     ],
 )

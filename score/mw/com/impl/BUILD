@@ -16,6 +16,17 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "un
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
+component(
+    name = "mw_com",
+    components = [
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding",
+    ],
+    requirements = [],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    visibility = ["//score/mw/com/dependability:__pkg__"],
+)
+
 package(default_visibility = [
     "//score/mw/com/impl:__subpackages__",
 ])
