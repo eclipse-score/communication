@@ -15,8 +15,8 @@
 Subclasses ``QemuProcess`` and replaces its internal ``_qemu`` with an
 :class:`IvshmemQemu` instance so the VM is launched with an ``ivshmem-plain`` device.
 
-The ``start()`` method is self-healing: it waits for stable SSH, runs ``pre_tests_phase``,
-and restarts the QEMU process up to ``max_boot_attempts`` times if sshd never comes up.
+The ``start()`` method is self-healing: it waits for stable SSH and restarts the QEMU
+process up to ``max_boot_attempts`` times if sshd never comes up.
 """
 
 import logging
@@ -87,13 +87,18 @@ class DualQemuProcess(QemuProcess):
             path_to_qemu_image,
             available_ram,
             available_cores,
+            network_adapters=[],
             port_forwarding=port_forwarding,
+            machine=vm_config.qemu_machine,
+            rootfs=None,
+            kernel_cmdline=vm_config.qemu_kernel_cmdline,
         )
         # Replace the base's default Qemu with our ivshmem-capable subclass.
         self._qemu = IvshmemQemu(
             path_to_qemu_image,
             available_ram,
             available_cores,
+            network_adapters=[],
             port_forwarding=port_forwarding,
             ivshmem_path=ivshmem_path,
             ivshmem_size=ivshmem_size,
