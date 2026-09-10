@@ -17,6 +17,7 @@ dependable_element(
     architectural_design = ["//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design"],
     assumptions_of_use = ["//score/mw/com/dependability/safety_analysis:aous"],
     components = [
+        "//score/mw/com/impl:mw_com",
     ],
     dependability_analysis = ["//score/mw/com/dependability/safety_analysis:mw_com_dependability_analysis"],
     integrity_level = "B",
