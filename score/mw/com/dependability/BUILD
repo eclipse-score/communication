@@ -16,6 +16,7 @@ dependable_element(
     name = "mw_com",
     architectural_design = ["//score/mw/com/dependability/architectural_design:software_architectural_design"],
     components = [
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding",
     ],
     dependability_analysis = ["//score/mw/com/dependability/safety_analysis:mw_com_dependability_analysis"],
     integrity_level = "B",
