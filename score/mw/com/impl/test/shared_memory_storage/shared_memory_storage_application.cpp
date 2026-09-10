@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#include "score/mw/com/test/shared_memory_storage/shared_memory_storage_application.h"
+#include "score/mw/com/impl/test/shared_memory_storage/shared_memory_storage_application.h"
 
 #include "score/mw/com/test/common_test_resources/big_datatype.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
