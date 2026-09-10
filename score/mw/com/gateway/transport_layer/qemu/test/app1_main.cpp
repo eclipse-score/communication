@@ -101,11 +101,13 @@ int main()
     TestGatewayCore gateway_core;
     auto message_transport = std::make_unique<BidirectionalTransport>(CreateConfiguration());
     QemuHypervisorTransport qemu_transport{gateway_core, std::move(message_transport), provider};
+    std::fprintf(stderr, "app1: starting transport setup\n");
     if (!qemu_transport.Setup().has_value())
     {
         std::fprintf(stderr, "app1: QemuHypervisorTransport::Setup failed\n");
         return 1;
     }
+    std::fprintf(stderr, "app1: transport setup complete\n");
 
     // ========================================================================
     // SOURCE SIDE: Create CTRL + DATA shm for service_a, matching the LoLa skeleton pattern.
@@ -119,6 +121,7 @@ int main()
     const auto paths_a = ResolveInterVmShmPaths(spec_a.value());
 
     // Create CTRL shm for service_a — holds the ServiceControl signaling structure.
+    std::fprintf(stderr, "app1: creating service_a CTRL shm\n");
     auto ctrl_a = score::memory::shared::SharedMemoryFactory::Create(
         paths_a.control,
         [](std::shared_ptr<score::memory::shared::ISharedMemoryResource> /*res*/) {},
@@ -129,6 +132,7 @@ int main()
         std::fprintf(stderr, "app1: SharedMemoryFactory::Create for service_a CTRL failed\n");
         return 1;
     }
+    std::fprintf(stderr, "app1: service_a CTRL shm created\n");
 
     // Create DATA shm for service_a — holds the actual payload.
     auto data_a = score::memory::shared::SharedMemoryFactory::Create(
