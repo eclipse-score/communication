@@ -29,6 +29,7 @@
 
 #include "score/result/result.h"
 
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -65,16 +66,16 @@ struct ServiceControl
 
 /// Polls a bool flag until it becomes true or times out — used to wait for a message
 /// delivered asynchronously by the real BidirectionalTransport.
-bool WaitForFlag(const bool& flag, int timeout_ms = 60000)
+bool WaitForFlag(const std::atomic<bool>& flag, int timeout_ms = 60000)
 {
     constexpr int kSleepMs = 50;
     int elapsed = 0;
-    while (!flag && elapsed < timeout_ms)
+    while (!flag.load(std::memory_order_acquire) && elapsed < timeout_ms)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(kSleepMs));
         elapsed += kSleepMs;
     }
-    return flag;
+    return flag.load(std::memory_order_acquire);
 }
 
 /// Brings up the "intervm" virtio-net NIC (vtnet1) and assigns it the given static IP.
@@ -116,14 +117,14 @@ bool ConfigureIntervmNic(const char* local_ip)
 class TestGatewayCore final : public score::mw::com::gateway::GatewayCore
 {
   public:
-    bool provide_service_called{false};
-    bool data_ready_notified{false};  // set when peer's "DataReady" NotifyUpdate arrives
-    bool verified_notified{false};    // set when peer's "Verified" NotifyUpdate arrives
+    std::atomic<bool> provide_service_called{false};
+    std::atomic<bool> data_ready_notified{false};  // set when peer's "DataReady" NotifyUpdate arrives
+    std::atomic<bool> verified_notified{false};    // set when peer's "Verified" NotifyUpdate arrives
 
     score::Result<void> ProvideService(score::mw::com::impl::InstanceSpecifier /*s*/,
                                        std::vector<score::mw::com::impl::EventInfo> /*e*/) override
     {
-        provide_service_called = true;
+        provide_service_called.store(true, std::memory_order_release);
         return {};
     }
     score::Result<void> OfferService(score::mw::com::impl::InstanceSpecifier /*s*/) override
@@ -137,11 +138,11 @@ class TestGatewayCore final : public score::mw::com::gateway::GatewayCore
     {
         if (element_name == kElementNameDataReady)
         {
-            data_ready_notified = true;
+            data_ready_notified.store(true, std::memory_order_release);
         }
         else if (element_name == kElementNameVerified)
         {
-            verified_notified = true;
+            verified_notified.store(true, std::memory_order_release);
         }
         return {};
     }
