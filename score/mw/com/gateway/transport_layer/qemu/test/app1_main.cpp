@@ -175,9 +175,12 @@ int main()
     // Notify VM-B (over the transport, not shared memory) that service_a's DATA is ready.
     // Both messages share one TCP connection with FIFO dispatch on the receiver, so this is
     // guaranteed to be handled after the ProvideServiceRequest above (shm already bound).
-    const auto notify_result = qemu_transport.NotifyUpdate(
-        spec_a.value(), score::mw::com::impl::ServiceElementType::EVENT, kElementNameDataReady);
-    if (!notify_result.has_value())
+    if (!SendNotificationWithRetries(
+            [&qemu_transport, &spec_a] {
+                return qemu_transport.NotifyUpdate(
+                    spec_a.value(), score::mw::com::impl::ServiceElementType::EVENT, kElementNameDataReady);
+            },
+            "DataReady for service_a"))
     {
         std::fprintf(stderr, "app1: DataReady notification for service_a failed to send\n");
         return 1;
@@ -254,9 +257,12 @@ int main()
     std::fprintf(stderr, "app1: service_b verified [magic=0x%08x, 300, 400] — read from VM-B OK\n", kMagicB);
 
     // Confirm back to VM-B over the transport that we verified its data.
-    const auto verified_result = qemu_transport.NotifyUpdate(
-        spec_b.value(), score::mw::com::impl::ServiceElementType::EVENT, kElementNameVerified);
-    if (!verified_result.has_value())
+    if (!SendNotificationWithRetries(
+            [&qemu_transport, &spec_b] {
+                return qemu_transport.NotifyUpdate(
+                    spec_b.value(), score::mw::com::impl::ServiceElementType::EVENT, kElementNameVerified);
+            },
+            "Verified for service_b"))
     {
         std::fprintf(stderr, "app1: Verified notification for service_b failed to send\n");
         return 1;

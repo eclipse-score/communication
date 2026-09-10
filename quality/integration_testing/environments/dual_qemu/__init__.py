@@ -22,6 +22,7 @@ Exposed session fixtures:
     - ``ivshmem_backend``         -- path of the shared host backing file.
 """
 
+import concurrent.futures
 import logging
 import socket
 
@@ -123,8 +124,16 @@ def _targets(config, ivshmem_backend):
             intervm=intervm_roles[1],
             vm_index=1,
         ) as process_b:
-            # Re-verify VM-A is still responsive (it may have gone quiet while VM-B booted).
-            process_a.ensure_responsive()
+            # Re-verify both VMs are still responsive (either may have gone quiet while the other
+            # booted). The probes are read-only SSH checks on already-booted VMs, so running them
+            # concurrently is safe; any restart needed to self-heal still runs sequentially below
+            # to avoid the concurrent-boot wedge that sequential *booting* was designed to avoid.
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+                healthy_a, healthy_b = pool.map(lambda p: p.is_responsive(), [process_a, process_b])
+            if not healthy_a:
+                process_a.self_heal()
+            if not healthy_b:
+                process_b.self_heal()
             yield [process_a.target, process_b.target]
 
 

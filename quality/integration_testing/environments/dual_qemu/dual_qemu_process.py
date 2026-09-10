@@ -138,13 +138,29 @@ class DualQemuProcess(QemuProcess):
             f"VM never booted into a usable state after {self._max_boot_attempts} attempts: {last_error}"
         )
 
-    def ensure_responsive(self, timeout: int = 30, stable_successes: int = 2):
-        """Re-verify the VM is still reachable; restart in place if not."""
+    def is_responsive(self, timeout: int = 60, stable_successes: int = 2) -> bool:
+        """Read-only SSH reachability probe (no restart); safe to run concurrently for both VMs."""
         try:
             _wait_for_ssh(self._target, total_timeout=timeout, stable_successes=stable_successes)
-        except Exception as ex:  # pylint: disable=broad-except
-            logger.warning("VM went unresponsive (%s); restarting", ex)
-            self.restart()
+            return True
+        except TimeoutError:
+            return False
+
+    def self_heal(self):
+        """Restart the VM, reusing start()'s own boot-retry + readiness-check loop.
+
+        A VM that already passed ``start()`` can still stop serving sshd while it sits idle during
+        the peer's boot; one restart recovers it without needing a full outer Bazel retry, which
+        would reboot both VMs from scratch.
+        """
+        logger.warning("VM went unresponsive; restarting to self-heal")
+        self.stop()
+        self.start()
+
+    def ensure_responsive(self, timeout: int = 60, stable_successes: int = 2):
+        """Re-verify the VM is still reachable, restarting it (self-heal) if it went idle-dead."""
+        if not self.is_responsive(timeout, stable_successes):
+            self.self_heal()
 
     @property
     def target(self):
