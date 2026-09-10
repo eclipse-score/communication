@@ -1,0 +1,45 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+namespace score::memory::shared {
+
+abstract class TypedMemory {
+  {static} +Default(): std::shared_ptr<TypedMemory>
+  {abstract} +AllocateNamedTypedMemory(shm_size, shm_name, permissions): score::cpp::expected_blank<score::os::Error>
+  {abstract} +AllocateAndOpenAnonymousTypedMemory(shm_size): score::cpp::expected<int, score::os::Error>
+  {abstract} +Unlink(shm_name): score::cpp::expected_blank<score::os::Error>
+  {abstract} +GetCreatorUid(shm_name): score::cpp::expected<uid_t, score::os::Error>
+}
+
+class "internal::TypedMemoryImpl" as TypedMemoryImpl {
+  +AllocateNamedTypedMemory(shm_size, shm_name, permissions): score::cpp::expected_blank<score::os::Error>
+  +AllocateAndOpenAnonymousTypedMemory(shm_size): score::cpp::expected<int, score::os::Error>
+  +Unlink(shm_name): score::cpp::expected_blank<score::os::Error>
+  +GetCreatorUid(shm_name): score::cpp::expected<uid_t, score::os::Error>
+}
+
+class SharedMemoryResource
+class SharedMemoryFactoryImpl
+
+TypedMemory <|-- TypedMemoryImpl
+SharedMemoryFactoryImpl ..> TypedMemory
+SharedMemoryResource ..> TypedMemory
+
+' QNX builds add TypedMemoryImpl members mman_ and typed_shm_client_.
+' typed_memory_utils.h contributes the free function AcquireTypedMemoryDaemonUid().
+
+}
+
+@enduml

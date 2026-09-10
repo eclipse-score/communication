@@ -1,0 +1,48 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+title SharedMemoryResource::OpenImpl prevents races with concurrent CreateImpl
+
+participant Caller
+participant SharedMemoryResource as Resource
+participant LockFile
+participant OS
+
+Caller -> Resource : Open(path, is_read_write, acl_factory, typed_memory_ptr)
+activate Resource
+Resource -> Resource : OpenImpl(is_read_write)
+Resource -> Resource : acquireLockFile()
+loop until lock file can be created
+    Resource -> LockFile : Create(<path>_lock)
+    alt lock file still present
+        Resource -> OS : stat/sleep/retry
+    else acquired
+        LockFile --> Resource : temporary lock
+    end
+end
+Resource -> Resource : acquireLockAndOpenSharedMemory()
+Resource -> OS : shm_open(path, flags)
+Resource -> OS : fstat(fd)
+Resource -> OS : mmap(fd, size)
+Resource -> Resource : loadInternalsFromSharedMemory()
+Resource --> Caller : mapped SharedMemoryResource
+deactivate Resource
+note right of LockFile
+The temporary lock file exists only to serialize
+Open with a concurrent CreateImpl so the opener
+never reads partially initialized shared memory.
+end note
+
+@enduml

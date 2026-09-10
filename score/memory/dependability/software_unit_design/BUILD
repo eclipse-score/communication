@@ -1,0 +1,153 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit_design")
+
+# NOTE on the ".rst" wrapper files listed alongside each ".puml" diagram below:
+# the `unit_design` rule (unlike `architectural_design`) does not yet
+# auto-generate an RST wrapper (with a `.. uml::` directive) for bare `.puml`
+# inputs - see rules_score's private/unit_design.bzl vs. private/architectural_design.bzl
+# (which calls make_puml_rst_wrappers()). Without a wrapper, dependable_element's
+# per-unit doc generator (_generate_unit_doc in private/dependable_element.bzl)
+# only emits an "Unit Design" section/toctree entry for ".rst"/".md" "document"
+# files - bare ".puml" files are merely symlinked next to the page and never
+# actually referenced, so the diagram silently fails to render. Each "<name>.rst"
+# here is therefore a minimal hand-authored wrapper (title + `.. uml:: <name>.puml`)
+# mirroring rules_score's own puml_diagram.template.rst, so the diagrams actually
+# show up on the generated unit pages. This can be removed once unit_design gains
+# the same auto-wrapping support as architectural_design.
+unit_design(
+    name = "managed_memory_resource_unit_design",
+    dynamic = [
+        "managed_memory_resource_dynamic.rst",
+        "managed_memory_resource_dynamic.puml",
+    ],
+    static = [
+        "managed_memory_resource_static.rst",
+        "managed_memory_resource_static.puml",
+    ],
+    visibility = ["//score/memory/shared:__pkg__"],
+)
+
+unit_design(
+    name = "shared_memory_resource_unit_design",
+    dynamic = [
+        "shared_memory_resource_dynamic.rst",
+        "shared_memory_resource_dynamic.puml",
+    ],
+    static = [
+        "shared_memory_resource_static.rst",
+        "shared_memory_resource_static.puml",
+    ],
+    visibility = ["//score/memory/shared:__pkg__"],
+)
+
+unit_design(
+    name = "shared_memory_factory_unit_design",
+    dynamic = [
+        "shared_memory_factory_dynamic.rst",
+        "shared_memory_factory_dynamic.puml",
+    ],
+    static = [
+        "shared_memory_factory_static.rst",
+        "shared_memory_factory_static.puml",
+    ],
+    visibility = ["//score/memory/shared:__pkg__"],
+)
+
+unit_design(
+    name = "memory_resource_registry_unit_design",
+    dynamic = [
+        "memory_resource_registry_dynamic.rst",
+        "memory_resource_registry_dynamic.puml",
+    ],
+    static = [
+        "memory_resource_registry_static.rst",
+        "memory_resource_registry_static.puml",
+    ],
+    visibility = ["//score/memory/shared:__pkg__"],
+)
+
+unit_design(
+    name = "offset_ptr_unit_design",
+    dynamic = [
+        "offset_ptr_dynamic.rst",
+        "offset_ptr_dynamic.puml",
+    ],
+    static = [
+        "offset_ptr_static.rst",
+        "offset_ptr_static.puml",
+    ],
+    visibility = ["//score/memory/shared:__pkg__"],
+)
+
+unit_design(
+    name = "polymorphic_offset_ptr_allocator_unit_design",
+    dynamic = [
+        "polymorphic_offset_ptr_allocator_dynamic.rst",
+        "polymorphic_offset_ptr_allocator_dynamic.puml",
+    ],
+    static = [
+        "polymorphic_offset_ptr_allocator_static.rst",
+        "polymorphic_offset_ptr_allocator_static.puml",
+    ],
+    visibility = ["//score/memory/shared:__pkg__"],
+)
+
+unit_design(
+    name = "containers_unit_design",
+    static = [
+        "containers_static.rst",
+        "containers_static.puml",
+    ],
+    visibility = ["//score/memory/shared:__pkg__"],
+)
+
+unit_design(
+    name = "flock_mutex_unit_design",
+    dynamic = [
+        "flock_mutex_dynamic.rst",
+        "flock_mutex_dynamic.puml",
+    ],
+    static = [
+        "flock_mutex_static.rst",
+        "flock_mutex_static.puml",
+    ],
+    visibility = ["//score/memory/shared:__pkg__"],
+)
+
+unit_design(
+    name = "typed_memory_unit_design",
+    dynamic = [
+        "typed_memory_dynamic.rst",
+        "typed_memory_dynamic.puml",
+    ],
+    static = [
+        "typed_memory_static.rst",
+        "typed_memory_static.puml",
+    ],
+    visibility = ["//score/memory/shared:__pkg__"],
+)
+
+unit_design(
+    name = "sealed_shared_memory_unit_design",
+    dynamic = [
+        "sealed_shared_memory_dynamic.rst",
+        "sealed_shared_memory_dynamic.puml",
+    ],
+    static = [
+        "sealed_shared_memory_static.rst",
+        "sealed_shared_memory_static.puml",
+    ],
+    visibility = ["//score/memory/shared:__pkg__"],
+)
