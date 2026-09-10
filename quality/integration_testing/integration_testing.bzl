@@ -239,10 +239,13 @@ def dual_qemu_integration_test(
     # This test is intentionally marked flaky (above) to retry environment-induced
     # QEMU boot hiccups, so exclude it from the nightly flaky-test detection to
     # avoid reporting expected, infrastructure-level nondeterminism.
+    #
+    # "exclusive": serializes execution on the same machine so two VM pairs never
+    # compete for CPU.
     _extend_list_in_kwargs_without_duplicates(
         kwargs,
         "tags",
-        ["no-flaky-test-detection"],
+        ["no-flaky-test-detection", "exclusive"],
     )
 
     _extend_list_in_kwargs_without_duplicates(
