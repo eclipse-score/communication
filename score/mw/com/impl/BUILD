@@ -16,43 +16,6 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "un
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
-component(
-    name = "frontend_component",
-    components = [
-        ":frontend_sd",
-        ":frontend_skeleton",
-        ":frontend_proxy",
-    ],
-    requirements = [],
-    target_compatible_with = ["@platforms//os:linux"],
-    tests = [],
-    visibility = ["//score/mw/com/dependability:__pkg__"],
-)
-
-unit(
-    name = "frontend_sd",
-    scope = [],
-    tests = [],
-    unit_design = [],
-    implementation = [],
-)
-
-unit(
-    name = "frontend_skeleton",
-    scope = [],
-    tests = [],
-    unit_design = [],
-    implementation = [],
-)
-
-unit(
-    name = "frontend_proxy",
-    scope = [],
-    tests = [],
-    unit_design = [],
-    implementation = [],
-)
-
 package(default_visibility = [
     "//score/mw/com/impl:__subpackages__",
 ])

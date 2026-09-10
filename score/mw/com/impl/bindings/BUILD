@@ -10,16 +10,3 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component")
-
-component(
-    name = "bindings",
-    components = [
-        "//score/mw/com/impl/bindings/lola:lola_component",
-        "//score/mw/com/impl/bindings/mock_binding:mock_component",
-    ],
-    requirements = [],
-    target_compatible_with = ["@platforms//os:linux"],
-    tests = [],
-    visibility = ["//score/mw/com/dependability:__pkg__"],
-)
