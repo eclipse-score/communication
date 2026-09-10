@@ -532,9 +532,7 @@ TEST_F(QemuHypervisorTransportTest, PreCreateInterVmSharedMemoryReturnsEarlyWhen
     EXPECT_CALL(*ivshmem_provider_raw_, AllocateNamedTypedMemoryAtOffset(::testing::_, ::testing::_, 0U, ::testing::_))
         .WillOnce(::testing::Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM))));
 
-    // ProvideService is still called after PreCreateInterVmSharedMemory returns
-    EXPECT_CALL(gateway_core_mock_, ProvideService(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+    EXPECT_CALL(gateway_core_mock_, ProvideService(::testing::_, ::testing::_)).Times(0);
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     auto request = CreateMessageOfType(MessageType::kProvideServiceRequest);
@@ -559,9 +557,7 @@ TEST_F(QemuHypervisorTransportTest, PreCreateInterVmSharedMemoryReturnsEarlyWhen
                 AllocateNamedTypedMemoryAtOffset(::testing::_, ::testing::_, 4096U, ::testing::_))
         .WillOnce(::testing::Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM))));
 
-    // ProvideService is still called after PreCreateInterVmSharedMemory returns
-    EXPECT_CALL(gateway_core_mock_, ProvideService(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+    EXPECT_CALL(gateway_core_mock_, ProvideService(::testing::_, ::testing::_)).Times(0);
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     auto request = CreateMessageOfType(MessageType::kProvideServiceRequest);
@@ -637,9 +633,7 @@ TEST_F(QemuHypervisorTransportTest, PreCreateInterVmSharedMemoryLogsErrorAndRetu
     // ivshmem provider must not be touched — we return early before reaching LookupOffsetInDirectory
     EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::_)).Times(0);
 
-    // HandleProvideServiceRequest calls ProvideService after PreCreateInterVmSharedMemory returns
-    EXPECT_CALL(gateway_core_mock_, ProvideService(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+    EXPECT_CALL(gateway_core_mock_, ProvideService(::testing::_, ::testing::_)).Times(0);
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     auto request = CreateMessageOfType(MessageType::kProvideServiceRequest);

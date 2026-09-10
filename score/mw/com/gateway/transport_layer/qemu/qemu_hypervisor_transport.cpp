@@ -191,7 +191,11 @@ void QemuHypervisorTransport::HandleProvideServiceRequest(std::unique_ptr<Transp
         log::LogError("LoLa") << "QemuTransport: Invalid instance specifier in ProvideServiceRequest!";
         return;
     }
-    PreCreateInterVmSharedMemory(specifier_result.value(), request.GetShmControlSize(), request.GetShmDataSize());
+    if (!PreCreateInterVmSharedMemory(specifier_result.value(), request.GetShmControlSize(), request.GetShmDataSize()))
+    {
+        log::LogError("LoLa") << "QemuTransport: Failed to bind inter-VM shared memory in ProvideServiceRequest";
+        return;
+    }
     const auto provide_service_result =
         gateway_app_.ProvideService(specifier_result.value(), request.GetServiceElements());
     if (!provide_service_result.has_value())
@@ -373,7 +377,7 @@ score::Result<void> QemuHypervisorTransport::UnregisterUpdateNotification(
     return message_transport_->SendRequest(request);
 }
 
-void QemuHypervisorTransport::PreCreateInterVmSharedMemory(const impl::InstanceSpecifier& specifier,
+bool QemuHypervisorTransport::PreCreateInterVmSharedMemory(const impl::InstanceSpecifier& specifier,
                                                            std::uint32_t shm_control_size,
                                                            std::uint32_t shm_data_size)
 {
@@ -382,7 +386,7 @@ void QemuHypervisorTransport::PreCreateInterVmSharedMemory(const impl::InstanceS
     {
         ::score::mw::log::LogError() << "PreCreateInterVmSharedMemory: failed to resolve SHM paths for "
                                      << specifier.ToString();
-        return;
+        return false;
     }
 
     // Look up the BAR offsets from the BAR-resident directory written by the source VM.
@@ -401,8 +405,9 @@ void QemuHypervisorTransport::PreCreateInterVmSharedMemory(const impl::InstanceS
         if (!ctrl_result.has_value())
         {
             ::score::mw::log::LogError() << "PreCreateInterVmSharedMemory: failed to bind CTRL shm to BAR for "
-                                         << specifier.ToString() << " at offset " << ctrl_offset.value();
-            return;
+                                         << specifier.ToString() << " at offset " << ctrl_offset.value()
+                                         << ", OS error " << ctrl_result.error().GetOsDependentErrorCode();
+            return false;
         }
     }
     else if (shm_control_size > 0U)
@@ -422,8 +427,9 @@ void QemuHypervisorTransport::PreCreateInterVmSharedMemory(const impl::InstanceS
         if (!data_result.has_value())
         {
             ::score::mw::log::LogError() << "PreCreateInterVmSharedMemory: failed to bind DATA shm to BAR for "
-                                         << specifier.ToString() << " at offset " << data_offset.value();
-            return;
+                                         << specifier.ToString() << " at offset " << data_offset.value()
+                                         << ", OS error " << data_result.error().GetOsDependentErrorCode();
+            return false;
         }
     }
     else if (shm_data_size > 0U)
@@ -438,6 +444,7 @@ void QemuHypervisorTransport::PreCreateInterVmSharedMemory(const impl::InstanceS
                                 << paths.data << ", " << shm_data_size
                                 << "B, offset=" << (data_offset.has_value() ? data_offset.value() : 0U)
                                 << ") to ivshmem BAR for " << specifier.ToString();
+    return true;
 }
 
 }  // namespace score::mw::com::gateway
