@@ -342,6 +342,7 @@ void SkeletonMemoryManager::RollbackSkeletonTracingTransactions(EventControl& ev
 
 void SkeletonMemoryManager::RemoveSharedMemory()
 {
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
     constexpr auto RemoveMemoryIfExists = [](const std::optional<std::string>& path) -> void {
         if (path.has_value())
         {

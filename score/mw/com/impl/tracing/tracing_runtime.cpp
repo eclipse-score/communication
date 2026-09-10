@@ -135,6 +135,7 @@ analysis::tracing::TracePointType InternalToExternalTracePointType(
     const TracingRuntime::TracePointType& internal_trace_point_type)
 {
     auto visitor = score::cpp::overload(
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const ProxyEventTracePointType& proxy_event_trace_point) -> analysis::tracing::TracePointType {
             if (proxy_event_trace_point == ProxyEventTracePointType::INVALID)
             {
@@ -143,6 +144,7 @@ analysis::tracing::TracePointType InternalToExternalTracePointType(
             }
             return kProxyEventTracePointToTracingTracePointMap.at(proxy_event_trace_point);
         },
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const ProxyFieldTracePointType& proxy_field_trace_point) -> analysis::tracing::TracePointType {
             if (proxy_field_trace_point == ProxyFieldTracePointType::INVALID)
             {
@@ -151,6 +153,7 @@ analysis::tracing::TracePointType InternalToExternalTracePointType(
             }
             return kProxyFieldTracePointToTracingTracePointMap.at(proxy_field_trace_point);
         },
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const SkeletonEventTracePointType& skeleton_event_trace_point) -> analysis::tracing::TracePointType {
             if (skeleton_event_trace_point == SkeletonEventTracePointType::INVALID)
             {
@@ -159,6 +162,7 @@ analysis::tracing::TracePointType InternalToExternalTracePointType(
             }
             return kSkeletonEventTracePointToTracingTracePointMap.at(skeleton_event_trace_point);
         },
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const SkeletonFieldTracePointType& skeleton_field_trace_point) -> analysis::tracing::TracePointType {
             if (skeleton_field_trace_point == SkeletonFieldTracePointType::INVALID)
             {

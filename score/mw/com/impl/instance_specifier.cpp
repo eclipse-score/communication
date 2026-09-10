@@ -42,6 +42,7 @@ bool IsShortNameValid(const std::string_view shortname) noexcept
         return false;
     }
 
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
     auto validate_chars = [](auto it_begin, auto it_end, const bool first_char) -> bool {
         const auto found_invalid_chars = std::find_if_not(it_begin, it_end, [first_char](const auto curent_char) {
             const auto u_ch = static_cast<unsigned char>(curent_char);

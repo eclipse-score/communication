@@ -164,6 +164,7 @@ InstanceIdentifierView::InstanceIdentifierView(const InstanceIdentifier& identif
 auto InstanceIdentifierView::GetServiceInstanceId() const -> std::optional<ServiceInstanceId>
 {
     auto visitor = score::cpp::overload(
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const LolaServiceInstanceDeployment& deployment) -> std::optional<ServiceInstanceId> {
             if (!deployment.instance_id_.has_value())
             {
@@ -171,6 +172,7 @@ auto InstanceIdentifierView::GetServiceInstanceId() const -> std::optional<Servi
             }
             return ServiceInstanceId{*deployment.instance_id_};
         },
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const score::cpp::blank&) noexcept -> std::optional<ServiceInstanceId> {
             return std::optional<ServiceInstanceId>{};
         });

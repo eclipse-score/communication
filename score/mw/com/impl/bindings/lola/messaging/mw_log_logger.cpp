@@ -22,6 +22,7 @@ namespace score::mw::com::impl::lola
 
 score::message_passing::LoggingCallback GetMwLogLogger()
 {
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
     return [](score::message_passing::LogSeverity severity, score::message_passing::LogItems items) -> void {
         using LogStreamFactoryPtr = score::mw::log::LogStream (*)(std::string_view) noexcept;
         constexpr auto kLogLevels = score::cpp::to_underlying(score::message_passing::LogSeverity::kVerbose) + 1U;

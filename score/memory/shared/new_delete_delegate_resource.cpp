@@ -155,6 +155,7 @@ void* NewDeleteDelegateMemoryResource::do_allocate(const std::size_t bytes, std:
     // result in a memory buffer large enough to align start_remaining_allocatable_memory in the worst case. If the
     // pointer is worst-case aligned, then it would require (alignment - 1) bytes of padding.
     auto max_required_padding_result =
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         safe_math::Add(bytes, alignment).and_then([](const auto max_required_padding) noexcept {
             return safe_math::Subtract(max_required_padding, 1U);
         });

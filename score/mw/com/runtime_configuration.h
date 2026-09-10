@@ -62,7 +62,7 @@ class RuntimeConfiguration
      *          path. If the key is not found, a default path is used.
      * \param command_line_arguments The command line arguments.
      */
-    RuntimeConfiguration(cpp::span<safecpp::zstring_view> command_line_arguments);
+    explicit RuntimeConfiguration(cpp::span<safecpp::zstring_view> command_line_arguments);
 
     /**
      * \api

@@ -82,9 +82,11 @@ std::string ToHashStringImpl(const ServiceInstanceId::BindingInformation& bindin
     binding_index_string_stream << std::hex << binding_info_index;
 
     auto visitor = score::cpp::overload(
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const LolaServiceInstanceId& instance_id) noexcept -> std::string_view {
             return instance_id.ToHashString();
         },
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const score::cpp::blank&) noexcept -> std::string_view {
             return "";
         });
@@ -132,6 +134,7 @@ score::json::Object ServiceInstanceId::Serialize() const
         [&json_object](const LolaServiceInstanceId& instance_id) {
             json_object[kBindingInfoKeySerInstID] = instance_id.Serialize();
         },
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const score::cpp::blank&) noexcept {});
     std::visit(visitor, binding_info_);
     return json_object;

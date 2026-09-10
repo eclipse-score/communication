@@ -46,6 +46,7 @@ std::string_view GetEventName(const InstanceIdentifier& identifier, std::string_
             }
             return {};
         },
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const score::cpp::blank&) noexcept -> std::string_view {
             return {};
         });

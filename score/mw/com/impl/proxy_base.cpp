@@ -102,6 +102,7 @@ bool ProxyBase::AreBindingsValid() const noexcept
 {
     const bool is_proxy_binding_valid = proxy_binding_ != nullptr;
 
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
     const bool are_event_bindings_valid = std::all_of(events_.begin(), events_.end(), [](const auto& element) {
         const auto binding_construction_result =
             ProxyEventBaseView{element.second.get().Get()}.GetBindingConstructionResult();
@@ -112,6 +113,7 @@ bool ProxyBase::AreBindingsValid() const noexcept
         }
         return binding_construction_result.has_value();
     });
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
     const bool are_field_bindings_valid = std::all_of(fields_.begin(), fields_.end(), [](const auto& element) {
         const auto event_binding_construction_result =
             ProxyFieldBaseView{element.second.get().Get()}.GetEventBindingConstructionResult();
@@ -140,6 +142,7 @@ bool ProxyBase::AreBindingsValid() const noexcept
         return event_binding_construction_result.has_value() && setter_binding_construction_result.has_value() &&
                getter_binding_construction_result.has_value();
     });
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
     const bool are_method_bindings_valid = std::all_of(methods_.begin(), methods_.end(), [](const auto& element) {
         const auto binding_construction_result =
             ProxyMethodBaseView{element.second.get().Get()}.GetBindingConstructionResult();

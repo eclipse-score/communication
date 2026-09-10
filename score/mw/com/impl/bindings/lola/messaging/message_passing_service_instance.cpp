@@ -240,10 +240,12 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(
     score::message_passing::IServerFactory::ServerConfig server_config{};
     server_ = server_factory.Create(protocol_config, server_config);
 
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
     auto connect_callback = [](score::message_passing::IServerConnection& connection) noexcept -> std::uintptr_t {
         const pid_t client_pid = connection.GetClientIdentity().pid;
         return static_cast<std::uintptr_t>(client_pid);
     };
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
     auto disconnect_callback = [](score::message_passing::IServerConnection& /*connection*/) noexcept {
         // TODO: outdated node id?
         // TODO: update related unit test as well
@@ -1162,6 +1164,7 @@ void MessagePassingServiceInstance::UnregisterEventNotification(
     bool notify_status_change = false;
 
     std::unique_lock<std::shared_mutex> write_lock(event_update_handlers_mutex_);
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
     auto search = event_update_handlers_.find(event_id);
     if (search != event_update_handlers_.end())
     {

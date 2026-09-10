@@ -69,7 +69,7 @@ class SlotDecrementerFixture : public ::testing::Test
     FakeMemoryResource memory_{};
     EventDataControl event_data_control_{kMaxSlots, memory_};
     TransactionLog transaction_log_{kMaxSlots, memory_};
-    ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{event_data_control_, transaction_log_};
+    ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{event_data_control_, TransactionLogLocalView{transaction_log_}};
     ProviderEventDataControlLocalView<> provider_event_data_control_local_{event_data_control_};
 
     std::optional<SlotIndexType> event_slot_index_{};

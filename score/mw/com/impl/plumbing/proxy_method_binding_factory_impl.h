@@ -158,6 +158,7 @@ Result<std::unique_ptr<ProxyMethodBinding>> ProxyMethodBindingFactoryImpl<Return
             return std::make_unique<lola::ProxyMethod>(
                 *lola_proxy, proxy_method_instance_identifier, type_erased_element_info);
         },
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const score::cpp::blank&) noexcept -> LambdaReturnType {
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
         });

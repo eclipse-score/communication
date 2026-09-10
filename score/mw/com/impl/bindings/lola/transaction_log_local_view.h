@@ -45,7 +45,7 @@ class TransactionLogLocalView
     using UnsubscribeCallback =
         score::cpp::callback<void(TransactionLog::MaxSampleCountType subscription_max_sample_count)>;
 
-    TransactionLogLocalView(TransactionLog& transaction_log);
+    explicit TransactionLogLocalView(TransactionLog& transaction_log);
 
     /// \brief Record Subscription / Unsubscription transactions
     ///

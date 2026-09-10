@@ -60,7 +60,7 @@ void InsertProxyTransactionLogWithValidTransactions(
         transaction_log_set.RegisterProxyElement(transaction_log_id, consumer_event_data_control_local).value();
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
-    TransactionLogLocalView transaction_log_local_view = transaction_log_set.GetTransactionLog(transaction_log_index);
+    TransactionLogLocalView transaction_log_local_view{transaction_log_set.GetTransactionLog(transaction_log_index)};
     transaction_log_local_view.SubscribeTransactionBegin(subscription_max_sample_count);
     transaction_log_local_view.SubscribeTransactionCommit();
 
@@ -84,7 +84,7 @@ void InsertSkeletonTransactionLogWithValidTransactions(
         transaction_log_set.RegisterSkeletonTransactionLog(consumer_event_data_control_local);
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
-    TransactionLogLocalView transaction_log_local_view = transaction_log_set.GetTransactionLog(transaction_log_index);
+    TransactionLogLocalView transaction_log_local_view{transaction_log_set.GetTransactionLog(transaction_log_index)};
 
     constexpr std::size_t slot_index{0U};
     transaction_log_local_view.ReferenceTransactionBegin(slot_index);
@@ -114,7 +114,7 @@ void InsertProxyTransactionLogWithInvalidTransactions(
         transaction_log_set.RegisterProxyElement(transaction_log_id, consumer_event_data_control_local).value();
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
-    TransactionLogLocalView transaction_log_local_view = transaction_log_set.GetTransactionLog(transaction_log_index);
+    TransactionLogLocalView transaction_log_local_view{transaction_log_set.GetTransactionLog(transaction_log_index)};
     transaction_log_local_view.SubscribeTransactionBegin(subscription_max_sample_count);
     transaction_log_local_view.SubscribeTransactionCommit();
 
@@ -137,7 +137,7 @@ void InsertSkeletonTransactionLogWithInvalidTransactions(
         transaction_log_set.RegisterSkeletonTransactionLog(consumer_event_data_control_local);
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
-    TransactionLogLocalView transaction_log_local_view = transaction_log_set.GetTransactionLog(transaction_log_index);
+    TransactionLogLocalView transaction_log_local_view{transaction_log_set.GetTransactionLog(transaction_log_index)};
 
     constexpr std::size_t slot_index{0U};
     transaction_log_local_view.ReferenceTransactionBegin(slot_index);
