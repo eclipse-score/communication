@@ -35,24 +35,27 @@ def _wait_for_ssh(target, total_timeout: int = 180, interval: int = 3, stable_su
     """Wait until the VM *stably* serves SSH.
 
     Early-boot sshd is briefly unstable, so require several consecutive successes to
-    avoid the ``pre_tests_phase`` (5 retries) failing in that window.
+    avoid the ``pre_tests_phase`` (5 retries) failing in that window. Reuse one SSH
+    connection for the consecutive checks because this guest can fail to accept a new
+    connection while an existing one is open.
     """
     deadline = time.monotonic() + total_timeout
     last_error = None
-    consecutive = 0
     while time.monotonic() < deadline:
+        consecutive = 0
         try:
             with target.ssh(timeout=10, n_retries=1, retry_interval=1) as ssh:
-                if ssh.execute_command("echo ready") == 0:
+                while consecutive < stable_successes:
+                    return_code = ssh.execute_command("echo ready")
+                    if return_code != 0:
+                        last_error = RuntimeError(f"SSH readiness command failed with exit code {return_code}")
+                        break
                     consecutive += 1
                     if consecutive >= stable_successes:
                         return
                     time.sleep(interval)
-                    continue
-            consecutive = 0
         except Exception as ex:  # pylint: disable=broad-except
             last_error = ex
-            consecutive = 0
         time.sleep(interval)
     raise TimeoutError(f"VM never became stably reachable via SSH within {total_timeout}s: {last_error}")
 
