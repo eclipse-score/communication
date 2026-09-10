@@ -307,6 +307,24 @@ llvm.toolchain(
     llvm_version = "22.1.7",
     stdlib = {"": "stdc++"},
 )
+
+# The default `toolchains_llvm` setup downloads the LLVM distribution through
+# its own generated repository. Use our repository rule instead so Bazel
+# downloads and extracts the known upstream archive directly.
+fast_llvm_repo = use_repo_rule("//:fast_llvm_repo.bzl", "fast_llvm_repo")
+
+# Create `@llvm_toolchain_llvm`, matching the repository name that
+# toolchains_llvm normally generates. Keep this version equal to
+# `llvm.toolchain(llvm_version = ...)`.
+fast_llvm_repo(
+    name = "llvm_toolchain_llvm",
+    llvm_version = "22.1.7",
+)
+
+# Point the existing LLVM toolchain configuration at the replacement
+# repository. This changes only where LLVM is obtained; its public target
+# layout remains compatible with toolchains_llvm's generated repository.
+llvm.toolchain_root(label = "@llvm_toolchain_llvm//:BUILD")
 llvm.sysroot(
     name = "llvm_toolchain",
     label = "@ubuntu24_04_sysroot_amd64//sysroot",
@@ -317,7 +335,10 @@ llvm.sysroot(
     label = "@ubuntu24_04_sysroot_arm64//sysroot",
     targets = ["linux-aarch64"],
 )
-use_repo(llvm, "llvm_toolchain", "llvm_toolchain_llvm")
+
+# `llvm_toolchain` contains the configured compiler toolchain. The custom
+# repository above provides `llvm_toolchain_llvm` under its original name.
+use_repo(llvm, "llvm_toolchain")
 
 bazel_dep(name = "score_toolchains_rust", version = "0.10.0", dev_dependency = True)
 
