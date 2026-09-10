@@ -32,18 +32,6 @@ package "Lola Binding" as lola_binding <<component>> {
     component "ProxyEvent" as lola_proxy_event <<unit>> 
     component "ProxyMethod" as lola_proxy_method <<unit>> 
   }
-
-  package "GenericSkeletonAndServiceElements" as lola_generic_skeleton_and_service_elements <<component>> {
-    component "GenericSkeleton" as lola_generic_skeleton <<unit>>
-    component "GenericSkeletonEvent" as lola_generic_skeleton_event <<unit>>
-    component "GenericSkeletonMethod" as lola_generic_skeleton_method <<unit>>
-  }
-
-  package "GenericProxyAndServiceElements" as lola_generic_proxy_and_service_elements <<component>> {
-    component "GenericProxy" as lola_generic_proxy <<unit>> 
-    component "GenericProxyEvent" as lola_generic_proxy_event <<unit>> 
-    component "GenericProxyMethod" as lola_generic_proxy_method <<unit>> 
-  }
 }
 
 @enduml
