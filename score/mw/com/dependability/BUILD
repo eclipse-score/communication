@@ -24,7 +24,9 @@ dependable_element(
     integrity_level = "B",
     maturity = "development",
     requirements = [
+        "//score/mw/com/dependability/requirements/feature_requirements:feature_requirements_e2e",
         "//score/mw/com/dependability/requirements/feature_requirements:feature_requirements_ipc",
+        "//score/mw/com/dependability/requirements/feature_requirements:feature_requirements_e2e_error_handling",
         "//score/mw/com/dependability/assumed_system:assumed_system_requirements",
     ],
     target_compatible_with = ["@platforms//os:linux"],

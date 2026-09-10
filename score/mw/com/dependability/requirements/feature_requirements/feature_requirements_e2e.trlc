@@ -1,0 +1,52 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+ScoreReq.FeatReq SupportForEndToEndProtection {
+    description = "The communication framework shall support End-to-End (E2E) protection of transmitted data to detect corruption, loss (gap in the received sample sequence ), repetition, and reordering between communication partners of the same or different criticality levels."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.SystemSafeCommunication@1, Communication.InterProcessCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq E2EProtectionForEvents {
+    description = "The communication framework shall support E2E protection for periodically or semi-periodically transmitted events and fields."
+    safety = ScoreReq.Asil.B
+    note = "E2E protection assumes a receiver with an expectation of regular data reception; communication paradigms without such an expectation (e.g. plain signal-based communication) are out of scope for this capability."
+    derived_from = [ Communication.SystemSafeCommunication@1, Communication.SystemSupportForDataDrivenArchitecture@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq E2EProtectionForMethods {
+    description = "The communication framework shall support E2E protection for service method request and response communication, limited to a single dedicated server per protected method (N:1 client-to-server)."
+    safety = ScoreReq.Asil.B
+    note = "Client-specific failure modes (e.g. repetition or insertion originating from one of several clients) are only detectable when a session/client-aware profile variant is used; the plain profile variant provides no a priori knowledge of the requesting client."
+    derived_from = [ Communication.SystemSafeCommunication@1, Communication.SystemSupportForRequestDrivenArchitecture@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq E2EStatusReportingToApplication {
+    description = "The communication framework shall report the outcome of E2E supervision as a communication-level status delivered to the consuming application together with each sample, without prescribing what action the application takes on that status."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.SystemSafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq MixedCriticalityE2ESupervision {
+    description = "The communication framework shall allow communication partners of different criticality levels to independently consume the same E2E-protected event, each evaluating E2E status relevant to its own criticality."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.SystemSafeCommunication@1, Communication.InterProcessCommunication@1 ]
+    version = 1
+}
