@@ -28,13 +28,15 @@ bazel_dep(name = "rules_rust", version = "0.68.1-score")
 # Cannot be dev-dependency due to being required in "load" statements
 bazel_dep(name = "score_qnx_unit_tests", version = "0.2.0")
 bazel_dep(name = "score_baselibs", version = "0.2.12")
-single_version_override(
+git_override(
     module_name = "score_baselibs",
+    commit = "31a1b3926aa9d2d78a8f03c47c3efb6397ebbdfc",
     patch_strip = 1,
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
     # See https://github.com/eclipse-score/bazel_cpp_toolchains/issues/68
     patches = ["//third_party/score_baselibs:restore_qnx8_poll_workaround.patch"],
+    remote = "https://github.com/etas-contrib/score_baselibs.git",
 )
 
 bazel_dep(name = "score_bazel_platforms", version = "1.1.0")
