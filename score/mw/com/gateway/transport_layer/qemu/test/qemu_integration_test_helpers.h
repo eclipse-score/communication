@@ -95,8 +95,7 @@ bool SendNotificationWithRetries(NotifyFn&& notify_update, const char* what, int
         {
             return true;
         }
-        std::fprintf(
-            stderr, "SendNotificationWithRetries: %s attempt %d/%d failed to send\n", what, attempt, attempts);
+        std::fprintf(stderr, "SendNotificationWithRetries: %s attempt %d/%d failed to send\n", what, attempt, attempts);
         if (attempt < attempts)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));

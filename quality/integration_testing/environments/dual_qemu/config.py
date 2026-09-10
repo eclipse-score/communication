@@ -48,7 +48,9 @@ class InterVmNetwork(BaseModel):
     # Optional point-to-point socket NIC between the two VMs for a socket-based control
     # plane. Off by default
     enabled: bool = False
-    host_port: int = Field(default=12345, ge=1, le=65535)
+    # 0 asks the plugin to pick a free host port per session, which keeps concurrent or
+    # back-to-back runs from sharing a link. Set a fixed port only to reproduce a failure.
+    host_port: int = Field(default=0, ge=0, le=65535)
 
 
 class DualQemuConfigModel(BaseModel):
@@ -56,6 +58,10 @@ class DualQemuConfigModel(BaseModel):
 
     ivshmem: IvshmemConfig = Field(default_factory=IvshmemConfig)
     intervm_network: InterVmNetwork = Field(default_factory=InterVmNetwork)
+    # Replace each VM's ``ssh_port`` (and its matching port-forwarding entry) with a free
+    # host port at session start. ``QemuConfigModel.ssh_port`` is mandatory and must be
+    # >= 1, so the JSON still needs a placeholder; it is ignored unless this is false.
+    auto_ssh_ports: bool = True
     vms: list[QemuConfigModel] = Field(min_length=2, max_length=2)
 
 

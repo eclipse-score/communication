@@ -60,7 +60,7 @@ block:
 ```json
 {
     "ivshmem": { "size": "4M" },
-    "intervm_network": { "enabled": false, "host_port": 12345 },
+    "intervm_network": { "enabled": false, "host_port": 0 },
     "vms": [ { "...": "QemuConfigModel for VM-A" },
              { "...": "QemuConfigModel for VM-B" } ]
 }
@@ -70,7 +70,13 @@ block:
 - `ivshmem.mem_path` (optional) — explicit host backing file; when empty a temporary file
   is created for the session and removed on teardown.
 - `intervm_network.enabled` — when `true`, adds a socket NIC where VM-A listens and VM-B
-  connects on `host_port` (for the future socket control plane).
+  connects on `host_port` (for the future socket control plane). Leave `host_port` at `0`
+  so a free port is picked per session; a fixed port lets a lingering QEMU from a previous
+  run steal the link.
+- `auto_ssh_ports` — defaults to `true`, which replaces each VM's `ssh_port` (and its
+  matching `port_forwarding` entry) with a free host port at session start. The values in
+  the JSON are then only placeholders, since `ssh_port` is mandatory and must be >= 1. Set
+  it to `false` to honour the configured ports, e.g. to attach to a VM at a known port.
 - Each VM's `ssh_port` and `port_forwarding` must use **distinct host ports**.
 
 ## Cross-VM lib-memory example
