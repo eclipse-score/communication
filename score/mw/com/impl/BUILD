@@ -1364,6 +1364,7 @@ cc_unit_test(
         ":generic_skeleton",
         ":generic_skeleton_event",
         ":service_discovery_mock",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "//score/mw/com/impl/test:runtime_mock_guard",
