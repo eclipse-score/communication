@@ -15,14 +15,13 @@
 Subclasses ``QemuProcess`` and replaces its internal ``_qemu`` with an
 :class:`IvshmemQemu` instance so the VM is launched with an ``ivshmem-plain`` device.
 
-The ``start()`` method is self-healing: it waits for stable SSH, runs ``pre_tests_phase``,
-and restarts the QEMU process up to ``max_boot_attempts`` times if sshd never comes up.
+The ``start()`` method is self-healing: it waits for stable SSH and restarts the QEMU
+process up to ``max_boot_attempts`` times if sshd never comes up.
 """
 
 import logging
 import time
 
-from score.itf.plugins.qemu.checks import pre_tests_phase
 from score.itf.plugins.qemu.qemu_process import QemuProcess
 from score.itf.plugins.qemu.qemu_target import QemuTarget
 
@@ -88,13 +87,18 @@ class DualQemuProcess(QemuProcess):
             path_to_qemu_image,
             available_ram,
             available_cores,
+            network_adapters=[],
             port_forwarding=port_forwarding,
+            machine=vm_config.qemu_machine,
+            rootfs=None,
+            kernel_cmdline=vm_config.qemu_kernel_cmdline,
         )
         # Replace the base's default Qemu with our ivshmem-capable subclass.
         self._qemu = IvshmemQemu(
             path_to_qemu_image,
             available_ram,
             available_cores,
+            network_adapters=[],
             port_forwarding=port_forwarding,
             ivshmem_path=ivshmem_path,
             ivshmem_size=ivshmem_size,
@@ -114,7 +118,6 @@ class DualQemuProcess(QemuProcess):
             try:
                 self._target = QemuTarget(self, self._vm_config)
                 _wait_for_ssh(self._target, total_timeout=self._boot_timeout)
-                pre_tests_phase(self._target)
                 return self
             except Exception as ex:  # pylint: disable=broad-except
                 last_error = ex
