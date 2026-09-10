@@ -26,7 +26,7 @@ cc_library(
     ],
     deps = [
         "//score/mw/com/impl",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/plumbing:proxy_binding_factory_mock",
         "//score/mw/com/impl/plumbing:proxy_event_binding_factory_mock",
         "//score/mw/com/impl/plumbing:proxy_field_binding_factory_mock",
@@ -48,7 +48,7 @@ cc_library(
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         "//score/mw/com/impl",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
