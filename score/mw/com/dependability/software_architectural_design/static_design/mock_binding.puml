@@ -25,18 +25,6 @@ package "Mock Binding" as mock_binding <<component>> {
     component "ProxyEvent" as mock_binding_proxy_event <<unit>> 
     component "ProxyMethod" as mock_binding_proxy_method <<unit>> 
   }
-
-  package "GenericSkeletonAndServiceElements" as mock_binding_generic_skeleton_and_service_elements <<component>>  {
-    component "GenericSkeleton" as mock_binding_generic_skeleton <<unit>> 
-    component "GenericSkeletonEvent" as mock_binding_generic_skeleton_event <<unit>> 
-    component "GenericSkeletonMethod" as mock_binding_generic_skeleton_method <<unit>> 
-  }
-
-  package "GenericProxyAndServiceElements" as mock_binding_generic_proxy_and_service_elements <<component>>  {
-    component "GenericProxy" as mock_binding_generic_proxy <<unit>> 
-    component "GenericProxyEvent" as mock_binding_generic_proxy_event <<unit>> 
-    component "GenericProxyMethod" as mock_binding_generic_proxy_method <<unit>> 
-  }
 }
 
 @enduml

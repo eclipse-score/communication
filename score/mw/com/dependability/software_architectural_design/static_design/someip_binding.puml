@@ -25,18 +25,6 @@ package "Someip Binding" as someip_binding <<component>> {
     component "ProxyEvent" as someip_proxy_event <<unit>> 
     component "ProxyMethod" as someip_proxy_method <<unit>> 
   }
-
-  package "GenericSkeletonAndServiceElements" as someip_generic_skeleton_and_service_elements <<component>>  {
-    component "GenericSkeleton" as someip_generic_skeleton <<unit>> 
-    component "GenericSkeletonEvent" as someip_generic_skeleton_event <<unit>> 
-    component "GenericSkeletonMethod" as someip_generic_skeleton_method <<unit>> 
-  }
-
-  package "GenericProxyAndServiceElements" as someip_generic_proxy_and_service_elements <<component>>  {
-    component "GenericProxy" as someip_generic_proxy <<unit>> 
-    component "GenericProxyEvent" as someip_generic_proxy_event <<unit>> 
-    component "GenericProxyMethod" as someip_generic_proxy_method <<unit>> 
-  }
 }
 
 @enduml
