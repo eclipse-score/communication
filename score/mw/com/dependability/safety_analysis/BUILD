@@ -13,6 +13,7 @@
 
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
+    "assumptions_of_use",
     "fmea",
 )
 
@@ -31,8 +32,14 @@ filegroup(
 fmea(
     name = "mw_com_fmea",
     arch_design = "//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design",
-    controlmeasures = ["aou.trlc"],
+    controlmeasures = [":assumptions_of_use"],
     failuremodes = ["failure_modes.trlc"],
     root_causes = [":root_causes"],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+assumptions_of_use(
+    name = "assumptions_of_use",
+    srcs = ["aou.trlc"],
+    visibility = ["//visibility:public"],
 )
