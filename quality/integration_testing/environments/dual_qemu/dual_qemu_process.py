@@ -30,20 +30,32 @@ from .ivshmem_qemu import IvshmemQemu
 logger = logging.getLogger(__name__)
 
 
-def _wait_for_ssh(target, total_timeout: int = 180, interval: int = 3, stable_successes: int = 3):
+def _wait_for_ssh(
+    target,
+    total_timeout: int = 180,
+    interval: int = 3,
+    stable_successes: int = 3,
+    poll_interval: float = 0.5,
+):
     """Wait until the VM *stably* serves SSH.
 
     Early-boot sshd is briefly unstable, so require several consecutive successes to
     avoid the ``pre_tests_phase`` (5 retries) failing in that window. Reuse one SSH
     connection for the consecutive checks because this guest can fail to accept a new
     connection while an existing one is open.
+
+    ``poll_interval`` paces retries while waiting for sshd to bind; ``interval`` spaces the
+    consecutive readiness checks once connected. They are separate because a refused connect
+    on loopback returns instantly, so polling fast costs nothing and detects sshd sooner,
+    whereas the stability window only means something if the checks are seconds apart.
     """
     deadline = time.monotonic() + total_timeout
     last_error = None
     while time.monotonic() < deadline:
         consecutive = 0
         try:
-            with target.ssh(timeout=10, n_retries=1, retry_interval=1) as ssh:
+            # score_itf sleeps retry_interval even after its final failed attempt.
+            with target.ssh(timeout=10, n_retries=1, retry_interval=poll_interval) as ssh:
                 while consecutive < stable_successes:
                     return_code = ssh.execute_command("echo ready")
                     if return_code != 0:
@@ -55,7 +67,7 @@ def _wait_for_ssh(target, total_timeout: int = 180, interval: int = 3, stable_su
                     time.sleep(interval)
         except Exception as ex:  # pylint: disable=broad-except
             last_error = ex
-        time.sleep(interval)
+        time.sleep(poll_interval)
     raise TimeoutError(f"VM never became stably reachable via SSH within {total_timeout}s: {last_error}")
 
 
