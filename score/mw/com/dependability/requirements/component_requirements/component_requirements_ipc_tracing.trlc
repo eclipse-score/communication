@@ -26,7 +26,7 @@ section "com" {
                 ScoreReq.CompReq EventLevelConfigSwitchDocumentation {
                     description = '''The documentation of the Event Level Config Switch in the schema definition, shall inform, that setting the {{numberOfIpcTracingSlots}} parameter to a value greater than 0, will enable {{IPC tracing}}. This involves internal allocation of additional slots on top of the user configured {{numberOfSampleSlots}}. In total leading to {{numberOfIpcTracingSlots + numberOfSampleSlots }}allocations.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.FEAT_SupportForTracing@1, Communication.FEAT_EventType@1]
+                    derived_from = [Communication.FEAT_SupportForTracing@1, Communication.FEAT_EventTypeStructure@1]
                     version = 1
                 }
 
