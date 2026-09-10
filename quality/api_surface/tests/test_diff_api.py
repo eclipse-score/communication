@@ -44,6 +44,58 @@ class DiffApiDocsFlagTest(unittest.TestCase):
             current_file.write_text(json.dumps(payload), encoding="utf-8")
             self.assertEqual(diff_api.compare(str(lock_file), str(current_file)), 0)
 
+    def test_compare_reports_undocumented_symbols_without_location(self):
+        payload = {
+            "symbols": [],
+            "undocumented_symbols": [
+                {
+                    "kind": "function",
+                    "name": "foo",
+                    "qualified_name": "ns::foo",
+                    "signature": "foo : void ()",
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            lock_file = Path(tmpdir) / "lock.json"
+            current_file = Path(tmpdir) / "current.json"
+            lock_file.write_text(json.dumps(payload), encoding="utf-8")
+            current_file.write_text(json.dumps(payload), encoding="utf-8")
+            self.assertEqual(diff_api.compare(str(lock_file), str(current_file), check_docs=True), 1)
+
+    def test_format_undocumented_symbols_omits_missing_location(self):
+        report = diff_api._format_undocumented_symbols(
+            {
+                "undocumented_symbols": [
+                    {
+                        "kind": "function",
+                        "name": "foo",
+                        "qualified_name": "ns::foo",
+                        "signature": "foo : void ()",
+                    }
+                ]
+            }
+        )
+        self.assertIn("ns::foo (function)", report)
+        self.assertNotIn("    at ", report)
+
+    def test_format_undocumented_symbols_includes_location_when_present(self):
+        report = diff_api._format_undocumented_symbols(
+            {
+                "undocumented_symbols": [
+                    {
+                        "kind": "function",
+                        "name": "foo",
+                        "qualified_name": "ns::foo",
+                        "signature": "foo : void ()",
+                        "file": "ns/foo.h",
+                        "line": 42,
+                    }
+                ]
+            }
+        )
+        self.assertIn("    at ns/foo.h:42", report)
+
 
 if __name__ == "__main__":
     unittest.main()
