@@ -98,7 +98,7 @@ cc_unit_test(
         "//score/mw/com/impl:service_discovery_mock",
         "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl:subscription_state",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/configuration:lola_service_instance_deployment",
         "//score/mw/com/impl/plumbing:skeleton_binding_factory_mock",
         "//score/mw/com/impl/test:binding_factory_resources",

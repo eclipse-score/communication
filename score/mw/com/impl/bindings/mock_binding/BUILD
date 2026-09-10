@@ -16,7 +16,7 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
-    name = "mock_binding",
+    name = "mock_binding_lib",
     testonly = True,
     srcs = [
         "generic_proxy_event.cpp",
