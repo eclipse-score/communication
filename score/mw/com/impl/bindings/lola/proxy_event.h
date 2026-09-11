@@ -115,6 +115,11 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
     {
         return proxy_event_common_.UnsetSubscriptionStateChangeHandler();
     }
+    void SetSubscriptionStateChangeTracingCallback(
+        score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept override
+    {
+        return proxy_event_common_.SetSubscriptionStateChangeTracingCallback(std::move(callback));
+    }
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override
     {
         return proxy_event_common_.GetMaxSampleCount();
