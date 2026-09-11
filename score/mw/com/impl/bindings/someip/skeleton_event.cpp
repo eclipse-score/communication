@@ -39,7 +39,7 @@ SkeletonEvent::SkeletonEvent(Skeleton& parent,
       event_data_storage_{nullptr},
       event_sample_size_info_{size_info},
       event_properties_{properties},
-      slot_in_use_{},
+      slot_allocation_control_{},
       is_offered_{false},
       tracing_data_{skeleton_event_tracing_data},
       receive_handler_registration_changed_callback_{}
@@ -85,7 +85,7 @@ Result<impl::SampleAllocateePtr<void>> SkeletonEvent::Allocate(SampleAllocateeGu
         return MakeUnexpected(ComErrc::kNotOffered);
     }
 
-    const auto slot_index = AllocateSlot();
+    const auto slot_index = slot_allocation_control_.AllocateSlot();
     if (!slot_index.has_value())
     {
         if (!event_properties_.enforce_max_samples)
@@ -99,7 +99,9 @@ Result<impl::SampleAllocateePtr<void>> SkeletonEvent::Allocate(SampleAllocateeGu
 
     return MakeSampleAllocateePtr(
         SampleAllocateePtr(
-            event_data_storage_->GetTypeErasedDataSlot(*slot_index, event_sample_size_info_.Size()), *this, *slot_index),
+            event_data_storage_->GetTypeErasedDataSlot(*slot_index, event_sample_size_info_.Size()),
+            slot_allocation_control_,
+            *slot_index),
         std::move(guard));
 }
 
@@ -126,13 +128,13 @@ Result<void> SkeletonEvent::PrepareOffer(
                                                       initialize_sample_callback);
     event_data_storage_ = &registration_result.event_data_storage;
 
-    slot_in_use_.assign(total_number_of_slots, false);
+    slot_allocation_control_.Reset(total_number_of_slots);
 
     const auto offer_result = parent_.GetTransport().OfferEvent(element_fq_id_);
     if (!offer_result.has_value())
     {
         event_data_storage_ = nullptr;
-        slot_in_use_.clear();
+        slot_allocation_control_.Clear();
         return offer_result;
     }
 
@@ -153,7 +155,7 @@ void SkeletonEvent::PrepareStopOffer() noexcept
     // re-initializing slots which a consumer of the previous offering could still be reading. This mirrors what
     // lola::Skeleton does with a re-opened shared-memory region.
     event_data_storage_ = nullptr;
-    slot_in_use_.clear();
+    slot_allocation_control_.Clear();
 }
 
 void SkeletonEvent::SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept
@@ -185,28 +187,6 @@ Result<void> SkeletonEvent::UnsetReceiveHandlerRegistrationChangedHandler() noex
 {
     receive_handler_registration_changed_callback_.reset();
     return {};
-}
-
-void SkeletonEvent::DiscardSlot(const SlotIndexType slot_index) noexcept
-{
-    if (static_cast<std::size_t>(slot_index) >= slot_in_use_.size())
-    {
-        return;
-    }
-    slot_in_use_[slot_index] = false;
-}
-
-std::optional<SlotIndexType> SkeletonEvent::AllocateSlot() noexcept
-{
-    for (std::size_t slot_index = 0U; slot_index < slot_in_use_.size(); ++slot_index)
-    {
-        if (!slot_in_use_[slot_index])
-        {
-            slot_in_use_[slot_index] = true;
-            return static_cast<SlotIndexType>(slot_index);
-        }
-    }
-    return std::nullopt;
 }
 
 }  // namespace score::mw::com::impl::someip

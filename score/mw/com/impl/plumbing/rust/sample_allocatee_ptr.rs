@@ -64,7 +64,7 @@ struct LolaSampleAllocateePtrBinding<T> {
 struct SomeIpSampleAllocateePtrBinding<T> {
     _managed_object: *mut T,
     _event_slot_index: SlotIndexType,
-    _owning_event: *mut core::ffi::c_void,
+    _slot_allocation_control: *mut core::ffi::c_void,
 }
 
 #[repr(C)]
