@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#include "score/mw/com/test/check_values_created_from_config/check_values_created_from_config_application.h"
+#include "score/mw/com/impl/test/check_values_created_from_config/check_values_created_from_config_application.h"
 
 #include "score/mw/com/com_error_domain.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"

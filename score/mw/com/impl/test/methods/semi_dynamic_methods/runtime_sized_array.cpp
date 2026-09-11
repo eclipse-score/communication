@@ -10,4 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/test/methods/semi_dynamic_methods/runtime_sized_array.h"
+#include "score/mw/com/impl/test/methods/semi_dynamic_methods/runtime_sized_array.h"

@@ -57,7 +57,7 @@ class EventSenderReceiver
                                   const score::cpp::stop_token& stop_token);
 
     template <typename ProxyType = score::mw::com::test::BigDataProxy,
-              typename ProxyEventType = score::mw::com::impl::ProxyEvent<MapApiLanesStamped>>
+              typename ProxyEventType = std::decay_t<decltype(std::declval<ProxyType>().map_api_lanes_stamped_)>>
     int RunAsProxy(const score::mw::com::InstanceSpecifier& instance_specifier,
                    const std::optional<std::chrono::milliseconds> cycle_time,
                    const std::size_t num_cycles,

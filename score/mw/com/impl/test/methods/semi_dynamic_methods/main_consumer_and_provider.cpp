@@ -12,10 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/runtime.h"
 
+#include "score/mw/com/impl/test/methods/semi_dynamic_methods/consumer.h"
+#include "score/mw/com/impl/test/methods/semi_dynamic_methods/provider.h"
 #include "score/mw/com/test/common_test_resources/assert_handler.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
-#include "score/mw/com/test/methods/semi_dynamic_methods/consumer.h"
-#include "score/mw/com/test/methods/semi_dynamic_methods/provider.h"
 #include "score/string_manipulation/arguments/arguments.h"
 
 #include <cstdlib>

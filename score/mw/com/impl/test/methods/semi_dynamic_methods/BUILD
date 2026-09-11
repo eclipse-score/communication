@@ -86,7 +86,7 @@ pkg_application(
         "config/logging.json",
     ],
     visibility = [
-        "//score/mw/com/test/methods/semi_dynamic_methods:__subpackages__",
+        "//score/mw/com/impl/test/methods/semi_dynamic_methods:__subpackages__",
     ],
 )
 
@@ -147,7 +147,7 @@ pkg_application(
         "config/logging.json",
     ],
     visibility = [
-        "//score/mw/com/test/methods/semi_dynamic_methods:__subpackages__",
+        "//score/mw/com/impl/test/methods/semi_dynamic_methods:__subpackages__",
     ],
 )
 
@@ -160,7 +160,7 @@ pkg_application(
         "config/logging.json",
     ],
     visibility = [
-        "//score/mw/com/test/methods/semi_dynamic_methods:__subpackages__",
+        "//score/mw/com/impl/test/methods/semi_dynamic_methods:__subpackages__",
     ],
 )
 

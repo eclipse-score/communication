@@ -10,4 +10,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/test/methods/semi_dynamic_methods/semi_dynamic_method_datatype.h"
+#include "score/mw/com/impl/test/methods/semi_dynamic_methods/consumer.h"
+#include "score/mw/com/runtime.h"
+#include "score/mw/com/test/common_test_resources/assert_handler.h"
+#include "score/string_manipulation/arguments/arguments.h"
+
+int main(int argc, const char** argv)
+{
+    score::mw::com::test::SetupAssertHandler();
+    score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
+    score::mw::com::test::run_consumer();
+    return EXIT_SUCCESS;
+}

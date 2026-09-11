@@ -229,6 +229,9 @@ class Skeleton final : public SkeletonBinding
         const uid_t proxy_uid,
         const pid_t proxy_pid,
         const QualityType asil_level);
+    /// \brief Will unsubscribe each of the provided ProxyMethods from their corresponding SkeletonMethod.
+    ///
+    /// \pre All provided method_ids were successfully subscribed via SubscribeMethods.
     void UnsubscribeMethods(const std::vector<UniqueMethodIdentifier>& method_ids,
                             const ProxyInstanceIdentifier& proxy_instance_identifier);
 

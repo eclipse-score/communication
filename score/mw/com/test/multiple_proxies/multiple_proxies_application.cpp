@@ -73,17 +73,14 @@ int main(int argc, const char** argv)
             }
             const auto& instance_specifier = instance_specifier_result.value();
 
-            auto future_return_value =
-                std::async(std::launch::async,
-                           &score::mw::com::test::EventSenderReceiver::RunAsProxy<
-                               score::mw::com::test::BigDataProxy,
-                               score::mw::com::impl::ProxyEvent<score::mw::com::test::MapApiLanesStamped>>,
-                           &event_sender_receiver,
-                           instance_specifier,
-                           cycle_time,
-                           num_cycles,
-                           std::cref(stop_token),
-                           false);
+            auto future_return_value = std::async(std::launch::async,
+                                                  &score::mw::com::test::EventSenderReceiver::RunAsProxy<>,
+                                                  &event_sender_receiver,
+                                                  instance_specifier,
+                                                  cycle_time,
+                                                  num_cycles,
+                                                  std::cref(stop_token),
+                                                  false);
             future_return_values.push_back(std::move(future_return_value));
         }
 
