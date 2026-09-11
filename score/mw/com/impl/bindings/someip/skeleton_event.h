@@ -15,9 +15,9 @@
 
 #include "score/mw/com/impl/bindings/someip/element_fq_id.h"
 #include "score/mw/com/impl/bindings/someip/event_data_storage.h"
-#include "score/mw/com/impl/bindings/someip/i_slot_owner.h"
 #include "score/mw/com/impl/bindings/someip/skeleton.h"
 #include "score/mw/com/impl/bindings/someip/skeleton_event_properties.h"
+#include "score/mw/com/impl/bindings/someip/slot_allocation_control.h"
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/initialize_sample_callback.h"
@@ -32,7 +32,6 @@
 #include <cstddef>
 #include <optional>
 #include <string_view>
-#include <vector>
 
 namespace score::mw::com::impl::someip
 {
@@ -48,7 +47,7 @@ namespace score::mw::com::impl::someip
 ///
 /// All operations on this class are _not_ thread-safe, in a manner that they shall not be invoked in parallel by
 /// different threads.
-class SkeletonEvent final : public SkeletonEventBinding, public ISlotOwner
+class SkeletonEvent final : public SkeletonEventBinding
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
     // Design decision: The "*Attorney" class is a helper, which sets the internal state of this class accessing
@@ -111,15 +110,7 @@ class SkeletonEvent final : public SkeletonEventBinding, public ISlotOwner
 
     Result<void> UnsetReceiveHandlerRegistrationChangedHandler() noexcept override;
 
-    /// \brief Returns a slot which was handed out by Allocate() but never sent.
-    /// \details Called by someip::SampleAllocateePtr when it is destroyed without a preceding Send().
-    void DiscardSlot(SlotIndexType slot_index) noexcept override;
-
   private:
-    /// \brief Claims a free slot.
-    /// \return The index of the claimed slot, or an empty optional if all slots are currently in use.
-    std::optional<SlotIndexType> AllocateSlot() noexcept;
-
     Skeleton& parent_;
     std::string_view event_name_;
     ElementFqId element_fq_id_;
@@ -127,11 +118,10 @@ class SkeletonEvent final : public SkeletonEventBinding, public ISlotOwner
     memory::DataTypeSizeInfo event_sample_size_info_;
     SkeletonEventProperties event_properties_;
 
-    /// \brief Per slot "currently handed out to the user" flag.
-    /// \details This is the SOME/IP counterpart of LoLa's EventDataControl. It can be this much simpler because the
-    ///          slots never leave the process: there is no cross-process reference counting and no partial-restart
-    ///          rollback to perform.
-    std::vector<bool> slot_in_use_;
+    /// \brief Tracks which slots are currently handed out to the user.
+    /// \details Owned here and referred to by every SampleAllocateePtr this event hands out, mirroring how
+    ///          lola::SkeletonEvent owns its EventDataControlComposite.
+    SlotAllocationControl slot_allocation_control_;
 
     bool is_offered_;
     impl::tracing::SkeletonEventTracingData tracing_data_;
