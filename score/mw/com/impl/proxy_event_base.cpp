@@ -91,13 +91,18 @@ Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count)
     if (current_state == SubscriptionState::kNotSubscribed)
     {
         tracker_->Reset(max_sample_count);
+        // Set up tracing callbacks before Subscribe() so first state transition is captured.
+        // This only needs to happen once since SubscriptionStateMachine persists across cycles.
+        if (!subscription_state_change_tracing_setup_done_)
+        {
+            tracing::SetupSubscriptionStateChangeTracing(tracing_data_, *binding_base_);
+            subscription_state_change_tracing_setup_done_ = true;
+        }
         const auto subscribe_result = binding_base_->Subscribe(max_sample_count);
         if (!subscribe_result.has_value())
         {
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
-        tracing::SetupSubscriptionStateChangeTracing(tracing_data_, *binding_base_);
-        tracing::SetupSubscriptionStateChangeHandlerTracing(tracing_data_, *binding_base_);
     }
     else if ((current_state == SubscriptionState::kSubscribed) ||
              (current_state == SubscriptionState::kSubscriptionPending))
@@ -157,9 +162,15 @@ Result<void> ProxyEventBase::SetSubscriptionStateChangeHandler(SubscriptionState
 {
     if (proxy_event_base_mock_ != nullptr)
     {
-        tracing::TraceSetSubscriptionStateChangeHandler(tracing_data_, *binding_base_);
-        return binding_base_->SetSubscriptionStateChangeHandler(std::move(handler));
+        return proxy_event_base_mock_->SetSubscriptionStateChangeHandler(std::move(handler));
     }
+
+    tracing::TraceSetSubscriptionStateChangeHandler(tracing_data_, *binding_base_);
+
+    // Set up handler tracing callback to trace handler invocations.
+    // This associates handler tracing with the lifecycle of SetSubscriptionStateChangeHandler.
+    tracing::SetupSubscriptionStateChangeHandlerTracing(tracing_data_, *binding_base_);
+
     return binding_base_->SetSubscriptionStateChangeHandler(std::move(handler));
 }
 
@@ -167,8 +178,11 @@ Result<void> ProxyEventBase::UnsetSubscriptionStateChangeHandler() noexcept
 {
     if (proxy_event_base_mock_ != nullptr)
     {
-        tracing::TraceUnsetSubscriptionStateChangeHandler(tracing_data_, *binding_base_);
+        return proxy_event_base_mock_->UnsetSubscriptionStateChangeHandler();
     }
+
+    tracing::TraceUnsetSubscriptionStateChangeHandler(tracing_data_, *binding_base_);
+
     return binding_base_->UnsetSubscriptionStateChangeHandler();
 }
 
