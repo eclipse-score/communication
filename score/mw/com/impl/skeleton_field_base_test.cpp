@@ -58,15 +58,16 @@ class MyDummyField : public SkeletonFieldBase
         : SkeletonFieldBase{
               kFieldName,
               std::make_unique<SkeletonEventBase>(kFieldName,
-                                                  std::make_unique<StrictMock<mock_binding::SkeletonEventBase>>())}
+                                                  std::nullopt,
+                                                  std::make_unique<StrictMock<mock_binding::SkeletonEvent>>())}
     {
     }
 
-    StrictMock<mock_binding::SkeletonEventBase>* GetMockEventBinding() noexcept
+    StrictMock<mock_binding::SkeletonEvent>* GetMockEventBinding() noexcept
     {
         auto* const skeleton_field_base_binding = SkeletonFieldBaseView{*this}.GetEventBinding();
         auto* const mock_event_binding =
-            dynamic_cast<StrictMock<mock_binding::SkeletonEventBase>*>(skeleton_field_base_binding);
+            dynamic_cast<StrictMock<mock_binding::SkeletonEvent>*>(skeleton_field_base_binding);
         return mock_event_binding;
     }
 
@@ -121,7 +122,7 @@ class SkeletonFieldBaseFixture : public ::testing::Test
     }
 
     std::unique_ptr<MyDummyField> skeleton_field_{nullptr};
-    StrictMock<mock_binding::SkeletonEventBase>* mock_event_binding_{nullptr};
+    StrictMock<mock_binding::SkeletonEvent>* mock_event_binding_{nullptr};
 };
 
 TEST_F(SkeletonFieldBaseFixture, PrepareOfferDispatchesToBinding)
@@ -130,7 +131,7 @@ TEST_F(SkeletonFieldBaseFixture, PrepareOfferDispatchesToBinding)
     CreateSkeletonField();
 
     // Expecting that PrepareOffer() is called on the binding
-    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(*mock_event_binding_, PrepareOffer(_)).WillOnce(Return(Result<void>{}));
 
     // When offering the event
     const auto result = skeleton_field_->PrepareOffer();
@@ -145,7 +146,7 @@ TEST_F(SkeletonFieldBaseFixture, PrepareStopOfferDispatchesToBinding)
     CreateSkeletonField();
 
     // Expecting that PrepareOffer() is called on the binding
-    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(*mock_event_binding_, PrepareOffer(_)).WillOnce(Return(Result<void>{}));
 
     // and expecting that PrepareStopOffer() is called on the binding
     EXPECT_CALL(*mock_event_binding_, PrepareStopOffer());
@@ -164,7 +165,7 @@ TEST_F(SkeletonFieldBaseFixture, PrepareOfferCallsInitialUpdateCallback)
     CreateSkeletonField();
 
     // Expecting that PrepareOffer() is called on the binding
-    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(*mock_event_binding_, PrepareOffer(_)).WillOnce(Return(Result<void>{}));
 
     // When offering the event
     EXPECT_FALSE(skeleton_field_->was_deferred_update_called_);
@@ -183,7 +184,7 @@ TEST_F(SkeletonFieldBaseFixture, PrepareOfferPropagatesErrorFromBinding)
     CreateSkeletonField();
 
     // When PrepareOffer() is called on the binding and returns an error
-    EXPECT_CALL(*mock_event_binding_, PrepareOffer())
+    EXPECT_CALL(*mock_event_binding_, PrepareOffer(_))
         .WillOnce(Return(score::MakeUnexpected(score::mw::com::impl::ComErrc::kInvalidBindingInformation)));
 
     // Expecting that when offering the event
@@ -203,7 +204,7 @@ TEST_F(SkeletonFieldBaseFixture, CallingPrepareOfferBeforeSettingInitialValueUpd
     skeleton_field_->is_initial_value_saved_ = false;
 
     // Expecting that PrepareOffer() will not be called on the binding
-    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).Times(0);
+    EXPECT_CALL(*mock_event_binding_, PrepareOffer(_)).Times(0);
 
     // When offering the event
     const auto result = skeleton_field_->PrepareOffer();
@@ -232,11 +233,11 @@ TEST(SkeletonFieldBaseTest, PrepareOfferPropagatesErrorFromInitialValueUpdateCal
     // Given a constructed SkeletonField with a valid mock binding which has a DoDeferredUpdate function which will
     // return an error
     MyDummyFieldFailingDeferredUpdate skeleton_field;
-    StrictMock<mock_binding::SkeletonEventBase>* mock_event_binding{skeleton_field.GetMockEventBinding()};
+    StrictMock<mock_binding::SkeletonEvent>* mock_event_binding{skeleton_field.GetMockEventBinding()};
     ASSERT_NE(mock_event_binding, nullptr);
 
     // Expecting that PrepareOffer() is called on the binding
-    EXPECT_CALL(*mock_event_binding, PrepareOffer()).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(*mock_event_binding, PrepareOffer(_)).WillOnce(Return(Result<void>{}));
 
     // When offering the event
     const auto result = skeleton_field.PrepareOffer();

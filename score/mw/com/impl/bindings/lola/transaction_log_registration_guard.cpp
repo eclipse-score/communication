@@ -59,8 +59,8 @@ TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(
       ///
       /// Skeleton side:
       ///   This function is called when tracing is enabled by TransactionLogSet::RegisterSkeletonTransactionLog which
-      ///   is called during SkeletonEventCommon::PrepareOfferCommon and destroyed in
-      ///   SkeletonEventCommon::PrepareStopOfferCommon.
+      ///   is called during SkeletonEvent::PrepareOfferCommon and destroyed in
+      ///   SkeletonEvent::PrepareStopOfferCommon.
       ///
       ///   The TransactionLogSet resides in shared memory and is created during Skeleton::PrepareOffer and destroyed
       ///   during Skeleton::PrepareStopOffer. Skeleton::PrepareOffer is always called before
@@ -68,8 +68,8 @@ TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(
       ///   SkeletonEvent::PrepareStopOffer. Therefore, the TransactionLogSet will always be destroyed after the
       ///   TransactionLogRegistrationGuard is destroyed.
       ///
-      ///   The ConsumerEventDataControlLocalView is created during Skeleton::Register by SkeletonEventCommon. The
-      ///   ConsumerEventDataControlLocalView is owned by the SkeletonEventCommon and destroyed during
+      ///   The ConsumerEventDataControlLocalView is created during Skeleton::Register by SkeletonEvent. The
+      ///   ConsumerEventDataControlLocalView is owned by the SkeletonEvent and destroyed during
       ///   PrepareStopOfferCommon after destroying this guard. Therefore, TransactionLogRegistrationGuard will always
       ///   be destroyed before the ConsumerEventDataControlLocalView is destroyed.
       unregister_on_destruction_operation_{

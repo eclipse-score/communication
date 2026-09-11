@@ -28,7 +28,7 @@
 namespace score::mw::com::impl
 {
 
-class SkeletonEventBindingBase;
+class SkeletonEventBinding;
 
 /**
  * \brief The SkeletonBinding abstracts the interface that _every_ binding needs to provide. It will be used by a
@@ -37,7 +37,7 @@ class SkeletonEventBindingBase;
 class SkeletonBinding
 {
   public:
-    using SkeletonEventBindings = std::map<std::string_view, std::reference_wrapper<SkeletonEventBindingBase>>;
+    using SkeletonEventBindings = std::map<std::string_view, std::reference_wrapper<SkeletonEventBinding>>;
 
     /// \brief callback type for registering shared-memory objects with tracing
     /// \details Needs only get used/called by bindings, which use shared-memory as their underlying communication/

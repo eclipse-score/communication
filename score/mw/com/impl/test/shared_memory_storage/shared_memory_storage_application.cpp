@@ -33,34 +33,31 @@
 namespace score::mw::com::impl::lola
 {
 // The Attorney uses the friend declaration to access private SkeletonEvent members
-template <typename SampleType>
 class SkeletonEventAttorney
 {
   public:
-    static ElementFqId GetElementFQId(const SkeletonEvent<SampleType>& event) noexcept
+    static ElementFqId GetElementFQId(const SkeletonEvent& event) noexcept
     {
         // Access the private skeleton_event_common_ and call its public GetElementFQId()
-        return event.skeleton_event_common_.GetElementFQId();
+        return event.element_fq_id_;
     }
 };
 }  // namespace score::mw::com::impl::lola
 
-// Overload for SkeletonEvent (uses Attorney to bypass private access)
-template <typename SampleType>
-score::mw::com::impl::lola::ElementFqId ExtractId(const score::mw::com::impl::lola::SkeletonEvent<SampleType>* binding)
+namespace
 {
-    return score::mw::com::impl::lola::SkeletonEventAttorney<SampleType>::GetElementFQId(*binding);
+// Overload for SkeletonEvent (uses Attorney to bypass private access)
+score::mw::com::impl::lola::ElementFqId ExtractId(const score::mw::com::impl::lola::SkeletonEvent* binding)
+{
+    return score::mw::com::impl::lola::SkeletonEventAttorney::GetElementFQId(*binding);
 }
 
 // Overload for ProxyEvent (method is still public)
-template <typename BindingType>
-score::mw::com::impl::lola::ElementFqId ExtractId(const BindingType* binding)
+template <typename SampleType>
+score::mw::com::impl::lola::ElementFqId ExtractId(const score::mw::com::impl::lola::ProxyEvent<SampleType>* binding)
 {
     return binding->GetElementFQId();
 }
-
-namespace
-{
 
 using BigDataServiceElementData = score::mw::com::test::BigDataServiceElementData;
 using MapApiLanesStamped = score::mw::com::test::MapApiLanesStamped;
@@ -216,8 +213,7 @@ int main(int argc, const char** argv)
         // ********************************************************************************
         const auto map_api_lanes_element_fq_id_result =
             GetElementFqId<score::mw::com::impl::SkeletonEventView<MapApiLanesStamped>,
-                           score::mw::com::impl::lola::SkeletonEvent<MapApiLanesStamped>>(
-                bigdata_skeleton.map_api_lanes_stamped_);
+                           score::mw::com::impl::lola::SkeletonEvent>(bigdata_skeleton.map_api_lanes_stamped_);
         if (!(map_api_lanes_element_fq_id_result.has_value()))
         {
             std::cerr << "Skeleton: Could not get map_api_lanes ElementFqId, bailing\n";
@@ -225,8 +221,7 @@ int main(int argc, const char** argv)
         }
         const auto dummy_data_element_fq_id_result =
             GetElementFqId<score::mw::com::impl::SkeletonEventView<DummyDataStamped>,
-                           score::mw::com::impl::lola::SkeletonEvent<DummyDataStamped>>(
-                bigdata_skeleton.dummy_data_stamped_);
+                           score::mw::com::impl::lola::SkeletonEvent>(bigdata_skeleton.dummy_data_stamped_);
         if (!(map_api_lanes_element_fq_id_result.has_value()))
         {
             std::cerr << "Skeleton: Could not get dummy_data ElementFqId, bailing\n";

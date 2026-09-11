@@ -86,6 +86,7 @@ class GenericProxyEvent final : public GenericProxyEventBinding
 
     ProxyEventCommon proxy_event_common_;
     const EventMetaInfo& meta_info_;
+    const EventDataStorage& event_data_storage_;
 };
 
 }  // namespace score::mw::com::impl::lola

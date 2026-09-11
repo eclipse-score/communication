@@ -22,6 +22,7 @@
 #include "score/result/result.h"
 
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <utility>
 
@@ -38,10 +39,13 @@ class SkeletonEventBase : public EnableReferenceToMoveableFromThis<SkeletonEvent
     friend SkeletonEventBaseView;
 
   public:
-    SkeletonEventBase(const std::string_view event_name, std::unique_ptr<SkeletonEventBindingBase> binding)
+    SkeletonEventBase(const std::string_view event_name,
+                      std::optional<InitializeSampleCallback> initialize_sample_callback,
+                      std::unique_ptr<SkeletonEventBinding> binding)
         : EnableReferenceToMoveableFromThis<SkeletonEventBase>(),
           binding_{std::move(binding)},
           event_name_{event_name},
+          initialize_sample_callback_{std::move(initialize_sample_callback)},
           tracing_data_{},
           service_offered_flag_{},
           sample_allocatee_tracker_{std::make_unique<SampleAllocateeTracker>()}
@@ -58,7 +62,7 @@ class SkeletonEventBase : public EnableReferenceToMoveableFromThis<SkeletonEvent
     /// Performs binding independent functionality and then dispatches to the binding
     score::Result<void> PrepareOffer() noexcept
     {
-        const auto result = binding_->PrepareOffer();
+        const auto result = binding_->PrepareOffer(initialize_sample_callback_);
         if (result.has_value())
         {
             service_offered_flag_.Set();
@@ -85,9 +89,11 @@ class SkeletonEventBase : public EnableReferenceToMoveableFromThis<SkeletonEvent
     // be private.". We need these data elements to exchange this information between the SkeletonEventBase and the
     // SkeletonEvent.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    std::unique_ptr<SkeletonEventBindingBase> binding_;
+    std::unique_ptr<SkeletonEventBinding> binding_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::string_view event_name_;
+    // coverity[autosar_cpp14_m11_0_1_violation]
+    std::optional<InitializeSampleCallback> initialize_sample_callback_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     tracing::SkeletonEventTracingData tracing_data_;
     // coverity[autosar_cpp14_m11_0_1_violation]
@@ -108,7 +114,7 @@ class SkeletonEventBaseView
     {
     }
 
-    SkeletonEventBindingBase* GetBinding()
+    SkeletonEventBinding* GetBinding()
     {
         return skeleton_event_base_.binding_.get();
     }

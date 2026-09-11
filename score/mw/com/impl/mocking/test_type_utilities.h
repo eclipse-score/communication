@@ -39,10 +39,32 @@ HandleType MakeFakeHandle(const std::uint16_t unique_identifier);
 
 void ResetInstanceIdentifierConfiguration();
 
+/// \brief Helper to create a SampleAllocateePtr with a mock_binding::SampleAllocateePtr as its internal variant.
+/// \details In this overload a raw-pointer to a SampleType is passed in, which is non-owning and intended for
+/// stack-allocated fakes/allocation buffers. The returned SampleAllocateePtr will not take ownership of the pointer.
+/// The deleter won't try to delete the given pointer!
+/// \note From the context one could expect this method being named MakeMockSampleAllocateePtr, but the internal pointer
+/// of type mock_binding::SampleAllocateePtr being created is no real mock in the sense of gmock. It is just a simple
+/// alias to a std::unique_ptr, thus "MakeFakeSampleAllocateePtr" is a more appropriate name.
+template <typename SampleType>
+SampleAllocateePtr<SampleType> MakeFakeSampleAllocateePtr(SampleType* fake_sample_allocatee_ptr)
+{
+    return impl::MakeSampleAllocateePtr(
+        mock_binding::SampleAllocateePtr{fake_sample_allocatee_ptr, [](void*) noexcept {}});
+}
+
+/// \brief Overload taking ownership of fake_sample_allocatee_ptr, deleting it once the last reference is released.
+///
+/// Unlike the raw-pointer overload above (which is non-owning and intended for stack-allocated fakes), this overload
+/// is used when the caller wants to transfer ownership of a heap-allocated fake sample to the returned
+/// SampleAllocateePtr.
 template <typename SampleType>
 SampleAllocateePtr<SampleType> MakeFakeSampleAllocateePtr(std::unique_ptr<SampleType> fake_sample_allocatee_ptr)
 {
-    return impl::MakeSampleAllocateePtr(std::move(fake_sample_allocatee_ptr));
+    return impl::MakeSampleAllocateePtr(
+        mock_binding::SampleAllocateePtr{fake_sample_allocatee_ptr.release(), [](void* ptr) noexcept {
+                                             delete static_cast<SampleType*>(ptr);
+                                         }});
 }
 
 template <typename SampleType>
