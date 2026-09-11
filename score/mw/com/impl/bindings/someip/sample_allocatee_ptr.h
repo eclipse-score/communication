@@ -14,7 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SAMPLE_ALLOCATEE_PTR_H
 
 #include "score/mw/com/impl/bindings/someip/event_data_storage.h"
-#include "score/mw/com/impl/bindings/someip/i_slot_owner.h"
+#include "score/mw/com/impl/bindings/someip/slot_allocation_control.h"
 
 #include <cstddef>
 #include <limits>
@@ -28,7 +28,9 @@ namespace score::mw::com::impl::someip
 /// \details Mirrors lola::SampleAllocateePtr. The difference is what has to be released when the pointer is destroyed
 ///          without a preceding Send(): LoLa has to discard the slot in the shared-memory EventDataControl so that
 ///          consumers of other processes can reuse it, whereas the SOME/IP binding only has to return the slot to its
-///          process-local owning SkeletonEvent.
+///          process-local SlotAllocationControl of the owning SkeletonEvent. This mirrors LoLa, where
+///          SampleAllocateePtr refers to the EventDataControlComposite owned by lola::SkeletonEvent rather than to
+///          the SkeletonEvent itself.
 class SampleAllocateePtr
 {
     // Friends to the View wrappers; used to access the managed object and the owning event.
@@ -50,9 +52,11 @@ class SampleAllocateePtr
 
     /// \brief ctor creating a valid SampleAllocateePtr from its members.
     /// \param ptr pointer to the managed (type-erased) slot
-    /// \param owning_event entity which handed out the slot and which takes it back on destruction
+    /// \param slot_allocation_control control which handed out the slot and which takes it back on destruction
     /// \param slot_index index of the slot within the event's EventDataStorage
-    SampleAllocateePtr(pointer ptr, ISlotOwner& owning_event, const SlotIndexType slot_index) noexcept;
+    SampleAllocateePtr(pointer ptr,
+                       SlotAllocationControl& slot_allocation_control,
+                       const SlotIndexType slot_index) noexcept;
 
     /// \brief SampleAllocateePtr is not copyable.
     SampleAllocateePtr(const SampleAllocateePtr&) = delete;
@@ -104,10 +108,11 @@ class SampleAllocateePtr
 
     pointer managed_object_;
     SlotIndexType event_slot_index_;
-    /// \brief Non-owning pointer to the entity which handed out the slot. It must outlive any SampleAllocateePtr
-    /// created from it; this is guaranteed by the SampleAllocateeTracker on the binding independent layer. Can only
-    /// be nullptr if the SampleAllocateePtr is default/nullptr constructed.
-    ISlotOwner* owning_event_;
+    /// \brief Non-owning pointer to the SlotAllocationControl owned by the SkeletonEvent which handed out the slot.
+    /// The SkeletonEvent (and with it the control) must outlive any SampleAllocateePtr created from it; this is
+    /// guaranteed by the SampleAllocateeTracker on the binding independent layer. Can only be nullptr if the
+    /// SampleAllocateePtr is default/nullptr constructed.
+    SlotAllocationControl* slot_allocation_control_;
 };
 
 /// \brief Specializes the std::swap algorithm for SampleAllocateePtr. Swaps the contents of lhs and rhs.
@@ -131,7 +136,7 @@ class SampleAllocateePtrMutableView
   public:
     explicit SampleAllocateePtrMutableView(SampleAllocateePtr& ptr) : ptr_{ptr} {}
 
-    ISlotOwner& GetOwningEvent() const noexcept;
+    SlotAllocationControl& GetSlotAllocationControl() const noexcept;
 
   private:
     SampleAllocateePtr& ptr_;

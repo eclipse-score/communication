@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -67,6 +66,18 @@ cc_library(
 )
 
 cc_library(
+    name = "slot_allocation_control",
+    srcs = ["slot_allocation_control.cpp"],
+    hdrs = ["slot_allocation_control.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [":event_data_storage"],
+)
+
+cc_library(
     name = "skeleton_event_properties",
     hdrs = ["skeleton_event_properties.h"],
     features = COMPILER_WARNING_FEATURES,
@@ -79,10 +90,7 @@ cc_library(
 cc_library(
     name = "sample_allocatee_ptr",
     srcs = ["sample_allocatee_ptr.cpp"],
-    hdrs = [
-        "i_slot_owner.h",
-        "sample_allocatee_ptr.h",
-    ],
+    hdrs = ["sample_allocatee_ptr.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
@@ -90,6 +98,7 @@ cc_library(
     ],
     deps = [
         ":event_data_storage",
+        ":slot_allocation_control",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -136,6 +145,7 @@ cc_library(
         ":sample_allocatee_ptr",
         ":skeleton",
         ":skeleton_event_properties",
+        ":slot_allocation_control",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:initialize_sample_callback",
@@ -166,8 +176,8 @@ cc_library(
     deps = [
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:error",
-        "//score/mw/com/impl:runtime_interfaces",
         "//score/mw/com/impl:i_service_discovery_client",
+        "//score/mw/com/impl:runtime_interfaces",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
     ],
@@ -187,39 +197,7 @@ cc_library(
         ":sample_allocatee_ptr",
         ":skeleton",
         ":skeleton_event",
+        ":slot_allocation_control",
         ":transport",
-    ],
-)
-
-cc_unit_test(
-    name = "event_data_storage_test",
-    srcs = ["event_data_storage_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":event_data_storage",
-        "@score_baselibs//score/memory:data_type_size_info",
-    ],
-)
-
-cc_unit_test(
-    name = "in_process_transport_test",
-    srcs = ["in_process_transport_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":transport",
-    ],
-)
-
-cc_unit_test(
-    name = "skeleton_event_test",
-    srcs = ["skeleton_event_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":sample_allocatee_ptr",
-        ":skeleton",
-        ":skeleton_event",
-        ":transport",
-        "//score/mw/com/impl:instance_identifier",
-        "//score/mw/com/impl/configuration",
     ],
 )

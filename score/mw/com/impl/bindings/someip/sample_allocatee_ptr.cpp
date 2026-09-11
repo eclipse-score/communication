@@ -19,15 +19,15 @@
 namespace score::mw::com::impl::someip
 {
 
-ISlotOwner::~ISlotOwner() = default;
-
 SampleAllocateePtr::SampleAllocateePtr(std::nullptr_t /* ptr */) noexcept
-    : managed_object_{nullptr}, event_slot_index_{kUninitialisedEventSlotIndex}, owning_event_{nullptr}
+    : managed_object_{nullptr}, event_slot_index_{kUninitialisedEventSlotIndex}, slot_allocation_control_{nullptr}
 {
 }
 
-SampleAllocateePtr::SampleAllocateePtr(pointer ptr, ISlotOwner& owning_event, const SlotIndexType slot_index) noexcept
-    : managed_object_{ptr}, event_slot_index_{slot_index}, owning_event_{&owning_event}
+SampleAllocateePtr::SampleAllocateePtr(pointer ptr,
+                                       SlotAllocationControl& slot_allocation_control,
+                                       const SlotIndexType slot_index) noexcept
+    : managed_object_{ptr}, event_slot_index_{slot_index}, slot_allocation_control_{&slot_allocation_control}
 {
 }
 
@@ -53,7 +53,7 @@ void SampleAllocateePtr::swap(SampleAllocateePtr& other) noexcept
 
     swap(this->managed_object_, other.managed_object_);
     swap(this->event_slot_index_, other.event_slot_index_);
-    swap(this->owning_event_, other.owning_event_);
+    swap(this->slot_allocation_control_, other.slot_allocation_control_);
 }
 
 SampleAllocateePtr& SampleAllocateePtr::operator=(std::nullptr_t /* ptr */) & noexcept
@@ -74,11 +74,12 @@ void SampleAllocateePtr::internal_delete() noexcept
     if (event_slot_index_ < kUninitialisedEventSlotIndex)
     {
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-            owning_event_ != nullptr,
-            "The only time that owning_event_ is nullptr is if the SampleAllocateePtr is default initialised or "
+            slot_allocation_control_ != nullptr,
+            "The only time that slot_allocation_control_ is nullptr is if the SampleAllocateePtr is default "
+            "initialised or "
             "initialised with a nullptr. In both these cases event_slot_index_ == kUninitialisedEventSlotIndex so we "
             "will never enter this branch.");
-        owning_event_->DiscardSlot(event_slot_index_);
+        slot_allocation_control_->DiscardSlot(event_slot_index_);
         event_slot_index_ = kUninitialisedEventSlotIndex;
     }
 }
@@ -93,10 +94,10 @@ typename SampleAllocateePtr::pointer SampleAllocateePtrView::GetManagedObject() 
     return ptr_.managed_object_;
 }
 
-ISlotOwner& SampleAllocateePtrMutableView::GetOwningEvent() const noexcept
+SlotAllocationControl& SampleAllocateePtrMutableView::GetSlotAllocationControl() const noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(ptr_.owning_event_ != nullptr);
-    return *ptr_.owning_event_;
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(ptr_.slot_allocation_control_ != nullptr);
+    return *ptr_.slot_allocation_control_;
 }
 
 }  // namespace score::mw::com::impl::someip
