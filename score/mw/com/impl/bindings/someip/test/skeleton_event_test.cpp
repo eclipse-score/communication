@@ -15,6 +15,7 @@
 #include "score/mw/com/impl/bindings/someip/in_process_transport.h"
 #include "score/mw/com/impl/bindings/someip/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/bindings/someip/skeleton.h"
+#include "score/mw/com/impl/bindings/someip/test/vehicle_status.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
@@ -23,10 +24,18 @@
 #include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
+#include "score/mw/com/impl/raw_wire_representation_fundamentals.h"
+#include "score/mw/com/impl/sample_serialization_spec.h"
+#include "score/mw/com/impl/serialization_sink.h"
+#include "score/mw/com/impl/serialize_sample_callback.h"
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <array>
+#include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <optional>
 
@@ -95,6 +104,26 @@ class SomeIpSkeletonEventFixture : public ::testing::Test
         }};
     }
 
+    /// \brief Wraps a serializer into a specification, sized generously so that tests which deliberately produce a
+    ///        payload differing from sizeof(TestSampleType) are not rejected by the buffer bound.
+    static SampleSerializationSpec MakeSpec(SerializeSampleCallback callback,
+                                            const std::size_t max_serialized_size = 64U) noexcept
+    {
+        return SampleSerializationSpec{std::move(callback), max_serialized_size};
+    }
+
+    /// \brief A serializer whose output differs from the raw object representation, so that tests can prove the
+    ///        transmitted bytes really went through the serializer.
+    static SerializeSampleCallback MakeByteSwappingSerializer() noexcept
+    {
+        return SerializeSampleCallback{[](const void* const sample_ptr, ISerializationSink& sink) noexcept {
+            std::array<std::byte, sizeof(TestSampleType)> bytes{};
+            std::memcpy(bytes.data(), sample_ptr, sizeof(TestSampleType));
+            std::reverse(bytes.begin(), bytes.end());
+            score::cpp::ignore = sink.Write(bytes.data(), bytes.size());
+        }};
+    }
+
     TestSampleType GetLastSentValue() const noexcept
     {
         const auto payload = transport_.GetLastSentPayload(kEventFqId);
@@ -158,10 +187,11 @@ TEST_F(SomeIpSkeletonEventFixture, PrepareOfferOffersTheEventOnTheTransport)
 TEST_F(SomeIpSkeletonEventFixture, PrepareOfferInitializesEverySlot)
 {
     std::size_t number_of_initialized_slots{0U};
-    ASSERT_TRUE(unit_->PrepareOffer(InitializeSampleCallback{[&number_of_initialized_slots](void* const sample_ptr) {
-                                        ++number_of_initialized_slots;
-                                        score::cpp::ignore = new (sample_ptr) TestSampleType{};
-                                    }})
+    ASSERT_TRUE(unit_
+                    ->PrepareOffer(InitializeSampleCallback{[&number_of_initialized_slots](void* const sample_ptr) {
+                        ++number_of_initialized_slots;
+                        score::cpp::ignore = new (sample_ptr) TestSampleType{};
+                    }})
                     .has_value());
 
     EXPECT_EQ(number_of_initialized_slots, kNumberOfSlots);
@@ -294,10 +324,11 @@ TEST_F(SomeIpSkeletonEventFixture, ReOfferingReusesTheExistingStorageWithoutReIn
     unit_->PrepareStopOffer();
 
     std::size_t number_of_initialized_slots{0U};
-    ASSERT_TRUE(unit_->PrepareOffer(InitializeSampleCallback{[&number_of_initialized_slots](void* const sample_ptr) {
-                                        ++number_of_initialized_slots;
-                                        score::cpp::ignore = new (sample_ptr) TestSampleType{};
-                                    }})
+    ASSERT_TRUE(unit_
+                    ->PrepareOffer(InitializeSampleCallback{[&number_of_initialized_slots](void* const sample_ptr) {
+                        ++number_of_initialized_slots;
+                        score::cpp::ignore = new (sample_ptr) TestSampleType{};
+                    }})
                     .has_value());
 
     EXPECT_EQ(number_of_initialized_slots, 0U);
@@ -354,6 +385,214 @@ TEST_F(SomeIpSkeletonEventFixture, UnsettingTheReceiveHandlerRegistrationChanged
     ASSERT_TRUE(unit_->PrepareOffer(MakeInitializeSampleCallback()).has_value());
 
     EXPECT_TRUE(unit_->UnsetReceiveHandlerRegistrationChangedHandler().has_value());
+}
+
+/// \brief Without a serializer the binding has to keep transmitting the raw object representation, which is the
+///        situation for a GenericSkeletonEvent: it is already type-erased and therefore hands over no serializer.
+TEST_F(SomeIpSkeletonEventFixture, SendWithoutSerializerTransmitsTheRawObjectRepresentation)
+{
+    ASSERT_TRUE(unit_->PrepareOffer(MakeInitializeSampleCallback()).has_value());
+    const TestSampleType value{0x12345678U};
+
+    ASSERT_TRUE(SendByCopy(*unit_, value).has_value());
+
+    const auto payload = transport_.GetLastSentPayload(kEventFqId);
+    ASSERT_EQ(payload.size(), sizeof(TestSampleType));
+    EXPECT_EQ(GetLastSentValue(), value);
+}
+
+TEST_F(SomeIpSkeletonEventFixture, SerializerIsUsedOnTheSendWithCopyPath)
+{
+    unit_->SetSampleSerialization(MakeSpec(MakeByteSwappingSerializer()));
+    ASSERT_TRUE(unit_->PrepareOffer(MakeInitializeSampleCallback()).has_value());
+    const TestSampleType value{0x12345678U};
+
+    ASSERT_TRUE(SendByCopy(*unit_, value).has_value());
+
+    EXPECT_EQ(GetLastSentValue(), TestSampleType{0x78563412U});
+}
+
+TEST_F(SomeIpSkeletonEventFixture, SerializerIsUsedOnTheSendWithAllocatePath)
+{
+    unit_->SetSampleSerialization(MakeSpec(MakeByteSwappingSerializer()));
+    ASSERT_TRUE(unit_->PrepareOffer(MakeInitializeSampleCallback()).has_value());
+
+    auto allocate_result = unit_->Allocate(SampleAllocateeGuard{});
+    ASSERT_TRUE(allocate_result.has_value());
+    auto sample = std::move(allocate_result).value();
+    *static_cast<TestSampleType*>(sample.Get()) = TestSampleType{0x12345678U};
+
+    ASSERT_TRUE(unit_->Send(std::move(sample), std::nullopt).has_value());
+
+    EXPECT_EQ(GetLastSentValue(), TestSampleType{0x78563412U});
+}
+
+/// \brief The serialized representation is what reaches the transport, so its size may differ from the size of the
+///        in-memory sample. This is what a real SOME/IP wire format (e.g. variable length members) requires.
+TEST_F(SomeIpSkeletonEventFixture, SerializerMayProduceAPayloadOfADifferentSize)
+{
+    static constexpr std::array<std::byte, 3U> kSerializedForm{std::byte{0xAAU}, std::byte{0xBBU}, std::byte{0xCCU}};
+    unit_->SetSampleSerialization(MakeSpec(SerializeSampleCallback{[](const void*, ISerializationSink& sink) noexcept {
+        score::cpp::ignore = sink.Write(kSerializedForm.data(), kSerializedForm.size());
+    }}));
+    ASSERT_TRUE(unit_->PrepareOffer(MakeInitializeSampleCallback()).has_value());
+    const TestSampleType value{0U};
+
+    ASSERT_TRUE(SendByCopy(*unit_, value).has_value());
+
+    const auto payload = transport_.GetLastSentPayload(kEventFqId);
+    ASSERT_EQ(payload.size(), kSerializedForm.size());
+    EXPECT_TRUE(std::equal(payload.cbegin(), payload.cend(), kSerializedForm.cbegin()));
+}
+
+/// \brief A serializer which appends in several steps must produce one contiguous payload.
+TEST_F(SomeIpSkeletonEventFixture, SerializerCanWriteTheSampleInMultipleChunks)
+{
+    unit_->SetSampleSerialization(
+        MakeSpec(SerializeSampleCallback{[](const void* const sample_ptr, ISerializationSink& sink) noexcept {
+            const auto* const bytes = static_cast<const std::byte*>(sample_ptr);
+            for (std::size_t i = 0U; i < sizeof(TestSampleType); ++i)
+            {
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic) iterating the object representation
+                score::cpp::ignore = sink.Write(bytes + i, 1U);
+            }
+        }}));
+    ASSERT_TRUE(unit_->PrepareOffer(MakeInitializeSampleCallback()).has_value());
+    const TestSampleType value{0x0BADF00DU};
+
+    ASSERT_TRUE(SendByCopy(*unit_, value).has_value());
+
+    EXPECT_EQ(GetLastSentValue(), value);
+}
+
+/// \brief The buffer is reused across sends, so it must not accumulate the payload of previous sends.
+TEST_F(SomeIpSkeletonEventFixture, ConsecutiveSendsDoNotAccumulateTheSerializationBuffer)
+{
+    unit_->SetSampleSerialization(MakeSpec(MakeByteSwappingSerializer()));
+    ASSERT_TRUE(unit_->PrepareOffer(MakeInitializeSampleCallback()).has_value());
+
+    for (TestSampleType value = 1U; value <= 3U; ++value)
+    {
+        ASSERT_TRUE(SendByCopy(*unit_, value).has_value());
+        const auto payload = transport_.GetLastSentPayload(kEventFqId);
+        ASSERT_EQ(payload.size(), sizeof(TestSampleType));
+    }
+}
+
+TEST_F(SomeIpSkeletonEventFixture, SendFailsWhenSerializationFails)
+{
+    unit_->SetSampleSerialization(MakeSpec(SerializeSampleCallback{[](const void*, ISerializationSink& sink) noexcept {
+        // A nullptr write is rejected by the sink and marks the serialization as failed.
+        score::cpp::ignore = sink.Write(nullptr, 1U);
+    }}));
+    ASSERT_TRUE(unit_->PrepareOffer(MakeInitializeSampleCallback()).has_value());
+    const TestSampleType value{42U};
+
+    const auto result = SendByCopy(*unit_, value);
+
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+/// \brief A failed send must not leak the slot it allocated, otherwise the event runs out of slots.
+TEST_F(SomeIpSkeletonEventFixture, FailedSerializationReturnsTheSlot)
+{
+    unit_->SetSampleSerialization(MakeSpec(SerializeSampleCallback{[](const void*, ISerializationSink& sink) noexcept {
+        score::cpp::ignore = sink.Write(nullptr, 1U);
+    }}));
+    ASSERT_TRUE(unit_->PrepareOffer(MakeInitializeSampleCallback()).has_value());
+    const TestSampleType value{42U};
+
+    for (std::size_t i = 0U; i < (kNumberOfSlots + 1U); ++i)
+    {
+        EXPECT_FALSE(SendByCopy(*unit_, value).has_value());
+    }
+
+    // All slots must still be available after the failed sends.
+    EXPECT_TRUE(unit_->Allocate(SampleAllocateeGuard{}).has_value());
+}
+
+/// \brief End to end proof of the whole chain: the sample handed to Send() reaches the transport in its SOME/IP wire
+///        representation, produced by SampleWireFormat -> SomeIpWriter -> SomeIpSerializer, and not as the raw
+///        object representation of the slot.
+TEST_F(SomeIpSkeletonEventFixture, SendTransmitsTheWireRepresentationProducedByTheSampleWireFormat)
+{
+    using VehicleStatus = test::VehicleStatus;
+    using WireFormat = impl::SampleWireFormat<VehicleStatus>;
+
+    SkeletonEvent vehicle_event{*skeleton_,
+                                kEventFqId,
+                                "DummyEvent",
+                                memory::DataTypeSizeInfo{sizeof(VehicleStatus), alignof(VehicleStatus)},
+                                SkeletonEventProperties{kNumberOfSlots, 1U, true},
+                                impl::tracing::SkeletonEventTracingData{}};
+    vehicle_event.SetSampleSerialization(impl::SampleSerializationSpec{
+        SerializeSampleCallback{[](const void* const sample_ptr, ISerializationSink& sink) noexcept {
+            score::cpp::ignore = WireFormat::Serialize(*static_cast<const VehicleStatus*>(sample_ptr), sink);
+        }},
+        WireFormat::kMaxSerializedSize});
+
+    ASSERT_TRUE(vehicle_event
+                    .PrepareOffer(InitializeSampleCallback{[](void* const sample_ptr) noexcept {
+                        score::cpp::ignore = new (sample_ptr) VehicleStatus{};
+                    }})
+                    .has_value());
+
+    const VehicleStatus sample{0x11223344U, 0x0064U, 0x03U, test::WheelSpeeds{1U, 2U, 3U, 4U}};
+    ASSERT_TRUE(SendByCopy(vehicle_event, sample).has_value());
+
+    const auto payload = transport_.GetLastSentPayload(kEventFqId);
+    const std::array<std::byte, 15U> expected{std::byte{0x11},
+                                              std::byte{0x22},
+                                              std::byte{0x33},
+                                              std::byte{0x44},
+                                              std::byte{0x00},
+                                              std::byte{0x64},
+                                              std::byte{0x03},
+                                              std::byte{0x00},
+                                              std::byte{0x01},
+                                              std::byte{0x00},
+                                              std::byte{0x02},
+                                              std::byte{0x00},
+                                              std::byte{0x03},
+                                              std::byte{0x00},
+                                              std::byte{0x04}};
+
+    // 15 bytes on the wire instead of the 16 the object occupies in memory: no padding byte, network byte order.
+    ASSERT_EQ(payload.size(), expected.size());
+    ASSERT_LT(payload.size(), sizeof(VehicleStatus));
+    EXPECT_TRUE(std::equal(payload.cbegin(), payload.cend(), expected.cbegin()));
+}
+
+/// \brief A serializer producing more than the declared bound must not silently exceed the memory reserved for this
+///        event: the send fails instead.
+TEST_F(SomeIpSkeletonEventFixture, SendFailsWhenTheSerializedSampleExceedsItsDeclaredBound)
+{
+    constexpr std::size_t kTightBound{2U};
+    unit_->SetSampleSerialization(MakeSpec(MakeByteSwappingSerializer(), kTightBound));
+    ASSERT_TRUE(unit_->PrepareOffer(MakeInitializeSampleCallback()).has_value());
+    const TestSampleType value{0x12345678U};
+
+    const auto result = SendByCopy(*unit_, value);
+
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+/// \brief Exceeding the bound must not leak the slot either, otherwise the event runs out of slots.
+TEST_F(SomeIpSkeletonEventFixture, ExceedingTheDeclaredBoundReturnsTheSlot)
+{
+    constexpr std::size_t kTightBound{2U};
+    unit_->SetSampleSerialization(MakeSpec(MakeByteSwappingSerializer(), kTightBound));
+    ASSERT_TRUE(unit_->PrepareOffer(MakeInitializeSampleCallback()).has_value());
+    const TestSampleType value{0x12345678U};
+
+    for (std::size_t i = 0U; i < (kNumberOfSlots + 1U); ++i)
+    {
+        EXPECT_FALSE(SendByCopy(*unit_, value).has_value());
+    }
+
+    EXPECT_TRUE(unit_->Allocate(SampleAllocateeGuard{}).has_value());
 }
 
 }  // namespace

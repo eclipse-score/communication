@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/bindings/someip/skeleton_event.h"
 
 #include "score/mw/com/impl/bindings/someip/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/bindings/someip/vector_serialization_sink.h"
 #include "score/mw/com/impl/com_error.h"
 
 #include "score/mw/log/logging.h"
@@ -42,7 +43,9 @@ SkeletonEvent::SkeletonEvent(Skeleton& parent,
       slot_allocation_control_{},
       is_offered_{false},
       tracing_data_{skeleton_event_tracing_data},
-      receive_handler_registration_changed_callback_{}
+      receive_handler_registration_changed_callback_{},
+      sample_serialization_spec_{},
+      serialization_buffer_{}
 {
 }
 
@@ -56,8 +59,24 @@ Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void> sample,
     // coverity[autosar_cpp14_a5_3_2_violation]
     const auto* const slot_data = ptr->get();
 
-    const auto send_result = parent_.GetTransport().SendEvent(
-        element_fq_id_, slot_data, static_cast<std::size_t>(event_sample_size_info_.Size()));
+    // The payload handed to the transport is produced here, at the single point where bytes leave the binding, so
+    // that both Send() overloads are covered (the copy overload delegates to this one).
+    const void* payload_data = slot_data;
+    auto payload_size = static_cast<std::size_t>(event_sample_size_info_.Size());
+    if (sample_serialization_spec_.has_value())
+    {
+        serialization_buffer_.clear();
+        VectorSerializationSink sink{serialization_buffer_, sample_serialization_spec_->max_serialized_size};
+        sample_serialization_spec_->serialize(slot_data, sink);
+        if (sink.HasWriteFailed())
+        {
+            return MakeUnexpected(ComErrc::kBindingFailure, "Serialization of the sample failed");
+        }
+        payload_data = serialization_buffer_.data();
+        payload_size = serialization_buffer_.size();
+    }
+
+    const auto send_result = parent_.GetTransport().SendEvent(element_fq_id_, payload_data, payload_size);
 
     if (!send_result.has_value())
     {
@@ -98,18 +117,17 @@ Result<impl::SampleAllocateePtr<void>> SkeletonEvent::Allocate(SampleAllocateeGu
     }
 
     return MakeSampleAllocateePtr(
-        SampleAllocateePtr(
-            event_data_storage_->GetTypeErasedDataSlot(*slot_index, event_sample_size_info_.Size()),
-            slot_allocation_control_,
-            *slot_index),
+        SampleAllocateePtr(event_data_storage_->GetTypeErasedDataSlot(*slot_index, event_sample_size_info_.Size()),
+                           slot_allocation_control_,
+                           *slot_index),
         std::move(guard));
 }
 
 Result<impl::SamplePtr<void>> SkeletonEvent::GetLatestSample(QualityType quality_type)
 {
     score::cpp::ignore = quality_type;
-    ::score::mw::log::LogError("someip")
-        << "SkeletonEvent::GetLatestSample is not supported by the SOME/IP binding:" << event_name_;
+    ::score::mw::log::LogError("someip") << "SkeletonEvent::GetLatestSample is not supported by the SOME/IP binding:"
+                                         << event_name_;
     return MakeUnexpected(ComErrc::kBindingFailure,
                           "GetLatestSample (field getter) is not supported by the SOME/IP binding");
 }
@@ -129,6 +147,13 @@ Result<void> SkeletonEvent::PrepareOffer(
     event_data_storage_ = &registration_result.event_data_storage;
 
     slot_allocation_control_.Reset(total_number_of_slots);
+
+    // Size the serialization buffer once, before any data flows, so that sending never allocates. This mirrors how
+    // the LoLa binding calculates its shared memory demand analytically up front.
+    if (sample_serialization_spec_.has_value())
+    {
+        serialization_buffer_.reserve(sample_serialization_spec_->max_serialized_size);
+    }
 
     const auto offer_result = parent_.GetTransport().OfferEvent(element_fq_id_);
     if (!offer_result.has_value())
@@ -187,6 +212,11 @@ Result<void> SkeletonEvent::UnsetReceiveHandlerRegistrationChangedHandler() noex
 {
     receive_handler_registration_changed_callback_.reset();
     return {};
+}
+
+void SkeletonEvent::SetSampleSerialization(std::optional<SampleSerializationSpec> sample_serialization_spec) noexcept
+{
+    sample_serialization_spec_ = std::move(sample_serialization_spec);
 }
 
 }  // namespace score::mw::com::impl::someip

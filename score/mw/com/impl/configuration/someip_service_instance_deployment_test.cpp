@@ -56,7 +56,7 @@ TEST(SomeIpServiceInstanceDeploymentTest, EqualityComparesAllMembers)
     const SomeIpServiceInstanceDeployment same{SomeIpServiceInstanceId{1U},
                                                {{"MyEvent", MakeEventInstanceDeployment()}}};
     const SomeIpServiceInstanceDeployment different_instance_id{SomeIpServiceInstanceId{2U},
-                                                               {{"MyEvent", MakeEventInstanceDeployment()}}};
+                                                                {{"MyEvent", MakeEventInstanceDeployment()}}};
 
     EXPECT_TRUE(unit == same);
     EXPECT_FALSE(unit == different_instance_id);

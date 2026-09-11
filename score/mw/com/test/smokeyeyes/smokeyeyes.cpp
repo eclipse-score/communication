@@ -12,6 +12,7 @@
  *******************************************************************************/
 
 #include "score/mw/com/test/smokeyeyes/smokeyeyes.h"
+#include "score/mw/com/impl/raw_wire_representation_fundamentals.h"
 
 #include "score/mw/com/runtime.h"
 #include "score/string_manipulation/arguments/arguments.h"
@@ -393,6 +394,11 @@ int run_receiver(SharedState& shared_state,
 
 }  // namespace
 }  // namespace score::mw::com::test
+
+// The object representation of this type is its wire representation: it is exchanged via a binding which hands the
+// bytes to consumers on the same host. Declared here, after the namespace it lives in has been closed, because the
+// macro opens namespace score::mw::com::impl and therefore has to be used at global scope.
+SCORE_MW_COM_DECLARE_RAW_WIRE_REPRESENTATION(score::mw::com::test::Data)
 
 int main(int argc, const char** argv)
 {

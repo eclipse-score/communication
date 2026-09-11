@@ -41,8 +41,8 @@ EventDataStorage::EventDataStorage(const SlotIndexType number_of_slots,
         return;
     }
 
-    void* const type_erased_data_slots_start = ::operator new(
-        storage_bytes_needed, std::align_val_t{event_sample_size_info.Alignment()}, std::nothrow);
+    void* const type_erased_data_slots_start =
+        ::operator new(storage_bytes_needed, std::align_val_t{event_sample_size_info.Alignment()}, std::nothrow);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(nullptr != type_erased_data_slots_start);
     type_erased_data_slots_ = static_cast<std::byte*>(type_erased_data_slots_start);
     type_erased_data_slots_storage_size_ = storage_bytes_needed;

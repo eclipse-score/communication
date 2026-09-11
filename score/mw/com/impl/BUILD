@@ -237,6 +237,10 @@ cc_library(
         ":instance_identifier",
         ":reference_to_moveable",
         ":runtime",
+        ":sample_serialization_spec",
+        ":sample_wire_format",
+        ":serialization_sink",
+        ":serialize_sample_callback",
         ":skeleton_base",
         ":skeleton_event_base",
         ":skeleton_event_binding",
@@ -559,6 +563,8 @@ cc_library(
         ":initialize_sample_callback",
         ":receive_handler_registration_changed_handler",
         ":sample_allocatee_tracker",
+        ":sample_serialization_spec",
+        ":serialize_sample_callback",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing_data",
@@ -919,6 +925,60 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = ["@score_baselibs//score/language/futurecpp"],
+)
+
+cc_library(
+    name = "serialization_sink",
+    srcs = ["serialization_sink.cpp"],
+    hdrs = ["serialization_sink.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = ["@score_baselibs//score/language/futurecpp"],
+)
+
+cc_library(
+    name = "serialize_sample_callback",
+    srcs = ["serialize_sample_callback.cpp"],
+    hdrs = ["serialize_sample_callback.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":serialization_sink",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "sample_serialization_spec",
+    srcs = ["sample_serialization_spec.cpp"],
+    hdrs = ["sample_serialization_spec.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [":serialize_sample_callback"],
+)
+
+cc_library(
+    name = "sample_wire_format",
+    srcs = ["sample_wire_format.cpp"],
+    hdrs = [
+        "raw_wire_representation_fundamentals.h",
+        "sample_wire_format.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [":serialization_sink"],
 )
 
 cc_library(
@@ -1609,6 +1669,20 @@ cc_unit_test(
     deps = [
         ":sample_allocatee_tracker",
         ":skeleton_event_binding",
+    ],
+)
+
+cc_unit_test(
+    name = "skeleton_event_serializer_test",
+    srcs = ["skeleton_event_serializer_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":sample_serialization_spec",
+        ":sample_wire_format",
+        ":serialization_sink",
+        ":serialize_sample_callback",
+        ":skeleton_event",
+        "//score/mw/com/impl/bindings/mock_binding",
     ],
 )
 

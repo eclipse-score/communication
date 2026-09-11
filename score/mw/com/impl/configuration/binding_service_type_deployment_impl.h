@@ -105,11 +105,11 @@ template <typename EventIdType,
           typename MethodIdType,
           typename ServiceIdType,
           BindingType binding_type>
-BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::BindingServiceTypeDeployment(
-    const ServiceIdType service_id,
-    EventIdMapping events,
-    FieldIdMapping fields,
-    MethodIdMapping methods) noexcept
+BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::
+    BindingServiceTypeDeployment(const ServiceIdType service_id,
+                                 EventIdMapping events,
+                                 FieldIdMapping fields,
+                                 MethodIdMapping methods) noexcept
     : service_id_{service_id},
       events_{std::move(events)},
       fields_{std::move(fields)},
@@ -123,13 +123,14 @@ template <typename EventIdType,
           typename MethodIdType,
           typename ServiceIdType,
           BindingType binding_type>
-BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::BindingServiceTypeDeployment(
-    const score::json::Object& json_object)
-    : BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::BindingServiceTypeDeployment(
-          GetValueFromJson<ServiceIdType>(json_object, detail::kServiceIdKey),
-          detail::ConvertJsonToServiceElementIdMap<EventIdType>(json_object, detail::kEventsKey),
-          detail::ConvertJsonToServiceElementIdMap<FieldIdType>(json_object, detail::kFieldsKey),
-          detail::ConvertJsonToServiceElementIdMap<MethodIdType>(json_object, detail::kMethodsKey))
+BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::
+    BindingServiceTypeDeployment(const score::json::Object& json_object)
+    : BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::
+          BindingServiceTypeDeployment(
+              GetValueFromJson<ServiceIdType>(json_object, detail::kServiceIdKey),
+              detail::ConvertJsonToServiceElementIdMap<EventIdType>(json_object, detail::kEventsKey),
+              detail::ConvertJsonToServiceElementIdMap<FieldIdType>(json_object, detail::kFieldsKey),
+              detail::ConvertJsonToServiceElementIdMap<MethodIdType>(json_object, detail::kMethodsKey))
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, detail::kSerializationVersionKey);
     if (serialization_version != serializationVersion)
@@ -143,7 +144,8 @@ template <typename EventIdType,
           typename MethodIdType,
           typename ServiceIdType,
           BindingType binding_type>
-json::Object BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::Serialize()
+json::Object
+BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::Serialize()
     const noexcept
 {
     score::json::Object json_object{};
@@ -162,7 +164,8 @@ template <typename EventIdType,
           typename MethodIdType,
           typename ServiceIdType,
           BindingType binding_type>
-std::string_view BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::ToHashString()
+std::string_view
+BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::ToHashString()
     const noexcept
 {
     return hash_string_;
@@ -173,8 +176,10 @@ template <typename EventIdType,
           typename MethodIdType,
           typename ServiceIdType,
           BindingType binding_type>
-bool operator==(const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>& lhs,
-                const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>& rhs) noexcept
+bool operator==(
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>& lhs,
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>&
+        rhs) noexcept
 {
     return ((lhs.service_id_ == rhs.service_id_) && (lhs.events_ == rhs.events_) && (lhs.fields_ == rhs.fields_) &&
             (lhs.methods_ == rhs.methods_));

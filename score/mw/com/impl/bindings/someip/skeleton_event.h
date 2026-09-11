@@ -13,16 +13,18 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SKELETON_EVENT_H
 #define SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SKELETON_EVENT_H
 
+#include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/someip/element_fq_id.h"
 #include "score/mw/com/impl/bindings/someip/event_data_storage.h"
 #include "score/mw/com/impl/bindings/someip/skeleton.h"
 #include "score/mw/com/impl/bindings/someip/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/someip/slot_allocation_control.h"
-#include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/initialize_sample_callback.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
+#include "score/mw/com/impl/sample_serialization_spec.h"
+#include "score/mw/com/impl/serialize_sample_callback.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
@@ -32,6 +34,7 @@
 #include <cstddef>
 #include <optional>
 #include <string_view>
+#include <vector>
 
 namespace score::mw::com::impl::someip
 {
@@ -110,6 +113,12 @@ class SkeletonEvent final : public SkeletonEventBinding
 
     Result<void> UnsetReceiveHandlerRegistrationChangedHandler() noexcept override;
 
+    /// \brief Installs the type-aware serializer used to produce the payload handed to the transport.
+    /// \details See SkeletonEventBinding::SetSampleSerialization(). If nothing is installed (i.e. the calling layer
+    ///          has no type knowledge, as for a GenericSkeletonEvent), Send() falls back to transmitting the raw
+    ///          object representation held in the slot.
+    void SetSampleSerialization(std::optional<SampleSerializationSpec> sample_serialization_spec) noexcept override;
+
   private:
     Skeleton& parent_;
     std::string_view event_name_;
@@ -126,6 +135,16 @@ class SkeletonEvent final : public SkeletonEventBinding
     bool is_offered_;
     impl::tracing::SkeletonEventTracingData tracing_data_;
     std::optional<ReceiveHandlerRegistrationChangedCallback> receive_handler_registration_changed_callback_;
+
+    /// \brief Serializer and its size bound, handed down from the strongly typed layer. Empty if that layer has
+    ///        no type knowledge.
+    std::optional<SampleSerializationSpec> sample_serialization_spec_;
+
+    /// \brief Buffer the serialized payload is assembled in.
+    /// \details Kept as a member (instead of a local) so that its capacity is reused across sends and the steady
+    ///          state does not allocate. This is safe because, as documented for this class, sends are not thread
+    ///          safe and must not be invoked in parallel.
+    std::vector<std::byte> serialization_buffer_;
 };
 
 }  // namespace score::mw::com::impl::someip

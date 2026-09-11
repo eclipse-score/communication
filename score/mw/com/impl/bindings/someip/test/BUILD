@@ -42,14 +42,54 @@ cc_unit_test(
 
 cc_unit_test(
     name = "skeleton_event_test",
-    srcs = ["skeleton_event_test.cpp"],
+    srcs = [
+        "skeleton_event_test.cpp",
+        "vehicle_status.h",
+    ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl:instance_identifier",
+        "//score/mw/com/impl:sample_serialization_spec",
+        "//score/mw/com/impl:sample_wire_format",
+        "//score/mw/com/impl:serialization_sink",
+        "//score/mw/com/impl:serialize_sample_callback",
         "//score/mw/com/impl/bindings/someip:sample_allocatee_ptr",
         "//score/mw/com/impl/bindings/someip:skeleton",
         "//score/mw/com/impl/bindings/someip:skeleton_event",
+        "//score/mw/com/impl/bindings/someip:someip_writer",
         "//score/mw/com/impl/bindings/someip:transport",
         "//score/mw/com/impl/configuration",
+    ],
+)
+
+cc_unit_test(
+    name = "vector_serialization_sink_test",
+    srcs = ["vector_serialization_sink_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = ["//score/mw/com/impl/bindings/someip:vector_serialization_sink"],
+)
+
+cc_unit_test(
+    name = "someip_writer_test",
+    srcs = ["someip_writer_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        "//score/mw/com/impl/bindings/someip:someip_writer",
+        "//score/mw/com/impl/bindings/someip:vector_serialization_sink",
+    ],
+)
+
+cc_unit_test(
+    name = "vehicle_status_wire_format_test",
+    srcs = [
+        "vehicle_status.h",
+        "vehicle_status_wire_format_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        "//score/mw/com/impl:sample_wire_format",
+        "//score/mw/com/impl:serialization_sink",
+        "//score/mw/com/impl/bindings/someip:someip_writer",
+        "//score/mw/com/impl/bindings/someip:vector_serialization_sink",
     ],
 )

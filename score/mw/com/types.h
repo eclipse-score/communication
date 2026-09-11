@@ -28,6 +28,11 @@
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
+// Declares the object representation of the fundamental types to be their wire representation. This holds for every
+// binding which hands the object representation itself to its consumers, which is the case for all bindings
+// currently reachable through this API. A binding putting bytes on a network needs an explicit SampleWireFormat
+// specialization for such a type, which takes precedence over this default.
+#include "score/mw/com/impl/raw_wire_representation_fundamentals.h"
 #include "score/mw/com/impl/receive_handler_registration_changed_handler.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/subscription_state.h"

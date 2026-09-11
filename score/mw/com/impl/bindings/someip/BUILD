@@ -78,6 +78,36 @@ cc_library(
 )
 
 cc_library(
+    name = "someip_writer",
+    srcs = ["someip_writer.cpp"],
+    hdrs = [
+        "someip_serializer.h",
+        "someip_writer.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:serialization_sink",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "vector_serialization_sink",
+    srcs = ["vector_serialization_sink.cpp"],
+    hdrs = ["vector_serialization_sink.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = ["//score/mw/com/impl:serialization_sink"],
+)
+
+cc_library(
     name = "skeleton_event_properties",
     hdrs = ["skeleton_event_properties.h"],
     features = COMPILER_WARNING_FEATURES,
@@ -146,9 +176,11 @@ cc_library(
         ":skeleton",
         ":skeleton_event_properties",
         ":slot_allocation_control",
+        ":vector_serialization_sink",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:initialize_sample_callback",
+        "//score/mw/com/impl:serialize_sample_callback",
         "//score/mw/com/impl:skeleton_event_binding",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
@@ -198,6 +230,8 @@ cc_library(
         ":skeleton",
         ":skeleton_event",
         ":slot_allocation_control",
+        ":someip_writer",
         ":transport",
+        ":vector_serialization_sink",
     ],
 )
