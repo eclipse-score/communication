@@ -20,7 +20,7 @@
 // as this are not part of any callable because of that unused warning is suppressed for this file.
 use score_com::{Builder, InstanceSpecifier, Interface, Producer, Runtime};
 
-use com_api_gen::{Tire, VehicleMethodsInterface};
+use com_api_gen::{PressureImbalance, Tire, VehicleMethodsInterface};
 
 #[allow(dead_code)]
 type VehicleMethodOfferedProducer<R> =
@@ -50,24 +50,26 @@ fn create_producer_method<R: Runtime>(
     producer
         .init()
         // register method handler like function pointer.
-        .register_update_tire_pressure_handler(process_left_tire)
-        .register_get_tire_pressure_handler(|| {
-            println!("Received get_tire_pressure call");
-            // Return a sample tire pressure value, just dummy value returned for demonstration
-            Tire { pressure: 32.0 }
-        })
         .register_update_front_tires_pressure_handler(|tire1: &Tire, tire2: &Tire| {
             println!(
                 "Received update_front_tires_pressure call with tire1: {:?}, tire2: {:?}",
                 tire1, tire2
             );
         })
+        .register_calculate_pressure_imbalance_handler(process_pressure_imbalance)
         .offer()
         .expect("Failed to offer producer instance")
 }
 
 #[allow(dead_code)]
-fn process_left_tire(tire: &Tire) {
-    // do some processing with the tire data
-    println!("Processing left tire pressure: {:?}", tire);
+fn process_pressure_imbalance(tire1: &Tire, tire2: &Tire) -> PressureImbalance {
+    // Unlike a plain update/get pair, this handler is not a thin wrapper around a field's
+    // get/set: it computes a derived result (PressureImbalance) from two Tire readings.
+    println!(
+        "Received calculate_pressure_imbalance call with tire1: {:?}, tire2: {:?}",
+        tire1, tire2
+    );
+    PressureImbalance {
+        delta_kpa: (tire1.pressure - tire2.pressure).abs(),
+    }
 }
