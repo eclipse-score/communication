@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -11,7 +11,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -26,13 +25,9 @@ cc_unit_test(
         "misc_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//score/memory:__pkg__",
-    ],
     deps = [
-        ":offset_ptr_test_resources",
         "//score/memory/shared:offset_ptr",
-        "@score_baselibs//score/mw/log:backend_stub_testutil",
+        "//score/memory/shared/test:offset_ptr_test_resources",
     ],
 )
 
@@ -47,41 +42,9 @@ cc_unit_test(
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
-    visibility = [
-        "//score/memory:__pkg__",
-    ],
     deps = [
-        ":bounds_check_memory_pool",
         "//score/memory/shared:offset_ptr",
+        "//score/memory/shared/test:bounds_check_memory_pool",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-        "@score_baselibs//score/mw/log:backend_stub_testutil",
-    ],
-)
-
-cc_library(
-    name = "offset_ptr_test_resources",
-    testonly = True,
-    srcs = ["offset_ptr_test_resources.cpp"],
-    hdrs = ["offset_ptr_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = ["//score/memory/shared:__pkg__"],
-    deps = [
-        "//score/memory/shared",
-        "//score/memory/shared/fake:fake_memory_resources",
-        "@googletest//:gtest_main",
-        "@score_baselibs//score/language/futurecpp",
-    ],
-)
-
-cc_library(
-    name = "bounds_check_memory_pool",
-    testonly = True,
-    srcs = ["bounds_check_memory_pool.cpp"],
-    hdrs = ["bounds_check_memory_pool.h"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":offset_ptr_test_resources",
-        "//score/memory/shared",
-        "@score_baselibs//score/language/futurecpp",
     ],
 )
