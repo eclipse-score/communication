@@ -21,9 +21,8 @@
 //       exhaust:    Event<Exhaust>,                                   // event
 //       left_tire_field: Field<Tire, WithGetter + WithSetter + WithNotifier>, // field
 //       exhaust_field:   Field<Exhaust, WithGetter + WithSetter + WithNotifier>, // field
-//       update_tire_pressure(Tire) -> (),                            // method
-//       update_front_tires_pressure(Tire, Tire) -> (),               // method
-//       get_tire_pressure() -> Tire,                                 // method
+//       update_front_tires_pressure: Method(Tire, Tire) -> (),       // method
+//       calculate_pressure_imbalance: Method(Tire, Tire) -> PressureImbalance,  // method
 //   }
 //
 // Producer side (skeleton):
@@ -39,7 +38,7 @@
 //   - Field notifications are subscribed via `left_tire_field.subscribe()`.
 //   - Field get/set are async wrappers backed by MethodCaller:
 //       `consumer.get_left_tire_field().await` / `consumer.set_left_tire_field(val).await`
-//   - Methods are called as async wrappers: `consumer.update_tire_pressure(tire).await`
+//   - Methods are called as async wrappers: `consumer.calculate_pressure_imbalance(tire1, tire2).await`
 //
 // This builds fine, but cannot run as field and method APIs in Lola runtime are not implemented yet.
 
@@ -49,7 +48,7 @@ use score_com::{
     Subscriber, Subscription,
 };
 
-use com_api_gen::{Exhaust, Tire, VehicleMonitorInterface};
+use com_api_gen::{Exhaust, PressureImbalance, Tire, VehicleMonitorInterface};
 
 //  Type aliases
 
@@ -114,10 +113,6 @@ where
         .register_get_handler_exhaust_field(|| Exhaust {})
         .update_exhaust_field(initial_exhaust)
         .expect("Failed to set initial value for exhaust_field")
-        //  Method: update_tire_pressure(Tire) -> ()
-        .register_update_tire_pressure_handler(|tire: &Tire| {
-            println!("[Producer] update_tire_pressure called: {:?}", tire);
-        })
         //  Method: update_front_tires_pressure(Tire, Tire) -> ()
         .register_update_front_tires_pressure_handler(|tire1: &Tire, tire2: &Tire| {
             println!(
@@ -125,12 +120,17 @@ where
                 tire1, tire2
             );
         })
-        //  Method: get_tire_pressure() -> Tire
-        .register_get_tire_pressure_handler(|| {
-            println!("[Producer] get_tire_pressure called");
-            // Return the current field value; in a real implementation this would
-            // read from the last Update()d field value.
-            Tire { pressure: 32.0 }
+        //  Method: calculate_pressure_imbalance(Tire, Tire) -> PressureImbalance
+        // Not a thin wrapper around a field's get/set: computes a derived result
+        // (PressureImbalance) from two Tire readings.
+        .register_calculate_pressure_imbalance_handler(|tire1: &Tire, tire2: &Tire| {
+            println!(
+                "[Producer] calculate_pressure_imbalance called: {:?}, {:?}",
+                tire1, tire2
+            );
+            PressureImbalance {
+                delta_kpa: (tire1.pressure - tire2.pressure).abs(),
+            }
         })
         // All states satisfied → offer() is available.
         .offer()
@@ -207,7 +207,7 @@ async fn consume_monitor<R: Runtime>(consumer: VehicleMonitorConsumer<R>) {
     // This takes the subscriber by value, which partially moves the corresponding
     // field (e.g. consumer.left_tire) out of the consumer struct. Once any field
     // is partially moved, Rust's borrow checker rejects whole-struct &self borrows
-    // such as consumer.get_left_tire_field() or consumer.update_tire_pressure().
+    // such as consumer.get_left_tire_field() or consumer.calculate_pressure_imbalance().
     //
     // Workaround Just for example: reorder so all whole-struct &self calls (field get/set, methods)
     // happen FIRST, and all subscribe() calls happen LAST  at that point individual
@@ -234,12 +234,6 @@ async fn consume_monitor<R: Runtime>(consumer: VehicleMonitorConsumer<R>) {
     }
 
     //  Methods
-    // Copy path: single argument.
-    match consumer.update_tire_pressure(Tire { pressure: 30.0 }).await {
-        Ok(_) => println!("[Consumer] update_tire_pressure OK"),
-        Err(e) => eprintln!("[Consumer] update_tire_pressure failed: {:?}", e),
-    }
-
     // Copy path: two arguments.
     match consumer
         .update_front_tires_pressure(Tire { pressure: 31.0 }, Tire { pressure: 32.0 })
@@ -249,24 +243,36 @@ async fn consume_monitor<R: Runtime>(consumer: VehicleMonitorConsumer<R>) {
         Err(e) => eprintln!("[Consumer] update_front_tires_pressure failed: {:?}", e),
     }
 
-    // Zero-copy path: allocate, write, then call.
-    let (uninit,) = consumer
-        .update_tire_pressure
-        .allocate()
-        .expect("Failed to allocate method argument");
-    let tire_ptr = uninit.write(Tire { pressure: 35.0 });
-    match consumer.update_tire_pressure(tire_ptr).await {
-        Ok(_) => println!("[Consumer] update_tire_pressure (zero-copy) OK"),
-        Err(e) => eprintln!(
-            "[Consumer] update_tire_pressure (zero-copy) failed: {:?}",
-            e
-        ),
+    // calculate_pressure_imbalance is not a thin wrapper around a field's get/set: it takes two
+    // Tire readings and returns a distinct computed result type (PressureImbalance).
+    // Copy path.
+    match consumer
+        .calculate_pressure_imbalance(Tire { pressure: 30.0 }, Tire { pressure: 35.0 })
+        .await
+    {
+        Ok(imbalance) => println!("[Consumer] calculate_pressure_imbalance: {:?}", *imbalance),
+        Err(e) => eprintln!("[Consumer] calculate_pressure_imbalance failed: {:?}", e),
     }
 
-    // Zero-argument method returning a value.
-    match consumer.get_tire_pressure().await {
-        Ok(tire) => println!("[Consumer] get_tire_pressure: {:?}", *tire),
-        Err(e) => eprintln!("[Consumer] get_tire_pressure failed: {:?}", e),
+    // Zero-copy path: allocate, write, then call.
+    let (uninit1, uninit2) = consumer
+        .calculate_pressure_imbalance
+        .allocate()
+        .expect("Failed to allocate method arguments");
+    let tire1_ptr = uninit1.write(Tire { pressure: 33.0 });
+    let tire2_ptr = uninit2.write(Tire { pressure: 34.0 });
+    match consumer
+        .calculate_pressure_imbalance(tire1_ptr, tire2_ptr)
+        .await
+    {
+        Ok(imbalance) => println!(
+            "[Consumer] calculate_pressure_imbalance (zero-copy): {:?}",
+            *imbalance
+        ),
+        Err(e) => eprintln!(
+            "[Consumer] calculate_pressure_imbalance (zero-copy) failed: {:?}",
+            e
+        ),
     }
 
     //  Events
@@ -318,8 +324,8 @@ async fn consume_monitor<R: Runtime>(consumer: VehicleMonitorConsumer<R>) {
 
     //  TODO: Uncomment when Runtime implementation is ready and
     //  subscribe() is changed to take &mut self (no partial move).
-    // match consumer.update_tire_pressure(Tire { pressure: 30.0 }).await {
-    //     Ok(_) => println!("[Consumer] update_tire_pressure OK"),
-    //     Err(e) => eprintln!("[Consumer] update_tire_pressure failed: {:?}", e),
+    // match consumer.calculate_pressure_imbalance(Tire { pressure: 30.0 }, Tire { pressure: 35.0 }).await {
+    //     Ok(imbalance) => println!("[Consumer] calculate_pressure_imbalance: {:?}", *imbalance),
+    //     Err(e) => eprintln!("[Consumer] calculate_pressure_imbalance failed: {:?}", e),
     // }
 }

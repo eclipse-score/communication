@@ -59,7 +59,7 @@ pub struct WithNotifier;
 /// along with all necessary trait implementations.
 ///
 /// Supports Event-only interfaces (backward compatible) and mixed interfaces containing
-/// any combination of `Event<T>`, `Field<T>`, and `method_name(Args) -> Return` members
+/// any combination of `Event<T>`, `Field<T>`, and `method_name: Method(Args) -> Return` members
 /// in the same definition block.
 ///
 /// Automatically generates unique type names from the identifier of macro invocation.
@@ -78,12 +78,12 @@ pub struct WithNotifier;
 /// # Member types
 /// - `name: Event<T>` - event subscriber / publisher pair
 /// - `name: Field<T>` - field subscriber / publisher pair (with set-handler callback support)
-/// - `name(Args) -> Return` - method caller / handler pair (fn-like syntax)
+/// - `name: Method(Args) -> Return` - method caller / handler pair (symmetric with `Event<T>` and `Field<T>`)
 ///
 /// # Parameters
 /// - Keywords: `interface` followed by the interface identifier and a block of member definitions.
 /// - `$id`: Simple identifier used for type name generation (e.g., Vehicle, Engine)
-/// - Members can be any mix of `Event<T>`, `Field<T>`, and `name(Args) -> Return`
+/// - Members can be any mix of `Event<T>`, `Field<T>`, and `name: Method(Args) -> Return`
 ///
 /// # Example: Event-only with auto-generated ID
 /// ```ignore
@@ -145,10 +145,10 @@ pub struct WithNotifier;
 ///             speed: Field<Speed, WithGetter>,
 ///             // Field with only WithNotifier: consumer gets subscriber only
 ///             status: Field<Status, WithNotifier>,
-///             // Method member
-///             update_left_tire_pressure(Tire) -> (),
+///             // Method member 
+///             update_left_tire_pressure: Method(Tire) -> (),
 ///             // Get method
-///             get_tire_pressure() -> Tire,
+///             get_tire_pressure: Method() -> Tire,
 ///         }
 ///     );
 /// }
@@ -488,7 +488,9 @@ macro_rules! _interface_collect_members {
         ));
     };
 
-    // Method member (fn-like syntax): `name(Arg0, Arg1, ...) -> Ret ,?`
+    // Method member (Field/Event-symmetric syntax): `name: Method(Arg0, Arg1, ...) -> Ret ,?`
+    // This resembles `Fn` bounds and keeps method declarations visually consistent
+    // with `Event<T>` and `Field<T, ...>` members.
     (
         @id[$id:ident, $uid:expr]
         @ev[$($ev_name:ident : $ev_type:ty ,)*]
@@ -497,7 +499,7 @@ macro_rules! _interface_collect_members {
         @fi_g[$($fig_name:ident : $fig_type:ty ,)*]
         @fi_s[$($fis_name:ident : $fis_type:ty ,)*]
         @me[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
-        $name:ident ( $($arg_ty:ty),* ) -> $ret:ty
+        $name:ident : Method ( $($arg_ty:ty),* ) -> $ret:ty
         $(, $($rest:tt)*)?
     ) => {
         $crate::_interface_collect_members!(
@@ -530,14 +532,14 @@ macro_rules! _interface_collect_members {
             "Supported member types:\n",
             "  name: Event<T>                                           - event subscriber / publisher pair\n",
             "  name: Field<T, WithGetter + WithSetter + WithNotifier>   - field with capability tags\n",
-            "  name(Arg0, Arg1, ...) -> Ret                             - method caller / handler pair\n",
+            "  name: Method(Arg0, Arg1, ...) -> Ret                     - method caller / handler pair\n",
             "Note: Field<T> without tags is not allowed. Specify at least one of:\n",
             "  WithGetter, WithSetter, WithNotifier\n",
             "Example:\n",
             "  interface!(interface MyIface {\n",
             "      my_event: Event<MyData>,\n",
             "      my_field: Field<MyData, WithGetter + WithSetter + WithNotifier>,\n",
-            "      my_method(MyData) -> MyData,\n",
+            "      my_method: Method(MyData) -> MyData,\n",
             "  });"
         ));
     };
