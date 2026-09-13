@@ -59,47 +59,6 @@ fn create_consumer_method<R: Runtime>(
 // Method calls return `impl Future<Output = score_com::Result<T>>`, so they must be `.await`ed.
 // All the method called is async.
 
-// Copy path: single positional argument.
-// Demonstrates calling a method with a single argument, where the argument is copied into the method call.
-// Zero-copy path: allocate, write, then call the method with allocated args.
-#[allow(dead_code)]
-async fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
-    // Copy path: single positional argument — no tuple needed.
-    let tire = Tire { pressure: 30.0 };
-    match consumer.update_tire_pressure(tire).await {
-        Ok(_) => println!("Successfully called update_tire_pressure method"),
-        Err(e) => eprintln!("Failed to call update_tire_pressure method: {:?}", e),
-    }
-    // Allocate return the tuple of uninitialized method argument slots,
-    // We need to store in tuple format, or user need to access using uninit1.0.write(...)
-    let (uninit1,) = consumer
-        .update_tire_pressure
-        .allocate()
-        .expect("Failed to allocate method arguments");
-    let tire1ptr = uninit1.write(Tire { pressure: 35.0 });
-
-    // Zero-copy path: allocate, write, then call the same wrapper.
-    match consumer.update_tire_pressure(tire1ptr).await {
-        Ok(_) => println!("Successfully called update_tire_pressure method with allocated args"),
-        Err(e) => eprintln!(
-            "Failed to call update_tire_pressure method with allocated args: {:?}",
-            e
-        ),
-    }
-}
-
-// Get Method call which has no argument and return a value, which is also async.
-#[allow(dead_code)]
-async fn method_get_call<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
-    // Copy path: zero-argument method — empty parens, no empty-tuple needed.
-    // it returns a `Result<R::MethodReturnSample<Tire>>`
-    // which is a wrapper around the return value of the method call.
-    match consumer.get_tire_pressure().await {
-        Ok(tire) => println!("Current tire pressure: {:?}", *tire),
-        Err(e) => eprintln!("Failed to call get_tire_pressure method: {:?}", e),
-    }
-}
-
 // two arguments method.
 // It demonstrates calling a method with two arguments, where the arguments are copied into the method call.
 // It also demonstrates the zero-copy path, where the arguments are allocated, written, and then passed to the method call.
@@ -129,6 +88,43 @@ async fn consumer_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
         }
         Err(e) => eprintln!(
             "Failed to call update_front_tires_pressure method with allocated args: {:?}",
+            e
+        ),
+    }
+}
+
+// A method that is not just a thin wrapper around a field's get/set: it takes two Tire
+// readings and returns a distinct computed result type (PressureImbalance), demonstrating both
+// the copy path and the zero-copy path.
+#[allow(dead_code)]
+async fn consumer_calculate_pressure_imbalance<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
+    // Copy path: two arguments, copied into the method call.
+    let tire1 = Tire { pressure: 30.0 };
+    let tire2 = Tire { pressure: 32.0 };
+    match consumer.calculate_pressure_imbalance(tire1, tire2).await {
+        Ok(imbalance) => println!("Calculated pressure imbalance: {:?}", *imbalance),
+        Err(e) => eprintln!("Failed to call calculate_pressure_imbalance method: {:?}", e),
+    }
+
+    // Zero-copy path: allocate, write both args, then call the same method with allocated args.
+    let (uninit1, uninit2) = consumer
+        .calculate_pressure_imbalance
+        .allocate()
+        .expect("Failed to allocate method arguments");
+    let tire1ptr = uninit1.write(Tire { pressure: 33.0 });
+    let tire2ptr = uninit2.write(Tire { pressure: 34.0 });
+    match consumer
+        .calculate_pressure_imbalance(tire1ptr, tire2ptr)
+        .await
+    {
+        Ok(imbalance) => {
+            println!(
+                "Calculated pressure imbalance with allocated args: {:?}",
+                *imbalance
+            )
+        }
+        Err(e) => eprintln!(
+            "Failed to call calculate_pressure_imbalance method with allocated args: {:?}",
             e
         ),
     }
