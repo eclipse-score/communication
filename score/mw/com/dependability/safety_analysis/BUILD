@@ -13,6 +13,8 @@
 
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
+    "assumptions_of_use",
+    "dependability_analysis",
     "fmea",
 )
 
@@ -34,5 +36,21 @@ fmea(
     controlmeasures = ["aou.trlc"],
     failuremodes = ["failure_modes.trlc"],
     root_causes = [":root_causes"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+assumptions_of_use(
+    name = "aous",
+    srcs = ["aou.trlc"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+# dependable_element consumes DependabilityAnalysisInfo, which only this rule
+# provides -- passing the fmea target directly drops it from traceability.
+dependability_analysis(
+    name = "mw_com_dependability_analysis",
+    arch_design = "//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design",
+    fmea = [":mw_com_fmea"],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
