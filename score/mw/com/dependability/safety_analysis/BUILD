@@ -48,9 +48,12 @@ assumptions_of_use(
 
 # dependable_element consumes DependabilityAnalysisInfo, which only this rule
 # provides -- passing the fmea target directly drops it from traceability.
+# maturity="development": traceability chain (public_api wiring, AoU root-cause
+# links) is not complete yet -- see communication#1075 for the migration plan.
 dependability_analysis(
     name = "mw_com_dependability_analysis",
     arch_design = "//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design",
     fmea = [":mw_com_fmea"],
+    maturity = "development",
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
