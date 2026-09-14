@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/test/skeleton_event_test_resources.h"
 
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
 
 namespace score::mw::com::impl::lola
 {
@@ -37,13 +38,13 @@ void SkeletonEventFixture::InitialiseSkeletonEvent(const ElementFqId element_fq_
                                                    const std::size_t max_samples,
                                                    const std::uint8_t max_subscribers,
                                                    const bool enforce_max_samples,
+                                                   const QualityType quality_type,
                                                    impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data,
-                                                   const bool field_getter_enabled,
-                                                   std::optional<InstanceIdentifier> instance_identifier)
+                                                   const bool field_getter_enabled)
 {
-    // We defer initialisation of the Skeleton to InitialiseSkeletonEvent to allow test fixtures to set any mocked
+    // We defer initialization of the Skeleton to InitialiseSkeletonEvent to allow test fixtures to set any mocked
     // expectations before creating the skeleton.
-    InitialiseSkeleton(instance_identifier.has_value() ? *instance_identifier : GetValidInstanceIdentifier());
+    InitialiseSkeleton(GetValidInstanceIdentifier(quality_type));
 
     SkeletonBinding::SkeletonEventBindings events{};
     SkeletonBinding::SkeletonFieldBindings fields{};
@@ -56,10 +57,11 @@ void SkeletonEventFixture::InitialiseSkeletonEvent(const ElementFqId element_fq_
 
     const auto number_of_field_getter_slots = field_getter_enabled ? kMaxConcurrentFieldGetterSamplePtrs : 0U;
 
-    skeleton_event_ = std::make_unique<SkeletonEvent<test::TestSampleType>>(
+    skeleton_event_ = std::make_unique<SkeletonEvent>(
         *skeleton_,
         element_fq_id,
         service_element_name,
+        test::kEventSampleTypeSizeInfo,
         SkeletonEventProperties{
             max_samples, 0U, number_of_field_getter_slots, false, max_subscribers, enforce_max_samples},
         skeleton_event_tracing_data);
@@ -81,9 +83,24 @@ EventControl* SkeletonEventFixture::GetEventControl(const ElementFqId element_fq
     return nullptr;
 }
 
-InstanceIdentifier SkeletonEventFixture::GetValidInstanceIdentifier()
+std::optional<std::reference_wrapper<TransactionLog>> SkeletonEventFixture::GetSkeletonTransactionLog(
+    const QualityType quality_type)
 {
-    return make_InstanceIdentifier(valid_asil_instance_deployment_, valid_type_deployment_);
+    auto* const event_control = GetEventControl(fake_element_fq_id_, quality_type);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(event_control != nullptr);
+    return TransactionLogSetAttorney{event_control->transaction_log_set_}.GetSkeletonTransactionLog();
+}
+
+InstanceIdentifier SkeletonEventFixture::GetValidInstanceIdentifier(QualityType quality_type)
+{
+    if (quality_type == QualityType::kASIL_B)
+    {
+        return make_InstanceIdentifier(valid_asil_instance_deployment_, valid_type_deployment_);
+    }
+    else
+    {
+        return make_InstanceIdentifier(valid_qm_instance_deployment_, valid_type_deployment_);
+    }
 }
 
 }  // namespace score::mw::com::impl::lola

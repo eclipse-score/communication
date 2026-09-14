@@ -52,7 +52,7 @@ class GenericProxyEventBinding : public ProxyEventBindingBase
 
     /// \brief return the (aligned) size in bytes of the underlying event sample data type.
     /// \return size in bytes.
-    [[deprecated("Use GetDataTypeSizeInfo() for size and alignment information, issue #975")]]
+    [[deprecated("Use GetEventDataTypeSizeInfo() for size and alignment information, issue #975")]]
     virtual std::size_t GetSampleSize() const noexcept = 0;
 
     /// \brief return the size and alignment information of the underlying event sample data type.
