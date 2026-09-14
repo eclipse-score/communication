@@ -104,6 +104,56 @@ def _find_compiled_pack_root():
     return pack_root
 
 
+def _populate_offline_package_cache(pack_root):
+    """Seed CodeQL's default package cache with the vendored library dependencies.
+
+    The `analysis_report` tool (from @codeql_coding_standards) runs several
+    queries straight from the checkout's *source* pack tree (e.g. the
+    deviations queries under cpp/common/src/codingstandards/cpp/deviations),
+    invoking plain `codeql database run-queries` with no --search-path/
+    --additional-packs. CodeQL then falls back to its default pack-cache
+    resolution (normally `~/.codeql/packages/<scope>/<name>/<version>`), which
+    requires downloading the pack's dependencies (e.g. `advanced-security/qtil`)
+    from the CodeQL package registry over the network the first time.
+    In a hermetic/offline environment this download fails with:
+        ERROR: Pack 'advanced-security/qtil@0.0.3' was not found in the pack
+        download cache. Run 'codeql pack install' to download the
+        dependencies.
+    (masked by an upstream bug in codeql-coding-standards' scripts/reports/
+    error.py, which never prints the run's stderr, so only the generic
+    "Unable to run queries" / returncode 2 is visible to the user.)
+
+    The vendored pre-compiled MISRA pack (@codeql_coding_standards_compiled)
+    already bundles every one of these dependencies -- at exactly the pinned
+    versions -- under `.codeql/libraries/<scope>/<name>/<version>`, so instead
+    of requiring network access we simply seed the default package cache
+    directory from there. This is idempotent: existing cache entries (e.g. a
+    real prior `codeql pack install`) are left untouched.
+    """
+    libraries_dir = os.path.join(pack_root, ".codeql", "libraries")
+    if not os.path.isdir(libraries_dir):
+        return
+
+    packages_dir = os.path.join(os.path.expanduser("~"), ".codeql", "packages")
+    for scope in os.listdir(libraries_dir):
+        scope_dir = os.path.join(libraries_dir, scope)
+        if not os.path.isdir(scope_dir):
+            continue
+        for name in os.listdir(scope_dir):
+            name_dir = os.path.join(scope_dir, name)
+            if not os.path.isdir(name_dir):
+                continue
+            for version in os.listdir(name_dir):
+                src = os.path.join(name_dir, version)
+                if not os.path.isdir(src):
+                    continue
+                dst = os.path.join(packages_dir, scope, name, version)
+                if os.path.exists(dst):
+                    continue
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                shutil.copytree(src, dst)
+
+
 def _read_pack_identity(pack_root):
     """Return the (name, version) declared in the pack's qlpack.yml.
 
@@ -237,6 +287,15 @@ def analyze_database(
     if analysis_report_path and os.path.exists(analysis_report_path):
         print(" Generating MISRA C++ compliance reports...")
         try:
+            # analysis_report runs several queries (e.g. the deviations
+            # queries) directly from the checkout's source pack tree via
+            # plain `codeql database run-queries`, with no --search-path/
+            # --additional-packs of its own. Seed CodeQL's default package
+            # cache with the vendored pack's bundled library dependencies
+            # first, so that pack resolution succeeds offline (see
+            # _populate_offline_package_cache's docstring for details).
+            _populate_offline_package_cache(_find_compiled_pack_root())
+
             # Make analysis_report executable and run it
             os.chmod(analysis_report_path, 0o755)
 
