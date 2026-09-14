@@ -735,8 +735,8 @@ TEST(SkeletonEventGetLatestSampleTest, CallingGetLatestSampleDispatchesToBinding
     // and that GetLatestSample() is called once on the event binding which returns a valid sample
     TestSampleType expected_sample_value{42U};
     EXPECT_CALL(skeleton_event_binding_mock, GetLatestSample(QualityType::kASIL_QM))
-        .WillOnce(Return(ByMove(SamplePtr<void>{
-            mock_binding::SamplePtr<void>{&expected_sample_value, [](void*) noexcept {}}, SampleReferenceGuard{}})));
+        .WillOnce(Return(ByMove(SamplePtr<void>{mock_binding::SamplePtr{&expected_sample_value, [](void*) noexcept {}},
+                                                SampleReferenceGuard{}})));
 
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};

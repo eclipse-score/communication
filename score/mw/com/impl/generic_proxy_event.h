@@ -18,11 +18,8 @@
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event_base.h"
 #include "score/mw/com/impl/tracing/proxy_event_tracing.h"
-#include "score/mw/com/impl/tracing/proxy_event_tracing_data.h"
 
 #include "score/mw/log/logging.h"
-
-#include <score/assert.hpp>
 
 #include <memory>
 #include <string_view>
@@ -53,7 +50,7 @@ class GenericProxyEvent : public ProxyEventBase
     ///
     /// \param parent Proxy that contains this event
     /// \param event_name Event name of the event, taken from the AUTOSAR model
-    GenericProxyEvent(ProxyBase& base, const std::string_view event_name);
+    GenericProxyEvent(ProxyBase& parent, const std::string_view event_name);
 
     /// \brief A ProxyEventBase shall not be copyable or copyable
     GenericProxyEvent(const GenericProxyEvent&) = delete;
@@ -103,13 +100,13 @@ Result<std::size_t> GenericProxyEvent::GetNewSamples(F&& receiver, std::size_t m
         return MakeUnexpected(ComErrc::kMaxSamplesReached);
     }
 
+    // \ToDo: Currently we do not have any tracing functionality for generic proxies/skeletons. Thus, this
+    // tracing_receiver is a no-op, which just adds a unnecessary call-indirection.
+    // Maybe remove with ticket: SWP-281948
     auto tracing_receiver =
         tracing::CreateTracingGenericGetNewSamplesCallback<F>(tracing_data_, std::forward<F>(receiver));
 
-    auto* const proxy_event_binding = dynamic_cast<GenericProxyEventBinding*>(binding_base_.get());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_event_binding != nullptr,
-                                                "Downcast to GenericProxyEventBinding failed!");
-    const auto get_new_samples_result = proxy_event_binding->GetNewSamples(std::move(tracing_receiver), guard_factory);
+    const auto get_new_samples_result = binding_->GetNewSamples(std::move(tracing_receiver), guard_factory);
     if (!get_new_samples_result.has_value())
     {
         if (get_new_samples_result.error() == ComErrc::kNotSubscribed)

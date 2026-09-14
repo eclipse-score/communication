@@ -41,19 +41,11 @@ using ::testing::StartsWith;
 
 }  // namespace
 
-GenericProxyEventAttorney::GenericProxyEventAttorney(GenericProxyEvent& generic_proxy_event) noexcept
-    : generic_proxy_event_{generic_proxy_event}
-{
-}
+ProxyEventAttorney::ProxyEventAttorney(ProxyEvent& proxy_event) noexcept : proxy_event_{proxy_event} {}
 
-ProxyEventCommonAttorney::ProxyEventCommonAttorney(ProxyEventCommon& proxy_event_common) noexcept
-    : proxy_event_common_{proxy_event_common}
+void ProxyEventAttorney::InjectSlotCollector(SlotCollector&& slot_collector)
 {
-}
-
-void ProxyEventCommonAttorney::InjectSlotCollector(SlotCollector&& slot_collector)
-{
-    proxy_event_common_.InjectSlotCollector(std::move(slot_collector));
+    proxy_event_.InjectSlotCollector(std::move(slot_collector));
 }
 
 ProxyMockedMemoryFixture::ProxyMockedMemoryFixture() noexcept

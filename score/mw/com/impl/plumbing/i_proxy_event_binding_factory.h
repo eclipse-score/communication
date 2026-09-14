@@ -50,7 +50,7 @@ class IProxyEventBindingFactory
                         ProxyBinding& parent_binding,
                         const std::string_view event_name,
                         const ServiceElementType service_element_type) noexcept
-        -> Result<std::unique_ptr<ProxyEventBinding<SampleType>>> = 0;
+        -> Result<std::unique_ptr<ProxyEventBinding>> = 0;
 };
 
 /// \brief Interface for a factory class that dispatches calls to the appropriate binding based on

@@ -13,7 +13,6 @@
 #include "score/mw/com/impl/plumbing/proxy_event_binding_factory_impl.h"
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/generic_proxy_event.h"
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
 #include "score/mw/com/impl/plumbing/binding_factory_error.h"
 #include "score/mw/com/impl/plumbing/lola_proxy_element_building_blocks.h"
@@ -41,7 +40,7 @@ Result<std::unique_ptr<GenericProxyEventBinding>> GenericProxyEventBindingFactor
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD((service_element_type == ServiceElementType::EVENT) ||
                                               (service_element_type == ServiceElementType::FIELD));
 
-    using ReturnType = Result<std::unique_ptr<lola::GenericProxyEvent>>;
+    using ReturnType = Result<std::unique_ptr<lola::ProxyEvent>>;
     auto deployment_info_visitor = score::cpp::overload(
         [&parent_handle, &parent_binding, event_name, service_element_type](
             const LolaServiceTypeDeployment& lola_type_deployment) -> ReturnType {
@@ -55,7 +54,7 @@ Result<std::unique_ptr<GenericProxyEventBinding>> GenericProxyEventBindingFactor
 
             const auto element_fq_id =
                 GetElementFqId(parent_handle, lola_type_deployment, std::string{event_name}, service_element_type);
-            return std::make_unique<lola::GenericProxyEvent>(*lola_proxy, element_fq_id, event_name);
+            return std::make_unique<lola::ProxyEvent>(*lola_proxy, element_fq_id, event_name);
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);

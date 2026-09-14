@@ -44,10 +44,9 @@ class ProxyFieldBindingFactoryImpl final : public IProxyFieldBindingFactory<Samp
     /// \param handle The handle containing the binding information.
     /// \param field_name The binding unspecific name of the event inside the proxy denoted by handle.
     /// \return An instance of ProxyEventBinding or an error in case binding creation fails.
-    Result<std::unique_ptr<ProxyEventBinding<SampleType>>> CreateEventBinding(
-        HandleType parent_handle,
-        ProxyBinding& parent_binding,
-        const std::string_view field_name) noexcept override;
+    Result<std::unique_ptr<ProxyEventBinding>> CreateEventBinding(HandleType parent_handle,
+                                                                  ProxyBinding& parent_binding,
+                                                                  const std::string_view field_name) noexcept override;
 
     Result<std::unique_ptr<ProxyMethodBinding>> CreateGetMethodBinding(
         HandleType parent_handle,
@@ -69,10 +68,10 @@ template <typename SampleType>
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-inline Result<std::unique_ptr<ProxyEventBinding<SampleType>>>
-ProxyFieldBindingFactoryImpl<SampleType>::CreateEventBinding(HandleType parent_handle,
-                                                             ProxyBinding& parent_binding,
-                                                             const std::string_view field_name) noexcept
+inline Result<std::unique_ptr<ProxyEventBinding>> ProxyFieldBindingFactoryImpl<SampleType>::CreateEventBinding(
+    HandleType parent_handle,
+    ProxyBinding& parent_binding,
+    const std::string_view field_name) noexcept
 {
     return ProxyEventBindingFactory<SampleType>::Create(
         std::move(parent_handle), parent_binding, field_name, ServiceElementType::FIELD);

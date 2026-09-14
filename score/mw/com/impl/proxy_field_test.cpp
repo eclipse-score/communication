@@ -364,7 +364,7 @@ class ProxyFieldGetSetFixture : public ::testing::Test
     {
         return ProxyField<TestSampleType, WithGetter>{
             kFieldName,
-            std::make_unique<mock_binding::ProxyEvent<TestSampleType>>(),
+            std::make_unique<mock_binding::ProxyEvent>(),
             nullptr,
             std::make_unique<mock_binding::ProxyMethodFacade>(get_method_binding_mock_)};
     }
@@ -373,7 +373,7 @@ class ProxyFieldGetSetFixture : public ::testing::Test
     {
         return ProxyField<TestSampleType, WithSetter, WithNotifier>{
             kFieldName,
-            std::make_unique<mock_binding::ProxyEvent<TestSampleType>>(),
+            std::make_unique<mock_binding::ProxyEvent>(),
             std::make_unique<mock_binding::ProxyMethodFacade>(set_method_binding_mock_)};
     }
 

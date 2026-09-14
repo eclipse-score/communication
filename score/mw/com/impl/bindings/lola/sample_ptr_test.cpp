@@ -26,12 +26,6 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
-struct DummyStruct
-{
-    std::uint8_t member1_;
-    std::uint8_t member2_;
-};
-
 constexpr std::size_t kMaxSlots{5U};
 
 /// \brief Test fixture for SamplePtr functionality that only works for non-void types
@@ -52,83 +46,64 @@ class SamplePtrTest : public ::testing::Test
         return slot.value();
     }
 
-    SamplePtr<std::uint8_t> CreateSamplePtr(const EventSlotStatus::EventTimeStamp timestamp,
-                                            const EventSlotStatus::EventTimeStamp last_search_time)
+    SamplePtr CreateSamplePtr(const EventSlotStatus::EventTimeStamp timestamp,
+                              const EventSlotStatus::EventTimeStamp last_search_time)
     {
         AllocateSlot(timestamp);
         auto slot_index = consumer_event_data_control_local_.ReferenceNextEvent(last_search_time);
         EXPECT_TRUE(slot_index.has_value());
 
         dummy_storage_.push_back(std::make_unique<std::uint8_t>(0U));
-        return SamplePtr<std::uint8_t>{
-            dummy_storage_.back().get(), consumer_event_data_control_local_, slot_index.value()};
+        return SamplePtr{dummy_storage_.back().get(), consumer_event_data_control_local_, slot_index.value()};
     }
     std::vector<std::unique_ptr<std::uint8_t>> dummy_storage_;
 };
 
-/// \brief Templated test fixture for SamplePtr functionality that works for both void and non-void types
-///
-/// \tparam SampleType The data type that is managed by the SamplePtr. Can either be a real type or void. The template
-/// parameter can be accessed in the tests through TypeParam.
-template <typename SampleType>
-class SamplePtrGenericTypeTest : public SamplePtrTest
-{
-};
-
-// Gtest will run all tests in the SamplePtrGenericTypeTest once for every type, t, in MyTypes, such that TypeParam == t
-// for each run.
-using MyTypes = ::testing::Types<uint8_t, void>;
-TYPED_TEST_SUITE(SamplePtrGenericTypeTest, MyTypes, );
-
-TYPED_TEST(SamplePtrGenericTypeTest, DereferencesAssignedSlot)
+TEST_F(SamplePtrTest, DereferencesAssignedSlot)
 {
     auto slot_index = SamplePtrTest::AllocateSlot();
 
     auto client_slot_result = SamplePtrTest::consumer_event_data_control_local_.ReferenceNextEvent(0);
     ASSERT_TRUE(client_slot_result.has_value());
     uint8_t dummy_val{};
-    SamplePtr<TypeParam> sample_ptr{
-        &dummy_val, SamplePtrTest::consumer_event_data_control_local_, client_slot_result.value()};
+    SamplePtr sample_ptr{&dummy_val, SamplePtrTest::consumer_event_data_control_local_, client_slot_result.value()};
 
     EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot_index]}.GetReferenceCount(), 1);
     sample_ptr = nullptr;
     EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot_index]}.GetReferenceCount(), 0);
 }
 
-TYPED_TEST(SamplePtrGenericTypeTest, ProperMoveConstruction)
+TEST_F(SamplePtrTest, ProperMoveConstruction)
 {
     auto slot_index = SamplePtrTest::AllocateSlot();
 
     auto client_slot_result = SamplePtrTest::consumer_event_data_control_local_.ReferenceNextEvent(0);
     ASSERT_TRUE(client_slot_result.has_value());
     uint8_t dummy_val{};
-    SamplePtr<TypeParam> sample_ptr{
-        &dummy_val, SamplePtrTest::consumer_event_data_control_local_, client_slot_result.value()};
+    SamplePtr sample_ptr{&dummy_val, SamplePtrTest::consumer_event_data_control_local_, client_slot_result.value()};
 
     EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot_index]}.GetReferenceCount(), 1);
-    SamplePtr<TypeParam> another_sample_ptr{std::move(sample_ptr)};
+    SamplePtr another_sample_ptr{std::move(sample_ptr)};
     sample_ptr = nullptr;
     EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot_index]}.GetReferenceCount(), 1);
     another_sample_ptr = nullptr;
     EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot_index]}.GetReferenceCount(), 0);
 }
 
-TYPED_TEST(SamplePtrGenericTypeTest, ProperMoveAssignment)
+TEST_F(SamplePtrTest, ProperMoveAssignment)
 {
     auto slot = SamplePtrTest::AllocateSlot(1);
 
     auto client_slot_result = SamplePtrTest::consumer_event_data_control_local_.ReferenceNextEvent(0);
     ASSERT_TRUE(client_slot_result.has_value());
     uint8_t dummy_val{};
-    SamplePtr<TypeParam> sample_ptr{
-        &dummy_val, SamplePtrTest::consumer_event_data_control_local_, client_slot_result.value()};
+    SamplePtr sample_ptr{&dummy_val, SamplePtrTest::consumer_event_data_control_local_, client_slot_result.value()};
 
     auto slot2 = SamplePtrTest::AllocateSlot(2);
 
     auto client_slot_result_2 = SamplePtrTest::consumer_event_data_control_local_.ReferenceNextEvent(1);
     ASSERT_TRUE(client_slot_result_2.has_value());
-    SamplePtr<TypeParam> sample_ptr2{
-        &dummy_val, SamplePtrTest::consumer_event_data_control_local_, client_slot_result_2.value()};
+    SamplePtr sample_ptr2{&dummy_val, SamplePtrTest::consumer_event_data_control_local_, client_slot_result_2.value()};
 
     EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot]}.GetReferenceCount(), 1);
     EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot2]}.GetReferenceCount(), 1);
@@ -140,57 +115,28 @@ TYPED_TEST(SamplePtrGenericTypeTest, ProperMoveAssignment)
     EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot2]}.GetReferenceCount(), 0);
 }
 
-TYPED_TEST(SamplePtrGenericTypeTest, TestStaticProperties)
+TEST_F(SamplePtrTest, TestStaticProperties)
 {
-    static_assert(!std::is_copy_constructible<SamplePtr<TypeParam>>::value,
+    static_assert(!std::is_copy_constructible<SamplePtr>::value,
                   "SamplePtr must not be copied to ensure proper reference counting");
-    static_assert(!std::is_copy_assignable<SamplePtr<TypeParam>>::value,
+    static_assert(!std::is_copy_assignable<SamplePtr>::value,
                   "SamplePtr must not be copied to ensure proper reference counting");
 }
 
-TYPED_TEST(SamplePtrGenericTypeTest, ConstructFromNullptr)
+TEST_F(SamplePtrTest, ConstructFromNullptr)
 {
     // Given a SamplePtr constructed from nullptr
-    SamplePtr<TypeParam> sample_ptr{nullptr};
+    SamplePtr sample_ptr{nullptr};
 
     // expect that bool op returns false
     EXPECT_FALSE(sample_ptr);
 }
 
-TEST_F(SamplePtrTest, ArrayOp)
-{
-    // Given an SamplePtr on an allocated slot
-    AllocateSlot();
-    auto slot_index = consumer_event_data_control_local_.ReferenceNextEvent(0);
-    ASSERT_TRUE(slot_index.has_value());
-    DummyStruct dummy_val{22, 44};
-    SamplePtr<DummyStruct> sample_ptr{&dummy_val, consumer_event_data_control_local_, slot_index.value()};
-
-    // When accessing the data via ->
-    auto val1 = sample_ptr->member1_;
-    auto val2 = sample_ptr->member2_;
-
-    // Then the values are as expected
-    EXPECT_EQ(val1, 22);
-    EXPECT_EQ(val2, 44);
-}
-
-TEST_F(SamplePtrTest, StarOp)
-{
-    // Given an SamplePtr on an allocated slot
-    AllocateSlot();
-    auto slot_index = consumer_event_data_control_local_.ReferenceNextEvent(0);
-    ASSERT_TRUE(slot_index.has_value());
-    DummyStruct dummy_val{22, 44};
-    SamplePtr<DummyStruct> sample_ptr{&dummy_val, consumer_event_data_control_local_, slot_index.value()};
-
-    // When accessing the data via *
-    auto val1 = *sample_ptr;
-
-    // Then the values are as expected
-    EXPECT_EQ(val1.member1_, 22);
-    EXPECT_EQ(val1.member2_, 44);
-}
+// Note: ArrayOp/StarOp tests (testing operator->/operator* dereferencing a typed slot value) used to live here when
+// lola::SamplePtr was still a template. Since the binding layer's SamplePtr is now fully type-erased (const void*),
+// typed dereferencing is no longer meaningful at this layer; it is performed by the binding-independent
+// impl::SamplePtr<SampleType>, whose operator->/operator* are covered by
+// score/mw/com/impl/plumbing/sample_ptr_test.cpp (CanDereference, CanArrowOperator).
 
 TEST_F(SamplePtrTest, GreaterThanReturnsTrueWhenLeftSampleHasNewerTimestamp)
 {
@@ -224,7 +170,7 @@ TEST_F(SamplePtrTest, SortByTimestampOrdersSamplesFromNewestToOldest)
     constexpr EventSlotStatus::EventTimeStamp kMiddleTimestamp{42U};
     constexpr EventSlotStatus::EventTimeStamp kNewestTimestamp{43U};
 
-    std::vector<SamplePtr<std::uint8_t>> samples{};
+    std::vector<SamplePtr> samples{};
     samples.emplace_back(CreateSamplePtr(kOldestTimestamp, 0U));
     samples.emplace_back(CreateSamplePtr(kMiddleTimestamp, 1U));
     samples.emplace_back(CreateSamplePtr(kNewestTimestamp, 2U));
@@ -272,7 +218,7 @@ TEST_F(SamplePtrTest, SortByTimestampOrdersSamplesFromOldestToNewest)
     constexpr EventSlotStatus::EventTimeStamp kMiddleTimestamp{42U};
     constexpr EventSlotStatus::EventTimeStamp kNewestTimestamp{43U};
 
-    std::vector<SamplePtr<std::uint8_t>> samples{};
+    std::vector<SamplePtr> samples{};
     samples.emplace_back(CreateSamplePtr(kOldestTimestamp, 0U));
     samples.emplace_back(CreateSamplePtr(kMiddleTimestamp, 1U));
     samples.emplace_back(CreateSamplePtr(kNewestTimestamp, 2U));
@@ -292,7 +238,7 @@ TEST_F(SamplePtrTest, GreaterThanReturnsFalseWhenLeftSampleIsInvalid)
 {
     constexpr EventSlotStatus::EventTimeStamp kTimestamp{42U};
 
-    SamplePtr<std::uint8_t> invalid_sample{};
+    SamplePtr invalid_sample{};
     auto valid_sample = CreateSamplePtr(kTimestamp, 0U);
 
     const bool result = invalid_sample > valid_sample;
@@ -305,7 +251,7 @@ TEST_F(SamplePtrTest, GreaterThanReturnsFalseWhenRightSampleIsInvalid)
     constexpr EventSlotStatus::EventTimeStamp kTimestamp{42U};
 
     auto valid_sample = CreateSamplePtr(kTimestamp, 0U);
-    SamplePtr<std::uint8_t> invalid_sample{};
+    SamplePtr invalid_sample{};
 
     const bool result = valid_sample > invalid_sample;
 
@@ -316,7 +262,7 @@ TEST_F(SamplePtrTest, LessThanReturnsFalseWhenLeftSampleIsInvalid)
 {
     constexpr EventSlotStatus::EventTimeStamp kTimestamp{42U};
 
-    SamplePtr<std::uint8_t> invalid_sample{};
+    SamplePtr invalid_sample{};
     auto valid_sample = CreateSamplePtr(kTimestamp, 0U);
 
     const bool result = invalid_sample < valid_sample;
@@ -329,7 +275,7 @@ TEST_F(SamplePtrTest, LessThanReturnsFalseWhenRightSampleIsInvalid)
     constexpr EventSlotStatus::EventTimeStamp kTimestamp{42U};
 
     auto valid_sample = CreateSamplePtr(kTimestamp, 0U);
-    SamplePtr<std::uint8_t> invalid_sample{};
+    SamplePtr invalid_sample{};
 
     const bool result = valid_sample < invalid_sample;
 
