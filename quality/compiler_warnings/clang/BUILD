@@ -23,8 +23,23 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
     args = [
+        "-pthread",
         "-ffp-model=strict",
         "-fbracket-depth=512",
+        "-no-canonical-prefixes",
+    ],
+)
+
+cc_args(
+    name = "default_link_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "-pthread",
+        "-ldl",
+        "-no-canonical-prefixes",
+        "-Wl,--warn-execstack",
     ],
 )
 
@@ -68,6 +83,7 @@ cc_feature(
         "//quality/compiler_warnings:default_compile_args",
         "//quality/compiler_warnings:default_link_args",
         ":default_compile_args",
+        ":default_link_args",
     ] + select(
         {
             "@platforms//cpu:aarch64": [":gcc_install_dir_args_arm64"],
