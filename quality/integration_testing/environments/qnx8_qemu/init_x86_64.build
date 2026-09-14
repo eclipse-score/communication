@@ -20,10 +20,10 @@
 
 [image=0x3600000]
 [virtual=x86_64,multiboot] boot = {
-    startup-x86 -v -D8250..115200 -zz
+    startup-x86 -vvvv -D8250..115200 -zz
     PATH=/proc/boot
     LD_LIBRARY_PATH=/proc/boot
-    [+keeplinked] procnto-smp-instr
+    [+keeplinked] procnto-smp-instr -v -v
 }
 
 [+script] startup-script = {
