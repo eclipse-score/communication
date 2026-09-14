@@ -43,6 +43,17 @@ on:
         description: "Whether to setup QNX-specific CI requirements."
         type: boolean
         default: false
+      shard-index:
+        description: "0-based index of this shard (used with shard-count to split the target set)."
+        type: number
+        default: 0
+      shard-count:
+        description: >
+          Number of shards the matching test targets are split across. The target set is
+          queried once per job and divided by (target index mod shard-count), so shards stay
+          balanced automatically as tests are added/removed - no manual target lists to maintain.
+        type: number
+        default: 1
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL:
         required: false
@@ -67,6 +78,11 @@ jobs:
   run-flaky:
     name: ${{ inputs.config-name }}
     runs-on: ubuntu-24.04
+    # Safety net below the GitHub-hosted-runner default of 360 minutes: if a
+    # (shard of a) config is still too slow, it fails cleanly with logs and a
+    # partial report instead of being hard-cancelled by the platform default,
+    # which kills every remaining step (including report upload) with no trace.
+    timeout-minutes: 300
     permissions:
       contents: read
       actions: write
@@ -114,8 +130,54 @@ jobs:
         with:
           qnx-license: ${{ secrets.SCORE_QNX_LICENSE }}
 
+      - name: Compute shard target list
+        id: shard
+        run: |
+          set -euo pipefail
+
+          TAG_FILTERS="-no-flaky-test-detection"
+          if [[ -n "${{ inputs.test-tag-filters }}" ]]; then
+            TAG_FILTERS="${{ inputs.test-tag-filters }},-no-flaky-test-detection"
+          fi
+          echo "TAG_FILTERS=${TAG_FILTERS}" >> "${GITHUB_ENV}"
+
+          # Build a bazel query expression mirroring --test_tag_filters semantics
+          # (comma separated, "-" prefix excludes) so the queried target set
+          # exactly matches what `bazel test --test_tag_filters=...` would select.
+          BASE="kind(\".*_test rule\", ${{ inputs.target-pattern }})"
+          EXPR="${BASE}"
+          IFS=',' read -ra FILTERS <<< "${TAG_FILTERS}"
+          for f in "${FILTERS[@]}"; do
+            [[ -z "${f}" ]] && continue
+            if [[ "${f}" == -* ]]; then
+              tag="${f#-}"
+              EXPR="(${EXPR}) except attr(tags, \"\\b${tag}\\b\", ${BASE})"
+            else
+              EXPR="(${EXPR}) intersect attr(tags, \"\\b${f}\\b\", ${BASE})"
+            fi
+          done
+
+          TARGETS_FILE="${RUNNER_TEMP}/targets_${{ inputs.config-name }}.txt"
+          SHARD_FILE="${RUNNER_TEMP}/shard_${{ inputs.config-name }}.txt"
+
+          bazel query "${EXPR}" --output=label 2>&1 | sort -u > "${TARGETS_FILE}"
+
+          # Split the (sorted, so stable across shards) target list by
+          # index-modulo-shard-count. This keeps shards self-balancing as
+          # tests are added/removed - no manual per-directory target lists
+          # to maintain as the codebase grows.
+          awk -v n="${{ inputs.shard-count }}" -v i="${{ inputs.shard-index }}" \
+            'NR % n == i' "${TARGETS_FILE}" > "${SHARD_FILE}"
+
+          TOTAL=$(wc -l < "${TARGETS_FILE}")
+          SHARD_TOTAL=$(wc -l < "${SHARD_FILE}")
+          echo "Matched ${TOTAL} total targets; shard ${{ inputs.shard-index }}/${{ inputs.shard-count }} has ${SHARD_TOTAL}."
+          echo "shard-file=${SHARD_FILE}" >> "${GITHUB_OUTPUT}"
+          echo "shard-total=${SHARD_TOTAL}" >> "${GITHUB_OUTPUT}"
+
       - name: Run repeated Bazel tests for flaky detection
         id: run-tests
+        if: ${{ steps.shard.outputs.shard-total != '0' }}
         continue-on-error: true
         env:
           SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
@@ -131,11 +193,6 @@ jobs:
             ARGS+=("--config=${{ inputs.bazel-config }}")
           fi
 
-          TAG_FILTERS="-no-flaky-test-detection"
-          if [[ -n "${{ inputs.test-tag-filters }}" ]]; then
-            TAG_FILTERS="${{ inputs.test-tag-filters }},-no-flaky-test-detection"
-          fi
-
           ARGS+=(
             "--config=ci"
             "--build_tests_only"
@@ -146,7 +203,7 @@ jobs:
             "--test_tag_filters=${TAG_FILTERS}"
             "--test_output=errors"
             "--build_event_json_file=${BEP_FILE}"
-            "${{ inputs.target-pattern }}"
+            "--target_pattern_file=${{ steps.shard.outputs.shard-file }}"
           )
 
           set +e
