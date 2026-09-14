@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/proxy_event_binding_base.h"
+#include "score/mw/com/impl/proxy_event_binding.h"
 
 #include <gtest/gtest.h>
 #include <type_traits>
@@ -20,7 +20,7 @@ namespace score::mw::com::impl
 namespace
 {
 
-class DummyProxyEventBinding final : public ProxyEventBindingBase
+class DummyProxyEventBinding final : public ProxyEventBinding
 {
   public:
     Result<void> Subscribe(std::size_t) noexcept override
@@ -60,16 +60,20 @@ class DummyProxyEventBinding final : public ProxyEventBindingBase
     {
         return BindingType::kFake;
     }
-    void NotifyServiceInstanceChangedAvailability(bool, pid_t) noexcept override {}
+
+    Result<std::size_t> GetNewSamples(Callback&&, TrackerGuardFactory&) noexcept override
+    {
+        return {};
+    }
 };
 
-TEST(ProxyEventBindingBaseTest, ProxyEventBindingBaseShouldNotBeCopyable)
+TEST(ProxyEventBindingTest, ProxyEventBindingBaseShouldNotBeCopyable)
 {
     static_assert(!std::is_copy_constructible<DummyProxyEventBinding>::value, "Is wrongly copyable");
     static_assert(!std::is_copy_assignable<DummyProxyEventBinding>::value, "Is wrongly copyable");
 }
 
-TEST(ProxyEventBindingBaseTest, ProxyEventBindingBaseShouldNotBeMoveable)
+TEST(ProxyEventBindingTest, ProxyEventBindingBaseShouldNotBeMoveable)
 {
     static_assert(!std::is_move_constructible<DummyProxyEventBinding>::value, "Is wrongly moveable");
     static_assert(!std::is_move_assignable<DummyProxyEventBinding>::value, "Is wrongly moveable");

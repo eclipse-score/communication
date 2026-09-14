@@ -204,12 +204,12 @@ TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<void>& sa
             const auto* const managed_object =
                 static_cast<const void*>(lola::SampleAllocateePtrView{lola_ptr}.GetManagedObject());
 
-            lola::SamplePtr<void> sample_ptr{managed_object, consumer_event_data_control_local, event_slot_index};
+            lola::SamplePtr sample_ptr{managed_object, consumer_event_data_control_local, event_slot_index};
             return impl::tracing::TypeErasedSamplePtr{std::move(sample_ptr)};
         },
         [](mock_binding::SampleAllocateePtr& ptr) -> TypeErasedSamplePtr {
             impl::tracing::TypeErasedSamplePtr type_erased_sample_ptr{
-                mock_binding::SamplePtr<void>{ptr.get(), [](void*) noexcept {}}};
+                mock_binding::SamplePtr{ptr.get(), [](void*) noexcept {}}};
             return type_erased_sample_ptr;
         },
         // LCOV_EXCL_START (Defensive programming: CreateTypeErasedSamplePtr is always called after

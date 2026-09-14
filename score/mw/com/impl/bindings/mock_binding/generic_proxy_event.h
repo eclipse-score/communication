@@ -48,7 +48,6 @@ class GenericProxyEvent : public GenericProxyEventBinding
     MOCK_METHOD(void, Unsubscribe, (), (noexcept, override));
     MOCK_METHOD(Result<void>, Subscribe, (std::size_t), (noexcept, override));
     MOCK_METHOD(Result<std::size_t>, GetNumNewSamplesAvailable, (), (const, noexcept, override));
-    MOCK_METHOD(std::size_t, GetSampleSize, (), (const, noexcept, override));
     MOCK_METHOD(memory::DataTypeSizeInfo, GetDataTypeSizeInfo, (), (const, noexcept, override));
     MOCK_METHOD(bool, HasSerializedFormat, (), (const, noexcept, override));
     MOCK_METHOD(Result<std::size_t>,
@@ -64,7 +63,6 @@ class GenericProxyEvent : public GenericProxyEventBinding
     MOCK_METHOD(Result<void>, UnsetSubscriptionStateChangeHandler, (), (noexcept, override));
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
-    MOCK_METHOD(void, NotifyServiceInstanceChangedAvailability, (bool, pid_t), (noexcept, override));
 
     /// \brief Add a sample to the internal queue of fake events.
     ///
@@ -76,7 +74,7 @@ class GenericProxyEvent : public GenericProxyEventBinding
     template <typename SampleType>
     void PushFakeSample(SampleType&& sample)
     {
-        SamplePtr<void> sample_ptr(new SampleType(std::forward<SampleType>(sample)), [](void* p) noexcept {
+        SamplePtr sample_ptr(new SampleType(std::forward<SampleType>(sample)), [](void* p) noexcept {
             auto* const int_p = static_cast<SampleType*>(p);
             delete int_p;
         });
@@ -84,7 +82,7 @@ class GenericProxyEvent : public GenericProxyEventBinding
     }
 
   private:
-    using FakeSamples = std::vector<SamplePtr<void>>;
+    using FakeSamples = std::vector<SamplePtr>;
     FakeSamples fake_samples_;
 
     Result<std::size_t> GetNewFakeSamples(typename GenericProxyEventBinding::Callback&& callable,

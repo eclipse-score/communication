@@ -27,7 +27,7 @@ Result<std::size_t> GenericProxyEvent::GetNewFakeSamples(typename GenericProxyEv
         std::optional<SampleReferenceGuard> guard = tracker.TakeGuard();
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(guard.has_value(), "No guards available.");
 
-        SamplePtr<void> ptr = *sample;
+        SamplePtr ptr = *sample;
         impl::SamplePtr<void> impl_ptr = this->MakeSamplePtr(std::move(ptr), std::move(*guard));
 
         const tracing::ITracingRuntime::TracePointDataId dummy_trace_point_data_id{0U};

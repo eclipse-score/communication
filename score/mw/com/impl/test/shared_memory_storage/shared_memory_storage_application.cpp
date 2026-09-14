@@ -53,8 +53,7 @@ score::mw::com::impl::lola::ElementFqId ExtractId(const score::mw::com::impl::lo
 }
 
 // Overload for ProxyEvent (method is still public)
-template <typename SampleType>
-score::mw::com::impl::lola::ElementFqId ExtractId(const score::mw::com::impl::lola::ProxyEvent<SampleType>* binding)
+score::mw::com::impl::lola::ElementFqId ExtractId(const score::mw::com::impl::lola::ProxyEvent* binding)
 {
     return binding->GetElementFQId();
 }
@@ -333,8 +332,7 @@ int main(int argc, const char** argv)
         // ********************************************************************************
         const auto map_api_lanes_element_fq_id_result =
             GetElementFqId<score::mw::com::impl::ProxyEventView<MapApiLanesStamped>,
-                           score::mw::com::impl::lola::ProxyEvent<MapApiLanesStamped>>(
-                bigdata_proxy.map_api_lanes_stamped_);
+                           score::mw::com::impl::lola::ProxyEvent>(bigdata_proxy.map_api_lanes_stamped_);
         if (!(map_api_lanes_element_fq_id_result.has_value()))
         {
             std::cerr << "Proxy: Could not get map_api_lanes ElementFqId, bailing\n";
@@ -342,7 +340,7 @@ int main(int argc, const char** argv)
         }
         const auto dummy_data_element_fq_id_result =
             GetElementFqId<score::mw::com::impl::ProxyEventView<DummyDataStamped>,
-                           score::mw::com::impl::lola::ProxyEvent<DummyDataStamped>>(bigdata_proxy.dummy_data_stamped_);
+                           score::mw::com::impl::lola::ProxyEvent>(bigdata_proxy.dummy_data_stamped_);
         if (!(map_api_lanes_element_fq_id_result.has_value()))
         {
             std::cerr << "Proxy: Could not get dummy_data ElementFqId, bailing\n";

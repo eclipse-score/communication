@@ -13,18 +13,14 @@
 #ifndef SCORE_MW_COM_IMPL_PROXYBINDING_H
 #define SCORE_MW_COM_IMPL_PROXYBINDING_H
 
-#include "score/mw/com/impl/proxy_event_binding_base.h"
-
 #include "score/result/result.h"
 
-#include <cstddef>
 #include <string_view>
-#include <vector>
 
 namespace score::mw::com::impl
 {
 
-/// \brief The ProxyBinding abstracts the interface that _every_ binding needs to provide.
+/// \brief The ProxyBinding abstracts the interface that _every_ proxy binding needs to provide.
 ///
 /// It will be used by a concrete proxy to perform _any_ operation in a then binding specific manner.
 class ProxyBinding
@@ -45,7 +41,7 @@ class ProxyBinding
     /// Checks whether the event corresponding to event_name is provided
     ///
     /// Note. This function is currently only needed in a GenericProxy. However, we currently don't distinguish between
-    /// a lola::Proxy and a lola::GenericProxy (the latter doesn't exists). This is because IsEventProvided() is the
+    /// a lola::Proxy and a lola::GenericProxy (the latter doesn't exist). This is because IsEventProvided() is the
     /// only function that is not the same for both classes so we avoid introducing multiple additional classes purely
     /// to remove IsEventProvided from lola::Proxy. Therefore, if we add a lola::GenericProxy in future, we should
     /// create a GenericProxyBinding class, which will contain the pure virtual IsEventProvided() function, and a

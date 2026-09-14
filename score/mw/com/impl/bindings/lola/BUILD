@@ -387,17 +387,13 @@ cc_library(
 cc_library(
     name = "proxy",
     srcs = [
-        "generic_proxy_event.cpp",
         "proxy.cpp",
         "proxy_event.cpp",
-        "proxy_event_common.cpp",
         "proxy_method.cpp",
     ],
     hdrs = [
-        "generic_proxy_event.h",
         "proxy.h",
         "proxy_event.h",
-        "proxy_event_common.h",
         "proxy_method.h",
     ],
     features = COMPILER_WARNING_FEATURES,
@@ -962,16 +958,6 @@ cc_unit_test(
 )
 
 cc_unit_test(
-    name = "generic_proxy_event_test",
-    srcs = ["generic_proxy_event_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":proxy",
-        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
-    ],
-)
-
-cc_unit_test(
     name = "skeleton_method_test",
     srcs = ["skeleton_method_test.cpp"],
     features = COMPILER_WARNING_FEATURES + [
@@ -1176,7 +1162,37 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":proxy",
+        "//score/mw/com/impl:service_element_type",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_fixture",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_unit_test(
+    name = "proxy_event_get_new_samples_test",
+    srcs = ["proxy_event_get_new_samples_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":proxy",
+        "//score/mw/com/impl:sample_reference_tracker",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_fixture",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_unit_test(
+    name = "proxy_event_subscription_test",
+    srcs = ["proxy_event_subscription_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":proxy",
+        "//score/mw/com/impl:subscription_state",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_fixture",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/safecpp/scoped_function:scope",
     ],
 )
 
@@ -1262,18 +1278,6 @@ cc_unit_test(
         ":event_subscription_control",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "@score_baselibs//score/concurrency:atomic_indirector_mock_binding",
-    ],
-)
-
-cc_unit_test(
-    name = "proxy_event_common_test",
-    srcs = [
-        "proxy_event_common_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":proxy",
-        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
     ],
 )
 

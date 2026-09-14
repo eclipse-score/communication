@@ -12,17 +12,18 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
-#include "score/mw/com/impl/bindings/mock_binding/proxy_event.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/enriched_instance_identifier.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/subscription_state.h"
 
 #include "score/result/result.h"
 
@@ -416,31 +417,40 @@ TEST_F(ProxyAutoReconnectFixture, WhenStopFindServiceReturnsErrorOnProxyDestruct
     // Then the program does not terminate
 }
 
-TEST_F(ProxyAutoReconnectFixture, RegisterEventCallsNotifyOnEventWithFalseWhenProviderInitiallyDoesNotExist)
+TEST_F(ProxyAutoReconnectFixture, ProxyEventCreationWhenProviderNotExistsLeadsToSubscriptionPending)
 {
     const auto valid_find_service_handle = make_FindServiceHandle(10U);
-    mock_binding::ProxyEvent<std::uint8_t> proxy_event{};
+
+    // Given a dummy SkeletonEvent which the ProxyEvent will connect to
+    InitialiseDummySkeletonEvent(kDummyElementFqId,
+                                 SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
 
     // Expecting that StartFindService is called but the handler is not called since the provider does not exist
     EXPECT_CALL(service_discovery_mock_, StartFindService(_, EnrichedInstanceIdentifier{identifier_}))
         .WillOnce(Return(valid_find_service_handle));
 
-    // Then expecting that NotifyServiceInstanceChangedAvailability is called on the event with is_available false
-    const bool is_available{false};
-    EXPECT_CALL(proxy_event, NotifyServiceInstanceChangedAvailability(is_available, _));
-
     // When creating a proxy
     InitialiseProxyWithConstructor(identifier_);
     EXPECT_NE(proxy_, nullptr);
 
-    // and the ProxyEvent registers itself with the Proxy
-    proxy_->RegisterEvent("Event0", proxy_event);
+    // and a ProxyEvent registers itself with the Proxy
+    ProxyEvent proxy_event{*proxy_, kDummyElementFqId, kDummyEventName};
+    score::cpp::ignore = proxy_event.Subscribe(kMaxNumSlots);
+
+    // Then the Proxy notified the event during registration that the provider service instance is not available,
+    // so the event ends up in SubscriptionPending instead of Subscribed after subscribing
+    EXPECT_EQ(proxy_event.GetSubscriptionState(), SubscriptionState::kSubscriptionPending);
+
+    proxy_event.Unsubscribe();
 }
 
-TEST_F(ProxyAutoReconnectFixture, RegisterEventCallsNotifyOnEventWithTrueWhenProviderInitiallyExists)
+TEST_F(ProxyAutoReconnectFixture, ProxyEventCreationWhenProviderExistsLeadsToSubscribed)
 {
     const auto valid_find_service_handle = make_FindServiceHandle(10U);
-    mock_binding::ProxyEvent<std::uint8_t> proxy_event{};
+
+    // Given a dummy SkeletonEvent which the ProxyEvent will connect to
+    InitialiseDummySkeletonEvent(kDummyElementFqId,
+                                 SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
 
     // Expecting that StartFindService is called and synchronously calls handler since provider exists
     EXPECT_CALL(service_discovery_mock_, StartFindService(_, EnrichedInstanceIdentifier{identifier_}))
@@ -450,23 +460,32 @@ TEST_F(ProxyAutoReconnectFixture, RegisterEventCallsNotifyOnEventWithTrueWhenPro
             return valid_find_service_handle;
         })));
 
-    // and expecting that NotifyServiceInstanceChangedAvailability is called on the event with is_available true
-    const bool is_available{true};
-    EXPECT_CALL(proxy_event, NotifyServiceInstanceChangedAvailability(is_available, _));
-
     // When creating a proxy
     InitialiseProxyWithConstructor(identifier_);
     EXPECT_NE(proxy_, nullptr);
 
-    // and the ProxyEvent registers itself with the Proxy
-    proxy_->RegisterEvent("Event0", proxy_event);
+    // and a ProxyEvent registers itself with the Proxy
+    ProxyEvent proxy_event{*proxy_, kDummyElementFqId, kDummyEventName};
+    score::cpp::ignore = proxy_event.Subscribe(kMaxNumSlots);
+
+    // Then the Proxy notified the event during registration that the provider service instance is available, so the
+    // event is immediately Subscribed
+    EXPECT_EQ(proxy_event.GetSubscriptionState(), SubscriptionState::kSubscribed);
+
+    proxy_event.Unsubscribe();
 }
 
-TEST_F(ProxyAutoReconnectFixture, RegisterEventCallsNotifyOnEventWithLatestValueFromFindServiceHandler)
+TEST_F(ProxyAutoReconnectFixture, ProxyEventSubscriptionStateReflectsLatestStateFromFindServiceHandler)
 {
     const auto valid_find_service_handle = make_FindServiceHandle(10U);
-    mock_binding::ProxyEvent<std::uint8_t> proxy_event_0{};
-    mock_binding::ProxyEvent<std::uint8_t> proxy_event_1{};
+    const ElementFqId element_fq_id_1{0xcdef, 0x6, 0x10, ServiceElementType::EVENT};
+    const std::string_view event_name_1{"some_other_event"};
+
+    // Given two dummy SkeletonEvents which the ProxyEvents will connect to
+    InitialiseDummySkeletonEvent(kDummyElementFqId,
+                                 SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
+    InitialiseDummySkeletonEvent(element_fq_id_1,
+                                 SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
 
     // Expecting that StartFindService is called and synchronously calls handler since provider exists
     FindServiceHandler<HandleType> saved_find_service_handler{};
@@ -479,51 +498,39 @@ TEST_F(ProxyAutoReconnectFixture, RegisterEventCallsNotifyOnEventWithLatestValue
                 return valid_find_service_handle;
             })));
 
-    // Then expecting that NotifyServiceInstanceChangedAvailability is called on the first event with is_available true
-    // during registration
-    // Note. We use Expectations and .After instead of an InSequence test since the events are stored in an
-    // unordered_map, so the final expectations on proxy_event_0 and proxy_event_1 can occur in any order, although
-    // after all of the preceeding calls.
-    const bool initial_is_available{true};
-    Expectation event_0_initial_notify =
-        EXPECT_CALL(proxy_event_0, NotifyServiceInstanceChangedAvailability(initial_is_available, _));
-
-    // and then NotifyServiceInstanceChangedAvailability is called on the first event by the find service handler
-    const bool first_find_service_is_available{false};
-    Expectation event_0_find_service_notify =
-        EXPECT_CALL(proxy_event_0, NotifyServiceInstanceChangedAvailability(first_find_service_is_available, _))
-            .After(event_0_initial_notify);
-
-    // Then expecting that NotifyServiceInstanceChangedAvailability is called on the second event with is_available
-    // false during registration
-    Expectation event_1_find_service_notify =
-        EXPECT_CALL(proxy_event_1, NotifyServiceInstanceChangedAvailability(first_find_service_is_available, _))
-            .After(event_0_initial_notify, event_0_find_service_notify);
-
-    // and then NotifyServiceInstanceChangedAvailability is called on both events by the second find service handler
-    const bool second_find_service_is_available{true};
-    EXPECT_CALL(proxy_event_0, NotifyServiceInstanceChangedAvailability(second_find_service_is_available, _))
-        .After(event_0_initial_notify, event_0_find_service_notify, event_1_find_service_notify);
-    EXPECT_CALL(proxy_event_1, NotifyServiceInstanceChangedAvailability(second_find_service_is_available, _))
-        .After(event_0_initial_notify, event_0_find_service_notify, event_1_find_service_notify);
-
     // When creating a proxy
     InitialiseProxyWithConstructor(identifier_);
     EXPECT_NE(proxy_, nullptr);
 
-    // and the first ProxyEvent registers itself with the Proxy
-    proxy_->RegisterEvent("Event0", proxy_event_0);
+    // and the first ProxyEvent registers itself with the Proxy while the provider service instance is available
+    ProxyEvent proxy_event_0{*proxy_, kDummyElementFqId, kDummyEventName};
+    score::cpp::ignore = proxy_event_0.Subscribe(kMaxNumSlots);
+    ASSERT_EQ(proxy_event_0.GetSubscriptionState(), SubscriptionState::kSubscribed);
 
     // And then the FindService handler is called with an empty service handle container
     ServiceHandleContainer<HandleType> empty_service_handle_container{};
     saved_find_service_handler(empty_service_handle_container, valid_find_service_handle);
 
-    // and the second ProxyEvent registers itself with the Proxy
-    proxy_->RegisterEvent("Event1", proxy_event_1);
+    // Then the first ProxyEvent is notified that the provider service instance is no longer available
+    EXPECT_EQ(proxy_event_0.GetSubscriptionState(), SubscriptionState::kSubscriptionPending);
+
+    // and the second ProxyEvent registers itself with the Proxy while the provider service instance is unavailable
+    ProxyEvent proxy_event_1{*proxy_, element_fq_id_1, event_name_1};
+    score::cpp::ignore = proxy_event_1.Subscribe(kMaxNumSlots);
+
+    // Then the second ProxyEvent is notified during registration that the provider service instance is not available
+    EXPECT_EQ(proxy_event_1.GetSubscriptionState(), SubscriptionState::kSubscriptionPending);
 
     // And then the FindService handler is called again with a non-empty service handle container
     ServiceHandleContainer<HandleType> filled_service_handle_container{make_HandleType(identifier_)};
     saved_find_service_handler(filled_service_handle_container, valid_find_service_handle);
+
+    // Then both ProxyEvents are notified that the provider service instance is available again
+    EXPECT_EQ(proxy_event_0.GetSubscriptionState(), SubscriptionState::kSubscribed);
+    EXPECT_EQ(proxy_event_1.GetSubscriptionState(), SubscriptionState::kSubscribed);
+
+    proxy_event_0.Unsubscribe();
+    proxy_event_1.Unsubscribe();
 }
 
 using ProxyAutoReconnectDeathTest = ProxyAutoReconnectFixture;
@@ -593,44 +600,6 @@ TEST_F(ProxyAutoReconnectDeathTest, FinalizeDeinitializeBeforeCallingPrepareDein
     // When calling FinalizeDeinitialize before PrepareDeinitialize
     // Then the program terminates
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(proxy_->FinalizeDeinitialize());
-}
-
-TEST_F(ProxyEventBindingFixture, RegisteringEventBindingWillCallNotifyServiceInstanceChangedAvailabilityOnBinding)
-{
-    mock_binding::ProxyEventBase mock_proxy_event_base_binding{};
-
-    // Given a constructed Proxy
-    InitialiseProxyWithCreate(identifier_);
-
-    // Expecting that NotifyServiceInstanceChangedAvailability will be called on the binding
-    EXPECT_CALL(mock_proxy_event_base_binding, NotifyServiceInstanceChangedAvailability(_, _));
-
-    // When calling RegisterEvent
-    proxy_->RegisterEvent(kDummyEventName, mock_proxy_event_base_binding);
-}
-
-TEST_F(ProxyEventBindingFixture,
-       CallingFindServiceHandlerWillCallNotifyServiceInstanceChangedAvailabilityOnAllRegisteredBindings)
-{
-    mock_binding::ProxyEventBase mock_proxy_event_base_binding{};
-    mock_binding::ProxyEventBase mock_proxy_event_base_binding_2{};
-
-    // Expecting that NotifyServiceInstanceChangedAvailability will be called on all registered bindings once during
-    // registration and again when the find service handler is called
-    EXPECT_CALL(mock_proxy_event_base_binding, NotifyServiceInstanceChangedAvailability(_, _)).Times(2);
-    EXPECT_CALL(mock_proxy_event_base_binding_2, NotifyServiceInstanceChangedAvailability(_, _)).Times(2);
-
-    // Given a constructed Proxy
-    WhichCapturesFindServiceHandler(identifier_);
-    InitialiseProxyWithCreate(identifier_);
-
-    // and that two bindings are registered
-    proxy_->RegisterEvent(kDummyEventName, mock_proxy_event_base_binding);
-    proxy_->RegisterEvent("some_other_event", mock_proxy_event_base_binding_2);
-
-    // When the find service handler is called
-    const auto find_service_handler = find_service_handler_promise_.get_future().get();
-    find_service_handler(ServiceHandleContainer<HandleType>{}, kDummyFindServiceHandle);
 }
 
 using ProxyGetEventMetaInfoFixture = ProxyMockedMemoryFixture;

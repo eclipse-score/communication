@@ -15,31 +15,22 @@
 
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/event_meta_info.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event_common.h"
-
-#include "score/language/safecpp/safe_math/safe_math.h"
-#include "score/memory/shared/pointer_arithmetic_util.h"
-#include "score/mw/com/impl/proxy_event_binding.h"
+#include "score/mw/com/impl/bindings/lola/proxy.h"
+#include "score/mw/com/impl/bindings/lola/slot_collector.h"
+#include "score/mw/com/impl/bindings/lola/subscription_state_machine.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
+#include "score/mw/com/impl/generic_proxy_event_binding.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
 #include "score/mw/com/impl/subscription_state.h"
-#include "score/mw/com/impl/tracing/i_tracing_runtime.h"
 
-#include "score/mw/log/logging.h"
 #include "score/result/result.h"
 
-#include <score/assert.hpp>
-
 #include <cstdint>
-#include <exception>
-#include <iostream>
-#include <limits>
 #include <memory>
-#include <mutex>
 #include <optional>
-#include <sstream>
 #include <string_view>
 #include <utility>
-#include <variant>
 
 namespace score::mw::com::impl::lola
 {
@@ -49,16 +40,13 @@ namespace score::mw::com::impl::lola
 /// All subscription operations are implemented in the separate class SubscriptionStateMachine and the associated
 /// states. All type agnostic proxy event operations are dispatched to the class ProxyEventCommon.
 ///
-/// \tparam SampleType Data type that is transmitted
-template <typename SampleType>
-class ProxyEvent final : public ProxyEventBinding<SampleType>
+class ProxyEvent final : public GenericProxyEventBinding
 {
-    template <typename T>
-    // coverity[autosar_cpp14_a11_3_1_violation] friend to test class; is used to access proxy_event_common_
+    // coverity[autosar_cpp14_a11_3_1_violation] friend to test class; is used to access meta_info_/InjectSlotCollector
     friend class ProxyEventAttorney;
 
   public:
-    using typename ProxyEventBinding<SampleType>::Callback;
+    using typename ProxyEventBinding::Callback;
 
     ProxyEvent() = delete;
     /// Create a new instance that is bound to the specified ShmBindingInformation and ElementId.
@@ -66,14 +54,7 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
     /// \param parent Parent proxy of the proxy event.
     /// \param element_fq_id The ID of the event inside the proxy type.
     /// \param event_name The name of the event inside the proxy type.
-    ProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name)
-        : ProxyEventBinding<SampleType>{},
-          proxy_event_common_{parent, element_fq_id, event_name},
-          meta_info_{parent.GetEventMetaInfo(element_fq_id)},
-          event_data_storage_{parent.GetEventDataStorage(element_fq_id)}
-    {
-        parent.RegisterEvent(event_name, *this);
-    }
+    ProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name);
 
     ProxyEvent(const ProxyEvent&) = delete;
     ProxyEvent(ProxyEvent&&) noexcept = delete;
@@ -82,152 +63,86 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
 
     ~ProxyEvent() noexcept override = default;
 
-    Result<void> Subscribe(const std::size_t max_sample_count) noexcept override
-    {
-        return proxy_event_common_.Subscribe(max_sample_count);
-    }
-    void Unsubscribe() noexcept override
-    {
-        proxy_event_common_.Unsubscribe();
-    }
+    Result<void> Subscribe(const std::size_t max_sample_count) noexcept override;
+    void Unsubscribe() noexcept override;
 
-    SubscriptionState GetSubscriptionState() const noexcept override
-    {
-        return proxy_event_common_.GetSubscriptionState();
-    }
+    SubscriptionState GetSubscriptionState() const noexcept override;
     Result<std::size_t> GetNumNewSamplesAvailable() const override;
     Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept override;
 
-    Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override
-    {
-        return proxy_event_common_.SetReceiveHandler(std::move(handler));
-    }
-    Result<void> UnsetReceiveHandler() noexcept override
-    {
-        return proxy_event_common_.UnsetReceiveHandler();
-    }
-    Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept override
-    {
-        return proxy_event_common_.SetSubscriptionStateChangeHandler(std::move(handler));
-    }
-    Result<void> UnsetSubscriptionStateChangeHandler() noexcept override
-    {
-        return proxy_event_common_.UnsetSubscriptionStateChangeHandler();
-    }
-    std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override
-    {
-        return proxy_event_common_.GetMaxSampleCount();
-    }
+    Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override;
+    Result<void> UnsetReceiveHandler() noexcept override;
+    Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept override;
+    Result<void> UnsetSubscriptionStateChangeHandler() noexcept override;
+    std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;
     BindingType GetBindingType() const noexcept override
     {
         return BindingType::kLoLa;
     }
-    void NotifyServiceInstanceChangedAvailability(bool is_available, pid_t new_event_source_pid) noexcept override
+
+    /// \brief Notifies the event that the provider service instance that it is connected to (i.e. the
+    ///        SkeletonEvent) has changed its availability.
+    /// \param is_available true if the provider service instance has changed from being unavailable to available.
+    ///        false if the providing service instance has changed from being available to unavailable.
+    /// \param new_event_source_pid new pid of provider service instance.
+    ///
+    /// This is called by the lola::Proxy which begins a StartFindService search on construction for the provider
+    /// service instance. When the service instance changes availability, it triggers a callback that calls
+    /// NotifyServiceInstanceChangedAvailability for all service elements contained within the Proxy.
+    ///
+    /// \note This is not part of the binding-independent ProxyEventBinding/GenericProxyEventBinding interface, since
+    /// identifying the (re-)connected provider service instance via its PID is a LoLa specific concept (e.g. a
+    /// network based binding would never use an ECU local PID to identify a remote event source). It is therefore
+    /// only used/called by lola::Proxy.
+    void NotifyServiceInstanceChangedAvailability(bool is_available, pid_t new_event_source_pid) noexcept;
+
+    memory::DataTypeSizeInfo GetDataTypeSizeInfo() const override
     {
-        proxy_event_common_.NotifyServiceInstanceChangedAvailability(is_available, new_event_source_pid);
+        return meta_info_.data_type_info_;
+    }
+    bool HasSerializedFormat() const noexcept override
+    {
+        return false;
     }
 
     ElementFqId GetElementFQId() const noexcept
     {
-        return proxy_event_common_.GetElementFQId();
-    };
+        return event_fq_id_;
+    }
 
   private:
-    Result<std::size_t> GetNewSamplesImpl(Callback&& receiver, TrackerGuardFactory& tracker) noexcept;
-    Result<std::size_t> GetNumNewSamplesAvailableImpl() const noexcept;
+    /// \brief Get the indicators of the slots containing samples that are pending for reception in ascending order.
+    ///        I.e. returned SlotIndices begin with the oldest slots/events (lowest timestamp) first and end at the
+    ///        newest/youngest (largest timestamp) slots.
+    ///
+    /// The call is dispatched to SlotCollector. It is the responsibility of the calling code to ensure that
+    /// GetNewSamplesSlotIndices() is only called when the event is in the subscribed state.
+    SlotCollector::SlotIndices GetNewSamplesSlotIndices(const std::size_t max_count);
 
-    ProxyEventCommon proxy_event_common_;
     const EventMetaInfo& meta_info_;
     const EventDataStorage& event_data_storage_;
+
+    /// \brief Manually insert a slot collector. Only used for tests.
+    // Suppress "AUTOSAR C++14 A0-1-3" rule finding. This rule states: "Every function defined in an anonymous
+    // namespace, or static function with internal linkage, or private member function shall be used.".
+    // Used for testing purposes.
+    // coverity[autosar_cpp14_a0_1_3_violation]
+    void InjectSlotCollector(SlotCollector&& slot_collector)
+    {
+        score::cpp::ignore = test_slot_collector_.emplace(std::move(slot_collector));
+    };
+
+    std::optional<SlotCollector> test_slot_collector_;
+
+    Proxy& parent_;
+    ElementFqId event_fq_id_;
+    const std::string_view event_name_;
+    TransactionLogId transaction_log_id_;
+    ConsumerEventDataControlLocalView<> event_data_control_local_;
+    std::reference_wrapper<EventSubscriptionControl<>> subscription_control_;
+    std::reference_wrapper<TransactionLogSet> transaction_log_set_;
+    SubscriptionStateMachine subscription_event_state_machine_;
 };
-
-template <typename SampleType>
-inline Result<std::size_t> ProxyEvent<SampleType>::GetNumNewSamplesAvailable() const
-{
-    /// In case of LoLa binding we can also dispatch to GetNumNewSamplesAvailableImpl() in case of kSubscriptionPending!
-    /// Because a pre-condition to kSubscriptionPending is that we once had a successful subscription... and then we can
-    /// always access the samples even if the provider went down.
-    const auto subscription_state = proxy_event_common_.GetSubscriptionState();
-    if (subscription_state == SubscriptionState::kNotSubscribed)
-    {
-        return MakeUnexpected(ComErrc::kNotSubscribed,
-                              "Attempt to call GetNumNewSamplesAvailable without successful subscription.");
-    }
-    return GetNumNewSamplesAvailableImpl();
-}
-
-template <typename SampleType>
-inline Result<std::size_t> ProxyEvent<SampleType>::GetNumNewSamplesAvailableImpl() const noexcept
-{
-    return proxy_event_common_.GetNumNewSamplesAvailable();
-}
-
-template <typename SampleType>
-inline Result<std::size_t> ProxyEvent<SampleType>::GetNewSamples(Callback&& receiver,
-                                                                 TrackerGuardFactory& tracker) noexcept
-{
-    /// In case of LoLa binding we can also dispatch to GetNewSamplesImpl() in case of kSubscriptionPending!
-    /// Because a pre-condition to kSubscriptionPending is that we once had a successful subscription... and then we can
-    /// always access the samples even if the provider went down.
-    const auto subscription_state = proxy_event_common_.GetSubscriptionState();
-    if (subscription_state == SubscriptionState::kNotSubscribed)
-    {
-        return MakeUnexpected(ComErrc::kNotSubscribed,
-                              "Attempt to call GetNewSamples without successful subscription.");
-    }
-    return GetNewSamplesImpl(std::move(receiver), tracker);
-}
-
-template <typename SampleType>
-// Suppress "AUTOSAR C++14 M3-2-2" rule finding. This rule declares: "The One Definition Rule shall not be
-// violated.". False-positive, template method is defined only once.
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, all results which are accessed with '.value()' that could implicitly call
-// 'std::terminate()' (in case it doesn't have value) has a check in advance using '.has_value()', so no way for
-// throwing std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
-// [Ticket-173043](broken_link_j/Ticket-173043)
-// coverity[autosar_cpp14_m3_2_2_violation : FALSE]
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-inline Result<std::size_t> ProxyEvent<SampleType>::GetNewSamplesImpl(Callback&& receiver,
-                                                                     TrackerGuardFactory& tracker) noexcept
-{
-    const auto max_sample_count = tracker.GetNumAvailableGuards();
-    const auto slot_indices = proxy_event_common_.GetNewSamplesSlotIndices(max_sample_count);
-
-    auto& event_data_control_local = proxy_event_common_.GetConsumerEventDataControlLocal();
-
-    for (auto slot_index_it = slot_indices.begin; slot_index_it != slot_indices.end; ++slot_index_it)
-    {
-        const void* type_erased_sample_ptr =
-            event_data_storage_.GetTypeErasedDataSlot(*slot_index_it, sizeof(SampleType));
-
-        // Suppress "AUTOSAR C++14 M5-2-8" rule finding: "An object with integer type or pointer to void type shall
-        // not be converted to an object with pointer type".
-        // The event samples are stored type-erased within shared-memory.
-        // coverity[autosar_cpp14_m5_2_8_violation]
-        const SampleType& sample_data{*static_cast<const SampleType*>(type_erased_sample_ptr)};
-        const EventSlotStatus event_slot_status{event_data_control_local[*slot_index_it]};
-        const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
-
-        SamplePtr<SampleType> sample{&sample_data, event_data_control_local, *slot_index_it};
-
-        auto guard = std::move(*tracker.TakeGuard());
-        auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard));
-
-        static_assert(
-            sizeof(EventSlotStatus::EventTimeStamp) == sizeof(impl::tracing::ITracingRuntime::TracePointDataId),
-            "Event timestamp is used for the trace point data id, therefore, the types should be the same.");
-        // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "I a function is declared to be
-        // noexcept, noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception"
-        // we can't add noexcept to score::cpp::callback signature.
-        // coverity[autosar_cpp14_a15_4_2_violation]
-        receiver(std::move(sample_binding_independent),
-                 static_cast<impl::tracing::ITracingRuntime::TracePointDataId>(sample_timestamp));
-    }
-
-    const auto num_collected_slots = static_cast<std::size_t>(std::distance(slot_indices.begin, slot_indices.end));
-    return num_collected_slots;
-}
 
 }  // namespace score::mw::com::impl::lola
 

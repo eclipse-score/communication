@@ -72,7 +72,7 @@ struct ProxyEventStruct
 {
     using SampleType = TestSampleType;
     using ProxyEventType = ProxyEvent<TestSampleType>;
-    using MockProxyEventType = NiceMock<mock_binding::ProxyEvent<TestSampleType>>;
+    using MockProxyEventType = NiceMock<mock_binding::ProxyEvent>;
 };
 struct GenericProxyEventStruct
 {
@@ -84,7 +84,7 @@ struct ProxyFieldStruct
 {
     using SampleType = TestSampleType;
     using ProxyEventType = ProxyField<TestSampleType, WithGetter, WithNotifier, WithSetter>;
-    using MockProxyEventType = NiceMock<mock_binding::ProxyEvent<TestSampleType>>;
+    using MockProxyEventType = NiceMock<mock_binding::ProxyEvent>;
 };
 
 /// \brief Templated test fixture for ProxyEvent functionality that works for both ProxyEvent and GenericProxyEvent
@@ -92,7 +92,7 @@ struct ProxyFieldStruct
 /// \tparam T A tuple containing:
 ///     SampleType either a type such as std::uint32_t or void
 ///     ProxyEventType either ProxyEvent or GenericProxyEvent
-///     MockProxyEventType either mock_binding::ProxyEvent<TestSampleType> or mock_binding::GenericProxyEvent
+///     MockProxyEventType either mock_binding::ProxyEvent or mock_binding::GenericProxyEvent
 template <typename T>
 class ProxyEventFixture : public ::testing::Test
 {
@@ -466,9 +466,9 @@ TEST(ProxyEventTest, SamplePtrsToSlotDataAreConst)
     using SampleType = std::uint16_t;
     const std::size_t max_num_samples{1};
 
-    auto mock_proxy_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent<SampleType>>>();
+    auto mock_proxy_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent>>();
     auto& mock_proxy = *mock_proxy_ptr;
-    ProxyEvent<SampleType> proxy{kEventName, std::unique_ptr<ProxyEventBinding<SampleType>>{std::move(mock_proxy_ptr)}};
+    ProxyEvent<SampleType> proxy{kEventName, std::unique_ptr<ProxyEventBinding>{std::move(mock_proxy_ptr)}};
 
     EXPECT_CALL(mock_proxy, Subscribe(max_num_samples));
     EXPECT_CALL(mock_proxy, GetNewSamples(_, _));
@@ -496,10 +496,10 @@ TEST(ProxyEventDeathTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
     using SampleType = std::uint16_t;
     const std::size_t max_num_samples{1};
 
-    auto mock_proxy_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent<SampleType>>>();
+    auto mock_proxy_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent>>();
     auto& mock_proxy = *mock_proxy_ptr;
     auto proxy = std::make_unique<ProxyEvent<SampleType>>(
-        kEventName, std::unique_ptr<ProxyEventBinding<SampleType>>{std::move(mock_proxy_ptr)});
+        kEventName, std::unique_ptr<ProxyEventBinding>{std::move(mock_proxy_ptr)});
 
     EXPECT_CALL(mock_proxy, Subscribe(max_num_samples));
     EXPECT_CALL(mock_proxy, GetNewSamples(_, _));
@@ -557,8 +557,8 @@ TEST_F(ProxyEventMoveAssignmentTest, MoveAssignmentTransfersBindingFromSourceToD
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    StrictMock<mock_binding::ProxyEvent<SampleType>> second_binding_mock{};
-    auto second_binding_facade = std::make_unique<mock_binding::ProxyEventFacade<SampleType>>(second_binding_mock);
+    StrictMock<mock_binding::ProxyEvent> second_binding_mock{};
+    auto second_binding_facade = std::make_unique<mock_binding::ProxyEventFacade>(second_binding_mock);
 
     // Given two ProxyEvents, each with their own binding mock
     ProxyEventType second_event{kEventName2, std::move(second_binding_facade)};

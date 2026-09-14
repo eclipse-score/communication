@@ -10,8 +10,5 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-///
-/// @file
-/// @copyright Copyright (C) $YEAR, Bayerische Motoren Werke Aktiengesellschaft (BMW AG)
-///
+
 #include "score/mw/com/impl/generic_proxy_event_binding.h"

@@ -51,10 +51,10 @@ class ProxyEventBaseAttorney
     {
     }
 
-    ::testing::StrictMock<mock_binding::ProxyEventBase>* GetMockBinding() noexcept
+    ::testing::StrictMock<mock_binding::ProxyEvent>* GetMockBinding() noexcept
     {
         auto* const mock_event_binding =
-            dynamic_cast<::testing::StrictMock<mock_binding::ProxyEventBase>*>(proxy_event_base_.binding_base_.get());
+            dynamic_cast<::testing::StrictMock<mock_binding::ProxyEvent>*>(proxy_event_base_.binding_.get());
         SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(mock_event_binding != nullptr);
         return mock_event_binding;
     }

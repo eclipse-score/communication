@@ -79,44 +79,23 @@ class SamplePtr final
     SamplePtr& operator=(const SamplePtr<SampleType>&) = delete;
     SamplePtr& operator=(SamplePtr<SampleType>&& other) & noexcept = default;
 
-    /// \brief Interim rebind ctor converting a type-erased SamplePtr<void> into a concrete SamplePtr<SampleType>.
+    /// \brief Rebind ctor converting a SamplePtr<OtherSampleType> into a SamplePtr<SampleType>.
     ///
-    /// \details This is needed because, as part of a stepwise refactoring, the skeleton-side binding API
-    /// already returns type-erased SamplePtr<void> instances (see SkeletonEventBinding::GetLatestSample()), while
-    /// this class - unlike SampleAllocateePtr - still is (and, for now, needs to remain) a class template, since it
-    /// is also used unchanged by the (not yet refactored) proxy-side (e.g. GetNewSamples()).
+    /// \details Since the binding layer is fully type-erased, all bindings' underlying sample pointer types
+    /// (lola::SamplePtr, mock_binding::SamplePtr) are identical across all SamplePtr<X> instantiations. This allows a
+    /// simple whole-variant Swap() to be used to implement the rebind, analogous to SampleAllocateePtr's rebind ctor.
     ///
-    /// \attention This is an INTERIM solution only! Once lola::SamplePtr and mock_binding::SamplePtr get converted
-    /// into non-template, fully type-erased classes (mirroring what was already done for SampleAllocateePtr), this
-    /// constructor - and the whole rebind mechanism built around it - becomes obsolete and shall be removed.
-    /// See ticket: SWP-281727
-    ///
-    /// Unlike SampleAllocateePtr's rebind ctor, this cannot be implemented as a simple whole-variant swap: since
-    /// lola::SamplePtr<T> and mock_binding::SamplePtr<T> remain templated on SampleType, binding_sample_ptr_'s
-    /// variant type differs between SamplePtr<void> and SamplePtr<SampleType>. Instead, the currently active
-    /// alternative of \p other is visited and rebuilt as the corresponding alternative of this instance.
-    ///
-    /// \tparam OtherSampleType source SampleType; only enabled for OtherSampleType == void and SampleType != void, as
-    ///                         the rebind direction is always from type-erased to concrete.
-    /// \param other type-erased SamplePtr<void> to rebind into a SamplePtr<SampleType>. Left in an invalid
-    ///              (blank) state afterwards.
-    template <typename OtherSampleType,
-              typename = std::enable_if_t<std::is_void<OtherSampleType>::value && !std::is_void<SampleType>::value>>
-    explicit SamplePtr(SamplePtr<OtherSampleType>&& other) noexcept
-        : reference_guard_{std::move(other.reference_guard_)}
+    /// \tparam OtherSampleType source SampleType; only one of SampleType/OtherSampleType may be non-void, as the
+    ///                         rebind is only meaningful between the type-erased (void) binding layer and the typed
+    ///                         (non-void) binding independent layer.
+    /// \param other SamplePtr to rebind from. Left in an invalid (blank) state afterwards.
+    template <typename OtherSampleType>
+    SamplePtr(SamplePtr<OtherSampleType>&& other) noexcept : SamplePtr()
     {
-        auto rebind_visitor = score::cpp::overload(
-            [this](lola::SamplePtr<void>&& lola_ptr) noexcept {
-                binding_sample_ptr_ = lola::SamplePtr<SampleType>{std::move(lola_ptr)};
-            },
-            [this](mock_binding::SamplePtr<void>&& mock_ptr) noexcept {
-                binding_sample_ptr_ = mock_binding::RebindSamplePtr<SampleType>(std::move(mock_ptr));
-            },
-            [this](score::cpp::blank&&) noexcept {
-                binding_sample_ptr_ = score::cpp::blank{};
-            });
-        std::visit(rebind_visitor, std::move(other.binding_sample_ptr_));
-        other.binding_sample_ptr_ = score::cpp::blank{};
+        static_assert(std::is_void<SampleType>::value || std::is_void<OtherSampleType>::value,
+                      "SamplePtr rebind is only supported between SamplePtr<void> (used on binding layer) and "
+                      "SamplePtr<NonVoidType> (used on binding independent layer), not between two non-void types.");
+        this->Swap(other);
     }
 
     SamplePtr& operator=(std::nullptr_t) noexcept
@@ -142,8 +121,13 @@ class SamplePtr final
             // separate line.". Following line statement is fine, this happens due to
             // clang formatting.
             // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const lola::SamplePtr<SampleType>& lola_ptr) noexcept -> pointer {
-                return lola_ptr.get();
+            [](const lola::SamplePtr& lola_ptr) noexcept -> pointer {
+                // Suppress "AUTOSAR C++14 M5-2-8" rule finding: "An object with integer type or pointer to void
+                // type shall not be converted to an object with pointer type". The binding layer is fully
+                // type-erased, so this cast from the type-erased binding pointer to the typed SamplePtr::pointer is
+                // an inherent part of "un-erasing" the type on the binding independent layer.
+                // coverity[autosar_cpp14_m5_2_8_violation]
+                return static_cast<pointer>(lola_ptr.get());
             },
             // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
             // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
@@ -151,8 +135,9 @@ class SamplePtr final
             // This is a false positive, we here using lvalue reference.
             // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
             // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const mock_binding::SamplePtr<SampleType>& mock_ptr) noexcept -> pointer {
-                return mock_ptr.get();
+            [](const mock_binding::SamplePtr& mock_ptr) noexcept -> pointer {
+                // coverity[autosar_cpp14_m5_2_8_violation]
+                return static_cast<pointer>(mock_ptr.get());
             },
             // coverity[autosar_cpp14_a7_1_7_violation]
             [](const score::cpp::blank&) noexcept -> pointer {
@@ -186,30 +171,28 @@ class SamplePtr final
 
     bool operator<(const SamplePtr& other) const noexcept
     {
-        return std::visit(
-            score::cpp::overload(
-                [](const lola::SamplePtr<SampleType>& lhs, const lola::SamplePtr<SampleType>& rhs) noexcept -> bool {
-                    return lhs < rhs;
-                },
-                [](const auto&, const auto&) noexcept -> bool {
-                    return false;
-                }),
-            binding_sample_ptr_,
-            other.binding_sample_ptr_);
+        return std::visit(score::cpp::overload(
+                              [](const lola::SamplePtr& lhs, const lola::SamplePtr& rhs) noexcept -> bool {
+                                  return lhs < rhs;
+                              },
+                              [](const auto&, const auto&) noexcept -> bool {
+                                  return false;
+                              }),
+                          binding_sample_ptr_,
+                          other.binding_sample_ptr_);
     }
 
     bool operator>(const SamplePtr& other) const noexcept
     {
-        return std::visit(
-            score::cpp::overload(
-                [](const lola::SamplePtr<SampleType>& lhs, const lola::SamplePtr<SampleType>& rhs) noexcept -> bool {
-                    return lhs > rhs;
-                },
-                [](const auto&, const auto&) noexcept -> bool {
-                    return false;
-                }),
-            binding_sample_ptr_,
-            other.binding_sample_ptr_);
+        return std::visit(score::cpp::overload(
+                              [](const lola::SamplePtr& lhs, const lola::SamplePtr& rhs) noexcept -> bool {
+                                  return lhs > rhs;
+                              },
+                              [](const auto&, const auto&) noexcept -> bool {
+                                  return false;
+                              }),
+                          binding_sample_ptr_,
+                          other.binding_sample_ptr_);
     }
     explicit operator bool() const noexcept
     {
@@ -221,6 +204,18 @@ class SamplePtr final
         // Search for custom swap functions via ADL, and use std::swap if none are found.
         using std::swap;
 
+        swap(binding_sample_ptr_, other.binding_sample_ptr_);
+        swap(reference_guard_, other.reference_guard_);
+    }
+
+    /// \brief Swaps the managed objects of *this and another SamplePtr object other, even if other has a
+    /// different SampleType. This is safe because the underlying binding_sample_ptr_/reference_guard_ members have
+    /// identical types across all SamplePtr<X> instantiations (the binding layer is fully type-erased).
+    template <typename OtherSampleType>
+    void Swap(SamplePtr<OtherSampleType>& other) noexcept
+    {
+        // Search for custom swap functions via ADL, and use std::swap if none are found.
+        using std::swap;
         swap(binding_sample_ptr_, other.binding_sample_ptr_);
         swap(reference_guard_, other.reference_guard_);
     }
@@ -237,8 +232,7 @@ class SamplePtr final
     {
     }
 
-    std::variant<score::cpp::blank, lola::SamplePtr<SampleType>, mock_binding::SamplePtr<SampleType>>
-        binding_sample_ptr_;
+    std::variant<score::cpp::blank, lola::SamplePtr, mock_binding::SamplePtr> binding_sample_ptr_;
     SampleReferenceGuard reference_guard_;
 
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".

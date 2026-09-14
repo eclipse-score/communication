@@ -58,7 +58,7 @@ class LolaForwardingSamplePtrTest : public ::testing::Test
 
         dummy_storage_.push_back(std::make_unique<std::uint8_t>(0U));
 
-        lola::SamplePtr<std::uint8_t> lola_sample{
+        lola::SamplePtr lola_sample{
             dummy_storage_.back().get(), consumer_event_data_control_local_, slot_result.value()};
 
         return SamplePtr<std::uint8_t>{std::move(lola_sample), SampleReferenceGuard{}};
@@ -73,14 +73,14 @@ class SamplePtrGenericTypeTest : public ::testing::Test
 {
   protected:
     SamplePtrGenericTypeTest()
-        : mock_pointer_{new TestSampleType(42), [](T* p) noexcept {
+        : mock_pointer_{new TestSampleType(42), [](void* p) noexcept {
                             auto* const int_p = static_cast<TestSampleType*>(p);
                             delete int_p;
                         }}
     {
     }
 
-    mock_binding::SamplePtr<T> mock_pointer_;
+    mock_binding::SamplePtr mock_pointer_;
 };
 
 // Gtest will run all tests in the SamplePtrGenericTypeTest once for every type, t, in MyTypes, such that TypeParam == t
@@ -180,7 +180,10 @@ TYPED_TEST(SamplePtrGenericTypeTest, InterfaceMatchesRequirements)
                   "Should contain operator bool");
 
     // Swaps the managed object
-    static_assert(std::is_member_function_pointer_v<decltype(&SamplePtr<TypeParam>::Swap)>, "Should contain Swap");
+    static_assert(
+        std::is_member_function_pointer_v<decltype(static_cast<void (SamplePtr<TypeParam>::*)(
+                                                       SamplePtr<TypeParam>&) noexcept>(&SamplePtr<TypeParam>::Swap))>,
+        "Should contain Swap");
 
     // Replaces the managed object
     static_assert(std::is_member_function_pointer_v<decltype(&SamplePtr<TypeParam>::Reset)>, "Should contain Reset");
@@ -215,8 +218,8 @@ TEST(SamplePtr, CanDereference)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    mock_binding::SamplePtr<TestSampleType> pointer = std::make_unique<TestSampleType>(42);
-    SamplePtr<TestSampleType> unit{std::move(pointer), SampleReferenceGuard{}};
+    mock_binding::SamplePtr mock_binding_ptr = mock_binding::MakeSamplePtr(new TestSampleType(42));
+    SamplePtr<TestSampleType> unit{std::move(mock_binding_ptr), SampleReferenceGuard{}};
 
     EXPECT_EQ(*unit, 42);
     EXPECT_EQ(*unit.get(), 42);
@@ -244,8 +247,9 @@ TEST(SamplePtr, CanArrowOperator)
         TestSampleType bar{42};
     };
 
-    mock_binding::SamplePtr<Foo> pointer = std::make_unique<Foo>(Foo{});
-    SamplePtr<Foo> unit{std::move(pointer), SampleReferenceGuard{}};
+    mock_binding::SamplePtr mock_binding_ptr = mock_binding::MakeSamplePtr(new Foo{});
+
+    SamplePtr<Foo> unit{std::move(mock_binding_ptr), SampleReferenceGuard{}};
 
     EXPECT_EQ(unit->bar, 42);
 }
@@ -308,10 +312,7 @@ TYPED_TEST(SamplePtrGenericTypeTest, CanAssignNullptr)
 template <typename T>
 SamplePtr<T> CreateMockBindingSamplePtr(SampleReferenceTracker& tracker)
 {
-    mock_binding::SamplePtr<T> pointer(new TestSampleType, [](T* p) noexcept {
-        auto* const int_p = static_cast<TestSampleType*>(p);
-        delete int_p;
-    });
+    mock_binding::SamplePtr pointer = mock_binding::MakeSamplePtr(new TestSampleType{});
     TrackerGuardFactory guard_factory{tracker.Allocate(1)};
     auto guard = std::move(*guard_factory.TakeGuard());
     SamplePtr<T> sample_ptr(std::move(pointer), std::move(guard));
