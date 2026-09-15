@@ -11,22 +11,17 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("//quality/integration_testing:integration_testing.bzl", "integration_test")
+"""Integration test for the inotify stress test's notify-latency mode."""
 
-integration_test(
-    name = "test_watch_churn",
-    srcs = [
-        "test_fixture.py",
-        "test_watch_churn.py",
-    ],
-    filesystem = "//score/mw/com/test/inotify_stress_test:inotify-stress-test-pkg",
-)
+from test_fixture import inotify_stress_test
 
-integration_test(
-    name = "test_notify_latency",
-    srcs = [
-        "test_fixture.py",
-        "test_notify_latency.py",
-    ],
-    filesystem = "//score/mw/com/test/inotify_stress_test:inotify-stress-test-pkg",
-)
+
+def test_notify_latency(target):
+    """Stress test for inotify: verifies that create/delete notifications on the shared
+    base folder are dispatched to every watching worker within the configured timeout."""
+    with inotify_stress_test(
+        target,
+        extra_args=["--mode", "notify-latency", "--notify-timeout-ms", "300"],
+        wait_timeout=50,
+    ):
+        pass

@@ -30,8 +30,30 @@ namespace score::mw::com::test
 /// Checkpoint number reported by each worker upon completing one stress cycle.
 constexpr std::uint8_t kCycleDoneCheckpoint{1U};
 
+/// Checkpoint number reported once by each worker in kNotifyLatency mode after its inotify watch has been
+/// established, before the cycle loop starts. The controller waits for this from every worker before
+/// performing the first file operation, so no notification can be missed due to a startup race between
+/// forking workers and the controller acting.
+constexpr std::uint8_t kWatchReadyCheckpoint{2U};
+
 /// Maximum time the controller waits for a single worker to complete a cycle.
 constexpr std::chrono::seconds kCheckpointWaitDuration{30U};
+
+/// \brief Selects which aspect of the inotify subsystem a stress-test run exercises.
+enum class TestMode : std::uint8_t
+{
+    /// Repeatedly adds and removes an inotify watch on the shared base folder (original behavior).
+    kWatchChurn,
+    /// Verifies that create/delete notifications on the shared base folder are dispatched to every
+    /// watching worker within a configurable time span after the controller announces the change.
+    kNotifyLatency,
+};
+
+/// Default maximum time a worker may wait for the expected inotify notification in kNotifyLatency mode.
+constexpr std::chrono::milliseconds kDefaultNotifyTimeout{300U};
+
+/// Name of the file the controller creates/removes under kBaseFolder in kNotifyLatency mode.
+inline const std::string kNotifyTestFileName{"notify_latency_test_file"};
 
 /// Returns the single shared directory that every worker concurrently attempts to create.
 inline std::string TestDir()
