@@ -97,19 +97,9 @@ def generate(postproc_schema_path):
     return json.dumps(restored, indent=4, ensure_ascii=False) + "\n"
 
 
-# Workspace-relative location of the schema, used to write back to the source tree when
-# invoked via ``bazel run`` (which sets ``BUILD_WORKSPACE_DIRECTORY``).
-_SCHEMA_RELPATH = "score/mw/com/impl/configuration/mw_com_config_schema.json"
-
-
 def build_arg_parser():
     """Argument parser for the CLI entry point (schema_drift_test.py parses --in separately
     before handing remaining args to unittest)."""
-    here = os.path.dirname(os.path.abspath(__file__))
-    workspace = os.environ.get("BUILD_WORKSPACE_DIRECTORY")
-    default_output = (
-        os.path.join(workspace, _SCHEMA_RELPATH) if workspace else os.path.join(here, "mw_com_config_schema.json")
-    )
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--in",
@@ -119,8 +109,10 @@ def build_arg_parser():
     )
     parser.add_argument(
         "--output",
-        default=default_output,
-        help="Where to write the schema, or '-' for stdout (default: the checked-in mw_com_config_schema.json).",
+        required=True,
+        help="Where to write the schema. The BUILD target passes the checked-in schema as "
+        "$(rootpath mw_com_config_schema.json); relative paths are resolved against "
+        "BUILD_WORKSPACE_DIRECTORY so that `bazel run` updates the source tree.",
     )
     return parser
 
@@ -129,12 +121,16 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     args = build_arg_parser().parse_args(argv)
 
-    schema = generate(args.input)
-    if args.output == "-":
-        sys.stdout.write(schema)
-    else:
-        with open(args.output, "w", encoding="utf-8") as handle:
-            handle.write(schema)
+    # $(rootpath ...) is workspace-relative, but `bazel run` executes in the runfiles tree.
+    output = args.output
+    if not os.path.isabs(output):
+        workspace = os.environ.get("BUILD_WORKSPACE_DIRECTORY")
+        if not workspace:
+            raise SystemExit("BUILD_WORKSPACE_DIRECTORY is not set; run via `bazel run`, or pass an absolute --output.")
+        output = os.path.join(workspace, output)
+
+    with open(output, "w", encoding="utf-8") as handle:
+        handle.write(generate(args.input))
     return 0
 
 

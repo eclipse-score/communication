@@ -67,7 +67,7 @@ build --per_file_copt=external/.*flatbuffers.*@-Wno-error=conversion
 build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=conversion
 
 # Enable the experimental FlatBuffers configuration path.
-build:flatbuffers --//score/mw/com/impl/configuration:experimental_enable_flatbuffers_configuration=True
+build:flatbuffers --//score/mw/com/flags:experimental_enable_flatbuffers_configuration=True
 
 build --per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
 build --host_per_file_copt=external/.*boost.*@-Wno-error=sign-conversion

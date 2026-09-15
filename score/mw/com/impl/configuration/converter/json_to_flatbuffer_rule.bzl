@@ -72,23 +72,9 @@ _normalize_json = rule(
     },
 )
 
-def json_to_flatbuffer(
-        name,
-        json,
-        fbs = "//score/mw/com/impl/configuration:mw_com_config.fbs",
-        schema = "//score/mw/com/impl/configuration:mw_com_config_schema.json",
-        **kwargs):
-    """Generates ``<name>.bin`` from a public (hyphenated) JSON config via the .fbs schema.
-
-    Args:
-        name: Target name; the FlatBuffer binary is ``<name>.bin``.
-        json: The JSON configuration file (public, hyphenated format).
-        fbs: The FlatBuffers schema.
-        schema: The JSON schema (kept in sync with .fbs via schema_drift_test).
-        **kwargs: Standard attributes (e.g. visibility) forwarded to the final target.
-    """
-
-    # Step 1: normalize the public JSON to the fbs underscore form.
+def _json_to_flatbuffer_impl(name, visibility, json, fbs, schema):
+    # Step 1: normalize the public JSON to the fbs underscore form. Internal to the
+    # macro (no visibility passed), per https://bazel.build/extending/macros#conventions.
     normalized_target = name + "_normalized"
     _normalize_json(
         name = normalized_target,
@@ -97,11 +83,34 @@ def json_to_flatbuffer(
         output = name + ".normalized.json",
     )
 
-    # Step 2: flatc --binary (via baselibs) on the normalized JSON.
+    # Step 2: flatc --binary (via baselibs) on the normalized JSON. This is the macro's
+    # exported target, so it forwards the macro's own visibility.
     serialize_buffer(
         name = name,
         data = ":" + normalized_target,
         schema = fbs,
         output = name + ".bin",
-        **kwargs
+        visibility = visibility,
     )
+
+json_to_flatbuffer = macro(
+    doc = "Generates ``<name>.bin`` from a public (hyphenated) JSON config via the .fbs schema.",
+    attrs = {
+        "json": attr.label(
+            allow_single_file = [".json"],
+            mandatory = True,
+            doc = "The JSON configuration file (public, hyphenated format).",
+        ),
+        "fbs": attr.label(
+            allow_single_file = [".fbs"],
+            default = Label("//score/mw/com/impl/configuration:mw_com_config.fbs"),
+            doc = "The FlatBuffers schema.",
+        ),
+        "schema": attr.label(
+            allow_single_file = [".json"],
+            default = Label("//score/mw/com/impl/configuration:mw_com_config_schema.json"),
+            doc = "The JSON schema (kept in sync with .fbs via schema_drift_test).",
+        ),
+    },
+    implementation = _json_to_flatbuffer_impl,
+)
