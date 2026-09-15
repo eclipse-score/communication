@@ -138,6 +138,51 @@ TEST_F(BidirectionalTransportWithMocksFixture, SendNotificationFailsWhenSendMess
     EXPECT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), TransportErrorc::kSendFailure);
 }
+TEST_F(BidirectionalTransportWithMocksFixture, SendNotificationMarksDisconnectedWhenSendMessageFails)
+{
+    // Given a connected transport where SendMessage returns an error
+    WithConnectedTransport();
+    EXPECT_CALL(*framer_mock_, SendMessage(_, _))
+        .WillOnce(Return(score::MakeUnexpected(TransportErrorc::kSendFailure)));
+
+    StopOfferServiceRequest message{};
+
+    // When SendNotification is called
+    std::ignore = transport_->SendNotification(message);
+
+    // Then the send socket is treated as broken so the connection loop can rebuild it
+    EXPECT_FALSE(transport_->IsConnected());
+}
+TEST_F(BidirectionalTransportWithMocksFixture, FailedAckStopsReceiveLoopAndMarksDisconnected)
+{
+    // Given a connected transport whose peer keeps sending requests but whose ACKs cannot be sent
+    WithConnectedTransport();
+    transport_->SetMessageHandler([](std::unique_ptr<TransportMessage>) noexcept {});
+
+    auto make_request = [](std::int32_t) -> std::unique_ptr<TransportMessage> {
+        auto request = std::make_unique<ProvideServiceRequest>();
+        request->SetSequenceNumber(1U);
+        return request;
+    };
+    int deliveries = 0;
+    EXPECT_CALL(*framer_mock_, ReceiveMessage(_))
+        .Times(::testing::AnyNumber())
+        .WillRepeatedly(Invoke([&deliveries, &make_request](std::int32_t fd) -> std::unique_ptr<TransportMessage> {
+            // Bounds the loop so a regression fails the expectation below instead of spinning forever.
+            return (deliveries++ < 2) ? make_request(fd) : nullptr;
+        }));
+
+    // Exactly one ACK attempt: the first failure must end the receive loop instead of consuming the next request.
+    EXPECT_CALL(*framer_mock_, SendMessage(_, _))
+        .Times(1)
+        .WillOnce(Return(score::MakeUnexpected(TransportErrorc::kSendFailure)));
+
+    // When the receive loop runs
+    attorney_->RunReceiveUntilDisconnect();
+
+    // Then the transport reports itself disconnected
+    EXPECT_FALSE(transport_->IsConnected());
+}
 TEST_F(BidirectionalTransportWithMocksFixture, SendRequestReturnsNotConnectedWhenDisconnected)
 {
     // Given a transport that is not connected

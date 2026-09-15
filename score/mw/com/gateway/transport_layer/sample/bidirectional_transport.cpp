@@ -323,6 +323,7 @@ void BidirectionalTransport::HandleIncomingMessage(std::unique_ptr<TransportMess
         {
             ::score::mw::log::LogWarn() << "BidirectionalTransport: Could not send acknowledgement. Message type: "
                                         << static_cast<int>(message->GetType()) << "," << message->GetSequenceNumber();
+            MarkConnectionBroken();
             return;
         }
     }
@@ -390,6 +391,13 @@ score::Result<void> BidirectionalTransport::SendAck(const std::uint32_t sequence
     return message_framer_->SendMessage(send_socket_.Get(), ack_response);
 }
 
+void BidirectionalTransport::MarkConnectionBroken()
+{
+    is_connected_ = false;
+    // Unblocks a receive thread parked in recv(), which would otherwise keep the dead send socket alive.
+    receive_socket_.ShutdownFd();
+}
+
 score::Result<void> BidirectionalTransport::TrySendAndWaitForAck(TransportMessage& message,
                                                                  const std::uint32_t sequence)
 {
@@ -400,6 +408,7 @@ score::Result<void> BidirectionalTransport::TrySendAndWaitForAck(TransportMessag
         {
             score::mw::log::LogError() << "BidirectionalTransport: failed to send message of type "
                                        << static_cast<int>(message.GetType());
+            MarkConnectionBroken();
             return send_result;
         }
     }
@@ -462,7 +471,12 @@ score::Result<void> BidirectionalTransport::SendNotification(TransportMessage& m
     }
 
     std::lock_guard<std::mutex> lock(send_mutex_);
-    return message_framer_->SendMessage(send_socket_.Get(), message);
+    auto send_result = message_framer_->SendMessage(send_socket_.Get(), message);
+    if (!send_result.has_value())
+    {
+        MarkConnectionBroken();
+    }
+    return send_result;
 }
 
 void BidirectionalTransport::SetMessageHandler(MessageHandler handler)
