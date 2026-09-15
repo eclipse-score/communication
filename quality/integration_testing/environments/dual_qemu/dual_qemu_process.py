@@ -22,7 +22,6 @@ and restarts the QEMU process up to ``max_boot_attempts`` times if sshd never co
 import logging
 import time
 
-from score.itf.plugins.qemu.checks import pre_tests_phase
 from score.itf.plugins.qemu.qemu_process import QemuProcess
 from score.itf.plugins.qemu.qemu_target import QemuTarget
 
@@ -114,7 +113,6 @@ class DualQemuProcess(QemuProcess):
             try:
                 self._target = QemuTarget(self, self._vm_config)
                 _wait_for_ssh(self._target, total_timeout=self._boot_timeout)
-                pre_tests_phase(self._target)
                 return self
             except Exception as ex:  # pylint: disable=broad-except
                 last_error = ex
