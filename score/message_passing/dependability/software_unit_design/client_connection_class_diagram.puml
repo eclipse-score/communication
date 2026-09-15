@@ -1,0 +1,119 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+' Unit design (static view) for the Client Connection unit.
+' Derived from the existing message-passing design in score/mw/com/design,
+' mapped onto the new score::message_passing units. The old mw::com roles are
+' shown as <<role: ...>> stereotypes to keep the design traceable.
+
+@startuml client_connection_class_diagram
+
+namespace score::message_passing {
+
+    ' Old: mw::com::message_passing::SenderFactory + MessagePassingControl::GetMessagePassingSender
+    interface IClientFactory <<role: SenderFactory>> {
+        + Create(protocol_config : ServiceProtocolConfig, client_config : ClientConfig) : IClientConnection
+    }
+
+    ' Old: mw::com::message_passing::ISender (Send) plus the client-side
+    ' request/result-message + callback pairing (subscribeEventResultCallbacks)
+    ' and the NotifyEventHandler notification callback, unified in one endpoint.
+    interface IClientConnection <<role: ISender + reply/notify>> {
+        + Send(message) : expected<Error>
+        + SendWaitReply(message, reply) : expected<Error>
+        + SendWithCallback(message, ReplyCallback) : expected<Error>
+        + Start(StateCallback, NotifyCallback) : void
+        + Stop() : void
+        + Restart() : void
+        + GetState() : State
+        + GetStopReason() : StopReason
+    }
+
+    enum State {
+        kStarting
+        kReady
+        kStopping
+        kStopped
+    }
+
+    enum StopReason {
+        kNone
+        kInit
+        kUserRequested
+        kPermission
+        kClosedByPeer
+        kIoError
+        kShutdown
+    }
+
+    ' Old: the fixed ShortMessage / MediumMessage split was dropped (premature
+    ' optimization); a per-service protocol now carries the max message sizes.
+    struct ServiceProtocolConfig <<replaces ShortMessage / MediumMessage>> {
+        + identifier
+        + max_send_size
+        + max_reply_size
+        + max_notify_size
+    }
+
+    ' Nested as IClientFactory::ClientConfig.
+    struct ClientConfig {
+        + max_async_replies
+        + max_queued_sends
+        + fully_ordered
+        + truly_async
+        + sync_first_connect
+    }
+
+    ' Old: lola::messaging::MessagePassingControl owned the senders map, the
+    ' send queue and the node identifier. Now a shared transport engine owns
+    ' the background thread and the OS-specific channels.
+    interface ISharedResourceEngine <<role: MessagePassingControl>> {
+        + TryOpenClientConnection(identifier) : fd
+        + SendProtocolMessage(fd, code, message) : expected<Error>
+        + ReceiveProtocolMessage(fd, code) : message
+        + RegisterPosixEndpoint(endpoint) : void
+        + EnqueueCommand(entry, until, callback, owner) : void
+    }
+
+}
+
+namespace score::message_passing::detail {
+
+    ' The unit: encapsulates the connection state machine and the
+    ' (pre-allocated) asynchronous send queue.
+    class ClientConnection <<unit>> {
+        + Send(message) : expected<Error>
+        + SendWaitReply(message, reply) : expected<Error>
+        + SendWithCallback(message, ReplyCallback) : expected<Error>
+        + Start(StateCallback, NotifyCallback) : void
+        + Stop() : void
+        + Restart() : void
+        + GetState() : State
+        + GetStopReason() : StopReason
+    }
+
+}
+
+ClientConnection ..|> IClientConnection
+ClientConnection o--> ISharedResourceEngine : shares transport & thread
+ClientConnection ..> ServiceProtocolConfig : bounded by
+ClientConnection ..> ClientConfig : configured by
+IClientConnection ..> State : reports
+IClientConnection ..> StopReason : reports
+IClientFactory ..> IClientConnection : creates
+IClientFactory *-- ClientConfig : nested config
+IClientFactory ..> ServiceProtocolConfig : uses
+
+note "Blend of mw/com: Send == old ISender::Send; old request + Result-message + callback becomes SendWaitReply / SendWithCallback; old per-ElementFqId notifications become NotifyCallback." as N1
+
+@enduml
