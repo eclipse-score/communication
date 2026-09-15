@@ -192,7 +192,7 @@ void SampleHyperVisorTransport::HandleUpdateNotification(std::unique_ptr<Transpo
         return;
     }
     const auto notify_update_result = gateway_app_.NotifyUpdate(
-        specifier_result.value(), notification.GetElementType(), notification.GetElementName());
+        specifier_result.value(), notification.GetElementType(), notification.GetElementName(), notification.GetData());
     if (!notify_update_result.has_value())
     {
         log::LogError("LoLa") << "SampleTransport: Failed to notify update in UpdateNotification!";
@@ -271,10 +271,13 @@ score::Result<void> SampleHyperVisorTransport::StopOfferService(
 score::Result<void> SampleHyperVisorTransport::NotifyUpdate(
     score::mw::com::InstanceSpecifier service_instance_specifier,
     impl::ServiceElementType updated_element_type,
-    std::string updated_element_name)
+    std::string updated_element_name,
+    std::vector<std::uint8_t> updated_element_data)
 {
-    UpdateNotification notification{
-        std::move(service_instance_specifier), updated_element_type, std::move(updated_element_name)};
+    UpdateNotification notification{service_instance_specifier,
+                                    updated_element_type,
+                                    std::move(updated_element_name),
+                                    std::move(updated_element_data)};
     return message_transport_->SendNotification(notification);
 }
 

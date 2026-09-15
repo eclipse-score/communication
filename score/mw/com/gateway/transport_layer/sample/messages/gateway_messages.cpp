@@ -119,4 +119,14 @@ bool ServiceElementMessage::Deserialize(score::cpp::span<const std::uint8_t> dat
     return DeserializeWithTemplate(*this, data);
 }
 
+std::size_t UpdateNotification::Serialize(score::cpp::span<std::uint8_t> buffer) const
+{
+    return SerializeWithTemplate(*this, buffer);
+}
+
+bool UpdateNotification::Deserialize(score::cpp::span<const std::uint8_t> data)
+{
+    return DeserializeWithTemplate(*this, data);
+}
+
 }  // namespace score::mw::com::gateway
