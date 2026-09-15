@@ -1,0 +1,118 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package ScoreMemory
+
+import ScoreReq
+
+///////////////////////////////
+// Feature Requirements
+// Integration level requirements derived from Assumed System Requirements
+///////////////////////////////
+
+ScoreReq.FeatReq TransparentMemoryAbstraction {
+    description = "The memory component shall provide an abstraction layer over shared memory and heap allocation that is fully transparent to the caller."
+    safety = ScoreReq.Asil.B
+    derived_from = [ScoreMemory.SharedMemoryIPC@1]
+    version = 1
+}
+
+ScoreReq.FeatReq PolymorphicAllocationAcrossResourceKinds {
+    description = "The memory component shall support polymorphic allocation of a data type either in shared memory or on the heap, decided at runtime, without requiring the caller to change the pointer type used to access the data."
+    safety = ScoreReq.Asil.B
+    derived_from = [ScoreMemory.SharedMemoryIPC@1]
+    version = 1
+}
+
+ScoreReq.FeatReq ProcessRelativeOffsetPointers {
+    description = "The memory component shall represent inter-process pointers stored in shared memory as a base-relative offset rather than an absolute address, so that the same stored pointer resolves correctly in every process that maps the shared memory region at a different base address."
+    safety = ScoreReq.Asil.B
+    derived_from = [ScoreMemory.SharedMemoryIPC@1]
+    version = 1
+}
+
+ScoreReq.FeatReq OffsetPointerBoundsChecking {
+    description = "The memory component shall verify, before dereferencing an offset pointer stored in shared memory, that the resulting address lies within the bounds of a memory resource registered for that process."
+    safety = ScoreReq.Asil.B
+    derived_from = [ScoreMemory.SharedMemoryIPC@1]
+    version = 1
+}
+
+ScoreReq.FeatReq SharedMemoryResourceLifecycleManagement {
+    description = "The memory component shall provide a factory that creates, opens, and removes named or anonymous shared memory resources, ensuring that a given shared memory object is not mapped more than once within the same process."
+    safety = ScoreReq.Asil.B
+    derived_from = [ScoreMemory.SharedMemoryIPC@1]
+    version = 1
+}
+
+ScoreReq.FeatReq SharedMemoryAccessControl {
+    description = "The memory component shall allow the creator of a shared memory resource to restrict access to specific users or groups via file system permissions and access control lists."
+    safety = ScoreReq.Asil.B
+    derived_from = [ScoreMemory.SharedMemoryIPC@1]
+    version = 1
+}
+
+ScoreReq.FeatReq StaleSharedMemoryArtefactCleanup {
+    description = "The memory component shall detect and remove stale shared memory artefacts left behind by a crashed or terminated process before creating a new shared memory resource with the same identifier."
+    safety = ScoreReq.Asil.B
+    derived_from = [ScoreMemory.SharedMemoryIPC@1, ScoreMemory.SafeState@1]
+    version = 1
+}
+
+ScoreReq.FeatReq TypedMemorySupport {
+    description = "The memory component shall support allocating shared memory from a typed memory pool where the operating system provides one, for both named and anonymous shared memory resources."
+    safety = ScoreReq.Asil.B
+    derived_from = [ScoreMemory.SharedMemoryIPC@1]
+    version = 1
+}
+
+ScoreReq.FeatReq ConcurrentReaderWriterSafeMemoryRegionTracking {
+    description = "The memory component shall allow concurrent readers to perform bounds-check lookups on the set of known memory regions while a writer updates that set, without blocking readers and without a reader observing a partially updated set."
+    safety = ScoreReq.Asil.B
+    derived_from = [ScoreMemory.SharedMemoryIPC@1]
+    version = 1
+}
+
+ScoreReq.FeatReq SealedSharedMemorySupport {
+    description = "The memory component shall provide a mechanism to seal a shared memory region after initialization so that further modification of its size or permissions is prevented."
+    safety = ScoreReq.Asil.B
+    derived_from = [ScoreMemory.SharedMemoryIPC@1]
+    version = 1
+}
+
+ScoreReq.FeatReq InterProcessMutualExclusion {
+    description = "The memory component shall provide inter-process file-lock based exclusive and shared mutexes that can be used to synchronize access to data stored in shared memory across process boundaries."
+    safety = ScoreReq.Asil.B
+    derived_from = [ScoreMemory.SharedMemoryIPC@1]
+    version = 1
+}
+
+ScoreReq.FeatReq SharedMemorySafeContainers {
+    description = "The memory component shall provide dynamic container types (e.g. vector, map, string) that can be constructed within a managed memory resource and safely accessed across process boundaries using offset pointers."
+    safety = ScoreReq.Asil.B
+    derived_from = [ScoreMemory.SharedMemoryIPC@1]
+    version = 1
+}
+
+ScoreReq.FeatReq ResourceMockInjectionForTesting {
+    description = "The memory component design shall allow mock injection of its memory resource and shared memory factory abstractions for testing purposes."
+    safety = ScoreReq.Asil.B
+    derived_from = [ScoreMemory.SharedMemoryIPC@1]
+    version = 1
+}
+
+ScoreReq.FeatReq GracefulDegradationOnMemoryResourceFailure {
+    description = "The memory component shall transition to the safe-silent state when a shared memory resource cannot be created, opened, or validated, rather than operating on an inconsistent memory region."
+    safety = ScoreReq.Asil.B
+    derived_from = [ScoreMemory.SafeState@1]
+    version = 1
+}

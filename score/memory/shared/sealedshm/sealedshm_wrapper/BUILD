@@ -69,6 +69,7 @@ cc_unit_test(
     ],
     visibility = [
         "//score/memory:__pkg__",
+        "//score/memory/shared:__pkg__",
     ],
     deps = [
         ":sealedshm",
