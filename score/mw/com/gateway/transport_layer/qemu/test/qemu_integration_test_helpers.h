@@ -79,23 +79,22 @@ bool WaitForFlag(const std::atomic<bool>& flag, int timeout_ms = 60000)
 }
 
 // NotifyUpdate is fire-and-forget, so a notification can be lost while the peer reconnects.
-// Repeat the idempotent test notification to cover that transient disconnect window.
+// Retry only while sending actually fails; repeating after success just floods the peer.
 template <typename NotifyFunction>
 bool NotifyWithRetries(NotifyFunction&& notify, int attempts = 10)
 {
-    bool sent = false;
     for (int attempt = 0; attempt < attempts; ++attempt)
     {
         if (notify().has_value())
         {
-            sent = true;
+            return true;
         }
         if (attempt + 1 < attempts)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
     }
-    return sent;
+    return false;
 }
 
 /// Brings up the "intervm" virtio-net NIC (vtnet1) and assigns it the given static IP.
