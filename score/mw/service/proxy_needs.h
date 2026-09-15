@@ -38,7 +38,18 @@ class Optional
 {
   public:
     Optional() = default;
-    explicit Optional(std::unique_ptr<ProxyType> proxy) : proxy_(std::move(proxy)) {}
+
+    /// @brief Wrap a proxy that is already available
+    explicit Optional(std::unique_ptr<ProxyType> proxy)
+    {
+        score::concurrency::InterruptiblePromise<std::unique_ptr<ProxyType>> promise;
+        future_ = std::move(promise.GetInterruptibleFuture().value());
+        promise.SetValue(std::move(proxy));
+    }
+
+    /// @brief Wrap a future that will resolve once service discovery finds the proxy
+    explicit Optional(ProxyFuture<std::unique_ptr<ProxyType>> future) : future_(std::move(future)) {}
+
     ~Optional() = default;
 
     Optional(Optional&&) noexcept = default;
@@ -47,38 +58,24 @@ class Optional
     Optional(const Optional&) = delete;
     Optional& operator=(const Optional&) = delete;
 
-    /// @brief Check if the optional contains a proxy
-    [[nodiscard]] bool has_value() const noexcept
-    {
-        return proxy_ != nullptr;
-    }
-
-    /// @brief Get the proxy instance
-    [[nodiscard]] ProxyType* get() noexcept
-    {
-        return proxy_.get();
-    }
-
-    /// @brief Get the proxy instance (const)
-    [[nodiscard]] const ProxyType* get() const noexcept
-    {
-        return proxy_.get();
-    }
-
     /// @brief Implicit conversion to ProxyFuture for compatibility
     /// This allows Optional<T> to be used where ProxyFuture<std::unique_ptr<T>> is expected
     operator ProxyFuture<std::unique_ptr<ProxyType>>() &&
     {
-        // Create a promise and immediately fulfill it with the proxy value
-        score::concurrency::InterruptiblePromise<std::unique_ptr<ProxyType>> promise;
-        auto future_expected = promise.GetInterruptibleFuture();
-        promise.SetValue(std::move(proxy_));
-        // Extract the future from the expected (assume success in stub)
-        return std::move(future_expected.value());
+        return std::move(*this).GetProxyFuture();
     }
 
+    /// @brief Get the future that resolves to the wrapped proxy
+    [[nodiscard]] ProxyFuture<std::unique_ptr<ProxyType>> GetProxyFuture()
+    {
+        return std::move(future_);
+    }
+
+    /// @brief No-op stub; this fake proxy has no ongoing service discovery to stop
+    void StopServiceDiscovery() noexcept {}
+
   private:
-    std::unique_ptr<ProxyType> proxy_;
+    ProxyFuture<std::unique_ptr<ProxyType>> future_;
 };
 
 /// @brief Container for proxy instances
