@@ -13,15 +13,36 @@
 #ifndef SCORE_MW_COM_GATEWAY_TRANSPORT_LAYER_TRANSPORT_H
 #define SCORE_MW_COM_GATEWAY_TRANSPORT_LAYER_TRANSPORT_H
 
+#include "score/mw/com/gateway/transport_layer/transport_error.h"
 #include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/types.h"
 #include "score/result/result.h"
 
+#include <score/span.hpp>
+
+#include <cstddef>
 #include <string>
 #include <vector>
 
 namespace score::mw::com::gateway
 {
+
+/// \brief Binding-agnostic view onto a single event/field sample update, used to explicitly forward payload bytes
+/// between gateway instances when the transport layer does not support memory sharing (see
+/// IsMemorySharingSupported()).
+/// \details Deliberately holds only a raw, non-owning view onto the already-serialized sample bytes plus the
+/// identifying information needed to copy them into the correct destination slot. It carries no assumption about how
+/// the transport layer implementation gets these bytes across the wire.
+struct SamplePayload
+{
+    /// \brief name of the service element (event/field) this sample belongs to.
+    std::string element_name;
+    /// \brief type of the service element (event, field, method). Currently only EVENT is supported.
+    impl::ServiceElementType element_type;
+    /// \brief non-owning view onto the sample bytes to forward. Only valid for the duration of the call it is
+    /// passed to (e.g. ForwardSamples()).
+    score::cpp::span<const std::byte> data;
+};
 
 /// \brief Abstract base class for gateway transport layer implementations.
 class Transport
@@ -114,6 +135,67 @@ class Transport
         score::mw::com::InstanceSpecifier service_instance_specifier,
         impl::ServiceElementType element_type,
         std::string element_name) = 0;
+
+    /// \brief Forwards a batch of event/field sample updates to the destination gateway, required only when
+    /// IsMemorySharingSupported() == false.
+    /// \details Since there is no shared memory to publish updates through, the transport layer implementation has to
+    /// explicitly copy each sample's payload to the destination gateway, which then makes it available to the
+    /// (generic) skeleton representing the forwarded service instance there (see GatewayCore::AllocateSamples() /
+    /// GatewayCore::SendOrUpdateSamples()). Not called when IsMemorySharingSupported() == true, as in that case
+    /// NotifyUpdate() alone is sufficient, since the sample data is already visible via shared memory.
+    /// \param service_instance_specifier instance specifier of the service instance owning the updated elements.
+    /// \param samples collection of sample payloads to forward. Bulked to allow batching updates for multiple
+    /// elements (potentially of different service instances) in a single round-trip.
+    /// \return result indicating success or failure.
+    /// \note Default implementation returns TransportErrorc::kNotSupported. Transport implementations for which
+    /// IsMemorySharingSupported() always returns true do not need to override this API.
+    virtual score::Result<void> ForwardSamples(score::mw::com::InstanceSpecifier service_instance_specifier,
+                                               std::vector<SamplePayload> samples)
+    {
+        static_cast<void>(service_instance_specifier);
+        static_cast<void>(samples);
+        return score::MakeUnexpected(TransportErrorc::kNotSupported);
+    }
+
+    /// \brief Subscribes for an event/field on the destination gateway, required only when
+    /// IsMemorySharingSupported() == false.
+    /// \details The transport layer implementation shall "forward" this call to the destination gateway and trigger
+    /// GatewayCore::Subscribe() there. Without shared memory the destination side needs to be told explicitly which
+    /// elements currently have active local subscribers, so that it only forwards samples via ForwardSamples() for
+    /// those. Not called when IsMemorySharingSupported() == true.
+    /// \param service_instance_specifier instance specifier of the service instance owning the service element.
+    /// \param element_type type of the service element (event, field, method). Currently only EVENT is supported.
+    /// \param element_name name of the service element to subscribe to.
+    /// \return result indicating success or failure.
+    /// \note Default implementation returns TransportErrorc::kNotSupported. Transport implementations for which
+    /// IsMemorySharingSupported() always returns true do not need to override this API.
+    virtual score::Result<void> Subscribe(score::mw::com::InstanceSpecifier service_instance_specifier,
+                                          impl::ServiceElementType element_type,
+                                          std::string element_name)
+    {
+        static_cast<void>(service_instance_specifier);
+        static_cast<void>(element_type);
+        static_cast<void>(element_name);
+        return score::MakeUnexpected(TransportErrorc::kNotSupported);
+    }
+
+    /// \brief Unsubscribes from an event/field on the destination gateway. See Subscribe() for the corresponding
+    /// subscription semantics; required only when IsMemorySharingSupported() == false.
+    /// \param service_instance_specifier instance specifier of the service instance owning the service element.
+    /// \param element_type type of the service element (event, field, method). Currently only EVENT is supported.
+    /// \param element_name name of the service element to unsubscribe from.
+    /// \return result indicating success or failure.
+    /// \note Default implementation returns TransportErrorc::kNotSupported. Transport implementations for which
+    /// IsMemorySharingSupported() always returns true do not need to override this API.
+    virtual score::Result<void> Unsubscribe(score::mw::com::InstanceSpecifier service_instance_specifier,
+                                            impl::ServiceElementType element_type,
+                                            std::string element_name)
+    {
+        static_cast<void>(service_instance_specifier);
+        static_cast<void>(element_type);
+        static_cast<void>(element_name);
+        return score::MakeUnexpected(TransportErrorc::kNotSupported);
+    }
 };
 
 }  // namespace score::mw::com::gateway

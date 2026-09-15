@@ -52,6 +52,7 @@ cc_library(
         "//score/mw/com/gateway:__subpackages__",
     ],
     deps = [
+        ":gateway_error",
         "//score/mw/com:types",
         "//score/mw/com/gateway/transport_layer:transport",
         "//score/mw/com/impl:service_element_type",
@@ -77,6 +78,18 @@ cc_unit_test(
     deps = [
         ":gateway_error",
         "@score_baselibs//score/result",
+    ],
+)
+
+cc_unit_test(
+    name = "gateway_core_test",
+    srcs = ["gateway_core_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":gateway_core",
+        ":gateway_error",
+        "//score/mw/com/impl:instance_specifier",
+        "//score/mw/com/impl:service_element_type",
     ],
 )
 

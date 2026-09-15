@@ -28,8 +28,10 @@ cc_library(
         "//score/mw/com/gateway:__subpackages__",
     ],
     deps = [
+        ":transport_error",
         "//score/mw/com:types",
         "//score/mw/com/impl:service_element_type",
+        "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
     ],
 )
@@ -82,5 +84,17 @@ cc_unit_test(
     deps = [
         ":transport_error",
         "@score_baselibs//score/result",
+    ],
+)
+
+cc_unit_test(
+    name = "transport_test",
+    srcs = ["transport_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":transport",
+        ":transport_error",
+        "//score/mw/com/impl:instance_specifier",
+        "//score/mw/com/impl:service_element_type",
     ],
 )

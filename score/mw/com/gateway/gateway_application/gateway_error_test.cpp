@@ -84,6 +84,11 @@ TEST_F(GatewayErrorTest, MessageForNotificationFailed)
     TestErrorMessage(GatewayErrorc::kNotificationFailed, "Gateway couldn't notify for this event.");
 }
 
+TEST_F(GatewayErrorTest, MessageForNotSupported)
+{
+    TestErrorMessage(GatewayErrorc::kNotSupported, "Operation not supported by this gateway core.");
+}
+
 TEST_F(GatewayErrorTest, MessageForDefault)
 {
     TestErrorMessage(static_cast<GatewayErrorc>(-1), "unknown gateway error");
