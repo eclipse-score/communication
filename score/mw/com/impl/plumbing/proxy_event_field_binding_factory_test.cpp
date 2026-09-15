@@ -25,7 +25,7 @@
 #include "score/mw/com/impl/plumbing/proxy_binding_factory.h"
 #include "score/mw/com/impl/plumbing/proxy_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/proxy_field_binding_factory.h"
-#include "score/mw/com/impl/proxy_event_binding_base.h"
+#include "score/mw/com/impl/proxy_event_binding.h"
 #include "score/mw/com/impl/test/dummy_instance_identifier_builder.h"
 
 #include <gtest/gtest.h>
@@ -109,8 +109,8 @@ class ProxyServiceElementBindingFactoryParamaterisedFixture : public lola::Proxy
         }
     }
 
-    Result<std::unique_ptr<ProxyEventBindingBase>> CreateServiceElementBinding(const HandleType& handle,
-                                                                               ProxyBinding& proxy_binding)
+    Result<std::unique_ptr<ProxyEventBinding>> CreateServiceElementBinding(const HandleType& handle,
+                                                                           ProxyBinding& proxy_binding)
     {
         switch (service_element_type_)
         {
@@ -118,27 +118,24 @@ class ProxyServiceElementBindingFactoryParamaterisedFixture : public lola::Proxy
             {
                 return ProxyEventBindingFactory<TestSampleType>::Create(
                            handle, proxy_binding, kDummyEventName, ServiceElementType::EVENT)
-                    .and_then([](auto&& binding) -> Result<std::unique_ptr<ProxyEventBindingBase>> {
-                        return std::unique_ptr<ProxyEventBindingBase>{
-                            static_cast<ProxyEventBindingBase*>(binding.release())};
+                    .and_then([](auto&& binding) -> Result<std::unique_ptr<ProxyEventBinding>> {
+                        return std::unique_ptr<ProxyEventBinding>{static_cast<ProxyEventBinding*>(binding.release())};
                     });
             }
             case ServiceElementTypes::PROXY_FIELD:
             {
                 return ProxyFieldBindingFactory<TestSampleType>::CreateEventBinding(
                            handle, proxy_binding, kDummyFieldName)
-                    .and_then([](auto&& binding) -> Result<std::unique_ptr<ProxyEventBindingBase>> {
-                        return std::unique_ptr<ProxyEventBindingBase>{
-                            static_cast<ProxyEventBindingBase*>(binding.release())};
+                    .and_then([](auto&& binding) -> Result<std::unique_ptr<ProxyEventBinding>> {
+                        return std::unique_ptr<ProxyEventBinding>{static_cast<ProxyEventBinding*>(binding.release())};
                     });
             }
             case ServiceElementTypes::GENERIC_PROXY_EVENT:
             {
                 return GenericProxyEventBindingFactory::Create(
                            handle, proxy_binding, kDummyGenericProxyEventName, ServiceElementType::EVENT)
-                    .and_then([](auto&& binding) -> Result<std::unique_ptr<ProxyEventBindingBase>> {
-                        return std::unique_ptr<ProxyEventBindingBase>{
-                            static_cast<ProxyEventBindingBase*>(binding.release())};
+                    .and_then([](auto&& binding) -> Result<std::unique_ptr<ProxyEventBinding>> {
+                        return std::unique_ptr<ProxyEventBinding>{static_cast<ProxyEventBinding*>(binding.release())};
                     });
             }
             default:

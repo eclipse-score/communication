@@ -70,7 +70,10 @@ SampleAllocateePtr<SampleType> MakeFakeSampleAllocateePtr(std::unique_ptr<Sample
 template <typename SampleType>
 SamplePtr<SampleType> MakeFakeSamplePtr(std::unique_ptr<SampleType> fake_sample_ptr)
 {
-    return SamplePtr<SampleType>(std::move(fake_sample_ptr));
+    mock_binding::SamplePtr mock_sample_ptr{fake_sample_ptr.release(), [](void* ptr) noexcept {
+                                                delete static_cast<SampleType*>(ptr);
+                                            }};
+    return SamplePtr<SampleType>{std::move(mock_sample_ptr), SampleReferenceGuard{}};
 }
 
 }  // namespace score::mw::com::impl

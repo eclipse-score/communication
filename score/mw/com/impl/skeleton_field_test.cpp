@@ -1465,9 +1465,9 @@ TEST_F(SkeletonFieldGetHandlerTest, CallingMethodHandlerPutsLatestSampleInMethod
     const QualityType kDummyQuality{QualityType::kASIL_QM};
     TestSampleType* dummyLatestValue{const_cast<TestSampleType*>(&kDummyLatestValue)};
     EXPECT_CALL(skeleton_field_binding_mock_, GetLatestSample(kDummyQuality))
-        .WillOnce(Return(ByMove(
-            SamplePtr<void>{mock_binding::SamplePtr<void>{static_cast<void*>(dummyLatestValue), [](void*) noexcept {}},
-                            SampleReferenceGuard{}})));
+        .WillOnce(Return(
+            ByMove(SamplePtr<void>{mock_binding::SamplePtr{static_cast<void*>(dummyLatestValue), [](void*) noexcept {}},
+                                   SampleReferenceGuard{}})));
 
     // When calling the get handler that was captured by the method binding
     auto out_span = CreateFieldGetterReturnSpan(score::Result<TestSampleType>{});

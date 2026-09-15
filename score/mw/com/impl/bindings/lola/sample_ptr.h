@@ -27,13 +27,13 @@ namespace score::mw::com::impl::lola
 class TransactionLogSet;
 
 /// \brief SamplePtr behaves as unique_ptr to a sample (event slot). User get access to a SamplePtr via GetNewSamples().
-/// This is the LoLa binding specific SamplePtr, which holds a link to the underlying slot in shared memory.
-template <typename SampleType>
+/// \details This is the LoLa binding specific SamplePtr, which holds a link to the underlying slot in shared memory.
+/// It is type-erased as our binding layer is always type-erased.
 class SamplePtr final
 {
   public:
-    using pointer = const SampleType*;
-    using element_type = SampleType;
+    using pointer = const void*;
+    using element_type = void;
 
     /// \brief default ctor giving invalid SamplePtr (owning no managed object, invalid event slot)
     SamplePtr() noexcept : SamplePtr{nullptr, std::nullopt} {}
@@ -43,7 +43,7 @@ class SamplePtr final
 
     /// \brief ctor creates valid SamplePtr from its members.
     /// \param ptr pointer to managed object
-    /// \param event_data_ctrl event data control structure, which manages the underlying event/sample in shmem.
+    /// \param event_data_ctrl_local event data control structure, which manages the underlying event/sample in shmem.
     /// \param slot_index index of event slot
     SamplePtr(pointer ptr,
               ConsumerEventDataControlLocalView<>& event_data_ctrl_local,
@@ -72,31 +72,6 @@ class SamplePtr final
     SamplePtr& operator=(SamplePtr&& other) noexcept = default;
     SamplePtr(SamplePtr&& other) noexcept = default;
 
-    /// \brief Interim rebind ctor converting a type-erased SamplePtr<void> into a concrete SamplePtr<SampleType>.
-    ///
-    /// \details This is needed because, as part of a stepwise refactoring, the skeleton-side binding API
-    /// (lola::SkeletonEvent::GetLatestSample()) already produces type-erased SamplePtr<void> instances, while
-    /// SamplePtr itself still is (and, for now, needs to remain) a class template, since it is also used unchanged
-    /// by the (not yet refactored) proxy-side.
-    ///
-    /// \attention This is an INTERIM solution only! Once lola::SamplePtr (and mock_binding::SamplePtr) get converted
-    /// into non-template, fully type-erased classes (mirroring what was already done for lola::SampleAllocateePtr),
-    /// this constructor - and the whole rebind mechanism built around it - becomes obsolete and shall be removed.
-    ///
-    /// \tparam OtherSampleType source SampleType; only enabled for OtherSampleType == void and SampleType != void, as
-    ///                         the rebind direction is always from type-erased to concrete.
-    /// \param other type-erased SamplePtr<void> to rebind into a SamplePtr<SampleType>. Left in an invalid
-    ///              (default-constructed-like) state afterwards.
-    template <typename OtherSampleType,
-              typename = std::enable_if_t<std::is_void<OtherSampleType>::value && !std::is_void<SampleType>::value>>
-    explicit SamplePtr(SamplePtr<OtherSampleType>&& other) noexcept
-        : managed_object_{static_cast<pointer>(other.managed_object_)},
-          slot_decrementer_{std::move(other.slot_decrementer_)},
-          timestamp_{other.timestamp_}
-    {
-        other.managed_object_ = nullptr;
-    }
-
     /// \brief returns managed object.
     /// \todo: Maybe remove later, if not used anymore by user facing wrappers.
     pointer get() const noexcept
@@ -109,16 +84,6 @@ class SamplePtr final
     explicit operator bool() const noexcept
     {
         return managed_object_ != nullptr;
-    }
-
-    /// \brief deref underlying managed object.
-    ///
-    /// Only enabled if the SampleType is not void
-    /// \return ref of managed object.
-    template <class T = SampleType, typename std::enable_if<!std::is_same<T, void>::value>::type* = nullptr>
-    typename std::add_lvalue_reference<const SampleType>::type operator*() const noexcept
-    {
-        return *managed_object_;
     }
 
     /// \brief access managed object
@@ -154,17 +119,12 @@ class SamplePtr final
     }
 
   private:
-    explicit SamplePtr(pointer managed_object, std::optional<SlotDecrementer>&& slog_decrementer) noexcept
-        : managed_object_{managed_object}, slot_decrementer_{std::move(slog_decrementer)}
+    explicit SamplePtr(pointer managed_object, std::optional<SlotDecrementer>&& slot_decrementer) noexcept
+        : managed_object_{managed_object},
+          slot_decrementer_{std::move(slot_decrementer)},
+          timestamp_{EventSlotStatus::INVALID_TIMESTAMP}
     {
     }
-
-    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
-    // Design decision: needed so that the interim rebind ctor above can access the private members of a
-    // differently-instantiated SamplePtr<OtherSampleType>. See the rebind ctor's doxygen comment for context.
-    // coverity[autosar_cpp14_a11_3_1_violation]
-    template <typename OtherSampleType>
-    friend class SamplePtr;
 
     pointer managed_object_;
     std::optional<SlotDecrementer> slot_decrementer_;

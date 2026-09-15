@@ -36,10 +36,10 @@ class ProxyEventBindingFactory final
 {
   public:
     /// \brief See documentation in IProxyEventBindingFactory.
-    static Result<std::unique_ptr<ProxyEventBinding<SampleType>>> Create(HandleType parent_handle,
-                                                                         ProxyBinding& parent_binding,
-                                                                         std::string_view event_name,
-                                                                         const ServiceElementType service_element_type)
+    static Result<std::unique_ptr<ProxyEventBinding>> Create(HandleType parent_handle,
+                                                             ProxyBinding& parent_binding,
+                                                             std::string_view event_name,
+                                                             const ServiceElementType service_element_type)
     {
         return instance().Create(std::move(parent_handle), parent_binding, event_name, service_element_type);
     }

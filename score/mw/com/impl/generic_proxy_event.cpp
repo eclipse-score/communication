@@ -19,14 +19,14 @@
 namespace score::mw::com::impl
 {
 
-GenericProxyEvent::GenericProxyEvent(ProxyBase& base, const std::string_view event_name)
+GenericProxyEvent::GenericProxyEvent(ProxyBase& parent, const std::string_view event_name)
     : ProxyEventBase{event_name,
-                     GenericProxyEventBindingFactory::Create(base.GetHandle(),
-                                                             ProxyBaseView{base}.GetBinding(),
+                     GenericProxyEventBindingFactory::Create(parent.GetHandle(),
+                                                             ProxyBaseView{parent}.GetBinding(),
                                                              event_name,
                                                              ServiceElementType::EVENT)
                          .and_then([](std::unique_ptr<GenericProxyEventBinding> binding) {
-                             return Result<std::unique_ptr<ProxyEventBindingBase>>{std::move(binding)};
+                             return Result<std::unique_ptr<ProxyEventBinding>>{std::move(binding)};
                          })}
 {
 }
@@ -39,15 +39,15 @@ GenericProxyEvent::GenericProxyEvent(const std::string_view event_name,
 
 std::size_t GenericProxyEvent::GetSampleSize() const noexcept
 {
-    auto* const proxy_event_binding = dynamic_cast<GenericProxyEventBinding*>(binding_base_.get());
+    auto* const proxy_event_binding = dynamic_cast<GenericProxyEventBinding*>(binding_.get());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_event_binding != nullptr,
                                                 "Downcast to GenericProxyEventBinding failed!");
-    return proxy_event_binding->GetSampleSize();
+    return proxy_event_binding->GetDataTypeSizeInfo().Size();
 }
 
 memory::DataTypeSizeInfo GenericProxyEvent::GetDataTypeSizeInfo() const
 {
-    auto* const proxy_event_binding = dynamic_cast<GenericProxyEventBinding*>(binding_base_.get());
+    auto* const proxy_event_binding = dynamic_cast<GenericProxyEventBinding*>(binding_.get());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_event_binding != nullptr,
                                                 "Downcast to GenericProxyEventBinding failed!");
     return proxy_event_binding->GetDataTypeSizeInfo();
@@ -55,7 +55,7 @@ memory::DataTypeSizeInfo GenericProxyEvent::GetDataTypeSizeInfo() const
 
 bool GenericProxyEvent::HasSerializedFormat() const noexcept
 {
-    auto* const proxy_event_binding = dynamic_cast<GenericProxyEventBinding*>(binding_base_.get());
+    auto* const proxy_event_binding = dynamic_cast<GenericProxyEventBinding*>(binding_.get());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_event_binding != nullptr,
                                                 "Downcast to GenericProxyEventBinding failed!");
     return proxy_event_binding->HasSerializedFormat();

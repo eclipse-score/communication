@@ -92,14 +92,13 @@ SizeInfo TestSizeProvider::GetSampleAllocateePtrSize() noexcept
 
 SizeInfo TestSizeProvider::GetSamplePtrSize() noexcept
 {
-    return {sizeof(score::mw::com::impl::lola::SamplePtr<int32_t>),
-            alignof(score::mw::com::impl::lola::SamplePtr<int32_t>)};
+    return {sizeof(score::mw::com::impl::lola::SamplePtr), alignof(score::mw::com::impl::lola::SamplePtr)};
 }
 
 SizeInfo TestSizeProvider::GetMockBindingSamplePtrSize() noexcept
 {
-    return {sizeof(score::mw::com::impl::mock_binding::SamplePtr<int32_t>),
-            alignof(score::mw::com::impl::mock_binding::SamplePtr<int32_t>)};
+    return {sizeof(score::mw::com::impl::mock_binding::SamplePtr),
+            alignof(score::mw::com::impl::mock_binding::SamplePtr)};
 }
 
 }  // namespace score::mw::com::impl

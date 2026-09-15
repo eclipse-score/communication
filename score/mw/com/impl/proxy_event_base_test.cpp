@@ -17,7 +17,7 @@
 #include "score/mw/com/impl/generic_proxy_event.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event.h"
-#include "score/mw/com/impl/proxy_event_binding_base.h"
+#include "score/mw/com/impl/proxy_event_binding.h"
 #include "score/mw/com/impl/proxy_field.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 #include "score/mw/com/impl/test/proxy_resources.h"
@@ -87,7 +87,7 @@ class ProxyEventBaseFixture : public ::testing::Test
 struct ProxyEventStruct
 {
     using ServiceElementType = ProxyEvent<TestEventOrFieldType>;
-    using MockServiceElementType = mock_binding::ProxyEvent<TestEventOrFieldType>;
+    using MockServiceElementType = mock_binding::ProxyEvent;
 };
 
 struct GenericProxyEventStruct
@@ -99,7 +99,7 @@ struct GenericProxyEventStruct
 struct ProxyFieldStruct
 {
     using ServiceElementType = ProxyField<TestEventOrFieldType, WithGetter, WithNotifier, WithSetter>;
-    using MockServiceElementType = mock_binding::ProxyEvent<TestEventOrFieldType>;
+    using MockServiceElementType = mock_binding::ProxyEvent;
 };
 
 // Gtest will run all tests in the LolaProxyEventFixture once for every type, t, in MyTypes, such that TypeParam
@@ -1027,7 +1027,7 @@ TYPED_TEST(ProxyEventBaseGetNumNewSamplesAvailableFixture, GetNumNewSamplesAvail
 
 TEST(ProxyEventBaseTest, MoveConstructingProxyEventDoesNotCrash)
 {
-    auto mock_proxy_event_binding_ptr = std::make_unique<StrictMock<mock_binding::ProxyEventBase>>();
+    auto mock_proxy_event_binding_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent>>();
     auto& mock_proxy_event_binding = *mock_proxy_event_binding_ptr;
 
     // Given a Service Element, that is connected to a mock binding
@@ -1049,14 +1049,14 @@ TEST(ProxyEventBaseTest, MoveConstructingProxyEventDoesNotCrash)
 
 TEST(ProxyEventBaseTest, MoveAssigningProxyEventDoesNotCrash)
 {
-    auto mock_proxy_event_binding_ptr = std::make_unique<StrictMock<mock_binding::ProxyEventBase>>();
+    auto mock_proxy_event_binding_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent>>();
     auto& mock_proxy_event_binding = *mock_proxy_event_binding_ptr;
 
     // Given a Service Element, that is connected to a mock binding
     ProxyEventBase dummy_event{kEventName, std::move(mock_proxy_event_binding_ptr)};
 
     // And a new Service Element is created and move assigned
-    ProxyEventBase dummy_event_2{kEventName2, std::make_unique<StrictMock<mock_binding::ProxyEventBase>>()};
+    ProxyEventBase dummy_event_2{kEventName2, std::make_unique<StrictMock<mock_binding::ProxyEvent>>()};
     dummy_event_2 = std::move(dummy_event);
 
     // Expect that Subscribe is called on the binding only once
@@ -1072,7 +1072,7 @@ TEST(ProxyEventBaseTest, MoveAssigningProxyEventDoesNotCrash)
 
 TEST(ProxyEventBaseTest, SetSubscriptionStateChangeHandlerWorks)
 {
-    auto mock_proxy_event_binding_ptr = std::make_unique<StrictMock<mock_binding::ProxyEventBase>>();
+    auto mock_proxy_event_binding_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent>>();
     auto& mock_proxy_event_binding = *mock_proxy_event_binding_ptr;
 
     // Given a Service Element, that is connected to a mock binding
@@ -1090,7 +1090,7 @@ TEST(ProxyEventBaseTest, SetSubscriptionStateChangeHandlerWorks)
 
 TEST(ProxyEventBaseTest, UnsetSubscriptionStateChangeHandlerWorks)
 {
-    auto mock_proxy_event_binding_ptr = std::make_unique<StrictMock<mock_binding::ProxyEventBase>>();
+    auto mock_proxy_event_binding_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent>>();
     auto& mock_proxy_event_binding = *mock_proxy_event_binding_ptr;
 
     // Given a Service Element, that is connected to a mock binding
