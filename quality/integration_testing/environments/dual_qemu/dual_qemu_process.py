@@ -20,6 +20,7 @@ process up to ``max_boot_attempts`` times if sshd never comes up.
 """
 
 import logging
+import socket
 import time
 
 from score.itf.plugins.qemu.qemu_process import QemuProcess
@@ -28,6 +29,37 @@ from score.itf.plugins.qemu.qemu_target import QemuTarget
 from .ivshmem_qemu import IvshmemQemu
 
 logger = logging.getLogger(__name__)
+
+
+def _host_port_is_free(port: int, host: str = "127.0.0.1") -> bool:
+    # SO_REUSEADDR keeps TIME_WAIT leftovers from looking like a live listener.
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            probe.bind((host, port))
+        except OSError:
+            return False
+    return True
+
+
+def require_free_host_ports(ports, host: str = "127.0.0.1"):
+    """Reject ports a killed run still holds; QEMU would otherwise fail to bind and strand the guests."""
+    taken = sorted({port for port in ports if not _host_port_is_free(port, host)})
+    if taken:
+        raise RuntimeError(
+            f"Host ports already in use on {host}: {taken}. "
+            "A previous QEMU run was most likely interrupted; stop the stale process before retrying."
+        )
+
+
+def wait_for_host_port_bound(port: int, host: str = "127.0.0.1", timeout_s: int = 30):
+    """Block until QEMU owns the listener, so the connecting VM never retries a socket that was never created."""
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        if not _host_port_is_free(port, host):
+            return
+        time.sleep(0.2)
+    raise TimeoutError(f"QEMU never bound the inter-VM socket {host}:{port} within {timeout_s}s")
 
 
 def _wait_for_ssh(target, total_timeout: int = 180, interval: int = 1, stable_successes: int = 3):

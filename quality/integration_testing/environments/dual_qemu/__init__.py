@@ -33,7 +33,9 @@ from .config import load_configuration, parse_size
 from .dual_qemu_process import (
     DualQemuProcess,
     execute_async_with_retries,
+    require_free_host_ports,
     stop_quietly,
+    wait_for_host_port_bound,
 )
 
 # Helpers used by tests that launch applications over SSH.
@@ -106,6 +108,11 @@ def _targets(config, ivshmem_backend):
 
     vms = dual_config.vms
 
+    required_host_ports = [forwarding.host_port for vm in vms for forwarding in vm.port_forwarding]
+    if intervm.enabled:
+        required_host_ports.append(intervm.host_port)
+    require_free_host_ports(required_host_ports)
+
     # Boot VM-A first, then VM-B. Sequential booting avoids a KVM race where two QNX
     # guests initializing concurrently can wedge the second guest's device bring-up.
     with DualQemuProcess(
@@ -119,6 +126,8 @@ def _targets(config, ivshmem_backend):
         intervm=intervm_roles[0],
         vm_index=0,
     ) as process_a:
+        if intervm.enabled:
+            wait_for_host_port_bound(intervm.host_port)
         with DualQemuProcess(
             config.qemu_images[1],
             vms[1].qemu_ram_size,
