@@ -108,6 +108,12 @@ Result<void> ProxyEventCommon::UnsetSubscriptionStateChangeHandler() noexcept
     return {};
 }
 
+void ProxyEventCommon::SetSubscriptionStateChangeTracingCallback(
+    score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept
+{
+    subscription_event_state_machine_.SetSubscriptionStateChangeTracingCallback(std::move(callback));
+}
+
 std::optional<std::uint16_t> ProxyEventCommon::GetMaxSampleCount() const noexcept
 {
     return subscription_event_state_machine_.GetMaxSampleCount();
