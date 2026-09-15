@@ -34,6 +34,13 @@ VM_B_LABEL = "VM-B (dest)"
 TIMEOUT_SECONDS = 180
 
 
+def _stop_quietly(process, label):
+    try:
+        process.stop()
+    except Exception as ex:  # pylint: disable=broad-except
+        logger.warning("Could not stop %s: %s", label, ex)
+
+
 def _collect_result(label, process):
     rc = process.get_exit_code()
     text = process.get_output().strip()
@@ -57,8 +64,10 @@ def test_qemu_ivshmem_transport(target_a, target_b):
                 results[label] = _collect_result(label, process)
                 del processes[label]
                 if results[label][0] != 0:
-                    for peer_process in processes.values():
-                        peer_process.stop()
+                    for peer_label, peer_process in list(processes.items()):
+                        _stop_quietly(peer_process, peer_label)
+                        results[peer_label] = _collect_result(peer_label, peer_process)
+                        del processes[peer_label]
                     break
         time.sleep(0.1)
 
