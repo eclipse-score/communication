@@ -5205,7 +5205,7 @@ TEST(ConfigurationJsonParsingStrategy, ServiceInstanceWithMultipleEventsAndField
     // That the application will not terminate
     const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
     const auto& deployment =
-        config.GetServiceInstanceDeployment(InstanceSpecifier::Create("abc/abc/TirePressurePort").value())
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
             .value()
             .get();
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
