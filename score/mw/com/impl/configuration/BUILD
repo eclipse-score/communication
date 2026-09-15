@@ -18,10 +18,6 @@ load("@score_baselibs//score/flatbuffers/bazel:tools.bzl", "generate_json_schema
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
-load(":flatbuffers_flags.bzl", "flatbuffers_flags")
-
-# FlatBuffers feature flag + config_setting (enable via --config=flatbuffers).
-flatbuffers_flags()
 
 exports_files(
     [
@@ -41,7 +37,7 @@ generate_cpp(
     output = "mw_com_config_generated.h",
     schema = "mw_com_config.fbs",
     target_compatible_with = select({
-        ":flatbuffers_enabled": [],
+        "//score/mw/com/flags:flatbuffers_enabled": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     visibility = ["//score/mw/com/impl/configuration:__subpackages__"],
@@ -65,8 +61,13 @@ py_binary(
     args = [
         "--in",
         "$(location :mw_com_config_postproc_schema)",
+        "--output",
+        "$(rootpath mw_com_config_schema.json)",
     ],
-    data = [":mw_com_config_postproc_schema"],
+    data = [
+        "mw_com_config_schema.json",
+        ":mw_com_config_postproc_schema",
+    ],
     main = "generate_schema.py",
 )
 
