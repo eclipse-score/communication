@@ -17,6 +17,7 @@
 #include "score/mw/com/test/common_test_resources/general_resources.h"
 #include "score/mw/com/test/inotify_stress_test/inotify_stress_test_internal.h"
 #include "score/os/inotify.h"
+#include "score/os/utils/inotify/inotify_event.h"
 #include "score/os/utils/inotify/inotify_instance_impl.h"
 
 #include <score/stop_token.hpp>
@@ -28,7 +29,9 @@
 
 #include <cerrno>
 #include <cstring>
+#include <future>
 #include <iostream>
+#include <optional>
 #include <string>
 
 namespace score::mw::com::test
@@ -92,9 +95,150 @@ bool EnsureDirectory(const pid_t pid, const std::string& test_dir)
     return false;
 }
 
+/// \brief Runs one add-watch/remove-watch churn cycle (TestMode::kWatchChurn).
+///
+/// \return true if the cycle succeeded and the worker shall continue; false if an unrecoverable error was
+///         reported to \p checkpoint_control and the worker shall exit.
+bool RunWatchChurnCycle(const pid_t pid,
+                        const std::string& test_dir,
+                        os::InotifyInstanceImpl& inotify,
+                        CheckPointControl& checkpoint_control)
+{
+    // Step 1: Ensure the shared process directory exists with the expected permissions
+    if (!EnsureDirectory(pid, test_dir))
+    {
+        checkpoint_control.ErrorOccurred();
+        return false;
+    }
+
+    // Steps 2 & 3: Add an inotify watch on the shared base folder and remove it immediately.
+    // Under heavy concurrent add/remove churn on the same directory, the QNX io-notify resource
+    // manager can transiently fail a removal with EINVAL. Once that happens the watch descriptor is
+    // permanently invalid — retrying RemoveWatch on the same descriptor keeps returning EINVAL — so
+    // recovery requires obtaining a fresh descriptor via AddWatch. Therefore the whole add+remove
+    // step is retried a bounded number of times, and the worker only fails if it cannot complete a
+    // clean add+remove within kMaxWatchAttempts. Any non-EINVAL error is a genuine failure.
+    bool watch_cycle_succeeded{false};
+    for (std::size_t attempt{0U}; (attempt < kMaxWatchAttempts) && (!watch_cycle_succeeded); ++attempt)
+    {
+        auto watch_descriptor =
+            inotify.AddWatch(kBaseFolder, os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete);
+        if (!watch_descriptor.has_value())
+        {
+            std::cerr << pid << ": AddWatch failed: " << watch_descriptor.error() << " on " << kBaseFolder << std::endl;
+            checkpoint_control.ErrorOccurred();
+            return false;
+        }
+
+        const auto remove_result = inotify.RemoveWatch(watch_descriptor.value());
+        if (remove_result.has_value())
+        {
+            watch_cycle_succeeded = true;
+        }
+        else if (remove_result.error().GetOsDependentErrorCode() != EINVAL)
+        {
+            std::cerr << pid << ": RemoveWatch failed: " << remove_result.error() << std::endl;
+            checkpoint_control.ErrorOccurred();
+            return false;
+        }
+        else
+        {
+            // Transient EINVAL: the descriptor is now invalid, so the next attempt re-adds the watch
+            // to obtain a fresh descriptor before removing again.
+            std::cerr << pid << ": RemoveWatch transient EINVAL (attempt " << (attempt + 1U) << " of "
+                      << kMaxWatchAttempts << "), re-adding watch and retrying" << std::endl;
+        }
+    }
+
+    if (!watch_cycle_succeeded)
+    {
+        std::cerr << pid << ": RemoveWatch failed persistently after " << kMaxWatchAttempts << " attempts" << std::endl;
+        checkpoint_control.ErrorOccurred();
+        return false;
+    }
+
+    return true;
+}
+
+/// \brief Blocks on \p inotify.Read() (via a helper thread) until either an event arrives or \p timeout
+///        elapses. On timeout, closes \p inotify to unblock the pending read (the instance becomes unusable
+///        afterwards — appropriate here since a timeout is treated as a fatal error for the worker).
+///
+/// \return The events read, or std::nullopt on timeout (already logged as N/A here — caller logs specifics).
+std::optional<score::cpp::static_vector<os::InotifyEvent, os::InotifyInstanceImpl::max_events>> ReadWithTimeout(
+    os::InotifyInstanceImpl& inotify,
+    const std::chrono::milliseconds timeout)
+{
+    auto read_future = std::async(std::launch::async, [&inotify]() {
+        return inotify.Read();
+    });
+
+    if (read_future.wait_for(timeout) == std::future_status::timeout)
+    {
+        // Unblocks the pending Read() call in the helper thread.
+        inotify.Close();
+        static_cast<void>(read_future.wait());
+        return std::nullopt;
+    }
+
+    auto read_result = read_future.get();
+    if (!read_result.has_value())
+    {
+        std::cerr << "Read() failed: " << read_result.error() << std::endl;
+        return std::nullopt;
+    }
+    return read_result.value();
+}
+
+/// \brief Waits for the inotify notification expected in cycle \p cycle_index (create on even cycles, delete
+///        on odd cycles) for kNotifyTestFileName within \p notify_timeout of being called.
+///
+/// \return true if the expected notification arrived in time; false if it timed out, an OS error occurred, or
+///         an unexpected event was observed. In all false cases an error has already been logged and reported
+///         to \p checkpoint_control via ErrorOccurred().
+bool WaitForExpectedNotification(const pid_t pid,
+                                 const std::size_t cycle_index,
+                                 os::InotifyInstanceImpl& inotify,
+                                 const std::chrono::milliseconds notify_timeout,
+                                 CheckPointControl& checkpoint_control)
+{
+    const bool expect_create{(cycle_index % 2U) == 0U};
+    const auto expected_mask =
+        expect_create ? os::InotifyEvent::ReadMask::kInCreate : os::InotifyEvent::ReadMask::kInDelete;
+    const char* const expected_action{expect_create ? "create" : "delete"};
+
+    const auto read_result = ReadWithTimeout(inotify, notify_timeout);
+    if (!read_result.has_value())
+    {
+        std::cerr << pid << ": cycle " << cycle_index << ": did not observe expected '" << expected_action
+                  << "' notification for " << kNotifyTestFileName << " within " << notify_timeout.count() << "ms"
+                  << std::endl;
+        checkpoint_control.ErrorOccurred();
+        return false;
+    }
+
+    for (const auto& event : read_result.value())
+    {
+        if ((event.GetMask() & expected_mask) && (event.GetName() == kNotifyTestFileName))
+        {
+            return true;
+        }
+    }
+
+    std::cerr << pid << ": cycle " << cycle_index << ": received " << read_result.value().size()
+              << " event(s), none matching expected '" << expected_action << "' notification for "
+              << kNotifyTestFileName << std::endl;
+    checkpoint_control.ErrorOccurred();
+    return false;
+}
+
 }  // namespace
 
-void RunWorkerProcess(const std::size_t worker_index, const std::size_t cycles, CheckPointControl& checkpoint_control)
+void RunWorkerProcess(const std::size_t worker_index,
+                      const std::size_t cycles,
+                      CheckPointControl& checkpoint_control,
+                      const TestMode mode,
+                      const std::chrono::milliseconds notify_timeout)
 {
     const auto pid{getpid()};
     const std::string test_dir{TestDir()};
@@ -103,9 +247,29 @@ void RunWorkerProcess(const std::size_t worker_index, const std::size_t cycles, 
     const score::cpp::stop_source worker_stop_source{};
     os::InotifyInstanceImpl inotify{};
 
+    if (mode == TestMode::kNotifyLatency)
+    {
+        // The watch is established once up front — kNotifyLatency exercises notification latency, not
+        // watch add/remove churn — and stays in place for the whole run so that inotify events queued by
+        // the controller's file operations are never missed between cycles.
+        auto watch_descriptor =
+            inotify.AddWatch(kBaseFolder, os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete);
+        if (!watch_descriptor.has_value())
+        {
+            std::cerr << pid << ": AddWatch failed: " << watch_descriptor.error() << " on " << kBaseFolder << std::endl;
+            checkpoint_control.ErrorOccurred();
+            return;
+        }
+        // Tell the controller the watch is armed before it performs any file operation — otherwise the
+        // controller could act before this worker's watch exists and the notification would be missed.
+        checkpoint_control.CheckPointReached(kWatchReadyCheckpoint);
+    }
+
     for (std::size_t i{0U}; i < cycles; ++i)
     {
-        // Wait for controller's start-of-cycle signal — blocks without polling
+        // Wait for controller's start-of-cycle signal — blocks without polling. In kNotifyLatency mode this
+        // is also the controller's announcement that it is about to create/remove the shared notify test
+        // file, so the notify_timeout clock effectively starts here.
         const auto instruction = WaitForChildProceed(checkpoint_control, worker_stop_source.get_token());
         if (instruction != CheckPointControl::ProceedInstruction::PROCEED_NEXT_CHECKPOINT)
         {
@@ -113,59 +277,19 @@ void RunWorkerProcess(const std::size_t worker_index, const std::size_t cycles, 
             return;
         }
 
-        // Step 1: Ensure the shared process directory exists with the expected permissions
-        if (!EnsureDirectory(pid, test_dir))
+        if (mode == TestMode::kWatchChurn)
         {
-            checkpoint_control.ErrorOccurred();
-            return;
-        }
-
-        // Steps 2 & 3: Add an inotify watch on the shared base folder and remove it immediately.
-        // Under heavy concurrent add/remove churn on the same directory, the QNX io-notify resource
-        // manager can transiently fail a removal with EINVAL. Once that happens the watch descriptor is
-        // permanently invalid — retrying RemoveWatch on the same descriptor keeps returning EINVAL — so
-        // recovery requires obtaining a fresh descriptor via AddWatch. Therefore the whole add+remove
-        // step is retried a bounded number of times, and the worker only fails if it cannot complete a
-        // clean add+remove within kMaxWatchAttempts. Any non-EINVAL error is a genuine failure.
-        bool watch_cycle_succeeded{false};
-        for (std::size_t attempt{0U}; (attempt < kMaxWatchAttempts) && (!watch_cycle_succeeded); ++attempt)
-        {
-            auto watch_descriptor =
-                inotify.AddWatch(kBaseFolder, os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete);
-            if (!watch_descriptor.has_value())
+            if (!RunWatchChurnCycle(pid, test_dir, inotify, checkpoint_control))
             {
-                std::cerr << pid << ": AddWatch failed: " << watch_descriptor.error() << " on " << kBaseFolder
-                          << std::endl;
-                checkpoint_control.ErrorOccurred();
                 return;
             }
-
-            const auto remove_result = inotify.RemoveWatch(watch_descriptor.value());
-            if (remove_result.has_value())
+        }
+        else
+        {
+            if (!WaitForExpectedNotification(pid, i, inotify, notify_timeout, checkpoint_control))
             {
-                watch_cycle_succeeded = true;
-            }
-            else if (remove_result.error().GetOsDependentErrorCode() != EINVAL)
-            {
-                std::cerr << pid << ": RemoveWatch failed: " << remove_result.error() << std::endl;
-                checkpoint_control.ErrorOccurred();
                 return;
             }
-            else
-            {
-                // Transient EINVAL: the descriptor is now invalid, so the next attempt re-adds the watch
-                // to obtain a fresh descriptor before removing again.
-                std::cerr << pid << ": RemoveWatch transient EINVAL (attempt " << (attempt + 1U) << " of "
-                          << kMaxWatchAttempts << "), re-adding watch and retrying" << std::endl;
-            }
-        }
-
-        if (!watch_cycle_succeeded)
-        {
-            std::cerr << pid << ": RemoveWatch failed persistently after " << kMaxWatchAttempts << " attempts"
-                      << std::endl;
-            checkpoint_control.ErrorOccurred();
-            return;
         }
 
         // Notify controller that this cycle completed successfully

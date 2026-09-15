@@ -11,22 +11,24 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("//quality/integration_testing:integration_testing.bzl", "integration_test")
+"""Shared helper for launching the inotify stress test binary."""
 
-integration_test(
-    name = "test_watch_churn",
-    srcs = [
-        "test_fixture.py",
-        "test_watch_churn.py",
-    ],
-    filesystem = "//score/mw/com/test/inotify_stress_test:inotify-stress-test-pkg",
-)
 
-integration_test(
-    name = "test_notify_latency",
-    srcs = [
-        "test_fixture.py",
-        "test_notify_latency.py",
-    ],
-    filesystem = "//score/mw/com/test/inotify_stress_test:inotify-stress-test-pkg",
-)
+def inotify_stress_test(target, extra_args=None, **kwargs):
+    args = [
+        "--num-processes",
+        "10",
+        "--cycles",
+        "300",
+        "--base-uid",
+        "2000",
+        "--base-gid",
+        "2000",
+    ] + (extra_args or [])
+    return target.wrap_exec(
+        "bin/inotify_stress_test",
+        args,
+        cwd="/opt/InotifyStressTestApp",
+        wait_on_exit=True,
+        **kwargs,
+    )
