@@ -32,7 +32,7 @@ class GatewayCoreMock : public GatewayCore
     MOCK_METHOD(void, StopOfferService, (score::mw::com::InstanceSpecifier), (override));
     MOCK_METHOD((score::Result<void>),
                 NotifyUpdate,
-                (score::mw::com::InstanceSpecifier, impl::ServiceElementType, std::string),
+                (score::mw::com::InstanceSpecifier, impl::ServiceElementType, std::string, std::vector<std::uint8_t>),
                 (override));
     MOCK_METHOD((score::Result<void>),
                 RegisterUpdateNotification,
