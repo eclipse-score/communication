@@ -15,6 +15,22 @@ The `Nightly Flaky Test Detection` workflow runs repeated Bazel test executions 
 - `tsan` (`//...` with `--config=tsan`)
 - `qnx` (`//score/...` with `--config=qnx`)
 
+## Sharding
+
+`gcc15-unit`, `qnx-unit` and `qnx-integration` are split into 3 shards each,
+because these configs were regularly hitting the GitHub-hosted-runner default
+360-minute job timeout and getting hard-cancelled (losing their report). Each
+shard job runs `bazel query` once to get the exact set of test targets that
+`--test_tag_filters` would select, then keeps every 3rd target
+(`index mod shard-count`). This keeps shards balanced automatically as tests
+are added/removed - no manual per-directory target lists to maintain. If a
+config's shards start approaching the timeout again, raise its `shard-count`
+in `nightly_flaky_detection.yml`.
+
+The runner job also has a `timeout-minutes: 300` safety net so a still-too-slow
+shard fails cleanly (with logs/partial report) instead of being hard-cancelled
+by the platform default.
+
 ## Detection mode
 
 The runner uses:
