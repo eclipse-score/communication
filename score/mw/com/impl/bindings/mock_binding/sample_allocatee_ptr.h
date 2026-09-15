@@ -19,17 +19,12 @@
 namespace score::mw::com::impl::mock_binding
 {
 
-template <typename SampleType>
-using CustomDeleter = score::cpp::callback<void(SampleType*)>;
+using CustomDeleter = score::cpp::callback<void(void*)>;
 
 /// \brief SampleAllocateePtr used for the mock binding.
-///
-/// The SampleAllocateePtr is an alias for a unique_ptr with a custom deleter.
+/// \details The SampleAllocateePtr in the mock_binding case is an alias for a unique_ptr with a custom deleter.
 /// This matches the logic used in SamplePtr to support 'void' types safely.
-///
-/// @tparam SampleType The data type managed by this pointer.
-template <typename SampleType>
-using SampleAllocateePtr = std::unique_ptr<SampleType, CustomDeleter<SampleType>>;
+using SampleAllocateePtr = std::unique_ptr<void, CustomDeleter>;
 
 }  // namespace score::mw::com::impl::mock_binding
 

@@ -136,36 +136,34 @@ class SkeletonBindingFactoryMockGuard
     ::testing::NiceMock<SkeletonBindingFactoryMock> factory_mock_;
 };
 
-template <typename SampleType>
 class SkeletonEventBindingFactoryMockGuard
 {
   public:
     SkeletonEventBindingFactoryMockGuard() noexcept
     {
-        SkeletonEventBindingFactory<SampleType>::InjectMockBinding(&factory_mock_);
+        SkeletonEventBindingFactory::InjectMockBinding(&factory_mock_);
     }
     ~SkeletonEventBindingFactoryMockGuard() noexcept
     {
-        SkeletonEventBindingFactory<SampleType>::InjectMockBinding(nullptr);
+        SkeletonEventBindingFactory::InjectMockBinding(nullptr);
     }
 
-    ::testing::NiceMock<SkeletonEventBindingFactoryMock<SampleType>> factory_mock_;
+    ::testing::NiceMock<SkeletonEventBindingFactoryMock> factory_mock_;
 };
 
-template <typename SampleType>
 class SkeletonFieldBindingFactoryMockGuard
 {
   public:
     SkeletonFieldBindingFactoryMockGuard() noexcept
     {
-        SkeletonFieldBindingFactory<SampleType>::InjectMockBinding(&factory_mock_);
+        SkeletonFieldBindingFactory::InjectMockBinding(&factory_mock_);
     }
     ~SkeletonFieldBindingFactoryMockGuard() noexcept
     {
-        SkeletonFieldBindingFactory<SampleType>::InjectMockBinding(nullptr);
+        SkeletonFieldBindingFactory::InjectMockBinding(nullptr);
     }
 
-    ::testing::NiceMock<SkeletonFieldBindingFactoryMock<SampleType>> factory_mock_;
+    ::testing::NiceMock<SkeletonFieldBindingFactoryMock> factory_mock_;
 };
 
 class SkeletonMethodBindingFactoryMockGuard
