@@ -82,7 +82,7 @@ TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(
           }}
 {
     auto& transaction_log = transaction_log_set.GetTransactionLog(transaction_log_index);
-    consumer_event_data_control_local_view.SetTransactionLogLocalView(transaction_log);
+    consumer_event_data_control_local_view.SetTransactionLogLocalView(TransactionLogLocalView{transaction_log});
 
     constexpr bool is_transaction_log_set_movable_or_copyable = is_movable_or_copyable<TransactionLogSet>::value;
     static_assert(!is_transaction_log_set_movable_or_copyable,

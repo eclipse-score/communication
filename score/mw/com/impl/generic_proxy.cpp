@@ -45,6 +45,7 @@ std::vector<std::string_view> GetEventNameList(const InstanceIdentifier& identif
 
     const auto& service_type_deployment = InstanceIdentifierView{identifier}.GetServiceTypeDeployment();
     auto visitor = score::cpp::overload(
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const LolaServiceTypeDeployment& deployment) -> ReturnType {
             ReturnType event_names;
             for (const auto& event : deployment.events_)
@@ -53,6 +54,7 @@ std::vector<std::string_view> GetEventNameList(const InstanceIdentifier& identif
             }
             return event_names;
         },
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return {};
         });
@@ -84,6 +86,7 @@ Result<GenericProxy> GenericProxy::Create(HandleType instance_handle)
     generic_proxy.FillEventMap(event_names);
     auto generic_proxy_events = generic_proxy.GetEvents();
     const bool are_event_bindings_valid =
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         std::all_of(generic_proxy_events.cbegin(), generic_proxy_events.cend(), [](const auto& element) {
             const auto binding_construction_result = ProxyEventBaseView{element.second}.GetBindingConstructionResult();
             if (!binding_construction_result.has_value())

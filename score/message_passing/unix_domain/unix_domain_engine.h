@@ -53,8 +53,8 @@ class UnixDomainEngine final : public ISharedResourceEngine
         score::cpp::pmr::unique_ptr<score::os::Unistd> unistd{};
     };
 
-    UnixDomainEngine(score::cpp::pmr::memory_resource* memory_resource,
-                     LoggingCallback logger = GetCerrLogger()) noexcept;
+    explicit UnixDomainEngine(score::cpp::pmr::memory_resource* memory_resource,
+                               LoggingCallback logger = GetCerrLogger()) noexcept;
     ~UnixDomainEngine() noexcept override;
 
     UnixDomainEngine(const UnixDomainEngine&) = delete;

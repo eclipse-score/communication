@@ -100,8 +100,8 @@ class EventDataControlCompositeFixture : public ::testing::Test
         auto& transaction_log_qm = transaction_log_qm_.emplace(kSlotCount, memory_);
         auto& transaction_log_asil = transaction_log_asil_.emplace(kSlotCount, memory_);
 
-        proxy_qm_local_.emplace(*qm_, transaction_log_qm);
-        proxy_asil_local_.emplace(*asil_, transaction_log_asil);
+        proxy_qm_local_.emplace(*qm_, TransactionLogLocalView{transaction_log_qm});
+        proxy_asil_local_.emplace(*asil_, TransactionLogLocalView{transaction_log_asil});
 
         unit_ =
             std::make_unique<EventDataControlComposite<>>(skeleton_qm_local_.value(), &skeleton_asil_local_.value());
@@ -134,7 +134,7 @@ class EventDataControlCompositeFixture : public ::testing::Test
         skeleton_qm_local_.emplace(*qm_);
 
         auto& transaction_log_qm = transaction_log_qm_.emplace(kSlotCount, memory_);
-        proxy_qm_local_.emplace(*qm_, transaction_log_qm);
+        proxy_qm_local_.emplace(*qm_, TransactionLogLocalView{transaction_log_qm});
 
         unit_ = std::make_unique<EventDataControlComposite<>>(skeleton_qm_local_.value(), nullptr);
 
@@ -702,8 +702,8 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
     auto receiver = [&last_send_time_stamp, &qm, &asil, &memory]() {
         TransactionLog transaction_log_qm{MAX_SLOTS, memory};
         TransactionLog transaction_log_asil{MAX_SLOTS, memory};
-        ConsumerEventDataControlLocalView proxy_asil_local{asil, transaction_log_asil};
-        ConsumerEventDataControlLocalView proxy_qm_local{qm, transaction_log_qm};
+        ConsumerEventDataControlLocalView proxy_asil_local{asil, TransactionLogLocalView{transaction_log_asil}};
+        ConsumerEventDataControlLocalView proxy_qm_local{qm, TransactionLogLocalView{transaction_log_qm}};
         std::set<SlotIndexType> used_slots_qm{};
         std::set<SlotIndexType> used_slots_asil{};
 

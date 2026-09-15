@@ -566,6 +566,7 @@ void Skeleton::RegisterMethod(const UniqueMethodIdentifier method_id, SkeletonMe
 
 bool Skeleton::VerifyAllMethodHandlersRegistered() const
 {
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
     return std::all_of(skeleton_methods_.begin(), skeleton_methods_.end(), [](const auto& method_pair) {
         return method_pair.second.get().IsRegistered();
     });

@@ -272,9 +272,11 @@ score::Result<void> Configuration::CrossCheckServiceInstancesToTypes() const noe
 score::Result<bool> Configuration::HasLolaServiceDeployment() const noexcept
 {
     auto deployment_info_visitor = score::cpp::overload(
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const LolaServiceTypeDeployment&) {
             return true;
         },
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const score::cpp::blank&) noexcept {
             return false;
         });
@@ -344,6 +346,7 @@ std::set<std::string_view> Configuration::GetElementNamesOfServiceType(const std
         // LCOV_EXCL_START (Unreachable Code: GetElementNamesOfServiceType can only be called on an existing service
         // type. I.e. The ServiceTypeDeployment must be LolaServiceTypeDeployment and can never be score::cpp::blank.
         // This code is there because std::visitor must handle all std::variant types.
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const score::cpp::blank&) noexcept {
             return;
         }
