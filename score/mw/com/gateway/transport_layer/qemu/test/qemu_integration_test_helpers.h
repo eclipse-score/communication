@@ -78,6 +78,26 @@ bool WaitForFlag(const std::atomic<bool>& flag, int timeout_ms = 60000)
     return flag.load(std::memory_order_acquire);
 }
 
+// NotifyUpdate is fire-and-forget, so a notification can be lost while the peer reconnects.
+// Repeat the idempotent test notification to cover that transient disconnect window.
+template <typename NotifyFunction>
+bool NotifyWithRetries(NotifyFunction&& notify, int attempts = 10)
+{
+    bool sent = false;
+    for (int attempt = 0; attempt < attempts; ++attempt)
+    {
+        if (notify().has_value())
+        {
+            sent = true;
+        }
+        if (attempt + 1 < attempts)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+    }
+    return sent;
+}
+
 /// Brings up the "intervm" virtio-net NIC (vtnet1) and assigns it the given static IP.
 ///
 /// This is the point-to-point link between the two dual_qemu VMs. QNX only auto-configures
