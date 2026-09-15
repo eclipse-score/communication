@@ -30,7 +30,14 @@ import pytest
 from score.itf.core.utils.bunch import Bunch
 
 from .config import load_configuration, parse_size
-from .dual_qemu_process import DualQemuProcess
+from .dual_qemu_process import (
+    DualQemuProcess,
+    execute_async_with_retries,
+    stop_quietly,
+)
+
+# Helpers used by tests that launch applications over SSH.
+__all__ = ["execute_async_with_retries", "stop_quietly"]
 
 logger = logging.getLogger(__name__)
 

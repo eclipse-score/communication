@@ -59,6 +59,55 @@ def _wait_for_ssh(target, total_timeout: int = 180, interval: int = 1, stable_su
     raise TimeoutError(f"VM never became stably reachable via SSH within {total_timeout}s: {last_error}")
 
 
+def execute_async_with_retries(
+    target,
+    binary_path,
+    attempts: int = 3,
+    ssh_recovery_timeout_s: int = 30,
+    **kwargs,
+):
+    """Retry application launch when the guest SSH session is transiently unavailable."""
+    last_error = None
+    for attempt in range(1, attempts + 1):
+        if attempt > 1:
+            try:
+                _wait_for_ssh(
+                    target,
+                    total_timeout=ssh_recovery_timeout_s,
+                    stable_successes=2,
+                )
+            except Exception as probe_error:  # pylint: disable=broad-except
+                logger.warning(
+                    "VM still not serving SSH before retry %d (%s)",
+                    attempt,
+                    probe_error,
+                )
+        try:
+            return target.execute_async(binary_path, **kwargs)
+        except Exception as ex:  # pylint: disable=broad-except
+            last_error = ex
+            logger.warning(
+                "Launching %s failed on attempt %d/%d (%s)",
+                binary_path,
+                attempt,
+                attempts,
+                ex,
+            )
+    raise last_error
+
+
+def stop_quietly(process, label: str = ""):
+    """Keep remote-process cleanup from masking the test result."""
+    try:
+        process.stop()
+    except Exception as ex:  # pylint: disable=broad-except
+        logger.warning(
+            "Could not stop remote process %s cleanly (%s)",
+            label,
+            ex,
+        )
+
+
 class DualQemuProcess(QemuProcess):
     """A :class:`QemuProcess` subclass with ivshmem support and self-healing boot.
 
