@@ -1,0 +1,44 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+section "com" {
+
+    section "E2E" {
+
+        section "Public_API" {
+
+            ScoreReq.CompReq E2EUsageErrorReturnedThroughDistinctErrorChannel {
+                description = "The frontend_component's public API shall return an E2E protect, forward, or check function usage error, such as a null required argument or an out-of-range input, through its function-call error-return channel, distinct from the per-sample check-status value returned on a successful call."
+                safety = ScoreReq.Asil.B
+                note = "A usage/configuration defect is a programming error to surface immediately; a non-valid check-status value is an expected runtime condition. Mixing the two into one result type would hide the former among the latter."
+                derived_from = [Communication.E2EUsageErrorsDistinctFromCommunicationFaultStatus@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq E2ECheckStatusDistinguishesMasqueradingAndInsertionFromCounterFaults {
+                description = "The frontend_component's public API shall expose a per-sample E2E check status that keeps a Data-ID/CRC-detected masquerading or insertion fault distinguishable from a counter-based fault, such as a loss, repetition, or reordering, rather than collapsing both fault classes into the same status value."
+                safety = ScoreReq.Asil.B
+                note = """If masquerading/insertion and counter-based faults were reported through the same status value, the application could not tell a wrongly-addressed or corrupted sample apart from a merely out-of-sequence one.
+This requirement mandates distinguishing exactly two fault classes, not one status value per underlying cause, because the check mechanism itself cannot disambiguate further: a Data-ID/CRC mismatch is reported identically whether its root cause is corruption, insertion, masquerading, or inconsistent information reaching multiple receivers, so those causes cannot be told apart at the receiver and are intentionally grouped into one status. Likewise, loss, repetition, delay, out-of-sequence delivery, and a blocked/stalled channel are all detected purely from the counter and are grouped into the other status. Reporting a third or finer-grained status per cause would not be implementable, since the check has no way to observe which of those causes actually occurred."""
+                derived_from = [Communication.E2EErrorClassificationPreservesMasqueradingAndInsertionDetection@1]
+                version = 1
+            }
+
+        }
+
+    }
+
+}

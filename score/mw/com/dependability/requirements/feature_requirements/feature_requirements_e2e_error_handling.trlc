@@ -1,0 +1,31 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+ScoreReq.FeatReq E2EUsageErrorsDistinctFromCommunicationFaultStatus {
+    description = "The communication framework shall report an E2E API usage or configuration error (e.g. a null required argument or an out-of-range input) through a channel distinct from the per-sample communication-fault check status, so that it is surfaced as a programming or configuration defect rather than as a runtime check-status value such as an error or repeated-sample result."
+    safety = ScoreReq.Asil.B
+    note = "The function-level return codes for a protect/forward/check call are distinct from the per-sample check status; conflating the two would collapse a usage-error channel and a communication-fault channel into one."
+    derived_from = [Communication.SystemErrorHandling@1, Communication.SystemSafeCommunication@1]
+    version = 1
+}
+
+ScoreReq.FeatReq E2EErrorClassificationPreservesMasqueradingAndInsertionDetection {
+    description = "The communication framework's E2E error status shall preserve detection of masquerading and insertion faults, performed via the Data ID and CRC checks, and not reduce the exposed error classification to counter-based faults (loss, repetition, reordering) alone."
+    safety = ScoreReq.Asil.B
+    note = "Counter-based checks alone cannot detect a correctly-sequenced but wrongly-addressed or corrupted sample; Data ID and CRC checks cover a distinct fault class that must remain visible in the reported error, not just sequence-related faults."
+    derived_from = [Communication.SystemSafeCommunication@1]
+    version = 1
+}
