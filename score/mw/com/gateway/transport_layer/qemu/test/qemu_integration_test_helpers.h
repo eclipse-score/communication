@@ -119,7 +119,7 @@ bool ConfigureIntervmNic(const char* local_ip)
     }
 
     const std::string ifconfig_cmd =
-        std::string{"ifconfig "} + kIntervmInterface + " " + local_ip + " netmask 255.255.255.0";
+        std::string{"ifconfig "} + kIntervmInterface + " " + local_ip + " netmask 255.255.255.0 up";
     const int ifconfig_rc = std::system(ifconfig_cmd.c_str());
     if (ifconfig_rc != 0)
     {
