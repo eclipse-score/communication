@@ -70,5 +70,6 @@ pkg_application(
         ":app1",
         ":app2",
     ],
+    tags = ["exclusive"],
     visibility = ["//score/mw/com/gateway/transport_layer/qemu/test:__subpackages__"],
 )

@@ -32,6 +32,7 @@ from score.itf.core.utils.bunch import Bunch
 from .config import load_configuration, parse_size
 from .dual_qemu_process import (
     DualQemuProcess,
+    allocate_free_host_port,
     execute_async_with_retries,
     require_free_host_ports,
     stop_quietly,
@@ -99,19 +100,28 @@ def _targets(config, ivshmem_backend):
     """Boot both VMs sequentially, verify them, and tear down in reverse order."""
     logger.info(f"Starting dual-VM tests on host: {socket.gethostname()}")
     dual_config = config.dual_config
-
-    # When the inter-VM network is enabled, VM-A hosts the socket and VM-B connects.
+    vms = dual_config.vms
     intervm = dual_config.intervm_network
+
+    reserved_host_ports = set()
     intervm_roles = [None, None]
     if intervm.enabled:
-        intervm_roles = [("listen", intervm.host_port), ("connect", intervm.host_port)]
+        intervm_port = allocate_free_host_port(intervm.host_port, reserved=reserved_host_ports)
+        intervm.host_port = intervm_port
+        intervm_roles = [("listen", intervm_port), ("connect", intervm_port)]
 
-    vms = dual_config.vms
-
-    required_host_ports = [forwarding.host_port for vm in vms for forwarding in vm.port_forwarding]
-    if intervm.enabled:
-        required_host_ports.append(intervm.host_port)
-    require_free_host_ports(required_host_ports)
+    for vm in vms:
+        old_ssh_port = vm.ssh_port
+        new_ssh_port = None
+        for forwarding in vm.port_forwarding:
+            new_port = allocate_free_host_port(forwarding.host_port, reserved=reserved_host_ports)
+            if forwarding.host_port == old_ssh_port or forwarding.guest_port == 22:
+                new_ssh_port = new_port
+            forwarding.host_port = new_port
+        if new_ssh_port is not None:
+            vm.ssh_port = new_ssh_port
+        else:
+            vm.ssh_port = allocate_free_host_port(vm.ssh_port, reserved=reserved_host_ports)
 
     # Boot VM-A first, then VM-B. Sequential booting avoids a KVM race where two QNX
     # guests initializing concurrently can wedge the second guest's device bring-up.

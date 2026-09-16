@@ -42,6 +42,35 @@ def _host_port_is_free(port: int, host: str = "127.0.0.1") -> bool:
     return True
 
 
+def allocate_free_host_port(
+    preferred_port: int | None = None,
+    host: str = "127.0.0.1",
+    reserved: set[int] | None = None,
+) -> int:
+    """Allocate a free ephemeral port from the OS to avoid TIME_WAIT collisions across runs."""
+    if reserved is None:
+        reserved = set()
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        probe.bind((host, 0))
+        port = probe.getsockname()[1]
+        while port in reserved or not _host_port_is_free(port, host):
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe2:
+                probe2.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                probe2.bind((host, 0))
+                port = probe2.getsockname()[1]
+        reserved.add(port)
+        if preferred_port is not None:
+            logger.info(
+                "Host port %d on %s mapped to dynamic free port %d",
+                preferred_port,
+                host,
+                port,
+            )
+        return port
+
+
 def require_free_host_ports(ports, host: str = "127.0.0.1"):
     """Reject ports a killed run still holds; QEMU would otherwise fail to bind and strand the guests."""
     taken = sorted({port for port in ports if not _host_port_is_free(port, host)})
