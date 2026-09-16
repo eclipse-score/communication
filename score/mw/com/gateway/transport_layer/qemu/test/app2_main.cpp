@@ -276,5 +276,8 @@ int main()
 
     std::fprintf(stderr, "app2: both directions verified successfully!\n");
     std::printf("verified\n");
+    std::fflush(stdout);
+    // Allow peer time to process before tearing down sockets on exit.
+    std::this_thread::sleep_for(std::chrono::seconds(2));
     return 0;
 }
