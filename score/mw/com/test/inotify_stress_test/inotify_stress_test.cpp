@@ -17,7 +17,9 @@
 /// --mode (see README.md and inotify_stress_test_internal.h::TestMode), each cycle exercises either:
 ///   - kWatchChurn: repeated inotify watch add/remove churn on the shared base folder, or
 ///   - kNotifyLatency: whether create/delete notifications for a shared file are dispatched to every
-///     watching worker within a configurable timeout after the controller announces the change.
+///     watching worker within a configurable timeout after the controller announces the change, or
+///   - kBurstLoss: whether every create/delete notification for a burst of many files created (then
+///     removed) back-to-back is eventually observed by every watching worker.
 ///
 /// A controller (parent process) drives synchronisation via CheckPointControl:
 ///   - ProceedToNextCheckpoint() signals each worker to begin a cycle.
@@ -89,13 +91,13 @@ int ParseArguments(int argc,
                    std::size_t& cycles,
                    std::uint32_t& base_uid,
                    std::uint32_t& base_gid,
-                   TestMode& mode,
-                   std::chrono::milliseconds& notify_timeout)
+                   StressTestConfig& config)
 {
     namespace po = boost::program_options;
 
     std::string mode_string{"watch-churn"};
     std::uint64_t notify_timeout_ms{static_cast<std::uint64_t>(kDefaultNotifyTimeout.count())};
+    std::uint64_t burst_check_delay_ms{static_cast<std::uint64_t>(kDefaultBurstCheckDelay.count())};
 
     po::options_description options;
     // clang-format off
@@ -111,10 +113,18 @@ int ParseArguments(int argc,
                           "Base GID: worker N calls setgid(base-gid + N). 0 = skip setgid.")
         ("mode",          po::value<std::string>(&mode_string)->default_value(mode_string),
                           "Stress-test mode: 'watch-churn' repeatedly adds/removes an inotify watch; "
-                          "'notify-latency' verifies create/delete notifications are dispatched in time.")
+                          "'notify-latency' verifies create/delete notifications are dispatched in time; "
+                          "'burst-loss' verifies no create/delete notification is lost for a burst of many "
+                          "files created/removed back-to-back.")
         ("notify-timeout-ms", po::value<std::uint64_t>(&notify_timeout_ms)->default_value(notify_timeout_ms),
                           "notify-latency mode only: maximum time (ms) a worker may wait for the expected "
-                          "inotify notification after the controller announces it.");
+                          "inotify notification after the controller announces it.")
+        ("burst-file-count", po::value<std::size_t>(&config.burst_file_count)->default_value(kDefaultBurstFileCount),
+                          "burst-loss mode only: number of files created (then removed) per cycle.")
+        ("burst-check-delay-ms", po::value<std::uint64_t>(&burst_check_delay_ms)->default_value(burst_check_delay_ms),
+                          "burst-loss mode only: grace period (ms) a worker waits, after the controller "
+                          "announces a cycle has ended, before checking whether every expected "
+                          "notification arrived.");
     // clang-format on
 
     po::variables_map args;
@@ -135,18 +145,24 @@ int ParseArguments(int argc,
 
     if (mode_string == "watch-churn")
     {
-        mode = TestMode::kWatchChurn;
+        config.mode = TestMode::kWatchChurn;
     }
     else if (mode_string == "notify-latency")
     {
-        mode = TestMode::kNotifyLatency;
+        config.mode = TestMode::kNotifyLatency;
+    }
+    else if (mode_string == "burst-loss")
+    {
+        config.mode = TestMode::kBurstLoss;
     }
     else
     {
-        std::cerr << "Invalid --mode '" << mode_string << "': expected 'watch-churn' or 'notify-latency'" << std::endl;
+        std::cerr << "Invalid --mode '" << mode_string << "': expected 'watch-churn', 'notify-latency' or 'burst-loss'"
+                  << std::endl;
         return -1;
     }
-    notify_timeout = std::chrono::milliseconds{notify_timeout_ms};
+    config.notify_timeout = std::chrono::milliseconds{notify_timeout_ms};
+    config.burst_check_delay = std::chrono::milliseconds{burst_check_delay_ms};
 
     return 0;
 }
@@ -156,8 +172,7 @@ int RunStressTest(const std::size_t num_processes,
                   const std::size_t cycles,
                   const std::uint32_t base_uid,
                   const std::uint32_t base_gid,
-                  const TestMode mode,
-                  const std::chrono::milliseconds notify_timeout)
+                  const StressTestConfig& config)
 {
     const score::cpp::stop_source stop_source{};
 
@@ -201,13 +216,13 @@ int RunStressTest(const std::size_t num_processes,
         const std::string worker_name{"Worker_" + std::to_string(worker)};
 
         auto guard_opt = ForkProcessAndRunInChildProcess(
-            "main", worker_name, [&cp, worker, cycles, base_uid, base_gid, worker_name, mode, notify_timeout]() {
+            "main", worker_name, [&cp, worker, cycles, base_uid, base_gid, worker_name, &config]() {
                 if (!SetWorkerCredentials(worker_name, base_gid, base_uid, worker))
                 {
                     cp.ErrorOccurred();
                     return;
                 }
-                RunWorkerProcess(worker, cycles, cp, mode, notify_timeout);
+                RunWorkerProcess(worker, cycles, cp, config);
             });
 
         if (!guard_opt.has_value())
@@ -222,7 +237,7 @@ int RunStressTest(const std::size_t num_processes,
         child_guards.push_back(guard_opt.value());
     }
 
-    const bool test_passed = RunController(checkpoint_controls, num_processes, cycles, stop_source.get_token(), mode);
+    const bool test_passed = RunController(checkpoint_controls, num_processes, cycles, stop_source.get_token(), config);
 
     // Wait for all worker processes to exit
     constexpr std::chrono::milliseconds worker_termination_timeout{5000U};
@@ -256,11 +271,9 @@ int main(int argc, const char** argv)
     std::size_t cycles{0U};
     std::uint32_t base_uid{0U};
     std::uint32_t base_gid{0U};
-    score::mw::com::test::TestMode mode{score::mw::com::test::TestMode::kWatchChurn};
-    std::chrono::milliseconds notify_timeout{score::mw::com::test::kDefaultNotifyTimeout};
+    score::mw::com::test::StressTestConfig config{};
 
-    if (score::mw::com::test::ParseArguments(
-            argc, argv, num_processes, cycles, base_uid, base_gid, mode, notify_timeout) == -1)
+    if (score::mw::com::test::ParseArguments(argc, argv, num_processes, cycles, base_uid, base_gid, config) == -1)
     {
         return -1;
     }
@@ -270,5 +283,5 @@ int main(int argc, const char** argv)
         return -1;
     }
 
-    return score::mw::com::test::RunStressTest(num_processes, cycles, base_uid, base_gid, mode, notify_timeout);
+    return score::mw::com::test::RunStressTest(num_processes, cycles, base_uid, base_gid, config);
 }

@@ -30,3 +30,20 @@ integration_test(
     ],
     filesystem = "//score/mw/com/test/inotify_stress_test:inotify-stress-test-pkg",
 )
+
+integration_test(
+    name = "test_burst_loss",
+    srcs = [
+        "test_burst_loss.py",
+        "test_fixture.py",
+    ],
+    filesystem = "//score/mw/com/test/inotify_stress_test:inotify-stress-test-pkg",
+)
+
+integration_test(
+    name = "test_event_loss",
+    srcs = [
+        "test_event_loss.py",
+    ],
+    filesystem = "//score/mw/com/test/inotify_stress_test:inotify-event-loss-pkg",
+)

@@ -14,12 +14,12 @@
 """Shared helper for launching the inotify stress test binary."""
 
 
-def inotify_stress_test(target, extra_args=None, **kwargs):
+def inotify_stress_test(target, num_processes=1, cycles=300, extra_args=None, **kwargs):
     args = [
         "--num-processes",
-        "10",
+        str(num_processes),
         "--cycles",
-        "300",
+        str(cycles),
         "--base-uid",
         "2000",
         "--base-gid",
