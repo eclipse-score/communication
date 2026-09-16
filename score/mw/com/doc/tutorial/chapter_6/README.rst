@@ -109,7 +109,7 @@ sample slot – which is exactly what we want to observe in this chapter:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 55-58
+   :lines: 58-61
    :caption: provider/provider.cpp
 
 
@@ -138,7 +138,7 @@ this chapter is more realistic:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 130-159
+   :lines: 133-162
    :caption: consumer/consumer.cpp
 
 

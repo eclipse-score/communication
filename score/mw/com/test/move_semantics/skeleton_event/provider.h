@@ -17,11 +17,13 @@
 
 #include <score/stop_token.hpp>
 
+#include <cstdint>
+
 namespace score::mw::com::test
 {
 
 void RunProvider(const SkeletonMoveScenario& scenario,
-                 const std::size_t num_samples_to_send,
+                 const std::uint32_t num_samples_to_send,
                  const score::cpp::stop_token& stop_token);
 
 }  // namespace score::mw::com::test

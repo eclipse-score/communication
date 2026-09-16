@@ -18,6 +18,8 @@
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
+#include "score/mw/com/impl/mocking/test_type_utilities.h"
+#include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 #include "score/mw/com/impl/skeleton_event.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
@@ -40,13 +42,40 @@ namespace
 {
 
 using ::testing::_;
+using ::testing::An;
 using ::testing::AnyNumber;
 using ::testing::ByMove;
 using ::testing::Invoke;
 using ::testing::Return;
 using ::testing::ReturnRef;
+using ::testing::WithArg;
 
 using TestSampleType = std::uint8_t;
+
+const memory::DataTypeSizeInfo kTestSampleTypeSizeInfo{sizeof(TestSampleType), alignof(TestSampleType)};
+
+TestSampleType test_sample_buffer_1{};
+TestSampleType test_sample_buffer_2{};
+
+/// \brief Action for an Allocate(SampleAllocateeGuard) mock expectation that returns a slot backed by `buffer`.
+auto AllocateReturns(TestSampleType& buffer)
+{
+    // Using Invoke() (rather than Return(ByMove(...))) so this action can be safely reused across multiple calls,
+    // e.g. when installed as a WillByDefault() default action.
+    return Invoke([&buffer](SampleAllocateeGuard) {
+        return MakeFakeSampleAllocateePtr(&buffer);
+    });
+}
+
+/// \brief Action for a Send(SampleAllocateePtr<void>, ...) mock expectation that verifies the value copied into the
+/// slot equals `expected_value`.
+auto SendCopyCheck(TestSampleType expected_value)
+{
+    return WithArg<0>(Invoke([expected_value](SampleAllocateePtr<TestSampleType> sample_ptr) -> Result<void> {
+        EXPECT_EQ(*sample_ptr, expected_value);
+        return {};
+    }));
+}
 
 const auto kDummyEventName{"DummyEvent"};
 const auto kDummyEventName2{"DummyEvent2"};
@@ -105,10 +134,10 @@ class SkeletonBaseFixture : public ::testing::Test
 
     void ExpectEventCreation(const InstanceIdentifier& instance_identifier) noexcept
     {
-        auto skeleton_event_mock_ptr_1 = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
-        auto skeleton_event_mock_ptr_2 = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
-        auto skeleton_field_mock_ptr_1 = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
-        auto skeleton_field_mock_ptr_2 = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+        auto skeleton_event_mock_ptr_1 = std::make_unique<mock_binding::SkeletonEvent>();
+        auto skeleton_event_mock_ptr_2 = std::make_unique<mock_binding::SkeletonEvent>();
+        auto skeleton_field_mock_ptr_1 = std::make_unique<mock_binding::SkeletonEvent>();
+        auto skeleton_field_mock_ptr_2 = std::make_unique<mock_binding::SkeletonEvent>();
 
         event_binding_mock_1_ = skeleton_event_mock_ptr_1.get();
         event_binding_mock_2_ = skeleton_event_mock_ptr_2.get();
@@ -116,22 +145,31 @@ class SkeletonBaseFixture : public ::testing::Test
         field_binding_mock_2_ = skeleton_field_mock_ptr_2.get();
 
         EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                    Create(instance_identifier, _, kDummyEventName))
+                    Create(instance_identifier, _, kDummyEventName, kTestSampleTypeSizeInfo))
             .WillOnce(Return(ByMove(std::move(skeleton_event_mock_ptr_1))));
         EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                    Create(instance_identifier, _, kDummyEventName2))
+                    Create(instance_identifier, _, kDummyEventName2, kTestSampleTypeSizeInfo))
             .WillOnce(Return(ByMove(std::move(skeleton_event_mock_ptr_2))));
         EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                    CreateEventBinding(instance_identifier, _, kDummyFieldName, _))
+                    CreateEventBinding(instance_identifier, _, kDummyFieldName, kTestSampleTypeSizeInfo, _))
             .WillOnce(Return(ByMove(std::move(skeleton_field_mock_ptr_1))));
         EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                    CreateEventBinding(instance_identifier, _, kDummyFieldName2, _))
+                    CreateEventBinding(instance_identifier, _, kDummyFieldName2, kTestSampleTypeSizeInfo, _))
             .WillOnce(Return(ByMove(std::move(skeleton_field_mock_ptr_2))));
 
         EXPECT_CALL(*event_binding_mock_1_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
         EXPECT_CALL(*event_binding_mock_2_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
         EXPECT_CALL(*field_binding_mock_1_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
         EXPECT_CALL(*field_binding_mock_2_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
+
+        // Fields dispatch a deferred Allocate()+Send() to the binding whenever the field's initial/latest value is
+        // sent as part of PrepareOffer(). Tests which don't care about this (and thus don't set up their own
+        // expectations) rely on these safe defaults instead of gmock's "uninteresting call" default action, which
+        // would otherwise return a null (but seemingly valid) SampleAllocateePtr, causing a crash.
+        ON_CALL(*field_binding_mock_1_, Allocate(_)).WillByDefault(AllocateReturns(test_sample_buffer_1));
+        ON_CALL(*field_binding_mock_2_, Allocate(_)).WillByDefault(AllocateReturns(test_sample_buffer_2));
+        ON_CALL(*field_binding_mock_1_, Send(_, _)).WillByDefault(Return(Result<void>{}));
+        ON_CALL(*field_binding_mock_2_, Send(_, _)).WillByDefault(Return(Result<void>{}));
     }
 
     void CreateSkeleton(const InstanceIdentifier& instance_identifier) noexcept
@@ -154,10 +192,10 @@ class SkeletonBaseFixture : public ::testing::Test
         // Expecting that PrepareOffer gets called on the skeleton binding and both events which all return a valid
         // result
         EXPECT_CALL(*binding_mock_, PrepareOffer(_, _, _));
-        EXPECT_CALL(*event_binding_mock_1_, PrepareOffer());
-        EXPECT_CALL(*event_binding_mock_2_, PrepareOffer());
-        EXPECT_CALL(*field_binding_mock_1_, PrepareOffer());
-        EXPECT_CALL(*field_binding_mock_2_, PrepareOffer());
+        EXPECT_CALL(*event_binding_mock_1_, PrepareOffer(_));
+        EXPECT_CALL(*event_binding_mock_2_, PrepareOffer(_));
+        EXPECT_CALL(*field_binding_mock_1_, PrepareOffer(_));
+        EXPECT_CALL(*field_binding_mock_2_, PrepareOffer(_));
         EXPECT_CALL(service_discovery_mock_, OfferService(_));
     }
 
@@ -194,13 +232,13 @@ class SkeletonBaseFixture : public ::testing::Test
     RuntimeMockGuard runtime_mock_guard_{};
 
     mock_binding::Skeleton* binding_mock_{nullptr};
-    mock_binding::SkeletonEvent<TestSampleType>* event_binding_mock_1_{nullptr};
-    mock_binding::SkeletonEvent<TestSampleType>* event_binding_mock_2_{nullptr};
-    mock_binding::SkeletonEvent<TestSampleType>* field_binding_mock_1_{nullptr};
-    mock_binding::SkeletonEvent<TestSampleType>* field_binding_mock_2_{nullptr};
+    mock_binding::SkeletonEvent* event_binding_mock_1_{nullptr};
+    mock_binding::SkeletonEvent* event_binding_mock_2_{nullptr};
+    mock_binding::SkeletonEvent* field_binding_mock_1_{nullptr};
+    mock_binding::SkeletonEvent* field_binding_mock_2_{nullptr};
 
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard_{};
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard_{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard_{};
+    SkeletonFieldBindingFactoryMockGuard skeleton_field_binding_factory_mock_guard_{};
 
     std::unique_ptr<MyDummySkeleton> skeleton_{nullptr};
 };
@@ -218,7 +256,8 @@ TEST_F(SkeletonBaseCreationDeathTest, CreatingSkeletonTerminatesWhenBindingIsNul
 using SkeletonBaseOfferFixture = SkeletonBaseFixture;
 TEST_F(SkeletonBaseOfferFixture, OfferService)
 {
-    RecordProperty("Verifies", "SCR-5897815, SCR-17434118");  // SWS_CM_00101
+    RecordProperty("Verifies", "SCR-5897815");
+    RecordProperty("lobster-tracing", "Communication.SkeletonOfferService");  // SWS_CM_00101
     RecordProperty("Description", "Checks whether a service can be offered.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -231,8 +270,12 @@ TEST_F(SkeletonBaseOfferFixture, OfferService)
     ExpectOfferService();
 
     // and expecting that Send is called on the field event bindings with the initial value
-    EXPECT_CALL(*field_binding_mock_1_, Send(kInitialFieldValue, _, _));
-    EXPECT_CALL(*field_binding_mock_2_, Send(kInitialFieldValue2, _, _));
+    EXPECT_CALL(*field_binding_mock_1_, Allocate(_)).WillOnce(AllocateReturns(test_sample_buffer_1));
+    EXPECT_CALL(*field_binding_mock_1_, Send(An<SampleAllocateePtr<void>>(), _))
+        .WillOnce(SendCopyCheck(kInitialFieldValue));
+    EXPECT_CALL(*field_binding_mock_2_, Allocate(_)).WillOnce(AllocateReturns(test_sample_buffer_2));
+    EXPECT_CALL(*field_binding_mock_2_, Send(An<SampleAllocateePtr<void>>(), _))
+        .WillOnce(SendCopyCheck(kInitialFieldValue2));
 
     // and the initial field values are set
     std::ignore = skeleton_->dummy_field.Update(kInitialFieldValue);
@@ -266,7 +309,8 @@ TEST_F(SkeletonBaseOfferFixture, OfferServiceFailsIfAllMethodsHaveNotBeenRegiste
 
 TEST_F(SkeletonBaseOfferFixture, CallingPrepareOfferWhenSkeletonBindingPrepareOfferFailsReturnsError)
 {
-    RecordProperty("Verifies", "SCR-6222081, SCR-21856131, SCR-17434118");
+    RecordProperty("Verifies", "SCR-6222081, SCR-21856131");
+    RecordProperty("lobster-tracing", "Communication.SkeletonOfferService");
     RecordProperty("Description",
                    "Checks that service offering returns error when binding prepare offer fails as no events will be "
                    "offered, which violates req.");
@@ -311,7 +355,8 @@ TEST_F(SkeletonBaseOfferFixture, PrepareStopOfferIsNotCalledWhenSkeletonBindingP
 
 TEST_F(SkeletonBaseOfferFixture, CallingPrepareOfferWhenEventBindingFailsReturnsError)
 {
-    RecordProperty("Verifies", "SCR-6222081, SCR-21856131, SCR-17434118");
+    RecordProperty("Verifies", "SCR-6222081, SCR-21856131");
+    RecordProperty("lobster-tracing", "Communication.SkeletonOfferService");
     RecordProperty("Description",
                    "Checks that service offering returns error when event binding prepare offer fails as no events "
                    "will be offered, which violates req.");
@@ -325,10 +370,10 @@ TEST_F(SkeletonBaseOfferFixture, CallingPrepareOfferWhenEventBindingFailsReturns
     // Expect that PrepareOffer fails when being called on the first event binding in the unordered map (we don't know
     // the order of the map so we add possible expecations on both event bindings)
     EXPECT_CALL(*binding_mock_, PrepareOffer(_, _, _));
-    EXPECT_CALL(*event_binding_mock_1_, PrepareOffer())
+    EXPECT_CALL(*event_binding_mock_1_, PrepareOffer(_))
         .Times(AnyNumber())
         .WillRepeatedly(Return(MakeUnexpected(ComErrc::kInvalidBindingInformation)));
-    EXPECT_CALL(*event_binding_mock_2_, PrepareOffer())
+    EXPECT_CALL(*event_binding_mock_2_, PrepareOffer(_))
         .Times(AnyNumber())
         .WillRepeatedly(Return(MakeUnexpected(ComErrc::kInvalidBindingInformation)));
 
@@ -347,7 +392,7 @@ TEST_F(SkeletonBaseOfferFixture,
     CreateSkeleton(GetInstanceIdentifierWithValidBinding());
 
     // Expect that PrepareOffer fails on the second event binding
-    EXPECT_CALL(*event_binding_mock_2_, PrepareOffer())
+    EXPECT_CALL(*event_binding_mock_2_, PrepareOffer(_))
         .WillOnce(Return(MakeUnexpected(ComErrc::kInvalidBindingInformation)));
 
     // Expect that PrepareStopOffer is called on the first event binding and the skeleton binding, but not on the second
@@ -361,7 +406,8 @@ TEST_F(SkeletonBaseOfferFixture,
 
 TEST_F(SkeletonBaseOfferFixture, CallingPrepareOfferWhenFieldValueNotSetReturnsError)
 {
-    RecordProperty("Verifies", "SCR-6222081, SCR-21856131, SCR-17434118");
+    RecordProperty("Verifies", "SCR-6222081, SCR-21856131");
+    RecordProperty("lobster-tracing", "Communication.SkeletonOfferService");
     RecordProperty("Description",
                    "Checks, that service offering leads to termination, when binding prepare offer service fails as "
                    "no events will be offered, which violates req.");
@@ -389,7 +435,7 @@ TEST_F(SkeletonBaseOfferFixture,
     CreateSkeleton(GetInstanceIdentifierWithValidBinding());
 
     // Expect that PrepareOffer fails on the second field binding
-    EXPECT_CALL(*field_binding_mock_2_, PrepareOffer())
+    EXPECT_CALL(*field_binding_mock_2_, PrepareOffer(_))
         .WillOnce(Return(MakeUnexpected(ComErrc::kInvalidBindingInformation)));
 
     // Expect that PrepareStopOffer is called on the first field binding, both event bindings and the skeleton binding,
@@ -410,7 +456,8 @@ TEST_F(SkeletonBaseOfferFixture,
 
 TEST_F(SkeletonBaseOfferFixture, CallingPrepareOfferWhenFieldBindingFailsReturnsError)
 {
-    RecordProperty("Verifies", "SCR-6222081, SCR-21856131, SCR-17434118");
+    RecordProperty("Verifies", "SCR-6222081, SCR-21856131");
+    RecordProperty("lobster-tracing", "Communication.SkeletonOfferService");
     RecordProperty("Description",
                    "Checks, that service offering leads to termination, when binding prepare offer service fails as "
                    "no events will be offered, which violates req.");
@@ -422,7 +469,7 @@ TEST_F(SkeletonBaseOfferFixture, CallingPrepareOfferWhenFieldBindingFailsReturns
     CreateSkeleton(GetInstanceIdentifierWithValidBinding());
 
     // Expect that PrepareOffer fails when being called on the field binding
-    EXPECT_CALL(*field_binding_mock_1_, PrepareOffer())
+    EXPECT_CALL(*field_binding_mock_1_, PrepareOffer(_))
         .WillOnce(Return(MakeUnexpected(ComErrc::kInvalidBindingInformation)));
 
     // and the initial field values are set
@@ -487,7 +534,8 @@ TEST_F(SkeletonBaseOfferDeathTest, TerminateOnOfferWithNoBinding)
 using SkeletonBaseStopOfferFixture = SkeletonBaseFixture;
 TEST_F(SkeletonBaseStopOfferFixture, PrepareStopOffer)
 {
-    RecordProperty("Verifies", "SCR-5897820, SCR-17434265");  // SWS_CM_00111
+    RecordProperty("Verifies", "SCR-5897820");  // SWS_CM_00111
+    RecordProperty("lobster-tracing", "Communication.SkeletonStopOfferService");
     RecordProperty("Description", "Checks that PrepareStopOffer() actually stops a offered service");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -503,7 +551,12 @@ TEST_F(SkeletonBaseStopOfferFixture, PrepareStopOffer)
     ExpectStopOfferService();
 
     // and expecting that Send is called on the event binding with the initial value
-    EXPECT_CALL(*field_binding_mock_1_, Send(kInitialFieldValue, _, _));
+    EXPECT_CALL(*field_binding_mock_1_, Allocate(_)).WillOnce(AllocateReturns(test_sample_buffer_1));
+    EXPECT_CALL(*field_binding_mock_1_, Send(An<SampleAllocateePtr<void>>(), _))
+        .WillOnce(SendCopyCheck(kInitialFieldValue));
+    EXPECT_CALL(*field_binding_mock_2_, Allocate(_)).WillOnce(AllocateReturns(test_sample_buffer_2));
+    EXPECT_CALL(*field_binding_mock_2_, Send(An<SampleAllocateePtr<void>>(), _))
+        .WillOnce(SendCopyCheck(kInitialFieldValue2));
 
     // and the initial field values are set
     std::ignore = skeleton_->dummy_field.Update(kInitialFieldValue);
@@ -589,7 +642,7 @@ TEST_F(SkeletonBaseMoveFixture, SelfMovingAssignmentDoesNotCauseIssues)
 
 TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterMoveConstructingService)
 {
-    RecordProperty("Verifies", "SCR-17432457, SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonDestructor, Communication.SkeletonMoveSemantics");
     RecordProperty("Description",
                    "If the service provided by the skeleton is currently being offered at the time of the destruction, "
                    "the offering shall be stopped. And skeleton is move constructible");
@@ -610,15 +663,19 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterMoveConstructingServi
     // Expecting that PrepareOffer gets called on the skeleton binding and each event twice, each time OfferService is
     // called (i.e. total of 6)
     EXPECT_CALL(binding_mock, PrepareOffer(_, _, _)).Times(2);
-    EXPECT_CALL(*event_binding_mock_1_, PrepareOffer()).Times(2);
-    EXPECT_CALL(*event_binding_mock_2_, PrepareOffer()).Times(2);
-    EXPECT_CALL(*field_binding_mock_1_, PrepareOffer()).Times(2);
-    EXPECT_CALL(*field_binding_mock_2_, PrepareOffer()).Times(2);
+    EXPECT_CALL(*event_binding_mock_1_, PrepareOffer(_)).Times(2);
+    EXPECT_CALL(*event_binding_mock_2_, PrepareOffer(_)).Times(2);
+    EXPECT_CALL(*field_binding_mock_1_, PrepareOffer(_)).Times(2);
+    EXPECT_CALL(*field_binding_mock_2_, PrepareOffer(_)).Times(2);
     EXPECT_CALL(service_discovery_mock_, OfferService(_)).Times(2);
 
     // and expecting that Send is called on the event binding once with the initial value
-    EXPECT_CALL(*field_binding_mock_1_, Send(kInitialFieldValue, _, _));
-    EXPECT_CALL(*field_binding_mock_2_, Send(kInitialFieldValue2, _, _));
+    EXPECT_CALL(*field_binding_mock_1_, Allocate(_)).WillOnce(AllocateReturns(test_sample_buffer_1));
+    EXPECT_CALL(*field_binding_mock_1_, Send(An<SampleAllocateePtr<void>>(), _))
+        .WillOnce(SendCopyCheck(kInitialFieldValue));
+    EXPECT_CALL(*field_binding_mock_2_, Allocate(_)).WillOnce(AllocateReturns(test_sample_buffer_2));
+    EXPECT_CALL(*field_binding_mock_2_, Send(An<SampleAllocateePtr<void>>(), _))
+        .WillOnce(SendCopyCheck(kInitialFieldValue2));
 
     // and the initial field values are set
     std::ignore = skeleton.dummy_field.Update(kInitialFieldValue);
@@ -671,25 +728,25 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterCallingStopOfferServi
                 skeleton_offer_count++;
                 return {};
             }));
-        EXPECT_CALL(*event_binding_mock_1_, PrepareOffer())
+        EXPECT_CALL(*event_binding_mock_1_, PrepareOffer(_))
             .Times(2)
             .WillRepeatedly(Invoke([&event_offer_count]() -> Result<void> {
                 event_offer_count++;
                 return {};
             }));
-        EXPECT_CALL(*event_binding_mock_2_, PrepareOffer())
+        EXPECT_CALL(*event_binding_mock_2_, PrepareOffer(_))
             .Times(2)
             .WillRepeatedly(Invoke([&event_offer_count]() -> Result<void> {
                 event_offer_count++;
                 return {};
             }));
-        EXPECT_CALL(*field_binding_mock_1_, PrepareOffer())
+        EXPECT_CALL(*field_binding_mock_1_, PrepareOffer(_))
             .Times(2)
             .WillRepeatedly(Invoke([&event_offer_count]() -> Result<void> {
                 event_offer_count++;
                 return {};
             }));
-        EXPECT_CALL(*field_binding_mock_2_, PrepareOffer())
+        EXPECT_CALL(*field_binding_mock_2_, PrepareOffer(_))
             .Times(2)
             .WillRepeatedly(Invoke([&event_offer_count]() -> Result<void> {
                 event_offer_count++;
@@ -698,7 +755,9 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterCallingStopOfferServi
         EXPECT_CALL(service_discovery_mock_, OfferService(_)).Times(2);
 
         // and expecting that Send is called on the event binding with the initial value
-        EXPECT_CALL(*field_binding_mock_1_, Send(kInitialFieldValue, _, _));
+        EXPECT_CALL(*field_binding_mock_1_, Allocate(_)).WillOnce(AllocateReturns(test_sample_buffer_1));
+        EXPECT_CALL(*field_binding_mock_1_, Send(An<SampleAllocateePtr<void>>(), _))
+            .WillOnce(SendCopyCheck(kInitialFieldValue));
 
         // and the initial field values are set
         std::ignore = skeleton.dummy_field.Update(kInitialFieldValue);
@@ -737,13 +796,14 @@ TEST_F(SkeletonBaseOfferFixture, NoStopOfferOnErrorIdentifier)
 
     // Expect that the events and field bindings are never created
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(instance_identifier, _, kDummyEventName))
+                Create(instance_identifier, _, kDummyEventName, kTestSampleTypeSizeInfo))
         .Times(0);
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(instance_identifier, _, kDummyEventName2))
+                Create(instance_identifier, _, kDummyEventName2, kTestSampleTypeSizeInfo))
         .Times(0);
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(GetInstanceIdentifierWithoutBinding(), _, kDummyFieldName, _))
+    EXPECT_CALL(
+        skeleton_field_binding_factory_mock_guard_.factory_mock_,
+        CreateEventBinding(GetInstanceIdentifierWithoutBinding(), _, kDummyFieldName, kTestSampleTypeSizeInfo, _))
         .Times(0);
 
     // Given a constructed Skeleton with a invalid identifier
@@ -829,13 +889,17 @@ class SkeletonBaseServiceElementReferencesFixture : public ::testing::Test
     mock_binding::Skeleton skeleton_binding_mock_{};
     MySkeleton skeleton_{std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_), instance_identifier_};
 
-    SkeletonEventBase event_0_{event_name_0_, std::make_unique<mock_binding::SkeletonEventBase>()};
-    SkeletonEventBase event_1_{event_name_1_, std::make_unique<mock_binding::SkeletonEventBase>()};
+    SkeletonEventBase event_0_{event_name_0_, std::nullopt, std::make_unique<mock_binding::SkeletonEvent>()};
+    SkeletonEventBase event_1_{event_name_1_, std::nullopt, std::make_unique<mock_binding::SkeletonEvent>()};
 
     std::unique_ptr<SkeletonEventBase> field_event_dispatch_0_{
-        std::make_unique<SkeletonEventBase>(field_name_0_, std::make_unique<mock_binding::SkeletonEventBase>())};
+        std::make_unique<SkeletonEventBase>(field_name_0_,
+                                            std::nullopt,
+                                            std::make_unique<mock_binding::SkeletonEvent>())};
     std::unique_ptr<SkeletonEventBase> field_event_dispatch_1_{
-        std::make_unique<SkeletonEventBase>(field_name_1_, std::make_unique<mock_binding::SkeletonEventBase>())};
+        std::make_unique<SkeletonEventBase>(field_name_1_,
+                                            std::nullopt,
+                                            std::make_unique<mock_binding::SkeletonEvent>())};
 
     DummyField field_0_{field_name_0_, std::move(field_event_dispatch_0_)};
     DummyField field_1_{field_name_1_, std::move(field_event_dispatch_1_)};
@@ -906,7 +970,7 @@ TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveConstructingUpdatesRefer
 TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesToServiceElements)
 {
 
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "Skeleton is move assignable");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -929,10 +993,10 @@ TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferenc
     MySkeleton skeleton_2{std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock), instance_identifier_};
 
     // and given that an Event, Field and Method were registered on the second skeleton
-    SkeletonEventBase event{other_event_name, std::make_unique<mock_binding::SkeletonEventBase>()};
+    SkeletonEventBase event{other_event_name, std::nullopt, std::make_unique<mock_binding::SkeletonEvent>()};
 
-    auto field_event_dispatch =
-        std::make_unique<SkeletonEventBase>(other_field_name, std::make_unique<mock_binding::SkeletonEventBase>());
+    auto field_event_dispatch = std::make_unique<SkeletonEventBase>(
+        other_field_name, std::nullopt, std::make_unique<mock_binding::SkeletonEvent>());
 
     DummyField field{other_field_name, std::move(field_event_dispatch)};
 

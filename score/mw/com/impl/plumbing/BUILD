@@ -79,21 +79,6 @@ cc_library(
 )
 
 cc_library(
-    name = "i_generic_skeleton_event_binding_factory",
-    srcs = ["i_generic_skeleton_event_binding_factory.cpp"],
-    hdrs = ["i_generic_skeleton_event_binding_factory.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//score/mw/com/impl/plumbing:__subpackages__",
-    ],
-    deps = [
-        "//score/mw/com/impl:generic_skeleton_event_binding",
-        "//score/mw/com/impl:skeleton_base",
-    ],
-)
-
-cc_library(
     name = "skeleton_method_binding_factory_impl",
     srcs = ["skeleton_method_binding_factory_impl.cpp"],
     hdrs = ["skeleton_method_binding_factory_impl.h"],
@@ -512,6 +497,9 @@ cc_library(
     hdrs = ["skeleton_event_binding_factory.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
     deps = [
         "skeleton_event_binding_factory_impl",
         ":i_skeleton_event_binding_factory",
@@ -636,61 +624,6 @@ cc_library(
     deps = [
         ":i_skeleton_field_binding_factory",
         "//score/mw/com/impl:field_tags",
-        "@googletest//:gtest",
-    ],
-)
-
-cc_library(
-    name = "generic_skeleton_event_binding_factory_impl",
-    srcs = ["generic_skeleton_event_binding_factory_impl.cpp"],
-    hdrs = ["generic_skeleton_event_binding_factory_impl.h"],
-    features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["//score/mw/com/impl/bindings/lola"],
-    tags = ["FFI"],  # Increased visibility as it's now in score::mw::com::impl namespace
-    visibility = [
-        "//score/mw/com/impl:__subpackages__",
-    ],
-    deps = [
-        ":i_generic_skeleton_event_binding_factory",
-        ":skeleton_service_element_binding_factory_impl",
-        "//score/mw/com/impl/bindings/lola:generic_skeleton_event",
-    ],
-)
-
-cc_library(
-    name = "generic_skeleton_event_binding_factory",
-    srcs = ["generic_skeleton_event_binding_factory.cpp"],
-    hdrs = [
-        "generic_skeleton_event_binding_factory.h",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [
-        ":generic_skeleton_event_binding_factory_impl",
-    ],
-    tags = ["FFI"],
-    visibility = [
-        "//score/mw/com/gateway:__subpackages__",
-        "//score/mw/com/impl:__subpackages__",
-    ],
-    deps = [
-        ":i_generic_skeleton_event_binding_factory",
-        ":skeleton_service_element_binding_factory_impl",
-        "//score/mw/com/impl/bindings/lola:generic_skeleton_event",
-    ],
-)
-
-cc_library(
-    name = "generic_skeleton_event_binding_factory_mock",
-    testonly = True,
-    srcs = ["generic_skeleton_event_binding_factory_mock.cpp"],
-    hdrs = ["generic_skeleton_event_binding_factory_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//score/mw/com/gateway:__subpackages__",
-        "//score/mw/com/impl:__subpackages__",
-    ],
-    deps = [
-        ":i_generic_skeleton_event_binding_factory",
         "@googletest//:gtest",
     ],
 )

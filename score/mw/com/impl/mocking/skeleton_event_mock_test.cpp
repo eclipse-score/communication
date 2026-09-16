@@ -50,7 +50,8 @@ TEST_F(SkeletonEventMockFixture, AllocateDispatchesToMockAfterInjectingMock)
     // Given a SkeletonEvent constructed with an empty binding and an injected mock
 
     // Expecting that Allocate will be called on the mock which returns a valid SampleAllocateePtr
-    auto fake_sample_allocatee_ptr = MakeFakeSampleAllocateePtr(std::make_unique<TestSampleType>());
+    TestSampleType allocated_sample;
+    auto fake_sample_allocatee_ptr = MakeFakeSampleAllocateePtr(&allocated_sample);
     EXPECT_CALL(skeleton_event_mock_, Allocate()).WillOnce(Return(ByMove(std::move(fake_sample_allocatee_ptr))));
 
     // When Allocate is called on the SkeletonEvent
@@ -119,7 +120,8 @@ TEST_F(SkeletonEventMockFixture, ZeroCopySendDispatchesToMockAfterInjectingMock)
         }));
 
     // When zero-copy Send is called on the SkeletonEvent with a SampleAllocateePtr containing a value
-    auto fake_sample_allocatee_ptr = MakeFakeSampleAllocateePtr(std::make_unique<TestSampleType>());
+    TestSampleType allocated_sample;
+    auto fake_sample_allocatee_ptr = MakeFakeSampleAllocateePtr(&allocated_sample);
     *fake_sample_allocatee_ptr = kDummyValueToSend;
     auto result = unit_.Send(std::move(fake_sample_allocatee_ptr));
 
@@ -137,7 +139,8 @@ TEST_F(SkeletonEventMockFixture, ZeroCopySendReturnsErrorWhenMockReturnsError)
         .WillOnce(Return(MakeUnexpected(error_code)));
 
     // When zero-copy Send is called on the SkeletonEvent
-    auto fake_sample_allocatee_ptr = MakeFakeSampleAllocateePtr(std::make_unique<TestSampleType>());
+    TestSampleType allocated_sample;
+    auto fake_sample_allocatee_ptr = MakeFakeSampleAllocateePtr(&allocated_sample);
     auto result = unit_.Send(std::move(fake_sample_allocatee_ptr));
 
     // Then the result contains the same error code that was returned by the mock

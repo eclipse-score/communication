@@ -19,7 +19,9 @@
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/mocking/test_type_utilities.h"
 #include "score/mw/com/impl/plumbing/binding_factory_error.h"
+#include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
@@ -40,19 +42,26 @@ namespace
 {
 
 using ::testing::_;
+using ::testing::An;
 using ::testing::ByMove;
 using ::testing::Invoke;
 using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::ReturnRef;
+using ::testing::WithArg;
 
 using TestSampleType = std::uint32_t;
+
+TestSampleType event_sample_buffer{};
+TestSampleType field_sample_buffer{};
 
 using TestMethodType = void();
 
 const auto kEventName{"SomeEventName"};
 const auto kFieldName{"SomeFieldName"};
 const auto kMethodName{"SomeMethodName"};
+
+const memory::DataTypeSizeInfo kTestSampleTypeSizeInfo{sizeof(TestSampleType), alignof(TestSampleType)};
 
 const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
 
@@ -169,7 +178,7 @@ class ProxyCreationFixture : public ::testing::Test
 
 TEST(GeneratedProxyTest, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-21290780");
+    RecordProperty("lobster-tracing", "Communication.ProxyCopySemantics");
     RecordProperty("Description", "Checks copy semantics for proxies");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -181,7 +190,7 @@ TEST(GeneratedProxyTest, NotCopyable)
 
 TEST(GeneratedProxyTest, IsMoveable)
 {
-    RecordProperty("Verifies", "SCR-21290799");
+    RecordProperty("lobster-tracing", "Communication.ProxyMoveSemantics");
     RecordProperty("Description", "Checks move semantics for proxies");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -194,7 +203,7 @@ TEST(GeneratedProxyTest, IsMoveable)
 using GeneratedProxyCreationTestFixture = ProxyCreationFixture;
 TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCreatingProxyWithValidBindings)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty("Description", "Proxy shall be created with Create function.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -235,7 +244,8 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCr
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458, SCR-31295722, SCR-32158471, SCR-32158442, SCR-33047276");
+    RecordProperty("Verifies", "SCR-31295722, SCR-32158471, SCR-32158442, SCR-33047276");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty(
         "Description",
         "Proxy shall be created with Create function which returns an error if the Proxy binding cannot be created.");
@@ -257,7 +267,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyBind
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyEventBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty("Description",
                    "Proxy shall be created with Create function which returns an error if a ProxyEvent binding cannot "
                    "be created.");
@@ -281,7 +291,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyEven
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFieldEventBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty(
         "Description",
         "Proxy shall be created with Create function which returns an error if a ProxyField's event binding cannot "
@@ -304,7 +314,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFiel
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFieldGetterBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty("Description",
                    "Proxy shall be created with Create function which returns an error if a ProxyMethods getter "
                    "binding cannot be created.");
@@ -326,7 +336,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFiel
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFieldSetterBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty("Description",
                    "Proxy shall be created with Create function which returns an error if a ProxyMethods setter "
                    "binding cannot be created.");
@@ -457,7 +467,8 @@ TEST_F(GeneratedProxyDestructionFixture, CallsUnsubscribeOnDestruction)
     // SCR-20236391 and SCR-20237033 are split with UnsubscribingWillUnregisterEventHandler in
     // proxy_event_common_test.cpp. this test covers destruction triggering Unsubscribe on the events and
     // fields, the other covers Unsubscribe triggering UnregisterEventNotification.
-    RecordProperty("Verifies", "SCR-20236391, SCR-20237033");
+    RecordProperty("Verifies", "SCR-20236391");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyEventDestructor");
     RecordProperty("Description",
                    "Checks that destroying a proxy triggers Unsubscribe on its bindings, events, and fields.");
     RecordProperty("TestType", "Requirements-based test");
@@ -529,7 +540,7 @@ TEST_F(GeneratedProxyMoveConstructionFixture, DestroyingMovedFromProxyDoesNotCal
 
 TEST(GeneratedProxyFindServiceTest, GeneratedProxyUsesProxyBaseFindServiceWithInstanceSpecifier)
 {
-    RecordProperty("Verifies", "SCR-14110930");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceSpecifier");
     RecordProperty("Description", "Checks that a generated proxy uses FindService in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -545,7 +556,7 @@ TEST(GeneratedProxyFindServiceTest, GeneratedProxyUsesProxyBaseFindServiceWithIn
 
 TEST(GeneratedProxyFindServiceTest, GeneratedProxyUsesProxyBaseFindServiceWithInstanceIdentifier)
 {
-    RecordProperty("Verifies", "SCR-14110933");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceIdentifier");
     RecordProperty("Description", "Checks that a generated proxy uses FindService in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -561,7 +572,7 @@ TEST(GeneratedProxyFindServiceTest, GeneratedProxyUsesProxyBaseFindServiceWithIn
 
 TEST(GeneratedProxyStartFindServiceTest, GeneratedProxyUsesProxyBaseStartFindServiceWithInstanceSpecifier)
 {
-    RecordProperty("Verifies", "SCR-21792392");
+    RecordProperty("lobster-tracing", "Communication.ProxyStartFindServiceWithInstanceSpecifier");
     RecordProperty("Description",
                    "Checks that a generated proxy uses StartFindService with InstanceSpecifier in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
@@ -599,7 +610,7 @@ TEST(GeneratedProxyStartFindServiceTest, GeneratedProxyUsesProxyBaseStartFindSer
 
 TEST(GeneratedProxyStopFindServiceTest, GeneratedProxyUsesProxyBaseStopFindServiceWithInstanceIdentifier)
 {
-    RecordProperty("Verifies", "SCR-21792394");
+    RecordProperty("lobster-tracing", "Communication.ProxyStopFindService");
     RecordProperty("Description", "Checks that a generated proxy uses StopFindService in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -613,7 +624,7 @@ TEST(GeneratedProxyStopFindServiceTest, GeneratedProxyUsesProxyBaseStopFindServi
 
 TEST(GeneratedProxyHandleTest, GeneratedProxyUsesProxyBaseGetHandle)
 {
-    RecordProperty("Verifies", "SCR-14110935");
+    RecordProperty("lobster-tracing", "Communication.ProxyGetHandle");
     RecordProperty("Description", "Checks that a generated proxy uses GetHandle in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -624,7 +635,7 @@ TEST(GeneratedProxyHandleTest, GeneratedProxyUsesProxyBaseGetHandle)
 
 TEST(GeneratedProxyHandleTest, GeneratedProxyContainsPublicHandleTypeAlias)
 {
-    RecordProperty("Verifies", "SCR-14110936");
+    RecordProperty("lobster-tracing", "Communication.ProxyHandleTypeClass");
     RecordProperty("Description",
                    "Checks that a generated proxy contains a public alias to our implementation of HandleType.");
     RecordProperty("TestType", "Requirements-based test");
@@ -636,7 +647,8 @@ TEST(GeneratedProxyHandleTest, GeneratedProxyContainsPublicHandleTypeAlias)
 
 TEST(GeneratedSkeletonTest, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-5897862, SCR-17432387");  // SWS_CM_00134
+    RecordProperty("Verifies", "SCR-5897862");
+    RecordProperty("lobster-tracing", "Communication.SkeletonCopySemantics");  // SWS_CM_00134
     RecordProperty("Description", "Checks copy semantics for Skeletons");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -648,7 +660,8 @@ TEST(GeneratedSkeletonTest, NotCopyable)
 
 TEST(GeneratedSkeletonTest, IsMoveable)
 {
-    RecordProperty("Verifies", "SCR-5897869, SCR-17432438");  // SWS_CM_00135
+    RecordProperty("Verifies", "SCR-5897869");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");  // SWS_CM_00135
     RecordProperty("Description", "Checks move semantics for Skeletons");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -665,9 +678,9 @@ class SkeletonCreationFixture : public ::testing::Test
     {
         auto skeleton_binding_mock_ptr = std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_);
         auto skeleton_event_binding_mock_ptr =
-            std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_);
+            std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_event_binding_mock_);
         auto skeleton_field_binding_mock_ptr =
-            std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_);
+            std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_field_binding_mock_);
         auto skeleton_method_binding_mock_ptr =
             std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock_);
         auto skeleton_field_get_binding_mock_ptr =
@@ -685,12 +698,12 @@ class SkeletonCreationFixture : public ::testing::Test
 
         // By default the Create call on the SkeletonEventBindingFactory returns valid bindings.
         ON_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kEventName))
+                Create(identifier_with_valid_binding_, _, kEventName, kTestSampleTypeSizeInfo))
             .WillByDefault(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
         // By default the Create call on the SkeletonFieldBindingFactory returns valid bindings.
         ON_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName, _))
+                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName, kTestSampleTypeSizeInfo, _))
             .WillByDefault(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
         // By default the Create call on the SkeletonMethodBindingFactory returns valid bindings.
@@ -713,8 +726,21 @@ class SkeletonCreationFixture : public ::testing::Test
 
         // By default the skeleton and service element bindings will report that offer service preparation succeeded
         ON_CALL(skeleton_binding_mock_, PrepareOffer(_, _, _)).WillByDefault(Return(score::Result<void>{}));
-        ON_CALL(skeleton_event_binding_mock_, PrepareOffer()).WillByDefault(Return(score::Result<void>{}));
-        ON_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillByDefault(Return(score::Result<void>{}));
+        ON_CALL(skeleton_event_binding_mock_, PrepareOffer(_)).WillByDefault(Return(score::Result<void>{}));
+        ON_CALL(skeleton_field_binding_mock_, PrepareOffer(_)).WillByDefault(Return(score::Result<void>{}));
+
+        // Tests which don't care about the deferred Allocate()+Send() dispatch (triggered when an event/field's
+        // initial/latest value is sent during PrepareOffer()) rely on these safe defaults instead of gmock's
+        // "uninteresting call" default action, which would otherwise return a null (but seemingly valid)
+        // SampleAllocateePtr, causing a crash.
+        ON_CALL(skeleton_event_binding_mock_, Allocate(_)).WillByDefault(Invoke([](SampleAllocateeGuard) {
+            return MakeFakeSampleAllocateePtr(&event_sample_buffer);
+        }));
+        ON_CALL(skeleton_field_binding_mock_, Allocate(_)).WillByDefault(Invoke([](SampleAllocateeGuard) {
+            return MakeFakeSampleAllocateePtr(&field_sample_buffer);
+        }));
+        ON_CALL(skeleton_event_binding_mock_, Send(_, _)).WillByDefault(Return(score::Result<void>{}));
+        ON_CALL(skeleton_field_binding_mock_, Send(_, _)).WillByDefault(Return(score::Result<void>{}));
     }
 
     std::vector<InstanceIdentifier> resolved_instance_identifiers_{};
@@ -722,12 +748,12 @@ class SkeletonCreationFixture : public ::testing::Test
         make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment)};
     RuntimeMockGuard runtime_mock_guard_{};
     SkeletonBindingFactoryMockGuard skeleton_binding_factory_mock_guard_{};
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard_{};
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard_{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard_{};
+    SkeletonFieldBindingFactoryMockGuard skeleton_field_binding_factory_mock_guard_{};
     SkeletonMethodBindingFactoryMockGuard skeleton_method_binding_factory_mock_guard_{};
     NiceMock<mock_binding::Skeleton> skeleton_binding_mock_{};
-    NiceMock<mock_binding::SkeletonEvent<TestSampleType>> skeleton_event_binding_mock_{};
-    NiceMock<mock_binding::SkeletonEvent<TestSampleType>> skeleton_field_binding_mock_{};
+    NiceMock<mock_binding::SkeletonEvent> skeleton_event_binding_mock_{};
+    NiceMock<mock_binding::SkeletonEvent> skeleton_field_binding_mock_{};
     NiceMock<mock_binding::SkeletonMethod> skeleton_method_binding_mock_{};
     NiceMock<mock_binding::SkeletonMethod> skeleton_field_set_binding_mock_{};
     NiceMock<mock_binding::SkeletonMethod> skeleton_field_get_binding_mock_{};
@@ -737,7 +763,7 @@ using GeneratedSkeletonCreationInstanceSpecifierTestFixture = SkeletonCreationFi
 TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
        ReturnGeneratedSkeletonWhenSuccessfullyCreatingSkeletonWithValidBindings)
 {
-    RecordProperty("Verifies", "SCR-17434559");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceSpecifier");
     RecordProperty("Description", "Checks exception-less creation of skeleton");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -745,9 +771,9 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
 
     auto skeleton_binding_mock_ptr = std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_);
     auto skeleton_event_binding_mock_ptr =
-        std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_);
+        std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_event_binding_mock_);
     auto skeleton_field_binding_mock_ptr =
-        std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_);
+        std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_field_binding_mock_);
     auto skeleton_method_binding_mock_ptr =
         std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock_);
     auto skeleton_field_set_binding_mock_ptr =
@@ -759,10 +785,10 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
     EXPECT_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(identifier_with_valid_binding_))
         .WillOnce(Return(ByMove(std::move(skeleton_binding_mock_ptr))));
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kEventName))
+                Create(identifier_with_valid_binding_, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName, _))
+                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName, kTestSampleTypeSizeInfo, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
                 Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet))
@@ -783,7 +809,7 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
 
 TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCreatingSkeletonWithNoSkeletonBinding)
 {
-    RecordProperty("Verifies", "SCR-17434559");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceSpecifier");
     RecordProperty("Description",
                    "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
     RecordProperty("TestType", "Requirements-based test");
@@ -804,7 +830,7 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCre
 
 TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCreatingSkeletonWithNoSkeletonEventBinding)
 {
-    RecordProperty("Verifies", "SCR-17434559");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceSpecifier");
     RecordProperty("Description",
                    "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
     RecordProperty("TestType", "Requirements-based test");
@@ -814,7 +840,7 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCre
     // Expecting that the Create call on the
     // SkeletonEventBindingFactory returns an invalid binding for the event.
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kEventName))
+                Create(identifier_with_valid_binding_, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(nullptr)));
 
     // When constructing a skeleton with an InstanceSpecifier
@@ -827,7 +853,7 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCre
 
 TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCreatingSkeletonWithNoSkeletonFieldBinding)
 {
-    RecordProperty("Verifies", "SCR-17434559");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceSpecifier");
     RecordProperty("Description",
                    "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
     RecordProperty("TestType", "Requirements-based test");
@@ -836,7 +862,7 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCre
 
     // Expecting that the Create call on the SkeletonFieldBindingFactory returns an invalid binding for the field.
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName, _))
+                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName, kTestSampleTypeSizeInfo, _))
         .WillOnce(Return(ByMove(nullptr)));
 
     // When constructing a skeleton with an InstanceSpecifier
@@ -850,7 +876,7 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCre
 TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
        ReturnErrorWhenCreatingSkeletonWithNoSkeletonMethodBinding)
 {
-    RecordProperty("Verifies", "SCR-17434559");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceSpecifier");
     RecordProperty("Description",
                    "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
     RecordProperty("TestType", "Requirements-based test");
@@ -894,7 +920,7 @@ TEST(GeneratedSkeletonCreationInstanceSpecifierDeathTest, ConstructingFromNonexi
 using GeneratedSkeletonCreationInstanceIdentifierTestFixture = SkeletonCreationFixture;
 TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromExistingValidSpecifierCreatesSkeleton)
 {
-    RecordProperty("Verifies", "SCR-18447605");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceId");
     RecordProperty("Description", "Checks exception-less creation of skeleton");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -902,9 +928,9 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromE
 
     auto skeleton_binding_mock_ptr = std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_);
     auto skeleton_event_binding_mock_ptr =
-        std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_);
+        std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_event_binding_mock_);
     auto skeleton_field_binding_mock_ptr =
-        std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_);
+        std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_field_binding_mock_);
     auto skeleton_method_binding_mock_ptr =
         std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock_);
 
@@ -912,10 +938,10 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromE
     EXPECT_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(identifier_with_valid_binding_))
         .WillOnce(Return(ByMove(std::move(skeleton_binding_mock_ptr))));
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kEventName))
+                Create(identifier_with_valid_binding_, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName, _))
+                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName, kTestSampleTypeSizeInfo, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // When constructing a skeleton with an InstanceIdentifier
@@ -927,7 +953,7 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromE
 
 TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromInvalidSkeletonReturnsError)
 {
-    RecordProperty("Verifies", "SCR-18447605");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceId");
     RecordProperty("Description",
                    "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
     RecordProperty("TestType", "Requirements-based test");
@@ -948,7 +974,7 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromI
 
 TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromInvalidSkeletonEventReturnsError)
 {
-    RecordProperty("Verifies", "SCR-18447605");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceId");
     RecordProperty("Description",
                    "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
     RecordProperty("TestType", "Requirements-based test");
@@ -958,7 +984,7 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromI
     // Expecting that the Create call on the
     // SkeletonEventBindingFactory returns an invalid binding for the event.
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kEventName))
+                Create(identifier_with_valid_binding_, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(nullptr)));
 
     // When constructing a skeleton with an InstanceIdentifier
@@ -971,7 +997,7 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromI
 
 TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromInvalidSkeletonFieldReturnsError)
 {
-    RecordProperty("Verifies", "SCR-18447605");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceId");
     RecordProperty("Description",
                    "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
     RecordProperty("TestType", "Requirements-based test");
@@ -980,7 +1006,7 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromI
 
     // Expecting that the Create call on the SkeletonFieldBindingFactory returns an invalid binding for the field.
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName, _))
+                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName, kTestSampleTypeSizeInfo, _))
         .WillOnce(Return(ByMove(nullptr)));
 
     // When constructing a skeleton with an InstanceIdentifier
@@ -1018,9 +1044,22 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSke
     EXPECT_CALL(skeleton_event_binding_mock_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
     EXPECT_CALL(skeleton_field_binding_mock_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
-    // and that Send is called on the event binding once for the event and once for the field
-    EXPECT_CALL(skeleton_event_binding_mock_, Send(event_value, _, _));
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(field_value, _, _));
+    // and that Allocate is called once on the event binding for the event and once for the field, followed by
+    // Send(SampleAllocateePtr) with the copied value
+    EXPECT_CALL(skeleton_event_binding_mock_, Allocate(_))
+        .WillOnce(Return(ByMove(MakeFakeSampleAllocateePtr(&event_sample_buffer))));
+    EXPECT_CALL(skeleton_field_binding_mock_, Allocate(_))
+        .WillOnce(Return(ByMove(MakeFakeSampleAllocateePtr(&field_sample_buffer))));
+    EXPECT_CALL(skeleton_event_binding_mock_, Send(An<SampleAllocateePtr<void>>(), _))
+        .WillOnce(WithArg<0>(Invoke([event_value](SampleAllocateePtr<void> sample_ptr) -> Result<void> {
+            EXPECT_EQ(*static_cast<TestSampleType*>(sample_ptr.Get()), event_value);
+            return {};
+        })));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(An<SampleAllocateePtr<void>>(), _))
+        .WillOnce(WithArg<0>(Invoke([field_value](SampleAllocateePtr<void> sample_ptr) -> Result<void> {
+            EXPECT_EQ(*static_cast<TestSampleType*>(sample_ptr.Get()), field_value);
+            return {};
+        })));
 
     // and that VerifyAllMethodHandlersRegistered returns true because there are no methods to register
     EXPECT_CALL(skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillOnce(Return(true));
@@ -1043,8 +1082,8 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSke
 
                 return {};
             }));
-    EXPECT_CALL(skeleton_event_binding_mock_, PrepareOffer());
-    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer());
+    EXPECT_CALL(skeleton_event_binding_mock_, PrepareOffer(_));
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer(_));
 
     // And that PrepareStopOffer is called on the skeleton binding and event / field on destruction
     EXPECT_CALL(skeleton_binding_mock_, PrepareStopOffer(_));
@@ -1104,8 +1143,21 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
 
         // By default the skeleton and service element bindings will report that offer service preparation succeeded
         ON_CALL(skeleton_binding_mock_2_, PrepareOffer(_, _, _)).WillByDefault(Return(score::Result<void>{}));
-        ON_CALL(skeleton_event_binding_mock_2_, PrepareOffer()).WillByDefault(Return(score::Result<void>{}));
-        ON_CALL(skeleton_field_binding_mock_2_, PrepareOffer()).WillByDefault(Return(score::Result<void>{}));
+        ON_CALL(skeleton_event_binding_mock_2_, PrepareOffer(_)).WillByDefault(Return(score::Result<void>{}));
+        ON_CALL(skeleton_field_binding_mock_2_, PrepareOffer(_)).WillByDefault(Return(score::Result<void>{}));
+
+        // Tests which don't care about the deferred Allocate()+Send() dispatch (triggered when an event/field's
+        // initial/latest value is sent during PrepareOffer()) rely on these safe defaults instead of gmock's
+        // default action for an unmocked call, which would otherwise return a null (but seemingly valid)
+        // SampleAllocateePtr, causing a crash.
+        ON_CALL(skeleton_event_binding_mock_2_, Allocate(_)).WillByDefault(Invoke([](SampleAllocateeGuard) {
+            return MakeFakeSampleAllocateePtr(&event_sample_buffer);
+        }));
+        ON_CALL(skeleton_field_binding_mock_2_, Allocate(_)).WillByDefault(Invoke([](SampleAllocateeGuard) {
+            return MakeFakeSampleAllocateePtr(&field_sample_buffer);
+        }));
+        ON_CALL(skeleton_event_binding_mock_2_, Send(_, _)).WillByDefault(Return(score::Result<void>{}));
+        ON_CALL(skeleton_field_binding_mock_2_, Send(_, _)).WillByDefault(Return(score::Result<void>{}));
     }
 
     MySkeleton CreateService()
@@ -1148,12 +1200,12 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
         ::testing::InSequence in_sequence{};
         EXPECT_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(_))
             .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_))));
-        EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_, Create(_, _, _))
-            .WillOnce(Return(ByMove(
-                std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_))));
-        EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, _, _))
-            .WillOnce(Return(ByMove(
-                std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_))));
+        EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, _))
+            .WillOnce(
+                Return(ByMove(std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_event_binding_mock_))));
+        EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, _, _, _))
+            .WillOnce(
+                Return(ByMove(std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_field_binding_mock_))));
         EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kSet))
             .WillOnce(
                 Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_field_set_binding_mock_))));
@@ -1166,12 +1218,12 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
 
         EXPECT_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(_))
             .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_2_))));
-        EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_, Create(_, _, _))
-            .WillOnce(Return(ByMove(
-                std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_2_))));
-        EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, _, _))
-            .WillOnce(Return(ByMove(
-                std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_2_))));
+        EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, _))
+            .WillOnce(
+                Return(ByMove(std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_event_binding_mock_2_))));
+        EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, _, _, _))
+            .WillOnce(
+                Return(ByMove(std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_field_binding_mock_2_))));
         EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kSet))
             .WillOnce(Return(
                 ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_field_set_binding_mock_2_))));
@@ -1216,8 +1268,8 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
     bool skeleton_field_stop_offer_called_2_{false};
 
     NiceMock<mock_binding::Skeleton> skeleton_binding_mock_2_{};
-    NiceMock<mock_binding::SkeletonEvent<TestSampleType>> skeleton_event_binding_mock_2_{};
-    NiceMock<mock_binding::SkeletonEvent<TestSampleType>> skeleton_field_binding_mock_2_{};
+    NiceMock<mock_binding::SkeletonEvent> skeleton_event_binding_mock_2_{};
+    NiceMock<mock_binding::SkeletonEvent> skeleton_field_binding_mock_2_{};
     NiceMock<mock_binding::SkeletonMethod> skeleton_method_binding_mock_2_{};
     NiceMock<mock_binding::SkeletonMethod> skeleton_field_set_binding_mock_2_{};
     NiceMock<mock_binding::SkeletonMethod> skeleton_field_get_binding_mock_2_{};
@@ -1229,7 +1281,8 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
 using GeneratedSkeletonDestructionFixture = GeneratedSkeletonStopOfferServiceRaiiFixture;
 TEST_F(GeneratedSkeletonDestructionFixture, CallsStopOfferServiceOnDestructionOfOfferedService)
 {
-    RecordProperty("Verifies", "SCR-6093144, SCR-17432457");
+    RecordProperty("Verifies", "SCR-6093144");
+    RecordProperty("lobster-tracing", "Communication.SkeletonDestructor");
     RecordProperty("Description", "Check whether the service event offering is stopped when the skeleton is destroyed");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1252,7 +1305,8 @@ TEST_F(GeneratedSkeletonDestructionFixture, CallsStopOfferServiceOnDestructionOf
 
 TEST_F(GeneratedSkeletonDestructionFixture, DoesNotCallStopOfferServiceOnDestructionOfNotOfferedService)
 {
-    RecordProperty("Verifies", "SCR-6093144, SCR-17432457");
+    RecordProperty("Verifies", "SCR-6093144");
+    RecordProperty("lobster-tracing", "Communication.SkeletonDestructor");
     RecordProperty("Description", "Check whether the service event offering is stopped when the skeleton is destroyed");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1272,7 +1326,7 @@ TEST_F(GeneratedSkeletonDestructionFixture, DoesNotCallStopOfferServiceOnDestruc
 using GeneratedSkeletonMoveConstructionFixture = GeneratedSkeletonStopOfferServiceRaiiFixture;
 TEST_F(GeneratedSkeletonMoveConstructionFixture, MoveConstructingDoesNotCallStopOfferService)
 {
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "skeleton is move constructible");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1291,7 +1345,7 @@ TEST_F(GeneratedSkeletonMoveConstructionFixture, MoveConstructingDoesNotCallStop
 
 TEST_F(GeneratedSkeletonMoveConstructionFixture, DestroyingMovedToSkeletonCallsStopOfferService)
 {
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "skeleton is move constructible");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1313,7 +1367,7 @@ TEST_F(GeneratedSkeletonMoveConstructionFixture, DestroyingMovedToSkeletonCallsS
 
 TEST_F(GeneratedSkeletonMoveConstructionFixture, DestroyingMovedFromSkeletonDoesNotCallStopOfferService)
 {
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "skeleton is move constructible");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1336,7 +1390,7 @@ TEST_F(GeneratedSkeletonMoveConstructionFixture, DestroyingMovedFromSkeletonDoes
 using GeneratedSkeletonMoveAssignmentFixture = GeneratedSkeletonStopOfferServiceRaiiFixture;
 TEST_F(GeneratedSkeletonMoveAssignmentFixture, MoveAssigningCallsStopOfferServiceOnMovedToSkeleton)
 {
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "skeleton is move assignable");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1359,7 +1413,7 @@ TEST_F(GeneratedSkeletonMoveAssignmentFixture, MoveAssigningCallsStopOfferServic
 
 TEST_F(GeneratedSkeletonMoveAssignmentFixture, DestroyingMovedToSkeletonCallsStopOfferService)
 {
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "skeleton is move assignable");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1381,7 +1435,7 @@ TEST_F(GeneratedSkeletonMoveAssignmentFixture, DestroyingMovedToSkeletonCallsSto
 
 TEST_F(GeneratedSkeletonMoveAssignmentFixture, DestroyingMovedFromSkeletonDoesNotCallStopOfferService)
 {
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "skeleton is move assignable");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1403,7 +1457,7 @@ TEST_F(GeneratedSkeletonMoveAssignmentFixture, DestroyingMovedFromSkeletonDoesNo
 
 TEST_F(GeneratedSkeletonMoveAssignmentFixture, MoveAssigningToAMovedFromSkeletonDoesNotCallStopOfferService)
 {
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "skeleton is move assignable");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

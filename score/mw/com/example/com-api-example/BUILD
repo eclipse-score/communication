@@ -17,7 +17,6 @@ rust_library(
     name = "com-api-example-lib",
     srcs = glob(["src/**/*.rs"]),
     crate_name = "com_api_example",
-    edition = "2024",
     features = ["link_std_cpp_lib"],
     deps = [
         "//score/mw/com/example/com-api-example/com-api-gen",
@@ -35,7 +34,6 @@ rust_binary(
         "etc/logging.json",
         "etc/mw_com_config.json",
     ],
-    edition = "2024",
     env = {
         "MW_LOG_CONFIG_FILE": "score/mw/com/example/com-api-example/etc/logging.json",
     },
@@ -55,7 +53,6 @@ rust_test(
     name = "com-api-example-tokio-integration-test",
     srcs = ["tests_using_tokio_runtime.rs"],
     data = ["etc/mw_com_config.json"],
-    edition = "2024",
     features = ["link_std_cpp_lib"],
     tags = ["manual"],
     deps = [

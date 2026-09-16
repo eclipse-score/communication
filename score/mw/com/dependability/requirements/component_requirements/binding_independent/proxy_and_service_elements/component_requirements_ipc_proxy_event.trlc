@@ -1,0 +1,220 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+section "com" {
+
+    section "Public_API_Specification" {
+
+        section "Typed_Proxy" {
+
+            section "Proxy_Event" {
+
+                /* broken_link_c/issue/14137268 */
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq ProxyEventClass {
+                    description = '''Event members within a Proxy Class shall be of a {{ProxyEvent}} class, whose properties are defined in this section.
+
+                    The name and namespace of a {{ProxyEvent}} shall be defined by the {{mw::com}} implementation.
+
+                    Note: It is up to the {{mw::com}} implementation, whether it defines/generates different/explicit classes for each {{ProxyEvent}} or whether it uses a class template for {{ProxyEvent}} and uses the event data type ({{SampleType}}) as a template argument.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1, Communication.CommunicationInterfaces@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyEventClassDefinition {
+                    description = '''For different event data types also different {{ProxyEvent}}
+                    {{ProxyEvent}}
+
+                     classes shall be defined, since the event data type influences the signature of a  class. See for example ProxyEvent Member type SampleType
+                    '''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1, Communication.ProducerConsumerPattern@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyEventMemberTypeSampleType {
+                    description = '''The {{ProxyEvent}} class shall have a public member type {{SampleType}}, which denotes the data type of an event.
+
+                    {{{using SampleType = <data type of event>}}}'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyEventCopySemantics {
+                    description = '''The {{ProxyEvent}} class shall neither be copy-constructible nor copy-assignable.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1, Communication.DataLoss@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyEventSubscribe {
+                    description = '''The {{ProxyEvent}} class shall provide a public method:
+
+                    {{{bmw::Result<void> ProxyEvent::Subscribe(std::size\_t max\_sample\_count) noexcept}}}
+
+                    Behaviour is described in default-cursor Behaviour of Subscribe.
+
+                    Return value is described in default-cursor Return value of Subscribe.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyEventUnsubscribe {
+                    description = '''The {{ProxyEvent}} class shall provide a public method:
+
+                    {{{void ProxyEvent::Unsubscribe() noexcept; }}}
+
+                    Behaviour is described in Behaviour of Unsubscribe.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyEventGetSubscriptionState {
+                    description = '''The {{ProxyClass}} shall provide a public method:
+
+                    {{{SubscriptionState ProxyEvent::GetSubscriptionState() const noexcept}}}
+
+                    Return value: returns the subscription state of an event.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.ProducerConsumerPattern@1]
+                    version = 1
+                }
+
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq ProxyEventSetSubscriptionStateChangeHandler {
+                    description = '''The {{ProxyEvent}} class shall provide a public method:
+
+                    {{{bmw::Result<void> ProxyEvent::SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler subscription\_state\_change\_handler) noexcept; }}}
+
+                    Arguments:
+
+                    * subscription\_state\_change\_handler: See SubscriptionStateChangeHandler for its definition.
+
+                    Behaviour: is described in Behaviour of SetSubscriptionStateChangeHandler.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.EventType@1, Communication.ProducerConsumerPattern@1]
+                    version = 1
+                }
+
+                /* ToDo: Potentially uncovered requirement! */
+                ScoreReq.CompReq ProxyEventUnsetSubscriptionStateChangeHandler {
+                    description = '''The {{ProxyEvent}} class shall provide a public method:
+
+                    {{{void ProxyEvent::UnsetSubscriptionStateChangeHandler() noexcept;}}}
+
+                    Behaviour: is described in Behaviour of UnsetSubscriptionStateChangeHandler.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.EventType@1, Communication.ProducerConsumerPattern@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyEventGetNewSamples {
+                    description = '''The {{ProxyEvent}}
+                    shall provide a public method:
+
+                    {{{template <typename F>
+                    bmw::Result<std::size\_t> ProxyEvent::GetNewSamples(F&& receiver, std::size\_t max\_num\_samples) noexcept;}}}
+
+                    Arguments:
+
+                    *  receiver: Callable that fulfills the signature requirement in GetNewSamples receiver signature.
+
+                    *  max\_num\_samples: size\_t value whose behaviour is defined in Behaviour of GetNewSamples
+
+                    Behaviour is described in Behaviour of GetNewSamples
+
+                    Return value:{{bmw::Result}} returned  which contains
+
+                    *  on success, a value defined in Return value of successful GetNewSamples.
+
+                    *  or, a {{bmw::result::Error}} containing the value {{kMaxSamplesReached}} when the implementation has a new sample, but can't call the receiver callback, because the number of {{SamplePtr}} s currently held by the application has met the maximum number passed to the ProxyEvent Subscribe call.
+
+                    *  {{bmw::result::Error}}, according to or, a Error Codes relating to Active Subscription.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1, Communication.EventType@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyEventSetReceiveHandler {
+                    description = '''The {{ProxyEvent}}
+                     shall provide a public method:
+
+                    {{{bmw::Result<void> ProxyEvent::SetReceiveHandler(mw::com::EventReceiveHandler handler) noexcept;}}}
+
+                    Arguments:
+
+                    *  handler See default-cursor Event Receive Handler for its definition.
+
+                    Behaviour is described in Behaviour of SetReceiveHandler.
+
+                    Return value: In case {{SetReceiveHandler()}} fails, {{ComErrc::kSetHandlerNotSet}} shall be returned in the {{Result}}.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Method@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyEventUnsetReceiveHandler {
+                    description = '''The {{ProxyEvent}}
+                     shall provide a public method:
+
+                    {{{bmw::Result<void> ProxyEvent::UnsetReceiveHandler() noexcept}}}
+
+                    Behaviour is described in Behaviour of UnsetReceiveHandler.
+
+                    Return value: {{UnsetReceiveHandler()}}{{ComErrc::kUnsetFailure}}{{Result}}In case  fails,  shall be returned in the '''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Method@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyEventGetFreeSampleCount {
+                    description = '''The {{ProxyEvent}}
+                    shall provide a public method:
+
+                    {{{std::size\_t ProxyEvent::GetFreeSampleCount() const noexcept}}}
+
+                    Return value is described in Return value of GetFreeSampleCount.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1, Communication.DataReordering@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq ProxyEventGetNumNewSamplesAvailable {
+                    description = '''The {{ProxyEvent}}
+                    shall provide a public method:
+
+                    {{{bmw::Result<std::size\_t> ProxyEvent::GetNumNewSamplesAvailable() const noexcept}}}
+
+                    Behaviour is described in progress-cursor Behaviour of GetNumNewSamplesAvailable.
+
+                    Return value:{{bmw::Result}} returned  which contains
+
+                    *  on success, number of new samples available as described in Behaviour of GetNumNewSamplesAvailable,
+
+                    *  or, a {{bmw::result::ErrorCode}}, according to Error Codes relating to Active Subscription.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1]
+                    version = 1
+                }
+            }
+
+        }
+    }
+}

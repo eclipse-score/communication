@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#include "score/mw/com/test/common_test_resources/service_instance_manifest_parser.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
-#include "score/mw/com/test/methods/methods_test_resources/common_resources.h"
 #include "score/mw/com/test/methods/stop_offer_during_call/consumer_and_provider.h"
 
 #include "score/mw/com/runtime.h"

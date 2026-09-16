@@ -20,15 +20,15 @@ bazel_dep(name = "boost.program_options", version = "1.83.0.bcr.4")
 bazel_dep(name = "download_utils", version = "1.2.2")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
-bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "rules_rust", version = "0.68.1-score")
 
 # Cannot be dev-dependency due to being required in "load" statements
 bazel_dep(name = "score_qnx_unit_tests", version = "0.2.0")
-bazel_dep(name = "score_baselibs", version = "0.2.11")
-git_override(
+bazel_dep(name = "score_baselibs", version = "0.2.12")
+single_version_override(
     module_name = "score_baselibs",
     commit = "4abf22407106ec2461f5f80a619cd15b5d294238",
     patch_strip = 1,
@@ -36,10 +36,9 @@ git_override(
     # until a fix is provided by the QNX SDP
     # See https://github.com/eclipse-score/bazel_cpp_toolchains/issues/68
     patches = ["//third_party/score_baselibs:restore_qnx8_poll_workaround.patch"],
-    remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
-bazel_dep(name = "score_bazel_platforms", version = "1.0.0")
+bazel_dep(name = "score_bazel_platforms", version = "1.1.0")
 bazel_dep(name = "score_crates", version = "0.0.11", repo_name = "score_communication_crate_index")
 
 download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
@@ -51,7 +50,7 @@ download_archive(
     urls = ["https://github.com/python-jsonschema/jsonschema/archive/refs/tags/v4.23.0.tar.gz"],
 )
 
-bazel_dep(name = "score_tooling", version = "2.0.2")
+bazel_dep(name = "score_tooling", version = "2.2.2")
 
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
 bazel_dep(name = "gcc_toolchain", version = "0.10.0", dev_dependency = True)
@@ -189,13 +188,16 @@ use_repo(
 )
 
 bazel_dep(name = "score_itf", version = "0.5.0", dev_dependency = True)
+
+# Use pinned score_itf fork commit for integration testing changes.
+# Fork adds core dump extraction from Docker container (commits 749e01e, fc6416b).
 git_override(
     module_name = "score_itf",
-    commit = "54cab4f6ebc1fb40d0b93a8c1a451a03bda77b6a",
+    commit = "1ce9b563e4a6f6b648ca313967fb2beb10f00317",
     remote = "https://github.com/eclipse-score/itf.git",
 )
 
-bazel_dep(name = "score_rules_imagefs", version = "0.0.4", dev_dependency = True)
+bazel_dep(name = "score_rules_imagefs", version = "0.1.0", dev_dependency = True)
 
 imagefs = use_extension("@score_rules_imagefs//extensions:imagefs.bzl", "imagefs", dev_dependency = True)
 imagefs.toolchain(
@@ -398,7 +400,7 @@ single_version_override(
     patches = ["//third_party/rule_doxygen:Doxyfile.patch"],
 )
 
-bazel_dep(name = "score_docs_as_code", version = "8.0.1", dev_dependency = True)
+bazel_dep(name = "score_docs_as_code", version = "8.1.1", dev_dependency = True)
 
 # Doxygen extension for documentation generation
 doxygen_extension = use_extension("@rules_doxygen//:extensions.bzl", "doxygen_extension", dev_dependency = True)

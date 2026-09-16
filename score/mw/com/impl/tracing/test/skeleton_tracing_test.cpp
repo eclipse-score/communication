@@ -199,7 +199,7 @@ TEST_F(SkeletonBaseRegisterShmTracingFixture, RegisterShmObjectIsTracedIfTracing
         })));
 
     // and that PrepareOffer gets called on the event binding
-    EXPECT_CALL(*event_binding_mock_, PrepareOffer());
+    EXPECT_CALL(*event_binding_mock_, PrepareOffer(_));
 
     // Then a shm object is registered with the tracing runtime
     EXPECT_CALL(tracing_runtime_mock_,
@@ -261,7 +261,7 @@ TEST_F(SkeletonBaseRegisterShmTracingFixture, RegisterShmObjectIsNotTracedIfTrac
         })));
 
     // and that PrepareOffer gets called on the event binding
-    EXPECT_CALL(*event_binding_mock_, PrepareOffer());
+    EXPECT_CALL(*event_binding_mock_, PrepareOffer(_));
 
     // Then a shm object is not registered with the tracing runtime
     EXPECT_CALL(tracing_runtime_mock_,
@@ -313,7 +313,7 @@ TEST_F(SkeletonBaseUnregisterShmTracingFixture, UnregisterShmObjectIsTracedIfTra
 
     // and that PrepareOffer gets called on the event binding
     EXPECT_CALL(*binding_mock_, PrepareOffer(_, _, _));
-    EXPECT_CALL(*event_binding_mock_, PrepareOffer());
+    EXPECT_CALL(*event_binding_mock_, PrepareOffer(_));
 
     // and that PrepareStopOffer will be called on the binding with the wrapped handler containing the unregister
     // shm object trace call
@@ -372,7 +372,7 @@ TEST_F(SkeletonBaseUnregisterShmTracingFixture, UnregisterShmObjectIsNotTracedIf
 
     // and that PrepareOffer gets called on the event binding
     EXPECT_CALL(*binding_mock_, PrepareOffer(_, _, _));
-    EXPECT_CALL(*event_binding_mock_, PrepareOffer());
+    EXPECT_CALL(*event_binding_mock_, PrepareOffer(_));
 
     // and that PrepareStopOffer will be called on the binding with the wrapped handler containing the unregister
     // shm object trace call
@@ -435,7 +435,7 @@ TEST_F(SkeletonBaseUnregisterShmTracingFixture, UnregisterShmObjectIsTracedOnDes
 
     // and that PrepareOffer gets called on the event binding
     EXPECT_CALL(*binding_mock_, PrepareOffer(_, _, _));
-    EXPECT_CALL(*event_binding_mock_, PrepareOffer());
+    EXPECT_CALL(*event_binding_mock_, PrepareOffer(_));
 
     // and that PrepareStopOffer will be called on the binding with the wrapped handler containing the unregister
     // shm object trace call
@@ -492,7 +492,7 @@ TEST_F(SkeletonBaseUnregisterShmTracingFixture,
 
     // and that PrepareOffer gets called on the event binding
     EXPECT_CALL(*binding_mock_, PrepareOffer(_, _, _));
-    EXPECT_CALL(*event_binding_mock_, PrepareOffer());
+    EXPECT_CALL(*event_binding_mock_, PrepareOffer(_));
 
     // and that PrepareStopOffer will be called on the binding with the wrapped handler containing the unregister
     // shm object trace call

@@ -310,7 +310,7 @@ TEST_F(SkeletonFieldTracingSendFixture, SendCallsAreTracedWhenEnabled)
         })));
 
     // and that PrepareStopOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding twice (once in SkeletonEvent creation and once
     // when calling tracing)
@@ -395,7 +395,7 @@ TEST_F(SkeletonFieldTracingSendFixture, SendTracePointShouldBeDisabledAfterTrace
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
 
     // and that PrepareStopOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding twice (once in SkeletonEvent creation and once
     // when calling tracing)
@@ -488,7 +488,7 @@ TEST_F(SkeletonFieldTracingSendFixture, SendTracePointShouldBeDisabledAfterTrace
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));
 
     // and that PrepareStopOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding twice (once in SkeletonEvent creation and once
     // when calling tracing)
@@ -564,7 +564,7 @@ TEST_F(SkeletonFieldTracingSendFixture, SendCallsAreNotTracedWhenDisabled)
     // Then a trace call relating to Send should never be called
 
     // and that PrepareStopOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer(_));
 
     // and that PrepareStopOffer is called on the skeleton event binding
     EXPECT_CALL(*mock_skeleton_field_binding_, PrepareStopOffer());
@@ -616,7 +616,7 @@ TEST_F(SkeletonFieldTracingSendFixture, SendCallsAreNotTracedWhenTracingFilterCo
     // Then a trace call relating to Send should never be called
 
     // and that PrepareStopOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding
     EXPECT_CALL(*mock_skeleton_field_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
@@ -671,7 +671,7 @@ TEST_F(SkeletonFieldTracingSendFixture, SendCallsAreNotTracedWhenTracingRuntimeC
     // Then a trace call relating to Send should never be called
 
     // and that PrepareStopOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding
     EXPECT_CALL(*mock_skeleton_field_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
@@ -767,7 +767,7 @@ TEST_F(SkeletonFieldTracingSendWithAllocateFixture, SendCallsAreTracedWhenEnable
     EXPECT_CALL(*mock_skeleton_field_binding_, Send(initial_data, _));
 
     // and that PrepareStopOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding twice (once in SkeletonEvent creation and once
     // when calling tracing)
@@ -871,7 +871,7 @@ TEST_F(SkeletonFieldTracingSendWithAllocateFixture,
     EXPECT_CALL(*mock_skeleton_field_binding_, Send(initial_data, _));
 
     // and that PrepareStopOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding twice (once in SkeletonEvent creation and once
     // when calling tracing)
@@ -983,7 +983,7 @@ TEST_F(SkeletonFieldTracingSendWithAllocateFixture,
     EXPECT_CALL(*mock_skeleton_field_binding_, Send(initial_data, _));
 
     // and that PrepareStopOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding twice (once in SkeletonEvent creation and once
     // when calling tracing)
@@ -1076,7 +1076,7 @@ TEST_F(SkeletonFieldTracingSendWithAllocateFixture, SendCallsAreNotTracedWhenDis
     EXPECT_CALL(*mock_skeleton_field_binding_, Send(initial_data, _));
 
     // and that PrepareStopOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer(_));
 
     // and that PrepareStopOffer is called on the skeleton event binding
     EXPECT_CALL(*mock_skeleton_field_binding_, PrepareStopOffer());
@@ -1145,7 +1145,7 @@ TEST_F(SkeletonFieldTracingSendWithAllocateFixture, SendCallsAreNotTracedWhenTra
     EXPECT_CALL(*mock_skeleton_field_binding_, Send(initial_data, _));
 
     // and that PrepareStopOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding
     EXPECT_CALL(*mock_skeleton_field_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
@@ -1217,7 +1217,7 @@ TEST_F(SkeletonFieldTracingSendWithAllocateFixture, SendCallsAreNotTracedWhenTra
     EXPECT_CALL(*mock_skeleton_field_binding_, Send(initial_data, _));
 
     // and that PrepareStopOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_field_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding
     EXPECT_CALL(*mock_skeleton_field_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));

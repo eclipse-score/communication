@@ -22,6 +22,12 @@ import shutil
 TMP_PATH_FOR_DATABASES = "/var/tmp/codeql_databases"
 CODING_STANDARDS_CONFIG_RELATIVE_PATH = "quality/static_analysis/coding-standards.yaml"
 
+# Name of the fake-$HOME directory used only while invoking `analysis_report`
+# (see _prepare_offline_codeql_home). Created under the current invocation's
+# own output directory rather than a fixed shared path, so it stays scoped
+# to this run and doesn't accumulate stale state across workspaces/versions.
+CODEQL_FAKE_HOME_DIR_NAME = "codeql_home"
+
 
 # Default query suite (relative to the MISRA C++ pack root) run by the analysis.
 # Forward-slash relative path, used both to locate the suite on disk and as the
@@ -102,6 +108,33 @@ def _find_compiled_pack_root():
             "other query source."
         )
     return pack_root
+
+
+def _prepare_offline_codeql_home(libraries_dir, fake_home):
+    """Set up a hermetic $HOME so CodeQL can resolve locked pack dependencies offline.
+
+    `analysis_report` runs some queries straight from the source pack tree via
+    plain `codeql database run-queries`, with no --search-path/--additional-packs
+    of its own. That pack's lock file pins a dependency on
+    `advanced-security/qtil`, which CodeQL can only resolve from its default
+    pack cache (~/.codeql/packages/...) or from --additional-packs directories
+    (--search-path is explicitly ignored for locked dependencies). Without
+    network access, resolving from the default cache would require mutating
+    the real user's $HOME.
+
+    The vendored pre-compiled MISRA pack already bundles this dependency under
+    `.codeql/libraries/<scope>/<name>/<version>`, so instead we point
+    --additional-packs at that directory via a CodeQL per-user config file at
+    `<fake_home>/.config/codeql/config`. `libraries_dir` must be the pack's
+    real, non-symlinked path, since CodeQL's pack resolution doesn't follow
+    symlinks (_find_compiled_pack_root() already handles this via realpath()).
+    The caller is responsible for pointing $HOME at `fake_home` for the
+    subprocess this is prepared for.
+    """
+    config_path = os.path.join(fake_home, ".config", "codeql", "config")
+    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+    with open(config_path, "w") as handle:
+        handle.write(f"--additional-packs {libraries_dir}\n")
 
 
 def _read_pack_identity(pack_root):
@@ -252,6 +285,15 @@ def analyze_database(
             print(f" CodeQL bin dir exists: {os.path.isdir(codeql_bin_dir)}")
             env["PATH"] = f"{codeql_bin_dir}:{env.get('PATH', '')}"
             print(f" PATH for analysis_report: {env['PATH']}")
+
+            # Point HOME at a hermetic per-invocation directory so
+            # analysis_report can resolve locked pack dependencies offline
+            # without touching the real user's $HOME (see
+            # _prepare_offline_codeql_home).
+            compiled_pack_root = _find_compiled_pack_root()
+            fake_home = os.path.join(output_base, CODEQL_FAKE_HOME_DIR_NAME)
+            _prepare_offline_codeql_home(os.path.join(compiled_pack_root, ".codeql", "libraries"), fake_home)
+            env["HOME"] = fake_home
 
             # analysis_report expects positional args: database-dir sarif-file output-dir
 

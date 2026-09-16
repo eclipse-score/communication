@@ -12,8 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/assert_handler.h"
+#include "score/mw/com/test/common_test_resources/service_instance_manifest_parser.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
-#include "score/mw/com/test/fields/mixed_criticality/common_resources.h"
 #include "score/mw/com/test/fields/mixed_criticality/consumer.h"
 
 #include <cstdlib>

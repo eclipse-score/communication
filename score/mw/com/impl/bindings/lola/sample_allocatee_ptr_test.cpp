@@ -60,8 +60,7 @@ TEST_F(SampleAllocateePtrFixture, MarksSlotAsInvalidOnDestruction)
     ASSERT_TRUE(slot.has_value());
     std::uint8_t data{};
     {
-        auto unit = SampleAllocateePtr<std::uint8_t>(
-            &data, control_composite_, consumer_event_data_control_local_, slot.value());
+        auto unit = SampleAllocateePtr(&data, control_composite_, consumer_event_data_control_local_, slot.value());
     }
     // When it goes out of scope
 
@@ -75,8 +74,7 @@ TEST_F(SampleAllocateePtrFixture, DoesNotMarkSlotAsInvalidOnMove)
     auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
     std::uint8_t data{};
-    auto unit =
-        SampleAllocateePtr<std::uint8_t>(&data, control_composite_, consumer_event_data_control_local_, slot.value());
+    auto unit = SampleAllocateePtr(&data, control_composite_, consumer_event_data_control_local_, slot.value());
 
     // When moving it
     auto unit2 = std::move(unit);
@@ -93,8 +91,7 @@ TEST_F(SampleAllocateePtrFixture, ReadySlotIsNotMarkedInvalidOnDestruction)
     provider_event_data_control_local_.EventReady(slot.value(), 0x42);
     std::uint8_t data{};
     {
-        auto unit = SampleAllocateePtr<std::uint8_t>(
-            &data, control_composite_, consumer_event_data_control_local_, slot.value());
+        auto unit = SampleAllocateePtr(&data, control_composite_, consumer_event_data_control_local_, slot.value());
     }
     // When it goes out of scope
 
@@ -116,8 +113,7 @@ TEST_F(SampleAllocateePtrFixture, CanAccessUnderlyingSlot)
     ASSERT_TRUE(slot.has_value());
     provider_event_data_control_local_.EventReady(slot.value(), 0x42);
     std::uint8_t data{};
-    auto unit =
-        SampleAllocateePtr<std::uint8_t>(&data, control_composite_, consumer_event_data_control_local_, slot.value());
+    auto unit = SampleAllocateePtr(&data, control_composite_, consumer_event_data_control_local_, slot.value());
 
     // When accessing which slot is associated with the SampleAllocateePtr
     auto referenced_slot = unit.GetReferencedSlot();
@@ -129,10 +125,10 @@ TEST_F(SampleAllocateePtrFixture, CanAccessUnderlyingSlot)
 
 TEST_F(SampleAllocateePtrFixture, ObeysOwnershipProperties)
 {
-    static_assert(std::is_move_constructible<SampleAllocateePtr<std::uint8_t>>::value, "Is not move constructable");
-    static_assert(std::is_move_assignable<SampleAllocateePtr<std::uint8_t>>::value, "Is not move assignable");
-    static_assert(!std::is_copy_constructible<SampleAllocateePtr<std::uint8_t>>::value, "Is copy constructable");
-    static_assert(!std::is_copy_assignable<SampleAllocateePtr<std::uint8_t>>::value, "Is copy assignable");
+    static_assert(std::is_move_constructible<SampleAllocateePtr>::value, "Is not move constructable");
+    static_assert(std::is_move_assignable<SampleAllocateePtr>::value, "Is not move assignable");
+    static_assert(!std::is_copy_constructible<SampleAllocateePtr>::value, "Is copy constructable");
+    static_assert(!std::is_copy_assignable<SampleAllocateePtr>::value, "Is copy assignable");
 }
 
 TEST_F(SampleAllocateePtrFixture, MoveConstruct)
@@ -142,11 +138,10 @@ TEST_F(SampleAllocateePtrFixture, MoveConstruct)
     ASSERT_TRUE(slot.has_value());
     provider_event_data_control_local_.EventReady(slot.value(), 0x42);
     std::uint8_t data{};
-    auto unit =
-        SampleAllocateePtr<std::uint8_t>(&data, control_composite_, consumer_event_data_control_local_, slot.value());
+    auto unit = SampleAllocateePtr(&data, control_composite_, consumer_event_data_control_local_, slot.value());
 
     // When move constructing another SampleAllocateePtr from it
-    SampleAllocateePtr<std::uint8_t> unit2(std::move(unit));
+    SampleAllocateePtr unit2(std::move(unit));
 
     // Then the move constructed instance contains the original members
     EXPECT_EQ(unit2.GetReferencedSlot(), slot.value());
@@ -163,11 +158,10 @@ TEST_F(SampleAllocateePtrFixture, MoveAssign)
     ASSERT_TRUE(slot.has_value());
     provider_event_data_control_local_.EventReady(slot.value(), 0x42);
     std::uint8_t data{};
-    auto unit =
-        SampleAllocateePtr<std::uint8_t>(&data, control_composite_, consumer_event_data_control_local_, slot.value());
+    auto unit = SampleAllocateePtr(&data, control_composite_, consumer_event_data_control_local_, slot.value());
 
     // When move assigning to another SampleAllocateePtr
-    SampleAllocateePtr<std::uint8_t> unit2 = std::move(unit);
+    SampleAllocateePtr unit2 = std::move(unit);
 
     // Then the move constructed instance contains the original members
     EXPECT_EQ(unit2.GetReferencedSlot(), slot.value());
@@ -180,7 +174,7 @@ TEST_F(SampleAllocateePtrFixture, MoveAssign)
 TEST_F(SampleAllocateePtrFixture, ConstructFromNullptr)
 {
     // Given a SampleAllocateePtr constructed from nullptr
-    auto unit = SampleAllocateePtr<std::uint8_t>(nullptr);
+    auto unit = SampleAllocateePtr(nullptr);
 
     // expect that ...
     EXPECT_FALSE(unit);
@@ -194,8 +188,7 @@ TEST_F(SampleAllocateePtrFixture, AssignNullptr)
     auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
     std::uint8_t data{};
-    auto unit =
-        SampleAllocateePtr<std::uint8_t>(&data, control_composite_, consumer_event_data_control_local_, slot.value());
+    auto unit = SampleAllocateePtr(&data, control_composite_, consumer_event_data_control_local_, slot.value());
 
     // When assigning a nullptr to it
     unit = nullptr;
@@ -206,39 +199,20 @@ TEST_F(SampleAllocateePtrFixture, AssignNullptr)
     EXPECT_FALSE(unit);
 }
 
-TEST_F(SampleAllocateePtrFixture, ArrayOp)
+TEST_F(SampleAllocateePtrFixture, GetReturnsTypeErasedPointerToUnderlyingData)
 {
     // Given an SampleAllocateePtr on an allocated slot
     auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
     DummyStruct data{99, 42};
-    auto unit =
-        SampleAllocateePtr<DummyStruct>(&data, control_composite_, consumer_event_data_control_local_, slot.value());
+    auto unit = SampleAllocateePtr(&data, control_composite_, consumer_event_data_control_local_, slot.value());
 
-    // When accessing the data via ->
-    auto val1 = unit->member1_;
-    auto val2 = unit->member2_;
+    // When accessing the data via get() and casting the type-erased pointer back to the actual type
+    auto* const typed_data = static_cast<DummyStruct*>(unit.get());
 
     // Then the values are as expected
-    EXPECT_EQ(val1, 99);
-    EXPECT_EQ(val2, 42);
-}
-
-TEST_F(SampleAllocateePtrFixture, StarOp)
-{
-    // Given an SampleAllocateePtr on an allocated slot
-    auto slot = provider_event_data_control_local_.AllocateNextSlot();
-    ASSERT_TRUE(slot.has_value());
-    DummyStruct data{99, 42};
-    auto unit =
-        SampleAllocateePtr<DummyStruct>(&data, control_composite_, consumer_event_data_control_local_, slot.value());
-
-    // When accessing the data via *
-    auto val1 = *unit;
-
-    // Then the values are as expected
-    EXPECT_EQ(val1.member1_, 99);
-    EXPECT_EQ(val1.member2_, 42);
+    EXPECT_EQ(typed_data->member1_, 99);
+    EXPECT_EQ(typed_data->member2_, 42);
 }
 
 TEST_F(SampleAllocateePtrFixture, SwapOp)
@@ -247,26 +221,23 @@ TEST_F(SampleAllocateePtrFixture, SwapOp)
     auto slot1 = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot1.has_value());
     DummyStruct data1{99, 42};
-    auto unit1 =
-        SampleAllocateePtr<DummyStruct>(&data1, control_composite_, consumer_event_data_control_local_, slot1.value());
+    auto unit1 = SampleAllocateePtr(&data1, control_composite_, consumer_event_data_control_local_, slot1.value());
 
     auto slot2 = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot2.has_value());
     DummyStruct data2{10, 100};
-    auto unit2 =
-        SampleAllocateePtr<DummyStruct>(&data2, control_composite_, consumer_event_data_control_local_, slot2.value());
+    auto unit2 = SampleAllocateePtr(&data2, control_composite_, consumer_event_data_control_local_, slot2.value());
 
     // When swapping the SampleAllocateePtrs
     swap(unit1, unit2);
 
-    // Then the values are swapped
-    auto val1 = *unit1;
-    auto val2 = *unit2;
-    EXPECT_EQ(val1.member1_, data2.member1_);
-    EXPECT_EQ(val1.member2_, data2.member2_);
+    // Then the underlying (type-erased) pointers are swapped
+    EXPECT_EQ(unit1.get(), static_cast<void*>(&data2));
+    EXPECT_EQ(unit2.get(), static_cast<void*>(&data1));
 
-    EXPECT_EQ(val2.member1_, data1.member1_);
-    EXPECT_EQ(val2.member2_, data1.member2_);
+    // ... and the referenced slots are swapped as well
+    EXPECT_EQ(unit1.GetReferencedSlot(), slot2.value());
+    EXPECT_EQ(unit2.GetReferencedSlot(), slot1.value());
 }
 
 }  // namespace

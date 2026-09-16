@@ -15,12 +15,12 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "dependable_elem
 dependable_element(
     name = "mw_com",
     architectural_design = ["//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design"],
-    assumptions_of_use = [],
+    assumptions_of_use = ["//score/mw/com/dependability/safety_analysis:aous"],
     components = [
         "//score/mw/com/impl:frontend_component",
         "//score/mw/com/impl/bindings",
     ],
-    dependability_analysis = ["//score/mw/com/dependability/safety_analysis:mw_com_fmea"],
+    dependability_analysis = ["//score/mw/com/dependability/safety_analysis:mw_com_dependability_analysis"],
     integrity_level = "B",
     maturity = "development",
     requirements = [

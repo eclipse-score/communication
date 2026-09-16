@@ -168,7 +168,7 @@ the previous chapters (which offered an event) is that **before** the provider m
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 95-95
+   :lines: 98-98
    :caption: provider/provider.cpp
 
 
@@ -183,7 +183,7 @@ random pressure between `2.0` and `2.5` bar) are randomized:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 105-110
+   :lines: 108-113
    :caption: provider/provider.cpp
 
 
@@ -199,13 +199,13 @@ handler. It then, for **each** of the four fields, registers an `EventReceiveHan
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 100-129
+   :lines: 99-128
    :caption: consumer/consumer.cpp
 
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 183-187
+   :lines: 182-186
    :caption: consumer/consumer.cpp
 
 

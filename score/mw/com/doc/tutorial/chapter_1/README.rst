@@ -185,7 +185,7 @@ The 1st important step happens in line 30:
 
 .. literalinclude:: provider.cpp
    :language: cpp
-   :lines: 30-30
+   :lines: 33-33
    :caption: provider.cpp
 
 
@@ -211,7 +211,7 @@ Then in line 40 we create an instance of the skeleton class with the `Create` (n
 
 .. literalinclude:: provider.cpp
    :language: cpp
-   :lines: 40-40
+   :lines: 43-43
    :caption: provider.cpp
 
 
@@ -225,7 +225,7 @@ its value in case of success), in line 43 we move the skeleton instance out of t
 
 .. literalinclude:: provider.cpp
    :language: cpp
-   :lines: 43-43
+   :lines: 46-46
    :caption: provider.cpp
 
 
@@ -239,7 +239,7 @@ After the call to `OfferService` in line 45 succeeds:
 
 .. literalinclude:: provider.cpp
    :language: cpp
-   :lines: 45-45
+   :lines: 48-48
    :caption: provider.cpp
 
 
@@ -251,7 +251,7 @@ Step 1 in line 55 allocates memory for a new event-sample for the "message" even
 
 .. literalinclude:: provider.cpp
    :language: cpp
-   :lines: 55-55
+   :lines: 58-58
    :caption: provider.cpp
 
 Step 2 in line 74 then signals to score::mw::com, that updating/writing to the memory is done and this new sample
@@ -259,7 +259,7 @@ can be made visible to consumers:
 
 .. literalinclude:: provider.cpp
    :language: cpp
-   :lines: 74-74
+   :lines: 77-77
    :caption: provider.cpp
 
 
@@ -282,7 +282,7 @@ the `HelloWorldInterface` via the `AsProxy` template, which we also introduce an
 
 .. literalinclude:: consumer.cpp
    :language: cpp
-   :lines: 29-29
+   :lines: 32-32
    :caption: consumer.cpp
 
 
@@ -291,7 +291,7 @@ In the while-loop starting in line 40, the consumer tries to find the service in
 
 .. literalinclude:: consumer.cpp
    :language: cpp
-   :lines: 43-43
+   :lines: 46-46
    :caption: consumer.cpp
 
 
@@ -314,7 +314,7 @@ instance for the service instance via the `Create` method of the `HelloWorldProx
 
 .. literalinclude:: consumer.cpp
    :language: cpp
-   :lines: 58-58
+   :lines: 61-61
    :caption: consumer.cpp
 
 
@@ -324,7 +324,7 @@ Symmetrically to the provider side, we move the proxy instance out of the result
 
 .. literalinclude:: consumer.cpp
    :language: cpp
-   :lines: 65-65
+   :lines: 68-68
    :caption: consumer.cpp
 
 
@@ -335,7 +335,7 @@ line 66:
 
 .. literalinclude:: consumer.cpp
    :language: cpp
-   :lines: 66-66
+   :lines: 69-69
    :caption: consumer.cpp
 
 
@@ -352,7 +352,7 @@ The API to do this, is the `ProxyEvent::GetNewSamples` API. You see the call in 
 
 .. literalinclude:: consumer.cpp
    :language: cpp
-   :lines: 78-84
+   :lines: 81-87
    :caption: consumer.cpp
 
 

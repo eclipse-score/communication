@@ -15,8 +15,8 @@
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/data_type_meta_info.h"
-#include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_binding_factory.h"
+#include "score/mw/com/impl/plumbing/skeleton_event_binding_factory.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/service_element_map_view_factory.h"
 #include "score/mw/com/impl/skeleton_binding.h"
@@ -114,18 +114,18 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
             return MakeUnexpected(ComErrc::kInvalidConfiguration);
         }
 
-        auto event_binding_result =
-            GenericSkeletonEventBindingFactory::Create(skeleton, info.name, data_type_size_info_result.value());
+        auto event_binding_ptr = SkeletonEventBindingFactory::Create(
+            identifier, SkeletonBaseView{skeleton}.GetBinding(), info.name, data_type_size_info_result.value());
 
-        if (!event_binding_result.has_value())
+        if (!event_binding_ptr)
         {
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
-        const auto emplace_result = skeleton.events_->emplace(
-            std::piecewise_construct,
-            std::forward_as_tuple(stable_name),
-            std::forward_as_tuple(skeleton, stable_name, std::move(event_binding_result).value()));
+        const auto emplace_result =
+            skeleton.events_->emplace(std::piecewise_construct,
+                                      std::forward_as_tuple(stable_name),
+                                      std::forward_as_tuple(skeleton, stable_name, std::move(event_binding_ptr)));
 
         if (!emplace_result.second)
         {

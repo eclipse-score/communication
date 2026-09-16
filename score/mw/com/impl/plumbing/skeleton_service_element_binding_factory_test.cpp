@@ -42,6 +42,8 @@ constexpr auto kDummyFieldName{"Field1"};
 constexpr std::uint16_t kDummyEventId{5U};
 constexpr std::uint16_t kDummyFieldId{6U};
 
+constexpr memory::DataTypeSizeInfo kTestSampleTypeSizeInfo{sizeof(TestSampleType), alignof(TestSampleType)};
+
 constexpr uint16_t kInstanceId = 0x31U;
 const LolaServiceId kServiceId{1U};
 const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{"/my_dummy_instance_specifier"}).value();
@@ -88,20 +90,20 @@ class SkeletonServiceElementBindingFactoryParamaterisedFixture
         }
     }
 
-    std::unique_ptr<SkeletonEventBinding<TestSampleType>> CreateServiceElementBinding(
-        const InstanceIdentifier instance_identifier,
-        SkeletonBinding& skeleton_binding)
+    std::unique_ptr<SkeletonEventBinding> CreateServiceElementBinding(const InstanceIdentifier instance_identifier,
+                                                                      SkeletonBinding& skeleton_binding)
     {
         switch (service_element_type_)
         {
             case ServiceElementType::EVENT:
-                return SkeletonEventBindingFactory<TestSampleType>::Create(
-                    instance_identifier, skeleton_binding, kDummyEventName);
+                return SkeletonEventBindingFactory::Create(
+                    instance_identifier, skeleton_binding, kDummyEventName, kTestSampleTypeSizeInfo);
             case ServiceElementType::FIELD:
-                return SkeletonFieldBindingFactory<TestSampleType>::CreateEventBinding(
+                return SkeletonFieldBindingFactory::CreateEventBinding(
                     instance_identifier,
                     skeleton_binding,
                     kDummyFieldName,
+                    kTestSampleTypeSizeInfo,
                     FieldTagsStore::Create<WithNotifier, WithGetter>());
             case ServiceElementType::METHOD:
             case ServiceElementType::INVALID:

@@ -109,7 +109,7 @@ you will see that we added a specific call:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 37-37
+   :lines: 40-40
    :caption: consumer/consumer.cpp
 
 

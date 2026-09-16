@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/skeleton_event.h"
 
+#include "score/mw/com/impl/mocking/test_type_utilities.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/sample_allocatee_guard.h"
@@ -43,6 +44,7 @@ using TestSampleType = std::uint8_t;
 using std::string_view_literals::operator""sv;
 
 constexpr auto kEventName = "Event1"sv;
+constexpr memory::DataTypeSizeInfo kTestSampleTypeSizeInfo{sizeof(TestSampleType), alignof(TestSampleType)};
 
 const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
 const auto kServiceIdentifier = make_ServiceIdentifierType("foo", 13, 37);
@@ -55,6 +57,8 @@ std::uint16_t kServiceId{34U};
 const ServiceTypeDeployment kTypeDeployment{LolaServiceTypeDeployment{kServiceId}};
 const auto kInstanceIdWithLolaBinding = make_InstanceIdentifier(kDeploymentInfo, kTypeDeployment);
 
+TestSampleType test_sample_buffer{};
+
 class MyDummySkeleton final : public SkeletonBase
 {
   public:
@@ -65,7 +69,7 @@ class MyDummySkeleton final : public SkeletonBase
 
 TEST(SkeletonEventTest, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-21840365");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventCopySemantics");
     RecordProperty("Description", "Checks that class is neither copy-constructable nor copy-assignable.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -82,7 +86,7 @@ TEST(SkeletonEventTest, IsMoveable)
 
 TEST(SkeletonEventTest, SkeletonEventContainsPublicSampleType)
 {
-    RecordProperty("Verifies", "SCR-21840366");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassMemberTypeEventType");
     RecordProperty("Description",
                    "A SkeletonEvent contains a public member type EventType which denotes the type of the event.");
     RecordProperty("TestType", "Requirements-based test");
@@ -95,7 +99,7 @@ TEST(SkeletonEventTest, SkeletonEventContainsPublicSampleType)
 
 TEST(SkeletonEventTest, ClassTypeDependsOnEventDataType)
 {
-    RecordProperty("Verifies", "SCR-29235002");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassDefinition");
     RecordProperty("Description", "SkeletonEvents with different event data types should be different classes.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -109,28 +113,29 @@ TEST(SkeletonEventTest, ClassTypeDependsOnEventDataType)
 
 TEST(SkeletonEventAllocateTest, CallingAllocateAfterPrepareOfferDispatchesToBinding)
 {
-    RecordProperty("Verifies", "SCR-21840368, SCR-21470600");
+    RecordProperty("Verifies", "SCR-21470600");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassAllocate");
     RecordProperty("Description", "Checks that calling allocate after offer service dispatches to the binding.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
 
     // Expecting that a SkeletonEvent binding is created
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // and that PrepareOffer() is called once on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer());
+    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer(_));
 
     // and that Allocate() is called once on the event binding
     EXPECT_CALL(skeleton_event_binding_mock, Allocate(_))
-        .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::make_unique<TestSampleType>(), SampleAllocateeGuard{}))));
+        .WillOnce(Return(ByMove(MakeFakeSampleAllocateePtr(&test_sample_buffer))));
 
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -147,20 +152,20 @@ TEST(SkeletonEventAllocateTest, CallingAllocateAfterPrepareOfferDispatchesToBind
 
 TEST(SkeletonEventAllocateTest, CallingAllocateBeforePrepareOfferReturnsError)
 {
-    RecordProperty("Verifies", "SCR-21840368");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassAllocate");
     RecordProperty("Description", "Checks that allocate before offer service returns an error.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
 
     // Expecting that a SkeletonEvent binding is created
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // and that Allocate() is never called on the event binding
@@ -181,13 +186,13 @@ TEST(SkeletonEventAllocateTest, CallingAllocateAfterStopOfferReturnsError)
 {
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
 
     // Given that a SkeletonEvent binding is created
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // Expecting that Allocate() is never called on the event binding
@@ -210,21 +215,22 @@ TEST(SkeletonEventAllocateDeathTest, DestroyingSkeletonEventWhileHoldingSampleAl
 {
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
 
     // Expecting that a SkeletonEvent binding is created
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // and that PrepareOffer() is called once on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer());
+    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer(_));
 
     // and that Allocate() is called once on the event binding, returning a ptr backed by a real tracker guard
     EXPECT_CALL(skeleton_event_binding_mock, Allocate(_)).WillOnce([](SampleAllocateeGuard guard) {
-        return MakeSampleAllocateePtr(std::make_unique<TestSampleType>(), std::move(guard));
+        return MakeSampleAllocateePtr(mock_binding::SampleAllocateePtr{&test_sample_buffer, [](void*) noexcept {}},
+                                      std::move(guard));
     });
 
     // Given a skeleton which has a mock skeleton-binding
@@ -245,7 +251,7 @@ TEST(SkeletonEventAllocateDeathTest, DestroyingSkeletonEventWhileHoldingSampleAl
 
 TEST(SkeletonEventAllocateTest, CallingAllocateAfterPrepareOfferWhenBindingFailsReturnsError)
 {
-    RecordProperty("Verifies", "SCR-21840368");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassAllocate");
     RecordProperty("Description",
                    "Checks that calling allocate after offer service propagates an error from the binding.");
     RecordProperty("TestType", "Requirements-based test");
@@ -253,17 +259,17 @@ TEST(SkeletonEventAllocateTest, CallingAllocateAfterPrepareOfferWhenBindingFails
 
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
 
     // Expecting that a SkeletonEvent binding is created
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // and that PrepareOffer() is called once on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer());
+    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer(_));
 
     // and that Allocate() is called once on the event binding which returns an error
     EXPECT_CALL(skeleton_event_binding_mock, Allocate(_))
@@ -285,7 +291,9 @@ TEST(SkeletonEventAllocateTest, CallingAllocateAfterPrepareOfferWhenBindingFails
 
 TEST(SkeletonEventSendZeroCopyTest, CallingSendDispatchesToBinding)
 {
-    RecordProperty("Verifies", "SCR-21470600, SCR-21840371, SCR-21840368, SCR-21553623");
+    RecordProperty("Verifies", "SCR-21470600, SCR-21553623");
+    RecordProperty("lobster-tracing",
+                   "Communication.SkeletonEventClassZeroCopySend, Communication.SkeletonEventClassAllocate");
     RecordProperty("Description", "Checks that calling zero copy Send dispatches to the binding.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -293,26 +301,26 @@ TEST(SkeletonEventSendZeroCopyTest, CallingSendDispatchesToBinding)
 
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
 
     // Expecting that a SkeletonEvent binding is created
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // and that PrepareOffer() is called once on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer());
+    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer(_));
 
     // and that Allocate() is called once on the event binding
     EXPECT_CALL(skeleton_event_binding_mock, Allocate(_))
-        .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::make_unique<TestSampleType>(), SampleAllocateeGuard{}))));
+        .WillOnce(Return(ByMove(MakeFakeSampleAllocateePtr(&test_sample_buffer))));
 
     // and that Send(SampleAllocateePtr) is called on the event binding with the expected value
-    EXPECT_CALL(skeleton_event_binding_mock, Send(An<SampleAllocateePtr<TestSampleType>>(), _))
-        .WillOnce(WithArg<0>(Invoke([](SampleAllocateePtr<TestSampleType> sample_ptr) -> Result<void> {
-            EXPECT_EQ(*sample_ptr, 42);
+    EXPECT_CALL(skeleton_event_binding_mock, Send(An<SampleAllocateePtr<void>>(), _))
+        .WillOnce(WithArg<0>(Invoke([](SampleAllocateePtr<void> sample_ptr) -> Result<void> {
+            EXPECT_EQ(*static_cast<TestSampleType*>(sample_ptr.Get()), 42);
             return {};
         })));
 
@@ -343,22 +351,21 @@ TEST(SkeletonEventSendZeroCopyTest, CallingSendAfterStopOfferReturnsError)
 {
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
 
     // Given that a SkeletonEvent binding is created
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // and that Allocate() is called once on the event binding
     ON_CALL(skeleton_event_binding_mock, Allocate(_))
-        .WillByDefault(
-            Return(ByMove(MakeSampleAllocateePtr(std::make_unique<TestSampleType>(), SampleAllocateeGuard{}))));
+        .WillByDefault(Return(ByMove(MakeFakeSampleAllocateePtr(&test_sample_buffer))));
 
     // Expecting that Send(SampleAllocateePtr) is not called on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, Send(An<SampleAllocateePtr<TestSampleType>>(), _)).Times(0);
+    EXPECT_CALL(skeleton_event_binding_mock, Send(An<SampleAllocateePtr<void>>(), _)).Times(0);
 
     // Given a skeleton which has a mock skeleton-binding which has been offered
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -382,33 +389,33 @@ TEST(SkeletonEventSendZeroCopyTest, CallingSendAfterStopOfferReturnsError)
 
 TEST(SkeletonEventSendZeroCopyTest, CallingSendWhenBindingFailsReturnsError)
 {
-    RecordProperty("Verifies", "SCR-21840371");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassZeroCopySend");
     RecordProperty("Description", "Checks that calling zero copy Send propagates an error from the binding.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
 
     // Expecting that a SkeletonEvent binding is created
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // and that PrepareOffer() is called once on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer());
+    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer(_));
 
     // and that Allocate() is called once on the event binding
     EXPECT_CALL(skeleton_event_binding_mock, Allocate(_))
-        .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::make_unique<TestSampleType>(), SampleAllocateeGuard{}))));
+        .WillOnce(Return(ByMove(MakeFakeSampleAllocateePtr(&test_sample_buffer))));
 
     // and that Send(SampleAllocateePtr) is called on the event binding with the expected value
-    EXPECT_CALL(skeleton_event_binding_mock, Send(An<SampleAllocateePtr<TestSampleType>>(), _))
-        .WillOnce(WithArg<0>(Invoke([](SampleAllocateePtr<TestSampleType> sample_ptr) -> Result<void> {
-            EXPECT_EQ(*sample_ptr, 42);
+    EXPECT_CALL(skeleton_event_binding_mock, Send(An<SampleAllocateePtr<void>>(), _))
+        .WillOnce(WithArg<0>(Invoke([](SampleAllocateePtr<void> sample_ptr) -> Result<void> {
+            EXPECT_EQ(*static_cast<TestSampleType*>(sample_ptr.Get()), 42);
             return MakeUnexpected(ComErrc::kInvalidConfiguration);
         })));
 
@@ -438,7 +445,8 @@ TEST(SkeletonEventSendZeroCopyTest, CallingSendWhenBindingFailsReturnsError)
 
 TEST(SkeletonEventTest, CallingSendAfterPrepareOfferDispatchesToBinding)
 {
-    RecordProperty("Verifies", "SCR-21553375, SCR-21840370");
+    RecordProperty("Verifies", "SCR-21553375");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassSend");
     RecordProperty("Description", "Checks that calling Send after offer service dispatches to the binding.");
     RecordProperty("Description", "Checks whether allocated data is sent correctly");
     RecordProperty("TestType", "Requirements-based test");
@@ -449,20 +457,28 @@ TEST(SkeletonEventTest, CallingSendAfterPrepareOfferDispatchesToBinding)
 
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
 
     // Expecting that a SkeletonEvent binding is created
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // and that PrepareOffer() is called once on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer());
+    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer(_));
 
-    // and that Send() is called once on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, Send(test_value, _, _)).WillOnce(Return(Result<void>{}));
+    // and that Allocate() is called once on the event binding
+    EXPECT_CALL(skeleton_event_binding_mock, Allocate(_))
+        .WillOnce(Return(ByMove(MakeFakeSampleAllocateePtr(&test_sample_buffer))));
+
+    // and that Send(SampleAllocateePtr) is called once on the event binding with the copied value
+    EXPECT_CALL(skeleton_event_binding_mock, Send(An<SampleAllocateePtr<void>>(), _))
+        .WillOnce(WithArg<0>(Invoke([&test_value](SampleAllocateePtr<void> sample_ptr) -> Result<void> {
+            EXPECT_EQ(*static_cast<TestSampleType*>(sample_ptr.Get()), test_value);
+            return {};
+        })));
 
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -479,7 +495,7 @@ TEST(SkeletonEventTest, CallingSendAfterPrepareOfferDispatchesToBinding)
 
 TEST(SkeletonEventSendWithCopyTest, CallingSendBeforePrepareOfferReturnsError)
 {
-    RecordProperty("Verifies", "SCR-21840370");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassSend");
     RecordProperty("Description", "Checks that calling Send before offer service returns an error.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -488,20 +504,23 @@ TEST(SkeletonEventSendWithCopyTest, CallingSendBeforePrepareOfferReturnsError)
 
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
 
     // Expecting that a SkeletonEvent binding is created
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // and that PrepareOffer() is never called on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer()).Times(0);
+    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer(_)).Times(0);
+
+    // and that Allocate() is never called on the event binding
+    EXPECT_CALL(skeleton_event_binding_mock, Allocate(_)).Times(0);
 
     // and that Send() is never called on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, Send(test_value, _, _)).Times(0);
+    EXPECT_CALL(skeleton_event_binding_mock, Send(An<SampleAllocateePtr<void>>(), _)).Times(0);
 
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -520,17 +539,20 @@ TEST(SkeletonEventSendWithCopyTest, CallingSendAfterStopOfferReturnsError)
 
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
 
     // Given that a SkeletonEvent binding is created
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
+    // Expecting that Allocate() is never called on the event binding
+    EXPECT_CALL(skeleton_event_binding_mock, Allocate(_)).Times(0);
+
     // Expecting that Send() is never called on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, Send(test_value, _, _)).Times(0);
+    EXPECT_CALL(skeleton_event_binding_mock, Send(An<SampleAllocateePtr<void>>(), _)).Times(0);
 
     // Given a skeleton which has a mock skeleton-binding which has been offered and stop offered
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -547,7 +569,7 @@ TEST(SkeletonEventSendWithCopyTest, CallingSendAfterStopOfferReturnsError)
 
 TEST(SkeletonEventSendWithCopyTest, CallingSendAfterPrepareOfferWhenBindingFailsReturnsError)
 {
-    RecordProperty("Verifies", "SCR-21840370");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassSend");
     RecordProperty("Description", "Checks that calling Send after offer service propagates an error from the binding.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -556,20 +578,24 @@ TEST(SkeletonEventSendWithCopyTest, CallingSendAfterPrepareOfferWhenBindingFails
 
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
 
     // Expecting that a SkeletonEvent binding is created
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // and that PrepareOffer() is called once on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer());
+    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer(_));
+
+    // and that Allocate() is called once on the event binding
+    EXPECT_CALL(skeleton_event_binding_mock, Allocate(_))
+        .WillOnce(Return(ByMove(MakeFakeSampleAllocateePtr(&test_sample_buffer))));
 
     // and that Send() is called once on the event binding which returns an error
-    EXPECT_CALL(skeleton_event_binding_mock, Send(test_value, _, _))
+    EXPECT_CALL(skeleton_event_binding_mock, Send(An<SampleAllocateePtr<void>>(), _))
         .WillOnce(Return(MakeUnexpected(ComErrc::kInvalidConfiguration)));
 
     // Given a skeleton which has a mock skeleton-binding
@@ -592,10 +618,10 @@ TEST(SkeletonEventTest, SkeletonEventsRegisterThemselvesWithSkeleton)
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
 
     // Expecting that the SkeletonEventBindingFactory returns a valid binding
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
+        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent>())));
 
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -622,10 +648,10 @@ TEST(SkeletonEventTest, MovingConstructingSkeletonUpdatesEventMapReference)
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
 
     // Expecting that the SkeletonEventBindingFactory returns a valid binding
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
+        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent>())));
 
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -662,12 +688,13 @@ TEST(SkeletonEventTest, MovingAssigningSkeletonUpdatesEventMapReference)
     InstanceIdentifier identifier2{make_InstanceIdentifier(instance_deployment, kTypeDeployment)};
 
     // Expecting that the SkeletonEventBindingFactory returns a valid binding for both Skeletons
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
-    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_, Create(identifier2, _, kEventName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
+        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent>())));
+    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
+                Create(identifier2, _, kEventName, kTestSampleTypeSizeInfo))
+        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent>())));
 
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -696,20 +723,20 @@ TEST(SkeletonEventGetLatestSampleTest, CallingGetLatestSampleDispatchesToBinding
 {
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
 
     // Expecting that a SkeletonEvent binding is created
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
-    ON_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, kEventName))
+    ON_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
+            Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
         .WillByDefault(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // and that GetLatestSample() is called once on the event binding which returns a valid sample
-    const TestSampleType expected_sample_value{42U};
+    TestSampleType expected_sample_value{42U};
     EXPECT_CALL(skeleton_event_binding_mock, GetLatestSample(QualityType::kASIL_QM))
-        .WillOnce(Return(ByMove(SamplePtr<TestSampleType>{
-            mock_binding::SamplePtr<TestSampleType>{std::make_unique<TestSampleType>(expected_sample_value)},
-            SampleReferenceGuard{}})));
+        .WillOnce(Return(ByMove(SamplePtr<void>{
+            mock_binding::SamplePtr<void>{&expected_sample_value, [](void*) noexcept {}}, SampleReferenceGuard{}})));
 
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -727,12 +754,13 @@ TEST(SkeletonEventGetLatestSampleTest, GetLatestSamplePropagatesErrorFromBinding
 {
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
 
     // Expecting that a SkeletonEvent binding is created
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
-    ON_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, kEventName))
+    ON_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
+            Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
         .WillByDefault(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // and that GetLatestSample() is called once on the event binding which returns an error

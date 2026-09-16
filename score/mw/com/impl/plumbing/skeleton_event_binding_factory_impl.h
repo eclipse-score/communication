@@ -13,16 +13,11 @@
 #ifndef SCORE_MW_COM_IMPL_PLUMBING_SKELETON_EVENT_BINDING_FACTORY_IMPL_H
 #define SCORE_MW_COM_IMPL_PLUMBING_SKELETON_EVENT_BINDING_FACTORY_IMPL_H
 
-#include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/plumbing/i_skeleton_event_binding_factory.h"
-#include "score/mw/com/impl/plumbing/skeleton_service_element_binding_factory_impl.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
-#include <score/assert.hpp>
-
 #include <memory>
-#include <optional>
 #include <string_view>
 
 namespace score::mw::com::impl
@@ -30,35 +25,14 @@ namespace score::mw::com::impl
 
 /// \brief Factory class that dispatches calls to the appropriate binding based on binding information in the
 /// deployment configuration.
-template <typename SampleType>
-class SkeletonEventBindingFactoryImpl : public ISkeletonEventBindingFactory<SampleType>
+class SkeletonEventBindingFactoryImpl : public ISkeletonEventBindingFactory
 {
   public:
-    std::unique_ptr<SkeletonEventBinding<SampleType>> Create(const InstanceIdentifier& identifier,
-                                                             SkeletonBinding& parent_binding,
-                                                             const std::string_view event_name) noexcept override;
+    std::unique_ptr<SkeletonEventBinding> Create(const InstanceIdentifier& identifier,
+                                                 SkeletonBinding& parent_binding,
+                                                 const std::string_view event_name,
+                                                 memory::DataTypeSizeInfo sample_type_size_info) noexcept override;
 };
-
-template <typename SampleType>
-// Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
-// not be called implicitly.". std::visit Throws std::bad_variant_access if
-// as-variant(vars_i).valueless_by_exception() is true for any variant vars_i in vars. The variant may only become
-// valueless if an exception is thrown during different stages. Since we don't throw exceptions, it's not possible
-// that the variant can return true from valueless_by_exception and therefore not possible that std::visit throws
-// an exception.
-// This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto SkeletonEventBindingFactoryImpl<SampleType>::Create(const InstanceIdentifier& identifier,
-                                                         SkeletonBinding& parent_binding,
-                                                         const std::string_view event_name) noexcept
-    -> std::unique_ptr<SkeletonEventBinding<SampleType>>
-{
-    const std::optional<FieldTagsStore> empty_field_tags_store{};
-    return CreateSkeletonEventOrField<SkeletonEventBinding<SampleType>,
-                                      lola::SkeletonEvent<SampleType>,
-                                      ServiceElementType::EVENT>(
-        identifier, parent_binding, event_name, empty_field_tags_store);
-}
 
 }  // namespace score::mw::com::impl
 

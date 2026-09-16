@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/bindings/lola/slot_decrementer.h"
 
 #include <optional>
+#include <type_traits>
 #include <utility>
 
 namespace score::mw::com::impl::lola
@@ -70,6 +71,31 @@ class SamplePtr final
     /// \brief SamplePtr is moveable.
     SamplePtr& operator=(SamplePtr&& other) noexcept = default;
     SamplePtr(SamplePtr&& other) noexcept = default;
+
+    /// \brief Interim rebind ctor converting a type-erased SamplePtr<void> into a concrete SamplePtr<SampleType>.
+    ///
+    /// \details This is needed because, as part of a stepwise refactoring, the skeleton-side binding API
+    /// (lola::SkeletonEvent::GetLatestSample()) already produces type-erased SamplePtr<void> instances, while
+    /// SamplePtr itself still is (and, for now, needs to remain) a class template, since it is also used unchanged
+    /// by the (not yet refactored) proxy-side.
+    ///
+    /// \attention This is an INTERIM solution only! Once lola::SamplePtr (and mock_binding::SamplePtr) get converted
+    /// into non-template, fully type-erased classes (mirroring what was already done for lola::SampleAllocateePtr),
+    /// this constructor - and the whole rebind mechanism built around it - becomes obsolete and shall be removed.
+    ///
+    /// \tparam OtherSampleType source SampleType; only enabled for OtherSampleType == void and SampleType != void, as
+    ///                         the rebind direction is always from type-erased to concrete.
+    /// \param other type-erased SamplePtr<void> to rebind into a SamplePtr<SampleType>. Left in an invalid
+    ///              (default-constructed-like) state afterwards.
+    template <typename OtherSampleType,
+              typename = std::enable_if_t<std::is_void<OtherSampleType>::value && !std::is_void<SampleType>::value>>
+    explicit SamplePtr(SamplePtr<OtherSampleType>&& other) noexcept
+        : managed_object_{static_cast<pointer>(other.managed_object_)},
+          slot_decrementer_{std::move(other.slot_decrementer_)},
+          timestamp_{other.timestamp_}
+    {
+        other.managed_object_ = nullptr;
+    }
 
     /// \brief returns managed object.
     /// \todo: Maybe remove later, if not used anymore by user facing wrappers.
@@ -132,6 +158,13 @@ class SamplePtr final
         : managed_object_{managed_object}, slot_decrementer_{std::move(slog_decrementer)}
     {
     }
+
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // Design decision: needed so that the interim rebind ctor above can access the private members of a
+    // differently-instantiated SamplePtr<OtherSampleType>. See the rebind ctor's doxygen comment for context.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    template <typename OtherSampleType>
+    friend class SamplePtr;
 
     pointer managed_object_;
     std::optional<SlotDecrementer> slot_decrementer_;
