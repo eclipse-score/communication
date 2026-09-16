@@ -71,7 +71,7 @@ ProxyMockedMemoryFixture::ProxyMockedMemoryFixture() noexcept
 
     ON_CALL(*(fake_data_->control_memory), getUsableBaseAddress())
         .WillByDefault(Return(static_cast<void*>(fake_data_->data_control)));
-    ON_CALL(*(fake_data_->data_memory), getUsableBaseAddress())
+    ON_CALL(*(fake_data_->data_memory_resource), getUsableBaseAddress())
         .WillByDefault(Return(static_cast<void*>(fake_data_->data_storage)));
 
     ON_CALL(binding_runtime_, GetRollbackSynchronization()).WillByDefault(ReturnRef(rollback_synchronization_));
@@ -89,7 +89,7 @@ void ProxyMockedMemoryFixture::ExpectDataSegmentOpened()
 {
     ON_CALL(shared_memory_factory_mock_guard_.mock_, Open(StartsWith(kDataChannelPrefix), false, _))
         .WillByDefault(InvokeWithoutArgs([this]() -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
-            return fake_data_->data_memory;
+            return fake_data_->data_memory_resource;
         }));
 }
 
@@ -144,7 +144,7 @@ void ProxyMockedMemoryFixture::InitialiseProxyWithConstructor(const InstanceIden
     Proxy::EventNameToElementFqIdConverter event_name_to_element_fq_id_converter{lola_service_deployment_,
                                                                                  lola_service_instance_id_.GetId()};
     proxy_ = std::make_unique<Proxy>(fake_data_->control_memory,
-                                     fake_data_->data_memory,
+                                     fake_data_->data_memory_resource,
                                      service_quality_type_,
                                      std::move(event_name_to_element_fq_id_converter),
                                      make_HandleType(instance_identifier),
@@ -170,8 +170,6 @@ void ProxyMockedMemoryFixture::InitialiseDummySkeletonEvent(const ElementFqId el
         fake_data_->AddEvent<SampleType>(element_fq_id, skeleton_event_properties);
     SCORE_LANGUAGE_FUTURECPP_ASSERT(event_control_ != nullptr);
     SCORE_LANGUAGE_FUTURECPP_ASSERT(event_data_storage_ != nullptr);
-    event_slots_raw_array_ = event_data_storage_->data();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT(event_slots_raw_array_ != nullptr);
     consumer_event_data_control_local_.emplace(event_control_->data_control);
     provider_event_data_control_local_.emplace(event_control_->data_control);
 }
@@ -235,7 +233,8 @@ SlotIndexType LolaProxyEventResources::PutData(const std::uint32_t value,
     auto slot_result = provider_event_data_control_local_->AllocateNextSlot();
     EXPECT_TRUE(slot_result.has_value());
     auto slot_index = slot_result.value();
-    event_data_storage_->at(slot_index) = value;
+    auto* storage_slot = event_data_storage_->GetTypeErasedDataSlot(slot_index, sizeof(value));
+    memcpy(storage_slot, &value, sizeof(value));
     provider_event_data_control_local_->EventReady(slot_index, timestamp);
     return slot_index;
 }

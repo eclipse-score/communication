@@ -63,7 +63,7 @@ struct FakeServiceData
     ServiceDataControl* data_control{nullptr};
     ServiceDataStorage* data_storage{nullptr};
     std::shared_ptr<memory::shared::ManagedMemoryResource> control_memory{nullptr};
-    std::shared_ptr<memory::shared::ManagedMemoryResource> data_memory{nullptr};
+    std::shared_ptr<memory::shared::ManagedMemoryResource> data_memory_resource{nullptr};
     const std::string control_path;
     const std::string data_path;
     score::filesystem::Filesystem filesystem;
@@ -78,13 +78,12 @@ struct FakeServiceData
     /// \param max_subscribers maximum number of subscribers
     /// \return A tuple that points to the newly initialized event-specific data structures.
     template <typename SampleType>
-    std::tuple<EventControl*, EventDataStorage<SampleType>*> AddEvent(
-        ElementFqId id,
-        SkeletonEventProperties event_properties) noexcept;
+    std::tuple<EventControl*, EventDataStorage*> AddEvent(ElementFqId id,
+                                                          SkeletonEventProperties event_properties) noexcept;
 };
 
 template <typename SampleType>
-inline std::tuple<EventControl*, EventDataStorage<SampleType>*> FakeServiceData::AddEvent(
+inline std::tuple<EventControl*, EventDataStorage*> FakeServiceData::AddEvent(
     const ElementFqId id,
     const SkeletonEventProperties event_properties) noexcept
 {
@@ -100,19 +99,16 @@ inline std::tuple<EventControl*, EventDataStorage<SampleType>*> FakeServiceData:
                                                                     *control_memory));
     auto& event_control = std::get<EventControl>(*inserted_control);
 
-    EventDataStorage<SampleType>* event_data_slots =
-        data_memory->construct<EventDataStorage<SampleType>>(total_number_of_slots, *data_memory);
-    const memory::shared::OffsetPtr<void> rel_event_data_buffer{static_cast<void*>(event_data_slots)};
-    data_storage->events_.emplace(id, rel_event_data_buffer);
+    const memory::DataTypeSizeInfo data_type_size_info{sizeof(SampleType), alignof(SampleType)};
+    auto* event_data_storage = data_memory_resource->construct<EventDataStorage>(
+        *data_memory_resource, static_cast<SlotIndexType>(total_number_of_slots), data_type_size_info);
+    const memory::shared::OffsetPtr<EventDataStorage> event_data_storage_offset_ptr{event_data_storage};
+    data_storage->events_.emplace(id, event_data_storage_offset_ptr);
 
-    const score::memory::DataTypeSizeInfo sample_meta_info{sizeof(SampleType), alignof(SampleType)};
-    auto* event_data_raw_array = event_data_slots->data();
-    const auto inserted_meta_info =
-        data_storage->events_metainfo_.emplace(std::piecewise_construct,
-                                               std::forward_as_tuple(id),
-                                               std::forward_as_tuple(sample_meta_info, event_data_raw_array));
+    const auto inserted_meta_info = data_storage->events_metainfo_.emplace(
+        std::piecewise_construct, std::forward_as_tuple(id), std::forward_as_tuple(data_type_size_info));
     SCORE_LANGUAGE_FUTURECPP_ASSERT(inserted_meta_info.second);
-    return std::make_tuple(&event_control, event_data_slots);
+    return std::make_tuple(&event_control, event_data_storage);
 }
 
 }  // namespace score::mw::com::impl::lola
