@@ -138,7 +138,7 @@ sends strictly cyclically. Instead, it draws a random delay between `kMinSendDel
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 33-113
+   :lines: 33-116
    :caption: provider/provider.cpp
 
 
@@ -155,7 +155,7 @@ subscribes, the consumer registers an `EventReceiveHandler` via `SetReceiveHandl
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 130-144
+   :lines: 129-143
    :caption: consumer/consumer.cpp
 
 
@@ -165,7 +165,7 @@ sample has actually been sent by the provider.
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 160-160
+   :lines: 159-159
    :caption: consumer/consumer.cpp
 
 
@@ -176,13 +176,13 @@ signal requests the shut down. The signal handler sets a flag and notifies the c
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 35-43
+   :lines: 37-45
    :caption: consumer/consumer.cpp
 
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 181-181
+   :lines: 180-180
    :caption: consumer/consumer.cpp
 
 
@@ -194,7 +194,7 @@ handler and the receive handler is the `std::optional<HelloWorldProxy> proxy`, c
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 122-125
+   :lines: 121-124
    :caption: consumer/consumer.cpp
 
 

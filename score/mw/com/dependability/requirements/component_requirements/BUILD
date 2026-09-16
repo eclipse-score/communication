@@ -23,6 +23,9 @@ load(
 component_requirements(
     name = "component_requirements_ipc",
     srcs = [
+        "GenericProxyAndServiceElements/component_requirements_ipc_generic_proxy.trlc",
+        "GenericProxyAndServiceElements/component_requirements_ipc_generic_proxy_event.trlc",
+        "GenericProxyAndServiceElements/component_requirements_ipc_generic_proxy_field.trlc",
         "GenericSkeletonAndServiceElements/component_requirements_ipc_generic_skeleton.trlc",
         "GenericSkeletonAndServiceElements/component_requirements_ipc_generic_skeleton_event.trlc",
         "GenericSkeletonAndServiceElements/component_requirements_ipc_generic_skeleton_field.trlc",
@@ -33,7 +36,6 @@ component_requirements(
         "binding_independent/proxy_and_service_elements/component_requirements_ipc_proxy_event.trlc",
         "binding_independent/proxy_and_service_elements/component_requirements_ipc_proxy_field.trlc",
         "component_requirements_ipc.trlc",
-        "component_requirements_ipc_generic_proxy.trlc",
         "component_requirements_ipc_methods.trlc",
         "component_requirements_ipc_partial_restart.trlc",
         "component_requirements_ipc_tracing.trlc",

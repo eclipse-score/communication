@@ -182,8 +182,10 @@ TYPED_TEST(LolaProxyEventCommonFixture, CallingSetReceiveHandlerRegistersEventNo
 
 TYPED_TEST(LolaProxyEventCommonFixture, SubscriptionFailsWhenProviderRejectsSubscription)
 {
-    this->RecordProperty("Verifies", "SCR-21269964, SCR-14033248");
-    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe");
+    this->RecordProperty("Verifies", "SCR-21269964");
+    this->RecordProperty("lobster-tracing",
+                         "Communication.ProxyFieldSubscribe, Communication.ProxyEventSubscribe, "
+                         "Communication.GenericProxyEventSubscribe");
     this->RecordProperty("Description",
                          "Checks that a subscription will fail when the provider rejects the subscription due to "
                          "overflowed max sample count.");
@@ -206,8 +208,10 @@ TYPED_TEST(LolaProxyEventCommonFixture, SubscriptionFailsWhenProviderRejectsSubs
 
 TYPED_TEST(LolaProxyEventCommonFixture, UnsubscribeImmediatelyAfterSubscribing)
 {
-    this->RecordProperty("Verifies", "SCR-14033377, SCR-21286218");
-    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldUnsubscribe, Communication.ProxyEventUnsubscribe");
+    this->RecordProperty("Verifies", "SCR-21286218");
+    this->RecordProperty("lobster-tracing",
+                         "Communication.ProxyFieldUnsubscribe, Communication.ProxyEventUnsubscribe, "
+                         "Communication.GenericProxyEventUnsubscribe");
     this->RecordProperty("Description",
                          "Unsubscribe will be succesfully processed if a user unsubscribes from an event immediately "
                          "after subscribing.");
@@ -235,7 +239,8 @@ TYPED_TEST(LolaProxyEventCommonFixture, UnsubscribingWillUnregisterEventHandler)
     // SCR-20236391 and SCR-20237033 are split with CallsUnsubscribeOnDestruction in traits_test.cpp.
     // this test covers Unsubscribe triggering UnregisterEventNotification, the other covers proxy
     // destruction triggering Unsubscribe on the events and fields.
-    this->RecordProperty("Verifies", "SCR-21293524, SCR-20236391, SCR-20237033");
+    this->RecordProperty("Verifies", "SCR-21293524, SCR-20236391");
+    this->RecordProperty("lobster-tracing", "Communication.GenericProxyEventDestructor");
     this->RecordProperty(
         "Description",
         "Checks that calling Unsubscribe while currently subscribed will unregister a registered event "

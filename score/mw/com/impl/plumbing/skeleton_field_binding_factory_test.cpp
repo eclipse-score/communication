@@ -16,7 +16,6 @@
 // SkeletonFieldBindingFactory and NOT SkeletonEventBindingFactory are added here.
 
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
@@ -29,13 +28,12 @@ namespace score::mw::com::impl
 namespace lola
 {
 
-template <typename SampleType>
 class SkeletonEventAttorney
 {
   public:
-    static const SkeletonEventProperties& GetSkeletonEventProperties(const SkeletonEvent<SampleType>& skeleton_event)
+    static const SkeletonEventProperties& GetSkeletonEventProperties(const SkeletonEvent& skeleton_event)
     {
-        return skeleton_event.skeleton_event_common_.GetEventProperties();
+        return skeleton_event.event_properties_;
     }
 };
 
@@ -53,6 +51,7 @@ constexpr std::size_t kExpectedAdditionalSetterSlots{1U};
 
 constexpr auto kDummyFieldName{"Field1"};
 constexpr std::uint16_t kDummyFieldId{6U};
+constexpr memory::DataTypeSizeInfo kTestSampleTypeSizeInfo{sizeof(TestSampleType), alignof(TestSampleType)};
 
 constexpr uint16_t kInstanceId = 0x31U;
 const LolaServiceId kServiceId{1U};
@@ -122,14 +121,14 @@ TEST_P(SkeletonFieldBindingFactoryParamaterisedFixture, CreatingWithNotifierCrea
     InitialiseSkeleton(instance_identifier);
 
     // When creating a SkeletonFieldBinding with specific field tags
-    auto skeleton_field_binding = SkeletonFieldBindingFactory<TestSampleType>::CreateEventBinding(
-        kConfigStoreAsilQM.GetInstanceIdentifier(), *skeleton_, kDummyFieldName, field_tags);
+    auto skeleton_field_binding = SkeletonFieldBindingFactory::CreateEventBinding(
+        kConfigStoreAsilQM.GetInstanceIdentifier(), *skeleton_, kDummyFieldName, kTestSampleTypeSizeInfo, field_tags);
 
     // Then the created lola binding has the expected number of slots
-    auto skeleton_field_lola_binding = dynamic_cast<lola::SkeletonEvent<TestSampleType>*>(skeleton_field_binding.get());
+    auto skeleton_field_lola_binding = dynamic_cast<lola::SkeletonEvent*>(skeleton_field_binding.get());
     ASSERT_NE(skeleton_field_lola_binding, nullptr);
     const auto skeleton_event_properties =
-        lola::SkeletonEventAttorney<TestSampleType>::GetSkeletonEventProperties(*skeleton_field_lola_binding);
+        lola::SkeletonEventAttorney::GetSkeletonEventProperties(*skeleton_field_lola_binding);
     EXPECT_EQ(skeleton_event_properties.GetTotalNumberOfSlots(), expected_number_of_slots);
     EXPECT_EQ(skeleton_event_properties.GetNumberOfFieldGetterSlots(), expected_number_of_getter_slots);
 }
@@ -146,12 +145,13 @@ TEST_F(SkeletonFieldBindingFactoryFixture, CreatingWithoutNotifierOrGetterTermin
 
     // When creating a SkeletonFieldBinding without notifier or getter
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = SkeletonFieldBindingFactory<TestSampleType>::CreateEventBinding(
-                     kConfigStoreAsilQM.GetInstanceIdentifier(),
-                     *skeleton_,
-                     kDummyFieldName,
-                     FieldTagsStore::Create<WithSetter>()),
-                 ".*");
+    EXPECT_DEATH(
+        score::cpp::ignore = SkeletonFieldBindingFactory::CreateEventBinding(kConfigStoreAsilQM.GetInstanceIdentifier(),
+                                                                             *skeleton_,
+                                                                             kDummyFieldName,
+                                                                             kTestSampleTypeSizeInfo,
+                                                                             FieldTagsStore::Create<WithSetter>()),
+        ".*");
 }
 
 }  // namespace

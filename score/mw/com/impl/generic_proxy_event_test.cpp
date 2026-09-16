@@ -53,7 +53,7 @@ const auto kEventName{"DummyEvent1"};
 
 TEST(GenericProxyEventTest, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-14032718");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyEventCopySemantics");
     RecordProperty("Description", "Checks copy semantics for GenericProxyEvent");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -138,7 +138,7 @@ TEST(GenericProxyEventDeathTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
 
 TEST(GenericProxyEventGetSampleSizeTest, GetSampleSizeDispatchesToBinding)
 {
-    RecordProperty("Verifies", "SCR-14035184");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyEventGetSampleSize");
     RecordProperty("Description", "Checks that GetSampleSize will return the sample size from the binding");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -166,7 +166,7 @@ TEST(GenericProxyEventGetDataTypeSizeInfoTest, GetDataTypeSizeInfoDispatchesToBi
 {
     RecordProperty("lobster-tracing", "GenericProxyEventGetDataTypeSizeInfo");
     RecordProperty("Description",
-                   "Checks that GetDataTypeSizeInfo will return the data type size info from the binding");
+                   "Checks that GetEventDataTypeSizeInfo will return the data type size info from the binding");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -179,10 +179,10 @@ TEST(GenericProxyEventGetDataTypeSizeInfoTest, GetDataTypeSizeInfoDispatchesToBi
     GenericProxyEvent proxy_event{kEventName,
                                   std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
 
-    // Expect that GetDataTypeSizeInfo is called once on the binding
+    // Expect that GetEventDataTypeSizeInfo is called once on the binding
     EXPECT_CALL(mock_proxy_event, GetDataTypeSizeInfo()).WillOnce(Return(expected_data_type_size_info));
 
-    // When GetDataTypeSizeInfo is called on the proxy_event
+    // When GetEventDataTypeSizeInfo is called on the proxy_event
     const auto data_type_size_info = proxy_event.GetDataTypeSizeInfo();
 
     // Then the data type size info will be the same value returned by the binding
@@ -191,7 +191,7 @@ TEST(GenericProxyEventGetDataTypeSizeInfoTest, GetDataTypeSizeInfoDispatchesToBi
 
 TEST(GenericProxyEventHasSerializedFormatTest, HasSerializedFormatDispatchesToBinding)
 {
-    RecordProperty("Verifies", "SCR-14035199");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyEventHasSerializedFormat");
     RecordProperty("Description", "Checks that HasSerializedFormat will return the sample size from the binding");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

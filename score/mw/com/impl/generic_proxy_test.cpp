@@ -111,7 +111,7 @@ ServiceTypeDeployment CreateServiceTypeDeploymentWithLolaBinding(const std::vect
 
 TEST(GenericProxyTest, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-17292012");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyCopySemantics");
     RecordProperty("Description", "Checks copy semantics for GenericProxies");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -123,7 +123,7 @@ TEST(GenericProxyTest, NotCopyable)
 
 TEST(GenericProxyTest, IsMoveable)
 {
-    RecordProperty("Verifies", "SCR-17292032");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyMoveSemantics");
     RecordProperty("Description", "Checks move semantics for GenericProxies");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -516,7 +516,7 @@ TEST_F(GenericProxyDeathTest, FillingEventMapWithDuplicateEventNamesWillTerminat
 
 TEST(GenericProxyHandleTest, GenericProxyUsesProxyBaseGetHandle)
 {
-    RecordProperty("Verifies", "SCR-14030261");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyGetHandle");
     RecordProperty("Description", "Checks that GenericProxy uses GetHandle in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -527,7 +527,7 @@ TEST(GenericProxyHandleTest, GenericProxyUsesProxyBaseGetHandle)
 
 TEST(GenericProxyHandleTest, GenericProxyContainsPublicHandleTypeAlias)
 {
-    RecordProperty("Verifies", "SCR-14030385");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyHandleTypeClass");
     RecordProperty("Description", "A GenericProxy contains a public alias to our implementation of HandleType.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -538,7 +538,7 @@ TEST(GenericProxyHandleTest, GenericProxyContainsPublicHandleTypeAlias)
 
 TEST(GenericProxyFindServiceTest, GenericProxyUsesProxyBaseFindServiceWithInstanceSpecifier)
 {
-    RecordProperty("Verifies", "SCR-14005977");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyFindServiceWithInstanceSpecifier");
     RecordProperty("Description", "Checks that GenericProxy uses FindService in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -555,7 +555,7 @@ TEST(GenericProxyFindServiceTest, GenericProxyUsesProxyBaseFindServiceWithInstan
 
 TEST(GenericProxyFindServiceTest, GenericProxyUsesProxyBaseFindServiceWithInstanceIdentifier)
 {
-    RecordProperty("Verifies", "SCR-14005991");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyFindServiceWithInstanceIdentifier");
     RecordProperty("Description", "Checks that GenericProxy uses FindService in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -572,7 +572,7 @@ TEST(GenericProxyFindServiceTest, GenericProxyUsesProxyBaseFindServiceWithInstan
 
 TEST(GenericProxyStartFindServiceTest, GeneratedProxyUsesProxyBaseStartFindServiceWithInstanceSpecifier)
 {
-    RecordProperty("Verifies", "SCR-21788695");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyStartFindServiceWithInstanceSpecifier");
     RecordProperty("Description",
                    "Checks that a generic proxy uses StartFindService with InstanceSpecifier in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
@@ -591,7 +591,7 @@ TEST(GenericProxyStartFindServiceTest, GeneratedProxyUsesProxyBaseStartFindServi
 
 TEST(GenericProxyStartFindServiceTest, GeneratedProxyUsesProxyBaseStartFindServiceWithInstanceIdentifier)
 {
-    RecordProperty("Verifies", "SCR-21790264");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyStartFindServiceWithInstanceIdentifier");
     RecordProperty("Description",
                    "Checks that a generic proxy uses StartFindService with InstanceIdentifier in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
@@ -610,7 +610,7 @@ TEST(GenericProxyStartFindServiceTest, GeneratedProxyUsesProxyBaseStartFindServi
 
 TEST(GenericProxyStopFindServiceTest, GeneratedProxyUsesProxyBaseStopFindService)
 {
-    RecordProperty("Verifies", "SCR-21790756");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyStopFindService");
     RecordProperty("Description", "Checks that a generic proxy uses StopFindService in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -624,7 +624,7 @@ TEST(GenericProxyStopFindServiceTest, GeneratedProxyUsesProxyBaseStopFindService
 
 TEST(GenericProxyEventMapTest, GenericProxyContainsEventMapClass)
 {
-    RecordProperty("Verifies", "SCR-14031112");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyEventMapViewClass");
     RecordProperty("Description", "Checks that GenericProxy contains a public EventMap class");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -636,7 +636,7 @@ TEST(GenericProxyEventMapTest, GenericProxyContainsEventMapClass)
 
 TEST(GenericProxyEventMapTest, CheckEventMapClassInterface)
 {
-    RecordProperty("Verifies", "SCR-14031544");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyEventMapViewClassProperties");
     RecordProperty(
         "Description",
         "Checks that the EventMapView class adheres to the required interface and that EventMapView is a "

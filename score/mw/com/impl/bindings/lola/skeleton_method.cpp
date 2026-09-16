@@ -117,18 +117,11 @@ Result<void> SkeletonMethod::OnProxyMethodSubscribeFinished(
     return {};
 }
 
-void SkeletonMethod::OnProxyMethodUnsubscribe(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier)
+bool SkeletonMethod::OnProxyMethodUnsubscribe(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier)
 {
     const std::lock_guard lock{registration_guards_mutex_};
     const auto num_elements_erased = registration_guards_.erase(proxy_method_instance_identifier);
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(num_elements_erased != 0U);
-}
-
-void SkeletonMethod::OnProxyMethodUnsubscribeFinished(
-    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier)
-{
-    const std::lock_guard lock{registration_guards_mutex_};
-    std::ignore = registration_guards_.erase(proxy_method_instance_identifier);
+    return num_elements_erased != 0U;
 }
 
 void SkeletonMethod::UnregisterMethodCallHandlers()

@@ -340,7 +340,7 @@ The ``start_find_service/consumer.cpp`` example shows this:
 
 .. literalinclude:: start_find_service/consumer.cpp
    :language: cpp
-   :lines: 51-98
+   :lines: 52-99
    :caption: start_find_service/consumer.cpp — StartFindService with bounded wait before forbid_heap()
 
 The key rule is: **wait for the discovery callback to complete before calling**
@@ -379,7 +379,7 @@ The ``bidirectional_discovery/application_a.cpp`` example shows this sequence:
 
 .. literalinclude:: bidirectional_discovery/application_a.cpp
    :language: cpp
-   :lines: 59-141
+   :lines: 60-142
    :caption: bidirectional_discovery/application_a.cpp — OfferService before StartFindService, then wait
 
 In the operational phase, application A simultaneously sends on its own skeleton event and
@@ -387,7 +387,7 @@ polls the remote proxy's event in the same loop, both heap-free:
 
 .. literalinclude:: bidirectional_discovery/application_a.cpp
    :language: cpp
-   :lines: 143-187
+   :lines: 144-188
    :caption: bidirectional_discovery/application_a.cpp — operational loop: send and receive without heap
 
 .. _chapter_13_asil_guidance:

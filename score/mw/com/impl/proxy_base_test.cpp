@@ -144,8 +144,7 @@ TEST_F(ProxyBaseFixture, GetImplReturnsProxyBindingPassedToConstructor)
 
 TEST_F(ProxyBaseFixture, StoredHandleTypeEqualToSuppliedOne)
 {
-    RecordProperty("Verifies", "SCR-14030261");
-    RecordProperty("lobster-tracing", "Communication.ProxyGetHandle");
+    RecordProperty("lobster-tracing", "Communication.ProxyGetHandle, Communication.GenericProxyGetHandle");
     RecordProperty("Description", "Checks that GetHandle gets the handle from which the ProxyBase has been created.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -423,8 +422,10 @@ using ProxyBaseFindServiceInstanceIdentifierFixture = ProxyBaseFixture;
 TEST_F(ProxyBaseFindServiceInstanceIdentifierFixture,
        FindServiceWithInstanceIdentifierShouldReturnHandlesContainerIfServiceCanBeFound)
 {
-    RecordProperty("Verifies", "SCR-14005991, SCR-18804932");
-    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceIdentifier");
+    RecordProperty("Verifies", "SCR-18804932");
+    RecordProperty("lobster-tracing",
+                   "Communication.GenericProxyFindServiceWithInstanceIdentifier, "
+                   "Communication.ProxyFindServiceWithInstanceIdentifier");
     RecordProperty("Description", "Checks finding a service with instance identifier");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -452,8 +453,10 @@ TEST_F(ProxyBaseFindServiceInstanceIdentifierFixture,
 TEST_F(ProxyBaseFindServiceInstanceIdentifierFixture,
        FindServiceWithInstanceIdentifierShouldReturnErrorIfBindingReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14005991, SCR-18804932");
-    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceIdentifier");
+    RecordProperty("Verifies", "SCR-18804932");
+    RecordProperty("lobster-tracing",
+                   "Communication.ProxyFindServiceWithInstanceIdentifier, "
+                   "Communication.GenericProxyFindServiceWithInstanceIdentifier");
     RecordProperty("Description", "FindService returns a kBindingFailure error code if binding returns any error.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

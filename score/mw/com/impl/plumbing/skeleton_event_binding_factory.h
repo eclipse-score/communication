@@ -13,14 +13,12 @@
 #ifndef SCORE_MW_COM_IMPL_PLUMBING_SKELETON_EVENT_BINDING_FACTORY_H
 #define SCORE_MW_COM_IMPL_PLUMBING_SKELETON_EVENT_BINDING_FACTORY_H
 
-#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
-#include "score/mw/com/impl/configuration/service_type_deployment.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/plumbing/i_skeleton_event_binding_factory.h"
-#include "score/mw/com/impl/plumbing/skeleton_event_binding_factory_impl.h"
-#include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
+
+#include "score/memory/data_type_size_info.h"
 
 #include <score/assert.hpp>
 
@@ -34,50 +32,29 @@ namespace score::mw::com::impl
 
 /// \brief Class that dispatches to either a real SkeletonEventBindingFactoryImpl or a mocked version
 /// SkeletonEventBindingFactoryMock, if a mock is injected.
-template <typename SampleType>
 class SkeletonEventBindingFactory final
 {
   public:
     /// \brief See documentation in ISkeletonEventBindingFactory.
-    static std::unique_ptr<SkeletonEventBinding<SampleType>> Create(const InstanceIdentifier& identifier,
-                                                                    SkeletonBinding& parent_binding,
-                                                                    const std::string_view event_name) noexcept
+    static std::unique_ptr<SkeletonEventBinding> Create(const InstanceIdentifier& identifier,
+                                                        SkeletonBinding& parent_binding,
+                                                        const std::string_view event_name,
+                                                        memory::DataTypeSizeInfo sample_type_size_info) noexcept
     {
-        return instance().Create(identifier, parent_binding, event_name);
+        return instance().Create(identifier, parent_binding, event_name, sample_type_size_info);
     }
 
     /// \brief Inject a mock ISkeletonEventBindingFactory. If a mock is injected, then all calls on
     /// SkeletonEventBindingFactory will be dispatched to the mock.
-    static void InjectMockBinding(ISkeletonEventBindingFactory<SampleType>* mock) noexcept
+    static void InjectMockBinding(ISkeletonEventBindingFactory* mock) noexcept
     {
         mock_ = mock;
     }
 
   private:
-    static ISkeletonEventBindingFactory<SampleType>& instance() noexcept;
-    static ISkeletonEventBindingFactory<SampleType>* mock_;
+    static ISkeletonEventBindingFactory& instance() noexcept;
+    static ISkeletonEventBindingFactory* mock_;
 };
-
-template <typename SampleType>
-auto SkeletonEventBindingFactory<SampleType>::instance() noexcept -> ISkeletonEventBindingFactory<SampleType>&
-{
-    if (mock_ != nullptr)
-    {
-        return *mock_;
-    }
-
-    // Suppress "AUTOSAR C++14 A3-3-2", The rule states: "Static and thread-local objects shall be constant-initialized"
-    // It cannot be made const since we will need to call non-const methods from a static instance.
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    static SkeletonEventBindingFactoryImpl<SampleType> instance{};
-    return instance;
-}
-
-// Suppress "AUTOSAR_C++14_A3-1-1" rule finding. This rule states:" It shall be possible to include any header file
-// in multiple translation units without violating the One Definition Rule".
-template <typename SampleType>
-// coverity[autosar_cpp14_a3_1_1_violation] This is false-positive, "mock_" is defined once
-ISkeletonEventBindingFactory<SampleType>* SkeletonEventBindingFactory<SampleType>::mock_ = nullptr;
 
 }  // namespace score::mw::com::impl
 

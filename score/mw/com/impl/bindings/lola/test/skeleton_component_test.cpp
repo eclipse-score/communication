@@ -55,6 +55,7 @@ constexpr auto control_shm = "/dev/shm/lola-ctl-0000000000000001-00016";
 constexpr auto asil_control_shm = "/dev/shm/lola-ctl-0000000000000001-00016-b";
 #endif
 
+const memory::DataTypeSizeInfo kSampleTypeSizeInfo{sizeof(TestSampleType), alignof(TestSampleType)};
 const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
 constexpr std::size_t kNumberOfSlots{10U};
 const SkeletonEventProperties kEventProperties{kNumberOfSlots, 0U, 0U, false, 10U, true};
@@ -150,8 +151,8 @@ class SkeletonComponentTestFixture : public ::testing::Test
         ON_CALL(lola_runtime_mock_, GetLolaMessaging()).WillByDefault(ReturnRef(message_passing_service_mock_));
         ON_CALL(runtime_mock_, GetTracingRuntime()).WillByDefault(Return(&tracing_runtime_mock_));
 
-        ON_CALL(mock_event_binding_, GetMaxSize()).WillByDefault(Return(sizeof(TestSampleType)));
-        ON_CALL(mock_field_binding_, GetMaxSize()).WillByDefault(Return(sizeof(TestSampleType)));
+        ON_CALL(mock_event_binding_, GetEventDataTypeSizeInfo()).WillByDefault(Return(kSampleTypeSizeInfo));
+        ON_CALL(mock_field_binding_, GetEventDataTypeSizeInfo()).WillByDefault(Return(kSampleTypeSizeInfo));
     }
 
     void TearDown() override
@@ -240,18 +241,20 @@ class SkeletonComponentTestFixture : public ::testing::Test
     ///          allocations!
     void RegisterEventAndFieldOnPrepareOffer(Skeleton& skeleton)
     {
-        ON_CALL(mock_event_binding_, PrepareOffer()).WillByDefault(testing::Invoke([&skeleton]() -> Result<void> {
-            const ElementFqId element_fq_id{
-                test::kLolaServiceId, test::kFooEventId, test::kDefaultLolaInstanceId, ServiceElementType::EVENT};
-            skeleton.Register<TestSampleType>(element_fq_id, kEventProperties);
-            return {};
-        }));
-        ON_CALL(mock_field_binding_, PrepareOffer()).WillByDefault(testing::Invoke([&skeleton]() -> Result<void> {
-            const ElementFqId element_fq_id{
-                test::kLolaServiceId, test::kFooFieldId, test::kDefaultLolaInstanceId, ServiceElementType::FIELD};
-            skeleton.Register<TestSampleType>(element_fq_id, kEventProperties);
-            return {};
-        }));
+        ON_CALL(mock_event_binding_, PrepareOffer(_))
+            .WillByDefault(testing::InvokeWithoutArgs([&skeleton]() -> Result<void> {
+                const ElementFqId element_fq_id{
+                    test::kLolaServiceId, test::kFooEventId, test::kDefaultLolaInstanceId, ServiceElementType::EVENT};
+                skeleton.Register(element_fq_id, kEventProperties, kSampleTypeSizeInfo);
+                return {};
+            }));
+        ON_CALL(mock_field_binding_, PrepareOffer(_))
+            .WillByDefault(testing::InvokeWithoutArgs([&skeleton]() -> Result<void> {
+                const ElementFqId element_fq_id{
+                    test::kLolaServiceId, test::kFooFieldId, test::kDefaultLolaInstanceId, ServiceElementType::FIELD};
+                skeleton.Register(element_fq_id, kEventProperties, kSampleTypeSizeInfo);
+                return {};
+            }));
     }
 
     /// mocks used by test
@@ -261,8 +264,8 @@ class SkeletonComponentTestFixture : public ::testing::Test
     MessagePassingServiceMock message_passing_service_mock_{};
     impl::tracing::TracingRuntimeMock tracing_runtime_mock_{};
 
-    mock_binding::SkeletonEvent<TestSampleType> mock_event_binding_{};
-    mock_binding::SkeletonEvent<TestSampleType> mock_field_binding_{};
+    mock_binding::SkeletonEvent mock_event_binding_{};
+    mock_binding::SkeletonEvent mock_field_binding_{};
 
     std::vector<std::pair<std::string, LolaEventInstanceDeployment>> lola_event_instance_deployments_;
     std::vector<std::pair<std::string, LolaFieldInstanceDeployment>> lola_field_instance_deployments_;
@@ -450,8 +453,8 @@ TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Simulation_QM)
 
     // When offering a service and all events
     const auto val = unit->PrepareOffer(events_, fields_, {});
-    std::ignore = mock_event_binding_.PrepareOffer();
-    std::ignore = mock_field_binding_.PrepareOffer();
+    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
+    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
 
     // then expect, that it has a value!
     EXPECT_TRUE(val.has_value());
@@ -493,8 +496,8 @@ TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Simulation_AsilB)
 
     // When offering a service and all events
     const auto val = unit->PrepareOffer(events_, fields_, {});
-    std::ignore = mock_event_binding_.PrepareOffer();
-    std::ignore = mock_field_binding_.PrepareOffer();
+    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
+    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
 
     // then expect, that it has a value!
     EXPECT_TRUE(val.has_value());
@@ -544,8 +547,8 @@ TEST_F(SkeletonComponentTestFixture,
 
     // When preparing to offer a service
     const auto prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
-    std::ignore = mock_event_binding_.PrepareOffer();
-    std::ignore = mock_field_binding_.PrepareOffer();
+    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
+    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
 
     // then expect, that it has a value!
     EXPECT_TRUE(prepare_offer_result.has_value());
@@ -579,18 +582,13 @@ TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Analysis_Data_QM)
     // Expect, that the LoLa runtime returns that ShmSize calculation shall be done via (analytic) estimation
     EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kAnalysis));
 
-    // The analytic size calculation queries the maximum sample-size of each event/field binding. Since the events are
-    // registered below as uint8_t, GetMaxSize() has to report the matching size.
-    ON_CALL(mock_event_binding_, GetMaxSize()).WillByDefault(Return(sizeof(std::uint8_t)));
-    ON_CALL(mock_field_binding_, GetMaxSize()).WillByDefault(Return(sizeof(std::uint8_t)));
-
     // Expecting that the event and field are registered
     RegisterEventAndFieldOnPrepareOffer(*unit);
 
     // When offering a service and registering all events/fields into the analytically-sized shared-memory
     const auto val = unit->PrepareOffer(events_, fields_, {});
-    std::ignore = mock_event_binding_.PrepareOffer();
-    std::ignore = mock_field_binding_.PrepareOffer();
+    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
+    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
 
     // then expect, that it succeeds (i.e. the analytically calculated data-shm size was sufficient; had it been too
     // small, the construction of the event-storage in the fixed-size shared-memory would have aborted)
@@ -628,18 +626,13 @@ TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Analysis_Control_QM)
     // Expect, that the LoLa runtime returns that ShmSize calculation shall be done via (analytic) estimation
     EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kAnalysis));
 
-    // The analytic size calculation queries the maximum sample-size of each event/field binding. Since the events are
-    // registered below as uint8_t, GetMaxSize() has to report the matching size.
-    ON_CALL(mock_event_binding_, GetMaxSize()).WillByDefault(Return(sizeof(std::uint8_t)));
-    ON_CALL(mock_field_binding_, GetMaxSize()).WillByDefault(Return(sizeof(std::uint8_t)));
-
     // Expecting that the event and field are registered
     RegisterEventAndFieldOnPrepareOffer(*unit);
 
     // When offering a service and registering all events/fields into the analytically-sized shared-memory
     const auto val = unit->PrepareOffer(events_, fields_, {});
-    std::ignore = mock_event_binding_.PrepareOffer();
-    std::ignore = mock_field_binding_.PrepareOffer();
+    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
+    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
 
     // then expect, that it succeeds (i.e. the analytically calculated control-shm size was sufficient; had it been too
     // small, the construction of the event-control in the fixed-size shared-memory would have aborted)
@@ -725,8 +718,8 @@ TEST_F(SkeletonComponentTestFixture,
 
     // When preparing to offer a service and its event and field
     const auto prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
-    std::ignore = mock_event_binding_.PrepareOffer();
-    std::ignore = mock_field_binding_.PrepareOffer();
+    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
+    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
 
     // then expect, that it has a value!
     EXPECT_TRUE(prepare_offer_result.has_value());
@@ -766,8 +759,8 @@ TEST_F(SkeletonComponentTestFixture,
 
     // When preparing to offer a service and its event and field
     const auto prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
-    std::ignore = mock_event_binding_.PrepareOffer();
-    std::ignore = mock_field_binding_.PrepareOffer();
+    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
+    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
 
     // then expect, that it has a value!
     EXPECT_TRUE(prepare_offer_result.has_value());
@@ -812,8 +805,8 @@ TEST_F(SkeletonComponentTestFixture,
 
     // When preparing to offer a service and its event and field
     const auto prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
-    std::ignore = mock_event_binding_.PrepareOffer();
-    std::ignore = mock_field_binding_.PrepareOffer();
+    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
+    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
 
     // then expect, that it has a value!
     EXPECT_TRUE(prepare_offer_result.has_value());
@@ -843,8 +836,8 @@ TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Analysis_QM_Control_SizeM
 
     // When preparing to offer a service and its event and field
     auto prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
-    std::ignore = mock_event_binding_.PrepareOffer();
-    std::ignore = mock_field_binding_.PrepareOffer();
+    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
+    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
 
     // then expect, that PrepareOffer was successful
     EXPECT_TRUE(prepare_offer_result.has_value());
@@ -857,8 +850,8 @@ TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Analysis_QM_Control_SizeM
     EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kAnalysis));
     // When preparing to offer a service and its event and field a 2nd time
     prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
-    std::ignore = mock_event_binding_.PrepareOffer();
-    std::ignore = mock_field_binding_.PrepareOffer();
+    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
+    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
 
     // then expect, that PrepareOffer was successful
     EXPECT_TRUE(prepare_offer_result.has_value());
@@ -892,8 +885,8 @@ TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Analysis_QM_Data_SizeMatc
 
     // When preparing to offer a service and its event and field
     auto prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
-    std::ignore = mock_event_binding_.PrepareOffer();
-    std::ignore = mock_field_binding_.PrepareOffer();
+    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
+    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
 
     // then expect, that PrepareOffer was successful
     EXPECT_TRUE(prepare_offer_result.has_value());
@@ -906,8 +899,8 @@ TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Analysis_QM_Data_SizeMatc
     EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kAnalysis));
     // When preparing to offer a service and its event and field a 2nd time
     prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
-    std::ignore = mock_event_binding_.PrepareOffer();
-    std::ignore = mock_field_binding_.PrepareOffer();
+    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
+    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
 
     // then expect, that PrepareOffer was successful
     EXPECT_TRUE(prepare_offer_result.has_value());
