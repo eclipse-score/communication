@@ -257,26 +257,9 @@ ScoreReq.AoU NoGuaranteeOnExecutionTime {
     mitigates = "AnyFunctionBlocksLongerThanExpected"
 }
 
-/* broken_link_c/issue/7091801 */
-ScoreReq.AoU UsageOfConfigurationOversubscription {
-    description = "If event instance \"oversubscription\" is enabled, LoLa makes no warranty that proxies/consumers can't suffer from data loss! It is the responsibility of the user to adapt scheduling/event-data access in a way that no data-loss happens."
-    safety = ScoreReq.Asil.B
-    note = "However, we can give the guarantee that if only QM consumers misbehave, ASIL consumers are not affected by these actions. The latter statement enables that a QM application where the scheduling/event-data access is not ensured, will not interfere the ASIL communication. The only thing that could happen is that the QM application might access wrong data or receive no data at all, in an error case (e.g. if it holds more samples then expected)."
-    version = 1
-    mitigates = ""
-}
-
 /* broken_link_c/issue/21206172 */
 ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide {
     description = "All compiler settings having influence on the binary representation of data exchanged via {{mw::com}}/{{LoLa}} (event, field, service-method payloads) have to be identical for compilation of code containing {{mw::com}} proxies and skeletons, which communicate."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = ""
-}
-
-/* broken_link_c/issue/21209491 */
-ScoreReq.AoU EventOrFieldReceptionViaGenericProxyNeedsSpecificCare {
-    description = "When receiving event or field data via untyped {{GenericProxyEvent}} or {{GenericProxyField}}, care has to be taken when accessing the corresponding {{SamplePtr<void>}} delivered by calls to {{GetNewSamples()}}: When casting it to the expected type, it needs to be checked that no access behind the size returned by {{GetSampleSize()}} will happen."
     safety = ScoreReq.Asil.B
     version = 1
     mitigates = ""
@@ -307,12 +290,4 @@ ScoreReq.AoU MethodInArgPtrMatches {
     note = "It is not guaranteed that a method call initiated by the caller will arrive at the callee, neither in which latency this will happen. It is also not guaranteed, that the completion of the call is notified to the caller at all, neither in which latency this will happen. This is caused by underlying OS/HW safety claims - see also [NoGuaranteesForNotifications]."
     version = 1
     mitigates = "Communication.CallBlocksOnCaller, Communication.CallBlocksOnCallee, Communication.CallBlocksOnUserHandler"
-}
-
-/* broken_link_c/issue/79416086 */
-ScoreReq.AoU NoGuaranteeOnSubscriptionStateCorrectness {
-    description = "For safety critical use cases, an application must treat a SubscriptionState of kSubscribed or kSubscriptionPending (returned by GetSubscriptionState() or reported by the SubscriptionStateChangeHandler) as the same."
-    safety = ScoreReq.Asil.B
-    note = "On a technical level, kSubscribed and kSubscriptionPending cannot be reliably differentiated, see {{SubscriptionState}} Component requirement for more details"
-    version = 1
 }
