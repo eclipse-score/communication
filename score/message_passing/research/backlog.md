@@ -58,6 +58,71 @@ a future cycle deliberately picks them up as its own change request.
 - ~~`IServerConnection::GetUserData()` has the same gap...~~ — resolved: added the
   `IServerConnectionGetUserDataAPI` `CompReq` in this same cycle, per explicit human confirmation.
 
+## From the 2026-09-16 memory/size-limits findings pass (no active cycle)
+
+`dependability/software_architectural_design/memory_and_size_limits_findings.md` was written as a
+standalone, read-only findings log (not tied to a `changes/<cycle>/`, and deliberately not yet
+TRLC/tests) analyzing `ServiceProtocolConfig`, `IClientFactory::ClientConfig`, and
+`IServerFactory::ServerConfig` for missing count/length/memory specifications. Deferred to a future
+cycle — not picked up this session. Key points for whoever runs that cycle's impact analysis:
+
+- **No documented/consistent `identifier` length limit**, and the two backends disagree: Unix
+  Domain abstract-socket path silently truncates via `memcpy` at ~106 bytes (no error), QNX
+  `QnxResourcePath::kMaxIdentifierLen`=256 hard-panics via precondition on violation (and also
+  rejects empty identifiers, which Unix Domain accepts). No cross-backend validation exists today.
+- **Preferred `identifier` size ≤ 15 bytes** to fit inside libstdc++'s `score::cpp::pmr::string` SSO
+  capacity and avoid an extra heap allocation per connection (libc++ SSO is 22 bytes); currently
+  undocumented next to the field.
+- **No per-connection/per-config memory-usage model** is documented for client (`ClientConnection`)
+  or server (`UnixDomainServer`/`QnxDispatchServer`) — rough formulas were derived from reading the
+  implementation but not written down as spec.
+- **`ServerConfig::pre_alloc_connections` and server-side `max_queued_sends` are dead configuration**
+  in both backends today (unused/unread), which directly **contradicts two existing ASIL B
+  requirements** in `component_requirements.trlc`:
+  `ServerPreallocatesConnectionObjects` and `ServerRingBufferQueueSizeConfigurable`. This should
+  likely be resolved (implement to match, or revise the requirements) *before* formalizing any new
+  memory-usage-model requirement, since preallocation would change the formulas.
+- The per-engine (not per-connection) shared receive buffer sizing is a favorable, currently
+  undocumented property worth stating explicitly once this becomes a requirement.
+- No test currently proves allocations stay within the caller-supplied `memory_resource` instead of
+  silently falling back to the process default; a poisoned-default-resource + counting-resource
+  test technique was sketched in the findings doc but not implemented.
+
+## From the 2026-09-17 architecture-completeness-for-fta-redo cycle
+
+- **Candidate AoU content (Category A — user contract misuse), not yet authored as TRLC.** Found
+  while grounding the new failure-path sequence diagrams; these belong in
+  `assumed_system/aous.trlc` (currently placeholder-only per the 2026-08-31 baseline) rather than
+  in a sequence diagram of library-internal or OS-layer behavior:
+  - Destructing an `IClientConnection` while not in the `Stopped` state (documented unsafe in
+    `i_client_connection.h`'s destructor doc).
+  - Starting a connection with `ClientConfig::sync_first_connect = true` from within a callback —
+    documented as a deadlock risk (`i_client_factory.h`), matches the existing but never-mitigated
+    FTA basic event `BE_SyncConnectDeadlock` in `fta_message_timing_violated.puml`.
+  - Calling `IServerConnection::Reply()`/`Notify()`/`RequestDisconnect()` after the corresponding
+    disconnection callback has already returned (`client-server.md`, "Server Connection" section).
+  - A server's `OnMessageSentWithReply()` (or `MessageCallback` used as the sent-with-reply
+    callback) never calling `Reply()` — stalls further sent-with-reply processing on that
+    connection; root cause is the server application's own callback, not the library.
+  - A `ConnectCallback` returning inconsistent, null, or otherwise invalid `UserData`.
+  - Full context and the (deliberately deferred) plan to redo the FTA/control-measures grounded in
+    this categorization is in
+    `changes/2026-09-17-architecture-completeness-for-fta-redo/evidence_bundle.md`.
+- `client_connection_activity_diagram.puml` uses PlantUML *state-diagram* syntax (`state X`,
+  `X --> Y`) that the repo's custom `puml_cli` parser (used by the `architectural_design` Bazel
+  rule) does not recognize under any of its supported kinds (Component/Activity/Class/Sequence —
+  confirmed via direct `bazel build` failure: "Failed to parse ... with any available parser").
+  It is therefore **not wired into `software_architectural_design/BUILD`** and has never been
+  toolchain-validated. Needs a rewrite into whichever diagram flavor the tool's "Activity" parser
+  actually accepts before it can be added. A harmless `skinparam` block→single-line syntax fix was
+  applied as a drive-by in the 2026-09-17 cycle, but the deeper state-diagram-syntax issue remains.
+- `static_design.puml` has **pre-existing** (not introduced by any recent cycle) non-fatal
+  validation warnings surfaced by `bazel build` on the `architectural_design` target: its
+  `message_passing_public_api` and `os` interface declarations are not found in `public_api.puml`
+  and have no SEooC-boundary relationship ("Public API interface(s) ... have no relationship to
+  the SEooC"). Worth a dedicated future cycle to fix `static_design.puml` or `public_api.puml`,
+  whichever is actually stale.
+
 ## Nice to have vs backlog
 
 Anything that is a *possible future improvement* rather than an *observed inconsistency* goes in

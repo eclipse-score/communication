@@ -1,0 +1,128 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+<style>
+.OS {
+    LineThickness 5.0
+}
+</style>
+
+skinparam sequenceArrowColor Black
+skinparam sequenceParticipantBackgroundColor White
+skinparam sequenceParticipantBorderColor Black
+skinparam sequenceLifeLineBorderColor Black
+skinparam sequenceGroupBorderColor DarkGray
+skinparam sequenceGroupBodyBackgroundColor #FAFAFA
+skinparam NoteBackgroundColor LightYellow
+skinparam NoteBorderColor Gray
+skinparam NoteTextAlignment left
+skinparam ParticipantFontName Courier
+skinparam sequenceFontName Courier
+skinparam ArrowFontName Courier
+
+title Server <-> Client Sequence Diagram: Library-Internal Fault Handling
+
+note over client_app, server_app
+  Companion to server_client_sequence.puml (happy path) and
+  server_client_os_fault_sequence.puml (underlying-layer faults).
+  This diagram covers deterministic, library-internal rejections -
+  bounded resources and configured limits that the library checks
+  itself, before any OS/transport call is attempted. These are not
+  OS-layer faults and not user contract misuse (see
+  research/backlog.md for the latter, tracked as candidate AoUs).
+end note
+
+participant "ClientApp" as client_app
+participant "IClientConnection" as client_conn
+participant "IPC Mechanism"  as os <<OS>>
+participant "IServerConnection" as server_conn
+participant "IServer" as server
+participant "ServerApp" as server_app
+
+' -----------------------------------------------------------------
+== Message Exceeds Configured Size Limit (max_send_size / max_reply_size / max_notify_size) ==
+' -----------------------------------------------------------------
+
+client_app -> client_conn : Send(oversized_message)
+client_conn -> client_conn : validate against\nServiceProtocolConfig::max_send_size
+client_conn --> client_app : score::os::Error\n(no IPC attempted)
+note left
+  Per i_client_connection.h Send() doc: "definitely fail"
+  if the message is too big to transport. Validated before
+  any OS call - control measure
+  MessagePassing.SendBufferArgumentValidation.
+end note
+
+client_app -> client_conn : SendWaitReply(message, reply_buffer)
+client_conn -> client_conn : validate reply_buffer size against\nServiceProtocolConfig::max_reply_size
+client_conn --> client_app : score::os::Error\n(no IPC attempted)
+
+server_app -> server_conn : Notify(oversized_message)
+server_conn -> server_conn : validate against\nServiceProtocolConfig::max_notify_size
+server_conn --> server_app : score::os::Error\n(no IPC attempted)
+
+' -----------------------------------------------------------------
+== Client-Side Async Send Queue Exhausted (max_queued_sends / max_async_replies) ==
+' -----------------------------------------------------------------
+
+client_app -> client_conn : Send(message) [repeated, non-blocking]
+client_conn -> client_conn : check pre-allocated\nsend_storage_ pool
+client_conn --> client_app : score::os::Error\n(pool exhausted; no IPC attempted)
+note left
+  Grounds control measure BE_SendQueueExhausted: "use a
+  pre-allocated, bounded pool for asynchronous client
+  send messages and return an error when the pool is
+  exhausted without blocking or silently dropping the
+  message." Same mechanism applies to
+  SendWithCallback()'s max_async_replies limit.
+end note
+
+' -----------------------------------------------------------------
+== Server-Side Notify Queue Exhausted (max_queued_notifies) ==
+' -----------------------------------------------------------------
+
+server_app -> server_conn : Notify(message) [repeated]
+server_conn -> server_conn : check per-connection\nnotify queue (max_queued_notifies)
+server_conn --> server_app : score::os::Error\n(queue exhausted; no IPC attempted)
+note right
+  Unlike the server-side incoming max_queued_sends
+  (see server_client_os_fault_sequence.puml, "Server-Side
+  Incoming Backpressure Delegated to the OS" - currently
+  unimplemented as an internal queue), the per-connection
+  Notify queue bound by max_queued_notifies is an
+  actual internal, deterministic check today.
+end note
+
+' -----------------------------------------------------------------
+== Safe Failure of Re-Entrant Calls From Within a Callback ==
+' -----------------------------------------------------------------
+
+os -> client_conn : [IPC] NOTIFY message
+client_conn -> client_app : notify_callback(message)
+activate client_app
+client_app -> client_conn : SendWaitReply(message, reply_buffer)\n(called from within notify_callback)
+client_conn -> client_conn : detect callback-context\nre-entrancy
+client_conn --> client_app : score::os::Error\n(safely fails; no deadlock)
+deactivate client_app
+note left
+  Per client-server.md: "it is not allowed to call any
+  blocking operation of the Message Passing library
+  during the execution of a Client Connection callback
+  ... the library provides the guarantee that such a
+  call will safely fail." Non-blocking calls (Send,
+  SendWithCallback, Stop) remain allowed from callbacks.
+end note
+
+@enduml
