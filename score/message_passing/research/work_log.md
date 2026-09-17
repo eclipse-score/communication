@@ -32,3 +32,17 @@ Never rewrite history — add new dated entries only.
   pass.
 - Stopped per the prompt's stop condition to ask the human what the first real actualization cycle
   should be about.
+
+## 2026-09-17 — Backlog: memory/size-limits findings deferred
+
+- The `changes/2026-09-01-client-identity-and-userdata-docs/` cycle (Step 7) is closed; no active
+  cycle is open.
+- Logged `dependability/software_architectural_design/memory_and_size_limits_findings.md` (written
+  2026-09-16, outside any cycle) as a `backlog.md` entry — identifier length-limit
+  inconsistency/undocumented SSO sizing preference, missing per-connection memory-usage model, the
+  `pre_alloc_connections`/server-side `max_queued_sends` dead-configuration-vs-ASIL-B-requirement
+  contradiction, and the missing memory_resource-containment test. Explicitly deferred — not
+  actioned this session, per human instruction.
+- No new `changes/<cycle>/` directory created. Awaiting human decision on which backlog/nice-to-have
+  item (or a new external trigger) becomes the next actualization cycle's Step 0
+  `change_request.md`.
