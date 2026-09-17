@@ -149,15 +149,6 @@ ScoreReq.AoU OneProducerOnlyOneAllocateePtr {
     mitigates = "TooFewMemoryAllocated, TooMuchMemoryAllocated, SendingEventSendsToWrongConsumer"
 }
 
-/* broken_link_c/issue/5835324 */
-ScoreReq.AoU NoCopySendWhileHoldingAllocateePtr {
-    description = "It shall be ensured that Send(const& value) is not invoked while an AllocateePtr is held."
-    safety = ScoreReq.Asil.B
-    note = "Send(const& value) creates an AllocateePtr in its implementation. Thus we would harm the previously stated AoU that only one AllocateePtr is held at any point in time."
-    version = 1
-    mitigates = ""
-}
-
 /* broken_link_c/issue/5835328 */
 ScoreReq.AoU NoneReentrantMethodsPerEventInstance {
     description = "It shall be ensured that any LoLa API that is bound to a specific event instance is not called in a reentrant manner."
