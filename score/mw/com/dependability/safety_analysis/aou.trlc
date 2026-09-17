@@ -230,15 +230,6 @@ ScoreReq.AoU NoSharedMemoryAllocationInNamespaceLola {
     mitigates = "MemoryAllocatedInWrongSection"
 }
 
-/* broken_link_c/issue/5835421 */
-ScoreReq.AoU OnlyQnx71Supported {
-    description = "It shall be ensured that any application containing LoLa is only executed on QNX Safe Operating System 7.1."
-    safety = ScoreReq.Asil.B
-    note = "All safety guarantees only hold as long executed on a safe operating system."
-    version = 1
-    mitigates = "MemoryAllocatedInWrongSection"
-}
-
 /* broken_link_c/issue/5835427 */
 ScoreReq.AoU LoLaSpecificQnxMessagingEndPointsOnlyAccessedThroughLoLa {
     description = "It shall be ensured that the LoLa specific QNX Message Passing end-points are only accessed through LoLa APIs."
@@ -246,15 +237,6 @@ ScoreReq.AoU LoLaSpecificQnxMessagingEndPointsOnlyAccessedThroughLoLa {
     note = "Any influence from other parts of the code might destroy expected contracts. The LoLa specific QNX Message Passing endpoints are located under: /mw_com/message_passing/LoLa_*"
     version = 1
     mitigates = "SendingEventOnlyPartiallyNotifiesConsumer"
-}
-
-/* broken_link_c/issue/5835432 */
-ScoreReq.AoU AragenNotSafe {
-    description = "Input artifacts shall be manually reviewed for correctness"
-    safety = ScoreReq.Asil.B
-    note = "aragen is not safety qualified, thus its outputs are not safe also. Usage of aragen is not mandatory as the LoLa specific interfaces can be written manually in C++ using LoLa provided support templates."
-    version = 1
-    mitigates = "GeneratedCodeDoesNotMatchGenerationInputs"
 }
 
 /* broken_link_c/issue/5835457 */
