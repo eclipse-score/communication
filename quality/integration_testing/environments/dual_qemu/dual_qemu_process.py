@@ -190,7 +190,7 @@ class DualQemuProcess(QemuProcess):
         ivshmem_size="4M",
         intervm=None,
         vm_index=0,
-        max_boot_attempts=3,
+        max_boot_attempts=2,
         boot_timeout=180,
     ):
         super().__init__(

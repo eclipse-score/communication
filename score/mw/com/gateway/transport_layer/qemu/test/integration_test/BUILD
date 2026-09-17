@@ -20,4 +20,7 @@ dual_qemu_integration_test(
     dual_config = "dual_qemu_transport_config.json",
     filesystem_a = "//score/mw/com/gateway/transport_layer/qemu/test:qemu_transport_test_apps",
     filesystem_b = "//score/mw/com/gateway/transport_layer/qemu/test:qemu_transport_test_apps",
+    # "long" (900s) doesn't reliably fit two sequential VM boots each retrying up to
+    # 3 times at 180s; give this test the full "eternal" budget instead.
+    timeout = "eternal",
 )
