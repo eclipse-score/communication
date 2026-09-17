@@ -262,7 +262,7 @@ ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide {
     description = "All compiler settings having influence on the binary representation of data exchanged via {{mw::com}}/{{LoLa}} (event, field, service-method payloads) have to be identical for compilation of code containing {{mw::com}} proxies and skeletons, which communicate."
     safety = ScoreReq.Asil.B
     version = 1
-    mitigates = ""
+    mitigates = "WrongReturnValueUsed"
 }
 
 /* broken_link_c/issue/32388804 */
