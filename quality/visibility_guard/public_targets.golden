@@ -54,6 +54,7 @@
 //score/mw/com/dependability:mw_com_doc_needs
 //score/mw/com/dependability:mw_com_index
 //score/mw/com/dependability:mw_com_rst
+//score/mw/com/impl/configuration/converter:json_to_flatbuffer_rule.bzl
 //score/mw/com/performance_benchmarks/macro_benchmark/config_generator:config_generator_rule.bzl
 //score/mw/com/performance_benchmarks/macro_benchmark:logging.json
 //score/mw/com/performance_benchmarks/macro_benchmark:lola_benchmarking_client
@@ -63,6 +64,7 @@
 //score/mw/com/rust:score_com
 //score/mw/com/rust:score_com_mock
 //score/mw/com:com
+//score/mw/com:config_fbs_schema
 //score/mw/com:config_schema
 //score/mw/com:test_types
 //score/mw/service/backend/mw_com:provided_service_builder
