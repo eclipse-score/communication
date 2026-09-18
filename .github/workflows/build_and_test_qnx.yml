@@ -148,6 +148,19 @@ jobs:
             SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
             SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
           run: bazel build --config=ci --config=qnx -- //score/...
+        - name: Monitor resources during tests
+          run: |
+            (
+              while true; do
+                date
+                uptime
+                free -h
+                ps -eo pid,ppid,%cpu,%mem,rss,etime,cmd --sort=-%cpu | head -20
+                echo "----------------------------------------"
+                sleep 10
+              done
+            ) > ci-resource-monitor.log 2>&1 &
+            echo $! > resource-monitor.pid
         - name: Test QNX
           if: inputs.fetch_only != 'true'
           id: run-tests
@@ -160,6 +173,10 @@ jobs:
           uses: ./.github/actions/00_infrastructure/upload_bazel_testlogs_on_failure
           with:
             artifact-name: bazel-testlogs-qnx
+        - name: Stop resource monitor
+          if: always()
+          run: |
+            kill "$(cat resource-monitor.pid)" 2>/dev/null || true
         - name: Fetch dependencies (--nobuild)
           if: inputs.fetch_only == 'true'
           env:
