@@ -35,7 +35,7 @@ section "com" {
 
                 Note: {{Skeleton}} is the name used for the created Skeleton in subsequent requirements.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.CommunicationInterfaces@1, Communication.SupportForMultipleProgrammingLanguages@1]
+                derived_from = [Communication.FEAT_CommunicationInterfaces@1, Communication.FEAT_SupportForMultipleProgrammingLanguages@1]
                 version = 1
             }
 
@@ -48,7 +48,7 @@ section "com" {
 
                 * with a type providing the features required in Skeleton Event'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.EventType@1, Communication.SupportForDataDrivenArchitecture@1, Communication.CommunicationInterfaces@1]
+                derived_from = [Communication.FEAT_EventType@1, Communication.FEAT_SupportForDataDrivenArchitecture@1, Communication.FEAT_CommunicationInterfaces@1]
                 version = 1
             }
 
@@ -61,7 +61,7 @@ section "com" {
 
                 * with a type providing the features required in SkeletonField'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.CommunicationInterfaces@1, Communication.SupportForDataDrivenArchitecture@1]
+                derived_from = [Communication.FEAT_CommunicationInterfaces@1, Communication.FEAT_SupportForDataDrivenArchitecture@1]
                 version = 1
             }
 
@@ -76,7 +76,7 @@ section "com" {
 
                 * with return value and arguments according to: TBD'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.SupportForRequestDrivenArchitecture@1, Communication.Method@1, Communication.CommunicationInterfaces@1]
+                derived_from = [Communication.FEAT_SupportForRequestDrivenArchitecture@1, Communication.FEAT_Method@1, Communication.FEAT_CommunicationInterfaces@1]
                 version = 1
             }
 
@@ -87,7 +87,7 @@ section "com" {
 
                 Therefore the signature of the constructor of {{Skeleton}} is implementation defined.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.SupportForProgrammingLanguageIdioms@1]
+                derived_from = [Communication.FEAT_SupportForProgrammingLanguageIdioms@1]
                 version = 1
             }
 
@@ -98,7 +98,7 @@ section "com" {
 
                 Behaviour: If the service provided by the skeleton is currently being offered at the time of the destruction, the offering shall be stopped.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.ServiceInstance@1, Communication.SupportForProgrammingLanguageIdioms@1]
+                derived_from = [Communication.FEAT_ServiceInstance@1, Communication.FEAT_SupportForProgrammingLanguageIdioms@1]
                 version = 1
             }
 
@@ -121,7 +121,7 @@ section "com" {
 
                 * {{Create}} call shall fail if the service instance provided by the {{Skeleton}} is not unique (i.e., a service with the same serviceInstanceId is already created). With the error code {{ComErrc::kServiceInstanceAlreadyExists}}.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.ErrorHandling@1]
+                derived_from = [Communication.FEAT_ErrorHandling@1]
                 version = 1
             }
 
@@ -142,14 +142,14 @@ section "com" {
 
                 * {{Create}} call shall fail if the service instance provided by the {{Skeleton}} is not unique (i.e., a service with the same serviceInstanceId is already created). With the error code {{ComErrc::kServiceInstanceAlreadyExists}}.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.ErrorHandling@1]
+                derived_from = [Communication.FEAT_ErrorHandling@1]
                 version = 1
             }
 
             ScoreReq.CompReq SkeletonCopySemantics {
                 description = '''The {{Skeleton}} class shall neither be copy-constructible nor copy-assignable.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.DataLoss@1]
+                derived_from = [Communication.FEAT_DataLoss@1]
                 version = 1
             }
 
@@ -157,7 +157,7 @@ section "com" {
                 description = '''The {{Skeleton}}
                 class shall be move-constructible as well as being move-assignable.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.SupportForProgrammingLanguageIdioms@1, Communication.SupportForMultipleProgrammingLanguages@1]
+                derived_from = [Communication.FEAT_SupportForProgrammingLanguageIdioms@1, Communication.FEAT_SupportForMultipleProgrammingLanguages@1]
                 version = 1
             }
 
@@ -176,7 +176,7 @@ section "com" {
 
                 *  or, if any of the {{SkeletonField}} instances are defined with {{hasSetter=true}} and no SetHandler has been registered yet, then the errorcode {{ComErrc::kSetHandlerNotSet}} shall be returned.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.ServiceDiscovery@1]
+                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_ServiceDiscovery@1]
                 version = 1
             }
 
@@ -187,7 +187,7 @@ section "com" {
 
                 Behaviour: is described in Behaviour of StopOfferService.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.ServiceDiscovery@1]
+                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_ServiceDiscovery@1]
                 version = 1
             }
             }

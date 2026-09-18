@@ -31,7 +31,7 @@ section "com" {
 
                     Note: It is up to the {{mw::com}} implementation, whether it defines/generates different/explicit classes for each {{SkeletonEvent}} or whether it uses a class template for {{SkeletonEvent}} class and uses the event data type (EventType) as a template argument.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.EventType@1, Communication.CommunicationInterfaces@1]
+                    derived_from = [Communication.FEAT_EventType@1, Communication.FEAT_CommunicationInterfaces@1]
                     version = 1
                 }
 
@@ -42,7 +42,7 @@ section "com" {
                      classes shall be defined, since the event data type influences the signature of a  class. See for example SkeletonEvent class member type EventType
                     '''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.EventType@1, Communication.ProducerConsumerPattern@1]
+                    derived_from = [Communication.FEAT_EventType@1, Communication.FEAT_ProducerConsumerPattern@1]
                     version = 1
                 }
 
@@ -50,7 +50,7 @@ section "com" {
                     description = '''The {{SkeletonEvent}}
                      class shall neither be copy-constructible nor copy-assignable.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.EventType@1, Communication.DataLoss@1]
+                    derived_from = [Communication.FEAT_EventType@1, Communication.FEAT_DataLoss@1]
                     version = 1
                 }
 
@@ -59,7 +59,7 @@ section "com" {
 
                     {{{using EventType = <data type>;}}}'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.EventType@1]
+                    derived_from = [Communication.FEAT_EventType@1]
                     version = 1
                 }
 
@@ -76,7 +76,7 @@ section "com" {
 
                     * on failure, a {{bmw::Result<void>}}, which contains a {{bmw::result::Error}}containing the value {{ComErrc::kNotOffered}} if Skeleton OfferService has not been called or the service offering has been withdrawn with a call to Skeleton StopOfferService.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.EventType@1, Communication.ZeroCopy@1]
+                    derived_from = [Communication.FEAT_EventType@1, Communication.FEAT_ZeroCopy@1]
                     version = 1
                 }
 
@@ -93,7 +93,7 @@ section "com" {
 
                     Return value: {{bmw::Result<void>}}{{bmw::result::Error}}returned  which contains a  containing the value {{ComErrc::kNotOffered}} if Skeleton OfferService has not been called or the service offering has been withdrawn with a call to Skeleton StopOfferService.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.StatelessCommunication@1]
+                    derived_from = [Communication.FEAT_StatelessCommunication@1]
                     version = 1
                 }
 
@@ -110,7 +110,7 @@ section "com" {
 
                     Return value: {{bmw::Result<void>}}{{bmw::result::Error}}returned  which contains a  containing the value {{ComErrc::kNotOffered}} if Skeleton OfferService has not been called or the service offering has been withdrawn with a call to Skeleton StopOfferService'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.ZeroCopy@1]
+                    derived_from = [Communication.FEAT_ZeroCopy@1]
                     version = 1
                 }
             }
