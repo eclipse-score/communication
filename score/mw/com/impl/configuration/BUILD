@@ -69,6 +69,7 @@ py_binary(
         ":mw_com_config_postproc_schema",
     ],
     main = "generate_schema.py",
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 # Drift guard: hyphen-restoring the post-processed schema reproduces the checked-in schema.

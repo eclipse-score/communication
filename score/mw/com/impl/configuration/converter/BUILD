@@ -19,6 +19,7 @@ load(":json_to_flatbuffer_rule.bzl", "json_to_flatbuffer")
 py_library(
     name = "json_to_flatbuffer_lib",
     srcs = ["json_to_flatbuffer.py"],
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/mw/com/impl/configuration:__subpackages__"],
 )
 
@@ -26,6 +27,7 @@ py_binary(
     name = "json_to_flatbuffer",
     srcs = ["json_to_flatbuffer.py"],
     main = "json_to_flatbuffer.py",
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/mw/com/impl/configuration:__subpackages__"],
 )
 
