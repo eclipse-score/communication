@@ -24,7 +24,7 @@ exports_files(
         "mw_com_config.fbs",
         "mw_com_config_schema.json",
     ],
-    visibility = ["//score/mw/com/impl/configuration:__subpackages__"],
+    visibility = ["//score/mw/com:__subpackages__"],
 )
 
 # mw_com_config.fbs is the single source of truth for the configuration schema.

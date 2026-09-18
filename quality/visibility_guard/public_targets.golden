@@ -64,6 +64,7 @@
 //score/mw/com/rust:score_com
 //score/mw/com/rust:score_com_mock
 //score/mw/com:com
+//score/mw/com:config_fbs_schema
 //score/mw/com:config_schema
 //score/mw/com:test_types
 //score/mw/service/backend/mw_com:provided_service_builder
