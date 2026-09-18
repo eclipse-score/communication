@@ -43,11 +43,10 @@ class ProxyEventBindingFactoryImpl : public IProxyEventBindingFactory<SampleType
     /// \param handle The handle containing the binding information.
     /// \param event_name The binding unspecific name of the event inside the proxy denoted by handle.
     /// \return An instance of ProxyEventBinding or an error in case binding creation fails.
-    Result<std::unique_ptr<ProxyEventBinding<SampleType>>> Create(
-        HandleType parent_handle,
-        ProxyBinding& parent_binding,
-        const std::string_view event_name,
-        const ServiceElementType service_element_type) noexcept override;
+    Result<std::unique_ptr<ProxyEventBinding>> Create(HandleType parent_handle,
+                                                      ProxyBinding& parent_binding,
+                                                      const std::string_view event_name,
+                                                      const ServiceElementType service_element_type) noexcept override;
 };
 
 /// \brief Factory class that dispatches calls to the appropriate binding based on binding information in the
@@ -66,7 +65,7 @@ class GenericProxyEventBindingFactoryImpl : public IGenericProxyEventBindingFact
 };
 
 template <typename SampleType>
-inline Result<std::unique_ptr<ProxyEventBinding<SampleType>>> ProxyEventBindingFactoryImpl<SampleType>::Create(
+inline Result<std::unique_ptr<ProxyEventBinding>> ProxyEventBindingFactoryImpl<SampleType>::Create(
     HandleType parent_handle,
     ProxyBinding& parent_binding,
     const std::string_view event_or_field_name,
@@ -75,7 +74,7 @@ inline Result<std::unique_ptr<ProxyEventBinding<SampleType>>> ProxyEventBindingF
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(service_element_type == ServiceElementType::EVENT ||
                                               service_element_type == ServiceElementType::FIELD);
 
-    using ReturnType = Result<std::unique_ptr<ProxyEventBinding<SampleType>>>;
+    using ReturnType = Result<std::unique_ptr<ProxyEventBinding>>;
     auto deployment_info_visitor = score::cpp::overload(
         [&parent_handle, &parent_binding, event_or_field_name, service_element_type](
             const LolaServiceTypeDeployment& lola_type_deployment) -> ReturnType {
@@ -90,7 +89,7 @@ inline Result<std::unique_ptr<ProxyEventBinding<SampleType>>> ProxyEventBindingF
 
             const auto element_fq_id = GetElementFqId(
                 parent_handle, lola_type_deployment, std::string{event_or_field_name}, service_element_type);
-            return std::make_unique<lola::ProxyEvent<SampleType>>(*lola_proxy, element_fq_id, event_or_field_name);
+            return std::make_unique<lola::ProxyEvent>(*lola_proxy, element_fq_id, event_or_field_name);
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);

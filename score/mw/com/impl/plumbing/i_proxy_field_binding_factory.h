@@ -49,7 +49,7 @@ class IProxyFieldBindingFactory
     virtual auto CreateEventBinding(HandleType parent_handle,
                                     ProxyBinding& parent_binding,
                                     const std::string_view field_name) noexcept
-        -> Result<std::unique_ptr<ProxyEventBinding<SampleType>>> = 0;
+        -> Result<std::unique_ptr<ProxyEventBinding>> = 0;
 
     /// Creates an instance of the method binding for the get-method of a proxy field.
     /// \param parent The proxy base that contains this field.

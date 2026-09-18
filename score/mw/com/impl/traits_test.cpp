@@ -113,10 +113,8 @@ class ProxyCreationFixture : public ::testing::Test
     void SetUp() override
     {
         auto proxy_binding_mock_ptr = std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock_);
-        auto proxy_event_binding_mock_ptr =
-            std::make_unique<mock_binding::ProxyEventFacade<TestSampleType>>(proxy_event_binding_mock_);
-        auto proxy_field_binding_mock_ptr =
-            std::make_unique<mock_binding::ProxyEventFacade<TestSampleType>>(proxy_field_binding_mock_);
+        auto proxy_event_binding_mock_ptr = std::make_unique<mock_binding::ProxyEventFacade>(proxy_event_binding_mock_);
+        auto proxy_field_binding_mock_ptr = std::make_unique<mock_binding::ProxyEventFacade>(proxy_field_binding_mock_);
         auto proxy_method_binding_mock_ptr =
             std::make_unique<mock_binding::ProxyMethodFacade>(proxy_method_binding_mock_);
         auto proxy_field_get_binding_mock_ptr =
@@ -169,8 +167,8 @@ class ProxyCreationFixture : public ::testing::Test
     ProxyFieldBindingFactoryMockGuard<TestSampleType> proxy_field_binding_factory_mock_guard_{};
     ProxyMethodBindingFactoryMockGuard<TestMethodType> proxy_method_binding_factory_mock_guard_{};
     NiceMock<mock_binding::Proxy> proxy_binding_mock_{};
-    NiceMock<mock_binding::ProxyEvent<TestSampleType>> proxy_event_binding_mock_{};
-    NiceMock<mock_binding::ProxyEvent<TestSampleType>> proxy_field_binding_mock_{};
+    NiceMock<mock_binding::ProxyEvent> proxy_event_binding_mock_{};
+    NiceMock<mock_binding::ProxyEvent> proxy_field_binding_mock_{};
     NiceMock<mock_binding::ProxyMethod> proxy_method_binding_mock_{};
     NiceMock<mock_binding::ProxyMethod> proxy_field_set_binding_mock_{};
     NiceMock<mock_binding::ProxyMethod> proxy_field_get_binding_mock_{};
@@ -209,7 +207,7 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCr
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    using EventFacade = mock_binding::ProxyEventFacade<TestSampleType>;
+    using EventFacade = mock_binding::ProxyEventFacade;
 
     auto proxy_binding_mock_ptr = std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock_);
     auto proxy_event_binding_mock_ptr = std::make_unique<EventFacade>(proxy_event_binding_mock_);

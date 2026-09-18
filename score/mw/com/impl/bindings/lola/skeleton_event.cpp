@@ -147,9 +147,9 @@ Result<impl::SamplePtr<void>> SkeletonEvent::GetLatestSample(QualityType quality
     }
 
     return impl::SamplePtr<void>{
-        lola::SamplePtr<void>{event_data_storage_->GetTypeErasedDataSlot(*slot_result, event_sample_size_info_.Size()),
-                              consumer_event_data_control_local,
-                              slot_result.value()},
+        lola::SamplePtr{event_data_storage_->GetTypeErasedDataSlot(*slot_result, event_sample_size_info_.Size()),
+                        consumer_event_data_control_local,
+                        slot_result.value()},
         std::move(*guard)};
 }
 

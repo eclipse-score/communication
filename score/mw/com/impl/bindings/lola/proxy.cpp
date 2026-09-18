@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/bindings/lola/methods/offered_state_machine.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
@@ -443,7 +444,7 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
       quality_type_{quality_type},
       event_name_to_element_fq_id_converter_{std::move(event_name_to_element_fq_id_converter)},
       handle_{std::move(handle)},
-      event_bindings_{},
+      proxy_events_{},
       proxy_event_registration_mutex_{},
       is_service_instance_available_{false},
       service_instance_usage_marker_file_{std::move(service_instance_usage_marker_file)},
@@ -475,7 +476,7 @@ Proxy::~Proxy()
 
 void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
 {
-    for (auto& event_binding : event_bindings_)
+    for (auto& event_binding : proxy_events_)
     {
         event_binding.second.get().NotifyServiceInstanceChangedAvailability(is_service_available, GetSourcePid());
     }
@@ -945,14 +946,13 @@ pid_t Proxy::GetSourcePid() const noexcept
     return service_data_storage.skeleton_pid_;
 }
 
-void Proxy::RegisterEvent(const std::string_view service_element_name,
-                          ProxyEventBindingBase& proxy_event_binding) noexcept
+void Proxy::RegisterEvent(const std::string_view service_element_name, ProxyEvent& proxy_event) noexcept
 {
     std::lock_guard lock{proxy_event_registration_mutex_};
-    const auto insert_result = event_bindings_.emplace(service_element_name, proxy_event_binding);
+    const auto insert_result = proxy_events_.emplace(service_element_name, proxy_event);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(insert_result.second,
                                                 "Failed to insert proxy event binding into event binding map.");
-    proxy_event_binding.NotifyServiceInstanceChangedAvailability(is_service_instance_available_, GetSourcePid());
+    proxy_event.NotifyServiceInstanceChangedAvailability(is_service_instance_available_, GetSourcePid());
 }
 
 void Proxy::RegisterMethod(const UniqueMethodIdentifier method_id, ProxyMethod& proxy_method) noexcept
@@ -989,7 +989,7 @@ void Proxy::FinalizeDeinitialize()
 
     {
         std::lock_guard lock{proxy_event_registration_mutex_};
-        event_bindings_.clear();
+        proxy_events_.clear();
         is_service_instance_available_ = false;
     }
     {
