@@ -79,6 +79,9 @@ cc_library(
     srcs = ["bounds_check_memory_pool.cpp"],
     hdrs = ["bounds_check_memory_pool.h"],
     features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/memory/shared/test_offset_ref:__pkg__",
+    ],
     deps = [
         ":offset_ptr_test_resources",
         "//score/memory/shared",

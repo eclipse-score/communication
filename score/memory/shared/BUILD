@@ -332,6 +332,27 @@ cc_library(
 )
 
 cc_library(
+    name = "offset_ref",
+    srcs = [
+        "offset_ref.cpp",
+    ],
+    hdrs = [
+        "offset_ref.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//visibility:public",  # platform_only
+    ],
+    deps = [
+        ":memory_region_bounds",
+        ":offset_ptr",
+        ":pointer_arithmetic_util",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
     name = "offset_ptr_bounds_check",
     srcs = [
         "offset_ptr_bounds_check.cpp",
