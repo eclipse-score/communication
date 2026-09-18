@@ -127,6 +127,12 @@ alias(
     visibility = ["//visibility:public"],
 )
 
+alias(
+    name = "config_fbs_schema",
+    actual = "//score/mw/com/impl/configuration:mw_com_config.fbs",
+    visibility = ["//visibility:public"],
+)
+
 cc_unit_test(
     name = "unit_test",
     srcs = [
