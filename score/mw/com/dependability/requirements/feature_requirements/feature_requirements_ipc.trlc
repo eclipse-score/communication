@@ -36,35 +36,63 @@ ScoreReq.FeatReq SupportForRequestDrivenArchitecture {
 }
 
 ScoreReq.FeatReq CommunicationInterfaces {
-    description = "A communication interface consists of a combination of any number of the following elements: Event-Types, Methods, Signals."
+    description = "The communication framework shall support communication interfaces composed of any number of the following elements: Event-Types, Methods, Fields, Signals."
     safety = ScoreReq.Asil.B
     derived_from = [ Communication.InterProcessCommunication@1, Communication.SystemSupportForDataDrivenArchitecture@1, Communication.SupportForTimeBasedArchitectures@1, Communication.SystemSafeCommunication@1, Communication.SystemSupportForRequestDrivenArchitecture@1 ]
     version = 1
 }
 
-ScoreReq.FeatReq EventType {
-    description = "An event-type is part of a communication interface and has a name and a data type. The producer can assign a value to it. Consumers can subscribe to value-changed events of the element or poll unseen, cached events."
+ScoreReq.FeatReq EventTypeStructure {
+    description = "An event-type shall be a named element of a communication interface with an associated data type."
     safety = ScoreReq.Asil.B
     derived_from = [ Communication.InterProcessCommunication@1, Communication.SupportForTimeBasedArchitectures@1 ]
     version = 1
 }
 
-ScoreReq.FeatReq Method {
-    description = "A method is part of a communication interface and has a name, a specified application routine with a given set of parameters and a return type. When a communication partner issues a call to the method with the required parameters, it shall invoke the application routine with the provided parameters, and return its result to the communication partner. A method call shall be possible both synchronously and asynchronously."
+ScoreReq.FeatReq EventTypeAccess {
+    description = "An event-type shall allow its producer to assign a value and its consumers to either subscribe to value-changed events or poll unseen, cached events."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.InterProcessCommunication@1, Communication.SupportForTimeBasedArchitectures@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq MethodStructure {
+    description = "A method shall be defined by a name, a specified application routine with a given set of parameters, and a return type."
     safety = ScoreReq.Asil.B
     derived_from = [ Communication.InterProcessCommunication@1, Communication.SystemSupportForRequestDrivenArchitecture@1, Communication.SystemSafeCommunication@1 ]
     version = 1
 }
 
-ScoreReq.FeatReq Field {
-    description = "A field is a component of a communication interface and is defined by a name and a data type, along with dedicated getter and setter methods. The producer has the ability to assign a value to the field. Consumers can either subscribe to receive notifications when the field’s value changes or poll the cached values of fields that have not yet been seen. Additionally, consumers can retrieve the current value of the field using the getter method or update the field’s value through the setter method."
+ScoreReq.FeatReq MethodInvocation {
+    description = "When a communication partner calls a method with the required parameters, the method shall invoke its application routine with those parameters, return the result to the caller, and support both synchronous and asynchronous invocation."
     safety = ScoreReq.Asil.B
     derived_from = [ Communication.InterProcessCommunication@1, Communication.SystemSupportForRequestDrivenArchitecture@1, Communication.SystemSafeCommunication@1 ]
     version = 1
 }
 
-ScoreReq.FeatReq Signal {
-    description = "A signal is part of a communication interface and has a name. A client can trigger the signal. The service instance offering the trigger can wait for the signal to be triggered or check if the signal was triggered. Signals can not transport data."
+ScoreReq.FeatReq FieldStructure {
+    description = "A field shall be defined by a name, a data type, and dedicated getter and setter methods."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.InterProcessCommunication@1, Communication.SystemSupportForRequestDrivenArchitecture@1, Communication.SystemSafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq FieldAccess {
+    description = "A field shall allow its producer to assign a value, and shall allow its consumers to subscribe to value-changed notifications, poll unseen cached values, or retrieve and update the value via its getter and setter methods."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.InterProcessCommunication@1, Communication.SystemSupportForRequestDrivenArchitecture@1, Communication.SystemSafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq SignalStructure {
+    description = "A signal shall be a named element of a communication interface that does not transport data."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ Communication.InterProcessCommunication@1, Communication.SystemSupportForRequestDrivenArchitecture@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq SignalTriggering {
+    description = "A signal shall be triggered by a client, and the service instance offering it shall support waiting for or checking the trigger state."
     safety = ScoreReq.Asil.QM
     derived_from = [ Communication.InterProcessCommunication@1, Communication.SystemSupportForRequestDrivenArchitecture@1 ]
     version = 1
@@ -78,28 +106,28 @@ ScoreReq.FeatReq ProducerConsumerPattern {
 }
 
 ScoreReq.FeatReq ServiceInstance {
-    description = "Multiple service instances shall be able to offer the same interface."
+    description = "The communication framework shall support offering multiple service instances for the same interface."
     safety = ScoreReq.Asil.B
     derived_from = [ Communication.InterProcessCommunication@1, Communication.SystemSafeCommunication@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq ServiceInstanceNames {
-    description = "A service instance is offered under one or more unique names by which it can be discovered. Names follow a POSIX path style."
+    description = "A service instance shall be offered under one or more unique names in POSIX path style by which it shall be discovered."
     safety = ScoreReq.Asil.B
     derived_from = [ Communication.InterProcessCommunication@1, Communication.SystemSafeCommunication@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq Versioning {
-    description = "The communication framework shall support versioning of service instances. Version information of a service instance is binding-specific."
+    description = "The communication framework shall support versioning of service instances using a major.minor format. Version information of a service instance shall be binding-specific."
     safety = ScoreReq.Asil.B
     derived_from = [ Communication.InterProcessCommunication@1, Communication.SystemSafeCommunication@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq ServiceLocationTransparency {
-    description = "The interface to access service instances is agnostic to the binding used to communicate with the service."
+    description = "The interface to access service instances shall be agnostic to the binding used to communicate with the service."
     safety = ScoreReq.Asil.B
     derived_from = [ Communication.InterProcessCommunication@1, Communication.SystemSafeCommunication@1 ]
     version = 1
@@ -120,7 +148,7 @@ ScoreReq.FeatReq ServiceInstanceGranularity {
 }
 
 ScoreReq.FeatReq ServiceDiscovery {
-    description = "The communication framework shall provide service discovery to find available services during runtime. Service discovery shall consider version compatibility."
+    description = "The communication framework shall provide service discovery that considers version compatibility to find available services during runtime."
     safety = ScoreReq.Asil.B
     derived_from = [ Communication.InterProcessCommunication@1, Communication.SystemSafeCommunication@1 ]
     version = 1
@@ -183,7 +211,8 @@ ScoreReq.FeatReq SupportForProgrammingLanguageIdioms {
 }
 
 ScoreReq.FeatReq UseProgrammingLanguageInfrastructure {
-    description = "Each public API shall use core infrastructure of its programming language and accompanying standard libraries, whenever possible and meaningful."
+    description = "Each public API shall use core infrastructure of its programming language and its accompanying standard libraries."
+    note = "Deviations are permitted where required and shall be commented and justified at component level."
     safety = ScoreReq.Asil.QM
     derived_from = [ Communication.ProgrammingLanguagesForApplicationDevelopment@1 ]
     version = 1
@@ -218,7 +247,7 @@ ScoreReq.FeatReq BindingAgnosticPublicAPI {
 }
 
 ScoreReq.FeatReq MultiBindingDeploymentConfiguration {
-    description = "The association of a service instance and the appropriate binding shall be specified in the deployment configuration."
+    description = "The association between a service instance and its binding shall be specified in the deployment configuration."
     safety = ScoreReq.Asil.B
     derived_from = [ Communication.InterProcessCommunication@1 ]
     version = 1
@@ -239,7 +268,7 @@ ScoreReq.FeatReq SupportForTracing {
 }
 
 ScoreReq.FeatReq AccessControlListPlacement {
-    description = "The communication framework shall support an Access Control Lists in the deployment configuration."
+    description = "The communication framework shall support Access Control Lists in the deployment configuration."
     safety = ScoreReq.Asil.QM
     derived_from = [ Communication.InterProcessCommunication@1, Communication.SecureCommunication@1 ]
     version = 1
@@ -270,6 +299,20 @@ ScoreReq.FeatReq CommunicationASILLevel {
     description = "The communication framework shall support safe communication up to ASIL-B."
     safety = ScoreReq.Asil.B
     derived_from = [ Communication.InterProcessCommunication@1, Communication.SystemSafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq CommunicationPartnerCrashRecovery {
+    description = "The communication framework shall support crash recovery and allow a communication partner to rejoin an earlier initialized communication after an application termination."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.InterProcessCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq CommunicationAcrossOSBoundaries {
+    description = "The communication framework shall support technologies which allow communication across operating system boundaries."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.InterProcessCommunication@1 ]
     version = 1
 }
 
