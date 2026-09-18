@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use score_com::{interface, CommData, ProviderInfo, Publisher, Reloc, Subscriber};
+use score_com::{interface, CommData, FieldPublisher, ProviderInfo, Publisher, Reloc, Subscriber};
 use score_log::ScoreDebug;
 
 #[derive(Debug, Reloc, CommData, ScoreDebug)]
@@ -25,6 +25,15 @@ pub struct Tire {
 #[repr(C)]
 // No explicit ID provided, so it will be auto-generated as "com_api_gen::Exhaust"
 pub struct Exhaust {}
+
+#[derive(Debug, Reloc, CommData, ScoreDebug)]
+#[repr(C)]
+#[comm_data(id = "PressureImbalance")]
+// Result type for `calculate_pressure_imbalance`, distinct from `Tire` itself so the method is
+// a genuine computation rather than a thin wrapper around a field's get/set.
+pub struct PressureImbalance {
+    pub delta_kpa: f32,
+}
 
 // Example interface definition using the interface macro with a custom UID for the interface.
 // This will generate the following types and trait implementations:
@@ -47,3 +56,50 @@ interface!(
         exhaust: Event<Exhaust>,
      }
 );
+
+// Example interface definition using the interface macro with a custom UID for the interface.
+// This will generate the following types and trait implementations:
+// - VehicleMethodsInterface struct with INTERFACE_ID = "VehicleMethodsInterface"
+// - VehicleMethodsConsumer<R>, VehicleMethodsProducer<R>, VehicleMethodsOfferedProducer<R>
+//   with appropriate trait implementations for the VehicleMethods interface.
+// As passed methods to macro it will generate the following methods:
+// - update_front_tires_pressure: Method(Tire, Tire) -> ()
+// - calculate_pressure_imbalance: Method(Tire, Tire) -> PressureImbalance
+// and this method can be accessed through the consumer instance of VehicleMethodsConsumer<R>.
+// Methods use the `Method(...)` syntax, symmetric with `Event<T>` and `Field<T, ...>`:
+// method_name: Method(ArgType0, ArgType1, ...) -> score_com::Result<R::MethodReturnSample<ReturnType>>.
+// For void return, -> () is required so the macro can identify the member as a method.
+interface!(
+    interface VehicleMethods {
+        Id = "VehicleMethodsInterface",
+        update_front_tires_pressure: Method(Tire, Tire) -> (),
+        calculate_pressure_imbalance: Method(Tire, Tire) -> PressureImbalance,
+    }
+);
+
+// Field-based interface with compile-time initialization safety.
+// All fields must be explicitly initialized via the Type State pattern before offering.
+// The Type State pattern ensures that you cannot call offer() until all fields have been updated.
+// This separate field-only interface is intentionally kept for demonstration purposes.
+// Mixed event and field interfaces are already supported, as shown by VehicleMonitor below.
+interface!(
+    interface VehicleField {
+        Id = "VehicleFieldInterface",
+        left_tire: Field<Tire, WithGetter + WithSetter + WithNotifier>,
+        exhaust: Field<Exhaust, WithGetter + WithSetter + WithNotifier>,
+     }
+);
+
+// We can also define mix of event , field and method in one interface.
+interface!(
+    interface VehicleMonitor {
+        Id = "VehicleMonitorInterface",
+        left_tire: Event<Tire>,
+        exhaust: Event<Exhaust>,
+        left_tire_field: Field<Tire, WithGetter + WithSetter + WithNotifier>,
+        exhaust_field: Field<Exhaust, WithGetter + WithSetter + WithNotifier>,
+        update_front_tires_pressure: Method(Tire, Tire) -> (),
+        calculate_pressure_imbalance: Method(Tire, Tire) -> PressureImbalance,
+    }
+);
+
