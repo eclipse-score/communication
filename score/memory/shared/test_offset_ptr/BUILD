@@ -28,6 +28,7 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
+        "//score/memory/shared:__pkg__",
     ],
     deps = [
         ":offset_ptr_test_resources",
@@ -49,6 +50,7 @@ cc_unit_test(
     ],
     visibility = [
         "//score/memory:__pkg__",
+        "//score/memory/shared:__pkg__",
     ],
     deps = [
         ":bounds_check_memory_pool",
