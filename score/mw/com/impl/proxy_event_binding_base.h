@@ -20,6 +20,8 @@
 
 #include "score/result/result.h"
 
+#include <score/callback.hpp>
+
 #include <cstddef>
 #include <memory>
 
@@ -82,6 +84,29 @@ class ProxyEventBindingBase
 
     /// \brief Remove any receive handler registered via SetSubscriptionStateChangeHandler()
     virtual Result<void> UnsetSubscriptionStateChangeHandler() noexcept = 0;
+
+    /// \brief Sets a tracing callback for subscription state changes (used internally for tracing only).
+    /// \details This is an optional interface for bindings that support IPC tracing. Implementations that do not
+    /// support tracing can use the default no-op implementation. Default implementation does nothing.
+    /// \param callback Callback to invoke on subscription state changes for tracing purposes.
+    virtual void SetSubscriptionStateChangeTracingCallback(
+        score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept
+    {
+        // Default no-op implementation for bindings that don't support tracing
+        (void)callback;  // Suppress unused parameter warning
+    }
+
+    /// \brief Sets a tracing callback for subscription state change handler invocations (used internally for tracing
+    /// only).
+    /// \details This is an optional interface for bindings that support IPC tracing. The callback is invoked before
+    /// the user's subscription state change handler is called. Default implementation does nothing.
+    /// \param callback Callback to invoke before subscription state change handler is called for tracing purposes.
+    virtual void SetSubscriptionStateChangeHandlerTracingCallback(
+        score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept
+    {
+        // Default no-op implementation for bindings that don't support tracing
+        (void)callback;  // Suppress unused parameter warning
+    }
 
     /// \brief Returns the number of new samples a call to GetNewSamples() would currently provide if the
     /// max_sample_count set in the Subscribe call and GetNewSamples call were both infinitely high.

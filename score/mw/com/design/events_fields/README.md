@@ -430,6 +430,35 @@ add a lot of complexity and potential for deadlocks. The solution via the return
 machine called the handler, and before it releases the lock, it checks the return value. If it is `false`, it just resets
 &ndash; still under state-machine mutex lock &ndash; the internal `std::optional`, which holds the handler.
 
+#### Tracing of Subscription State Changes
+
+The subscription state machine supports optional tracing of state transitions to provide visibility into the subscription
+lifecycle. When IPC Tracing is enabled for a proxy event, two separate tracing callbacks are automatically installed 
+during `Subscribe()`:
+- `SetupSubscriptionStateChangeTracing()` - Installed via `SetSubscriptionStateChangeTracingCallback()`
+- `SetupSubscriptionStateChangeHandlerTracing()` - Installed via `SetSubscriptionStateChangeHandlerTracingCallback()`
+
+The tracing infrastructure provides five trace point types:
+- **Subscription state changed** - Captures every state transition (fired by `SetupSubscriptionStateChangeTracing()` callback at each `TransitionToState()`)
+- **Handler registered** - Captures when `SetSubscriptionStateChangeHandler()` is called
+- **Handler deregistered** - Captures when `UnsetSubscriptionStateChangeHandler()` is called
+- **Set handler** - Captures when `SetSubscriptionStateChangeHandler()` is called
+- **Unset handler** - Captures when `UnsetSubscriptionStateChangeHandler()` is called
+- **Handler callback** - Captures before the user-provided handler is invoked (fired by `SetupSubscriptionStateChangeHandlerTracing()` callback before user handler execution)
+
+The tracing callbacks are managed at the binding level via separate interfaces on the `ProxyEventBindingBase`:
+- `SetSubscriptionStateChangeTracingCallback()` - Receives new subscription state at each transition
+- `SetSubscriptionStateChangeHandlerTracingCallback()` - Receives new subscription state before user handler is called
+
+Both callbacks are invoked in the subscription state machine's `TransitionToState()` method to ensure complete 
+visibility into state transitions and handler invocations. The state changed callback is invoked first, followed by 
+the handler tracing callback (if a user handler is set).
+
+The structural model of the subscription state machine with tracing callback support is shown in the 
+[proxy event state machine model](proxy_event_state_machine_model.puml). The interaction flow, 
+implementation pattern, and configuration details are documented in the 
+[IPC Tracing Design](../ipc_tracing/README.md#subscription-state-change-tracing).
+
 ### Event Update Notification
 
 Event Notification is a good showcase for the "smart" behavior of `lola::MessagePassingFacade` as already mentioned (see
