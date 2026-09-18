@@ -1,0 +1,148 @@
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+@startuml static_design_service
+
+top to bottom direction
+skinparam linetype ortho
+skinparam nodesep 45
+skinparam ranksep 55
+
+' Classes colored green are provided by the user
+' Classes in magenta are AUTOSAR generated
+
+class ProvidedServicesContainer {
+  + ProvidedServicesContainer()
+  + Emplace<ServiceType, Args...>(\n      ServiceIdentifierView service_identifier, Args&&... args): Result<void>
+  + Extract<ServiceType>(ServiceIdentifierView service_identifier): std::unique_ptr<ServiceType>
+  + Extract<ServiceType>(): std::unique_ptr<ServiceType>
+  + Get<ServiceType>(ServiceIdentifierView service_identifier): ServiceType*
+  + Get<ServiceType>(): ServiceType*
+  + Has<ServiceType>(ServiceIdentifierView service_identifier): bool
+  + Has<ServiceType>(): bool
+  + Size(): std::size_t
+  + Reserve(std::size_t size): void
+  + StopAll(): void
+  --
+  - services_: std::vector<std::pair<ServiceIdentifierType, std::unique_ptr<ManagedService>>>
+}
+
+interface ManagedService {
+  + ManagedService()
+  + {abstract} Start(): Result<void>
+  + {abstract} Stop(): void
+}
+
+class AppFactory #GreenYellow {
+  + CreateServiceReactor3(<...>): std::shared_ptr<ServiceReactor3>
+  + CreateServiceReactor5(<...>): std::shared_ptr<ServiceReactor5>
+  + CreateProvidedServices(\n      std::shared_ptr<ServiceReactor>... service_reactors): ServiceData
+}
+
+class App #GreenYellow {
+}
+
+class "Business Logic" as BusinessLogic #GreenYellow {
+}
+
+struct ProvidedServiceData #GreenYellow {
+  accessor_for_service_one: score::cpp::callback<void(std::size_t)>
+  accessor_for_service_two: score::cpp::callback<void(std::string)>
+  reactor_for_service_three: std::shared_ptr<ReactorService3>
+  accessor_for_service_four: score::cpp::callback<void(CustomType)>
+  reactor_for_service_five: std::shared_ptr<ReactorService5>
+  --
+  provided_services: ProvidedServicesContainer
+}
+
+class SomeServiceSkeleton <<AUTOSAR generated>> {
+}
+
+class SomeService #GreenYellow {
+  + SomeService(std::shared_ptr<ServiceReactor>)
+}
+
+note right of SomeService
+  -> inject the reactor only if required, e.g. in case SomeService offers methods
+  -> use a ServiceAccessor callback instead in case just some
+     data needs to be published via fields or events
+end note
+
+interface ServiceReactor #GreenYellow {
+}
+
+class ServiceReactorImpl #GreenYellow {
+}
+
+class "ServiceAccessor" as ServiceAccessor <<score::cpp::callback>> #GreenYellow {
+}
+
+' Relationships
+
+App *-- AppFactory
+App *-- BusinessLogic
+
+' Keep the application layer at the top and align the main ownership path.
+App -[hidden]down-> AppFactory
+App -[hidden]down-> BusinessLogic
+
+
+AppFactory -left-> ProvidedServiceData : returns
+AppFactory ..> ServiceAccessor : might\ncreate
+AppFactory ..> ServiceReactorImpl : might create
+
+BusinessLogic <-- ServiceReactorImpl : invo\n-kes
+BusinessLogic .down.> ServiceAccessor : uses one of both \nper service
+BusinessLogic ..> ServiceReactor : uses one of \nboth per \nservice
+BusinessLogic <-- ProvidedServiceData : gets relevant accessors/reactors injected
+
+ProvidedServiceData *-- ProvidedServicesContainer
+ProvidedServiceData *-- ServiceReactor
+ProvidedServiceData *-up- ServiceAccessor
+
+SomeService o.up. ServiceReactor
+SomeService o.up. ServiceAccessor
+
+ManagedService <|-up- SomeService : implements
+
+SomeServiceSkeleton <|-- SomeService
+
+ServiceReactorImpl --|> ServiceReactor
+
+note top of SomeService #Magenta
+  Replace SomeService with your Service / Skeleton Name
+end note
+
+note as N1
+  **Note:** Classes colored green are to be provided by
+  the user of this framework.
+end note
+
+note bottom of ServiceReactorImpl
+  We can unit test our business logic now
+  without any backend deps, since ServiceReactor
+  or ServiceAccessor are to be used by it and
+  never the instance of SomeService directly.
+end note
+
+note top of ProvidedServicesContainer
+  ProvidedServicesContainer::Emplace<ServiceType>() constructs
+  the service in-place and immediately calls Start() on it.
+  If Start() fails, the service is discarded (not stored) and
+  the error is propagated back to the caller via Result<void>.
+  Compared to the deprecated ProvidedServiceContainer /
+  ProvidedServiceBuilder, there is no separate
+  "assemble now, start later" step and no ServiceDecorator
+  template parameter: ManagedService::Start()/Stop() are
+  implemented directly by the concrete service.
+end note
+
+@enduml
