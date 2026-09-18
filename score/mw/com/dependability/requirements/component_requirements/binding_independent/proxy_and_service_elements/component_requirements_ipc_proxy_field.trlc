@@ -30,7 +30,7 @@ section "com" {
 
                     Note: It is up to the {{mw::com}} implementation, whether it defines/generates different/explicit classes for each {{ProxyField}} or whether it uses a class template for {{ProxyField}} and uses the field data type ({{FieldType}}) as a template argument.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.CommunicationInterfaces@1]
+                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_CommunicationInterfaces@1]
                     version = 1
                 }
 
@@ -41,7 +41,7 @@ section "com" {
                      classes shall be defined, since the field data type influences the signature of a  class. See for example the ProxyField Member type FieldType
                     '''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.CommunicationInterfaces@1, Communication.ServiceInstanceNames@1]
+                    derived_from = [Communication.FEAT_CommunicationInterfaces@1, Communication.FEAT_ServiceInstanceNames@1]
                     version = 1
                 }
 
@@ -50,7 +50,7 @@ section "com" {
 
                     {{{using FieldType = <data type of field>}}}'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.CommunicationInterfaces@1]
+                    derived_from = [Communication.FEAT_CommunicationInterfaces@1]
                     version = 1
                 }
 
@@ -58,7 +58,7 @@ section "com" {
                     description = '''The {{ProxyField}}
                      class shall neither be copy-constructible nor copy-assignable.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.DataLoss@1]
+                    derived_from = [Communication.FEAT_DataLoss@1]
                     version = 1
                 }
 
@@ -71,7 +71,7 @@ section "com" {
 
                     Return value is described in Return value of Subscribe.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.DataLoss@1, Communication.ProducerConsumerPattern@1]
+                    derived_from = [Communication.FEAT_DataLoss@1, Communication.FEAT_ProducerConsumerPattern@1]
                     version = 1
                 }
 
@@ -82,7 +82,7 @@ section "com" {
 
                     Behaviour is described in Behaviour of Unsubscribe'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.SafeCommunication@1]
+                    derived_from = [Communication.FEAT_SafeCommunication@1]
                     version = 1
                 }
 
@@ -93,7 +93,7 @@ section "com" {
 
                     Return value: returns the subscription state of an event.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.ProducerConsumerPattern@1]
+                    derived_from = [Communication.FEAT_ProducerConsumerPattern@1]
                     version = 1
                 }
 
@@ -110,7 +110,7 @@ section "com" {
 
                     Behaviour: is described in default-cursor Behaviour of SetSubscriptionStateChangeHandler.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@1]
+                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
                     version = 1
                 }
 
@@ -123,7 +123,7 @@ section "com" {
 
                     Behaviour: is described in Behaviour of UnsetSubscriptionStateChangeHandler.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.Method@1]
+                    derived_from = [Communication.FEAT_Method@1]
                     version = 1
                 }
 
@@ -150,7 +150,7 @@ section "com" {
 
                     *  {{bmw::result::Error}}, according to or, a Error Codes relating to Active Subscription.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.DataLoss@1]
+                    derived_from = [Communication.FEAT_DataLoss@1]
                     version = 1
                 }
 
@@ -168,7 +168,7 @@ section "com" {
 
                     Return value: In case {{SetReceiveHandler()}} fails, {{ComErrc::kSetHandlerNotSet}} shall be returned in the {{Result}}.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.Method@1]
+                    derived_from = [Communication.FEAT_Method@1]
                     version = 1
                 }
 
@@ -183,7 +183,7 @@ section "com" {
 
                     Return value: {{UnsetReceiveHandler()}}{{ComErrc::kUnsetFailure}}{{Result}}In case  fails,  shall be returned in the '''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.Method@1]
+                    derived_from = [Communication.FEAT_Method@1]
                     version = 1
                 }
 
@@ -195,7 +195,7 @@ section "com" {
 
                     Return value is described in Return value of GetFreeSampleCount.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.SafeCommunication@1, Communication.ProducerConsumerPattern@1]
+                    derived_from = [Communication.FEAT_SafeCommunication@1, Communication.FEAT_ProducerConsumerPattern@1]
                     version = 1
                 }
 
@@ -213,7 +213,7 @@ section "com" {
 
                     *  or, a {{bmw::result::ErrorCode}}, according to Error Codes relating to Active Subscription.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.DataReordering@1]
+                    derived_from = [Communication.FEAT_DataReordering@1]
                     version = 1
                 }
             }

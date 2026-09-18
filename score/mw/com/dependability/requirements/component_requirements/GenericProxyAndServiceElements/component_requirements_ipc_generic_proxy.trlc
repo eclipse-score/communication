@@ -27,7 +27,7 @@ section "com" {
 
                     Note: A {{GenericProxy}} is created via the Create API based on {{HandleType}} containing its related deployment information.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.CommunicationInterfaces@1]
+                    derived_from = [Communication.FEAT_CommunicationInterfaces@1]
                     version = 1
                 }
 
@@ -36,7 +36,7 @@ section "com" {
 
                     Note: This information is needed for the [GetSampleSize() API|ISSUE:14035184].'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.EventType@1]
+                    derived_from = [Communication.FEAT_EventType@1]
                     version = 1
                 }
 
@@ -45,14 +45,14 @@ section "com" {
 
                     No corresponding Event shall be inserted into the event map member of the {{GenericProxy}} instance.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.EventType@1]
+                    derived_from = [Communication.FEAT_EventType@1]
                     version = 1
                 }
 
                 ScoreReq.CompReq GenericProxyClass {
                     description = '''The class {{GenericProxy}} is not a generated class and shall be provided in the namespace {{score::mw::com}}. {{GenericProxy}} users shall be able to access the definition of by inclusion of {{platform/aas/mw/com/types.h}}.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.CommunicationInterfaces@1, Communication.SupportForMultipleProgrammingLanguages@1]
+                    derived_from = [Communication.FEAT_CommunicationInterfaces@1, Communication.FEAT_SupportForMultipleProgrammingLanguages@1]
                     version = 1
                 }
 
@@ -64,7 +64,7 @@ section "com" {
 
                     Therefore the signature of the constructor of {{GenericProxy}} is implementation defined.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.SupportForProgrammingLanguageIdioms@1]
+                    derived_from = [Communication.FEAT_SupportForProgrammingLanguageIdioms@1]
                     version = 1
                 }
 
@@ -77,21 +77,21 @@ section "com" {
 
                     * HandleType: The given {{handle}} parameter shall be a handle returned from one of the {{GenericProxy::FindService()}} API overloads.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.ErrorHandling@1]
+                    derived_from = [Communication.FEAT_ErrorHandling@1]
                     version = 1
                 }
 
                 ScoreReq.CompReq GenericProxyCopySemantics {
                     description = '''The {{GenericProxy}} class shall neither be copy-constructible nor copy-assignable.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.DataLoss@1]
+                    derived_from = [Communication.FEAT_DataLoss@1]
                     version = 1
                 }
 
                 ScoreReq.CompReq GenericProxyMoveSemantics {
                     description = '''The {{GenericProxy}} class shall be move-constructible as well as being move-assignable.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.SupportForProgrammingLanguageIdioms@1, Communication.SupportForMultipleProgrammingLanguages@1]
+                    derived_from = [Communication.FEAT_SupportForProgrammingLanguageIdioms@1, Communication.FEAT_SupportForMultipleProgrammingLanguages@1]
                     version = 1
                 }
 
@@ -115,7 +115,7 @@ section "com" {
 
                     *  '''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.ServiceDiscovery@1]
+                    derived_from = [Communication.FEAT_ServiceDiscovery@1]
                     version = 1
                 }
 
@@ -138,7 +138,7 @@ section "com" {
 
                     *  or, a {{bmw::result::Error}} containing the value {{ComErrc::kBindingFailure}} if the lookup of all service instances corresponding to the service instance (See InstanceSpecifier Correspondence to Service Instances) by the binding returned errors.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.ServiceDiscovery@1]
+                    derived_from = [Communication.FEAT_ServiceDiscovery@1]
                     version = 1
                 }
 
@@ -162,7 +162,7 @@ section "com" {
 
                     *  or, a {{bmw::result::Error}} containing the value {{ComErrc::kFindServiceHandlerFailure}} if the handler could not be installed.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.MultiBindingSupport@1]
+                    derived_from = [Communication.FEAT_MultiBindingSupport@1]
                     version = 1
                 }
 
@@ -186,7 +186,7 @@ section "com" {
 
                     *  or, a {{bmw::result::Error}} containing the value {{ComErrc::kFindServiceHandlerFailure}} if the handler could not be installed.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.ServiceDiscovery@1]
+                    derived_from = [Communication.FEAT_ServiceDiscovery@1]
                     version = 1
                 }
 
@@ -203,7 +203,7 @@ section "com" {
 
                     Return values: returned {{bmw::Result<void>}}, which contains a {{bmw::result::Error}} containing the value {{ComErrc::kInvalidHandle}}, in case the given handle hasn't been returned by a corresponding {{StartFindService}} call on the same class or is a handle for a search, which has already been stopped.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.ServiceDiscovery@1, Communication.SafeCommunication@1]
+                    derived_from = [Communication.FEAT_ServiceDiscovery@1, Communication.FEAT_SafeCommunication@1]
                     version = 1
                 }
 
@@ -214,7 +214,7 @@ section "com" {
 
                     Return value: the read-only view of the map of events the {{GenericProxy}} provides (See GenericProxy EventMapView class, [[GenericProxyEventMapViewClass]]).'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.EventType@1]
+                    derived_from = [Communication.FEAT_EventType@1]
                     version = 1
                 }
 
@@ -226,7 +226,7 @@ section "com" {
 
                     Return value: the read-only view of the map of fields the {{GenericProxy}} provides (See GenericProxy FieldMapView class, [[GenericProxyFieldMapViewClass]]).'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.Field@1]
+                    derived_from = [Communication.FEAT_Field@1]
                     version = 1
                 }
 
@@ -237,7 +237,7 @@ section "com" {
 
                     Return value: the {{GenericProxy}}handle from which the  instance has been created whose type is specified in GenericProxy HandleType class.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.ServiceInstance@1]
+                    derived_from = [Communication.FEAT_ServiceInstance@1]
                     version = 1
                 }
 
@@ -247,14 +247,14 @@ section "com" {
 
                      class shall contain a public member type  which shall adhere to the requirements of HandleType'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.CommunicationInterfaces@1]
+                    derived_from = [Communication.FEAT_CommunicationInterfaces@1]
                     version = 1
                 }
 
                 ScoreReq.CompReq GenericProxyEventMapViewClass {
                     description = '''{{GenericProxy}} class shall have a {{public}} nested class EventMapView. The {{GenericProxyEvent}}s that shall be contained in {{EventMap}} are according to Event List Source.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.EventType@1]
+                    derived_from = [Communication.FEAT_EventType@1]
                     version = 1
                 }
 
@@ -273,7 +273,7 @@ section "com" {
 
                     * empty()'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.EventType@1]
+                    derived_from = [Communication.FEAT_EventType@1]
                     version = 1
                 }
 
@@ -281,7 +281,7 @@ section "com" {
                 ScoreReq.CompReq GenericProxyFieldMapViewClass {
                     description = '''{{GenericProxy}} class shall have a {{public}} nested class FieldMapView. The {{GenericProxyField}}s that shall be contained in {{FieldMapView}} are according to Field List Source.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.Field@1]
+                    derived_from = [Communication.FEAT_Field@1]
                     version = 1
                 }
 
@@ -301,7 +301,7 @@ section "com" {
 
                     * empty()'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.Field@1]
+                    derived_from = [Communication.FEAT_Field@1]
                     version = 1
                 }
             }
