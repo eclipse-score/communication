@@ -1,0 +1,7 @@
+{
+  "appId": "MTMU",
+  "appDesc": "methods_multiple_proxies",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole"
+}
