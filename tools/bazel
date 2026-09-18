@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+#
+# Bazelisk hook (https://github.com/bazelbuild/bazelisk#toolsbazel).
+#
+# This is the Bash wrapper script for Linux hosts, picked up directly via the
+# `tools/bazel.linux-x86_64` and `tools/bazel.linux-arm64` symlinks to this
+# file for bazelisk >= 1.28 (which understands the documented OS-/
+# arch-specific wrapper names). This file itself, `tools/bazel`, is also kept
+# around as the cross-platform fallback for bazelisk < 1.28, which predates
+# OS-/arch-specific wrapper names and only ever looks for the plain
+# `tools/bazel` file - on those older bazelisk versions this script has to
+# figure out the host OS itself, which it does below via `uname`.
+#
+# macOS hosts are handled separately by `tools/bazel.darwin` (symlinked as
+# `tools/bazel.darwin-x86_64` / `tools/bazel.darwin-arm64`) in bazelisk >= 1.28:
+# The fallback case below still covers macOS for bazelisk < 1.28.
+#
+# Windows hosts are handled separately by `tools/bazel.ps1`, since this is a
+# POSIX shell script that can't run natively there.
+#
+# Bazelisk executes this script instead of the real Bazel binary for every
+# invocation of `bazel` in this workspace, passing the real binary via
+# $BAZEL_REAL and forwarding all of the original CLI arguments.
+#
+# Intentionally never blocks the actual command: the checks below only emit
+# warnings, and this script always execs into the real Bazel afterwards.
+
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Best-effort: never let a check abort or fail to hand off to the real bazel.
+case "$(uname -s)" in
+    Linux)
+        "${script_dir}/setup/dev_setup_check.sh" || true
+        ;;
+    *)
+        # Covers macOS and any other POSIX host bazelisk might invoke this
+        # script on. Only Linux is officially supported (see CONTRIBUTING.md);
+        # we don't run the Linux-specific checks here, we just let the user
+        # know and get out of the way.
+        # Color warnings when writing to an interactive terminal, respecting the
+        # NO_COLOR convention (https://no-color.org/). Never colorize otherwise
+        # (e.g. when output is redirected/piped into a log file).
+        color_yellow=""
+        color_bold=""
+        color_reset=""
+        if [ -t 2 ] && [ -z "${NO_COLOR:-}" ]; then
+            color_yellow="$(printf '\033[33m')"
+            color_bold="$(printf '\033[1m')"
+            color_reset="$(printf '\033[0m')"
+        fi
+        printf '\n%s%sThis machine is not compliant with the instructions in CONTRIBUTING.md.\nThis can cause unexpected failures. Before filing any bug report, please follow the instructions in CONTRIBUTING.md%s\n' "${color_bold}" "${color_yellow}" "${color_reset}" >&2
+        ;;
+esac
+
+exec "${BAZEL_REAL}" "$@"
