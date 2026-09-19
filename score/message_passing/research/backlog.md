@@ -4,6 +4,29 @@ Long-lived, shared across all actualization cycles. Opportunistic findings notic
 or working land here (Core Principle 1 of `rules-score-actualize`) — they are not acted upon until
 a future cycle deliberately picks them up as its own change request.
 
+## From the 2026-09-19 assumed-system-requirements-rewrite cycle (closed)
+
+- No `FeatReq` distinguishes server-initiated notification (`Notify`) from client-initiated one-way
+  send (`Send`) — both derive from the same `MessagePassing.OneWayMessageDeliveryCapability@1`
+  (assumed-system level intentionally merges the two; the split, if wanted, belongs at `FeatReq`).
+  `IServerConnectionNotifyAPI` (`CompReq`) still derives straight from `ServerInterface@2`.
+- `MessagePassing.CrossPlatformAbstraction@1` (`AssumedSystemReq`, QM) has zero `FeatReq` children.
+  A genuinely new `FeatReq` — "QM-quality implementations of the API are permitted for non-QNX
+  OSes" — would derive from it; not yet authored (`OSIndependentAPI` correctly derives from the
+  ASIL B `QnxAsilBQualifiedImplementation@1` instead, since its content is "the API contract itself
+  is OS-independent", not the QM-implementations-allowed capability).
+- `Mitigation`/`ControlMeasure` content (what the retired `SafeState` used to gesture at with the
+  unverified "safe-silent" term) has no home in `assumed_system_requirements.trlc` anymore and is
+  not yet re-authored anywhere. Per the human, it belongs in `safety_analysis/control_measures.trlc`
+  once the repo rebases on the `@score_tooling` schema version that actually defines
+  `Mitigation`/`ControlMeasure` there (confirmed the vendored
+  `third_party/score_requirement_model/score_requirements_model.rsl` copy in this repo does not
+  define `Mitigation` at all — the real schema in use must come from a newer external version).
+- Reconciling `safety_analysis/failure_modes.trlc`/`control_measures.trlc`/`fta_*.puml` against the
+  new assumed-system requirements, and against `research/safety_concept_notes.md`'s 8 principles
+  more broadly, remains separate, larger future work — see the paused
+  `changes/2026-09-17-fta-redo-grounded-in-architecture` cycle.
+
 ## From the 2026-08-31 baseline snapshot (read-only reconnaissance)
 
 - `dependability/assumed_system/aous.trlc` contains no real Assumptions of Use — only a `TODO`

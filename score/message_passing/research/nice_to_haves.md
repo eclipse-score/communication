@@ -21,7 +21,7 @@ passing, not (yet) inconsistencies or defects — see `backlog.md` for those.
   `AssumedSystemReq`/`Mitigation` records in `assumed_system/assumed_system_requirements.trlc`
   (currently just `SystemMessagingProtocol` and `SafeState`), reasoned top-down from the system's
   point of view. Explicitly **not** to be wired into the TRLC/`fmea()` graph — see the new optional
-  skill `.github/skills/score-safety-analysis-tiered-fta/SKILL.md` for the full rationale (Tier 1
+  skill `.github/skills/rules-score-safety-analysis-tiered-fta/SKILL.md` for the full rationale (Tier 1
   vs. the existing component-API-level micro-FTAs). Would live as a plain, un-wired sketch under
   `research/` if ever done. Parked here, not started.
 
