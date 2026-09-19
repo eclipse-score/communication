@@ -15,6 +15,7 @@
 
 #include <sys/types.h>
 
+#include <cstdint>
 #include <limits>
 
 namespace score::mw::com::impl::lola
@@ -35,6 +36,15 @@ using TransactionLogId = uid_t;
 ///        SCTF tests
 /// \details We are asserting in TransactionLogSet::TransactionLogNode::TryAcquire, that this API doesn't get called
 ///          with kInvalidTransactionLogId!
+/// \details This TransactionLogSet is shared across processes/toolchains
+///          (e.g. between the QNX Domain and Linux/Android Lola Domain sides of the mw-com gateway),
+///          so this sentinel must resolve to the identical bit pattern everywhere it's placed
+///          in shared memory. Deriving it from std::numeric_limits<TransactionLogId>::max() is NOT safe for that,
+///          because uid_t's signedness differs by platform (signed 32-bit on QNX vs unsigned 32-bit on Linux/Android
+///          bionic), so std::numeric_limits<uid_t>::max() silently resolves to a different value (2147483647 vs
+///          4294967295) on each side even though the source is identical. All real TransactionLogIds come from
+///          GlobalConfiguration::ApplicationId (std::uint32_t) or a process uid cast to std::uint32_t, so
+///          INT32_MAX is used directly as a fixed, platform-independent sentinel that both sides agree on.
 // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
 // variables being given values that are not subsequently used".
 // This constant definition is used by other units to represent an invalid/initial TransactionLogId.
@@ -43,7 +53,10 @@ using TransactionLogId = uid_t;
 // This variable is declared only once within this namespace and does not violate the rule.
 // coverity[autosar_cpp14_a2_10_4_violation]
 // coverity[autosar_cpp14_a0_1_1_violation]
-constexpr uid_t kInvalidTransactionLogId{std::numeric_limits<TransactionLogId>::max()};
+static_assert(std::numeric_limits<std::int32_t>::max() <= std::numeric_limits<TransactionLogId>::max(),
+              "TransactionLogId must represent INT32_MAX");
+constexpr TransactionLogId kInvalidTransactionLogId{
+    static_cast<TransactionLogId>(std::numeric_limits<std::int32_t>::max())};
 
 }  // namespace score::mw::com::impl::lola
 
