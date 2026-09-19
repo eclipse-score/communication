@@ -14,7 +14,7 @@ guesses.
 
 The human clarified the intended safety-analysis methodology beyond what
 `score-safety-analysis`/`rules-score-actualize` alone say, now captured as an optional, opt-in
-lens: `.github/skills/score-safety-analysis-tiered-fta/SKILL.md`. Key points adopted for this
+lens: `.github/skills/rules-score-safety-analysis-tiered-fta/SKILL.md`. Key points adopted for this
 cycle:
 
 - We are **not** doing a formal, TRLC-wired system-level FTA. An informal "virtual" one (root

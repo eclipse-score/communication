@@ -28,7 +28,7 @@ artifacts that inform impact analysis; do not fold cycle-specific detail in here
   `.github/skills/score-architecture/SKILL.md`, `.github/skills/score-safety-analysis/SKILL.md`,
   `.github/skills/score-testing/SKILL.md` — the mechanical skills `rules-score-actualize`
   sequences per cycle.
-- `.github/skills/score-safety-analysis-tiered-fta/SKILL.md` — optional, opt-in lens layered on top
+- `.github/skills/rules-score-safety-analysis-tiered-fta/SKILL.md` — optional, opt-in lens layered on top
   of `score-safety-analysis` (two-tier FTA model + content-review checklist); this component has
   opted in.
 

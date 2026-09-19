@@ -23,7 +23,7 @@ themselves — no other artifact needs re-pinning.
 ## Full per-failure-mode mapping (proposal, pending Open Questions confirmation)
 
 Each table below is annotated with **Review notes** where applying the
-`score-safety-analysis-tiered-fta` content-review checklist (semantic validity / ambiguity /
+`rules-score-safety-analysis-tiered-fta` content-review checklist (semantic validity / ambiguity /
 correct scoping / coverage) surfaced something beyond simple A/B/C categorization — i.e. cases
 where being mechanically well-scoped (interface-keyed) did not mean the basic event's content was
 actually right.
