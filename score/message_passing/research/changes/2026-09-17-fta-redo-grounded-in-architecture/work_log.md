@@ -25,7 +25,7 @@
   (interface-keyed) doesn't mean the existing 8 `FailureMode`/`fta_*.puml` are semantically valid,
   unambiguous, correctly attributed, or complete — still need a genuine content review; (3) the
   system-level FTA idea goes to `nice_to_haves.md`, not further action now.
-- Authored a new, separate, opt-in skill `.github/skills/score-safety-analysis-tiered-fta/SKILL.md`
+- Authored a new, separate, opt-in skill `.github/skills/rules-score-safety-analysis-tiered-fta/SKILL.md`
   (does not modify `score-safety-analysis/SKILL.md` itself) capturing the two-tier model (informal
   Tier-1 system-level FTA vs. the existing Tier-2 micro-FTAs), the leaf-node-subset relationship,
   the "requirement layering is a guide not a rule" principle, and a content-review checklist.

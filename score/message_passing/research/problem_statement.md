@@ -61,30 +61,57 @@ ring-buffer send queues sized at construction time), and allows resource-mock in
 ## Existing requirement index (name + one-line gist)
 
 ### Assumed System Requirements (`assumed_system/assumed_system_requirements.trlc`)
-- `SystemMessagingProtocol` (AssumedSystemReq, ASIL B) — system needs a client-server IPC
-  messaging mechanism across process boundaries respecting ISO 26262 failure modes.
-- `SafeState` (Mitigation, ASIL B) — the safe state of the system is *safe-silent*.
+*(rewritten in `changes/2026-09-19-assumed-system-requirements-rewrite/`; `SystemMessagingProtocol`
+and `SafeState` retired — see that cycle's files for the full discussion)*
+- `ClientServerCommunicationModel` (B) — client/server roles, named service, cross-process.
+- `PointToPointConnectionTopology` (B) — each connection is exactly one client to one server.
+- `RequestReplyInteractionCapability` (B) — a request yields a corresponding reply.
+- `OneWayMessageDeliveryCapability` (B) — a message delivered either direction without a reply.
+- `RuntimeFailureDetectability` (B) — the application can tell a failed communication from success.
+- `IntegrationMisconfigurationDetectability` (B) — incompatible client/server config is detectable
+  at first-connection time.
+- `CrossPlatformAbstraction` (QM) — the API is usable across more than one host OS, for
+  development/evaluation/testing/QM deployment off the certified target.
+- `QnxAsilBQualifiedImplementation` (B) — on QNX, the API/abstraction/transport are capable of
+  ASIL B qualification; bounded/monotonic memory allocation, singleton-free design, and
+  mock-injectability all serve this one capability rather than being independent requirements.
+- `PeerIdentityInformationForAccessControl` (B) — the server gets client-identifying information
+  to support the integrator's own authentication/access-control decisions.
 
 ### Assumptions of Use (`assumed_system/aous.trlc`)
 - **Placeholder only** — contains a single `TODO` comment and one literal `ExampleAoU` record with
   placeholder description/note text (`mitigates = "FailureModeName"`, which is not a real failure
   mode name in this component). No real AoUs have been authored yet. Flagged in `backlog.md`.
 
-### Feature Requirements (`requirements/feature_requirements.trlc`), all `derived_from
-SystemMessagingProtocol@1`
+### Feature Requirements (`requirements/feature_requirements.trlc`)
+*(re-pinned to the new assumed-system layer in `changes/2026-09-19-assumed-system-requirements-rewrite/`;
+all 12 records bumped `@1`→`@2` since their own `derived_from` content changed — descriptions
+themselves are unchanged)*
 - `ServerInterface` (B) — server registers connection handlers and processes incoming requests.
+  `derived_from ClientServerCommunicationModel@1`.
 - `OSIndependentAPI` (B) — OS-independent API over OS-native IPC mechanisms.
+  `derived_from QnxAsilBQualifiedImplementation@1`.
 - `SafetyCertifiedTransportMechanism` (B) — QNX implementation uses a safety-certified transport.
+  `derived_from QnxAsilBQualifiedImplementation@1`.
 - `PointToPointConnections` (B) — only 1:1 connections; N:M explicitly excluded.
+  `derived_from PointToPointConnectionTopology@1`.
 - `SmallDataLowLatencyCommunication` (QM) — low-latency small-data communication.
+  `derived_from ClientServerCommunicationModel@1`.
 - `SynchronousUnidirectionalCommunication` (B) — blocking fire-and-forget send.
+  `derived_from OneWayMessageDeliveryCapability@1`.
 - `SynchronousBidirectionalCommunication` (B) — blocking send-and-wait-for-reply (`SendWaitReply`).
+  `derived_from RequestReplyInteractionCapability@1`.
 - `AsynchronousUnidirectionalCommunication` (B) — non-blocking send, no delivery guarantee.
+  `derived_from OneWayMessageDeliveryCapability@1`.
 - `SingletonFreeImplementation` (B) — no singletons in the design.
+  `derived_from QnxAsilBQualifiedImplementation@1`.
 - `AllowsBoundedMonotonicMemoryAllocation` (B) — bounded monotonic allocation.
+  `derived_from QnxAsilBQualifiedImplementation@1`.
 - `AllowsResourceMockInjectionForTesting` (B) — resource mock injection for tests.
+  `derived_from QnxAsilBQualifiedImplementation@1`.
 - `ClientIdentificationForAccessControl` (B) — server-side app gets OS-provided client identity per
-  Server Connection, for identification and access control. *(added in
+  Server Connection, for identification and access control. `derived_from
+  PeerIdentityInformationForAccessControl@1`. *(added in
   changes/2026-09-01-client-identity-and-userdata-docs)*
 
 ### Component Requirements (`requirements/component_requirements.trlc`), grouped by section
@@ -201,3 +228,18 @@ The other seven failure modes/FTAs (`IpcChannelUnavailable`, `NotificationNotDel
   `ClientIdentificationForAccessControl` `FeatReq` and the `IServerConnectionGetClientIdentityAPI`/
   `IServerConnectionGetUserDataAPI` `CompReq`s; lowered `TransportMechanismOnLinux` from ASIL B to
   QM (`version` 1→2). See that cycle's `evidence_bundle.md` for the full diff and rationale.
+- **2026-09-19** (`changes/2026-09-19-assumed-system-requirements-rewrite`): rewrote the assumed-
+  system layer from scratch, grounded in `research/safety_concept_notes.md`. Retired
+  `SystemMessagingProtocol` and the unverified `SafeState`/"safe-silent" `Mitigation` (no
+  replacement `Mitigation` — that content now belongs in a future `control_measures.trlc` entry,
+  per the updated, not-yet-rebased `@score_tooling` schema). Added 9 new `AssumedSystemReq` records,
+  each stating a black-box capability (core client-server model, interaction patterns, runtime/
+  integration-time error detectability, cross-platform/ASIL-B-qualification split, peer-identity
+  support) rather than a failure-handling mechanism or a named interface method. Cascaded: all 12
+  existing `FeatReq` records re-pinned to the new parents and bumped `@1`→`@2` (their own
+  `derived_from` content changed); every `CompReq` referencing them (in `component_requirements.trlc`
+  and `external_component_requirements.trlc`) re-pinned to the new `FeatReq` version as a pure
+  version-pin update, with no `CompReq` content or version changes. See that cycle's
+  `evidence_bundle.md` for the full diff, version-bump table, and deferred items (a `Notify`-specific
+  `FeatReq` split and a "QM implementation on non-QNX OSes" `FeatReq` are both left for a future
+  cycle).
