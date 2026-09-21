@@ -262,14 +262,7 @@ sysroot_from_lock(
     lock = "@ubuntu24_04_sysroot_resolve//:lock.json",
 )
 
-# FIXME: remove git_override once score_cpp_policies is released to BCR.
-bazel_dep(name = "score_cpp_policies", version = "0.0.0", dev_dependency = True)
-git_override(
-    module_name = "score_cpp_policies",
-    commit = "cdfd6ac4217b9e7413fa1e959ccb857bf803165f",
-    remote = "https://github.com/eclipse-score/score_cpp_policies.git",
-)
-
+bazel_dep(name = "score_cpp_policies", version = "0.1.1", dev_dependency = True)
 bazel_dep(name = "toolchains_llvm", version = "1.8.0", dev_dependency = True)
 
 llvm = use_extension(
@@ -287,7 +280,8 @@ llvm.toolchain(
     extra_known_features = [
         "@score_cpp_policies//sanitizers/features:debug_symbols",
         "@score_cpp_policies//sanitizers/features:asan",
-        "@score_cpp_policies//sanitizers/features:ubsan",
+        "@score_cpp_policies//sanitizers/features:ubsan_base",
+        "@score_cpp_policies//sanitizers/features:ubsan_clang",
         "@score_cpp_policies//sanitizers/features:lsan",
         "@score_cpp_policies//sanitizers/features:tsan",
         "//quality/compiler_warnings:minimal_warnings",
