@@ -32,9 +32,17 @@ build --@rules_python//python/config_settings:bootstrap_impl=script
 common --@score_baselibs//score/json:base_library=nlohmann
 common --//score/memory/shared/flags:use_typedshmd=False
 common --@score_baselibs//score/analysis/tracing/generic_trace_library:implementation=@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation
-common --extra_toolchains=@gcc_toolchain_x86_64//:cc_toolchain
-common --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_unknown_linux_gnu
+
+# Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
+common:linux_x64_gcc_15 --extra_toolchains=@gcc_toolchain_x86_64//:cc_toolchain
+common:linux_x64_gcc_15 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_unknown_linux_gnu
+# Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
+common:linux_x64 --config=linux_x64_gcc_15
+# Default required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
+common --config=linux_x64_gcc_15
+
 common --extra_toolchains=//bazel/toolchains:score_communication_libclang_toolchain
+
 build --incompatible_strict_action_env
 test --test_output=errors
 build --experimental_retain_test_configuration_across_testonly #https://github.com/bazelbuild/bazel/issues/6842
@@ -72,9 +80,14 @@ build --host_per_file_copt=external/.*boost.*@-Wno-error=shadow
 
 common:linux_x86_64_score_gcc_12_2_0_posix --platforms=@score_bazel_platforms//:x86_64-linux-gcc_12.2.0-posix
 common:linux_x86_64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_x86_64_toolchain//:x86_64-linux
+# Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
+common:linux_x64_gcc_12 --config=linux_x86_64_score_gcc_12_2_0_posix
+
 common:linux_aarch64_score_gcc_12_2_0_posix --platforms=@score_bazel_platforms//:aarch64-linux-gcc_12.2.0-posix
 common:linux_aarch64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_aarch64_toolchain//:aarch64-linux
 common:linux_aarch64_score_gcc_12_2_0_posix --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_aarch64_unknown_linux_gnu
+# Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
+common:linux_arm64_gcc_12 --config=linux_aarch64_score_gcc_12_2_0_posix
 
 # In order to build for QNX, you need:
 # * An account on qnx.com
