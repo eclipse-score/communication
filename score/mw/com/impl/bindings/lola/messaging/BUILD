@@ -96,6 +96,7 @@ cc_library(
     srcs = ["message_passing_service_instance.cpp"],
     hdrs = ["message_passing_service_instance.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = ["@score_baselibs//score/language/safecpp/safe_math"],
     tags = ["FFI"],
     deps = [
         ":asil_specific_cfg",

@@ -38,16 +38,16 @@
       "signature": "InitializeRuntime : void (const RuntimeConfiguration &)"
     },
     {
-      "name": "InitializeRuntimeAddonConfiguration",
-      "qualified_name": "score::mw::com::runtime::InitializeRuntimeAddonConfiguration",
+      "name": "AddConfiguration",
+      "qualified_name": "score::mw::com::runtime::AddConfiguration",
       "kind": "function",
-      "signature": "InitializeRuntimeAddonConfiguration : Result<void> (const RuntimeConfiguration &)"
+      "signature": "AddConfiguration : Result<void> (const RuntimeConfiguration &)"
     },
     {
-      "name": "InitializeRuntimeAddonConfiguration",
-      "qualified_name": "score::mw::com::runtime::InitializeRuntimeAddonConfiguration",
+      "name": "AddConfiguration",
+      "qualified_name": "score::mw::com::runtime::AddConfiguration",
       "kind": "function",
-      "signature": "InitializeRuntimeAddonConfiguration : Result<void> (score::json::Any)"
+      "signature": "AddConfiguration : Result<void> (score::json::Any)"
     },
     {
       "name": "RuntimeConfiguration",
