@@ -1,0 +1,149 @@
+@startuml
+
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam packageStyle rectangle
+skinparam defaultTextAlignment center
+
+interface Runtime {
+  type MethodCaller<Args, Return>
+  type MethodHandler<Args, Return>
+  type MethodInArgAllocator
+  type MethodReturnSample<T: CommData>
+  ---
+  + find_service()
+  + producer_builder()
+}
+
+interface MethodHandler<Args: MethodArgs, Return: CommData, R: Runtime> {
+  ---
+  + new(method_name, instance_info) -> Result<Self>
+  + register_handler(handler: impl MethodHandlerCall<Args, Return>)
+}
+
+interface MethodCaller<Args: MethodArgs, Return: CommData, R: Runtime> {
+  ---
+  + new(method_name, instance_info) -> Result<Self>
+  + invoke_with_copy(args: Args) -> impl Future<Output = Result<R::MethodReturnSample<Return>>>
+  + allocate() -> Result<Args::UninitTuple>
+  + invoke_zero_copy(ptrs: <Args as MethodArgsPtrTuple<R>>::PtrTuple) -> impl Future<Output = Result<R::MethodReturnSample<Return>>>
+}
+
+interface "MethodReturnSample<T>" as MethodReturnSample {
+  ---
+  ' Trait - mirrors Sample<T> in the event design
+  ' Bound: Deref<Target = T>
+  ' Runtime implements on its concrete type:
+  '   LolaMethodReturnSample<T>, MockMethodReturnSample<T>
+}
+
+interface MethodArgs {
+  ---
+  ' Marker trait: CommData supertrait
+  ' Blanket impls for arities 0-8 via impl_all_arities!()
+  ' No PtrTuple - pointer types are runtime-specific (see MethodArgsPtrTuple)
+}
+
+interface "MethodArgsPtrTuple<R: Runtime>" as MethodArgsPtrTuple {
+  type PtrTuple
+  ---
+  ' Blanket impls for arities 0-8 via impl_all_arities!()
+  ' PtrTuple = (ZeroCopyArgs<R::MethodInArgAllocator::MethodInArgPtr<T1>>, ...)
+  ' Separated from MethodArgs because pointer types are runtime-specific
+}
+
+interface "MethodArgsAllocate<A: MethodInArgAllocator>" as MethodArgsAllocate {
+  type UninitTuple
+  ---
+  ' Blanket impls for arities 0-8 via impl_all_arities!()
+  + alloc_uninit(allocator: &A) -> UninitTuple
+}
+
+interface "MethodCallInput<Args, Return, R>" as MethodCallInput {
+  ---
+  + invoke(caller: &R::MethodCaller<Args, Return>) -> impl Future<Output = Result<R::MethodReturnSample<Return>>>
+  ---
+  ' Copy path:      impl for Args itself        (dispatches invoke_with_copy)
+  ' Zero-copy path: impl for (ZeroCopyArgs<P1>, ...) (dispatches invoke_zero_copy)
+}
+
+interface "MethodHandlerCall<Args, Return>" as MethodHandlerCall {
+  ---
+  + call(args: Args) -> Return
+  ---
+  ' Blanket impl for Fn(...) -> Return + Send + Sync + 'static
+  ' Covers all arities 0-8 via impl_all_arities!()
+}
+
+interface "MethodInArgAllocator" as MethodInArgAllocator {
+  type MethodInArgPtr<T: CommData>
+  type MethodInArgMaybeUninit<T: CommData>
+  ---
+  + allocate<T: CommData>() -> MethodInArgMaybeUninit<T>
+  ---
+  ' MethodInArgPtr<T> declared here so both write() and
+  ' MethodArgsPtrTuple<R> resolve to the same concrete type
+}
+
+interface "MethodInArgMaybeUninit<T>" as MethodInArgMaybeUninit {
+  type Ptr: MethodInArgPtr<T>
+  ---
+  + write(val: T) -> ZeroCopyArgs<Self::Ptr>
+  + assume_init() -> ZeroCopyArgs<Self::Ptr>
+  ---
+  ' Mirrors SampleMaybeUninit<T> in the event design
+}
+
+interface "MethodInArgPtr<T>" as MethodInArgPtr {
+  ---
+  ' Trait - mirrors SampleMut<T> in the event design
+  ' Runtime implements on its concrete type:
+  '   LolaMethodInArgPtr<T>, MockMethodInArgPtr<T>
+  ' Concrete type will hold FFI slot pointer + Drop
+}
+
+class "ZeroCopyArgs<P>" as ZeroCopyArgs {
+  + 0: P
+  ---
+  ' Newtype wrapper returned by write()
+  ' Does NOT implement CommData - keeps MethodCallInput impls disjoint
+  ' User never writes this type explicitly; always inferred from write()
+}
+
+Runtime --> MethodCaller : defines as\nassociated type
+Runtime --> MethodHandler : defines as\nassociated type
+Runtime --> MethodInArgAllocator : defines as\nassociated type
+Runtime --> MethodReturnSample : defines as\nassociated type
+
+MethodCaller --> MethodArgsAllocate : uses for allocate()
+MethodCaller --> MethodArgsPtrTuple : uses for invoke_zero_copy()
+MethodCaller --> MethodInArgAllocator : via Runtime associated type
+MethodCaller --> MethodReturnSample : invoke returns
+
+MethodHandler --> MethodHandlerCall : accepts in\nregister_handler()
+
+MethodArgsAllocate --|> MethodArgs : extends
+MethodArgsPtrTuple --|> MethodArgs : extends
+
+MethodInArgAllocator --> MethodInArgMaybeUninit : allocate() produces
+MethodInArgAllocator --> MethodInArgPtr : declares as\nassociated type
+
+MethodInArgMaybeUninit --> ZeroCopyArgs : write() returns
+ZeroCopyArgs --> MethodInArgPtr : wraps
+
+MethodCallInput --> MethodCaller : invoke() dispatches to\ninvoke_with_copy or\ninvoke_zero_copy
+
+@enduml

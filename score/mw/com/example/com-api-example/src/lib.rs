@@ -12,12 +12,18 @@
  ********************************************************************************/
 
 pub mod consumer;
+// Method/Field/Mixed modules are just for demonstration purpose, as runtime implementation is not available yet.
+mod field_consumer;
+mod field_producer;
+mod method_consumer;
+mod method_producer;
+mod mixed_monitor;
 pub mod producer;
 pub use consumer::VehicleMonitorConsumer;
 pub use producer::VehicleMonitorProducer;
 
-use score_com::{Interface, Producer};
 use com_api_gen::VehicleInterface;
+use score_com::{Interface, Producer};
 
 // Type aliases for generated consumer and offered producer types for the Vehicle interface
 // VehicleConsumer is the consumer type generated for the Vehicle interface, parameterized by the runtime R
