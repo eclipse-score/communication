@@ -56,7 +56,7 @@ section "com" {
                 {{Proxy}}
                 Note:  is the name used for the created Proxy in subsequent requirements.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.CommunicationInterfaces@1, Communication.SupportForMultipleProgrammingLanguages@1]
+                derived_from = [Communication.FEAT_CommunicationInterfaces@1, Communication.FEAT_SupportForMultipleProgrammingLanguages@1]
                 version = 1
             }
 
@@ -67,7 +67,7 @@ section "com" {
 
                 Therefore the signature of the constructor of {{Proxy}} is implementation defined.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.SupportForProgrammingLanguageIdioms@1]
+                derived_from = [Communication.FEAT_SupportForProgrammingLanguageIdioms@1]
                 version = 1
             }
 
@@ -82,7 +82,7 @@ section "com" {
 
                 * HandleType: The given {{handle}} parameter shall be a handle returned from one of the {{Proxy::FindService()}} API overloads. See HandleType.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.ErrorHandling@1]
+                derived_from = [Communication.FEAT_ErrorHandling@1]
                 version = 1
             }
 
@@ -90,7 +90,7 @@ section "com" {
                 description = '''The {{Proxy}}
                 class shall neither be copy-constructible nor copy-assignable.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.DataLoss@1]
+                derived_from = [Communication.FEAT_DataLoss@1]
                 version = 1
             }
 
@@ -98,7 +98,7 @@ section "com" {
                 description = '''The {{Proxy}}
                 class shall be move-constructible as well as being move-assignable.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.SupportForProgrammingLanguageIdioms@1, Communication.SupportForMultipleProgrammingLanguages@1]
+                derived_from = [Communication.FEAT_SupportForProgrammingLanguageIdioms@1, Communication.FEAT_SupportForMultipleProgrammingLanguages@1]
                 version = 1
             }
 
@@ -119,7 +119,7 @@ section "com" {
 
                 *  or, a {{bmw::result::Error}} containing the value {{ComErrc::kBindingFailure}} if the lookup of all service instances corresponding to the service instance (See InstanceSpecifier Correspondence to Service Instances) by the binding returned errors.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.ServiceDiscovery@1]
+                derived_from = [Communication.FEAT_ServiceDiscovery@1]
                 version = 1
             }
 
@@ -141,7 +141,7 @@ section "com" {
 
                 *  or, a {{bmw::result::Error}} containing the value {{ComErrc::kBindingFailure}} if the lookup of all service instances corresponding to the service instance (See InstanceIdentifier Correspondence to Service Instances) by the binding returned errors.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.ServiceDiscovery@1]
+                derived_from = [Communication.FEAT_ServiceDiscovery@1]
                 version = 1
             }
 
@@ -165,7 +165,7 @@ section "com" {
 
                 *  or, a {{bmw::result::Error}} containing the value {{ComErrc::kFindServiceHandlerFailure}} if the handler could not be installed.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.MultiBindingSupport@1]
+                derived_from = [Communication.FEAT_MultiBindingSupport@1]
                 version = 1
             }
 
@@ -189,7 +189,7 @@ section "com" {
 
                 *  or, a {{bmw::result::Error}} containing the value {{ComErrc::kFindServiceHandlerFailure}} if the handler could not be installed.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.ServiceDiscovery@1]
+                derived_from = [Communication.FEAT_ServiceDiscovery@1]
                 version = 1
             }
 
@@ -204,7 +204,7 @@ section "com" {
 
                 Behaviour: Stops the asynchronous search for available services, which has been started by either Proxy StartFindService with InstanceIdentifier or Proxy StartFindService with InstanceSpecifier. After the call has returned no further calls to the user provided FindServiceHandler takes place. Calls to {{StopFindService}} with a {{FindServiceHandle}} that was already used in a call to {{StopFindService}} which did not return an error will be silently ignored.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.ServiceDiscovery@1, Communication.SafeCommunication@1]
+                derived_from = [Communication.FEAT_ServiceDiscovery@1, Communication.FEAT_SafeCommunication@1]
                 version = 1
             }
 
@@ -215,14 +215,14 @@ section "com" {
 
                 Return value: the handle from which the {{Proxy}} instance has been created whose type is specified in Proxy HandleType class.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.ServiceInstance@1]
+                derived_from = [Communication.FEAT_ServiceInstance@1]
                 version = 1
             }
 
             ScoreReq.CompReq ProxyHandleTypeClass {
                 description = '''The {{Proxy}} class shall contain a public member type {{HandleType}} which shall adhere to the .requirements of HandleType'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.CommunicationInterfaces@1]
+                derived_from = [Communication.FEAT_CommunicationInterfaces@1]
                 version = 1
             }
             }

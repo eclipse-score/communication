@@ -14,8 +14,8 @@ to exchange data with each other to execute their functionality.
 Since not every process should come up with its own custom infrastructure on how to exchange data, it is the main purpose
 of this software component to provide infrastructure for processes to exchange data in a safe and secure manner.
 
-The assumed functional requirements are specified
-within [assumed_functional_requirements.trlc](assumed_functional_requirements.trlc).
+The assumed system requirements are specified
+within [assumed_system_requirements.trlc](assumed_system_requirements.trlc).
 
 We assume further that the software component is part of the following layered architecture:
 

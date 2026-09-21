@@ -30,7 +30,7 @@ section "com" {
 
                     The class {{GenericProxyField}} is essentially a ProxyField class, where the concrete event data type / {{SampleType}} is unknown and therefore represented as {{void}}.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.EventType@1, Communication.CommunicationInterfaces@1]
+                    derived_from = [Communication.FEAT_EventType@1, Communication.FEAT_CommunicationInterfaces@1]
                     version = 1
                 }
 
@@ -40,7 +40,7 @@ section "com" {
 
                     * {{SetReceiveHandler}} (See GenericProxyField SetReceiveHandler)'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.SupportForProgrammingLanguageIdioms@1]
+                    derived_from = [Communication.FEAT_SupportForProgrammingLanguageIdioms@1]
                     version = 1
                 }
 
@@ -48,7 +48,7 @@ section "com" {
                 ScoreReq.CompReq GenericProxyFieldCopySemantics {
                     description = '''The {{GenericProxyField}} class shall neither be copy-constructible nor copy-assignable'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.DataLoss@1]
+                    derived_from = [Communication.FEAT_DataLoss@1]
                     version = 1
                 }
 
@@ -61,7 +61,7 @@ section "com" {
 
                     Return value is described in Return value of Subscribe.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.Field@1]
+                    derived_from = [Communication.FEAT_Field@1]
                     version = 1
                 }
 
@@ -73,7 +73,7 @@ section "com" {
 
                     Behaviour is described in Behaviour of Unsubscribe.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.Field@1]
+                    derived_from = [Communication.FEAT_Field@1]
                     version = 1
                 }
 
@@ -85,7 +85,7 @@ section "com" {
 
                     Return value: returns the subscription state of an field.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.ProducerConsumerPattern@1]
+                    derived_from = [Communication.FEAT_ProducerConsumerPattern@1]
                     version = 1
                 }
 
@@ -103,7 +103,7 @@ section "com" {
 
                     Behaviour: is described in Behaviour of SetSubscriptionStateChangeHandler.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.Field@1, Communication.ProducerConsumerPattern@1]
+                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_Field@1, Communication.FEAT_ProducerConsumerPattern@1]
                     version = 1
                 }
 
@@ -115,7 +115,7 @@ section "com" {
 
                     Behaviour: is described in Behaviour of UnsetSubscriptionStateChangeHandler.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.Field@1, Communication.ProducerConsumerPattern@1]
+                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_Field@1, Communication.FEAT_ProducerConsumerPattern@1]
                     version = 1
                 }
 
@@ -142,7 +142,7 @@ section "com" {
 
                     * or, a {{score::result::Error}}, according to Error Codes relating to Active Subscription.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.DataLoss@1, Communication.Field@1]
+                    derived_from = [Communication.FEAT_DataLoss@1, Communication.FEAT_Field@1]
                     version = 1
                 }
 
@@ -160,7 +160,7 @@ section "com" {
 
                     Return value: In case {{SetReceiveHandler()}} fails, {{ComErrc::kSetHandlerNotSet}} shall be returned in the {{Result}}.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.Method@1]
+                    derived_from = [Communication.FEAT_Method@1]
                     version = 1
                 }
 
@@ -174,7 +174,7 @@ section "com" {
 
                     Return value: {{{ComErrc::kUnsetFailure}} shall be returned in case UnsetReceiveHandler() fails '''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.Method@1]
+                    derived_from = [Communication.FEAT_Method@1]
                     version = 1
                 }
 
@@ -186,7 +186,7 @@ section "com" {
 
                     Return value is described in Return value of GetFreeSampleCount.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.DataLoss@1, Communication.DataReordering@1]
+                    derived_from = [Communication.FEAT_DataLoss@1, Communication.FEAT_DataReordering@1]
                     version = 1
                 }
 
@@ -204,7 +204,7 @@ section "com" {
 
                     * or, a {{bmw::result::ErrorCode}}, according to Error Codes relating to Active Subscription'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.DataLoss@1]
+                    derived_from = [Communication.FEAT_DataLoss@1]
                     version = 1
                 }
 
@@ -218,7 +218,7 @@ section "com" {
 
                     Return value: returns the aligned size in bytes of the underlying event sample data type. I.e. in case the underlying data type is T, it shall return {{sizeof(T)}}.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.Field@1]
+                    derived_from = [Communication.FEAT_Field@1]
                     version = 1
                 }
 
@@ -232,7 +232,7 @@ section "com" {
 
                     Return value: returns whether the representation of a sample event provided by the {{GenericProxyField}} instance has some (internal) serialization format ({{true}}) or is 1:1 the binary representation of the underlying C++ data type of the event sample ({{false}})'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.Field@1]
+                    derived_from = [Communication.FEAT_Field@1]
                     version = 1
                 }
             }
