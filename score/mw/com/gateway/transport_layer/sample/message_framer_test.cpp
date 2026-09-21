@@ -147,7 +147,7 @@ TEST_F(MessageFramerFixture, CreateMessageForTypeReturnsNullptrForInvalidType)
 
 TEST_F(MessageFramerFixture, CreateMessageForTypeReturnsNullptrForUnknownType)
 {
-    auto msg = MessageFramer::CreateMessageForType(static_cast<MessageType>(999));
+    auto msg = MessageFramer::CreateMessageForType(static_cast<MessageType>(0));
     EXPECT_EQ(msg, nullptr);
 }
 

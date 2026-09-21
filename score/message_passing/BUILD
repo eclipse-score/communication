@@ -147,6 +147,7 @@ cc_library(
         "unix_domain/unix_domain_socket_address.h",
     ],
     features = COMPILER_WARNING_FEATURES,
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
