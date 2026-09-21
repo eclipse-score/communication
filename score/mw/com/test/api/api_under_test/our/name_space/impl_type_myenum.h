@@ -14,10 +14,6 @@
 #ifndef OUR_NAME_SPACE_IMPL_TYPE_MY_ENUM_H
 #define OUR_NAME_SPACE_IMPL_TYPE_MY_ENUM_H
 
-#include "score/memory/shared/map.h"
-#include "score/memory/shared/string.h"
-#include "score/memory/shared/vector.h"
-#include <array>
 #include <cstdint>
 
 namespace our::name_space

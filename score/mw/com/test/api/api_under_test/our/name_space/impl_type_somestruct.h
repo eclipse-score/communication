@@ -14,16 +14,15 @@
 #ifndef OUR_NAME_SPACE_IMPL_TYPE_SOME_STRUCT_H
 #define OUR_NAME_SPACE_IMPL_TYPE_SOME_STRUCT_H
 
-#include "score/memory/shared/map.h"
+#include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 #include "score/memory/shared/string.h"
-#include "score/memory/shared/vector.h"
 #include <our/name_space/impl_type_multidimarray.h>
 #include <our/name_space/impl_type_multidimvector.h>
 #include <our/name_space/impl_type_myenum.h>
 #include <our/name_space/impl_type_mytype.h>
 #include <our/name_space/impl_type_somearray.h>
 #include <our/name_space/impl_type_somevector.h>
-#include <array>
+
 #include <cstdint>
 
 namespace our::name_space
@@ -42,13 +41,13 @@ struct SomeStruct
                const ::our::name_space::SomeArray& access_array_param,
                const ::our::name_space::MultiDimArray& multi_dim_array_param,
 #if !defined(__QNX__)
-               ::score::memory::shared::String const& access_string_param,
+               const score::memory::shared::String& access_string_param,
 #endif
-               ::our::name_space::SomeVector const& access_vector_param,
-               ::our::name_space::MultiDimVector const& multi_dim_vector_param,
-               ::our::name_space::MyType const& my_type_param,
-               ::our::name_space::MyEnum const& my_enum_param,
-               allocator_type const& allocator = allocator_type())
+               const ::our::name_space::SomeVector& access_vector_param,
+               const ::our::name_space::MultiDimVector& multi_dim_vector_param,
+               const ::our::name_space::MyType& my_type_param,
+               const ::our::name_space::MyEnum& my_enum_param,
+               const allocator_type& allocator = allocator_type())
         : foo{foo_param},
           bar{bar_param},
           access_array{access_array_param},
