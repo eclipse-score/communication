@@ -123,7 +123,8 @@ bool IsShmInTypedMemory(const std::string& path)
     score::os::StatBuffer stat_buffer{};
 
     const auto stat_result = score::os::Stat::instance().stat(file_path.c_str(), stat_buffer);
-    return (stat_result.has_value() && (stat_buffer.st_uid == typedmemd_uid.value()));
+    return (stat_result.has_value() &&
+            (stat_buffer.st_uid == static_cast<decltype(stat_buffer.st_uid)>(typedmemd_uid.value())));
 }
 
 }  // namespace
