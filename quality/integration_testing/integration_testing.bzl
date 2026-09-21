@@ -245,7 +245,9 @@ def dual_qemu_integration_test(
     _extend_list_in_kwargs_without_duplicates(
         kwargs,
         "tags",
-        ["no-flaky-test-detection", "exclusive"],
+        # "requires-network": the two VMs talk over a host socket, the sandbox
+        # network namespace (--nosandbox_default_allow_network) cuts that link.
+        ["no-flaky-test-detection", "exclusive", "requires-network"],
     )
 
     _extend_list_in_kwargs_without_duplicates(

@@ -20,12 +20,16 @@ Shared memory (the ivshmem BAR) carries only the data plane; cross-VM synchroniz
 (data-ready / verified signaling) travels over the real socket-based BidirectionalTransport
 via QemuHypervisorTransport::NotifyUpdate, matching ivshmem-plain's lack of a doorbell/MSI-X.
 Both apps print "verified" on success.
+
+Diagnostics: interrupt report from the guests and a qmp snapshot per VM before the apps start,
+then every 10s if the run takes too long, and once more on timeout. A hang should explain
+itself in the log.
 """
 
 import logging
-import time
-
-from dual_qemu import execute_async_with_retries, stop_quietly
+import subprocess
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -34,46 +38,76 @@ APP2 = "/opt/qemu_transport_test/bin/app2"
 VM_A_LABEL = "VM-A (src)"
 VM_B_LABEL = "VM-B (dest)"
 TIMEOUT_SECONDS = 180
+# healthy runs take a few seconds
+WATCHDOG_GRACE_S = 20
+WATCHDOG_INTERVAL_S = 10
 
 
-def _collect_result(label, process):
-    rc = process.get_exit_code()
-    text = process.get_output().strip()
+def _run_app(label, console, app):
+    """Run one app over the serial console and return rc + output. No ssh here on purpose."""
+    exit_code, output = console.run_sh_cmd_output(app, timeout=TIMEOUT_SECONDS)
+    text = output.strip()
     logger.info("==================== %s ====================", label)
-    logger.info("%s (rc=%s)", text, rc)
-    print(f"\n[{label}] {text} (rc={rc})")
-    return rc, text
+    logger.info("%s (rc=%s)", text, exit_code)
+    return exit_code, text
 
 
-def test_qemu_ivshmem_transport(target_a, target_b):
-    """Bidirectional: VM-A writes service_a and reads service_b; VM-B writes service_b and reads service_a."""
-    # Launch both guest applications with recovery for transient SSH failures.
-    processes = {
-        VM_A_LABEL: execute_async_with_retries(target_a, APP1),
-        VM_B_LABEL: execute_async_with_retries(target_b, APP2),
-    }
-    results = {}
-    deadline = time.monotonic() + TIMEOUT_SECONDS
-    while processes and time.monotonic() < deadline:
-        for label, process in list(processes.items()):
-            if not process.is_running():
-                results[label] = _collect_result(label, process)
-                del processes[label]
-                if results[label][0] != 0:
-                    for peer_label, peer_process in list(processes.items()):
-                        stop_quietly(peer_process, peer_label)
-                        results[peer_label] = _collect_result(peer_label, peer_process)
-                        del processes[peer_label]
-                    break
-        time.sleep(0.1)
+def _host_socket_state(port):
+    """ss output for the socket linking the two qemus."""
+    if port is None:
+        return "intervm socket: disabled"
+    try:
+        result = subprocess.run(
+            ["ss", "-tni", f"( sport = :{port} or dport = :{port} )"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        return f"intervm host socket (port {port}):\n{result.stdout.strip() or result.stderr.strip()}"
+    except Exception as ex:  # pylint: disable=broad-except
+        return f"intervm host socket (port {port}): ss failed: {ex}"
 
-    if processes:
-        for label, process in processes.items():
-            stop_quietly(process, label)
-        raise TimeoutError(f"Timed out after {TIMEOUT_SECONDS}s waiting for: {list(processes)}")
 
-    rc_a, text_a = results[VM_A_LABEL]
-    rc_b, text_b = results[VM_B_LABEL]
+def _snapshot(vm_a, vm_b, port, reason):
+    logger.warning(
+        "DIAGNOSTIC SNAPSHOT (%s)\n%s\n%s\n%s", reason, vm_a.diagnose(), vm_b.diagnose(), _host_socket_state(port)
+    )
+
+
+def _watchdog(vm_a, vm_b, port, stop_event):
+    if stop_event.wait(WATCHDOG_GRACE_S):
+        return
+    sample = 0
+    while not stop_event.is_set():
+        sample += 1
+        _snapshot(vm_a, vm_b, port, f"still running after {WATCHDOG_GRACE_S + (sample - 1) * WATCHDOG_INTERVAL_S}s")
+        stop_event.wait(WATCHDOG_INTERVAL_S)
+
+
+def test_qemu_ivshmem_transport(console_a, console_b, vm_a, vm_b, intervm_host_port):
+    """Bidirectional: VM-A writes service_a and reads service_b; VM-B mirrors it."""
+    # baseline while the consoles are still free
+    logger.info("%s\n%s", vm_a.guest_interrupt_report(), vm_b.guest_interrupt_report())
+    _snapshot(vm_a, vm_b, intervm_host_port, "baseline before application start")
+
+    stop_watchdog = threading.Event()
+    watchdog = threading.Thread(target=_watchdog, args=(vm_a, vm_b, intervm_host_port, stop_watchdog), daemon=True)
+    watchdog.start()
+    try:
+        # the apps wait for each other, so run both at once
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            future_a = executor.submit(_run_app, VM_A_LABEL, console_a, APP1)
+            future_b = executor.submit(_run_app, VM_B_LABEL, console_b, APP2)
+            try:
+                rc_a, text_a = future_a.result(timeout=TIMEOUT_SECONDS + 30)
+                rc_b, text_b = future_b.result(timeout=TIMEOUT_SECONDS + 30)
+            except Exception:
+                _snapshot(vm_a, vm_b, intervm_host_port, "post-mortem at failure")
+                raise
+    finally:
+        stop_watchdog.set()
+        watchdog.join(timeout=5)
 
     assert rc_a == 0, f"source (VM-A) failed (rc={rc_a}): {text_a}"
     assert rc_b == 0, f"destination (VM-B) failed (rc={rc_b}): {text_b}"

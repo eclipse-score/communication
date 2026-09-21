@@ -53,7 +53,7 @@ using score::mw::com::impl::InstanceSpecifier;
 namespace
 {
 
-// Static IPs on the "intervm" NIC (vtnet1) bridging the two VMs; see ConfigureIntervmNic().
+// Static IPs on the "intervm" NIC (vtnet1), assigned by the dual_qemu fixture.
 constexpr char kIntervmIpVmA[] = "10.0.3.1";  // this VM's transport peer
 constexpr char kIntervmIpVmB[] = "10.0.3.2";
 constexpr std::uint16_t kTransportPortVmA = 46001U;
@@ -74,12 +74,7 @@ int main()
 {
     std::fprintf(stderr, "=== app2 (VM-B): bidirectional gateway transport test ===\n");
 
-    // Bring up the intervm NIC before BidirectionalTransport needs it for listen()/connect().
-    if (!ConfigureIntervmNic(kIntervmIpVmB))
-    {
-        std::fprintf(stderr, "app2: failed to configure intervm NIC\n");
-        return 1;
-    }
+    // vtnet1 is configured by the dual_qemu fixture, not here
 
     // --- Setup: discover BAR, create provider, create transport ---
     std::uint64_t paddr = 0U;

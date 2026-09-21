@@ -97,39 +97,7 @@ bool NotifyWithRetries(NotifyFunction&& notify, int attempts = 10)
     return false;
 }
 
-/// Brings up the "intervm" virtio-net NIC (vtnet1) and assigns it the given static IP.
-///
-/// This is the point-to-point link between the two dual_qemu VMs. QNX only auto-configures
-/// vtnet0 (SSH) in the shared qnx8_qemu boot image, so vtnet1 arrives unconfigured. Each app
-/// configures its own side here rather than in the shared boot script because:
-///   - each app binary has a fixed, known VM role, whereas the boot script is shared by both
-///     VMs and would need runtime MAC-based branching;
-///   - the boot script is parsed by mkifs at image-build time with a restricted grammar (no
-///     real shell; even escaped `$` substitutions broke the parser) — ordinary compiled code
-///     avoids that fragility.
-bool ConfigureIntervmNic(const char* local_ip)
-{
-    constexpr const char* kIntervmInterface = "vtnet1";
-
-    const int up_rc = std::system((std::string{"if_up -p "} + kIntervmInterface).c_str());
-    if (up_rc != 0)
-    {
-        std::fprintf(stderr, "ConfigureIntervmNic: if_up -p %s failed (rc=%d)\n", kIntervmInterface, up_rc);
-        return false;
-    }
-
-    const std::string ifconfig_cmd =
-        std::string{"ifconfig "} + kIntervmInterface + " " + local_ip + " netmask 255.255.255.0 up";
-    const int ifconfig_rc = std::system(ifconfig_cmd.c_str());
-    if (ifconfig_rc != 0)
-    {
-        std::fprintf(stderr, "ConfigureIntervmNic: ifconfig %s failed (rc=%d)\n", kIntervmInterface, ifconfig_rc);
-        return false;
-    }
-
-    std::fprintf(stderr, "ConfigureIntervmNic: %s configured as %s\n", kIntervmInterface, local_ip);
-    return true;
-}
+// vtnet1 is configured by the dual_qemu fixture over the console, not from the apps.
 
 /// Test GatewayCore stub — records ProvideService calls and routes incoming NotifyUpdate
 /// notifications to local flags by element name, so app code can WaitForFlag() on them.

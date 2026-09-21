@@ -27,8 +27,13 @@ from score.itf.plugins.qemu.qemu_process import QemuProcess
 from score.itf.plugins.qemu.qemu_target import QemuTarget
 
 from .ivshmem_qemu import IvshmemQemu
+from .qmp_client import diagnose
 
 logger = logging.getLogger(__name__)
+
+# second NIC in the guest, the boot image only configures vtnet0
+INTERVM_INTERFACE = "vtnet1"
+INTERVM_NETMASK = "255.255.255.0"
 
 
 def _host_port_is_free(port: int, host: str = "127.0.0.1") -> bool:
@@ -192,6 +197,9 @@ class DualQemuProcess(QemuProcess):
         vm_index=0,
         max_boot_attempts=2,
         boot_timeout=180,
+        intervm_address=None,
+        qmp_socket_path=None,
+        dump_dir=None,
     ):
         super().__init__(
             path_to_qemu_image,
@@ -214,8 +222,13 @@ class DualQemuProcess(QemuProcess):
             ivshmem_size=ivshmem_size,
             intervm=intervm,
             vm_index=vm_index,
+            qmp_socket_path=qmp_socket_path,
+            dump_dir=dump_dir,
         )
         self._vm_config = vm_config
+        self._vm_index = vm_index
+        self._intervm_address = intervm_address
+        self._qmp_socket_path = qmp_socket_path
         self._max_boot_attempts = max_boot_attempts
         self._boot_timeout = boot_timeout
         self._target = None
@@ -226,8 +239,13 @@ class DualQemuProcess(QemuProcess):
         for attempt in range(1, self._max_boot_attempts + 1):
             super().start()
             try:
+                self._wait_for_console()
                 self._target = QemuTarget(self, self._vm_config)
-                _wait_for_ssh(self._target, total_timeout=self._boot_timeout)
+                if self._intervm_address:
+                    # console is the control channel here, don't gate the boot on ssh
+                    logger.info("VM %d: booted", self._vm_index)
+                else:
+                    _wait_for_ssh(self._target, total_timeout=self._boot_timeout)
                 return self
             except Exception as ex:  # pylint: disable=broad-except
                 last_error = ex
@@ -248,6 +266,60 @@ class DualQemuProcess(QemuProcess):
             f"VM never booted into a usable state after {self._max_boot_attempts} attempts: {last_error}"
         )
 
+    def _wait_for_console(self, timeout_s=90):
+        """Wait for the shell on the serial console."""
+        deadline = time.monotonic() + timeout_s
+        last_error = None
+        while time.monotonic() < deadline:
+            try:
+                code, _ = self.console.run_sh_cmd_output("echo console-ready", timeout=15)
+                if code == 0:
+                    return
+                last_error = RuntimeError(f"rc={code}")
+            except Exception as ex:  # pylint: disable=broad-except
+                last_error = ex
+            time.sleep(2)
+        raise RuntimeError(f"VM {self._vm_index}: console never responded: {last_error}")
+
+    def configure_intervm_nic(self, timeout_s=90):
+        """Configure vtnet1 over the console and check the address took."""
+        if not self._intervm_address:
+            return
+
+        deadline = time.monotonic() + timeout_s
+        last_error = None
+        while time.monotonic() < deadline:
+            try:
+                # shell may not be there yet
+                ready_code, _ = self.console.run_sh_cmd_output("echo console-ready", timeout=15)
+                if ready_code != 0:
+                    raise RuntimeError(f"console not ready (rc={ready_code})")
+
+                command = (
+                    f"if_up -p {INTERVM_INTERFACE} ; "
+                    f"ifconfig {INTERVM_INTERFACE} {self._intervm_address} "
+                    f"netmask {INTERVM_NETMASK} up ; "
+                    f"ifconfig {INTERVM_INTERFACE}"
+                )
+                exit_code, readback = self.console.run_sh_cmd_output(command, timeout=60)
+                if exit_code == 0 and self._intervm_address in readback:
+                    logger.info(
+                        "VM %d: %s configured as %s",
+                        self._vm_index,
+                        INTERVM_INTERFACE,
+                        self._intervm_address,
+                    )
+                    return
+                last_error = RuntimeError(f"rc={exit_code}, ifconfig said:\n{readback}")
+            except Exception as ex:  # pylint: disable=broad-except
+                last_error = ex
+            time.sleep(2)
+
+        raise RuntimeError(
+            f"VM {self._vm_index}: could not configure {INTERVM_INTERFACE} as "
+            f"{self._intervm_address} within {timeout_s}s: {last_error}"
+        )
+
     def ensure_responsive(self, timeout: int = 30, stable_successes: int = 2):
         """Re-verify the VM is still reachable; restart in place if not."""
         try:
@@ -260,3 +332,29 @@ class DualQemuProcess(QemuProcess):
     def target(self):
         """The ``QemuTarget`` for this VM (available after ``start()``)."""
         return self._target
+
+    @property
+    def qmp_socket_path(self):
+        """Path of this VM's QMP unix socket, for host-side diagnostics (may be None)."""
+        return self._qmp_socket_path
+
+    def diagnose(self):
+        """QMP snapshot: netdevs, PCI IRQ lines, IOAPIC, virtio rings."""
+        if not self._qmp_socket_path:
+            return f"VM {self._vm_index}: no QMP socket configured"
+        return diagnose(self._qmp_socket_path, f"VM {self._vm_index}")
+
+    def guest_interrupt_report(self, timeout=30):
+        """pidin irqs + driver slog lines, run this before the apps take the console."""
+        report = [f"VM {self._vm_index} guest interrupt report:"]
+        for command in (
+            "pidin irqs",
+            "slog2info | grep -i -E 'vtnet|virtio|msi|pci_cap|pci_server|module'",
+            "ls -l /proc/boot/pci /proc/boot/pci_hw.cfg /proc/boot/pci_server.cfg",
+        ):
+            try:
+                code, output = self.console.run_sh_cmd_output(command, timeout=timeout)
+                report.append(f"  $ {command} (rc={code})\n    " + output.replace("\n", "\n    "))
+            except Exception as ex:  # pylint: disable=broad-except
+                report.append(f"  $ {command}: failed: {ex}")
+        return "\n".join(report)

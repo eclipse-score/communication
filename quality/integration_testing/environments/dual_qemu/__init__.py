@@ -18,11 +18,15 @@ and only adds (a) a second VM, (b) an ``ivshmem-plain`` device backed by one sha
 file, and (c) distinct host SSH ports per VM.
 
 Exposed session fixtures:
-    - ``target_a`` / ``target_b`` -- the two booted VMs (``QemuTarget``).
-    - ``ivshmem_backend``         -- path of the shared host backing file.
+    - ``target_a`` / ``target_b``   -- the two booted VMs (``QemuTarget``).
+    - ``console_a`` / ``console_b`` -- their serial consoles.
+    - ``vm_a`` / ``vm_b``           -- the ``DualQemuProcess`` objects (diagnostics).
+    - ``intervm_host_port``         -- host port of the socket linking the two VMs.
+    - ``ivshmem_backend``           -- path of the shared host backing file.
 """
 
 import logging
+import os
 import socket
 
 import pytest
@@ -43,6 +47,9 @@ from .dual_qemu_process import (
 __all__ = ["execute_async_with_retries", "stop_quietly"]
 
 logger = logging.getLogger(__name__)
+
+# what the apps connect to
+_INTERVM_ADDRESSES = ("10.0.3.1", "10.0.3.2")
 
 
 def pytest_addoption(parser):
@@ -95,13 +102,27 @@ def ivshmem_backend(config, tmp_path_factory):
     yield path
 
 
+def _diagnostics_dir(tmp_path_factory):
+    """pcaps go to bazel undeclared outputs when available."""
+    undeclared = os.environ.get("TEST_UNDECLARED_OUTPUTS_DIR")
+    if undeclared and os.path.isdir(undeclared):
+        return undeclared
+    return str(tmp_path_factory.mktemp("netdump"))
+
+
 @pytest.fixture(scope="session")
-def _targets(config, ivshmem_backend):
+def _targets(config, ivshmem_backend, tmp_path_factory):
     """Boot both VMs sequentially, verify them, and tear down in reverse order."""
     logger.info(f"Starting dual-VM tests on host: {socket.gethostname()}")
     dual_config = config.dual_config
     vms = dual_config.vms
     intervm = dual_config.intervm_network
+
+    # diagnostics only, guests don't see any of this
+    qmp_dir = tmp_path_factory.mktemp("qmp")
+    qmp_socket_paths = [str(qmp_dir / "vm_a.qmp"), str(qmp_dir / "vm_b.qmp")]
+    dump_dir = _diagnostics_dir(tmp_path_factory)
+    logger.info("Netdev pcaps go to %s", dump_dir)
 
     reserved_host_ports = set()
     intervm_roles = [None, None]
@@ -135,6 +156,9 @@ def _targets(config, ivshmem_backend):
         ivshmem_size=dual_config.ivshmem.size,
         intervm=intervm_roles[0],
         vm_index=0,
+        intervm_address=_INTERVM_ADDRESSES[0] if intervm.enabled else None,
+        qmp_socket_path=qmp_socket_paths[0],
+        dump_dir=dump_dir,
     ) as process_a:
         if intervm.enabled:
             wait_for_host_port_bound(intervm.host_port)
@@ -148,17 +172,55 @@ def _targets(config, ivshmem_backend):
             ivshmem_size=dual_config.ivshmem.size,
             intervm=intervm_roles[1],
             vm_index=1,
+            intervm_address=_INTERVM_ADDRESSES[1] if intervm.enabled else None,
+            qmp_socket_path=qmp_socket_paths[1],
+            dump_dir=dump_dir,
         ) as process_b:
-            yield [process_a.target, process_b.target]
+            if intervm.enabled:
+                # only now, both qemus exist so the link between them is up
+                process_a.configure_intervm_nic()
+                process_b.configure_intervm_nic()
+            yield [process_a, process_b]
+
+
+@pytest.fixture(scope="session")
+def console_a(_targets):
+    """VM-A serial console (the shell on ser1). Works without guest networking."""
+    return _targets[0].console
+
+
+@pytest.fixture(scope="session")
+def console_b(_targets):
+    """VM-B serial console."""
+    return _targets[1].console
+
+
+@pytest.fixture(scope="session")
+def vm_a(_targets):
+    """VM-A process object (console, qmp diagnostics)."""
+    return _targets[0]
+
+
+@pytest.fixture(scope="session")
+def vm_b(_targets):
+    """VM-B process object."""
+    return _targets[1]
+
+
+@pytest.fixture(scope="session")
+def intervm_host_port(config, _targets):
+    """Host port of the socket linking the two VMs, None if disabled."""
+    intervm = config.dual_config.intervm_network
+    return intervm.host_port if intervm.enabled else None
 
 
 @pytest.fixture(scope="session")
 def target_a(_targets):
     """The first VM (VM-A) in the inter-VM shared-memory tests."""
-    return _targets[0]
+    return _targets[0].target
 
 
 @pytest.fixture(scope="session")
 def target_b(_targets):
     """The second VM (VM-B) in the inter-VM shared-memory tests."""
-    return _targets[1]
+    return _targets[1].target
