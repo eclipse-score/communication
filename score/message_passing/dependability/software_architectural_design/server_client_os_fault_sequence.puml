@@ -100,8 +100,7 @@ client_conn -> client_app : state_callback(kStopped)
 note left : GetStopReason() == StopReason::kClosedByPeer
 
 os -> server_conn : [IPC] peer closed
-note right : Detected independently on the
-server side once the OS reports the peer gone
+note right : Detected independently on the server side once the OS reports the peer gone
 server_conn -> server_app : DisconnectCallback(connection)\nor IConnectionHandler::OnDisconnect(connection)
 destroy server_conn
 

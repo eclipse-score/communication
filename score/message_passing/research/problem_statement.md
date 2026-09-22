@@ -243,3 +243,19 @@ The other seven failure modes/FTAs (`IpcChannelUnavailable`, `NotificationNotDel
   `evidence_bundle.md` for the full diff, version-bump table, and deferred items (a `Notify`-specific
   `FeatReq` split and a "QM implementation on non-QNX OSes" `FeatReq` are both left for a future
   cycle).
+- **2026-09-22** (`changes/2026-09-22-feature-req-notify-split-and-crossplatform-qm`): picked up
+  both items deferred from the previous cycle. Split server-initiated `Notify` out of the
+  client-`Send`-only one-way `FeatReq`s into a new `AsynchronousServerNotification` `FeatReq`
+  (unconditionally async), re-pointing `IServerConnectionNotifyAPI` to it (`version` 1→2). Rewrote
+  `SynchronousUnidirectionalCommunication`/`AsynchronousUnidirectionalCommunication` (`@2`→`@3`) to
+  stop asserting a QNX-only "blocks until a suitable handler has been identified" guarantee as a
+  universal feature, and to state the real, asymmetric, `ClientConfig`-dependent (`truly_async`,
+  `fully_ordered` + pending-reply) trigger for blocking vs. queuing. Retired the two `CompReq`s that
+  inherited the wrong condition (`SynchronousSendBlocksUntilServerReceives`,
+  `AsynchronousSendReturnsAfterLocalAcceptance`, both wrongly gated on "a client-side send queue is
+  configured") and replaced them with `ClientSendUsesDirectTransportCallByDefault`/
+  `ClientSendQueuesForAsyncOrOrderingReasons`, whose descriptions match
+  `ClientConnection::Send`'s actual gating logic. Added a new `QMImplementationOnNonQnxOS` `FeatReq`
+  deriving from `CrossPlatformAbstraction@1`, and wired `TransportMechanismOnLinux`
+  (`external_component_requirements.trlc`) to also derive from it (`version` 2→3). See that cycle's
+  `evidence_bundle.md` for the full diff and version-bump table.

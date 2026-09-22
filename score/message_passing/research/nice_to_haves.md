@@ -25,3 +25,14 @@ passing, not (yet) inconsistencies or defects — see `backlog.md` for those.
   vs. the existing component-API-level micro-FTAs). Would live as a plain, un-wired sketch under
   `research/` if ever done. Parked here, not started.
 
+## From the 2026-09-22 feature-req-notify-split-and-crossplatform-qm cycle
+
+- Model client-initiated one-way `Send` as `SynchronousBidirectionalCommunication` with an empty
+  reply instead of as a distinct one-way capability. Would make the "blocks until the receiving
+  side's handler has processed the call" guarantee portable to both backends (today it holds only
+  for QNX's synchronous native transport, not for Linux's Unix Domain Socket `write()`), at the
+  cost of merging two currently-separate `IClientConnection` API surfaces. Raised by the human as a
+  design thought during that cycle; explicitly not directed to be implemented — this cycle only
+  fixed requirement wording to stop overclaiming the QNX-only guarantee, not the API/architecture.
+
+

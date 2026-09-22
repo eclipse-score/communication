@@ -6,15 +6,6 @@ a future cycle deliberately picks them up as its own change request.
 
 ## From the 2026-09-19 assumed-system-requirements-rewrite cycle (closed)
 
-- No `FeatReq` distinguishes server-initiated notification (`Notify`) from client-initiated one-way
-  send (`Send`) — both derive from the same `MessagePassing.OneWayMessageDeliveryCapability@1`
-  (assumed-system level intentionally merges the two; the split, if wanted, belongs at `FeatReq`).
-  `IServerConnectionNotifyAPI` (`CompReq`) still derives straight from `ServerInterface@2`.
-- `MessagePassing.CrossPlatformAbstraction@1` (`AssumedSystemReq`, QM) has zero `FeatReq` children.
-  A genuinely new `FeatReq` — "QM-quality implementations of the API are permitted for non-QNX
-  OSes" — would derive from it; not yet authored (`OSIndependentAPI` correctly derives from the
-  ASIL B `QnxAsilBQualifiedImplementation@1` instead, since its content is "the API contract itself
-  is OS-independent", not the QM-implementations-allowed capability).
 - `Mitigation`/`ControlMeasure` content (what the retired `SafeState` used to gesture at with the
   unverified "safe-silent" term) has no home in `assumed_system_requirements.trlc` anymore and is
   not yet re-authored anywhere. Per the human, it belongs in `safety_analysis/control_measures.trlc`
@@ -78,8 +69,6 @@ a future cycle deliberately picks them up as its own change request.
   `ConnectionContextDataWrong` FTA (`fta_connection_context_data_wrong.puml`) to a future
   safety-analysis-focused cycle — see
   `changes/2026-09-01-client-identity-and-userdata-docs/change_request.md`, Open Question 2.
-- ~~`IServerConnection::GetUserData()` has the same gap...~~ — resolved: added the
-  `IServerConnectionGetUserDataAPI` `CompReq` in this same cycle, per explicit human confirmation.
 
 ## From the 2026-09-16 memory/size-limits findings pass (no active cycle)
 
