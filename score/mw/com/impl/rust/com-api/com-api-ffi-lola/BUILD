@@ -68,6 +68,6 @@ rust_library(
     deps = [
         ":bridge_ffi_rs",
         "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
-        "@score_baselibs//src/log/score_log",
+        "@score_baselibs//score/log_rust/score_log",
     ],
 )
