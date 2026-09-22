@@ -509,6 +509,9 @@ ScoreReq.AoU NoGuaranteeOnExecutionTime {
     safety = ScoreReq.Asil.B
     note = "This implies that safety-relevant code, where the safety goal is dependent on timing, needs to be supervised."
     version = 1
+    root_causes = [
+        mw_com_fta.RootCauseAnyFunctionBlocksLongerThanExpected
+    ]
 }
 
 /* broken_link_c/issue/7091801 */
