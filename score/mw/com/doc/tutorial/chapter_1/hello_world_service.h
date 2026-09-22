@@ -17,6 +17,7 @@
 
 namespace score::mw::com::tutorial
 {
+// [hello-world-interface-start]
 template <typename Trait>
 class HelloWorldInterface : public Trait::Base
 {
@@ -26,6 +27,7 @@ class HelloWorldInterface : public Trait::Base
     using FixedSizeString = std::array<char, 255>;
     typename Trait::template Event<FixedSizeString> message{*this, "message"};
 };
+// [hello-world-interface-end]
 }  // namespace score::mw::com::tutorial
 
 #endif  // SCORE_MW_COM_TUTORIAL_HELLO_WORLD_SERVICE_H
