@@ -456,8 +456,9 @@ pub struct MockConsumerBuilder<I: Interface> {
 }
 
 impl<I: Interface> ConsumerDescriptor<MockRuntimeImpl> for MockConsumerBuilder<I> {
-    fn get_instance_identifier(&self) -> &InstanceSpecifier {
-        todo!()
+    fn get_instance_specifier(&self) -> &InstanceSpecifier {
+        // For the mock runtime, simply return the stored instance specifier.
+        &self.instance_specifier
     }
 }
 

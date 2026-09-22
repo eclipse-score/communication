@@ -116,7 +116,7 @@ interface ServiceDiscovery<I: Interface, R: Runtime + ?Sized> {
 }
 
 interface ConsumerDescriptor<R: Runtime + ?Sized> {
-    + get_instance_identifier()
+    + get_instance_specifier()
 }
 
 interface ConsumerBuilder<I: Interface, R: Runtime + ?Sized>
