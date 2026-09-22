@@ -37,17 +37,19 @@ ScoreReq.CompReq ClientConnectionMaintainsStateMachine {
     version = 1
 }
 
-ScoreReq.CompReq SynchronousSendBlocksUntilServerReceives {
-    description = "The `ClientConnection` shall block the calling thread during a `Send` call until the message has been and accepted by the server's receive buffer, when no client-side send queue is configured."
+ScoreReq.CompReq ClientSendUsesDirectTransportCallByDefault {
+    description = "The `ClientConnection` shall issue the `Send` message via an immediate OS-level transport call, which may block the calling thread, unless `ClientConfig::truly_async` is configured, or a `SendWaitReply`/`SendWithCallback` reply is currently pending on the same connection while `ClientConfig::fully_ordered` is configured."
+    note = "Replaces the retired `SynchronousSendBlocksUntilServerReceives`, whose condition ('no client-side send queue configured') did not match the implementation: the direct-call path is selected by `!ClientConfig::fully_ordered && !ClientConfig::truly_async` (plus the pending-reply exception above), independent of `ClientConfig::max_queued_sends`. Blocking, when it occurs, is bounded by the OS transport call itself, not by receiver-side processing; see `SynchronousUnidirectionalCommunication` for the corresponding feature-level asymmetry between backends."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SynchronousUnidirectionalCommunication@2]
+    derived_from = [MessagePassing.SynchronousUnidirectionalCommunication@3]
     version = 1
 }
 
-ScoreReq.CompReq AsynchronousSendReturnsAfterLocalAcceptance {
-    description = "The `ClientConnection` shall return from a Send call after the message has been accepted by the local message passing layer, when a client-side send queue is configured."
+ScoreReq.CompReq ClientSendQueuesForAsyncOrOrderingReasons {
+    description = "The `ClientConnection` shall enqueue the `Send` message for asynchronous delivery by the background transport, returning after local acceptance, whenever `ClientConfig::truly_async` is configured, or whenever a `SendWaitReply`/`SendWithCallback` reply is currently pending on the same connection while `ClientConfig::fully_ordered` is configured."
+    note = "Replaces the retired `AsynchronousSendReturnsAfterLocalAcceptance`, whose condition ('a client-side send queue is configured') did not match the implementation: `ClientConfig::max_queued_sends` being nonzero alone does not trigger queuing."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.AsynchronousUnidirectionalCommunication@2]
+    derived_from = [MessagePassing.AsynchronousUnidirectionalCommunication@3]
     version = 1
 }
 
@@ -93,7 +95,7 @@ ScoreReq.CompReq IServerStopListeningAPI {
 ScoreReq.CompReq IClientConnectionSendAPI {
     description = "`IClientConnection` shall provide a Send method that accepts a byte-span message and transmits it to the server."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SynchronousUnidirectionalCommunication@2]
+    derived_from = [MessagePassing.SynchronousUnidirectionalCommunication@3]
     version = 1
 }
 
@@ -121,8 +123,8 @@ ScoreReq.CompReq IServerConnectionReplyAPI {
 ScoreReq.CompReq IServerConnectionNotifyAPI {
     description = "`IServerConnection` shall provide a `Notify` method that accepts a byte-span message and sends it as an asynchronous notification to the client."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.ServerInterface@2]
-    version = 1
+    derived_from = [MessagePassing.AsynchronousServerNotification@1]
+    version = 2
 }
 
 ScoreReq.CompReq ClientFactoryCreateAPI {
@@ -223,7 +225,7 @@ ScoreReq.CompReq ClientConnectionMockInjectionForTesting {
 ScoreReq.CompReq ClientConnectionSendFailsWhenStopped {
     description = "The `ClientConnection` shall return an error for a Send call when the connection is in the `Stopped` state."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SynchronousUnidirectionalCommunication@2]
+    derived_from = [MessagePassing.SynchronousUnidirectionalCommunication@3]
     version = 1
 }
 
@@ -237,7 +239,7 @@ ScoreReq.CompReq ClientConnectionSendWaitReplyFailsWhenStopped {
 ScoreReq.CompReq ClientConnectionSendWithCallbackFailsWhenStopped {
     description = "The `ClientConnection` shall return an error for a `SendWithCallback` call when the connection is in the `Stopped` state."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.AsynchronousUnidirectionalCommunication@2]
+    derived_from = [MessagePassing.AsynchronousUnidirectionalCommunication@3]
     version = 1
 }
 

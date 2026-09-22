@@ -25,10 +25,10 @@ ScoreReq.CompReq SafetyCertifiedTransportMechanismUnderQNX {
 
 ScoreReq.CompReq TransportMechanismOnLinux {
     description = "On the Linux operating system, the message passing component shall use unix domain-sockets as the underlying IPC mechanism."
-    note = "Lowered from ASIL B to QM: ASIL compliance is not currently pursued on Linux, which is used for host development and testing. The safety-certified transport for ASIL B is QNX-native messaging on QNX (see SafetyCertifiedTransportMechanismUnderQNX); this record therefore no longer derives from SafetyCertifiedTransportMechanism."
+    note = "Lowered from ASIL B to QM: ASIL compliance is not currently pursued on Linux, which is used for host development and testing. The safety-certified transport for ASIL B is QNX-native messaging on QNX (see SafetyCertifiedTransportMechanismUnderQNX); this record therefore no longer derives from SafetyCertifiedTransportMechanism. Now also derives from QMImplementationOnNonQnxOS, the feature-level capability this record's QM Linux implementation fulfills."
     safety = ScoreReq.Asil.QM
-    derived_from = [MessagePassing.OSIndependentAPI@2]
-    version = 2
+    derived_from = [MessagePassing.OSIndependentAPI@2, MessagePassing.QMImplementationOnNonQnxOS@1]
+    version = 3
 }
 
 
