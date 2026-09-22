@@ -259,10 +259,10 @@ cc_library(
     srcs = ["memory_region_bounds.cpp"],
     hdrs = ["memory_region_bounds.h"],
     features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    deps = [
+    implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
+    tags = ["FFI"],
 )
 
 cc_library(
