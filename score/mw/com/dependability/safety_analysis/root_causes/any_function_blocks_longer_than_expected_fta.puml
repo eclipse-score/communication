@@ -1,0 +1,33 @@
+' *******************************************************************************
+' Copyright (c) {year} Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$TopEvent("Any function of mw::com (LoLa) blocks longer than expected", "Communication.AnyFunctionBlocksLongerThanExpected")
+
+$OrGate("Gate1", "Communication.AnyFunctionBlocksLongerThanExpected")
+
+$IntermediateEvent("Blocking within LoLa's own execution", "Event1", "Gate1")
+$OrGate("Gate2", "Event1")
+$BasicEvent("Self-deadlock caused by a reentrant/nested LoLa call on the same instance", "Communication.NoneReentrantMethodsPerEventInstance", "Gate2")
+$BasicEvent("Unbounded internal execution: internal deadlock, faulty synchronization or endless loop, or a blocking underlying OS/message-passing primitive", "Communication.NoGuaranteeOnExecutionTime", "Gate2")
+
+$IntermediateEvent("Blocking while waiting on a communication peer or dependency", "Event2", "Gate1")
+$OrGate("Gate3", "Event2")
+$BasicEvent("Waiting on a reply or data from a crashed or terminated producer", "Communication.NoNotificationOnTerminationOfProducer", "Gate3")
+$BasicEvent("Waiting for a service instance that is never offered/found", "Communication.NoGuaranteeInAvailabilityOfServices", "Gate3")
+$BasicEvent("Waiting on a delayed, lost or spurious event notification", "Communication.NoGuaranteesForNotifications", "Gate3")
+
+@enduml

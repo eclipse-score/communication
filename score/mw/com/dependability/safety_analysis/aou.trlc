@@ -74,7 +74,7 @@ ScoreReq.AoU NoGuaranteesForNotifications {
     safety = ScoreReq.Asil.B
     note = "It is not guaranteed that notifications will arrive, neither in which latency this will happen, or if they happen too often or on a wrong event. This is caused by underlying OS/HW safety claims."
     version = 1
-    mitigates = "SendingEventOnlyPartiallyNotifiesConsumer"
+    mitigates = "SendingEventOnlyPartiallyNotifiesConsumer, AnyFunctionBlocksLongerThanExpected"
 }
 
 /* broken_link_c/issue/5835150 */
@@ -119,7 +119,7 @@ ScoreReq.AoU NoGuaranteeInAvailabilityOfServices {
     safety = ScoreReq.Asil.B
     note = "LoLa is a Service-Discovery based middleware. In such cases it is possible that a service is not offered. Thus, LoLa cannot give any guarantee that a service will be found."
     version = 1
-    mitigates = "CreationOfSkeletonNotPossible, WrongStartfindserviceIsStopped"
+    mitigates = "CreationOfSkeletonNotPossible, WrongStartfindserviceIsStopped, AnyFunctionBlocksLongerThanExpected"
 }
 
 /* broken_link_c/issue/5835249 */
@@ -128,7 +128,7 @@ ScoreReq.AoU NoNotificationOnTerminationOfProducer {
     safety = ScoreReq.Asil.B
     note = "LoLa provides no mechanism to communicate the termination of an event data producer. It is also possible that a producer suddenly crashes and no events are any longer produced. A supervision can be implemented on application side, if events are polled in a certain interval. If no new events are present within a certain set of intervals, it can be assumed that the producer is malfunctioning."
     version = 1
-    mitigates = "ServiceOfferingNotStopped, WrongStartfindserviceIsStopped"
+    mitigates = "ServiceOfferingNotStopped, WrongStartfindserviceIsStopped, AnyFunctionBlocksLongerThanExpected"
 }
 
 /* broken_link_c/issue/5835311 */
@@ -164,7 +164,7 @@ ScoreReq.AoU NoneReentrantMethodsPerEventInstance {
     safety = ScoreReq.Asil.B
     note = "Thread-Safety is ensured for static methods and over instances."
     version = 1
-    mitigates = "FunctionCalledFromMultipleThreads"
+    mitigates = "FunctionCalledFromMultipleThreads, AnyFunctionBlocksLongerThanExpected"
 }
 
 /* broken_link_c/issue/5835337 */
