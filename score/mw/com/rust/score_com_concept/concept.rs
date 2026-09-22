@@ -591,7 +591,7 @@ pub trait ServiceDiscovery<I: Interface, R: Runtime + ?Sized> {
 /// * `R` - The runtime managing this service
 pub trait ConsumerDescriptor<R: Runtime + ?Sized> {
     /// Get the unique instance specifier for this service instance.
-    fn get_instance_identifier(&self) -> &InstanceSpecifier;
+    fn get_instance_specifier(&self) -> &InstanceSpecifier;
 }
 
 /// Constructor for consumer instances of a specific service.
