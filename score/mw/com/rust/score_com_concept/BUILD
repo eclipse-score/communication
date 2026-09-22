@@ -25,8 +25,8 @@ rust_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
-        "@score_baselibs//src/containers",
-        "@score_baselibs//src/log/score_log",
+        "@score_baselibs//score/containers_rust:containers",
+        "@score_baselibs//score/log_rust/score_log",
         "@score_communication_crate_index//:futures",
         "@score_communication_crate_index//:thiserror",
     ],
