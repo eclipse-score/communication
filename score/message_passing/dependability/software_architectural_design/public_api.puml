@@ -15,24 +15,48 @@
 
 namespace score::message_passing {
 
-    interface ServerConnection {
-        +SetConnectionCallback()
-        +SetDisconnectionCallback()
-        +SetMessageCallback()
-        +SetMessageWithReplyCallback()
+    interface IClientFactory {
+        +Create()
     }
 
-    interface ClientConnection {
-        +CreateClientConnection()
+    interface IClientConnection {
         +Start()
         +Restart()
         +Stop()
+        +GetState()
         +GetStopReason()
         +Send()
-        +SendWithReply()
-        +SetStateCallback()
-        +SetNotificationCallback()
+        +SendWaitReply()
+        +SendWithCallback()
     }
+
+    interface IServerFactory {
+        +Create()
+    }
+
+    interface IServer {
+        +StartListening()
+        +StopListening()
+    }
+
+    interface IServerConnection {
+        +GetClientIdentity()
+        +GetUserData()
+        +Reply()
+        +Notify()
+        +RequestDisconnect()
+    }
+
+    interface IConnectionHandler <<user_provided>> {
+        +OnMessageSent()
+        +OnMessageSentWithReply()
+        +OnDisconnect()
+    }
+
+    IClientFactory ..> IClientConnection : creates
+    IServerFactory ..> IServer : creates
+    IServer ..> IServerConnection : uses
+    IServerConnection ..> IConnectionHandler : uses
 
 }
 
