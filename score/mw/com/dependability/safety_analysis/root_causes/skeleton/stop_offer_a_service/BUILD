@@ -12,17 +12,33 @@
 # *******************************************************************************
 
 filegroup(
-    name = "only_partially_stop_offer_fta",
+    name = "offer_not_stopped_in_sd_fta",
     srcs = [
-        "only_partially_stop_offer_fta.puml",
+        "offer_not_stopped_in_sd_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
-    name = "stop_offer_on_wrong_ids_fta",
+    name = "offer_stopped_for_wrong_instance_in_sd_fta",
     srcs = [
-        "stop_offer_on_wrong_ids_fta.puml",
+        "offer_stopped_for_wrong_instance_in_sd_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
+    name = "shm_objects_unlink_failure_fta",
+    srcs = [
+        "shm_objects_unlink_failure_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
+    name = "stop_offer_state_inconsistent_fta",
+    srcs = [
+        "stop_offer_state_inconsistent_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

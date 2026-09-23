@@ -32,8 +32,10 @@ filegroup(
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/send_an_event_or_field:does_not_free_resources_after_usage_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/send_an_event_or_field:only_partially_notifies_user_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/send_an_event_or_field:sends_to_wrong_consumer_fta",
-        "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/stop_offer_a_service:only_partially_stop_offer_fta",
-        "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/stop_offer_a_service:stop_offer_on_wrong_ids_fta",
+        "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/stop_offer_a_service:offer_not_stopped_in_sd_fta",
+        "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/stop_offer_a_service:offer_stopped_for_wrong_instance_in_sd_fta",
+        "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/stop_offer_a_service:shm_objects_unlink_failure_fta",
+        "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/stop_offer_a_service:stop_offer_state_inconsistent_fta",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
