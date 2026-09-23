@@ -141,6 +141,10 @@ score_gcc.toolchain(
     name = "score_gcc_x86_64_toolchain",
     extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
     extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
+    extra_enabled_features = [
+        "//quality/compiler_warnings:fortify_source",
+        "//quality/compiler_warnings:optimize_code",
+    ],
     target_cpu = "x86_64",
     target_os = "linux",
     use_base_constraints_only = True,
@@ -151,6 +155,10 @@ score_gcc.toolchain(
     name = "score_gcc_aarch64_toolchain",
     extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
     extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
+    extra_enabled_features = [
+        "//quality/compiler_warnings:fortify_source",
+        "//quality/compiler_warnings:optimize_code",
+    ],
     target_cpu = "aarch64",
     target_os = "linux",
     use_base_constraints_only = True,
@@ -161,6 +169,10 @@ score_gcc.toolchain(
     name = "score_qcc_x86_64_toolchain",
     extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
     extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
+    extra_enabled_features = [
+        "//quality/compiler_warnings:fortify_source",
+        "//quality/compiler_warnings:optimize_code",
+    ],
     sdp_version = "8.0.4",
     target_cpu = "x86_64",
     target_os = "qnx",
@@ -171,6 +183,10 @@ score_gcc.toolchain(
     name = "score_qcc_aarch64_toolchain",
     extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
     extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
+    extra_enabled_features = [
+        "//quality/compiler_warnings:fortify_source",
+        "//quality/compiler_warnings:optimize_code",
+    ],
     sdp_version = "8.0.4",
     target_cpu = "aarch64",
     target_os = "qnx",

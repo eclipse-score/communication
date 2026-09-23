@@ -12919,7 +12919,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "+vgTABLj64cvjmKGlkw+4AJ9S7iLJFRI20t6JpYfRzM=",
-        "usagesDigest": "MPny+2dkLvn/QwYWWW0cTzIF+zW3OnxoFOjlo83vJbw=",
+        "usagesDigest": "EPTNm0Hi9F4L9C/uFDI/Qeu1gJqelErvbLjbvnU1Yuw=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -13019,7 +13019,10 @@
                 "-Wno-noexcept-type"
               ],
               "extra_known_features": [],
-              "extra_enabled_features": [],
+              "extra_enabled_features": [
+                "@@//quality/compiler_warnings:fortify_source",
+                "@@//quality/compiler_warnings:optimize_code"
+              ],
               "extra_link_flags": [],
               "license_info_variable": "",
               "license_info_value": "",
@@ -13086,7 +13089,10 @@
                 "-Wno-noexcept-type"
               ],
               "extra_known_features": [],
-              "extra_enabled_features": [],
+              "extra_enabled_features": [
+                "@@//quality/compiler_warnings:fortify_source",
+                "@@//quality/compiler_warnings:optimize_code"
+              ],
               "extra_link_flags": [],
               "license_info_variable": "",
               "license_info_value": "",
@@ -13153,7 +13159,10 @@
                 "-Wno-noexcept-type"
               ],
               "extra_known_features": [],
-              "extra_enabled_features": [],
+              "extra_enabled_features": [
+                "@@//quality/compiler_warnings:fortify_source",
+                "@@//quality/compiler_warnings:optimize_code"
+              ],
               "extra_link_flags": [],
               "license_info_variable": "",
               "license_info_value": "",
@@ -13220,7 +13229,10 @@
                 "-Wno-noexcept-type"
               ],
               "extra_known_features": [],
-              "extra_enabled_features": [],
+              "extra_enabled_features": [
+                "@@//quality/compiler_warnings:fortify_source",
+                "@@//quality/compiler_warnings:optimize_code"
+              ],
               "extra_link_flags": [],
               "license_info_variable": "",
               "license_info_value": "",
