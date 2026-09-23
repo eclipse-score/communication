@@ -45,7 +45,7 @@ belongs in that component's `research/problem_statement.md` and its frozen TRLC/
 - FMEA/FTA/`FailureMode`/`ControlMeasure` records → **score-safety-analysis**
 - Test annotation, `lobster-tracing`, and `test_case_coverage.lock.yaml` → **score-testing**
 - Incremental, traceable updates to an already-trusted `dependable_element` baseline (new need,
-  defect, drift, deprecation) → **rules-score-actualize**
+  defect, drift, deprecation) → **rules-score-update**
 
 ## Scope & limits
 
@@ -60,7 +60,7 @@ safety artifacts are the trusted baseline rather than discardable evidence). Tha
 different, minimal-delta workflow — preserve existing requirement IDs/versions where unaffected,
 bump versions only where content actually changes, and re-run only the lifecycle steps whose
 inputs changed, so the diff stays small and traceable over the project's lifetime. Use
-**rules-score-actualize** for that case instead — do not apply this skill's "re-derive fresh,
+**rules-score-update** for that case instead — do not apply this skill's "re-derive fresh,
 discard old names freely" guidance to a trusted baseline.
 
 ---

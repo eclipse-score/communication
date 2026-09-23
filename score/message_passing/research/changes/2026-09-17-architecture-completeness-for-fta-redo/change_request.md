@@ -76,4 +76,4 @@ This change_request captures piece 1 only. Piece 2 is deliberately deferred to i
 3. **Continue automatically**: once this cycle closes, the FTA/control-measures redo opens as the
    next cycle without waiting for a separate human prompt — but still subject to that cycle's own
    Step 0/1 checkpoints before any `.trlc`/`.puml` safety-analysis content is rewritten, per
-   `rules-score-actualize`'s discipline for ASIL B content.
+   `rules-score-update`'s discipline for ASIL B content.

@@ -1,30 +1,30 @@
 ---
-description: "Start using the rules-score-actualize lifecycle on score/message_passing/: create its research/ scratchpad with a reverse-documented baseline snapshot of the existing (trusted) dependability artifacts, then stop and ask the human what the first concrete actualization cycle should be about."
+description: "Start using the rules-score-update lifecycle on score/message_passing/: create its research/ scratchpad with a reverse-documented baseline snapshot of the existing (trusted) dependability artifacts, then stop and ask the human what the first concrete actualization cycle should be about."
 agent: "agent"
 argument-hint: "Bootstrap the message_passing actualization scratchpad; the concrete change comes later"
 ---
 
 # Bootstrap: Message Passing Actualization Scratchpad (Cycle 0 — Baseline Snapshot)
 
-You are starting to use the **`rules-score-actualize`** skill
-(`.github/skills/rules-score-actualize/SKILL.md`) on `score/message_passing/`. Read that skill
+You are starting to use the **`rules-score-update`** skill
+(`.github/skills/rules-score-update/SKILL.md`) on `score/message_passing/`. Read that skill
 first — it defines the impact-analysis-first update process, the `research/` scratchpad layout for
 repeated cycles, and the checkpoint discipline you must follow. This prompt only supplies the
 component-specific starting facts; do not rely on any other session or host-specific memory.
 
-## Why this component, and why `rules-score-actualize` and not `rules-score`
+## Why this component, and why `rules-score-update` and not `rules-score`
 
 `score/message_passing/` already has a real `dependable_element` at
 `score/message_passing/dependability/` (`integrity_level = "B"`, `maturity = "development"`) with
 frozen `assumed_system/`, `requirements/`, `software_architectural_design/`, and
 `safety_analysis/` content that passes verification today. This is **not** a discardable PoC —
 treat it as the trusted baseline. Any future change to it must go through
-`rules-score-actualize`'s impact-analysis-and-cascade process, never through `rules-score`'s
+`rules-score-update`'s impact-analysis-and-cascade process, never through `rules-score`'s
 "re-derive fresh, discard old names" rework path.
 
 ## What you are doing in this prompt
 
-Only the **first bullet of `rules-score-actualize`'s "If `research/` does not exist yet for this
+Only the **first bullet of `rules-score-update`'s "If `research/` does not exist yet for this
 component"** section — nothing else. Concretely:
 
 1. Confirm `score/message_passing/research/` does not already exist. If it does, stop and ask the
@@ -76,5 +76,5 @@ component"** section — nothing else. Concretely:
 After writing `problem_statement.md` and the shared scratchpad files, stop. Summarize the baseline
 snapshot for the human and explicitly ask what the first real actualization cycle should be about
 (a new need, a known defect, an assumption that no longer holds, or something else) — per
-`rules-score-actualize` Step 0, that answer becomes `research/changes/<first-cycle-slug>/
+`rules-score-update` Step 0, that answer becomes `research/changes/<first-cycle-slug>/
 change_request.md` in a follow-up run, not in this one.

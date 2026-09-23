@@ -33,7 +33,7 @@ Append-only, cycle-scoped. Never rewrite history.
   validated this way (not wired into any target — see `backlog.md`); reviewed its syntax by hand
   against the sibling frozen files' conventions instead.
 - Also updated `research/problem_statement.md` (requirement index + dated Changelog entry) and
-  `research/backlog.md` (4 new findings) per `rules-score-actualize`'s "Keeping it current".
+  `research/backlog.md` (4 new findings) per `rules-score-update`'s "Keeping it current".
 - Left three items explicitly open for human confirmation rather than deciding unilaterally: the
   `TransportMechanismOnLinux` ASIL classification, whether to promote the UDS-on-QNX limitation to
   a full `AoU`/FTA in this cycle vs. defer it, and whether to fold the `GetUserData` API `CompReq`

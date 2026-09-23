@@ -14,7 +14,7 @@
   plausibility, or measure sufficiency is uncertain" guidance.
 - Stopped before writing any `.trlc`/`.puml` change — Step B (mechanical wiring) is withheld until
   the human confirms Step A's safety judgement calls (Open Questions 1–4), consistent with both
-  `rules-score-actualize`'s Step 1 checkpoint and `score-safety-analysis`'s explicit collaboration
+  `rules-score-update`'s Step 1 checkpoint and `score-safety-analysis`'s explicit collaboration
   requirement for ASIL B content.
 
 ## 2026-09-17 — Methodology clarification from human; new optional skill authored
