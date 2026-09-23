@@ -23,8 +23,7 @@ via QemuHypervisorTransport::NotifyUpdate. Both apps print "verified" on success
 
 import logging
 import re
-import threading
-import time
+from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -36,45 +35,28 @@ TIMEOUT_SECONDS = 180
 VERIFIED_LINE = re.compile(r"(?m)^verified$")
 
 
-def _run(target, label, app_path, results):
-    try:
-        rc, out = target.execute(app_path)
-        text = out.decode(errors="replace").strip()
-        results[label] = (rc, text, None)
-    except Exception as error:  # noqa: BLE001 - preserve the remote-execution failure for the main thread
-        results[label] = (None, "", error)
+def _run(console, label, app_path):
+    rc, out = console.run_sh_cmd_output(app_path, timeout=TIMEOUT_SECONDS)
+    text = out.strip()
     logger.info("==================== %s ====================", label)
-    logger.info("%s (rc=%s)", results[label][1], results[label][0])
-    print(f"\n[{label}] {results[label][1]} (rc={results[label][0]})")
+    logger.info("%s (rc=%s)", text, rc)
+    print(f"\n[{label}] {text} (rc={rc})")
+    return rc, text
 
 
-def test_qemu_ivshmem_transport(target_a, target_b):
+def test_qemu_ivshmem_transport(console_a, console_b):
     """Bidirectional: VM-A writes service_a and reads service_b; VM-B writes service_b and reads service_a."""
-    results = {}
-    threads = [
-        threading.Thread(target=_run, args=(target_a, VM_A_LABEL, APP1, results), name=VM_A_LABEL),
-        threading.Thread(target=_run, args=(target_b, VM_B_LABEL, APP2, results), name=VM_B_LABEL),
-    ]
-    for t in threads:
-        t.start()
-    deadline = time.monotonic() + TIMEOUT_SECONDS
-    for t in threads:
-        remaining = deadline - time.monotonic()
-        if remaining > 0:
-            t.join(timeout=remaining)
-    alive_threads = [t.name for t in threads if t.is_alive()]
-    if alive_threads:
-        raise TimeoutError(f"Timed out after {TIMEOUT_SECONDS}s waiting for: {alive_threads}")
+    # Both applications wait for messages from the other VM and must start together.
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        future_a = executor.submit(_run, console_a, VM_A_LABEL, APP1)
+        future_b = executor.submit(_run, console_b, VM_B_LABEL, APP2)
+        try:
+            rc_a, text_a = future_a.result(timeout=TIMEOUT_SECONDS)
+            rc_b, text_b = future_b.result(timeout=TIMEOUT_SECONDS)
+        except Exception:
+            logger.exception("QEMU transport application execution failed")
+            raise
 
-    missing_results = [label for label in [VM_A_LABEL, VM_B_LABEL] if label not in results]
-    if missing_results:
-        raise AssertionError(f"Missing test results for: {missing_results}")
-
-    rc_a, text_a, error_a = results[VM_A_LABEL]
-    rc_b, text_b, error_b = results[VM_B_LABEL]
-
-    assert error_a is None, f"source (VM-A) execution failed: {error_a!r}"
-    assert error_b is None, f"destination (VM-B) execution failed: {error_b!r}"
     assert rc_a == 0, f"source (VM-A) failed (rc={rc_a}): {text_a}"
     assert rc_b == 0, f"destination (VM-B) failed (rc={rc_b}): {text_b}"
     assert VERIFIED_LINE.search(text_a), f"source did not verify: {text_a!r}"
