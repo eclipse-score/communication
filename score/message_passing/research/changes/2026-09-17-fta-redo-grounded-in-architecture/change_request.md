@@ -13,7 +13,7 @@ guesses.
 ## Methodology framing (added 2026-09-17, after human clarification)
 
 The human clarified the intended safety-analysis methodology beyond what
-`score-safety-analysis`/`rules-score-actualize` alone say, now captured as an optional, opt-in
+`score-safety-analysis`/`rules-score-update` alone say, now captured as an optional, opt-in
 lens: `.github/skills/rules-score-safety-analysis-tiered-fta/SKILL.md`. Key points adopted for this
 cycle:
 

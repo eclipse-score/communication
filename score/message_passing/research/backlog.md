@@ -1,7 +1,7 @@
 # Message Passing — Backlog
 
 Long-lived, shared across all actualization cycles. Opportunistic findings noticed while reading
-or working land here (Core Principle 1 of `rules-score-actualize`) — they are not acted upon until
+or working land here (Core Principle 1 of `rules-score-update`) — they are not acted upon until
 a future cycle deliberately picks them up as its own change request.
 
 ## From the 2026-09-19 assumed-system-requirements-rewrite cycle (closed)

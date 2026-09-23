@@ -22,11 +22,11 @@ artifacts that inform impact analysis; do not fold cycle-specific detail in here
 
 ## Related lifecycle skills
 
-- `.github/skills/rules-score-actualize/SKILL.md` — the process this `research/` directory
+- `.github/skills/rules-score-update/SKILL.md` — the process this `research/` directory
   belongs to.
 - `.github/skills/rules-score/SKILL.md`, `.github/skills/score-requirements/SKILL.md`,
   `.github/skills/score-architecture/SKILL.md`, `.github/skills/score-safety-analysis/SKILL.md`,
-  `.github/skills/score-testing/SKILL.md` — the mechanical skills `rules-score-actualize`
+  `.github/skills/score-testing/SKILL.md` — the mechanical skills `rules-score-update`
   sequences per cycle.
 - `.github/skills/rules-score-safety-analysis-tiered-fta/SKILL.md` — optional, opt-in lens layered on top
   of `score-safety-analysis` (two-tier FTA model + content-review checklist); this component has
