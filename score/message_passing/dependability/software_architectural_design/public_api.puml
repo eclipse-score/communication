@@ -15,24 +15,69 @@
 
 namespace score::message_passing {
 
-    interface ServerConnection {
-        +SetConnectionCallback()
-        +SetDisconnectionCallback()
-        +SetMessageCallback()
-        +SetMessageWithReplyCallback()
+    class Engine {
+        +Engine(memory_resource, logger)
+        +{static} GetDefaultOsResources()
     }
 
-    interface ClientConnection {
-        +CreateClientConnection()
+    interface IClientFactory {
+        +Create()
+    }
+
+    class ClientFactory {
+        +ClientFactory(memory_resource)
+        +ClientFactory(shared_ptr<Engine>)
+        +GetEngine()
+    }
+
+    interface IClientConnection {
         +Start()
         +Restart()
         +Stop()
+        +GetState()
         +GetStopReason()
         +Send()
-        +SendWithReply()
-        +SetStateCallback()
-        +SetNotificationCallback()
+        +SendWaitReply()
+        +SendWithCallback()
     }
+
+    interface IServerFactory {
+        +Create()
+    }
+
+    class ServerFactory {
+        +ServerFactory(memory_resource)
+        +ServerFactory(shared_ptr<Engine>)
+        +GetEngine()
+    }
+
+    interface IServer {
+        +StartListening()
+        +StopListening()
+    }
+
+    interface IServerConnection {
+        +GetClientIdentity()
+        +GetUserData()
+        +Reply()
+        +Notify()
+        +RequestDisconnect()
+    }
+
+    interface IConnectionHandler <<user_provided>> {
+        +OnMessageSent()
+        +OnMessageSentWithReply()
+        +OnDisconnect()
+    }
+
+    IClientFactory ..> IClientConnection : creates
+    IServerFactory ..> IServer : creates
+    IServer ..> IServerConnection : uses
+    IServerConnection ..> IConnectionHandler : uses
+    ClientFactory ..|> IClientFactory
+    ServerFactory ..|> IServerFactory
+    ClientFactory --> Engine : uses
+    ServerFactory --> Engine : uses
 
 }
 
