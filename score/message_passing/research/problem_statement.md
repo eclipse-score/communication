@@ -1,6 +1,6 @@
 # Message Passing — Baseline Snapshot (orientation, not source of truth)
 
-> **This file is reverse-documented orientation material**, written per the `rules-score-actualize`
+> **This file is reverse-documented orientation material**, written per the `rules-score-update`
 > skill's "if `research/` does not exist yet" step. It is a read-only summary of an already-existing,
 > trusted `dependable_element` (`score/message_passing/dependability/`), not a fresh Step-0-style
 > derivation against a discardable PoC. The frozen TRLC records and PlantUML diagrams under

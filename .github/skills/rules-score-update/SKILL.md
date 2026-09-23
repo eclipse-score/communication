@@ -1,5 +1,5 @@
 ---
-name: rules-score-actualize
+name: rules-score-update
 description: "Incremental, traceable actualization/update lifecycle for an EXISTING S-CORE Safety Element out of Context (SEooC) built with the rules_score Bazel rules, whose requirements/architecture/safety/test artifacts are the trusted baseline (not a discardable PoC) but may themselves be incorrect, obsolete, or out of date with a new need. USE FOR: adding a new requirement to an already-authored dependable_element; fixing a defect where code/tests contradict a frozen requirement or diagram; retiring an obsolete requirement/behaviour; extending the design for a new or changed consumer; deciding the minimal set of existing artifacts a change must touch; keeping version numbers, derived_from links, FTA aliases, and lobster-tracing ids consistent across a small, reviewable diff. Component-agnostic — do not hardcode any component's domain content here. NOT FOR: bootstrapping a brand-new dependable_element or discarding a low-maturity/PoC baseline wholesale — use rules-score for that."
 argument-hint: "component/SEooC name and the change being made (new need, defect, or drift)"
 ---
@@ -38,7 +38,7 @@ content of one particular component. Component-specific knowledge belongs in tha
 |---|---|
 | No `dependable_element` exists yet for this component | **rules-score**, fresh Step 0 |
 | Existing artifacts are low-maturity/PoC-quality and explicitly discardable (no external consumer relies on their names/wording) | **rules-score**, "Handling a rework" |
-| Existing artifacts are the project's trusted baseline (released or actively relied upon), and something changed, was found wrong, or needs extending | **rules-score-actualize** (this skill) |
+| Existing artifacts are the project's trusted baseline (released or actively relied upon), and something changed, was found wrong, or needs extending | **rules-score-update** (this skill) |
 
 If you are unsure which bucket a component is in, ask the human — do not guess whether an existing
 baseline is discardable.

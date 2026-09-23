@@ -17,7 +17,7 @@
   files deliberately left untouched this cycle).
 - Stopped before editing any `.puml` file to get human checkpoint confirmation on: the impact set
   (Step 1 checkpoint) and the candidate list of 9 failure/error scenarios plus the in-place-vs-new-
-  file question (`change_request.md` Open Questions 1–2), per `rules-score-actualize`'s discipline
+  file question (`change_request.md` Open Questions 1–2), per `rules-score-update`'s discipline
   of not starting Steps 2+ before Step 1 is confirmed.
 
 ## 2026-09-17 — Human answers received; Steps 2–6 executed

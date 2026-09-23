@@ -100,7 +100,7 @@ This is exactly what `score-safety-analysis` already produces — no renaming, n
 3. **Component requirements (and hence micro-FTA basic events) only fully make sense once grounded
    in the real software architecture.** A `CompReq`/basic event that can't be traced to something
    the actual architecture (sequence diagrams, static design) documents is a warning sign — see
-   `rules-score-actualize`'s Core Principle 3 (upward trace before patching a symptom) — the
+   `rules-score-update`'s Core Principle 3 (upward trace before patching a symptom) — the
    architecture may need to be completed first, exactly as done in a prior `message_passing`
    actualization cycle.
 
@@ -138,5 +138,5 @@ skill only changes the bar for *reviewing* that content before treating it as do
 
 - `.github/skills/score-safety-analysis/SKILL.md` — the base workflow this skill layers on top of;
   read it first, every time.
-- `.github/skills/rules-score-actualize/SKILL.md` — Core Principle 3 (upward trace before patching
+- `.github/skills/rules-score-update/SKILL.md` — Core Principle 3 (upward trace before patching
   a symptom) motivates the "grounded in real architecture" relationship above.

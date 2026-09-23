@@ -1,6 +1,6 @@
 # Message Passing — Next Steps: client-identity-and-userdata-docs
 
-Current step: **Step 7 — evidence bundle complete, cycle closed** (`rules-score-actualize`
+Current step: **Step 7 — evidence bundle complete, cycle closed** (`rules-score-update`
 lifecycle table).
 
 All three open questions were answered by the human and acted on in this cycle:

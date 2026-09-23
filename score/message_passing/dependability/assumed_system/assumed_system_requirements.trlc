@@ -17,13 +17,6 @@ import ScoreReq
 ///////////////////////////////
 // Assumed System Requirements
 // System level requirements for MessagePassing SEooC
-//
-// Each requirement below states a black-box capability an integrator evaluating message passing
-// as a product would check for (core communication model, happy-flow interaction patterns,
-// production-error detectability, integration-time misconfiguration detectability, platform
-// support, and access-control support) - not how the component behaves internally under failure,
-// and not any specific interface method. See research/changes/2026-09-19-
-// assumed-system-requirements-rewrite/ for the discussion that produced this set.
 ///////////////////////////////
 
 ScoreReq.AssumedSystemReq ClientServerCommunicationModel {
