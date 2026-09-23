@@ -49,9 +49,9 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
 
 GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
                                            const std::string_view event_name,
-                                           std::unique_ptr<GenericSkeletonEventBinding> binding,
+                                           std::unique_ptr<SkeletonEventBinding> binding,
                                            FieldOnlyConstructorEnabler /*tag*/)
-    : SkeletonEventBase(event_name, std::move(binding))
+    : SkeletonEventBase(event_name, kEmptyInitializeSampleCallback, std::move(binding))
 {
     // Intentionally omitting SkeletonBaseView{skeleton_base}.RegisterEvent(event_name, *this);
 
@@ -59,14 +59,10 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
     {
         const SkeletonBaseView skeleton_base_view{skeleton_base};
         const auto& instance_identifier = skeleton_base_view.GetAssociatedInstanceIdentifier();
-        auto* const binding_ptr = static_cast<GenericSkeletonEventBinding*>(binding_.get());
-        if (binding_ptr)
-        {
-            const auto binding_type = binding_ptr->GetBindingType();
-            auto tracing_data =
-                tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
-            binding_ptr->SetSkeletonEventTracingData(tracing_data);
-        }
+        const auto binding_type = binding_->GetBindingType();
+        tracing_data_ =
+            tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
+        binding_->SetSkeletonEventTracingData(tracing_data_);
     }
 }
 

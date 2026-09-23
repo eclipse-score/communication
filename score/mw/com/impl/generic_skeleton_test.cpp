@@ -389,8 +389,8 @@ TEST_F(GenericSkeletonTest, CreateWithFieldsInitializesFieldBindings)
     auto MetaMatcher = AllOf(Property(&score::memory::DataTypeSizeInfo::Size, meta_info.size),
                              Property(&score::memory::DataTypeSizeInfo::Alignment, meta_info.alignment));
 
-    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, field_name, MetaMatcher))
-        .WillOnce(Return(ByMove(std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>())));
+    EXPECT_CALL(skeleton_event_binding_factory_mock_, Create(identifier, _, field_name, MetaMatcher))
+        .WillOnce(Return(ByMove(std::make_unique<NiceMock<mock_binding::SkeletonEvent>>())));
 
     // When creating the skeleton
     auto result = GenericSkeleton::Create(identifier, params);
@@ -420,8 +420,8 @@ TEST_F(GenericSkeletonTest, CreateWithDuplicateFieldNamesFails)
     params.fields = field_storage;
 
     // Expecting at least one attempt to create an event binding
-    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, field_name, _))
-        .WillRepeatedly(Return(ByMove(std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>())));
+    EXPECT_CALL(skeleton_event_binding_factory_mock_, Create(identifier, _, field_name, _))
+        .WillRepeatedly(Return(ByMove(std::make_unique<NiceMock<mock_binding::SkeletonEvent>>())));
 
     // When creating the skeleton
     auto result = GenericSkeleton::Create(identifier, params);
@@ -433,9 +433,8 @@ TEST_F(GenericSkeletonTest, CreateWithDuplicateFieldNamesFails)
 
 TEST_F(GenericSkeletonTest, CreateFailsIfFieldBindingCannotBeCreated)
 {
-    RecordProperty(
-        "Description",
-        "Checks that creation fails if the GenericSkeletonEventBindingFactory returns an error for any field.");
+    RecordProperty("Description",
+                   "Checks that creation fails if the SkeletonEventBindingFactory returns an error for any field.");
     RecordProperty("TestType", "Requirements-based test");
 
     // Given an identifier and configuration with one valid field
@@ -449,8 +448,8 @@ TEST_F(GenericSkeletonTest, CreateFailsIfFieldBindingCannotBeCreated)
     params.fields = field_storage;
 
     // Expect the Event Binding Factory to be called, but force it to FAIL
-    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, field_name, _))
-        .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kBindingFailure))));
+    EXPECT_CALL(skeleton_event_binding_factory_mock_, Create(identifier, _, field_name, _))
+        .WillOnce(Return(std::unique_ptr<SkeletonEventBinding>(nullptr)));
 
     // When creating the skeleton
     auto result = GenericSkeleton::Create(identifier, params);
@@ -486,12 +485,10 @@ TEST_F(GenericSkeletonTest, GetFieldsReturnsCorrectMapOfServiceElements)
     params.fields = field_storage;
 
     // Expect the binding factory to be called for each field
-    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, _, _))
+    EXPECT_CALL(skeleton_event_binding_factory_mock_, Create(identifier, _, _, _))
         .Times(3)
-        .WillRepeatedly(Invoke([](SkeletonBase&, std::string_view, const score::memory::DataTypeSizeInfo&) {
-            std::unique_ptr<GenericSkeletonEventBinding> binding =
-                std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>();
-            return Result<std::unique_ptr<GenericSkeletonEventBinding>>{std::move(binding)};
+        .WillRepeatedly(testing::InvokeWithoutArgs([] {
+            return std::make_unique<NiceMock<mock_binding::SkeletonEvent>>();
         }));
 
     // 4. When creating the skeleton
@@ -525,7 +522,7 @@ TEST_F(GenericSkeletonTest, CreateFailsIfFieldNameNotFoundInConfiguration)
     params.fields = field_storage;
 
     // The factory should not be called because name resolution fails first
-    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, _, _)).Times(0);
+    EXPECT_CALL(skeleton_event_binding_factory_mock_, Create(_, _, _, _)).Times(0);
 
     // When creating the skeleton
     auto result = GenericSkeleton::Create(identifier, params);

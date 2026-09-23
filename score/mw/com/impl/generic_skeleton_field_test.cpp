@@ -12,11 +12,11 @@
 #include "score/mw/com/impl/generic_skeleton_field.h"
 #include "score/mw/com/impl/generic_skeleton.h"
 
-#include "score/mw/com/impl/bindings/mock_binding/generic_skeleton_event.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
-#include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory.h"
-#include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory_mock.h"
+#include "score/mw/com/impl/bindings/mock_binding/skeleton_event.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/plumbing/skeleton_event_binding_factory.h"
+#include "score/mw/com/impl/plumbing/skeleton_event_binding_factory_mock.h"
 
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/i_binding_runtime.h"
@@ -60,7 +60,7 @@ class GenericSkeletonFieldTest : public ::testing::Test
   public:
     GenericSkeletonFieldTest()
     {
-        GenericSkeletonEventBindingFactory::mock_ = &generic_event_binding_factory_mock_;
+        SkeletonEventBindingFactory::InjectMockBinding(&skeleton_event_binding_factory_mock_);
 
         ON_CALL(runtime_mock_guard_.runtime_mock_, GetBindingRuntime(BindingType::kLoLa))
             .WillByDefault(Return(&binding_runtime_mock_));
@@ -87,7 +87,7 @@ class GenericSkeletonFieldTest : public ::testing::Test
 
     ~GenericSkeletonFieldTest() override
     {
-        GenericSkeletonEventBindingFactory::mock_ = nullptr;
+        SkeletonEventBindingFactory::InjectMockBinding(nullptr);
     }
 
     /// \brief Creates a GenericSkeleton with one field
@@ -97,18 +97,25 @@ class GenericSkeletonFieldTest : public ::testing::Test
                                                                 bool has_setter = false,
                                                                 bool has_notifier = true)
     {
-        auto mock_event_binding = std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>();
+        auto data_type_size_info = MakeDataTypeSizeInfo(size_info);
+        EXPECT_TRUE(data_type_size_info.has_value());
+        auto instance_identifier = dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField();
+
+        auto mock_event_binding = std::make_unique<NiceMock<mock_binding::SkeletonEvent>>();
         mock_event_binding_ptr_ = mock_event_binding.get();
 
-        EXPECT_CALL(generic_event_binding_factory_mock_, Create(_, field_name, _))
+        ON_CALL(*mock_event_binding_ptr_, GetEventDataTypeSizeInfo())
+            .WillByDefault(Return(data_type_size_info.value()));
+
+        EXPECT_CALL(skeleton_event_binding_factory_mock_,
+                    Create(instance_identifier, _, field_name, data_type_size_info.value()))
             .WillOnce(Return(ByMove(std::move(mock_event_binding))));
 
         GenericSkeletonServiceElementInfo create_params;
         std::vector<FieldInfo> field_storage{{field_name, size_info, has_getter, has_setter, has_notifier}};
         create_params.fields = field_storage;
 
-        auto skeleton_result = GenericSkeleton::Create(
-            dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField(), create_params);
+        auto skeleton_result = GenericSkeleton::Create(instance_identifier, create_params);
         EXPECT_TRUE(skeleton_result.has_value());
 
         skeleton_ = std::make_unique<GenericSkeleton>(std::move(skeleton_result.value()));
@@ -123,9 +130,7 @@ class GenericSkeletonFieldTest : public ::testing::Test
     GenericSkeletonFieldTest& OfferSkeletonService()
     {
         EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillRepeatedly(Return(true));
-        EXPECT_CALL(*mock_event_binding_ptr_, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
-        EXPECT_CALL(*mock_event_binding_ptr_, GetSizeInfo())
-            .WillRepeatedly(Return(std::make_pair<size_t, size_t>(16, 8)));
+        EXPECT_CALL(*mock_event_binding_ptr_, PrepareOffer(_)).WillOnce(Return(score::Result<void>{}));
 
         const auto offer_result = skeleton_->OfferService();
         EXPECT_TRUE(offer_result.has_value());
@@ -135,10 +140,10 @@ class GenericSkeletonFieldTest : public ::testing::Test
   protected:
     std::unique_ptr<GenericSkeleton> skeleton_;
     GenericSkeletonField* field_{nullptr};
-    mock_binding::GenericSkeletonEvent* mock_event_binding_ptr_{nullptr};
+    mock_binding::SkeletonEvent* mock_event_binding_ptr_{nullptr};
 
     // Mocks
-    NiceMock<GenericSkeletonEventBindingFactoryMock> generic_event_binding_factory_mock_;
+    NiceMock<SkeletonEventBindingFactoryMock> skeleton_event_binding_factory_mock_{};
     RuntimeMockGuard runtime_mock_guard_{};
     NiceMock<IBindingRuntimeMock> binding_runtime_mock_{};
     NiceMock<ServiceDiscoveryMock> service_discovery_mock_{};
@@ -215,10 +220,10 @@ TEST_F(GenericSkeletonFieldTest, DoDeferredUpdatePushesCachedValueOnOffer)
 
     // EXPECT: Allocation and Send to be triggered during OfferService()
     std::vector<uint8_t> dummy_memory(16, 0);
-    mock_binding::SampleAllocateePtr<void> dummy_alloc{dummy_memory.data(), [](void*) {}};
+    mock_binding::SampleAllocateePtr dummy_alloc{dummy_memory.data(), [](void*) {}};
     EXPECT_CALL(*mock_event_binding_ptr_, Allocate(_))
         .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc)))));
-    EXPECT_CALL(*mock_event_binding_ptr_, Send(_)).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(*mock_event_binding_ptr_, Send(_, _)).WillOnce(Return(score::Result<void>{}));
 
     // WHEN: Offering the service
     this->OfferSkeletonService();
@@ -241,22 +246,22 @@ TEST_F(GenericSkeletonFieldTest, UpdateAfterOfferAllocatesAndSends)
 
     // EXPECT: Initial value allocation and send to the binding during OfferService
     std::vector<uint8_t> dummy_memory1(16, 0);
-    mock_binding::SampleAllocateePtr<void> dummy_alloc1{dummy_memory1.data(), [](void*) {}};
+    mock_binding::SampleAllocateePtr dummy_alloc1{dummy_memory1.data(), [](void*) {}};
     EXPECT_CALL(*mock_event_binding_ptr_, Allocate(_))
         .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc1)))));
-    EXPECT_CALL(*mock_event_binding_ptr_, Send(_)).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(*mock_event_binding_ptr_, Send(_, _)).WillOnce(Return(score::Result<void>{}));
 
     OfferSkeletonService();
 
     // WHEN: Calling Update after OfferService
     std::vector<uint8_t> new_val{0xCC, 0xDD};
     std::vector<uint8_t> dummy_memory(16, 0);
-    mock_binding::SampleAllocateePtr<void> dummy_alloc{dummy_memory.data(), [](void*) {}};
+    mock_binding::SampleAllocateePtr dummy_alloc{dummy_memory.data(), [](void*) {}};
 
     // EXPECT: A new allocation and send to the binding
     EXPECT_CALL(*mock_event_binding_ptr_, Allocate(_))
         .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc)))));
-    EXPECT_CALL(*mock_event_binding_ptr_, Send(_)).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(*mock_event_binding_ptr_, Send(_, _)).WillOnce(Return(score::Result<void>{}));
 
     auto update_res = field_->Update(new_val);
 
@@ -279,22 +284,22 @@ TEST_F(GenericSkeletonFieldTest, UpdateWithoutNotifierSendsToBinding)
 
     // EXPECT: Initial value allocation and send to the binding during OfferService
     std::vector<uint8_t> dummy_memory1(16, 0);
-    mock_binding::SampleAllocateePtr<void> dummy_alloc1{dummy_memory1.data(), [](void*) {}};
+    mock_binding::SampleAllocateePtr dummy_alloc1{dummy_memory1.data(), [](void*) {}};
     EXPECT_CALL(*mock_event_binding_ptr_, Allocate(_))
         .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc1)))));
-    EXPECT_CALL(*mock_event_binding_ptr_, Send(_)).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(*mock_event_binding_ptr_, Send(_, _)).WillOnce(Return(score::Result<void>{}));
 
     OfferSkeletonService();
 
     // WHEN: Calling Update
     std::vector<uint8_t> new_val{0xCC, 0xDD};
     std::vector<uint8_t> dummy_memory(16, 0);
-    mock_binding::SampleAllocateePtr<void> dummy_alloc{dummy_memory.data(), [](void*) {}};
+    mock_binding::SampleAllocateePtr dummy_alloc{dummy_memory.data(), [](void*) {}};
 
     // EXPECT: An allocation and send to the binding (to update shared memory for Getters)
     EXPECT_CALL(*mock_event_binding_ptr_, Allocate(_))
         .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc)))));
-    EXPECT_CALL(*mock_event_binding_ptr_, Send(_)).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(*mock_event_binding_ptr_, Send(_, _)).WillOnce(Return(score::Result<void>{}));
 
     auto update_res = field_->Update(new_val);
 

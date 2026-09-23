@@ -41,7 +41,7 @@ class GenericSkeletonEvent : public SkeletonEventBase
 
     GenericSkeletonEvent(SkeletonBase& skeleton_base,
                          const std::string_view event_name,
-                         std::unique_ptr<GenericSkeletonEventBinding> binding,
+                         std::unique_ptr<SkeletonEventBinding> binding,
                          FieldOnlyConstructorEnabler tag);
 
     Result<void> Send(SampleAllocateePtr<void> sample) noexcept;

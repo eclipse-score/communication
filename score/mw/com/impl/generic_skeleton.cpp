@@ -182,20 +182,17 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
             return MakeUnexpected(ComErrc::kInvalidConfiguration);
         }
 
-        auto event_binding_result =
-            GenericSkeletonEventBindingFactory::Create(skeleton, info.name, data_type_size_info_result.value());
+        auto event_binding_ptr = SkeletonEventBindingFactory::Create(
+            identifier, SkeletonBaseView{skeleton}.GetBinding(), info.name, data_type_size_info_result.value());
 
-        if (!event_binding_result.has_value())
+        if (!event_binding_ptr)
         {
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
         // Use the hidden constructor tag so the event doesn't register itself in the events_ map
-        auto generic_event =
-            std::make_unique<GenericSkeletonEvent>(skeleton,
-                                                   stable_name,
-                                                   std::move(event_binding_result).value(),
-                                                   GenericSkeletonEvent::FieldOnlyConstructorEnabler{});
+        auto generic_event = std::make_unique<GenericSkeletonEvent>(
+            skeleton, stable_name, std::move(event_binding_ptr), GenericSkeletonEvent::FieldOnlyConstructorEnabler{});
 
         const auto emplace_result = skeleton.fields_->emplace(
             std::piecewise_construct,
