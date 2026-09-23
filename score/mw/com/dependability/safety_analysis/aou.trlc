@@ -470,13 +470,15 @@ ScoreReq.AoU LoLaSpecificQnxMessagingEndPointsOnlyAccessedThroughLoLa {
     ]
 }
 
-/* broken_link_c/issue/5835432 */
-ScoreReq.AoU AragenNotSafe {
-    // mitigates = "GeneratedCodeDoesNotMatchGenerationInputs"
-    description = "Input artifacts shall be manually reviewed for correctness"
+ScoreReq.AoU ArtifactsRequireManualReview {
+    description = "Input artifacts (C++ service-interface definitions and mw::config) shall be manually reviewed for correctness"
     safety = ScoreReq.Asil.B
-    note = "aragen is not safety qualified, thus its outputs are not safe also. Usage of aragen is not mandatory as the LoLa specific interfaces can be written manually in C++ using LoLa provided support templates."
+    note = "C++ service-interface definitions and mw::config are hand-written artifacts and might not be in sync or match."
     version = 1
+    root_causes = [
+        mw_com_fta.MissingSyncCodeAndConfiguration,
+        mw_com_fta.DifferentRevisionsForProxyAndSkeletonBuilt
+    ]
 }
 
 /* broken_link_c/issue/5835457 */
