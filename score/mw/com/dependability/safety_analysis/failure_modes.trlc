@@ -509,6 +509,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "All four root causes have been prevented by according measures each. * The name mapping clash in case of a GenericProxy is prevented by: ''Service-Element-Name clash needs to get unambigiously detected.'' * The referencing of wrong storage location is prevented by: ''Mapping from Event/Field identification to shared-memory storage needs to be unambigous.''"
+                interface = "mw.com.GenericProxyEvent.Subscribe"
             }
 
             // ID: 6166218
@@ -519,6 +520,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "Both possible root cause are checked with preventive measures."
+                interface = "mw.com.GenericProxyEvent.Subscribe"
             }
 
             // ID: 6166225
@@ -529,6 +531,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "-"
+                interface = "mw.com.GenericProxyEvent.Subscribe"
                 // potentialcause = "the only possible fault is, that the shared memory segment or event is wrongly choosen, but this was already checked before while creating, so this can not really happen."
             }
         }
@@ -660,6 +663,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "Message transmission failed, indicates an issue in our message passing library, which was already analyzed in [ISSUE:FailureMode SubscribeToWrongEvent] A proxy crash is not explicitly supported, with our partial restart feature."
+                interface = "mw.com.GenericProxyEvent.Unsubscribe"
             }
 
             // ID: 6166364
@@ -670,6 +674,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "If we unsubscribe to an wrong event, basically the same situation arises as if we would subscribe to a wrong event."
+                interface = "mw.com.GenericProxyEvent.Unsubscribe"
                 // potentialcause = "Same as [ISSUE:Failuremode SubscribeToWrongEvent]"
             }
 
@@ -681,6 +686,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "Only one possible failure that is covered with a preventive measure."
+                interface = "mw.com.GenericProxyEvent.Unsubscribe"
                 // potentialcause = "Only possible fault is that the receive handler is not removed on unsubscription."
             }
         }

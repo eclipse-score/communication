@@ -12,16 +12,10 @@
 # *******************************************************************************
 
 filegroup(
-    name = "subscribe_to_wrong_event_fta",
+    name = "subscribe_for_an_event_fta",
     srcs = [
+        "does_not_subscribe_fta.puml",
         "subscribe_to_wrong_event_fta.puml",
-    ],
-    visibility = ["//score/mw/com/dependability:__subpackages__"],
-)
-
-filegroup(
-    name = "subscribe_with_wrong_max_sample_count_fta",
-    srcs = [
         "subscribe_with_wrong_max_sample_count_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
