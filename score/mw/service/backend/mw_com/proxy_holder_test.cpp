@@ -13,10 +13,10 @@
 
 #include "score/concurrency/notification.h"
 
-#include "score/mw/service/backend/mw_com/proxy_holder.h"
-#include "score/mw/service/backend/mw_com/proxy_stub.h"
 #include "score/mw/com/com_error_domain.h"
 #include "score/mw/com/types.h"
+#include "score/mw/service/backend/mw_com/proxy_holder.h"
+#include "score/mw/service/backend/mw_com/proxy_stub.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

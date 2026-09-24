@@ -318,7 +318,8 @@ TEST_F(SharedOptionalProxyHolderTest, ConstructorAssertsWhenThenFails)
 
     // When attempting to create a holder with the invalid future
     // Then contract violation should be triggered in constructor
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(auto holder = SharedOptionalProxyHolder<Proxy>(std::move(invalid_future)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(auto holder =
+                                                          SharedOptionalProxyHolder<Proxy>(std::move(invalid_future)));
 }
 
 TEST_F(SharedOptionalProxyHolderTest, ProxyBecomesAvailableAfterCopy)

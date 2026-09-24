@@ -13,8 +13,8 @@
 
 #include "score/mw/service/proxy_container.h"
 
-#include "score/mw/service/test_doubles/test_doubles.h"
 #include "score/concurrency/future/interruptible_promise.h"
+#include "score/mw/service/test_doubles/test_doubles.h"
 
 #include "gtest/gtest.h"
 

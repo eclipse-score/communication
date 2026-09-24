@@ -14,9 +14,9 @@
 #ifndef SCORE_MW_SERVICE_UTILS_SHARED_OPTIONAL_PROXY_HOLDER_SHARED_OPTIONAL_PROXY_HOLDER_H
 #define SCORE_MW_SERVICE_UTILS_SHARED_OPTIONAL_PROXY_HOLDER_SHARED_OPTIONAL_PROXY_HOLDER_H
 
+#include "score/language/safecpp/scoped_function/move_only_scoped_function.h"
 #include "score/mw/service/proxy_data.h"
 #include "score/mw/service/single_instance_holder.h"
-#include "score/language/safecpp/scoped_function/move_only_scoped_function.h"
 #include "score/result/result.h"
 
 #include <score/assert.hpp>
@@ -164,8 +164,9 @@ class SharedOptionalProxyHolder final
         auto RegisterExtractionCallback(ProxyFutureExtrationCallback proxy_extraction_callback)
         {
             auto then_result = proxy_data.GetProxyFuture().Then(std::move(proxy_extraction_callback));
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(then_result.has_value(),
-                                   "Failed to register proxy extraction callback - proxy will never become available");
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+                then_result.has_value(),
+                "Failed to register proxy extraction callback - proxy will never become available");
         }
 
         // As unique_ptr is not thread safe we will use the ProxyType* for atomic loads and stores before accessing the

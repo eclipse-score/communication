@@ -68,8 +68,8 @@ class InstantiationStrategyBase : public FindServiceStrategy
 
     /// @brief Start the service discovery for `BackendProxy`.
     /// @note It must be ensured by the caller of Find() that StopFind() will also get invoked!
-    void StartFind(
-        score::cpp::callback<ShallStopFindService(std::vector<std::unique_ptr<BackendProxy>>, std::string_view)> on_found)
+    void StartFind(score::cpp::callback<ShallStopFindService(std::vector<std::unique_ptr<BackendProxy>>,
+                                                             std::string_view)> on_found)
     {
         auto new_proxy_holder = std::invoke(ProxyCreator{}, port_identifier_);
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(new_proxy_holder != nullptr);

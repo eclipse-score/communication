@@ -13,10 +13,10 @@
 
 #include "score/mw/service/proxy_needs.h"
 
+#include "score/concurrency/interruptible_wait.h"
 #include "score/mw/service/find_service_strategy.h"
 #include "score/mw/service/proxy_needs_factory.h"
 #include "score/mw/service/test_doubles/test_doubles.h"
-#include "score/concurrency/interruptible_wait.h"
 
 #include "gtest/gtest.h"
 
@@ -212,8 +212,10 @@ TEST_F(ProxyNeedsTest, InitiateServiceDiscovery)
     // Then immediate termination is expected due to violated precondition
     ASSERT_EXIT(score::cpp::ignore = unit.InitiateServiceDiscovery(), ::testing::KilledBySignal{SIGABRT}, "");
     ASSERT_EXIT(score::cpp::ignore = unit.InitiateServiceDiscovery({}), ::testing::KilledBySignal{SIGABRT}, "");
-    ASSERT_EXIT(score::cpp::ignore = decltype(unit){}.InitiateServiceDiscovery(), ::testing::KilledBySignal{SIGABRT}, "");
-    ASSERT_EXIT(score::cpp::ignore = decltype(unit){}.InitiateServiceDiscovery({}), ::testing::KilledBySignal{SIGABRT}, "");
+    ASSERT_EXIT(
+        score::cpp::ignore = decltype(unit){}.InitiateServiceDiscovery(), ::testing::KilledBySignal{SIGABRT}, "");
+    ASSERT_EXIT(
+        score::cpp::ignore = decltype(unit){}.InitiateServiceDiscovery({}), ::testing::KilledBySignal{SIGABRT}, "");
 }
 
 TEST_F(ProxyNeedsTest, InitiateServiceDiscoveryWithMandatoryProxiesButWithoutStopToken)
@@ -312,7 +314,8 @@ TEST_F(ProxyNeedsTest, SingleMandatoryProxyWaitWithoutBlocking)
     // When calling WaitForMandatoryProxies() once more after that
     // Then immediate termination is expected due to violated precondition
     ASSERT_EXIT(score::cpp::ignore = unit.WaitForMandatoryProxies({}), ::testing::KilledBySignal{SIGABRT}, "");
-    ASSERT_EXIT(score::cpp::ignore = decltype(unit){}.WaitForMandatoryProxies({}), ::testing::KilledBySignal{SIGABRT}, "");
+    ASSERT_EXIT(
+        score::cpp::ignore = decltype(unit){}.WaitForMandatoryProxies({}), ::testing::KilledBySignal{SIGABRT}, "");
 }
 
 TEST_F(ProxyNeedsTest, SingleOptionalProxyWaitForever)
