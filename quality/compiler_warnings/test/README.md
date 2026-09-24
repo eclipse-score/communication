@@ -25,10 +25,6 @@ that can be combined with any of the above.
 `score_communication_third_party_warnings` is mutually exclusive with all other warning
 features and is intended for external code that cannot be modified.
 
-`score_communication_strict_warnings_no_error` is a convenience variant of strict warnings
-that demotes selected diagnostics from errors to warnings — useful during incremental
-adoption of stricter flags.
-
 ## Feature Reference
 
 ### Common flags ([`//quality/compiler_warnings:…`](../BUILD))
@@ -52,7 +48,6 @@ Additional flags applied only when the GCC toolchain is active.
 |---------|-------------|
 | `minimal_warnings` | `-Wno-builtin-macro-redefined`, `-Wno-maybe-uninitialized`, `-Wno-format-y2k`, `-Wno-free-nonheap-object`; C++ only: `-Wno-literal-suffix`, `-Wno-noexcept-type` |
 | `strict_warnings` | `-Warray-bounds=2`, `-Wdisabled-optimization`, `-Wimplicit-fallthrough=4`, `-Wmissing-format-attribute`, `-Wscalar-storage-order`, `-Wsuggest-attribute=format`, `-Wvector-operation-performance`, `-Wlogical-op`; C++ only: `-Wdelete-non-virtual-dtor`, `-Woverloaded-virtual`, `-Wregister`, `-Wstrict-null-sentinel`; C only: `-Wold-style-definition`, `-Wstrict-prototypes` |
-| `strict_warnings_no_error` | All of `strict_warnings` + `-Wno-error` suppressors for known GCC false positives (conversion, shadow, sign-compare, return-type, etc.) |
 | `third_party_warnings` | `-w` (suppress all warnings) |
 
 ### Clang-specific flags ([`//quality/compiler_warnings/clang:…`](../clang/BUILD))
@@ -63,7 +58,6 @@ Additional flags applied only when the LLVM/Clang toolchain is active.
 |---------|-------------|
 | `minimal_warnings` | `-Wno-error=self-assign-overloaded`, `-Wno-return-type-c-linkage`, `-Wno-unused-command-line-argument`, `-Wno-deprecated-non-prototype` |
 | `strict_warnings` | `-Warray-bounds`, `-Wimplicit-fallthrough`, `-Wno-error=shadow-uncaptured-local` (demoted — see [score_baselibs#304](https://github.com/eclipse-score/baselibs/issues/304)) |
-| `strict_warnings_no_error` | All of `strict_warnings` + `-Wno-error` suppressors for known Clang false positives (conversion, shadow, sign-compare, return-type, etc.) |
 | `third_party_warnings` | (no extra flags beyond mutual-exclusion) |
 
 ## Using Warning Features in BUILD Files
