@@ -198,6 +198,7 @@ cc_args(
         "-Wunused-function",  # Helps to achieve MISRA C++:2023 Rule 0-2-4
         "-Wtrigraphs",  # Helps to achieve MISRA C++:2023 Rule 5-0-1
         "-Wcomment",  # Helps to achieve MISRA C++:2023 Rule 5-7-1 and 5-7-3
+        "-Wparentheses",  # Helps to achieve MISRA C++:2023 Rule 8-0-1, 8-18-2, and 9-3-1 in gcc and clang and Rule 6-0-1 in gcc
         "-Wsign-compare",  # Helps to achieve MISRA C++:2023 Rule 7-0-5
         "-Wdangling-else",  # Helps to achieve MISRA C++:2023 Rule 9-3-1
         "-Wmisleading-indentation",  # Helps to achieve MISRA C++:2023 Rule 9-3-1

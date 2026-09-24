@@ -97,7 +97,6 @@ SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
     "-Wall",
     "-Werror",
     "-Wunused-local-typedefs",  # Helps to achieve MISRA C++:2023 Rule 0-2-3
-    "-Wparentheses",  # Helps to achieve MISRA C++:2023 Rule 6-0-1, 8-0-1, and 8-18-2
     "-Wshadow",  # Helps to achieve MISRA C++:2023 Rule 6-4-1
     "-Wreturn-local-addr",  # Helps to achieve MISRA C++:2023 Rule 6-8-2
     "-Wswitch-bool",  # Helps to achieve MISRA C++:2023 Rule 7-0-1
