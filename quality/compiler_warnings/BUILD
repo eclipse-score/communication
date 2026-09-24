@@ -44,11 +44,27 @@ cc_args(
 )
 
 cc_args(
+    name = "optimize_code_args",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = ["-O2"],
+    visibility = ["//quality/compiler_warnings:__subpackages__"],
+)
+
+cc_feature(
+    name = "optimize_code",
+    args = [":optimize_code_args"],
+    feature_name = "score_communication_optimize_code",
+    visibility = ["//visibility:public"],
+)
+
+cc_args(
     name = "fortify_source_args",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:compile_actions",
-    ],
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
     args = [
+        # Fortify requires to have an optimization level of 1 or above
+        # Ideally the cc_feature should be modeled in a way that if the
+        # optimization feature is not enable but you try to enable fortify
+        # you get an error.
         "-U_FORTIFY_SOURCE",
         "-D_FORTIFY_SOURCE=2",
     ],
@@ -57,9 +73,7 @@ cc_args(
 
 cc_feature(
     name = "fortify_source",
-    args = [
-        ":fortify_source_args",
-    ],
+    args = [":fortify_source_args"],
     feature_name = "score_communication_fortify_source",
     visibility = ["//visibility:public"],
 )
