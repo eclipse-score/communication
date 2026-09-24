@@ -61,10 +61,10 @@ Note: According to MISRA Compliance:2020 document, every guideline within "The G
 | RULE-6-9-2 | | | `google-runtime-int` | `AvoidStandardIntegerTypeNames.ql` |
 | RULE-7-0-1 | `-Wswitch-bool` | `-Wswitch-bool` | | `NoConversionFromBool.ql` |
 | RULE-7-0-2 | | | `modernize-use-bool-literals` <br/> `readability-implicit-bool-conversion` | `NoImplicitBoolConversion.ql` |
-| RULE-7-0-3 | | `-Wconstant-conversion` <br/> `-Wimplicit-int-conversion` | `bugprone-narrowing-conversions` <br/> `readability-implicit-bool-conversion` | `NoCharacterNumericalValue.ql` |
+| RULE-7-0-3 | | `-Wconversion` <br/> `-Wconstant-conversion` <br/> `-Wimplicit-int-conversion` | `bugprone-narrowing-conversions` <br/> `readability-implicit-bool-conversion` | `NoCharacterNumericalValue.ql` |
 | RULE-7-0-4 | | `-Wshift-sign-overflow` | `hicpp-signed-bitwise` | `InappropriateBitwiseOrShiftOperands.ql` |
 | RULE-7-0-5 | `-Wsign-compare` <br/> `-Wconversion` | `-Wsign-compare` | | `NoSignednessChangeFromPromotion.ql` |
-| RULE-7-0-6 | `-Wconversion` <br/> `-Wfloat-conversion` | `-Wc++11-narrowing` <br/> `-Wimplicit-int-conversion` <br/> `-Wsign-conversion` | `bugprone-narrowing-conversions` | `NumericAssignmentTypeMismatch.ql` |
+| RULE-7-0-6 | `-Wconversion` <br/> `-Wfloat-conversion` | `-Wconversion` <br/> `-Wc++11-narrowing` <br/> `-Wimplicit-int-conversion` <br/> `-Wsign-conversion` | `bugprone-narrowing-conversions` | `NumericAssignmentTypeMismatch.ql` |
 | RULE-7-11-1 | | `-Wzero-as-null-pointer-constant` | | `NullptrNotTheOnlyFormOfTheNullPointerConstant.ql` |
 | RULE-7-11-2 | | | `cppcoreguidelines-pro-bounds-array-to-pointer-decay` | `ArrayPassedAsFunctionArgumentDecayToAPointer.ql` |
 | RULE-7-11-3 | `-Waddress` | `-Wtautological-pointer-compare` | | `FunctionPointerConversionContext.ql` |
@@ -91,7 +91,7 @@ Note: According to MISRA Compliance:2020 document, every guideline within "The G
 | RULE-8-18-1 | | | | `ObjectAssignedToAnOverlappingObjectMisraCpp.ql`<br/> `ObjectCopiedToAnOverlappingObjectMisraCpp.ql` |
 | RULE-8-18-2 | `-Wparentheses` | `-Wparentheses` | | `ResultOfAnAssignmentOperatorShouldNotBeUsed.ql` |
 | RULE-8-19-1 | | `-Wcomma` | | `CommaOperatorShouldNotBeUsed.ql` |
-| RULE-8-20-1 | | `-Wconstant-conversion` | | `UnsignedOperationWithConstantOperandsWraps.ql` |
+| RULE-8-20-1 | | `-Wconversion` <br/> `-Wconstant-conversion` | | `UnsignedOperationWithConstantOperandsWraps.ql` |
 | RULE-9-2-1 | | `-Wunused-value` | `bugprone-unused-raii` | `NoStandaloneTypeCastExpression.ql` |
 | RULE-9-3-1 | `-Wparentheses` <br/> `-Wdangling-else` <br/> `-Wmisleading-indentation` | `-Wparentheses` <br/> `-Wdangling-else` <br/> `-Wmisleading-indentation` <br/> `-Wempty-body` | `readability-braces-around-statements` | `SwitchBodyCompoundCondition.ql`<br/> `LoopBodyCompoundCondition.ql` |
 | RULE-9-4-1 | | | | `IfElseIfEndCondition.ql` |
