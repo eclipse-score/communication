@@ -137,6 +137,9 @@ cycle — not picked up this session. Key points for whoever runs that cycle's i
 
 ## From the 2026-09-23 public-api-diagram-requirements-review cycle (closed)
 
+- **RESOLVED 2026-09-24** by `changes/2026-09-24-client-interface-feature-requirement/` (closed):
+  `FeatReq ClientInterface` added, and the 7 `CompReq`s below re-pinned to it (version bumped
+  1→2 each). Kept for history:
 - **`FeatReq` asymmetry: `ServerInterface` exists, `ClientInterface` does not.**
   `feature_requirements.trlc` has a dedicated `ServerInterface` `FeatReq` ("the message passing
   component shall provide a server interface that registers connection handlers and processes
@@ -176,6 +179,11 @@ cycle — not picked up this session. Key points for whoever runs that cycle's i
   there as its new item 5 in `next_steps.md`), not inside
   `changes/2026-09-23-public-api-diagram-requirements-review/`, which stays scoped to its own
   `CompReq`-coverage questions.
+  **Clarification (2026-09-24, human):** this entry only records *where* the 54-findings fix is
+  queued once that cycle resumes — it is not a priority signal. As of 2026-09-24 the human
+  explicitly deprioritized `changes/2026-09-17-fta-redo-grounded-in-architecture/` entirely behind
+  finishing requirements and API-surface work (see that cycle's own `next_steps.md`); do not treat
+  this backlog entry as a reason to pick that cycle back up.
 - `research/problem_statement.md`'s "Current public API surface" section only lists the interface
   headers (`i_client_connection.h`, etc.) and predates `public_api.puml`'s `d3b34c89` commit — it
   does not mention the concrete platform-alias headers (`engine.h`, `client_factory.h`,
