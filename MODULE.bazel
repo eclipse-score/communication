@@ -88,11 +88,6 @@ bazel_dep(name = "score_bazel_cpp_toolchains", version = "1.0.3", dev_dependency
 
 score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
 
-# Minimal warning baseline for the S-CORE GCC/QCC toolchains.
-# Mirrors //quality/compiler_warnings/gcc:minimal_warnings. The S-CORE GCC
-# toolchain extension does not consume cc_features, so the baseline is applied
-# directly as compiler flags. Warning-as-error enforcement stays in the
-# score_communication_* cc_features (currently consumed by the LLVM toolchain).
 SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
     "-Wall",
     "-Wunused-local-typedefs",  # Helps to achieve MISRA C++:2023 Rule 0-2-3
