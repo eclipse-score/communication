@@ -11,13 +11,13 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
+#include "score/language/safecpp/scoped_function/move_only_scoped_function.h"
 #include "score/mw/service/backend/mw_com/proxy_stub.h"
 #include "score/mw/service/backend/mw_com/single_instantiation_strategy.h"
 #include "score/mw/service/details/proxy_spec_traits.h"
 #include "score/mw/service/proxy_data.h"
 #include "score/mw/service/proxy_needs.h"
 #include "score/mw/service/proxy_needs_factory.h"
-#include "score/language/safecpp/scoped_function/move_only_scoped_function.h"
 
 #include "score/concurrency/future/interruptible_promise.h"
 #include "score/mw/com/types.h"

@@ -14,8 +14,8 @@
 #ifndef SCORE_MW_SERVICE_BACKEND_MW_COM_PROXY_STUB_H
 #define SCORE_MW_SERVICE_BACKEND_MW_COM_PROXY_STUB_H
 
-#include "score/result/result.h"
 #include "score/mw/com/types.h"
+#include "score/result/result.h"
 
 #include <score/assert.hpp>
 
