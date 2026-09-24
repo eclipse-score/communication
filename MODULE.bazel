@@ -90,11 +90,7 @@ score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gc
 
 SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
     "-Wall",
-    "-Wunused-local-typedefs",  # Helps to achieve MISRA C++:2023 Rule 0-2-3
-    "-Wreturn-local-addr",  # Helps to achieve MISRA C++:2023 Rule 6-8-2
     "-Wswitch-bool",  # Helps to achieve MISRA C++:2023 Rule 7-0-1
-    "-Wfloat-conversion",  # Helps to achieve MISRA C++:2023 Rule 7-0-6
-    "-Wcast-function-type",  # Helps to achieve MISRA C++:2023 Rule 8-2-4
     "-Wno-error=deprecated-declarations",
     "-Wno-error=cpp",
     "-Wno-builtin-macro-redefined",
@@ -107,7 +103,6 @@ SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
 ]
 
 SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS = [
-    "-Wterminate",  # Helps to achieve MISRA C++:2023 Rule 18-5-1
     "-Wno-literal-suffix",
     "-Wno-noexcept-type",
 ]
@@ -119,7 +114,7 @@ score_gcc.toolchain(
     extra_enabled_features = [
         "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings:optimize_code",
-        "//quality/compiler_warnings:misra_warnings",
+        "//quality/compiler_warnings/gcc:misra_warnings",
         "//quality/compiler_warnings:treat_warnings_as_errors",
     ],
     target_cpu = "x86_64",
@@ -135,7 +130,7 @@ score_gcc.toolchain(
     extra_enabled_features = [
         "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings:optimize_code",
-        "//quality/compiler_warnings:misra_warnings",
+        "//quality/compiler_warnings/gcc:misra_warnings",
         "//quality/compiler_warnings:treat_warnings_as_errors",
     ],
     target_cpu = "aarch64",
@@ -151,7 +146,7 @@ score_gcc.toolchain(
     extra_enabled_features = [
         "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings:optimize_code",
-        "//quality/compiler_warnings:misra_warnings",
+        "//quality/compiler_warnings/gcc:misra_warnings",
         "//quality/compiler_warnings:treat_warnings_as_errors",
     ],
     sdp_version = "8.0.4",
@@ -167,7 +162,7 @@ score_gcc.toolchain(
     extra_enabled_features = [
         "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings:optimize_code",
-        "//quality/compiler_warnings:misra_warnings",
+        "//quality/compiler_warnings/gcc:misra_warnings",
         "//quality/compiler_warnings:treat_warnings_as_errors",
     ],
     sdp_version = "8.0.4",

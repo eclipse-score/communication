@@ -214,3 +214,30 @@ cc_feature(
     ],
     visibility = ["//visibility:public"],
 )
+
+cc_args(
+    name = "misra_warnings_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
+    ],
+    # This contains the list of warnings that we decided to enable for C++ to help fulfilling
+    # MISRA C++:2023. This list contains only the warnings that are enabled in gcc only.
+    # The warnings that are common can be found in the BUILD file one level up.
+    args = [
+        "-Wunused-local-typedefs",  # Helps to achieve MISRA C++:2023 Rule 0-2-3
+        "-Wreturn-local-addr",  # Helps to achieve MISRA C++:2023 Rule 6-8-2
+        "-Wfloat-conversion",  # Helps to achieve MISRA C++:2023 Rule 7-0-6
+        "-Wcast-function-type",  # Helps to achieve MISRA C++:2023 Rule 8-2-4
+        "-Wterminate",  # Helps to achieve MISRA C++:2023 Rule 18-5-1
+    ],
+)
+
+cc_feature(
+    name = "misra_warnings",
+    args = [
+        ":misra_warnings_args",
+        "//quality/compiler_warnings:minimal_warnings_args",
+    ],
+    feature_name = "score_communication_misra_warnings",
+    visibility = ["//visibility:public"],
+)
