@@ -95,7 +95,6 @@ score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gc
 # score_communication_* cc_features (currently consumed by the LLVM toolchain).
 SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
     "-Wall",
-    "-Werror",
     "-Wunused-local-typedefs",  # Helps to achieve MISRA C++:2023 Rule 0-2-3
     "-Wreturn-local-addr",  # Helps to achieve MISRA C++:2023 Rule 6-8-2
     "-Wswitch-bool",  # Helps to achieve MISRA C++:2023 Rule 7-0-1
@@ -128,6 +127,7 @@ score_gcc.toolchain(
         "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings:optimize_code",
         "//quality/compiler_warnings:misra_warnings",
+        "//quality/compiler_warnings:treat_warnings_as_errors",
     ],
     target_cpu = "x86_64",
     target_os = "linux",
@@ -143,6 +143,7 @@ score_gcc.toolchain(
         "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings:optimize_code",
         "//quality/compiler_warnings:misra_warnings",
+        "//quality/compiler_warnings:treat_warnings_as_errors",
     ],
     target_cpu = "aarch64",
     target_os = "linux",
@@ -158,6 +159,7 @@ score_gcc.toolchain(
         "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings:optimize_code",
         "//quality/compiler_warnings:misra_warnings",
+        "//quality/compiler_warnings:treat_warnings_as_errors",
     ],
     sdp_version = "8.0.4",
     target_cpu = "x86_64",
@@ -173,6 +175,7 @@ score_gcc.toolchain(
         "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings:optimize_code",
         "//quality/compiler_warnings:misra_warnings",
+        "//quality/compiler_warnings:treat_warnings_as_errors",
     ],
     sdp_version = "8.0.4",
     target_cpu = "aarch64",

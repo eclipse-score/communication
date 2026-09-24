@@ -12919,7 +12919,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "+vgTABLj64cvjmKGlkw+4AJ9S7iLJFRI20t6JpYfRzM=",
-        "usagesDigest": "JjnVygACivzntcjbKKItwdBEgXGf/ulYUnVJf1RY2mQ=",
+        "usagesDigest": "pDSTO9I6kplBcBbbdy5j6JVfoJ0TMs/Hc67YJp3Oa3g=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -12977,7 +12977,6 @@
             "attributes": {
               "extra_compile_flags": [
                 "-Wall",
-                "-Werror",
                 "-Wunused-local-typedefs",
                 "-Wreturn-local-addr",
                 "-Wswitch-bool",
@@ -13005,7 +13004,8 @@
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
                 "@@//quality/compiler_warnings:optimize_code",
-                "@@//quality/compiler_warnings:misra_warnings"
+                "@@//quality/compiler_warnings:misra_warnings",
+                "@@//quality/compiler_warnings:treat_warnings_as_errors"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",
@@ -13031,7 +13031,6 @@
             "attributes": {
               "extra_compile_flags": [
                 "-Wall",
-                "-Werror",
                 "-Wunused-local-typedefs",
                 "-Wreturn-local-addr",
                 "-Wswitch-bool",
@@ -13059,7 +13058,8 @@
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
                 "@@//quality/compiler_warnings:optimize_code",
-                "@@//quality/compiler_warnings:misra_warnings"
+                "@@//quality/compiler_warnings:misra_warnings",
+                "@@//quality/compiler_warnings:treat_warnings_as_errors"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",
@@ -13085,7 +13085,6 @@
             "attributes": {
               "extra_compile_flags": [
                 "-Wall",
-                "-Werror",
                 "-Wunused-local-typedefs",
                 "-Wreturn-local-addr",
                 "-Wswitch-bool",
@@ -13113,7 +13112,8 @@
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
                 "@@//quality/compiler_warnings:optimize_code",
-                "@@//quality/compiler_warnings:misra_warnings"
+                "@@//quality/compiler_warnings:misra_warnings",
+                "@@//quality/compiler_warnings:treat_warnings_as_errors"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",
@@ -13139,7 +13139,6 @@
             "attributes": {
               "extra_compile_flags": [
                 "-Wall",
-                "-Werror",
                 "-Wunused-local-typedefs",
                 "-Wreturn-local-addr",
                 "-Wswitch-bool",
@@ -13167,7 +13166,8 @@
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
                 "@@//quality/compiler_warnings:optimize_code",
-                "@@//quality/compiler_warnings:misra_warnings"
+                "@@//quality/compiler_warnings:misra_warnings",
+                "@@//quality/compiler_warnings:treat_warnings_as_errors"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",
