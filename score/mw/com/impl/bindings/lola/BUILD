@@ -811,6 +811,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = ["//score/mw/com/impl/configuration:global_configuration"],
 )
 
 # TransactionLogSet and TransactionLogRegistrationGuard are in the same build target to avoid cyclic dependency errors
