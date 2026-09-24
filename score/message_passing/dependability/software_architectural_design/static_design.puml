@@ -13,7 +13,12 @@
 
 @startuml
 
-interface "score::message_passing" as message_passing_public_api
+interface "IClientConnection" as IClientConnection
+interface "IClientFactory" as IClientFactory
+interface "IServer" as IServer
+interface "IServerFactory" as IServerFactory
+interface "IServerConnection" as IServerConnection
+interface "IConnectionHandler" as IConnectionHandler
 interface "OS" as os
 
 component "Message Passing" as dependable_element_message_passing <<SEooC>> {
@@ -28,14 +33,24 @@ component "Message Passing" as dependable_element_message_passing <<SEooC>> {
             component "QNX Dispatch" as qnx_dispatch <<unit>>
             component "Unix Domain" as unix_domain <<unit>>
         }
+
+        interface "ISharedResourceEngine" as ISharedResourceEngine
+        note right of ISharedResourceEngine : Abstracts the engine for ClientConnection only;\nserver-side units use their own concrete engine directly.
+
+        client_connection -( ISharedResourceEngine
+        qnx_dispatch )- ISharedResourceEngine
+        unix_domain )- ISharedResourceEngine
     }
-    portout " " as message_passing_public_api_port
-    portin " " as port_os
     dispatch -u[hidden]- server_connection
     dispatch -u[hidden]- client_connection
 }
 
-message_passing_public_api -r-() message_passing_public_api_port
-port_os -u-( os : uses
+dependable_element_message_passing )-r- IClientConnection
+dependable_element_message_passing )-r- IClientFactory
+dependable_element_message_passing )-r- IServer
+dependable_element_message_passing )-r- IServerFactory
+dependable_element_message_passing )-r- IServerConnection
+dependable_element_message_passing -r-( IConnectionHandler : requires
+dependable_element_message_passing -u-( os : requires
 
 @enduml
