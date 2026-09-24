@@ -67,7 +67,7 @@ Note: According to MISRA Compliance:2020 document, every guideline within "The G
 | RULE-7-0-6 | `-Wconversion` <br/> `-Wfloat-conversion` | `-Wconversion` <br/> `-Wc++11-narrowing` <br/> `-Wimplicit-int-conversion` <br/> `-Wsign-conversion` | `bugprone-narrowing-conversions` | `NumericAssignmentTypeMismatch.ql` |
 | RULE-7-11-1 | | `-Wzero-as-null-pointer-constant` | | `NullptrNotTheOnlyFormOfTheNullPointerConstant.ql` |
 | RULE-7-11-2 | | | `cppcoreguidelines-pro-bounds-array-to-pointer-decay` | `ArrayPassedAsFunctionArgumentDecayToAPointer.ql` |
-| RULE-7-11-3 | `-Waddress` | `-Wtautological-pointer-compare` | | `FunctionPointerConversionContext.ql` |
+| RULE-7-11-3 | `-Waddress` | `-Waddress` <br/> `-Wtautological-pointer-compare` | | `FunctionPointerConversionContext.ql` |
 | RULE-8-0-1 | `-Wparentheses` | `-Wparentheses` | | `MissingPrecedenceClarifyingParenthesis.ql`<br/> `MissingSizeofOperatorParenthesis.ql` |
 | RULE-8-1-1 | | | | `NonTransientLambdaImplicitlyCapturesThis.ql` |
 | RULE-8-1-2 | | | | `ImplicitCapturesDisallowedInNonTransientLambda.ql` |

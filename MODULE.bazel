@@ -100,7 +100,6 @@ SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
     "-Wreturn-local-addr",  # Helps to achieve MISRA C++:2023 Rule 6-8-2
     "-Wswitch-bool",  # Helps to achieve MISRA C++:2023 Rule 7-0-1
     "-Wfloat-conversion",  # Helps to achieve MISRA C++:2023 Rule 7-0-6
-    "-Waddress",  # Helps to achieve MISRA C++:2023 Rule 7-11-3
     "-Wcast-function-type",  # Helps to achieve MISRA C++:2023 Rule 8-2-4
     "-Wuninitialized",  # Helps to achieve MISRA C++:2023 Rule 11-6-2
     "-Wexpansion-to-defined",  # Helps to achieve MISRA C++:2023 Rule 19-1-1
