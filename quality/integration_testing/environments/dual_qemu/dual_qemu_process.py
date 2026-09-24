@@ -15,46 +15,163 @@
 Subclasses ``QemuProcess`` and replaces its internal ``_qemu`` with an
 :class:`IvshmemQemu` instance so the VM is launched with an ``ivshmem-plain`` device.
 
-The ``start()`` method is self-healing: it waits for stable SSH, runs ``pre_tests_phase``,
-and restarts the QEMU process up to ``max_boot_attempts`` times if sshd never comes up.
+The ``start()`` method is self-healing: it waits for stable SSH and restarts the QEMU
+process up to ``max_boot_attempts`` times if sshd never comes up.
 """
 
 import logging
+import socket
 import time
 
-from score.itf.plugins.qemu.checks import pre_tests_phase
 from score.itf.plugins.qemu.qemu_process import QemuProcess
 from score.itf.plugins.qemu.qemu_target import QemuTarget
 
 from .ivshmem_qemu import IvshmemQemu
+from .qmp_client import diagnose
 
 logger = logging.getLogger(__name__)
 
+# second NIC in the guest, the boot image only configures vtnet0
+INTERVM_INTERFACE = "vtnet1"
+INTERVM_NETMASK = "255.255.255.0"
 
-def _wait_for_ssh(target, total_timeout: int = 180, interval: int = 3, stable_successes: int = 3):
+
+def _host_port_is_free(port: int, host: str = "127.0.0.1") -> bool:
+    # SO_REUSEADDR keeps TIME_WAIT leftovers from looking like a live listener.
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            probe.bind((host, port))
+        except OSError:
+            return False
+    return True
+
+
+def allocate_free_host_port(
+    preferred_port: int | None = None,
+    host: str = "127.0.0.1",
+    reserved: set[int] | None = None,
+) -> int:
+    """Allocate a free ephemeral port from the OS to avoid TIME_WAIT collisions across runs."""
+    if reserved is None:
+        reserved = set()
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        probe.bind((host, 0))
+        port = probe.getsockname()[1]
+        while port in reserved or not _host_port_is_free(port, host):
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe2:
+                probe2.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                probe2.bind((host, 0))
+                port = probe2.getsockname()[1]
+        reserved.add(port)
+        if preferred_port is not None:
+            logger.info(
+                "Host port %d on %s mapped to dynamic free port %d",
+                preferred_port,
+                host,
+                port,
+            )
+        return port
+
+
+def require_free_host_ports(ports, host: str = "127.0.0.1"):
+    """Reject ports a killed run still holds; QEMU would otherwise fail to bind and strand the guests."""
+    taken = sorted({port for port in ports if not _host_port_is_free(port, host)})
+    if taken:
+        raise RuntimeError(
+            f"Host ports already in use on {host}: {taken}. "
+            "A previous QEMU run was most likely interrupted; stop the stale process before retrying."
+        )
+
+
+def wait_for_host_port_bound(port: int, host: str = "127.0.0.1", timeout_s: int = 30):
+    """Block until QEMU owns the listener, so the connecting VM never retries a socket that was never created."""
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        if not _host_port_is_free(port, host):
+            return
+        time.sleep(0.2)
+    raise TimeoutError(f"QEMU never bound the inter-VM socket {host}:{port} within {timeout_s}s")
+
+
+def _wait_for_ssh(target, total_timeout: int = 180, interval: int = 1, stable_successes: int = 3):
     """Wait until the VM *stably* serves SSH.
 
     Early-boot sshd is briefly unstable, so require several consecutive successes to
-    avoid the ``pre_tests_phase`` (5 retries) failing in that window.
+    avoid the ``pre_tests_phase`` (5 retries) failing in that window. Reuse one SSH
+    connection for the consecutive checks because this guest can fail to accept a new
+    connection while an existing one is open.
     """
     deadline = time.monotonic() + total_timeout
     last_error = None
-    consecutive = 0
     while time.monotonic() < deadline:
+        consecutive = 0
         try:
             with target.ssh(timeout=10, n_retries=1, retry_interval=1) as ssh:
-                if ssh.execute_command("echo ready") == 0:
+                while consecutive < stable_successes:
+                    return_code = ssh.execute_command("echo ready")
+                    if return_code != 0:
+                        last_error = RuntimeError(f"SSH readiness command failed with exit code {return_code}")
+                        break
                     consecutive += 1
                     if consecutive >= stable_successes:
                         return
                     time.sleep(interval)
-                    continue
-            consecutive = 0
         except Exception as ex:  # pylint: disable=broad-except
             last_error = ex
-            consecutive = 0
         time.sleep(interval)
     raise TimeoutError(f"VM never became stably reachable via SSH within {total_timeout}s: {last_error}")
+
+
+def execute_async_with_retries(
+    target,
+    binary_path,
+    attempts: int = 3,
+    ssh_recovery_timeout_s: int = 30,
+    **kwargs,
+):
+    """Retry application launch when the guest SSH session is transiently unavailable."""
+    last_error = None
+    for attempt in range(1, attempts + 1):
+        if attempt > 1:
+            try:
+                _wait_for_ssh(
+                    target,
+                    total_timeout=ssh_recovery_timeout_s,
+                    stable_successes=2,
+                )
+            except Exception as probe_error:  # pylint: disable=broad-except
+                logger.warning(
+                    "VM still not serving SSH before retry %d (%s)",
+                    attempt,
+                    probe_error,
+                )
+        try:
+            return target.execute_async(binary_path, **kwargs)
+        except Exception as ex:  # pylint: disable=broad-except
+            last_error = ex
+            logger.warning(
+                "Launching %s failed on attempt %d/%d (%s)",
+                binary_path,
+                attempt,
+                attempts,
+                ex,
+            )
+    raise last_error
+
+
+def stop_quietly(process, label: str = ""):
+    """Keep remote-process cleanup from masking the test result."""
+    try:
+        process.stop()
+    except Exception as ex:  # pylint: disable=broad-except
+        logger.warning(
+            "Could not stop remote process %s cleanly (%s)",
+            label,
+            ex,
+        )
 
 
 class DualQemuProcess(QemuProcess):
@@ -78,27 +195,40 @@ class DualQemuProcess(QemuProcess):
         ivshmem_size="4M",
         intervm=None,
         vm_index=0,
-        max_boot_attempts=3,
-        boot_timeout=100,
+        max_boot_attempts=2,
+        boot_timeout=180,
+        intervm_address=None,
+        qmp_socket_path=None,
+        dump_dir=None,
     ):
         super().__init__(
             path_to_qemu_image,
             available_ram,
             available_cores,
+            network_adapters=[],
             port_forwarding=port_forwarding,
+            machine=vm_config.qemu_machine,
+            rootfs=None,
+            kernel_cmdline=vm_config.qemu_kernel_cmdline,
         )
         # Replace the base's default Qemu with our ivshmem-capable subclass.
         self._qemu = IvshmemQemu(
             path_to_qemu_image,
             available_ram,
             available_cores,
+            network_adapters=[],
             port_forwarding=port_forwarding,
             ivshmem_path=ivshmem_path,
             ivshmem_size=ivshmem_size,
             intervm=intervm,
             vm_index=vm_index,
+            qmp_socket_path=qmp_socket_path,
+            dump_dir=dump_dir,
         )
         self._vm_config = vm_config
+        self._vm_index = vm_index
+        self._intervm_address = intervm_address
+        self._qmp_socket_path = qmp_socket_path
         self._max_boot_attempts = max_boot_attempts
         self._boot_timeout = boot_timeout
         self._target = None
@@ -109,9 +239,13 @@ class DualQemuProcess(QemuProcess):
         for attempt in range(1, self._max_boot_attempts + 1):
             super().start()
             try:
+                self._wait_for_console()
                 self._target = QemuTarget(self, self._vm_config)
-                _wait_for_ssh(self._target, total_timeout=self._boot_timeout)
-                pre_tests_phase(self._target)
+                if self._intervm_address:
+                    # console is the control channel here, don't gate the boot on ssh
+                    logger.info("VM %d: booted", self._vm_index)
+                else:
+                    _wait_for_ssh(self._target, total_timeout=self._boot_timeout)
                 return self
             except Exception as ex:  # pylint: disable=broad-except
                 last_error = ex
@@ -125,8 +259,65 @@ class DualQemuProcess(QemuProcess):
                     self.stop()
                 except Exception:  # pylint: disable=broad-except
                     logger.exception("Failed to stop the wedged QEMU before retrying")
+                if attempt < self._max_boot_attempts:
+                    logger.info("Waiting 5 s before next boot attempt to let resources settle")
+                    time.sleep(5)
         raise RuntimeError(
             f"VM never booted into a usable state after {self._max_boot_attempts} attempts: {last_error}"
+        )
+
+    def _wait_for_console(self, timeout_s=90):
+        """Wait for the shell on the serial console."""
+        deadline = time.monotonic() + timeout_s
+        last_error = None
+        while time.monotonic() < deadline:
+            try:
+                code, _ = self.console.run_sh_cmd_output("echo console-ready", timeout=15)
+                if code == 0:
+                    return
+                last_error = RuntimeError(f"rc={code}")
+            except Exception as ex:  # pylint: disable=broad-except
+                last_error = ex
+            time.sleep(2)
+        raise RuntimeError(f"VM {self._vm_index}: console never responded: {last_error}")
+
+    def configure_intervm_nic(self, timeout_s=90):
+        """Configure vtnet1 over the console and check the address took."""
+        if not self._intervm_address:
+            return
+
+        deadline = time.monotonic() + timeout_s
+        last_error = None
+        while time.monotonic() < deadline:
+            try:
+                # shell may not be there yet
+                ready_code, _ = self.console.run_sh_cmd_output("echo console-ready", timeout=15)
+                if ready_code != 0:
+                    raise RuntimeError(f"console not ready (rc={ready_code})")
+
+                command = (
+                    f"if_up -p {INTERVM_INTERFACE} ; "
+                    f"ifconfig {INTERVM_INTERFACE} {self._intervm_address} "
+                    f"netmask {INTERVM_NETMASK} up ; "
+                    f"ifconfig {INTERVM_INTERFACE}"
+                )
+                exit_code, readback = self.console.run_sh_cmd_output(command, timeout=60)
+                if exit_code == 0 and self._intervm_address in readback:
+                    logger.info(
+                        "VM %d: %s configured as %s",
+                        self._vm_index,
+                        INTERVM_INTERFACE,
+                        self._intervm_address,
+                    )
+                    return
+                last_error = RuntimeError(f"rc={exit_code}, ifconfig said:\n{readback}")
+            except Exception as ex:  # pylint: disable=broad-except
+                last_error = ex
+            time.sleep(2)
+
+        raise RuntimeError(
+            f"VM {self._vm_index}: could not configure {INTERVM_INTERFACE} as "
+            f"{self._intervm_address} within {timeout_s}s: {last_error}"
         )
 
     def ensure_responsive(self, timeout: int = 30, stable_successes: int = 2):
@@ -141,3 +332,29 @@ class DualQemuProcess(QemuProcess):
     def target(self):
         """The ``QemuTarget`` for this VM (available after ``start()``)."""
         return self._target
+
+    @property
+    def qmp_socket_path(self):
+        """Path of this VM's QMP unix socket, for host-side diagnostics (may be None)."""
+        return self._qmp_socket_path
+
+    def diagnose(self):
+        """QMP snapshot: netdevs, PCI IRQ lines, IOAPIC, virtio rings."""
+        if not self._qmp_socket_path:
+            return f"VM {self._vm_index}: no QMP socket configured"
+        return diagnose(self._qmp_socket_path, f"VM {self._vm_index}")
+
+    def guest_interrupt_report(self, timeout=30):
+        """pidin irqs + driver slog lines, run this before the apps take the console."""
+        report = [f"VM {self._vm_index} guest interrupt report:"]
+        for command in (
+            "pidin irqs",
+            "slog2info | grep -i -E 'vtnet|virtio|msi|pci_cap|pci_server|module'",
+            "ls -l /proc/boot/pci /proc/boot/pci_hw.cfg /proc/boot/pci_server.cfg",
+        ):
+            try:
+                code, output = self.console.run_sh_cmd_output(command, timeout=timeout)
+                report.append(f"  $ {command} (rc={code})\n    " + output.replace("\n", "\n    "))
+            except Exception as ex:  # pylint: disable=broad-except
+                report.append(f"  $ {command}: failed: {ex}")
+        return "\n".join(report)

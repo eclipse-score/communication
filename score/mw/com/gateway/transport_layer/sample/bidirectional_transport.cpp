@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <poll.h>
 
 #include <cerrno>
 #include <chrono>
@@ -127,12 +128,48 @@ score::Result<void> BidirectionalTransport::SetupSendSocket(score::cpp::stop_tok
     const auto* remote_addr_ptr = reinterpret_cast<const struct sockaddr*>(&remote_addr);
 
     constexpr auto kRetryInterval = std::chrono::milliseconds(50);
+    constexpr int kConnectTimeoutMs = 200;
 
     while (!stop_token.stop_requested())
     {
+        // Set non-blocking on socket so connect() does not block for 75s if peer IP/ARP is not yet ready.
+        const int flags = fcntl(socket.Get(), F_GETFL, 0);
+        if (flags != -1)
+        {
+            fcntl(socket.Get(), F_SETFL, flags | O_NONBLOCK);
+        }
+
         auto connect_result = Socket::instance().connect(socket.Get(), remote_addr_ptr, sizeof(remote_addr));
+        bool connected = false;
+
         if (connect_result.has_value())
         {
+            connected = true;
+        }
+        else if (errno == EINPROGRESS || connect_result.error() == score::os::Error::createFromErrno(EINPROGRESS))
+        {
+            struct pollfd pfd{};
+            pfd.fd = socket.Get();
+            pfd.events = POLLOUT;
+            const int poll_res = poll(&pfd, 1, kConnectTimeoutMs);
+            if (poll_res > 0 && (pfd.revents & POLLOUT))
+            {
+                int so_error = 0;
+                socklen_t len = sizeof(so_error);
+                if (getsockopt(socket.Get(), SOL_SOCKET, SO_ERROR, &so_error, &len) == 0 && so_error == 0)
+                {
+                    connected = true;
+                }
+            }
+        }
+
+        if (connected)
+        {
+            // Restore blocking mode on connected socket.
+            if (flags != -1)
+            {
+                fcntl(socket.Get(), F_SETFL, flags & ~O_NONBLOCK);
+            }
             send_socket_ = std::move(socket);
             return {};
         }
@@ -323,6 +360,7 @@ void BidirectionalTransport::HandleIncomingMessage(std::unique_ptr<TransportMess
         {
             ::score::mw::log::LogWarn() << "BidirectionalTransport: Could not send acknowledgement. Message type: "
                                         << static_cast<int>(message->GetType()) << "," << message->GetSequenceNumber();
+            MarkConnectionBroken();
             return;
         }
     }
@@ -390,6 +428,13 @@ score::Result<void> BidirectionalTransport::SendAck(const std::uint32_t sequence
     return message_framer_->SendMessage(send_socket_.Get(), ack_response);
 }
 
+void BidirectionalTransport::MarkConnectionBroken()
+{
+    is_connected_ = false;
+    // Unblocks a receive thread parked in recv(), which would otherwise keep the dead send socket alive.
+    receive_socket_.ShutdownFd();
+}
+
 score::Result<void> BidirectionalTransport::TrySendAndWaitForAck(TransportMessage& message,
                                                                  const std::uint32_t sequence)
 {
@@ -400,6 +445,7 @@ score::Result<void> BidirectionalTransport::TrySendAndWaitForAck(TransportMessag
         {
             score::mw::log::LogError() << "BidirectionalTransport: failed to send message of type "
                                        << static_cast<int>(message.GetType());
+            MarkConnectionBroken();
             return send_result;
         }
     }
@@ -462,7 +508,12 @@ score::Result<void> BidirectionalTransport::SendNotification(TransportMessage& m
     }
 
     std::lock_guard<std::mutex> lock(send_mutex_);
-    return message_framer_->SendMessage(send_socket_.Get(), message);
+    auto send_result = message_framer_->SendMessage(send_socket_.Get(), message);
+    if (!send_result.has_value())
+    {
+        MarkConnectionBroken();
+    }
+    return send_result;
 }
 
 void BidirectionalTransport::SetMessageHandler(MessageHandler handler)

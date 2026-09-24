@@ -31,11 +31,17 @@ class IvshmemQemu(Qemu):
         path_to_image,
         ram="1G",
         cores="2",
+        network_adapters=None,
         port_forwarding=[],
+        machine="pc-x86_64",
+        rootfs=None,
+        kernel_cmdline=None,
         ivshmem_path=None,
         ivshmem_size="4M",
         intervm=None,
         vm_index=0,
+        qmp_socket_path=None,
+        dump_dir=None,
     ):
         """
         :param str ivshmem_path: Host backing file shared between VMs (memory-backend-file).
@@ -43,23 +49,63 @@ class IvshmemQemu(Qemu):
         :param tuple intervm: Optional ("listen"|"connect", host_port) for a point-to-point
             socket NIC between the two VMs. ``None`` disables it.
         :param int vm_index: Zero-based VM index, used to derive unique NIC MACs.
+        :param str qmp_socket_path: Optional QMP unix socket, for diagnostics.
+        :param str dump_dir: Optional directory for a pcap per netdev.
         """
         self._ivshmem_path = ivshmem_path
         self._ivshmem_size = ivshmem_size
         self._intervm = intervm
         self._vm_index = vm_index
+        self._qmp_socket_path = qmp_socket_path
+        self._dump_dir = dump_dir
+        network_adapters = network_adapters if network_adapters is not None else []
+        self._network_adapters = network_adapters
         self._dual_port_forwarding = port_forwarding
         # Pass port_forwarding=[] to the base so it doesn't add default-MAC devices.
         # We handle port forwarding ourselves in _extra_qemu_args with per-VM MACs.
-        super().__init__(path_to_image, ram, cores, cpu="host", port_forwarding=[])
-        # Re-resolve: "host" is invalid under TCG, fall back to "max".
-        if self._accelerator_support == "tcg":
-            self._Qemu__cpu = "max"
-            logger.warning("Running under TCG: using -cpu max instead of host.")
+        super().__init__(
+            path_to_image,
+            ram,
+            cores,
+            machine=machine,
+            network_adapters=[],
+            port_forwarding=[],
+            rootfs=rootfs,
+            kernel_cmdline=kernel_cmdline,
+        )
 
     def _extra_qemu_args(self):
-        """Inject ivshmem, per-VM-MAC port forwarding, and inter-VM NIC arguments."""
-        return self._ivshmem_args() + self._port_forwarding_with_mac_args() + self._intervm_args()
+        """Inject ivshmem, per-VM-MAC port forwarding, inter-VM NIC, qmp and pcap arguments."""
+        return (
+            self._ivshmem_args()
+            + self._port_forwarding_with_mac_args()
+            + self._intervm_args()
+            + self._qmp_args()
+            + self._dump_args()
+        )
+
+    def _qmp_args(self):
+        if not self._qmp_socket_path:
+            return []
+        return ["-qmp", f"unix:{self._qmp_socket_path},server=on,wait=off"]
+
+    def _dump_args(self):
+        """pcap per netdev, both directions, taken at the netdev side of the NIC."""
+        if not self._dump_dir:
+            return []
+        netdev_ids = [f"net{id}" for id, _ in enumerate(self._dual_port_forwarding, start=1)]
+        if self._intervm:
+            netdev_ids.append("intervm")
+        result = []
+        for netdev_id in netdev_ids:
+            result.extend(
+                [
+                    "-object",
+                    f"filter-dump,id=dump_{netdev_id},netdev={netdev_id},"
+                    f"file={self._dump_dir}/vm{self._vm_index}_{netdev_id}.pcap",
+                ]
+            )
+        return result
 
     def _ivshmem_args(self):
         if not self._ivshmem_path:
@@ -102,9 +148,9 @@ class IvshmemQemu(Qemu):
             return []
         mode, host_port = self._intervm
         if mode == "listen":
-            netdev = f"socket,id=intervm,listen=:{host_port}"
+            netdev = f"stream,id=intervm,server=on,addr.type=inet,addr.host=127.0.0.1,addr.port={host_port}"
         else:
-            netdev = f"socket,id=intervm,connect=127.0.0.1:{host_port}"
+            netdev = f"stream,id=intervm,addr.type=inet,addr.host=127.0.0.1,addr.port={host_port},reconnect=1"
         return [
             "-netdev",
             netdev,

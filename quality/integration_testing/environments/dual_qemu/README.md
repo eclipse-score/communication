@@ -27,8 +27,9 @@ socket-based control plane, so the data plane only needs plain shared memory.
 | `ivshmem_backend`  | session | Path of the shared host backing file.                   |
 | `config`           | session | Loaded `DualQemuConfigModel` + `qemu_image`.            |
 
-Both VMs run the upstream `pre_tests_phase` checks (ping / SSH / SFTP) before the tests
-start.
+Both VMs complete a full SSH command readiness check before the tests start. The dual-QEMU
+plugin does not run the upstream SFTP check afterward because QNX's `sshd` can exhaust its
+session state when that check is immediately followed by two asynchronous application launches.
 
 ### Boot reliability
 
@@ -37,8 +38,8 @@ during device bring-up (it can hang at SMP AP / secondary-CPU startup under the 
 boot path, so its `sshd` never comes up and QEMU's SLIRP resets the harness connections).
 To keep the test reliable the plugin:
 
-- boots the VMs **sequentially** — it starts a VM, waits until SSH is *stably* reachable
-  and runs `pre_tests_phase`, and only then starts the next one, so the two guests never
+- boots the VMs **sequentially** — it starts a VM, waits until SSH is *stably* reachable,
+  and only then starts the next one, so the two guests never
   initialise their devices at the same time;
 - gives each VM a single core and a **distinct NIC MAC**;
 - the `dual_qemu_integration_test` macro additionally marks the test `flaky = True` so

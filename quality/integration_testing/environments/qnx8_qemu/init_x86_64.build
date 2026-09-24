@@ -416,4 +416,5 @@ StrictModes no
 UseDNS no
 MaxAuthTries 3
 LoginGraceTime 30
+MaxStartups 100:30:200
 }

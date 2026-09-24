@@ -1,0 +1,152 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+#ifndef SCORE_MW_COM_GATEWAY_TRANSPORT_LAYER_QEMU_TEST_QEMU_INTEGRATION_TEST_HELPERS_H
+#define SCORE_MW_COM_GATEWAY_TRANSPORT_LAYER_QEMU_TEST_QEMU_INTEGRATION_TEST_HELPERS_H
+
+/// Shared fixtures for the bidirectional QEMU/ivshmem gateway integration test
+/// (app1_main.cpp = VM-A, app2_main.cpp = VM-B). Both apps run the identical protocol in
+/// mirrored roles, so the constants and test doubles below are defined once here.
+///
+/// Both message transport (real BidirectionalTransport over the intervm socket NIC) and shared
+/// memory (ivshmem BAR) are exercised end-to-end; only GatewayCore is stubbed, since driving a
+/// full GenericSkeleton is out of scope for this transport-layer test.
+///
+/// Cross-VM synchronization (data-ready / verified signaling) travels over the real transport
+/// via QemuHypervisorTransport::NotifyUpdate, not by polling shared CTRL memory — matching
+/// ivshmem-plain's lack of an MSI-X/doorbell.
+
+#include "score/mw/com/gateway/gateway_application/gateway_core.h"
+
+#include "score/result/result.h"
+
+#include <atomic>
+#include <chrono>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <string>
+#include <thread>
+
+namespace
+{
+
+constexpr std::uint32_t kShmSize = 4096U;
+
+// Payload magic values — different per direction to prove correct routing.
+constexpr std::uint32_t kMagicA = 0xCAFEBABEU;  // VM-A → VM-B
+constexpr std::uint32_t kMagicB = 0xDEADBEEFU;  // VM-B → VM-A
+
+// Service specifiers for each direction.
+constexpr char kServiceA[] = "service_a";  // produced by VM-A, consumed on VM-B
+constexpr char kServiceB[] = "service_b";  // produced by VM-B, consumed on VM-A
+
+// NotifyUpdate element names distinguishing the two notification purposes below. Each VM
+// receives at most one of each per run, so a plain string comparison is enough to route them.
+constexpr char kElementNameDataReady[] = "DataReady";
+constexpr char kElementNameVerified[] = "Verified";
+
+/// Control structure placed in each service's CTRL shm (a minimal stand-in for production's
+/// ServiceDataControl). Readiness is signalled to the peer over the transport
+/// (kElementNameDataReady), not by polling event_count; event_count is kept only as a
+/// realistic data-plane artifact.
+struct ServiceControl
+{
+    volatile std::uint32_t event_count;  // incremented by provider after writing DATA
+};
+
+/// Polls a bool flag until it becomes true or times out — used to wait for a message
+/// delivered asynchronously by the real BidirectionalTransport.
+bool WaitForFlag(const std::atomic<bool>& flag, int timeout_ms = 60000)
+{
+    constexpr int kSleepMs = 50;
+    int elapsed = 0;
+    while (!flag.load(std::memory_order_acquire) && elapsed < timeout_ms)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(kSleepMs));
+        elapsed += kSleepMs;
+    }
+    return flag.load(std::memory_order_acquire);
+}
+
+// NotifyUpdate is fire-and-forget, so a notification can be lost while the peer reconnects.
+// Retry only while sending actually fails; repeating after success just floods the peer.
+template <typename NotifyFunction>
+bool NotifyWithRetries(NotifyFunction&& notify, int attempts = 10)
+{
+    for (int attempt = 0; attempt < attempts; ++attempt)
+    {
+        if (notify().has_value())
+        {
+            return true;
+        }
+        if (attempt + 1 < attempts)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+    }
+    return false;
+}
+
+// vtnet1 is configured by the dual_qemu fixture over the console, not from the apps.
+
+/// Test GatewayCore stub — records ProvideService calls and routes incoming NotifyUpdate
+/// notifications to local flags by element name, so app code can WaitForFlag() on them.
+class TestGatewayCore final : public score::mw::com::gateway::GatewayCore
+{
+  public:
+    std::atomic<bool> provide_service_called{false};
+    std::atomic<bool> data_ready_notified{false};  // set when peer's "DataReady" NotifyUpdate arrives
+    std::atomic<bool> verified_notified{false};    // set when peer's "Verified" NotifyUpdate arrives
+
+    score::Result<void> ProvideService(score::mw::com::impl::InstanceSpecifier /*s*/,
+                                       std::vector<score::mw::com::impl::EventInfo> /*e*/) override
+    {
+        provide_service_called.store(true, std::memory_order_release);
+        return {};
+    }
+    score::Result<void> OfferService(score::mw::com::impl::InstanceSpecifier /*s*/) override
+    {
+        return {};
+    }
+    void StopOfferService(score::mw::com::impl::InstanceSpecifier /*s*/) override {}
+    score::Result<void> NotifyUpdate(score::mw::com::impl::InstanceSpecifier /*s*/,
+                                     score::mw::com::impl::ServiceElementType /*t*/,
+                                     std::string element_name) override
+    {
+        if (element_name == kElementNameDataReady)
+        {
+            data_ready_notified.store(true, std::memory_order_release);
+        }
+        else if (element_name == kElementNameVerified)
+        {
+            verified_notified.store(true, std::memory_order_release);
+        }
+        return {};
+    }
+    score::Result<void> RegisterUpdateNotification(score::mw::com::impl::InstanceSpecifier /*s*/,
+                                                   score::mw::com::impl::ServiceElementType /*t*/,
+                                                   std::string /*n*/) override
+    {
+        return {};
+    }
+    score::Result<void> UnregisterUpdateNotification(score::mw::com::impl::InstanceSpecifier /*s*/,
+                                                     score::mw::com::impl::ServiceElementType /*t*/,
+                                                     std::string /*n*/) override
+    {
+        return {};
+    }
+};
+
+}  // namespace
+
+#endif  // SCORE_MW_COM_GATEWAY_TRANSPORT_LAYER_QEMU_TEST_QEMU_INTEGRATION_TEST_HELPERS_H

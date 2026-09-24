@@ -22,6 +22,7 @@ py_library(
         "config.py",
         "dual_qemu_process.py",
         "ivshmem_qemu.py",
+        "qmp_client.py",
     ],
     imports = [".."],
     deps = [
