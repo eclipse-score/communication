@@ -1,0 +1,10 @@
+---
+#
+# This configuration file contains additional clang-tidy
+# checks which shall get performed for all source files
+# residing in this as well as contained subdirectories.
+#
+
+Checks: >
+  -*,
+  modernize-concat-nested-namespaces,

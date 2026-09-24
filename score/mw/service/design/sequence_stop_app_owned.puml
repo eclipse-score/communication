@@ -1,0 +1,76 @@
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+@startuml sequence_stop_app_owned
+title Stop Service Discovery - App Owns ProxyData
+
+skinparam sequenceParticipantBackgroundColor #F7F7F7
+skinparam sequenceParticipantBorderColor #666666
+skinparam sequenceLifeLineBorderColor #777777
+skinparam sequenceLifeLineBackgroundColor #EFEFEF
+
+participant "App" as App #CFE8FF
+participant "RequestedProxies" as Requested
+participant "ProxyContainer" as Container
+participant "ProxyData" as ProxyData
+participant "StopServiceDiscoveryAction" as StopAction
+participant "ActiveServiceDiscovery" as ActiveSD
+participant "FindStrategy" as Strategy
+participant "ProxyHolder" as Holder
+
+== Build Output Consumed ==
+
+App -> Requested : GetProxyContainer()
+Requested --> App : ProxyContainer
+
+== App Extracts Ownership ==
+
+alt Multiple extracted
+App -> Container : Extract<Multiple>()
+Container --> App : MultipleProxyData
+else Optional extracted
+App -> Container : Extract<Optional>()
+Container --> App : OptionalProxyData
+end
+
+note over App, StopAction
+After extraction, App owns stop-capable ProxyData and can stop explicitly.
+end note
+
+Container -> Container : destructor
+note over App, Container
+Container destruction does not stop discovery after ownership is extracted.
+end note
+
+== Explicit Stop ==
+App -> ProxyData : StopServiceDiscovery()
+ProxyData -> StopAction : Stop()
+StopAction -> ActiveSD : Stop()
+ActiveSD -> Strategy : StopFind()
+Strategy -> Holder : StopFindService()
+
+note over ProxyData, StopAction
+StopServiceDiscovery() behavior is idempotent.
+Repeated stop requests are safe.
+end note
+
+== App Termination / Destructors ==
+
+note over App, ProxyData
+As App shutdown starts, ProxyData destructors will be called.
+end note
+
+ProxyData -> StopAction : Stop()
+StopAction -> ActiveSD : Stop()
+ActiveSD -> Strategy : StopFind()
+Strategy -> Holder : StopFindService()
+
+@enduml
