@@ -141,8 +141,50 @@ ScoreReq.CompReq ServerFactoryCreateAPI {
     version = 1
 }
 
+ScoreReq.CompReq ClientFactoryEngineSharingAPI {
+    description = "`ClientFactory` shall provide a constructor accepting a `shared_ptr<Engine>` and a `GetEngine` accessor, so that it can share a single `Engine` instance with other `ClientFactory`/`ServerFactory` instances in the same process instead of each owning its own."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.SingletonFreeImplementation@2]
+    version = 1
+}
+
+ScoreReq.CompReq ServerFactoryEngineSharingAPI {
+    description = "`ServerFactory` shall provide a constructor accepting a `shared_ptr<Engine>` and a `GetEngine` accessor, so that it can share a single `Engine` instance with other `ClientFactory`/`ServerFactory` instances in the same process instead of each owning its own."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.SingletonFreeImplementation@2]
+    version = 1
+}
+
 ScoreReq.CompReq IClientConnectionGetStateAPI {
     description = "`IClientConnection` shall provide a `GetState` method that returns the current connection state."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.OSIndependentAPI@2]
+    version = 1
+}
+
+ScoreReq.CompReq IClientConnectionGetStopReasonAPI {
+    description = "`IClientConnection` shall provide a `GetStopReason` method that returns the reason for the most recent transition to the `Stopping`/`Stopped` state."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.OSIndependentAPI@2]
+    version = 1
+}
+
+ScoreReq.CompReq IClientConnectionStartAPI {
+    description = "`IClientConnection` shall provide a `Start` method that begins connecting to the server, registering the state and notification callbacks for the connection's lifetime."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.OSIndependentAPI@2]
+    version = 1
+}
+
+ScoreReq.CompReq IClientConnectionStopAPI {
+    description = "`IClientConnection` shall provide a `Stop` method that ends the existing connection."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.OSIndependentAPI@2]
+    version = 1
+}
+
+ScoreReq.CompReq IClientConnectionRestartAPI {
+    description = "`IClientConnection` shall provide a `Restart` method that attempts to bring a stopped connection back to the `Starting` state."
     safety = ScoreReq.Asil.B
     derived_from = [MessagePassing.OSIndependentAPI@2]
     version = 1
