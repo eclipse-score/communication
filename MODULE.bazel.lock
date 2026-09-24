@@ -12919,7 +12919,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "+vgTABLj64cvjmKGlkw+4AJ9S7iLJFRI20t6JpYfRzM=",
-        "usagesDigest": "edBxldNsBmBlevs7gaX7enR2Fi9ftdBVuUwPCAjw950=",
+        "usagesDigest": "ZNgELGHHOs6xA7lhpwkf44HLDTUNH+u9V1ty/OZ+GgI=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -12978,7 +12978,6 @@
               "extra_compile_flags": [
                 "-Wall",
                 "-Werror",
-                "-Wtype-limits",
                 "-Wunused-local-typedefs",
                 "-Wparentheses",
                 "-Wshadow",
@@ -13038,7 +13037,6 @@
               "extra_compile_flags": [
                 "-Wall",
                 "-Werror",
-                "-Wtype-limits",
                 "-Wunused-local-typedefs",
                 "-Wparentheses",
                 "-Wshadow",
@@ -13098,7 +13096,6 @@
               "extra_compile_flags": [
                 "-Wall",
                 "-Werror",
-                "-Wtype-limits",
                 "-Wunused-local-typedefs",
                 "-Wparentheses",
                 "-Wshadow",
@@ -13158,7 +13155,6 @@
               "extra_compile_flags": [
                 "-Wall",
                 "-Werror",
-                "-Wtype-limits",
                 "-Wunused-local-typedefs",
                 "-Wparentheses",
                 "-Wshadow",

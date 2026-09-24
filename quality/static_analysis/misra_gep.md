@@ -13,7 +13,7 @@ Note: According to MISRA Compliance:2020 document, every guideline within "The G
 | Rule | gcc | clang | clang-tidy | CodeQL |
 | ----- | -------- | ---- | ---- | ---- |
 | RULE-0-0-1 | | `-Wunreachable-code` <br/> `-Wunreachable-code-return` | | `UnreachableStatement.ql` |
-| RULE-0-0-2 | `-Wtype-limits` | `-Wtautological-unsigned-zero-compare` <br/> `-Wtautological-type-limit-compare` | `misc-redundant-expression` | `InvariantCondition.ql` |
+| RULE-0-0-2 | `-Wtype-limits` | `-Wtype-limits` | `misc-redundant-expression` | `InvariantCondition.ql` |
 | RULE-0-1-1 | | `-Wunused-variable` | `clang-analyzer-deadcode.DeadStores` | `UnnecessaryWriteToLocalObject.ql` |
 | RULE-0-1-2 | | | `bugprone-unused-return-value` | `UnusedReturnValueMisraCpp.ql` |
 | RULE-0-2-1 | `-Wunused-variable` | `-Wunused-variable` | `clang-diagnostic-unused-const-variable` <br/> `clang-diagnostic-unused-template` <br/> `clang-diagnostic-unused-variable` | `UnusedLimitedVisibilityVariable.ql` |

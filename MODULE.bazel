@@ -96,7 +96,6 @@ score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gc
 SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
     "-Wall",
     "-Werror",
-    "-Wtype-limits",  # Helps to achieve MISRA C++:2023 Rule 0-0-2
     "-Wunused-local-typedefs",  # Helps to achieve MISRA C++:2023 Rule 0-2-3
     "-Wparentheses",  # Helps to achieve MISRA C++:2023 Rule 6-0-1, 8-0-1, and 8-18-2
     "-Wshadow",  # Helps to achieve MISRA C++:2023 Rule 6-4-1

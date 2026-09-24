@@ -193,6 +193,7 @@ cc_args(
     # MISRA C++:2023. This list contains only the warnings that are common to gcc and clang.
     # The warnings that are specific to gcc or clang can be found in the respective folders.
     args = [
+        "-Wtype-limits",  # Helps to achieve MISRA C++:2023 Rule 0-0-2
         "-Wunused-variable",  # Helps to achieve MISRA C++:2023 Rule 0-2-1 in gcc and clang and Rule 0-1-1 in clang
         "-Wunused-function",  # Helps to achieve MISRA C++:2023 Rule 0-2-4
         "-Wtrigraphs",  # Helps to achieve MISRA C++:2023 Rule 5-0-1
