@@ -93,7 +93,7 @@ Note: According to MISRA Compliance:2020 document, every guideline within "The G
 | RULE-8-19-1 | | `-Wcomma` | | `CommaOperatorShouldNotBeUsed.ql` |
 | RULE-8-20-1 | | `-Wconstant-conversion` | | `UnsignedOperationWithConstantOperandsWraps.ql` |
 | RULE-9-2-1 | | `-Wunused-value` | `bugprone-unused-raii` | `NoStandaloneTypeCastExpression.ql` |
-| RULE-9-3-1 | `-Wdangling-else` <br/> `-Wmisleading-indentation` | `-Wdangling-else` <br/> `-Wmisleading-indentation` <br/> `-Wempty-body` | `readability-braces-around-statements` | `SwitchBodyCompoundCondition.ql`<br/> `LoopBodyCompoundCondition.ql` |
+| RULE-9-3-1 | `-Wparentheses` <br/> `-Wdangling-else` <br/> `-Wmisleading-indentation` | `-Wparentheses` <br/> `-Wdangling-else` <br/> `-Wmisleading-indentation` <br/> `-Wempty-body` | `readability-braces-around-statements` | `SwitchBodyCompoundCondition.ql`<br/> `LoopBodyCompoundCondition.ql` |
 | RULE-9-4-1 | | | | `IfElseIfEndCondition.ql` |
 | RULE-9-4-2 | | `-Wimplicit-fallthrough` <br/> `-Wswitch` <br/> `-Wswitch-default` <br/> `-Wswitch-enum` | `hicpp-multiway-paths-covered` | `AppropriateStructureOfSwitchStatement.ql` |
 | RULE-9-5-1 | | | `bugprone-too-small-loop-variable` | `LegacyForStatementsShouldBeSimple.ql` |
