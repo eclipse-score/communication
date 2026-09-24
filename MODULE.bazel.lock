@@ -12919,7 +12919,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "+vgTABLj64cvjmKGlkw+4AJ9S7iLJFRI20t6JpYfRzM=",
-        "usagesDigest": "0WNY03kEHLBIp+d6HX28VjPfNvfioMi1bPkjQmPKnuQ=",
+        "usagesDigest": "JjnVygACivzntcjbKKItwdBEgXGf/ulYUnVJf1RY2mQ=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -12998,7 +12998,6 @@
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
                 "-Wterminate",
-                "-Wdelete-incomplete",
                 "-Wno-literal-suffix",
                 "-Wno-noexcept-type"
               ],
@@ -13053,7 +13052,6 @@
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
                 "-Wterminate",
-                "-Wdelete-incomplete",
                 "-Wno-literal-suffix",
                 "-Wno-noexcept-type"
               ],
@@ -13108,7 +13106,6 @@
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
                 "-Wterminate",
-                "-Wdelete-incomplete",
                 "-Wno-literal-suffix",
                 "-Wno-noexcept-type"
               ],
@@ -13163,7 +13160,6 @@
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
                 "-Wterminate",
-                "-Wdelete-incomplete",
                 "-Wno-literal-suffix",
                 "-Wno-noexcept-type"
               ],

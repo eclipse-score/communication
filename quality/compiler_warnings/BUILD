@@ -208,6 +208,7 @@ cc_args(
         "-Wreturn-type",  # Helps to achieve MISRA C++:2023 Rule 9-6-5
         "-Wignored-qualifiers",  # Helps to achieve MISRA C++:2023 Rule 10-1-2
         "-Wenum-compare",  # Helps to achieve MISRA C++:2023 Rule 10-2-3
+        "-Wdelete-incomplete",  # Helps to achieve MISRA C++:2023 Rule 21-6-5
     ],
     visibility = ["//quality/compiler_warnings:__subpackages__"],
 )

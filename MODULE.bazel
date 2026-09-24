@@ -116,7 +116,6 @@ SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
 
 SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS = [
     "-Wterminate",  # Helps to achieve MISRA C++:2023 Rule 18-5-1
-    "-Wdelete-incomplete",  # Helps to achieve MISRA C++:2023 Rule 21-6-5
     "-Wno-literal-suffix",
     "-Wno-noexcept-type",
 ]
