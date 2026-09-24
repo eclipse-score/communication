@@ -89,6 +89,19 @@ This is the real content that should eventually replace/ground the placeholder `
    *how* it's contained (ignore that single spurious message vs. muting the whole channel in one or
    both directions because an unexpected event occurred) is a real design decision that needs to be
    made explicitly and documented, not left implicit.
+9. **An `AoU` and a parallel partial mitigation are not mutually exclusive (added 2026-09-24).**
+   The micro-FTA is a bottom-up FMEA check: per candidate root cause, decide whether the component
+   controls/prevents it (→ `ControlMeasure`) or not (→ must be captured as an `AoU`, since an
+   uncontrolled root cause is by definition the user/integrator's obligation). But "uncontrolled by
+   the library" does not mean "nothing about the design helps" — a root cause can be documented as
+   an `AoU` (no guarantee given) while a real, parallel, partial mitigation is *also* written down
+   alongside it, rather than forcing a single either/or category. Worked example: `Send()` +
+   the `DelayedFunction` HAZOP guideword ("processing too slow", distinct from `TooLate`, defined in
+   the real `@score_tooling` `score_requirements_model.rsl` but not yet used in `failure_modes.trlc`)
+   — the `TimingSupervision` `AoU` correctly states the library gives no timing guarantee, but
+   `Send()`'s internal message queue + background-thread dispatch (decoupling the call from an
+   inline, blocking IPC syscall on the caller's thread) is a real, parallel, partial mitigation
+   worth documenting too, not a contradiction of the `AoU`.
 
 ## Follow-up answers (same day, before wrap-up)
 

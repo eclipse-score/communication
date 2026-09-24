@@ -33,8 +33,8 @@ ScoreReq.CompReq ServerProcessesSinglePendingRequest {
 ScoreReq.CompReq ClientConnectionMaintainsStateMachine {
     description = "The `ClientConnection` shall maintain a state machine with the states `Starting`, `Ready`, `Stopping`, and `Stopped`."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.OSIndependentAPI@2]
-    version = 1
+    derived_from = [MessagePassing.ClientInterface@1]
+    version = 2
 }
 
 ScoreReq.CompReq ClientSendUsesDirectTransportCallByDefault {
@@ -158,36 +158,36 @@ ScoreReq.CompReq ServerFactoryEngineSharingAPI {
 ScoreReq.CompReq IClientConnectionGetStateAPI {
     description = "`IClientConnection` shall provide a `GetState` method that returns the current connection state."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.OSIndependentAPI@2]
-    version = 1
+    derived_from = [MessagePassing.ClientInterface@1]
+    version = 2
 }
 
 ScoreReq.CompReq IClientConnectionGetStopReasonAPI {
     description = "`IClientConnection` shall provide a `GetStopReason` method that returns the reason for the most recent transition to the `Stopping`/`Stopped` state."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.OSIndependentAPI@2]
-    version = 1
+    derived_from = [MessagePassing.ClientInterface@1]
+    version = 2
 }
 
 ScoreReq.CompReq IClientConnectionStartAPI {
     description = "`IClientConnection` shall provide a `Start` method that begins connecting to the server, registering the state and notification callbacks for the connection's lifetime."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.OSIndependentAPI@2]
-    version = 1
+    derived_from = [MessagePassing.ClientInterface@1]
+    version = 2
 }
 
 ScoreReq.CompReq IClientConnectionStopAPI {
     description = "`IClientConnection` shall provide a `Stop` method that ends the existing connection."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.OSIndependentAPI@2]
-    version = 1
+    derived_from = [MessagePassing.ClientInterface@1]
+    version = 2
 }
 
 ScoreReq.CompReq IClientConnectionRestartAPI {
     description = "`IClientConnection` shall provide a `Restart` method that attempts to bring a stopped connection back to the `Starting` state."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.OSIndependentAPI@2]
-    version = 1
+    derived_from = [MessagePassing.ClientInterface@1]
+    version = 2
 }
 
 ScoreReq.CompReq IServerConnectionGetClientIdentityAPI {
@@ -288,8 +288,8 @@ ScoreReq.CompReq ClientConnectionSendWithCallbackFailsWhenStopped {
 ScoreReq.CompReq ClientConnectionStateCallbackInvocation {
     description = "The `ClientConnection` shall invoke the registered `StateCallback` each time the connection state changes, passing the new state as the argument."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.OSIndependentAPI@2]
-    version = 1
+    derived_from = [MessagePassing.ClientInterface@1]
+    version = 2
 }
 
 }

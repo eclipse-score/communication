@@ -26,6 +26,13 @@ ScoreReq.FeatReq ServerInterface {
     version = 2
 }
 
+ScoreReq.FeatReq ClientInterface {
+    description = "The message passing component shall provide a client interface that establishes and maintains a connection to a server, exposing its lifecycle state, the reason for its termination, and a callback invoked on every state change."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.ClientServerCommunicationModel@1]
+    version = 1
+}
+
 ScoreReq.FeatReq OSIndependentAPI {
     description = "The message passing component shall provide an OS-independent API for OS-native IPC mechanisms."
     safety = ScoreReq.Asil.B

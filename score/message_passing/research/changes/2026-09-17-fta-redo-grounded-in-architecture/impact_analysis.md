@@ -155,6 +155,127 @@ control measure. The *verification coverage* angle belongs in `score-testing`'s 
 (`test_case_coverage.lock.yaml`), not in this `ControlMeasure`'s wording.
 
 
+## Code-level re-derivation (2026-09-24 resumption)
+
+Per `next_steps.md` item 1, the mapping above (header/prose-grounded) is now re-verified against the
+actual implementation: `client_connection.cpp`/`.h`, `unix_domain/unix_domain_server.cpp` (read in
+full), and a thorough subagent pass over `qnx_dispatch/*.cpp`, `i_client_connection.h`,
+`i_server.h`/`i_server_connection.h`, `server_types.h`. Findings below **supersede** the
+corresponding rows above where they differ; unchanged rows are not repeated. Function/line
+citations for `client_connection.cpp`/`unix_domain_server.cpp` were read directly; QNX-side
+citations came from a thorough read-only subagent pass and should be spot-checked before the
+`.trlc` text is finalized, but are consistent with the Linux-side mechanisms confirmed directly.
+
+### 1. `IpcChannelUnavailable` — confirmed/changed dispositions
+
+- **`StartupArgumentValidation` (AoU) — CONFIRMED.** Neither `UnixDomainClientFactory::Create()`/
+  `UnixDomainServerFactory::Create()` nor their QNX dispatch equivalents validate
+  `ServiceProtocolConfig`/`ClientConfig`/`ServerConfig` at `Create()` time — configs are passed
+  straight into the implementation constructors. An invalid value only surfaces later, indirectly
+  (e.g. an oversized-message config surfaces as `EMSGSIZE` at `Send()`/`Reply()`/`Notify()` time,
+  per `MessageNotDeliveredCorrectly`; an over-length `identifier` truncates or panics per
+  `memory_and_size_limits_findings.md`). Strengthens the AoU: state explicitly that the library
+  performs **no config validation at `Create()` time at all** — any invalid config's failure mode is
+  deferred and indirect, not a graceful `Create()`-time error.
+- **`UniqueServerNamePolicy` (ControlMeasure) — CONFIRMED, reworded.** `UnixDomainServer::StartListening()`
+  (`unix_domain_server.cpp`): `socket()` → `bind()` → `listen()`, each checked; a `bind()` failure
+  (e.g. `EADDRINUSE` for a duplicate name) or `listen()` failure closes the fd and returns the OS
+  error via `score::cpp::expected_blank<Error>` — no retry, no fallback. This is a **detect-and-report**
+  measure, not a duplicate-prevention mechanism — reword the record to say so explicitly (avoid
+  implying the library prevents duplicate names; it only surfaces the OS's rejection of one).
+- **`BE_ServerQueueConfig` — CONFIRMED retire.** `UnixDomainServer`'s constructor takes
+  `server_config` as an unnamed, unused parameter; `ServerConfig::max_queued_sends` has no
+  implemented effect in either backend. Matches `memory_and_size_limits_findings.md` finding 4
+  exactly.
+- **`ServerHealthCheck` + `ClientRetryPolicy` — REVISES Open Questions 4/5's original answer.**
+  `ClientConnection::TryConnect()` (`client_connection.cpp`): retryable errors (`EAGAIN`,
+  `ECONNREFUSED`, `ENOENT`) re-enqueue `TryConnect()` after `connect_retry_ms_`, starting at
+  `kConnectRetryMsStart = 50`, growing by `new_delay = prev_delay * (1 + 1/kConnectRetryT)` with
+  `kConnectRetryT = 3`, capped at `kConnectRetryMsMax = 5000`; any other OS error is terminal for
+  the attempt — `EACCES` → `StopReason::kPermission`, anything else → `StopReason::kIoError` — no
+  retry. This confirms `safety_concept_notes.md`'s finding precisely and shows `ServerHealthCheck`
+  and `ClientRetryPolicy` are indeed **one single mechanism**, not two. **Revised proposal:
+  consolidate both into one `ControlMeasure`** (e.g. `ClientConnectRetryAndFailureClassification`),
+  retiring both old names, described as: "the client connection attempt uses a capped-backoff retry
+  loop for OS errors indicating the server is transiently absent (`EAGAIN`/`ECONNREFUSED`/`ENOENT`),
+  and classifies any other OS error as an immediate, distinguishable `StopReason`
+  (`kPermission`/`kIoError`) with no retry" — grounded directly in `TryConnect()`, not the sequence
+  diagram's higher-level narrative. This reverses the impact_analysis.md draft above (which had
+  proposed keeping both as separate records).
+- **`BE_UnintendedDisconnect` + `BE_RequestDisconnectMisuse` (AoU, consolidated) — CONFIRMED, refined.**
+  `UnixDomainServer::ServerConnection::RequestDisconnect()` unregisters the endpoint under a
+  recursive mutex; a second call finds nothing to unregister and is a harmless no-op (confirmed via
+  `UnregisterPosixEndpoint`'s `find`-then-no-op-if-absent pattern). So the consolidated `AoU` is
+  **not** about double-invocation safety (the library already tolerates that) — it is about caller
+  *intent*: the library honors `RequestDisconnect()` unconditionally and immediately, with no
+  confirmation or delay, so the integrator must only call it when it genuinely intends to tear down
+  that specific channel.
+
+### 6/7 (renumbered from `IpcApiMisuseOrLifecycleViolation`/`ConnectionContextDataWrong`) — confirmed dispositions
+
+- **`CallFlowConformance` split — CONFIRMED exactly, per Open Question 8.** `ClientConnection::IsInCallback()`
+  (`client_connection.h`) reads `engine_->IsOnCallbackThread()`; `SendWaitReply()`
+  (`client_connection.cpp`) checks it first and returns `EAGAIN` without attempting anything —
+  this is a real, checked `ControlMeasure` (blocking call from a callback thread is detected and
+  safely refused). By contrast, `IServerConnection::Reply()`
+  (`UnixDomainServer::ServerConnection::Reply()`) has **zero** state/context check — it only
+  validates size, then sends; calling it outside the intended `OnMessageSentWithReply` context, or
+  after disconnect, is undetected by the library (an OS-level `EPIPE`-class error may or may not
+  surface depending on timing) — stays an `AoU`. Confirms the split proposed in the draft above; no
+  change needed beyond adding these citations.
+- **`ConnectCallback*` consolidation — CONFIRMED.** `UnixDomainServer::ProcessConnect()`: the
+  `ConnectCallback`'s returned `UserData` is stored via `AcceptConnection()` with **no validation at
+  all** — no null check, no type check. Confirms merging `ConnectCallbackReturnValueValidation` and
+  `ConnectCallbackValidation` into one `AoU` as already proposed.
+- **`BE_NotifyCallbackMissing` (AoU) — CONFIRMED exact mechanism, per Open Question 6.**
+  `ClientConnection::ProcessInputEvent()` checks `if (!notify_callback_.empty())` before invoking
+  it on an incoming `NOTIFY`; if the client never registered one, the notification is **silently
+  dropped** — not logged, not treated as an error, not surfaced anywhere. Confirms the proposed
+  conditional rewording ("only an obligation if the client's own protocol expects notifications")
+  and additionally grounds the *consequence* precisely: silent drop, matching
+  `safety_concept_notes.md` principle 2 (absorb what can't be reported) even though this specific
+  case is an expected, non-error condition rather than a detected failure.
+
+### New finding: `LifecycleOrderEnforcement` may be miscategorized as pure AoU
+
+Not previously flagged as uncertain — this is a **new** judgement call surfaced only by reading
+`client_connection.cpp` directly. `Send()`, `SendWaitReply()`, `SendWithCallback()` all explicitly
+check `state_ != State::kReady` and return `EINVAL` rather than attempting the operation; `Restart()`
+checks `state_ != State::kStopped`. These are **detected, reported** preconditions — i.e. arguably a
+`ControlMeasure` (Category B), not a pure caller `AoU`, for at least this subset of "wrong lifecycle
+stage" cases. Proposed resolution (needs confirmation, see updated Open Questions in
+`change_request.md`): split `LifecycleOrderEnforcement` the same way `CallFlowConformance` was split
+— a `ControlMeasure` for the checked client-side call-order violations (`Send`/`SendWaitReply`/
+`SendWithCallback`/`Restart` all return `EINVAL` rather than misbehaving), and keep a narrower `AoU`
+only for whatever residual lifecycle misuse is **not** checked (e.g. server-side
+`StartListening()`/`StopListening()` reentrancy or ordering — not yet verified either way; flagged
+as needing the same direct code read before finalizing).
+
+### New finding: `BE_HandlerNotRegistered`'s exact failure behavior is unconfirmed
+
+`UnixDomainServer::ProcessConnect()` calls `connect_callback_(*connection)` unconditionally — if
+`StartListening()` was called with a default-constructed (empty) `ConnectCallback`, invoking it
+depends on `score::cpp::callback`'s behavior for an unset callback, which was **not verified this
+session** (out of scope of the files read) and is likely a precondition violation/assert rather
+than a harmless no-op, contradicting the original assumption of a graceful "connection just isn't
+accepted." Needs a direct read of `score::cpp::callback`'s empty-invocation semantics (external
+dependency, not in this repo) before finalizing the `AoU` wording — flagged as an Open Question
+rather than guessed at.
+
+### New finding: `BE_NotifyQueueExhausted` has a platform asymmetry
+
+`UnixDomainServer::ServerConnection::Notify()` (confirmed by direct read) checks `message.size() >
+server_.max_notify_size_` (→ `EMSGSIZE`) but has **no queue at all** — it sends synchronously,
+once, per call via `SendProtocolMessage()`. There is no internal pool/queue to exhaust on this
+backend; the QNX dispatch backend, per the subagent's read of `qnx_dispatch_server.cpp`, does
+maintain a preallocated `notify_pool_` sized to `max_queued_notifies` and returns `ENOBUFS` when
+exhausted — a real, checked, Category B mechanism there. Proposed resolution: keep
+`BE_NotifyQueueExhausted` as a **QNX-dispatch-scoped** `ControlMeasure` (paralleling the existing
+`SafetyCertifiedTransportMechanismUnderQNX`-style platform-scoped naming precedent in
+`component_requirements.trlc`), and note that on Unix Domain, equivalent backpressure surfaces as an
+OS-level transport fault (already covered by `BE_NotifyTransportFault`, Category C), not a separate
+basic event. Needs confirmation.
+
 ## Artifacts to touch (once confirmed)
 
 - `safety_analysis/control_measures.trlc` — ~10 new `ControlMeasure` records (Category B/C above).
