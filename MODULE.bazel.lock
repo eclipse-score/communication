@@ -12919,7 +12919,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "+vgTABLj64cvjmKGlkw+4AJ9S7iLJFRI20t6JpYfRzM=",
-        "usagesDigest": "EPTNm0Hi9F4L9C/uFDI/Qeu1gJqelErvbLjbvnU1Yuw=",
+        "usagesDigest": "/kHrr/tWUDrNj1Cp82dUeRpSsxKxcBNGTUmZAYuIYx4=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -13008,7 +13008,6 @@
                 "-Wno-maybe-uninitialized",
                 "-Wno-unused-macros",
                 "-Wunused-parameter",
-                "-Wunused-variable",
                 "-Wunused-but-set-parameter"
               ],
               "extra_c_compile_flags": [],
@@ -13078,7 +13077,6 @@
                 "-Wno-maybe-uninitialized",
                 "-Wno-unused-macros",
                 "-Wunused-parameter",
-                "-Wunused-variable",
                 "-Wunused-but-set-parameter"
               ],
               "extra_c_compile_flags": [],
@@ -13148,7 +13146,6 @@
                 "-Wno-maybe-uninitialized",
                 "-Wno-unused-macros",
                 "-Wunused-parameter",
-                "-Wunused-variable",
                 "-Wunused-but-set-parameter"
               ],
               "extra_c_compile_flags": [],
@@ -13218,7 +13215,6 @@
                 "-Wno-maybe-uninitialized",
                 "-Wno-unused-macros",
                 "-Wunused-parameter",
-                "-Wunused-variable",
                 "-Wunused-but-set-parameter"
               ],
               "extra_c_compile_flags": [],

@@ -126,7 +126,6 @@ SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
     "-Wno-maybe-uninitialized",
     "-Wno-unused-macros",
     "-Wunused-parameter",
-    "-Wunused-variable",
     "-Wunused-but-set-parameter",
 ]
 
