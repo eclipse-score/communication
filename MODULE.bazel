@@ -99,7 +99,6 @@ SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
     "-Wunused-local-typedefs",  # Helps to achieve MISRA C++:2023 Rule 0-2-3
     "-Wreturn-local-addr",  # Helps to achieve MISRA C++:2023 Rule 6-8-2
     "-Wswitch-bool",  # Helps to achieve MISRA C++:2023 Rule 7-0-1
-    "-Wconversion",  # Helps to achieve MISRA C++:2023 Rule 7-0-5 and 7-0-6
     "-Wfloat-conversion",  # Helps to achieve MISRA C++:2023 Rule 7-0-6
     "-Waddress",  # Helps to achieve MISRA C++:2023 Rule 7-11-3
     "-Wcast-function-type",  # Helps to achieve MISRA C++:2023 Rule 8-2-4

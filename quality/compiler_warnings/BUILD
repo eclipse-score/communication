@@ -201,6 +201,7 @@ cc_args(
         "-Wshadow",  # Helps to achieve MISRA C++:2023 Rule 6-4-1 in gcc and clang and Rule 10-2-2 in clang
         "-Wparentheses",  # Helps to achieve MISRA C++:2023 Rule 8-0-1, 8-18-2, and 9-3-1 in gcc and clang and Rule 6-0-1 in gcc
         "-Wsign-compare",  # Helps to achieve MISRA C++:2023 Rule 7-0-5
+        "-Wconversion",  # Helps to achieve MISRA C++:2023 Rule 7-0-6 in gcc and clang, Rule 7-0-5 in gcc, and Rule 7-0-3 and 8-20-1 in clang
         "-Wdangling-else",  # Helps to achieve MISRA C++:2023 Rule 9-3-1
         "-Wmisleading-indentation",  # Helps to achieve MISRA C++:2023 Rule 9-3-1
         "-Wreturn-type",  # Helps to achieve MISRA C++:2023 Rule 9-6-5
