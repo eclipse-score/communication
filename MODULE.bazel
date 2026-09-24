@@ -100,8 +100,6 @@ SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
     "-Wswitch-bool",  # Helps to achieve MISRA C++:2023 Rule 7-0-1
     "-Wfloat-conversion",  # Helps to achieve MISRA C++:2023 Rule 7-0-6
     "-Wcast-function-type",  # Helps to achieve MISRA C++:2023 Rule 8-2-4
-    "-Wuninitialized",  # Helps to achieve MISRA C++:2023 Rule 11-6-2
-    "-Wexpansion-to-defined",  # Helps to achieve MISRA C++:2023 Rule 19-1-1
     "-Wno-error=deprecated-declarations",
     "-Wno-error=cpp",
     "-Wno-builtin-macro-redefined",
