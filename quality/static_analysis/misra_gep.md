@@ -46,7 +46,7 @@ Note: According to MISRA Compliance:2020 document, every guideline within "The G
 | RULE-6-2-2 | | | | `IncompatibleObjectDeclarationsCpp.ql`<br/> `IncompatibleFunctionDeclarationsCpp.ql` |
 | RULE-6-2-3 | | | | `DuplicateInlineFunctionDefinitions.ql`<br/> `TemplateSpecializationWrongLocation.ql`<br/> `DuplicateTypeDefinitions.ql` |
 | RULE-6-2-4 | | | `misc-definitions-in-headers` | `ViolationsOfOneDefinitionRuleMisra.ql` |
-| RULE-6-4-1 | `-Wshadow` | `-Wshadow-all` | | `VariableDeclaredInInnerScopeHidesOuterScope.ql` |
+| RULE-6-4-1 | `-Wshadow` | `-Wshadow` | | `VariableDeclaredInInnerScopeHidesOuterScope.ql` |
 | RULE-6-4-2 | | | | `InheritedNonOverridableMemberFunction.ql`<br/> `InheritedOverridableMemberFunction.ql`<br/> `DefinitionShallBeConsideredForUnqualifiedLookup.ql` |
 | RULE-6-4-3 | | | | `NameShallBeReferredUsingAQualifiedIdOrThis.ql`<br/> `NameShallBeReferredUsingAQualifiedIdOrThisAudit.ql` |
 | RULE-6-5-1 | | | `misc-use-internal-linkage` | `ExternalLinkageNotDeclaredInHeaderFileMisra.ql` |
