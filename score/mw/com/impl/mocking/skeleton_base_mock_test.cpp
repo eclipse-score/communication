@@ -60,8 +60,8 @@ TEST_F(SkeletonMockFixture, OfferServiceReturnsErrorWhenMockReturnsError)
     // Given a SkeletonBase constructed with an empty binding an dummy InstanceIdentifier and an injected
     // SkeletonBaseMock
 
-    // Expecting that OfferService will be called on the mock which returns a valid result
-    const auto error_code = ComErrc::kServiceInstanceAlreadyOffered;
+    // Expecting that OfferService will be called on the mock which returns an error code
+    const auto error_code = ComErrc::kBindingFailure;
     EXPECT_CALL(skeleton_mock_, OfferService()).WillOnce(Return(MakeUnexpected(error_code)));
 
     // When OfferService is called on the SkeletonBase
