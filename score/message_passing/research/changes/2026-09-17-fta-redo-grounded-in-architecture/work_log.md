@@ -87,3 +87,70 @@
 - Updated `next_steps.md` (new item 5) to record this as queued input. Did not start the actual
   re-derivation/rewrite this session — this cycle remains PAUSED per the 2026-09-17 entry above;
   only the resumption backlog changed.
+
+## 2026-09-24 — Resumed: code-level re-derivation done for all 8 `FailureMode`s
+
+- Read `client_connection.cpp`/`client_connection.h` and `unix_domain/unix_domain_server.cpp` in
+  full directly (not via subagent) to verify the specific claims from `safety_concept_notes.md` and
+  extend the same rigor to the other 7 `FailureMode`s. Ran a thorough read-only subagent pass over
+  the remaining files (`qnx_dispatch/*.cpp`, `i_client_connection.h`, `i_server.h`,
+  `i_server_connection.h`, `server_types.h`, `i_client_factory.h`) for the QNX-side and
+  cross-cutting mechanisms, then spot-checked its most load-bearing claims (re-entrancy detection,
+  state-machine source of truth, `ProcessConnect()`/`Notify()`/`Reply()` behavior) against the
+  directly-read files.
+- Wrote a new "Code-level re-derivation (2026-09-24 resumption)" section in `impact_analysis.md`
+  with exact function/constant citations, confirming Open Questions 1, 2, 3, 6, 8, 9 exactly as
+  originally proposed, and **revising** Open Questions 4/5 (originally "keep `ServerHealthCheck`
+  and `ClientRetryPolicy` as two separate `ControlMeasure`s" — now proposed as one consolidated
+  record, since `TryConnect()` shows they're the same mechanism, matching
+  `safety_concept_notes.md`'s original suspicion).
+- Surfaced 3 genuinely new judgement calls not visible from headers/prose alone (added as Open
+  Questions 11–13 in `change_request.md`'s new "Additional Open Questions" section):
+  `LifecycleOrderEnforcement` may be partly a `ControlMeasure` (Send/SendWaitReply/SendWithCallback/
+  Restart all check state and
+  return `EINVAL` rather than misbehaving — a detected precondition, not pure caller obligation);
+  `BE_HandlerNotRegistered`'s exact behavior on an unset `score::cpp::callback` invocation is
+  unverified (external dependency, not read this session) rather than the previously-assumed
+  graceful no-op; `BE_NotifyQueueExhausted` has a real platform asymmetry (QNX dispatch has a
+  genuine bounded `notify_pool_`, Unix Domain's `Notify()` has no queue at all, only a size check).
+- Did **not** write any `.trlc`/`.puml` content yet — per this cycle's established discipline
+  (paused twice already specifically for insufficient/incorrect grounding), the newly revised and
+  newly surfaced judgement calls (Open Questions 4/5 revised, 10–13 new) need explicit human
+  confirmation before Step 2 (writing `control_measures.trlc`/`aous.trlc`/`fta_*.puml`) starts.
+  `next_steps.md` item 5 (sequence-diagram/`static_design.puml`/`private_api.puml` reconciliation,
+  the 54 findings) is still untouched this session — deliberately sequenced after the FTA content
+  itself is confirmed, since renaming participants/units needs the final basic-event set decided
+  first (a diagram section referenced by a basic event's `description` should use its final name).
+## 2026-09-24 (same day, immediately after) — RE-PAUSED: methodological correction + explicit deprioritization
+
+- Human caught two problems with the same-day code-level re-derivation above before any `.trlc`
+  was touched: (1) most of the grounding was done by directly reading `unix_domain_server.cpp`,
+  but `UnixDomainServer`/`UnixDomainEngine` are the **QM-only** Linux backend
+  (`TransportMechanismOnLinux`, QM) — the FTA/`safety_analysis` scope is `integrity_level = "B"`,
+  which is carried by the **QNX dispatch** backend (`SafetyCertifiedTransportMechanismUnderQNX`,
+  ASIL B) alone. Grounding ASIL-B `ControlMeasure` wording in the QM backend's source, with the
+  ASIL-B backend only covered by an unverified subagent summary, is a methodological error that
+  needs a direct `qnx_dispatch/*.cpp` re-verification pass before Step 2, not just relying on the
+  subagent's read. (2) The "`BE_NotifyQueueExhausted` platform asymmetry" claim (Open Question 13)
+  was also factually incomplete: `UnixDomainServer::Notify()` has no *library-level* queue, but the
+  underlying Unix domain socket itself still has an *implicit* OS-level send buffer — "no queue at
+  all" overstated the case, and the whole platform-asymmetry framing may be moot once Unix Domain
+  is correctly recognized as outside FTA scope.
+- Human also gave a durable methodology clarification (not specific to this cycle): the micro-FTA
+  is a bottom-up FMEA check — per root cause, controlled/prevented → `ControlMeasure`, uncontrolled
+  → must be an `AoU` — but **`AoU` and a parallel partial mitigation are not mutually exclusive**.
+  Worked example: `IClientConnection::Send()` + the `DelayedFunction` HAZOP guideword (confirmed
+  present in the real `@score_tooling` `score_requirements_model.rsl`, distinct from `TooLate`, not
+  currently used in `failure_modes.trlc`) — the `TimingSupervision` `AoU` (no timing guarantee) can
+  coexist with documenting `Send()`'s internal queue + background-thread dispatch as a real, partial
+  mitigation, rather than forcing a single either/or category.
+- Most importantly: **the human explicitly deprioritized this cycle** — requirements and
+  API-surface finalization work takes priority over continuing the FTA rework right now. Likely
+  cause of confusion identified by the human: `research/backlog.md`'s 2026-09-23 entry phrased this
+  cycle as the natural place the 54-findings work was "queued", which reads like an implicit
+  priority signal even though it wasn't meant as one.
+- Rewrote `next_steps.md` to capture the re-pause, the two corrections, the durable methodology
+  point, and the explicit re-prioritization instruction, so a future resumption doesn't repeat the
+  same QM-vs-ASIL-B grounding mistake. Added a note to `safety_concept_notes.md`'s principles and a
+  short clarifying note to `research/backlog.md`'s 2026-09-23 entry so it no longer reads as an
+  implicit "do this next" signal. No `.trlc`/`.puml` touched.

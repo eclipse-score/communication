@@ -114,3 +114,44 @@ confirmation:
    (content-review finding): both describe the same root cause (malformed `ConnectCallback` return
    value) with no clear line between "wrong" and "null/incomplete". Propose merging into a single
    `AoU`. Confirm.
+
+## Additional Open Questions (added 2026-09-24, code-level re-derivation)
+
+Resuming per `next_steps.md` item 1: `client_connection.cpp`, `client_connection.h`, and
+`unix_domain/unix_domain_server.cpp` were read in full (plus a thorough subagent pass over the QNX
+dispatch backend) to re-derive basic events from actual code paths rather than header/prose. See
+`impact_analysis.md`'s new "Code-level re-derivation" section for full citations. Questions 1, 2, 3,
+6, 8, 9 above are now **confirmed exactly** by the code (no change to the proposed disposition,
+just added precision/citations). Questions 4 and 5 are **revised** (see below). Three genuinely new
+judgement calls surfaced that weren't visible from headers/prose alone:
+
+10. **`ServerHealthCheck`/`ClientRetryPolicy` consolidation (revises Q4/Q5's original answer):**
+    `TryConnect()` shows these are one single capped-backoff-retry-plus-terminal-error-classification
+    mechanism, not two. Propose retiring both names and replacing with one `ControlMeasure` (e.g.
+    `ClientConnectRetryAndFailureClassification`) grounded directly in `TryConnect()`'s constants
+    and error-code branching. Confirm before writing.
+11. **`LifecycleOrderEnforcement` may not be a pure `AoU`:** `Send()`/`SendWaitReply()`/
+    `SendWithCallback()`/`Restart()` all explicitly check connection state and return `EINVAL`
+    rather than misbehaving — a detected, reported precondition, i.e. plausibly a `ControlMeasure`
+    (Category B) for this subset, not a caller obligation. Propose splitting the same way
+    `CallFlowConformance` was split: a `ControlMeasure` for the checked client-side call-order
+    violations, and a narrower `AoU` only if a genuinely unchecked lifecycle-order misuse exists
+    elsewhere (e.g. server-side `StartListening()`/`StopListening()` — not yet verified). Confirm
+    the split, and confirm whether further code reading of the server lifecycle path is needed
+    before finalizing the residual `AoU`'s scope.
+12. **`BE_HandlerNotRegistered`'s exact failure behavior is unconfirmed:** whether invoking an
+    unset (default-constructed) `ConnectCallback`/`MessageCallback` via `score::cpp::callback` is a
+    graceful no-op or a precondition violation/assert was not verified this session (external
+    dependency, out of scope of the files read). Needs either a direct read of
+    `score::cpp::callback`'s empty-invocation semantics, or an explicit decision to word the `AoU`
+    conservatively ("must always register required callbacks before `StartListening()`; behavior of
+    an unset required callback being invoked is not defined by this component") rather than
+    asserting a specific graceful-degradation behavior that may not be true. Confirm which.
+13. **`BE_NotifyQueueExhausted` platform asymmetry:** confirmed by direct read that
+    `UnixDomainServer::ServerConnection::Notify()` has no internal queue at all (synchronous,
+    per-call send, size-checked only) — `max_queued_notifies` has no analogous bounded-pool
+    enforcement on that backend, unlike QNX dispatch's real `notify_pool_`. Propose keeping
+    `BE_NotifyQueueExhausted` as a QNX-dispatch-scoped `ControlMeasure` only (paralleling the
+    existing `SafetyCertifiedTransportMechanismUnderQNX` platform-scoped naming precedent), with
+    Unix Domain's equivalent backpressure already covered by the Category C
+    `BE_NotifyTransportFault`. Confirm this platform-scoped framing rather than one unscoped record.
