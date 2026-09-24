@@ -12,9 +12,10 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("@score_baselibs//score/quality/clang_tidy:extra_checks.bzl", "clang_tidy_extra_checks")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 # To be referenced by the application core logic
 cc_library(
@@ -173,7 +174,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "single_instance_holder_test",
     srcs = ["single_instance_holder_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -182,14 +183,14 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "multi_instance_holder_test",
     srcs = ["multi_instance_holder_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     deps = [":multi_instance_holder"],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "provided_services_container_test",
     srcs = ["provided_services_container_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -199,7 +200,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_container_test",
     srcs = ["proxy_container_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -211,7 +212,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_future_test",
     srcs = ["proxy_future_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -222,7 +223,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_needs_factory_test",
     srcs = ["proxy_needs_factory_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -232,7 +233,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_needs_test",
     srcs = ["proxy_needs_test.cpp"],
     features = COMPILER_WARNING_FEATURES,

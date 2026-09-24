@@ -12,8 +12,9 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
     name = "single_instantiation_strategy",
@@ -82,6 +83,7 @@ cc_test(
     srcs = ["proxy_holder_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["unit"],
+    target_compatible_with = ["@platforms//os:linux"],
     deps = [
         ":proxy_holder",
         ":proxy_stub",
@@ -91,7 +93,7 @@ cc_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_holder_robustness_test",
     srcs = ["proxy_holder_robustness_test.cpp"],
     deps = [
@@ -105,7 +107,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "single_instantiation_strategy_test",
     srcs = ["single_instantiation_strategy_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -120,7 +122,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "multiple_instantiation_strategy_test",
     srcs = ["multiple_instantiation_strategy_test.cpp"],
     features = COMPILER_WARNING_FEATURES,

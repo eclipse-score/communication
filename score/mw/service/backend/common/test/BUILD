@@ -12,8 +12,9 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
     name = "single_immediate_instantiation_strategy",
@@ -42,7 +43,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "single_immediate_instantiation_strategy_test",
     srcs = ["single_immediate_instantiation_strategy_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -51,7 +52,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "multiple_immediate_instantiation_strategy_test",
     srcs = ["multiple_immediate_instantiation_strategy_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -60,7 +61,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "instantiation_strategy_base_test",
     srcs = ["instantiation_strategy_base_test.cpp"],
     features = COMPILER_WARNING_FEATURES + [
