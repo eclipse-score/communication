@@ -12,48 +12,16 @@
 ' *******************************************************************************
 @startuml
 
-namespace Server {
-    interface ServerConnection {
-        +GetClientIdentity()
-        +GetUserData()
-        +Notify()
-        +Reply()
-        +RequestDisconnect()
-    }
-}
-
-namespace Dispatch {
-    namespace QNX {
-        interface Client {
-            +Connect()
-            +SendMessage()
-        }
-
-        interface Server {
-            +Dispatch()
-            +Accept()
-        }
-    }
-
-    namespace UnixDomain {
-        interface Client {
-            +Connect()
-            +SendMessage()
-        }
-
-        interface Server {
-            +Listen()
-            +Accept()
+namespace dependable_element_message_passing {
+    namespace component_message_passing {
+        interface "ISharedResourceEngine" as ISharedResourceEngine <<interface>> {
+            {abstract} TryOpenClientConnection(identifier): fd
+            {abstract} CloseClientConnection(client_fd): void
+            {abstract} SendProtocolMessage(fd, code, message): expected_blank<Error>
+            {abstract} ReceiveProtocolMessage(fd, code): expected<span, Error>
+            {abstract} RegisterPosixEndpoint(endpoint): void
         }
     }
 }
-
-interface IConnectionHandler <<user_provided>> {
-    +OnMessage()
-    +OnMessageWithReply()
-    +OnDisconnect()
-}
-
-Server.ServerConnection ..> IConnectionHandler : uses
 
 @enduml

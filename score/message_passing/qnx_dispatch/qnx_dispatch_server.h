@@ -135,9 +135,6 @@ class QnxDispatchServer final : public IServer, private QnxDispatchEngine::Resou
     DisconnectCallback disconnect_callback_;
     MessageCallback sent_callback_;
     MessageCallback sent_with_reply_callback_;
-
-    ISharedResourceEngine::CommandQueueEntry listener_command_;
-    ISharedResourceEngine::PosixEndpointEntry listener_endpoint_;
 };
 
 }  // namespace score::message_passing::detail

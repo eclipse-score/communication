@@ -184,6 +184,12 @@ cycle — not picked up this session. Key points for whoever runs that cycle's i
   explicitly deprioritized `changes/2026-09-17-fta-redo-grounded-in-architecture/` entirely behind
   finishing requirements and API-surface work (see that cycle's own `next_steps.md`); do not treat
   this backlog entry as a reason to pick that cycle back up.
+  **RESOLVED 2026-09-24** by `changes/2026-09-24-diagram-reconciliation-54-findings/` (opened as
+  its own independent cycle, not a resumption of the paused FTA cycle, after confirming no FTA
+  content references any diagram section by name): all 54 findings fixed, `bazel build` on the
+  `architectural_design` target now reports 0 findings. See that cycle's `evidence_bundle.md` for
+  the full before/after and the real `puml_cli`/`sequence_internal_api` toolchain bugs found along
+  the way (now also recorded in `/memories/repo/score-documentation-conventions.md`).
 - `research/problem_statement.md`'s "Current public API surface" section only lists the interface
   headers (`i_client_connection.h`, etc.) and predates `public_api.puml`'s `d3b34c89` commit — it
   does not mention the concrete platform-alias headers (`engine.h`, `client_factory.h`,

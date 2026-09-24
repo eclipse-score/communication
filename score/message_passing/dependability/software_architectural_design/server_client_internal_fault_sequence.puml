@@ -34,95 +34,52 @@ skinparam ArrowFontName Courier
 
 title Server <-> Client Sequence Diagram: Library-Internal Fault Handling
 
-note over client_app, server_app
-  Companion to server_client_sequence.puml (happy path) and
-  server_client_os_fault_sequence.puml (underlying-layer faults).
-  This diagram covers deterministic, library-internal rejections -
-  bounded resources and configured limits that the library checks
-  itself, before any OS/transport call is attempted. These are not
-  OS-layer faults and not user contract misuse (see
-  research/backlog.md for the latter, tracked as candidate AoUs).
-end note
+note over client_connection, server_connection : Companion to server_client_sequence.puml (happy path) and\nserver_client_os_fault_sequence.puml (underlying-layer faults).\nThis diagram covers deterministic, library-internal rejections -\nbounded resources and configured limits that the library checks\nitself, before any OS/transport call is attempted. These are not\nOS-layer faults and not user contract misuse (see\nresearch/backlog.md for the latter, tracked as candidate AoUs).
 
-participant "ClientApp" as client_app
-participant "IClientConnection" as client_conn
-participant "IPC Mechanism"  as os <<OS>>
-participant "IServerConnection" as server_conn
-participant "IServer" as server
-participant "ServerApp" as server_app
+participant "ExternalEndpoint" as ExternalEndpoint
+participant "ClientConnection" as client_connection
+participant "ServerConnection" as server_connection
 
 ' -----------------------------------------------------------------
 == Message Exceeds Configured Size Limit (max_send_size / max_reply_size / max_notify_size) ==
 ' -----------------------------------------------------------------
 
-client_app -> client_conn : Send(oversized_message)
-client_conn -> client_conn : validate against\nServiceProtocolConfig::max_send_size
-client_conn --> client_app : score::os::Error\n(no IPC attempted)
-note left
-  Per i_client_connection.h Send() doc: "definitely fail"
-  if the message is too big to transport. Validated before
-  any OS call - control measure
-  MessagePassing.SendBufferArgumentValidation.
-end note
+ExternalEndpoint -> client_connection : (Send(oversized_message))
+note over client_connection : Validated against ServiceProtocolConfig::max_send_size;\nreturns score::os::Error (no IPC attempted)
+note left : Per i_client_connection.h Send() doc: "definitely fail"\nif the message is too big to transport. Validated before\nany OS call - control measure\nMessagePassing.SendBufferArgumentValidation.
 
-client_app -> client_conn : SendWaitReply(message, reply_buffer)
-client_conn -> client_conn : validate reply_buffer size against\nServiceProtocolConfig::max_reply_size
-client_conn --> client_app : score::os::Error\n(no IPC attempted)
+ExternalEndpoint -> client_connection : (SendWaitReply(message, reply_buffer))
+note over client_connection : Validated reply_buffer size against\nServiceProtocolConfig::max_reply_size;\nreturns score::os::Error (no IPC attempted)
 
-server_app -> server_conn : Notify(oversized_message)
-server_conn -> server_conn : validate against\nServiceProtocolConfig::max_notify_size
-server_conn --> server_app : score::os::Error\n(no IPC attempted)
+ExternalEndpoint -> server_connection : (Notify(oversized_message))
+note over server_connection : Validated against ServiceProtocolConfig::max_notify_size;\nreturns score::os::Error (no IPC attempted)
 
 ' -----------------------------------------------------------------
 == Client-Side Async Send Queue Exhausted (max_queued_sends / max_async_replies) ==
 ' -----------------------------------------------------------------
 
-client_app -> client_conn : Send(message) [repeated, non-blocking]
-client_conn -> client_conn : check pre-allocated\nsend_storage_ pool
-client_conn --> client_app : score::os::Error\n(pool exhausted; no IPC attempted)
-note left
-  Grounds control measure BE_SendQueueExhausted: "use a
-  pre-allocated, bounded pool for asynchronous client
-  send messages and return an error when the pool is
-  exhausted without blocking or silently dropping the
-  message." Same mechanism applies to
-  SendWithCallback()'s max_async_replies limit.
-end note
+ExternalEndpoint -> client_connection : (Send(message) [repeated, non-blocking])
+note over client_connection : Checked pre-allocated send_storage_ pool;\nreturns score::os::Error (pool exhausted; no IPC attempted)
+note left : Grounds control measure BE_SendQueueExhausted: "use a\npre-allocated, bounded pool for asynchronous client\nsend messages and return an error when the pool is\nexhausted without blocking or silently dropping the\nmessage." Same mechanism applies to\nSendWithCallback()'s max_async_replies limit.
 
 ' -----------------------------------------------------------------
 == Server-Side Notify Queue Exhausted (max_queued_notifies) ==
 ' -----------------------------------------------------------------
 
-server_app -> server_conn : Notify(message) [repeated]
-server_conn -> server_conn : check per-connection\nnotify queue (max_queued_notifies)
-server_conn --> server_app : score::os::Error\n(queue exhausted; no IPC attempted)
-note right
-  Unlike the server-side incoming max_queued_sends
-  (see server_client_os_fault_sequence.puml, "Server-Side
-  Incoming Backpressure Delegated to the OS" - currently
-  unimplemented as an internal queue), the per-connection
-  Notify queue bound by max_queued_notifies is an
-  actual internal, deterministic check today.
-end note
+ExternalEndpoint -> server_connection : (Notify(message) [repeated])
+note over server_connection : Checked per-connection notify queue (max_queued_notifies);\nreturns score::os::Error (queue exhausted; no IPC attempted)
+note right : Unlike the server-side incoming max_queued_sends\n(see server_client_os_fault_sequence.puml, "Server-Side\nIncoming Backpressure Delegated to the OS" - currently\nunimplemented as an internal queue), the per-connection\nNotify queue bound by max_queued_notifies is an\nactual internal, deterministic check today.
 
 ' -----------------------------------------------------------------
 == Safe Failure of Re-Entrant Calls From Within a Callback ==
 ' -----------------------------------------------------------------
 
-os -> client_conn : [IPC] NOTIFY message
-client_conn -> client_app : notify_callback(message)
-activate client_app
-client_app -> client_conn : SendWaitReply(message, reply_buffer)\n(called from within notify_callback)
-client_conn -> client_conn : detect callback-context\nre-entrancy
-client_conn --> client_app : score::os::Error\n(safely fails; no deadlock)
-deactivate client_app
-note left
-  Per client-server.md: "it is not allowed to call any
-  blocking operation of the Message Passing library
-  during the execution of a Client Connection callback
-  ... the library provides the guarantee that such a
-  call will safely fail." Non-blocking calls (Send,
-  SendWithCallback, Stop) remain allowed from callbacks.
-end note
+note over server_connection : Sends the notification using its own concrete\nengine, which delivers it to client_connection
+note over client_connection : Invokes notify_callback(message)
+activate ExternalEndpoint
+ExternalEndpoint -> client_connection : (SendWaitReply(message, reply_buffer)\n(called from within notify_callback))
+note over client_connection : Detected callback-context re-entrancy;\nreturns score::os::Error (safely fails; no deadlock)
+deactivate ExternalEndpoint
+note left : Per client-server.md: "it is not allowed to call any\nblocking operation of the Message Passing library\nduring the execution of a Client Connection callback\n... the library provides the guarantee that such a\ncall will safely fail." Non-blocking calls (Send,\nSendWithCallback, Stop) remain allowed from callbacks.
 
 @enduml
