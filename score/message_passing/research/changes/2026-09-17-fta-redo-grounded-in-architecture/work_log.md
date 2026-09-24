@@ -62,3 +62,28 @@
   original author, so it may not resume next session either.
 - No `.trlc`/`.puml` file edited this session as a result of this finding (deliberately) — only
   research/scratchpad artifacts were updated.
+
+## 2026-09-23 — Queued new resumption input (still paused, not restarted)
+
+- The sibling cycle `changes/2026-09-23-public-api-diagram-requirements-review/` fixed a
+  `software_architectural_design/BUILD` wiring bug while reviewing the rebased `public_api.puml`:
+  `private_api.puml` and the three `server_client*_sequence.puml` files were listed under `static`
+  instead of `internal_api`/`dynamic`, so the `component_internal_api`/`component_sequence`/
+  `sequence_internal_api` validators silently skipped them ("not a component-diagram") instead of
+  actually checking them.
+- With the wiring corrected, those validators now report 54 findings: `static_design.puml`'s unit
+  aliases and the sequence diagrams' participant aliases share zero overlap (10 `[Naming]`); every
+  cross-unit sequence call has no backing interface connection in `static_design.puml`, which binds
+  none at all (7 new `[Interface]`); and `private_api.puml`'s placeholder interfaces/methods match
+  neither the sequence diagrams' call names nor any real class (29 `[Method]` + 6 `[Coverage]`).
+  Full list in that cycle's `impact_analysis.md` Finding 5 and in `research/backlog.md`.
+- Human decision (2026-09-23, made in that sibling cycle's session): keep the corrected wiring
+  (not reverted — the 54 warnings stay visible, non-blocking under `maturity = "development"`) and
+  fix them as a resumption of **this** cycle, not a new one — since the fix is the same underlying
+  work as this cycle's still-pending Step 1 item "re-derive each `FailureMode`'s basic events from
+  its actual implementation" (`next_steps.md` item 1): the sequence diagrams need re-deriving from
+  real code paths either way, and doing so with aliases/interfaces matching `static_design.puml`
+  and methods matching `private_api.puml` is the same re-derivation, not extra scope.
+- Updated `next_steps.md` (new item 5) to record this as queued input. Did not start the actual
+  re-derivation/rewrite this session — this cycle remains PAUSED per the 2026-09-17 entry above;
+  only the resumption backlog changed.

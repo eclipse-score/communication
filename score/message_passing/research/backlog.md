@@ -135,6 +135,54 @@ cycle — not picked up this session. Key points for whoever runs that cycle's i
   the SEooC"). Worth a dedicated future cycle to fix `static_design.puml` or `public_api.puml`,
   whichever is actually stale.
 
+## From the 2026-09-23 public-api-diagram-requirements-review cycle (closed)
+
+- **`FeatReq` asymmetry: `ServerInterface` exists, `ClientInterface` does not.**
+  `feature_requirements.trlc` has a dedicated `ServerInterface` `FeatReq` ("the message passing
+  component shall provide a server interface that registers connection handlers and processes
+  incoming requests", `derived_from ClientServerCommunicationModel@1`) that several server-side
+  `CompReq`s properly derive from (`IServerStartListeningAPI`, `IServerStopListeningAPI`,
+  `ServerConnectionRefusal`, `ServerIConnectionHandlerDispatch`,
+  `IServerConnectionGetUserDataAPI`). There is no equivalent `ClientInterface` `FeatReq` — confirmed
+  via `grep` across `feature_requirements.trlc`. Consequently, every client-side structural/lifecycle
+  `CompReq` had nowhere semantically-scoped to derive from and was pinned to the generic
+  `OSIndependentAPI` instead (about OS-independence of the API, not about "there is a client
+  interface"): `ClientConnectionMaintainsStateMachine`, `ClientConnectionStateCallbackInvocation`,
+  `IClientConnectionGetStateAPI`, and this cycle's new `IClientConnectionStartAPI`,
+  `IClientConnectionStopAPI`, `IClientConnectionRestartAPI`, `IClientConnectionGetStopReasonAPI`. A
+  future cycle should decide whether to author a `ClientInterface` `FeatReq` (mirroring
+  `ServerInterface`, `derived_from ClientServerCommunicationModel@1`) and re-pin these seven
+  `CompReq`s to it — not done here, since it touches records well outside this cycle's stated scope
+  and needs its own impact analysis (re-pin cascade, version-bump table).
+- **`software_architectural_design/BUILD` wiring for `private_api.puml`/sequence diagrams was
+  fixed this cycle** (moved to the `internal_api`/`dynamic` `architectural_design` attributes,
+  matching the rule's own doc strings, instead of the previous `static`, under which the validator
+  silently skipped them). This surfaced **54 validation findings** (10 `[Naming]`, 7 new
+  `[Interface]` + 2 pre-existing, 29 `[Method]`, 6 `[Coverage]`) — non-blocking
+  (`maturity = "development"`), full breakdown in
+  `changes/2026-09-23-public-api-diagram-requirements-review/impact_analysis.md` Finding 5. Root
+  cause: `static_design.puml` (unit aliases `client_connection`/`server_connection`/`dispatch`/
+  `qnx_dispatch`/`unix_domain`, no bound interfaces at all), the three `server_client*_sequence.puml`
+  files (participant aliases `client_app`/`client_conn`/`os`/`server`/`server_app`/`server_conn`,
+  zero overlap with the static aliases), and `private_api.puml` (placeholder interfaces
+  `Dispatch.QNX.Client/Server`, `Dispatch.UnixDomain.Client/Server`, `IConnectionHandler`,
+  `Server.ServerConnection` with invented method names) were each authored independently and never
+  cross-validated. This is the same disconnect (at the sequence-diagram-content level) already
+  identified and deliberately **paused** in `changes/2026-09-17-fta-redo-grounded-in-architecture/`
+  — that cycle's eventual resumption should treat this finding list as ready-made input rather than
+  rediscovering it. **Decision (2026-09-23, human):** keep the corrected wiring — the 54 warnings
+  stay visible in every build rather than being silenced by reverting `BUILD` — and fix them as
+  part of the **resumption of** `changes/2026-09-17-fta-redo-grounded-in-architecture/` (queued
+  there as its new item 5 in `next_steps.md`), not inside
+  `changes/2026-09-23-public-api-diagram-requirements-review/`, which stays scoped to its own
+  `CompReq`-coverage questions.
+- `research/problem_statement.md`'s "Current public API surface" section only lists the interface
+  headers (`i_client_connection.h`, etc.) and predates `public_api.puml`'s `d3b34c89` commit — it
+  does not mention the concrete platform-alias headers (`engine.h`, `client_factory.h`,
+  `server_factory.h`) or the concrete `Engine`/`ClientFactory`/`ServerFactory` classes now
+  diagrammed there. Worth folding into a future baseline-doc amendment (per the "amended, never
+  silently rewritten" convention), not done as part of this review-only cycle.
+
 ## Nice to have vs backlog
 
 Anything that is a *possible future improvement* rather than an *observed inconsistency* goes in
