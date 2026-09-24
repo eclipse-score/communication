@@ -185,6 +185,36 @@ cc_feature(
 )
 
 cc_args(
+    name = "misra_warnings_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
+    ],
+    # This contains the list of warnings that we decided to enable for C++ to help fulfilling
+    # MISRA C++:2023. This list contains only the warnings that are common to gcc and clang.
+    # The warnings that are specific to gcc or clang can be found in the respective folders.
+    args = [
+        "-Wunused-variable",  # Helps to achieve MISRA C++:2023 Rule 0-2-1 in gcc and clang and Rule 0-1-1 in clang
+        "-Wunused-function",  # Helps to achieve MISRA C++:2023 Rule 0-2-4
+        "-Wtrigraphs",  # Helps to achieve MISRA C++:2023 Rule 5-0-1
+        "-Wcomment",  # Helps to achieve MISRA C++:2023 Rule 5-7-1 and 5-7-3
+        "-Wsign-compare",  # Helps to achieve MISRA C++:2023 Rule 7-0-5
+        "-Wdangling-else",  # Helps to achieve MISRA C++:2023 Rule 9-3-1
+        "-Wmisleading-indentation",  # Helps to achieve MISRA C++:2023 Rule 9-3-1
+        "-Wreturn-type",  # Helps to achieve MISRA C++:2023 Rule 9-6-5
+        "-Wignored-qualifiers",  # Helps to achieve MISRA C++:2023 Rule 10-1-2
+        "-Wenum-compare",  # Helps to achieve MISRA C++:2023 Rule 10-2-3
+    ],
+    visibility = ["//quality/compiler_warnings:__subpackages__"],
+)
+
+cc_feature(
+    name = "misra_warnings",
+    args = [":misra_warnings_args"],
+    feature_name = "score_communication_common_misra_warnings",
+    visibility = ["//visibility:public"],
+)
+
+cc_args(
     name = "additional_warnings_args",
     actions = [
         "@rules_cc//cc/toolchains/actions:compile_actions",
