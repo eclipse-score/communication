@@ -451,7 +451,7 @@ TEST_F(TransactionLogSetRegisterFixture, RegisteringLessThanTheMaxNumberPassedTo
     std::vector<TransactionLogRegistrationGuard> transaction_log_registration_guards{};
     for (std::size_t i = 0; i < kNumberOfLogs; ++i)
     {
-        const TransactionLogId transaction_log_id{static_cast<uid_t>(i)};
+        const TransactionLogId transaction_log_id{static_cast<TransactionLogId>(i)};
         transaction_log_registration_guards.push_back(
             unit_->RegisterProxyElement(transaction_log_id, consumer_event_data_control_local_).value());
     }
@@ -464,12 +464,12 @@ TEST_F(TransactionLogSetRegisterFixture, RegisteringMoreThanTheMaxNumberPassedTo
     std::vector<TransactionLogRegistrationGuard> transaction_log_registration_guards{};
     for (std::size_t i = 0; i < kNumberOfLogs; ++i)
     {
-        const TransactionLogId transaction_log_id{static_cast<uid_t>(i)};
+        const TransactionLogId transaction_log_id{static_cast<TransactionLogId>(i)};
         transaction_log_registration_guards.push_back(
             unit_->RegisterProxyElement(transaction_log_id, consumer_event_data_control_local_).value());
     }
 
-    const TransactionLogId transaction_log_id{static_cast<uid_t>(kNumberOfLogs)};
+    const TransactionLogId transaction_log_id{static_cast<TransactionLogId>(kNumberOfLogs)};
     const auto transaction_log_registration_result =
         unit_->RegisterProxyElement(transaction_log_id, consumer_event_data_control_local_);
     EXPECT_FALSE(transaction_log_registration_result.has_value());

@@ -2615,6 +2615,29 @@ INSTANTIATE_TEST_SUITE_P(
         R"json({"serviceTypes": [], "serviceInstances": [], "global": { "asil-level": "B", "queue-size": {"QM-receiver": 8, "B-receiver": 5, "B-sender": "bla"}}})json",
         R"json({"serviceTypes": [], "serviceInstances": [], "global": { "asil-level": "B", "queue-size": {"QM-receiver": "bla", "B-receiver": 9}}})json"));
 
+class InvalidApplicationIdFixture : public ::testing::TestWithParam<std::string>
+{
+};
+
+TEST_P(InvalidApplicationIdFixture, DieOnInvalidApplicationId)
+{
+    score::json::JsonParser json_parser_obj;
+    // Given a JSON with invalid applicationID
+    json::Any json{json_parser_obj.FromBuffer(GetParam()).value()};
+
+    // When parsing the JSON then it will fail with a precondition violation
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::cpp::ignore = Configuration{configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(json))});
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    InvalidApplicationIdTests,
+    InvalidApplicationIdFixture,
+    ::testing::Values(
+        R"json({"serviceTypes": [], "serviceInstances": [], "global": { "applicationID": 4294967295}})json",
+        R"json({"serviceTypes": [], "serviceInstances": [], "global": { "applicationID": 429496729533}})json",
+        R"json({"serviceTypes": [], "serviceInstances": [], "global": { "applicationID": -1}})json"));
+
 TEST(ConfigurationJsonParsingStrategy, OnlyQmReceiverQueueSizes)
 {
     // Given a JSON with only QM-receiver queue size being explicitly configured
