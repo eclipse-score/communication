@@ -2,6 +2,8 @@
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/log/logging.h"
+#include "score/string_manipulation/arguments/arguments.h"
+
 #include <score/stop_token.hpp>
 
 #include <chrono>
@@ -225,7 +227,8 @@ int main(int argc, const char* argv[])
     for (int i = 1; i < argc; ++i)
         if (std::string(argv[i]) == "--mode" && i + 1 < argc)
             mode = argv[++i];
-    score::mw::com::runtime::InitializeRuntime(score::mw::com::runtime::RuntimeConfiguration(argc, argv));
+    score::mw::com::runtime::InitializeRuntime(
+        score::mw::com::runtime::RuntimeConfiguration(score::string_manipulation::GetArguments(argc, argv)));
 
     score::cpp::stop_source stop_source{};
     score::mw::com::SetupStopTokenSigTermHandler(stop_source);
