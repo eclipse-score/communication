@@ -44,8 +44,7 @@ class SomeIpFieldInstanceDeployment
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
     constexpr static std::uint32_t serializationVersion = 1U;
 
-    friend bool operator==(const SomeIpFieldInstanceDeployment& lhs,
-                           const SomeIpFieldInstanceDeployment& rhs) noexcept;
+    friend bool operator==(const SomeIpFieldInstanceDeployment& lhs, const SomeIpFieldInstanceDeployment& rhs) noexcept;
 };
 
 bool operator==(const SomeIpFieldInstanceDeployment& lhs, const SomeIpFieldInstanceDeployment& rhs) noexcept;

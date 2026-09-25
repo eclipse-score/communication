@@ -13,12 +13,12 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SKELETON_EVENT_H
 #define SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SKELETON_EVENT_H
 
+#include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/someip/element_fq_id.h"
 #include "score/mw/com/impl/bindings/someip/event_data_storage.h"
 #include "score/mw/com/impl/bindings/someip/skeleton.h"
 #include "score/mw/com/impl/bindings/someip/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/someip/slot_allocation_control.h"
-#include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/initialize_sample_callback.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"

@@ -278,7 +278,8 @@ TEST_F(ConfigurationJsonParsingStrategyFixture, ParseSomeIpBinding)
 
     // Then the service type deployment holds a SOME/IP binding with the configured ids
     const auto& service_type_deployment =
-        config.GetServiceTypeDeployment(make_ServiceIdentifierType("/score/ncar/services/TirePressureService", 12U, 34U))
+        config
+            .GetServiceTypeDeployment(make_ServiceIdentifierType("/score/ncar/services/TirePressureService", 12U, 34U))
             .value()
             .get();
     const auto* const someip_service_type_deployment =
@@ -302,8 +303,7 @@ TEST_F(ConfigurationJsonParsingStrategyFixture, ParseSomeIpBinding)
     EXPECT_EQ(someip_service_instance_deployment->instance_id_.value().GetId(), 1234U);
     ASSERT_TRUE(someip_service_instance_deployment->ContainsEvent("CurrentPressureFrontLeft"));
 
-    const auto& event_instance_deployment =
-        someip_service_instance_deployment->events_.at("CurrentPressureFrontLeft");
+    const auto& event_instance_deployment = someip_service_instance_deployment->events_.at("CurrentPressureFrontLeft");
     EXPECT_EQ(event_instance_deployment.GetNumberOfSampleSlots().value(), 50U);
     EXPECT_EQ(event_instance_deployment.max_subscribers_.value(), 5U);
 }

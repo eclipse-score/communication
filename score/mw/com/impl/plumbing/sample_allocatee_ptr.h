@@ -183,7 +183,11 @@ class SampleAllocateePtr
 
     // We don't use the pimpl idiom because it would require dynamic memory allocation (that we want to avoid)
     // Stores either the LoLa pointer or the Mock Binding pointer (which handles void safely)
-    std::variant<score::cpp::blank, lola::SampleAllocateePtr, someip::SampleAllocateePtr, mock_binding::SampleAllocateePtr> internal_;
+    std::variant<score::cpp::blank,
+                 lola::SampleAllocateePtr,
+                 someip::SampleAllocateePtr,
+                 mock_binding::SampleAllocateePtr>
+        internal_;
     /// \brief Guard that tracks this allocation's lifetime in the SampleAllocateeTracker.
     /// Stored in an optional to handle both cases default-constructed SampleAllocateePtr (which don't track any
     /// allocation) and allocated SampleAllocateePtr (which are tracked).
@@ -468,7 +472,10 @@ class SampleAllocateePtrView
         return std::get_if<T>(&ptr_.internal_);
     }
 
-    const std::variant<score::cpp::blank, lola::SampleAllocateePtr, someip::SampleAllocateePtr, mock_binding::SampleAllocateePtr>&
+    const std::variant<score::cpp::blank,
+                       lola::SampleAllocateePtr,
+                       someip::SampleAllocateePtr,
+                       mock_binding::SampleAllocateePtr>&
     GetUnderlyingVariant() const noexcept
     {
         return ptr_.internal_;
@@ -485,7 +492,10 @@ class SampleAllocateePtrMutableView
   public:
     explicit SampleAllocateePtrMutableView(SampleAllocateePtr<SampleType>& ptr) : ptr_{ptr} {}
 
-    std::variant<score::cpp::blank, lola::SampleAllocateePtr, someip::SampleAllocateePtr, mock_binding::SampleAllocateePtr>&
+    std::variant<score::cpp::blank,
+                 lola::SampleAllocateePtr,
+                 someip::SampleAllocateePtr,
+                 mock_binding::SampleAllocateePtr>&
     GetUnderlyingVariant() noexcept
     {
         // Suppress "AUTOSAR C++14 A9-3-1", The rule states: "Member functions shall not return non-const “raw” pointers
