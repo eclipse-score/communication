@@ -162,15 +162,15 @@ SkeletonEventTracingData SkeletonEventTracingWithDefaultId(std::array<bool, 4> e
                                     enable_flags[3]};
 }
 
-INSTANTIATE_TEST_CASE_P(SkeletonEventTracingParamaterisedFixture,
-                        SkeletonEventTracingParamaterisedFixture,
-                        ::testing::Values(SkeletonEventTracingWithDefaultId({true, true, true, true}),
-                                          SkeletonEventTracingWithDefaultId({false, false, false, false}),
-                                          SkeletonEventTracingWithDefaultId({true, false, true, false}),
-                                          SkeletonEventTracingWithDefaultId({true, false, false, false}),
-                                          SkeletonEventTracingWithDefaultId({false, true, false, false}),
-                                          SkeletonEventTracingWithDefaultId({false, false, true, false}),
-                                          SkeletonEventTracingWithDefaultId({false, false, false, true})));
+INSTANTIATE_TEST_SUITE_P(SkeletonEventTracingParamaterisedFixture,
+                         SkeletonEventTracingParamaterisedFixture,
+                         ::testing::Values(SkeletonEventTracingWithDefaultId({true, true, true, true}),
+                                           SkeletonEventTracingWithDefaultId({false, false, false, false}),
+                                           SkeletonEventTracingWithDefaultId({true, false, true, false}),
+                                           SkeletonEventTracingWithDefaultId({true, false, false, false}),
+                                           SkeletonEventTracingWithDefaultId({false, true, false, false}),
+                                           SkeletonEventTracingWithDefaultId({false, false, true, false}),
+                                           SkeletonEventTracingWithDefaultId({false, false, false, true})));
 
 class SkeletonEventTracingFixture : public ::testing::Test
 {

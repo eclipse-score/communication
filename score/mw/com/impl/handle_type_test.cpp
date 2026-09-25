@@ -304,7 +304,7 @@ TEST_P(HandleTypeHashFixture, HashesOfDifferentHandleTypesAreNotEqual)
 }
 
 // Test that each element that should be used in the hashing algorithm is used by changing them one at a time.
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     HandleTypeHashDifferentKeys,
     HandleTypeHashFixture,
     ::testing::Values(

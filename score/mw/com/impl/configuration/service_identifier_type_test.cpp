@@ -141,7 +141,7 @@ TEST_P(ServiceIdentifierTypeHashFixture, HashesOfTheDifferentServiceIdentifierTy
     ASSERT_NE(hash_value, hash_value_2);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     ServiceIdentifierTypeHashDifferentKeys,
     ServiceIdentifierTypeHashFixture,
     ::testing::Values(std::array<ServiceIdentifierType, 2>{make_ServiceIdentifierType("test_name", 2U, 0U),

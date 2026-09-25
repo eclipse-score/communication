@@ -115,7 +115,7 @@ TEST_P(ServiceElementIdentifierViewEqualityFixture, DifferentServiceElementIdent
     ASSERT_FALSE(service_element_identifier_view == service_element_identifier_view_2);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     ServiceElementIdentifierViewEqualityFixture,
     ServiceElementIdentifierViewEqualityFixture,
     ::testing::Values(
@@ -155,7 +155,7 @@ TEST_P(ServiceElementIdentifierViewComparisonFixture, ServiceElementIdentifierVi
     ASSERT_TRUE(service_element_identifier_view < service_element_identifier_view_2);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     ServiceElementIdentifierViewComparisonFixture,
     ServiceElementIdentifierViewComparisonFixture,
     ::testing::Values(std::make_pair(ServiceElementIdentifierView{"a", "c", static_cast<ServiceElementType>(1U)},

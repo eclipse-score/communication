@@ -117,15 +117,15 @@ class SkeletonServiceElementBindingFactoryParamaterisedFixture
     DummyInstanceIdentifierBuilder dummy_instance_identifier_builder{};
 };
 
-INSTANTIATE_TEST_CASE_P(SkeletonServiceElementBindingFactoryParamaterisedFixture,
-                        SkeletonServiceElementBindingFactoryParamaterisedFixture,
-                        ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
+INSTANTIATE_TEST_SUITE_P(SkeletonServiceElementBindingFactoryParamaterisedFixture,
+                         SkeletonServiceElementBindingFactoryParamaterisedFixture,
+                         ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
 
 using SkeletonServiceElementBindingFactoryParamaterisedDeathTest =
     SkeletonServiceElementBindingFactoryParamaterisedFixture;
-INSTANTIATE_TEST_CASE_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
-                        SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
-                        ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
+INSTANTIATE_TEST_SUITE_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
+                         SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
+                         ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
 
 TEST_P(SkeletonServiceElementBindingFactoryParamaterisedFixture, CanConstructFixture) {}
 

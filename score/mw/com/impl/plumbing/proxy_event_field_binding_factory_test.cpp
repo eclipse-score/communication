@@ -151,11 +151,11 @@ class ProxyServiceElementBindingFactoryParamaterisedFixture : public lola::Proxy
     DummyInstanceIdentifierBuilder dummy_instance_identifier_builder_{};
 };
 
-INSTANTIATE_TEST_CASE_P(ProxyServiceElementBindingFactoryParamaterisedFixture,
-                        ProxyServiceElementBindingFactoryParamaterisedFixture,
-                        ::testing::Values(ServiceElementTypes::PROXY_EVENT,
-                                          ServiceElementTypes::PROXY_FIELD,
-                                          ServiceElementTypes::GENERIC_PROXY_EVENT));
+INSTANTIATE_TEST_SUITE_P(ProxyServiceElementBindingFactoryParamaterisedFixture,
+                         ProxyServiceElementBindingFactoryParamaterisedFixture,
+                         ::testing::Values(ServiceElementTypes::PROXY_EVENT,
+                                           ServiceElementTypes::PROXY_FIELD,
+                                           ServiceElementTypes::GENERIC_PROXY_EVENT));
 
 TEST_P(ProxyServiceElementBindingFactoryParamaterisedFixture, CanConstructFixture) {}
 

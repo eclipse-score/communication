@@ -85,7 +85,7 @@ class SkeletonFieldBindingFactoryParamaterisedFixture : public lola::SkeletonMoc
 {
 };
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SkeletonFieldBindingFactoryParamaterisedFixture,
     SkeletonFieldBindingFactoryParamaterisedFixture,
     ::testing::Values(

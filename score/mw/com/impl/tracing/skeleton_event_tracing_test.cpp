@@ -441,14 +441,14 @@ class SkeletonEventTracingGenerateTracingStructFixture : public ::testing::TestW
     RuntimeMockGuard runtime_mock_guard_{};
 };
 
-INSTANTIATE_TEST_CASE_P(SkeletonEventTracingGenerateTracingStructFixture,
-                        SkeletonEventTracingGenerateTracingStructFixture,
-                        ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
+INSTANTIATE_TEST_SUITE_P(SkeletonEventTracingGenerateTracingStructFixture,
+                         SkeletonEventTracingGenerateTracingStructFixture,
+                         ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
 
 using SkeletonEventTracingGenerateTracingStructDeathTest = SkeletonEventTracingGenerateTracingStructFixture;
-INSTANTIATE_TEST_CASE_P(SkeletonEventTracingGenerateTracingStructDeathTest,
-                        SkeletonEventTracingGenerateTracingStructDeathTest,
-                        ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
+INSTANTIATE_TEST_SUITE_P(SkeletonEventTracingGenerateTracingStructDeathTest,
+                         SkeletonEventTracingGenerateTracingStructDeathTest,
+                         ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
 
 TEST_P(SkeletonEventTracingGenerateTracingStructFixture,
        CallingGenerateTracingStructRegistersServiceElementIfATracePointIsEnabled)
