@@ -11,14 +11,14 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/generic_skeleton_event.h"
-#include "score/mw/com/impl/generic_skeleton.h"
 
+#include "score/mw/com/impl/bindings/mock_binding/generic_skeleton_event.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
+#include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/generic_skeleton.h"
+#include "score/mw/com/impl/i_binding_runtime.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/skeleton_event_binding_factory_mock.h"
-
-#include "score/mw/com/impl/com_error.h"
-#include "score/mw/com/impl/i_binding_runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/service_discovery_client_mock.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
@@ -94,14 +94,14 @@ class GenericSkeletonEventTest : public ::testing::Test
     GenericSkeletonEventTest& GivenAGenericSkeletonWithOneEvent(
         const std::string& event_name = "test_event",
         DataTypeMetaInfo size_info = {16, 8},
-        std::unique_ptr<NiceMock<mock_binding::SkeletonEvent>> mock_event_binding = nullptr)
+        std::unique_ptr<NiceMock<mock_binding::GenericSkeletonEvent>> mock_event_binding = nullptr)
     {
         auto data_type_size_info = MakeDataTypeSizeInfo(size_info);
         EXPECT_TRUE(data_type_size_info.has_value());
         auto instance_identifier = dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithEvent();
         if (!mock_event_binding)
         {
-            mock_event_binding = std::make_unique<NiceMock<mock_binding::SkeletonEvent>>();
+            mock_event_binding = std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>();
         }
         auto* mock_event_binding_ptr = mock_event_binding.get();
 
@@ -142,7 +142,7 @@ class GenericSkeletonEventTest : public ::testing::Test
   protected:
     std::unique_ptr<GenericSkeleton> skeleton_;
     GenericSkeletonEvent* event_;
-    mock_binding::SkeletonEvent* mock_event_binding_ptr_;
+    mock_binding::GenericSkeletonEvent* mock_event_binding_ptr_;
 
     // Mocks
     NiceMock<SkeletonEventBindingFactoryMock> skeleton_event_binding_factory_mock_;

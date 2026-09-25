@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/skeleton_event_binding.h"
+#include "score/mw/com/impl/generic_skeleton_event_binding.h"
 
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
@@ -24,7 +24,7 @@ namespace score::mw::com::impl
 namespace
 {
 
-class MyEvent final : public SkeletonEventBinding
+class MyGenericEvent final : public GenericSkeletonEventBinding
 {
   public:
     Result<void> PrepareOffer(const std::optional<InitializeSampleCallback>&) noexcept override
@@ -56,29 +56,42 @@ class MyEvent final : public SkeletonEventBinding
     {
         return sample_data_type_size_info;
     }
+    Result<void> Notify() noexcept override
+    {
+        return {};
+    }
+    Result<void> SetReceiveHandlerRegistrationChangedHandler(
+        ReceiveHandlerRegistrationChangedCallback) noexcept override
+    {
+        return {};
+    }
+    Result<void> UnsetReceiveHandlerRegistrationChangedHandler() noexcept override
+    {
+        return {};
+    }
 
   private:
     memory::DataTypeSizeInfo sample_data_type_size_info{sizeof(std::uint8_t), alignof(std::uint8_t)};
     std::uint8_t test_sample_buffer_{};
 };
 
-TEST(SkeletonEventBindingTest, CanGetSizeInfoOfLiteralType)
+TEST(GenericSkeletonEventBindingTest, CanGetSizeInfoOfLiteralType)
 {
-    MyEvent unit{};
+    MyGenericEvent unit{};
     EXPECT_EQ(unit.GetEventDataTypeSizeInfo().Size(), sizeof(std::uint8_t));
     EXPECT_EQ(unit.GetEventDataTypeSizeInfo().Alignment(), alignof(std::uint8_t));
 }
 
-TEST(SkeletonEventBindingTest, SkeletonEventBindingShouldNotBeCopyable)
+TEST(GenericSkeletonEventBindingTest, GenericSkeletonEventBindingShouldNotBeCopyable)
 {
-    static_assert(!std::is_copy_constructible<MyEvent>::value, "Is wrongly copyable");
-    static_assert(!std::is_copy_assignable<MyEvent>::value, "Is wrongly copyable");
+    static_assert(!std::is_copy_constructible<MyGenericEvent>::value, "Is wrongly copyable");
+    static_assert(!std::is_copy_assignable<MyGenericEvent>::value, "Is wrongly copyable");
 }
 
-TEST(SkeletonEventBindingTest, SkeletonEventBindingShouldNotBeMoveable)
+TEST(GenericSkeletonEventBindingTest, GenericSkeletonEventBindingShouldNotBeMoveable)
 {
-    static_assert(!std::is_move_constructible<MyEvent>::value, "Is wrongly moveable");
-    static_assert(!std::is_move_assignable<MyEvent>::value, "Is wrongly moveable");
+    static_assert(!std::is_move_constructible<MyGenericEvent>::value, "Is wrongly moveable");
+    static_assert(!std::is_move_assignable<MyGenericEvent>::value, "Is wrongly moveable");
 }
 
 }  // namespace
