@@ -47,6 +47,25 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
     }
 }
 
+GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
+                                           const std::string_view event_name,
+                                           std::unique_ptr<SkeletonEventBinding> binding,
+                                           FieldOnlyConstructorEnabler /*tag*/)
+    : SkeletonEventBase(event_name, kEmptyInitializeSampleCallback, std::move(binding))
+{
+    // Intentionally omitting SkeletonBaseView{skeleton_base}.RegisterEvent(event_name, *this);
+
+    if (binding_ != nullptr)
+    {
+        const SkeletonBaseView skeleton_base_view{skeleton_base};
+        const auto& instance_identifier = skeleton_base_view.GetAssociatedInstanceIdentifier();
+        const auto binding_type = binding_->GetBindingType();
+        tracing_data_ =
+            tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
+        binding_->SetSkeletonEventTracingData(tracing_data_);
+    }
+}
+
 Result<void> GenericSkeletonEvent::Send(SampleAllocateePtr<void> sample) noexcept
 {
     if (!service_offered_flag_.IsSet())

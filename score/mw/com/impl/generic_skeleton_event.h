@@ -30,9 +30,19 @@ class SkeletonBase;
 class GenericSkeletonEvent : public SkeletonEventBase
 {
   public:
+    struct FieldOnlyConstructorEnabler
+    {
+        explicit FieldOnlyConstructorEnabler() = default;
+    };
+
     GenericSkeletonEvent(SkeletonBase& skeleton_base,
                          const std::string_view event_name,
                          std::unique_ptr<SkeletonEventBinding> binding);
+
+    GenericSkeletonEvent(SkeletonBase& skeleton_base,
+                         const std::string_view event_name,
+                         std::unique_ptr<SkeletonEventBinding> binding,
+                         FieldOnlyConstructorEnabler tag);
 
     Result<void> Send(SampleAllocateePtr<void> sample) noexcept;
 
