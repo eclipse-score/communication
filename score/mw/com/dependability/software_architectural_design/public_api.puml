@@ -1,0 +1,155 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+namespace score::mw::com {
+
+    ' --- Runtime bootstrap (score::mw::com::runtime) ---
+
+    class RuntimeConfiguration {
+        +RuntimeConfiguration(argv)
+        +RuntimeConfiguration(configuration_path)
+        +GetConfigurationPath()
+    }
+
+    interface IRuntime {
+        +InitializeRuntime()
+        +ResolveInstanceIDs()
+    }
+
+    class "Runtime" as RuntimeFreeFunctions <<free_functions>> {
+        +InitializeRuntime(argv)
+        +InitializeRuntime(RuntimeConfiguration)
+        +AddConfiguration(RuntimeConfiguration)
+        +AddConfiguration(json::Any)
+        +ResolveInstanceIDs(InstanceSpecifier)
+    }
+
+    ' --- Identifiers & handles ---
+
+    interface InstanceIdentifier {
+        +{static} Create(string)
+        +ToString()
+    }
+
+    interface InstanceSpecifier {
+        +{static} Create(string)
+        +ToString()
+    }
+
+    interface HandleType {
+        +GetInstanceId()
+        +GetInstanceIdentifier()
+        +GetServiceInstanceDeployment()
+        +GetServiceTypeDeployment()
+    }
+
+    class FindServiceHandle
+
+    ' --- Errors ---
+
+    interface ComErrorDomain {
+        +MessageFor()
+    }
+
+    class ComErrc <<enum>>
+
+    ' --- Proxy side ---
+
+    interface GenericProxy {
+        +{static} Create(HandleType)
+        +{static} FindService()
+        +{static} StartFindService()
+        +{static} StopFindService(FindServiceHandle)
+        +GetEvents()
+        +GetHandle()
+    }
+
+    interface GenericProxyEvent {
+        +Subscribe(max_sample_count)
+        +Unsubscribe()
+        +GetSubscriptionState()
+        +SetReceiveHandler(EventReceiveHandler)
+        +UnsetReceiveHandler()
+        +SetSubscriptionStateChangeHandler()
+        +UnsetSubscriptionStateChangeHandler()
+        +GetNumNewSamplesAvailable()
+        +GetNewSamples(callable, max_count)
+        +GetFreeSampleCount()
+        +IsBindingValid()
+        +HasSerializedFormat()
+        +GetSampleSize()
+        +GetDataTypeSizeInfo()
+    }
+
+    class "SamplePtr<T>" as SamplePtr
+
+    ' --- Skeleton side ---
+
+    interface GenericSkeleton {
+        +{static} Create()
+        +OfferService()
+        +StopOfferService()
+        +GetEvents()
+        +InjectMock(ISkeletonBase)
+    }
+
+    interface GenericSkeletonEvent {
+        +PrepareOffer()
+        +PrepareStopOffer()
+        +Allocate()
+        +Send(SampleAllocateePtr)
+        +Notify()
+        +SetReceiveHandlerRegistrationChangedHandler()
+        +UnsetReceiveHandlerRegistrationChangedHandler()
+        +GetSizeInfo()
+    }
+
+    class "SampleAllocateePtr<T>" as SampleAllocateePtr
+
+    ' --- Field / method call plumbing used by generated proxy & skeleton code ---
+
+    class WithGetter <<field_tag>>
+    class WithSetter <<field_tag>>
+    class WithNotifier <<field_tag>>
+    class "AsProxy<T>" as AsProxy <<binding_selector>>
+    class "AsSkeleton<T>" as AsSkeleton <<binding_selector>>
+    class "MethodReturnTypePtr<T>" as MethodReturnTypePtr
+    class "MethodInArgTypePtr<T>" as MethodInArgTypePtr
+    class EventReceiveHandler <<user_provided>>
+    class SubscriptionState <<enum>>
+
+    ' --- relationships ---
+
+    RuntimeFreeFunctions ..> IRuntime : delegates to
+    RuntimeFreeFunctions ..> RuntimeConfiguration : configures with
+    GenericProxy ..> HandleType : identified by
+    GenericProxy ..> InstanceIdentifier : resolved from
+    GenericProxy ..> InstanceSpecifier : resolved from
+    GenericProxy ..> FindServiceHandle : creates via StartFindService
+    GenericProxy ..> GenericProxyEvent : exposes
+    GenericProxyEvent ..> SamplePtr : returns via GetNewSamples
+    GenericProxyEvent ..> EventReceiveHandler : notifies via
+    GenericProxyEvent ..> SubscriptionState : reports
+    GenericSkeleton ..> InstanceIdentifier : resolved from
+    GenericSkeleton ..> InstanceSpecifier : resolved from
+    GenericSkeleton ..> GenericSkeletonEvent : exposes
+    GenericSkeletonEvent ..> SampleAllocateePtr : allocates via
+    AsProxy ..> GenericProxy : binds
+    AsSkeleton ..> GenericSkeleton : binds
+    ComErrorDomain ..> ComErrc : describes
+
+}
+
+@enduml
