@@ -84,7 +84,7 @@ section "com" {
 
                 The type chosen for {{EventReceiveHandler}} by the {{mw::com}} provider shall allow construction from any callable, with the given signature.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_EventType@1]
+                derived_from = [Communication.FEAT_EventTypeAccess@1]
                 version = 1
             }
 
@@ -100,7 +100,7 @@ section "com" {
 
                 The type chosen for {{SubscriptionStateChangeHandler}} by the {{mw::com}} provider shall allow construction from any callable, with the given signature.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_EventType@1]
+                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_EventTypeAccess@1]
                 version = 1
             }
 
@@ -649,7 +649,7 @@ section "com" {
 
             {{SetReceiveHandler}} shall adhere to the re-entrancy and thread-safety specifications described in Re-entrancy and Thread-safety.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_EventType@1]
+            derived_from = [Communication.FEAT_EventTypeAccess@1]
             version = 1
         }
 
@@ -661,7 +661,7 @@ section "com" {
 
             {{UnsetReceiveHandler}} shall adhere to the re-entrancy and thread-safety specifications described in Re-entrancy and Thread-safety.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_EventType@1]
+            derived_from = [Communication.FEAT_EventTypeAccess@1]
             version = 1
         }
 
@@ -917,7 +917,7 @@ section "com" {
             Note. In certain cases, the error handling of {{Update}} may be deferred according to Deferring Initial Value Update Error Handling to OfferService
             '''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_EventType@1]
+            derived_from = [Communication.FEAT_EventTypeAccess@1]
             version = 1
         }
 
