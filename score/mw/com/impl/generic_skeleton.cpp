@@ -46,6 +46,14 @@ std::string_view GetEventName(const InstanceIdentifier& identifier, std::string_
             }
             return {};
         },
+        [&](const SomeIpServiceTypeDeployment& deployment) -> std::string_view {
+            const auto it = deployment.events_.find(std::string{search_name});
+            if (it != deployment.events_.end())
+            {
+                return it->first;  // Return the stable address of the Key from the Config Map
+            }
+            return {};
+        },
         [](const score::cpp::blank&) noexcept -> std::string_view {
             return {};
         });

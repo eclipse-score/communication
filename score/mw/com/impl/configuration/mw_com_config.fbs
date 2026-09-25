@@ -46,7 +46,8 @@ file_identifier "MWCC";
 // ---------------------------------------------------------------------------
 
 enum Binding : ubyte {
-    SHM
+    SHM,
+    SOMEIP
 }
 
 enum AsilLevel : ubyte {

@@ -17,8 +17,12 @@
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/bindings/someip/element_fq_id.h"
+#include "score/mw/com/impl/bindings/someip/skeleton.h"
+#include "score/mw/com/impl/bindings/someip/skeleton_event_properties.h"
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/field_tags_store.h"
 #include "score/mw/com/impl/skeleton_base.h"
@@ -111,9 +115,65 @@ inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
                                          field_tags_store);
 }
 
+/// \brief Creates SkeletonEventProperties for the SOME/IP binding from the configuration and field tags.
+///
+/// \details Mirrors the LoLa overload above. It is simpler because the SOME/IP binding has neither IPC tracing slots
+///          nor field getter/setter slots (field getter/setter are not supported yet).
+inline someip::SkeletonEventProperties CreateSomeIpSkeletonEventProperties(
+    const SomeIpEventInstanceDeployment& someip_event_instance_deployment,
+    const std::optional<FieldTagsStore> field_tags_store)
+{
+    std::size_t max_subscribers{0U};
+
+    if (!someip_event_instance_deployment.GetNumberOfSampleSlots().has_value())
+    {
+        score::mw::log::LogFatal("someip") << "Could not create SkeletonEventProperties from "
+                                              "ServiceElementInstanceDeployment. Number of sample slots "
+                                              "was not specified in the configuration. Terminating.";
+        std::terminate();
+    }
+    const auto number_of_slots = someip_event_instance_deployment.GetNumberOfSampleSlots().value();
+
+    const bool is_event = !field_tags_store.has_value();
+    const bool is_field_with_subscription_semantics = !is_event && field_tags_store->HasNotifier();
+    if (is_field_with_subscription_semantics || is_event)
+    {
+        if (!someip_event_instance_deployment.max_subscribers_.has_value())
+        {
+            score::mw::log::LogFatal("someip") << "Could not create SkeletonEventProperties from "
+                                                  "ServiceElementInstanceDeployment. Max subscribers was "
+                                                  "not specified in the configuration. Terminating.";
+            std::terminate();
+        }
+        max_subscribers = someip_event_instance_deployment.max_subscribers_.value();
+    }
+    else if (someip_event_instance_deployment.max_subscribers_.has_value())
+    {
+        score::mw::log::LogWarn("someip") << "Field has WithNotifier disabled; configured maxSubscribers is ignored.";
+    }
+    else
+    {
+        // No notifier and no configured maxSubscribers: nothing to warn about.
+    }
+
+    return someip::SkeletonEventProperties{
+        number_of_slots, max_subscribers, someip_event_instance_deployment.enforce_max_samples_};
+}
+
+inline someip::SkeletonEventProperties CreateSomeIpSkeletonEventProperties(
+    const SomeIpFieldInstanceDeployment& someip_field_instance_deployment,
+    const std::optional<FieldTagsStore> field_tags_store)
+{
+    return CreateSomeIpSkeletonEventProperties(someip_field_instance_deployment.someip_event_instance_deployment_,
+                                               field_tags_store);
+}
+
 }  // namespace detail
 
-template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, ServiceElementType element_type>
+template <typename SkeletonServiceElementBinding,
+          typename LolaSkeletonServiceElement,
+          typename SomeIpSkeletonServiceElement,
+          ServiceElementType element_type>
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
 // not be called implicitly.". std::visit Throws std::bad_variant_access if
 // as-variant(vars_i).valueless_by_exception() is true for any variant vars_i in vars. The variant may only become
@@ -176,12 +236,49 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
                                                   lola_service_instance_deployment.instance_id_.value().GetId(),
                                                   element_type};
 
-            return std::make_unique<SkeletonServiceElement>(*lola_parent,
-                                                            element_fq_id,
-                                                            service_element_name,
-                                                            sample_type_size_info,
-                                                            skeleton_event_properties,
-                                                            impl::tracing::SkeletonEventTracingData{});
+            return std::make_unique<LolaSkeletonServiceElement>(*lola_parent,
+                                                                element_fq_id,
+                                                                service_element_name,
+                                                                sample_type_size_info,
+                                                                skeleton_event_properties,
+                                                                impl::tracing::SkeletonEventTracingData{});
+        },
+        [identifier_view, &parent_binding, &service_element_name, &sample_type_size_info, field_tags_store](
+            const SomeIpServiceTypeDeployment& someip_service_type_deployment) -> ReturnType {
+            auto* const someip_parent = dynamic_cast<someip::Skeleton*>(&parent_binding);
+            if (someip_parent == nullptr)
+            {
+                score::mw::log::LogFatal("someip") << "Skeleton service element could not be created because parent "
+                                                      "skeleton binding is a nullptr.";
+                return nullptr;
+            }
+
+            const auto& service_instance_deployment = identifier_view.GetServiceInstanceDeployment();
+            const auto& someip_service_instance_deployment =
+                GetServiceInstanceDeploymentBinding<SomeIpServiceInstanceDeployment>(service_instance_deployment);
+
+            const std::string service_element_name_str{service_element_name};
+            const auto& someip_service_element_instance_deployment =
+                GetServiceElementInstanceDeployment<element_type>(someip_service_instance_deployment,
+                                                                 service_element_name_str);
+
+            const someip::SkeletonEventProperties skeleton_event_properties =
+                detail::CreateSomeIpSkeletonEventProperties(someip_service_element_instance_deployment,
+                                                            field_tags_store);
+
+            const auto someip_service_element_id =
+                GetServiceElementId<element_type>(someip_service_type_deployment, service_element_name_str);
+            const someip::ElementFqId element_fq_id{someip_service_type_deployment.service_id_,
+                                                    someip_service_element_id,
+                                                    someip_service_instance_deployment.instance_id_.value().GetId(),
+                                                    element_type};
+
+            return std::make_unique<SomeIpSkeletonServiceElement>(*someip_parent,
+                                                                  element_fq_id,
+                                                                  service_element_name,
+                                                                  sample_type_size_info,
+                                                                  skeleton_event_properties,
+                                                                  impl::tracing::SkeletonEventTracingData{});
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return nullptr;
@@ -239,6 +336,12 @@ auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
                                                             element_fq_id,
                                                             size_info,
                                                             tracing::SkeletonEventTracingData{});
+        },
+        // \todo The SOME/IP binding is wired up in a follow-up step; until then this arm behaves like an
+        // unsupported binding. It is listed explicitly (instead of being served by the score::cpp::blank arm)
+        // because std::visit requires an arm for every variant alternative.
+        [](const SomeIpServiceTypeDeployment&) noexcept -> ReturnType {
+            return nullptr;
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return nullptr;
