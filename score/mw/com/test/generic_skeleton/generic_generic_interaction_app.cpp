@@ -49,7 +49,7 @@ constexpr std::string_view kEventName = "Event8Byte";
 
 int run_provider(score::cpp::stop_token stop_token)
 {
-    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(kInstanceSpecifier).value();
+    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(std::string{kInstanceSpecifier}).value();
     std::cout << "[PROVIDER] Instance specifier created." << std::endl;
     const score::mw::com::DataTypeMetaInfo meta{sizeof(MyEventData), alignof(MyEventData)};
     std::cout << "[PROVIDER] DataTypeMetaInfo created (size=" << sizeof(MyEventData)
@@ -130,7 +130,7 @@ int run_provider(score::cpp::stop_token stop_token)
 
 int run_consumer()
 {
-    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(kInstanceSpecifier).value();
+    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(std::string{kInstanceSpecifier}).value();
 
     score::Result<score::mw::com::ServiceHandleContainer<score::mw::com::GenericProxy::HandleType>> handles_res;
     int retries{0};
