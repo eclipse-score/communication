@@ -157,48 +157,40 @@ section "LoLa" {
         }
 
         section "StopOfferAService" {
-
-            // ID: 6164141
-            ScoreReq.FailureMode ServiceOfferingNotStopped {
-                guidewords = [ ScoreReq.Guideword.LossOfFunction ]
-                description = "A skeleton offered a service, but the stop offering did not work."
-                failureeffect = "A service is found by a consumer, even though it shall no longer be found. This shall have no bad influence, since then no data will be send."
-                version = 1
-                safety = ScoreReq.Asil.B
-                rationale = "A sudden death of a producer also does not follow the stop offer service protocol. Thus, the service is still available, but no events are sent. Stop Offer service is a strict subset of the sudden death of a producer, therefor this case is covered by the mentioned AoU."
-            }
-
-            // ID: 6164171
-            ScoreReq.FailureMode ServiceOnlyPartiallyStopOffered {
-                guidewords = [ ScoreReq.Guideword.PartialFunction ]
-                description = "A skeleton stop offers a service, but the service is still seen a partial set of consumers."
-                failureeffect = "A service is found by a consumer, even though it shall no longer be found. This shall have no bad influence, since then no data will be send."
-                version = 1
-                safety = ScoreReq.Asil.B
-                rationale = "Since we agreed on not harming a safety goal on the sudden death of an producer, a partial stop offer (which could be part of a sudden death) can not have any bad effect."
-                interface = "mw.com.Skeleton.StopOfferService"
-            }
-
-            // ID: 6164197
-            ScoreReq.FailureMode ServiceStopOfferedOnWrongBinding {
+            ScoreReq.FailureMode StopOfferNotStoppedInSD {
                 guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "A skeleton is stop offering a service on the wrong binding. Meaning, the service is still offered on the actual binding."
-                failureeffect = "A service is found by a consumer, even though it shall no longer be found. This shall have no bad influence, since then no data will be send. On the other (wrong) binding, no effect will happen, since the service was never offered here anyhow."
+                description = "A service instance was offered via service discovery, but it wasn't withdrawn from service discovery in the stop offer."
+                failureeffect = "Either a service is found by a consumer, even though it shall no longer be found or an event/field subscription state stays in SUBSCRIBED although it isn't."
                 version = 1
                 safety = ScoreReq.Asil.B
-                rationale = "Same as Failuremode ServiceOfferingNotStopped"
-                // potentialcause = "Same as Failuremode ServiceOfferingNotStopped"
+                rationale = "Consumers might have wrong expectations about event or field data reception and availability of a service instance."
             }
 
-            // ID: 6164217
-            ScoreReq.FailureMode ServiceStopOfferingWrongIds {
-                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "A skeleton is stop offering a service under wrong IDs. This can include a service id, a instance id or also the service version."
-                failureeffect = "A wrong service is stop offered. This means that another service might no longer be found, even though it should be found. It could also cause garbage data, depending on the service discovery mechanism. This could cause a complete loss of functionality and influence customer functions"
-                version = 1
-                safety = ScoreReq.Asil.B
-                rationale = "If a service is stopped on the wrong id, that means that another service is no longer found (AoU existing). The case is that our service is not stopped it all (already covered by second AoU)."
-                interface = "mw.com.Skeleton.StopOfferService"
+            ScoreReq.FailureMode StopOfferWrongInstanceStoppedInSD {
+                 guidewords = [ ScoreReq.Guideword.UnintendedFunction, ScoreReq.Guideword.LossOfFunction ]
+                 description = "Same as in StopOfferNotStoppedInSD. Additionally another service instance, which is still being offered, is withdrawn from service discovery."
+                 failureeffect = "Same as in StopOfferNotStoppedInSD. In addition: Consumers using this service instance will not be able to find it anymore or would see subscription state changes of subscribed events/fields from SUBSCRIBED to SUBSCRIPTION_PENDING."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+                 rationale = "Same as in StopOfferNotStoppedInSD. In addition: Other consumers might falsely deduce, that they won't receive any new data from the service instance"
+            }
+
+            ScoreReq.FailureMode StopOfferUnlinkWrongSHMObjects {
+                 guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+                 description = "Skeleton instance did unlink shared memory objects which do not belong to the service instance being stop offered."
+                 failureeffect = "Consumers finding the service instance of which the shared memory objects have been falsely unlinked, will fail to create a proxy instance and thus will not be able to communicate with the service instance."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+                 rationale = "From the consumer's point of view, this is an unexpected failure eventually leading to a termination."
+            }
+
+            ScoreReq.FailureMode StopOfferInconsistent {
+                 guidewords = [ ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.UnintendedFunction ]
+                 description = "Skeleton instance is in an inconsistent state after stop offering: Either the stop offer was not forwarded to the binding or failed at the binding. Or it wasn't forwarded to the dependent service elements or their bindings or failed at them."
+                 failureeffect = "The stop offer is incomplete and thus incoming service method calls may be still dispatched to handlers. Or doing a later StartOfferService may fail because the skeleton instance is in an inconsistent state."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+                 rationale = "The user might see unexpected errors from later calls to StartOfferService. The user might see unexpected calls to his service method handlers."
             }
         }
 
