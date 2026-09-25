@@ -10,21 +10,20 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_IMPL_BINDINGS_MOCK_BINDING_SKELETON_EVENT_H
-#define SCORE_MW_COM_IMPL_BINDINGS_MOCK_BINDING_SKELETON_EVENT_H
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_MOCK_BINDING_GENERIC_SKELETON_EVENT_H
+#define SCORE_MW_COM_IMPL_BINDINGS_MOCK_BINDING_GENERIC_SKELETON_EVENT_H
 
+#include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
 #include <gmock/gmock.h>
 
-#include <memory>
-
 namespace score::mw::com::impl::mock_binding
 {
 
-class SkeletonEvent : public SkeletonEventBinding
+class GenericSkeletonEvent : public GenericSkeletonEventBinding
 {
   public:
     MOCK_METHOD(Result<void>,
@@ -44,16 +43,25 @@ class SkeletonEvent : public SkeletonEventBinding
     MOCK_METHOD(memory::DataTypeSizeInfo, GetEventDataTypeSizeInfo, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, SetSkeletonEventTracingData, (impl::tracing::SkeletonEventTracingData), (noexcept, override));
+    MOCK_METHOD(Result<void>, Notify, (), (noexcept, override));
+    MOCK_METHOD(Result<void>,
+                SetReceiveHandlerRegistrationChangedHandler,
+                (ReceiveHandlerRegistrationChangedCallback),
+                (noexcept, override));
+    MOCK_METHOD(Result<void>, UnsetReceiveHandlerRegistrationChangedHandler, (), (noexcept, override));
 };
 
-class SkeletonEventFacade : public SkeletonEventBinding
+class GenericSkeletonEventFacade : public GenericSkeletonEventBinding
 {
-    SkeletonEvent& skeleton_event_;
+    GenericSkeletonEvent& skeleton_event_;
 
   public:
-    SkeletonEventFacade(SkeletonEvent& skeleton_event) : SkeletonEventBinding{}, skeleton_event_{skeleton_event} {}
+    GenericSkeletonEventFacade(GenericSkeletonEvent& skeleton_event)
+        : GenericSkeletonEventBinding{}, skeleton_event_{skeleton_event}
+    {
+    }
 
-    ~SkeletonEventFacade() override = default;
+    ~GenericSkeletonEventFacade() override = default;
     Result<void> Send(score::mw::com::impl::SampleAllocateePtr<void> sample,
                       std::optional<SendTraceCallback> callback) noexcept override
     {
@@ -88,7 +96,20 @@ class SkeletonEventFacade : public SkeletonEventBinding
     {
         return skeleton_event_.SetSkeletonEventTracingData(tracing_data);
     }
+    Result<void> Notify() noexcept override
+    {
+        return skeleton_event_.Notify();
+    }
+    Result<void> SetReceiveHandlerRegistrationChangedHandler(
+        ReceiveHandlerRegistrationChangedCallback callback) noexcept override
+    {
+        return skeleton_event_.SetReceiveHandlerRegistrationChangedHandler(std::move(callback));
+    }
+    Result<void> UnsetReceiveHandlerRegistrationChangedHandler() noexcept override
+    {
+        return skeleton_event_.UnsetReceiveHandlerRegistrationChangedHandler();
+    }
 };
 }  // namespace score::mw::com::impl::mock_binding
 
-#endif  // SCORE_MW_COM_IMPL_BINDINGS_MOCK_BINDING_SKELETON_EVENT_H
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_MOCK_BINDING_GENERIC_SKELETON_EVENT_H

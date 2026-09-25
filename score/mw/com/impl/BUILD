@@ -566,6 +566,25 @@ cc_library(
 )
 
 cc_library(
+    name = "generic_skeleton_event_binding",
+    srcs = ["generic_skeleton_event_binding.cpp"],
+    hdrs = ["generic_skeleton_event_binding.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/bindings/lola:__pkg__",
+        "//score/mw/com/impl/bindings/mock_binding:__pkg__",
+        "//score/mw/com/impl/plumbing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
+    ],
+    deps = [
+        ":receive_handler_registration_changed_handler",
+        ":skeleton_event_binding",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
     name = "proxy_binding",
     srcs = [
         "proxy_binding.cpp",
@@ -1602,6 +1621,15 @@ cc_unit_test(
     deps = [
         ":sample_allocatee_tracker",
         ":skeleton_event_binding",
+    ],
+)
+
+cc_unit_test(
+    name = "generic_skeleton_event_binding_test",
+    srcs = ["generic_skeleton_event_binding_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":generic_skeleton_event_binding",
     ],
 )
 
