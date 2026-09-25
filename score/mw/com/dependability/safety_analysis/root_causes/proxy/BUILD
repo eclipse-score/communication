@@ -22,6 +22,7 @@ filegroup(
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/generic_proxy/getting_access_to_generic_proxy_events:map_containing_nonexistent_events_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/get_new_samples_on_an_event:callback_invoked_with_wrong_data_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/get_new_samples_on_an_event:callback_not_invoked_despite_samples_available_fta",
+        "//score/mw/com/dependability/safety_analysis/root_causes/proxy/set_receive_handler_for_an_event:set_receive_handler_for_an_event_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/start_find_service_construction:start_find_service_callback_is_redundantly_called_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/subscribe_for_an_event:subscribe_for_an_event_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/unsubscribe_for_an_event:unsubscribe_for_an_event_fta",

@@ -546,6 +546,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "N/A because root-cause covered by AoU."
+                interface = "mw.com.GenericProxyEvent.SetReceiveHandler"
                 // potentialcause = "N/A because root-cause covered by AoU."
             }
 
@@ -557,6 +558,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = ""
+                interface = "mw.com.GenericProxyEvent.SetReceiveHandler"
             }
 
             // ID: 6166306
@@ -567,6 +569,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "N/A because root-cause covered by AoU."
+                interface = "mw.com.GenericProxyEvent.SetReceiveHandler"
                 // potentialcause = "N/A because root-cause covered by AoU."
             }
 
@@ -578,6 +581,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "N/A because root-cause covered by AoU."
+                interface = "mw.com.GenericProxyEvent.SetReceiveHandler"
                 // potentialcause = "N/A because root-cause covered by AoU."
             }
         }
