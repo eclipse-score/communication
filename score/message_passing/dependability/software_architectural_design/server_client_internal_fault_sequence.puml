@@ -1,0 +1,85 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+<style>
+.OS {
+    LineThickness 5.0
+}
+</style>
+
+skinparam sequenceArrowColor Black
+skinparam sequenceParticipantBackgroundColor White
+skinparam sequenceParticipantBorderColor Black
+skinparam sequenceLifeLineBorderColor Black
+skinparam sequenceGroupBorderColor DarkGray
+skinparam sequenceGroupBodyBackgroundColor #FAFAFA
+skinparam NoteBackgroundColor LightYellow
+skinparam NoteBorderColor Gray
+skinparam NoteTextAlignment left
+skinparam ParticipantFontName Courier
+skinparam sequenceFontName Courier
+skinparam ArrowFontName Courier
+
+title Server <-> Client Sequence Diagram: Library-Internal Fault Handling
+
+note over client_connection, server_connection : Companion to server_client_sequence.puml (happy path) and\nserver_client_os_fault_sequence.puml (underlying-layer faults).\nThis diagram covers deterministic, library-internal rejections -\nbounded resources and configured limits that the library checks\nitself, before any OS/transport call is attempted. These are not\nOS-layer faults and not user contract misuse (see\nresearch/backlog.md for the latter, tracked as candidate AoUs).
+
+participant "ExternalEndpoint" as ExternalEndpoint
+participant "ClientConnection" as client_connection
+participant "ServerConnection" as server_connection
+
+' -----------------------------------------------------------------
+== Message Exceeds Configured Size Limit (max_send_size / max_reply_size / max_notify_size) ==
+' -----------------------------------------------------------------
+
+ExternalEndpoint -> client_connection : (Send(oversized_message))
+note over client_connection : Validated against ServiceProtocolConfig::max_send_size;\nreturns score::os::Error (no IPC attempted)
+note left : Per i_client_connection.h Send() doc: "definitely fail"\nif the message is too big to transport. Validated before\nany OS call - control measure\nMessagePassing.SendBufferArgumentValidation.
+
+ExternalEndpoint -> client_connection : (SendWaitReply(message, reply_buffer))
+note over client_connection : Validated reply_buffer size against\nServiceProtocolConfig::max_reply_size;\nreturns score::os::Error (no IPC attempted)
+
+ExternalEndpoint -> server_connection : (Notify(oversized_message))
+note over server_connection : Validated against ServiceProtocolConfig::max_notify_size;\nreturns score::os::Error (no IPC attempted)
+
+' -----------------------------------------------------------------
+== Client-Side Async Send Queue Exhausted (max_queued_sends / max_async_replies) ==
+' -----------------------------------------------------------------
+
+ExternalEndpoint -> client_connection : (Send(message) [repeated, non-blocking])
+note over client_connection : Checked pre-allocated send_storage_ pool;\nreturns score::os::Error (pool exhausted; no IPC attempted)
+note left : Grounds control measure BE_SendQueueExhausted: "use a\npre-allocated, bounded pool for asynchronous client\nsend messages and return an error when the pool is\nexhausted without blocking or silently dropping the\nmessage." Same mechanism applies to\nSendWithCallback()'s max_async_replies limit.
+
+' -----------------------------------------------------------------
+== Server-Side Notify Queue Exhausted (max_queued_notifies) ==
+' -----------------------------------------------------------------
+
+ExternalEndpoint -> server_connection : (Notify(message) [repeated])
+note over server_connection : Checked per-connection notify queue (max_queued_notifies);\nreturns score::os::Error (queue exhausted; no IPC attempted)
+note right : Unlike the server-side incoming max_queued_sends\n(see server_client_os_fault_sequence.puml, "Server-Side\nIncoming Backpressure Delegated to the OS" - currently\nunimplemented as an internal queue), the per-connection\nNotify queue bound by max_queued_notifies is an\nactual internal, deterministic check today.
+
+' -----------------------------------------------------------------
+== Safe Failure of Re-Entrant Calls From Within a Callback ==
+' -----------------------------------------------------------------
+
+note over server_connection : Sends the notification using its own concrete\nengine, which delivers it to client_connection
+note over client_connection : Invokes notify_callback(message)
+activate ExternalEndpoint
+ExternalEndpoint -> client_connection : (SendWaitReply(message, reply_buffer)\n(called from within notify_callback))
+note over client_connection : Detected callback-context re-entrancy;\nreturns score::os::Error (safely fails; no deadlock)
+deactivate ExternalEndpoint
+note left : Per client-server.md: "it is not allowed to call any\nblocking operation of the Message Passing library\nduring the execution of a Client Connection callback\n... the library provides the guarantee that such a\ncall will safely fail." Non-blocking calls (Send,\nSendWithCallback, Stop) remain allowed from callbacks.
+
+@enduml

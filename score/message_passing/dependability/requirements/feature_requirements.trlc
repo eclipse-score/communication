@@ -22,56 +22,78 @@ import ScoreReq
 ScoreReq.FeatReq ServerInterface {
     description = "The message passing component shall provide a server interface that registers connection handlers and processes incoming requests."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SystemMessagingProtocol@1]
+    derived_from = [MessagePassing.ClientServerCommunicationModel@1]
+    version = 2
+}
+
+ScoreReq.FeatReq ClientInterface {
+    description = "The message passing component shall provide a client interface that establishes and maintains a connection to a server, exposing its lifecycle state, the reason for its termination, and a callback invoked on every state change."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.ClientServerCommunicationModel@1]
     version = 1
 }
 
 ScoreReq.FeatReq OSIndependentAPI {
     description = "The message passing component shall provide an OS-independent API for OS-native IPC mechanisms."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SystemMessagingProtocol@1]
+    derived_from = [MessagePassing.QnxAsilBQualifiedImplementation@1]
+    version = 2
+}
+
+ScoreReq.FeatReq QMImplementationOnNonQnxOS {
+    description = "The message passing component shall provide a QM-quality implementation of its API on host operating systems other than QNX, to support development, evaluation, testing, and QM deployment off the ASIL B certified target."
+    safety = ScoreReq.Asil.QM
+    derived_from = [MessagePassing.CrossPlatformAbstraction@1]
     version = 1
 }
 
 ScoreReq.FeatReq SafetyCertifiedTransportMechanism {
     description = "The implementation under QNX shall use a safety-certified transport mechanism."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SystemMessagingProtocol@1]
-    version = 1
+    derived_from = [MessagePassing.QnxAsilBQualifiedImplementation@1]
+    version = 2
 }
 
 ScoreReq.FeatReq PointToPointConnections {
     description = "The message passing component shall support only point-to-point (1:1) connections between communication endpoints. N:M connections are explicitly excluded."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SystemMessagingProtocol@1]
-    version = 1
+    derived_from = [MessagePassing.PointToPointConnectionTopology@1]
+    version = 2
 }
 
 ScoreReq.FeatReq SmallDataLowLatencyCommunication {
     description = "The message passing component shall provide low-latency communication for small data between dedicated endpoints. "
     safety = ScoreReq.Asil.QM
-    derived_from = [MessagePassing.SystemMessagingProtocol@1]
-    version = 1
+    derived_from = [MessagePassing.ClientServerCommunicationModel@1]
+    version = 2
 }
 
 ScoreReq.FeatReq SynchronousUnidirectionalCommunication {
-    description = "The communication shall support synchronous unidirectional message sending on a given connection. The send call blocks until the message has been transferred to the receiving side and a suitable handler has been identified."
+    description = "The communication shall support client-initiated one-way message sending (Send) on a given connection, where the send call is allowed to hand the message directly to the underlying OS transport call, which may block the calling thread, depending on client configuration and whether a reply is currently pending on the same connection."
+    note = "Blocking, when it occurs, only guarantees that the message has been accepted by the OS-level transport call, not that the receiving side has received or processed it: whether the transport call itself is synchronous end-to-end (e.g. QNX native messaging) or merely buffers the message (e.g. a Unix Domain Socket write on Linux) is a transport-specific property, not a guarantee of this feature. See AsynchronousUnidirectionalCommunication for the complementary queued case."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SystemMessagingProtocol@1]
-    version = 1
+    derived_from = [MessagePassing.OneWayMessageDeliveryCapability@1]
+    version = 3
 }
 
 ScoreReq.FeatReq SynchronousBidirectionalCommunication {
     description = "The communication shall support synchronous bidirectional request-response communication on a given connection. The send call blocks until a reply from the receiver has been received (SendWaitReply)."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SystemMessagingProtocol@1]
-    version = 1
+    derived_from = [MessagePassing.RequestReplyInteractionCapability@1]
+    version = 2
 }
 
 ScoreReq.FeatReq AsynchronousUnidirectionalCommunication {
-    description = "The communication shall support asynchronous unidirectional message sending, where the send call returns after the local message passing layer has accepted the message. No guarantee is provided that the message is delivered to or processed by the receiver."
+    description = "The communication shall support client-initiated one-way message sending (Send) on a given connection, where the send call instead enqueues the message for asynchronous delivery by the background transport and returns after local acceptance, whenever client configuration or a reply currently pending on the same connection requires it. No guarantee is provided that an enqueued message is delivered to or processed by the receiver."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SystemMessagingProtocol@1]
+    derived_from = [MessagePassing.OneWayMessageDeliveryCapability@1]
+    version = 3
+}
+
+ScoreReq.FeatReq AsynchronousServerNotification {
+    description = "The message passing component shall allow a server to send a one-way notification message to a connected client (Notify), unconditionally asynchronously: the call returns after the message has been accepted by the local message passing layer, without blocking on the client's receipt or processing of the notification."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.OneWayMessageDeliveryCapability@1]
     version = 1
 }
 
@@ -79,20 +101,27 @@ ScoreReq.FeatReq SingletonFreeImplementation {
     description = "The Message Passing library design shall not use any singletons."
     note = "Since resource management and life-cycle of the singleton are hard to track."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SystemMessagingProtocol@1]
-    version = 1
+    derived_from = [MessagePassing.QnxAsilBQualifiedImplementation@1]
+    version = 2
 }
 
 ScoreReq.FeatReq AllowsBoundedMonotonicMemoryAllocation {
     description = "The Message Passing library design shall allow bounded monotonic memory allocation."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SystemMessagingProtocol@1]
-    version = 1
+    derived_from = [MessagePassing.QnxAsilBQualifiedImplementation@1]
+    version = 2
 }
 
 ScoreReq.FeatReq AllowsResourceMockInjectionForTesting {
     description = "The Message Passing library design shall allow resource mock injection for testing."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SystemMessagingProtocol@1]
-    version = 1
+    derived_from = [MessagePassing.QnxAsilBQualifiedImplementation@1]
+    version = 2
+}
+
+ScoreReq.FeatReq ClientIdentificationForAccessControl {
+    description = "The message passing component shall provide the server-side application with the OS-provided identity of the client of each Server Connection, to support server-side client identification and access control decisions."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.PeerIdentityInformationForAccessControl@1]
+    version = 2
 }

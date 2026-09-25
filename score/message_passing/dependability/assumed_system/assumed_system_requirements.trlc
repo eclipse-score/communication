@@ -19,16 +19,65 @@ import ScoreReq
 // System level requirements for MessagePassing SEooC
 ///////////////////////////////
 
-ScoreReq.AssumedSystemReq SystemMessagingProtocol {
-    description = "The system shall provide a mechanism for inter-process communication via a client-server messaging protocol."
+ScoreReq.AssumedSystemReq ClientServerCommunicationModel {
+    description = "The system shall provide a mechanism for two application processes to communicate as a client and a server across process boundaries: a server process accepts connections addressed to a named service, and a client process initiates a connection to that named service."
     safety = ScoreReq.Asil.B
-    rationale = "Application processes need to exchange requests and responses process boundaries, while adhearing to the failiure modes of ISO-26262."
+    rationale = "This is the foundational communication relationship the component exists to provide; an integrator choosing an IPC library needs to know whether it offers a client-server model at all before any finer-grained capability matters."
     version = 1
 }
 
-ScoreReq.Mitigation SafeState {
-    description = "The Safe State of the system shall be *safe-silent*"
+ScoreReq.AssumedSystemReq PointToPointConnectionTopology {
+    description = "Each connection the system establishes between a client and a server shall connect exactly one client endpoint to exactly one server endpoint for the connection's entire lifetime."
     safety = ScoreReq.Asil.B
-    rationale = "Currently only fail safe systems are in scope"
+    rationale = "Distinguishes the offered topology from one-to-many or many-to-many messaging; an integrator needing fan-out/fan-in needs to know this system does not provide it as a native connection topology."
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq RequestReplyInteractionCapability {
+    description = "The system shall support a request-reply interaction, in which a request sent to a server yields a corresponding reply from that server as part of the same interaction."
+    safety = ScoreReq.Asil.B
+    rationale = "Request-reply is one of the basic interaction patterns an integrator's application logic may depend on; its availability is a task-fit criterion when selecting an IPC mechanism."
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq OneWayMessageDeliveryCapability {
+    description = "The system shall support delivering a message from either end of a connection to the other without the sender waiting for or expecting a reply."
+    safety = ScoreReq.Asil.B
+    rationale = "Some application interactions do not require a reply (e.g. logging, best-effort notifications); an integrator needs to know this pattern is available without being forced into a request-reply round trip."
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq RuntimeFailureDetectability {
+    description = "The system shall provide the communicating application with the means to determine, during operation, that a communication attempt has failed rather than succeeded."
+    safety = ScoreReq.Asil.B
+    rationale = "An application built on top of the component needs to know, in production, whether a given communication actually took place, so it can react appropriately instead of assuming success."
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq IntegrationMisconfigurationDetectability {
+    description = "The system shall provide the means to detect, when a client and a server first attempt to communicate, that they have been configured with incompatible communication parameters."
+    safety = ScoreReq.Asil.B
+    rationale = "Catching a configuration mismatch between independently deployed client and server applications at connection time, rather than allowing it to silently misbehave, is necessary for safe integration of separately built applications."
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq CrossPlatformAbstraction {
+    description = "The system shall provide its client-server communication API in a form usable across more than one host operating system, to support development, evaluation, and testing convenience, and deployment in non-safety (QM) contexts on platforms other than the certified safety target."
+    safety = ScoreReq.Asil.QM
+    rationale = "The component is developed, evaluated, and partly tested on a general-purpose host OS before being deployed on its certified safety target; this capability is not itself safety-relevant, which is why it is tagged QM rather than inheriting the certified target's ASIL B."
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq QnxAsilBQualifiedImplementation {
+    description = "On QNX, the system's certified safety target platform, the common client-server API, its shared abstraction code, and the underlying transport implementation shall be capable of ASIL B qualification."
+    safety = ScoreReq.Asil.B
+    rationale = "States the actual safety commitment explicitly: ASIL B is claimed only for the QNX transport path. This is also the umbrella need served by bounded/monotonic memory allocation, a singleton-free design, and mock-injectability for verification, rather than each of those being an independent capability in its own right."
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq PeerIdentityInformationForAccessControl {
+    description = "The system shall provide the server with information identifying the connecting client, sufficient to support the integrator's own authentication and/or access-control decisions."
+    safety = ScoreReq.Asil.B
+    rationale = "Access control is the integrator's responsibility, not the component's, but the integrator can only make that decision if the component supplies trustworthy peer-identifying information at connection time; the specific data fields and platform-specific enforcement mechanisms are defined at the feature/component level."
     version = 1
 }
