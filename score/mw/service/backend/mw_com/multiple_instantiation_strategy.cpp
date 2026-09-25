@@ -1,4 +1,4 @@
-/********************************************************************************
+/*********************************************************************************
  * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -9,6 +9,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  *
  * SPDX-License-Identifier: Apache-2.0
- ********************************************************************************/
+ *******************************************************************************/
 
-#include "score/mw/service/backend/mw_com/provided_service_builder.h"
+#include "score/mw/service/backend/mw_com/multiple_instantiation_strategy.h"
