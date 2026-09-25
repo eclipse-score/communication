@@ -44,8 +44,6 @@ cc_args(
     ],
     args = [
         "-Wno-builtin-macro-redefined",
-        # Reduce known GCC false positives.
-        "-Wno-maybe-uninitialized",
     ],
 )
 
