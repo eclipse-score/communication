@@ -591,11 +591,9 @@ cc_library(
     name = "proxy_event_binding",
     srcs = [
         "proxy_event_binding.cpp",
-        "proxy_event_binding_base.cpp",
     ],
     hdrs = [
         "proxy_event_binding.h",
-        "proxy_event_binding_base.h",
     ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
@@ -1560,8 +1558,8 @@ cc_unit_test(
 )
 
 cc_unit_test(
-    name = "proxy_event_binding_base_test",
-    srcs = ["proxy_event_binding_base_test.cpp"],
+    name = "proxy_event_binding_test",
+    srcs = ["proxy_event_binding_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":proxy_event_binding",

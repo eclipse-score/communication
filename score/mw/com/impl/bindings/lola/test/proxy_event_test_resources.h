@@ -15,7 +15,6 @@
 
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
-#include "score/mw/com/impl/bindings/lola/generic_proxy_event.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
@@ -72,48 +71,22 @@ class EventSubscriptionControlAttorney
     EventSubscriptionControl& event_subscription_control_;
 };
 
-class GenericProxyEventAttorney
-{
-  public:
-    using Callback = typename GenericProxyEvent::Callback;
-
-    GenericProxyEventAttorney(GenericProxyEvent& generic_proxy_event) noexcept;
-
-    auto& GetMetaInfoMember()
-    {
-        return generic_proxy_event_.meta_info_;
-    }
-
-  private:
-    GenericProxyEvent& generic_proxy_event_;
-};
-
-template <typename T>
 class ProxyEventAttorney
 {
   public:
-    using Callback = typename ProxyEvent<T>::Callback;
+    using Callback = typename ProxyEvent::Callback;
 
-    ProxyEventAttorney(ProxyEvent<T>& proxy_event) noexcept : proxy_event_{proxy_event} {}
+    ProxyEventAttorney(ProxyEvent& proxy_event) noexcept;
 
     auto& GetMetaInfoMember()
     {
         return proxy_event_.meta_info_;
     }
 
-  private:
-    ProxyEvent<T>& proxy_event_;
-};
-
-class ProxyEventCommonAttorney
-{
-  public:
-    ProxyEventCommonAttorney(ProxyEventCommon& proxy_event_common) noexcept;
-
     void InjectSlotCollector(SlotCollector&& slot_collector);
 
   private:
-    ProxyEventCommon& proxy_event_common_;
+    ProxyEvent& proxy_event_;
 };
 
 template <template <typename> class MessagePassingPtr>

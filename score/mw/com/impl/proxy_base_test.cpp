@@ -631,11 +631,11 @@ class ProxyBaseServiceElementReferencesFixture : public ::testing::Test
     mock_binding::Proxy proxy_binding_mock_{};
     MyProxy proxy_{std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock_), handle_};
 
-    ProxyEventBase event_0_{event_name_0_, std::make_unique<mock_binding::ProxyEventBase>()};
-    ProxyEventBase event_1_{event_name_1_, std::make_unique<mock_binding::ProxyEventBase>()};
+    ProxyEventBase event_0_{event_name_0_, std::make_unique<mock_binding::ProxyEvent>()};
+    ProxyEventBase event_1_{event_name_1_, std::make_unique<mock_binding::ProxyEvent>()};
 
-    ProxyEventBase field_event_dispatch_0_{field_name_0_, std::make_unique<mock_binding::ProxyEventBase>()};
-    ProxyEventBase field_event_dispatch_1_{field_name_1_, std::make_unique<mock_binding::ProxyEventBase>()};
+    ProxyEventBase field_event_dispatch_0_{field_name_0_, std::make_unique<mock_binding::ProxyEvent>()};
+    ProxyEventBase field_event_dispatch_1_{field_name_1_, std::make_unique<mock_binding::ProxyEvent>()};
     DummyProxyMethod field_setter_dispatch_0_{method_name_0_,
                                               std::make_unique<mock_binding::ProxyMethod>(),
                                               MethodType::kSet};
@@ -752,8 +752,8 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesT
     MyProxy proxy_2{std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock), handle_};
 
     // and given that an Event, Field and Method were registered on the second proxy
-    ProxyEventBase event{other_event_name, std::make_unique<mock_binding::ProxyEventBase>()};
-    ProxyEventBase field_event_dispatch{other_field_name, std::make_unique<mock_binding::ProxyEventBase>()};
+    ProxyEventBase event{other_event_name, std::make_unique<mock_binding::ProxyEvent>()};
+    ProxyEventBase field_event_dispatch{other_field_name, std::make_unique<mock_binding::ProxyEvent>()};
     DummyProxyMethod field_setter_dispatch{
         other_field_name, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kSet};
     DummyProxyMethod field_getter_dispatch{
@@ -823,7 +823,7 @@ class ProxyBaseAreBindingsValidFixture : public ::testing::Test
 
     ProxyBaseAreBindingsValidFixture& WithAValidEventRegistered()
     {
-        event_ = std::make_unique<ProxyEventBase>(kEventName, std::make_unique<mock_binding::ProxyEventBase>());
+        event_ = std::make_unique<ProxyEventBase>(kEventName, std::make_unique<mock_binding::ProxyEvent>());
         ProxyBaseView{*proxy_base_}.RegisterEvent(kEventName, event_->GetReferenceToMoveable());
         return *this;
     }
@@ -831,7 +831,7 @@ class ProxyBaseAreBindingsValidFixture : public ::testing::Test
     ProxyBaseAreBindingsValidFixture& WithAValidFieldRegistered()
     {
         field_event_dispatch_ =
-            std::make_unique<ProxyEventBase>(kFieldEventName, std::make_unique<mock_binding::ProxyEventBase>());
+            std::make_unique<ProxyEventBase>(kFieldEventName, std::make_unique<mock_binding::ProxyEvent>());
         field_setter_dispatch_ = std::make_unique<DummyProxyMethod>(
             kFieldSetterName, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kSet);
         field_getter_dispatch_ = std::make_unique<DummyProxyMethod>(
@@ -944,7 +944,7 @@ TEST_F(ProxyBaseAreBindingsValidFixture, AreBindingsValidReturnsFalseIfRegistere
     GivenAProxyBaseWithValidBinding().WithAValidEventRegistered().WithAValidMethodRegistered();
 
     // and given that a Field with a null get binding but valid event / set bindings was registered
-    ProxyEventBase valid_field_event_dispatch{kFieldEventName, std::make_unique<mock_binding::ProxyEventBase>()};
+    ProxyEventBase valid_field_event_dispatch{kFieldEventName, std::make_unique<mock_binding::ProxyEvent>()};
     DummyProxyMethod invalid_field_getter_dispatch{
         kFieldGetterName, Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}, MethodType::kGet};
     DummyProxyMethod valid_field_setter_dispatch{
@@ -965,7 +965,7 @@ TEST_F(ProxyBaseAreBindingsValidFixture, AreBindingsValidReturnsFalseIfRegistere
     GivenAProxyBaseWithValidBinding().WithAValidEventRegistered().WithAValidMethodRegistered();
 
     // and given that a Field with a null set binding but valid event / get bindings was registered
-    ProxyEventBase valid_field_event_dispatch{kFieldEventName, std::make_unique<mock_binding::ProxyEventBase>()};
+    ProxyEventBase valid_field_event_dispatch{kFieldEventName, std::make_unique<mock_binding::ProxyEvent>()};
     DummyProxyMethod invalid_field_setter_dispatch{
         kFieldSetterName, Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}, MethodType::kSet};
     DummyProxyMethod valid_field_getter_dispatch{

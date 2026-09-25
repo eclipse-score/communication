@@ -81,13 +81,12 @@ class ProxyFieldImpl : public ProxyFieldBase
     /// \details The template tags do not gate this overload; they continue to control which parts of the public
     ///          API (Get, Set, Subscribe, ...) are available on the resulting object. The event binding parameter
     ///          is required (non default) to disambiguate this overload from the production ctor.
-    /// \param proxy_base Parent proxy that owns this field's registration.
     /// \param field_name Field's name as it appears in the deployment.
     /// \param event_binding Mock event binding. Must be provided (use nullptr if no event binding is needed).
     /// \param set_method_binding Optional mock Set-method binding. If nullptr, no ProxyMethod is built for Set.
     /// \param get_method_binding Optional mock Get-method binding. If nullptr, no ProxyMethod is built for Get.
     ProxyFieldImpl(const std::string_view field_name,
-                   std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
+                   std::unique_ptr<ProxyEventBinding> event_binding,
                    std::unique_ptr<ProxyMethodBinding> set_method_binding = nullptr,
                    std::unique_ptr<ProxyMethodBinding> get_method_binding = nullptr)
         : ProxyFieldImpl{

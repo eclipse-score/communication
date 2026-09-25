@@ -45,7 +45,7 @@ class MyEvent final : public SkeletonEventBinding
     }
     Result<SamplePtr<void>> GetLatestSample(QualityType) override
     {
-        return SamplePtr<void>{mock_binding::SamplePtr<void>{&test_sample_buffer_, [](void*) noexcept {}},
+        return SamplePtr<void>{mock_binding::SamplePtr{&test_sample_buffer_, [](void*) noexcept {}},
                                SampleReferenceGuard{}};
     }
     BindingType GetBindingType() const noexcept override

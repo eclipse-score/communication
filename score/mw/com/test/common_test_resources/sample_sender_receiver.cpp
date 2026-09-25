@@ -265,7 +265,7 @@ bool ElementFqIdMatchesConfigurationValue(
     const score::mw::com::impl::lola::ElementFqId element_fq_id_from_config) noexcept
 {
     auto* const binding = impl::ProxyEventView<SampleType>{proxy_event}.GetBinding();
-    auto* const lola_binding = dynamic_cast<impl::lola::ProxyEvent<SampleType>*>(binding);
+    auto* const lola_binding = dynamic_cast<impl::lola::ProxyEvent*>(binding);
     if (lola_binding == nullptr)
     {
         return {};
