@@ -168,7 +168,7 @@ TEST_P(LolaServiceTypeDeploymentEqualityParamaterisedFixture, DifferentDeploymen
     EXPECT_FALSE(comparison_result);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     LolaServiceTypeDeploymentEqualityParamaterisedFixture,
     LolaServiceTypeDeploymentEqualityParamaterisedFixture,
     ::testing::Values(std::make_pair(LolaServiceTypeDeployment{1U}, LolaServiceTypeDeployment{2U}),

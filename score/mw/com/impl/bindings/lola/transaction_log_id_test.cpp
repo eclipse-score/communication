@@ -91,13 +91,13 @@ TEST_P(TransactionLogIdEqualityFixture, HashesOfTheDifferentTransactionLogIdsAre
     ASSERT_NE(hash_value, hash_value_2);
 }
 
-INSTANTIATE_TEST_CASE_P(TransactionLogIdEqualityFixture,
-                        TransactionLogIdEqualityFixture,
-                        ::testing::Values(std::make_pair(TransactionLogId{1U, kSameInstanceSpecifier.ToString()},
-                                                         TransactionLogId{2U, kSameInstanceSpecifier.ToString()}),
-                                          std::make_pair(TransactionLogId{1U, kSameInstanceSpecifier.ToString()},
-                                                         TransactionLogId{1U,
-                                                                          kDifferentInstanceSpecifier.ToString()})));
+INSTANTIATE_TEST_SUITE_P(TransactionLogIdEqualityFixture,
+                         TransactionLogIdEqualityFixture,
+                         ::testing::Values(std::make_pair(TransactionLogId{1U, kSameInstanceSpecifier.ToString()},
+                                                          TransactionLogId{2U, kSameInstanceSpecifier.ToString()}),
+                                           std::make_pair(TransactionLogId{1U, kSameInstanceSpecifier.ToString()},
+                                                          TransactionLogId{1U,
+                                                                           kDifferentInstanceSpecifier.ToString()})));
 
 }  // namespace
 }  // namespace score::mw::com::impl::lola

@@ -398,7 +398,7 @@ ProxyEventTracingData ProxyEventTracingWithDefaultId(std::array<bool, 11> enable
                                  enable_flags[10]};
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     ProxyEventTracingEnabledTracePointsParamaterizedFixture,
     ProxyEventTracingEnabledTracePointsParamaterizedFixture,
     ::testing::Values(
@@ -416,7 +416,7 @@ INSTANTIATE_TEST_CASE_P(
         ProxyEventTracingWithDefaultId({false, false, false, false, false, false, false, false, true, false, false}),
         ProxyEventTracingWithDefaultId({false, false, false, false, false, false, false, false, false, true, false}),
         ProxyEventTracingWithDefaultId({false, false, false, false, false, false, false, false, false, false, true})));
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     ProxyFieldTracingEnabledTracePointsParamaterizedFixture,
     ProxyFieldTracingEnabledTracePointsParamaterizedFixture,
     ::testing::Values(

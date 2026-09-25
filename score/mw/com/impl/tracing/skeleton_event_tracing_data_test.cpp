@@ -85,7 +85,7 @@ TEST_P(SkeletonEventTracingDataEqualityOperationParamaterisedFixture, DifferentS
 }
 
 // Test that each element that should be used in the equality operator is used by changing them one at a time.
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SkeletonEventTracingDataEqualityOperationParamaterisedFixture,
     SkeletonEventTracingDataEqualityOperationParamaterisedFixture,
     ::testing::Values(std::make_pair(SkeletonEventTracingData{kDummyServiceElementInstanceIdentifierView1,
