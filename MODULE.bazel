@@ -97,7 +97,6 @@ SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
     "-Wno-format-y2k",
     "-Wno-free-nonheap-object",
     "-Wno-maybe-uninitialized",
-    "-Wno-unused-macros",
     "-Wunused-parameter",
     "-Wunused-but-set-parameter",
 ]

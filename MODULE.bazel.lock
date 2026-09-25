@@ -12919,7 +12919,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "+vgTABLj64cvjmKGlkw+4AJ9S7iLJFRI20t6JpYfRzM=",
-        "usagesDigest": "2M/Y9UlwtA58SqUI7CroWu2hNhRiUcHy6Bv6qeZUg04=",
+        "usagesDigest": "6+zirWZYSyQ0p1a1iskGVeaWxcxZbIYGIZ1R3A+piys=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -12984,7 +12984,6 @@
                 "-Wno-format-y2k",
                 "-Wno-free-nonheap-object",
                 "-Wno-maybe-uninitialized",
-                "-Wno-unused-macros",
                 "-Wunused-parameter",
                 "-Wunused-but-set-parameter"
               ],
@@ -13031,7 +13030,6 @@
                 "-Wno-format-y2k",
                 "-Wno-free-nonheap-object",
                 "-Wno-maybe-uninitialized",
-                "-Wno-unused-macros",
                 "-Wunused-parameter",
                 "-Wunused-but-set-parameter"
               ],
@@ -13078,7 +13076,6 @@
                 "-Wno-format-y2k",
                 "-Wno-free-nonheap-object",
                 "-Wno-maybe-uninitialized",
-                "-Wno-unused-macros",
                 "-Wunused-parameter",
                 "-Wunused-but-set-parameter"
               ],
@@ -13125,7 +13122,6 @@
                 "-Wno-format-y2k",
                 "-Wno-free-nonheap-object",
                 "-Wno-maybe-uninitialized",
-                "-Wno-unused-macros",
                 "-Wunused-parameter",
                 "-Wunused-but-set-parameter"
               ],
