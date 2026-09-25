@@ -58,8 +58,7 @@ class SomeIpEventInstanceDeployment
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
     constexpr static std::uint32_t serializationVersion = 1U;
 
-    friend bool operator==(const SomeIpEventInstanceDeployment& lhs,
-                           const SomeIpEventInstanceDeployment& rhs) noexcept;
+    friend bool operator==(const SomeIpEventInstanceDeployment& lhs, const SomeIpEventInstanceDeployment& rhs) noexcept;
 
   private:
     /// \brief number of sample slots is only relevant/required on skeleton side, where slots get allocated. On the

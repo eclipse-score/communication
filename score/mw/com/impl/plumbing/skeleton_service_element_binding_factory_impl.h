@@ -22,8 +22,8 @@
 #include "score/mw/com/impl/bindings/someip/skeleton_event_properties.h"
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
-#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/field_tags_store.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
@@ -258,9 +258,8 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
                 GetServiceInstanceDeploymentBinding<SomeIpServiceInstanceDeployment>(service_instance_deployment);
 
             const std::string service_element_name_str{service_element_name};
-            const auto& someip_service_element_instance_deployment =
-                GetServiceElementInstanceDeployment<element_type>(someip_service_instance_deployment,
-                                                                 service_element_name_str);
+            const auto& someip_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
+                someip_service_instance_deployment, service_element_name_str);
 
             const someip::SkeletonEventProperties skeleton_event_properties =
                 detail::CreateSomeIpSkeletonEventProperties(someip_service_element_instance_deployment,

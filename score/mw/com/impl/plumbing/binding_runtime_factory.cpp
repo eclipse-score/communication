@@ -15,8 +15,8 @@
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 
 #include "score/mw/com/impl/bindings/lola/runtime.h"
-#include "score/mw/com/impl/bindings/someip/runtime.h"
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
+#include "score/mw/com/impl/bindings/someip/runtime.h"
 
 #include <score/overload.hpp>
 #include <score/utility.hpp>

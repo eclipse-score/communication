@@ -12,13 +12,13 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/configuration.h"
 
-#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/config_parser.h"
 #include "score/mw/com/impl/configuration/configuration_error.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 
 #include "score/json/internal/model/any.h"

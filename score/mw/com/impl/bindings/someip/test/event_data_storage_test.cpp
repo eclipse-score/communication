@@ -41,7 +41,8 @@ TEST(SomeIpEventDataStorageTest, SlotsAreDistinctAndCorrectlyStrided)
     EventDataStorage unit{kNumberOfSlots, kSampleSizeInfo};
 
     std::set<const void*> slot_addresses{};
-    const auto* const first_slot = static_cast<const std::uint8_t*>(unit.GetTypeErasedDataSlot(0U, sizeof(TestSampleType)));
+    const auto* const first_slot =
+        static_cast<const std::uint8_t*>(unit.GetTypeErasedDataSlot(0U, sizeof(TestSampleType)));
     for (SlotIndexType slot_index = 0U; slot_index < kNumberOfSlots; ++slot_index)
     {
         auto* const slot = unit.GetTypeErasedDataSlot(slot_index, sizeof(TestSampleType));
