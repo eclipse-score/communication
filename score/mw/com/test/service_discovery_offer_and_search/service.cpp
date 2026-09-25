@@ -13,6 +13,7 @@
 
 #include "score/concurrency/future/interruptible_future.h"
 #include "score/concurrency/future/interruptible_promise.h"
+#include "score/mw/com/com_error_domain.h"
 #include "score/mw/com/test/common_test_resources/common_service.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
 #include "score/mw/com/test/common_test_resources/sync_utils.h"
@@ -48,6 +49,17 @@ int run_service(const std::chrono::milliseconds& cycle_time, const score::cpp::s
     {
         std::cerr << "Could not offer first service, terminating\n";
         return 3;
+    }
+
+    // Offering the same service a second time must not cause any issues (e.g. crashing or corrupting the
+    // already-offered service) and the call should simply return successfully.
+    // TODO: Should be moved into dedicated integration test
+    // (https://github.com/eclipse-score/communication/issues/1167)
+    const auto duplicate_offer_service_result = first_service_result.value().OfferService(kTestValue);
+    if (!duplicate_offer_service_result.has_value())
+    {
+        std::cerr << "Second OfferService() call unexpectedly failed, terminating\n";
+        return 4;
     }
 
     auto second_service_result = Service<TestDataSkeleton>::Create(kInstanceSpecifierStringServiceSecond);

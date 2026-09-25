@@ -54,7 +54,8 @@ enum class ComErrc : score::result::ErrorCode
     kNotSubscribed,
     kInvalidConfiguration,
     kInvalidMetaModelShortname,
-    kServiceInstanceAlreadyOffered,
+    kServiceInstanceAlreadyOffered
+        [[deprecated("Value has never been used. Calls to OfferService shall be idempotent.")]],
     kCouldNotRestartProxy,
     kNotOffered,
     kInstanceIDCouldNotBeResolved,

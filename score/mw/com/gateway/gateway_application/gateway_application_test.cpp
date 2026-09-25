@@ -1233,21 +1233,16 @@ TEST_F(GatewayApplicationFlowTest, ProvideServiceSetReceiveHandlerRegistrationFa
     EXPECT_TRUE(result.has_value());
 }
 
-TEST_F(GatewayApplicationFlowTest, OfferServiceFailureReturnsError)
+TEST_F(GatewayApplicationFlowTest, SecondOfferServiceWorks)
 {
     // Given a service has been provided (skeleton exists and offered once)
     ASSERT_TRUE(app_->ProvideService(MakeSpecifier("svc/a"), MakeElements({"EventA"})).has_value());
     ASSERT_NE(skeleton_binding_mock_, nullptr);
 
-    // and the binding will now reject any further offer
-    ON_CALL(*skeleton_binding_mock_, PrepareOffer(::testing::_, ::testing::_, ::testing::_))
-        .WillByDefault(::testing::Return(score::MakeUnexpected(GatewayErrorc::kSkeletonOfferFailed)));
-
     // When OfferService is called explicitly
-    // Then it fails with kSkeletonOfferFailed.
     const auto result = app_->OfferService(MakeSpecifier("svc/a"));
-    ASSERT_FALSE(result.has_value());
-    EXPECT_EQ(result.error(), GatewayErrorc::kSkeletonOfferFailed);
+    // Then it returns successfully
+    ASSERT_TRUE(result.has_value());
 }
 
 TEST_F(GatewayApplicationFlowTest, ReusedSkeletonOfferFailureIsToleratedAndResubscribes)

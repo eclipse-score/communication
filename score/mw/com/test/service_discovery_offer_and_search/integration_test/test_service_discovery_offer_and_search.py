@@ -25,6 +25,12 @@ def service(target):
 
 
 def test_service_discovery_offer_and_search(target):
-    """Test service discovery where service offers first, then client searches."""
+    """Test service discovery where service offers first, then client searches.
+
+    The service also issues a second OfferService() call on the first
+    service instance to verify that offering an already-offered service is
+    handled without affecting the already-offered instance or the client's
+    ability to discover it.
+    """
     with service(target), client(target):
         pass

@@ -150,6 +150,12 @@ score::Result<std::vector<utils::ScopeExit<>>> SkeletonBase::OfferServiceFields(
 
 auto SkeletonBase::OfferService() -> Result<void>
 {
+    if (service_offered_flag_.IsSet())
+    {
+        score::mw::log::LogInfo("lola") << "SkeletonBinding::OfferService called, but service is already offered.";
+        return {};
+    }
+
     if (skeleton_mock_ != nullptr)
     {
         return skeleton_mock_->OfferService();
