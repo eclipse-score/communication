@@ -93,7 +93,7 @@ namespace score::mw::com {
         +GetDataTypeSizeInfo()
     }
 
-    class "SamplePtr<T>" as SamplePtr
+    class SamplePtr<T>
 
     ' --- Skeleton side ---
 
@@ -116,17 +116,17 @@ namespace score::mw::com {
         +GetSizeInfo()
     }
 
-    class "SampleAllocateePtr<T>" as SampleAllocateePtr
+    class SampleAllocateePtr<T>
 
     ' --- Field / method call plumbing used by generated proxy & skeleton code ---
 
     class WithGetter <<field_tag>>
     class WithSetter <<field_tag>>
     class WithNotifier <<field_tag>>
-    class "AsProxy<T>" as AsProxy <<binding_selector>>
-    class "AsSkeleton<T>" as AsSkeleton <<binding_selector>>
-    class "MethodReturnTypePtr<T>" as MethodReturnTypePtr
-    class "MethodInArgTypePtr<T>" as MethodInArgTypePtr
+    class AsProxy<T> <<binding_selector>>
+    class AsSkeleton<T> <<binding_selector>>
+    class MethodReturnTypePtr<T>
+    class MethodInArgTypePtr<T>
     class EventReceiveHandler <<user_provided>>
     class SubscriptionState <<enum>>
 
