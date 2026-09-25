@@ -1,0 +1,86 @@
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+@startuml sequence_managed_service_client_usage
+title ManagedService / ProvidedServicesContainer - Client Usage
+
+skinparam sequenceParticipantBackgroundColor #F7F7F7
+skinparam sequenceParticipantBorderColor #666666
+skinparam sequenceLifeLineBorderColor #777777
+skinparam sequenceLifeLineBackgroundColor #EFEFEF
+
+participant "App" as App #CFE8FF
+participant "ProvidedServicesContainer" as Container
+participant "MyService\n<<extends ManagedService>>" as Service
+participant "mw::com\nSkeleton" as Skeleton
+
+== Initialize / Run: offer the service ==
+
+App -> Container : Emplace<MyService>(\n    "instance_specifier", ctor_args...)
+activate Container
+
+Container -> Service : make_unique<MyService>(ctor_args...)
+activate Service
+Service --> Container : service
+
+Container -> Service : ManagedService::Start()
+Service -> Skeleton : OfferService()
+Skeleton --> Service
+Service --> Container : Result<void>
+
+alt Start() succeeded
+Container -> Container : store service in services_
+Container --> App : Result<void>{} (success)
+else Start() failed
+Container -> Service : ~MyService() (discarded, not stored)
+destroy Service
+Container --> App : Result<void>{unexpected error}
+end
+deactivate Container
+
+== Access a stored service ==
+
+App -> Container : Get<MyService>()
+activate Container
+loop for each stored service
+Container -> Container : dynamic_cast<MyService*>(service.get())
+end
+Container --> App : MyService* (or nullptr if not found)
+deactivate Container
+
+== Shutdown ==
+
+alt Explicit stop
+App -> Container : StopAll()
+activate Container
+loop for each stored service
+Container -> Service : ManagedService::Stop()
+Service -> Skeleton : StopOfferService()
+Skeleton --> Service
+Service --> Container
+end
+Container -> Container : services_.clear()
+deactivate Container
+else Implicit stop (container destroyed)
+App -> Container : ~ProvidedServicesContainer()
+activate Container
+Container -> Container : StopAll()
+loop for each stored service
+Container -> Service : ManagedService::Stop()
+Service -> Skeleton : StopOfferService()
+Skeleton --> Service
+Service --> Container
+end
+deactivate Container
+deactivate Service
+end
+
+@enduml

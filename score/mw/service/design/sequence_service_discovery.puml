@@ -1,0 +1,101 @@
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+@startuml sequence
+title Service Discovery Sequence
+
+skinparam sequenceParticipantBackgroundColor #F7F7F7
+skinparam sequenceParticipantBorderColor #666666
+skinparam sequenceLifeLineBorderColor #777777
+skinparam sequenceLifeLineBackgroundColor #EFEFEF
+
+participant "AppFactory" as Root #CFE8FF
+participant "App" as App #CFE8FF
+participant "ProxyNeedsFactory" as NeedsFactory
+participant "ProxyNeeds" as Needs
+participant "RequestedProxies" as Requested
+participant "ProxyContainer" as Container
+participant "ProxyBuilderBase" as Builder
+participant "FindStrategy" as Strategy
+participant "ProxyHolder" as Holder
+
+[-> Root : Configure
+Root -> NeedsFactory : Create<Strategies...>()
+NeedsFactory --> Root : ProxyNeeds
+Root -> App : Inject ProxyNeeds
+
+activate App
+
+App -> Needs : WithOnServiceFound(callback tuple)
+App -> Needs : InitiateServiceDiscovery(stop_token?)
+
+loop each ProxySpec in ProxyNeeds
+Needs -> Builder : Build(stop_token?)
+Builder -> Strategy : Find(builder_callback)
+Strategy -> Holder : StartFindService(find_callback)
+end
+
+Needs --> App : RequestedProxies
+
+alt contains mandatory ProxySpec
+App -> Requested : WaitForMandatoryProxies(stop_token)
+Requested --> App : ProxyContainer
+else only optional/multiple ProxySpec
+App -> Requested : GetProxyContainer()
+Requested --> App : ProxyContainer
+end
+
+== ProxyContainer is Built & Service Discovery Initiated ==
+
+note over App, Requested
+App can stop service discovery only when it owns stop-capable ProxyData
+(typically optional/multiple via Extract()).
+Single/Variant follow mandatory semantics and do not expose explicit stop.
+end note
+
+alt App uses Extract() for ownership path
+alt Single<Proxy>
+App -> Container : Extract<Single>()
+Container --> App : SingleInstanceHolder<Proxy>
+else Multiple<Proxy>
+App -> Container : Extract<Multiple>()
+Container --> App : MultipleProxyData<Proxy>
+else Optional<Proxy>
+App -> Container : Extract<Optional>()
+Container --> App : OptionalProxyData<Proxy>
+else Variant<Proxy...>
+App -> Container : Extract<Variant>()
+Container --> App : variant<...>
+end
+else App uses Get() for non-owning path
+alt Single<Proxy>
+App -> Container : Get<Single>()
+Container --> App : SingleInstanceHolder<Proxy>&
+else Multiple<Proxy>
+App -> Container : Get<Multiple>()
+Container --> App : MultiInstanceHolder<Proxy>&
+else Optional<Proxy>
+App -> Container : Get<Optional>()
+Container --> App : ProxyFuture<Proxy>&
+else Variant<Proxy...>
+App -> Container : Get<Variant>()
+Container --> App : variant<...>
+end
+end
+
+note over App, Container
+Service discovery lifecycle is tied to internal stop action ownership.
+For ownership-centric control, prefer Extract() for optional/multiple.
+end note
+
+deactivate App
+
+@enduml
