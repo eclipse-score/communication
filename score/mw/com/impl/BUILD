@@ -871,9 +871,30 @@ cc_library(
         ":i_service_discovery_client",
         ":instance_identifier",
         ":instance_specifier",
+        ":serializer_manager",
         "//score/mw/com/impl/tracing:i_binding_tracing_runtime",
         "//score/mw/com/impl/tracing:i_tracing_runtime",
         "//score/mw/com/impl/tracing/configuration:i_tracing_filter_config",
+    ],
+)
+
+cc_library(
+    name = "serializer_manager",
+    srcs = ["serializer_manager.cpp"],
+    hdrs = ["serializer_manager.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/mw/log",
+    ],
+    linkopts = ["-ldl"],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        "//score/serialization/someip:serializer",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -1038,6 +1059,7 @@ cc_library(
         ":instance_identifier",
         ":instance_specifier",
         ":runtime_interfaces",
+        ":serializer_manager",
         ":service_discovery",
         "//score/mw/com:runtime_configuration",
         "//score/mw/com/impl:event_receive_handler",
