@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/i_runtime.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
+#include "score/mw/com/impl/serializer_manager.h"
 #include "score/mw/com/impl/service_discovery.h"
 #include "score/mw/com/impl/tracing/configuration/tracing_filter_config.h"
 #include "score/mw/com/impl/tracing/i_tracing_runtime.h"
@@ -141,6 +142,10 @@ class Runtime final : public IRuntime
     // coverity[autosar_cpp14_a10_3_1_violation]
     tracing::ITracingRuntime* GetTracingRuntime() const noexcept override final;
 
+    /// \brief see IRuntime::GetSerializerManager
+    // coverity[autosar_cpp14_a10_3_1_violation]
+    SerializerManager& GetSerializerManager() noexcept override final;
+
   private:
     /// \return static Runtime (the real one - not a mock!) configured based on the configuration set by one of the
     ///         static Initialize() overloads.
@@ -193,6 +198,9 @@ class Runtime final : public IRuntime
 
     /// \brief Service Discovery
     ServiceDiscovery service_discovery_;
+
+    /// \brief owner of the process-wide serializers.
+    SerializerManager serializer_manager_;
 
     /// \brief Executor for long-running tasks, that is handed down to binding-specific runtimes to be also used in
     ///        their context

@@ -334,6 +334,11 @@ tracing::ITracingRuntime* Runtime::GetTracingRuntime() const noexcept
     return tracing_runtime_.get();
 }
 
+SerializerManager& Runtime::GetSerializerManager() noexcept
+{
+    return serializer_manager_;
+}
+
 void Runtime::InjectMock(IRuntime* const mock) noexcept
 {
     mock_ = mock;
