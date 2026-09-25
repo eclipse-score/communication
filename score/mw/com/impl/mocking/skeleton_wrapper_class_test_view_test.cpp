@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/mocking/skeleton_wrapper_class_test_view.h"
+#include "score/mw/com/impl/raw_wire_representation_fundamentals.h"
 
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/field_tags.h"

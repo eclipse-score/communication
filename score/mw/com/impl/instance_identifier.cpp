@@ -171,6 +171,13 @@ auto InstanceIdentifierView::GetServiceInstanceId() const -> std::optional<Servi
             }
             return ServiceInstanceId{*deployment.instance_id_};
         },
+        [](const SomeIpServiceInstanceDeployment& deployment) -> std::optional<ServiceInstanceId> {
+            if (!deployment.instance_id_.has_value())
+            {
+                return {};
+            }
+            return ServiceInstanceId{*deployment.instance_id_};
+        },
         [](const score::cpp::blank&) noexcept -> std::optional<ServiceInstanceId> {
             return std::optional<ServiceInstanceId>{};
         });

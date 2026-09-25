@@ -18,6 +18,10 @@
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/plumbing/skeleton_event_binding_factory.h"
+#include "score/mw/com/impl/sample_serialization_spec.h"
+#include "score/mw/com/impl/sample_wire_format.h"
+#include "score/mw/com/impl/serialization_sink.h"
+#include "score/mw/com/impl/serialize_sample_callback.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
@@ -134,6 +138,20 @@ class SkeletonEvent : public SkeletonEventBase
             score::cpp::ignore = new (sample_ptr) SampleDataType{};
         }};
     }
+
+    /// \brief Creates the specification the binding needs to produce the wire representation of a sample.
+    /// \details Both the serializer and its worst case output size come from SampleWireFormat<SampleDataType>, which
+    ///          is the customization point specialized next to the sample type. This layer stays free of any
+    ///          knowledge about the actual wire format.
+    static SampleSerializationSpec MakeSampleSerializationSpec() noexcept
+    {
+        return SampleSerializationSpec{
+            SerializeSampleCallback{[](const void* const sample_ptr, ISerializationSink& sink) noexcept {
+                const auto& sample = *static_cast<const SampleDataType*>(sample_ptr);
+                score::cpp::ignore = SampleWireFormat<SampleDataType>::Serialize(sample, sink);
+            }},
+            SampleWireFormat<SampleDataType>::kMaxSerializedSize};
+    }
     ISkeletonEvent<EventType>* skeleton_event_mock_;
 };
 
@@ -158,6 +176,7 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base, const 
         tracing_data_ =
             tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
         binding_->SetSkeletonEventTracingData(tracing_data_);
+        binding_->SetSampleSerialization(MakeSampleSerializationSpec());
     }
 }
 
@@ -176,6 +195,7 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base,
         tracing_data_ =
             tracing::GenerateSkeletonTracingStructFromFieldConfig(instance_identifier, binding_type, event_name);
         binding_->SetSkeletonEventTracingData(tracing_data_);
+        binding_->SetSampleSerialization(MakeSampleSerializationSpec());
     }
 }
 
@@ -185,6 +205,10 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& /*skeleton_base*/,
                                              std::unique_ptr<SkeletonEventBinding> binding)
     : SkeletonEventBase{event_name, MakeInitializeSampleCallback(), std::move(binding)}, skeleton_event_mock_{nullptr}
 {
+    if (binding_ != nullptr)
+    {
+        binding_->SetSampleSerialization(MakeSampleSerializationSpec());
+    }
 }
 
 template <typename SampleDataType>

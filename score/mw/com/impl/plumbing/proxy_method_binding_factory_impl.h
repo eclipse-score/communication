@@ -158,6 +158,12 @@ Result<std::unique_ptr<ProxyMethodBinding>> ProxyMethodBindingFactoryImpl<Return
             return std::make_unique<lola::ProxyMethod>(
                 *lola_proxy, proxy_method_instance_identifier, type_erased_element_info);
         },
+        // The SOME/IP binding does not support this service element (yet). It is listed explicitly (instead of
+        // being served by the score::cpp::blank arm) because std::visit requires an arm for every variant
+        // alternative.
+        [](const SomeIpServiceTypeDeployment&) noexcept -> LambdaReturnType {
+            return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
+        },
         [](const score::cpp::blank&) noexcept -> LambdaReturnType {
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
         });
