@@ -63,8 +63,8 @@ void InsertServiceElementNames(const BindingServiceTypeDeploymentType& service_d
     // protect us from future programming mistakes)
     else
     {
-        score::mw::log::LogFatal("lola")
-            << "GetElementNamesOfServiceType called with unsupported ServiceElementType: " << element_type;
+        score::mw::log::LogFatal("lola") << "GetElementNamesOfServiceType called with unsupported ServiceElementType: "
+                                         << element_type;
         std::terminate();
     }
     // LCOV_EXCL_STOP

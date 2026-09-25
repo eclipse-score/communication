@@ -30,11 +30,10 @@ constexpr auto kEnforceMaxSamplesKeySomeIpEventInstDepl = "enforceMaxSamples";
 
 }  // namespace
 
-SomeIpEventInstanceDeployment::SomeIpEventInstanceDeployment(
-    std::optional<SampleSlotCountType> number_of_sample_slots,
-    std::optional<SubscriberCountType> max_subscribers,
-    std::optional<std::uint8_t> max_concurrent_allocations,
-    const bool enforce_max_samples) noexcept
+SomeIpEventInstanceDeployment::SomeIpEventInstanceDeployment(std::optional<SampleSlotCountType> number_of_sample_slots,
+                                                             std::optional<SubscriberCountType> max_subscribers,
+                                                             std::optional<std::uint8_t> max_concurrent_allocations,
+                                                             const bool enforce_max_samples) noexcept
     : max_subscribers_{max_subscribers},
       max_concurrent_allocations_{max_concurrent_allocations},
       enforce_max_samples_{enforce_max_samples},
@@ -61,8 +60,7 @@ SomeIpEventInstanceDeployment SomeIpEventInstanceDeployment::CreateFromJson(cons
         GetOptionalValueFromJson<SubscriberCountType>(json_object, kSubscribersKeySomeIpEventInstDepl);
     const auto max_concurrent_allocations =
         GetOptionalValueFromJson<std::uint8_t>(json_object, kMaxConcurrentAllocationsKeySomeIpEventInstDepl);
-    const auto enforce_max_samples =
-        GetValueFromJson<bool>(json_object, kEnforceMaxSamplesKeySomeIpEventInstDepl);
+    const auto enforce_max_samples = GetValueFromJson<bool>(json_object, kEnforceMaxSamplesKeySomeIpEventInstDepl);
 
     return SomeIpEventInstanceDeployment(
         number_of_sample_slots, max_subscribers, max_concurrent_allocations, enforce_max_samples);

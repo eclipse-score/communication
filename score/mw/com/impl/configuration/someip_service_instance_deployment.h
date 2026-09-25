@@ -72,9 +72,9 @@ const auto& GetServiceElementInstanceDeployment(
     const SomeIpServiceInstanceDeployment& someip_service_instance_deployment,
     const std::string& service_element_name)
 {
-    static_assert((service_element_type == ServiceElementType::EVENT) ||
-                      (service_element_type == ServiceElementType::FIELD),
-                  "The SOME/IP binding currently only supports events and fields.");
+    static_assert(
+        (service_element_type == ServiceElementType::EVENT) || (service_element_type == ServiceElementType::FIELD),
+        "The SOME/IP binding currently only supports events and fields.");
 
     const auto& service_element_instance_deployments = [&someip_service_instance_deployment]() -> const auto& {
         if constexpr (service_element_type == ServiceElementType::EVENT)
@@ -87,8 +87,7 @@ const auto& GetServiceElementInstanceDeployment(
         }
     }();
 
-    const auto service_element_instance_deployment_it =
-        service_element_instance_deployments.find(service_element_name);
+    const auto service_element_instance_deployment_it = service_element_instance_deployments.find(service_element_name);
     if (service_element_instance_deployment_it == service_element_instance_deployments.cend())
     {
         score::mw::log::LogFatal() << service_element_type << "name \"" << service_element_name

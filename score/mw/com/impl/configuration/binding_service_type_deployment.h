@@ -96,7 +96,8 @@ template <typename EventIdType,
           BindingType binding_type>
 bool operator==(
     const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>& lhs,
-    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>& rhs) noexcept;
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>&
+        rhs) noexcept;
 
 }  // namespace score::mw::com::impl
 

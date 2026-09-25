@@ -13,10 +13,10 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SKELETON_H
 #define SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SKELETON_H
 
+#include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/someip/element_fq_id.h"
 #include "score/mw/com/impl/bindings/someip/event_data_storage.h"
 #include "score/mw/com/impl/bindings/someip/i_transport.h"
-#include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/initialize_sample_callback.h"
 #include "score/mw/com/impl/instance_identifier.h"
@@ -59,11 +59,13 @@ class Skeleton final : public SkeletonBinding
     Skeleton& operator=(const Skeleton&) & = delete;
     Skeleton& operator=(Skeleton&&) & noexcept = delete;
 
-    Result<void> PrepareOffer(SkeletonEventBindings& events,
-                              SkeletonFieldBindings& fields,
-                              std::optional<RegisterShmObjectTraceCallback> register_shm_object_trace_callback) override;
+    Result<void> PrepareOffer(
+        SkeletonEventBindings& events,
+        SkeletonFieldBindings& fields,
+        std::optional<RegisterShmObjectTraceCallback> register_shm_object_trace_callback) override;
 
-    void PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> unregister_shm_object_trace_callback) override;
+    void PrepareStopOffer(
+        std::optional<UnregisterShmObjectTraceCallback> unregister_shm_object_trace_callback) override;
 
     BindingType GetBindingType() const noexcept override
     {

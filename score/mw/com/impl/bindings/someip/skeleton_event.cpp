@@ -98,18 +98,17 @@ Result<impl::SampleAllocateePtr<void>> SkeletonEvent::Allocate(SampleAllocateeGu
     }
 
     return MakeSampleAllocateePtr(
-        SampleAllocateePtr(
-            event_data_storage_->GetTypeErasedDataSlot(*slot_index, event_sample_size_info_.Size()),
-            slot_allocation_control_,
-            *slot_index),
+        SampleAllocateePtr(event_data_storage_->GetTypeErasedDataSlot(*slot_index, event_sample_size_info_.Size()),
+                           slot_allocation_control_,
+                           *slot_index),
         std::move(guard));
 }
 
 Result<impl::SamplePtr<void>> SkeletonEvent::GetLatestSample(QualityType quality_type)
 {
     score::cpp::ignore = quality_type;
-    ::score::mw::log::LogError("someip")
-        << "SkeletonEvent::GetLatestSample is not supported by the SOME/IP binding:" << event_name_;
+    ::score::mw::log::LogError("someip") << "SkeletonEvent::GetLatestSample is not supported by the SOME/IP binding:"
+                                         << event_name_;
     return MakeUnexpected(ComErrc::kBindingFailure,
                           "GetLatestSample (field getter) is not supported by the SOME/IP binding");
 }

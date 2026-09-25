@@ -158,10 +158,11 @@ TEST_F(SomeIpSkeletonEventFixture, PrepareOfferOffersTheEventOnTheTransport)
 TEST_F(SomeIpSkeletonEventFixture, PrepareOfferInitializesEverySlot)
 {
     std::size_t number_of_initialized_slots{0U};
-    ASSERT_TRUE(unit_->PrepareOffer(InitializeSampleCallback{[&number_of_initialized_slots](void* const sample_ptr) {
-                                        ++number_of_initialized_slots;
-                                        score::cpp::ignore = new (sample_ptr) TestSampleType{};
-                                    }})
+    ASSERT_TRUE(unit_
+                    ->PrepareOffer(InitializeSampleCallback{[&number_of_initialized_slots](void* const sample_ptr) {
+                        ++number_of_initialized_slots;
+                        score::cpp::ignore = new (sample_ptr) TestSampleType{};
+                    }})
                     .has_value());
 
     EXPECT_EQ(number_of_initialized_slots, kNumberOfSlots);
@@ -294,10 +295,11 @@ TEST_F(SomeIpSkeletonEventFixture, ReOfferingReusesTheExistingStorageWithoutReIn
     unit_->PrepareStopOffer();
 
     std::size_t number_of_initialized_slots{0U};
-    ASSERT_TRUE(unit_->PrepareOffer(InitializeSampleCallback{[&number_of_initialized_slots](void* const sample_ptr) {
-                                        ++number_of_initialized_slots;
-                                        score::cpp::ignore = new (sample_ptr) TestSampleType{};
-                                    }})
+    ASSERT_TRUE(unit_
+                    ->PrepareOffer(InitializeSampleCallback{[&number_of_initialized_slots](void* const sample_ptr) {
+                        ++number_of_initialized_slots;
+                        score::cpp::ignore = new (sample_ptr) TestSampleType{};
+                    }})
                     .has_value());
 
     EXPECT_EQ(number_of_initialized_slots, 0U);
