@@ -51,3 +51,18 @@ cc_library(
         ":e2e_result",
     ],
 )
+
+cc_library(
+    name = "e2e_profile_stub",
+    srcs = ["e2e_profile_stub.cpp"],
+    hdrs = [
+        "e2e_profile_stub.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        ":e2e_result",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
