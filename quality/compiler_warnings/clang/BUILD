@@ -130,42 +130,6 @@ cc_feature(
 )
 
 cc_args(
-    name = "strict_warnings_no_error_args",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:compile_actions",
-    ],
-    args = [
-        "-Wno-error=shadow",
-        "-Wno-error=conversion",
-        "-Wno-error=sign-conversion",
-    ],
-)
-
-cc_feature(
-    name = "strict_warnings_no_error",
-    # Emit -Werror first, then the -Wno-error= demotions, so the demotions
-    # reliably take effect (ordering matters: a trailing blanket -Werror would
-    # re-promote them to errors).
-    args = [
-        "//quality/compiler_warnings:treat_warnings_as_errors_args",
-        ":strict_warnings_no_error_args",
-    ],
-    feature_name = "score_communication_strict_warnings_no_error",
-    implies = ["strict_warnings"],
-    visibility = ["//visibility:public"],
-)
-
-cc_feature(
-    name = "additional_warnings",
-    args = [
-        "//quality/compiler_warnings:additional_warnings_args",
-    ],
-    feature_name = "score_communication_additional_warnings",
-    implies = [":strict_warnings"],
-    visibility = ["//visibility:public"],
-)
-
-cc_args(
     name = "third_party_warnings_args",
     actions = [
         "@rules_cc//cc/toolchains/actions:compile_actions",
@@ -180,7 +144,6 @@ cc_feature(
     ],
     feature_name = "score_communication_third_party_warnings",
     mutually_exclusive = [
-        ":additional_warnings",
         "//quality/compiler_warnings:treat_warnings_as_errors",
         ":minimal_warnings",
         ":strict_warnings",

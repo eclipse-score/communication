@@ -12919,7 +12919,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "+vgTABLj64cvjmKGlkw+4AJ9S7iLJFRI20t6JpYfRzM=",
-        "usagesDigest": "KadYGIsqmydhf+VLIoNpsGSWMehT0TfVf7Thzpk0odA=",
+        "usagesDigest": "2M/Y9UlwtA58SqUI7CroWu2hNhRiUcHy6Bv6qeZUg04=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -12977,11 +12977,7 @@
             "attributes": {
               "extra_compile_flags": [
                 "-Wall",
-                "-Wunused-local-typedefs",
-                "-Wreturn-local-addr",
                 "-Wswitch-bool",
-                "-Wfloat-conversion",
-                "-Wcast-function-type",
                 "-Wno-error=deprecated-declarations",
                 "-Wno-error=cpp",
                 "-Wno-builtin-macro-redefined",
@@ -12994,7 +12990,6 @@
               ],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
-                "-Wterminate",
                 "-Wno-literal-suffix",
                 "-Wno-noexcept-type"
               ],
@@ -13002,7 +12997,7 @@
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
                 "@@//quality/compiler_warnings:optimize_code",
-                "@@//quality/compiler_warnings:misra_warnings",
+                "@@//quality/compiler_warnings/gcc:misra_warnings",
                 "@@//quality/compiler_warnings:treat_warnings_as_errors"
               ],
               "extra_link_flags": [],
@@ -13029,11 +13024,7 @@
             "attributes": {
               "extra_compile_flags": [
                 "-Wall",
-                "-Wunused-local-typedefs",
-                "-Wreturn-local-addr",
                 "-Wswitch-bool",
-                "-Wfloat-conversion",
-                "-Wcast-function-type",
                 "-Wno-error=deprecated-declarations",
                 "-Wno-error=cpp",
                 "-Wno-builtin-macro-redefined",
@@ -13046,7 +13037,6 @@
               ],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
-                "-Wterminate",
                 "-Wno-literal-suffix",
                 "-Wno-noexcept-type"
               ],
@@ -13054,7 +13044,7 @@
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
                 "@@//quality/compiler_warnings:optimize_code",
-                "@@//quality/compiler_warnings:misra_warnings",
+                "@@//quality/compiler_warnings/gcc:misra_warnings",
                 "@@//quality/compiler_warnings:treat_warnings_as_errors"
               ],
               "extra_link_flags": [],
@@ -13081,11 +13071,7 @@
             "attributes": {
               "extra_compile_flags": [
                 "-Wall",
-                "-Wunused-local-typedefs",
-                "-Wreturn-local-addr",
                 "-Wswitch-bool",
-                "-Wfloat-conversion",
-                "-Wcast-function-type",
                 "-Wno-error=deprecated-declarations",
                 "-Wno-error=cpp",
                 "-Wno-builtin-macro-redefined",
@@ -13098,7 +13084,6 @@
               ],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
-                "-Wterminate",
                 "-Wno-literal-suffix",
                 "-Wno-noexcept-type"
               ],
@@ -13106,7 +13091,7 @@
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
                 "@@//quality/compiler_warnings:optimize_code",
-                "@@//quality/compiler_warnings:misra_warnings",
+                "@@//quality/compiler_warnings/gcc:misra_warnings",
                 "@@//quality/compiler_warnings:treat_warnings_as_errors"
               ],
               "extra_link_flags": [],
@@ -13133,11 +13118,7 @@
             "attributes": {
               "extra_compile_flags": [
                 "-Wall",
-                "-Wunused-local-typedefs",
-                "-Wreturn-local-addr",
                 "-Wswitch-bool",
-                "-Wfloat-conversion",
-                "-Wcast-function-type",
                 "-Wno-error=deprecated-declarations",
                 "-Wno-error=cpp",
                 "-Wno-builtin-macro-redefined",
@@ -13150,7 +13131,6 @@
               ],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
-                "-Wterminate",
                 "-Wno-literal-suffix",
                 "-Wno-noexcept-type"
               ],
@@ -13158,7 +13138,7 @@
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
                 "@@//quality/compiler_warnings:optimize_code",
-                "@@//quality/compiler_warnings:misra_warnings",
+                "@@//quality/compiler_warnings/gcc:misra_warnings",
                 "@@//quality/compiler_warnings:treat_warnings_as_errors"
               ],
               "extra_link_flags": [],

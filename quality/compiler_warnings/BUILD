@@ -170,6 +170,11 @@ cc_args(
         "-Wunused-macros",
         "-Wformat-security",
         "-Wshadow",  # A2-10-1,A2-10-6
+        "-Wcast-align",
+        "-Wcast-qual",
+        "-Wundef",
+        "-Wwrite-strings",  # A2-13-4
+        "-Wredundant-decls",
     ],
     visibility = ["//quality/compiler_warnings:__subpackages__"],
 )
@@ -211,28 +216,6 @@ cc_args(
         "-Wuninitialized",  # Helps to achieve MISRA C++:2023 Rule 11-6-2
         "-Wexpansion-to-defined",  # Helps to achieve MISRA C++:2023 Rule 19-1-1
         "-Wdelete-incomplete",  # Helps to achieve MISRA C++:2023 Rule 21-6-5
-    ],
-    visibility = ["//quality/compiler_warnings:__subpackages__"],
-)
-
-cc_feature(
-    name = "misra_warnings",
-    args = [":misra_warnings_args"],
-    feature_name = "score_communication_common_misra_warnings",
-    visibility = ["//visibility:public"],
-)
-
-cc_args(
-    name = "additional_warnings_args",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:compile_actions",
-    ],
-    args = [
-        "-Wcast-align",
-        "-Wcast-qual",
-        "-Wundef",
-        "-Wwrite-strings",  # A2-13-4
-        "-Wredundant-decls",
     ],
     visibility = ["//quality/compiler_warnings:__subpackages__"],
 )

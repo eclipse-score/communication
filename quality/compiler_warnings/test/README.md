@@ -12,22 +12,13 @@ layered: each level implies all levels below it.
 ```
 score_communication_minimal_warnings
   └─ score_communication_strict_warnings
-       └─ score_communication_additional_warnings
 ```
-
-`score_communication_additional_warnings` sits on top of `score_communication_strict_warnings`
-(which it implies) and adds a further set of diagnostics of its own: `-Wcast-align`,
-`-Wcast-qual`, `-Wundef`, `-Wwrite-strings`, and `-Wredundant-decls`.
 
 `score_communication_treat_warnings_as_errors` (`-Werror`) is a separate orthogonal feature
 that can be combined with any of the above.
 
 `score_communication_third_party_warnings` is mutually exclusive with all other warning
 features and is intended for external code that cannot be modified.
-
-`score_communication_strict_warnings_no_error` is a convenience variant of strict warnings
-that demotes selected diagnostics from errors to warnings — useful during incremental
-adoption of stricter flags.
 
 ## Feature Reference
 
@@ -41,7 +32,6 @@ Shared base args consumed by both GCC and Clang features.
 | `default_link_args` | `-pipe`, `-Wl,-z,relro,-z,now,-z,noexecstack,-z,notext`, `-fuse-ld=gold`, plus hardening/link flags (`-lrt`/`-latomic` are provided by the toolchain `link_libs`) |
 | `minimal_warnings_args` | `-Wall`, `-Wno-error=cpp`, `-Wno-error=deprecated-declarations`, `-Wno-unused-macros`, `-Wno-unused-parameter`, `-Wno-unused-variable`, `-Wunused-but-set-parameter` |
 | `strict_warnings_args` | `-Wextra`, `-pedantic`, `-Wconversion`, `-Wsign-conversion`, `-Wfloat-conversion`, `-Wfloat-equal`, `-Wformat=2`, `-Wshadow`, `-Wformat-security`, `-Wunused-macros`, `-Wmultichar`, `-Wpacked`, `-Winvalid-pch` |
-| `additional_warnings_args` | `-Wcast-align`, `-Wcast-qual`, `-Wundef`, `-Wwrite-strings`, `-Wredundant-decls` |
 | `treat_warnings_as_errors_args` | `-Werror` |
 
 ### GCC-specific flags ([`//quality/compiler_warnings/gcc:…`](../gcc/BUILD))
@@ -52,7 +42,6 @@ Additional flags applied only when the GCC toolchain is active.
 |---------|-------------|
 | `minimal_warnings` | `-Wno-builtin-macro-redefined`, `-Wno-maybe-uninitialized`, `-Wno-format-y2k`, `-Wno-free-nonheap-object`; C++ only: `-Wno-literal-suffix`, `-Wno-noexcept-type` |
 | `strict_warnings` | `-Warray-bounds=2`, `-Wdisabled-optimization`, `-Wimplicit-fallthrough=4`, `-Wmissing-format-attribute`, `-Wscalar-storage-order`, `-Wsuggest-attribute=format`, `-Wvector-operation-performance`, `-Wlogical-op`; C++ only: `-Wdelete-non-virtual-dtor`, `-Woverloaded-virtual`, `-Wregister`, `-Wstrict-null-sentinel`; C only: `-Wold-style-definition`, `-Wstrict-prototypes` |
-| `strict_warnings_no_error` | All of `strict_warnings` + `-Wno-error` suppressors for known GCC false positives (conversion, shadow, sign-compare, return-type, etc.) |
 | `third_party_warnings` | `-w` (suppress all warnings) |
 
 ### Clang-specific flags ([`//quality/compiler_warnings/clang:…`](../clang/BUILD))
@@ -63,7 +52,6 @@ Additional flags applied only when the LLVM/Clang toolchain is active.
 |---------|-------------|
 | `minimal_warnings` | `-Wno-error=self-assign-overloaded`, `-Wno-return-type-c-linkage`, `-Wno-unused-command-line-argument`, `-Wno-deprecated-non-prototype` |
 | `strict_warnings` | `-Warray-bounds`, `-Wimplicit-fallthrough`, `-Wno-error=shadow-uncaptured-local` (demoted — see [score_baselibs#304](https://github.com/eclipse-score/baselibs/issues/304)) |
-| `strict_warnings_no_error` | All of `strict_warnings` + `-Wno-error` suppressors for known Clang false positives (conversion, shadow, sign-compare, return-type, etc.) |
 | `third_party_warnings` | (no extra flags beyond mutual-exclusion) |
 
 ## Using Warning Features in BUILD Files
