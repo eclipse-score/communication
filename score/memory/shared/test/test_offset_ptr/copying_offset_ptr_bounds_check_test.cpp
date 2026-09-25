@@ -13,8 +13,7 @@
 #include "score/memory/shared/fake/my_bounded_memory_resource.h"
 #include "score/memory/shared/memory_resource_registry.h"
 #include "score/memory/shared/offset_ptr.h"
-
-#include "score/memory/shared/test_offset_ptr/bounds_check_memory_pool.h"
+#include "score/memory/shared/test/bounds_check_memory_pool.h"
 
 #include <score/assert_support.hpp>
 

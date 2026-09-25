@@ -259,10 +259,10 @@ cc_library(
     srcs = ["memory_region_bounds.cpp"],
     hdrs = ["memory_region_bounds.h"],
     features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    deps = [
+    implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
+    tags = ["FFI"],
 )
 
 cc_library(
@@ -328,6 +328,23 @@ cc_library(
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/quality/compiler_warnings",
+    ],
+)
+
+cc_library(
+    name = "offset_ref",
+    srcs = ["offset_ref.cpp"],
+    hdrs = ["offset_ref.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":memory_region_bounds",
+        ":offset_ptr",
+        ":pointer_arithmetic_util",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 

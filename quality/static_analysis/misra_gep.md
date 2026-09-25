@@ -13,7 +13,7 @@ Note: According to MISRA Compliance:2020 document, every guideline within "The G
 | Rule | gcc | clang | clang-tidy | CodeQL |
 | ----- | -------- | ---- | ---- | ---- |
 | RULE-0-0-1 | | `-Wunreachable-code` <br/> `-Wunreachable-code-return` | | `UnreachableStatement.ql` |
-| RULE-0-0-2 | `-Wtype-limits` | `-Wtautological-unsigned-zero-compare` <br/> `-Wtautological-type-limit-compare` | `misc-redundant-expression` | `InvariantCondition.ql` |
+| RULE-0-0-2 | `-Wtype-limits` | `-Wtype-limits` | `misc-redundant-expression` | `InvariantCondition.ql` |
 | RULE-0-1-1 | | `-Wunused-variable` | `clang-analyzer-deadcode.DeadStores` | `UnnecessaryWriteToLocalObject.ql` |
 | RULE-0-1-2 | | | `bugprone-unused-return-value` | `UnusedReturnValueMisraCpp.ql` |
 | RULE-0-2-1 | `-Wunused-variable` | `-Wunused-variable` | `clang-diagnostic-unused-const-variable` <br/> `clang-diagnostic-unused-template` <br/> `clang-diagnostic-unused-variable` | `UnusedLimitedVisibilityVariable.ql` |
@@ -46,7 +46,7 @@ Note: According to MISRA Compliance:2020 document, every guideline within "The G
 | RULE-6-2-2 | | | | `IncompatibleObjectDeclarationsCpp.ql`<br/> `IncompatibleFunctionDeclarationsCpp.ql` |
 | RULE-6-2-3 | | | | `DuplicateInlineFunctionDefinitions.ql`<br/> `TemplateSpecializationWrongLocation.ql`<br/> `DuplicateTypeDefinitions.ql` |
 | RULE-6-2-4 | | | `misc-definitions-in-headers` | `ViolationsOfOneDefinitionRuleMisra.ql` |
-| RULE-6-4-1 | `-Wshadow` | `-Wshadow-all` | | `VariableDeclaredInInnerScopeHidesOuterScope.ql` |
+| RULE-6-4-1 | `-Wshadow` | `-Wshadow` | | `VariableDeclaredInInnerScopeHidesOuterScope.ql` |
 | RULE-6-4-2 | | | | `InheritedNonOverridableMemberFunction.ql`<br/> `InheritedOverridableMemberFunction.ql`<br/> `DefinitionShallBeConsideredForUnqualifiedLookup.ql` |
 | RULE-6-4-3 | | | | `NameShallBeReferredUsingAQualifiedIdOrThis.ql`<br/> `NameShallBeReferredUsingAQualifiedIdOrThisAudit.ql` |
 | RULE-6-5-1 | | | `misc-use-internal-linkage` | `ExternalLinkageNotDeclaredInHeaderFileMisra.ql` |
@@ -61,13 +61,13 @@ Note: According to MISRA Compliance:2020 document, every guideline within "The G
 | RULE-6-9-2 | | | `google-runtime-int` | `AvoidStandardIntegerTypeNames.ql` |
 | RULE-7-0-1 | `-Wswitch-bool` | `-Wswitch-bool` | | `NoConversionFromBool.ql` |
 | RULE-7-0-2 | | | `modernize-use-bool-literals` <br/> `readability-implicit-bool-conversion` | `NoImplicitBoolConversion.ql` |
-| RULE-7-0-3 | | `-Wconstant-conversion` <br/> `-Wimplicit-int-conversion` | `bugprone-narrowing-conversions` <br/> `readability-implicit-bool-conversion` | `NoCharacterNumericalValue.ql` |
+| RULE-7-0-3 | | `-Wconversion` <br/> `-Wconstant-conversion` <br/> `-Wimplicit-int-conversion` | `bugprone-narrowing-conversions` <br/> `readability-implicit-bool-conversion` | `NoCharacterNumericalValue.ql` |
 | RULE-7-0-4 | | `-Wshift-sign-overflow` | `hicpp-signed-bitwise` | `InappropriateBitwiseOrShiftOperands.ql` |
 | RULE-7-0-5 | `-Wsign-compare` <br/> `-Wconversion` | `-Wsign-compare` | | `NoSignednessChangeFromPromotion.ql` |
-| RULE-7-0-6 | `-Wconversion` <br/> `-Wfloat-conversion` | `-Wc++11-narrowing` <br/> `-Wimplicit-int-conversion` <br/> `-Wsign-conversion` | `bugprone-narrowing-conversions` | `NumericAssignmentTypeMismatch.ql` |
+| RULE-7-0-6 | `-Wconversion` <br/> `-Wfloat-conversion` | `-Wconversion` <br/> `-Wc++11-narrowing` <br/> `-Wimplicit-int-conversion` <br/> `-Wsign-conversion` | `bugprone-narrowing-conversions` | `NumericAssignmentTypeMismatch.ql` |
 | RULE-7-11-1 | | `-Wzero-as-null-pointer-constant` | | `NullptrNotTheOnlyFormOfTheNullPointerConstant.ql` |
 | RULE-7-11-2 | | | `cppcoreguidelines-pro-bounds-array-to-pointer-decay` | `ArrayPassedAsFunctionArgumentDecayToAPointer.ql` |
-| RULE-7-11-3 | `-Waddress` | `-Wtautological-pointer-compare` | | `FunctionPointerConversionContext.ql` |
+| RULE-7-11-3 | `-Waddress` | `-Waddress` <br/> `-Wtautological-pointer-compare` | | `FunctionPointerConversionContext.ql` |
 | RULE-8-0-1 | `-Wparentheses` | `-Wparentheses` | | `MissingPrecedenceClarifyingParenthesis.ql`<br/> `MissingSizeofOperatorParenthesis.ql` |
 | RULE-8-1-1 | | | | `NonTransientLambdaImplicitlyCapturesThis.ql` |
 | RULE-8-1-2 | | | | `ImplicitCapturesDisallowedInNonTransientLambda.ql` |
@@ -91,9 +91,9 @@ Note: According to MISRA Compliance:2020 document, every guideline within "The G
 | RULE-8-18-1 | | | | `ObjectAssignedToAnOverlappingObjectMisraCpp.ql`<br/> `ObjectCopiedToAnOverlappingObjectMisraCpp.ql` |
 | RULE-8-18-2 | `-Wparentheses` | `-Wparentheses` | | `ResultOfAnAssignmentOperatorShouldNotBeUsed.ql` |
 | RULE-8-19-1 | | `-Wcomma` | | `CommaOperatorShouldNotBeUsed.ql` |
-| RULE-8-20-1 | | `-Wconstant-conversion` | | `UnsignedOperationWithConstantOperandsWraps.ql` |
+| RULE-8-20-1 | | `-Wconversion` <br/> `-Wconstant-conversion` | | `UnsignedOperationWithConstantOperandsWraps.ql` |
 | RULE-9-2-1 | | `-Wunused-value` | `bugprone-unused-raii` | `NoStandaloneTypeCastExpression.ql` |
-| RULE-9-3-1 | `-Wdangling-else` <br/> `-Wmisleading-indentation` | `-Wdangling-else` <br/> `-Wmisleading-indentation` <br/> `-Wempty-body` | `readability-braces-around-statements` | `SwitchBodyCompoundCondition.ql`<br/> `LoopBodyCompoundCondition.ql` |
+| RULE-9-3-1 | `-Wparentheses` <br/> `-Wdangling-else` <br/> `-Wmisleading-indentation` | `-Wparentheses` <br/> `-Wdangling-else` <br/> `-Wmisleading-indentation` <br/> `-Wempty-body` | `readability-braces-around-statements` | `SwitchBodyCompoundCondition.ql`<br/> `LoopBodyCompoundCondition.ql` |
 | RULE-9-4-1 | | | | `IfElseIfEndCondition.ql` |
 | RULE-9-4-2 | | `-Wimplicit-fallthrough` <br/> `-Wswitch` <br/> `-Wswitch-default` <br/> `-Wswitch-enum` | `hicpp-multiway-paths-covered` | `AppropriateStructureOfSwitchStatement.ql` |
 | RULE-9-5-1 | | | `bugprone-too-small-loop-variable` | `LegacyForStatementsShouldBeSimple.ql` |

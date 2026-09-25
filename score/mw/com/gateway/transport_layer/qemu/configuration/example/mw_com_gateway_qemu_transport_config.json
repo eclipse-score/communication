@@ -1,0 +1,11 @@
+{
+  "hypervisor-socket": {
+    "remote-ip": "10.0.2.2",
+    "local-port": 45001,
+    "remote-port": 45002,
+    "request-timeout-ms": 5000
+  },
+  "ivshmem": {
+    "preferred-bar-num": 2
+  }
+}

@@ -10,14 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-///
-/// @file
-///
-/// @brief Unit tests for OffsetPtr arithmetic. Does not apply for OffsetPtr<void> or
-///        an OffsetPtr initialised with a nullptr.
-///
 #include "score/memory/shared/offset_ptr.h"
-#include "score/memory/shared/test_offset_ptr/offset_ptr_test_resources.h"
+#include "score/memory/shared/test/offset_ptr_test_resources.h"
 
 #include <score/assert.hpp>
 #include <score/assert_support.hpp>

@@ -32,6 +32,7 @@
 
 #include <cstdlib>
 #include <exception>
+#include <limits>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -1275,9 +1276,11 @@ auto ParseGlobalProperties(const score::json::Object& top_level_object) -> Globa
         const auto& application_id_it = process_properties_map.find(kApplicationIdKey);
         if (application_id_it != process_properties_map.cend())
         {
-            const auto application_id_casted = application_id_it->second.As<std::uint32_t>();
-            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(application_id_casted.has_value(),
-                                                              "Configuration corrupted, check with json schema");
+            const auto application_id_casted = application_id_it->second.As<GlobalConfiguration::ApplicationId>();
+            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+                application_id_casted.has_value() &&
+                    (application_id_casted.value() != std::numeric_limits<GlobalConfiguration::ApplicationId>::max()),
+                "Configuration corrupted, check with json schema");
             const auto app_id = application_id_casted.value();
             global_configuration.SetApplicationId(app_id);
         }

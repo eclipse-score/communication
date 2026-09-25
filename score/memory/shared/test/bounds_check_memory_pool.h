@@ -15,7 +15,7 @@
 
 #include "score/memory/shared/offset_ptr.h"
 #include "score/memory/shared/pointer_arithmetic_util.h"
-#include "score/memory/shared/test_offset_ptr/offset_ptr_test_resources.h"
+#include "score/memory/shared/test/offset_ptr_test_resources.h"
 
 #include <score/assert.hpp>
 

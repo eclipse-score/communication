@@ -29,7 +29,9 @@ void SignalHandler(int /*signum*/)
 }
 }  // namespace
 
+// [hello-world-proxy-alias-start]
 using HelloWorldProxy = score::mw::com::AsProxy<score::mw::com::tutorial::HelloWorldInterface>;
+// [hello-world-proxy-alias-end]
 
 int main()
 {
@@ -43,7 +45,9 @@ int main()
     while (g_running.load(std::memory_order_relaxed))
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        // [hello-world-find-service-start]
         auto service_handle_container_result = HelloWorldProxy::FindService(instance_specifier.value());
+        // [hello-world-find-service-end]
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_handle_container_result.has_value(),
                                                     "HelloWorldProxy::FindService failed!");
         if (service_handle_container_result.value().empty())
@@ -58,15 +62,21 @@ int main()
         }
     }
 
+    // [hello-world-proxy-create-start]
     auto proxy_result = HelloWorldProxy::Create(service_handle.value());
+    // [hello-world-proxy-create-end]
     if (!proxy_result)
     {
         std::cerr << "Failed to create HelloWorldProxy: " << proxy_result.error() << std::endl;
         exit(1);
     }
 
+    // [hello-world-proxy-instance-start]
     auto hello_world_proxy = std::move(proxy_result).value();
+    // [hello-world-proxy-instance-end]
+    // [hello-world-subscribe-start]
     const auto subscribe_result = hello_world_proxy.message.Subscribe(1);
+    // [hello-world-subscribe-end]
     if (!subscribe_result)
     {
         std::cerr << "Failed to subscribe to HelloWorldService instance 'message' event: " << subscribe_result.error()
@@ -78,6 +88,7 @@ int main()
     while (g_running.load(std::memory_order_relaxed))
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        // [hello-world-get-new-samples-start]
         auto get_new_samples_result = hello_world_proxy.message.GetNewSamples(
             [&receive_counter](auto&& sample) {
                 const auto* buf = sample.Get()->data();
@@ -85,6 +96,7 @@ int main()
                 ++receive_counter;
             },
             1);
+        // [hello-world-get-new-samples-end]
         if (!get_new_samples_result)
         {
             std::cerr << "Failed to get new samples: " << get_new_samples_result.error() << std::endl;

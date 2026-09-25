@@ -140,7 +140,8 @@ This is our simple service interface, which is declared in `hello_world_service.
 
 .. literalinclude:: hello_world_service.h
    :language: cpp
-   :lines: 20-28
+   :start-after: [hello-world-interface-start]
+   :end-before: [hello-world-interface-end]
    :caption: hello_world_service.h
 
 
@@ -185,7 +186,8 @@ The 1st important step happens in line 30:
 
 .. literalinclude:: provider.cpp
    :language: cpp
-   :lines: 33-33
+   :start-after: [hello-world-skeleton-alias-start]
+   :end-before: [hello-world-skeleton-alias-end]
    :caption: provider.cpp
 
 
@@ -211,7 +213,8 @@ Then in line 40 we create an instance of the skeleton class with the `Create` (n
 
 .. literalinclude:: provider.cpp
    :language: cpp
-   :lines: 43-43
+   :start-after: [hello-world-skeleton-create-start]
+   :end-before: [hello-world-skeleton-create-end]
    :caption: provider.cpp
 
 
@@ -225,7 +228,8 @@ its value in case of success), in line 43 we move the skeleton instance out of t
 
 .. literalinclude:: provider.cpp
    :language: cpp
-   :lines: 46-46
+   :start-after: [hello-world-skeleton-instance-start]
+   :end-before: [hello-world-skeleton-instance-end]
    :caption: provider.cpp
 
 
@@ -239,7 +243,8 @@ After the call to `OfferService` in line 45 succeeds:
 
 .. literalinclude:: provider.cpp
    :language: cpp
-   :lines: 48-48
+   :start-after: [hello-world-offer-service-start]
+   :end-before: [hello-world-offer-service-end]
    :caption: provider.cpp
 
 
@@ -251,7 +256,8 @@ Step 1 in line 55 allocates memory for a new event-sample for the "message" even
 
 .. literalinclude:: provider.cpp
    :language: cpp
-   :lines: 58-58
+   :start-after: [hello-world-allocate-start]
+   :end-before: [hello-world-allocate-end]
    :caption: provider.cpp
 
 Step 2 in line 74 then signals to score::mw::com, that updating/writing to the memory is done and this new sample
@@ -259,7 +265,8 @@ can be made visible to consumers:
 
 .. literalinclude:: provider.cpp
    :language: cpp
-   :lines: 77-77
+   :start-after: [hello-world-send-start]
+   :end-before: [hello-world-send-end]
    :caption: provider.cpp
 
 
@@ -282,7 +289,8 @@ the `HelloWorldInterface` via the `AsProxy` template, which we also introduce an
 
 .. literalinclude:: consumer.cpp
    :language: cpp
-   :lines: 32-32
+   :start-after: [hello-world-proxy-alias-start]
+   :end-before: [hello-world-proxy-alias-end]
    :caption: consumer.cpp
 
 
@@ -291,7 +299,8 @@ In the while-loop starting in line 40, the consumer tries to find the service in
 
 .. literalinclude:: consumer.cpp
    :language: cpp
-   :lines: 46-46
+   :start-after: [hello-world-find-service-start]
+   :end-before: [hello-world-find-service-end]
    :caption: consumer.cpp
 
 
@@ -314,7 +323,8 @@ instance for the service instance via the `Create` method of the `HelloWorldProx
 
 .. literalinclude:: consumer.cpp
    :language: cpp
-   :lines: 61-61
+   :start-after: [hello-world-proxy-create-start]
+   :end-before: [hello-world-proxy-create-end]
    :caption: consumer.cpp
 
 
@@ -324,7 +334,8 @@ Symmetrically to the provider side, we move the proxy instance out of the result
 
 .. literalinclude:: consumer.cpp
    :language: cpp
-   :lines: 68-68
+   :start-after: [hello-world-proxy-instance-start]
+   :end-before: [hello-world-proxy-instance-end]
    :caption: consumer.cpp
 
 
@@ -335,7 +346,8 @@ line 66:
 
 .. literalinclude:: consumer.cpp
    :language: cpp
-   :lines: 69-69
+   :start-after: [hello-world-subscribe-start]
+   :end-before: [hello-world-subscribe-end]
    :caption: consumer.cpp
 
 
@@ -352,7 +364,8 @@ The API to do this, is the `ProxyEvent::GetNewSamples` API. You see the call in 
 
 .. literalinclude:: consumer.cpp
    :language: cpp
-   :lines: 81-87
+   :start-after: [hello-world-get-new-samples-start]
+   :end-before: [hello-world-get-new-samples-end]
    :caption: consumer.cpp
 
 

@@ -1,4 +1,4 @@
-# Offset Pointer
+# Offset Pointer and Offset Reference
 
 ## Overview
 
@@ -20,7 +20,8 @@ This offset is the same in all processes, thus, a valid pointer can be calculate
 `OffsetPtr` and the offset that it stores.
 
 Validity of the `OffsetPtr` depends on the validity of the pointed to object.
-This means, that the absolute pointer handed to the constructor of `OffsetPtr<T>` must point to a valid object of type `T` (or derived).
+This means, that the absolute pointer handed to the constructor of `OffsetPtr<T>` must point to a valid object of type
+`T` (or derived).
 Users must make sure that the `OffsetPtr` is valid before dereferencing it.
 E.g. make sure that the `OffsetPtr` is not dereferenced after the object is destructed or moved-from.
 
@@ -28,7 +29,19 @@ The available public member methods are taken over from the `boost::interprocess
 In order to reuse this pointer also with stl-based containers it shall implement the requirements stated by
 [std::pointer_traits](https://en.cppreference.com/w/cpp/memory/pointer_traits).
 
-### Bounds Checking OffsetPtr
+This design document mainly describes the `OffsetPtr`. But in addition to the `OffsetPtr`, we also have an "offset
+reference" type called `OffsetRef`. It is similar to a C++ reference in the sense, that it:
+
+- always references a valid T, because it can only be constructed from a T& (still the user needs to guarantee proper
+  lifetime).
+- i.e. it never can be null.
+- it can not be copied nor moved or rebound to reference another object.
+
+Like an `OffsetPtr`, an `OffsetRef` can be used in shared memory and can be dereferenced to get a reference to the
+pointed-to object. It borrows the bounds-checking functionality from the `OffsetPtr`, which hinders an `OffsetRef`
+residing within a ManagedMemoryResource to reference an object outside.
+
+## Bounds Checking OffsetPtr
 
 For safety reasons, it is important that when accessing the memory pointed to by an `OffsetPtr` (either by dereferencing
 the `OffsetPtr` or getting a raw pointer from the `OffsetPtr` and dereferencing that), the *entire* pointed-to object
@@ -57,7 +70,7 @@ It does this by implementing the function `ManagedMemoryResource::IsOffsetPtrBou
 [Bounds checking](./generated/svg/bounds_checking.svg)
 contains a minimalistic UML diagram of the bounds checking.
 
-#### Bounds Checking Performance - Memory Bounds Lookup
+### Bounds Checking Performance - Memory Bounds Lookup
 
 Our simple integration tests and feedback from customers revealed, that the bounds checking functionality will be hit
 very frequently!
@@ -79,7 +92,7 @@ is the following:
 So as we have lock-free access to the bounds for our readers, the footprint/runtime during the (high frequency
 bounds-checking is very low, which also some benchmarks revealed (see [here](../../shared/test/performance).
 
-##### Lock-Free bounds-check algorithm
+### Lock-Free bounds-check algorithm
 
 The known bounds (aka known regions) are stored in a map (`std::map<const void*, const void*>`) containing the start
 address of the region as key and its end address as value.
@@ -102,7 +115,7 @@ We also check that the entire `OffsetPtr` fits within the shared memory region.
 ### Bounds checking - OffsetPtr on stack
 
 If the `OffsetPtr` is copied out of the memory region in which it was originally created, we still need to perform
-bounds checks before dereferencing / getting a raw pointrer from the `OffsetPtr`.
+bounds checks before dereferencing / getting a raw pointer from the `OffsetPtr`.
 Therefore, when copying an `OffsetPtr` from shared memory to the stack, we get the `MemoryResourceIdentifier` of the
 memory resource from the `MemoryResourceRegistry` and store it within the `OffsetPtr`.
 When dereferencing / getting a raw pointer from an `OffsetPtr` on the stack, we can get the memory bounds of the
@@ -113,6 +126,8 @@ When the `OffsetPtr` is copied back into shared memory, the `MemoryResourceIdent
 be corrupted by another process, so we have to again use `MemoryResourceRegistry::GetBoundsFromAddress` to look up
 memory bounds for bounds checking.
 If the `OffsetPtr` is copied back to the stack, then the `MemoryResourceIdentifier` will be looked up again.
+
+Note, that all the functionality described in this section does not apply to an `OffsetRef` as it isn't copyable/moveable.
 
 ### Dereferencing / Getting OffsetPtr\<void\>
 

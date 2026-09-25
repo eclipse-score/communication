@@ -229,7 +229,7 @@ cc_library(
     implementation_deps = ["@score_baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = [
-        "//score/mw/com/impl/configuration:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":quality_type",
