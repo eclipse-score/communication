@@ -12,12 +12,7 @@ layered: each level implies all levels below it.
 ```
 score_communication_minimal_warnings
   └─ score_communication_strict_warnings
-       └─ score_communication_additional_warnings
 ```
-
-`score_communication_additional_warnings` sits on top of `score_communication_strict_warnings`
-(which it implies) and adds a further set of diagnostics of its own: `-Wcast-align`,
-`-Wcast-qual`, `-Wundef`, `-Wwrite-strings`, and `-Wredundant-decls`.
 
 `score_communication_treat_warnings_as_errors` (`-Werror`) is a separate orthogonal feature
 that can be combined with any of the above.
@@ -37,7 +32,6 @@ Shared base args consumed by both GCC and Clang features.
 | `default_link_args` | `-pipe`, `-Wl,-z,relro,-z,now,-z,noexecstack,-z,notext`, `-fuse-ld=gold`, plus hardening/link flags (`-lrt`/`-latomic` are provided by the toolchain `link_libs`) |
 | `minimal_warnings_args` | `-Wall`, `-Wno-error=cpp`, `-Wno-error=deprecated-declarations`, `-Wno-unused-macros`, `-Wno-unused-parameter`, `-Wno-unused-variable`, `-Wunused-but-set-parameter` |
 | `strict_warnings_args` | `-Wextra`, `-pedantic`, `-Wconversion`, `-Wsign-conversion`, `-Wfloat-conversion`, `-Wfloat-equal`, `-Wformat=2`, `-Wshadow`, `-Wformat-security`, `-Wunused-macros`, `-Wmultichar`, `-Wpacked`, `-Winvalid-pch` |
-| `additional_warnings_args` | `-Wcast-align`, `-Wcast-qual`, `-Wundef`, `-Wwrite-strings`, `-Wredundant-decls` |
 | `treat_warnings_as_errors_args` | `-Werror` |
 
 ### GCC-specific flags ([`//quality/compiler_warnings/gcc:…`](../gcc/BUILD))

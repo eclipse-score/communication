@@ -129,16 +129,6 @@ cc_feature(
     visibility = ["//visibility:public"],
 )
 
-cc_feature(
-    name = "additional_warnings",
-    args = [
-        "//quality/compiler_warnings:additional_warnings_args",
-    ],
-    feature_name = "score_communication_additional_warnings",
-    implies = [":strict_warnings"],
-    visibility = ["//visibility:public"],
-)
-
 cc_args(
     name = "third_party_warnings_args",
     actions = [
@@ -154,7 +144,6 @@ cc_feature(
     ],
     feature_name = "score_communication_third_party_warnings",
     mutually_exclusive = [
-        ":additional_warnings",
         "//quality/compiler_warnings:treat_warnings_as_errors",
         ":minimal_warnings",
         ":strict_warnings",
