@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/generic_skeleton_event.h"
 #include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
@@ -19,13 +20,21 @@
 #include <functional>
 #include <optional>
 
+namespace score::mw::com::impl
+{
 namespace
 {
 constexpr auto kEmptyInitializeSampleCallback = std::nullopt;
+
+GenericSkeletonEventBinding& GetGenericEventBinding(SkeletonEventBinding* binding)
+{
+    auto* generic_binding = dynamic_cast<GenericSkeletonEventBinding*>(binding);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(generic_binding != nullptr,
+                                                "Binding is not a GenericSkeletonEventBinding!");
+    return *generic_binding;
 }
 
-namespace score::mw::com::impl
-{
+}  // namespace
 
 GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
                                            const std::string_view event_name,
@@ -100,8 +109,7 @@ Result<void> GenericSkeletonEvent::Notify() noexcept
         return MakeUnexpected(ComErrc::kNotOffered);
     }
 
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ != nullptr, "Binding is not initialized!");
-    return binding_->Notify();
+    return GetGenericEventBinding(binding_.get()).Notify();
 }
 
 DataTypeMetaInfo GenericSkeletonEvent::GetSizeInfo() const noexcept
@@ -114,13 +122,12 @@ DataTypeMetaInfo GenericSkeletonEvent::GetSizeInfo() const noexcept
 Result<void> GenericSkeletonEvent::SetReceiveHandlerRegistrationChangedHandler(
     ReceiveHandlerRegistrationChangedCallback callback) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ != nullptr, "Binding is not initialized!");
-    return binding_->SetReceiveHandlerRegistrationChangedHandler(std::move(callback));
+    return GetGenericEventBinding(binding_.get()).SetReceiveHandlerRegistrationChangedHandler(std::move(callback));
 }
 
 Result<void> GenericSkeletonEvent::UnsetReceiveHandlerRegistrationChangedHandler() noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ != nullptr, "Binding is not initialized!");
-    return binding_->UnsetReceiveHandlerRegistrationChangedHandler();
+    return GetGenericEventBinding(binding_.get()).UnsetReceiveHandlerRegistrationChangedHandler();
 }
+
 }  // namespace score::mw::com::impl

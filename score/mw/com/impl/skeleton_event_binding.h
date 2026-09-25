@@ -99,20 +99,6 @@ class SkeletonEventBinding
 
     /// \todo To be removed in Ticket-134850
     virtual void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept = 0;
-
-    /// \brief Trigger notification of potential registered receive handlers.
-    /// \details This is a specific API for the gateway use-case!
-    /// \todo With SWP-281633 this will be moved to a separate interface.
-    virtual Result<void> Notify() noexcept = 0;
-
-    /// \brief Sets a callback that will be called when the first ReceiveHandler of a GenericEvent
-    /// will get registered or the last ReceiveHandler will be removed.
-    /// \details This is a specific API for the gateway use-case!
-    /// \todo With SWP-281633 this will be moved to a separate interface.
-    virtual Result<void> SetReceiveHandlerRegistrationChangedHandler(
-        ReceiveHandlerRegistrationChangedCallback callback) noexcept = 0;
-
-    virtual Result<void> UnsetReceiveHandlerRegistrationChangedHandler() noexcept = 0;
 };
 
 }  // namespace score::mw::com::impl

@@ -24,6 +24,7 @@
 #include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
+#include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
@@ -55,7 +56,7 @@ static constexpr std::uint8_t kMaxConcurrentFieldGetterSamplePtrs{1U};
 ///
 /// All operations on this class are _not_ thread-safe, in a manner that they shall not be invoked in parallel by
 /// different threads.
-class SkeletonEvent final : public SkeletonEventBinding
+class SkeletonEvent final : public GenericSkeletonEventBinding
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
     // Design decision: The "*Attorney" class is a helper, which sets the internal state of this class accessing
@@ -66,9 +67,9 @@ class SkeletonEvent final : public SkeletonEventBinding
     using ReceiveHandlerRegistrationChangedCallback = lola::IMessagePassingService::HandlerStatusChangeCallback;
 
   public:
-    using SkeletonEventBinding::SendTraceCallback;
-    using SkeletonEventBinding::SubscribeTraceCallback;
-    using SkeletonEventBinding::UnsubscribeTraceCallback;
+    using GenericSkeletonEventBinding::SendTraceCallback;
+    using GenericSkeletonEventBinding::SubscribeTraceCallback;
+    using GenericSkeletonEventBinding::UnsubscribeTraceCallback;
 
     SkeletonEvent(Skeleton& parent,
                   const ElementFqId element_fq_id,
