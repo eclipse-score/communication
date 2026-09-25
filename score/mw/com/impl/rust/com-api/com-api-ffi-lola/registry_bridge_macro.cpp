@@ -34,6 +34,7 @@
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
 #include "score/mw/log/logging.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <limits>
 #include <string_view>
@@ -556,7 +557,7 @@ const ::score::mw::com::impl::HandleType* mw_com_impl_handle_container_get_handl
 /// \param argc Number of command-line arguments
 void mw_com_impl_initialize(const char* argv[], std::int32_t argc)
 {
-    ::score::mw::com::runtime::InitializeRuntime(argc, argv);
+    ::score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
 }
 
 /// \brief Get the size of a SamplePtr

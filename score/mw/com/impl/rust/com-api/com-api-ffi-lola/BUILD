@@ -27,6 +27,7 @@ cc_library(
         "//score/mw/com:types",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 
