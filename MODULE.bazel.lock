@@ -12919,7 +12919,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "+vgTABLj64cvjmKGlkw+4AJ9S7iLJFRI20t6JpYfRzM=",
-        "usagesDigest": "6+zirWZYSyQ0p1a1iskGVeaWxcxZbIYGIZ1R3A+piys=",
+        "usagesDigest": "jnKacWO5fdPWoP6ByEgdS37+bMF1Hdx6WEdy8n+dlok=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -12981,8 +12981,6 @@
                 "-Wno-error=deprecated-declarations",
                 "-Wno-error=cpp",
                 "-Wno-builtin-macro-redefined",
-                "-Wno-format-y2k",
-                "-Wno-free-nonheap-object",
                 "-Wno-maybe-uninitialized",
                 "-Wunused-parameter",
                 "-Wunused-but-set-parameter"
@@ -13027,8 +13025,6 @@
                 "-Wno-error=deprecated-declarations",
                 "-Wno-error=cpp",
                 "-Wno-builtin-macro-redefined",
-                "-Wno-format-y2k",
-                "-Wno-free-nonheap-object",
                 "-Wno-maybe-uninitialized",
                 "-Wunused-parameter",
                 "-Wunused-but-set-parameter"
@@ -13073,8 +13069,6 @@
                 "-Wno-error=deprecated-declarations",
                 "-Wno-error=cpp",
                 "-Wno-builtin-macro-redefined",
-                "-Wno-format-y2k",
-                "-Wno-free-nonheap-object",
                 "-Wno-maybe-uninitialized",
                 "-Wunused-parameter",
                 "-Wunused-but-set-parameter"
@@ -13119,8 +13113,6 @@
                 "-Wno-error=deprecated-declarations",
                 "-Wno-error=cpp",
                 "-Wno-builtin-macro-redefined",
-                "-Wno-format-y2k",
-                "-Wno-free-nonheap-object",
                 "-Wno-maybe-uninitialized",
                 "-Wunused-parameter",
                 "-Wunused-but-set-parameter"

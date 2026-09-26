@@ -40,7 +40,7 @@ Additional flags applied only when the GCC toolchain is active.
 
 | Feature | Extra flags |
 |---------|-------------|
-| `minimal_warnings` | `-Wno-builtin-macro-redefined`, `-Wno-maybe-uninitialized`, `-Wno-format-y2k`, `-Wno-free-nonheap-object`; C++ only: `-Wno-literal-suffix`, `-Wno-noexcept-type` |
+| `minimal_warnings` | `-Wno-builtin-macro-redefined`, `-Wno-maybe-uninitialized`; C++ only: `-Wno-literal-suffix`, `-Wno-noexcept-type` |
 | `strict_warnings` | `-Warray-bounds=2`, `-Wdisabled-optimization`, `-Wimplicit-fallthrough=4`, `-Wmissing-format-attribute`, `-Wscalar-storage-order`, `-Wsuggest-attribute=format`, `-Wvector-operation-performance`, `-Wlogical-op`; C++ only: `-Wdelete-non-virtual-dtor`, `-Woverloaded-virtual`, `-Wregister`, `-Wstrict-null-sentinel`; C only: `-Wold-style-definition`, `-Wstrict-prototypes` |
 | `third_party_warnings` | `-w` (suppress all warnings) |
 
