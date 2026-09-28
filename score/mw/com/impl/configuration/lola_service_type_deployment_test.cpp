@@ -46,6 +46,23 @@ TEST_F(LolaServiceTypeDeploymentFixture, CanCreateFromSerializedObject)
     ExpectLolaServiceTypeDeploymentObjectsEqual(reconstructed_unit, unit);
 }
 
+TEST(LolaServiceTypeDeploymentTest, SerializesAndDeserializesE2EEventDeployment)
+{
+    // Given a LolaServiceTypeDeployment with a POC E2E event deployment
+    const LolaServiceTypeDeployment unit{kLolaServiceId,
+                                         {{kDummyEventName, kDummyLolaEventId}},
+                                         {},
+                                         {},
+                                         {{kDummyEventName, E2EEventTypeDeployment{E2EProfile::kP4, 0x3AU, 2U}}}};
+
+    // When serializing and reconstructing it
+    const LolaServiceTypeDeployment reconstructed_unit{unit.Serialize()};
+
+    // Then the E2E event deployment survives the round trip unchanged
+    ASSERT_EQ(reconstructed_unit.e2e_events_.size(), 1U);
+    EXPECT_EQ(reconstructed_unit.e2e_events_.at(kDummyEventName), (E2EEventTypeDeployment{E2EProfile::kP4, 0x3AU, 2U}));
+}
+
 using LolaServiceTypeDeploymentGetServiceElementFixture = ConfigurationStructsFixture;
 TEST_F(LolaServiceTypeDeploymentGetServiceElementFixture, ReturnsEventIdThatExistsInDeployment)
 {
