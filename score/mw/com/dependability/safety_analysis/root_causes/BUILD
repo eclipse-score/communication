@@ -14,6 +14,7 @@
 filegroup(
     name = "general",
     srcs = [
+        "function_called_from_multiple_threads_fta.puml",
         "in_memory_configuration_wrong_fta.puml",
         "misused_apis_fta.puml",
     ],
