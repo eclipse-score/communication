@@ -11,9 +11,6 @@ Warning flags are grouped into named `cc_feature` targets that consumers apply v
 `score_communication_treat_warnings_as_errors` (`-Werror`) is a separate orthogonal feature
 that can be combined with any of the above.
 
-`score_communication_third_party_warnings` is mutually exclusive with all other warning
-features and is intended for external code that cannot be modified.
-
 ## Feature Reference
 
 ### Common flags ([`//quality/compiler_warnings:…`](../BUILD))
@@ -34,7 +31,6 @@ Additional flags applied only when the GCC toolchain is active.
 | Feature | Extra flags |
 |---------|-------------|
 | `minimal_warnings` | `-Wno-builtin-macro-redefined`, `-Wno-maybe-uninitialized`; C++ only: `-Wno-literal-suffix`, `-Wno-noexcept-type` |
-| `third_party_warnings` | `-w` (suppress all warnings) |
 
 ### Clang-specific flags ([`//quality/compiler_warnings/clang:…`](../clang/BUILD))
 
@@ -43,7 +39,6 @@ Additional flags applied only when the LLVM/Clang toolchain is active.
 | Feature | Extra flags |
 |---------|-------------|
 | `minimal_warnings` | `-Wno-error=self-assign-overloaded`, `-Wno-return-type-c-linkage`, `-Wno-unused-command-line-argument`, `-Wno-deprecated-non-prototype` |
-| `third_party_warnings` | (no extra flags beyond mutual-exclusion) |
 
 ## Using Warning Features in BUILD Files
 

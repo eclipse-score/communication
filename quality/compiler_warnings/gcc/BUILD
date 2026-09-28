@@ -96,29 +96,6 @@ cc_feature(
 )
 
 cc_args(
-    name = "third_party_warnings_args",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:compile_actions",
-    ],
-    args = [
-        "-w",
-    ],
-)
-
-cc_feature(
-    name = "third_party_warnings",
-    args = [
-        ":third_party_warnings_args",
-    ],
-    feature_name = "score_communication_third_party_warnings",
-    mutually_exclusive = [
-        "//quality/compiler_warnings:treat_warnings_as_errors",
-        ":minimal_warnings",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-cc_args(
     name = "misra_warnings_args",
     actions = [
         "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
