@@ -373,14 +373,14 @@ TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStdStringLvalue)
 TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStdStringRvalue)
 {
     // Given a valid shortname path as std::string for moving
-    const std::string shortname_string = "/bla/blub/service1";
+    std::string shortname_string = "/bla/blub/service1";
 
     // When creating InstanceSpecifier with std::string rvalue (moved)
     const auto result = InstanceSpecifier::Create(std::move(shortname_string));
 
     // Then should succeed and contain the correct value
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result.value().ToString(), shortname_string);
+    EXPECT_EQ(result.value().ToString(), "/bla/blub/service1");
 }
 
 // The use of a deprecated API is intended because this test is testing it.
