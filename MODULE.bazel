@@ -97,17 +97,19 @@ SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS = [
     "-Wno-noexcept-type",
 ]
 
+GCC_BASED_COMPILER_ENABLED_FEATURES = [
+    "//quality/compiler_warnings:fortify_source",
+    "//quality/compiler_warnings:optimize_code",
+    "//quality/compiler_warnings:treat_warnings_as_errors",
+    "//quality/compiler_warnings/gcc:misra_warnings",
+    "//quality/compiler_warnings/gcc:minimal_warnings",
+]
+
 score_gcc.toolchain(
     name = "score_gcc_x86_64_toolchain",
     extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
     extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
-    extra_enabled_features = [
-        "//quality/compiler_warnings:fortify_source",
-        "//quality/compiler_warnings:optimize_code",
-        "//quality/compiler_warnings:treat_warnings_as_errors",
-        "//quality/compiler_warnings/gcc:misra_warnings",
-        "//quality/compiler_warnings/gcc:minimal_warnings",
-    ],
+    extra_enabled_features = GCC_BASED_COMPILER_ENABLED_FEATURES,
     target_cpu = "x86_64",
     target_os = "linux",
     use_base_constraints_only = True,
@@ -118,13 +120,7 @@ score_gcc.toolchain(
     name = "score_gcc_aarch64_toolchain",
     extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
     extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
-    extra_enabled_features = [
-        "//quality/compiler_warnings:fortify_source",
-        "//quality/compiler_warnings:optimize_code",
-        "//quality/compiler_warnings:treat_warnings_as_errors",
-        "//quality/compiler_warnings/gcc:misra_warnings",
-        "//quality/compiler_warnings/gcc:minimal_warnings",
-    ],
+    extra_enabled_features = GCC_BASED_COMPILER_ENABLED_FEATURES,
     target_cpu = "aarch64",
     target_os = "linux",
     use_base_constraints_only = True,
@@ -135,13 +131,7 @@ score_gcc.toolchain(
     name = "score_qcc_x86_64_toolchain",
     extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
     extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
-    extra_enabled_features = [
-        "//quality/compiler_warnings:fortify_source",
-        "//quality/compiler_warnings:optimize_code",
-        "//quality/compiler_warnings:treat_warnings_as_errors",
-        "//quality/compiler_warnings/gcc:misra_warnings",
-        "//quality/compiler_warnings/gcc:minimal_warnings",
-    ],
+    extra_enabled_features = GCC_BASED_COMPILER_ENABLED_FEATURES,
     sdp_version = "8.0.4",
     target_cpu = "x86_64",
     target_os = "qnx",
@@ -152,13 +142,7 @@ score_gcc.toolchain(
     name = "score_qcc_aarch64_toolchain",
     extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
     extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
-    extra_enabled_features = [
-        "//quality/compiler_warnings:fortify_source",
-        "//quality/compiler_warnings:optimize_code",
-        "//quality/compiler_warnings:treat_warnings_as_errors",
-        "//quality/compiler_warnings/gcc:misra_warnings",
-        "//quality/compiler_warnings/gcc:minimal_warnings",
-    ],
+    extra_enabled_features = GCC_BASED_COMPILER_ENABLED_FEATURES,
     sdp_version = "8.0.4",
     target_cpu = "aarch64",
     target_os = "qnx",
