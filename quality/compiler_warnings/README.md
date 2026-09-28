@@ -11,34 +11,19 @@ Warning flags are grouped into named `cc_feature` targets that consumers apply v
 `score_communication_treat_warnings_as_errors` (`-Werror`) is a separate orthogonal feature
 that can be combined with any of the above.
 
-## Feature Reference
+## Features
 
 ### Common flags ([`//quality/compiler_warnings:…`](../BUILD))
 
 Shared base args consumed by both GCC and Clang features.
 
-| `cc_args` target | Flags |
-|-----------------|-------|
-| `default_compile_args` | `-march=nehalem`, `-fstack-protector-strong`, `-fno-omit-frame-pointer`, `-fPIC`, `-D_FORTIFY_SOURCE=2`, `-D_GLIBCXX_ASSERTIONS`, `-fstack-clash-protection`, `-fcf-protection=full`, `-fdiagnostics-color=always` |
-| `default_link_args` | `-pipe`, `-Wl,-z,relro,-z,now,-z,noexecstack,-z,notext`, `-fuse-ld=gold`, plus hardening/link flags (`-lrt`/`-latomic` are provided by the toolchain `link_libs`) |
-| `minimal_warnings_args` | `-Wall`, `-Wno-error=cpp`, `-Wno-error=deprecated-declarations`, `-Wunused-but-set-parameter` |
-| `treat_warnings_as_errors_args` | `-Werror` |
-
 ### GCC-specific flags ([`//quality/compiler_warnings/gcc:…`](../gcc/BUILD))
 
 Additional flags applied only when the GCC toolchain is active.
 
-| Feature | Extra flags |
-|---------|-------------|
-| `minimal_warnings` | `-Wno-builtin-macro-redefined`, `-Wno-maybe-uninitialized`; C++ only: `-Wno-literal-suffix`, `-Wno-noexcept-type` |
-
 ### Clang-specific flags ([`//quality/compiler_warnings/clang:…`](../clang/BUILD))
 
 Additional flags applied only when the LLVM/Clang toolchain is active.
-
-| Feature | Extra flags |
-|---------|-------------|
-| `minimal_warnings` | `-Wno-error=self-assign-overloaded`, `-Wno-return-type-c-linkage`, `-Wno-unused-command-line-argument`, `-Wno-deprecated-non-prototype` |
 
 ## Using Warning Features in BUILD Files
 
