@@ -101,8 +101,8 @@ cc_feature(
     name = "minimal_warnings",
     args = [
         ":minimal_warnings_args",
+        "//quality/compiler_warnings:minimal_warnings_args",
     ],
     feature_name = "score_communication_minimal_warnings",
-    implies = ["//quality/compiler_warnings:minimal_warnings"],
     visibility = ["//visibility:public"],
 )

@@ -86,12 +86,12 @@ cc_args(
 cc_feature(
     name = "minimal_warnings",
     args = [
+        "//quality/compiler_warnings:minimal_warnings_args",
         ":minimal_warnings_args_for_all_compile_actions",
         ":minimal_warnings_args_for_cpp_compile_actions",
         ":minimal_warnings_args_for_c_compile_actions",
     ],
     feature_name = "score_communication_minimal_warnings",
-    implies = ["//quality/compiler_warnings:minimal_warnings"],
     visibility = ["//visibility:public"],
 )
 

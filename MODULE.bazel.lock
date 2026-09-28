@@ -12919,7 +12919,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "+vgTABLj64cvjmKGlkw+4AJ9S7iLJFRI20t6JpYfRzM=",
-        "usagesDigest": "jnKacWO5fdPWoP6ByEgdS37+bMF1Hdx6WEdy8n+dlok=",
+        "usagesDigest": "NLMwqzn2RdFd4h8I/DnbmXHKA+tCcrdgYIjj1K+xuSY=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -12976,14 +12976,8 @@
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
               "extra_compile_flags": [
-                "-Wall",
                 "-Wswitch-bool",
-                "-Wno-error=deprecated-declarations",
-                "-Wno-error=cpp",
-                "-Wno-builtin-macro-redefined",
-                "-Wno-maybe-uninitialized",
-                "-Wunused-parameter",
-                "-Wunused-but-set-parameter"
+                "-Wunused-parameter"
               ],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
@@ -12994,8 +12988,9 @@
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
                 "@@//quality/compiler_warnings:optimize_code",
+                "@@//quality/compiler_warnings:treat_warnings_as_errors",
                 "@@//quality/compiler_warnings/gcc:misra_warnings",
-                "@@//quality/compiler_warnings:treat_warnings_as_errors"
+                "@@//quality/compiler_warnings/gcc:minimal_warnings"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",
@@ -13020,14 +13015,8 @@
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
               "extra_compile_flags": [
-                "-Wall",
                 "-Wswitch-bool",
-                "-Wno-error=deprecated-declarations",
-                "-Wno-error=cpp",
-                "-Wno-builtin-macro-redefined",
-                "-Wno-maybe-uninitialized",
-                "-Wunused-parameter",
-                "-Wunused-but-set-parameter"
+                "-Wunused-parameter"
               ],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
@@ -13038,8 +13027,9 @@
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
                 "@@//quality/compiler_warnings:optimize_code",
+                "@@//quality/compiler_warnings:treat_warnings_as_errors",
                 "@@//quality/compiler_warnings/gcc:misra_warnings",
-                "@@//quality/compiler_warnings:treat_warnings_as_errors"
+                "@@//quality/compiler_warnings/gcc:minimal_warnings"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",
@@ -13064,14 +13054,8 @@
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
               "extra_compile_flags": [
-                "-Wall",
                 "-Wswitch-bool",
-                "-Wno-error=deprecated-declarations",
-                "-Wno-error=cpp",
-                "-Wno-builtin-macro-redefined",
-                "-Wno-maybe-uninitialized",
-                "-Wunused-parameter",
-                "-Wunused-but-set-parameter"
+                "-Wunused-parameter"
               ],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
@@ -13082,8 +13066,9 @@
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
                 "@@//quality/compiler_warnings:optimize_code",
+                "@@//quality/compiler_warnings:treat_warnings_as_errors",
                 "@@//quality/compiler_warnings/gcc:misra_warnings",
-                "@@//quality/compiler_warnings:treat_warnings_as_errors"
+                "@@//quality/compiler_warnings/gcc:minimal_warnings"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",
@@ -13108,14 +13093,8 @@
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
               "extra_compile_flags": [
-                "-Wall",
                 "-Wswitch-bool",
-                "-Wno-error=deprecated-declarations",
-                "-Wno-error=cpp",
-                "-Wno-builtin-macro-redefined",
-                "-Wno-maybe-uninitialized",
-                "-Wunused-parameter",
-                "-Wunused-but-set-parameter"
+                "-Wunused-parameter"
               ],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
@@ -13126,8 +13105,9 @@
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
                 "@@//quality/compiler_warnings:optimize_code",
+                "@@//quality/compiler_warnings:treat_warnings_as_errors",
                 "@@//quality/compiler_warnings/gcc:misra_warnings",
-                "@@//quality/compiler_warnings:treat_warnings_as_errors"
+                "@@//quality/compiler_warnings/gcc:minimal_warnings"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",

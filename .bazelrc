@@ -78,6 +78,8 @@ build --per_file_copt=external/.*google_benchmark.*@-Wno-error=switch-enum
 build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=switch-enum
 build --per_file_copt=external/.*google_benchmark.*@-Wno-error=undef
 build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=undef
+build --per_file_copt=external/.*google_benchmark.*@-Wno-error=suggest-attribute=format
+build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=suggest-attribute=format
 
 # json_schema_validator
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch
@@ -101,6 +103,7 @@ build --per_file_copt=external/.*score_qnx_unit_tests.*virtio9p.*@-Wno-error=sig
 build --host_per_file_copt=external/.*score_qnx_unit_tests.*virtio9p.*@-Wno-error=sign-conversion
 
 # Places with warnings that we need to fix
+# Issue to track it https://github.com/eclipse-score/communication/issues/1180
 build --per_file_copt=score/message_passing/qnx_dispatch_mocked_server.*@-Wno-error=sign-conversion
 build --host_per_file_copt=score/message_passing/qnx_dispatch_mocked_server.*@-Wno-error=sign-conversion
 build --per_file_copt=score/message_passing/qnx_dispatch_engine_test.*@-Wno-error=sign-conversion

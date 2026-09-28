@@ -88,14 +88,8 @@ bazel_dep(name = "score_bazel_cpp_toolchains", version = "1.0.3", dev_dependency
 score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
 
 SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
-    "-Wall",
     "-Wswitch-bool",  # Helps to achieve MISRA C++:2023 Rule 7-0-1
-    "-Wno-error=deprecated-declarations",
-    "-Wno-error=cpp",
-    "-Wno-builtin-macro-redefined",
-    "-Wno-maybe-uninitialized",
     "-Wunused-parameter",
-    "-Wunused-but-set-parameter",
 ]
 
 SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS = [
@@ -110,8 +104,9 @@ score_gcc.toolchain(
     extra_enabled_features = [
         "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings:optimize_code",
-        "//quality/compiler_warnings/gcc:misra_warnings",
         "//quality/compiler_warnings:treat_warnings_as_errors",
+        "//quality/compiler_warnings/gcc:misra_warnings",
+        "//quality/compiler_warnings/gcc:minimal_warnings",
     ],
     target_cpu = "x86_64",
     target_os = "linux",
@@ -126,8 +121,9 @@ score_gcc.toolchain(
     extra_enabled_features = [
         "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings:optimize_code",
-        "//quality/compiler_warnings/gcc:misra_warnings",
         "//quality/compiler_warnings:treat_warnings_as_errors",
+        "//quality/compiler_warnings/gcc:misra_warnings",
+        "//quality/compiler_warnings/gcc:minimal_warnings",
     ],
     target_cpu = "aarch64",
     target_os = "linux",
@@ -142,8 +138,9 @@ score_gcc.toolchain(
     extra_enabled_features = [
         "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings:optimize_code",
-        "//quality/compiler_warnings/gcc:misra_warnings",
         "//quality/compiler_warnings:treat_warnings_as_errors",
+        "//quality/compiler_warnings/gcc:misra_warnings",
+        "//quality/compiler_warnings/gcc:minimal_warnings",
     ],
     sdp_version = "8.0.4",
     target_cpu = "x86_64",
@@ -158,8 +155,9 @@ score_gcc.toolchain(
     extra_enabled_features = [
         "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings:optimize_code",
-        "//quality/compiler_warnings/gcc:misra_warnings",
         "//quality/compiler_warnings:treat_warnings_as_errors",
+        "//quality/compiler_warnings/gcc:misra_warnings",
+        "//quality/compiler_warnings/gcc:minimal_warnings",
     ],
     sdp_version = "8.0.4",
     target_cpu = "aarch64",
@@ -275,7 +273,6 @@ llvm.toolchain(
         "@score_cpp_policies//sanitizers/features:ubsan_clang",
         "@score_cpp_policies//sanitizers/features:lsan",
         "@score_cpp_policies//sanitizers/features:tsan",
-        "//quality/compiler_warnings:minimal_warnings",
         "//quality/compiler_warnings:treat_warnings_as_errors",
         "//quality/coverage:enable_llvm_coverage_for_death_tests",
     ],

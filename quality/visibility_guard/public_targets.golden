@@ -4,7 +4,6 @@
 //quality/compiler_warnings/gcc:minimal_warnings
 //quality/compiler_warnings/gcc:misra_warnings
 //quality/compiler_warnings:fortify_source
-//quality/compiler_warnings:minimal_warnings
 //quality/compiler_warnings:optimize_code
 //quality/compiler_warnings:treat_warnings_as_errors
 //quality/coverage:enable_llvm_coverage_for_death_tests
