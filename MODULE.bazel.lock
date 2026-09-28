@@ -12919,7 +12919,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "+vgTABLj64cvjmKGlkw+4AJ9S7iLJFRI20t6JpYfRzM=",
-        "usagesDigest": "2M/Y9UlwtA58SqUI7CroWu2hNhRiUcHy6Bv6qeZUg04=",
+        "usagesDigest": "jnKacWO5fdPWoP6ByEgdS37+bMF1Hdx6WEdy8n+dlok=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -12981,10 +12981,7 @@
                 "-Wno-error=deprecated-declarations",
                 "-Wno-error=cpp",
                 "-Wno-builtin-macro-redefined",
-                "-Wno-format-y2k",
-                "-Wno-free-nonheap-object",
                 "-Wno-maybe-uninitialized",
-                "-Wno-unused-macros",
                 "-Wunused-parameter",
                 "-Wunused-but-set-parameter"
               ],
@@ -13028,10 +13025,7 @@
                 "-Wno-error=deprecated-declarations",
                 "-Wno-error=cpp",
                 "-Wno-builtin-macro-redefined",
-                "-Wno-format-y2k",
-                "-Wno-free-nonheap-object",
                 "-Wno-maybe-uninitialized",
-                "-Wno-unused-macros",
                 "-Wunused-parameter",
                 "-Wunused-but-set-parameter"
               ],
@@ -13075,10 +13069,7 @@
                 "-Wno-error=deprecated-declarations",
                 "-Wno-error=cpp",
                 "-Wno-builtin-macro-redefined",
-                "-Wno-format-y2k",
-                "-Wno-free-nonheap-object",
                 "-Wno-maybe-uninitialized",
-                "-Wno-unused-macros",
                 "-Wunused-parameter",
                 "-Wunused-but-set-parameter"
               ],
@@ -13122,10 +13113,7 @@
                 "-Wno-error=deprecated-declarations",
                 "-Wno-error=cpp",
                 "-Wno-builtin-macro-redefined",
-                "-Wno-format-y2k",
-                "-Wno-free-nonheap-object",
                 "-Wno-maybe-uninitialized",
-                "-Wno-unused-macros",
                 "-Wunused-parameter",
                 "-Wunused-but-set-parameter"
               ],

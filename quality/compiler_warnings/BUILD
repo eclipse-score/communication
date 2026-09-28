@@ -134,9 +134,6 @@ cc_args(
         # Keep #warning visible without failing the build.
         "-Wno-error=cpp",
         "-Wno-error=deprecated-declarations",
-        "-Wno-unused-macros",
-        "-Wno-unused-parameter",
-        "-Wno-unused-variable",
         "-Wunused-but-set-parameter",
     ],
     visibility = ["//quality/compiler_warnings:__subpackages__"],

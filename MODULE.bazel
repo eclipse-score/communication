@@ -71,7 +71,6 @@ gcc_toolchains.toolchain(
         "-Wno-error=deprecated-declarations",  # Allow deprecated API as warning
         "-Wno-error=cpp",  # Allow #warning as warning
         "-Wno-maybe-uninitialized",  # GCC 8/9 false positives (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=80635)
-        "-Wno-free-nonheap-object",  # GCC false positive (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=99578)
         "-Wunused-but-set-parameter",  # Dead store detection (MISRA Rule 0.1.1)
     ],
     extra_ldflags = [
@@ -94,10 +93,7 @@ SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
     "-Wno-error=deprecated-declarations",
     "-Wno-error=cpp",
     "-Wno-builtin-macro-redefined",
-    "-Wno-format-y2k",
-    "-Wno-free-nonheap-object",
     "-Wno-maybe-uninitialized",
-    "-Wno-unused-macros",
     "-Wunused-parameter",
     "-Wunused-but-set-parameter",
 ]

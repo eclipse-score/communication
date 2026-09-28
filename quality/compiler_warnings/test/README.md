@@ -30,7 +30,7 @@ Shared base args consumed by both GCC and Clang features.
 |-----------------|-------|
 | `default_compile_args` | `-march=nehalem`, `-fstack-protector-strong`, `-fno-omit-frame-pointer`, `-fPIC`, `-D_FORTIFY_SOURCE=2`, `-D_GLIBCXX_ASSERTIONS`, `-fstack-clash-protection`, `-fcf-protection=full`, `-fdiagnostics-color=always` |
 | `default_link_args` | `-pipe`, `-Wl,-z,relro,-z,now,-z,noexecstack,-z,notext`, `-fuse-ld=gold`, plus hardening/link flags (`-lrt`/`-latomic` are provided by the toolchain `link_libs`) |
-| `minimal_warnings_args` | `-Wall`, `-Wno-error=cpp`, `-Wno-error=deprecated-declarations`, `-Wno-unused-macros`, `-Wno-unused-parameter`, `-Wno-unused-variable`, `-Wunused-but-set-parameter` |
+| `minimal_warnings_args` | `-Wall`, `-Wno-error=cpp`, `-Wno-error=deprecated-declarations`, `-Wunused-but-set-parameter` |
 | `strict_warnings_args` | `-Wextra`, `-pedantic`, `-Wconversion`, `-Wsign-conversion`, `-Wfloat-conversion`, `-Wfloat-equal`, `-Wformat=2`, `-Wshadow`, `-Wformat-security`, `-Wunused-macros`, `-Wmultichar`, `-Wpacked`, `-Winvalid-pch` |
 | `treat_warnings_as_errors_args` | `-Werror` |
 
@@ -40,7 +40,7 @@ Additional flags applied only when the GCC toolchain is active.
 
 | Feature | Extra flags |
 |---------|-------------|
-| `minimal_warnings` | `-Wno-builtin-macro-redefined`, `-Wno-maybe-uninitialized`, `-Wno-format-y2k`, `-Wno-free-nonheap-object`; C++ only: `-Wno-literal-suffix`, `-Wno-noexcept-type` |
+| `minimal_warnings` | `-Wno-builtin-macro-redefined`, `-Wno-maybe-uninitialized`; C++ only: `-Wno-literal-suffix`, `-Wno-noexcept-type` |
 | `strict_warnings` | `-Warray-bounds=2`, `-Wdisabled-optimization`, `-Wimplicit-fallthrough=4`, `-Wmissing-format-attribute`, `-Wscalar-storage-order`, `-Wsuggest-attribute=format`, `-Wvector-operation-performance`, `-Wlogical-op`; C++ only: `-Wdelete-non-virtual-dtor`, `-Woverloaded-virtual`, `-Wregister`, `-Wstrict-null-sentinel`; C only: `-Wold-style-definition`, `-Wstrict-prototypes` |
 | `third_party_warnings` | `-w` (suppress all warnings) |
 

@@ -46,9 +46,6 @@ cc_args(
         "-Wno-builtin-macro-redefined",
         # Reduce known GCC false positives.
         "-Wno-maybe-uninitialized",
-        # GCC-only diagnostics (Clang has no equivalent flag).
-        "-Wno-format-y2k",
-        "-Wno-free-nonheap-object",
     ],
 )
 

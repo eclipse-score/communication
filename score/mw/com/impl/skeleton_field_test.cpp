@@ -1444,7 +1444,7 @@ TEST_F(SkeletonFieldGetHandlerTest, OfferingGetterEnabledFieldRegistersGetHandle
     GivenAFieldWithSetterAndGetterEnabled();
 
     // and given that a set handler was registered (needed in order to offer the field)
-    const auto result = unit_->my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {});
+    ASSERT_TRUE(unit_->my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {}).has_value());
 
     // When offering the field
     WhichIsOffered();
@@ -1457,7 +1457,7 @@ TEST_F(SkeletonFieldGetHandlerTest, CallingMethodHandlerPutsLatestSampleInMethod
     WhichCapturesAGetHandler().GivenAFieldWithSetterAndGetterEnabled();
 
     // and given that a set handler was registered (needed in order to offer the field)
-    const auto result = unit_->my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {});
+    ASSERT_TRUE(unit_->my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {}).has_value());
 
     WhichIsOffered();
 
@@ -1486,7 +1486,7 @@ TEST_F(SkeletonFieldGetHandlerTest, CallingMethodHandlerPutsErrorInMethodReturnB
     WhichCapturesAGetHandler().GivenAFieldWithSetterAndGetterEnabled();
 
     // and given that a set handler was registered (needed in order to offer the field)
-    const auto result = unit_->my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {});
+    ASSERT_TRUE(unit_->my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {}).has_value());
 
     WhichIsOffered();
 
