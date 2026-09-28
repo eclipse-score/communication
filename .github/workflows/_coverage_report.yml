@@ -57,9 +57,14 @@ jobs:
         if: inputs.fetch-only != 'true' && steps.run-coverage.outcome == 'success'
         id: generate-report
         run: |
-          bazel run --config=ci //quality/coverage:generate_coverage_html -- \
+          bazel run --config=ci @score_coverage//:generate_coverage_html -- \
+            --yaml quality/coverage/coverage_justifications.yaml \
+            --testlogs-subdir score \
             --archive "${{ github.event.repository.name }}_coverage_report_${{ github.sha }}" \
             cpp_coverage_linux
+        env:
+          # Report-only: the effective-coverage gate is not enforced yet.
+          COVERAGE_THRESHOLD: "0"
 
       - name: Upload coverage artifacts
         if: inputs.fetch-only != 'true' && steps.generate-report.outcome == 'success'

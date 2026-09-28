@@ -22,6 +22,3 @@ sphinx_needs
 sphinxcontrib_plantuml
 pydata_sphinx_theme
 myst_parser
-
-# Python dependencies for coverage report generation (QNX)
-gcovr
