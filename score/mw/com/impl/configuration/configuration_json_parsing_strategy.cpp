@@ -65,6 +65,11 @@ constexpr auto kServiceTypesKey = "serviceTypes"sv;
 constexpr auto kEventsKey = "events"sv;
 constexpr auto kEventNameKey = "eventName"sv;
 constexpr auto kEventIdKey = "eventId"sv;
+constexpr auto kE2EKey = "e2e"sv;
+constexpr auto kE2EProfileKey = "profile"sv;
+constexpr auto kE2EDataIdKey = "dataId"sv;
+constexpr auto kE2EMaxDeltaCounterKey = "maxDeltaCounter"sv;
+constexpr auto kE2EP4Profile = "P04"sv;
 constexpr auto kFieldsKey = "fields"sv;
 constexpr auto kFieldNameKey = "fieldName"sv;
 constexpr auto kFieldIdKey = "fieldId"sv;
@@ -894,6 +899,40 @@ auto ParseServiceInstances(const score::json::Object& object, TracingConfigurati
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
+auto ParseE2EEventTypeDeployment(const score::json::Object& event_object) -> std::optional<E2EEventTypeDeployment>
+{
+    const auto e2e = event_object.find(kE2EKey.data());
+    if (e2e == event_object.cend())
+    {
+        return std::nullopt;
+    }
+
+    const auto e2e_object = e2e->second.As<score::json::Object>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(e2e_object.has_value(),
+                                                      "Configuration corrupted, check with json schema");
+    const auto& e2e_map = e2e_object.value().get();
+    const auto profile = e2e_map.find(kE2EProfileKey.data());
+    const auto data_id = e2e_map.find(kE2EDataIdKey.data());
+    const auto max_delta_counter = e2e_map.find(kE2EMaxDeltaCounterKey.data());
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        (profile != e2e_map.cend()) && (data_id != e2e_map.cend()) && (max_delta_counter != e2e_map.cend()),
+        "Configuration corrupted, check with json schema");
+
+    const auto profile_casted = profile->second.As<std::string>();
+    const auto data_id_casted = data_id->second.As<std::uint8_t>();
+    const auto max_delta_counter_casted = max_delta_counter->second.As<std::uint8_t>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        profile_casted.has_value() && data_id_casted.has_value() && max_delta_counter_casted.has_value(),
+        "Configuration corrupted, check with json schema");
+    // TODO: only "P04" is accepted here; replace with a real string->E2EProfile mapping once more profiles are added.
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(profile_casted.value().get() == kE2EP4Profile,
+                                                      "Unsupported E2E profile in POC configuration");
+
+    return E2EEventTypeDeployment{E2EProfile::kP4, data_id_casted.value(), max_delta_counter_casted.value()};
+}
+
+// See Note 1
+// coverity[autosar_cpp14_a15_5_3_violation]
 // \details Templated on the concrete binding deployment, since LolaServiceTypeDeployment and
 // SomeIpServiceTypeDeployment are distinct instantiations of the same BindingServiceTypeDeployment template and
 // therefore expose the same events_/fields_/methods_ members.
@@ -929,6 +968,15 @@ void ParseEventTypeDeployments(const score::json::Object& json_map, BindingServi
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(event_id_casted.has_value(),
                                                           "Configuration corrupted, check with json schema");
         EmplaceOrFatal(service.events_, event_name_casted.value().get(), event_id_casted.value(), "An event");
+
+        const auto e2e_event_deployment = ParseE2EEventTypeDeployment(event_object);
+        if (e2e_event_deployment.has_value())
+        {
+            EmplaceOrFatal(service.e2e_events_,
+                           event_name_casted.value().get(),
+                           e2e_event_deployment.value(),
+                           "An E2E event deployment");
+        }
     }
 }
 
