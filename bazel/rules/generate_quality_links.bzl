@@ -129,7 +129,7 @@ def _generate_quality_links_impl(ctx):
         # local build — no published reports; show the equivalent bazel command
         coverage_ref = (
             "*local build* — run " +
-            "``bazel run //quality/coverage:generate_coverage_html``"
+            "``bazel run @score_coverage//:generate_coverage_html``"
         )
         dashboard_ref = (
             "*local build* — dashboard only available on GitHub Pages"
