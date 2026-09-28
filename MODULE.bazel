@@ -51,6 +51,10 @@ download_archive(
 
 bazel_dep(name = "score_tooling", version = "2.2.2")
 
+# Coverage pipeline (LLVM on Linux, gcov on QNX): the qualified module that
+# replaced the copy under quality/coverage. See quality/coverage/README.md.
+bazel_dep(name = "score_coverage", version = "0.2.0", dev_dependency = True)
+
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
 bazel_dep(name = "gcc_toolchain", version = "0.10.0", dev_dependency = True)
 
@@ -256,7 +260,7 @@ llvm.toolchain(
         "@score_cpp_policies//sanitizers/features:lsan",
         "@score_cpp_policies//sanitizers/features:tsan",
         "//quality/compiler_warnings:treat_warnings_as_errors",
-        "//quality/coverage:enable_llvm_coverage_for_death_tests",
+        "@score_coverage//:enable_llvm_coverage_for_death_tests",
     ],
     link_libs = {"": [
         "-lrt",
