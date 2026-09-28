@@ -991,7 +991,7 @@ std::uint32_t MessagePassingServiceInstance::NotifyEventLocally(const ElementFqI
     for (std::uint8_t i = 0U; i < number_weak_ptrs_copied; i++)
     {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index): "i" is assured to be within array bounds.
-        if (auto current_handler = handler_weak_ptrs[i].lock())
+        if (auto current_handler = handler_weak_ptrs[i].lock(); current_handler != nullptr)
         {
             auto& scoped_func = (*current_handler);
             // return value tells us, whether the scope has already expired (thus handler not called) or not. We don't

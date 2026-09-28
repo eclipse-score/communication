@@ -78,7 +78,7 @@ bool WaitForAsyncTestResultsFailureTest(std::vector<std::future<int>>& future_re
     const auto skeleton_return_value = skeleton_future_value.get();
     const auto proxy_return_value = proxy_future_value.get();
 
-    const bool failing_test_success = (!skeleton_return_value && proxy_return_value);
+    const bool failing_test_success = ((skeleton_return_value == 0) && (proxy_return_value != 0));
 
     return failing_test_success;
 }
@@ -139,7 +139,7 @@ int main(int argc, const char** argv)
         // Wait for all threads to finish and check that they finished safely
         const auto passing_test_return_code =
             score::mw::com::test::SctfTestRunner::WaitForAsyncTestResults(passing_test_future_return_values);
-        std::cout << "passing test: " << (passing_test_return_code ? "Failed" : "Passed") << std::endl;
+        std::cout << "passing test: " << ((passing_test_return_code != 0) ? "Failed" : "Passed") << std::endl;
 
         return passing_test_return_code;
     }
@@ -157,7 +157,7 @@ int main(int argc, const char** argv)
         const auto failing_test_return_code = WaitForAsyncTestResultsFailureTest(failing_test_future_return_values);
         std::cout << "failing_extra_slots test: " << (failing_test_return_code ? "Failed" : "Passed") << std::endl;
 
-        return failing_test_return_code;
+        return static_cast<int>(failing_test_return_code);
     }
     else if (mode == "failing_less_slots")
     {
@@ -173,7 +173,7 @@ int main(int argc, const char** argv)
         const auto failing_test_return_code = WaitForAsyncTestResultsFailureTest(failing_test_future_return_values);
         std::cout << "failing_less_slots test: " << (failing_test_return_code ? "Failed" : "Passed") << std::endl;
 
-        return failing_test_return_code;
+        return static_cast<int>(failing_test_return_code);
     }
     else
     {

@@ -1003,7 +1003,7 @@ TEST_F(GatewayApplicationFlowTest, ReceiveHandlerFiringForwardsNotifyUpdateOverT
     // and the binding fires the stored receive handler immediately when it is set
     ON_CALL(*proxy_event_mocks_["EventA"], SetReceiveHandler(::testing::_))
         .WillByDefault(::testing::Invoke([](std::weak_ptr<impl::ScopedEventReceiveHandler> handler) {
-            if (auto locked = handler.lock())
+            if (auto locked = handler.lock(); locked != nullptr)
             {
                 (*locked)();
             }

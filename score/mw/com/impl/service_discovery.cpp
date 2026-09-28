@@ -313,7 +313,7 @@ auto ServiceDiscovery::BindingSpecificStartFindService(FindServiceHandle search_
     return service_discovery_client.StartFindService(
         search_handle,
         [handler_weak_ptr](auto container, auto handle) {
-            if (auto handler_shared_ptr = handler_weak_ptr.lock())
+            if (auto handler_shared_ptr = handler_weak_ptr.lock(); handler_shared_ptr != nullptr)
             {
                 (*handler_shared_ptr)(std::move(container), handle);
             }
