@@ -70,7 +70,6 @@ gcc_toolchains.toolchain(
         "-Wswitch-enum",  # Warn on unhandled enum in switch (MISRA Rule 9.6.4)
         "-Wno-error=deprecated-declarations",  # Allow deprecated API as warning
         "-Wno-error=cpp",  # Allow #warning as warning
-        "-Wno-maybe-uninitialized",  # GCC 8/9 false positives (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=80635)
         "-Wunused-but-set-parameter",  # Dead store detection (MISRA Rule 0.1.1)
     ],
     extra_ldflags = [
@@ -93,7 +92,6 @@ SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
     "-Wno-error=deprecated-declarations",
     "-Wno-error=cpp",
     "-Wno-builtin-macro-redefined",
-    "-Wno-maybe-uninitialized",
     "-Wunused-parameter",
     "-Wunused-but-set-parameter",
 ]
