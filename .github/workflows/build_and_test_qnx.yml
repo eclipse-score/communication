@@ -155,6 +155,28 @@ jobs:
             SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
             SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
           run: bazel test --config=ci --config=qnx -- //score/...
+        - name: Coverage QNX (gcov, on target, C++)
+          if: inputs.fetch_only != 'true' && steps.run-tests.outcome == 'success'
+          id: run-coverage
+          env:
+            SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+            SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+            COVERAGE_THRESHOLD: "0"
+          run: |
+            bazel coverage --config=ci --config=qnx --build_tests_only -- //score/...
+            bazel run --config=ci --config=qnx @score_coverage//:generate_coverage_html -- \
+              --platform qnx \
+              --yaml quality/coverage/coverage_justifications.yaml \
+              --testlogs-subdir score \
+              --archive-dir coverage_artifact_qnx
+        - name: Upload QNX coverage report
+          if: inputs.fetch_only != 'true' && steps.run-coverage.outcome == 'success'
+          uses: actions/upload-artifact@v4
+          with:
+            name: ${{ github.event.repository.name }}_coverage_report_qnx_${{ github.sha }}
+            path: coverage_artifact_qnx/
+            include-hidden-files: true
+            retention-days: 10
         - name: Upload failed Bazel test logs
           if: inputs.fetch_only != 'true' && failure() && steps.run-tests.outcome == 'failure'
           uses: ./.github/actions/00_infrastructure/upload_bazel_testlogs_on_failure

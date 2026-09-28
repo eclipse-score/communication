@@ -215,11 +215,9 @@ The following markdown files are automatically created in `bazel-out/analysis_re
 
 ## Coverage
 
-Code coverage is generated using LLVM's source-based coverage instrumentation. The instrumentation filter is configured in [`quality/coverage/coverage.bazelrc`](coverage/coverage.bazelrc) to cover `//score/message_passing` and `//score/mw/com` while excluding test and benchmark code.
+Code coverage is produced by the qualified S-CORE coverage tool, [`score_coverage`](https://eclipse-score.github.io/coverage_tool/main/): LLVM source-based coverage for C++ and Rust on Linux, gcov-based coverage for the C++ tests that run on QNX inside QEMU. The coverage scope (`//score/message_passing`, `//score/mw/com`, `//score/mw/com/rust:score_com`) is declared in [`quality/coverage/BUILD`](coverage/BUILD); everything outside it (tests, mocks, external dependencies) is filtered out of the report.
 
-HTML reports are generated directly by `llvm-cov show`.
-
-For detailed documentation of the pipeline architecture, tools, and requirements, see [`quality/coverage/README.md`](coverage/README.md) and [`quality/coverage/llvm_cov/README.md`](coverage/llvm_cov/README.md).
+For the repository-specific configuration see [`quality/coverage/README.md`](coverage/README.md); for the pipeline itself, its requirements and its verification report, see the tool documentation.
 
 ### Running Coverage
 
@@ -239,14 +237,17 @@ The coverage report generator produces a zip file at
 To extract the HTML report (works for both full and single-target runs):
 
 ```bash
-bazel run //quality/coverage:generate_coverage_html
+bazel run @score_coverage//:generate_coverage_html -- \
+    --yaml quality/coverage/coverage_justifications.yaml --testlogs-subdir score
 ```
 
-The report is written to `cpp_coverage_<platform>/index.html`. Open it with:
+The report is written to `coverage_<platform>/index.html`. Open it with:
 
 ```bash
-xdg-open cpp_coverage_linux/index.html
+xdg-open coverage_linux/index.html
 ```
+
+QNX on target (C++ only): `bazel coverage --config=qnx //score/... --build_tests_only`, then the same command with `--platform qnx`.
 
 ### Coverage Justifications
 
