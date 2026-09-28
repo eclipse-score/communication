@@ -135,25 +135,6 @@ cc_args(
         "-Wno-error=cpp",
         "-Wno-error=deprecated-declarations",
         "-Wunused-but-set-parameter",
-    ],
-    visibility = ["//quality/compiler_warnings:__subpackages__"],
-)
-
-cc_feature(
-    name = "minimal_warnings",
-    args = [
-        ":minimal_warnings_args",
-    ],
-    feature_name = "score_communication_common_minimal_warnings",
-    visibility = ["//visibility:public"],
-)
-
-cc_args(
-    name = "strict_warnings_args",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:compile_actions",
-    ],
-    args = [
         "-Wextra",
         "-pedantic",
         "-Wconversion",  # A4-7-1,M5-0-5,M5-0-6
@@ -177,12 +158,11 @@ cc_args(
 )
 
 cc_feature(
-    name = "strict_warnings",
+    name = "minimal_warnings",
     args = [
-        ":strict_warnings_args",
+        ":minimal_warnings_args",
     ],
-    feature_name = "score_communication_common_strict_warnings",
-    implies = [":minimal_warnings"],
+    feature_name = "score_communication_common_minimal_warnings",
     visibility = ["//visibility:public"],
 )
 

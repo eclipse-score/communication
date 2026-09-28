@@ -332,6 +332,11 @@ INSTANTIATE_TEST_SUITE_P(InstanceSpecifierCannotConstructFromInvalidStringTest,
                                            "//bad/instance_specifier//123",
                                            "bad/instance_specifier//123"));
 
+// The use of a deprecated API is intended because this test is testing it.
+// score_baselibs does not provide yet a mechanism to suppress deprecated warnings
+// see: https://github.com/eclipse-score/baselibs/issues/627
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringLiteral)
 {
     // Given an expected shortname path
@@ -344,7 +349,13 @@ TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringLiteral)
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().ToString(), expected_shortname);
 }
+#pragma GCC diagnostic pop
 
+// The use of a deprecated API is intended because this test is testing it.
+// score_baselibs does not provide yet a mechanism to suppress deprecated warnings
+// see: https://github.com/eclipse-score/baselibs/issues/627
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStdStringLvalue)
 {
     // Given a valid shortname path as std::string lvalue
@@ -357,20 +368,26 @@ TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStdStringLvalue)
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().ToString(), shortname_string);
 }
+#pragma GCC diagnostic pop
 
 TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStdStringRvalue)
 {
     // Given a valid shortname path as std::string for moving
-    const std::string shortname_string = "/bla/blub/service1";
+    std::string shortname_string = "/bla/blub/service1";
 
     // When creating InstanceSpecifier with std::string rvalue (moved)
     const auto result = InstanceSpecifier::Create(std::move(shortname_string));
 
     // Then should succeed and contain the correct value
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result.value().ToString(), shortname_string);
+    EXPECT_EQ(result.value().ToString(), "/bla/blub/service1");
 }
 
+// The use of a deprecated API is intended because this test is testing it.
+// score_baselibs does not provide yet a mechanism to suppress deprecated warnings
+// see: https://github.com/eclipse-score/baselibs/issues/627
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringViewLvalue)
 {
     // Given a valid shortname path as std::string_view lvalue
@@ -383,7 +400,13 @@ TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringViewLvalue
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().ToString(), shortname_view);
 }
+#pragma GCC diagnostic pop
 
+// The use of a deprecated API is intended because this test is testing it.
+// score_baselibs does not provide yet a mechanism to suppress deprecated warnings
+// see: https://github.com/eclipse-score/baselibs/issues/627
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringViewRvalue)
 {
     // Given a valid shortname path for temporary string_view creation
@@ -396,20 +419,26 @@ TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringViewRvalue
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().ToString(), valid_shortname);
 }
+#pragma GCC diagnostic pop
 
+// The use of a deprecated API is intended because this test is testing it.
+// score_baselibs does not provide yet a mechanism to suppress deprecated warnings
+// see: https://github.com/eclipse-score/baselibs/issues/627
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromConstCharPointer)
 {
     // Given a valid shortname path as const char* variable
     const char* shortname_cstr = "/bla/blub/service1";
 
     // When creating InstanceSpecifier with const char* variable
-
     const auto result = InstanceSpecifier::Create(shortname_cstr);
 
     // Then should succeed and contain the correct value
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().ToString(), shortname_cstr);
 }
+#pragma GCC diagnostic pop
 
 }  // namespace
 }  // namespace score::mw::com::impl

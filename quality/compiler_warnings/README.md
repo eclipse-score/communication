@@ -6,53 +6,24 @@ and verifies that each warning flag is correctly wired up in the Bazel toolchain
 ## Overview
 
 Warning flags are grouped into named `cc_feature` targets that consumers apply via the
-`features` attribute of any `cc_binary`, `cc_library`, or `cc_test` rule. Features are
-layered: each level implies all levels below it.
-
-```
-score_communication_minimal_warnings
-  └─ score_communication_strict_warnings
-```
+`features` attribute of any `cc_binary`, `cc_library`, or `cc_test` rule.
 
 `score_communication_treat_warnings_as_errors` (`-Werror`) is a separate orthogonal feature
 that can be combined with any of the above.
 
-`score_communication_third_party_warnings` is mutually exclusive with all other warning
-features and is intended for external code that cannot be modified.
-
-## Feature Reference
+## Features
 
 ### Common flags ([`//quality/compiler_warnings:…`](../BUILD))
 
 Shared base args consumed by both GCC and Clang features.
 
-| `cc_args` target | Flags |
-|-----------------|-------|
-| `default_compile_args` | `-march=nehalem`, `-fstack-protector-strong`, `-fno-omit-frame-pointer`, `-fPIC`, `-D_FORTIFY_SOURCE=2`, `-D_GLIBCXX_ASSERTIONS`, `-fstack-clash-protection`, `-fcf-protection=full`, `-fdiagnostics-color=always` |
-| `default_link_args` | `-pipe`, `-Wl,-z,relro,-z,now,-z,noexecstack,-z,notext`, `-fuse-ld=gold`, plus hardening/link flags (`-lrt`/`-latomic` are provided by the toolchain `link_libs`) |
-| `minimal_warnings_args` | `-Wall`, `-Wno-error=cpp`, `-Wno-error=deprecated-declarations`, `-Wunused-but-set-parameter` |
-| `strict_warnings_args` | `-Wextra`, `-pedantic`, `-Wconversion`, `-Wsign-conversion`, `-Wfloat-conversion`, `-Wfloat-equal`, `-Wformat=2`, `-Wshadow`, `-Wformat-security`, `-Wunused-macros`, `-Wmultichar`, `-Wpacked`, `-Winvalid-pch` |
-| `treat_warnings_as_errors_args` | `-Werror` |
-
 ### GCC-specific flags ([`//quality/compiler_warnings/gcc:…`](../gcc/BUILD))
 
 Additional flags applied only when the GCC toolchain is active.
 
-| Feature | Extra flags |
-|---------|-------------|
-| `minimal_warnings` | `-Wno-builtin-macro-redefined`, `-Wno-maybe-uninitialized`; C++ only: `-Wno-literal-suffix`, `-Wno-noexcept-type` |
-| `strict_warnings` | `-Warray-bounds=2`, `-Wdisabled-optimization`, `-Wimplicit-fallthrough=4`, `-Wmissing-format-attribute`, `-Wscalar-storage-order`, `-Wsuggest-attribute=format`, `-Wvector-operation-performance`, `-Wlogical-op`; C++ only: `-Wdelete-non-virtual-dtor`, `-Woverloaded-virtual`, `-Wregister`, `-Wstrict-null-sentinel`; C only: `-Wold-style-definition`, `-Wstrict-prototypes` |
-| `third_party_warnings` | `-w` (suppress all warnings) |
-
 ### Clang-specific flags ([`//quality/compiler_warnings/clang:…`](../clang/BUILD))
 
 Additional flags applied only when the LLVM/Clang toolchain is active.
-
-| Feature | Extra flags |
-|---------|-------------|
-| `minimal_warnings` | `-Wno-error=self-assign-overloaded`, `-Wno-return-type-c-linkage`, `-Wno-unused-command-line-argument`, `-Wno-deprecated-non-prototype` |
-| `strict_warnings` | `-Warray-bounds`, `-Wimplicit-fallthrough`, `-Wno-error=shadow-uncaptured-local` (demoted — see [score_baselibs#304](https://github.com/eclipse-score/baselibs/issues/304)) |
-| `third_party_warnings` | (no extra flags beyond mutual-exclusion) |
 
 ## Using Warning Features in BUILD Files
 
@@ -62,7 +33,7 @@ cc_library(
     srcs = ["my_lib.cpp"],
     hdrs = ["my_lib.h"],
     features = [
-        "score_communication_strict_warnings",
+        "score_communication_misra_warnings",
         "score_communication_treat_warnings_as_errors",
     ],
 )
