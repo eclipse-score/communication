@@ -59,7 +59,7 @@ class QemuHypervisorTransportTest : public ::testing::Test
             .WillOnce([this](IBidirectionalTransport::MessageHandler handler) {
                 captured_handler_ = std::move(handler);
             });
-        EXPECT_CALL(*bi_directional_transport_mock_, Setup()).WillOnce(::testing::Return(score::ResultBlank{}));
+        EXPECT_CALL(*bi_directional_transport_mock_, Setup()).WillOnce(::testing::Return(score::Result<void>{}));
         const auto setup_result = transport_->Setup();
         EXPECT_TRUE(setup_result.has_value());
         return *this;
@@ -185,7 +185,7 @@ TEST_F(QemuHypervisorTransportTest, IsMemorySharingSupportedReturnsTrue)
 TEST_F(QemuHypervisorTransportTest, SetupCallsSetMessageHandlerAndSetupOnTransport)
 {
     EXPECT_CALL(*bi_directional_transport_mock_, SetMessageHandler(::testing::_)).Times(1);
-    EXPECT_CALL(*bi_directional_transport_mock_, Setup()).WillOnce(::testing::Return(score::ResultBlank{}));
+    EXPECT_CALL(*bi_directional_transport_mock_, Setup()).WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     QemuHypervisorTransport transport(gateway_core_mock_, std::move(mock_transport_owner_), ivshmem_provider_mock_);
@@ -222,7 +222,7 @@ TEST_F(QemuHypervisorTransportTest, OfferServiceSendsOfferServiceRequest)
 
     EXPECT_CALL(*bi_directional_transport_mock_,
                 SendRequest(::testing::Property(&TransportMessage::GetType, MessageType::kOfferServiceRequest)))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     const auto result = transport_->OfferService(specifier);
@@ -236,7 +236,7 @@ TEST_F(QemuHypervisorTransportTest, StopOfferServiceSendsStopOfferServiceRequest
 
     EXPECT_CALL(*bi_directional_transport_mock_,
                 SendRequest(::testing::Property(&TransportMessage::GetType, MessageType::kStopOfferServiceRequest)))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     const auto result = transport_->StopOfferService(specifier);
@@ -250,7 +250,7 @@ TEST_F(QemuHypervisorTransportTest, NotifyUpdateSendsUpdateNotification)
 
     EXPECT_CALL(*bi_directional_transport_mock_,
                 SendNotification(::testing::Property(&TransportMessage::GetType, MessageType::kUpdateNotification)))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     const auto result = transport_->NotifyUpdate(specifier, impl::ServiceElementType::EVENT, "SpeedEvent");
@@ -264,7 +264,7 @@ TEST_F(QemuHypervisorTransportTest, RegisterUpdateNotificationSendsRegisterReque
 
     EXPECT_CALL(*bi_directional_transport_mock_,
                 SendRequest(::testing::Property(&TransportMessage::GetType, MessageType::kRegisterNotificationRequest)))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     const auto result =
@@ -280,7 +280,7 @@ TEST_F(QemuHypervisorTransportTest, UnregisterUpdateNotificationSendsUnregisterR
     EXPECT_CALL(
         *bi_directional_transport_mock_,
         SendRequest(::testing::Property(&TransportMessage::GetType, MessageType::kUnregisterNotificationRequest)))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     const auto result =
@@ -295,7 +295,7 @@ TEST_F(QemuHypervisorTransportTest, ProvideServiceSendsProvideServiceRequestWith
 
     EXPECT_CALL(*bi_directional_transport_mock_,
                 SendRequest(::testing::Property(&TransportMessage::GetType, MessageType::kProvideServiceRequest)))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     const auto result = transport_->ProvideService(specifier, std::vector<impl::EventInfo>{});
@@ -319,7 +319,7 @@ TEST_F(QemuHypervisorTransportTest,
                 AllocateNamedTypedMemoryAtOffset(::testing::_, ::testing::_, 4096U, ::testing::_))
         .WillOnce(::testing::Return(score::cpp::expected_blank<score::os::Error>{}));
     EXPECT_CALL(gateway_core_mock_, ProvideService(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     captured_handler_(std::move(request));
@@ -369,7 +369,7 @@ TEST_F(QemuHypervisorTransportTest,
 
     auto request = CreateMessageOfType(MessageType::kOfferServiceRequest);
 
-    EXPECT_CALL(gateway_core_mock_, OfferService(::testing::_)).WillOnce(::testing::Return(score::ResultBlank{}));
+    EXPECT_CALL(gateway_core_mock_, OfferService(::testing::_)).WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     captured_handler_(std::move(request));
@@ -395,7 +395,7 @@ TEST_F(QemuHypervisorTransportTest,
     auto request = CreateMessageOfType(MessageType::kRegisterNotificationRequest);
 
     EXPECT_CALL(gateway_core_mock_, RegisterUpdateNotification(::testing::_, ::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     captured_handler_(std::move(request));
@@ -422,7 +422,7 @@ TEST_F(QemuHypervisorTransportTest,
     auto request = CreateMessageOfType(MessageType::kUnregisterNotificationRequest);
 
     EXPECT_CALL(gateway_core_mock_, UnregisterUpdateNotification(::testing::_, ::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     captured_handler_(std::move(request));
@@ -448,7 +448,7 @@ TEST_F(QemuHypervisorTransportTest, OnMessageReceivedUpdateNotificationWithValid
     auto request = CreateMessageOfType(MessageType::kUpdateNotification);
 
     EXPECT_CALL(gateway_core_mock_, NotifyUpdate(::testing::_, ::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     captured_handler_(std::move(request));
@@ -516,7 +516,7 @@ TEST_F(QemuHypervisorTransportTest, PreCreateInterVmSharedMemoryBindsCtrlAndData
         .WillOnce(::testing::Return(score::cpp::expected_blank<score::os::Error>{}));
 
     EXPECT_CALL(gateway_core_mock_, ProvideService(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     auto request = CreateMessageOfType(MessageType::kProvideServiceRequest);
@@ -605,7 +605,7 @@ TEST_F(QemuHypervisorTransportTest, PreCreateInterVmSharedMemorySkipsCtrlBindWhe
         .WillOnce(::testing::Return(score::cpp::expected_blank<score::os::Error>{}));
 
     EXPECT_CALL(gateway_core_mock_, ProvideService(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     captured_handler_(std::move(request));
@@ -629,7 +629,7 @@ TEST_F(QemuHypervisorTransportTest, PreCreateInterVmSharedMemorySkipsDataBindWhe
         .WillOnce(::testing::Return(std::nullopt));
 
     EXPECT_CALL(gateway_core_mock_, ProvideService(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
     captured_handler_(std::move(request));
