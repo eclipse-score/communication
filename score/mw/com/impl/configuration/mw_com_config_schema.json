@@ -83,6 +83,35 @@
                                                 "type": "integer",
                                                 "title": "Service Event Id",
                                                 "description": "Binding technology specific event id. LoLa supports 16 bit values. The value needs to be unique across all events/fields/methods within the same binding, in case it is a SHM/LoLa binding."
+                                            },
+                                            "e2e": {
+                                                "type": "object",
+                                                "title": "POC E2E Event Configuration",
+                                                "description": "Binding-specific POC configuration for a protected LoLa event.",
+                                                "required": [
+                                                    "profile",
+                                                    "dataId",
+                                                    "maxDeltaCounter"
+                                                ],
+                                                "additionalProperties": false,
+                                                "properties": {
+                                                    "profile": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "P04"
+                                                        ]
+                                                    },
+                                                    "dataId": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 255
+                                                    },
+                                                    "maxDeltaCounter": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 255
+                                                    }
+                                                }
                                             }
                                         }
                                     }
