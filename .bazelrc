@@ -51,6 +51,35 @@ build --experimental_retain_test_configuration_across_testonly #https://github.c
 build --output_filter=^(?!(external/.*(googletest|flatbuffers|score_baselibs|google_benchmark|json_schema_validator)|@@?[^/]*(googletest|flatbuffers|score_baselibs|google_benchmark|json_schema_validator)|[/]*quality/compiler_warnings)).*
 
 # Do not treat as errors the warnings from external libraries that are known
+# boost
+build --per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
+build --host_per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
+build --per_file_copt=external/.*boost.*@-Wno-error=shadow
+build --host_per_file_copt=external/.*boost.*@-Wno-error=shadow
+
+# flatbuffers
+build --per_file_copt=external/.*flatbuffers.*@-Wno-error=sign-conversion
+build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=sign-conversion
+build --per_file_copt=external/.*flatbuffers.*@-Wno-error=switch-enum
+build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=switch-enum
+build --per_file_copt=external/.*flatbuffers.*@-Wno-error=conversion
+build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=conversion
+
+# googletest
+build --per_file_copt=external/.*googletest.*@-Wno-error=switch-enum
+build --host_per_file_copt=external/.*googletest.*@-Wno-error=switch-enum
+build --per_file_copt=external/.*googletest.*@-Wno-error=missing-field-initializers
+build --host_per_file_copt=external/.*googletest.*@-Wno-error=missing-field-initializers
+
+# google_benchmark
+build --per_file_copt=external/.*google_benchmark.*@-Wno-error=sign-conversion
+build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=sign-conversion
+build --per_file_copt=external/.*google_benchmark.*@-Wno-error=switch-enum
+build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=switch-enum
+build --per_file_copt=external/.*google_benchmark.*@-Wno-error=undef
+build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=undef
+
+# json_schema_validator
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch-enum
@@ -61,26 +90,26 @@ build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=conversion
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=conversion
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=range-loop-construct
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=range-loop-construct
-build --per_file_copt=external/.*googletest.*@-Wno-error=switch-enum
-build --host_per_file_copt=external/.*googletest.*@-Wno-error=switch-enum
-build --per_file_copt=external/.*google_benchmark.*@-Wno-error=sign-conversion
-build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=sign-conversion
-build --per_file_copt=external/.*google_benchmark.*@-Wno-error=switch-enum
-build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=switch-enum
-build --per_file_copt=external/.*flatbuffers.*@-Wno-error=sign-conversion
-build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=sign-conversion
-build --per_file_copt=external/.*flatbuffers.*@-Wno-error=switch-enum
-build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=switch-enum
-build --per_file_copt=external/.*flatbuffers.*@-Wno-error=conversion
-build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=conversion
+
+# score_baselibs
+build --per_file_copt=external/.*score_baselibs.*string_manipulation.*arguments.*@-Wno-error=sign-conversion
+build --host_per_file_copt=external/.*score_baselibs.*string_manipulation.*arguments.*@-Wno-error=sign-conversion
+
+# score_qnx_unit_tests
+# Issue reported in https://github.com/eclipse-score/qnx_unit_tests/issues/44
+build --per_file_copt=external/.*score_qnx_unit_tests.*virtio9p.*@-Wno-error=sign-conversion
+build --host_per_file_copt=external/.*score_qnx_unit_tests.*virtio9p.*@-Wno-error=sign-conversion
+
+# Places with warnings that we need to fix
+build --per_file_copt=score/message_passing/qnx_dispatch_mocked_server.*@-Wno-error=sign-conversion
+build --host_per_file_copt=score/message_passing/qnx_dispatch_mocked_server.*@-Wno-error=sign-conversion
+build --per_file_copt=score/message_passing/qnx_dispatch_engine_test.*@-Wno-error=sign-conversion
+build --host_per_file_copt=score/message_passing/qnx_dispatch_engine_test.*@-Wno-error=sign-conversion
+build --per_file_copt=score/message_passing/dispatch_thread_runner_test.*@-Wno-error=sign-conversion
+build --host_per_file_copt=score/message_passing/dispatch_thread_runner_test.*@-Wno-error=sign-conversion
 
 # Enable the experimental FlatBuffers configuration path.
 build:flatbuffers --//score/mw/com/flags:experimental_enable_flatbuffers_configuration=True
-
-build --per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
-build --host_per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
-build --per_file_copt=external/.*boost.*@-Wno-error=shadow
-build --host_per_file_copt=external/.*boost.*@-Wno-error=shadow
 
 common:linux_x86_64_score_gcc_12_2_0_posix --platforms=@score_bazel_platforms//:x86_64-linux-gcc_12.2.0-posix
 common:linux_x86_64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_x86_64_toolchain//:x86_64-linux
