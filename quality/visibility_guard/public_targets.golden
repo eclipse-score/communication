@@ -6,7 +6,6 @@
 //quality/compiler_warnings:fortify_source
 //quality/compiler_warnings:optimize_code
 //quality/compiler_warnings:treat_warnings_as_errors
-//quality/coverage:enable_llvm_coverage_for_death_tests
 //score/memory/shared/fake:fake_memory_resources
 //score/memory/shared/fake:my_bounded_shared_memory_resource
 //score/memory/shared/flock:exclusive_flock_mutex
