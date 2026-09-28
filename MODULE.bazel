@@ -55,14 +55,13 @@ bazel_dep(name = "score_tooling", version = "2.2.2")
 
 # Coverage pipeline (LLVM on Linux, gcov on QNX): the qualified module that
 # replaced the copy under quality/coverage. See quality/coverage/README.md.
-bazel_dep(name = "score_coverage", version = "0.2.0", dev_dependency = True)
+bazel_dep(name = "score_coverage", version = "0.3.0", dev_dependency = True)
 
-# VALIDATION ONLY: the gcov backend for QNX on-target coverage is in
-# eclipse-score/coverage_tool PR #10; replace by the 0.3.0 release once it is
-# in the registry.
+# TEMPORARY: pins the 0.3.0 release commit until the registry entry
+# (eclipse-score/bazel_registry PR #519) is merged; then drop this override.
 git_override(
     module_name = "score_coverage",
-    commit = "bcd4b3e",
+    commit = "c2eb26aeec94",
     remote = "https://github.com/eclipse-score/coverage_tool.git",
 )
 
