@@ -46,37 +46,6 @@ cc_args(
         "-Wno-builtin-macro-redefined",
         # Reduce known GCC false positives.
         "-Wno-maybe-uninitialized",
-    ],
-)
-
-cc_args(
-    name = "minimal_warnings_args_for_cpp_compile_actions",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
-    ],
-    args = [
-        "-Wno-literal-suffix",
-        "-Wno-noexcept-type",
-    ],
-)
-
-cc_feature(
-    name = "minimal_warnings",
-    args = [
-        ":minimal_warnings_args_for_all_compile_actions",
-        ":minimal_warnings_args_for_cpp_compile_actions",
-    ],
-    feature_name = "score_communication_minimal_warnings",
-    implies = ["//quality/compiler_warnings:minimal_warnings"],
-    visibility = ["//visibility:public"],
-)
-
-cc_args(
-    name = "strict_warnings_args_for_all_compile_actions",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:compile_actions",
-    ],
-    args = [
         "-Warray-bounds=2",  # A5-2-5
         "-Wdisabled-optimization",
         "-Wimplicit-fallthrough=4",
@@ -89,11 +58,13 @@ cc_args(
 )
 
 cc_args(
-    name = "strict_warnings_args_for_cpp_compile_actions",
+    name = "minimal_warnings_args_for_cpp_compile_actions",
     actions = [
         "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
     ],
     args = [
+        "-Wno-literal-suffix",
+        "-Wno-noexcept-type",
         "-Wdelete-non-virtual-dtor",
         "-Woverloaded-virtual",
         "-Wregister",
@@ -102,7 +73,7 @@ cc_args(
 )
 
 cc_args(
-    name = "strict_warnings_args_for_c_compile_actions",
+    name = "minimal_warnings_args_for_c_compile_actions",
     actions = [
         "@rules_cc//cc/toolchains/actions:c_compile_actions",
     ],
@@ -113,17 +84,14 @@ cc_args(
 )
 
 cc_feature(
-    name = "strict_warnings",
+    name = "minimal_warnings",
     args = [
-        ":strict_warnings_args_for_all_compile_actions",
-        ":strict_warnings_args_for_cpp_compile_actions",
-        ":strict_warnings_args_for_c_compile_actions",
+        ":minimal_warnings_args_for_all_compile_actions",
+        ":minimal_warnings_args_for_cpp_compile_actions",
+        ":minimal_warnings_args_for_c_compile_actions",
     ],
-    feature_name = "score_communication_strict_warnings",
-    implies = [
-        "//quality/compiler_warnings:strict_warnings",
-        "minimal_warnings",
-    ],
+    feature_name = "score_communication_minimal_warnings",
+    implies = ["//quality/compiler_warnings:minimal_warnings"],
     visibility = ["//visibility:public"],
 )
 
@@ -146,7 +114,6 @@ cc_feature(
     mutually_exclusive = [
         "//quality/compiler_warnings:treat_warnings_as_errors",
         ":minimal_warnings",
-        ":strict_warnings",
     ],
     visibility = ["//visibility:public"],
 )

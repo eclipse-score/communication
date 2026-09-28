@@ -92,6 +92,8 @@ cc_args(
         "-Wno-unused-command-line-argument",
         # Clang-only: GCC has no -Wdeprecated-non-prototype (C2x non-prototype decls).
         "-Wno-deprecated-non-prototype",
+        "-Warray-bounds",
+        "-Wimplicit-fallthrough",
     ],
 )
 
@@ -102,30 +104,6 @@ cc_feature(
     ],
     feature_name = "score_communication_minimal_warnings",
     implies = ["//quality/compiler_warnings:minimal_warnings"],
-    visibility = ["//visibility:public"],
-)
-
-cc_args(
-    name = "strict_warnings_args",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:compile_actions",
-    ],
-    args = [
-        "-Warray-bounds",
-        "-Wimplicit-fallthrough",
-    ],
-)
-
-cc_feature(
-    name = "strict_warnings",
-    args = [
-        ":strict_warnings_args",
-    ],
-    feature_name = "score_communication_strict_warnings",
-    implies = [
-        "//quality/compiler_warnings:strict_warnings",
-        "minimal_warnings",
-    ],
     visibility = ["//visibility:public"],
 )
 
@@ -146,7 +124,6 @@ cc_feature(
     mutually_exclusive = [
         "//quality/compiler_warnings:treat_warnings_as_errors",
         ":minimal_warnings",
-        ":strict_warnings",
     ],
     visibility = ["//visibility:public"],
 )
