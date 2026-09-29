@@ -445,4 +445,11 @@ using BigDataSkeleton = AsSkeleton<BigDatatypeInterface>;
 
 }  // namespace score::mw::com::test
 
+#include "score/mw/com/impl/sample_wire_format.h"
+
+// The object representation of these types is their wire representation: they are exchanged via a
+// binding which hands the bytes to consumers on the same host.
+SCORE_MW_COM_DECLARE_RAW_WIRE_REPRESENTATION(score::mw::com::test::DummyDataStamped)
+SCORE_MW_COM_DECLARE_RAW_WIRE_REPRESENTATION(score::mw::com::test::MapApiLanesStamped)
+
 #endif  // SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_BIG_DATATYPE_H

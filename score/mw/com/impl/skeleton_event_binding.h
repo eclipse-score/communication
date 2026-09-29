@@ -20,16 +20,20 @@
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/receive_handler_registration_changed_handler.h"
 #include "score/mw/com/impl/sample_allocatee_guard.h"
+#include "score/mw/com/impl/sample_serialization_spec.h"
+#include "score/mw/com/impl/serialize_sample_callback.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
 #include "score/memory/data_type_size_info.h"
 #include "score/result/result.h"
 
 #include <score/callback.hpp>
+#include <score/utility.hpp>
 
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <utility>
 
 namespace score::mw::com::impl
 {
@@ -113,6 +117,24 @@ class SkeletonEventBinding
         ReceiveHandlerRegistrationChangedCallback callback) noexcept = 0;
 
     virtual Result<void> UnsetReceiveHandlerRegistrationChangedHandler() noexcept = 0;
+
+    /// \brief Sets how a sample is turned into its wire representation.
+    /// \details A binding is type-erased: it only sees a `void*` plus size/alignment, which is not enough to marshal
+    /// a sample (endianness, padding rules, variable length members). Only the strongly typed (binding independent)
+    /// layer can do that, so it hands down a serializer here, the same way it hands down an InitializeSampleCallback
+    /// via PrepareOffer(). The accompanying size bound lets a binding reserve its serialization buffer before any
+    /// data flows instead of growing it while sending.
+    /// This is intentionally not pure virtual and defaults to ignoring the specification: bindings which never
+    /// produce a wire representation have nothing to do here. LoLa is such a case, as its consumers read the sample
+    /// in place from shared memory instead of receiving serialized bytes.
+    /// The specification is optional: callers without type knowledge (e.g. GenericSkeletonEvent, which is already
+    /// type-erased on the binding independent layer) hand over an empty optional. A binding which requires
+    /// serialization has to define its own fallback for that case.
+    /// \param sample_serialization_spec Optional serializer plus the worst case size of its output.
+    virtual void SetSampleSerialization(std::optional<SampleSerializationSpec> sample_serialization_spec) noexcept
+    {
+        score::cpp::ignore = std::move(sample_serialization_spec);
+    }
 };
 
 }  // namespace score::mw::com::impl

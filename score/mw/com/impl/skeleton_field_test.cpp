@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/skeleton_field.h"
+#include "score/mw/com/impl/raw_wire_representation_fundamentals.h"
 
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_method.h"
 #include "score/mw/com/impl/com_error.h"

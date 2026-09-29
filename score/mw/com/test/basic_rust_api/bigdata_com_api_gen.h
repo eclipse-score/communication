@@ -118,4 +118,11 @@ using ComplexStructProxy = ::score::mw::com::AsProxy<ComplexStructInterface>;
 using ComplexStructSkeleton = ::score::mw::com::AsSkeleton<ComplexStructInterface>;
 }  // namespace score::mw::com::test
 
+#include "score/mw/com/impl/sample_wire_format.h"
+
+// The object representation of these types is their wire representation: they are exchanged via a
+// binding which hands the bytes to consumers on the same host.
+SCORE_MW_COM_DECLARE_RAW_WIRE_REPRESENTATION(score::mw::com::test::ComplexStruct)
+SCORE_MW_COM_DECLARE_RAW_WIRE_REPRESENTATION(score::mw::com::test::MixedPrimitivesPayload)
+
 #endif  // SCORE_MW_COM_TEST_BASIC_RUST_API_COM_API_GEN_H

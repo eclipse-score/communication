@@ -59,4 +59,10 @@ using AddonInterfaceSkeleton = score::mw::com::AsSkeleton<AddonInterface>;
 
 }  // namespace score::mw::com::test
 
+#include "score/mw/com/impl/sample_wire_format.h"
+
+// The object representation of this type is its wire representation: it is exchanged via a binding which hands the
+// bytes to consumers on the same host.
+SCORE_MW_COM_DECLARE_RAW_WIRE_REPRESENTATION(score::mw::com::test::ExampleData)
+
 #endif  // SCORE_MW_COM_TEST_LOADING_ADD_ON_CONFIGURATION_ADDON_INTERFACE_H

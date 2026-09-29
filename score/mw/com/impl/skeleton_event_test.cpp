@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/skeleton_event.h"
+#include "score/mw/com/impl/raw_wire_representation_fundamentals.h"
 
 #include "score/mw/com/impl/mocking/test_type_utilities.h"
 #include "score/mw/com/impl/runtime.h"

@@ -47,4 +47,11 @@ using VehicleSkeleton = AsSkeleton<VehicleInterface>;
 
 }  // namespace score::mw::com
 
+#include "score/mw/com/impl/sample_wire_format.h"
+
+// The object representation of these types is their wire representation: they are exchanged via a
+// binding which hands the bytes to consumers on the same host.
+SCORE_MW_COM_DECLARE_RAW_WIRE_REPRESENTATION(score::mw::com::Tire)
+SCORE_MW_COM_DECLARE_RAW_WIRE_REPRESENTATION(score::mw::com::Exhaust)
+
 #endif  // SCORE_MW_COM_EXAMPLE_COM_API_EXAMPLE_VEHICLE_DATATYPE_H

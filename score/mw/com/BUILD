@@ -49,6 +49,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl:event_receive_handler",
+        "//score/mw/com/impl:sample_wire_format",
     ],
 )
 

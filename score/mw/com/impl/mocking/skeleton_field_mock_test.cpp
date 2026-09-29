@@ -14,6 +14,7 @@
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/mocking/test_type_utilities.h"
+#include "score/mw/com/impl/raw_wire_representation_fundamentals.h"
 #include "score/mw/com/impl/skeleton_field.h"
 #include "score/result/result.h"
 

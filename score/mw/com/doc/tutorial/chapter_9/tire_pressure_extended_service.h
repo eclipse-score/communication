@@ -86,4 +86,11 @@ using TirePressureExtendedSkeleton = score::mw::com::AsSkeleton<TirePressureExte
 
 }  // namespace score::mw::com::tutorial
 
+#include "score/mw/com/impl/sample_wire_format.h"
+
+// The object representation of these types is their wire representation: they are exchanged via a
+// binding which hands the bytes to consumers on the same host.
+SCORE_MW_COM_DECLARE_RAW_WIRE_REPRESENTATION(score::mw::com::tutorial::Tire)
+SCORE_MW_COM_DECLARE_RAW_WIRE_REPRESENTATION(score::mw::com::tutorial::TirePressureThreshold)
+
 #endif  // SCORE_MW_COM_TUTORIAL_TIRE_PRESSURE_EXTENDED_SERVICE_H

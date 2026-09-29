@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/traits.h"
+#include "score/mw/com/impl/raw_wire_representation_fundamentals.h"
 
 #include "method_type.h"
 #include "score/mw/com/impl/bindings/mock_binding/proxy_method.h"
