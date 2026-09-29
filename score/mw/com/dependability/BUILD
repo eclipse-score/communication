@@ -19,6 +19,7 @@ dependable_element(
     components = [
         "//score/mw/com/impl/bindings/mock_binding:mock_binding_component",
         "//score/mw/com/impl/bindings/lola:lola_binding",
+        "//score/mw/com/impl:binding_independent",
     ],
     dependability_analysis = ["//score/mw/com/dependability/safety_analysis:mw_com_dependability_analysis"],
     integrity_level = "B",
