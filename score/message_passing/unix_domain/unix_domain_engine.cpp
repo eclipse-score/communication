@@ -116,7 +116,7 @@ void UnixDomainEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noexc
     if (found != poll_fds_.end())
     {
         *found = {endpoint.fd, events, 0};
-        std::size_t i = static_cast<std::size_t>(std::distance(poll_fds_.begin(), found));
+        const auto i = static_cast<std::size_t>(std::distance(poll_fds_.begin(), found));
         poll_endpoints_[i] = &endpoint;
     }
     else
@@ -134,7 +134,7 @@ void UnixDomainEngine::UnregisterPosixEndpoint(PosixEndpointEntry& endpoint) noe
     const auto found = std::find(poll_endpoints_.begin(), poll_endpoints_.end(), &endpoint);
     if (found != poll_endpoints_.end())
     {
-        std::size_t i = static_cast<std::size_t>(std::distance(poll_endpoints_.begin(), found));
+        const auto i = static_cast<std::size_t>(std::distance(poll_endpoints_.begin(), found));
         UnpollEndpoint(i);
     }
 }
@@ -195,7 +195,7 @@ score::cpp::expected_blank<score::os::Error> UnixDomainEngine::SendProtocolMessa
     struct msghdr msg;
     std::ignore = std::memset(static_cast<void*>(&msg), 0, sizeof(msg));
     constexpr auto kVectorCount = 3UL;
-    std::uint16_t size = static_cast<std::uint16_t>(message.size());
+    auto size = static_cast<std::uint16_t>(message.size());
     std::array<iovec, kVectorCount> io;
     // Deviation of MISRA RULE-6-8-3: codeql::misra_deviation_next_line(unix-domain-iovec-stack-buffers)
     io[0].iov_base = &code;
