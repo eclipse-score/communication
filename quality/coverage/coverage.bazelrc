@@ -80,5 +80,12 @@ coverage:qnx_x86_64 --@rules_rust//rust/settings:extra_rustc_flags=
 coverage:qnx_x86_64 --coverage_output_generator=@bazel_tools//tools/test:lcov_merger
 coverage:qnx_x86_64 --coverage_report_generator=//quality/coverage:gcov_reporter_wrapper
 coverage:qnx_x86_64 --instrument_test_targets
+# Bazel guesses --instrumentation_filter from the packages of the test targets
+# and only strips a trailing "/tests" (plural) to reach the code under test.
+# Libraries whose tests live in a "test" subpackage would fall outside the
+# guess and the stock collector of the gcov backend would drop their counters
+# (seen as 0 % for score/os in baselibs). The LLVM backend on Linux is
+# unaffected (its merger does not consult the filter).
+coverage:qnx_x86_64 --instrumentation_filter=^//score[/:]
 coverage:qnx_x86_64 --test_lang_filters=cc
 coverage:qnx --config=qnx_x86_64
