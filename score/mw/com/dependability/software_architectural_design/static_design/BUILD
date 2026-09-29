@@ -18,7 +18,6 @@ architectural_design(
         "overall.puml",
         "binding_independent.puml",
         "lola_binding.puml",
-        "someip_binding.puml",
         "mock_binding.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
