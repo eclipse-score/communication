@@ -37,4 +37,4 @@ dependencies:
         skip: "https://github.com/eclipse-score/communication/issues/695"
   rules_rust:
     versions:
-      - version: "0.68.1-score"
+      - version: "0.68.2-score"
