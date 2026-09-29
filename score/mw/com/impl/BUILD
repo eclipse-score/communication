@@ -16,6 +16,28 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "un
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
+unit(
+    name = "errors",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/errors:unit_design",
+    ],
+    visibility = ["//score/mw/com/dependability:__pkg__"],
+    implementation = [],
+)
+
+unit(
+    name = "service_instance_identifiers",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/errors:unit_design",
+    ],
+    visibility = ["//score/mw/com/dependability:__pkg__"],
+    implementation = [],
+)
+
 component(
     name = "binding_independent",
     components = [
