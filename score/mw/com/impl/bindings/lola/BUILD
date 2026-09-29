@@ -16,6 +16,74 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "un
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
+component(
+    name = "lola_binding",
+    components = [
+        ":lola_proxy_and_service_elements",
+        ":lola_skeleton_and_service_elements",
+        ":lola_event_data_control",
+        ":lola_runtime",
+        ":lola_partial_restart",
+        "//score/mw/com/impl/bindings/lola/service_discovery:lola_service_discovery",
+        "//score/mw/com/impl/bindings/lola/messaging:lola_message_passing_service",
+        "//score/mw/com/impl/bindings/lola/methods:lola_method_data_control",
+    ],
+    requirements = [],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    visibility = ["//score/mw/com/dependability:__pkg__"],
+)
+
+unit(
+    name = "lola_proxy_and_service_elements",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/bindings/lola/dependability/proxy_and_service_elements:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "lola_skeleton_and_service_elements",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/bindings/lola/dependability/skeleton_and_service_elements:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "lola_event_data_control",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/bindings/lola/dependability/event_data_control:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "lola_runtime",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/bindings/lola/dependability/runtime:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "lola_partial_restart",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/bindings/lola/dependability/partial_restart:unit_design",
+    ],
+    implementation = [],
+)
+
 cc_library(
     name = "lola",
     features = COMPILER_WARNING_FEATURES,
