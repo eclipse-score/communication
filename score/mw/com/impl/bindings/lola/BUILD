@@ -12,8 +12,90 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+component(
+    name = "lola_binding",
+    components = [
+        ":proxy_and_service_elements",
+        ":skeleton_and_service_elements",
+        ":event_data_control_unit",
+        ":runtime_unit",
+        ":partial_restart",
+        ":sample_management_pointers",
+        "//score/mw/com/impl/bindings/lola/service_discovery:service_discovery_unit",
+        "//score/mw/com/impl/bindings/lola/messaging:message_passing_service_unit",
+        "//score/mw/com/impl/bindings/lola/methods:method_data_control_unit",
+    ],
+    requirements = [],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    visibility = ["//score/mw/com/dependability:__pkg__"],
+)
+
+unit(
+    name = "proxy_and_service_elements",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/bindings/lola/dependability/proxy_and_service_elements:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "skeleton_and_service_elements",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/bindings/lola/dependability/skeleton_and_service_elements:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "event_data_control_unit",
+    design_name = "event_data_control",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/bindings/lola/dependability/event_data_control:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "runtime_unit",
+    design_name = "runtime",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/bindings/lola/dependability/runtime:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "partial_restart",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/bindings/lola/dependability/partial_restart:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "sample_management_pointers",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/bindings/lola/dependability/sample_management_pointers:unit_design",
+    ],
+    implementation = [],
+)
 
 cc_library(
     name = "lola",

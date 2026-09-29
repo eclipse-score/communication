@@ -20,7 +20,7 @@ component lola_binding <<component>> {
   component method_data_control <<unit>> 
   component event_data_control <<unit>> 
   component message_passing_service <<unit>> 
-  component slot_pointers <<unit>>
+  component sample_management_pointers <<unit>>
 
   component skeleton_and_service_elements <<unit>> 
   
