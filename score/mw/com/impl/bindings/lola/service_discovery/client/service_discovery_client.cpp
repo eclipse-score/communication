@@ -43,8 +43,8 @@ auto ReadMaskSet(const os::InotifyEvent& event, const os::InotifyEvent::ReadMask
     return static_cast<underlying_type_readmask>(event.GetMask() & mask) != 0U;
 }
 
-std::vector<HandleType> GetKnownHandles(EnrichedInstanceIdentifier enriched_instance_identifier,
-                                        QualityAwareContainer<KnownInstancesContainer> known_instances)
+std::vector<HandleType> GetKnownHandles(const EnrichedInstanceIdentifier& enriched_instance_identifier,
+                                        const QualityAwareContainer<KnownInstancesContainer>& known_instances)
 {
     std::vector<HandleType> known_handles{};
     // Suppress "AUTOSAR C++14 M6-4-3" rule finding. This rule declares: "A switch statement shall be

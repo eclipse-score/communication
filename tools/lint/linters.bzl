@@ -21,12 +21,27 @@ load("@bazel_skylib//rules:write_file.bzl", "write_file")
 visibility(["//..."])
 
 # Define the clang-tidy linter aspect using LLVM toolchain
+# NOTE: lint_target_headers is deliberately left False (the aspect_rules_lint
+# default). When enabled it computes its own `-header-filter` regex from the
+# target's own header directories, which unconditionally overrides (rather
+# than merges with) //:.clang-tidy's HeaderFilterRegex, and falls back to
+# matching *every* header (".*") whenever a target has more than one header
+# directory (e.g. because of _virtual_includes) -- letting findings from
+# external Bazel repositories (bazel-out/.../external/<repo>/...), which we
+# cannot fix or influence, leak into the results.
+#
+# header_filter is set explicitly (rather than relying on clang-tidy
+# discovering //:.clang-tidy's HeaderFilterRegex on its own, which isn't
+# reliable from inside the sandbox) to the same pattern as
+# //:.clang-tidy's HeaderFilterRegex, so our own headers are still linted
+# while third_party/ and external/ (Bazel external repositories) are
+# excluded.
 clang_tidy = lint_clang_tidy_aspect(
     binary = Label("@llvm_toolchain//:clang-tidy"),
     configs = [
         Label("//:.clang-tidy"),
     ],
-    lint_target_headers = True,
+    header_filter = "^(?!(third_party|external)/).*$",
     angle_includes_are_system = True,
     verbose = False,
 )

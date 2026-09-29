@@ -67,8 +67,15 @@ void DoConsumerActions(score::mw::com::test::CheckPointControl& check_point_cont
     //              provider while the consumer is still in the callback.
     // ***********************************************************************************
 
-    auto find_service_callback = [&check_point_control](auto service_handle_container,
-                                                        auto find_service_handle) noexcept {
+    auto find_service_callback = [&check_point_control](
+                                     // The enclosing FindServiceHandler is a type-erased callback whose call
+                                     // signature takes this parameter by value; the caller already copies it
+                                     // into that fixed signature before invoking this lambda, so taking it by
+                                     // const& here would not avoid any copy - it would only (misleadingly) hide
+                                     // the fact that one already happened.
+                                     // NOLINTNEXTLINE(performance-unnecessary-value-param)
+                                     auto service_handle_container,
+                                     auto find_service_handle) noexcept {
         std::cerr << "Consumer Step (C.2): find service handler called" << std::endl;
         if (service_handle_container.size() != 1)
         {

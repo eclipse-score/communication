@@ -292,7 +292,7 @@ TEST(GetCerrLoggerShutdownDeathTest, LoggingThreadSurvivesStaticDestructionAtExi
     EXPECT_EXIT(
         {
             // Silence the fallback logger's output inside the forked child.
-            static_cast<void>(std::freopen("/dev/null", "w", stderr));
+            std::ignore = std::freopen("/dev/null", "w", stderr);
 
             const LoggingCallback logger = GetCerrLogger();
             std::atomic<bool> started{false};

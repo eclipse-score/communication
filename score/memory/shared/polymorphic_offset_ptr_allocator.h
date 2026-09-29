@@ -62,6 +62,12 @@ class PolymorphicOffsetPtrAllocator
     PolymorphicOffsetPtrAllocator& operator=(PolymorphicOffsetPtrAllocator&&) noexcept = default;
 
     auto allocate(size_type size) -> pointer;
+    // The C++ standard Allocator named requirements (Cpp17Allocator, [allocator.requirements]) specify the
+    // expression "a.deallocate(p, n)" with "p" of type "X::pointer" passed by value; this matches the signature
+    // of std::allocator::deallocate and is relied upon by std::allocator_traits and allocator-aware containers.
+    // Passing by const& would deviate from this standard interface for no measurable benefit, since OffsetPtr is a
+    // small, trivially-copyable pointer-like type.
+    // NOLINTNEXTLINE(performance-unnecessary-value-param): see above, matches std Allocator requirements interface
     void deallocate(pointer p, size_type size);
 
     OffsetPtr<const MemoryResourceProxy> getMemoryResourceProxy() const;
@@ -110,6 +116,7 @@ auto PolymorphicOffsetPtrAllocator<T>::allocate(size_type size) -> pointer
 }
 
 template <typename T>
+// NOLINTNEXTLINE(performance-unnecessary-value-param): matches std Allocator requirements interface, see declaration
 void PolymorphicOffsetPtrAllocator<T>::deallocate(pointer p, size_type size)
 {
     if (proxy_ != nullptr)

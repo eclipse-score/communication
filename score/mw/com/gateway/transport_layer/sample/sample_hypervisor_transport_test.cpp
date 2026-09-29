@@ -60,7 +60,7 @@ class SampleHyperVisorTransportTest : public ::testing::Test
 
     impl::InstanceSpecifier CreateValidInstanceSpecifier()
     {
-        const auto specifier_result = impl::InstanceSpecifier::Create("SpeedService/Instance42");
+        const auto specifier_result = impl::InstanceSpecifier::Create(std::string{"SpeedService/Instance42"});
         EXPECT_TRUE(specifier_result.has_value());
         return specifier_result.value();
     }

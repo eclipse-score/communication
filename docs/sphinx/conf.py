@@ -23,7 +23,7 @@ import warnings
 from pathlib import Path
 
 # -- Project information --
-project = "Eclipse S-CORE"
+project = "Communication"
 copyright = "2026, Eclipse S-CORE Contributors"
 author = "Eclipse Foundation"
 release = "1.0.0"

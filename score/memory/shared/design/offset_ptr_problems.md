@@ -1,9 +1,14 @@
-# OffsetPtr problems to solve
+# OffsetPtr/OffsetRef problems to solve
+
+Note, that OffsetRef is more restricted than OffsetPtr, so not all of the problems that apply to OffsetPtr apply to
+OffsetRef. We will annotate the problems that apply to OffsetRef too.
 
 ## Definitions / background:
-- Start check: Checking that the start address of a pointed-to object lies the same shared memory region in which the OffsetPtr was created.
-- End checks: Checking that the end address of a pointed-to object lies the same shared memory region in which the OffsetPtr was created.
-- Bounds check: Start and end check.
+- Start check: Checking that the start address of a pointed-to object lies the same shared memory region in which the
+  `OffsetPtr` was created. (Also applicable to `OffsetRef`)
+- End checks: Checking that the end address of a pointed-to object lies the same shared memory region in which the
+  `OffsetPtr` was created. (Also applicable to `OffsetRef`)
+- Bounds check: Start and end check. (Also applicable to `OffsetRef`)
 
 One-past-the-end-iterators:
 - The size of memory allocated for a container usually doesn't include the size of a pointed-to object starting at a one-past-the-end iterator address. Therefore, doing an end check on a one-past-the-end iterator may fail.
@@ -16,7 +21,7 @@ One-past-the-end-iterators:
 
 OffsetPtr<PointedType != void>
 - Dereferencing a pointer - operator*
-    - We need to do a Bounds check.
+    - We need to do a Bounds check. (same is done for `OffsetRef<T>::get()`)
 - Getting raw pointer - get(), operator pointer(), operator->
     - Although we're not dereferencing the pointer, so we are not violating any safety goals by creating the raw pointer, we cannot control the bounds checking after this point (i.e. making sure that bounds checking is done before the raw pointer is dereferenced). Therefore, we need to do the same checks as if we were dereferencing the pointer.
 - Copying OffsetPtr

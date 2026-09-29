@@ -62,7 +62,14 @@ score::Result<score::mw::com::test::BigDataProxy> CreateProxy(
     std::promise<std::vector<score::mw::com::test::BigDataProxy::HandleType>> service_discovery_promise{};
     auto service_discovery_future = service_discovery_promise.get_future();
     auto handles_result = score::mw::com::test::BigDataProxy::StartFindService(
-        [moved_service_discovery_promise = std::move(service_discovery_promise)](auto handles, auto handle) mutable {
+        [moved_service_discovery_promise = std::move(service_discovery_promise)](
+            // The enclosing FindServiceHandler is a type-erased callback whose call signature takes this
+            // parameter by value; the caller already copies it into that fixed signature before invoking this
+            // lambda, so taking it by const& here would not avoid any copy - it would only (misleadingly) hide
+            // the fact that one already happened.
+            // NOLINTNEXTLINE(performance-unnecessary-value-param)
+            auto handles,
+            auto handle) mutable {
             moved_service_discovery_promise.set_value(handles);
             score::cpp::ignore = score::mw::com::test::BigDataProxy::StopFindService(handle);
         },
@@ -79,8 +86,7 @@ score::Result<score::mw::com::test::BigDataProxy> CreateProxy(
     {
         std::cerr << "NO instance found for instance specifier" << instance_specifier.ToString()
                   << " although service instance has been successfully offered! Terminating!" << std::endl;
-        return score::MakeUnexpected<score::mw::com::test::BigDataProxy>(
-            score::mw::com::impl::MakeError(score::mw::com::ComErrc::kServiceNotAvailable));
+        return score::MakeUnexpected<score::mw::com::test::BigDataProxy>(score::mw::com::ComErrc::kServiceNotAvailable);
     }
 
     return score::mw::com::test::BigDataProxy::Create(handles.front());

@@ -44,7 +44,7 @@ class LolaServiceInstanceDeployment
 
     LolaServiceInstanceDeployment() = default;
     explicit LolaServiceInstanceDeployment(const score::json::Object& json_object);
-    explicit LolaServiceInstanceDeployment(const std::optional<LolaServiceInstanceId> instance_id,
+    explicit LolaServiceInstanceDeployment(const std::optional<LolaServiceInstanceId>& instance_id,
                                            EventInstanceMapping events = {},
                                            FieldInstanceMapping fields = {},
                                            MethodInstanceMapping methods = {},

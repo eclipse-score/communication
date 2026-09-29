@@ -144,7 +144,7 @@ TEST_F(StateMachineNotSubscribedStateFixture, CallingSubscribeWhenMaxSubscribers
 {
     for (std::size_t i = 0; i < max_subscribers_; ++i)
     {
-        const TransactionLogId dummy_transaction_log_id{static_cast<uid_t>(i)};
+        const TransactionLogId dummy_transaction_log_id{static_cast<TransactionLogId>(i)};
         RegisterTransactionLog(dummy_transaction_log_id);
         EXPECT_TRUE(IsProxyTransactionLogIdRegistered(dummy_transaction_log_id));
     }

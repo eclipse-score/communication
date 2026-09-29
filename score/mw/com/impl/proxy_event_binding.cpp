@@ -11,3 +11,5 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/proxy_event_binding.h"
+
+::score::mw::com::impl::ProxyEventBinding::~ProxyEventBinding() noexcept = default;

@@ -30,7 +30,7 @@ namespace score::mw::com::test
 class AllSignaturesMethodProvider
 {
   public:
-    void CreateSkeleton(InstanceSpecifier instance_specifier, const std::string& failure_message_prefix);
+    void CreateSkeleton(const InstanceSpecifier& instance_specifier, const std::string& failure_message_prefix);
 
     void OfferService(const std::string& failure_message_prefix);
 

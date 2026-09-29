@@ -20,7 +20,7 @@ $TopEvent("Skeleton offered on wrong binding", "Communication.ServiceOfferedOnWr
 $OrGate("Gate1", "Communication.ServiceOfferedOnWrongBinding")
 $IntermediateEvent("Instance Identifier refers to wrong binding", "Event1", "Gate1")
 $OrGate("Gate2", "Event1")
-$BasicEvent("Instance Specifier resolution broken", "Communication.InstanceSpecifierResolutionBroken", "Gate2")
+$BasicEvent("Instance Specifier resolution broken", "Communication.InstanceSpecifierResolutionBrokenWrongBinding", "Gate2")
 $IntermediateEvent("Configuration broken", "Event3", "Gate2")
 $TransferInGate("Transfer1", "Event3")
 $BasicEvent("Binding selection faulty", "Communication.BindingSelectionFaulty", "Gate1")

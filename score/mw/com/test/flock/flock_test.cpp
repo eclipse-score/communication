@@ -50,8 +50,7 @@ void DoChildActions(int fd_to_write_to)
 {
     using namespace score::memory::shared;
 
-    FILE* stream;
-    stream = fdopen(fd_to_write_to, "w");
+    FILE* stream = fdopen(fd_to_write_to, "w");
     if (stream == nullptr)
     {
         std::cerr << "Child: Can't open pipe fd!" << std::endl;
@@ -240,9 +239,8 @@ bool WaitForChildFinished(int fd_to_read_from)
         return false;
     }
     bool child_is_done{false};
-    FILE* stream;
-    int c;
-    stream = fdopen(fd_to_read_from, "r");
+    FILE* stream = fdopen(fd_to_read_from, "r");
+    int c = 0;
     if (stream == nullptr)
     {
         std::cerr << "Controller: Can't open pipe fd!" << std::endl;

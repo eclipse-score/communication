@@ -34,8 +34,9 @@ class ProxyFieldBindingFactory final
 {
   public:
     /// \brief See documentation in IProxyFieldBindingFactory.
-    static Result<std::unique_ptr<ProxyEventBinding<SampleType>>>
-    CreateEventBinding(HandleType parent_handle, ProxyBinding& parent_binding, std::string_view field_name) noexcept
+    static Result<std::unique_ptr<ProxyEventBinding>> CreateEventBinding(HandleType parent_handle,
+                                                                         ProxyBinding& parent_binding,
+                                                                         std::string_view field_name) noexcept
     {
         return instance().CreateEventBinding(std::move(parent_handle), parent_binding, field_name);
     }

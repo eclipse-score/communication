@@ -135,7 +135,15 @@ void ConsumerActions::DoConsumerActionsBeforeRestart() noexcept
     // Step (C.1) - Start an async FindService Search
     // ********************************************************************************
     std::cout << "Consumer Step (C.1): Call StartFindService" << std::endl;
-    auto find_service_callback = [this](auto service_handle_container, auto) noexcept {
+    auto find_service_callback = [this](
+                                     // The enclosing FindServiceHandler is a type-erased callback whose call
+                                     // signature takes this parameter by value; the caller already copies it
+                                     // into that fixed signature before invoking this lambda, so taking it by
+                                     // const& here would not avoid any copy - it would only (misleadingly) hide
+                                     // the fact that one already happened.
+                                     // NOLINTNEXTLINE(performance-unnecessary-value-param)
+                                     auto service_handle_container,
+                                     auto) noexcept {
         HandleReceivedNotification(service_handle_container, handle_notification_data_, check_point_control_);
     };
 

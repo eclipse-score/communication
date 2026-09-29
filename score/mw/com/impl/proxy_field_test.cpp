@@ -194,7 +194,7 @@ struct has_set<T, std::void_t<decltype(std::declval<T&>().Set(std::declval<typen
 
 TEST(ProxyFieldTest, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-17397027");
+    RecordProperty("lobster-tracing", "Communication.ProxyFieldCopySemantics");
     RecordProperty("Description", "Checks copy semantics for ProxyField");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -216,7 +216,7 @@ TEST(ProxyFieldTest, IsMoveable)
 
 TEST(ProxyFieldTest, ClassTypeDependsOnFieldDataType)
 {
-    RecordProperty("Verifies", "SCR-29235459");
+    RecordProperty("lobster-tracing", "Communication.ProxyFieldClassDefinition");
     RecordProperty("Description", "ProxyFields with different field data types should be different classes.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -230,7 +230,7 @@ TEST(ProxyFieldTest, ClassTypeDependsOnFieldDataType)
 
 TEST(ProxyFieldTest, ProxyFieldContainsPublicFieldType)
 {
-    RecordProperty("Verifies", "SCR-17291997");
+    RecordProperty("lobster-tracing", "Communication.ProxyFieldMemberTypeFieldType");
     RecordProperty("Description",
                    "A ProxyField contains a public member type FieldType which denotes the type of the field.");
     RecordProperty("TestType", "Requirements-based test");
@@ -364,7 +364,7 @@ class ProxyFieldGetSetFixture : public ::testing::Test
     {
         return ProxyField<TestSampleType, WithGetter>{
             kFieldName,
-            std::make_unique<mock_binding::ProxyEvent<TestSampleType>>(),
+            std::make_unique<mock_binding::ProxyEvent>(),
             nullptr,
             std::make_unique<mock_binding::ProxyMethodFacade>(get_method_binding_mock_)};
     }
@@ -373,7 +373,7 @@ class ProxyFieldGetSetFixture : public ::testing::Test
     {
         return ProxyField<TestSampleType, WithSetter, WithNotifier>{
             kFieldName,
-            std::make_unique<mock_binding::ProxyEvent<TestSampleType>>(),
+            std::make_unique<mock_binding::ProxyEvent>(),
             std::make_unique<mock_binding::ProxyMethodFacade>(set_method_binding_mock_)};
     }
 

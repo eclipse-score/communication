@@ -208,7 +208,7 @@ bool IsMethodErrorRecoverable(const score::result::Error error)
 
 MessagePassingServiceInstance::MessagePassingServiceInstance(
     const ClientQualityType asil_level,
-    AsilSpecificCfg /*config*/,
+    const AsilSpecificCfg& /*config*/,
     score::message_passing::IServerFactory& server_factory,
     score::message_passing::IClientFactory& client_factory,
     score::concurrency::Executor& local_event_executor) noexcept

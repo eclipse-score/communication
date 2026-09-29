@@ -100,7 +100,7 @@ void UnixDomainServer::ServerConnection::RequestDisconnect() noexcept
 
 bool UnixDomainServer::ServerConnection::ProcessInput()
 {
-    std::uint8_t code;
+    std::uint8_t code{0U};
     auto& user_data = *user_data_;
     using HandlerPointerT = score::cpp::pmr::unique_ptr<IConnectionHandler>;
     auto message_expected = server_.engine_->ReceiveProtocolMessage(endpoint_.fd, code);

@@ -15,7 +15,6 @@
 
 #include "score/mw/com/impl/bindings/mock_binding/sample_ptr.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
-#include "score/mw/com/impl/proxy_event_binding_base.h"
 
 #include <score/assert.hpp>
 
@@ -29,45 +28,20 @@
 namespace score::mw::com::impl::mock_binding
 {
 
-class ProxyEventBase : public ProxyEventBindingBase
-{
-  public:
-    ~ProxyEventBase() override = default;
-
-    MOCK_METHOD(SubscriptionState, GetSubscriptionState, (), (const, noexcept, override));
-    MOCK_METHOD(void, Unsubscribe, (), (noexcept, override));
-    MOCK_METHOD(Result<void>, Subscribe, (std::size_t), (noexcept, override));
-    MOCK_METHOD(Result<std::size_t>, GetNumNewSamplesAvailable, (), (const, noexcept, override));
-    MOCK_METHOD(Result<void>, SetReceiveHandler, (std::weak_ptr<ScopedEventReceiveHandler>), (noexcept, override));
-    MOCK_METHOD(Result<void>, UnsetReceiveHandler, (), (noexcept, override));
-    MOCK_METHOD(Result<void>,
-                SetSubscriptionStateChangeHandler,
-                (SubscriptionStateChangeHandler),
-                (noexcept, override));
-    MOCK_METHOD(Result<void>, UnsetSubscriptionStateChangeHandler, (), (noexcept, override));
-    MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
-    MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
-    MOCK_METHOD(void, NotifyServiceInstanceChangedAvailability, (bool, pid_t), (noexcept, override));
-};
-
 /// \brief Mock implementation for proxy event bindings.
 ///
 /// This mock also includes a default behavior for GetNewSamples(): If there are fake samples added to an internal FIFO,
 /// these samples are returned in order to the provided callback, unless stated otherwise with EXPECT_CALL.
-///
-/// \tparam SampleType Data type to be received by this proxy event.
-template <typename SampleType>
-class ProxyEvent : public ProxyEventBinding<SampleType>
+class ProxyEvent : public ProxyEventBinding
 {
   public:
-    ProxyEvent() : ProxyEventBinding<SampleType>{}
+    ProxyEvent() : ProxyEventBinding{}, fake_samples_{}
     {
         ON_CALL(*this, GetNewSamples(::testing::_, ::testing::_))
-            .WillByDefault(
-                ::testing::WithArgs<0, 1>(::testing::Invoke(this, &ProxyEvent<SampleType>::GetNewFakeSamples)));
+            .WillByDefault(::testing::WithArgs<0, 1>(::testing::Invoke(this, &ProxyEvent::GetNewFakeSamples)));
     }
 
-    ~ProxyEvent() = default;
+    ~ProxyEvent() override = default;
 
     MOCK_METHOD(SubscriptionState, GetSubscriptionState, (), (const, noexcept, override));
     MOCK_METHOD(void, Unsubscribe, (), (noexcept, override));
@@ -75,7 +49,7 @@ class ProxyEvent : public ProxyEventBinding<SampleType>
     MOCK_METHOD(Result<std::size_t>, GetNumNewSamplesAvailable, (), (const, noexcept, override));
     MOCK_METHOD(Result<std::size_t>,
                 GetNewSamples,
-                (typename ProxyEventBinding<SampleType>::Callback&&, TrackerGuardFactory&),
+                (ProxyEventBinding::Callback&&, TrackerGuardFactory&),
                 (noexcept, override));
     MOCK_METHOD(Result<void>, SetReceiveHandler, (std::weak_ptr<ScopedEventReceiveHandler>), (noexcept, override));
     MOCK_METHOD(Result<void>, UnsetReceiveHandler, (), (noexcept, override));
@@ -86,58 +60,35 @@ class ProxyEvent : public ProxyEventBinding<SampleType>
     MOCK_METHOD(Result<void>, UnsetSubscriptionStateChangeHandler, (), (noexcept, override));
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
-    MOCK_METHOD(void, NotifyServiceInstanceChangedAvailability, (bool, pid_t), (noexcept, override));
 
     /// \brief Add a sample to the internal queue of fake events.
     ///
     /// On a call to GetNewSamples(), these samples will be forwarded to the provided callable in case there is no
     /// EXPECT_CALL that overrides this behavior. This can be used to simulate received data on the proxy side.
     ///
+    /// \tparam SampleType Data type to be received by this proxy event.
     /// \param sample The data to be added to the incoming queue.
+    template <typename SampleType>
     void PushFakeSample(SampleType&& sample)
     {
-        fake_samples_.push_back(std::make_unique<SampleType>(std::forward<SampleType>(sample)));
+        SamplePtr sample_ptr(new SampleType(std::forward<SampleType>(sample)), [](void* p) noexcept {
+            auto* const int_p = static_cast<SampleType*>(p);
+            delete int_p;
+        });
+        fake_samples_.push_back(std::move(sample_ptr));
     }
 
   private:
-    using FakeSamples = std::vector<SamplePtr<SampleType>>;
-    FakeSamples fake_samples_{};
+    using FakeSamples = std::vector<SamplePtr>;
+    FakeSamples fake_samples_;
 
-    Result<std::size_t> GetNewFakeSamples(typename ProxyEventBinding<SampleType>::Callback&& callable,
-                                          TrackerGuardFactory& tracker);
+    Result<std::size_t> GetNewFakeSamples(ProxyEventBinding::Callback&& callable, TrackerGuardFactory& tracker);
 };
 
-template <typename SampleType>
-Result<std::size_t> ProxyEvent<SampleType>::GetNewFakeSamples(
-    typename ProxyEventBinding<SampleType>::Callback&& callable,
-    TrackerGuardFactory& tracker)
-{
-    const std::size_t num_samples = std::min(fake_samples_.size(), tracker.GetNumAvailableGuards());
-    const auto start_iter = fake_samples_.end() - static_cast<typename FakeSamples::difference_type>(num_samples);
-    auto sample = std::make_move_iterator(start_iter);
-
-    while (sample.base() != fake_samples_.end())
-    {
-        std::optional<SampleReferenceGuard> guard = tracker.TakeGuard();
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(guard.has_value(), "No guards available.");
-        SamplePtr<SampleType> ptr = *sample;
-        impl::SamplePtr<SampleType> impl_ptr = this->MakeSamplePtr(std::move(ptr), std::move(*guard));
-
-        const tracing::ITracingRuntime::TracePointDataId dummy_trace_point_data_id{0U};
-        callable(std::move(impl_ptr), dummy_trace_point_data_id);
-        ++sample;
-    }
-
-    fake_samples_.clear();
-    return {num_samples};
-}
-
-template <typename SampleType>
-class ProxyEventFacade : public ProxyEventBinding<SampleType>
+class ProxyEventFacade : public ProxyEventBinding
 {
   public:
-    ProxyEventFacade(ProxyEvent<SampleType>& proxy_event)
-        : ProxyEventBinding<SampleType>{}, proxy_event_{proxy_event} {};
+    ProxyEventFacade(ProxyEvent& proxy_event) : ProxyEventBinding{}, proxy_event_{proxy_event} {};
 
     ~ProxyEventFacade() override = default;
 
@@ -157,7 +108,7 @@ class ProxyEventFacade : public ProxyEventBinding<SampleType>
     {
         return proxy_event_.GetNumNewSamplesAvailable();
     }
-    Result<std::size_t> GetNewSamples(typename ProxyEventBinding<SampleType>::Callback&& callback,
+    Result<std::size_t> GetNewSamples(ProxyEventBinding::Callback&& callback,
                                       TrackerGuardFactory& tracker_guard_factory) noexcept override
     {
         return proxy_event_.GetNewSamples(std::move(callback), tracker_guard_factory);
@@ -186,13 +137,9 @@ class ProxyEventFacade : public ProxyEventBinding<SampleType>
     {
         return proxy_event_.GetBindingType();
     }
-    void NotifyServiceInstanceChangedAvailability(bool b, pid_t pid) noexcept override
-    {
-        return proxy_event_.NotifyServiceInstanceChangedAvailability(b, pid);
-    }
 
   private:
-    ProxyEvent<SampleType>& proxy_event_;
+    ProxyEvent& proxy_event_;
 };
 
 }  // namespace score::mw::com::impl::mock_binding

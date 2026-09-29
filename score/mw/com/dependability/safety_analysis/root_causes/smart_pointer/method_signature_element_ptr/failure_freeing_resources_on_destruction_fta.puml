@@ -20,6 +20,6 @@ $TopEvent("Failure freeing resources on destruction", "Communication.MethodSigna
 $OrGate("Gate1", "Communication.MethodSignatureElementPtrFailsToFree")
 $BasicEvent("Does not free method signature element", "Communication.DoesNotFreeMethodSignatureElement", "Gate1")
 $IntermediateEvent("Frees wrong method signature element", "Event2", "Gate1")
-$BasicEvent("Overwrite of element in use", "Communication.ChangingStateFails", "Event2")
+$BasicEvent("Overwrite of element in use", "Communication.OverwriteOfElementInUse", "Event2")
 
 @enduml

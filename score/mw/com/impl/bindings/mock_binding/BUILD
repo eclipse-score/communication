@@ -29,7 +29,6 @@ cc_library(
     testonly = True,
     srcs = [
         "generic_proxy_event.cpp",
-        "generic_skeleton_event.cpp",
         "proxy.cpp",
         "proxy_event.cpp",
         "proxy_method.cpp",
@@ -39,7 +38,6 @@ cc_library(
     ],
     hdrs = [
         "generic_proxy_event.h",
-        "generic_skeleton_event.h",
         "proxy.h",
         "proxy_event.h",
         "proxy_method.h",
@@ -54,7 +52,6 @@ cc_library(
     deps = [
         ":sample_ptr",
         "//score/mw/com/impl:generic_proxy_event_binding",
-        "//score/mw/com/impl:generic_skeleton_event_binding",
         "//score/mw/com/impl:proxy_binding",
         "//score/mw/com/impl:proxy_event_binding",
         "//score/mw/com/impl:skeleton_binding",
@@ -64,19 +61,6 @@ cc_library(
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "@googletest//:gtest",
         "@score_baselibs//score/language/futurecpp",
-    ],
-)
-
-cc_library(
-    name = "generic_skeleton_event",
-    testonly = True,
-    srcs = ["generic_skeleton_event.cpp"],
-    hdrs = ["generic_skeleton_event.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = ["//score/mw/com:__subpackages__"],
-    deps = [
-        "//score/mw/com/impl:generic_skeleton_event_binding",
-        "@googletest//:gtest",
     ],
 )
 

@@ -26,14 +26,14 @@
 
 use bigdata_com_api_gen::{BigDataInterface, MapApiLanesStamped};
 use clap::Parser;
-use score_com::{
-    Builder, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl, Runtime,
-    RuntimeBuilder, SampleContainer, ServiceDiscovery, Subscriber, Subscription,
-};
 use core::time::Duration;
 use core::unreachable;
 use futures::channel::oneshot;
 use futures::{FutureExt, StreamExt};
+use score_com::{
+    Builder, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl, Runtime, RuntimeBuilder, SampleContainer,
+    ServiceDiscovery, Subscriber, Subscription,
+};
 use std::path::Path;
 use std::sync::mpsc;
 use std::thread;
@@ -82,11 +82,11 @@ async fn receive_without_cancellation<R: Runtime>(
                     println!("[bigdata-consumer]   Sample x: {}", sample.x);
                 }
                 buffer = buf;
-            }
+            },
             Err(e) => {
                 eprintln!("[bigdata-consumer] Failed to receive samples: {:?}", e);
                 buffer = returned_buf;
-            }
+            },
         }
         total_cycle += 1;
         if total_cycle >= num_cycles {
@@ -120,9 +120,7 @@ async fn receive_with_cancellation<R: Runtime>(
     while total_cycle < num_cycles {
         // Request a timeout from the shared timer thread.
         let (tx, rx) = oneshot::channel();
-        timer_tx
-            .send(tx)
-            .expect("Timer thread unexpectedly stopped");
+        timer_tx.send(tx).expect("Timer thread unexpectedly stopped");
 
         // Map the receiver to resolve to () instead of Result<(), Canceled>
         let timeout_future = rx.map(|_| ());
@@ -140,12 +138,12 @@ async fn receive_with_cancellation<R: Runtime>(
                     println!("[bigdata-consumer]   Sample x: {}", sample.x);
                 }
                 buffer = buf;
-            }
+            },
             Err(e) => {
                 // Just for demonstration, we are printing the error, but in a real application you would likely handle it differently.
                 eprintln!("[bigdata-consumer] Receive error or timeout: {:?}", e);
                 buffer = returned_buf;
-            }
+            },
         }
         total_cycle += 1;
         if total_cycle >= num_cycles {
@@ -158,10 +156,7 @@ async fn receive_with_cancellation<R: Runtime>(
 /// Receives samples one at a time as they are published by the producer, printing each sample's `x` field until the specified number of samples have been received.
 /// The stream will end if the subscription is cancelled or if the consumer is shut down, but will not end on receive errors instead,
 /// errors are returned as part of the stream and can be handled by the consumer while continuing to receive future samples.
-async fn receive_stream<R: Runtime>(
-    mut subscription: impl Subscription<MapApiLanesStamped, R>,
-    num_cycles: usize,
-) {
+async fn receive_stream<R: Runtime>(mut subscription: impl Subscription<MapApiLanesStamped, R>, num_cycles: usize) {
     let mut stream = subscription.to_stream();
     let mut total_cycle = 0;
 
@@ -171,12 +166,12 @@ async fn receive_stream<R: Runtime>(
         match stream.next().await {
             Some(Ok(sample)) => {
                 println!("[bigdata-consumer] Stream received sample x: {}", sample.x);
-            }
+            },
             //when error received from stream, here we are just printing it, but in a real application you would likely handle it differently based on user needs and error type.
             //But library never ends the stream, it will keep retrying to receive samples until the subscription is cancelled or the consumer is shut down.
             Some(Err(e)) => {
                 eprintln!("[bigdata-consumer] Stream error: {:?}", e);
-            }
+            },
             None => unreachable!("Stream never sends None"),
         }
         total_cycle += 1;
@@ -199,15 +194,12 @@ async fn async_main() {
     // Initialise the Lola runtime.
     let mut runtime_builder: LolaRuntimeBuilderImpl = LolaRuntimeBuilderImpl::new();
     runtime_builder.load_config(Path::new(CONFIG_PATH));
-    let runtime = runtime_builder
-        .build()
-        .expect("Failed to build Lola runtime");
+    let runtime = runtime_builder.build().expect("Failed to build Lola runtime");
 
-    let instance_specifier = InstanceSpecifier::new("/score/cp60/MapApiLanesStamped")
-        .expect("Invalid instance specifier");
+    let instance_specifier =
+        InstanceSpecifier::new("/score/cp60/MapApiLanesStamped").expect("Invalid instance specifier");
 
-    let discovery = runtime
-        .find_service::<BigDataInterface>(FindServiceSpecifier::Specific(instance_specifier));
+    let discovery = runtime.find_service::<BigDataInterface>(FindServiceSpecifier::Specific(instance_specifier));
 
     // Await the producer to become available.
     let instances = discovery
@@ -215,10 +207,7 @@ async fn async_main() {
         .await
         .expect("Failed to get available instances");
 
-    let builder = instances
-        .into_iter()
-        .next()
-        .expect("No service instances available");
+    let builder = instances.into_iter().next().expect("No service instances available");
     let consumer = builder.build().expect("Failed to build consumer");
 
     // Subscribe with a slot buffer large enough for MAX_SAMPLES_PER_CALL.
@@ -228,15 +217,10 @@ async fn async_main() {
         .expect("Failed to subscribe to map_api_lanes_stamped_");
 
     match args.receive_mode {
-        ReceiveMode::WithoutCancellation => {
-            receive_without_cancellation(subscription, num_cycles).await
-        }
+        ReceiveMode::WithoutCancellation => receive_without_cancellation(subscription, num_cycles).await,
         ReceiveMode::WithCancellation => receive_with_cancellation(subscription, num_cycles).await,
         ReceiveMode::Stream => receive_stream(subscription, num_cycles).await,
     }
 
-    println!(
-        "[bigdata-consumer] Completed {} receive attempts, exiting",
-        num_cycles
-    );
+    println!("[bigdata-consumer] Completed {} receive attempts, exiting", num_cycles);
 }

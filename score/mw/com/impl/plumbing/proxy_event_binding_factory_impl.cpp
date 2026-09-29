@@ -12,14 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/proxy_event_binding_factory_impl.h"
 
-#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/generic_proxy_event.h"
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
 #include "score/mw/com/impl/plumbing/binding_factory_error.h"
 #include "score/mw/com/impl/plumbing/lola_proxy_element_building_blocks.h"
 #include "score/mw/com/impl/service_element_type.h"
-
-#include "score/mw/log/logging.h"
 
 namespace score::mw::com::impl
 {
@@ -41,21 +37,12 @@ Result<std::unique_ptr<GenericProxyEventBinding>> GenericProxyEventBindingFactor
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD((service_element_type == ServiceElementType::EVENT) ||
                                               (service_element_type == ServiceElementType::FIELD));
 
-    using ReturnType = Result<std::unique_ptr<lola::GenericProxyEvent>>;
+    using ReturnType = Result<std::unique_ptr<lola::ProxyEvent>>;
     auto deployment_info_visitor = score::cpp::overload(
         [&parent_handle, &parent_binding, event_name, service_element_type](
             const LolaServiceTypeDeployment& lola_type_deployment) -> ReturnType {
-            auto* const lola_proxy = dynamic_cast<lola::Proxy*>(&parent_binding);
-            if (lola_proxy == nullptr)
-            {
-                score::mw::log::LogError("lola") << "Generic proxy event binding could not be created for" << event_name
-                                                 << "because the parent proxy binding is not a lola binding.";
-                return MakeUnexpected(BindingFactoryErrorCode::kParentBindingIsNotLola);
-            }
-
-            const auto element_fq_id =
-                GetElementFqId(parent_handle, lola_type_deployment, std::string{event_name}, service_element_type);
-            return std::make_unique<lola::GenericProxyEvent>(*lola_proxy, element_fq_id, event_name);
+            return detail::CreateLolaProxyEvent<ReturnType>(
+                parent_handle, parent_binding, lola_type_deployment, event_name, service_element_type);
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);

@@ -38,7 +38,7 @@ namespace score::mw::com::impl
 class EnrichedInstanceIdentifier final
 {
   public:
-    explicit EnrichedInstanceIdentifier(InstanceIdentifier instance_identifier)
+    explicit EnrichedInstanceIdentifier(const InstanceIdentifier& instance_identifier)
         : EnrichedInstanceIdentifier(
               InstanceIdentifierView{instance_identifier}.GetServiceInstanceId(),
               InstanceIdentifierView{instance_identifier}.GetServiceInstanceDeployment().asilLevel_,
@@ -50,7 +50,7 @@ class EnrichedInstanceIdentifier final
     // initialized by the constructor shall be initialized using member initializers".
     // This is false positive, all data members are initialized using member initializers in the delegated constructor.
     // coverity[autosar_cpp14_a12_6_1_violation]
-    EnrichedInstanceIdentifier(InstanceIdentifier instance_identifier, const ServiceInstanceId instance_id)
+    EnrichedInstanceIdentifier(const InstanceIdentifier& instance_identifier, const ServiceInstanceId& instance_id)
         : EnrichedInstanceIdentifier(
               std::optional<ServiceInstanceId>{instance_id},
               InstanceIdentifierView{instance_identifier}.GetServiceInstanceDeployment().asilLevel_,
@@ -71,7 +71,7 @@ class EnrichedInstanceIdentifier final
     {
     }
 
-    explicit EnrichedInstanceIdentifier(const HandleType handle) noexcept
+    explicit EnrichedInstanceIdentifier(const HandleType& handle) noexcept
         : EnrichedInstanceIdentifier(
               handle.GetInstanceId(),
               InstanceIdentifierView{handle.GetInstanceIdentifier()}.GetServiceInstanceDeployment().asilLevel_,
@@ -82,7 +82,9 @@ class EnrichedInstanceIdentifier final
     EnrichedInstanceIdentifier(std::optional<ServiceInstanceId> instance_id,
                                QualityType quality_type,
                                InstanceIdentifier instance_identifier) noexcept
-        : instance_identifier_{std::move(instance_identifier)}, instance_id_{instance_id}, quality_type_{quality_type}
+        : instance_identifier_{std::move(instance_identifier)},
+          instance_id_{std::move(instance_id)},
+          quality_type_{quality_type}
     {
     }
 

@@ -18,7 +18,7 @@
 #include "score/mw/com/impl/event_receive_handler.h"
 #include "score/mw/com/impl/flag_owner.h"
 #include "score/mw/com/impl/proxy_binding.h"
-#include "score/mw/com/impl/proxy_event_binding_base.h"
+#include "score/mw/com/impl/proxy_event_binding.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
 #include "score/mw/com/impl/subscription_state.h"
 #include "score/mw/com/impl/subscription_state_change_handler.h"
@@ -59,7 +59,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     /// \brief Constructs a ProxyEventBase with the given proxy event binding.
     /// \param event_name Event name of the event.
     /// \param proxy_event_binding The binding that shall be associated with this proxy event.
-    ProxyEventBase(std::string_view event_name, Result<std::unique_ptr<ProxyEventBindingBase>> proxy_event_binding);
+    ProxyEventBase(std::string_view event_name, Result<std::unique_ptr<ProxyEventBinding>> proxy_event_binding);
 
     /// \brief A ProxyEventBase shall not be copyable
     ProxyEventBase(const ProxyEventBase&) = delete;
@@ -168,7 +168,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
      */
     bool IsBindingValid() const noexcept
     {
-        return binding_base_ != nullptr;
+        return binding_ != nullptr;
     }
 
   protected:
@@ -189,7 +189,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     // (1.9) after the initialization of each base and member. The expression-list of a mem-initializer is evaluated as
     // part of the initialization of the corresponding base or member.". So binding_construction_result_ is guaranteed
     // to be initialized before the or_else() lambda is called.
-    std::unique_ptr<ProxyEventBindingBase> binding_base_;
+    std::unique_ptr<ProxyEventBinding> binding_;
 
     std::string_view event_name_;
     std::unique_ptr<SampleReferenceTracker> tracker_;
@@ -226,9 +226,9 @@ class ProxyEventBaseView
   public:
     explicit ProxyEventBaseView(const ProxyEventBase& proxy_event_base) : proxy_event_base_{proxy_event_base} {}
 
-    const ProxyEventBindingBase* GetBinding() const
+    const ProxyEventBinding* GetBinding() const
     {
-        return proxy_event_base_.binding_base_.get();
+        return proxy_event_base_.binding_.get();
     }
 
     [[nodiscard]] Result<void> GetBindingConstructionResult() const

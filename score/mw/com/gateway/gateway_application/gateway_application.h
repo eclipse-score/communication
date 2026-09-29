@@ -33,13 +33,13 @@ namespace score::mw::com::gateway
 class GatewayApplication : public GatewayCore
 {
   public:
-    explicit GatewayApplication(GatewayConfiguration app_configuration) noexcept
+    explicit GatewayApplication(GatewayConfiguration&& app_configuration) noexcept
         : app_configuration_{std::move(app_configuration)}
     {
     }
 
     /// \brief Constructor for testing — injects a pre-built transport, skipping TransportFactory::Create in Setup().
-    explicit GatewayApplication(GatewayConfiguration app_configuration, std::unique_ptr<Transport> transport) noexcept
+    explicit GatewayApplication(GatewayConfiguration&& app_configuration, std::unique_ptr<Transport> transport) noexcept
         : app_configuration_{std::move(app_configuration)}, transport_layer_{std::move(transport)}
     {
     }

@@ -14,7 +14,6 @@
 #ifndef OUR_NAME_SPACE_IMPL_TYPE_COLLECTION_OF_TYPES_H
 #define OUR_NAME_SPACE_IMPL_TYPE_COLLECTION_OF_TYPES_H
 
-#include "score/memory/shared/map.h"
 #include "score/memory/shared/string.h"
 #include "score/memory/shared/vector.h"
 #include <our/name_space/impl_type_somestruct.h>

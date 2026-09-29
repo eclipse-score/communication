@@ -15,7 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
@@ -125,6 +125,7 @@ template <typename SkeletonServiceElementBinding, typename SkeletonServiceElemen
 auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
                                 SkeletonBinding& parent_binding,
                                 const std::string_view service_element_name,
+                                memory::DataTypeSizeInfo sample_type_size_info,
                                 std::optional<FieldTagsStore> field_tags_store) noexcept
     -> std::unique_ptr<SkeletonServiceElementBinding>
 {
@@ -147,7 +148,7 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
 
     using ReturnType = std::unique_ptr<SkeletonServiceElementBinding>;
     auto visitor = score::cpp::overload(
-        [identifier_view, &parent_binding, &service_element_name, field_tags_store](
+        [identifier_view, &parent_binding, &service_element_name, &sample_type_size_info, field_tags_store](
             const LolaServiceTypeDeployment& lola_service_type_deployment) -> ReturnType {
             auto* const lola_parent = dynamic_cast<lola::Skeleton*>(&parent_binding);
             if (lola_parent == nullptr)
@@ -178,6 +179,7 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
             return std::make_unique<SkeletonServiceElement>(*lola_parent,
                                                             element_fq_id,
                                                             service_element_name,
+                                                            sample_type_size_info,
                                                             skeleton_event_properties,
                                                             impl::tracing::SkeletonEventTracingData{});
         },

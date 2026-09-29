@@ -11,5 +11,3 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/skeleton_event_binding.h"
-
-::score::mw::com::impl::SkeletonEventBindingBase::~SkeletonEventBindingBase() = default;

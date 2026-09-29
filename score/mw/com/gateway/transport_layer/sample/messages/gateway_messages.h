@@ -17,7 +17,9 @@
 #include "score/mw/com/gateway/transport_layer/transport.h"
 #include "score/mw/com/types.h"
 
+#include <cstddef>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <vector>
@@ -30,14 +32,54 @@ namespace score::mw::com::gateway
 /// (generic) skeleton for the given service instance.
 class ProvideServiceRequest : public TransportMessage
 {
+    /// \brief Wire-format representation of a single service element (event/field) exposed by a
+    /// ProvideServiceRequest.
+    class GatewayEventInfo
+    {
+        template <typename Self>
+        auto GetSerializeMembersImpl(Self& self) const
+        {
+            using SelfNoRef = std::remove_reference_t<Self>;
+            using NameType = std::conditional_t<std::is_const_v<SelfNoRef>, const std::string, std::string>;
+            using MetaType = std::conditional_t<std::is_const_v<SelfNoRef>, const DataTypeMetaInfo, DataTypeMetaInfo>;
+            return std::tuple<NameType&, MetaType&>(self.name_, self.data_type_meta_info_);
+        }
+
+      public:
+        GatewayEventInfo() = default;
+
+        explicit GatewayEventInfo(const EventInfo& event_info)
+            : name_{event_info.name}, data_type_meta_info_{event_info.data_type_meta_info}
+        {
+        }
+
+        EventInfo ToEventInfo() const
+        {
+            return EventInfo{std::string_view{name_}, data_type_meta_info_};
+        }
+
+        auto GetSerializeMembers() const
+        {
+            return GetSerializeMembersImpl(*this);
+        }
+        auto GetSerializeMembers()
+        {
+            return GetSerializeMembersImpl(*this);
+        }
+
+      private:
+        std::string name_{};
+        DataTypeMetaInfo data_type_meta_info_{};
+    };
+
     template <typename Self>
     static auto GetSerializeMembersImpl(Self& self)
     {
         using SelfNoRef = std::remove_reference_t<Self>;
         using StringType = std::conditional_t<std::is_const_v<SelfNoRef>, const std::string, std::string>;
         using VectorType = std::conditional_t<std::is_const_v<SelfNoRef>,
-                                              const std::vector<score::mw::com::EventInfo>,
-                                              std::vector<score::mw::com::EventInfo>>;
+                                              const std::vector<GatewayEventInfo>,
+                                              std::vector<GatewayEventInfo>>;
         using Uint32Type = std::conditional_t<std::is_const_v<SelfNoRef>, const std::uint32_t, std::uint32_t>;
         return std::tuple<StringType&, VectorType&, Uint32Type&, Uint32Type&>(
             self.instance_specifier_, self.elements_, self.shm_control_size_, self.shm_data_size_);
@@ -46,17 +88,10 @@ class ProvideServiceRequest : public TransportMessage
   public:
     ProvideServiceRequest() : TransportMessage(MessageType::kProvideServiceRequest) {}
 
-    ProvideServiceRequest(score::mw::com::InstanceSpecifier service_instance_specifier,
-                          std::vector<score::mw::com::EventInfo> service_elements,
+    ProvideServiceRequest(const score::mw::com::InstanceSpecifier& service_instance_specifier,
+                          const std::vector<score::mw::com::EventInfo>& service_elements,
                           std::uint32_t shm_control_size = 0U,
-                          std::uint32_t shm_data_size = 0U)
-        : TransportMessage(MessageType::kProvideServiceRequest),
-          instance_specifier_(std::string{service_instance_specifier.ToString()}),
-          elements_(std::move(service_elements)),
-          shm_control_size_(shm_control_size),
-          shm_data_size_(shm_data_size)
-    {
-    }
+                          std::uint32_t shm_data_size = 0U);
 
     std::size_t Serialize(score::cpp::span<std::uint8_t> buffer) const override;
     bool Deserialize(score::cpp::span<const std::uint8_t> data) override;
@@ -66,9 +101,15 @@ class ProvideServiceRequest : public TransportMessage
         return instance_specifier_;
     }
 
-    const std::vector<score::mw::com::EventInfo>& GetServiceElements() const
+    std::vector<EventInfo> GetServiceElements() const
     {
-        return elements_;
+        std::vector<EventInfo> result;
+        result.reserve(elements_.size());
+        for (const auto& element : elements_)
+        {
+            result.push_back(element.ToEventInfo());
+        }
+        return result;
     }
 
     std::uint32_t GetShmControlSize() const
@@ -92,7 +133,7 @@ class ProvideServiceRequest : public TransportMessage
 
   private:
     std::string instance_specifier_;
-    std::vector<score::mw::com::EventInfo> elements_;
+    std::vector<GatewayEventInfo> elements_;
     std::uint32_t shm_control_size_{0U};
     std::uint32_t shm_data_size_{0U};
 };
@@ -142,7 +183,7 @@ class OfferServiceRequest : public TransportMessage
   public:
     OfferServiceRequest() : TransportMessage(MessageType::kOfferServiceRequest) {}
 
-    explicit OfferServiceRequest(score::mw::com::InstanceSpecifier service_instance_specifier)
+    explicit OfferServiceRequest(const score::mw::com::InstanceSpecifier& service_instance_specifier)
         : TransportMessage(MessageType::kOfferServiceRequest),
           instance_specifier_(std::string{service_instance_specifier.ToString()})
     {
@@ -175,7 +216,7 @@ class StopOfferServiceRequest : public TransportMessage
   public:
     StopOfferServiceRequest() : TransportMessage(MessageType::kStopOfferServiceRequest) {}
 
-    explicit StopOfferServiceRequest(score::mw::com::InstanceSpecifier service_instance_specifier)
+    explicit StopOfferServiceRequest(const score::mw::com::InstanceSpecifier& service_instance_specifier)
         : TransportMessage(MessageType::kStopOfferServiceRequest),
           instance_specifier_(std::string{service_instance_specifier.ToString()})
     {
@@ -222,7 +263,7 @@ class ServiceElementMessage : public TransportMessage
     using TransportMessage::TransportMessage;
 
     ServiceElementMessage(MessageType message_type,
-                          score::mw::com::InstanceSpecifier service_instance_specifier,
+                          const score::mw::com::InstanceSpecifier& service_instance_specifier,
                           impl::ServiceElementType element_type,
                           std::string element_name)
         : TransportMessage(message_type),
@@ -270,11 +311,11 @@ class RegisterNotificationRequest final : public ServiceElementMessage
 {
   public:
     RegisterNotificationRequest() : ServiceElementMessage(MessageType::kRegisterNotificationRequest) {}
-    RegisterNotificationRequest(score::mw::com::InstanceSpecifier service_instance_specifier,
+    RegisterNotificationRequest(const score::mw::com::InstanceSpecifier& service_instance_specifier,
                                 impl::ServiceElementType element_type,
                                 std::string element_name)
         : ServiceElementMessage(MessageType::kRegisterNotificationRequest,
-                                std::move(service_instance_specifier),
+                                service_instance_specifier,
                                 element_type,
                                 std::move(element_name))
     {
@@ -286,11 +327,11 @@ class UnregisterNotificationRequest final : public ServiceElementMessage
 {
   public:
     UnregisterNotificationRequest() : ServiceElementMessage(MessageType::kUnregisterNotificationRequest) {}
-    UnregisterNotificationRequest(score::mw::com::InstanceSpecifier service_instance_specifier,
+    UnregisterNotificationRequest(const score::mw::com::InstanceSpecifier& service_instance_specifier,
                                   impl::ServiceElementType element_type,
                                   std::string element_name)
         : ServiceElementMessage(MessageType::kUnregisterNotificationRequest,
-                                std::move(service_instance_specifier),
+                                service_instance_specifier,
                                 element_type,
                                 std::move(element_name))
     {
@@ -303,11 +344,11 @@ class UpdateNotification final : public ServiceElementMessage
 {
   public:
     UpdateNotification() : ServiceElementMessage(MessageType::kUpdateNotification) {}
-    UpdateNotification(score::mw::com::InstanceSpecifier service_instance_specifier,
+    UpdateNotification(const score::mw::com::InstanceSpecifier& service_instance_specifier,
                        impl::ServiceElementType element_type,
                        std::string element_name)
         : ServiceElementMessage(MessageType::kUpdateNotification,
-                                std::move(service_instance_specifier),
+                                service_instance_specifier,
                                 element_type,
                                 std::move(element_name))
     {

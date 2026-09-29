@@ -31,6 +31,12 @@ class IServer
   public:
     virtual ~IServer() = default;
 
+    /// \brief An IServer shall not be copyable or movable
+    IServer(const IServer&) = delete;
+    IServer(IServer&&) = delete;
+    IServer& operator=(const IServer&) = delete;
+    IServer& operator=(IServer&&) = delete;
+
     /// \brief Sets up the callbacks for connection, disconnection and message reception notifications.
     /// \details The callbacks lifetime (or rather the lifetime of the system state captured in the callbacks by
     ///          reference) needs to end not earlier than after StopListening() (or the destructor) has returned.
@@ -52,10 +58,6 @@ class IServer
 
   protected:
     IServer() noexcept = default;
-    IServer(const IServer&) = delete;
-    IServer(IServer&&) = delete;
-    IServer& operator=(const IServer&) = delete;
-    IServer& operator=(IServer&&) = delete;
 };
 
 }  // namespace score::message_passing

@@ -53,6 +53,11 @@ class ProxyBase
 
     virtual ~ProxyBase() = default;
 
+    /// \brief A Proxy shall not be copyable
+    /// \requirement SWS_CM_00136
+    ProxyBase(const ProxyBase&) = delete;
+    ProxyBase& operator=(const ProxyBase&) = delete;
+
     /**
      * \api
      * \brief Tries to find a service that matches the given specifier synchronously.
@@ -124,11 +129,6 @@ class ProxyBase
         std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<ProxyFieldBase>::Reference>>;
     using ProxyMethods =
         std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<ProxyMethodBase>::Reference>>;
-
-    /// \brief A Proxy shall not be copyable
-    /// \requirement SWS_CM_00136
-    ProxyBase(const ProxyBase&) = delete;
-    ProxyBase& operator=(const ProxyBase&) = delete;
 
     /// \brief A Proxy shall be movable
     /// \requirement SWS_CM_00137

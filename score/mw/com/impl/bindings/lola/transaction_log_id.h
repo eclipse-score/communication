@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_ID_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_ID_H
 
-#include <sys/types.h>
+#include "score/mw/com/impl/configuration/global_configuration.h"
 
 #include <limits>
 
@@ -27,14 +27,17 @@ namespace score::mw::com::impl::lola
 /// same identifier. Similarly, 2 instantiations of the same ProxyEvent will share the same TransactionLogId. This is
 /// acceptable since ALL service elements within a process will live / die together. So in the TransactionLogSet
 /// rollback mechanism, we can simply rollback all TransactionLogs corresponding to a given TransactionLogId.
-using TransactionLogId = uid_t;
+using TransactionLogId = GlobalConfiguration::ApplicationId;
 
 /// \brief We assign max TransactionLogId as the "invalid"/initial TransactionLogId our initially created transaction
-///        logs will have. Since we expect, that no process will run with this max-uid. We assert if this would be the
-///        case. Note, that using the min-uid (0) is NOT an option, since this uid is taken regularly, i.e. in case of
-///        SCTF tests
+///        logs will have. Since we expect, that no process will run with this max-application-id. We assert if this
+///        would be the case. Note, that using the min-uid (0) is NOT an option, since this uid is taken regularly, i.e.
+///        in case of SCTF tests
 /// \details We are asserting in TransactionLogSet::TransactionLogNode::TryAcquire, that this API doesn't get called
 ///          with kInvalidTransactionLogId!
+///          Since the TransactionLogId will be stored in shared memory and thus be potentially accessed even from
+///          different OS instances (cross-VM use case) it is essential not to use a platform dependent type (which
+///          e.g. uid_t would be).
 // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
 // variables being given values that are not subsequently used".
 // This constant definition is used by other units to represent an invalid/initial TransactionLogId.
@@ -43,7 +46,7 @@ using TransactionLogId = uid_t;
 // This variable is declared only once within this namespace and does not violate the rule.
 // coverity[autosar_cpp14_a2_10_4_violation]
 // coverity[autosar_cpp14_a0_1_1_violation]
-constexpr uid_t kInvalidTransactionLogId{std::numeric_limits<TransactionLogId>::max()};
+constexpr TransactionLogId kInvalidTransactionLogId{std::numeric_limits<TransactionLogId>::max()};
 
 }  // namespace score::mw::com::impl::lola
 

@@ -28,7 +28,7 @@ enum class QualityType : std::uint16_t
 
 std::string ToString(QualityType quality_type) noexcept;
 
-QualityType FromString(std::string quality_type) noexcept;
+QualityType FromString(const std::string& quality_type) noexcept;
 
 bool areCompatible(const QualityType& lhs, const QualityType& rhs);
 

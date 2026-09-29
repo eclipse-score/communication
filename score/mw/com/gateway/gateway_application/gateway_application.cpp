@@ -203,9 +203,9 @@ void GatewayApplication::PropagateService(const std::string& specifier_str)
     const auto& event_map = proxy_it->second.GetEvents();
     for (const auto& [event_name, event] : std::as_const(event_map))
     {
-        const auto sample_size = event.GetSampleSize();
-        elements.push_back(
-            score::mw::com::impl::EventInfo{event_name, score::mw::com::impl::DataTypeMetaInfo{sample_size, 0U}});
+        const auto sample_size_info = event.GetDataTypeSizeInfo();
+        elements.push_back(score::mw::com::impl::EventInfo{
+            event_name, score::mw::com::impl::DataTypeMetaInfo{sample_size_info.Size(), sample_size_info.Alignment()}});
     }
 
     auto provide_result = transport_layer_->ProvideService(std::move(specifier_result).value(), std::move(elements));

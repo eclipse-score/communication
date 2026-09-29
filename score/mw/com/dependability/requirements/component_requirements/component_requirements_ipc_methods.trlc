@@ -23,7 +23,7 @@ section "com" {
             return value, of the service-method. In case of shm-binding this pre-allocated memory would be in shared
             memory, allowing a zero copy implementation."""
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.ZeroCopy@1, Communication.Method@1]
+            derived_from = [Communication.FEAT_ZeroCopy@1, Communication.FEAT_Method@1]
             version = 1
         }
 
@@ -35,7 +35,7 @@ section "com" {
             """
 
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.ZeroCopy@1, Communication.Method@1]
+            derived_from = [Communication.FEAT_ZeroCopy@1, Communication.FEAT_Method@1]
             version = 1
         }
 
@@ -48,7 +48,7 @@ section "com" {
 
             note = "Unrelated processes, other than the communicating consumer provider pair, will not share a shared memory object, which avoids security violations through interference."
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.DataCorruption@1, Communication.DataLoss@1, Communication.DataReordering@1, Communication.DataRepetition@1]
+            derived_from = [Communication.FEAT_DataCorruption@1, Communication.FEAT_DataLoss@1, Communication.FEAT_DataReordering@1, Communication.FEAT_DataRepetition@1]
             version = 1
         }
     }

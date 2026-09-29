@@ -115,12 +115,13 @@ numfig = True
 # calling bazel_sphinx_needs directly.
 suppress_warnings = sphinx_conf_helpers.DEFAULT_SUPPRESS_WARNINGS + ["myst.xref_missing"]
 
-# Hermetic PlantUML / Graphviz / FTA-metamodel resolution.
-# PLANTUML_BIN, GRAPHVIZ_DOT and FTA_METAMODEL_DIR are injected into every
-# sphinx_module build action by sphinx_module.bzl itself, so no Bazel
-# runfiles lookup is needed here anymore -- see sphinx_conf_helpers'
-# module docstring for details.
-_graphviz_dot = sphinx_conf_helpers.resolve_graphviz_dot()
+# Hermetic PlantUML / Graphviz / FTA-metamodel/fontconfig resolution is done
+# by the "sphinx_module_ext" extension's config-inited listener (see
+# sphinx_conf_helpers.init_hermetic_tools), not here: this module-level scope
+# runs inside Sphinx's chdir(confdir) (eval_config_file), so resolving the
+# execroot-relative PLANTUML_FONTCONFIG_DIR/FTA_METAMODEL_DIR env vars here
+# would resolve them against confdir instead, producing a bogus path (see
+# score_tooling docs/tooling_architecture.rst §"Hermetic tool path
+# resolution"). Only the fixed-literal output format stays here.
 plantuml_output_format = "svg_obj"
-plantuml = sphinx_conf_helpers.resolve_plantuml_command(graphviz_dot_path=_graphviz_dot)
 graphviz_output_format = "svg"

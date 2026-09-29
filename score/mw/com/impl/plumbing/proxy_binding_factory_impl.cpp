@@ -48,7 +48,7 @@ Result<std::unique_ptr<ProxyBinding>> ProxyBindingFactoryImpl::Create(const Hand
             {
                 return MakeUnexpected(BindingFactoryErrorCode::kProxyCreationFailed);
             }
-            return std::move(proxy_creation_result);
+            return proxy_creation_result;
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> ReturnType {

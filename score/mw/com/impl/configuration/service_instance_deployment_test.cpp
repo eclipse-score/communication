@@ -296,7 +296,7 @@ TEST_P(ServiceInstanceDeploymentLessThanParamaterisedFixture, DifferentDeploymen
     EXPECT_FALSE(service_type_deployment_2 < service_type_deployment_1);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     ServiceInstanceDeploymentLessThanParamaterisedFixture,
     ServiceInstanceDeploymentLessThanParamaterisedFixture,
     ::testing::Values(

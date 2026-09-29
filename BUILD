@@ -76,6 +76,7 @@ format_multirun(
     name = "format",
     cc = "@clang_format//:executable",
     python = "@aspect_rules_lint//lint:ruff_bin",
+    rust = "//tools/lint:rustfmt_with_config",
     starlark = "@buildifier_prebuilt//:buildifier",
     target_compatible_with = ["@platforms//os:linux"],
 )
@@ -85,6 +86,7 @@ format_test(
     cc = "@clang_format//:executable",
     no_sandbox = True,
     python = "@aspect_rules_lint//lint:ruff_bin",
+    rust = "//tools/lint:rustfmt_with_config",
     starlark = "@buildifier_prebuilt//:buildifier",
     tags = ["no-flaky-test-detection"],
     target_compatible_with = ["@platforms//os:linux"],

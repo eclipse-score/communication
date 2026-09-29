@@ -10,6 +10,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
 package(
     default_visibility = ["//visibility:public"],
 )
@@ -18,10 +21,6 @@ cc_library(
     name = "json_schema_validator_lib",
     srcs = glob(["src/*"]),
     hdrs = ["src/nlohmann/json-schema.hpp"],
-    features = [
-        "third_party_warnings",
-        "-treat_warnings_as_errors",
-    ],
     includes = ["src"],
     deps = ["@nlohmann_json//:json"],
 )

@@ -80,15 +80,15 @@ pub fn derive_comm_data(input: TokenStream) -> TokenStream {
         Ok(Some(user_id)) => {
             // User-provided ID
             quote! { #user_id }
-        }
+        },
         Ok(None) => {
             // Auto-generated: use fully qualified type name with module_path!()
             quote! { concat!(module_path!(), "::", stringify!(#ident_name)) }
-        }
+        },
         Err(err) => {
             // Propagate the error to the compiler
             return err.to_compile_error().into();
-        }
+        },
     };
 
     let comm_data_impl = quote! {
@@ -107,46 +107,28 @@ fn extract_id_from_attribute(attrs: &[syn::Attribute]) -> Result<Option<String>,
         }
 
         let Meta::List(list) = &attr.meta else {
-            return Err(syn::Error::new_spanned(
-                attr,
-                "Expected #[comm_data(id = \"...\")]",
-            ));
+            return Err(syn::Error::new_spanned(attr, "Expected #[comm_data(id = \"...\")]"));
         };
 
         let Ok(Meta::NameValue(nv)) = list.parse_args::<Meta>() else {
-            return Err(syn::Error::new_spanned(
-                attr,
-                "Expected #[comm_data(id = \"...\")]",
-            ));
+            return Err(syn::Error::new_spanned(attr, "Expected #[comm_data(id = \"...\")]"));
         };
 
         if !nv.path.is_ident("id") {
-            return Err(syn::Error::new_spanned(
-                nv.path,
-                "Expected #[comm_data(id = \"...\")]",
-            ));
+            return Err(syn::Error::new_spanned(nv.path, "Expected #[comm_data(id = \"...\")]"));
         }
 
         let syn::Expr::Lit(expr_lit) = &nv.value else {
-            return Err(syn::Error::new_spanned(
-                nv.value,
-                "Expected a string literal value",
-            ));
+            return Err(syn::Error::new_spanned(nv.value, "Expected a string literal value"));
         };
 
         let syn::Lit::Str(lit_str) = &expr_lit.lit else {
-            return Err(syn::Error::new_spanned(
-                expr_lit,
-                "Expected a string literal value",
-            ));
+            return Err(syn::Error::new_spanned(expr_lit, "Expected a string literal value"));
         };
 
         let id_value = lit_str.value();
         if id_value.is_empty() {
-            return Err(syn::Error::new_spanned(
-                expr_lit,
-                "The id cannot be an empty string",
-            ));
+            return Err(syn::Error::new_spanned(expr_lit, "The id cannot be an empty string"));
         }
 
         return Ok(Some(id_value));
@@ -173,11 +155,7 @@ fn check_enum_variants(
 ) -> Result<(), syn::Error> {
     for variant in variants {
         // Find #[comm_data(...)] attribute on the variant
-        if let Some(attr) = variant
-            .attrs
-            .iter()
-            .find(|a| a.path().is_ident("comm_data"))
-        {
+        if let Some(attr) = variant.attrs.iter().find(|a| a.path().is_ident("comm_data")) {
             return Err(syn::Error::new_spanned(
                 attr,
                 "#[comm_data(id = \"...\")] must be placed on the type, not on an enum variant",
@@ -200,7 +178,7 @@ fn check_attrs(fields: &Fields) -> Result<(), syn::Error> {
                 }
             }
             Ok(())
-        }
+        },
         Fields::Unnamed(f) => {
             for field in &f.unnamed {
                 if let Some(attr) = field.attrs.iter().find(|a| a.path().is_ident("comm_data")) {
@@ -211,7 +189,7 @@ fn check_attrs(fields: &Fields) -> Result<(), syn::Error> {
                 }
             }
             Ok(())
-        }
+        },
         Fields::Unit => Ok(()), // Unit variants have no fields, nothing to check
     }
 }
@@ -235,12 +213,9 @@ pub fn derive_reloc(input: TokenStream) -> TokenStream {
 
     // Ensure #[repr(C)] on the struct itself
     if !has_repr_c(&input_args.attrs) {
-        return syn::Error::new_spanned(
-            ident_name,
-            "The #[derive(Reloc)] macro requires #[repr(C)] on the type",
-        )
-        .to_compile_error()
-        .into();
+        return syn::Error::new_spanned(ident_name, "The #[derive(Reloc)] macro requires #[repr(C)] on the type")
+            .to_compile_error()
+            .into();
     }
 
     let mut generics = create_bounds_with_reloc(input_args.generics.clone());
@@ -264,8 +239,8 @@ pub fn derive_reloc(input: TokenStream) -> TokenStream {
                  tuple structs",
             )
             .to_compile_error()
-            .into()
-        }
+            .into();
+        },
     };
 
     {
@@ -319,7 +294,7 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
                 Fields::Unnamed(fields) => fields.unnamed.iter().map(|f| &f.ty).collect(),
                 Fields::Unit => Vec::new(),
             };
-        }
+        },
         Data::Enum(data_enum) => {
             if !data_enum
                 .variants
@@ -328,7 +303,7 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
             {
                 return Err(());
             }
-        }
+        },
         Data::Union(_) => return Err(()),
     };
 

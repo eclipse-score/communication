@@ -43,7 +43,7 @@ namespace score::mw::com::impl
 namespace detail
 {
 
-LolaMethodInstanceDeployment::QueueSize GetQueueSize(HandleType parent_handle,
+LolaMethodInstanceDeployment::QueueSize GetQueueSize(const HandleType& parent_handle,
                                                      const std::string& method_name_str,
                                                      MethodType method_type);
 
@@ -52,7 +52,7 @@ bool IsMethodOrFieldEnabled(const LolaServiceInstanceDeployment& lola_service_in
                             MethodType method_type);
 
 template <typename ReturnType, typename... ArgTypes>
-lola::TypeErasedCallQueue::TypeErasedElementInfo GetTypeErasedElementInfo(HandleType parent_handle,
+lola::TypeErasedCallQueue::TypeErasedElementInfo GetTypeErasedElementInfo(const HandleType& parent_handle,
                                                                           const std::string& method_name_str,
                                                                           MethodType method_type)
 {

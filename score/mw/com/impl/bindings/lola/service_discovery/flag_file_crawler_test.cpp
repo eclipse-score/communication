@@ -805,13 +805,13 @@ class FlagFileCrawlerConvertFromStringToInstanceIdParamaterisedFixture
     : public ::testing::TestWithParam<std::pair<std::string, LolaServiceInstanceId>>
 {
 };
-INSTANTIATE_TEST_CASE_P(FlagFileCrawlerConvertFromStringToInstanceIdParamaterisedFixture,
-                        FlagFileCrawlerConvertFromStringToInstanceIdParamaterisedFixture,
-                        ::testing::Values(std::make_pair("0", 0U),
-                                          std::make_pair("00000", 0U),
-                                          std::make_pair("00001", 1U),
-                                          std::make_pair("10000", 10000U),
-                                          std::make_pair("65535", 65535U)));
+INSTANTIATE_TEST_SUITE_P(FlagFileCrawlerConvertFromStringToInstanceIdParamaterisedFixture,
+                         FlagFileCrawlerConvertFromStringToInstanceIdParamaterisedFixture,
+                         ::testing::Values(std::make_pair("0", 0U),
+                                           std::make_pair("00000", 0U),
+                                           std::make_pair("00001", 1U),
+                                           std::make_pair("10000", 10000U),
+                                           std::make_pair("65535", 65535U)));
 
 TEST_P(FlagFileCrawlerConvertFromStringToInstanceIdParamaterisedFixture,
        ReturnsInstanceIdWhenPassingValidStringContainingInstanceId)
@@ -850,14 +850,14 @@ class FlagFileCrawlerParseQualityTypeFromStringParamaterisedFixture
     : public ::testing::TestWithParam<std::pair<std::string, QualityType>>
 {
 };
-INSTANTIATE_TEST_CASE_P(FlagFileCrawlerParseQualityTypeFromStringParamaterisedFixture,
-                        FlagFileCrawlerParseQualityTypeFromStringParamaterisedFixture,
-                        ::testing::Values(std::make_pair("asil-qm", QualityType::kASIL_QM),
-                                          std::make_pair("00000-asil-qm", QualityType::kASIL_QM),
-                                          std::make_pair("asil-b", QualityType::kASIL_B),
-                                          std::make_pair("00000-asil-b", QualityType::kASIL_B),
-                                          std::make_pair("", QualityType::kInvalid),
-                                          std::make_pair("00000", QualityType::kInvalid)));
+INSTANTIATE_TEST_SUITE_P(FlagFileCrawlerParseQualityTypeFromStringParamaterisedFixture,
+                         FlagFileCrawlerParseQualityTypeFromStringParamaterisedFixture,
+                         ::testing::Values(std::make_pair("asil-qm", QualityType::kASIL_QM),
+                                           std::make_pair("00000-asil-qm", QualityType::kASIL_QM),
+                                           std::make_pair("asil-b", QualityType::kASIL_B),
+                                           std::make_pair("00000-asil-b", QualityType::kASIL_B),
+                                           std::make_pair("", QualityType::kInvalid),
+                                           std::make_pair("00000", QualityType::kInvalid)));
 
 TEST_P(FlagFileCrawlerParseQualityTypeFromStringParamaterisedFixture, ReturnsExpectedQualityType)
 {

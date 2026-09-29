@@ -31,12 +31,12 @@
 
 #[cfg(test)]
 mod test {
-    use score_com::{
-        Builder, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl, OfferedProducer,
-        Producer, Publisher, Runtime, RuntimeBuilder, SampleContainer, SampleMaybeUninit,
-        SampleMut, ServiceDiscovery, Subscriber, Subscription,
-    };
     use com_api_gen::{Tire, VehicleInterface, VehicleOfferedProducer};
+    use score_com::{
+        Builder, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl, OfferedProducer, Producer, Publisher,
+        Runtime, RuntimeBuilder, SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber,
+        Subscription,
+    };
 
     use futures::stream::StreamExt;
     use std::sync::OnceLock;
@@ -57,8 +57,7 @@ mod test {
     // as it prints warning if backend is initialized more than once.
     fn get_test_runtime() -> &'static score_com::LolaRuntimeImpl {
         LOLA_RUNTIME.get_or_init(|| {
-            let lola_runtime_builder =
-                init_lola_runtime_builder(std::path::Path::new(TEST_CONFIG_PATH));
+            let lola_runtime_builder = init_lola_runtime_builder(std::path::Path::new(TEST_CONFIG_PATH));
             lola_runtime_builder.build().unwrap()
         })
     }
@@ -69,10 +68,7 @@ mod test {
         if config_path.exists() {
             lola_runtime_builder.load_config(config_path);
         } else {
-            eprintln!(
-                "Provided config path does not exist: {}",
-                config_path.display()
-            );
+            eprintln!("Provided config path does not exist: {}", config_path.display());
         }
         lola_runtime_builder
     }
@@ -83,9 +79,7 @@ mod test {
         service_id: InstanceSpecifier,
     ) -> com_api_gen::VehicleOfferedProducer<R> {
         let producer_builder = runtime.producer_builder::<VehicleInterface>(service_id);
-        let producer = producer_builder
-            .build()
-            .expect("Failed to build producer instance");
+        let producer = producer_builder.build().expect("Failed to build producer instance");
         producer.offer().expect("Failed to offer producer instance")
     }
 
@@ -94,8 +88,7 @@ mod test {
         runtime: &R,
         service_id: InstanceSpecifier,
     ) -> com_api_gen::VehicleConsumer<R> {
-        let consumer_discovery =
-            runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
+        let consumer_discovery = runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
         let available_service_instances = consumer_discovery
             .get_available_instances_async()
             .await
@@ -107,9 +100,7 @@ mod test {
             .nth(handle_index)
             .expect("Failed to get consumer builder at specified handle index");
 
-        consumer_builder
-            .build()
-            .expect("Failed to build consumer instance")
+        consumer_builder.build().expect("Failed to build consumer instance")
     }
 
     //sender will send data in each 1 second
@@ -122,7 +113,7 @@ mod test {
                 Err(e) => {
                     eprintln!("[SENDER] Failed to allocate sample: {:?}", e);
                     continue;
-                }
+                },
             };
             let sample = uninit_sample.write(Tire {
                 pressure: INITIAL_TIRE_PRESSURE + i as f32,
@@ -139,16 +130,12 @@ mod test {
 
     //receiver function which use async receive to get data, it waits for new data and process it once it arrives,
     //it will receive data 10 times and print the received samples
-    async fn async_data_processor_fn<R: Runtime>(
-        subscribed: impl Subscription<Tire, R>,
-        is_timeout: bool,
-    ) {
+    async fn async_data_processor_fn<R: Runtime>(subscribed: impl Subscription<Tire, R>, is_timeout: bool) {
         println!("[RECEIVER] Async data processor started");
         let mut buffer = SampleContainer::new(SAMPLE_COUNT);
         for _ in 0..CONSUMER_ITERATIONS {
             let (returned_buf, result) = if is_timeout {
-                let timeout =
-                    tokio::time::sleep(tokio::time::Duration::from_millis(RECEIVE_TIMEOUT_MS));
+                let timeout = tokio::time::sleep(tokio::time::Duration::from_millis(RECEIVE_TIMEOUT_MS));
                 subscribed.cancellable_receive(buffer, 1, 3, timeout).await
             } else {
                 subscribed.receive(buffer, 1, 3).await
@@ -171,24 +158,16 @@ mod test {
         println!("[RECEIVER] Stream processor started");
         while cnt > 0 {
             // Use timeout to avoid waiting indefinitely in case of issues with the producer or subscription
-            match tokio::time::timeout(
-                tokio::time::Duration::from_millis(SAMPLE_INTERVAL_MS),
-                stream.next(),
-            )
-            .await
-            {
+            match tokio::time::timeout(tokio::time::Duration::from_millis(SAMPLE_INTERVAL_MS), stream.next()).await {
                 Ok(Some(Ok(sample))) => {
-                    println!(
-                        "[RECEIVER] Stream received sample: {:.2} psi",
-                        sample.pressure
-                    )
-                }
+                    println!("[RECEIVER] Stream received sample: {:.2} psi", sample.pressure)
+                },
                 Ok(Some(Err(e))) => eprintln!("[RECEIVER] Stream error: {:?}", e),
                 Ok(None) => break,
                 Err(_) => {
                     eprintln!("[RECEIVER] Timeout while waiting for stream sample");
                     break;
-                }
+                },
             }
             cnt -= 1;
         }
@@ -199,18 +178,15 @@ mod test {
     #[tokio::test(flavor = "multi_thread")]
     async fn receive_and_send_using_multi_thread() {
         println!("Starting async subscription test with Lola runtime");
-        let service_id = InstanceSpecifier::new("/Vehicle/Service3/Instance")
-            .expect("Failed to create InstanceSpecifier");
+        let service_id =
+            InstanceSpecifier::new("/Vehicle/Service3/Instance").expect("Failed to create InstanceSpecifier");
         let service_id_clone = service_id.clone();
         //consumer create
         let consumer_runtime = get_test_runtime();
         //starting service discovery in async way, so that it can be discovered when producer offer service after some delay, and consumer is waiting for discovery result
         let consumer = tokio::spawn(create_consumer_async(consumer_runtime, service_id));
         //simulate some delay before producer offer service, so that consumer is waiting for discovery
-        tokio::time::sleep(tokio::time::Duration::from_millis(
-            TIMEOUT_FOR_SIMULATION_MS,
-        ))
-        .await;
+        tokio::time::sleep(tokio::time::Duration::from_millis(TIMEOUT_FOR_SIMULATION_MS)).await;
         //Producer create
         let producer_runtime = get_test_runtime();
         let producer = create_producer(producer_runtime, service_id_clone);
@@ -222,9 +198,7 @@ mod test {
         let subscribed = consumer.left_tire.subscribe(SAMPLE_COUNT).unwrap();
 
         let processor_join_handle = tokio::spawn(async_data_processor_fn(subscribed, false));
-        processor_join_handle
-            .await
-            .expect("Error returned from task");
+        processor_join_handle.await.expect("Error returned from task");
         let producer = sender_join_handle.await.expect("Error returned from task");
 
         match producer.unoffer() {
@@ -240,18 +214,15 @@ mod test {
     async fn receive_with_timeout_and_send_using_multi_thread() {
         println!("Starting async subscription test with Lola runtime");
         //Intentionally using service instance of test1, if you face issue add new service instance in config file and use it here.
-        let service_id = InstanceSpecifier::new("/Vehicle/Service1/Instance")
-            .expect("Failed to create InstanceSpecifier");
+        let service_id =
+            InstanceSpecifier::new("/Vehicle/Service1/Instance").expect("Failed to create InstanceSpecifier");
         let service_id_clone = service_id.clone();
         //consumer create
         let consumer_runtime = get_test_runtime();
         //starting service discovery in async way, so that it can be discovered when producer offer service after some delay, and consumer is waiting for discovery result
         let consumer = tokio::spawn(create_consumer_async(consumer_runtime, service_id));
         //simulate some delay before producer offer service, so that consumer is waiting for discovery
-        tokio::time::sleep(tokio::time::Duration::from_millis(
-            TIMEOUT_FOR_SIMULATION_MS,
-        ))
-        .await;
+        tokio::time::sleep(tokio::time::Duration::from_millis(TIMEOUT_FOR_SIMULATION_MS)).await;
         //Producer create
         let producer_runtime = get_test_runtime();
         let producer = create_producer(producer_runtime, service_id_clone);
@@ -263,9 +234,7 @@ mod test {
         let subscribed = consumer.left_tire.subscribe(SAMPLE_COUNT).unwrap();
 
         let processor_join_handle = tokio::spawn(async_data_processor_fn(subscribed, true));
-        processor_join_handle
-            .await
-            .expect("Error returned from task");
+        processor_join_handle.await.expect("Error returned from task");
 
         let producer = sender_join_handle.await.expect("Error returned from task");
 
@@ -282,18 +251,15 @@ mod test {
     #[tokio::test(flavor = "multi_thread")]
     async fn stream_and_send_using_multi_thread() {
         println!("Starting async subscription test with Lola runtime");
-        let service_id = InstanceSpecifier::new("/Vehicle/Service1/Instance")
-            .expect("Failed to create InstanceSpecifier");
+        let service_id =
+            InstanceSpecifier::new("/Vehicle/Service1/Instance").expect("Failed to create InstanceSpecifier");
         let service_id_clone = service_id.clone();
         //consumer create
         let consumer_runtime = get_test_runtime();
         //starting service discovery in async way, so that it can be discovered when producer offer service after some delay, and consumer is waiting for discovery result
         let consumer = tokio::spawn(create_consumer_async(consumer_runtime, service_id));
         //simulate some delay before producer offer service, so that consumer is waiting for discovery
-        tokio::time::sleep(tokio::time::Duration::from_millis(
-            TIMEOUT_FOR_SIMULATION_MS,
-        ))
-        .await;
+        tokio::time::sleep(tokio::time::Duration::from_millis(TIMEOUT_FOR_SIMULATION_MS)).await;
         //Producer create
         let producer_runtime = get_test_runtime();
         let producer = create_producer(producer_runtime, service_id_clone);

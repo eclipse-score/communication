@@ -42,7 +42,7 @@ bool WaitTillServiceAppears(HandleNotificationData& handle_notification_data,
     return wait_result;
 }
 
-void HandleReceivedNotification(const ServiceHandleContainer<TestServiceProxy::HandleType> service_handle_container,
+void HandleReceivedNotification(const ServiceHandleContainer<TestServiceProxy::HandleType>& service_handle_container,
                                 HandleNotificationData& handle_notification_data,
                                 CheckPointControl& check_point_control)
 {

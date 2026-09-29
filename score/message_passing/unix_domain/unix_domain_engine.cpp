@@ -290,7 +290,7 @@ void UnixDomainEngine::SendPipeEvent(PipeEvent pipe_event) noexcept
 
 void UnixDomainEngine::ProcessPipeEvent() noexcept
 {
-    PipeEvent pipe_event;
+    PipeEvent pipe_event{PipeEvent::QUIT};
     std::ignore = os_resources_.unistd->read(pipe_fds_[0], &pipe_event, sizeof(pipe_event));
     if (pipe_event == PipeEvent::TIMER)
     {

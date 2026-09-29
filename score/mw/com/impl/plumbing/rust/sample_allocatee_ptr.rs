@@ -18,11 +18,7 @@ use core::fmt::Debug;
 use std::mem::ManuallyDrop;
 
 use common_rs::{
-    BlankBinding,
-    ConsumerEventDataControlLocalView,
-    CxxOptional,
-    CustomDeleter,
-    ProviderEventDataControlLocalView,
+    BlankBinding, ConsumerEventDataControlLocalView, CustomDeleter, CxxOptional, ProviderEventDataControlLocalView,
     SlotIndexType,
 };
 
@@ -99,9 +95,7 @@ impl<T> Debug for SampleAllocateePtr<T> {
             _ => "Unknown",
         };
 
-        f.debug_struct("SampleAllocateePtr")
-            .field("state", &state)
-            .finish()
+        f.debug_struct("SampleAllocateePtr").field("state", &state).finish()
     }
 }
 
@@ -132,21 +126,13 @@ mod tests {
     #[test]
     fn test_sample_allocatee_ptr_variant_user_defined_type_size() {
         let cpp_size = SampleAllocateePtrLola::get_variant_user_defined_type();
-        verify_size_and_align!(
-            SampleAllocateePtr<UserType>,
-            cpp_size,
-            "SampleAllocateePtr<UserType>"
-        );
+        verify_size_and_align!(SampleAllocateePtr<UserType>, cpp_size, "SampleAllocateePtr<UserType>");
     }
 
     #[test]
     fn test_event_data_control_composite_size() {
         let cpp_size = SampleAllocateePtrLola::get_event_data_control_composite_size();
-        verify_size_and_align!(
-            EventDataControlComposite,
-            cpp_size,
-            "EventDataControlComposite"
-        );
+        verify_size_and_align!(EventDataControlComposite, cpp_size, "EventDataControlComposite");
     }
 
     #[test]
@@ -164,10 +150,7 @@ mod tests {
     fn test_negative_allocatee_ptr_size_mismatch() {
         let cpp_size = SampleAllocateePtrLola::get_variant_int32();
         let incorrect = cpp_size.size + 1;
-        assert_eq!(
-            incorrect, cpp_size.size,
-            "SampleAllocateePtr size mismatch!"
-        );
+        assert_eq!(incorrect, cpp_size.size, "SampleAllocateePtr size mismatch!");
     }
 
     #[test]
@@ -175,9 +158,6 @@ mod tests {
     fn test_negative_allocatee_ptr_align_mismatch() {
         let cpp_size = SampleAllocateePtrLola::get_variant_int32();
         let incorrect = cpp_size.align + 1;
-        assert_eq!(
-            incorrect, cpp_size.align,
-            "SampleAllocateePtr align mismatch!"
-        );
+        assert_eq!(incorrect, cpp_size.align, "SampleAllocateePtr align mismatch!");
     }
 }

@@ -27,6 +27,7 @@ cc_library(
         "//score/mw/com:types",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 
@@ -37,7 +38,6 @@ rust_library(
         "common.rs",
     ],
     crate_root = "bridge_ffi.rs",
-    edition = "2024",
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
@@ -50,7 +50,6 @@ rust_library(
 rust_library(
     name = "bridge_ffi_mock",
     srcs = ["bridge_ffi_mock.rs"],
-    edition = "2024",
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
@@ -64,13 +63,12 @@ rust_library(
 rust_library(
     name = "bridge_ffi_lola",
     srcs = ["bridge_ffi_lola.rs"],
-    edition = "2024",
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
     deps = [
         ":bridge_ffi_rs",
         "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
-        "@score_baselibs//src/log/score_log",
+        "@score_baselibs//score/log_rust/score_log",
     ],
 )

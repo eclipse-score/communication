@@ -2,6 +2,8 @@
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/log/logging.h"
+#include "score/string_manipulation/arguments/arguments.h"
+
 #include <score/stop_token.hpp>
 
 #include <chrono>
@@ -47,7 +49,7 @@ constexpr std::string_view kEventName = "Event8Byte";
 
 int run_provider(score::cpp::stop_token stop_token)
 {
-    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(kInstanceSpecifier).value();
+    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(std::string{kInstanceSpecifier}).value();
     std::cout << "[PROVIDER] Instance specifier created." << std::endl;
     const score::mw::com::DataTypeMetaInfo meta{sizeof(MyEventData), alignof(MyEventData)};
     std::cout << "[PROVIDER] DataTypeMetaInfo created (size=" << sizeof(MyEventData)
@@ -128,7 +130,7 @@ int run_provider(score::cpp::stop_token stop_token)
 
 int run_consumer()
 {
-    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(kInstanceSpecifier).value();
+    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(std::string{kInstanceSpecifier}).value();
 
     score::Result<score::mw::com::ServiceHandleContainer<score::mw::com::GenericProxy::HandleType>> handles_res;
     int retries{0};
@@ -225,7 +227,8 @@ int main(int argc, const char* argv[])
     for (int i = 1; i < argc; ++i)
         if (std::string(argv[i]) == "--mode" && i + 1 < argc)
             mode = argv[++i];
-    score::mw::com::runtime::InitializeRuntime(score::mw::com::runtime::RuntimeConfiguration(argc, argv));
+    score::mw::com::runtime::InitializeRuntime(
+        score::mw::com::runtime::RuntimeConfiguration(score::string_manipulation::GetArguments(argc, argv)));
 
     score::cpp::stop_source stop_source{};
     score::mw::com::SetupStopTokenSigTermHandler(stop_source);

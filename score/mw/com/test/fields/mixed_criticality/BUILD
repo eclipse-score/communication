@@ -43,7 +43,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
-        "//score/mw/com/test/common_test_resources:command_line_parser",
     ],
 )
 
@@ -87,10 +86,10 @@ cc_binary(
         "aborts_upon_exception",
     ],
     deps = [
-        ":common_resources",
         ":provider",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:assert_handler",
+        "//score/mw/com/test/common_test_resources:service_instance_manifest_parser",
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
     ],
 )
@@ -102,10 +101,10 @@ cc_binary(
         "aborts_upon_exception",
     ],
     deps = [
-        ":common_resources",
         ":consumer",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:assert_handler",
+        "//score/mw/com/test/common_test_resources:service_instance_manifest_parser",
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
     ],
 )

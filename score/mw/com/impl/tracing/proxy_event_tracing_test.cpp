@@ -91,7 +91,7 @@ class ProxyEventTracingFixture : public ::testing::TestWithParam<ServiceElementT
     using TestSampleType = std::uint32_t;
 
     ProxyEventTracingData proxy_event_tracing_data_{};
-    mock_binding::ProxyEvent<TestSampleType> proxy_event_binding_base_{};
+    mock_binding::ProxyEvent proxy_event_binding_base_{};
 
     TracingRuntimeMock tracing_runtime_mock_{};
     RuntimeMockGuard runtime_mock_guard_{};

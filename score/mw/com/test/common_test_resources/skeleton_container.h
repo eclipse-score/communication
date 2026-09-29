@@ -27,7 +27,7 @@ template <typename Skeleton>
 class SkeletonContainer
 {
   public:
-    void CreateSkeleton(InstanceSpecifier instance_specifier, const std::string& failure_message_prefix);
+    void CreateSkeleton(const InstanceSpecifier& instance_specifier, const std::string& failure_message_prefix);
     void OfferService(const std::string& failure_message_prefix);
 
     Skeleton& GetSkeleton()
@@ -49,10 +49,10 @@ class SkeletonContainer
 };
 
 template <typename Skeleton>
-void SkeletonContainer<Skeleton>::CreateSkeleton(InstanceSpecifier instance_specifier,
+void SkeletonContainer<Skeleton>::CreateSkeleton(const InstanceSpecifier& instance_specifier,
                                                  const std::string& failure_message_prefix)
 {
-    auto skeleton_result = Skeleton::Create(std::move(instance_specifier));
+    auto skeleton_result = Skeleton::Create(instance_specifier);
     if (!skeleton_result.has_value())
     {
         FailTest(failure_message_prefix, " Provider: Could not create skeleton: ", skeleton_result.error());

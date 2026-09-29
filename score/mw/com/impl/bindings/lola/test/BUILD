@@ -39,6 +39,25 @@ cc_library(
     ],
 )
 
+# Shared LolaProxyEventFixture and test helpers (ProxyTestAttorney, CallbackCountingReceiver, GetSamplePtrValue,
+# FromMockFunction) used by the various proxy_event_*_test.cpp files in //score/mw/com/impl/bindings/lola.
+cc_library(
+    name = "proxy_event_fixture",
+    testonly = True,
+    hdrs = ["proxy_event_fixture.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    deps = [
+        ":proxy_event_test_resources",
+        "//score/mw/com/impl:sample_reference_tracker",
+        "//score/mw/com/impl:subscription_state",
+        "//score/mw/com/impl/bindings/lola:proxy",
+        "@googletest//:gtest_main",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/safecpp/scoped_function:scope",
+    ],
+)
+
 cc_library(
     name = "skeleton_test_resources",
     testonly = True,
@@ -80,6 +99,7 @@ cc_library(
     ],
     deps = [
         ":skeleton_test_resources",
+        ":transaction_log_test_resources",
         "//score/mw/com/impl:service_discovery_mock",
         "//score/mw/com/impl/bindings/lola:event",
         "//score/mw/com/impl/bindings/lola/messaging:message_passing_service_mock",

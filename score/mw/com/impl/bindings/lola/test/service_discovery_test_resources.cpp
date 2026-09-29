@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/test/service_discovery_test_resources.h"
 
+#include <utility>
+
 #include "score/mw/com/impl/find_service_handle.h"
 #include "score/mw/com/impl/find_service_handler.h"
 
@@ -36,7 +38,7 @@ score::cpp::callback<void(ServiceHandleContainer<HandleType>, FindServiceHandle)
 {
     return
         [&mock_find_service_handler](ServiceHandleContainer<HandleType> containers, FindServiceHandle handle) noexcept {
-            mock_find_service_handler.AsStdFunction()(containers, handle);
+            mock_find_service_handler.AsStdFunction()(std::move(containers), handle);
         };
 }
 

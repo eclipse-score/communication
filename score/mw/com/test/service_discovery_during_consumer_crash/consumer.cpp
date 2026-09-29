@@ -61,8 +61,15 @@ void DoConsumerActionsFirstTime(score::mw::com::test::CheckPointControl& check_p
     // ********************************************************************************
     std::cerr << "Consumer Step (C.1): Call StartFindService" << std::endl;
     // HandleNotificationData handle_notification_data{};
-    auto find_service_callback = [&check_point_control]([[maybe_unused]] auto service_handle_container,
-                                                        [[maybe_unused]] auto find_service_handle) noexcept {
+    auto find_service_callback = [&check_point_control](
+                                     // The enclosing FindServiceHandler is a type-erased callback whose call
+                                     // signature takes this parameter by value; the caller already copies it
+                                     // into that fixed signature before invoking this lambda, so taking it by
+                                     // const& here would not avoid any copy - it would only (misleadingly) hide
+                                     // the fact that one already happened.
+                                     // NOLINTNEXTLINE(performance-unnecessary-value-param)
+                                     [[maybe_unused]] auto service_handle_container,
+                                     [[maybe_unused]] auto find_service_handle) noexcept {
         std::cerr << "Consumer Step (C.1): find service handler called" << std::endl;
         if (service_handle_container.size() != 1)
         {

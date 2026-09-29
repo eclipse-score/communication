@@ -17,7 +17,10 @@ cc_library(
     name = "getter_and_setter_checkers",
     srcs = ["getter_and_setter_checkers.cpp"],
     hdrs = ["getter_and_setter_checkers.h"],
-    visibility = ["//score/mw/com/test/fields:__subpackages__"],
+    visibility = [
+        "//score/mw/com/test/all_service_elements:__subpackages__",
+        "//score/mw/com/test/fields:__subpackages__",
+    ],
     deps = [
         "//score/mw/com/test/common_test_resources:fail_test",
     ],

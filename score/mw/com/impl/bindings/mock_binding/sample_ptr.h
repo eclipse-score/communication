@@ -15,23 +15,30 @@
 
 #include <score/callback.hpp>
 
+#include <functional>
 #include <memory>
+#include <type_traits>
+#include <utility>
 
 namespace score::mw::com::impl::mock_binding
 {
 
-template <typename SampleType>
-using CustomDeleter = score::cpp::callback<void(SampleType*)>;
+using SamplePtrCustomDeleter = score::cpp::callback<void(void*)>;
 
 /// \brief SamplePtr used for the mock binding.
 ///
 /// The SamplePtr is an alias for a unique_ptr with a custom deleter. If no deleter is provided, a default deleter
 /// will be used. A custom deleter must be supplied when SampleType == void, as calling delete on a void pointer is
 /// undefined behaviour (as it's unclear what destructor to call on a void pointer).
-///
-/// @tparam SampleType The data that is transmitted via the mock proxy.
+using SamplePtr = std::unique_ptr<void, SamplePtrCustomDeleter>;
+
 template <typename SampleType>
-using SamplePtr = std::unique_ptr<SampleType, CustomDeleter<SampleType>>;
+SamplePtr MakeSamplePtr(SampleType* sample_ptr)
+{
+    return SamplePtr{sample_ptr, [](void* p) noexcept {
+                         delete static_cast<SampleType*>(p);
+                     }};
+}
 
 }  // namespace score::mw::com::impl::mock_binding
 

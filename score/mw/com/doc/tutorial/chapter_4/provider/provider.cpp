@@ -32,9 +32,11 @@ constexpr std::string_view kInstanceSpecifierString{"MyHelloWorldServiceInstance
 constexpr std::chrono::seconds kOfferDuration{8};
 constexpr std::chrono::seconds kStopOfferDuration{5};
 
-static std::atomic<bool> g_running{true};
+namespace
+{
+std::atomic<bool> g_running{true};
 
-static void SignalHandler(int /*signum*/)
+void SignalHandler(int /*signum*/)
 {
     std::cout << "HelloWorld service provider caught signal." << std::endl;
     g_running.store(false, std::memory_order_relaxed);
@@ -43,7 +45,7 @@ static void SignalHandler(int /*signum*/)
 using HelloWorldSkeleton = score::mw::com::AsSkeleton<score::mw::com::tutorial::HelloWorldInterface>;
 
 // Publishes one "message" event sample on the given service instance.
-static void SendSample(HelloWorldSkeleton& service_instance, const std::size_t send_counter)
+void SendSample(HelloWorldSkeleton& service_instance, const std::size_t send_counter)
 {
     // Allocate a slot, where to publish the next event
     auto sample_allocatee_ptr = service_instance.message.Allocate();
@@ -72,6 +74,7 @@ static void SendSample(HelloWorldSkeleton& service_instance, const std::size_t s
         std::cout << "Sample send completed. Event \"message\" update sent: " << buf << std::endl;
     }
 }
+}  // namespace
 
 int main()
 {

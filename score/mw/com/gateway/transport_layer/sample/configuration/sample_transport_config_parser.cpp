@@ -62,15 +62,15 @@ auto ParseSampleTransportConfig(score::json::Any json) noexcept -> HyperVisorSoc
 
     const auto& obj = top_level_object.value().get();
 
-    const auto socket_entry = obj.find(kHvSocketConfigurationKey.data());
+    const auto socket_entry = obj.find(kHvSocketConfigurationKey);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(socket_entry != obj.cend(),
                                                 "hypervisor-socket is mandatory in sample transport configuration.");
 
     const auto& socket_obj = socket_entry->second.As<score::json::Object>().value().get();
 
-    const auto remote_ip = socket_obj.find(kRemoteIpKey.data());
-    const auto local_port = socket_obj.find(kLocalPortKey.data());
-    const auto remote_port = socket_obj.find(kRemotePortKey.data());
+    const auto remote_ip = socket_obj.find(kRemoteIpKey);
+    const auto local_port = socket_obj.find(kLocalPortKey);
+    const auto remote_port = socket_obj.find(kRemotePortKey);
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(remote_ip != socket_obj.cend(),
                                                 "remote-ip is mandatory in hypervisor-socket configuration.");
@@ -84,7 +84,7 @@ auto ParseSampleTransportConfig(score::json::Any json) noexcept -> HyperVisorSoc
     config.local_port_ = local_port->second.As<std::uint16_t>().value();
     config.remote_port_ = remote_port->second.As<std::uint16_t>().value();
 
-    const auto request_timeout = socket_obj.find(kRequestTimeoutMsKey.data());
+    const auto request_timeout = socket_obj.find(kRequestTimeoutMsKey);
     if (request_timeout != socket_obj.cend())
     {
         config.request_timeout_ms_ = request_timeout->second.As<std::uint32_t>().value();

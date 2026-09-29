@@ -58,7 +58,7 @@ And this is the list of bazel `--config=` for the supported configurations:
 
 |              | GCC 12.2 + libstdc++ | GCC 15 + libstdc++                         | QCC (GCC 12.2) + libc++           | Clang 22 + libc++         |
 |--------------|----------------------|--------------------------------------------|-----------------------------------|---------------------------|
-| x86-64 linux | linux_x64_gcc_12     | (default) / linux_arm64_gcc_15 / linux_x64 | NA                                | linux_x64_clang_22 /clang |
+| x86-64 linux | linux_x64_gcc_12     | (default) / linux_x64_gcc_15 / linux_x64   | NA                                | linux_x64_clang_22 /clang |
 | ARM64 linux  | linux_arm64_gcc_12   | linux_arm64_gcc_15 / linux_arm64           | NA                                | linux_arm64_clang_22      |
 | x86-64 QNX   | NA                   | NA                                         | qnx_x64_qcc_12 / qnx_x64          | NA                        |
 | ARM64 QNX    | NA                   | NA                                         | qnx_arm64_qcc_12 / qnx_arm64 /qnx | NA                        |
@@ -113,6 +113,11 @@ The goal is not to ensure a specific format but to have consistency in the proje
 #### Formatting of Python files
 
 Ensure that the modified Python files are formatted following our decided style.
+The goal is not to ensure a specific format but to have consistency in the project.
+
+#### Formatting of Rust files
+
+Ensure that the modified Rust files are formatted following our decided style.
 The goal is not to ensure a specific format but to have consistency in the project.
 
 #### Build everything and run unit tests (x86-64 linux)

@@ -21,29 +21,9 @@ package "Lola Binding" as lola_binding <<component>> {
   component "Event Data and Control" as lola_event_data_control <<unit>> 
   component "Message Passing Service" as lola_message_passing_service <<unit>> 
 
-  package "SkeletonAndServiceElements" as lola_skeleton_and_service_elements <<component>> {
-    component "Skeleton" as lola_skeleton <<unit>> 
-    component "SkeletonEvent" as lola_skeleton_event <<unit>> 
-    component "SkeletonMethod" as lola_skeleton_method <<unit>> 
-  }
+  package "SkeletonAndServiceElements" as lola_skeleton_and_service_elements <<unit>> 
   
-  package "ProxyAndServiceElements" as lola_proxy_and_service_elements <<component>> {
-    component "Proxy" as lola_proxy <<unit>> 
-    component "ProxyEvent" as lola_proxy_event <<unit>> 
-    component "ProxyMethod" as lola_proxy_method <<unit>> 
-  }
-
-  package "GenericSkeletonAndServiceElements" as lola_generic_skeleton_and_service_elements <<component>> {
-    component "GenericSkeleton" as lola_generic_skeleton <<unit>>
-    component "GenericSkeletonEvent" as lola_generic_skeleton_event <<unit>>
-    component "GenericSkeletonMethod" as lola_generic_skeleton_method <<unit>>
-  }
-
-  package "GenericProxyAndServiceElements" as lola_generic_proxy_and_service_elements <<component>> {
-    component "GenericProxy" as lola_generic_proxy <<unit>> 
-    component "GenericProxyEvent" as lola_generic_proxy_event <<unit>> 
-    component "GenericProxyMethod" as lola_generic_proxy_method <<unit>> 
-  }
+  package "ProxyAndServiceElements" as lola_proxy_and_service_elements <<unit>> 
 }
 
 @enduml

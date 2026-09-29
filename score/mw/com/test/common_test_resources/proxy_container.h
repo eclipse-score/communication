@@ -39,6 +39,17 @@ class ProxyContainer
         return *proxy_;
     }
 
+    /// \brief Extracts the proxy, leaving the ProxyContainer in a valid but unspecified state.
+    ///
+    /// This function can only be called on an rvalue ProxyContainer, to make it clear that the ProxyContainer should
+    /// not be used after calling Extract()
+    Proxy&& Extract() &&
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_ != nullptr,
+                                                    "Proxy was not successfully created! Cannot extract it!");
+        return std::move(*proxy_);
+    }
+
   private:
     std::unique_ptr<typename Proxy::HandleType> handle_{nullptr};
     std::mutex proxy_creation_mutex_{};
@@ -69,7 +80,7 @@ void ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier, co
         proxy_creation_condition_variable_.notify_all();
     };
 
-    auto start_find_service_result = Proxy::StartFindService(find_service_callback, instance_specifier);
+    auto start_find_service_result = Proxy::StartFindService(find_service_callback, std::move(instance_specifier));
     if (!start_find_service_result.has_value())
     {
         FailTest(failure_message_prefix, " Consumer: StartFindService() failed: ", start_find_service_result.error());

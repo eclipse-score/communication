@@ -35,6 +35,38 @@ bool IsPointerWithinMemoryBounds(const std::uintptr_t ptr_as_integer, const Memo
     return ((ptr_as_integer >= memory_bounds.GetStartAddress()) && (ptr_as_integer <= memory_bounds.GetEndAddress()));
 }
 
+bool DoesPointedObjectPassBoundsChecks(const std::uintptr_t offset_ptr_address_as_integer,
+                                       const std::ptrdiff_t offset,
+                                       const MemoryRegionBounds& offset_ptr_memory_bounds,
+                                       const std::size_t pointed_type_size)
+{
+    // Check that the start address of the pointed-to object lies inside the shared memory region.
+    const auto pointed_to_start_address_as_integer =
+        AddSignedOffsetToPointerAsInteger(offset_ptr_address_as_integer, offset);
+    if (!IsPointerWithinMemoryBounds(pointed_to_start_address_as_integer, offset_ptr_memory_bounds))
+    {
+        ::score::mw::log::LogError("shm")
+            << __func__ << __LINE__ << "OffsetPtr at" << offset_ptr_address_as_integer << "is pointing to address "
+            << pointed_to_start_address_as_integer << "which lies outside the OffsetPtr's memory region: ["
+            << offset_ptr_memory_bounds.GetStartAddress() << ":" << offset_ptr_memory_bounds.GetEndAddress() << "]";
+        return false;
+    }
+
+    // Check that the end address of the pointed-to object lies inside the shared memory region.
+    const auto pointed_to_end_address_as_integer =
+        AddOffsetToPointerAsInteger(pointed_to_start_address_as_integer, pointed_type_size);
+    if (!IsPointerWithinMemoryBounds(pointed_to_end_address_as_integer, offset_ptr_memory_bounds))
+    {
+        ::score::mw::log::LogError("shm")
+            << __func__ << __LINE__ << "OffsetPtr at" << offset_ptr_address_as_integer << "is pointing to address "
+            << pointed_to_end_address_as_integer
+            << "which does not fit completely within the OffsetPtr's memory region: ["
+            << offset_ptr_memory_bounds.GetStartAddress() << ":" << offset_ptr_memory_bounds.GetEndAddress() << "]";
+        return false;
+    }
+    return true;
+}
+
 }  // namespace
 
 bool DoesOffsetPtrInSharedMemoryPassBoundsChecks(const void* const offset_ptr_address,
@@ -50,38 +82,14 @@ bool DoesOffsetPtrInSharedMemoryPassBoundsChecks(const void* const offset_ptr_ad
     if (!IsPointerWithinMemoryBounds(offset_ptr_end_address_as_integer, offset_ptr_memory_bounds))
     {
         ::score::mw::log::LogError("shm")
-            << __func__ << __LINE__ << "OffsetPtr at" << CastPointerToInteger(offset_ptr_address)
+            << __func__ << __LINE__ << "OffsetPtr at" << offset_ptr_address_as_integer
             << "does not fit completely in memory region: [" << offset_ptr_memory_bounds.GetStartAddress() << ":"
             << offset_ptr_memory_bounds.GetEndAddress() << "]";
         return false;
     }
 
-    // Check that the start address of the pointed-to object lies inside the shared memory region.
-    const auto pointed_to_start_address_as_integer =
-        AddSignedOffsetToPointerAsInteger(offset_ptr_address_as_integer, offset);
-    if (!IsPointerWithinMemoryBounds(pointed_to_start_address_as_integer, offset_ptr_memory_bounds))
-    {
-        ::score::mw::log::LogError("shm")
-            << __func__ << __LINE__ << "OffsetPtr at" << CastPointerToInteger(offset_ptr_address)
-            << "is pointing to address " << pointed_to_start_address_as_integer
-            << "which lies outside the OffsetPtr's memory region: [" << offset_ptr_memory_bounds.GetStartAddress()
-            << ":" << offset_ptr_memory_bounds.GetEndAddress() << "]";
-        return false;
-    }
-
-    // Check that the end address of the pointed-to object lies inside the shared memory region.
-    const auto pointed_to_end_address_as_integer =
-        AddOffsetToPointerAsInteger(pointed_to_start_address_as_integer, pointed_type_size);
-    if (!IsPointerWithinMemoryBounds(pointed_to_end_address_as_integer, offset_ptr_memory_bounds))
-    {
-        ::score::mw::log::LogError("shm")
-            << __func__ << __LINE__ << "OffsetPtr at" << CastPointerToInteger(offset_ptr_address)
-            << "is pointing to address " << pointed_to_end_address_as_integer
-            << "which does not fit completely within the OffsetPtr's memory region: ["
-            << offset_ptr_memory_bounds.GetStartAddress() << ":" << offset_ptr_memory_bounds.GetEndAddress() << "]";
-        return false;
-    }
-    return true;
+    return DoesPointedObjectPassBoundsChecks(
+        offset_ptr_address_as_integer, offset, offset_ptr_memory_bounds, pointed_type_size);
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
@@ -105,7 +113,7 @@ bool DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(const void* const offset_ptr
     if (offset_ptr_end_address_bounds.has_value())
     {
         ::score::mw::log::LogError("shm")
-            << __func__ << __LINE__ << "OffsetPtr at" << CastPointerToInteger(offset_ptr_address)
+            << __func__ << __LINE__ << "OffsetPtr at" << offset_ptr_address_as_integer
             << "is overlapping the start of memory region: [" << offset_ptr_end_address_bounds.value().GetStartAddress()
             << ":" << offset_ptr_end_address_bounds.value().GetEndAddress() << "]";
         return false;
@@ -115,31 +123,8 @@ bool DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(const void* const offset_ptr
     // which indicates that it was previously in a shared memory region and was copied out.
     if (offset_ptr_memory_bounds.has_value())
     {
-        // Check that the start address of the pointed-to object lies inside the shared memory region.
-        const auto pointed_to_start_address_as_integer =
-            AddSignedOffsetToPointerAsInteger(offset_ptr_address_as_integer, offset);
-        if (!IsPointerWithinMemoryBounds(pointed_to_start_address_as_integer, offset_ptr_memory_bounds))
-        {
-            ::score::mw::log::LogError("shm")
-                << __func__ << __LINE__ << "OffsetPtr at" << CastPointerToInteger(offset_ptr_address)
-                << "is pointing to address " << pointed_to_start_address_as_integer
-                << "which lies outside the OffsetPtr's memory region: [" << offset_ptr_memory_bounds.GetStartAddress()
-                << ":" << offset_ptr_memory_bounds.GetEndAddress() << "]";
-            return false;
-        }
-
-        // Check that the end address of the pointed-to object lies inside the shared memory region.
-        const auto pointed_to_end_address_as_integer =
-            AddOffsetToPointerAsInteger(pointed_to_start_address_as_integer, pointed_type_size);
-        if (!IsPointerWithinMemoryBounds(pointed_to_end_address_as_integer, offset_ptr_memory_bounds))
-        {
-            ::score::mw::log::LogError("shm")
-                << __func__ << __LINE__ << "OffsetPtr at" << CastPointerToInteger(offset_ptr_address)
-                << "is pointing to address " << pointed_to_end_address_as_integer
-                << "which does not fit completely within the OffsetPtr's memory region: ["
-                << offset_ptr_memory_bounds.GetStartAddress() << ":" << offset_ptr_memory_bounds.GetEndAddress() << "]";
-            return false;
-        }
+        return DoesPointedObjectPassBoundsChecks(
+            offset_ptr_address_as_integer, offset, offset_ptr_memory_bounds, pointed_type_size);
     }
     return true;
 }

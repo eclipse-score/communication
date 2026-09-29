@@ -28,6 +28,12 @@ namespace score::message_passing
 class IServerConnection
 {
   public:
+    /// \brief An IServerConnection shall not be copyable or movable
+    IServerConnection(const IServerConnection&) = delete;
+    IServerConnection(IServerConnection&&) = delete;
+    IServerConnection& operator=(const IServerConnection&) = delete;
+    IServerConnection& operator=(IServerConnection&&) = delete;
+
     virtual const ClientIdentity& GetClientIdentity() const& noexcept = 0;
     virtual UserData& GetUserData() noexcept = 0;
 
@@ -41,10 +47,6 @@ class IServerConnection
     ~IServerConnection() noexcept = default;
 
     IServerConnection() noexcept = default;
-    IServerConnection(const IServerConnection&) = delete;
-    IServerConnection(IServerConnection&&) = delete;
-    IServerConnection& operator=(const IServerConnection&) = delete;
-    IServerConnection& operator=(IServerConnection&&) = delete;
 };
 
 }  // namespace score::message_passing

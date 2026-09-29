@@ -11,12 +11,11 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 // Unit tests for SkeletonEventBindingFactory which are identical to tests for SkeletonFieldBindingFactory are
-// implemented in skeleton_service_element_binding_factory_test.cpp. We do this to minimise code duplication by creating
+// implemented in skeleton_service_element_binding_factory_test.cpp. We do this to minimize code duplication by creating
 // templated tests in skeleton_service_element_binding_factory_test.cpp. The tests which are only relevant to
 // SkeletonEventBindingFactory and NOT SkeletonFieldBindingFactory are added here.
 
 #include "score/mw/com/impl/plumbing/skeleton_event_binding_factory.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
@@ -29,13 +28,12 @@ namespace score::mw::com::impl
 namespace lola
 {
 
-template <typename SampleType>
 class SkeletonEventAttorney
 {
   public:
-    static const SkeletonEventProperties& GetSkeletonEventProperties(const SkeletonEvent<SampleType>& skeleton_event)
+    static const SkeletonEventProperties& GetSkeletonEventProperties(const SkeletonEvent& skeleton_event)
     {
-        return skeleton_event.skeleton_event_common_.GetEventProperties();
+        return skeleton_event.event_properties_;
     }
 };
 
@@ -48,6 +46,7 @@ using TestSampleType = std::uint32_t;
 
 constexpr auto kDummyEventName{"Event1"};
 constexpr std::uint16_t kDummyEventId{5U};
+constexpr memory::DataTypeSizeInfo kTestSampleTypeSizeInfo{sizeof(TestSampleType), alignof(TestSampleType)};
 
 constexpr std::size_t kNumberOfConfiguredSlots{5U};
 constexpr std::size_t kNumberOfConfiguredTracingSlots{3U};
@@ -80,14 +79,14 @@ TEST_F(SkeletonEventBindingFactoryFixture, CreatingEventBindingCreatesBindingWit
     InitialiseSkeleton(instance_identifier);
 
     // When creating a SkeletonEventBinding
-    auto skeleton_event_binding = SkeletonEventBindingFactory<TestSampleType>::Create(
-        kConfigStoreAsilQM.GetInstanceIdentifier(), *skeleton_, kDummyEventName);
+    auto skeleton_event_binding = SkeletonEventBindingFactory::Create(
+        kConfigStoreAsilQM.GetInstanceIdentifier(), *skeleton_, kDummyEventName, kTestSampleTypeSizeInfo);
 
     // Then the created lola binding has the expected number of events in SkeletonEventProperties
-    auto skeleton_event_lola_binding = dynamic_cast<lola::SkeletonEvent<TestSampleType>*>(skeleton_event_binding.get());
+    auto skeleton_event_lola_binding = dynamic_cast<lola::SkeletonEvent*>(skeleton_event_binding.get());
     ASSERT_NE(skeleton_event_lola_binding, nullptr);
     const auto skeleton_event_properties =
-        lola::SkeletonEventAttorney<TestSampleType>::GetSkeletonEventProperties(*skeleton_event_lola_binding);
+        lola::SkeletonEventAttorney::GetSkeletonEventProperties(*skeleton_event_lola_binding);
     EXPECT_EQ(skeleton_event_properties.GetTotalNumberOfSlots(),
               kNumberOfConfiguredSlots + kNumberOfConfiguredTracingSlots);
     EXPECT_EQ(skeleton_event_properties.GetNumberOfFieldGetterSlots(), 0U);

@@ -1,0 +1,146 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/mw/com/test/fields/getter_setter_if_available",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 4300,
+          "fields": [
+            {
+              "fieldName": "getter_setter_if_available_field",
+              "fieldId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "/score/mw/com/test/fields/getter_setter_if_available/provider",
+      "serviceTypeName": "/score/mw/com/test/fields/getter_setter_if_available",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 4300,
+          "asil-level": "B",
+          "binding": "SHM",
+          "fields": [
+            {
+              "fieldName": "getter_setter_if_available_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/score/mw/com/test/fields/getter_setter_if_available/get_true_set_true",
+      "serviceTypeName": "/score/mw/com/test/fields/getter_setter_if_available",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 4300,
+          "asil-level": "B",
+          "binding": "SHM",
+          "fields": [
+            {
+              "fieldName": "getter_setter_if_available_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 1,
+              "useGetIfAvailable": true,
+              "useSetIfAvailable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/score/mw/com/test/fields/getter_setter_if_available/get_true_set_false",
+      "serviceTypeName": "/score/mw/com/test/fields/getter_setter_if_available",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 4300,
+          "asil-level": "B",
+          "binding": "SHM",
+          "fields": [
+            {
+              "fieldName": "getter_setter_if_available_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 1,
+              "useGetIfAvailable": true,
+              "useSetIfAvailable": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/score/mw/com/test/fields/getter_setter_if_available/get_false_set_true",
+      "serviceTypeName": "/score/mw/com/test/fields/getter_setter_if_available",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 4300,
+          "asil-level": "B",
+          "binding": "SHM",
+          "fields": [
+            {
+              "fieldName": "getter_setter_if_available_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 1,
+              "useGetIfAvailable": false,
+              "useSetIfAvailable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/score/mw/com/test/fields/getter_setter_if_available/get_false_set_false",
+      "serviceTypeName": "/score/mw/com/test/fields/getter_setter_if_available",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 4300,
+          "asil-level": "B",
+          "binding": "SHM",
+          "fields": [
+            {
+              "fieldName": "getter_setter_if_available_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 1,
+              "useGetIfAvailable": false,
+              "useSetIfAvailable": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "B"
+  }
+}

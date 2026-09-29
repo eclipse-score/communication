@@ -87,6 +87,29 @@ constexpr difference_type kNullPtrRepresentation = 1;
 
 bool IsBoundsCheckingEnabled() noexcept;
 
+/// \brief Performs the bounds-check (if enabled) for an offset-based address relationship, i.e. an address at
+/// address + offset, where address itself is either located within a shared-memory region (registered with the
+/// MemoryResourceRegistry) or not.
+///
+/// This contains the shared orchestration logic (checking whether bounds-checking is enabled at all, looking up the
+/// bounds of the memory region address is located in, and dispatching to the appropriate one of
+/// DoesOffsetPtrInSharedMemoryPassBoundsChecks() / DoesOffsetPtrNotInSharedMemoryPassBoundsChecks()) so that it can be
+/// re-used by both OffsetPtr and OffsetRef.
+///
+/// \param address the address of the offset-holding object itself (i.e. the OffsetPtr's or OffsetRef's own address).
+/// \param offset the offset (relative to address) of the pointed-to/referenced object.
+/// \param memory_bounds_when_not_in_shm memory bounds to fall back on for the bounds-check, in case address does not
+///        lie within a shared-memory region registered with the MemoryResourceRegistry (see
+///        DoesOffsetPtrNotInSharedMemoryPassBoundsChecks() for details). Callers which never populate such bounds
+///        (e.g. OffsetRef, which is never copied) can simply pass a default constructed (empty) MemoryRegionBounds.
+/// \param pointed_type_size sizeof() of the pointed-to/referenced type.
+/// \param own_size sizeof() of the offset-holding object itself (i.e. sizeof(OffsetPtr<T>) or sizeof(OffsetRef<T>)).
+void AssertOffsetBoundsCheck(const void* const address,
+                             const difference_type offset,
+                             const MemoryRegionBounds& memory_bounds_when_not_in_shm,
+                             const std::size_t pointed_type_size,
+                             const std::size_t own_size);
+
 }  // namespace detail_offset_ptr
 
 /// \brief Enables/Disables OffsetPtr bounds-checking globally. Initially it is activated for safety reasons!
@@ -553,35 +576,11 @@ auto OffsetPtr<PointedType>::GetPointerWithBoundsCheck(
     const MemoryRegionBounds& offset_ptr_memory_bounds_when_not_in_shm,
     const std::size_t pointed_type_size) -> pointer
 {
-    if (detail_offset_ptr::IsBoundsCheckingEnabled())
-    {
-        const auto offset_ptr_bounds = MemoryResourceRegistry::getInstance().GetBoundsFromAddress(offset_ptr_address);
-        const auto is_offset_ptr_in_memory_region = offset_ptr_bounds.has_value();
-        if (is_offset_ptr_in_memory_region)
-        {
-            // We use SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD instead of std::terminate so that we can check these in unit
-            // tests using SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED instead of death tests (since death tests
-            // are very slow).
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(
-                DoesOffsetPtrInSharedMemoryPassBoundsChecks(offset_ptr_address,
-                                                            offset,
-                                                            offset_ptr_bounds.value(),
-                                                            pointed_type_size,
-                                                            sizeof(OffsetPtr<PointedType>)));
-        }
-        else
-        {
-            // We use SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD instead of std::terminate so that we can check these in unit
-            // tests using SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED instead of death tests (since death tests
-            // are very slow).
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(
-                DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(offset_ptr_address,
-                                                               offset,
-                                                               offset_ptr_memory_bounds_when_not_in_shm,
-                                                               pointed_type_size,
-                                                               sizeof(OffsetPtr<PointedType>)));
-        }
-    }
+    detail_offset_ptr::AssertOffsetBoundsCheck(offset_ptr_address,
+                                               offset,
+                                               offset_ptr_memory_bounds_when_not_in_shm,
+                                               pointed_type_size,
+                                               sizeof(OffsetPtr<PointedType>));
 
     // NOLINTNEXTLINE(score-banned-function) The current function is banned for calling this function
     return GetPointerWithoutBoundsCheck(offset_ptr_address, offset);

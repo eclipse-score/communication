@@ -371,7 +371,7 @@ TEST_P(LolaServiceInstanceDeploymentEqualityParamaterisedFixture, DifferentDeplo
     EXPECT_FALSE(comparison_result);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     LolaServiceInstanceDeploymentEqualityParamaterisedFixture,
     LolaServiceInstanceDeploymentEqualityParamaterisedFixture,
     ::testing::Values(

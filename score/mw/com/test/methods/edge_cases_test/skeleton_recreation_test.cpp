@@ -11,11 +11,11 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/test/common_test_resources/assert_handler.h"
+#include "score/mw/com/test/common_test_resources/service_instance_manifest_parser.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/com/test/methods/methods_test_resources/all_signatures_datatype/all_signatures_datatype.h"
 #include "score/mw/com/test/methods/methods_test_resources/all_signatures_datatype/all_signatures_method_consumer.h"
 #include "score/mw/com/test/methods/methods_test_resources/all_signatures_datatype/all_signatures_method_provider.h"
-#include "score/mw/com/test/methods/methods_test_resources/common_resources.h"
 
 #include "score/mw/com/runtime.h"
 

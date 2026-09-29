@@ -142,7 +142,7 @@ of its instances by 5 seconds each:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 103-131
+   :lines: 106-134
    :caption: provider/provider.cpp
 
 
@@ -177,7 +177,7 @@ handing over the container of **all** currently matching service handles.
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 111-147
+   :lines: 116-152
    :caption: consumer/consumer.cpp
 
 
@@ -208,7 +208,7 @@ The portable way to get a representation of the instance id out of a handle is:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 54-60
+   :lines: 53-59
    :caption: consumer/consumer.cpp
 
 
@@ -225,7 +225,7 @@ The main loop of the consumer then simply polls the `message` event of **every**
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 157-169
+   :lines: 162-174
    :caption: consumer/consumer.cpp
 
 
@@ -235,7 +235,7 @@ longer be called):
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 179-179
+   :lines: 184-184
    :caption: consumer/consumer.cpp
 
 

@@ -93,3 +93,47 @@ justifications:
        Coverage tool incorrectly marks this line as not covered. Lines immediately before and after are covered.
        Covered by the test BidirectionalTransportSocketFixture.DispatchThreadDeliversQueuedMessageToHandler
        inside score/mw/com/gateway/transport_layer/sample/bidirectional_transport_test.cpp
+
+  - id: ivshmem-bind-shm-to-bar-shm-ctl-special-success
+    category: defensive_programming
+    platforms: [qnx]
+    reason: >
+      QNX x86_64 only: shm_ctl_special() needs a real ivshmem device and WB-backed shared memory,
+      so the mock-fd test path always hits EBADF. Fallback to standard shm_ctl() on failure.
+    locations:
+      - file: score/mw/com/gateway/transport_layer/qemu/ivshmem/ivshmem_typed_memory_provider.cpp
+        line_start: 321
+        line_end: 329
+
+  - id: ivshmem-write-directory-entry-idempotent
+    category: defensive_programming
+    platforms: [qnx]
+    reason: >
+      Idempotent guard in WriteDirectoryEntry() requires multi-VM concurrent write race; 
+      single-process tests cache allocations on first write, preventing re-entry.
+    locations:
+      - file: score/mw/com/gateway/transport_layer/qemu/ivshmem/ivshmem_typed_memory_provider.cpp
+        line_start: 222
+        line_end: 230
+
+  - id: ivshmem-bar-discovery-hardware-path
+    category: defensive_programming
+    platforms: [qnx]
+    reason: >
+      QNX PCI API calls require real ivshmem device. Tests with no hardware hit pci_device_find→PCI_BDF_NONE 
+      and cannot mock PCI subsystem APIs.
+    locations:
+      - file: score/mw/com/gateway/transport_layer/qemu/ivshmem/ivshmem_bar_discovery.cpp
+        line_start: 45
+        line_end: 133
+
+  - id: qemu-worldwritable-ctor-gcc-artifact
+    category: defensive_programming
+    platforms: [qnx]
+    reason: >
+      GCC/GCOV x86_64 QNX emits separate counter for WorldWritable{} on continuation lines;
+      QCC omits sequence-point counter on trivial temporaries.
+    locations:
+      - file: score/mw/com/gateway/transport_layer/qemu/qemu_hypervisor_transport.cpp
+        line_start: 356
+        line_end: 357

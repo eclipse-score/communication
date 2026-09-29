@@ -57,15 +57,17 @@ constexpr std::chrono::milliseconds kMaxUpdateDelay{3000};
 constexpr float kMinTirePressure{1.2F};
 constexpr float kMaxTirePressure{4.0F};
 
-static std::atomic<bool> g_running{true};
+namespace
+{
+std::atomic<bool> g_running{true};
 
 // The current threshold band. It is the provider's local mirror of the "tire_pressure_thresholds" field value: it is
 // initialized before the service is offered and updated by the set-handler whenever a consumer calls Set() on the
 // field. The main loop reads it to decide whether a tire pressure has left the band.
-static std::mutex g_thresholds_mutex{};
-static TirePressureThreshold g_current_thresholds{kInitialLowerThreshold, kInitialUpperThreshold};
+std::mutex g_thresholds_mutex{};
+TirePressureThreshold g_current_thresholds{kInitialLowerThreshold, kInitialUpperThreshold};
 
-static void SignalHandler(int /*signum*/)
+void SignalHandler(int /*signum*/)
 {
     std::cout << "TirePressureExtended service provider caught signal." << std::endl;
     g_running.store(false, std::memory_order_relaxed);
@@ -77,7 +79,7 @@ static void SignalHandler(int /*signum*/)
 using TirePressureField = decltype(TirePressureExtendedSkeleton::tire_pressure_front_left);
 
 // Updates a single tire pressure field with the given value and returns the value it was set to.
-static float UpdateField(TirePressureField& field, const std::string_view field_name, const float value)
+float UpdateField(TirePressureField& field, const std::string_view field_name, const float value)
 {
     const auto update_result = field.Update(value);
     if (!update_result)
@@ -92,10 +94,10 @@ static float UpdateField(TirePressureField& field, const std::string_view field_
 }
 
 // Clamps a single threshold value into [min, max] and logs an error message when an adjustment was necessary.
-static float ClampThreshold(const std::string_view threshold_name,
-                            const float value,
-                            const float min_value,
-                            const float max_value)
+float ClampThreshold(const std::string_view threshold_name,
+                     const float value,
+                     const float min_value,
+                     const float max_value)
 {
     if (value < min_value)
     {
@@ -111,6 +113,7 @@ static float ClampThreshold(const std::string_view threshold_name,
     }
     return value;
 }
+}  // namespace
 
 int main()
 {

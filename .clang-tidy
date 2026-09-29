@@ -128,7 +128,6 @@ Checks: >
   performance-unnecessary-copy-initialization,
   performance-unnecessary-value-param,
   readability-container-data-pointer,
-  readability-magic-numbers,
   readability-math-missing-parentheses,
   readability-redundant-casting,
   readability-redundant-inline-specifier,
@@ -165,7 +164,7 @@ Checks: >
 WarningsAsErrors: >
   clang-analyzer-*,
 
-HeaderFilterRegex: '^(?!.*/third_party/).*'
+HeaderFilterRegex: '^(?!(third_party|external)/).*'
 
 FormatStyle: file
 
@@ -241,7 +240,7 @@ CheckOptions:
   - key: performance-unnecessary-value-param.IncludeStyle
     value: "llvm"
   - key: performance-unnecessary-value-param.AllowedTypes
-    value: "::score::cpp::stop_token"
+    value: "::score::cpp::stop_token;std::shared_ptr;std::weak_ptr"
   - key: readability-container-data-pointer.IgnoredContainers
     value: ""
   - key: readability-redundant-casting.IgnoreTypeAliases

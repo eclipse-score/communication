@@ -50,7 +50,8 @@ TEST_F(SkeletonFieldMockFixture, AllocateDispatchesToMockAfterInjectingMock)
     // Given a SkeletonField constructed with an empty binding and an injected mock
 
     // Expecting that Allocate will be called on the mock which returns a valid SampleAllocateePtr
-    auto fake_sample_allocatee_ptr = MakeFakeSampleAllocateePtr(std::make_unique<TestSampleType>());
+    TestSampleType allocated_sample;
+    auto fake_sample_allocatee_ptr = MakeFakeSampleAllocateePtr(&allocated_sample);
     EXPECT_CALL(skeleton_field_mock_, Allocate()).WillOnce(Return(ByMove(std::move(fake_sample_allocatee_ptr))));
 
     // When Allocate is called on the SkeletonField
@@ -115,7 +116,8 @@ TEST_F(SkeletonFieldMockFixture, ZeroCopyUpdateDispatchesToMockAfterInjectingMoc
         .WillOnce(Return(Result<void>{}));
 
     // When zero-copy Update is called on the SkeletonField
-    auto fake_sample_allocatee_ptr = MakeFakeSampleAllocateePtr(std::make_unique<TestSampleType>());
+    TestSampleType allocated_sample;
+    auto fake_sample_allocatee_ptr = MakeFakeSampleAllocateePtr(&allocated_sample);
     auto result = unit_.Update(std::move(fake_sample_allocatee_ptr));
 
     // Then the result is valid
@@ -132,7 +134,8 @@ TEST_F(SkeletonFieldMockFixture, ZeroCopyUpdateReturnsErrorWhenMockReturnsError)
         .WillOnce(Return(MakeUnexpected(error_code)));
 
     // When zero-copy Update is called on the SkeletonField
-    auto fake_sample_allocatee_ptr = MakeFakeSampleAllocateePtr(std::make_unique<TestSampleType>());
+    TestSampleType allocated_sample;
+    auto fake_sample_allocatee_ptr = MakeFakeSampleAllocateePtr(&allocated_sample);
     auto result = unit_.Update(std::move(fake_sample_allocatee_ptr));
 
     // Then the result contains the same error code that was returned by the mock

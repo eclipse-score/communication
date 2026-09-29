@@ -35,15 +35,15 @@ namespace score::mw::com::impl
 thread_local bool ProxyEventBase::is_in_receive_handler_context = false;
 
 ProxyEventBase::ProxyEventBase(std::string_view event_name,
-                               Result<std::unique_ptr<ProxyEventBindingBase>> proxy_event_binding)
+                               Result<std::unique_ptr<ProxyEventBinding>> proxy_event_binding)
     : EnableReferenceToMoveableFromThis<ProxyEventBase>(),
       binding_construction_result_{},
-      binding_base_{std::move(proxy_event_binding)
-                        .or_else([this](auto&& error) -> Result<std::unique_ptr<ProxyEventBindingBase>> {
-                            binding_construction_result_ = Unexpected{error};
-                            return nullptr;
-                        })
-                        .value()},
+      binding_{std::move(proxy_event_binding)
+                   .or_else([this](auto&& error) -> Result<std::unique_ptr<ProxyEventBinding>> {
+                       binding_construction_result_ = Unexpected{error};
+                       return nullptr;
+                   })
+                   .value()},
       event_name_{event_name},
       tracker_{std::make_unique<SampleReferenceTracker>()},
       tracing_data_{},
@@ -85,13 +85,13 @@ Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count)
         return mock_result;
     }
 
-    tracing::TraceSubscribe(tracing_data_, *binding_base_, max_sample_count);
+    tracing::TraceSubscribe(tracing_data_, *binding_, max_sample_count);
 
     const auto current_state = GetSubscriptionState();
     if (current_state == SubscriptionState::kNotSubscribed)
     {
         tracker_->Reset(max_sample_count);
-        const auto subscribe_result = binding_base_->Subscribe(max_sample_count);
+        const auto subscribe_result = binding_->Subscribe(max_sample_count);
         if (!subscribe_result.has_value())
         {
             return MakeUnexpected(ComErrc::kBindingFailure);
@@ -100,7 +100,7 @@ Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count)
     else if ((current_state == SubscriptionState::kSubscribed) ||
              (current_state == SubscriptionState::kSubscriptionPending))
     {
-        const auto current_max_sample_count = binding_base_->GetMaxSampleCount();
+        const auto current_max_sample_count = binding_->GetMaxSampleCount();
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(current_max_sample_count.has_value(),
                                                 "Current MaxSampleCount must be set when subscribed.");
         if (max_sample_count != current_max_sample_count.value())
@@ -130,10 +130,10 @@ void ProxyEventBase::Unsubscribe() noexcept
         return;
     }
 
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_base_ != nullptr,
-                                                "binding_base_ must be set if Subscribe completed successfully.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ != nullptr,
+                                                "binding_ must be set if Subscribe completed successfully.");
 
-    tracing::TraceUnsubscribe(tracing_data_, *binding_base_);
+    tracing::TraceUnsubscribe(tracing_data_, *binding_);
 
     if (GetSubscriptionState() != SubscriptionState::kNotSubscribed)
     {
@@ -141,7 +141,7 @@ void ProxyEventBase::Unsubscribe() noexcept
         // ReceiveHandler will be implicitly unset during Unsubscribe and therefore any current invocation has to finish
         // first, which we assure via its scope expiring.
         ExpireReceiveHandlerScopeIfNotInHandler();
-        binding_base_->Unsubscribe();
+        binding_->Unsubscribe();
         if (tracker_->IsUsed())
         {
             score::mw::log::LogFatal("lola")
@@ -153,12 +153,12 @@ void ProxyEventBase::Unsubscribe() noexcept
 
 Result<void> ProxyEventBase::SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept
 {
-    return binding_base_->SetSubscriptionStateChangeHandler(std::move(handler));
+    return binding_->SetSubscriptionStateChangeHandler(std::move(handler));
 }
 
 Result<void> ProxyEventBase::UnsetSubscriptionStateChangeHandler() noexcept
 {
-    return binding_base_->UnsetSubscriptionStateChangeHandler();
+    return binding_->UnsetSubscriptionStateChangeHandler();
 }
 
 std::size_t ProxyEventBase::GetFreeSampleCount() const noexcept
@@ -178,7 +178,7 @@ SubscriptionState ProxyEventBase::GetSubscriptionState() const noexcept
         return proxy_event_base_mock_->GetSubscriptionState();
     }
 
-    return binding_base_->GetSubscriptionState();
+    return binding_->GetSubscriptionState();
 }
 
 Result<std::size_t> ProxyEventBase::GetNumNewSamplesAvailable() const
@@ -188,7 +188,7 @@ Result<std::size_t> ProxyEventBase::GetNumNewSamplesAvailable() const
         return proxy_event_base_mock_->GetNumNewSamplesAvailable();
     }
 
-    const auto get_num_new_samples_available_result = binding_base_->GetNumNewSamplesAvailable();
+    const auto get_num_new_samples_available_result = binding_->GetNumNewSamplesAvailable();
     if (!get_num_new_samples_available_result.has_value())
     {
         if (get_num_new_samples_available_result.error() == ComErrc::kNotSubscribed)
@@ -210,8 +210,8 @@ Result<void> ProxyEventBase::SetReceiveHandler(EventReceiveHandler handler) noex
         return proxy_event_base_mock_->SetReceiveHandler(std::move(handler));
     }
 
-    tracing::TraceSetReceiveHandler(tracing_data_, *binding_base_);
-    auto tracing_handler = tracing::CreateTracingReceiveHandler(tracing_data_, *binding_base_, std::move(handler));
+    tracing::TraceSetReceiveHandler(tracing_data_, *binding_);
+    auto tracing_handler = tracing::CreateTracingReceiveHandler(tracing_data_, *binding_, std::move(handler));
 
     // Package the tracing handler, which already encapsulates the user provided EventReceiveHandler into another
     // move-only function, which adds the aspect of updating the thread local state is_in_receive_handler_context
@@ -228,7 +228,7 @@ Result<void> ProxyEventBase::SetReceiveHandler(EventReceiveHandler handler) noex
     receive_handler_ptr_ =
         std::make_shared<ScopedEventReceiveHandler>(receive_handler_scope_, std::move(extended_tracing_handler));
 
-    const auto set_receive_handler_result = binding_base_->SetReceiveHandler(receive_handler_ptr_);
+    const auto set_receive_handler_result = binding_->SetReceiveHandler(receive_handler_ptr_);
     if (!set_receive_handler_result.has_value())
     {
         return MakeUnexpected(ComErrc::kSetHandlerNotSet);
@@ -249,12 +249,12 @@ Result<void> ProxyEventBase::UnsetReceiveHandler() noexcept
         // silently ignore this call.
         return {};
     }
-    tracing::TraceUnsetReceiveHandler(tracing_data_, *binding_base_);
+    tracing::TraceUnsetReceiveHandler(tracing_data_, *binding_);
 
     ExpireReceiveHandlerScopeIfNotInHandler();
     receive_handler_ptr_.reset();
 
-    const auto unset_receive_handler_result = binding_base_->UnsetReceiveHandler();
+    const auto unset_receive_handler_result = binding_->UnsetReceiveHandler();
     if (!unset_receive_handler_result.has_value())
     {
         return MakeUnexpected(ComErrc::kUnsetFailure);

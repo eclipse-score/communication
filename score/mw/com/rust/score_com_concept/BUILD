@@ -17,7 +17,6 @@ load("//quality/unit_testing:unit_testing.bzl", "rust_unit_test")
 rust_library(
     name = "score_com_concept",
     srcs = glob(["**/*.rs"]),
-    edition = "2024",
     proc_macro_deps = [
         "//score/mw/com/rust/score_com_macros:score-com-macros",
         "@score_communication_crate_index//:paste",
@@ -26,8 +25,8 @@ rust_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
-        "@score_baselibs//src/containers",
-        "@score_baselibs//src/log/score_log",
+        "@score_baselibs//score/containers_rust:containers",
+        "@score_baselibs//score/log_rust/score_log",
         "@score_communication_crate_index//:futures",
         "@score_communication_crate_index//:thiserror",
     ],
@@ -36,9 +35,11 @@ rust_library(
 rust_test(
     name = "score_com_concept-test",
     crate = ":score_com_concept",
-    edition = "2024",
     tags = ["manual"],
-    deps = [":score_com_concept"],
+    deps = [
+        ":score_com_concept",
+        "//score/mw/com/rust:score_com",
+    ],
 )
 
 rust_doc_test(

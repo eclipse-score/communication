@@ -174,28 +174,28 @@ class TracingRuntimeTraceParamaterisedFixture : public TracingRuntimeTraceFixtur
 };
 
 using TracingRuntimeTraceShmParamaterisedFixture = TracingRuntimeTraceParamaterisedFixture;
-INSTANTIATE_TEST_CASE_P(TracingRuntimeTraceShmParamaterisedFixture,
-                        TracingRuntimeTraceShmParamaterisedFixture,
-                        ::testing::Values(SkeletonEventTracePointType::SEND,
-                                          SkeletonEventTracePointType::SEND_WITH_ALLOCATE,
-                                          SkeletonFieldTracePointType::UPDATE,
-                                          SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE));
+INSTANTIATE_TEST_SUITE_P(TracingRuntimeTraceShmParamaterisedFixture,
+                         TracingRuntimeTraceShmParamaterisedFixture,
+                         ::testing::Values(SkeletonEventTracePointType::SEND,
+                                           SkeletonEventTracePointType::SEND_WITH_ALLOCATE,
+                                           SkeletonFieldTracePointType::UPDATE,
+                                           SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE));
 
 using TracingRuntimeTraceLocalParamaterisedFixture = TracingRuntimeTraceParamaterisedFixture;
-INSTANTIATE_TEST_CASE_P(TracingRuntimeTraceLocalParamaterisedFixture,
-                        TracingRuntimeTraceLocalParamaterisedFixture,
-                        ::testing::Values(ProxyEventTracePointType::GET_NEW_SAMPLES,
-                                          ProxyEventTracePointType::SUBSCRIBE,
-                                          ProxyFieldTracePointType::GET_NEW_SAMPLES,
-                                          ProxyFieldTracePointType::SUBSCRIBE));
+INSTANTIATE_TEST_SUITE_P(TracingRuntimeTraceLocalParamaterisedFixture,
+                         TracingRuntimeTraceLocalParamaterisedFixture,
+                         ::testing::Values(ProxyEventTracePointType::GET_NEW_SAMPLES,
+                                           ProxyEventTracePointType::SUBSCRIBE,
+                                           ProxyFieldTracePointType::GET_NEW_SAMPLES,
+                                           ProxyFieldTracePointType::SUBSCRIBE));
 
 using TracingRuntimeTraceInvalidTracePointTypeParamaterisedDeathTest = TracingRuntimeTraceParamaterisedFixture;
-INSTANTIATE_TEST_CASE_P(TracingRuntimeTraceInvalidTracePointTypeParamaterisedDeathTest,
-                        TracingRuntimeTraceInvalidTracePointTypeParamaterisedDeathTest,
-                        ::testing::Values(ProxyEventTracePointType::INVALID,
-                                          SkeletonEventTracePointType::INVALID,
-                                          ProxyFieldTracePointType::INVALID,
-                                          SkeletonFieldTracePointType::INVALID));
+INSTANTIATE_TEST_SUITE_P(TracingRuntimeTraceInvalidTracePointTypeParamaterisedDeathTest,
+                         TracingRuntimeTraceInvalidTracePointTypeParamaterisedDeathTest,
+                         ::testing::Values(ProxyEventTracePointType::INVALID,
+                                           SkeletonEventTracePointType::INVALID,
+                                           ProxyFieldTracePointType::INVALID,
+                                           SkeletonFieldTracePointType::INVALID));
 
 TEST_P(TracingRuntimeTraceShmParamaterisedFixture, CanConstructTracingRuntime)
 {
@@ -534,12 +534,12 @@ TEST_P(TracingRuntimeTraceShmParamaterisedFixture, TraceShmDataNOK_NoCachedFiled
 }
 
 using TracingRuntimeTraceShmParamaterisedDeathTest = TracingRuntimeTraceShmParamaterisedFixture;
-INSTANTIATE_TEST_CASE_P(TracingRuntimeTraceShmParamaterisedDeathTest,
-                        TracingRuntimeTraceShmParamaterisedDeathTest,
-                        ::testing::Values(SkeletonEventTracePointType::SEND,
-                                          SkeletonEventTracePointType::SEND_WITH_ALLOCATE,
-                                          SkeletonFieldTracePointType::UPDATE,
-                                          SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE));
+INSTANTIATE_TEST_SUITE_P(TracingRuntimeTraceShmParamaterisedDeathTest,
+                         TracingRuntimeTraceShmParamaterisedDeathTest,
+                         ::testing::Values(SkeletonEventTracePointType::SEND,
+                                           SkeletonEventTracePointType::SEND_WITH_ALLOCATE,
+                                           SkeletonFieldTracePointType::UPDATE,
+                                           SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE));
 TEST_P(TracingRuntimeTraceShmParamaterisedDeathTest, TraceShmDataNOK_GetShmRegionStartAddressFailedDeathTest)
 {
     // given a UuT which delegates to a mock IBindingTracingRuntime in case of BindingType::kLoLa
@@ -1076,28 +1076,28 @@ class TracingRuntimeMetaInfoParamaterisedFixture : public TracingRuntimeTraceFix
 };
 
 using TracingRuntimeShmMetaInfoFixture = TracingRuntimeMetaInfoParamaterisedFixture;
-INSTANTIATE_TEST_CASE_P(TracingRuntimeShmMetaInfoFixture,
-                        TracingRuntimeShmMetaInfoFixture,
-                        ::testing::Values(MetaInfoTestData{SkeletonEventTracePointType::SEND,
-                                                           analysis::tracing::TracePointType::kSkelEventSnd},
-                                          MetaInfoTestData{SkeletonEventTracePointType::SEND_WITH_ALLOCATE,
-                                                           analysis::tracing::TracePointType::kSkelEventSndA},
-                                          MetaInfoTestData{SkeletonFieldTracePointType::UPDATE,
-                                                           analysis::tracing::TracePointType::kSkelFieldUpd},
-                                          MetaInfoTestData{SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE,
-                                                           analysis::tracing::TracePointType::kSkelFieldUpdA}));
+INSTANTIATE_TEST_SUITE_P(TracingRuntimeShmMetaInfoFixture,
+                         TracingRuntimeShmMetaInfoFixture,
+                         ::testing::Values(MetaInfoTestData{SkeletonEventTracePointType::SEND,
+                                                            analysis::tracing::TracePointType::kSkelEventSnd},
+                                           MetaInfoTestData{SkeletonEventTracePointType::SEND_WITH_ALLOCATE,
+                                                            analysis::tracing::TracePointType::kSkelEventSndA},
+                                           MetaInfoTestData{SkeletonFieldTracePointType::UPDATE,
+                                                            analysis::tracing::TracePointType::kSkelFieldUpd},
+                                           MetaInfoTestData{SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE,
+                                                            analysis::tracing::TracePointType::kSkelFieldUpdA}));
 
 using TracingRuntimeLocalMetaInfoFixture = TracingRuntimeMetaInfoParamaterisedFixture;
-INSTANTIATE_TEST_CASE_P(TracingRuntimeLocalMetaInfoFixture,
-                        TracingRuntimeLocalMetaInfoFixture,
-                        ::testing::Values(MetaInfoTestData{ProxyEventTracePointType::GET_NEW_SAMPLES,
-                                                           analysis::tracing::TracePointType::kProxyEventGetSamples},
-                                          MetaInfoTestData{ProxyEventTracePointType::SUBSCRIBE,
-                                                           analysis::tracing::TracePointType::kProxyEventSub},
-                                          MetaInfoTestData{ProxyFieldTracePointType::GET_NEW_SAMPLES,
-                                                           analysis::tracing::TracePointType::kProxyFieldGetSamples},
-                                          MetaInfoTestData{ProxyFieldTracePointType::SUBSCRIBE,
-                                                           analysis::tracing::TracePointType::kProxyFieldSub}));
+INSTANTIATE_TEST_SUITE_P(TracingRuntimeLocalMetaInfoFixture,
+                         TracingRuntimeLocalMetaInfoFixture,
+                         ::testing::Values(MetaInfoTestData{ProxyEventTracePointType::GET_NEW_SAMPLES,
+                                                            analysis::tracing::TracePointType::kProxyEventGetSamples},
+                                           MetaInfoTestData{ProxyEventTracePointType::SUBSCRIBE,
+                                                            analysis::tracing::TracePointType::kProxyEventSub},
+                                           MetaInfoTestData{ProxyFieldTracePointType::GET_NEW_SAMPLES,
+                                                            analysis::tracing::TracePointType::kProxyFieldGetSamples},
+                                           MetaInfoTestData{ProxyFieldTracePointType::SUBSCRIBE,
+                                                            analysis::tracing::TracePointType::kProxyFieldSub}));
 
 TEST_P(TracingRuntimeShmMetaInfoFixture, ShmTraceCallMetaInfoContainsAraComMetaInfo)
 {

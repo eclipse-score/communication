@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/bindings/lola/slot_decrementer.h"
 
 #include <optional>
+#include <type_traits>
 #include <utility>
 
 namespace score::mw::com::impl::lola
@@ -26,30 +27,34 @@ namespace score::mw::com::impl::lola
 class TransactionLogSet;
 
 /// \brief SamplePtr behaves as unique_ptr to a sample (event slot). User get access to a SamplePtr via GetNewSamples().
-/// This is the LoLa binding specific SamplePtr, which holds a link to the underlying slot in shared memory.
-template <typename SampleType>
+/// \details This is the LoLa binding specific SamplePtr, which holds a link to the underlying slot in shared memory.
+/// It is type-erased as our binding layer is always type-erased.
 class SamplePtr final
 {
   public:
-    using pointer = const SampleType*;
-    using element_type = SampleType;
+    using pointer = const void*;
+    using element_type = void;
 
     /// \brief default ctor giving invalid SamplePtr (owning no managed object, invalid event slot)
-    SamplePtr() noexcept : SamplePtr{nullptr, std::nullopt} {}
+    SamplePtr() noexcept : SamplePtr{nullptr, std::nullopt, EventSlotStatus::INVALID_TIMESTAMP} {}
 
     /// \brief ctor from nullptr_t also giving invalid SamplePtr like default ctor.
-    explicit SamplePtr(std::nullptr_t /* ptr */) noexcept : SamplePtr{nullptr, std::nullopt} {}
+    explicit SamplePtr(std::nullptr_t /* ptr */) noexcept
+        : SamplePtr{nullptr, std::nullopt, EventSlotStatus::INVALID_TIMESTAMP}
+    {
+    }
 
     /// \brief ctor creates valid SamplePtr from its members.
     /// \param ptr pointer to managed object
-    /// \param event_data_ctrl event data control structure, which manages the underlying event/sample in shmem.
+    /// \param event_data_ctrl_local event data control structure, which manages the underlying event/sample in shmem.
     /// \param slot_index index of event slot
     SamplePtr(pointer ptr,
               ConsumerEventDataControlLocalView<>& event_data_ctrl_local,
               const SlotIndexType slot_index) noexcept
-        : SamplePtr{ptr, std::make_optional<SlotDecrementer>(event_data_ctrl_local, slot_index)}
+        : SamplePtr{ptr,
+                    std::make_optional<SlotDecrementer>(event_data_ctrl_local, slot_index),
+                    (event_data_ctrl_local)[slot_index].GetTimeStamp()}
     {
-        timestamp_ = (event_data_ctrl_local)[slot_index].GetTimeStamp();
     }
 
     ~SamplePtr() noexcept = default;
@@ -85,23 +90,6 @@ class SamplePtr final
         return managed_object_ != nullptr;
     }
 
-    /// \brief deref underlying managed object.
-    ///
-    /// Only enabled if the SampleType is not void
-    /// \return ref of managed object.
-    template <class T = SampleType, typename std::enable_if<!std::is_same<T, void>::value>::type* = nullptr>
-    typename std::add_lvalue_reference<const SampleType>::type operator*() const noexcept
-    {
-        return *managed_object_;
-    }
-
-    /// \brief access managed object
-    /// \return pointer to managed object
-    pointer operator->() const noexcept
-    {
-        return managed_object_;
-    }
-
     /// \brief Compares two SamplePtr instances based on their timestamp
     /// \param other SamplePtr to compare against
     /// \return true if this instance is older than \p other, false otherwise or if any of the SamplePtr are invalid
@@ -128,8 +116,10 @@ class SamplePtr final
     }
 
   private:
-    explicit SamplePtr(pointer managed_object, std::optional<SlotDecrementer>&& slog_decrementer) noexcept
-        : managed_object_{managed_object}, slot_decrementer_{std::move(slog_decrementer)}
+    explicit SamplePtr(pointer managed_object,
+                       std::optional<SlotDecrementer>&& slot_decrementer,
+                       EventSlotStatus::EventTimeStamp timestamp) noexcept
+        : managed_object_{managed_object}, slot_decrementer_{std::move(slot_decrementer)}, timestamp_{timestamp}
     {
     }
 

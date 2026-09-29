@@ -21,7 +21,6 @@ rust_library(
         "producer.rs",
         "runtime.rs",
     ],
-    edition = "2024",
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
         "//score/mw/com/impl/plumbing/rust:sample_allocatee_ptr_rs",
@@ -29,7 +28,7 @@ rust_library(
         "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:bridge_ffi_lola",
         "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:bridge_ffi_rs",
         "//score/mw/com/rust/score_com_concept",
-        "@score_baselibs//src/log/score_log",
+        "@score_baselibs//score/log_rust/score_log",
         "@score_communication_crate_index//:futures",
     ],
 )
@@ -37,7 +36,6 @@ rust_library(
 rust_test(
     name = "com-api-runtime-lola-tests",
     crate = ":com-api-runtime-lola",
-    edition = "2024",
     #tag will be removed wwhen sanitizer issue resolved for this
     tags = ["manual"],
     deps = [

@@ -39,16 +39,16 @@ class ConfigurationStore final
 {
   public:
     ConfigurationStore(InstanceSpecifier instance_specifier,
-                       const ServiceIdentifierType service_identifier,
+                       ServiceIdentifierType service_identifier,
                        const QualityType quality_type,
                        const LolaServiceId lola_service_id,
-                       const std::optional<LolaServiceInstanceId> lola_instance_id) noexcept;
+                       const std::optional<LolaServiceInstanceId>& lola_instance_id) noexcept;
 
     ConfigurationStore(InstanceSpecifier instance_specifier,
-                       const ServiceIdentifierType service_identifier,
+                       ServiceIdentifierType service_identifier,
                        const QualityType quality_type,
-                       const LolaServiceTypeDeployment lola_service_type_deployment,
-                       const LolaServiceInstanceDeployment lola_service_instance_deployment) noexcept;
+                       LolaServiceTypeDeployment lola_service_type_deployment,
+                       const LolaServiceInstanceDeployment& lola_service_instance_deployment) noexcept;
 
     InstanceIdentifier GetInstanceIdentifier() const noexcept;
     EnrichedInstanceIdentifier GetEnrichedInstanceIdentifier(

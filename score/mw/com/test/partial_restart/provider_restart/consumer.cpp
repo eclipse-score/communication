@@ -27,6 +27,7 @@
 
 #include <iostream>
 #include <mutex>
+#include <utility>
 
 namespace score::mw::com::test
 {
@@ -392,7 +393,7 @@ void DoConsumerActions(CheckPointControl& check_point_control,
         return;
     }
 
-    auto find_service_callback = [&handle_notification_data, &check_point_control](auto service_handle_container,
+    auto find_service_callback = [&handle_notification_data, &check_point_control](const auto& service_handle_container,
                                                                                    auto) noexcept {
         HandleReceivedNotification(service_handle_container, handle_notification_data, check_point_control);
     };

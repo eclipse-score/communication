@@ -28,8 +28,8 @@ use bigdata_com_api_gen::{
 };
 use clap::Parser;
 use score_com::{
-    Builder, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl, Result, Runtime,
-    RuntimeBuilder, SampleContainer, ServiceDiscovery, Subscriber, Subscription,
+    Builder, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl, Result, Runtime, RuntimeBuilder,
+    SampleContainer, ServiceDiscovery, Subscriber, Subscription,
 };
 use std::path::Path;
 use std::thread;
@@ -72,11 +72,11 @@ fn receive_loop(
             Ok(n) => {
                 received_total += n;
                 println!("{} Progress: {}/{}", log_tag, received_total, num_cycles);
-            }
+            },
             Err(e) => {
                 eprintln!("{} Receive error: {:?}", log_tag, e);
                 std::process::exit(1);
-            }
+            },
         }
     }
     println!("{} Received all {} samples, exiting", log_tag, num_cycles);
@@ -118,15 +118,12 @@ fn run_bigdata_test<R: Runtime>(runtime: &R, num_cycles: usize) {
         "[bigdata-consumer] Starting bigdata test, will receive {} samples",
         num_cycles
     );
-    let instance_specifier = InstanceSpecifier::new("/score/cp60/MapApiLanesStamped")
-        .expect("Invalid instance specifier");
-    let discovery = runtime
-        .find_service::<BigDataInterface>(FindServiceSpecifier::Specific(instance_specifier));
+    let instance_specifier =
+        InstanceSpecifier::new("/score/cp60/MapApiLanesStamped").expect("Invalid instance specifier");
+    let discovery = runtime.find_service::<BigDataInterface>(FindServiceSpecifier::Specific(instance_specifier));
 
     let consumer_builder = wait_for_consumer_builder(log_tag, || {
-        let instances = discovery
-            .get_available_instances()
-            .expect("Service discovery failed");
+        let instances = discovery.get_available_instances().expect("Service discovery failed");
         instances.into_iter().next()
     });
 
@@ -154,16 +151,13 @@ fn run_mixed_primitives_test<R: Runtime>(runtime: &R, num_cycles: usize) {
         "[mixed-primitives-consumer] Starting mixed_primitives test, will receive {} samples",
         num_cycles
     );
-    let instance_specifier = InstanceSpecifier::new("/IntegrationTest/MixedPrimitives")
-        .expect("Invalid instance specifier");
-    let discovery = runtime.find_service::<MixedPrimitivesInterface>(
-        FindServiceSpecifier::Specific(instance_specifier),
-    );
+    let instance_specifier =
+        InstanceSpecifier::new("/IntegrationTest/MixedPrimitives").expect("Invalid instance specifier");
+    let discovery =
+        runtime.find_service::<MixedPrimitivesInterface>(FindServiceSpecifier::Specific(instance_specifier));
 
     let consumer_builder = wait_for_consumer_builder(log_tag, || {
-        let instances = discovery
-            .get_available_instances()
-            .expect("Service discovery failed");
+        let instances = discovery.get_available_instances().expect("Service discovery failed");
         instances.into_iter().next()
     });
 
@@ -205,9 +199,16 @@ fn run_mixed_primitives_test<R: Runtime>(runtime: &R, num_cycles: usize) {
             assert_eq!(sample.flag, expected.flag);
             println!(
                 "[mixed-primitives-consumer] Received sample u64={} i64={} u32={} i32={} f32={} u16={} i16={} u8={} i8={} flag={}",
-                sample.u64_val, sample.i64_val, sample.u32_val,
-                sample.i32_val, sample.f32_val, sample.u16_val,
-                sample.i16_val, sample.u8_val, sample.i8_val, sample.flag
+                sample.u64_val,
+                sample.i64_val,
+                sample.u32_val,
+                sample.i32_val,
+                sample.f32_val,
+                sample.u16_val,
+                sample.i16_val,
+                sample.u8_val,
+                sample.i8_val,
+                sample.flag
             );
         },
     );
@@ -219,15 +220,12 @@ fn run_complex_struct_test<R: Runtime>(runtime: &R, num_cycles: usize) {
         "[complex-struct-consumer] Starting complex_struct test, will receive {} samples",
         num_cycles
     );
-    let instance_specifier = InstanceSpecifier::new("/UserDefinedTest/ComplexStruct")
-        .expect("Invalid instance specifier");
-    let discovery = runtime
-        .find_service::<ComplexStructInterface>(FindServiceSpecifier::Specific(instance_specifier));
+    let instance_specifier =
+        InstanceSpecifier::new("/UserDefinedTest/ComplexStruct").expect("Invalid instance specifier");
+    let discovery = runtime.find_service::<ComplexStructInterface>(FindServiceSpecifier::Specific(instance_specifier));
 
     let consumer_builder = wait_for_consumer_builder(log_tag, || {
-        let instances = discovery
-            .get_available_instances()
-            .expect("Service discovery failed");
+        let instances = discovery.get_available_instances().expect("Service discovery failed");
         instances.into_iter().next()
     });
 
@@ -319,9 +317,7 @@ fn main() {
     // Initialise the Lola runtime.
     let mut runtime_builder: LolaRuntimeBuilderImpl = LolaRuntimeBuilderImpl::new();
     runtime_builder.load_config(Path::new(CONFIG_PATH));
-    let runtime = runtime_builder
-        .build()
-        .expect("Failed to build Lola runtime");
+    let runtime = runtime_builder.build().expect("Failed to build Lola runtime");
 
     match args.test_case {
         TestCase::Bigdata => run_bigdata_test(&runtime, num_cycles),

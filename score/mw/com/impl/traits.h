@@ -342,7 +342,7 @@ class ProxyWrapperClass : public Interface<ProxyTrait>
     ///          for the given service handle and validating all service element bindings.
     /// \param instance_handle The handle identifying the service instance to connect to.
     /// \return On success, returns a ProxyWrapperClass instance. On failure, returns an error code.
-    static Result<ProxyWrapperClass> Create(const HandleType instance_handle) noexcept
+    static Result<ProxyWrapperClass> Create(const HandleType& instance_handle) noexcept
     {
         return Create(instance_handle, 0U);
     }
@@ -385,7 +385,7 @@ class ProxyWrapperClass : public Interface<ProxyTrait>
     /// This is a temporary workaround added to allow using types which dynamically allocate memory once at runtime.
     /// This is not currently public and should not be used by user applications. (SWP-269486). Can be accessed with
     /// ProxyWithSemiDynamicMethodFactory::Create.
-    static Result<ProxyWrapperClass> Create(const HandleType instance_handle,
+    static Result<ProxyWrapperClass> Create(const HandleType& instance_handle,
                                             std::size_t additional_shm_size_bytes) noexcept
     {
         if (creation_results_.has_value())
@@ -476,7 +476,7 @@ template <typename T>
 class ProxyWithSemiDynamicMethodFactory
 {
   public:
-    static Result<T> Create(const HandleType instance_handle, std::size_t additional_shm_size_bytes) noexcept
+    static Result<T> Create(const HandleType& instance_handle, std::size_t additional_shm_size_bytes) noexcept
     {
         return T::Create(instance_handle, additional_shm_size_bytes);
     }

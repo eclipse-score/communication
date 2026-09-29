@@ -57,9 +57,11 @@ class SkeletonMethod : public SkeletonMethodBinding
         pid_t proxy_pid,
         const QualityType asil_level);
 
-    void OnProxyMethodUnsubscribe(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier);
-
-    void OnProxyMethodUnsubscribeFinished(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier);
+    /// \brief Unregisters the method call handler corresponding to a given ProxyMethod which was registered with
+    /// MessagePassing in OnProxyMethodSubscribeFinished.
+    ///
+    /// \return Returns true if a registration guard was erased, false if none existed.
+    bool OnProxyMethodUnsubscribe(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier);
 
     bool IsRegistered() const;
 

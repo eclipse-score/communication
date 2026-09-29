@@ -23,8 +23,6 @@
 namespace score::mw::com::test
 {
 
-std::string ParseServiceInstanceManifest(int argc, const char** argv);
-
 const std::string kInterprocessNotificationShmPath{"/fields_mixed_criticality_test_interprocess_notification"};
 const std::string kFailureMessagePrefix{"fields_mixed_criticality"};
 

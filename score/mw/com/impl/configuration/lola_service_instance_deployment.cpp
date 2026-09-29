@@ -191,7 +191,7 @@ LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(const score::json::
 // Justification: This constructor is used by other constructors for delegation.
 // coverity[autosar_cpp14_a12_1_5_violation]
 LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(
-    const std::optional<LolaServiceInstanceId> instance_id,
+    const std::optional<LolaServiceInstanceId>& instance_id,
     EventInstanceMapping events,
     FieldInstanceMapping fields,
     MethodInstanceMapping methods,

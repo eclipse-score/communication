@@ -25,11 +25,11 @@ namespace score::mw::com::impl
 {
 
 ConfigurationStore::ConfigurationStore(InstanceSpecifier instance_specifier,
-                                       const ServiceIdentifierType service_identifier,
+                                       ServiceIdentifierType service_identifier,
                                        const QualityType quality_type,
                                        const LolaServiceId lola_service_id,
-                                       const std::optional<LolaServiceInstanceId> lola_instance_id) noexcept
-    : service_identifier_{service_identifier},
+                                       const std::optional<LolaServiceInstanceId>& lola_instance_id) noexcept
+    : service_identifier_{std::move(service_identifier)},
       instance_specifier_{std::move(instance_specifier)},
       quality_type_{quality_type},
       lola_instance_id_{lola_instance_id},
@@ -44,15 +44,15 @@ ConfigurationStore::ConfigurationStore(InstanceSpecifier instance_specifier,
 }
 
 ConfigurationStore::ConfigurationStore(InstanceSpecifier instance_specifier,
-                                       const ServiceIdentifierType service_identifier,
+                                       ServiceIdentifierType service_identifier,
                                        const QualityType quality_type,
-                                       const LolaServiceTypeDeployment lola_service_type_deployment,
-                                       const LolaServiceInstanceDeployment lola_service_instance_deployment) noexcept
-    : service_identifier_{service_identifier},
+                                       LolaServiceTypeDeployment lola_service_type_deployment,
+                                       const LolaServiceInstanceDeployment& lola_service_instance_deployment) noexcept
+    : service_identifier_{std::move(service_identifier)},
       instance_specifier_{std::move(instance_specifier)},
       quality_type_{quality_type},
       lola_instance_id_{lola_service_instance_deployment.instance_id_.value()},
-      lola_service_type_deployment_{lola_service_type_deployment},
+      lola_service_type_deployment_{std::move(lola_service_type_deployment)},
       lola_service_instance_deployment_{lola_service_instance_deployment},
       service_type_deployment_{std::make_unique<ServiceTypeDeployment>(lola_service_type_deployment_)},
       service_instance_deployment_{std::make_unique<ServiceInstanceDeployment>(service_identifier_,
@@ -79,7 +79,7 @@ EnrichedInstanceIdentifier ConfigurationStore::GetEnrichedInstanceIdentifier(
 
 HandleType ConfigurationStore::GetHandle(std::optional<ServiceInstanceId> instance_id) const noexcept
 {
-    return make_HandleType(GetInstanceIdentifier(), instance_id);
+    return make_HandleType(GetInstanceIdentifier(), std::move(instance_id));
 }
 
 }  // namespace score::mw::com::impl

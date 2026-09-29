@@ -94,8 +94,8 @@ class SkeletonWrapperClassTestView
         // Create service element binding factory guards which inject mocks into the binding factories. We rely on the
         // default behaviour that calls to Create on the factories will return nullptrs. This is required since the real
         // factories try to parse required information from a config file.
-        [[maybe_unused]] std::tuple<SkeletonEventBindingFactoryMockGuard<EventTypes>...> event_binding_factories{};
-        [[maybe_unused]] std::tuple<SkeletonFieldBindingFactoryMockGuard<FieldTypes>...> field_binding_factories{};
+        [[maybe_unused]] SkeletonEventBindingFactoryMockGuard event_binding_factory{};
+        [[maybe_unused]] SkeletonFieldBindingFactoryMockGuard field_binding_factory{};
 
         SkeletonWrapperClass skeleton{MakeFakeInstanceIdentifier(0U), std::make_unique<mock_binding::Skeleton>()};
 

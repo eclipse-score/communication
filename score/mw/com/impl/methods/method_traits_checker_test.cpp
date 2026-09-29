@@ -587,6 +587,8 @@ TEST(MethodTraitsCheckerAssertMethodCallableIsNotStdBindRuntimeTimeTest, Calling
 {
     // When calling AssertMethodCallableIsNotStdBind with a lvalue reference to std::bind type
     // Then the function terminates with a contract violation
+    // clang issues a warning in libstdc++ that internally bind uses a deprecated feature
+    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114394
     auto std_bind_expression = std::bind([]() {});
     using lvalue_ref_to_std_bind_expression = decltype(std_bind_expression)&;
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(

@@ -24,7 +24,7 @@ section "com" {
     - support for a `Set()` call to set the current field value
     - support for a notification to registered consumers to a field update."""
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.Field@1]
+            derived_from = [Communication.FEAT_Field@1]
             version = 1
         }
 
@@ -32,7 +32,7 @@ section "com" {
         ScoreReq.CompReq NoSupportForNotificationInSharedMemoryBinding {
 
             description = """For the field implementation in our shared-memory-binding implementation, the setting for "support for a notification" specified in [[FieldGetAndSetInterfaceDefinition]] shall be ignored. This is because, in the shared-memory-binding implementation support for update notification does not imply any performance drawbacks, unlike, for example a network binding.""" safety = ScoreReq.Asil.B
-            derived_from = [Communication.Field@1, Communication.MultiBindingSupport@1]
+            derived_from = [Communication.FEAT_Field@1, Communication.FEAT_MultiBindingSupport@1]
             version = 1
         }
 
@@ -42,14 +42,14 @@ section "com" {
 
         ScoreReq.CompReq GetMethodOnlyIfEnabledInInterfaceDefinition {
             description="""It shall provide a public `Get` method only in the case, that 'support for a `Get()`' has been enabled in the underlying interface definition (see [[FieldGetAndSetInterfaceDefinition]])"""
-            derived_from = [Communication.Field@1]
+            derived_from = [Communication.FEAT_Field@1]
             version = 1
 
         }
 
         ScoreReq.CompReq  GetMethodSignature {
             description=""" The signature of the `Get` method shall be: `score::Result<MethodReturnTypePtr<SampleDataType>> Get()`."""
-            derived_from = [Communication.Field@1]
+            derived_from = [Communication.FEAT_Field@1]
             version = 1
 
         }
@@ -57,51 +57,51 @@ section "com" {
 
         ScoreReq.CompReq GetMethodReturnValue {
              description="""It shall return the provider's most recently updated field value as a `MethodReturnTypePtr` upon success."""
-                derived_from = [Communication.Field@1, Communication.ProducerConsumerPattern@1]
+                derived_from = [Communication.FEAT_Field@1, Communication.FEAT_ProducerConsumerPattern@1]
                 version = 1
 
         }
 
         ScoreReq.CompReq SetMethodOnlyIfEnabledInInterfaceDefinition {
                 description="""It shall provide a public `Set` method only in the case, that "support for a Set()" has been enabled in the underlying interface definition (see [[FieldGetAndSetInterfaceDefinition]])."""
-                derived_from = [Communication.Field@1]
+                derived_from = [Communication.FEAT_Field@1]
                 version = 1
         }
 
         ScoreReq.CompReq SetMethodSignature {
                 description=""" The signature of the `Set` method shall be: `score::Result<MethodReturnTypePtr<SampleDataType>> Set(MethodInArgPtr<SampleDataType>)`"""
-                derived_from = [Communication.Field@1]
+                derived_from = [Communication.FEAT_Field@1]
                 version = 1
         }
 
         ScoreReq.CompReq SetMethodReturnValue {
                 description="""`Set` method shall return the provider’s latest updated field value as a `MethodReturnTypePtr` on success."""
-                derived_from = [Communication.Field@1, Communication.ProducerConsumerPattern@1]
+                derived_from = [Communication.FEAT_Field@1, Communication.FEAT_ProducerConsumerPattern@1]
                 version = 1
         }
 
         ScoreReq.CompReq  AllocateMethodForZeroCopySet {
                 description="""It shall provide a `Allocate()` method for the zero-copy Set call variant."""
-                derived_from = [Communication.Field@1, Communication.ZeroCopy@1]
+                derived_from = [Communication.FEAT_Field@1, Communication.FEAT_ZeroCopy@1]
                 version = 1
         }
 
         ScoreReq.CompReq  AllocateMethodSignature {
                 description="""The signature of the `Allocate()` method shall be: `score::Result<impl::MethodInArgPtr<SampleDataType>> Allocate()`."""
-                derived_from = [Communication.Field@1, Communication.ZeroCopy@1]
+                derived_from = [Communication.FEAT_Field@1, Communication.FEAT_ZeroCopy@1]
                 version = 1
         }
 
 
         ScoreReq.CompReq  ZeroCopySetMethodOnlyIfEnabledInInterfaceDefinition {
                 description="""It shall provide a public `Set` method with zero copy semantics only in the case, that "support for a Set()" has been enabled in the underlying interface definition (see [[FieldGetAndSetInterfaceDefinition]])."""
-                derived_from = [Communication.Field@1, Communication.ZeroCopy@1]
+                derived_from = [Communication.FEAT_Field@1, Communication.FEAT_ZeroCopy@1]
                 version = 1
         }
 
         ScoreReq.CompReq   ZeroCopySetMethodSignature {
                 description="""The signature of the `Set` method shall be: `score::Result<MethodReturnTypePtr<SampleDataType>> Set(MethodInArgPtr<SampleDataType>)`"""
-                derived_from = [Communication.Field@1, Communication.ZeroCopy@1]
+                derived_from = [Communication.FEAT_Field@1, Communication.FEAT_ZeroCopy@1]
                 version = 1
         }
 
@@ -111,25 +111,25 @@ section "com" {
 
         ScoreReq.CompReq RegisterSetHandlerOnlyIfEnabledInInterfaceDefinition {
             description="""It shall provide a public `RegisterSetHandler` method only in the case, that "support for a Set()" has been enabled in the underlying interface definition (see [[FieldGetAndSetInterfaceDefinition]])"""
-            derived_from = [Communication.Field@1]
+            derived_from = [Communication.FEAT_Field@1]
             version = 1
         }
 
         ScoreReq.CompReq RegisterSetHandlerSignature {
             description=""" The signature of the `RegisterSetHandler` method shall be: `score::Result<void> RegisterSetHandler(SetHandlerType)`"""
-            derived_from = [Communication.Field@1]
+            derived_from = [Communication.FEAT_Field@1]
             version = 1
         }
 
         ScoreReq.CompReq SetHandlerTypeDefinition {
             description="""The `SetHandlerType` shall be a callable of this type: using SetHandlerType = score::cpp::callback<void(SampleDataType&)>;`"""
-            derived_from = [Communication.Field@1]
+            derived_from = [Communication.FEAT_Field@1]
             version = 1
         }
 
         ScoreReq.CompReq SetHandlerMandatoryIfSetEnabledInInterfaceDefinition {
             description="""It is mandatory to register a `SetHandler` for a `SkeletonField` instance, in case Set has been enabled in the underlying interface definition. If the user has not registered a handler before calling `Offer()` on the enclosing skeleton, the call to `Offer()` shall fail with an error."""
-            derived_from = [Communication.Field@1, Communication.ServiceInstance@1]
+            derived_from = [Communication.FEAT_Field@1, Communication.FEAT_ServiceInstance@1]
             version = 1
         }
 
@@ -139,7 +139,7 @@ section "com" {
 - be stored as the latest value.
 - if notification has been enabled as per the interface definition (see [[FieldGetAndSetInterfaceDefinition]]), notifier for the updated value has to be called to inform subscribers of the field about the updated value.
 - be returned as the result of the `get()` method call to the proxy side."""
-            derived_from = [Communication.Field@1, Communication.ProducerConsumerPattern@1]
+            derived_from = [Communication.FEAT_Field@1, Communication.FEAT_ProducerConsumerPattern@1]
             version = 1
         }
 

@@ -17,13 +17,13 @@
 #include "score/mw/com/impl/field_tags.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/skeleton_method.h"
+#include "score/mw/com/impl/mocking/i_skeleton_field.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory.h"
 #include "score/mw/com/impl/skeleton_event.h"
 #include "score/mw/com/impl/skeleton_field_base.h"
 
-#include "score/mw/com/impl/mocking/i_skeleton_field.h"
-
+#include "score/memory/data_type_size_info.h"
 #include "score/mw/log/logging.h"
 #include "score/result/result.h"
 
@@ -59,7 +59,7 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     /// \param binding Mock event binding.
     SkeletonFieldImpl(SkeletonBase& skeleton_base,
                       const std::string_view field_name,
-                      std::unique_ptr<SkeletonEventBinding<FieldType>> binding)
+                      std::unique_ptr<SkeletonEventBinding> binding)
         : SkeletonFieldImpl{skeleton_base,
                             field_name,
                             std::make_unique<SkeletonEvent<FieldType>>(skeleton_base, field_name, std::move(binding)),
@@ -237,10 +237,12 @@ class SkeletonFieldImpl : public SkeletonFieldBase
         return std::make_unique<SkeletonEvent<FieldType>>(
             parent,
             field_name,
-            SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
+
+            SkeletonFieldBindingFactory::CreateEventBinding(
                 skeleton_base_view.GetAssociatedInstanceIdentifier(),
                 skeleton_base_view.GetBinding(),
                 field_name,
+                memory::DataTypeSizeInfo{sizeof(FieldType), alignof(FieldType)},
                 FieldTagsStore::Create<Tags...>()),
             typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{});
     }

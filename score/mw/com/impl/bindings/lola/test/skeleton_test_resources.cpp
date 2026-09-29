@@ -47,11 +47,11 @@ using ::testing::WithArg;
 
 LolaServiceInstanceDeployment CreateLolaServiceInstanceDeployment(
     std::uint16_t instance_id,
-    std::vector<std::pair<std::string, LolaEventInstanceDeployment>> lola_event_inst_depls,
-    std::vector<std::pair<std::string, LolaFieldInstanceDeployment>> lola_field_inst_depls,
-    std::vector<std::pair<std::string, LolaMethodInstanceDeployment>> lola_method_inst_depls,
-    std::vector<uid_t> allowed_consumers_qm,
-    std::vector<uid_t> allowed_consumers_asil_b,
+    const std::vector<std::pair<std::string, LolaEventInstanceDeployment>>& lola_event_inst_depls,
+    const std::vector<std::pair<std::string, LolaFieldInstanceDeployment>>& lola_field_inst_depls,
+    const std::vector<std::pair<std::string, LolaMethodInstanceDeployment>>& lola_method_inst_depls,
+    const std::vector<uid_t>& allowed_consumers_qm,
+    const std::vector<uid_t>& allowed_consumers_asil_b,
     std::optional<std::size_t> shm_size,
     std::optional<std::size_t> control_asil_b_shm_size,
     std::optional<std::size_t> control_qm_shm_size)
@@ -405,7 +405,7 @@ void SkeletonMockedMemoryFixture::CleanUpSkeleton()
     // Because the skeleton will hold a raw pointer to that configuration item and on destruction of the SkeletonGuard
     // as member of this fixture, will invoke "StopOffer" which needs to access this configuration items.
     // Thus, we need to clean up earlier - which will cause now mock calls which have not been there before
-    EXPECT_CALL(shared_memory_factory_mock_, Remove(_)).WillRepeatedly([](auto) {});
+    EXPECT_CALL(shared_memory_factory_mock_, Remove(_)).Times(::testing::AnyNumber());
     skeleton_.reset();
 }
 

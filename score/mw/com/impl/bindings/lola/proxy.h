@@ -30,7 +30,6 @@
 #include "score/mw/com/impl/find_service_handle.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/proxy_binding.h"
-#include "score/mw/com/impl/proxy_event_binding_base.h"
 
 #include "score/filesystem/filesystem_struct.h"
 #include "score/filesystem/i_standard_filesystem.h"
@@ -63,6 +62,7 @@ namespace score::mw::com::impl::lola
 {
 
 class IShmPathBuilder;
+class ProxyEvent;
 
 namespace detail_proxy
 {
@@ -115,7 +115,7 @@ class Proxy : public ProxyBinding
     // coverity[autosar_cpp14_m3_2_4_violation]
     ~Proxy() override;
 
-    static std::unique_ptr<Proxy> Create(const HandleType handle);
+    static std::unique_ptr<Proxy> Create(const HandleType& handle);
 
     Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
           std::shared_ptr<memory::shared::ManagedMemoryResource> data,
@@ -142,6 +142,9 @@ class Proxy : public ProxyBinding
     ///
     /// Terminates if the event control structure cannot be found.
     TransactionLogSet& GetTransactionLogSet(const ElementFqId element_fq_id);
+
+    /// Retrieves a reference to the event data storage area for a given ElementFqId.
+    const EventDataStorage& GetEventDataStorage(const ElementFqId element_fq_id) const;
 
     /// Retrieves an event data meta info.
     ///
@@ -181,8 +184,7 @@ class Proxy : public ProxyBinding
         return proxy_instance_identifier_;
     }
 
-    void RegisterEvent(const std::string_view service_element_name,
-                       ProxyEventBindingBase& proxy_event_binding) noexcept;
+    void RegisterEvent(const std::string_view service_element_name, ProxyEvent& proxy_event) noexcept;
     void RegisterMethod(const UniqueMethodIdentifier method_id, ProxyMethod& proxy_method) noexcept;
 
     /// \brief Stops auto-reconnect for this proxy and marks it ready for destruction.
@@ -214,8 +216,6 @@ class Proxy : public ProxyBinding
         const std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>& method_data,
         const std::vector<TypeErasedCallQueue::TypeErasedElementInfo>& type_erased_element_infos);
 
-    static bool DoElementInfosContainInArgsOrReturn(
-        const std::vector<TypeErasedCallQueue::TypeErasedElementInfo>& type_erased_element_infos);
     static std::size_t CalculateRequiredShmSize(
         std::vector<TypeErasedCallQueue::TypeErasedElementInfo> type_erased_element_infos);
 
@@ -234,7 +234,7 @@ class Proxy : public ProxyBinding
     QualityType quality_type_;
     EventNameToElementFqIdConverter event_name_to_element_fq_id_converter_;
     HandleType handle_;
-    std::unordered_map<std::string_view, std::reference_wrapper<ProxyEventBindingBase>> event_bindings_;
+    std::unordered_map<std::string_view, std::reference_wrapper<ProxyEvent>> proxy_events_;
 
     /// Mutex which synchronises registration of Proxy service elements via Proxy::RegisterEvent with the
     /// FindServiceHandler in find_service_guard_ which will call NotifyServiceInstanceChangedAvailability on all

@@ -753,8 +753,12 @@ inline ::score::mw::com::impl::rust::TypeOperationImpl<T>& get_type_operations()
             }                                                                                                          \
         };                                                                                                             \
                                                                                                                        \
-        /* Force instantiation at startup */                                                                           \
-        static id##_InterfaceRegistrationHelper id##_interface_reg_instance;
+        /* Force instantiation at startup (in an anonymous namespace so the instance has internal linkage without      \
+           relying on the deprecated 'static' meaning; see misc-use-anonymous-namespace) */                            \
+        namespace                                                                                                      \
+        {                                                                                                              \
+        id##_InterfaceRegistrationHelper id##_interface_reg_instance;                                                  \
+        } /* namespace */
 
 /// \brief Macro to register event member operations
 /// \details Creates registry for event member operations for a specific interface and event name.
@@ -785,7 +789,10 @@ inline ::score::mw::com::impl::rust::TypeOperationImpl<T>& get_type_operations()
         }                                                                                                         \
     };                                                                                                            \
                                                                                                                   \
-    static event_member##_EventRegistrationHelper event_member##_event_reg_instance;
+    namespace                                                                                                     \
+    {                                                                                                             \
+    event_member##_EventRegistrationHelper event_member##_event_reg_instance;                                     \
+    } /* namespace */
 
 #define END_EXPORT_MW_COM_INTERFACE() }  // namespace id##_detail
 

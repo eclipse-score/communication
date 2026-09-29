@@ -49,20 +49,20 @@ std::ostream& operator<<(std::ostream& stream, const InstanceSpecifier& instance
 }
 
 template <typename T>
-void ToStringImpl(std::ostream& o, T t)
+void ToStringImpl(std::ostream& o, const T& t)
 {
     o << t;
 }
 
 template <typename T, typename... Args>
-void ToStringImpl(std::ostream& o, T t, Args... args)
+void ToStringImpl(std::ostream& o, const T& t, Args... args)
 {
     ToStringImpl(o, t);
     ToStringImpl(o, args...);
 }
 
 template <typename... Args>
-std::string ToString(Args... args)
+std::string ToString(const Args&... args)
 {
     std::ostringstream oss;
     ToStringImpl(oss, args...);
@@ -246,6 +246,10 @@ class TestDestructor
 {
   public:
     TestDestructor(score::cpp::stop_source& stop_source) : stop_source_{stop_source} {}
+    TestDestructor(const TestDestructor&) = delete;
+    TestDestructor& operator=(const TestDestructor&) = delete;
+    TestDestructor(TestDestructor&&) = delete;
+    TestDestructor& operator=(TestDestructor&&) = delete;
     ~TestDestructor()
     {
         stop_source_.request_stop();
@@ -261,7 +265,7 @@ bool ElementFqIdMatchesConfigurationValue(
     const score::mw::com::impl::lola::ElementFqId element_fq_id_from_config) noexcept
 {
     auto* const binding = impl::ProxyEventView<SampleType>{proxy_event}.GetBinding();
-    auto* const lola_binding = dynamic_cast<impl::lola::ProxyEvent<SampleType>*>(binding);
+    auto* const lola_binding = dynamic_cast<impl::lola::ProxyEvent*>(binding);
     if (lola_binding == nullptr)
     {
         return {};

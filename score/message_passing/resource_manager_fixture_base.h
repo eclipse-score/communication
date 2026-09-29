@@ -167,7 +167,7 @@ class ResourceManagerMockHelper
             } data{{}, {1, 2, 3, 4}};
             io_write_t& message = data.message;
             message.i.xtype = io_write.xtype;
-            message.i.nbytes = io_write.nbytes;
+            message.i.nbytes = static_cast<std::uint32_t>(io_write.nbytes);
             context.offset = 0;  // explicitly
             context.info.msglen = context.offset + sizeof(io_write_t) + io_write.nbytes_max;
 
@@ -179,7 +179,7 @@ class ResourceManagerMockHelper
             auto& io_read = std::get<IoReadMessage>(current_message_);
             io_read_t message{};
             message.i.xtype = io_read.xtype;
-            message.i.nbytes = io_read.nbytes;
+            message.i.nbytes = static_cast<std::uint32_t>(io_read.nbytes);
 
             const auto result = (*io_funcs_->read)(&context, &message, ocb_);
             promises_.read.set_value(result);

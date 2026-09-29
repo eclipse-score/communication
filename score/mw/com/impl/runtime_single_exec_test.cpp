@@ -271,9 +271,8 @@ TEST_F(RuntimeInitializationTest, ConfigurationGetsMergedAndLoadedIfInitialConfi
         const auto configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other_};
         Runtime::Initialize(configuration);
 
-        // When loading an add-on configuration with InitializeRuntimeAddonConfiguration
-        const auto addon_init_result =
-            Runtime::InitializeRuntimeAddonConfiguration(runtime::RuntimeConfiguration{config_to_merge_});
+        // When loading an add-on configuration with AddConfiguration
+        const auto addon_init_result = Runtime::AddConfiguration(runtime::RuntimeConfiguration{config_to_merge_});
 
         auto& updated_runtime = static_cast<Runtime&>(Runtime::getInstance());
 
@@ -297,13 +296,11 @@ TEST_F(RuntimeInitializationTest, ConcurrentAddonConfigurationInitializationSucc
         std::optional<Result<void>> result_thread_2{};
 
         std::thread thread_1{[&result_thread_1, this]() {
-            result_thread_1 =
-                Runtime::InitializeRuntimeAddonConfiguration(runtime::RuntimeConfiguration{config_to_merge_});
+            result_thread_1 = Runtime::AddConfiguration(runtime::RuntimeConfiguration{config_to_merge_});
         }};
 
         std::thread thread_2{[&result_thread_2, this]() {
-            result_thread_2 =
-                Runtime::InitializeRuntimeAddonConfiguration(runtime::RuntimeConfiguration{config_to_merge_second_});
+            result_thread_2 = Runtime::AddConfiguration(runtime::RuntimeConfiguration{config_to_merge_second_});
         }};
 
         thread_1.join();
@@ -333,8 +330,8 @@ TEST_F(RuntimeInitializationDeathTest, InitializationFailsIfNoAppConfigurationHa
         {
             // Given no configuration has been loaded
             const auto runtime_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
-            // When loading an add-on configuration via InitializeRuntimeAddonConfiguration()
-            std::ignore = Runtime::InitializeRuntimeAddonConfiguration(runtime_configuration);
+            // When loading an add-on configuration via AddConfiguration()
+            std::ignore = Runtime::AddConfiguration(runtime_configuration);
             // Then the process terminates via std::terminate()
         },
         ".*");
@@ -351,9 +348,9 @@ TEST_F(RuntimeInitializationDeathTest, AddOnConfigurationInitializationFailsIfMe
             const auto runtime_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
             Runtime::Initialize(runtime_configuration);
             std::ignore = static_cast<Runtime&>(Runtime::getInstance());
-            // When loading the same configuration via InitializeRuntimeAddonConfiguration()
+            // When loading the same configuration via AddConfiguration()
             const auto add_on_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
-            std::ignore = Runtime::InitializeRuntimeAddonConfiguration(add_on_configuration);
+            std::ignore = Runtime::AddConfiguration(add_on_configuration);
             // Then the process terminates via std::terminate() because there is a clash of service identifiers
         },
         ".*");

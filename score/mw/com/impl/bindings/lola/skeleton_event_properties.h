@@ -94,7 +94,7 @@ class SkeletonEventProperties
     /// field with a Getter enabled.
     ///
     /// The maximum number of concurrent Getter calls is defined by the static constexpr
-    /// kMaxConcurrentFieldGetterSamplePtrs in SkeletonEventCommon. This value is not configured by the user but rather
+    /// kMaxConcurrentFieldGetterSamplePtrs in SkeletonEvent. This value is not configured by the user but rather
     /// chosen by the implementation of a field on the lola binding level.
     std::size_t number_of_field_getter_slots_;
 
