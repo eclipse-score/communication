@@ -58,7 +58,7 @@ int ExecuteWithRegularConnection()
     // App app2 is expected to send 2 messages to receiver and will in return receive 1 message back from app1.
     auto config = CreateConfiguration();
 
-    BidirectionalTransport transport{std::move(config)};
+    BidirectionalTransport transport{config};
     const auto setup_result = transport.Setup();
     if (!setup_result)
     {
@@ -104,7 +104,7 @@ int ExecuteWithReconnect()
 
     {
         auto config = CreateConfiguration();
-        BidirectionalTransport transport{std::move(config)};
+        BidirectionalTransport transport{config};
         const auto setup_result = transport.Setup();
         if (!setup_result)
         {
@@ -134,7 +134,7 @@ int ExecuteWithReconnect()
     // Reconnect and send message
     {
         auto config = CreateConfiguration();
-        BidirectionalTransport transport{std::move(config)};
+        BidirectionalTransport transport{config};
         const auto setup_result = transport.Setup();
         if (!setup_result)
         {

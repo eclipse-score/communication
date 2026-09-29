@@ -36,7 +36,7 @@ SlotDecrementer::SlotDecrementer(SlotDecrementer&& other) noexcept
       // Rationale: False positive - std::move is used which will result in the move constructor of
       // event_slot_index_ being called.
       // coverity[autosar_cpp14_a12_8_4_violation : FALSE]
-      event_slot_index_{std::move(other.event_slot_index_)}
+      event_slot_index_{other.event_slot_index_}
 {
     other.event_data_control_local_ = nullptr;
 }

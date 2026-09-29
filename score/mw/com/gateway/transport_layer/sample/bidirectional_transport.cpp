@@ -53,7 +53,7 @@ void SetTcpNoDelay(std::int32_t socket_fd)
 }  // namespace
 
 BidirectionalTransport::BidirectionalTransport(HyperVisorSocketConfiguration socket_config) noexcept
-    : socket_config_(std::move(socket_config)),
+    : socket_config_(socket_config),
       message_framer_(std::make_unique<MessageFramer>()),
       pending_tracker_(std::make_unique<PendingRequestTracker>())
 {
@@ -62,7 +62,7 @@ BidirectionalTransport::BidirectionalTransport(HyperVisorSocketConfiguration soc
 BidirectionalTransport::BidirectionalTransport(HyperVisorSocketConfiguration socket_config,
                                                std::unique_ptr<IMessageFramer> message_framer,
                                                std::unique_ptr<IPendingRequestTracker> pending_tracker) noexcept
-    : socket_config_(std::move(socket_config)),
+    : socket_config_(socket_config),
       message_framer_(std::move(message_framer)),
       pending_tracker_(std::move(pending_tracker))
 {

@@ -135,7 +135,7 @@ auto ServiceDiscovery::StartFindService(FindServiceHandler<HandleType> handler,
 auto ServiceDiscovery::StartFindService(FindServiceHandler<HandleType> handler, InstanceIdentifier instance_identifier)
     -> Result<FindServiceHandle>
 {
-    EnrichedInstanceIdentifier enriched_instance_identifier{std::move(instance_identifier)};
+    EnrichedInstanceIdentifier enriched_instance_identifier{instance_identifier};
     return StartFindService(std::move(handler), std::move(enriched_instance_identifier));
 }
 
@@ -323,7 +323,7 @@ auto ServiceDiscovery::BindingSpecificStartFindService(FindServiceHandle search_
 
 Result<ServiceHandleContainer<HandleType>> ServiceDiscovery::FindService(InstanceIdentifier instance_identifier)
 {
-    EnrichedInstanceIdentifier enriched_instance_identifier{std::move(instance_identifier)};
+    EnrichedInstanceIdentifier enriched_instance_identifier{instance_identifier};
     auto& service_discovery_client = GetServiceDiscoveryClient(enriched_instance_identifier.GetInstanceIdentifier());
     const auto find_service_result = service_discovery_client.FindService(std::move(enriched_instance_identifier));
     if (!(find_service_result.has_value()))

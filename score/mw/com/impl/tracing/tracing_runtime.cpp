@@ -456,7 +456,7 @@ Result<analysis::tracing::ShmObjectHandle> TracingRuntime::GetRegisteredShmObjec
     auto shm_object_handle = binding_runtime.GetShmObjectHandle(service_element_instance_identifier);
     if (shm_object_handle.has_value())
     {
-        return std::move(shm_object_handle.value());
+        return shm_object_handle.value();
     }
 
     auto cached_file_descriptor =
@@ -498,7 +498,7 @@ Result<analysis::tracing::ShmObjectHandle> TracingRuntime::GetRegisteredShmObjec
     binding_runtime.RegisterShmObject(
         service_element_instance_identifier, shm_object_handle.value(), shm_memory_start_address);
 
-    return std::move(shm_object_handle.value());
+    return shm_object_handle.value();
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called

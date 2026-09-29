@@ -88,9 +88,9 @@ MemoryRegionMapImpl<AtomicIndirectorType>::AcquiredRefcountIndex::AcquiredRefcou
     AcquiredRefcountIndex&& other) noexcept
     // Suppress "AUTOSAR C++14 A12-8-4", The rule states: "Move constructor shall not initialize its class
     // members and base classes using copy semantics".
-    // Rationale: All members are already initialized with move semantics.
+    // Rationale: All members are trivially copyable, so copying them is equivalent to moving them.
     // coverity[autosar_cpp14_a12_8_4_violation : FALSE]
-    : index_{std::move(other.index_)}, ref_count_{std::move(other.ref_count_)}, owns_resource_{other.owns_resource_}
+    : index_{other.index_}, ref_count_{other.ref_count_}, owns_resource_{other.owns_resource_}
 {
     other.owns_resource_ = false;
 }

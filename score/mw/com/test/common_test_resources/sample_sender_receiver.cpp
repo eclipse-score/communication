@@ -829,7 +829,7 @@ int EventSenderReceiver::RunAsProxyCheckValuesCreatedFromConfig(
     }
     auto handle = handle_result.value();
 
-    auto proxy_result = BigDataProxy::Create(std::move(handle));
+    auto proxy_result = BigDataProxy::Create(handle);
     if (!proxy_result.has_value())
     {
         std::cerr << "Unable to construct BigDataProxy: " << proxy_result.error() << ", bailing!\n";
@@ -898,7 +898,7 @@ int EventSenderReceiver::RunAsProxyReceiveHandlerOnly(const score::mw::com::Inst
     }
     auto handle = handle_result.value();
 
-    auto proxy_result = BigDataProxy::Create(std::move(handle));
+    auto proxy_result = BigDataProxy::Create(handle);
     if (!proxy_result.has_value())
     {
         std::cerr << "Unable to construct BigDataProxy: " << proxy_result.error() << ", bailing!\n";
@@ -978,7 +978,7 @@ int EventSenderReceiver::RunAsProxyCheckEventSlots(const score::mw::com::Instanc
     }
     auto handle = handle_result.value();
 
-    auto proxy_result = BigDataProxy::Create(std::move(handle));
+    auto proxy_result = BigDataProxy::Create(handle);
     if (!proxy_result.has_value())
     {
         std::cerr << "Unable to construct BigDataProxy: " << proxy_result.error() << ", bailing!\n";
@@ -1061,7 +1061,7 @@ int EventSenderReceiver::RunAsProxyCheckSubscribeHandler(const score::mw::com::I
     }
     auto handle = handle_result.value();
 
-    auto proxy_result = BigDataProxy::Create(std::move(handle));
+    auto proxy_result = BigDataProxy::Create(handle);
     if (!proxy_result.has_value())
     {
         std::cerr << "Unable to construct BigDataProxy: " << proxy_result.error() << ", bailing!\n";

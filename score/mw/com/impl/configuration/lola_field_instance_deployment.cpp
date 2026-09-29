@@ -32,7 +32,7 @@ constexpr auto kUseSetIfAvailableKey = "useSetIfAvailable";
 LolaFieldInstanceDeployment::LolaFieldInstanceDeployment(LolaEventInstanceDeployment event_deployment,
                                                          const bool use_get_if_available,
                                                          const bool use_set_if_available) noexcept
-    : lola_event_instance_deployment_{std::move(event_deployment)},
+    : lola_event_instance_deployment_{event_deployment},
       use_get_if_available_{use_get_if_available},
       use_set_if_available_{use_set_if_available}
 {
@@ -51,7 +51,7 @@ LolaFieldInstanceDeployment LolaFieldInstanceDeployment::CreateFromJson(const sc
     const bool use_get_if_available = GetValueFromJson<bool>(json_object, kUseGetIfAvailableKey);
     const bool use_set_if_available = GetValueFromJson<bool>(json_object, kUseSetIfAvailableKey);
 
-    return LolaFieldInstanceDeployment(std::move(event_deployment), use_get_if_available, use_set_if_available);
+    return LolaFieldInstanceDeployment(event_deployment, use_get_if_available, use_set_if_available);
 }
 
 score::json::Object LolaFieldInstanceDeployment::Serialize() const

@@ -50,7 +50,7 @@ InstanceIdentifier MakeFakeInstanceIdentifier(const std::uint16_t unique_identif
 
 HandleType MakeFakeHandle(const std::uint16_t unique_identifier)
 {
-    auto dummy_instance_identifier = MakeFakeInstanceIdentifier(std::move(unique_identifier));
+    auto dummy_instance_identifier = MakeFakeInstanceIdentifier(unique_identifier);
     ServiceInstanceId lola_instance_id{LolaServiceInstanceId{unique_identifier}};
     return make_HandleType(std::move(dummy_instance_identifier), lola_instance_id);
 }

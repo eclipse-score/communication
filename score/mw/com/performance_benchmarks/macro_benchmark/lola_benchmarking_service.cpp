@@ -63,7 +63,7 @@ bool RunService(const ServiceConfig& config, score::cpp::stop_token test_stop_to
         return false;
     }
 
-    auto skeleton_result = TestDataSkeleton::Create(std::move(instance_specifier_result.value()));
+    auto skeleton_result = TestDataSkeleton::Create(instance_specifier_result.value());
 
     if (!skeleton_result.has_value())
     {

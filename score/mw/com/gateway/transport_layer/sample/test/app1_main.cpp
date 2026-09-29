@@ -40,7 +40,7 @@ int ExecuteWithRegularConnection()
 
     auto config = CreateConfiguration();
 
-    BidirectionalTransport transport{std::move(config)};
+    BidirectionalTransport transport{config};
     const auto setup_result = transport.Setup();
     if (!setup_result)
     {
@@ -94,7 +94,7 @@ int ExecuteWithReconnect()
     constexpr int kTotalExpectedMessages = 2;
 
     auto config = CreateConfiguration();
-    BidirectionalTransport transport{std::move(config)};
+    BidirectionalTransport transport{config};
     const auto setup_result = transport.Setup();
     if (!setup_result)
     {

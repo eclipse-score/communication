@@ -105,14 +105,14 @@ SctfTestRunner::RunParameters::RunParameters(const std::vector<Parameters>& allo
                                              std::optional<std::chrono::milliseconds> retry_backoff_time,
                                              std::optional<bool> should_modify_data_segment) noexcept
     : allowed_parameters_{allowed_parameters},
-      cycle_time_{std::move(cycle_time)},
+      cycle_time_{cycle_time},
       mode_{std::move(mode)},
-      num_cycles_{std::move(num_cycles)},
+      num_cycles_{num_cycles},
       service_instance_manifest_{std::move(service_instance_manifest)},
-      uid_{std::move(uid)},
-      num_retries_{std::move(num_retries)},
-      retry_backoff_time_{std::move(retry_backoff_time)},
-      should_modify_data_segment_{std::move(should_modify_data_segment)}
+      uid_{uid},
+      num_retries_{num_retries},
+      retry_backoff_time_{retry_backoff_time},
+      should_modify_data_segment_{should_modify_data_segment}
 {
 }
 
@@ -267,14 +267,14 @@ SctfTestRunner::RunParameters SctfTestRunner::ParseCommandLineArguments(
     auto should_modify_data_segment = ParseAndPackage<bool>(args, "should-modify-data-segment");
 
     RunParameters run_parameters(allowed_parameters_with_uid,
-                                 std::move(cycle_time),
+                                 cycle_time,
                                  std::move(mode),
-                                 std::move(num_cycles),
+                                 num_cycles,
                                  std::move(service_instance_manifest),
-                                 std::move(uid),
-                                 std::move(num_retry),
-                                 std::move(retry_backoff_time),
-                                 std::move(should_modify_data_segment));
+                                 uid,
+                                 num_retry,
+                                 retry_backoff_time,
+                                 should_modify_data_segment);
 
     return run_parameters;
 }  // namespace
