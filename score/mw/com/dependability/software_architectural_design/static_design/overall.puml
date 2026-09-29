@@ -16,7 +16,7 @@ title "mw_com_static_architecture"
 package "mw_com" as mw_com <<SEooC>>  {
   component "Configuration" as configuration <<unit>> 
   component "Binding Factories" as binding_factories <<unit>>
-  component "Tracing" as tracing <<component>> 
+  component "Tracing" as tracing <<unit>> 
 
   package "Binding Independent" as binding_independent <<component>>
   package "Lola Binding" as lola_binding <<component>>
