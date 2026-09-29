@@ -12,7 +12,6 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 
-#include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 
@@ -76,12 +75,7 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::FindOldestUnusedSl
 {
     EventSlotStatus::EventTimeStamp oldest_time_stamp{EventSlotStatus::TIMESTAMP_MAX};
     std::optional<ProviderEventDataControlLocalView::SlotInfo> slot_info{};
-    for (SlotIndexType slot_index = 0U;
-         // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
-         // loss.". As the maximum number of slots is std::uint16_t, so there is no case for a data loss here.
-         // coverity[autosar_cpp14_a4_7_1_violation]
-         safe_math::CmpLess(slot_index, static_cast<SlotIndexType>(state_slots_.size()));
-         ++slot_index)
+    for (std::size_t slot_index = 0U; slot_index < state_slots_.size(); ++slot_index)
     {
         // coverity[autosar_cpp14_a5_3_2_violation]
         const EventSlotStatus status{AtomicIndirectorType<EventSlotStatus::value_type>::load(
@@ -89,7 +83,7 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::FindOldestUnusedSl
 
         if (status.IsInvalid())
         {
-            slot_info = {{slot_index, static_cast<EventSlotStatus::value_type>(status)}};
+            slot_info = {{static_cast<SlotIndexType>(slot_index), static_cast<EventSlotStatus::value_type>(status)}};
             return slot_info;
         }
 
@@ -100,7 +94,7 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::FindOldestUnusedSl
             if (status.GetTimeStamp() < oldest_time_stamp)
             {
                 oldest_time_stamp = status.GetTimeStamp();
-                slot_info = {{slot_index, static_cast<EventSlotStatus::value_type>(status)}};
+                slot_info = {{static_cast<SlotIndexType>(slot_index), static_cast<EventSlotStatus::value_type>(status)}};
             }
         }
     }

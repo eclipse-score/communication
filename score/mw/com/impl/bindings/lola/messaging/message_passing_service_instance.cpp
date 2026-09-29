@@ -885,7 +885,7 @@ void MessagePassingServiceInstance::NotifyEventRemote(const ElementFqId event_id
     NodeIdTmpBufferType nodeIdentifiersTmp;
     pid_t start_node_id{0};
     const auto message = SerializeToMessage(score::cpp::to_underlying(MessageType::kNotifyEvent), event_id);
-    std::pair<std::uint8_t, bool> num_ids_copied;
+    std::pair<std::uint32_t, bool> num_ids_copied;
     std::uint8_t loop_count{0U};
     do
     {
@@ -908,7 +908,7 @@ void MessagePassingServiceInstance::NotifyEventRemote(const ElementFqId event_id
                                              nodeIdentifiersTmp,
                                              start_node_id);
         // send NotifyEventUpdateMessage to each node_id in nodeIdentifiersTmp
-        for (std::uint8_t i = 0U; score::safe_math::CmpLess(i, num_ids_copied.first); i++)
+        for (std::uint32_t i = 0U; i < num_ids_copied.first; i++)
         {
             // Suppress "AUTOSAR C++14 M5-0-3" rule findings. This rule states: "A cvalue expression shall
             // not be implicitly converted to a different underlying type"

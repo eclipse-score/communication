@@ -12,7 +12,6 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
 #include "score/analysis/tracing/common/interface_types/types.h"
-#include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/language/safecpp/scoped_function/scope.h"
 #include "score/mw/com/impl/tracing/service_element_tracing_data.h"
 #include "score/mw/log/logging.h"
@@ -406,8 +405,8 @@ auto TracingRuntime::GetTraceContextId(
 TracingRuntime::EmplaceTypeErasedSamplePtr(impl::tracing::TypeErasedSamplePtr type_erased_sample_ptr,
                                            const impl::tracing::ServiceElementTracingData service_element_tracing_data)
 {
-    if (score::safe_math::CmpGreaterEqual(service_element_tracing_data.service_element_range_start,
-                                          next_available_position_for_new_service_element_range_start_))
+    if (service_element_tracing_data.service_element_range_start >=
+        next_available_position_for_new_service_element_range_start_)
     {
         score::mw::log::LogFatal("lola")
             << "Cannot set type erased sample pointer as provided service element with range start at"

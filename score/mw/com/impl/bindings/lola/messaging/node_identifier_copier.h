@@ -47,13 +47,13 @@ template <typename MapType>
 // we compare the index with the buffer's size, so no way for the index to go outside array's range and throw
 // std::out_of_range which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-std::pair<std::uint8_t, bool> CopyNodeIdentifiers(ElementFqId event_id,
+std::pair<std::uint32_t, bool> CopyNodeIdentifiers(ElementFqId event_id,
                                                   MapType& src_map,
                                                   std::shared_mutex& src_map_mutex,
                                                   NodeIdTmpBufferType& dest_buffer,
                                                   pid_t start) noexcept
 {
-    std::uint8_t num_nodeids_copied{0U};
+    std::uint32_t num_nodeids_copied{0U};
     bool further_ids_avail{false};
     // Suppress "AUTOSAR C++14 M0-1-3" rule findings. This rule states: "There shall be no dead code".
     //  This is a RAII Pattern, which binds the life cycle of a resource that must be acquired before use.

@@ -23,7 +23,9 @@ namespace score::mw::com::impl::tracing
 
 struct ServiceElementTracingData
 {
-    using SamplePointerIndex = LolaEventInstanceDeployment::SampleSlotCountType;
+    // The valid range would fit into std::uint16_t (SampleSlotCountType), but std::uint32_t is used so that
+    // comparisons with other integral types do not undergo signed integral promotion.
+    using SamplePointerIndex = std::uint32_t;
     using TracingSlotSizeType = LolaEventInstanceDeployment::TracingSlotSizeType;
 
     SamplePointerIndex service_element_range_start;
