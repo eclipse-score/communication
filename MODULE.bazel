@@ -36,7 +36,7 @@ git_override(
     # until a fix is provided by the QNX SDP
     # See https://github.com/eclipse-score/bazel_cpp_toolchains/issues/68
     patches = ["//third_party/score_baselibs:restore_qnx8_poll_workaround.patch"],
-    remote = "https://github.com/etas-contrib/score_baselibs.git",
+    remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
 bazel_dep(name = "score_bazel_platforms", version = "1.1.0")
