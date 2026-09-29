@@ -76,7 +76,7 @@ union SomeIpSampleAllocateePtrVariant<T> {
 #[repr(C)]
 union LolaSampleAllocateePtrVariant<T> {
     _variant: ManuallyDrop<LolaSampleAllocateePtrBinding<T>>,
-    _someip_binding: ManuallyDrop<SomeIpSampleAllocateePtrVariant<T>>,
+    _mock_binding: ManuallyDrop<MockBindingVariant<T>>,
 }
 
 #[repr(C)]

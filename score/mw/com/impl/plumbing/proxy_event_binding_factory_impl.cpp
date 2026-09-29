@@ -48,6 +48,7 @@ Result<std::unique_ptr<GenericProxyEventBinding>> GenericProxyEventBindingFactor
         // being served by the score::cpp::blank arm) because std::visit requires an arm for every variant
         // alternative.
         [](const SomeIpServiceTypeDeployment&) noexcept -> ReturnType {
+            // TODO(someip-proxy-event): Create the SOME/IP proxy event binding.
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {

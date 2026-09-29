@@ -25,12 +25,6 @@ namespace score::mw::com::impl::someip
 using SlotIndexType = std::uint16_t;
 
 /// \brief Container for storing the actual data of a SOME/IP event (resp. field).
-///
-/// \details This mirrors lola::EventDataStorage: it is a type-erased, slot based container which only knows the size
-///          and alignment of one sample. The difference to the LoLa counterpart is where the slots live: LoLa places
-///          them into a shared-memory region managed by a ManagedMemoryResource and addresses them via OffsetPtr,
-///          while the SOME/IP binding keeps them in process-local heap memory. Slots are process-local because a
-///          SOME/IP provider never hands raw memory to its consumers; it would send the bytes over the transport.
 class EventDataStorage final
 {
   public:

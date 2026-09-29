@@ -29,6 +29,7 @@ namespace score::mw::com::impl::someip
 ///          ITransport during their own PrepareOffer()/PrepareStopOffer(), so there is nothing left for the service
 ///          discovery to do on the provider side.
 ///
+/// TODO(someip-proxy-service-discovery): Implement consumer-side service discovery.
 /// \attention The consumer-side operations (Start/StopFindService, FindService) report kUnsupportedBindingType,
 ///            because the SOME/IP proxy side is not implemented yet. They return an error rather than aborting, so
 ///            that a configuration which points a consumer at a SOME/IP instance stays diagnosable.

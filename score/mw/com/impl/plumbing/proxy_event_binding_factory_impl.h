@@ -118,6 +118,7 @@ inline Result<std::unique_ptr<ProxyEventBinding>> ProxyEventBindingFactoryImpl<S
         // The SOME/IP binding does not support proxy events (yet). It is listed explicitly (instead of being served
         // by the score::cpp::blank arm) because std::visit requires an arm for every variant alternative.
         [](const SomeIpServiceTypeDeployment&) noexcept -> ReturnType {
+            // TODO(someip-proxy-event): Create the SOME/IP proxy event binding.
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {

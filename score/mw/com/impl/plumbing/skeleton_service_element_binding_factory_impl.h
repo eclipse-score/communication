@@ -119,10 +119,12 @@ inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
 ///
 /// \details Mirrors the LoLa overload above. It is simpler because the SOME/IP binding has neither IPC tracing slots
 ///          nor field getter/setter slots (field getter/setter are not supported yet).
+/// TODO(someip-field-getter): Implement SOME/IP field getter/setter slots.
 inline someip::SkeletonEventProperties CreateSomeIpSkeletonEventProperties(
     const SomeIpEventInstanceDeployment& someip_event_instance_deployment,
     const std::optional<FieldTagsStore> field_tags_store)
 {
+    // TODO(someip-skeleton-service-element-binding): Update checks in this function to reflect any new constraints or requirements for SOME/IP SkeletonEventProperties.
     std::size_t max_subscribers{0U};
 
     if (!someip_event_instance_deployment.GetNumberOfSampleSlots().has_value())
@@ -336,9 +338,9 @@ auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
                                                             size_info,
                                                             tracing::SkeletonEventTracingData{});
         },
-        // \todo The SOME/IP binding is wired up in a follow-up step; until then this arm behaves like an
-        // unsupported binding. It is listed explicitly (instead of being served by the score::cpp::blank arm)
-        // because std::visit requires an arm for every variant alternative.
+        // TODO(someip-generic-skeleton-event-field): Create the generic SOME/IP skeleton event or field binding.
+        // This arm is listed explicitly instead of being served by the score::cpp::blank arm because std::visit
+        // requires an arm for every variant alternative.
         [](const SomeIpServiceTypeDeployment&) noexcept -> ReturnType {
             return nullptr;
         },

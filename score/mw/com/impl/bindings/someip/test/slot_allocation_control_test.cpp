@@ -23,7 +23,7 @@ namespace
 
 constexpr std::size_t kNumberOfSlots{3U};
 
-TEST(SomeIpSlotAllocationControlTest, NoSlotCanBeAllocatedBeforeReset)
+TEST(SomeIpSlotAllocationControlTest, BeforeReset_AllocateSlot_NoSlotIsReturned)
 {
     SlotAllocationControl unit{};
 
@@ -31,7 +31,7 @@ TEST(SomeIpSlotAllocationControlTest, NoSlotCanBeAllocatedBeforeReset)
     EXPECT_FALSE(unit.AllocateSlot().has_value());
 }
 
-TEST(SomeIpSlotAllocationControlTest, ResetMakesEverySlotAllocatableExactlyOnce)
+TEST(SomeIpSlotAllocationControlTest, DefaultControl_ResetWithThreeSlots_EachSlotIsAllocatedExactlyOnce)
 {
     SlotAllocationControl unit{};
     unit.Reset(kNumberOfSlots);
@@ -48,7 +48,7 @@ TEST(SomeIpSlotAllocationControlTest, ResetMakesEverySlotAllocatableExactlyOnce)
     EXPECT_FALSE(unit.AllocateSlot().has_value());
 }
 
-TEST(SomeIpSlotAllocationControlTest, DiscardedSlotBecomesAllocatableAgain)
+TEST(SomeIpSlotAllocationControlTest, AllThreeSlotsAllocated_DiscardSlotOne_SlotOneCanBeAllocatedAgain)
 {
     SlotAllocationControl unit{};
     unit.Reset(kNumberOfSlots);
@@ -66,7 +66,7 @@ TEST(SomeIpSlotAllocationControlTest, DiscardedSlotBecomesAllocatableAgain)
     EXPECT_FALSE(unit.AllocateSlot().has_value());
 }
 
-TEST(SomeIpSlotAllocationControlTest, DiscardingTheSameSlotTwiceDoesNotFreeAnAdditionalSlot)
+TEST(SomeIpSlotAllocationControlTest, AllSlotsAllocated_DiscardSlotZeroTwice_OnlyOneSlotBecomesAvailable)
 {
     SlotAllocationControl unit{};
     unit.Reset(kNumberOfSlots);
@@ -83,7 +83,7 @@ TEST(SomeIpSlotAllocationControlTest, DiscardingTheSameSlotTwiceDoesNotFreeAnAdd
     EXPECT_FALSE(unit.AllocateSlot().has_value());
 }
 
-TEST(SomeIpSlotAllocationControlTest, DiscardingAnOutOfRangeSlotIsIgnored)
+TEST(SomeIpSlotAllocationControlTest, ControlHasThreeSlots_DiscardOutOfRangeSlots_ConfiguredSlotsRemainAllocatable)
 {
     SlotAllocationControl unit{};
     unit.Reset(kNumberOfSlots);
@@ -98,7 +98,7 @@ TEST(SomeIpSlotAllocationControlTest, DiscardingAnOutOfRangeSlotIsIgnored)
     EXPECT_FALSE(unit.AllocateSlot().has_value());
 }
 
-TEST(SomeIpSlotAllocationControlTest, ClearDropsAllSlots)
+TEST(SomeIpSlotAllocationControlTest, ControlHasThreeSlots_Clear_NoSlotsRemainAllocatable)
 {
     SlotAllocationControl unit{};
     unit.Reset(kNumberOfSlots);
@@ -109,7 +109,7 @@ TEST(SomeIpSlotAllocationControlTest, ClearDropsAllSlots)
     EXPECT_FALSE(unit.AllocateSlot().has_value());
 }
 
-TEST(SomeIpSlotAllocationControlTest, ResetReleasesPreviouslyAllocatedSlots)
+TEST(SomeIpSlotAllocationControlTest, AllSlotsAllocated_ResetWithThreeSlots_AllSlotsAreAllocatableAgain)
 {
     SlotAllocationControl unit{};
     unit.Reset(kNumberOfSlots);

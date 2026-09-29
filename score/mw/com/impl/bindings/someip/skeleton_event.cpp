@@ -107,6 +107,7 @@ Result<impl::SampleAllocateePtr<void>> SkeletonEvent::Allocate(SampleAllocateeGu
 Result<impl::SamplePtr<void>> SkeletonEvent::GetLatestSample(QualityType quality_type)
 {
     score::cpp::ignore = quality_type;
+    // TODO(someip-field-getter): Implement SOME/IP field getter support.
     ::score::mw::log::LogError("someip") << "SkeletonEvent::GetLatestSample is not supported by the SOME/IP binding:"
                                          << event_name_;
     return MakeUnexpected(ComErrc::kBindingFailure,

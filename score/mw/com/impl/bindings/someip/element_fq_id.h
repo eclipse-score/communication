@@ -26,9 +26,6 @@ namespace score::mw::com::impl::someip
 {
 
 /// \brief Unique identification of a service element (event, field) instance of the SOME/IP binding.
-///
-/// \details Mirrors lola::ElementFqId: identification consists of service id, instance id, the id of the element
-///          within that service and the type of the element.
 class ElementFqId
 {
   public:

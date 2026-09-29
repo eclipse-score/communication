@@ -79,6 +79,7 @@ class SkeletonEvent final : public SkeletonEventBinding
 
     Result<impl::SampleAllocateePtr<void>> Allocate(SampleAllocateeGuard guard) noexcept override;
 
+    /// TODO(someip-field-getter): Implement SOME/IP field getter support.
     /// \brief Not supported by the SOME/IP binding yet.
     /// \details GetLatestSample() only serves the getter of a SkeletonField, and fields are out of scope of the
     ///          current SOME/IP increment. Returning an error (instead of aborting) keeps a misconfigured field

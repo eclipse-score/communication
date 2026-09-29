@@ -70,6 +70,7 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
         // The SOME/IP binding does not support methods (yet). It is listed explicitly (instead of being served by
         // the score::cpp::blank arm) because std::visit requires an arm for every variant alternative.
         [](const SomeIpServiceTypeDeployment&) noexcept -> LambdaReturnType {
+            // TODO(someip-skeleton-method): Create the SOME/IP skeleton method binding.
             return nullptr;
         },
         [](const score::cpp::blank&) noexcept -> LambdaReturnType {
