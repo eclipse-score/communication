@@ -23,6 +23,7 @@ filegroup(
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/get_new_samples_on_an_event:callback_invoked_with_wrong_data_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/get_new_samples_on_an_event:callback_not_invoked_despite_samples_available_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/start_find_service_construction:start_find_service_callback_is_redundantly_called_fta",
+        "//score/mw/com/dependability/safety_analysis/root_causes/proxy/stop_find_service:wrong_startfindservice_is_stopped_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/subscribe_for_an_event:subscribe_to_wrong_event_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/subscribe_for_an_event:subscribe_with_wrong_max_sample_count_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/unsubscribe_for_an_event:does_not_unsubscribe_fta",
