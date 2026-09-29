@@ -16,7 +16,6 @@
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/someip/element_fq_id.h"
 #include "score/mw/com/impl/bindings/someip/event_data_storage.h"
-#include "score/mw/com/impl/bindings/someip/i_transport.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/initialize_sample_callback.h"
 #include "score/mw/com/impl/instance_identifier.h"
@@ -35,8 +34,8 @@ namespace score::mw::com::impl::someip
 /// \brief Skeleton binding of the SOME/IP binding.
 ///
 /// \details Mirrors lola::Skeleton in role and API shape, but is far smaller: LoLa has to create, open, size and roll
-///          back shared-memory regions, whereas the SOME/IP binding only has to offer/stop-offer its service elements
-///          on the transport and own the process-local slot storage of its events.
+///          back shared-memory regions, whereas the SOME/IP binding only owns the process-local slot storage of its
+///          events. Service-element offering is unsupported until a SOME/IP transport is integrated.
 class Skeleton final : public SkeletonBinding
 {
   public:
@@ -48,9 +47,9 @@ class Skeleton final : public SkeletonBinding
         EventDataStorage& event_data_storage;
     };
 
-    static std::unique_ptr<Skeleton> Create(const InstanceIdentifier& identifier, ITransport& transport) noexcept;
+    static std::unique_ptr<Skeleton> Create(const InstanceIdentifier& identifier) noexcept;
 
-    Skeleton(const InstanceIdentifier& identifier, ITransport& transport) noexcept;
+    explicit Skeleton(const InstanceIdentifier& identifier) noexcept;
 
     ~Skeleton() noexcept override;
 
@@ -98,14 +97,8 @@ class Skeleton final : public SkeletonBinding
         return quality_type_;
     }
 
-    ITransport& GetTransport() const noexcept
-    {
-        return transport_;
-    }
-
   private:
     InstanceIdentifier identifier_;
-    ITransport& transport_;
     QualityType quality_type_;
     std::unordered_map<ElementFqId, std::unique_ptr<EventDataStorage>> event_data_storages_;
 };

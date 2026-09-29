@@ -22,10 +22,10 @@ namespace score::mw::com::impl::someip
 
 /// \brief Binding runtime of the SOME/IP binding.
 ///
-/// \details Mirrors lola::Runtime in role. It is minimal because the SOME/IP binding needs neither a message passing
-///          service (its ITransport takes that role) nor a tracing runtime (send tracing is not supported yet). Its
-///          purpose is to provide the ServiceDiscoveryClient, so that offering a SOME/IP service instance resolves a
-///          binding runtime instead of hitting the "Unsupported binding" assertion in impl::ServiceDiscovery.
+/// \details Mirrors lola::Runtime in role. It is minimal because the SOME/IP binding has no transport or tracing
+///          runtime yet. Its purpose is to provide the ServiceDiscoveryClient, so that using a SOME/IP service
+///          instance resolves a binding runtime instead of hitting the "Unsupported binding" assertion in
+///          impl::ServiceDiscovery.
 class Runtime final : public IBindingRuntime
 {
   public:

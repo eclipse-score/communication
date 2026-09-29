@@ -46,26 +46,6 @@ cc_library(
 )
 
 cc_library(
-    name = "transport",
-    srcs = ["in_process_transport.cpp"],
-    hdrs = [
-        "i_transport.h",
-        "in_process_transport.h",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//score/mw/com/impl:__subpackages__",
-    ],
-    deps = [
-        ":element_fq_id",
-        "//score/mw/com/impl:error",
-        "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/result",
-    ],
-)
-
-cc_library(
     name = "slot_allocation_control",
     srcs = ["slot_allocation_control.cpp"],
     hdrs = ["slot_allocation_control.h"],
@@ -115,7 +95,6 @@ cc_library(
     deps = [
         ":element_fq_id",
         ":event_data_storage",
-        ":transport",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:initialize_sample_callback",
@@ -198,6 +177,5 @@ cc_library(
         ":skeleton",
         ":skeleton_event",
         ":slot_allocation_control",
-        ":transport",
     ],
 )
