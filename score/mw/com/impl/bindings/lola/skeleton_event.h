@@ -18,7 +18,6 @@
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
-#include "score/mw/com/impl/bindings/lola/sample_ptr.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"

@@ -25,7 +25,7 @@
 #include "score/mw/com/impl/skeleton_binding.h"
 
 #include "score/memory/data_type_size_info.h"
-#include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
+#include "score/memory/shared/managed_memory_resource.h"
 
 #include <score/assert.hpp>
 
@@ -35,7 +35,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <tuple>
 #include <utility>
 
 namespace score::mw::com::impl::lola

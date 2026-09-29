@@ -26,10 +26,13 @@ cc_library(
         "my_memory_resource.h",
     ],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = ["//score/memory/shared:shared_memory_resource"],
     visibility = ["//visibility:public"],
     deps = [
-        "//score/memory/shared:shared_memory_resource",
-        "//score/memory/shared:types",
+        "//score/memory/shared:managed_memory_resource",
+        "//score/memory/shared:memory_resource_proxy",
+        "//score/memory/shared:memory_resource_registry",
+        "//score/memory/shared:pointer_arithmetic_util",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -48,7 +51,6 @@ cc_library(
     deps = [
         ":fake_memory_resources",
         "//score/memory/shared:i_shared_memory_resource",
-        "//score/memory/shared:types",
         "@score_baselibs//score/language/futurecpp",
     ],
 )

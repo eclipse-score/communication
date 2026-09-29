@@ -20,6 +20,7 @@
 #include "score/containers/dynamic_array.h"
 
 #include <sys/types.h>
+
 #include <cstdint>
 #include <memory>
 #include <optional>

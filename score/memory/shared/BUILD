@@ -43,8 +43,8 @@ cc_library(
         "//visibility:public",  # platform_only
     ],
     deps = [
+        ":managed_memory_resource",
         ":memory_resource_registry",
-        ":types",
         ":user_permission",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/os/utils/acl",
@@ -101,8 +101,9 @@ cc_library(
     deps = [
         ":i_shared_memory_resource",
         ":lock_file",
+        ":memory_resource_proxy",
+        ":memory_resource_registry",
         ":pointer_arithmetic_util",
-        ":types",
         "//score/memory/shared/sealedshm/sealedshm_wrapper:sealedshm",
         "//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
         "//score/memory/shared/typedshm/utils:typed_memory_utils",
@@ -126,7 +127,6 @@ cc_library(
     tags = ["FFI"],
     deps = [
         ":i_shared_memory_resource",
-        ":types",
         "//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -143,7 +143,6 @@ cc_library(
     ],
     deps = [
         ":i_shared_memory_factory",
-        ":types",
         "//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
         "@googletest//:gtest",
     ],
@@ -161,7 +160,6 @@ cc_library(
     deps = [
         ":i_shared_memory_factory",
         ":shared_memory_resource",
-        ":types",
         "//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
         "//score/memory/shared/typedshm/utils:typed_memory_utils",
         "@score_baselibs//score/language/futurecpp",
@@ -185,7 +183,6 @@ cc_library(
     deps = [
         ":i_shared_memory_factory",
         ":i_shared_memory_resource",
-        ":types",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -443,6 +440,7 @@ cc_library(
     ],
     hdrs = [
     ],
+    deprecation = "This aggregation target is deprecated and pulls in the unmaintained/broken ':map' target on some platforms. Depend directly on the specific score/memory/shared sub-targets you need (e.g. ':offset_ptr', ':vector', ':string', ...) instead.",
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
@@ -475,6 +473,8 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/memory/shared:__subpackages__"],
     deps = [
+        ":memory_resource_registry",
+        ":offset_ptr",
         ":shared",
         "//score/memory/shared/sealedshm/sealedshm_wrapper:sealedshm_mock",
         "//score/memory/shared/typedshm/typedshm_wrapper/test:typedmemory_mock",
@@ -511,9 +511,11 @@ cc_library(
         "//visibility:public",
     ],
     deps = [
+        ":managed_memory_resource",
+        ":memory_resource_proxy",
+        ":memory_resource_registry",
         ":pointer_arithmetic_util",
         ":shared",
-        ":types",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -635,6 +637,7 @@ cc_unit_test(
     ],
     deps = [
         ":map",
+        ":vector",
         "//score/memory/shared/fake:fake_memory_resources",
     ],
 )
