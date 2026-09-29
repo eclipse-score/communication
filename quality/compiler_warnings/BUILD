@@ -157,15 +157,6 @@ cc_args(
     visibility = ["//quality/compiler_warnings:__subpackages__"],
 )
 
-cc_feature(
-    name = "minimal_warnings",
-    args = [
-        ":minimal_warnings_args",
-    ],
-    feature_name = "score_communication_common_minimal_warnings",
-    visibility = ["//visibility:public"],
-)
-
 cc_args(
     name = "misra_warnings_args",
     actions = [
