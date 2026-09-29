@@ -18,6 +18,7 @@ dependable_element(
     assumptions_of_use = ["//score/mw/com/dependability/safety_analysis:aous"],
     components = [
         "//score/mw/com/impl/bindings/mock_binding:mock_binding",
+        "//score/mw/com/impl/bindings/lola:lola_binding",
     ],
     dependability_analysis = ["//score/mw/com/dependability/safety_analysis:mw_com_dependability_analysis"],
     integrity_level = "B",
