@@ -255,7 +255,7 @@ void ConfigurationStructsFixture::ExpectLolaServiceTypeDeploymentObjectsEqual(
     EXPECT_EQ(lhs.service_id_, rhs.service_id_);
 
     ASSERT_EQ(lhs.events_.size(), rhs.events_.size());
-    for (auto lhs_it : lhs.events_)
+    for (const auto& lhs_it : lhs.events_)
     {
         auto rhs_it = rhs.events_.find(lhs_it.first);
         ASSERT_NE(rhs_it, rhs.events_.end());
@@ -263,7 +263,7 @@ void ConfigurationStructsFixture::ExpectLolaServiceTypeDeploymentObjectsEqual(
     }
 
     ASSERT_EQ(lhs.fields_.size(), rhs.fields_.size());
-    for (auto lhs_it : lhs.fields_)
+    for (const auto& lhs_it : lhs.fields_)
     {
         auto rhs_it = rhs.fields_.find(lhs_it.first);
         ASSERT_NE(rhs_it, rhs.fields_.end());
@@ -271,7 +271,7 @@ void ConfigurationStructsFixture::ExpectLolaServiceTypeDeploymentObjectsEqual(
     }
 
     ASSERT_EQ(lhs.methods_.size(), rhs.methods_.size());
-    for (auto lhs_it : lhs.methods_)
+    for (const auto& lhs_it : lhs.methods_)
     {
         auto rhs_it = rhs.methods_.find(lhs_it.first);
         ASSERT_NE(rhs_it, rhs.methods_.end());
