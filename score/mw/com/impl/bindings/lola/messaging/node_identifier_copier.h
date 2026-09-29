@@ -48,10 +48,10 @@ template <typename MapType>
 // std::out_of_range which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 std::pair<std::uint32_t, bool> CopyNodeIdentifiers(ElementFqId event_id,
-                                                  MapType& src_map,
-                                                  std::shared_mutex& src_map_mutex,
-                                                  NodeIdTmpBufferType& dest_buffer,
-                                                  pid_t start) noexcept
+                                                   MapType& src_map,
+                                                   std::shared_mutex& src_map_mutex,
+                                                   NodeIdTmpBufferType& dest_buffer,
+                                                   pid_t start) noexcept
 {
     std::uint32_t num_nodeids_copied{0U};
     bool further_ids_avail{false};

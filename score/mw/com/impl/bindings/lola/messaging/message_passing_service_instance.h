@@ -282,10 +282,10 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     // buffersize. So an access out of the range and consequently a call to std::terminate() is not possible.
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
     static std::pair<std::uint32_t, bool> CopyNodeIdentifiers(ElementFqId event_id,
-                                                             MapType& src_map,
-                                                             std::shared_mutex& src_map_mutex,
-                                                             NodeIdTmpBufferType& dest_buffer,
-                                                             pid_t start) noexcept
+                                                              MapType& src_map,
+                                                              std::shared_mutex& src_map_mutex,
+                                                              NodeIdTmpBufferType& dest_buffer,
+                                                              pid_t start) noexcept
     {
         std::uint32_t num_nodeids_copied{0U};
         bool further_ids_avail{false};

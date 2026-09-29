@@ -94,7 +94,8 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::FindOldestUnusedSl
             if (status.GetTimeStamp() < oldest_time_stamp)
             {
                 oldest_time_stamp = status.GetTimeStamp();
-                slot_info = {{static_cast<SlotIndexType>(slot_index), static_cast<EventSlotStatus::value_type>(status)}};
+                slot_info = {
+                    {static_cast<SlotIndexType>(slot_index), static_cast<EventSlotStatus::value_type>(status)}};
             }
         }
     }
