@@ -25,7 +25,7 @@ component(
 )
 
 cc_library(
-    name = "mock_binding",
+    name = "mock_binding_lib",
     testonly = True,
     srcs = [
         "generic_proxy_event.cpp",

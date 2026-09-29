@@ -14,17 +14,17 @@
 title "Binding Independent Static Architecture"
 
 package "Binding Independent" as binding_independent <<component>> {
-  component "Service Discovery" as service_discovery <<unit>> 
-  component "Mocks" as mocks <<unit>> 
-  component "Runtime" as runtime <<unit>> 
+  component "Service Discovery" as binding_independent_service_discovery <<unit>> 
+  component "Mocks" as binding_independent_mocks <<unit>> 
+  component "Runtime" as binding_independent_runtime <<unit>> 
 
-  package "SkeletonAndServiceElements" as skeleton_and_service_elements <<unit>>
+  package "SkeletonAndServiceElements" as binding_independent_skeleton_and_service_elements <<unit>>
 
-  package "ProxyAndServiceElements" as proxy_and_service_elements <<unit>>
+  package "ProxyAndServiceElements" as binding_independent_proxy_and_service_elements <<unit>>
 
-  package "GenericSkeletonAndServiceElements" as generic_skeleton_and_service_elements <<unit>>
+  package "GenericSkeletonAndServiceElements" as binding_independent_generic_skeleton_and_service_elements <<unit>>
 
-  package "GenericProxyAndServiceElements" as generic_proxy_and_service_elements <<unit>>
+  package "GenericProxyAndServiceElements" as binding_independent_generic_proxy_and_service_elements <<unit>>
 }
 
 @enduml
