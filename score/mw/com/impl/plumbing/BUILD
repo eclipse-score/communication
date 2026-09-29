@@ -12,8 +12,20 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+unit(
+    name = "mw_com_binding_factories",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/plumbing/dependability:unit_design",
+    ],
+    visibility = ["//score/mw/com/dependability:__pkg__"],
+    implementation = [],
+)
 
 cc_library(
     name = "plumbing",
