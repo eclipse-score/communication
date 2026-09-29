@@ -33,9 +33,6 @@ namespace score::mw::com::impl
 {
 
 /// \brief Per service-instance deployment information of the SOME/IP binding.
-///
-/// \details Mirrors LolaServiceInstanceDeployment, minus the members which only make sense for a shared-memory based
-///          binding (shared memory sizes, uid based access permissions and inter-VM support).
 class SomeIpServiceInstanceDeployment
 {
   public:

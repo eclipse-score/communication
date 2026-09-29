@@ -72,7 +72,7 @@ auto Skeleton::Register(const ElementFqId element_fq_id,
     {
         // The storage of a previous offering is reused. The initialize_sample_callback is deliberately ignored here:
         // re-initializing the slots would tamper with event data which a consumer of the previous offering could
-        // still be reading. This mirrors lola::Skeleton::Register().
+        // still be reading.
         return RegistrationResult{*existing_storage_it->second};
     }
 

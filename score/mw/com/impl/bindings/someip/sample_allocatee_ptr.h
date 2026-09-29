@@ -24,13 +24,6 @@ namespace score::mw::com::impl::someip
 
 /// \brief SampleAllocateePtr behaves as unique_ptr to an allocated sample (event slot). It is type-erased as generally
 /// our binding layer is type-erased (i.e. it just moves bytes around).
-///
-/// \details Mirrors lola::SampleAllocateePtr. The difference is what has to be released when the pointer is destroyed
-///          without a preceding Send(): LoLa has to discard the slot in the shared-memory EventDataControl so that
-///          consumers of other processes can reuse it, whereas the SOME/IP binding only has to return the slot to its
-///          process-local SlotAllocationControl of the owning SkeletonEvent. This mirrors LoLa, where
-///          SampleAllocateePtr refers to the EventDataControlComposite owned by lola::SkeletonEvent rather than to
-///          the SkeletonEvent itself.
 class SampleAllocateePtr
 {
     // Friends to the View wrappers; used to access the managed object and the owning event.

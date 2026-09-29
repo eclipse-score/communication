@@ -24,9 +24,7 @@ namespace score::mw::com::impl
 class SomeIpFieldInstanceDeployment
 {
   public:
-    explicit SomeIpFieldInstanceDeployment(SomeIpEventInstanceDeployment event_deployment,
-                                           const bool use_get_if_available,
-                                           const bool use_set_if_available) noexcept;
+    explicit SomeIpFieldInstanceDeployment(SomeIpEventInstanceDeployment event_deployment) noexcept;
 
     explicit SomeIpFieldInstanceDeployment(const score::json::Object& json_object);
 
@@ -36,10 +34,6 @@ class SomeIpFieldInstanceDeployment
 
     // coverity[autosar_cpp14_m11_0_1_violation]
     SomeIpEventInstanceDeployment someip_event_instance_deployment_;
-    // coverity[autosar_cpp14_m11_0_1_violation]
-    bool use_get_if_available_;
-    // coverity[autosar_cpp14_m11_0_1_violation]
-    bool use_set_if_available_;
 
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
     constexpr static std::uint32_t serializationVersion = 1U;

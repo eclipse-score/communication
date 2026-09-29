@@ -100,8 +100,7 @@ void SkeletonEvent::PrepareStopOffer() noexcept
     is_offered_ = false;
 
     // The EventDataStorage itself stays alive in the parent Skeleton, so that a subsequent offer can reuse it without
-    // re-initializing slots which a consumer of the previous offering could still be reading. This mirrors what
-    // lola::Skeleton does with a re-opened shared-memory region.
+    // re-initializing slots which a consumer of the previous offering could still be reading.
     event_data_storage_ = nullptr;
     slot_allocation_control_.Clear();
 }
@@ -109,32 +108,6 @@ void SkeletonEvent::PrepareStopOffer() noexcept
 void SkeletonEvent::SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept
 {
     tracing_data_ = tracing_data;
-}
-
-Result<void> SkeletonEvent::Notify() noexcept
-{
-    if (!is_offered_)
-    {
-        return MakeUnexpected(ComErrc::kNotOffered, "Notify called on an event which is not offered");
-    }
-    return MakeUnexpected(ComErrc::kBindingFailure, "SOME/IP event notification is unsupported without a transport");
-}
-
-Result<void> SkeletonEvent::SetReceiveHandlerRegistrationChangedHandler(
-    ReceiveHandlerRegistrationChangedCallback callback) noexcept
-{
-    receive_handler_registration_changed_callback_ = std::move(callback);
-
-    // Report the current state right away, so that the caller does not have to wait for the next change to learn
-    // whether receive handlers are currently registered.
-    (*receive_handler_registration_changed_callback_)(false);
-    return {};
-}
-
-Result<void> SkeletonEvent::UnsetReceiveHandlerRegistrationChangedHandler() noexcept
-{
-    receive_handler_registration_changed_callback_.reset();
-    return {};
 }
 
 }  // namespace score::mw::com::impl::someip
