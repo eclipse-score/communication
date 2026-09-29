@@ -284,3 +284,5 @@ CheckOptions:
       ::std::basic_string
   - key: readability-uniqueptr-delete-release.PreferResetCall
     value: true
+  - key: readability-implicit-bool-conversion.AllowPointerConditions
+    value: true
