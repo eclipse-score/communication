@@ -60,7 +60,12 @@ const LolaServiceInstanceDeployment kLolaServiceInstanceDeployment{
     {{kDummyEventName,
       LolaEventInstanceDeployment{{kNumberOfConfiguredSlots}, {3U}, 1U, true, kNumberOfConfiguredTracingSlots}}},
     {}};
-const LolaServiceTypeDeployment kLolaServiceTypeDeployment{kServiceId, {{kDummyEventName, kDummyEventId}}, {}};
+const LolaServiceTypeDeployment kLolaServiceTypeDeployment{
+    kServiceId,
+    {{kDummyEventName, kDummyEventId}},
+    {},
+    {},
+    {{kDummyEventName, E2EEventTypeDeployment{E2EProfile::kP4, 0x3AU, 2U}}}};
 
 ConfigurationStore kConfigStoreAsilQM{kInstanceSpecifier,
                                       make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
@@ -90,6 +95,10 @@ TEST_F(SkeletonEventBindingFactoryFixture, CreatingEventBindingCreatesBindingWit
     EXPECT_EQ(skeleton_event_properties.GetTotalNumberOfSlots(),
               kNumberOfConfiguredSlots + kNumberOfConfiguredTracingSlots);
     EXPECT_EQ(skeleton_event_properties.GetNumberOfFieldGetterSlots(), 0U);
+    ASSERT_TRUE(skeleton_event_properties.GetE2EEventDeployment().has_value());
+    EXPECT_EQ(skeleton_event_properties.GetE2EEventDeployment()->profile_, E2EProfile::kP4);
+    EXPECT_EQ(skeleton_event_properties.GetE2EEventDeployment()->data_id_, 0x3AU);
+    EXPECT_EQ(skeleton_event_properties.GetE2EEventDeployment()->max_delta_counter_, 2U);
 }
 
 }  // namespace
