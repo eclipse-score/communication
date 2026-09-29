@@ -28,7 +28,7 @@ UnixDomainServerFactory::UnixDomainServerFactory(const std::shared_ptr<UnixDomai
 {
 }
 
-UnixDomainServerFactory::~UnixDomainServerFactory() noexcept {}
+UnixDomainServerFactory::~UnixDomainServerFactory() noexcept = default;
 
 score::cpp::pmr::unique_ptr<IServer> UnixDomainServerFactory::Create(const ServiceProtocolConfig& protocol_config,
                                                                      const ServerConfig& server_config) noexcept
