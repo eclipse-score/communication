@@ -39,7 +39,7 @@ class TypeErasedCallQueue final
         std::size_t queue_size;
     };
 
-    TypeErasedCallQueue(memory::shared::ManagedMemoryResource& resource,
+    TypeErasedCallQueue(memory::shared::ManagedMemoryResource& memory_resource,
                         const TypeErasedElementInfo& type_erased_element_info);
 
     ~TypeErasedCallQueue() noexcept;

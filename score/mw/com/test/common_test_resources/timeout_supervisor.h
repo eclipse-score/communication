@@ -41,7 +41,8 @@ class TimeoutSupervisor
     TimeoutSupervisor& operator=(TimeoutSupervisor&&) = delete;
     ~TimeoutSupervisor();
 
-    void StartSupervision(std::chrono::milliseconds timeout, score::cpp::callback<void(void)> timeout_callback);
+    void StartSupervision(std::chrono::milliseconds timeout_milliseconds,
+                          score::cpp::callback<void(void)> timeout_callback);
     void StopSupervision();
 
   private:
