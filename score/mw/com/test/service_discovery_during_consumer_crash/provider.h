@@ -22,7 +22,7 @@ namespace score::mw::com::test
 {
 
 void DoProviderActions(CheckPointControl& check_point_control,
-                       score::cpp::stop_token test_stop_token,
+                       score::cpp::stop_token stop_token,
                        int argc,
                        const char** argv) noexcept;
 

@@ -212,17 +212,17 @@ EventDataControlComposite<AtomicIndirectorType>::GetAsilBEventDataControlLocal()
 
 template <template <class> class AtomicIndirectorType>
 EventSlotStatus::EventTimeStamp EventDataControlComposite<AtomicIndirectorType>::GetEventSlotTimestamp(
-    const SlotIndexType slot) const noexcept
+    const SlotIndexType slot_index) const noexcept
 {
     if (asil_b_control_local_ != nullptr)
     {
-        const EventSlotStatus event_slot_status{(*asil_b_control_local_)[slot]};
+        const EventSlotStatus event_slot_status{(*asil_b_control_local_)[slot_index]};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
         return sample_timestamp;
     }
     else
     {
-        const EventSlotStatus event_slot_status{asil_qm_control_local_.get()[slot]};
+        const EventSlotStatus event_slot_status{asil_qm_control_local_.get()[slot_index]};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
         return sample_timestamp;
     }

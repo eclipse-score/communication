@@ -66,7 +66,7 @@ LolaServiceInstanceDeployment CreateLolaServiceInstanceDeployment(
     const std::vector<std::pair<std::string, LolaMethodInstanceDeployment>>& lola_method_inst_depls,
     const std::vector<uid_t>& allowed_consumers_qm,
     const std::vector<uid_t>& allowed_consumers_asil_b,
-    std::optional<std::size_t> size = std::nullopt,
+    std::optional<std::size_t> shm_size = std::nullopt,
     std::optional<std::size_t> control_asil_b_shm_size = std::nullopt,
     std::optional<std::size_t> control_qm_shm_size = std::nullopt);
 

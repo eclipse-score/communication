@@ -22,7 +22,7 @@ namespace score::mw::com::impl::lola
 class SlotDecrementer
 {
   public:
-    SlotDecrementer(ConsumerEventDataControlLocalView<>& event_data_control,
+    SlotDecrementer(ConsumerEventDataControlLocalView<>& event_data_control_local,
                     const SlotIndexType event_slot_index) noexcept;
     ~SlotDecrementer() noexcept;
 

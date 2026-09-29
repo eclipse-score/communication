@@ -110,7 +110,7 @@ class ConsumerEventDataControlLocalView final
     /// \pre ReferenceNextEvent() was invoked to obtain read-ownership
     ///
     /// \details Will also record the transaction in the TransactionLog corresponding to transaction_log_index
-    void DereferenceEvent(const SlotIndexType slot_index) noexcept;
+    void DereferenceEvent(const SlotIndexType event_slot_index) noexcept;
 
     /// \brief Indicates that a consumer is finished reading (thread-safe, wait-free).
     /// \pre ReferenceNextEvent() was invoked to obtain read-ownership

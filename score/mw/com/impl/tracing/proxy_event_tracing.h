@@ -38,24 +38,22 @@ ProxyEventTracingData GenerateProxyTracingStructFromFieldConfig(const InstanceId
                                                                 const std::string_view field_name);
 
 void TraceSubscribe(ProxyEventTracingData& proxy_event_tracing_data,
-                    const ProxyEventBinding& proxy_event_binding_base,
+                    const ProxyEventBinding& proxy_event_binding,
                     const std::size_t max_sample_count);
-void TraceUnsubscribe(ProxyEventTracingData& proxy_event_tracing_data,
-                      const ProxyEventBinding& proxy_event_binding_base);
+void TraceUnsubscribe(ProxyEventTracingData& proxy_event_tracing_data, const ProxyEventBinding& proxy_event_binding);
 void TraceSetReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
-                            const ProxyEventBinding& proxy_event_binding_base);
+                            const ProxyEventBinding& proxy_event_binding);
 void TraceUnsetReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
-                              const ProxyEventBinding& proxy_event_binding_base);
-void TraceGetNewSamples(ProxyEventTracingData& proxy_event_tracing_data,
-                        const ProxyEventBinding& proxy_event_binding_base);
+                              const ProxyEventBinding& proxy_event_binding);
+void TraceGetNewSamples(ProxyEventTracingData& proxy_event_tracing_data, const ProxyEventBinding& proxy_event_binding);
 void TraceCallGetNewSamplesCallback(ProxyEventTracingData& proxy_event_tracing_data,
-                                    const ProxyEventBinding& proxy_event_binding_base,
+                                    const ProxyEventBinding& proxy_event_binding,
                                     ITracingRuntime::TracePointDataId trace_point_data_id);
 void TraceCallReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
-                             const ProxyEventBinding& proxy_event_binding_base);
+                             const ProxyEventBinding& proxy_event_binding);
 
 score::cpp::callback<void(void), 128U> CreateTracingReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
-                                                                   const ProxyEventBinding& proxy_event_binding_base,
+                                                                   const ProxyEventBinding& proxy_event_binding,
                                                                    EventReceiveHandler handler);
 
 template <typename SampleType, typename ReceiverType>
