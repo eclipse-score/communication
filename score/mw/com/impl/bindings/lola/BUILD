@@ -595,7 +595,7 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         ":control_slot_types",
-        "//score/memory/shared:types",
+        "//score/memory/shared:polymorphic_offset_ptr_allocator",
         "@score_baselibs//score/containers:dynamic_array",
     ],
 )
