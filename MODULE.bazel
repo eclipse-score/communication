@@ -57,14 +57,6 @@ bazel_dep(name = "score_tooling", version = "2.2.2")
 # replaced the copy under quality/coverage. See quality/coverage/README.md.
 bazel_dep(name = "score_coverage", version = "0.3.0", dev_dependency = True)
 
-# TEMPORARY: pins the 0.3.0 release commit until the registry entry
-# (eclipse-score/bazel_registry PR #519) is merged; then drop this override.
-git_override(
-    module_name = "score_coverage",
-    commit = "c2eb26aeec94",
-    remote = "https://github.com/eclipse-score/coverage_tool.git",
-)
-
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
 bazel_dep(name = "gcc_toolchain", version = "0.10.0", dev_dependency = True)
 
