@@ -25,9 +25,8 @@ namespace score::mw::com::impl::someip
 
 /// \brief Service discovery client of the SOME/IP binding.
 ///
-/// \details Offering and stop-offering succeed: the individual service elements announce themselves on the
-///          ITransport during their own PrepareOffer()/PrepareStopOffer(), so there is nothing left for the service
-///          discovery to do on the provider side.
+/// \details Provider-side service discovery has no additional work to perform. Event offering remains unsupported
+///          until a SOME/IP transport is integrated.
 ///
 /// TODO(someip-proxy-service-discovery): Implement consumer-side service discovery.
 /// \attention The consumer-side operations (Start/StopFindService, FindService) report kUnsupportedBindingType,

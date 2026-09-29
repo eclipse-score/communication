@@ -22,8 +22,7 @@ namespace score::mw::com::impl::someip
 Result<void> ServiceDiscoveryClient::OfferService(const InstanceIdentifier instance_identifier)
 {
     // TODO(someip-service-discovery): Implement offer service logic.
-    // The service elements announce themselves on the ITransport in their own PrepareOffer(), so there is nothing
-    // left to do here.
+    // Service discovery has no provider-side work until SOME/IP transport support is integrated.
     score::cpp::ignore = instance_identifier;
     return {};
 }
@@ -33,7 +32,7 @@ Result<void> ServiceDiscoveryClient::StopOfferService(
     const IServiceDiscovery::QualityTypeSelector quality_type_selector)
 {
     // TODO(someip-service-discovery): Implement stop offer service logic.
-    // See OfferService(): withdrawal happens per service element in PrepareStopOffer().
+    // See OfferService(): no SOME/IP transport is currently available to withdraw service elements.
     score::cpp::ignore = instance_identifier;
     score::cpp::ignore = quality_type_selector;
     return {};

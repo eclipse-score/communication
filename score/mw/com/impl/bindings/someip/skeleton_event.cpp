@@ -12,15 +12,12 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/someip/skeleton_event.h"
 
-#include "score/mw/com/impl/bindings/someip/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/com_error.h"
 
 #include "score/mw/log/logging.h"
 
-#include <score/assert.hpp>
 #include <score/utility.hpp>
 
-#include <limits>
 #include <utility>
 
 namespace score::mw::com::impl::someip
@@ -46,34 +43,9 @@ SkeletonEvent::SkeletonEvent(Skeleton& parent,
 {
 }
 
-Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void> sample,
-                                 std::optional<SendTraceCallback> send_trace_callback) noexcept
+Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void>, std::optional<SendTraceCallback>) noexcept
 {
-    const impl::SampleAllocateePtrView<void> view{sample};
-    const auto* ptr = view.template As<someip::SampleAllocateePtr>();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(nullptr != ptr);
-    // Suppress "AUTOSAR C++14 A5-3-2": "Null pointers shall not be dereferenced". The pointer is checked above.
-    // coverity[autosar_cpp14_a5_3_2_violation]
-    const auto* const slot_data = ptr->get();
-
-    const auto send_result = parent_.GetTransport().SendEvent(
-        element_fq_id_, slot_data, static_cast<std::size_t>(event_sample_size_info_.Size()));
-
-    if (!send_result.has_value())
-    {
-        return send_result;
-    }
-
-    if (send_trace_callback.has_value())
-    {
-        (*send_trace_callback)(sample);
-    }
-
-    // The slot is not discarded explicitly here: `sample` owns it and returns it via DiscardSlot() when it goes out
-    // of scope at the end of this function. That happens on the error path as well, so no slot can leak, and it
-    // happens only after the trace callback has read the slot. Discarding here in addition would return the same
-    // slot twice and would mark it reusable while it is still being read.
-    return {};
+    return MakeUnexpected(ComErrc::kBindingFailure, "SOME/IP event sending is unsupported without a transport");
 }
 
 Result<impl::SampleAllocateePtr<void>> SkeletonEvent::Allocate(SampleAllocateeGuard guard) noexcept
@@ -114,32 +86,9 @@ Result<impl::SamplePtr<void>> SkeletonEvent::GetLatestSample(QualityType quality
                           "GetLatestSample (field getter) is not supported by the SOME/IP binding");
 }
 
-Result<void> SkeletonEvent::PrepareOffer(
-    const std::optional<InitializeSampleCallback>& initialize_sample_callback) noexcept
+Result<void> SkeletonEvent::PrepareOffer(const std::optional<InitializeSampleCallback>&) noexcept
 {
-    const auto total_number_of_slots = event_properties_.GetTotalNumberOfSlots();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        total_number_of_slots <= std::numeric_limits<SlotIndexType>::max(),
-        "Configured number of sample slots exceeds the maximum representable slot index.");
-
-    const auto registration_result = parent_.Register(element_fq_id_,
-                                                      static_cast<SlotIndexType>(total_number_of_slots),
-                                                      event_sample_size_info_,
-                                                      initialize_sample_callback);
-    event_data_storage_ = &registration_result.event_data_storage;
-
-    slot_allocation_control_.Reset(total_number_of_slots);
-
-    const auto offer_result = parent_.GetTransport().OfferEvent(element_fq_id_);
-    if (!offer_result.has_value())
-    {
-        event_data_storage_ = nullptr;
-        slot_allocation_control_.Clear();
-        return offer_result;
-    }
-
-    is_offered_ = true;
-    return {};
+    return MakeUnexpected(ComErrc::kBindingFailure, "SOME/IP event offering is unsupported without a transport");
 }
 
 void SkeletonEvent::PrepareStopOffer() noexcept
@@ -148,7 +97,6 @@ void SkeletonEvent::PrepareStopOffer() noexcept
     {
         return;
     }
-    parent_.GetTransport().StopOfferEvent(element_fq_id_);
     is_offered_ = false;
 
     // The EventDataStorage itself stays alive in the parent Skeleton, so that a subsequent offer can reuse it without
@@ -169,7 +117,7 @@ Result<void> SkeletonEvent::Notify() noexcept
     {
         return MakeUnexpected(ComErrc::kNotOffered, "Notify called on an event which is not offered");
     }
-    return parent_.GetTransport().NotifyEvent(element_fq_id_);
+    return MakeUnexpected(ComErrc::kBindingFailure, "SOME/IP event notification is unsupported without a transport");
 }
 
 Result<void> SkeletonEvent::SetReceiveHandlerRegistrationChangedHandler(
@@ -179,7 +127,7 @@ Result<void> SkeletonEvent::SetReceiveHandlerRegistrationChangedHandler(
 
     // Report the current state right away, so that the caller does not have to wait for the next change to learn
     // whether receive handlers are currently registered.
-    (*receive_handler_registration_changed_callback_)(parent_.GetTransport().HasSubscribers(element_fq_id_));
+    (*receive_handler_registration_changed_callback_)(false);
     return {};
 }
 

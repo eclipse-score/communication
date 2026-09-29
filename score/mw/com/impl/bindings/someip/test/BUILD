@@ -32,24 +32,14 @@ cc_unit_test(
 )
 
 cc_unit_test(
-    name = "in_process_transport_test",
-    srcs = ["in_process_transport_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        "//score/mw/com/impl/bindings/someip:transport",
-    ],
-)
-
-cc_unit_test(
     name = "skeleton_event_test",
-    srcs = ["skeleton_event_test.cpp"],
+    srcs = ["skeleton_event_stub_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl/bindings/someip:sample_allocatee_ptr",
         "//score/mw/com/impl/bindings/someip:skeleton",
         "//score/mw/com/impl/bindings/someip:skeleton_event",
-        "//score/mw/com/impl/bindings/someip:transport",
         "//score/mw/com/impl/configuration",
     ],
 )

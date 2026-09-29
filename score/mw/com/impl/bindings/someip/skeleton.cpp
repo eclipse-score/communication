@@ -25,15 +25,14 @@
 namespace score::mw::com::impl::someip
 {
 
-std::unique_ptr<Skeleton> Skeleton::Create(const InstanceIdentifier& identifier, ITransport& transport) noexcept
+std::unique_ptr<Skeleton> Skeleton::Create(const InstanceIdentifier& identifier) noexcept
 {
-    return std::make_unique<Skeleton>(identifier, transport);
+    return std::make_unique<Skeleton>(identifier);
 }
 
-Skeleton::Skeleton(const InstanceIdentifier& identifier, ITransport& transport) noexcept
+Skeleton::Skeleton(const InstanceIdentifier& identifier) noexcept
     : SkeletonBinding{},
       identifier_{identifier},
-      transport_{transport},
       quality_type_{InstanceIdentifierView{identifier_}.GetServiceInstanceDeployment().asilLevel_},
       event_data_storages_{}
 {

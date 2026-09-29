@@ -39,9 +39,8 @@ namespace score::mw::com::impl::someip
 /// \brief Represents a binding specific instance (SOME/IP) of an event within a skeleton.
 ///
 /// \details Mirrors lola::SkeletonEvent. As on the LoLa side, this class is type-erased: it only knows the size and
-///          alignment of one sample and moves opaque bytes around. The essential difference is what Send() does with
-///          those bytes: LoLa marks a shared-memory slot as ready so that consumers can read it in place, whereas the
-///          SOME/IP binding hands the bytes to the transport.
+///          alignment of one sample and moves opaque bytes around. SOME/IP event offering and sending are unsupported
+///          until a transport is integrated.
 ///
 /// This class is _not_ user-facing.
 ///
