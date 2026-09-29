@@ -12,8 +12,99 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+component(
+    name = "binding_independent",
+    components = [
+        ":skeleton_and_service_elements",
+        ":proxy_and_service_elements",
+        ":generic_skeleton_and_service_elements",
+        ":generic_proxy_and_service_elements",
+        ":service_discovery_unit",
+        ":runtime_unit",
+        ":sample_management_pointers",
+        "//score/mw/com/impl/mocking:mocks",
+    ],
+    requirements = [],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    visibility = ["//score/mw/com/dependability:__pkg__"],
+)
+
+unit(
+    name = "skeleton_and_service_elements",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/skeleton_and_service_elements:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "proxy_and_service_elements",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/proxy_and_service_elements:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "generic_skeleton_and_service_elements",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/generic_skeleton_and_service_elements:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "generic_proxy_and_service_elements",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/generic_proxy_and_service_elements:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "runtime_unit",
+    design_name = "runtime",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/runtime:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "service_discovery_unit",
+    design_name = "service_discovery",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/service_discovery:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "sample_management_pointers",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/sample_management_pointers:unit_design",
+    ],
+    implementation = [],
+)
 
 package(default_visibility = [
     "//score/mw/com/impl:__subpackages__",

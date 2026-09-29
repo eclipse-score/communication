@@ -17,7 +17,7 @@ component binding_independent <<component>> {
   component service_discovery <<unit>>
   component mocks <<unit>>
   component runtime <<unit>>
-  component slot_pointers <<unit>>
+  component sample_management_pointers <<unit>>
 
   component skeleton_and_service_elements <<unit>>
 
