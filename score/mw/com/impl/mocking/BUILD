@@ -12,7 +12,19 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
+
+unit(
+    name = "mocks",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/mocking/dependability:unit_design",
+    ],
+    visibility = ["//score/mw/com/impl:__pkg__"],
+    implementation = [],
+)
 
 cc_library(
     name = "test_type_utilities",
