@@ -21,11 +21,6 @@ namespace score::mw::com::impl::someip
 {
 
 /// \brief Binding runtime of the SOME/IP binding.
-///
-/// \details Mirrors lola::Runtime in role. It is minimal because the SOME/IP binding has no transport or tracing
-///          runtime yet. Its purpose is to provide the ServiceDiscoveryClient, so that using a SOME/IP service
-///          instance resolves a binding runtime instead of hitting the "Unsupported binding" assertion in
-///          impl::ServiceDiscovery.
 class Runtime final : public IBindingRuntime
 {
   public:
@@ -50,7 +45,7 @@ class Runtime final : public IBindingRuntime
     /// \brief The SOME/IP binding does not support tracing yet.
     tracing::IBindingTracingRuntime* GetTracingRuntime() noexcept override
     {
-      // TODO(someip-tracing): Implement the SOME/IP tracing runtime.
+        // TODO(someip-tracing): Implement the SOME/IP tracing runtime.
         return nullptr;
     }
 

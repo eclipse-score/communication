@@ -75,9 +75,6 @@ class ServiceInstanceDeployment
     QualityType asilLevel_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     InstanceSpecifier instance_specifier_;
-    /// \brief Bumped to 2 when SomeIpServiceInstanceDeployment was inserted into BindingInformation before
-    /// score::cpp::blank: that shifted the alternative indices which Serialize() writes as bindingInfoIndex, so
-    /// version 1 payloads must not be read back with this layout.
     constexpr static std::uint32_t serializationVersion = 2U;
 };
 

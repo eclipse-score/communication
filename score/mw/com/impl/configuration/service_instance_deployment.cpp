@@ -83,22 +83,19 @@ auto operator<(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeploy
 
 auto areCompatible(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs) -> bool
 {
-    bool bindingCompatible{false};
-    const auto* const lhsShmBindingInfo = std::get_if<LolaServiceInstanceDeployment>(&lhs.bindingInfo_);
-    const auto* const rhsShmBindingInfo = std::get_if<LolaServiceInstanceDeployment>(&rhs.bindingInfo_);
-    if ((lhsShmBindingInfo != nullptr) && (rhsShmBindingInfo != nullptr))
-    {
-        bindingCompatible = areCompatible(*lhsShmBindingInfo, *rhsShmBindingInfo);
-    }
-    else
-    {
-        const auto* const lhsSomeIpBindingInfo = std::get_if<SomeIpServiceInstanceDeployment>(&lhs.bindingInfo_);
-        const auto* const rhsSomeIpBindingInfo = std::get_if<SomeIpServiceInstanceDeployment>(&rhs.bindingInfo_);
-        if ((lhsSomeIpBindingInfo != nullptr) && (rhsSomeIpBindingInfo != nullptr))
-        {
-            bindingCompatible = areCompatible(*lhsSomeIpBindingInfo, *rhsSomeIpBindingInfo);
-        }
-    }
+    const auto binding_visitor = score::cpp::overload(
+        [](const LolaServiceInstanceDeployment& lhs_binding,
+           const LolaServiceInstanceDeployment& rhs_binding) noexcept {
+            return areCompatible(lhs_binding, rhs_binding);
+        },
+        [](const SomeIpServiceInstanceDeployment& lhs_binding,
+           const SomeIpServiceInstanceDeployment& rhs_binding) noexcept {
+            return areCompatible(lhs_binding, rhs_binding);
+        },
+        [](const auto&, const auto&) noexcept {
+            return false;
+        });
+    const auto bindingCompatible = std::visit(binding_visitor, lhs.bindingInfo_, rhs.bindingInfo_);
     return areCompatible(lhs.asilLevel_, rhs.asilLevel_) && bindingCompatible;
 }
 

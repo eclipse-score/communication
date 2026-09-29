@@ -24,13 +24,10 @@ namespace score::mw::com::impl::someip
 
 /// \brief Tracks which sample slots of an event are currently handed out to the user.
 ///
-/// \details This is the SOME/IP counterpart of lola::EventDataControlComposite, and it plays the same structural
-///          role: the owning SkeletonEvent holds it as a member, and every SampleAllocateePtr handed out by that
+/// \details The owning SkeletonEvent holds this as a member, and every SampleAllocateePtr handed out by that
 ///          event refers to it (not to the SkeletonEvent) in order to return its slot. Keeping the slot state in its
 ///          own type is what avoids a dependency cycle between SkeletonEvent and SampleAllocateePtr.
 ///
-///          It can be far simpler than its LoLa counterpart because the slots never leave the process: there is no
-///          cross-process reference counting and no partial-restart rollback to perform.
 class SlotAllocationControl final
 {
   public:

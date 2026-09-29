@@ -19,9 +19,6 @@ namespace score::mw::com::impl::someip
 {
 
 /// \brief Deployment derived properties of a SOME/IP skeleton event (resp. field).
-///
-/// \details Mirrors lola::SkeletonEventProperties minus the members which only exist because LoLa slots live in
-///          shared memory (IPC tracing slots) or serve the not-yet-supported field getter/setter.
 class SkeletonEventProperties
 {
   public:

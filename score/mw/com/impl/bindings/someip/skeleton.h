@@ -32,10 +32,6 @@ namespace score::mw::com::impl::someip
 {
 
 /// \brief Skeleton binding of the SOME/IP binding.
-///
-/// \details Mirrors lola::Skeleton in role and API shape, but is far smaller: LoLa has to create, open, size and roll
-///          back shared-memory regions, whereas the SOME/IP binding only owns the process-local slot storage of its
-///          events. Service-element offering is unsupported until a SOME/IP transport is integrated.
 class Skeleton final : public SkeletonBinding
 {
   public:

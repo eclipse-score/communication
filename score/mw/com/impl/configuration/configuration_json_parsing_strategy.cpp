@@ -662,8 +662,6 @@ auto ParseSomeIpFieldInstanceDeployment(const score::json::Object& json_map, Som
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(field_obj.has_value(),
                                                           "Configuration corrupted, check with json schema");
         const auto& field_object = field_obj.value().get();
-        const auto& max_concurrent_allocations_it = field_object.find(kFieldMaxConcurrentAllocationsKey);
-        AbortIfFound(max_concurrent_allocations_it, field_object);
 
         ServiceElementInstanceDeploymentParser deployment_parser{field_object};
 
@@ -678,16 +676,9 @@ auto ParseSomeIpFieldInstanceDeployment(const score::json::Object& json_map, Som
                 kFieldMaxSubscribersKey);
         const auto enforce_max_samples =
             deployment_parser.RetrieveJsonElement<bool>(kFieldEnforceMaxSamplesKey).value_or(true);
-        const auto use_get_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseGetIfAvailableKey)
-                                              .value_or(kUseGetIfAvailableDefaultValue);
-        const auto use_set_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseSetIfAvailableKey)
-                                              .value_or(kUseSetIfAvailableDefaultValue);
 
-        auto field_deployment = SomeIpFieldInstanceDeployment(
-            SomeIpEventInstanceDeployment(
-                number_of_sample_slots, max_subscribers, kMaxConcurrentAllocationsDefault, enforce_max_samples),
-            use_get_if_available,
-            use_set_if_available);
+        auto field_deployment = SomeIpFieldInstanceDeployment(SomeIpEventInstanceDeployment(
+            number_of_sample_slots, max_subscribers, kMaxConcurrentAllocationsDefault, enforce_max_samples));
         EmplaceOrFatal(service.fields_, std::move(field_name_value), field_deployment, "A field instance");
     }
 }

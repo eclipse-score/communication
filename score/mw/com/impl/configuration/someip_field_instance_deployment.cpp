@@ -20,20 +20,8 @@
 namespace score::mw::com::impl
 {
 
-namespace
-{
-
-constexpr auto kUseGetIfAvailableKeySomeIpFieldInstDepl = "useGetIfAvailable";
-constexpr auto kUseSetIfAvailableKeySomeIpFieldInstDepl = "useSetIfAvailable";
-
-}  // namespace
-
-SomeIpFieldInstanceDeployment::SomeIpFieldInstanceDeployment(SomeIpEventInstanceDeployment event_deployment,
-                                                             const bool use_get_if_available,
-                                                             const bool use_set_if_available) noexcept
-    : someip_event_instance_deployment_{std::move(event_deployment)},
-      use_get_if_available_{use_get_if_available},
-      use_set_if_available_{use_set_if_available}
+SomeIpFieldInstanceDeployment::SomeIpFieldInstanceDeployment(SomeIpEventInstanceDeployment event_deployment) noexcept
+    : someip_event_instance_deployment_{std::move(event_deployment)}
 {
 }
 
@@ -47,31 +35,22 @@ SomeIpFieldInstanceDeployment SomeIpFieldInstanceDeployment::CreateFromJson(cons
     // Delegate event-specific parsing to SomeIpEventInstanceDeployment (which also checks serialization version).
     auto event_deployment = SomeIpEventInstanceDeployment::CreateFromJson(json_object);
 
-    const bool use_get_if_available = GetValueFromJson<bool>(json_object, kUseGetIfAvailableKeySomeIpFieldInstDepl);
-    const bool use_set_if_available = GetValueFromJson<bool>(json_object, kUseSetIfAvailableKeySomeIpFieldInstDepl);
-
-    return SomeIpFieldInstanceDeployment(std::move(event_deployment), use_get_if_available, use_set_if_available);
+    return SomeIpFieldInstanceDeployment(std::move(event_deployment));
 }
 
 score::json::Object SomeIpFieldInstanceDeployment::Serialize() const
 {
     auto json_object = someip_event_instance_deployment_.Serialize();
 
-    json_object[kUseGetIfAvailableKeySomeIpFieldInstDepl] = score::json::Any{use_get_if_available_};
-    json_object[kUseSetIfAvailableKeySomeIpFieldInstDepl] = score::json::Any{use_set_if_available_};
-
     return json_object;
 }
 
 bool operator==(const SomeIpFieldInstanceDeployment& lhs, const SomeIpFieldInstanceDeployment& rhs) noexcept
 {
-    const bool use_get_if_available_equal = (lhs.use_get_if_available_ == rhs.use_get_if_available_);
-    const bool use_set_if_available_equal = (lhs.use_set_if_available_ == rhs.use_set_if_available_);
     // Adding brackets to the expression does not give additional value since only one logical operator is used which
     // is independent of the execution order
     // coverity[autosar_cpp14_a5_2_6_violation]
-    return ((lhs.someip_event_instance_deployment_ == rhs.someip_event_instance_deployment_) &&
-            use_get_if_available_equal && use_set_if_available_equal);
+    return ((lhs.someip_event_instance_deployment_ == rhs.someip_event_instance_deployment_));
 }
 
 }  // namespace score::mw::com::impl

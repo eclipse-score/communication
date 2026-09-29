@@ -38,9 +38,6 @@ namespace score::mw::com::impl::someip
 
 /// \brief Represents a binding specific instance (SOME/IP) of an event within a skeleton.
 ///
-/// \details Mirrors lola::SkeletonEvent. As on the LoLa side, this class is type-erased: it only knows the size and
-///          alignment of one sample and moves opaque bytes around. SOME/IP event offering and sending are unsupported
-///          until a transport is integrated.
 ///
 /// This class is _not_ user-facing.
 ///
@@ -102,13 +99,6 @@ class SkeletonEvent final : public SkeletonEventBinding
     }
 
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override;
-
-    Result<void> Notify() noexcept override;
-
-    Result<void> SetReceiveHandlerRegistrationChangedHandler(
-        ReceiveHandlerRegistrationChangedCallback callback) noexcept override;
-
-    Result<void> UnsetReceiveHandlerRegistrationChangedHandler() noexcept override;
 
   private:
     Skeleton& parent_;
