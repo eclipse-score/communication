@@ -15,9 +15,21 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@score_baselibs//score/flatbuffers/bazel:codegen.bzl", "generate_cpp")
 load("@score_baselibs//score/flatbuffers/bazel:tools.bzl", "generate_json_schema")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+unit(
+    name = "mw_com_configuration",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/configuration/dependability:unit_design",
+    ],
+    visibility = ["//score/mw/com/dependability:__pkg__"],
+    implementation = [],
+)
 
 exports_files(
     [
