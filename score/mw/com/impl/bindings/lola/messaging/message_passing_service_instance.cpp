@@ -77,7 +77,7 @@ struct UnsubscribeServiceMethodUnserializedPayload
 struct MethodCallUnserializedPayload
 {
     ProxyMethodInstanceIdentifier proxy_method_instance_identifier;
-    std::size_t queue_position;
+    std::size_t queue_position{};
 };
 
 using MethodUnserializedReply = score::Result<void>;
