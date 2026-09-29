@@ -55,6 +55,7 @@ Result<std::unique_ptr<ProxyBinding>> ProxyBindingFactoryImpl::Create(const Hand
         // alternative.
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const SomeIpServiceInstanceDeployment&) noexcept -> ReturnType {
+            // TODO(someip-proxy): Create the SOME/IP proxy binding.
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
         },
         // coverity[autosar_cpp14_a7_1_7_violation]

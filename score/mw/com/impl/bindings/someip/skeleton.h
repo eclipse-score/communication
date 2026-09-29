@@ -72,6 +72,7 @@ class Skeleton final : public SkeletonBinding
         return BindingType::kSomeIp;
     }
 
+    /// TODO(someip-skeleton-method): Implement SOME/IP method handler registration.
     /// \brief The SOME/IP binding does not support methods yet, so there are never unregistered method handlers.
     bool VerifyAllMethodHandlersRegistered() const override
     {

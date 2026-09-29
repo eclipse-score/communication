@@ -28,6 +28,7 @@ namespace score::mw::com::impl::someip
 ///          assume anything about how (or whether) the payload reaches a remote consumer; it only offers/stop-offers
 ///          service elements and pushes opaque byte payloads.
 ///
+/// TODO(someip-transport): Replace the process-local stub with a real SOME/IP transport.
 /// \attention The only implementation available today is InProcessTransport, which is a stub: it keeps the last
 ///            payload per service element in process-local memory and never touches the network. Replacing it with a
 ///            real SOME/IP stack must not require changes above this interface.

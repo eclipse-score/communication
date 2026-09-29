@@ -162,6 +162,7 @@ Result<std::unique_ptr<ProxyMethodBinding>> ProxyMethodBindingFactoryImpl<Return
         // being served by the score::cpp::blank arm) because std::visit requires an arm for every variant
         // alternative.
         [](const SomeIpServiceTypeDeployment&) noexcept -> LambdaReturnType {
+            // TODO(someip-proxy-method): Create the SOME/IP proxy method binding.
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
         },
         [](const score::cpp::blank&) noexcept -> LambdaReturnType {

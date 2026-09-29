@@ -29,6 +29,7 @@ namespace score::mw::com::impl::someip
 
 /// \brief Process-local stub implementation of ITransport.
 ///
+/// TODO(someip-transport): Replace the process-local stub with a real SOME/IP transport.
 /// \attention This is a STUB. It implements no part of the SOME/IP wire protocol: offered service elements are only
 ///            visible within the same process and sent payloads are copied into a process-local buffer instead of
 ///            being serialized and transmitted. It exists so that the SOME/IP binding can be built and unit-tested

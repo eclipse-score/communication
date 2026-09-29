@@ -21,6 +21,7 @@ namespace score::mw::com::impl::someip
 
 Result<void> ServiceDiscoveryClient::OfferService(const InstanceIdentifier instance_identifier)
 {
+    // TODO(someip-service-discovery): Implement offer service logic.
     // The service elements announce themselves on the ITransport in their own PrepareOffer(), so there is nothing
     // left to do here.
     score::cpp::ignore = instance_identifier;
@@ -31,6 +32,7 @@ Result<void> ServiceDiscoveryClient::StopOfferService(
     const InstanceIdentifier instance_identifier,
     const IServiceDiscovery::QualityTypeSelector quality_type_selector)
 {
+    // TODO(someip-service-discovery): Implement stop offer service logic.
     // See OfferService(): withdrawal happens per service element in PrepareStopOffer().
     score::cpp::ignore = instance_identifier;
     score::cpp::ignore = quality_type_selector;
@@ -44,6 +46,7 @@ Result<void> ServiceDiscoveryClient::StartFindService(const FindServiceHandle fi
     score::cpp::ignore = find_service_handle;
     score::cpp::ignore = handler;
     score::cpp::ignore = enriched_instance_identifier;
+    // TODO(someip-service-discovery): Implement start find service logic.
     return MakeUnexpected(ComErrc::kInvalidBindingInformation,
                           "StartFindService is not supported by the SOME/IP binding, as it has no proxy side yet");
 }
@@ -51,6 +54,7 @@ Result<void> ServiceDiscoveryClient::StartFindService(const FindServiceHandle fi
 Result<void> ServiceDiscoveryClient::StopFindService(const FindServiceHandle find_service_handle)
 {
     score::cpp::ignore = find_service_handle;
+    // TODO(someip-service-discovery): Implement stop find service logic.
     return MakeUnexpected(ComErrc::kInvalidBindingInformation,
                           "StopFindService is not supported by the SOME/IP binding, as it has no proxy side yet");
 }
@@ -59,6 +63,7 @@ Result<ServiceHandleContainer<HandleType>> ServiceDiscoveryClient::FindService(
     const EnrichedInstanceIdentifier enriched_instance_identifier)
 {
     score::cpp::ignore = enriched_instance_identifier;
+    // TODO(someip-service-discovery): Implement find service logic.
     return MakeUnexpected(ComErrc::kInvalidBindingInformation,
                           "FindService is not supported by the SOME/IP binding, as it has no proxy side yet");
 }

@@ -50,6 +50,7 @@ class Runtime final : public IBindingRuntime
     /// \brief The SOME/IP binding does not support tracing yet.
     tracing::IBindingTracingRuntime* GetTracingRuntime() noexcept override
     {
+      // TODO(someip-tracing): Implement the SOME/IP tracing runtime.
         return nullptr;
     }
 
