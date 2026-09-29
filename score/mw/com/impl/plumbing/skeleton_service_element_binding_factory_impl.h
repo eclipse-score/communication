@@ -57,7 +57,8 @@ namespace detail
 /// into account the field tags when calculating the number of slots that are needed.
 inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
     const LolaEventInstanceDeployment& lola_event_instance_deployment,
-    const std::optional<FieldTagsStore> field_tags_store)
+    const std::optional<FieldTagsStore> field_tags_store,
+    const std::optional<E2EEventTypeDeployment> e2e_event_deployment = {})
 {
     std::size_t max_subscribers{0U};
 
@@ -104,7 +105,8 @@ inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
                                          number_of_field_getter_slots,
                                          is_setter_enabled,
                                          max_subscribers,
-                                         lola_event_instance_deployment.enforce_max_samples_};
+                                         lola_event_instance_deployment.enforce_max_samples_,
+                                         e2e_event_deployment};
 }
 
 inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
@@ -229,8 +231,18 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, service_element_name_str);
 
-            const lola::SkeletonEventProperties skeleton_event_properties =
-                detail::CreateSkeletonEventProperties(lola_service_element_instance_deployment, field_tags_store);
+            std::optional<E2EEventTypeDeployment> e2e_event_deployment{};
+            if constexpr (element_type == ServiceElementType::EVENT)
+            {
+                const auto e2e_deployment_it = lola_service_type_deployment.e2e_events_.find(service_element_name_str);
+                if (e2e_deployment_it != lola_service_type_deployment.e2e_events_.cend())
+                {
+                    e2e_event_deployment = e2e_deployment_it->second;
+                }
+            }
+
+            const lola::SkeletonEventProperties skeleton_event_properties = detail::CreateSkeletonEventProperties(
+                lola_service_element_instance_deployment, field_tags_store, e2e_event_deployment);
 
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name_str);
@@ -321,9 +333,20 @@ auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, std::string{service_element_name});
 
+            std::optional<E2EEventTypeDeployment> e2e_event_deployment{};
+            if constexpr (element_type == ServiceElementType::EVENT)
+            {
+                const auto e2e_deployment_it =
+                    lola_service_type_deployment.e2e_events_.find(std::string{service_element_name});
+                if (e2e_deployment_it != lola_service_type_deployment.e2e_events_.cend())
+                {
+                    e2e_event_deployment = e2e_deployment_it->second;
+                }
+            }
+
             // TODO: Pass in the FieldAbilities when GenericSkeletonFields are implemented.
             const lola::SkeletonEventProperties skeleton_event_properties = detail::CreateSkeletonEventProperties(
-                lola_service_element_instance_deployment, std::optional<FieldTagsStore>{});
+                lola_service_element_instance_deployment, std::optional<FieldTagsStore>{}, e2e_event_deployment);
 
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_service_type_deployment, std::string{service_element_name});
