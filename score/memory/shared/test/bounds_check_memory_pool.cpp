@@ -17,8 +17,12 @@ namespace score::memory::shared::test
 
 template <>
 OffsetPtr<void>* CreateOffsetPtr<void>(
+    // The addresses are used as storage for placement new, which requires a non-const void*. Pointers to const cannot
+    // be used here and the signature has to match the primary template, hence this check is a false positive.
+    // NOLINTBEGIN(readability-non-const-parameter)
     const typename BoundsCheckMemoryPool<void>::MemoryPool::iterator offset_ptr_address,
     const typename BoundsCheckMemoryPool<void>::MemoryPool::iterator pointed_to_address) noexcept
+// NOLINTEND(readability-non-const-parameter)
 {
     auto* const pointed_to_object = new (pointed_to_address) int(10);
     auto* const pointed_to_object_void = static_cast<void*>(pointed_to_object);
