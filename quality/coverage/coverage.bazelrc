@@ -87,5 +87,9 @@ coverage:qnx_x86_64 --instrument_test_targets
 # (seen as 0 % for score/os in baselibs). The LLVM backend on Linux is
 # unaffected (its merger does not consult the filter).
 coverage:qnx_x86_64 --instrumentation_filter=^//score[/:]
-coverage:qnx_x86_64 --test_lang_filters=cc
+# NOTE: no --test_lang_filters=cc here. QNX unit tests are wrapped by
+# cc_unit_test/score_qnx_unit_tests as a Starlark _forwarding_test rule (which
+# dispatches to a sh_test running the binary under QEMU), not a native
+# cc_test. --test_lang_filters matches on the rule class' language prefix, so
+# any non-empty value (including "cc") silently excludes every QNX test.
 coverage:qnx --config=qnx_x86_64
