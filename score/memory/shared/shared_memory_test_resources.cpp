@@ -68,13 +68,6 @@ class IAccessControlListMockWrapper : public score::os::IAccessControlList
 
 }  // namespace
 
-constexpr const char* const TestValues::sharedMemorySegmentPath;
-constexpr const std::uint64_t TestValues::sharedMemoryResourceIdentifier;
-constexpr const char* const TestValues::secondSharedMemorySegmentPath;
-constexpr const char* const TestValues::sharedMemorySegmentLockPath;
-constexpr const char* const TestValues::secondSharedMemorySegmentLockPath;
-constexpr std::size_t TestValues::some_share_memory_size;
-constexpr uid_t TestValues::our_uid;
 constexpr auto kTypedmemdUserName = "typed_memory_daemon";
 constexpr auto kTSHMDeviceName = "/dev/typedshm";
 constexpr std::uint32_t kMaxBufferSize = 16384U;
