@@ -41,6 +41,10 @@ void SendMessages(BidirectionalTransport& transport)
         4U,
         8U};
     const auto send_result = transport.SendRequest(service_request);
+    if (!send_result)
+    {
+        std::cerr << "Failed to send request: " << send_result.error() << std::endl;
+    }
 
     auto notification = score::mw::com::gateway::RegisterNotificationRequest{
         score::mw::com::impl::InstanceSpecifier::Create(std::string{"TestService/Instance1"}).value(),
