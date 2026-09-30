@@ -324,7 +324,7 @@ bool RunClient(const ClientConfig& config, score::cpp::stop_token test_stop_toke
     {
         return false;
     }
-    auto proxy_handle = handle_opt.value();
+    const auto& proxy_handle = handle_opt.value();
 
     auto lola_proxy_result = TestDataProxy::Create(proxy_handle);
 
@@ -379,7 +379,7 @@ int main(int argc, const char** argv)
         score::mw::log::LogError(kLogContext) << "Could not read command line arguments.";
         return EXIT_FAILURE;
     }
-    auto args = args_result.value();
+    const auto& args = args_result.value();
 
     score::cpp::stop_source test_stop_source{};
 
