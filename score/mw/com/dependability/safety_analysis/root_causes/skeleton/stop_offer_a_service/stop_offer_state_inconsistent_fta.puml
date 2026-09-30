@@ -1,0 +1,27 @@
+' *******************************************************************************
+' Copyright (c) {year} Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$TopEvent("Service Offer stopped inconsistent", "Communication.StopOfferInconsistent")
+
+$OrGate("Gate1", "Communication.StopOfferInconsistent")
+$IntermediateEvent("Stop Offer not succeeded on dependent elements", "Communication.StopOfferNotSucceededOnDependentElements", "Gate1")
+$BasicEvent("Offer State inconsistent", "Communication.OfferStateInconsistent", "Gate1")
+$OrGate("Gate2", "Communication.StopOfferNotSucceededOnDependentElements")
+$BasicEvent("PrepareOffer on dependent elements not called", "Communication.DependentPrepareOfferNotCalled", "Gate2")
+$BasicEvent("PrepareOffer on dependent elements failed", "Communication.DependentPrepareOfferFailed", "Gate2")
+
+@enduml
