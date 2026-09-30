@@ -17,8 +17,10 @@
 
 #include <score/span.hpp>
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 namespace score::mw::com::impl::e2e
 {
@@ -52,6 +54,13 @@ struct CheckOutcome
 
 /// \brief Fixed header size used only by this POC profile stub.
 constexpr std::size_t kProfileStubHeaderSize{4U};
+
+/// \brief Fixed-size POC header bytes for one event sample slot.
+using HeaderBytes = std::array<std::byte, kProfileStubHeaderSize>;
+
+/// \brief Per-slot POC header storage. Stands in for the parallel shared-memory array a real implementation would
+///        use; a scaffolding harness shares one instance between a skeleton event and its consuming proxy events.
+using HeaderStorage = std::vector<HeaderBytes>;
 
 /// \brief Adds deterministic POC metadata to a fixed-size header.
 /// \details The header contains a data ID, an eight-bit counter,
