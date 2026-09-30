@@ -68,7 +68,7 @@ class ProxyEvent final : public GenericProxyEventBinding
 
     SubscriptionState GetSubscriptionState() const noexcept override;
     Result<std::size_t> GetNumNewSamplesAvailable() const override;
-    Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept override;
+    Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) override;
 
     Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override;
     Result<void> UnsetReceiveHandler() noexcept override;

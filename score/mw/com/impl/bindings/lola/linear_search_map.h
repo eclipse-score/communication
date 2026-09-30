@@ -85,13 +85,13 @@ class LinearSearchMap
                     memory::shared::ManagedMemoryResource& resource,
                     const KeyEqual& key_equal = KeyEqual{});
 
-    iterator begin() noexcept;
-    const_iterator begin() const noexcept;
-    const_iterator cbegin() const noexcept;
+    iterator begin();
+    const_iterator begin() const;
+    const_iterator cbegin() const;
 
-    iterator end() noexcept;
-    const_iterator end() const noexcept;
-    const_iterator cend() const noexcept;
+    iterator end();
+    const_iterator end() const;
+    const_iterator cend() const;
 
     size_type size() const noexcept;
 
@@ -141,42 +141,42 @@ LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::LinearSearchMap(const siz
 
 template <typename Key, typename MappedType, typename KeyEqual, typename Allocator>
 typename LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::iterator
-LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::begin() noexcept
+LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::begin()
 {
     return storage_.begin();
 }
 
 template <typename Key, typename MappedType, typename KeyEqual, typename Allocator>
 typename LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::const_iterator
-LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::begin() const noexcept
+LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::begin() const
 {
     return storage_.begin();
 }
 
 template <typename Key, typename MappedType, typename KeyEqual, typename Allocator>
 typename LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::const_iterator
-LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::cbegin() const noexcept
+LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::cbegin() const
 {
     return storage_.cbegin();
 }
 
 template <typename Key, typename MappedType, typename KeyEqual, typename Allocator>
 typename LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::iterator
-LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::end() noexcept
+LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::end()
 {
     return storage_.end();
 }
 
 template <typename Key, typename MappedType, typename KeyEqual, typename Allocator>
 typename LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::const_iterator
-LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::end() const noexcept
+LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::end() const
 {
     return storage_.end();
 }
 
 template <typename Key, typename MappedType, typename KeyEqual, typename Allocator>
 typename LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::const_iterator
-LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::cend() const noexcept
+LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::cend() const
 {
     return storage_.cend();
 }

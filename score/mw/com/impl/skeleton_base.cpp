@@ -40,7 +40,7 @@ namespace score::mw::com::impl
 namespace
 {
 
-void StopOfferServiceInServiceDiscovery(const InstanceIdentifier& instance_identifier) noexcept
+void StopOfferServiceInServiceDiscovery(const InstanceIdentifier& instance_identifier)
 {
     const auto result = Runtime::getInstance().GetServiceDiscovery().StopOfferService(instance_identifier);
     if (!result.has_value())

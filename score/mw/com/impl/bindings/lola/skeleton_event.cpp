@@ -66,7 +66,7 @@ Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void> sample,
 // implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have value but as we check
 // before with 'has_value()' so no way for throwing std::bad_optional_access, which leads to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-Result<impl::SampleAllocateePtr<void>> SkeletonEvent::Allocate(SampleAllocateeGuard guard) noexcept
+Result<impl::SampleAllocateePtr<void>> SkeletonEvent::Allocate(SampleAllocateeGuard guard)
 {
     if (!event_data_control_composite_.has_value())
     {
@@ -152,8 +152,7 @@ Result<impl::SamplePtr<void>> SkeletonEvent::GetLatestSample(QualityType quality
         std::move(*guard)};
 }
 
-Result<void> SkeletonEvent::PrepareOffer(
-    const std::optional<InitializeSampleCallback>& initialize_sample_callback) noexcept
+Result<void> SkeletonEvent::PrepareOffer(const std::optional<InitializeSampleCallback>& initialize_sample_callback)
 {
     // Invariant: after a successful PrepareOffer(), event_data_storage_ is guaranteed to be non-null.
     // All methods that require event_data_storage_ (e.g. GetLatestSample) rely on this invariant.
@@ -231,7 +230,7 @@ Result<void> SkeletonEvent::PrepareOffer(
                 if (receive_handler_registration_changed_callback_.has_value())
                 {
                     const bool qm_registered = qm_event_update_notifications_registered_.load();
-                    receive_handler_registration_changed_callback_.value()(qm_registered);
+                    (*receive_handler_registration_changed_callback_)(qm_registered);
                 }
             });
 
@@ -245,7 +244,7 @@ Result<void> SkeletonEvent::PrepareOffer(
                     if (receive_handler_registration_changed_callback_.has_value())
                     {
                         const bool asil_b_registered = asil_b_event_update_notifications_registered_.load();
-                        receive_handler_registration_changed_callback_.value()(asil_b_registered);
+                        (*receive_handler_registration_changed_callback_)(asil_b_registered);
                     }
                 });
     }
@@ -253,7 +252,7 @@ Result<void> SkeletonEvent::PrepareOffer(
     return {};
 }
 
-void SkeletonEvent::PrepareStopOffer() noexcept
+void SkeletonEvent::PrepareStopOffer()
 {
     // Unregister event notification existence changed callbacks
     GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
@@ -312,7 +311,7 @@ void SkeletonEvent::ResetGuards() noexcept
     }
 }
 
-Result<void> SkeletonEvent::NotifyConsumersIfHandlersRegistered() noexcept
+Result<void> SkeletonEvent::NotifyConsumersIfHandlersRegistered()
 {
     // Only call NotifyEvent if there are any registered receive handlers for each quality level.
     // This avoids the expensive lock operation in the common case where no handlers are registered.

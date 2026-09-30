@@ -49,7 +49,7 @@ bool MemoryResourceProxy::EnableBoundsChecking(const bool enable) noexcept
 
 MemoryResourceProxy::MemoryResourceProxy(const std::uint64_t identifier) : memory_identifier_{identifier} {}
 
-auto MemoryResourceProxy::allocate(const std::size_t bytes, const std::size_t alignment) const noexcept -> void*
+auto MemoryResourceProxy::allocate(const std::size_t bytes, const std::size_t alignment) const -> void*
 {
     if (bounds_checking_enabled_)
     {

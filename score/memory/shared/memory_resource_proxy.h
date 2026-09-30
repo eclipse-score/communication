@@ -59,7 +59,7 @@ class MemoryResourceProxy
     MemoryResourceProxy(MemoryResourceProxy&&) noexcept = delete;
     MemoryResourceProxy& operator=(MemoryResourceProxy&&) noexcept = delete;
 
-    void* allocate(const std::size_t, const std::size_t = alignof(std::max_align_t)) const noexcept;
+    void* allocate(const std::size_t, const std::size_t = alignof(std::max_align_t)) const;
     void deallocate(void* const, const std::size_t) const;
 
     friend bool operator==(const MemoryResourceProxy& lhs, const MemoryResourceProxy& rhs) noexcept;

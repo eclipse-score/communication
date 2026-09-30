@@ -215,7 +215,7 @@ score::Result<void> Configuration::CrossCheckAsilLevels() const noexcept
     return {};
 }
 
-score::Result<void> Configuration::CrossCheckServiceInstancesToTypes() const noexcept
+score::Result<void> Configuration::CrossCheckServiceInstancesToTypes() const
 {
     for (const auto& service_instance : GetServiceInstances())
     {
@@ -270,7 +270,7 @@ score::Result<void> Configuration::CrossCheckServiceInstancesToTypes() const noe
     }
     return {};
 }
-score::Result<bool> Configuration::HasLolaServiceDeployment() const noexcept
+score::Result<bool> Configuration::HasLolaServiceDeployment() const
 {
     auto deployment_info_visitor = score::cpp::overload(
         [](const LolaServiceTypeDeployment&) {

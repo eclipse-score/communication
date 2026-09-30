@@ -66,7 +66,7 @@ class SkeletonEventBinding
 
     /// \brief Allocates memory for SampleType for the user to fill it. This is especially necessary for Zero-Copy
     /// implementations.
-    virtual Result<SampleAllocateePtr<void>> Allocate(SampleAllocateeGuard guard) noexcept = 0;
+    virtual Result<SampleAllocateePtr<void>> Allocate(SampleAllocateeGuard guard) = 0;
 
     /// \brief Retrieves the latest sample, intended to support the getter of a SkeletonField.
     virtual Result<SamplePtr<void>> GetLatestSample(QualityType quality_type) = 0;
@@ -84,12 +84,11 @@ class SkeletonEventBinding
     /// keep ownership of the callback and reuse it across multiple PrepareOffer() calls over the lifetime of the event
     /// (e.g. offer -> stop-offer -> offer again).
     /// \param initialize_sample_callback Optional callback to initialize a sample in the underlying type_erased storage
-    virtual Result<void> PrepareOffer(
-        const std::optional<InitializeSampleCallback>& initialize_sample_callback) noexcept = 0;
+    virtual Result<void> PrepareOffer(const std::optional<InitializeSampleCallback>& initialize_sample_callback) = 0;
 
     /// \brief Used to indicate that the event shall no longer be available to consumer (e.g. binding specific
     /// de-initialization)
-    virtual void PrepareStopOffer() noexcept = 0;
+    virtual void PrepareStopOffer() = 0;
 
     /// \brief Get size and alignment for the underlying event-type.
     virtual memory::DataTypeSizeInfo GetEventDataTypeSizeInfo() const = 0;

@@ -224,7 +224,7 @@ ServiceDataControl& GetServiceDataControl(const memory::shared::ManagedMemoryRes
 score::Result<void> ExecutePartialRestartLogic(const QualityType quality_type,
                                                const SkeletonInstanceIdentifier skeleton_instance_identifier,
                                                const memory::shared::ManagedMemoryResource& control,
-                                               const memory::shared::ManagedMemoryResource& data) noexcept
+                                               const memory::shared::ManagedMemoryResource& data)
 {
     auto& service_data_storage = detail_proxy::GetServiceDataStorage(data);
 

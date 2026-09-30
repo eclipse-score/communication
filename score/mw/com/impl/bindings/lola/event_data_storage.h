@@ -51,7 +51,7 @@ class EventDataStorage final
                      memory::DataTypeSizeInfo event_sample_size_info,
                      const std::optional<InitializeSampleCallback>& initialize_sample_callback = std::nullopt);
 
-    ~EventDataStorage();
+    ~EventDataStorage() noexcept;
 
     /// \brief EventDataStorage is neither copyable nor movable.
     /// \details It manages a raw memory allocation (type_erased_data_slots_) whose lifetime is tied to this

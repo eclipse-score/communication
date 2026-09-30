@@ -125,7 +125,7 @@ class Configuration final
     score::Result<void> Validate() const noexcept;
 
     /// \brief Determine if any service with a LoLa binding is defined in this configuration
-    score::Result<bool> HasLolaServiceDeployment() const noexcept;
+    score::Result<bool> HasLolaServiceDeployment() const;
 
     /// \brief Returns the list of names (ToString()) of all configured ServiceIdentifierTypes
     std::set<std::string_view> GetServiceTypeNames() const noexcept;
@@ -171,7 +171,7 @@ class Configuration final
     ///            safe to extract references/string_views from the entries passed to callback and use them beyond
     ///            the lifetime of a single call, as long as this Configuration outlives them.
     template <typename Callback>
-    void ForEachServiceType(Callback&& callback) const noexcept
+    void ForEachServiceType(Callback&& callback) const
     {
         const auto current_list = std::atomic_load_explicit(&service_types_, std::memory_order_acquire);
         if (current_list == nullptr)
@@ -234,7 +234,7 @@ class Configuration final
     /// \brief Validate if service ASIL levels match the application's assigned ASIL level.
     score::Result<void> CrossCheckAsilLevels() const noexcept;
     /// \brief Validate if service type definitions and service instance definitions fit together.
-    score::Result<void> CrossCheckServiceInstancesToTypes() const noexcept;
+    score::Result<void> CrossCheckServiceInstancesToTypes() const;
 
     /// \brief Helper func aggregates allowed_user_ids of the given quality type into aggregated_allowed_users. If
     ///        allowed_user_ids is empty (no access restriction!), then aggregated_allowed_users is cleared!

@@ -329,7 +329,7 @@
       "name": "SetReceiveHandler",
       "qualified_name": "score::mw::com::GenericProxyEvent::SetReceiveHandler",
       "kind": "method",
-      "signature": "SetReceiveHandler : Result<void> (EventReceiveHandler) noexcept"
+      "signature": "SetReceiveHandler : Result<void> (EventReceiveHandler)"
     },
     {
       "name": "SetSubscriptionStateChangeHandler",
@@ -347,7 +347,7 @@
       "name": "UnsetReceiveHandler",
       "qualified_name": "score::mw::com::GenericProxyEvent::UnsetReceiveHandler",
       "kind": "method",
-      "signature": "UnsetReceiveHandler : Result<void> () noexcept"
+      "signature": "UnsetReceiveHandler : Result<void> ()"
     },
     {
       "name": "UnsetSubscriptionStateChangeHandler",
@@ -359,7 +359,7 @@
       "name": "Unsubscribe",
       "qualified_name": "score::mw::com::GenericProxyEvent::Unsubscribe",
       "kind": "method",
-      "signature": "Unsubscribe : void () noexcept"
+      "signature": "Unsubscribe : void ()"
     },
     {
       "name": "GenericSkeleton",
@@ -622,10 +622,22 @@
       "signature": "SamplePtr<SampleType> : void (SamplePtr<SampleType> &&) noexcept"
     },
     {
+      "name": "SamplePtr<SampleType>",
+      "qualified_name": "score::mw::com::SamplePtr::SamplePtr<SampleType>",
+      "kind": "template_function",
+      "signature": "SamplePtr<SampleType>"
+    },
+    {
       "name": "Swap",
       "qualified_name": "score::mw::com::SamplePtr::Swap",
       "kind": "method",
       "signature": "Swap : void (SamplePtr<SampleType> &) noexcept"
+    },
+    {
+      "name": "Swap",
+      "qualified_name": "score::mw::com::SamplePtr::Swap",
+      "kind": "template_function",
+      "signature": "Swap : void (SamplePtr<OtherSampleType> &) noexcept"
     },
     {
       "name": "get",
@@ -706,10 +718,22 @@
       "signature": "SampleAllocateePtr<SampleType> : void (SampleAllocateePtr<SampleType> &&) noexcept"
     },
     {
+      "name": "SampleAllocateePtr<SampleType>",
+      "qualified_name": "score::mw::com::SampleAllocateePtr::SampleAllocateePtr<SampleType>",
+      "kind": "template_function",
+      "signature": "SampleAllocateePtr<SampleType>"
+    },
+    {
       "name": "Swap",
       "qualified_name": "score::mw::com::SampleAllocateePtr::Swap",
       "kind": "method",
       "signature": "Swap : void (SampleAllocateePtr<SampleType> &) noexcept"
+    },
+    {
+      "name": "Swap",
+      "qualified_name": "score::mw::com::SampleAllocateePtr::Swap",
+      "kind": "template_function",
+      "signature": "Swap : void (SampleAllocateePtr<OtherSampleType> &) noexcept"
     },
     {
       "name": "operator*",
@@ -835,7 +859,7 @@
       "name": "ProxyEventBase",
       "qualified_name": "score::mw::com::GenericProxyEvent::ProxyEventBase",
       "kind": "constructor",
-      "signature": "ProxyEventBase : void (std::string_view, Result<std::unique_ptr<ProxyEventBindingBase>>)"
+      "signature": "ProxyEventBase : void (std::string_view, Result<std::unique_ptr<ProxyEventBinding>>)"
     },
     {
       "name": "ProxyEventBase",
@@ -973,7 +997,7 @@
       "name": "GenericSkeletonEvent",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::GenericSkeletonEvent",
       "kind": "constructor",
-      "signature": "GenericSkeletonEvent : void (SkeletonBase &, const std::string_view, std::unique_ptr<GenericSkeletonEventBinding>)"
+      "signature": "GenericSkeletonEvent : void (SkeletonBase &, const std::string_view, std::unique_ptr<SkeletonEventBinding>)"
     },
     {
       "name": "GetReferenceToMoveable",
@@ -1021,7 +1045,7 @@
       "name": "SkeletonEventBase",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::SkeletonEventBase",
       "kind": "constructor",
-      "signature": "SkeletonEventBase : void (const std::string_view, std::unique_ptr<SkeletonEventBindingBase>)"
+      "signature": "SkeletonEventBase : void (const std::string_view, std::optional<InitializeSampleCallback>, std::unique_ptr<SkeletonEventBinding>)"
     },
     {
       "name": "UnsetReceiveHandlerRegistrationChangedHandler",

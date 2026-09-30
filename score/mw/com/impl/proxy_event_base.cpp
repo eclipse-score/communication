@@ -112,7 +112,7 @@ Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count)
     return {};
 }
 
-void ProxyEventBase::Unsubscribe() noexcept
+void ProxyEventBase::Unsubscribe()
 {
     // Unsubscribe before a successful Subscribe is a silent no-op.
     if (!is_subscribed_flag_.IsSet())
@@ -203,7 +203,7 @@ Result<std::size_t> ProxyEventBase::GetNumNewSamplesAvailable() const
     return get_num_new_samples_available_result;
 }
 
-Result<void> ProxyEventBase::SetReceiveHandler(EventReceiveHandler handler) noexcept
+Result<void> ProxyEventBase::SetReceiveHandler(EventReceiveHandler handler)
 {
     if (proxy_event_base_mock_ != nullptr)
     {
@@ -236,7 +236,7 @@ Result<void> ProxyEventBase::SetReceiveHandler(EventReceiveHandler handler) noex
     return {};
 }
 
-Result<void> ProxyEventBase::UnsetReceiveHandler() noexcept
+Result<void> ProxyEventBase::UnsetReceiveHandler()
 {
     if (proxy_event_base_mock_ != nullptr)
     {

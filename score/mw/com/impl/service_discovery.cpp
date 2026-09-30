@@ -45,6 +45,7 @@ ServiceDiscovery::ServiceDiscovery(score::mw::com::impl::IRuntime& runtime)
 {
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(destructor-contract-violation-terminate)
 ServiceDiscovery::~ServiceDiscovery() noexcept
 {
     const auto copy_of_handles = handle_to_instances_;

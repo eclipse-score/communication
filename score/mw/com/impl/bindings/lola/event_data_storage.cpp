@@ -59,7 +59,8 @@ EventDataStorage::EventDataStorage(memory::shared::ManagedMemoryResource& resour
     }
 }
 
-EventDataStorage::~EventDataStorage()
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(destructor-contract-violation-terminate)
+EventDataStorage::~EventDataStorage() noexcept
 {
     if (type_erased_data_slots_ != nullptr)
     {

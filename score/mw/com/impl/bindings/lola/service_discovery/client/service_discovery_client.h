@@ -151,7 +151,7 @@ class ServiceDiscoveryClient final : public IServiceDiscoveryClient
     void OnInstanceFlagFileCreated(const WatchesContainer::iterator& watch_iterator, const std::string_view name);
     void OnInstanceFlagFileRemoved(const WatchesContainer::iterator& watch_iterator, std::string_view name);
 
-    void TransferSearchRequests() noexcept;
+    void TransferSearchRequests();
     SearchRequestsContainer::value_type& TransferNewSearchRequest(NewSearchRequest search_request);
     void TransferObsoleteSearchRequests();
 

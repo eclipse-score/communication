@@ -121,7 +121,7 @@ class ProxyEventBinding
     /// \param receiver Callback that will be used to hand over data to the upper layer.
     /// \param tracker Tracker that is used to produce reference counted SamplePtrs.
     /// \return Number of samples that were handed over to the callable.
-    virtual Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept = 0;
+    virtual Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) = 0;
 
   protected:
     /// Create a binding-independent SamplePtr from a binding-specific sample pointer.

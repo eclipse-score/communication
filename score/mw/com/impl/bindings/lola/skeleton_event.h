@@ -88,14 +88,13 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     Result<void> Send(impl::SampleAllocateePtr<void> sample,
                       std::optional<SendTraceCallback> send_trace_callback) noexcept override;
 
-    Result<impl::SampleAllocateePtr<void>> Allocate(SampleAllocateeGuard guard) noexcept override;
+    Result<impl::SampleAllocateePtr<void>> Allocate(SampleAllocateeGuard guard) override;
 
     Result<impl::SamplePtr<void>> GetLatestSample(QualityType quality_type) override;
 
-    Result<void> PrepareOffer(
-        const std::optional<InitializeSampleCallback>& initialize_sample_callback) noexcept override;
+    Result<void> PrepareOffer(const std::optional<InitializeSampleCallback>& initialize_sample_callback) override;
 
-    void PrepareStopOffer() noexcept override;
+    void PrepareStopOffer() override;
 
     /// \brief Get size for the underlying event-type (including possible dynamic memory allocations) and its alignment
     memory::DataTypeSizeInfo GetEventDataTypeSizeInfo() const noexcept override
@@ -141,7 +140,7 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     }
     /// \brief Dispatches NotifyEvent() to QM and ASIL consumers if their respective
     ///        receive-handler registration flags are set.
-    Result<void> NotifyConsumersIfHandlersRegistered() noexcept;
+    Result<void> NotifyConsumersIfHandlersRegistered();
 
     Skeleton& parent_;
     std::string_view event_name_;
