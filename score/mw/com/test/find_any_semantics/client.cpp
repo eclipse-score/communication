@@ -71,9 +71,9 @@ int run_client(const std::size_t num_retries, const std::chrono::milliseconds re
         are_required_instances_found = true;
     }
 
-    for (std::size_t i = 0; i < lola_proxy_handles.size(); i++)
+    for (const auto& lola_proxy_handle : lola_proxy_handles)
     {
-        auto lola_proxy_result = TestDataProxy::Create(lola_proxy_handles[i]);
+        auto lola_proxy_result = TestDataProxy::Create(lola_proxy_handle);
         if (!lola_proxy_result.has_value())
         {
             std::cerr << "Unable to create lola proxy, terminating\n";

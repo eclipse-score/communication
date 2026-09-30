@@ -50,9 +50,8 @@ void WaitForTransactionEndToBecomeFalse(TransactionLogSlot& slot) noexcept
 bool DoesLogContainIncrementOrDecrementTransactions(
     const TransactionLogLocalView::TransactionLogSlotsLocalView& reference_count_slots) noexcept
 {
-    for (std::size_t slot_idx = 0U; slot_idx < reference_count_slots.size(); ++slot_idx)
+    for (const auto& slot : reference_count_slots)
     {
-        const auto& slot = reference_count_slots[slot_idx];
         if (slot.GetTransactionBegin() || slot.GetTransactionEnd())
         {
             return true;
