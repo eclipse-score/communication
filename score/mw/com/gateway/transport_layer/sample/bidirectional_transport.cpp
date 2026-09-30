@@ -272,6 +272,8 @@ bool BidirectionalTransport::WaitForConnection(score::cpp::stop_token stop_token
         if (flags != -1)
         // COV_JUSTIFIED_START gateway-clear-nonblock-on-accepted-socket
         {
+            // fcntl is a variadic POSIX API without a non-variadic alternative here.
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)
             fcntl(client_sock.Get(), F_SETFL, flags & ~O_NONBLOCK);
         }
         // COV_JUSTIFIED_STOP

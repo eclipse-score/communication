@@ -49,6 +49,8 @@ SkeletonComponent::SendSampleResult SkeletonComponent::SendSample(std::size_t se
     std::memcpy(sample_allocatee_ptr.value().Get()->data(), kHelloWorld.data(), kHelloWorld.size());
     auto* buf = sample_allocatee_ptr.value().Get()->data();
     const auto remaining = sample_allocatee_ptr.value().Get()->size() - kHelloWorld.size();
+    // snprintf is variadic; it bounds the write to the remaining sample size.
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)
     const auto chars_written = std::snprintf(buf + kHelloWorld.size(), remaining, "%zu", send_counter);
     if (chars_written < 0)
     {
