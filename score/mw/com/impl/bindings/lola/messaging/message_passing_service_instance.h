@@ -172,7 +172,7 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
 
     // false-positive: is used to define the size of buffer for handlers
     // coverity[autosar_cpp14_a0_1_1_violation]
-    static constexpr std::uint8_t kMaxReceiveHandlersPerEvent{5U};
+    static constexpr std::uint32_t kMaxReceiveHandlersPerEvent{5U};
 
     // false-positive: is used to define the size of tmp array for node IDs
     // coverity[autosar_cpp14_a0_1_1_violation]
@@ -281,13 +281,13 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     // checked before accessing the dest_buffer that the function will break as soon as the index is equal to the
     // buffersize. So an access out of the range and consequently a call to std::terminate() is not possible.
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-    static std::pair<std::uint8_t, bool> CopyNodeIdentifiers(ElementFqId event_id,
-                                                             MapType& src_map,
-                                                             std::shared_mutex& src_map_mutex,
-                                                             NodeIdTmpBufferType& dest_buffer,
-                                                             pid_t start) noexcept
+    static std::pair<std::uint32_t, bool> CopyNodeIdentifiers(ElementFqId event_id,
+                                                              MapType& src_map,
+                                                              std::shared_mutex& src_map_mutex,
+                                                              NodeIdTmpBufferType& dest_buffer,
+                                                              pid_t start) noexcept
     {
-        std::uint8_t num_nodeids_copied{0U};
+        std::uint32_t num_nodeids_copied{0U};
         bool further_ids_avail{false};
         // Suppress "AUTOSAR C++14 M0-1-3" rule findings. This rule states: "There shall be no dead code".
         //  This is a RAII Pattern, which binds the life cycle of a resource that must be acquired before use.

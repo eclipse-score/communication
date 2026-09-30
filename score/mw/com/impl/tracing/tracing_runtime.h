@@ -180,13 +180,13 @@ class TracingRuntime : public ITracingRuntime
     /// \details After this many consecutive (limited by 10 for the moment) "no tracing slot available" failures,
     ///          subsequent failure messages will be logged at LogDebug level instead of LogInfo to reduce DLT
     ///          bandwidth.
-    static constexpr std::uint8_t kDebounceAfter{10U};
+    static constexpr std::uint32_t kDebounceAfter{10U};
 
     /// \brief Counter for consecutive "no tracing slot available" failures
     /// \details Tracks consecutive getting available slots failures. Incremented on each failure, reset to 0 when
     ///          tracing slot becomes available again. Used with kDebounceAfter threshold to determine when to switch
     ///          log levels from LogInfo to LogDebug.
-    std::uint8_t debounce_counter_;
+    std::uint32_t debounce_counter_;
 
     /// \brief Flag to track if this is the first time debouncing becomes active
     /// \details Initially true. Set to false when debounce_counter_ first exceeds kDebounceAfter threshold. Used to log

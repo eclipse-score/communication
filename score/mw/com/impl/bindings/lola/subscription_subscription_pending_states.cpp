@@ -30,13 +30,15 @@ namespace score::mw::com::impl::lola
 
 Result<void> SubscriptionPendingState::SubscribeEvent(const std::size_t max_sample_count)
 {
-    // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
-    // not lead to data loss.".
-    // This is an in purpose casting and below we do check on the max_sample_count and an error reported in case of
-    // different max_sample_count.
-    // coverity[autosar_cpp14_a4_7_1_violation]
-    const auto max_sample_count_uint8 = static_cast<std::uint8_t>(max_sample_count);
-    if (state_machine_.subscription_data_.max_sample_count_.value() == max_sample_count_uint8)
+    // Compare max_sample_count (std::size_t) directly against the stored max_sample_count_ (std::uint16_t),
+    // widening the latter to std::size_t for the comparison. This is always lossless (every std::uint16_t
+    // value fits in std::size_t) and avoids a signedness-changing promotion, since std::size_t already has
+    // rank >= int. Note: this intentionally no longer truncates max_sample_count down to std::uint8_t first --
+    // that previous truncation silently corrupted the comparison for any max_sample_count above 255 (the
+    // stored max_sample_count_ can legitimately be up to 65535, per its std::uint16_t type), which would
+    // have caused SubscribeEvent() to spuriously report "different max_sample_count" for a legitimate
+    // resubscription with the same, larger count.
+    if (max_sample_count == static_cast<std::size_t>(state_machine_.subscription_data_.max_sample_count_.value()))
     {
         ::score::mw::log::LogWarn("lola")
             << CreateLoggingString("Calling SubscribeEvent() while subscription is pending has no effect.",

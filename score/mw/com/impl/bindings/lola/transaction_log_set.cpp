@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/log/logging.h"
@@ -57,7 +58,7 @@ TransactionLogSet::TransactionLogSet(const TransactionLogIndex max_number_of_log
       skeleton_tracing_transaction_log_{number_of_slots, resource}
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        max_number_of_logs != kSkeletonIndexSentinel,
+        safe_math::CmpNotEqual(max_number_of_logs, kSkeletonIndexSentinel),
         "kSkeletonIndexSentinel is a reserved sentinel value so the max_number_of_logs must be reduced.");
 }
 
@@ -271,7 +272,7 @@ TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
 
 bool TransactionLogSet::IsSkeletonElementTransactionLogIndex(const TransactionLogIndex transaction_log_index)
 {
-    return transaction_log_index == TransactionLogSet::kSkeletonIndexSentinel;
+    return safe_math::CmpEqual(transaction_log_index, TransactionLogSet::kSkeletonIndexSentinel);
 }
 
 }  // namespace score::mw::com::impl::lola

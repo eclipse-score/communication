@@ -31,9 +31,9 @@ namespace
 // This allows Thread A to complete its dereference transaction before proceeding.
 void WaitForTransactionEndToBecomeFalse(TransactionLogSlot& slot) noexcept
 {
-    constexpr std::uint8_t kRetryCount = 10U;
+    constexpr std::uint32_t kRetryCount = 10U;
     constexpr std::chrono::milliseconds kRetryInterval(10);
-    for (std::uint8_t retry = 0U; retry < kRetryCount; ++retry)
+    for (std::uint32_t retry = 0U; retry < kRetryCount; ++retry)
     {
         if (!slot.GetTransactionEnd())
         {
@@ -42,7 +42,8 @@ void WaitForTransactionEndToBecomeFalse(TransactionLogSlot& slot) noexcept
         std::this_thread::sleep_for(kRetryInterval);
     }
     score::mw::log::LogFatal("lola") << "ReferenceTransactionBegin: Transaction-END bit remains TRUE after "
-                                     << kRetryCount * kRetryInterval.count() << "ms; terminating";
+                                     << static_cast<std::int64_t>(kRetryCount) * kRetryInterval.count()
+                                     << "ms; terminating";
     std::terminate();
 }
 

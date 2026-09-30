@@ -138,7 +138,7 @@ class MemoryRegionMapImpl final
     // being given values that are not subsequently used.".
     // Rationale: False positive - variable is used below.
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
-    static constexpr const std::uint8_t VERSION_COUNT{10U};
+    static constexpr const std::uint32_t VERSION_COUNT{10U};
     static_assert(
         VERSION_COUNT <= 255U,
         "VERSION_COUNT needs to be smaller than 255 as our latest_known_region_version_ tracker is an uint8 ");

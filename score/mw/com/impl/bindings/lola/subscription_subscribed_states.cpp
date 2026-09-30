@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/subscription_subscribed_states.h"
+#include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/mw/com/impl/bindings/lola/subscription_helpers.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine_states.h"
@@ -34,7 +35,7 @@ Result<void> SubscribedState::SubscribeEvent(const std::size_t max_sample_count)
     // different max_sample_count.
     // coverity[autosar_cpp14_a4_7_1_violation]
     const auto max_sample_count_uint16 = static_cast<std::uint16_t>(max_sample_count);
-    if (state_machine_.subscription_data_.max_sample_count_.value() == max_sample_count_uint16)
+    if (safe_math::CmpEqual(state_machine_.subscription_data_.max_sample_count_.value(), max_sample_count_uint16))
     {
         ::score::mw::log::LogWarn("lola")
             << CreateLoggingString("Calling SubscribeEvent() while already subscribed has no effect.",

@@ -15,6 +15,7 @@
 
 #include "score/json/json_parser.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/mw/com/impl/configuration/configuration_common_resources.h"
 #include "score/mw/com/impl/service_element_type.h"
 
@@ -156,8 +157,8 @@ template <typename EventIdType, typename FieldIdType, typename MethodIdType, typ
 bool operator==(const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>& lhs,
                 const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>& rhs) noexcept
 {
-    return ((lhs.service_id_ == rhs.service_id_) && (lhs.events_ == rhs.events_) && (lhs.fields_ == rhs.fields_) &&
-            (lhs.methods_ == rhs.methods_));
+    return (safe_math::CmpEqual(lhs.service_id_, rhs.service_id_) && (lhs.events_ == rhs.events_) &&
+            (lhs.fields_ == rhs.fields_) && (lhs.methods_ == rhs.methods_));
 }
 
 template <ServiceElementType service_element_type,

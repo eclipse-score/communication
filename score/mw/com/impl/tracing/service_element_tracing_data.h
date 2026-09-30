@@ -15,13 +15,17 @@
 
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
+
 #include <cstdint>
 namespace score::mw::com::impl::tracing
 {
 
 struct ServiceElementTracingData
 {
-    using SamplePointerIndex = LolaEventInstanceDeployment::SampleSlotCountType;
+    // The valid range would fit into std::uint16_t (SampleSlotCountType), but std::uint32_t is used so that
+    // comparisons with other integral types do not undergo signed integral promotion.
+    using SamplePointerIndex = std::uint32_t;
     using TracingSlotSizeType = LolaEventInstanceDeployment::TracingSlotSizeType;
 
     SamplePointerIndex service_element_range_start;
@@ -30,8 +34,9 @@ struct ServiceElementTracingData
 
 inline bool operator==(const ServiceElementTracingData& lhs, const ServiceElementTracingData& rhs) noexcept
 {
-    return ((lhs.number_of_service_element_tracing_slots == rhs.number_of_service_element_tracing_slots) &&
-            (lhs.service_element_range_start == rhs.service_element_range_start));
+    return (
+        safe_math::CmpEqual(lhs.number_of_service_element_tracing_slots, rhs.number_of_service_element_tracing_slots) &&
+        safe_math::CmpEqual(lhs.service_element_range_start, rhs.service_element_range_start));
 }
 
 }  // namespace score::mw::com::impl::tracing

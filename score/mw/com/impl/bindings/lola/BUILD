@@ -404,6 +404,7 @@ cc_library(
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl/bindings/lola:partial_restart_path_builder",
         "@score_baselibs//score/language/safecpp/safe_atomics:try_atomic_add",
+        "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/os:errno_logging",
     ],
     tags = ["FFI"],
@@ -461,6 +462,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl/configuration",
+        "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -530,6 +532,7 @@ cc_library(
         "//score/mw/com/impl:subscription_state",
         "//score/mw/com/impl:subscription_state_change_handler",
         "//score/mw/com/impl/bindings/lola/messaging:i_message_passing_service",
+        "@score_baselibs//score/language/safecpp/safe_math",
     ],
 )
 
@@ -612,6 +615,7 @@ cc_library(
         ":event_data_control",
         ":event_slot_status",
         "@score_baselibs//score/concurrency:atomic_indirector",
+        "@score_baselibs//score/language/safecpp/safe_math",
     ],
 )
 
@@ -741,6 +745,7 @@ cc_library(
     deps = [
         ":control_slot_types",
         ":event_data_control_composite",
+        "@score_baselibs//score/language/safecpp/safe_math",
     ],
 )
 
@@ -850,6 +855,7 @@ cc_library(
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/util:copyable_atomic",
         "@score_baselibs//score/containers:dynamic_array",
+        "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/result",
         "@score_baselibs//score/scope_exit",
     ],
@@ -911,6 +917,7 @@ cc_library(
     ],
     deps = [
         "//score/mw/com/impl/configuration",
+        "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -926,6 +933,7 @@ cc_library(
     ],
     deps = [
         "//score/mw/com/impl/configuration",
+        "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/mw/log",
     ],
 )

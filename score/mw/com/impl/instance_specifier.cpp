@@ -51,6 +51,7 @@ bool IsShortNameValid(const std::string_view shortname) noexcept
             // static_cast from int to bool will not change the signedness and the type convertion is intended
             // coverity[autosar_cpp14_m5_0_3_violation]
             // coverity[autosar_cpp14_m5_0_4_violation]
+            // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(ctype-function-argument-promotion)
             const auto is_alpha_or_num = first_char ? std::isalpha(u_ch) : std::isalnum(u_ch);
             // coverity[autosar_cpp14_a5_2_6_violation: FALSE] False positive: each operand is parenthesized
             return ((static_cast<bool>(is_alpha_or_num)) || (curent_char == '_') || (curent_char == '/'));

@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/service_discovery/lola_service_instance_identifier.h"
+#include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 
 namespace score::mw::com::impl::lola
@@ -51,7 +52,7 @@ std::optional<LolaServiceInstanceId::InstanceId> LolaServiceInstanceIdentifier::
 
 bool operator==(const LolaServiceInstanceIdentifier& lhs, const LolaServiceInstanceIdentifier& rhs) noexcept
 {
-    return (lhs.GetServiceId() == rhs.GetServiceId()) && (lhs.GetInstanceId() == rhs.GetInstanceId());
+    return safe_math::CmpEqual(lhs.GetServiceId(), rhs.GetServiceId()) && (lhs.GetInstanceId() == rhs.GetInstanceId());
 }
 
 }  // namespace score::mw::com::impl::lola

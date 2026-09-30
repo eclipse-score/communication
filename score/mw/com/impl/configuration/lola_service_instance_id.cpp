@@ -15,6 +15,7 @@
 #include "score/mw/com/impl/configuration/configuration_common_resources.h"
 
 #include "score/json/json_parser.h"
+#include "score/language/safecpp/safe_math/safe_math.h"
 
 #include <score/assert.hpp>
 
@@ -70,12 +71,12 @@ std::string_view LolaServiceInstanceId::ToHashString() const noexcept
 
 bool operator==(const LolaServiceInstanceId& lhs, const LolaServiceInstanceId& rhs) noexcept
 {
-    return lhs.GetId() == rhs.GetId();
+    return safe_math::CmpEqual(lhs.GetId(), rhs.GetId());
 }
 
 bool operator<(const LolaServiceInstanceId& lhs, const LolaServiceInstanceId& rhs) noexcept
 {
-    return lhs.GetId() < rhs.GetId();
+    return safe_math::CmpLess(lhs.GetId(), rhs.GetId());
 }
 
 }  // namespace score::mw::com::impl

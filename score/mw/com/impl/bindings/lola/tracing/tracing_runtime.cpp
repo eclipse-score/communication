@@ -12,7 +12,6 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
 #include "score/analysis/tracing/common/interface_types/types.h"
-#include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/language/safecpp/scoped_function/scope.h"
 #include "score/mw/com/impl/tracing/service_element_tracing_data.h"
 #include "score/mw/log/logging.h"
@@ -370,6 +369,7 @@ auto TracingRuntime::GetTraceContextIdRangeForServiceElement(
     // LCOV_EXCL_START (We don't have the infrastructure to test the failure case of this static assert at compile time.
     // This check is anyway defensive programming to prevent accidental changes that could be made to the code in
     // the future but currently has no way of failing in production.
+    // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(compile-time-static-assert-limit-check)
     static_assert(
         ((std::numeric_limits<decltype(range_start)>::max() + std::numeric_limits<decltype(range_size)>::max()) <=
          std::numeric_limits<TraceContextId>::max()),
