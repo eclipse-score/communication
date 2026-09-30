@@ -88,8 +88,9 @@ Camera App ──► [Video Frame] ──┬──► Display App
 ## Getting Started
 
 ### Prerequisites
+
 - **C++ Compiler**: GCC 12+ with C++17 support
-- **Build System**: Bazel 6.0+
+- **Build System**: 8.6 <= Bazel < 9.x
 - **Operating System**: Linux (Ubuntu 24.04+) or QNX
 - **Dependencies**: GoogleTest, Google Benchmark
 - **Virtualization**: Docker with user permissions or rootless mode

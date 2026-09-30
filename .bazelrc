@@ -94,6 +94,7 @@ build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=range-loop-c
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=range-loop-construct
 
 # score_baselibs
+# Issue reported in https://github.com/eclipse-score/baselibs/issues/631
 build --per_file_copt=external/.*score_baselibs.*string_manipulation.*arguments.*@-Wno-error=sign-conversion
 build --host_per_file_copt=external/.*score_baselibs.*string_manipulation.*arguments.*@-Wno-error=sign-conversion
 
