@@ -152,7 +152,7 @@ class MmanMock : public os::Mman
 class SampleReceiver
 {
   public:
-    SampleReceiver(const score::mw::com::InstanceSpecifier& instance_specifier)
+    explicit SampleReceiver(const score::mw::com::InstanceSpecifier& instance_specifier)
         : instance_specifier_{instance_specifier}, last_received_{}, received_{0U}
     {
     }
@@ -245,7 +245,7 @@ score::result::Error MakeError(const TestErrorCode code, const std::string_view 
 class TestDestructor
 {
   public:
-    TestDestructor(score::cpp::stop_source& stop_source) : stop_source_{stop_source} {}
+    explicit TestDestructor(score::cpp::stop_source& stop_source) : stop_source_{stop_source} {}
     TestDestructor(const TestDestructor&) = delete;
     TestDestructor& operator=(const TestDestructor&) = delete;
     TestDestructor(TestDestructor&&) = delete;

@@ -144,7 +144,7 @@ class RunDurationHandler
     std::chrono::time_point<std::chrono::high_resolution_clock> start_;
 
   public:
-    RunDurationHandler(const ClientConfig& cc) : run_time_limit_(cc.run_time_limit)
+    explicit RunDurationHandler(const ClientConfig& cc) : run_time_limit_(cc.run_time_limit)
     {
         start_ = std::chrono::high_resolution_clock::now();
     }
