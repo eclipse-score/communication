@@ -24,7 +24,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/plumbing:__pkg__",
     ],
-    deps = ["//score/memory/shared:types"],
+    deps = ["//score/memory/shared:managed_memory_resource"],
 )
 
 cc_library(

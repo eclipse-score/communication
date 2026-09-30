@@ -163,7 +163,7 @@ cc_library(
     hdrs = ["runtime.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "//score/memory/shared",
+        "//score/memory/shared:offset_ptr",
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
@@ -241,7 +241,6 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
-        "//score/memory/shared",
         "@score_baselibs//score/memory:data_type_size_info",
     ],
 )
@@ -249,9 +248,7 @@ cc_library(
 cc_library(
     name = "linear_search_map",
     srcs = ["linear_search_map.cpp"],
-    hdrs = [
-        "linear_search_map.h",
-    ],
+    hdrs = ["linear_search_map.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
@@ -259,7 +256,8 @@ cc_library(
         "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
     ],
     deps = [
-        "//score/memory/shared",
+        "//score/memory/shared:managed_memory_resource",
+        "//score/memory/shared:polymorphic_offset_ptr_allocator",
         "@score_baselibs//score/containers:non_relocatable_vector",
     ],
 )
@@ -283,7 +281,8 @@ cc_library(
         ":event_meta_info",
         ":i_runtime",
         ":linear_search_map",
-        "//score/memory/shared",
+        "//score/memory/shared:managed_memory_resource",
+        "//score/memory/shared:offset_ptr",
         "//score/memory/shared:pointer_arithmetic_util",
         "//score/mw/com/impl:runtime",
         "@score_baselibs//score/containers:non_relocatable_vector",
@@ -312,8 +311,8 @@ cc_library(
         ":linear_search_map",
         ":transaction_log",
         ":transaction_log_set",
-        "//score/memory/shared",
         "//score/memory/shared:pointer_arithmetic_util",
+        "//score/memory/shared:polymorphic_offset_ptr_allocator",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory:data_type_size_info",
     ],
@@ -337,6 +336,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
+        ":sample_ptr",
         "//score/mw/com/impl/bindings/lola/tracing:tracing_runtime",
     ],
     tags = ["FFI"],
@@ -355,9 +355,9 @@ cc_library(
         ":shm_path_builder",
         ":skeleton_instance_identifier",
         ":type_erased_sample_ptrs_guard",
-        "//score/memory/shared",
         "//score/memory/shared:i_shared_memory_resource",
         "//score/memory/shared:lock_file",
+        "//score/memory/shared:managed_memory_resource",
         "//score/memory/shared:new_delete_delegate_resource",
         "//score/memory/shared/flock:exclusive_flock_mutex",
         "//score/memory/shared/flock:flock_mutex_and_lock",
@@ -420,6 +420,7 @@ cc_library(
         ":transaction_log_id",
         "//score/memory/shared",
         "//score/memory/shared:lock_file",
+        "//score/memory/shared:managed_memory_resource",
         "//score/memory/shared:pointer_arithmetic_util",
         "//score/memory/shared/flock:flock_mutex_and_lock",
         "//score/memory/shared/flock:shared_flock_mutex",
@@ -559,7 +560,6 @@ cc_library(
     deps = [
         ":application_id_pid_mapping_entry",
         ":register_pid_fake",
-        "//score/memory/shared:types",
         "@score_baselibs//score/concurrency:atomic_indirector",
         "@score_baselibs//score/containers:dynamic_array",
     ],
@@ -727,7 +727,6 @@ cc_library(
         ":control_slot_types",
         "//score/memory/shared:managed_memory_resource",
         "//score/memory/shared:offset_ptr",
-        "//score/memory/shared:types",
         "//score/mw/com/impl:initialize_sample_callback",
         "@score_baselibs//score/memory:data_type_size_info",
     ],
@@ -780,7 +779,7 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         ":transaction_log_slot",
-        "//score/memory/shared",
+        "//score/memory/shared:polymorphic_offset_ptr_allocator",
         "@score_baselibs//score/containers:dynamic_array",
     ],
 )
@@ -799,8 +798,6 @@ cc_library(
     deps = [
         ":control_slot_types",
         ":transaction_log",
-        "//score/memory/shared",
-        "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/language/futurecpp",
     ],
 )

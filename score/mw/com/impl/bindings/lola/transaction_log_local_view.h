@@ -17,8 +17,6 @@
 #include "score/mw/com/impl/bindings/lola/transaction_log.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_slot.h"
 
-#include "score/memory/shared/memory_resource_proxy.h"
-#include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 #include "score/result/result.h"
 
 #include <score/callback.hpp>

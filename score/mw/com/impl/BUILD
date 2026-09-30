@@ -1041,7 +1041,7 @@ cc_library(
     hdrs = ["runtime.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "//score/memory/shared:types",
+        "//score/memory/shared:memory_resource_registry",
         "//score/mw/com/impl/tracing:tracing_runtime",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config_parser",
         "@score_baselibs//score/mw/log",

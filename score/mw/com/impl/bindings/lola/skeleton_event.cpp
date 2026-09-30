@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 
+#include "score/mw/com/impl/bindings/lola/sample_ptr.h"
+
 namespace score::mw::com::impl::lola
 {
 

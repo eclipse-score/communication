@@ -56,6 +56,7 @@ cc_library(
         "//score/mw/com/test:__subpackages__",
     ],
     deps = [
+        "//score/memory/shared:string",
         "//score/mw/com",
     ],
 )
@@ -75,6 +76,7 @@ cc_library(
     ],
     deps = [
         ":bigdata_type",
+        "//score/memory/shared:vector",
         "//score/mw/com",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/os/utils/interprocess:interprocess_notification",
