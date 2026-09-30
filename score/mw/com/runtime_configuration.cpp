@@ -53,7 +53,7 @@ RuntimeConfiguration::RuntimeConfiguration(const std::int32_t argc, const char* 
     for (std::int32_t arg_idx = 0U; arg_idx < argc; arg_idx++)
     {
         auto argument = std::string_view{argv[arg_idx]};
-        command_line_arguments.push_back(safecpp::zstring_view{argument.data(), argument.size()});
+        command_line_arguments.emplace_back(argument.data(), argument.size());
     }
 
     auto configuration_path = ParseConfigurationPath(command_line_arguments);

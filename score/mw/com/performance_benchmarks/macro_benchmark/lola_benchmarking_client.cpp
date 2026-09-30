@@ -400,7 +400,7 @@ int main(int argc, const char** argv)
     {
         // fuzz the creation time of the proxies
         std::this_thread::sleep_for(std::chrono::milliseconds{std::rand() % 100});
-        workers.push_back(std::thread([&config, &exit_code, &test_stop_token]() noexcept {
+        workers.emplace_back([&config, &exit_code, &test_stop_token]() noexcept {
             auto success = score::mw::com::test::RunClient(config, test_stop_token);
 
             success &= score::mw::com::test::signal_service_that_client_is_done();
@@ -409,7 +409,7 @@ int main(int argc, const char** argv)
             {
                 exit_code = EXIT_FAILURE;
             }
-        }));
+        });
     }
     std::for_each(workers.begin(), workers.end(), [](std::thread& t) {
         t.join();
