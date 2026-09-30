@@ -122,7 +122,7 @@ Result<impl::SamplePtr<void>> SkeletonEvent::GetLatestSample(QualityType quality
 {
     const QualityType event_quality_type = parent_.GetInstanceQualityType();
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        !((event_quality_type == QualityType::kASIL_QM) && (quality_type == QualityType::kASIL_B)),
+        (event_quality_type != QualityType::kASIL_QM) || (quality_type != QualityType::kASIL_B),
         "ASIL-B event support ASIL-QM and ASIL-B quality types, but ASIL-QM event support only ASIL-QM quality type.");
 
     auto guard = getter_sample_tracker_.Allocate(1U).TakeGuard();
