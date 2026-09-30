@@ -357,7 +357,7 @@ std::unique_ptr<Proxy> Proxy::Create(const HandleType& handle)
     const auto& lola_service_deployment = GetLoLaServiceTypeDeployment(handle);
 
     auto service_instance_id = handle.GetInstanceId();
-    const auto lola_service_instance_id = GetServiceInstanceIdBinding<LolaServiceInstanceId>(service_instance_id);
+    const auto& lola_service_instance_id = GetServiceInstanceIdBinding<LolaServiceInstanceId>(service_instance_id);
 
     PartialRestartPathBuilder partial_restart_builder{lola_service_deployment.service_id_};
     const auto service_instance_usage_marker_file_path =
