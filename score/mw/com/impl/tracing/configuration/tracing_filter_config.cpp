@@ -37,7 +37,7 @@ const std::string_view GetOrInsertStringInSet(const std::string_view key,
     const bool does_string_already_exist{find_result != search_set.end()};
     if (does_string_already_exist)
     {
-        return find_result->data();
+        return *find_result;
     }
 
     auto insert_result = search_set.emplace(key.data(), key.size());
@@ -45,7 +45,7 @@ const std::string_view GetOrInsertStringInSet(const std::string_view key,
     // with find() so this check can never fail.
     // LCOV_EXCL_LINE (defensive programming. In current implementation, the assertion can never become wrong.)
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(insert_result.second);
-    return insert_result.first->data();
+    return *insert_result.first;
 }
 
 void InsertTracePointIntoMap(

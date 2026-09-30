@@ -187,7 +187,7 @@ auto ParseServiceTypeIdentifier(const score::json::Object& json) -> ServiceIdent
     const auto& name = ParseServiceTypeName(json);
     const auto& version = ParseVersion(json);
 
-    return make_ServiceIdentifierType(name.data(), version.first, version.second);
+    return make_ServiceIdentifierType(name, version.first, version.second);
 }
 
 auto ParseAsilLevel(const score::json::Object& json_map) -> std::optional<QualityType>
