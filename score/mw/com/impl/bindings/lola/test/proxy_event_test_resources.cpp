@@ -31,8 +31,6 @@ namespace
 const auto kControlChannelPrefix{"/lola-ctl-"};
 const auto kDataChannelPrefix{"/lola-data-"};
 
-using namespace ::score::memory::shared;
-
 using ::testing::_;
 using ::testing::InvokeWithoutArgs;
 using ::testing::Return;

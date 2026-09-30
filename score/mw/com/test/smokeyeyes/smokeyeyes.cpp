@@ -398,7 +398,7 @@ int main(int argc, const char** argv)
 {
     namespace po = boost::program_options;
     namespace ipc = boost::interprocess;
-    using namespace score;
+    namespace mw = score::mw;
 
     std::size_t num_clients{0U};
     std::size_t turns{0U};
