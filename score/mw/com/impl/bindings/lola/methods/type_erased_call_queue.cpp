@@ -90,6 +90,7 @@ TypeErasedCallQueue::TypeErasedCallQueue(memory::shared::ManagedMemoryResource& 
     std::tie(in_args_queue_start_address_, return_queue_start_address_) = AllocateQueue();
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(destructor-contract-violation-terminate)
 TypeErasedCallQueue::~TypeErasedCallQueue() noexcept
 {
     if (in_args_queue_start_address_.data != nullptr)

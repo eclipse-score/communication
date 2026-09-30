@@ -4,6 +4,11 @@ deviations:
     justification: "The software is designed for a fail-silent system. The agreed safe-state for a process is the termination. Thus, we do not need to care about not cleaning up the environment, as this is exactly the desired behavior."
     paths:
       - "score/**"
+  - rule-id: "RULE-18-5-1"
+    query-id: "cpp/misra/noexcept-function-should-not-propagate-to-the-caller"
+    code-identifier: "destructor-contract-violation-terminate"
+    scope: "Applies only to the destructors marked with this code identifier in score/mw/com/impl/bindings/lola/event_data_storage.cpp, score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.cpp and score/mw/com/impl/service_discovery.cpp. This code-identifier must not be used anywhere else in the codebase."
+    justification: "Destructors are implicitly noexcept and cannot be declared potentially-throwing without breaking container and RAII guarantees. The only exceptions the analyzer reports (std::bad_optional_access, std::bad_variant_access) originate from accesses that are guarded by a preceding has_value()/valid-state check or from bounds checks that only fail on a contract violation. In the fail-silent system the agreed safe-state for such a violation is process termination, which is exactly what std::terminate() provides."
   - rule-id: "RULE-6-8-3"
     query-id: "cpp/misra/automatic-storage-assigned-to-object-greater-lifetime"
     code-identifier: "unix-domain-iovec-stack-buffers"

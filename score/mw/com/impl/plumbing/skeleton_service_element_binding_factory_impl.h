@@ -126,7 +126,7 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
                                 SkeletonBinding& parent_binding,
                                 const std::string_view service_element_name,
                                 memory::DataTypeSizeInfo sample_type_size_info,
-                                std::optional<FieldTagsStore> field_tags_store) noexcept
+                                std::optional<FieldTagsStore> field_tags_store)
     -> std::unique_ptr<SkeletonServiceElementBinding>
 {
     static_assert((element_type == ServiceElementType::EVENT) || (element_type == ServiceElementType::FIELD));

@@ -149,7 +149,7 @@ class Runtime final : public IRuntime
 
     /// \brief Extend loaded configuration with the Configuration provided as a parameter. Returns an error if
     /// configurations are incompatible or there is no regular (complete) configuration loaded yet.
-    static Result<void> HandleAddonConfiguration(const Configuration& config) noexcept;
+    static Result<void> HandleAddonConfiguration(const Configuration& config);
 
     /// \brief Merges the service types and instances into the already loaded configuration. Returns an error if one of
     /// those entries in the given configuration already exists in this configuration.

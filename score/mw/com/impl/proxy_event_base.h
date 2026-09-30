@@ -98,7 +98,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
      *          with a currently running ReceiveHandler and will only finish after any running ReceiveHandler has ended.
      *          After a call to this method, the event behaves as if it had just been constructed.
      */
-    void Unsubscribe() noexcept;
+    void Unsubscribe();
 
     /**
      * \api
@@ -153,13 +153,13 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
      *            already running ReceiveHandler. We also see no use cases for it and won't support it therefore.
      * \param handler user provided handler to be called
      */
-    Result<void> SetReceiveHandler(EventReceiveHandler handler) noexcept;
+    Result<void> SetReceiveHandler(EventReceiveHandler handler);
 
     /**
      * \api
      * \brief Removes any ReceiveHandler registered via SetReceiveHandler.
      */
-    Result<void> UnsetReceiveHandler() noexcept;
+    Result<void> UnsetReceiveHandler();
 
     /**
      * \api

@@ -422,7 +422,7 @@ score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error> Sh
     std::string input_path,
     const bool is_read_write,
     AccessControlListFactory acl_factory,
-    std::shared_ptr<score::memory::shared::TypedMemory> typed_memory_ptr) noexcept
+    std::shared_ptr<score::memory::shared::TypedMemory> typed_memory_ptr)
 {
     auto resource = CreateInstance(std::move(input_path), std::move(acl_factory), typed_memory_ptr);
     const auto result = resource->OpenImpl(is_read_write);

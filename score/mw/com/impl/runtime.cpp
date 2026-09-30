@@ -147,7 +147,7 @@ Result<void> Runtime::AddConfiguration(score::json::Any json)
     return HandleAddonConfiguration(config);
 }
 
-Result<void> Runtime::HandleAddonConfiguration(const Configuration& config) noexcept
+Result<void> Runtime::HandleAddonConfiguration(const Configuration& config)
 {
     // TODO This check is not complete and should be extended
     if (config.GetGlobalConfiguration().GetApplicationId().has_value())

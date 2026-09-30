@@ -87,7 +87,7 @@ SubscriptionState ProxyEvent::GetSubscriptionState() const noexcept
     return SubscriptionStateMachineStateToSubscriptionState(current_state);
 }
 
-inline Result<std::size_t> ProxyEvent::GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept
+inline Result<std::size_t> ProxyEvent::GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker)
 {
     /// In case of LoLa binding we can also dispatch to GetNewSamplesImpl() in case of kSubscriptionPending!
     /// Because a pre-condition to kSubscriptionPending is that we once had a successful subscription... and then we can

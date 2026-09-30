@@ -336,7 +336,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
         std::string input_path,
         const bool is_read_write,
         AccessControlListFactory acl_factory,
-        std::shared_ptr<score::memory::shared::TypedMemory> typed_memory_ptr) noexcept;
+        std::shared_ptr<score::memory::shared::TypedMemory> typed_memory_ptr);
 
     /// \brief Called by SharedMemoryResource::Create() after calling the constructor.
     /// \return in case of error an score::os::Error is returned.

@@ -20,6 +20,7 @@
 
 #include "gtest/gtest.h"
 #include <cstddef>
+#include <new>
 
 namespace score::memory::shared::test
 {
@@ -86,8 +87,8 @@ TEST_F(MemoryResourceProxyTest, ProperHandleIfNoAllocationIsPossible)
     memoryResource42.setAllocationPossible(false);
 
     // When allocating memory on the MemoryResourceProxy
-    // Then no more memory is allocated and an excpetion is thrown (which aborts)
-    EXPECT_DEATH(unit.allocate(42U), "");
+    // Then no more memory is allocated and an exception is thrown
+    EXPECT_THROW(unit.allocate(42U), std::bad_alloc);
 }
 
 TEST_F(MemoryResourceProxyTest, ForwardsDeAllocateRequestToCorrectMemoryResource)
