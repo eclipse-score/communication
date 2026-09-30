@@ -146,7 +146,7 @@ int main(int argc, const char** argv)
         return EXIT_FAILURE;
     }
 
-    auto args = args_maybe.value();
+    const auto& args = args_maybe.value();
 
     score::mw::com::test::InitializeRuntime(args.service_instance_manifest);
     auto config = score::mw::com::test::ParseServiceConfig(args.config_path, kLogContext);

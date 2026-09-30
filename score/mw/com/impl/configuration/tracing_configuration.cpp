@@ -115,7 +115,7 @@ bool TracingConfiguration::IsServiceElementTracingEnabled(
         instance_specifier_result.has_value(),
         "an instance specifier could not be created from the given instance_specifier_view.");
 
-    const auto instance_specifier = instance_specifier_result.value();
+    const auto& instance_specifier = instance_specifier_result.value();
     const auto& instance_specifier_set = find_result->second;
     return instance_specifier_set.count(instance_specifier) != 0U;
 }
