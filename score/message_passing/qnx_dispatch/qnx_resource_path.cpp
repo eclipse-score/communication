@@ -23,7 +23,7 @@ namespace score::message_passing::detail
 QnxResourcePath::QnxResourcePath(const std::string_view identifier) noexcept
     : buffer_{GetQnxPrefix().cbegin(), GetQnxPrefix().cend()}
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION((identifier.size() > 0U) && (identifier.size() <= kMaxIdentifierLen));
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION((!identifier.empty()) && (identifier.size() <= kMaxIdentifierLen));
 
     const auto* identifier_begin = identifier.cbegin();
     if (*identifier_begin == '/')

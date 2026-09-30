@@ -369,11 +369,11 @@ score::Result<HandleType> GetHandleFromSpecifier(const InstanceSpecifier& instan
             return MakeUnexpected<HandleType>(std::move(handles_result.error()));
         }
         handles = std::move(handles_result).value();
-        if (handles.size() == 0)
+        if (handles.empty())
         {
             std::this_thread::sleep_for(500ms);
         }
-    } while (handles.size() == 0);
+    } while (handles.empty());
 
     std::cout << ToString(instance_specifier, ": Found service, instantiating proxy\n");
     return handles.front();
