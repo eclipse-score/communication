@@ -378,7 +378,7 @@ message_passing::MessageCallback MessagePassingServiceInstance::CreateSendMessag
 void MessagePassingServiceInstance::MessageCallback(const pid_t sender_pid,
                                                     const score::cpp::span<const std::uint8_t> message) noexcept
 {
-    if (message.size() < 1U)
+    if (message.empty())
     {
         score::mw::log::LogError("lola") << "MessagePassingService: Empty message received from " << sender_pid;
         return;
@@ -415,7 +415,7 @@ score::Result<void> MessagePassingServiceInstance::MessageCallbackWithReply(
     const pid_t sender_pid,
     const score::cpp::span<const std::uint8_t> message)
 {
-    if (message.size() < 1U)
+    if (message.empty())
     {
         score::mw::log::LogError("lola") << "MessagePassingService: Empty message received from " << sender_pid;
         return MakeUnexpected(MethodErrc::kUnexpectedMessageSize);

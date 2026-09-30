@@ -85,7 +85,7 @@ std::optional<TestParameters> ParseTestParameters(int argc, const char** argv) n
 
     po::notify(args);
 
-    if (service_instance_manifest != "")
+    if (!service_instance_manifest.empty())
     {
         test_parameters.service_instance_manifest = service_instance_manifest;
     }
