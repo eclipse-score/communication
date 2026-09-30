@@ -29,6 +29,8 @@ constexpr std::string_view kBenchmarkInstanceSpecifier = "/score/mw/com/test/Tes
 }
 
 // This fixture will be used to benchmark the LoLa runtime
+namespace
+{
 class LolaBenchmarkFixture : public benchmark::Fixture
 {
   public:
@@ -53,6 +55,7 @@ class LolaBenchmarkFixture : public benchmark::Fixture
 
     static std::atomic<bool> fixture_initialized_;
 };
+}  // namespace
 
 std::atomic<bool> LolaBenchmarkFixture::fixture_initialized_{false};
 

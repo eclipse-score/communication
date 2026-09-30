@@ -35,6 +35,8 @@ namespace score::mw::com::test
 
 using namespace std::chrono_literals;
 
+namespace
+{
 int run_service(const std::chrono::milliseconds& cycle_time, const score::cpp::stop_token& stop_token)
 {
     auto first_service_result = Service<TestDataSkeleton>::Create(kInstanceSpecifierStringServiceFirst);
@@ -75,6 +77,7 @@ int run_service(const std::chrono::milliseconds& cycle_time, const score::cpp::s
 
     return 0;
 }
+}  // namespace
 
 }  // namespace score::mw::com::test
 

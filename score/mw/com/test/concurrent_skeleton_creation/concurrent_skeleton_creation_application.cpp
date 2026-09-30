@@ -27,6 +27,8 @@
 #include <thread>
 #include <vector>
 
+namespace
+{
 void CreateAndOfferSkeleton(const score::mw::com::InstanceSpecifier& instance_specifier, std::atomic_bool& success_flag)
 {
     for (std::size_t j = 0; j < 10; ++j)
@@ -49,6 +51,7 @@ void CreateAndOfferSkeleton(const score::mw::com::InstanceSpecifier& instance_sp
         }
     }
 }
+}  // namespace
 
 /**
  * Test that checks that skeletons with different instance IDs of the same service type can be created and offered at

@@ -42,6 +42,8 @@ constexpr DataExchangeConfig kConfig{};
 }  // namespace
 
 // This fixture will be used to benchmark the LoLa runtime
+namespace
+{
 class LolaAllocateSendBenchmarkFixture : public benchmark::Fixture
 {
   public:
@@ -100,6 +102,7 @@ class LolaAllocateSendBenchmarkFixture : public benchmark::Fixture
     std::optional<TestDataSkeleton> skeleton_;
     static std::atomic<bool> fixture_initialized_;
 };
+}  // namespace
 
 std::atomic<bool> LolaAllocateSendBenchmarkFixture::fixture_initialized_{false};
 

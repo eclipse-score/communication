@@ -33,6 +33,8 @@
 
 const score::mw::com::test::MapApiLanesStamped kEvent_sample{};
 
+namespace
+{
 void CreateAndOfferSkeleton(const score::mw::com::InstanceSpecifier& instance_specifier, std::atomic_bool& success_flag)
 {
     for (std::size_t j = 0; j < 10; ++j)
@@ -91,6 +93,7 @@ score::Result<score::mw::com::test::BigDataProxy> CreateProxy(
 
     return score::mw::com::test::BigDataProxy::Create(handles.front());
 }
+}  // namespace
 
 /**
  * Test that checks that there is no deadlock in the following situation:
