@@ -17,6 +17,7 @@
 #include "score/mw/com/test/common_test_resources/sample_sender_receiver.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
 
+#include <cstdlib>
 #include <future>
 #include <string>
 #include <utility>
@@ -157,7 +158,7 @@ int main(int argc, const char** argv)
         const auto failing_test_return_code = WaitForAsyncTestResultsFailureTest(failing_test_future_return_values);
         std::cout << "failing_extra_slots test: " << (failing_test_return_code ? "Failed" : "Passed") << std::endl;
 
-        return failing_test_return_code ? 1 : 0;
+        return failing_test_return_code ? EXIT_FAILURE : EXIT_SUCCESS;
     }
     else if (mode == "failing_less_slots")
     {
@@ -173,7 +174,7 @@ int main(int argc, const char** argv)
         const auto failing_test_return_code = WaitForAsyncTestResultsFailureTest(failing_test_future_return_values);
         std::cout << "failing_less_slots test: " << (failing_test_return_code ? "Failed" : "Passed") << std::endl;
 
-        return failing_test_return_code ? 1 : 0;
+        return failing_test_return_code ? EXIT_FAILURE : EXIT_SUCCESS;
     }
     else
     {
