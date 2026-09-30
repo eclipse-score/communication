@@ -155,7 +155,8 @@ void RunProviderMoveConstructOfferedSkeleton(const score::cpp::stop_token& stop_
     // Step 10. Send n values
     std::cout << "\nProvider: Step 10 - Send " << number_of_samples_to_send_per_offer
               << " samples again after re-offering" << std::endl;
-    SendSamples(moved_to_skeleton, number_of_samples_to_send_per_offer, number_of_samples_to_send_per_offer * 2U + 1U);
+    SendSamples(
+        moved_to_skeleton, number_of_samples_to_send_per_offer, (number_of_samples_to_send_per_offer * 2U) + 1U);
 
     // Step 11. Wait for consumer to notify that it received the third n values
     if (!proxy_done_synchronizer.WaitWithAbort(stop_token))
@@ -288,7 +289,7 @@ void RunProviderMoveAssignOfferedSkeleton(const score::cpp::stop_token& stop_tok
     // Step 9. Send n values
     std::cout << "\nProvider: Step 9 - Send " << number_of_samples_to_send_per_offer
               << " samples again after re-offering" << std::endl;
-    SendSamples(moved_to_skeleton, number_of_samples_to_send_per_offer, 2 * number_of_samples_to_send_per_offer + 1U);
+    SendSamples(moved_to_skeleton, number_of_samples_to_send_per_offer, (2 * number_of_samples_to_send_per_offer) + 1U);
 
     // Step 10. Wait for moved-to consumer to notify that it received the third n values
     if (!moved_to_proxy_done_synchronizer_result.WaitWithAbort(stop_token))

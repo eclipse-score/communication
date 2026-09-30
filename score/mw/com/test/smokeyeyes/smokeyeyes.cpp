@@ -438,7 +438,7 @@ int main(int argc, const char** argv)
     // We use a raw pointer here as we need to take care to only clean it up once the sender is about to terminate,
     // after having joined with all children.
     auto* shared_state =
-        new (shared_state_mem.get_address()) mw::com::test::SharedState{num_clients, turns * batch_size - 1};
+        new (shared_state_mem.get_address()) mw::com::test::SharedState{num_clients, (turns * batch_size) - 1};
 
     std::vector<pid_t> children{};
 
