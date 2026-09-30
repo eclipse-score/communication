@@ -130,7 +130,7 @@ class TracingRuntime : public impl::tracing::IBindingTracingRuntime
     /// pointer correctly. If no slots are left for the service element then no TraceContextId can be returned, thus the
     /// function returns an empty optional.
     [[nodiscard]] std::optional<TraceContextId> EmplaceTypeErasedSamplePtr(
-        impl::tracing::TypeErasedSamplePtr type_erased_sample_ptr,
+        impl::SamplePtr<void> type_erased_sample_ptr,
         const impl::tracing::ServiceElementTracingData service_element_tracing_data) override;
 
     void ClearTypeErasedSamplePtr(const TraceContextId trace_context_id) noexcept override;
@@ -148,7 +148,7 @@ class TracingRuntime : public impl::tracing::IBindingTracingRuntime
         // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
         // be private.". We need these data elements to be organized into a coherent organized data structure.
         // coverity[autosar_cpp14_m11_0_1_violation]
-        std::optional<impl::tracing::TypeErasedSamplePtr> sample_ptr;
+        std::optional<impl::SamplePtr<void>> sample_ptr;
         // coverity[autosar_cpp14_m11_0_1_violation]
         std::mutex mutex;
     };

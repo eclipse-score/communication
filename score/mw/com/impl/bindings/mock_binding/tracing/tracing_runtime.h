@@ -64,7 +64,7 @@ class TracingRuntime : public IBindingTracingRuntime
                 (const, override));
     MOCK_METHOD(std::optional<TraceContextId>,
                 EmplaceTypeErasedSamplePtr,
-                (TypeErasedSamplePtr, const impl::tracing::ServiceElementTracingData),
+                (impl::SamplePtr<void>, const impl::tracing::ServiceElementTracingData),
                 (override));
     MOCK_METHOD(void, ClearTypeErasedSamplePtr, (TraceContextId), (noexcept, override));
     MOCK_METHOD(void,

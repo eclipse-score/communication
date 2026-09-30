@@ -730,8 +730,10 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
+        ":sample_allocatee_ptr",
         "//score/mw/com/impl:sample_reference_tracker",
         "//score/mw/com/impl/bindings/lola:event",
+        "//score/mw/com/impl/bindings/mock_binding:sample_allocatee_ptr",
         "//score/mw/com/impl/bindings/mock_binding:sample_ptr",
         "@score_baselibs//score/language/futurecpp",
     ],

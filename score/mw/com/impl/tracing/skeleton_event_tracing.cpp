@@ -183,46 +183,6 @@ TracingData ExtractBindingTracingData(const impl::SampleAllocateePtr<void>& samp
     return std::visit(visitor, binding_ptr_variant);
 }
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
-// not be called implicitly.". std::visit Throws std::bad_variant_access if
-// as-variant(vars_i).valueless_by_exception() is true for any variant vars_i in vars. The variant may only become
-// valueless if an exception is thrown during different stages. Since we don't throw exceptions, it's not possible
-// that the variant can return true from valueless_by_exception and therefore not possible that std::visit throws
-// an exception.
-// This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<void>& sample_data_ptr)
-{
-    auto& binding_ptr_variant = SampleAllocateePtrMutableView{sample_data_ptr}.GetUnderlyingVariant();
-    auto visitor = score::cpp::overload(
-        [](lola::SampleAllocateePtr& lola_ptr) -> TypeErasedSamplePtr {
-            lola::ConsumerEventDataControlLocalView<>& consumer_event_data_control_local =
-                lola::SampleAllocateePtrMutableView{lola_ptr}.GetConsumerEventDataControlLocalView();
-
-            const auto event_slot_index = lola_ptr.GetReferencedSlot();
-            consumer_event_data_control_local.ReferenceSpecificEvent(event_slot_index);
-            const auto* const managed_object =
-                static_cast<const void*>(lola::SampleAllocateePtrView{lola_ptr}.GetManagedObject());
-
-            lola::SamplePtr sample_ptr{managed_object, consumer_event_data_control_local, event_slot_index};
-            return impl::tracing::TypeErasedSamplePtr{std::move(sample_ptr)};
-        },
-        [](mock_binding::SampleAllocateePtr& ptr) -> TypeErasedSamplePtr {
-            impl::tracing::TypeErasedSamplePtr type_erased_sample_ptr{
-                mock_binding::SamplePtr{ptr.get(), [](void*) noexcept {}}};
-            return type_erased_sample_ptr;
-        },
-        // LCOV_EXCL_START (Defensive programming: CreateTypeErasedSamplePtr is always called after
-        // ExtractBindingTracingData. If the SampleAllocateePtr contains a blank binding, then ExtractBindingTracingData
-        // will terminate. Therefore, we will never reach this branch.
-        [](score::cpp::blank&) -> TypeErasedSamplePtr {
-            std::terminate();
-        });
-    // LCOV_EXCL_STOP
-
-    return std::visit(visitor, binding_ptr_variant);
-}
-
 }  // namespace
 
 // Suppress "AUTOSAR C++14 A3-1-1", The rule states: "It shall be possible to include any header file
@@ -391,7 +351,7 @@ void TraceSend(SkeletonEventTracingData& skeleton_event_tracing_data,
         }
 
         const auto tracing_data = ExtractBindingTracingData(sample_data_ptr, skeleton_event_size_info);
-        auto type_erased_sample_ptr = CreateTypeErasedSamplePtr(sample_data_ptr);
+        auto type_erased_sample_ptr = CreateSamplePtrFromSampleAllocateePtr(sample_data_ptr);
 
         const auto binding_type = skeleton_event_binding_base.GetBindingType();
         const auto service_element_tracing_data = skeleton_event_tracing_data.service_element_tracing_data;
@@ -436,7 +396,7 @@ void TraceSendWithAllocate(SkeletonEventTracingData& skeleton_event_tracing_data
         }
 
         const auto tracing_data = ExtractBindingTracingData(sample_data_ptr, skeleton_event_size_info);
-        auto type_erased_sample_ptr = CreateTypeErasedSamplePtr(sample_data_ptr);
+        auto type_erased_sample_ptr = CreateSamplePtrFromSampleAllocateePtr(sample_data_ptr);
 
         const auto binding_type = skeleton_event_binding_base.GetBindingType();
         const auto service_element_tracing_data = skeleton_event_tracing_data.service_element_tracing_data;

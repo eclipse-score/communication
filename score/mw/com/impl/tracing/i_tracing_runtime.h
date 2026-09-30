@@ -15,6 +15,7 @@
 
 #include "score/memory/shared/i_shared_memory_resource.h"
 #include "score/mw/com/impl/binding_type.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/tracing/configuration/proxy_event_trace_point_type.h"
 #include "score/mw/com/impl/tracing/configuration/proxy_field_trace_point_type.h"
 #include "score/mw/com/impl/tracing/configuration/service_element_instance_identifier_view.h"
@@ -22,7 +23,6 @@
 #include "score/mw/com/impl/tracing/configuration/skeleton_field_trace_point_type.h"
 #include "score/mw/com/impl/tracing/i_binding_tracing_runtime.h"
 #include "score/mw/com/impl/tracing/service_element_tracing_data.h"
-#include "score/mw/com/impl/tracing/type_erased_sample_ptr.h"
 #include "score/result/result.h"
 
 #include <cstdint>
@@ -65,7 +65,7 @@ class ITracingRuntime
                                const ServiceElementInstanceIdentifierView service_element_instance_identifier,
                                const TracePointType trace_point_type,
                                const TracePointDataId trace_point_data_id,
-                               TypeErasedSamplePtr sample_ptr,
+                               impl::SamplePtr<void> sample_ptr,
                                const void* const shm_data_ptr,
                                const std::size_t shm_data_size) = 0;
 

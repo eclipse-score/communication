@@ -327,7 +327,7 @@ elements with tracing enabled and potential `TraceDoneCallback` need to take pla
 `impl::tracing::TracingRuntime` via call to`RegisterServiceElement(TracingSlotSizeType number_of_ipc_tracing_slots)`,
 which returns their specific `ServiceElementTracingData`. This struct contains sufficient information for a service
 element, to obtain a slot for the `SamplePtr`, if one is free. This can be done through a call to
-`EmplaceTypeErasedSamplePtr(TypeErasedSamplePtr, ServiceElementTracingData)`, which will look for an empty slot for a
+`EmplaceTypeErasedSamplePtr(SamplePtr<void>, ServiceElementTracingData)`, which will look for an empty slot for a
 sample pointer in it's allowed range of slots and return an `optional<TraceContextId>` which contains a value if a
 slot could be found and is empty if it could not be. If the returned optional is empty, we will set a data loss flag.
 Otherwise, the `TraceContextId` can be used for calls to the asynchronous `Trace()` overload.

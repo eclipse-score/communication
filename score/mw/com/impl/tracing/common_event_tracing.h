@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_TRACING_COMMON_EVENT_TRACING_H
 
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/impl/tracing/configuration/service_element_instance_identifier_view.h"
 #include "score/mw/com/impl/tracing/tracing_runtime.h"
@@ -45,7 +46,7 @@ Result<void> TraceShmData(const BindingType binding_type,
                           const ServiceElementInstanceIdentifierView service_element_instance_identifier_view,
                           const TracingRuntime::TracePointType trace_point,
                           TracingRuntime::TracePointDataId trace_point_data_id,
-                          TypeErasedSamplePtr sample_ptr,
+                          impl::SamplePtr<void> sample_ptr,
                           const std::pair<const void*, std::size_t>& data_chunk);
 
 ServiceElementInstanceIdentifierView GetServiceElementInstanceIdentifierView(
