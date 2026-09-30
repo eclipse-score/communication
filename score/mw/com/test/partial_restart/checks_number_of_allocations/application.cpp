@@ -23,7 +23,16 @@
 #include <cstdlib>
 #include <iostream>
 
-using namespace score::mw::com::test;
+using score::mw::com::test::CheckPointControl;
+using score::mw::com::test::CreateSharedCheckPointControl;
+using score::mw::com::test::CreateSkeleton;
+using score::mw::com::test::ForkProcessAndRunInChildProcess;
+using score::mw::com::test::ObjectCleanupGuard;
+using score::mw::com::test::OfferService;
+using score::mw::com::test::SimpleEventDatatype;
+using score::mw::com::test::TestServiceSkeleton;
+using score::mw::com::test::WaitAndVerifyCheckPoint;
+using score::mw::com::test::WaitForChildProcessToTerminate;
 
 const std::string_view kShmSkeletonCheckpointControlFileName = "skeleton_checks_number_of_allocations_checkpoint_file";
 const std::string_view kSkeletonCheckpointControlName = "Skeleton";

@@ -39,6 +39,11 @@ namespace score::mw::com::test
 
 namespace
 {
+
+using score::memory::shared::ExclusiveFlockMutex;
+using score::memory::shared::LockFile;
+using score::memory::shared::SharedFlockMutex;
+
 const char kChildDone = 'Z';
 
 /// \brief Action the forked child process does.
@@ -48,7 +53,6 @@ const char kChildDone = 'Z';
 /// \param fd_to_write_to
 void DoChildActions(int fd_to_write_to)
 {
-    using namespace score::memory::shared;
 
     FILE* stream = fdopen(fd_to_write_to, "w");
     if (stream == nullptr)
@@ -117,7 +121,6 @@ void DoChildActions(int fd_to_write_to)
 /// \return EXIT_SUCCESS, if the checks are ok, EXIT_FAILURE otherwise.
 int CheckSharedLockedFile()
 {
-    using namespace score::memory::shared;
 
     auto shared_lock_file = LockFile::Open(kTestDir + "/" + kSharedLockFileName);
     if (!shared_lock_file.has_value())
@@ -154,7 +157,6 @@ int CheckSharedLockedFile()
 /// \return EXIT_SUCCESS, if the checks are ok, EXIT_FAILURE otherwise.
 int CheckExclusiveLockedFile()
 {
-    using namespace score::memory::shared;
 
     auto exclusive_lock_file = LockFile::Open(kTestDir + "/" + kExclusiveLockFileName);
     if (!exclusive_lock_file.has_value())
@@ -190,7 +192,6 @@ int CheckExclusiveLockedFile()
 /// \return EXIT_SUCCESS, if the checks are ok, EXIT_FAILURE otherwise.
 int LockBothFilesExclusively()
 {
-    using namespace score::memory::shared;
 
     auto exclusive_lock_file = LockFile::Open(kTestDir + "/" + kExclusiveLockFileName);
     if (!exclusive_lock_file.has_value())

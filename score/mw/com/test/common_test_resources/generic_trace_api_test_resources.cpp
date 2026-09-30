@@ -27,12 +27,18 @@ namespace score::mw::com::test
 namespace
 {
 
+using score::analysis::tracing::MetaInfoVariants;
+using score::analysis::tracing::RegisterSharedMemoryObjectResult;
+using score::analysis::tracing::ShmDataChunkList;
+using score::analysis::tracing::ShmObjectHandle;
+using score::analysis::tracing::TraceClientId;
+using score::analysis::tracing::TraceContextId;
+using score::analysis::tracing::TraceDoneCallBackType;
 using testing::_;
 using testing::An;
 using testing::Invoke;
 using testing::Matcher;
 using testing::Return;
-using namespace score::analysis::tracing;
 
 constexpr auto readWriteAccessForUser = os::Stat::Mode::kReadUser | os::Stat::Mode::kWriteUser;
 constexpr auto readAccessForEveryBody =

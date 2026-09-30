@@ -45,7 +45,12 @@ struct TestParameters
     bool kill_consumer{false};
 };
 
-using namespace score::mw::com::test;
+using score::mw::com::test::CheckPointControl;
+using score::mw::com::test::CreateSharedCheckPointControl;
+using score::mw::com::test::ForkProcessAndRunInChildProcess;
+using score::mw::com::test::ObjectCleanupGuard;
+using score::mw::com::test::WaitAndVerifyCheckPoint;
+using score::mw::com::test::WaitForChildProcessToTerminate;
 
 bool DoControllerActions(const TestParameters& test_parameters, score::cpp::stop_token stop_token)
 {
