@@ -232,7 +232,7 @@ score::Result<void> ExecutePartialRestartLogic(const QualityType quality_type,
 
     // The transaction log is identified by the application's unique identifier, which is either the configured
     // 'applicationID' or the process UID as a fallback.
-    const TransactionLogId transaction_log_id{static_cast<TransactionLogId>(lola_runtime.GetApplicationId())};
+    const TransactionLogId transaction_log_id{lola_runtime.GetApplicationId()};
     auto& service_data_control = GetServiceDataControl(control);
     TransactionLogRollbackExecutor transaction_log_rollback_executor{service_data_control,
                                                                      skeleton_instance_identifier,

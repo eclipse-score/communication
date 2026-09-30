@@ -50,6 +50,8 @@ std::uint32_t Runtime::DetermineApplicationIdentifier(const Configuration& confi
                                         << "Ensure unique UIDs for applications using mw::com.";
         // The uid_t is only used internally (in the fallback case) and then casted to an std::uint32_t
         static_assert(sizeof(uid_t) <= 4, "For more than 32 bits we cannot guarantee the key to be unique");
+        // uid_t is a signed int on QNX, so the cast is required there to avoid -Wsign-conversion errors.
+        // NOLINTNEXTLINE(readability-redundant-casting)
         return static_cast<std::uint32_t>(os::Unistd::instance().getuid());
     }
 }

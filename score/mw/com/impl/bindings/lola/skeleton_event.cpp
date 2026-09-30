@@ -138,8 +138,7 @@ Result<impl::SamplePtr<void>> SkeletonEvent::GetLatestSample(QualityType quality
     // ReferenceNextEvent returns the slot with the highest timestamp in the exclusive range (min, max).
     // We pass 0 and TIMESTAMP_MAX to span the entire valid timestamp range, so it always returns the
     // most recently written sample regardless of its timestamp.
-    const auto slot_result = consumer_event_data_control_local.ReferenceNextEvent(EventSlotStatus::EventTimeStamp{0U},
-                                                                                  EventSlotStatus::TIMESTAMP_MAX);
+    const auto slot_result = consumer_event_data_control_local.ReferenceNextEvent(0U, EventSlotStatus::TIMESTAMP_MAX);
     if (!slot_result.has_value())
     {
         ::score::mw::log::LogError("lola") << "ReferenceNextEvent did not return a slot index";

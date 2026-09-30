@@ -25,7 +25,7 @@ template <typename T>
 std::size_t SerializeWithTemplate(const T& message, score::cpp::span<std::uint8_t> buffer)
 {
     const auto size = gateway::ComputeSerializedSize(message);
-    if (size > static_cast<std::size_t>(buffer.size()))
+    if (size > buffer.size())
     {
         score::mw::log::LogError() << "Serialize buffer too small: need " << size << " have " << buffer.size();
         return 0U;
