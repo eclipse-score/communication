@@ -153,7 +153,7 @@ auto SerializeToMessage(const std::uint8_t message_id, const T& t) noexcept -> s
     // trivially self-consistent for every instantiation of T.
     const auto* const source_begin = reinterpret_cast<const std::uint8_t*>(&t);
     const auto* const source_end = source_begin + sizeof(T);
-    std::copy(source_begin, source_end, std::next(out.begin()));
+    std::ignore = std::copy(source_begin, source_end, std::next(out.begin()));
     return out;
 }
 

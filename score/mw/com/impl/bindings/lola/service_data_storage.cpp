@@ -18,6 +18,7 @@
 #include "score/memory/shared/pointer_arithmetic_util.h"
 
 #include <cstddef>
+#include <tuple>
 #include <vector>
 
 namespace score::mw::com::impl::lola
@@ -39,14 +40,14 @@ std::size_t CalculateServiceDataStorageShmSize(
     std::vector<score::memory::DataTypeSizeInfo> allocation_sequence{};
 
     // (1) The ServiceDataStorage object itself (including the inline bookkeeping of its two LinearSearchMaps).
-    allocation_sequence.emplace_back(sizeof(ServiceDataStorage), alignof(ServiceDataStorage));
+    std::ignore = allocation_sequence.emplace_back(sizeof(ServiceDataStorage), alignof(ServiceDataStorage));
 
     // (2) The two allocated arrays of the LinearSearchMaps (allocated once, with capacity ==
     // number_of_events_and_fields).
-    allocation_sequence.emplace_back(
+    std::ignore = allocation_sequence.emplace_back(
         number_of_events_and_fields * sizeof(ServiceDataStorage::EventDataStorageMap::value_type),
         alignof(ServiceDataStorage::EventDataStorageMap::value_type));
-    allocation_sequence.emplace_back(
+    std::ignore = allocation_sequence.emplace_back(
         number_of_events_and_fields * sizeof(ServiceDataStorage::EventMetaInfoMap::value_type),
         alignof(ServiceDataStorage::EventMetaInfoMap::value_type));
 

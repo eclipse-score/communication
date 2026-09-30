@@ -16,6 +16,7 @@
 #include "score/mw/log/logging.h"
 
 #include <exception>
+#include <tuple>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -123,7 +124,7 @@ Result<void> Configuration::MergeServiceEntries(const Configuration& additional_
 
             if (!type_found)
             {
-                new_type_map->emplace(service_type.first, service_type.second);
+                std::ignore = new_type_map->emplace(service_type.first, service_type.second);
                 new_type_element_inserted = true;
             }
             else
@@ -159,7 +160,7 @@ Result<void> Configuration::MergeServiceEntries(const Configuration& additional_
 
             if (!instance_found)
             {
-                new_instance_map->emplace(service_instance.first, service_instance.second);
+                std::ignore = new_instance_map->emplace(service_instance.first, service_instance.second);
                 new_instance_element_inserted = true;
             }
             else
@@ -536,7 +537,7 @@ Configuration::ServiceTypeDeployments Configuration::GetServiceTypes() const noe
     {
         for (const auto& entry : *element.get())
         {
-            result.emplace(entry.first, entry.second);
+            std::ignore = result.emplace(entry.first, entry.second);
         }
     }
     return result;
@@ -552,7 +553,7 @@ Configuration::ServiceInstanceDeployments Configuration::GetServiceInstances() c
     {
         for (const auto& entry : *element.get())
         {
-            result.emplace(entry.first, entry.second);
+            std::ignore = result.emplace(entry.first, entry.second);
         }
     }
     return result;

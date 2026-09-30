@@ -30,6 +30,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -115,7 +116,7 @@ score::Result<std::vector<utils::ScopeExit<>>> SkeletonBase::OfferServiceEvents(
                 << ": Reason:" << offer_result.error().Message() << ": " << offer_result.error().UserMessage();
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
-        offer_guards.emplace_back([&skeleton_event]() {
+        std::ignore = offer_guards.emplace_back([&skeleton_event]() {
             skeleton_event.PrepareStopOffer();
         });
     }
@@ -141,7 +142,7 @@ score::Result<std::vector<utils::ScopeExit<>>> SkeletonBase::OfferServiceFields(
             }
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
-        offer_guards.emplace_back([&skeleton_field]() {
+        std::ignore = offer_guards.emplace_back([&skeleton_field]() {
             skeleton_field.PrepareStopOffer();
         });
     }

@@ -45,6 +45,7 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -545,8 +546,8 @@ std::size_t SkeletonMemoryManager::CalculateDataShmResourceStorageSize(
                 SkeletonEventBinding& event_binding = binding.second.get();
 
                 const std::size_t slot_array_size = number_of_slots * event_binding.GetEventDataTypeSizeInfo().Size();
-                events_and_fields_size_infos.emplace_back(slot_array_size,
-                                                          event_binding.GetEventDataTypeSizeInfo().Alignment());
+                std::ignore = events_and_fields_size_infos.emplace_back(
+                    slot_array_size, event_binding.GetEventDataTypeSizeInfo().Alignment());
             }
         };
     std::vector<score::memory::DataTypeSizeInfo> events_and_fields_size_infos{};

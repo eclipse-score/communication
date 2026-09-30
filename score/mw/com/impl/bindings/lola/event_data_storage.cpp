@@ -17,6 +17,7 @@
 #include <score/assert.hpp>
 
 #include <functional>
+#include <tuple>
 
 namespace score::mw::com::impl::lola
 {
@@ -115,8 +116,9 @@ SlotIndexType EventDataStorage::GetNumberOfSlots() const
 void AddEventDataStorageShmSizeAllocation(std::vector<score::memory::DataTypeSizeInfo>& allocation_sequence,
                                           memory::DataTypeSizeInfo event_sample_array_size_info)
 {
-    allocation_sequence.emplace_back(sizeof(EventDataStorage), alignof(EventDataStorage));
-    allocation_sequence.emplace_back(event_sample_array_size_info.Size(), event_sample_array_size_info.Alignment());
+    std::ignore = allocation_sequence.emplace_back(sizeof(EventDataStorage), alignof(EventDataStorage));
+    std::ignore =
+        allocation_sequence.emplace_back(event_sample_array_size_info.Size(), event_sample_array_size_info.Alignment());
 }
 
 }  // namespace score::mw::com::impl::lola

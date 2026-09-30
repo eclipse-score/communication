@@ -276,7 +276,7 @@ void AppendEnabledMethodIdsAndQueueSizes(
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
             method_deployment.queue_size_.has_value(),
             "Method instance deployment must contain queue_size on proxy side!");
-        result.emplace_back(unique_method_identifier, method_deployment.queue_size_.value());
+        std::ignore = result.emplace_back(unique_method_identifier, method_deployment.queue_size_.value());
     }
 }
 
@@ -309,7 +309,7 @@ void AppendEnabledFieldIdsAndQueueSizes(
                 continue;
             }
 
-            result.emplace_back(unique_method_identifier, kFieldMethodQueueSize);
+            std::ignore = result.emplace_back(unique_method_identifier, kFieldMethodQueueSize);
         }
     }
 }
