@@ -2,8 +2,8 @@
 
 Reusable reasoning for `rules_score` projects. Exact types, attributes, validator
 behavior, and commands are version-dependent: confirm them from the resolved
-dependency. Repo-specific pins and observed workarounds belong in repository guidance,
-not universal rules here.
+dependency. Repo-specific pins belong in repository guidance; version-specific external
+constraints and workarounds belong in the external tooling depot, not universal rules here.
 
 ## Four kinds of evidence
 
@@ -65,18 +65,12 @@ test annotations, coverage locks where present, and textual/diagram relationship
 Repeat the focused search after edits to catch omissions. A lexical scan is useful
 for identifiers and pins but cannot replace the schema or semantic review.
 
-The proposed workflow uses the convention demonstrated by the reviewed cycles:
-
-| Change | Own version | Dependent work |
-|---|---|---|
-| Record content, safety, or parent identity/set changes | Bump | Review and re-pin dependents; amend their meaning if necessary |
-| Only a version pin changes, same parent identity | Preserve if child meaning is unchanged | Review whether the new parent still supports the child |
-| New record | Initial version per project convention | Add justified links and validation ownership |
-| Diagram/text without schema version | No invented version field | Record diff, provenance, and impacted relationships |
-| Retirement | Record disposition/replacement | Confirm no remaining references before removal |
-
-Confirm any differing project version policy explicitly. Do not regenerate a coverage
-lock to conceal drift; review its change and retain coverage intent.
+Use the [repository's version convention](../../../../docs/engineering/seooc-maintenance.md#local-version-convention).
+A pure same-parent re-pin still requires checking the child's meaning. Changes to
+meaning or parent identity extend the impact; diagrams without schema versions do
+not acquire invented version fields. Before retirement, record disposition and
+confirm remaining references are reconciled. Do not regenerate a coverage lock to
+conceal drift; review its change and retain coverage intent.
 
 ## Validation dimensions
 
@@ -91,9 +85,12 @@ lock to conceal drift; review its change and retain coverage intent.
    missing allocation or unvalidated platform.
 
 Select the applicable dimensions from the impact, not a fixed full-repo command list.
-Capture baseline findings when needed to distinguish new issues. A development-mode
-warning remains a finding. Treat unsupported schema syntax as a parser/toolchain
-mismatch to resolve, never as an ignorable successful verification.
+Capture baseline findings to distinguish new issues. Development-mode warnings are
+permitted; inspect affected generated documentation and explain the remaining
+misalignment without expanding the cycle to fix every warning. Schema validation
+and version-link checking are different dimensions. Functional tests supply behavior
+evidence; Lobster traces relate it to obligations. Treat unsupported schema syntax
+as an unverified parser/toolchain mismatch, not a permitted modeling warning.
 
 If a workaround disables a check, retain the exact scope, observed tool version if
 known, reproduction evidence, compensating review, and a condition for reevaluation

@@ -1,21 +1,25 @@
-# `dependability/` conventions
+# Dependability conventions
 
-This directory holds the frozen, authoritative TRLC/PlantUML artifacts for the `message_passing`
-`dependable_element`. If content here and anything under `research/` ever disagree, this directory
-wins — the disagreement is a finding for `research/backlog.md`, not license to trust `research/`
-instead.
+This directory holds authored requirements, design, and safety artifacts for the
+message-passing dependable element. They are the current contract/model, not proof
+that implementation or every trace relationship already agrees.
 
-## Keep these files free of process/meta-information
+Use the [knowledge depot](../maintenance/README.md) for current context and sources.
+Recorded human intent, authored obligations, implementation, and generated evidence
+can disagree. Preserve the discrepancy and reconcile it through an authorized cycle;
+neither a working note nor current code silently overrides a requirement.
 
-Do not put "why this was written this way", pointers to a specific `research/changes/<cycle>/`
-directory, or other authoring-process narrative inside `.trlc`/`.puml` files. That belongs in
-`research/` (`problem_statement.md`, `changes/<cycle>/`). Records here should read as pure,
-timeless black-box/technical content, not a log of how they came to be.
+## Keep artifacts focused on technical content
 
-## Assumed System Requirements writing convention
+Feature scope, investigation history, cycle status, and acceptance belong under
+`../work/<feature>/`. Enduring design intent and rationale belong in the maintained
+depot or the appropriate technical artifact. Do not embed temporary work-directory
+links or authoring logs in TRLC/PlantUML. Keep actual requirement rationale where the
+schema calls for it.
 
-Each `AssumedSystemReq` should state a black-box capability an integrator evaluating
-`message_passing` as a product would check for — e.g. core communication model, happy-flow
-interaction patterns, production-error detectability, integration-time misconfiguration
-detectability, platform support, access-control support — not how the component behaves
-internally under failure, and not any specific interface method.
+## Assumed-system requirement convention
+
+An `AssumedSystemReq` states a capability an integrator assessing this subsystem
+would check from outside: communication model, interaction patterns, production-error
+and integration-misconfiguration detectability, platform support, or access control.
+Method-level behavior and internal failure handling belong below that level.

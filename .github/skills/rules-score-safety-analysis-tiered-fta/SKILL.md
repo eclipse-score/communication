@@ -1,6 +1,6 @@
 ---
 name: rules-score-safety-analysis-tiered-fta
-description: "Optional, opt-in lens on top of score-safety-analysis. Introduces a two-tier fault-tree model: an informal, non-TRLC-wired 'virtual' system-level FTA (root nodes = negated AssumedSystemReq/safety-goal statements, kept purely for team understanding) layered conceptually above the existing component-API-level 'micro-FTA' (the fta_<failure_mode>.puml files already wired into control_measures.trlc/aous.trlc via $BasicEvent aliases). USE FOR: sanity-checking that a component's FailureMode/fta_*.puml root-cause coverage is system-relevant and plausibly complete; deciding whether a basic event's root cause belongs in an AoU vs a ControlMeasure; auditing existing FailureMode/fta_*.puml content for semantic correctness, ambiguity, and correct component/interface scoping — not just fixing dangling traceability links; teams that want more rigor without it being forced project-wide. NOT FOR: replacing score-safety-analysis's Step A/B workflow (this only adds a lens on top of it, never a substitute); wiring a system-level FTA into the TRLC graph (explicitly out of scope for now — see Non-goals); components/teams that haven't opted in — score-safety-analysis alone remains the default, unmodified workflow."
+description: "Apply an optional tiered-FTA lens to S-CORE safety analysis: review formal failure modes against implementation and distinguish controls from integration obligations, with an informal system-level tree when useful. Use only when the user or subsystem has opted in; retain score-safety-analysis for artifact mechanics."
 argument-hint: "component/SEooC name whose FailureMode/fta_*.puml set you want to review or extend using the tiered model"
 ---
 
@@ -24,7 +24,7 @@ self-sufficient workflow for authoring `FailureMode`/`fta_*.puml`/`ControlMeasur
 Nothing here changes its mechanics, its file layout, or its TRLC/BUILD wiring rules. Projects,
 components, or reviewers who have not opted into this skill should see no difference in what a
 correct `score-safety-analysis` deliverable looks like. Use this skill only when explicitly asked
-for, or when a component's own `research/` scratchpad records that it has opted in.
+for, or when a component's maintained knowledge depot records that it has opted in.
 
 ## When to use
 
@@ -63,8 +63,7 @@ An optional, lightweight fault tree reasoned about **top-down from the system's 
 - **Deliberately not wired into the TRLC graph.** No `$TopEvent`/`$BasicEvent`/`fta_metamodel.puml`
   macros, no entry in any `fmea()`/`dependability_analysis()` Bazel target, no `ControlMeasure`/
   `AoU` resolution requirement. If drawn at all, it lives as a plain note or an un-wired `.puml`
-  sketch under the component's `research/` directory (e.g. `research/nice_to_haves.md` or a
-  dedicated `research/system_level_fta_sketch.md`), clearly labeled "informal, not authoritative,
+  sketch in the active feature's `work/<feature>/` directory, clearly labeled "informal, not authoritative,
   not validated by the safety-analysis toolchain".
 - **Purpose is purely diagnostic**: a scratchpad for reasoning about completeness and plausibility,
   not a deliverable that gets reviewed, versioned, or traced the way `FailureMode`/`ControlMeasure`
@@ -100,9 +99,9 @@ This is exactly what `score-safety-analysis` already produces — no renaming, n
 3. **Component requirements (and hence micro-FTA basic events) only fully make sense once grounded
    in the real software architecture.** A `CompReq`/basic event that can't be traced to something
    the actual architecture (sequence diagrams, static design) documents is a warning sign — see
-   `rules-score-update`'s Core Principle 3 (upward trace before patching a symptom) — the
-   architecture may need to be completed first, exactly as done in a prior `message_passing`
-   actualization cycle.
+   `rules-score-update`'s impact analysis (upward trace before patching a symptom) — the
+   architecture may need to be completed first. Follow the shared `rules-score`
+   feature/cycle workflow; using this lens does not resume paused work.
 
 ## Using this skill for a content review (not just re-linking)
 
@@ -138,5 +137,5 @@ skill only changes the bar for *reviewing* that content before treating it as do
 
 - `.github/skills/score-safety-analysis/SKILL.md` — the base workflow this skill layers on top of;
   read it first, every time.
-- `.github/skills/rules-score-update/SKILL.md` — Core Principle 3 (upward trace before patching
+- `.github/skills/rules-score-update/SKILL.md` — impact analysis (upward trace before patching
   a symptom) motivates the "grounded in real architecture" relationship above.

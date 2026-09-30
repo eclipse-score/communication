@@ -9,8 +9,9 @@ SPDX-License-Identifier: Apache-2.0 -->
 
 # Update an existing SEooC
 
-**Review draft:** this file is the proposed replacement for `SKILL.md`; it is not
-installed as the active skill. Remove this paragraph when adopting it.
+**Historical proposal:** retained as evidence for the original review. The active
+workflow is now in `SKILL.md` and `../rules-score/SKILL.md`; this draft is not a
+routine input and its lifecycle/storage guidance is superseded.
 
 Preserve the existing baseline and traceability while making the requested change.
 Existing artifacts may be wrong: distinguish the authored contract, recorded human
