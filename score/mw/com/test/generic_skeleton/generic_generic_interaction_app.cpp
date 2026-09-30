@@ -138,7 +138,9 @@ int run_consumer()
     {
         handles_res = score::mw::com::GenericProxy::FindService(instance_specifier);
         if (handles_res.has_value() && !handles_res.value().empty())
+        {
             break;
+        }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         retries++;
     }
@@ -225,8 +227,12 @@ int main(int argc, const char* argv[])
 {
     std::string mode;
     for (int i = 1; i < argc; ++i)
+    {
         if (std::string(argv[i]) == "--mode" && i + 1 < argc)
+        {
             mode = argv[++i];
+        }
+    }
     score::mw::com::runtime::InitializeRuntime(
         score::mw::com::runtime::RuntimeConfiguration(score::string_manipulation::GetArguments(argc, argv)));
 
@@ -234,8 +240,12 @@ int main(int argc, const char* argv[])
     score::mw::com::SetupStopTokenSigTermHandler(stop_source);
 
     if (mode == "provider")
+    {
         return run_provider(stop_source.get_token());
+    }
     if (mode == "consumer")
+    {
         return run_consumer();
+    }
     return 1;
 }
