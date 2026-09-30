@@ -20,6 +20,7 @@
 #include <ostream>
 #include <streambuf>
 #include <string_view>
+#include <tuple>
 #include <variant>
 
 namespace score::message_passing
@@ -64,7 +65,7 @@ LoggingCallback GetCerrLogger()
         FixedBufferStreamBuf stream_buffer{buffer.data(), buffer.size()};
         std::ostream stream{&stream_buffer};
         // Force the classic locale so integer formatting is deterministic (no digit grouping) and allocation-free.
-        stream.imbue(std::locale::classic());
+        std::ignore = stream.imbue(std::locale::classic());
         for (const auto& item : items)
         {
             std::visit(
