@@ -81,7 +81,7 @@ std::shared_ptr<score::message_passing::IClientConnection> MessagePassingClientC
 {
     std::lock_guard<std::mutex> lck(mutex_);
 
-    const auto cached_client = UnlockedGetCachedMessagePassingClient(target_node_id);
+    auto cached_client = UnlockedGetCachedMessagePassingClient(target_node_id);
     if (cached_client != nullptr)
     {
         const auto state = cached_client->GetState();

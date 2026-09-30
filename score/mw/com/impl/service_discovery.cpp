@@ -325,7 +325,7 @@ Result<ServiceHandleContainer<HandleType>> ServiceDiscovery::FindService(Instanc
 {
     EnrichedInstanceIdentifier enriched_instance_identifier{std::move(instance_identifier)};
     auto& service_discovery_client = GetServiceDiscoveryClient(enriched_instance_identifier.GetInstanceIdentifier());
-    const auto find_service_result = service_discovery_client.FindService(std::move(enriched_instance_identifier));
+    auto find_service_result = service_discovery_client.FindService(std::move(enriched_instance_identifier));
     if (!(find_service_result.has_value()))
     {
         return MakeUnexpected(ComErrc::kBindingFailure);

@@ -94,7 +94,7 @@ class ConfigParser
         {
             return {};
         }
-        const auto shm_path = kSharedMemoryPathPrefix + shm_name.value();
+        auto shm_path = kSharedMemoryPathPrefix + shm_name.value();
         return shm_path;
     }
 
