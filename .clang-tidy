@@ -70,7 +70,6 @@ Checks: >
   cppcoreguidelines-special-member-functions,
   fuchsia-multiple-inheritance,
   google-build-using-namespace,
-  hicpp-move-const-arg,
   hicpp-signed-bitwise,
   hicpp-use-nullptr,
   misc-no-recursion,
@@ -173,8 +172,6 @@ CheckOptions:
     value: true
   - key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
     value: true
-  - key: hicpp-move-const-arg.CheckTriviallyCopyableMove
-    value: false
   - key: modernize-avoid-c-arrays.AllowStringArrays
     value: false
   - key: modernize-make-shared.IncludeStyle
@@ -234,7 +231,7 @@ CheckOptions:
       ::std::basic_string_view;
       ::std::basic_string
   - key: performance-move-const-arg.CheckTriviallyCopyableMove
-    value: true
+    value: false
   - key: performance-move-const-arg.CheckMoveToConstRef
     value: true
   - key: performance-unnecessary-value-param.IncludeStyle
