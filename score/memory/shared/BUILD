@@ -389,26 +389,6 @@ cc_library(
 )
 
 cc_library(
-    name = "map",
-    srcs = ["map.cpp"],
-    hdrs = ["map.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = [
-        ":polymorphic_offset_ptr_allocator",
-    ] + select({
-        "@platforms//os:linux": [
-            "@boost.container",
-            "@boost.interprocess",
-        ],
-        "@platforms//os:qnx": [],
-    }),
-)
-
-cc_library(
     name = "string",
     srcs = ["string.cpp"],
     hdrs = ["string.h"],
@@ -450,7 +430,6 @@ cc_library(
     ],
     deps = [
         ":managed_memory_resource",
-        ":map",
         ":memory_region_map",
         ":memory_resource_proxy",
         ":memory_resource_registry",
@@ -620,21 +599,6 @@ cc_unit_test(
     deps = [
         ":managed_memory_resource",
         ":shared_memory_test_resources",
-        "//score/memory/shared/fake:fake_memory_resources",
-    ],
-)
-
-cc_unit_test(
-    name = "map_test",
-    srcs = [
-        "map_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//score/memory:__pkg__",
-    ],
-    deps = [
-        ":map",
         "//score/memory/shared/fake:fake_memory_resources",
     ],
 )
