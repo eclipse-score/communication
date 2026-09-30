@@ -26,7 +26,7 @@ auto ErrorSerializer<ErrorCode>::SerializeSuccess() -> SerializedErrorType
     static_assert(ErrorCode::kInvalid == static_cast<ErrorCode>(0U),
                   "The serialization scheme uses 0 to represent 'No error'. Therefore, we cannot have a valid error "
                   "code which corresponds to an integer value 0.");
-    return SerializedErrorType(0);
+    return 0;
 }
 
 template <typename ErrorCode>

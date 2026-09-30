@@ -87,8 +87,7 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::FindOldestUnusedSl
             return slot_info;
         }
 
-        const auto are_proxies_referencing_slot =
-            status.GetReferenceCount() != static_cast<EventSlotStatus::SubscriberCount>(0U);
+        const auto are_proxies_referencing_slot = status.GetReferenceCount() != 0U;
         if (!are_proxies_referencing_slot && !status.IsInWriting())
         {
             if (status.GetTimeStamp() < oldest_time_stamp)

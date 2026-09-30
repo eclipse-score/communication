@@ -31,8 +31,7 @@ ProxyEvent::ProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std
       event_fq_id_{element_fq_id},
       event_name_{event_name},
       // The transaction log is identified by the application's unique identifier.
-      transaction_log_id_{
-          static_cast<TransactionLogId>(GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetApplicationId())},
+      transaction_log_id_{GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetApplicationId()},
       event_data_control_local_{parent_.GetConsumerEventDataControlLocalView(event_fq_id_)},
       subscription_control_{parent_.GetEventSubscriptionControl(event_fq_id_)},
       transaction_log_set_{parent_.GetTransactionLogSet(event_fq_id_)},

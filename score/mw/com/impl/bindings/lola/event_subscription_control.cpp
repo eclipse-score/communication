@@ -102,8 +102,7 @@ auto EventSubscriptionControl<AtomicIndirectorType>::Subscribe(SlotNumberType sl
                         // ensures that the addition result will not exceed its maximum value for
                         // std::uint16_t type.
                         // coverity[autosar_cpp14_a4_7_1_violation]
-                        static_cast<SlotNumberType>(safe_math::Add<safe_math::ReturnMode::kAbortOnError>(
-                            current_subscribed_slots, slot_count)));
+                        safe_math::Add<safe_math::ReturnMode::kAbortOnError>(current_subscribed_slots, slot_count));
         auto success = AtomicIndirectorType<std::uint32_t>::compare_exchange_weak(
             current_subscription_state_, current_state, new_state, std::memory_order_acq_rel);
         if (success)
@@ -150,10 +149,9 @@ auto EventSubscriptionControl<AtomicIndirectorType>::Unsubscribe(SlotNumberType 
             std::terminate();
         }
 
-        std::uint32_t new_state =
-            CreateState(static_cast<SubscriberCountType>(current_subscribers - 1U),
-                        static_cast<SlotNumberType>(safe_math::Subtract<safe_math::ReturnMode::kAbortOnError>(
-                            current_subscribed_slots, slot_count)));
+        std::uint32_t new_state = CreateState(
+            static_cast<SubscriberCountType>(current_subscribers - 1U),
+            safe_math::Subtract<safe_math::ReturnMode::kAbortOnError>(current_subscribed_slots, slot_count));
         auto success = AtomicIndirectorType<std::uint32_t>::compare_exchange_weak(
             current_subscription_state_, current_state, new_state, std::memory_order_acq_rel);
         if (success)

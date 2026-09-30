@@ -204,7 +204,7 @@ score::cpp::expected_blank<score::os::Error> UnixDomainEngine::SendProtocolMessa
     io[1].iov_base = &size;
     io[1].iov_len = sizeof(size);
     io[2].iov_base = const_cast<std::uint8_t*>(message.data());
-    io[2].iov_len = static_cast<std::size_t>(message.size());
+    io[2].iov_len = message.size();
     msg.msg_iov = io.data();
     msg.msg_iovlen = kVectorCount;
 
