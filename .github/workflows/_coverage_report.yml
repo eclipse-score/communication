@@ -130,12 +130,15 @@ jobs:
         if: steps.run-coverage-qnx.outcome == 'success'
         id: generate-report-qnx
         env:
-          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
-          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
           # Report-only: the effective-coverage gate is not enforced yet.
           COVERAGE_THRESHOLD: "0"
         run: |
-          bazel run --config=ci --config=qnx @score_coverage//:generate_coverage_html -- \
+          # Note: no --config=qnx here. This step only reads the coverage
+          # data produced by the previous "bazel coverage" step and runs a
+          # host-side Python tool; --config=qnx sets the *target* platform to
+          # QNX for the whole invocation, and no Python toolchain is
+          # registered for that platform, so the build fails to resolve one.
+          bazel run --config=ci @score_coverage//:generate_coverage_html -- \
             --platform qnx \
             --yaml quality/coverage/coverage_justifications.yaml \
             --testlogs-subdir score \
