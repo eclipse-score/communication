@@ -42,7 +42,7 @@ auto ParseForwardedServices(const score::json::Any& json) noexcept -> std::vecto
         {
             for (const auto& forwarded_service : forwarded_services_entry->second.As<score::json::List>().value().get())
             {
-                forwarded_services.push_back(std::move(forwarded_service.As<std::string>().value().get()));
+                forwarded_services.push_back(forwarded_service.As<std::string>().value().get());
             }
         }
     }
@@ -61,7 +61,7 @@ auto ParseReceivedServices(const score::json::Any& json) noexcept -> std::vector
         {
             for (const auto& received_service : received_services_entry->second.As<score::json::List>().value().get())
             {
-                received_services.push_back(std::move(received_service.As<std::string>().value().get()));
+                received_services.push_back(received_service.As<std::string>().value().get());
             }
         }
     }

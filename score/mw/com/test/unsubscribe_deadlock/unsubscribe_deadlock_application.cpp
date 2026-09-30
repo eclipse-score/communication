@@ -73,7 +73,7 @@ score::Result<score::mw::com::test::BigDataProxy> CreateProxy(
             moved_service_discovery_promise.set_value(handles);
             score::cpp::ignore = score::mw::com::test::BigDataProxy::StopFindService(handle);
         },
-        std::move(instance_specifier));
+        instance_specifier);
     if (!handles_result.has_value())
     {
         std::cerr << "Error finding service for instance specifier" << instance_specifier.ToString() << ": "

@@ -334,8 +334,7 @@ score::Result<void> QemuHypervisorTransport::ProvideService(impl::InstanceSpecif
     const auto shm_sizes = GetInterVmShmSizes(service_instance_specifier);
 #endif
 
-    ProvideServiceRequest request{
-        service_instance_specifier, std::move(service_elements), shm_sizes.control, shm_sizes.data};
+    ProvideServiceRequest request{service_instance_specifier, service_elements, shm_sizes.control, shm_sizes.data};
     return message_transport_->SendRequest(request);
 }
 
