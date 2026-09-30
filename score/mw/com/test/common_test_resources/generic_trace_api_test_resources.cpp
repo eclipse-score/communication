@@ -37,7 +37,6 @@ using score::analysis::tracing::TraceDoneCallBackType;
 using testing::_;
 using testing::An;
 using testing::Invoke;
-using testing::Matcher;
 using testing::Return;
 
 constexpr auto readWriteAccessForUser = os::Stat::Mode::kReadUser | os::Stat::Mode::kWriteUser;

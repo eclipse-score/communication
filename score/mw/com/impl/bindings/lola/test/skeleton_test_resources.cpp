@@ -37,7 +37,6 @@ namespace
 {
 
 using ::testing::_;
-using ::testing::InvokeWithoutArgs;
 using ::testing::Return;
 using ::testing::ReturnRef;
 using ::testing::StrEq;
