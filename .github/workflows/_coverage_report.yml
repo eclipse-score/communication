@@ -27,10 +27,16 @@ on:
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL:
         required: false
+      SCORE_QNX_LICENSE:
+        required: false
+      SCORE_QNX_USER:
+        required: false
+      SCORE_QNX_PASSWORD:
+        required: false
 
 jobs:
-  coverage:
-    name: Build & Test
+  coverage-linux:
+    name: Build & Test (Linux)
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -72,3 +78,73 @@ jobs:
         with:
           name: ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}
           path: ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}.zip
+
+  # Whether to additionally collect the --config=qnx coverage is derived
+  # automatically from secret availability rather than a caller-supplied
+  # flag: it only runs when the QNX license secret has actually been
+  # provided (e.g. not forwarded by cache-warming callers).
+  determine-qnx:
+    name: Determine QNX availability
+    runs-on: ubuntu-24.04
+    outputs:
+      available: ${{ steps.qnx.outputs.available }}
+    steps:
+      - id: qnx
+        run: |
+          if [[ -n "${{ secrets.SCORE_QNX_LICENSE }}" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  coverage-qnx:
+    name: Build & Test (QNX, --config=qnx)
+    needs: [determine-qnx]
+    if: inputs.fetch-only != 'true' && needs.determine-qnx.outputs.available == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - name: Setup QNX and QEMU environment
+        uses: ./.github/actions/00_infrastructure/setup_qnx_environment
+        with:
+          qnx-license: ${{ secrets.SCORE_QNX_LICENSE }}
+
+      - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
+        with:
+          disk-cache: ""
+          cache-mode: ${{ inputs.cache-mode }}
+          ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+      - name: Run coverage (QNX, --config=qnx)
+        id: run-coverage-qnx
+        env:
+          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+        run: bazel coverage --config=ci --config=qnx //score/... --build_tests_only
+
+      - name: Generate coverage report (QNX)
+        if: steps.run-coverage-qnx.outcome == 'success'
+        id: generate-report-qnx
+        env:
+          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+          # Report-only: the effective-coverage gate is not enforced yet.
+          COVERAGE_THRESHOLD: "0"
+        run: |
+          bazel run --config=ci --config=qnx @score_coverage//:generate_coverage_html -- \
+            --platform qnx \
+            --yaml quality/coverage/coverage_justifications.yaml \
+            --testlogs-subdir score \
+            --archive "${{ github.event.repository.name }}_coverage_report_qnx_${{ github.sha }}" \
+            cpp_coverage_qnx
+
+      - name: Upload coverage artifacts (QNX)
+        if: steps.generate-report-qnx.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}_coverage_report_qnx_${{ github.sha }}
+          path: ${{ github.event.repository.name }}_coverage_report_qnx_${{ github.sha }}.zip

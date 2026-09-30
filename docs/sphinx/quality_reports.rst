@@ -28,8 +28,13 @@ nightly run of the `Nightly Quality Jobs`_ workflow.
      - Description
      - Report
    * - Coverage
-     - Line, function, and branch coverage from C++ unit tests (gcov/lcov)
+     - Line, function, and branch coverage from C++ unit tests (Linux, llvm-cov/lcov)
      - |coverage_report_link|
+   * - Coverage (QNX)
+     - Line, function, and branch coverage from C++ unit tests built for QNX
+       (``--config=qnx``, gcov/lcov). Only generated when QNX secrets are
+       available.
+     - |coverage_qnx_report_link|
    * - Clang-Tidy
      - Static analysis findings (errors and warnings) across all C++ targets
      - |clang_tidy_report_link|
@@ -51,7 +56,7 @@ nightly run of the `Nightly Quality Jobs`_ workflow.
    exclusively alongside the ``latest`` documentation on GitHub Pages.
    In local Sphinx builds the link cells above show equivalent ``bazel run``
    commands. In versioned release docs, every quality link (coverage,
-   dashboard, clang-tidy, and CodeQL) points to the corresponding report
-   uploaded as a release artifact for that release.
+   coverage (QNX), dashboard, clang-tidy, and CodeQL) points to the
+   corresponding report uploaded as a release artifact for that release.
 
 .. _Nightly Quality Jobs: https://github.com/eclipse-score/communication/actions/workflows/nightly_quality.yml
