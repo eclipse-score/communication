@@ -96,6 +96,23 @@ class DiffApiDocsFlagTest(unittest.TestCase):
         )
         self.assertIn("    at ns/foo.h:42", report)
 
+    def test_format_undocumented_symbols_includes_file_without_line(self):
+        report = diff_api._format_undocumented_symbols(
+            {
+                "undocumented_symbols": [
+                    {
+                        "kind": "function",
+                        "name": "foo",
+                        "qualified_name": "ns::foo",
+                        "signature": "foo : void ()",
+                        "file": "ns/foo.h",
+                    }
+                ]
+            }
+        )
+        self.assertIn("    at ns/foo.h\n", report + "\n")
+        self.assertNotIn("ns/foo.h:", report)
+
 
 if __name__ == "__main__":
     unittest.main()
