@@ -91,6 +91,7 @@ cc_library(
     hdrs = ["shared_memory_resource.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
+        ":memory_resource_registry",
         "@score_baselibs//score/language/safecpp/string_view:zstring_view",
         "@score_baselibs//score/mw/log",
     ],
@@ -102,7 +103,6 @@ cc_library(
         ":i_shared_memory_resource",
         ":lock_file",
         ":memory_resource_proxy",
-        ":memory_resource_registry",
         ":pointer_arithmetic_util",
         "//score/memory/shared/sealedshm/sealedshm_wrapper:sealedshm",
         "//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
@@ -177,13 +177,13 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "shared_memory_factory_impl",
+        "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/utils:static_destruction_guard",
     ],
     tags = ["FFI"],
     deps = [
         ":i_shared_memory_factory",
         ":i_shared_memory_resource",
-        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -503,6 +503,9 @@ cc_library(
     hdrs = ["new_delete_delegate_resource.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
+        ":memory_resource_registry",
+        ":pointer_arithmetic_util",
+        ":shared",
         "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/mw/log",
     ],
@@ -513,9 +516,6 @@ cc_library(
     deps = [
         ":managed_memory_resource",
         ":memory_resource_proxy",
-        ":memory_resource_registry",
-        ":pointer_arithmetic_util",
-        ":shared",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
