@@ -283,3 +283,5 @@ CheckOptions:
     value: true
   - key: readability-implicit-bool-conversion.AllowPointerConditions
     value: true
+  - key: readability-function-cognitive-complexity.IgnoreMacros
+    value: true
