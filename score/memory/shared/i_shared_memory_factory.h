@@ -15,7 +15,6 @@
 
 #include "score/memory/shared/i_shared_memory_resource.h"
 #include "score/memory/shared/typedshm/typedshm_wrapper/typed_memory.h"
-#include "score/os/utils/acl/access_control_list.h"
 
 #include <score/span.hpp>
 
