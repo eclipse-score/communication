@@ -42,15 +42,21 @@ def main() -> None:
     # Read the list of per-test report files.
     reports = read_reports_file(args.reports_file)
     if not reports:
-        print("ERROR: No coverage reports found.", file=sys.stderr)
-        sys.exit(-1)
+        print("INFO: No coverage reports found.", file=sys.stderr)
+        write_empty_output(args.output_file)
+        sys.exit(0)
 
     # Extract profdata and object files from each per-test zip.
     valid_profdata_files, valid_object_files = extract_reports(reports)
 
     if not valid_profdata_files or not valid_object_files:
+        # This is expected when the covered target set contains no
+        # instrumented C++/Rust code: the merger legitimately produces no
+        # profdata/object files for such targets. Treat it like Bazel's
+        # own empty-coverage behavior instead of failing the build.
         print("INFO: No valid profdata or object files found.", file=sys.stderr)
-        sys.exit(-1)
+        write_empty_output(args.output_file)
+        sys.exit(0)
 
     sorted_objects = sorted(valid_object_files)
 
@@ -616,6 +622,12 @@ def load_baseline_objects(
             print(f"ERROR: Baseline object not found: {line}", file=sys.stderr)
             sys.exit(-1)
     return sorted(resolved)
+
+
+def write_empty_output(output_file: Path) -> None:
+    """Write an empty file as output when there's nothing to report."""
+    with open(output_file, "w", encoding="utf-8") as f:
+        f.write("")
 
 
 def run_command(cmd: List[str]) -> subprocess.CompletedProcess:
