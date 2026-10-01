@@ -40,7 +40,7 @@ class TracingRuntimeMock : public ITracingRuntime
                  ServiceElementInstanceIdentifierView,
                  TracePointType,
                  TracePointDataId,
-                 TypeErasedSamplePtr sample_ptr,
+                 impl::SamplePtr<void> sample_ptr,
                  const void*,
                  std::size_t),
                 (override));

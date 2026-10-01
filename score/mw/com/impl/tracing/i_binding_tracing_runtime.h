@@ -18,7 +18,7 @@
 
 #include "score/analysis/tracing/generic_trace_library/interface_types/generic_trace_api.h"
 #include "score/memory/shared/i_shared_memory_resource.h"
-#include "score/mw/com/impl/tracing/type_erased_sample_ptr.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 
 #include <score/callback.hpp>
 
@@ -106,7 +106,7 @@ class IBindingTracingRuntime
         const impl::tracing::ServiceElementInstanceIdentifierView service_element_instance_identifier_view) const = 0;
 
     virtual std::optional<TraceContextId> EmplaceTypeErasedSamplePtr(
-        TypeErasedSamplePtr type_erased_sample_ptr,
+        impl::SamplePtr<void> type_erased_sample_ptr,
         const ServiceElementTracingData service_element_tracing_data) = 0;
     virtual void ClearTypeErasedSamplePtr(const TraceContextId trace_context_id) noexcept = 0;
     virtual void ClearTypeErasedSamplePtrs(

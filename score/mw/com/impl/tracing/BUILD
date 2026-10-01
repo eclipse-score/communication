@@ -22,18 +22,6 @@ package(
 )
 
 cc_library(
-    name = "type_erased_sample_ptr",
-    srcs = ["type_erased_sample_ptr.cpp"],
-    hdrs = ["type_erased_sample_ptr.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = ["//score/mw/com/impl:__subpackages__"],
-    deps = [
-        "@score_baselibs//score/language/futurecpp",
-    ],
-)
-
-cc_library(
     name = "i_binding_tracing_runtime",
     srcs = ["i_binding_tracing_runtime.cpp"],
     hdrs = ["i_binding_tracing_runtime.h"],
@@ -42,8 +30,8 @@ cc_library(
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":service_element_tracing_data",
-        ":type_erased_sample_ptr",
         "//score/memory/shared",
+        "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
         "@score_baselibs//score/analysis/tracing/generic_trace_library:api",
         "@score_baselibs//score/language/futurecpp",
@@ -198,9 +186,9 @@ cc_library(
     deps = [
         ":i_binding_tracing_runtime",
         ":service_element_tracing_data",
-        ":type_erased_sample_ptr",
         "//score/memory/shared:i_shared_memory_resource",
         "//score/mw/com/impl:binding_type",
+        "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing/configuration:proxy_event_trace_point_type",
         "//score/mw/com/impl/tracing/configuration:proxy_field_trace_point_type",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
@@ -287,16 +275,6 @@ cc_unit_test(
         "@score_baselibs//score/analysis/tracing/generic_trace_library:mock",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/mw/log:recorder_mock",
-    ],
-)
-
-cc_unit_test(
-    name = "type_erased_sample_ptr_test",
-    srcs = ["type_erased_sample_ptr_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":type_erased_sample_ptr",
-        "@score_baselibs//score/language/futurecpp",
     ],
 )
 

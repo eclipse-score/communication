@@ -135,7 +135,7 @@ class TracingRuntime : public ITracingRuntime
                        const ServiceElementInstanceIdentifierView service_element_instance_identifier,
                        const TracePointType trace_point_type,
                        const TracePointDataId trace_point_data_id,
-                       TypeErasedSamplePtr sample_ptr,
+                       impl::SamplePtr<void> sample_ptr,
                        const void* const shm_data_ptr,
                        const std::size_t shm_data_size) override;
 

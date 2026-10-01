@@ -13,12 +13,13 @@
 #include "score/mw/com/impl/tracing/common_event_tracing.h"
 
 #include "score/mw/com/impl/binding_type.h"
+#include "score/mw/com/impl/bindings/mock_binding/sample_ptr.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
 #include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
-#include "score/mw/com/impl/tracing/type_erased_sample_ptr.h"
 
 #include "score/result/result.h"
 
@@ -70,7 +71,8 @@ class CommonEventTracingFixture : public ::testing::Test
     TracingRuntime::TracePointDataId trace_point_data_id_{10U};
     ServiceElementTracingData service_element_tracing_data_{0U, 1U};
 
-    TypeErasedSamplePtr type_erased_sample_ptr_{std::make_unique<int>(10U)};
+    impl::SamplePtr<void> type_erased_sample_ptr_{impl::mock_binding::MakeSamplePtr(new int(10U)),
+                                                  impl::SampleReferenceGuard{}};
     const std::pair<const void*, std::size_t> shm_data_chunk_{
         reinterpret_cast<const void*>(static_cast<std::uintptr_t>(20U)),
         200U};

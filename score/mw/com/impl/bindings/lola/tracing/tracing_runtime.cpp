@@ -402,7 +402,7 @@ auto TracingRuntime::GetTraceContextId(
 // implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have value but as we check
 // before with 'has_value()' so no way for throwing std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-TracingRuntime::EmplaceTypeErasedSamplePtr(impl::tracing::TypeErasedSamplePtr type_erased_sample_ptr,
+TracingRuntime::EmplaceTypeErasedSamplePtr(impl::SamplePtr<void> type_erased_sample_ptr,
                                            const impl::tracing::ServiceElementTracingData service_element_tracing_data)
 {
     if (service_element_tracing_data.service_element_range_start >=

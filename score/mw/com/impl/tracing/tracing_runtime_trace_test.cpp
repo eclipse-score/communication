@@ -33,6 +33,9 @@
 #include "score/mw/log/logging.h"
 #include "score/mw/log/recorder_mock.h"
 
+#include "score/mw/com/impl/bindings/mock_binding/sample_ptr.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -70,14 +73,6 @@ using testing::Eq;
 using testing::Invoke;
 using testing::Return;
 using testing::WithArg;
-
-class MySamplePtrType
-{
-  public:
-    MySamplePtrType() = default;
-    MySamplePtrType(MySamplePtrType& other) = delete;
-    MySamplePtrType(MySamplePtrType&& other) = default;
-};
 
 class TracingRuntimeTraceFixture : public ::testing::Test
 {
@@ -128,9 +123,10 @@ class TracingRuntimeTraceFixture : public ::testing::Test
             .WillByDefault(Return(kServiceInstanceElement));
     }
 
-    TypeErasedSamplePtr CreateDummySamplePtr()
+    impl::SamplePtr<void> CreateDummySamplePtr()
     {
-        return TypeErasedSamplePtr{MySamplePtrType()};
+        return impl::SamplePtr<void>{impl::mock_binding::SamplePtr{nullptr, [](void*) noexcept {}},
+                                     impl::SampleReferenceGuard{}};
     }
 
     std::unique_ptr<TracingRuntime> unit_under_test_{nullptr};

@@ -63,7 +63,7 @@ Result<void> TraceShmData(const BindingType binding_type,
                           const ServiceElementInstanceIdentifierView service_element_instance_identifier_view,
                           const TracingRuntime::TracePointType trace_point,
                           TracingRuntime::TracePointDataId trace_point_data_id,
-                          TypeErasedSamplePtr sample_ptr,
+                          impl::SamplePtr<void> sample_ptr,
                           const std::pair<const void*, std::size_t>& data_chunk)
 {
     auto* const tracing_runtime = impl::Runtime::getInstance().GetTracingRuntime();

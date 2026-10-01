@@ -17,6 +17,7 @@
 
 #include "score/mw/com/impl/bindings/lola/sample_ptr.h"
 #include "score/mw/com/impl/bindings/mock_binding/sample_ptr.h"
+#include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 
 #include <score/blank.hpp>
 #include <score/overload.hpp>
@@ -286,6 +287,21 @@ void swap(SamplePtr<SampleType>& lhs, SamplePtr<SampleType>& rhs) noexcept
 {
     lhs.Swap(rhs);
 }
+
+/// \brief Creates a binding agnostic, type-erased SamplePtr<void> referencing the same underlying sample as the
+/// given SampleAllocateePtr<void>.
+///
+/// \details This is used on the skeleton side (e.g. by tracing) to obtain a read-only, type-erased handle to a
+/// sample that is currently being sent via a SampleAllocateePtr, without transferring ownership of the
+/// SampleAllocateePtr itself. Such a SamplePtr gets then "freed" from a trace-done-callback of the trace library (GTL).
+/// For the LoLa binding, this additionally references the underlying event slot
+/// (mirroring what happens for samples received via a proxy) so that the slot remains valid for as long as the
+/// returned SamplePtr<void> is alive.
+///
+/// \param sample_allocatee_ptr The SampleAllocateePtr from which the type-erased SamplePtr shall be created. Must not
+///                             be blank/default constructed, otherwise this function will terminate.
+/// \return type-erased SamplePtr<void> referencing the same underlying sample as \p sample_allocatee_ptr.
+SamplePtr<void> CreateSamplePtrFromSampleAllocateePtr(SampleAllocateePtr<void>& sample_allocatee_ptr);
 
 }  // namespace score::mw::com::impl
 
