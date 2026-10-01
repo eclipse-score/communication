@@ -22,7 +22,11 @@
 namespace score::mw::com::impl::lola
 {
 
-ProxyEvent::ProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name)
+ProxyEvent::ProxyEvent(Proxy& parent,
+                       const ElementFqId element_fq_id,
+                       const std::string_view event_name,
+                       std::optional<E2EEventTypeDeployment> e2e_event_deployment,
+                       std::shared_ptr<e2e::HeaderStorage> e2e_header_storage)
     : GenericProxyEventBinding{},
       meta_info_{parent.GetEventMetaInfo(element_fq_id)},
       event_data_storage_{parent.GetEventDataStorage(element_fq_id)},
@@ -41,7 +45,9 @@ ProxyEvent::ProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std
                                         event_data_control_local_,
                                         subscription_control_.get(),
                                         transaction_log_set_.get(),
-                                        transaction_log_id_}
+                                        transaction_log_id_},
+      e2e_event_deployment_{e2e_event_deployment},
+      e2e_header_storage_{std::move(e2e_header_storage)}
 {
     parent.RegisterEvent(event_name, *this);
 }
@@ -109,6 +115,8 @@ inline Result<std::size_t> ProxyEvent::GetNewSamples(Callback&& receiver, Tracke
         const EventSlotStatus event_slot_status{event_data_control_local_[*slot_index_it]};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
 
+        CheckE2E(*slot_index_it, type_erased_sample_ptr);
+
         SamplePtr sample{type_erased_sample_ptr, event_data_control_local_, *slot_index_it};
 
         auto guard = std::move(*tracker.TakeGuard());
@@ -127,6 +135,41 @@ inline Result<std::size_t> ProxyEvent::GetNewSamples(Callback&& receiver, Tracke
 
     const auto num_collected_slots = static_cast<std::size_t>(std::distance(slot_indices.begin, slot_indices.end));
     return num_collected_slots;
+}
+
+void ProxyEvent::CheckE2E(const SlotIndexType slot_index, const void* sample_data)
+{
+    last_e2e_result_ = e2e::E2EResult{};
+    if (!e2e_event_deployment_.has_value() || (e2e_header_storage_ == nullptr) ||
+        (slot_index >= e2e_header_storage_->size()))
+    {
+        return;
+    }
+    const e2e::ProfileConfiguration profile_config{e2e_event_deployment_->data_id_,
+                                                   e2e_event_deployment_->max_delta_counter_};
+    auto& header = (*e2e_header_storage_)[slot_index];
+    const score::cpp::span<const std::byte> header_span{header.data(), header.size()};
+    const score::cpp::span<const std::byte> payload_span{static_cast<const std::byte*>(sample_data),
+                                                         meta_info_.data_type_info_.Size()};
+    const auto outcome = e2e::CheckMessage(header_span, payload_span, profile_config, e2e_check_context_);
+    const bool sequence_ok = (outcome.sequence == e2e::SequenceStatus::kOk) ||
+                             (outcome.sequence == e2e::SequenceStatus::kOkGapWithinThreshold);
+    last_e2e_result_.data_integrity = outcome.data_integrity;
+    last_e2e_result_.sequence = outcome.sequence;
+    last_e2e_result_.historical_health = e2e::HistoricalHealthStatus::kDisabled;
+    last_e2e_result_.summary =
+        ((outcome.data_integrity == e2e::DataIntegrityStatus::kOk) && sequence_ok) ? e2e::Summary::kOk
+                                                                                      : e2e::Summary::kError;
+    if (last_e2e_result_.summary == e2e::Summary::kError)
+    {
+        score::mw::log::LogWarn("lola") << "E2E check failed: slot" << slot_index << "data_integrity"
+                                        << static_cast<std::uint8_t>(outcome.data_integrity) << "sequence"
+                                        << static_cast<std::uint8_t>(outcome.sequence);
+    }
+    else
+    {
+        score::mw::log::LogDebug("lola") << "E2E check passed: slot" << slot_index;
+    }
 }
 
 SlotCollector::SlotIndices ProxyEvent::GetNewSamplesSlotIndices(const std::size_t max_count)
