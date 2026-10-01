@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_MOCK_BINDING_PROXY_EVENT_H
 
 #include "score/mw/com/impl/bindings/mock_binding/sample_ptr.h"
+#include "score/mw/com/impl/e2e/e2e_result.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
 #include <score/assert.hpp>
@@ -60,6 +61,7 @@ class ProxyEvent : public ProxyEventBinding
     MOCK_METHOD(Result<void>, UnsetSubscriptionStateChangeHandler, (), (noexcept, override));
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
+    MOCK_METHOD(e2e::E2EResult, GetLastE2EResult, (), (const, noexcept, override));
 
     /// \brief Add a sample to the internal queue of fake events.
     ///

@@ -25,6 +25,7 @@
 #include "score/mw/com/impl/tracing/proxy_event_tracing_data.h"
 
 #include "score/mw/com/impl/mocking/i_proxy_event.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 
 #include "score/language/safecpp/scoped_function/scope.h"
 #include "score/result/result.h"
@@ -169,6 +170,17 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     bool IsBindingValid() const noexcept
     {
         return binding_ != nullptr;
+    }
+
+    /**
+     * \brief Attaches the POC E2E result onto a sample handle delivered by this event's binding.
+     * \details Only ProxyEventBase may set the result on a SamplePtr; see SamplePtr::SetE2EResult(). Derived,
+     *          binding-independent event classes call this from their GetNewSamples() wrapper.
+     */
+    template <typename SampleType>
+    void AttachE2EResult(SamplePtr<SampleType>& sample, const e2e::E2EResult& result) const noexcept
+    {
+        sample.SetE2EResult(result);
     }
 
   protected:
