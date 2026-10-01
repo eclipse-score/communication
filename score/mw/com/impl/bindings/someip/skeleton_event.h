@@ -70,8 +70,7 @@ class SkeletonEvent final : public SkeletonEventBinding
 
     ~SkeletonEvent() noexcept override = default;
 
-    Result<void> Send(impl::SampleAllocateePtr<void> sample,
-                      std::optional<SendTraceCallback> send_trace_callback) noexcept override;
+    Result<void> Send(impl::SampleAllocateePtr<void> sample, const std::optional<SendTraceCallback>&) override;
 
     Result<impl::SampleAllocateePtr<void>> Allocate(SampleAllocateeGuard guard) noexcept override;
 

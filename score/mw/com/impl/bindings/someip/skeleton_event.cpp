@@ -43,7 +43,7 @@ SkeletonEvent::SkeletonEvent(Skeleton& parent,
 {
 }
 
-Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void>, std::optional<SendTraceCallback>) noexcept
+Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void>, const std::optional<SendTraceCallback>&)
 {
     return MakeUnexpected(ComErrc::kBindingFailure, "SOME/IP event sending is unsupported without a transport");
 }
