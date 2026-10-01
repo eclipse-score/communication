@@ -807,6 +807,8 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":proxy_event_binding_factory",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "//score/mw/com/impl/configuration/test:configuration_store",
     ],
 )
 
