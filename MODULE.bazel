@@ -51,10 +51,6 @@ download_archive(
 
 bazel_dep(name = "score_tooling", version = "2.2.2")
 
-# Coverage pipeline (LLVM on Linux, gcov on QNX): the qualified module that
-# replaced the copy under quality/coverage. See quality/coverage/README.md.
-bazel_dep(name = "score_coverage", version = "0.3.1", dev_dependency = True)
-
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
 bazel_dep(name = "gcc_toolchain", version = "0.10.0", dev_dependency = True)
 
@@ -160,6 +156,8 @@ use_repo(
     "score_qcc_x86_64_toolchain",
     "score_qcc_x86_64_toolchain_pkg",
 )
+
+bazel_dep(name = "score_coverage", version = "0.3.1", dev_dependency = True)
 
 bazel_dep(name = "score_itf", version = "0.5.0", dev_dependency = True)
 
