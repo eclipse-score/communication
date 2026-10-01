@@ -15,17 +15,17 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("In-Memory configuration wrong", "Communication.InMemoryConfigurationWrong")
+$FailureMode("In-Memory configuration wrong", "Communication.InMemoryConfigurationWrong")
 
 $OrGate("Gate1", "Communication.InMemoryConfigurationWrong")
-$BasicEvent("User provided wrong configuration", "Communication.UserProvidedWrongConfiguration", "Gate1")
+$RootCause("User provided wrong configuration", "UserProvidedWrongConfiguration", "Gate1")
 $IntermediateEvent("JSON-Tree corrupt", "Event2", "Gate1")
 $OrGate("Gate2", "Event2")
-$BasicEvent("File corrupted", "Communication.FileCorrupted", "Gate2")
-$BasicEvent("JSON Parser broken", "Communication.JsonParserBroken", "Gate2")
+$RootCause("File corrupted", "FileCorrupted", "Gate2")
+$RootCause("JSON Parser broken", "JsonParserBroken", "Gate2")
 $IntermediateEvent("Configuration gets corrupted reading the JSON-Tree", "Event3", "Gate1")
 $OrGate("Gate3", "Event3")
-$BasicEvent("Manipulate read data", "Communication.ManipulateReadData", "Gate3")
-$BasicEvent("Omit reading of relevant elements", "Communication.OmitReadingOfRelevantElements", "Gate3")
+$RootCause("Manipulate read data", "ManipulateReadData", "Gate3")
+$RootCause("Omit reading of relevant elements", "OmitReadingOfRelevantElements", "Gate3")
 
 @enduml

@@ -15,13 +15,13 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Server notification lost, incomplete, corrupted, delayed, or spurious", "MessagePassing.NotificationNotDelivered")
+$FailureMode("Server notification lost, incomplete, corrupted, delayed, or spurious", "MessagePassing.NotificationNotDelivered")
 
 $OrGate("OG1", "MessagePassing.NotificationNotDelivered")
 
-$BasicEvent("Notification dropped because max_queued_notifies is zero or exhausted", "BE_NotifyQueueExhausted", "OG1")
-$BasicEvent("Notification exceeds configured max_notify_size and is rejected", "BE_NotifyTooBig", "OG1")
-$BasicEvent("OS IPC transport failure on the notification path", "BE_NotifyTransportFault", "OG1")
-$BasicEvent("Client notification callback not registered via Start", "BE_NotifyCallbackMissing", "OG1")
+$RootCause("Notification dropped because max_queued_notifies is zero or exhausted", "BE_NotifyQueueExhausted", "OG1")
+$RootCause("Notification exceeds configured max_notify_size and is rejected", "BE_NotifyTooBig", "OG1")
+$RootCause("OS IPC transport failure on the notification path", "BE_NotifyTransportFault", "OG1")
+$RootCause("Client notification callback not registered via Start", "BE_NotifyCallbackMissing", "OG1")
 
 @enduml

@@ -15,18 +15,18 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Wrong input arguments used", "Communication.WrongMethodInArgsUsed")
+$FailureMode("Wrong input arguments used", "Communication.WrongMethodInArgsUsed")
 
 $OrGate("Gate1", "Communication.WrongMethodInArgsUsed")
 $IntermediateEvent("Callee used wrong InArgs", "Event1", "Gate1")
 $IntermediateEvent("Callee used corrupted InArgs", "Event2", "Gate1")
 $OrGate("Gate2", "Event1")
 $OrGate("Gate3", "Event2")
-$BasicEvent("Callee used InArgs from wrong location", "Communication.CalleeUsedInArgsFromWrongLocation", "Gate2")
-$BasicEvent("Callee used InArgs before being provided", "Communication.CalleeUsedInArgsBeforeBeingProvided", "Gate2")
+$RootCause("Callee used InArgs from wrong location", "CalleeUsedInArgsFromWrongLocation", "Gate2")
+$RootCause("Callee used InArgs before being provided", "CalleeUsedInArgsBeforeBeingProvided", "Gate2")
 
-$BasicEvent("Callee used InArgs in wrong layout", "Communication.CalleeUsedInArgsInWrongLayout", "Gate3")
-$BasicEvent("Callee used InArgs while concurrently updated", "Communication.CalleeUsedInArgsWhileConcurrentlyUpdated", "Gate3")
-$BasicEvent("InArgs corrupted by 3d party", "Communication.InArgsCorruptedBy3rdParty", "Gate3")
+$RootCause("Callee used InArgs in wrong layout", "CalleeUsedInArgsInWrongLayout", "Gate3")
+$RootCause("Callee used InArgs while concurrently updated", "CalleeUsedInArgsWhileConcurrentlyUpdated", "Gate3")
+$RootCause("InArgs corrupted by 3d party", "InArgsCorruptedBy3rdParty", "Gate3")
 
 @enduml

@@ -15,12 +15,12 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("StopOffer unlinks wrong SHM objects", "Communication.StopOfferUnlinkWrongSHMObjects")
+$FailureMode("StopOffer unlinks wrong SHM objects", "Communication.StopOfferUnlinkWrongSHMObjects")
 $OrGate("Gate1", "Communication.StopOfferUnlinkWrongSHMObjects")
-$BasicEvent("Wrong SHM path created", "Communication.SHMObjectWrongPath", "Gate1")
+$RootCause("Wrong SHM path created", "SHMObjectWrongPath", "Gate1")
 $IntermediateEvent("Unlinked while used", "Communication.SHMObjectUnlinkedWhileUsed", "Gate1")
 $OrGate("Gate3", "Communication.SHMObjectUnlinkedWhileUsed")
-$BasicEvent("Service instance usage not checked", "Communication.ServiceInstanceUsageNotChecked", "Gate3")
-$BasicEvent("Service instance usage lock mechanism failed", "Communication.ServiceInstanceUsageLockMechanismFailed", "Gate3")
+$RootCause("Service instance usage not checked", "ServiceInstanceUsageNotChecked", "Gate3")
+$RootCause("Service instance usage lock mechanism failed", "ServiceInstanceUsageLockMechanismFailed", "Gate3")
 
 @enduml

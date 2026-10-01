@@ -15,18 +15,18 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("IPC channel cannot be established or maintained between client and server", "MessagePassing.IpcChannelUnavailable")
+$FailureMode("IPC channel cannot be established or maintained between client and server", "MessagePassing.IpcChannelUnavailable")
 
 $OrGate("OG1", "MessagePassing.IpcChannelUnavailable")
 
 $IntermediateEvent("Startup fails", "IE_Startup", "OG1")
 $OrGate("OG_Startup", "IE_Startup")
-$BasicEvent("Startup arguments missing or incorrect", "MessagePassing.StartupArgumentValidation", "OG_Startup")
-$BasicEvent("Duplicate Server Name", "MessagePassing.UniqueServerNamePolicy", "OG_Startup")
-$BasicEvent("Server factory queue size configured below the required minimum", "BE_ServerQueueConfig", "OG_Startup")
+$RootCause("Startup arguments missing or incorrect", "StartupArgumentValidation", "OG_Startup")
+$RootCause("Duplicate Server Name", "UniqueServerNamePolicy", "OG_Startup")
+$RootCause("Server factory queue size configured below the required minimum", "BE_ServerQueueConfig", "OG_Startup")
 
-$BasicEvent("Server not accepting connections at runtime", "MessagePassing.ServerHealthCheck", "OG1")
-$BasicEvent("Client cannot connect to server at runtime", "MessagePassing.ClientRetryPolicy", "OG1")
-$BasicEvent("Unintended RequestDisconnect drops a live channel", "BE_UnintendedDisconnect", "OG1")
+$RootCause("Server not accepting connections at runtime", "ServerHealthCheck", "OG1")
+$RootCause("Client cannot connect to server at runtime", "ClientRetryPolicy", "OG1")
+$RootCause("Unintended RequestDisconnect drops a live channel", "BE_UnintendedDisconnect", "OG1")
 
 @enduml
