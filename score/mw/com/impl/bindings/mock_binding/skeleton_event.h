@@ -55,7 +55,7 @@ class SkeletonEventFacade : public SkeletonEventBinding
 
     ~SkeletonEventFacade() override = default;
     Result<void> Send(score::mw::com::impl::SampleAllocateePtr<void> sample,
-                      std::optional<SendTraceCallback> callback) noexcept override
+                      std::optional<SendTraceCallback> callback) override
     {
         return skeleton_event_.Send(std::move(sample), std::move(callback));
     }

@@ -221,7 +221,7 @@ auto SkeletonBase::OfferService() -> Result<void>
     return {};
 }
 
-auto SkeletonBase::StopOfferService() noexcept -> void
+auto SkeletonBase::StopOfferService() -> void
 {
     if (skeleton_mock_ != nullptr)
     {

@@ -39,7 +39,7 @@ class SkeletonEventBindingFactory final
     static std::unique_ptr<SkeletonEventBinding> Create(const InstanceIdentifier& identifier,
                                                         SkeletonBinding& parent_binding,
                                                         const std::string_view event_name,
-                                                        memory::DataTypeSizeInfo sample_type_size_info) noexcept
+                                                        memory::DataTypeSizeInfo sample_type_size_info)
     {
         return instance().Create(identifier, parent_binding, event_name, sample_type_size_info);
     }

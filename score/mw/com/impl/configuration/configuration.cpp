@@ -186,7 +186,7 @@ Result<void> Configuration::MergeServiceEntries(const Configuration& additional_
     return {};
 }
 
-score::Result<void> Configuration::Validate() const noexcept
+score::Result<void> Configuration::Validate() const
 {
 
     if (const auto result = CrossCheckAsilLevels(); !result.has_value())
@@ -301,7 +301,7 @@ std::set<std::string_view> Configuration::GetServiceTypeNames() const noexcept
 }
 
 std::set<std::string_view> Configuration::GetElementNamesOfServiceType(const std::string_view service_type,
-                                                                       ServiceElementType element_type) const noexcept
+                                                                       ServiceElementType element_type) const
 {
     std::set<std::string_view> result{};
     auto service_type_deployment_visitor = score::cpp::overload(

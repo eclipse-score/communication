@@ -108,6 +108,7 @@ GenericProxy::GenericProxy(std::unique_ptr<ProxyBinding> proxy_binding, HandleTy
 {
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(destructor-contract-violation-terminate)
 GenericProxy::~GenericProxy() noexcept
 {
     if (is_proxy_owner_.IsSet())
@@ -123,6 +124,7 @@ GenericProxy::GenericProxy(GenericProxy&& other) noexcept
 {
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(move-assignment-contract-violation-terminate)
 GenericProxy& GenericProxy::operator=(GenericProxy&& other) noexcept
 {
     if (&other != this)

@@ -192,7 +192,7 @@ class ProxyFieldImpl : public ProxyFieldBase
      */
     template <typename T = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
-    void Unsubscribe() noexcept
+    void Unsubscribe()
     {
         ProxyFieldBase::Unsubscribe();
     }
@@ -257,7 +257,7 @@ class ProxyFieldImpl : public ProxyFieldBase
      */
     template <typename T = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
-    Result<void> SetReceiveHandler(EventReceiveHandler handler) noexcept
+    Result<void> SetReceiveHandler(EventReceiveHandler handler)
     {
         return ProxyFieldBase::SetReceiveHandler(std::move(handler));
     }
@@ -294,7 +294,7 @@ class ProxyFieldImpl : public ProxyFieldBase
      */
     template <typename T = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
-    Result<void> UnsetReceiveHandler() noexcept
+    Result<void> UnsetReceiveHandler()
     {
         return ProxyFieldBase::UnsetReceiveHandler();
     }

@@ -46,7 +46,7 @@ class GenericSkeletonEventBinding : public SkeletonEventBinding
 
     /// \brief Trigger notification of potential registered receive handlers.
     /// \details This is a specific API for the gateway use-case!
-    virtual Result<void> Notify() noexcept = 0;
+    virtual Result<void> Notify() = 0;
 
     /// \brief Sets a callback that will be called when the first ReceiveHandler of a GenericEvent
     /// will get registered or the last ReceiveHandler will be removed.

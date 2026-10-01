@@ -35,7 +35,7 @@ class SkeletonFieldBindingFactoryImpl : public ISkeletonFieldBindingFactory
                                                              SkeletonBinding& parent_binding,
                                                              const std::string_view field_name,
                                                              memory::DataTypeSizeInfo sample_type_size_info,
-                                                             const FieldTagsStore field_tags_store) noexcept override;
+                                                             const FieldTagsStore field_tags_store) override;
 };
 
 }  // namespace score::mw::com::impl

@@ -48,8 +48,7 @@ class ISkeletonEventBindingFactory
     virtual auto Create(const InstanceIdentifier& identifier,
                         SkeletonBinding& parent_binding,
                         const std::string_view event_name,
-                        memory::DataTypeSizeInfo sample_type_size_info) noexcept
-        -> std::unique_ptr<SkeletonEventBinding> = 0;
+                        memory::DataTypeSizeInfo sample_type_size_info) -> std::unique_ptr<SkeletonEventBinding> = 0;
 };
 
 }  // namespace score::mw::com::impl

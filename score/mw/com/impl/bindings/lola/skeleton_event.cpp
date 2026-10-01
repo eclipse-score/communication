@@ -40,7 +40,7 @@ SkeletonEvent::SkeletonEvent(Skeleton& parent,
 }
 
 Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void> sample,
-                                 std::optional<SendTraceCallback> send_trace_callback) noexcept
+                                 std::optional<SendTraceCallback> send_trace_callback)
 {
     const impl::SampleAllocateePtrView<void> view{sample};
     const auto* ptr = view.template As<lola::SampleAllocateePtr>();
@@ -333,7 +333,7 @@ Result<void> SkeletonEvent::NotifyConsumersIfHandlersRegistered()
     return {};
 }
 
-Result<void> SkeletonEvent::Notify() noexcept
+Result<void> SkeletonEvent::Notify()
 {
     return NotifyConsumersIfHandlersRegistered();
 }

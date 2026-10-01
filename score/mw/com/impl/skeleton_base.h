@@ -80,7 +80,7 @@ class SkeletonBase
      * \brief Stops offering the respective service to other applications
      * \requirement SWS_CM_00111
      */
-    void StopOfferService() noexcept;
+    void StopOfferService();
 
     void InjectMock(ISkeletonBase& skeleton_mock)
     {

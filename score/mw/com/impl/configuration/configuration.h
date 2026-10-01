@@ -122,7 +122,7 @@ class Configuration final
     }
 
     /// \brief Public interface to trigger a validation of this configuration.
-    score::Result<void> Validate() const noexcept;
+    score::Result<void> Validate() const;
 
     /// \brief Determine if any service with a LoLa binding is defined in this configuration
     score::Result<bool> HasLolaServiceDeployment() const;
@@ -137,7 +137,7 @@ class Configuration final
     /// \param element_type element type of which to get names
     /// \return a set of string_views denoting the service element names.
     std::set<std::string_view> GetElementNamesOfServiceType(const std::string_view service_type,
-                                                            ServiceElementType element_type) const noexcept;
+                                                            ServiceElementType element_type) const;
 
     /// \brief Returns a set of UIDs of all allowed users of all service instances defined in this configuration for the
     /// given
