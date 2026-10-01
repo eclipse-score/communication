@@ -22,6 +22,8 @@
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
+#include "score/mw/com/impl/reference_to_moveable.h"
+#include "score/mw/com/impl/skeleton_event_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/common_event_tracing.h"
 #include "score/mw/com/impl/tracing/configuration/service_element_instance_identifier_view.h"
@@ -46,16 +48,6 @@ tracing::SkeletonEventTracingData GenerateSkeletonTracingStructFromFieldConfig(
     const BindingType binding_type,
     const std::string_view field_name);
 
-auto CreateTracingSendCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
-                               memory::DataTypeSizeInfo skeleton_event_size_info,
-                               const SkeletonEventBinding& skeleton_event_binding)
-    -> std::optional<typename SkeletonEventBinding::SendTraceCallback>;
-
-auto CreateTracingSendWithAllocateCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
-                                           memory::DataTypeSizeInfo skeleton_event_size_info,
-                                           const SkeletonEventBinding& skeleton_event_binding)
-    -> std::optional<typename SkeletonEventBinding::SendTraceCallback>;
-
 void TraceSendWithAllocate(SkeletonEventTracingData& skeleton_event_tracing_data,
                            memory::DataTypeSizeInfo skeleton_event_size_info,
                            const SkeletonEventBinding& skeleton_event_binding_base,
@@ -65,6 +57,23 @@ void TraceSend(SkeletonEventTracingData& skeleton_event_tracing_data,
                memory::DataTypeSizeInfo skeleton_event_size_info,
                const SkeletonEventBinding& skeleton_event_binding_base,
                impl::SampleAllocateePtr<void>& sample_data_ptr);
+
+/// \brief Creates the (optional) callback used to trace a SkeletonEvent::Send() call.
+/// \details The callback is only created (i.e. the returned optional has a value) if tracing of the Send trace point
+/// is currently enabled. SkeletonEventTracingData and SkeletonEventBinding are handed over as ref/pointer, because they
+/// will never move.
+auto CreateTracingSendCallback(SkeletonEventTracingData& tracing_data,
+                               SkeletonEventBinding& skeleton_event_binding,
+                               memory::DataTypeSizeInfo skeleton_event_size_info)
+    -> std::optional<SkeletonEventBinding::SendTraceCallback>;
+
+/// \brief Creates the (optional) callback used to trace a SkeletonEvent::Send(SampleAllocateePtr) call.
+/// \details See CreateTracingSendCallback() above for the rationale behind capturing skeleton_event_reference instead
+/// of the SkeletonEventBase's members directly.
+auto CreateTracingSendWithAllocateCallback(SkeletonEventTracingData& tracing_data,
+                                           SkeletonEventBinding& skeleton_event_binding,
+                                           memory::DataTypeSizeInfo skeleton_event_size_info)
+    -> std::optional<SkeletonEventBinding::SendTraceCallback>;
 
 }  // namespace score::mw::com::impl::tracing
 

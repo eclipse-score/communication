@@ -134,7 +134,15 @@ class SkeletonEvent : public SkeletonEventBase
             score::cpp::ignore = new (sample_ptr) SampleDataType{};
         }};
     }
+
+    /// \brief Creates the tracing send callbacks from the current tracing_data_/binding_, once (called in the
+    /// constructor).
+    void InitializeTracingSendCallbacks();
+
     ISkeletonEvent<EventType>* skeleton_event_mock_;
+
+    std::optional<SkeletonEventBinding::SendTraceCallback> send_tracing_handler_;
+    std::optional<SkeletonEventBinding::SendTraceCallback> send_with_allocate_tracing_handler_;
 };
 
 template <typename SampleDataType>
@@ -155,9 +163,10 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base, const 
         const SkeletonBaseView skeleton_base_view{skeleton_base};
         const auto& instance_identifier = skeleton_base_view.GetAssociatedInstanceIdentifier();
         const auto binding_type = binding_->GetBindingType();
-        tracing_data_ =
+        *tracing_data_ =
             tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
-        binding_->SetSkeletonEventTracingData(tracing_data_);
+        binding_->SetSkeletonEventTracingData(*tracing_data_);
+        InitializeTracingSendCallbacks();
     }
 }
 
@@ -173,9 +182,10 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base,
         const SkeletonBaseView skeleton_base_view{skeleton_base};
         const auto& instance_identifier = skeleton_base_view.GetAssociatedInstanceIdentifier();
         const auto binding_type = binding_->GetBindingType();
-        tracing_data_ =
+        *tracing_data_ =
             tracing::GenerateSkeletonTracingStructFromFieldConfig(instance_identifier, binding_type, event_name);
-        binding_->SetSkeletonEventTracingData(tracing_data_);
+        binding_->SetSkeletonEventTracingData(*tracing_data_);
+        InitializeTracingSendCallbacks();
     }
 }
 
@@ -185,6 +195,10 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& /*skeleton_base*/,
                                              std::unique_ptr<SkeletonEventBinding> binding)
     : SkeletonEventBase{event_name, MakeInitializeSampleCallback(), std::move(binding)}, skeleton_event_mock_{nullptr}
 {
+    if (binding_ != nullptr)
+    {
+        InitializeTracingSendCallbacks();
+    }
 }
 
 template <typename SampleDataType>
@@ -201,9 +215,6 @@ Result<void> SkeletonEvent<SampleDataType>::Send(const EventType& sample_value)
             << "SkeletonEvent::Send with copy failed as Event has not yet been offered or has been stop offered";
         return MakeUnexpected(ComErrc::kNotOffered);
     }
-    auto tracing_handler = impl::tracing::CreateTracingSendCallback(
-        tracing_data_, memory::DataTypeSizeInfo{sizeof(SampleDataType), alignof(SampleDataType)}, *binding_);
-
     auto allocate_result = binding_->Allocate(sample_allocatee_tracker_->Allocate());
     if (!allocate_result.has_value())
     {
@@ -215,7 +226,7 @@ Result<void> SkeletonEvent<SampleDataType>::Send(const EventType& sample_value)
     auto allocated_slot = std::move(allocate_result).value();
     *static_cast<SampleDataType*>(allocated_slot.Get()) = sample_value;
 
-    const auto send_result = binding_->Send(std::move(allocated_slot), std::move(tracing_handler));
+    const auto send_result = binding_->Send(std::move(allocated_slot), send_tracing_handler_);
     if (!send_result.has_value())
     {
         score::mw::log::LogError("lola") << "SkeletonEvent::Send with copy failed: " << send_result.error().Message()
@@ -240,10 +251,7 @@ Result<void> SkeletonEvent<SampleDataType>::Send(SampleAllocateePtr<EventType> s
         return MakeUnexpected(ComErrc::kNotOffered);
     }
 
-    auto tracing_handler = impl::tracing::CreateTracingSendWithAllocateCallback(
-        tracing_data_, memory::DataTypeSizeInfo{sizeof(SampleDataType), alignof(SampleDataType)}, *binding_);
-
-    const auto send_result = binding_->Send(std::move(sample), std::move(tracing_handler));
+    const auto send_result = binding_->Send(std::move(sample), send_with_allocate_tracing_handler_);
     if (!send_result.has_value())
     {
         score::mw::log::LogError("lola") << "SkeletonEvent::Send zero copy failed: " << send_result.error().Message()
@@ -280,6 +288,15 @@ Result<SampleAllocateePtr<SampleDataType>> SkeletonEvent<SampleDataType>::Alloca
     // If a slot gets reused later here (because we return in this Allocate() a slot, which had been used before, we
     // return it in a state, where it was left in the last Send()!
     return allocate_result;
+}
+
+template <typename SampleDataType>
+void SkeletonEvent<SampleDataType>::InitializeTracingSendCallbacks()
+{
+    const memory::DataTypeSizeInfo size_info{sizeof(SampleDataType), alignof(SampleDataType)};
+    send_tracing_handler_ = impl::tracing::CreateTracingSendCallback(*tracing_data_, *binding_, size_info);
+    send_with_allocate_tracing_handler_ =
+        impl::tracing::CreateTracingSendWithAllocateCallback(*tracing_data_, *binding_, size_info);
 }
 
 template <typename SampleType>

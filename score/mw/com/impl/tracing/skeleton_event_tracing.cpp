@@ -302,39 +302,6 @@ SkeletonEventTracingData GenerateSkeletonTracingStructFromFieldConfig(const Inst
     return skeleton_event_tracing_data;
 }
 
-auto CreateTracingSendCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
-                               memory::DataTypeSizeInfo skeleton_event_size_info,
-                               const SkeletonEventBinding& skeleton_event_binding)
-    -> std::optional<typename SkeletonEventBinding::SendTraceCallback>
-{
-    std::optional<typename SkeletonEventBinding::SendTraceCallback> tracing_handler{};
-    if (skeleton_event_tracing_data.enable_send)
-    {
-        tracing_handler = [&skeleton_event_tracing_data, skeleton_event_size_info, &skeleton_event_binding](
-                              impl::SampleAllocateePtr<void>& sample_data_ptr) mutable {
-            TraceSend(skeleton_event_tracing_data, skeleton_event_size_info, skeleton_event_binding, sample_data_ptr);
-        };
-    }
-    return tracing_handler;
-}
-
-auto CreateTracingSendWithAllocateCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
-                                           memory::DataTypeSizeInfo skeleton_event_size_info,
-                                           const SkeletonEventBinding& skeleton_event_binding)
-    -> std::optional<typename SkeletonEventBinding::SendTraceCallback>
-{
-    std::optional<typename SkeletonEventBinding::SendTraceCallback> tracing_handler{};
-    if (skeleton_event_tracing_data.enable_send_with_allocate)
-    {
-        tracing_handler = [&skeleton_event_tracing_data, skeleton_event_size_info, &skeleton_event_binding](
-                              impl::SampleAllocateePtr<void>& sample_data_ptr) mutable {
-            TraceSendWithAllocate(
-                skeleton_event_tracing_data, skeleton_event_size_info, skeleton_event_binding, sample_data_ptr);
-        };
-    }
-    return tracing_handler;
-}
-
 void TraceSend(SkeletonEventTracingData& skeleton_event_tracing_data,
                memory::DataTypeSizeInfo skeleton_event_size_info,
                const SkeletonEventBinding& skeleton_event_binding_base,
@@ -428,6 +395,38 @@ void TraceSendWithAllocate(SkeletonEventTracingData& skeleton_event_tracing_data
         UpdateTracingDataFromTraceResult(
             trace_result, skeleton_event_tracing_data, skeleton_event_tracing_data.enable_send_with_allocate);
     }
+}
+
+auto CreateTracingSendCallback(SkeletonEventTracingData& tracing_data,
+                               SkeletonEventBinding& skeleton_event_binding,
+                               memory::DataTypeSizeInfo skeleton_event_size_info)
+    -> std::optional<SkeletonEventBinding::SendTraceCallback>
+{
+    std::optional<SkeletonEventBinding::SendTraceCallback> tracing_handler{};
+    if (tracing_data.enable_send)
+    {
+        tracing_handler = [&tracing_data, &skeleton_event_binding, skeleton_event_size_info](
+                              impl::SampleAllocateePtr<void>& sample_data_ptr) mutable {
+            TraceSend(tracing_data, skeleton_event_size_info, skeleton_event_binding, sample_data_ptr);
+        };
+    }
+    return tracing_handler;
+}
+
+auto CreateTracingSendWithAllocateCallback(SkeletonEventTracingData& tracing_data,
+                                           SkeletonEventBinding& skeleton_event_binding,
+                                           memory::DataTypeSizeInfo skeleton_event_size_info)
+    -> std::optional<SkeletonEventBinding::SendTraceCallback>
+{
+    std::optional<SkeletonEventBinding::SendTraceCallback> tracing_handler{};
+    if (tracing_data.enable_send_with_allocate)
+    {
+        tracing_handler = [&tracing_data, &skeleton_event_binding, skeleton_event_size_info](
+                              impl::SampleAllocateePtr<void>& sample_data_ptr) mutable {
+            TraceSendWithAllocate(tracing_data, skeleton_event_size_info, skeleton_event_binding, sample_data_ptr);
+        };
+    }
+    return tracing_handler;
 }
 
 }  // namespace score::mw::com::impl::tracing

@@ -170,7 +170,7 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreTracedWhenEnabled)
 
     // and then send is called
     auto tracing_handler = impl::tracing::CreateTracingSendCallback(
-        expected_enabled_trace_points, test::kEventSampleTypeSizeInfo, *skeleton_event_);
+        expected_enabled_trace_points, *skeleton_event_, test::kEventSampleTypeSizeInfo);
     std::ignore = SendValueByCopy(*skeleton_event_, sample_data, std::move(tracing_handler));
 }
 
@@ -240,11 +240,11 @@ TEST_F(SkeletonEventTracingSendFixture, MultipleSendCallsUsesCorrectTracePointDa
 
     // and then send is called twice
     auto tracing_handler = impl::tracing::CreateTracingSendCallback(
-        expected_enabled_trace_points, test::kEventSampleTypeSizeInfo, *skeleton_event_);
+        expected_enabled_trace_points, *skeleton_event_, test::kEventSampleTypeSizeInfo);
     std::ignore = SendValueByCopy(*skeleton_event_, sample_data[0], std::move(tracing_handler));
 
     auto tracing_handler_2 = impl::tracing::CreateTracingSendCallback(
-        expected_enabled_trace_points, test::kEventSampleTypeSizeInfo, *skeleton_event_);
+        expected_enabled_trace_points, *skeleton_event_, test::kEventSampleTypeSizeInfo);
     std::ignore = SendValueByCopy(*skeleton_event_, sample_data[1], std::move(tracing_handler_2));
 }
 
@@ -285,7 +285,7 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenAllocateFails)
 
     // and then send is called
     auto tracing_handler = impl::tracing::CreateTracingSendCallback(
-        expected_enabled_trace_points, test::kEventSampleTypeSizeInfo, *skeleton_event_);
+        expected_enabled_trace_points, *skeleton_event_, test::kEventSampleTypeSizeInfo);
     std::ignore = SendValueByCopy(*skeleton_event_, sample_data, std::move(tracing_handler));
 }
 
@@ -362,7 +362,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendWithAllocateCallsAreTrac
 
     // and then send is called
     auto tracing_handler = impl::tracing::CreateTracingSendWithAllocateCallback(
-        expected_enabled_trace_points, test::kEventSampleTypeSizeInfo, *skeleton_event_);
+        expected_enabled_trace_points, *skeleton_event_, test::kEventSampleTypeSizeInfo);
     std::ignore = skeleton_event_->Send(std::move(slot), {std::move(tracing_handler)});
 }
 TEST_F(SkeletonEventTracingSendWithAllocateFixture, MultipleSendCallsUsesCorrectTracePointDataId)
@@ -440,7 +440,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, MultipleSendCallsUsesCorrect
 
     // and then send is called
     auto tracing_handler = impl::tracing::CreateTracingSendWithAllocateCallback(
-        expected_enabled_trace_points, test::kEventSampleTypeSizeInfo, *skeleton_event_);
+        expected_enabled_trace_points, *skeleton_event_, test::kEventSampleTypeSizeInfo);
     std::ignore = skeleton_event_->Send(std::move(slot), {std::move(tracing_handler)});
 
     // and then allocating another slot
@@ -451,7 +451,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, MultipleSendCallsUsesCorrect
     // and assigning a value to the slot
     *(static_cast<test::TestSampleType*>(slot_2.Get())) = sample_data[1];
     auto tracing_handler_2 = impl::tracing::CreateTracingSendWithAllocateCallback(
-        expected_enabled_trace_points, test::kEventSampleTypeSizeInfo, *skeleton_event_);
+        expected_enabled_trace_points, *skeleton_event_, test::kEventSampleTypeSizeInfo);
 
     // and then send is called again
     std::ignore = skeleton_event_->Send(std::move(slot_2), {std::move(tracing_handler_2)});

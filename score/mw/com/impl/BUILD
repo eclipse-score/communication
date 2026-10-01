@@ -319,7 +319,6 @@ cc_library(
         ":flag_owner",
         ":sample_allocatee_tracker",
         ":skeleton_event_binding",
-        "//score/mw/com/impl/tracing:skeleton_event_tracing",
         "//score/mw/com/impl/tracing:skeleton_event_tracing_data",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
