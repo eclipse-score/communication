@@ -739,7 +739,10 @@ inline ::score::mw::com::impl::rust::TypeOperationImpl<T>& get_type_operations()
         using ProxyType = proxy_type;                                                                                  \
         using SkeletonType = skeleton_type;                                                                            \
                                                                                                                        \
-        /* Registration helper struct - constructor runs at startup */                                                 \
+        /* Registration helper struct - constructor runs at startup. Kept in an anonymous namespace so that the        \
+           struct and its instance have internal linkage (misc-use-internal-linkage). */                               \
+        namespace                                                                                                      \
+        {                                                                                                              \
         struct id##_InterfaceRegistrationHelper                                                                        \
         {                                                                                                              \
             id##_InterfaceRegistrationHelper()                                                                         \
@@ -753,10 +756,7 @@ inline ::score::mw::com::impl::rust::TypeOperationImpl<T>& get_type_operations()
             }                                                                                                          \
         };                                                                                                             \
                                                                                                                        \
-        /* Force instantiation at startup (in an anonymous namespace so the instance has internal linkage without      \
-           relying on the deprecated 'static' meaning; see misc-use-anonymous-namespace) */                            \
-        namespace                                                                                                      \
-        {                                                                                                              \
+        /* Force instantiation at startup */                                                                           \
         id##_InterfaceRegistrationHelper id##_interface_reg_instance;                                                  \
         } /* namespace */
 
@@ -769,6 +769,8 @@ inline ::score::mw::com::impl::rust::TypeOperationImpl<T>& get_type_operations()
 /// \param event_member Event member name in Proxy and Skeleton classes (e.g., left_tire, right_tire)
 /// \note Example usage: EXPORT_MW_COM_EVENT(Tire, left_tire)
 #define EXPORT_MW_COM_EVENT(event_type, event_member)                                                             \
+    namespace                                                                                                     \
+    {                                                                                                             \
     struct event_member##_EventRegistrationHelper                                                                 \
     {                                                                                                             \
         event_member##_EventRegistrationHelper()                                                                  \
@@ -789,8 +791,6 @@ inline ::score::mw::com::impl::rust::TypeOperationImpl<T>& get_type_operations()
         }                                                                                                         \
     };                                                                                                            \
                                                                                                                   \
-    namespace                                                                                                     \
-    {                                                                                                             \
     event_member##_EventRegistrationHelper event_member##_event_reg_instance;                                     \
     } /* namespace */
 

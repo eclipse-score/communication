@@ -37,6 +37,8 @@ namespace
 const std::chrono::seconds kMaxHandleNotificationWaitTime{15U};
 }  // namespace
 
+namespace
+{
 void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
                                 HandleNotificationData& handle_notification_data,
                                 score::cpp::stop_token test_stop_token,
@@ -341,6 +343,7 @@ void DoConsumerActionsWithOutProxy(CheckPointControl& check_point_control,
     }
     check_point_control_error_guard.Release();
 }
+}  // namespace
 
 /// \brief Implements Actions/Steps done by the Consumer process in the Partial Restart ITF
 /// \param check_point_control communication/sync object to interact with the parent/controller process.

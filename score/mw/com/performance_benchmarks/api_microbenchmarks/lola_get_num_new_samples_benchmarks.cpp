@@ -26,6 +26,8 @@ constexpr std::string_view kBenchmarkInstanceSpecifier = "test/lolabenchmark";
 }
 
 // This fixture will be used to benchmark the LoLa runtime
+namespace
+{
 class LolaGetNumNewSamplesAvailableBenchmarkFixture : public benchmark::Fixture
 {
   public:
@@ -124,6 +126,7 @@ class LolaGetNumNewSamplesAvailableBenchmarkFixture : public benchmark::Fixture
     std::thread sender_thread_;
     static std::atomic<bool> fixture_initialized_;
 };
+}  // namespace
 
 std::atomic<bool> LolaGetNumNewSamplesAvailableBenchmarkFixture::fixture_initialized_{false};
 

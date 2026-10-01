@@ -42,6 +42,8 @@ constexpr DataExchangeConfig kConfig{};
 }  // namespace
 
 // This fixture will be used to benchmark the LoLa runtime
+namespace
+{
 class LolaGetNewSamplesBenchmarkFixture : public benchmark::Fixture
 {
   public:
@@ -144,6 +146,7 @@ class LolaGetNewSamplesBenchmarkFixture : public benchmark::Fixture
     std::thread sender_thread_;
     static std::atomic<bool> fixture_initialized_;
 };
+}  // namespace
 
 std::atomic<bool> LolaGetNewSamplesBenchmarkFixture::fixture_initialized_{false};
 

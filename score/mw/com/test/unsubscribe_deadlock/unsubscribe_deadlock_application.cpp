@@ -33,29 +33,8 @@
 
 const score::mw::com::test::MapApiLanesStamped kEvent_sample{};
 
-void CreateAndOfferSkeleton(const score::mw::com::InstanceSpecifier& instance_specifier, std::atomic_bool& success_flag)
+namespace
 {
-    for (std::size_t j = 0; j < 10; ++j)
-    {
-        auto bigdata_result = score::mw::com::test::BigDataSkeleton::Create(instance_specifier);
-        if (!bigdata_result.has_value())
-        {
-            success_flag = false;
-            std::cerr << "Could not create skeleton with instance specifier" << instance_specifier.ToString()
-                      << "in index " << j << "of loop, terminating." << std::endl;
-            break;
-        }
-        const auto offer_service_result = bigdata_result->OfferService();
-        if (!offer_service_result.has_value())
-        {
-            success_flag = false;
-            std::cerr << "Could not offer service for skeleton with instance specifier" << instance_specifier.ToString()
-                      << "in index " << j << "of loop, terminating." << std::endl;
-            break;
-        }
-    }
-}
-
 score::Result<score::mw::com::test::BigDataProxy> CreateProxy(
     const score::mw::com::InstanceSpecifier& instance_specifier)
 {
@@ -91,6 +70,7 @@ score::Result<score::mw::com::test::BigDataProxy> CreateProxy(
 
     return score::mw::com::test::BigDataProxy::Create(handles.front());
 }
+}  // namespace
 
 /**
  * Test that checks that there is no deadlock in the following situation:

@@ -42,6 +42,8 @@ constexpr int kMaxNumSamples{kNumberOfSampleSlots + kNumberOfTracingSlots};
 const std::string_view kInstanceSpecifier = "partial_restart/small_but_great";
 const std::chrono::seconds kMaxWaitTimeToReachCheckpoint{30U};
 
+namespace
+{
 void PerformProviderActions(CheckPointControl& check_point_control, score::cpp::stop_token stop_token)
 {
     score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
@@ -109,6 +111,7 @@ void PerformProviderActions(CheckPointControl& check_point_control, score::cpp::
     check_point_control_error_guard.Release();
     std::cout << "Provider Step (5): after waiting for proceed\n";
 }
+}  // namespace
 
 int main()
 {
