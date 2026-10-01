@@ -1,0 +1,64 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Postprocessing steps that run once a release has been published.
+# Currently: add the new release version to the "Affected Version" dropdown of
+# the bug report issue template (via a pull request).
+
+name: Release Postprocessing
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update-issue-template-versions:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      # dry_run: no-commit only rewrites the form file; the change is proposed via a PR
+      - name: Populate version dropdown with published releases
+        uses: ShaMan123/gha-populate-form-version@1069c5fbc9d018875fdf26dbe11db854f4288b45
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          registry: github
+          form: .github/ISSUE_TEMPLATE/1-bugfix.yml
+          dropdown: _version
+          dry_run: no-commit
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: chore/update-issue-template-versions
+          base: ${{ github.event.repository.default_branch }}
+          commit-message: "chore: add released version to issue template"
+          title: "chore: add released version to issue template"
+          body: |
+            Automatically adds the newly published release to the "Affected Version"
+            dropdown of `.github/ISSUE_TEMPLATE/1-bugfix.yml`.
+
+            Triggered by workflow `Release Postprocessing`.
+          add-paths: .github/ISSUE_TEMPLATE/1-bugfix.yml
+          delete-branch: true
