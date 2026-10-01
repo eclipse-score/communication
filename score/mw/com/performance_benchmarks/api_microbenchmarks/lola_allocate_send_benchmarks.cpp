@@ -41,26 +41,16 @@ struct DataExchangeConfig
 constexpr DataExchangeConfig kConfig{};
 }  // namespace
 
-// This fixture will be used to benchmark the LoLa runtime
+// Common SetUp/TearDown logic shared by both the combined AllocateSend benchmark (automatic
+// CPU/wall-clock timing) and the split Allocate()-only/Send()-only benchmarks (manual timing).
 namespace
 {
-class LolaAllocateSendBenchmarkFixture : public benchmark::Fixture
+class LolaAllocateSendBenchmarkFixtureBase : public benchmark::Fixture
 {
   public:
     // Bring base class SetUp/TearDown into scope to avoid hiding them
     using benchmark::Fixture::SetUp;
     using benchmark::Fixture::TearDown;
-
-    LolaAllocateSendBenchmarkFixture()
-    {
-        // This code is run once per benchmark
-        this->Repetitions(10);
-        this->ReportAggregatesOnly(true);
-        this->ThreadRange(1, 1);
-        this->MeasureProcessCPUTime();
-        this->UseRealTime();
-        this->Unit(benchmark::kMicrosecond);
-    }
 
     void SetUp(const benchmark::State& /*state*/) override
     {
@@ -104,7 +94,54 @@ class LolaAllocateSendBenchmarkFixture : public benchmark::Fixture
 };
 }  // namespace
 
-std::atomic<bool> LolaAllocateSendBenchmarkFixture::fixture_initialized_{false};
+std::atomic<bool> LolaAllocateSendBenchmarkFixtureBase::fixture_initialized_{false};
+
+// Fixture for the combined AllocateSend benchmark: uses Google Benchmark's automatic (CPU/wall-clock)
+// timing, exactly as before.
+class LolaAllocateSendBenchmarkFixture : public LolaAllocateSendBenchmarkFixtureBase
+{
+  public:
+    LolaAllocateSendBenchmarkFixture()
+    {
+        // This code is run once per benchmark
+        this->Repetitions(10);
+        this->ReportAggregatesOnly(true);
+        this->ThreadRange(1, 1);
+        this->MeasureProcessCPUTime();
+        this->UseRealTime();
+        this->Unit(benchmark::kMicrosecond);
+    }
+};
+
+// Fixture for the AllocateOnly/SendOnly benchmarks below.
+// These use Google Benchmark's *manual* timing mode (UseManualTime() + state.SetIterationTime()).
+// Rationale: to isolate the cost of Allocate() alone or Send() alone out of the combined ~230ns
+// AllocateSend measurement, every iteration needs some untimed "setup"/"drain" work:
+//   - AllocateOnly: the SampleAllocateePtr returned by Allocate() must be released before the next
+//     Allocate() call can succeed (slots are a finite resource). We do this by simply letting it go
+//     out of scope - but its destructor cost must NOT be attributed to Allocate()'s measured time.
+//   - SendOnly: Send() always needs a freshly allocated SampleAllocateePtr to consume. We call
+//     Allocate() first - but its cost must NOT be attributed to Send()'s measured time.
+// Automatic timing (the default for/for-each loop based BENCHMARK_F body) times the *entire* loop
+// body each iteration, so it cannot exclude this extra setup/drain work. Pausing/resuming the
+// automatic timer (state.PauseTiming()/ResumeTiming()) is documented by Google Benchmark as
+// comparatively expensive and not recommended for fine-grained, sub-microsecond measurements like
+// these. Manual timing avoids that overhead: we take two raw std::chrono::steady_clock readings
+// bracketing only the call of interest, and report just that delta via SetIterationTime() - the
+// untimed setup/drain code runs outside those two readings.
+class LolaAllocateSendManualTimeBenchmarkFixture : public LolaAllocateSendBenchmarkFixtureBase
+{
+  public:
+    LolaAllocateSendManualTimeBenchmarkFixture()
+    {
+        // This code is run once per benchmark
+        this->Repetitions(10);
+        this->ReportAggregatesOnly(true);
+        this->ThreadRange(1, 1);
+        this->UseManualTime();
+        this->Unit(benchmark::kMicrosecond);
+    }
+};
 
 BENCHMARK_F(LolaAllocateSendBenchmarkFixture, AllocateSend)(benchmark::State& state)
 {
@@ -130,6 +167,63 @@ BENCHMARK_F(LolaAllocateSendBenchmarkFixture, AllocateSend)(benchmark::State& st
     {
         std::ignore = _;
         allocate_send_sequence(*skeleton_);
+    }
+}
+
+BENCHMARK_F(LolaAllocateSendManualTimeBenchmarkFixture, AllocateOnly)(benchmark::State& state)
+{
+    std::cout << "AllocateOnly Run: " << gGetNewSamplesBenchmarkIndex++ << '\n';
+
+    for (auto _ : state)
+    {
+        std::ignore = _;
+
+        const auto t_start = std::chrono::steady_clock::now();
+        auto sample_alloc_result = skeleton_->test_event.Allocate();
+        const auto t_end = std::chrono::steady_clock::now();
+
+        if (!sample_alloc_result.has_value())
+        {
+            state.SkipWithError("Allocate Failed");
+            break;
+        }
+        state.SetIterationTime(std::chrono::duration<double>(t_end - t_start).count());
+
+        // sample_alloc_result (and the SampleAllocateePtr it contains) is destroyed here, outside the
+        // timed region, releasing the event slot so that the next Allocate() call can succeed. We
+        // deliberately do NOT call Send() on it, and we deliberately do NOT include this destruction
+        // in the measured time.
+    }
+}
+
+BENCHMARK_F(LolaAllocateSendManualTimeBenchmarkFixture, SendOnly)(benchmark::State& state)
+{
+    std::cout << "SendOnly Run: " << gGetNewSamplesBenchmarkIndex++ << '\n';
+
+    for (auto _ : state)
+    {
+        std::ignore = _;
+
+        // Untimed setup: Send() always needs a freshly allocated SampleAllocateePtr to consume. This
+        // Allocate() call's cost must NOT be attributed to Send()'s measured time.
+        auto sample_alloc_result = skeleton_->test_event.Allocate();
+        if (!sample_alloc_result.has_value())
+        {
+            state.SkipWithError("Allocate Failed");
+            break;
+        }
+        auto sample = std::move(sample_alloc_result).value();
+
+        const auto t_start = std::chrono::steady_clock::now();
+        const auto send_result = skeleton_->test_event.Send(std::move(sample));
+        const auto t_end = std::chrono::steady_clock::now();
+
+        if (!send_result.has_value())
+        {
+            state.SkipWithError("Send Failed");
+            break;
+        }
+        state.SetIterationTime(std::chrono::duration<double>(t_end - t_start).count());
     }
 }
 
