@@ -46,15 +46,22 @@ tracing::SkeletonEventTracingData GenerateSkeletonTracingStructFromFieldConfig(
     const BindingType binding_type,
     const std::string_view field_name);
 
+/// \brief Creates the (optional) callback used to trace a SkeletonEvent::Send() call.
+/// \details The callback is only created (i.e. the returned optional has a value) if tracing of the Send trace point
+/// is currently enabled. SkeletonEventTracingData and SkeletonEventBinding are handed over as ref/pointer, because they
+/// will never move.
 auto CreateTracingSendCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
                                memory::DataTypeSizeInfo skeleton_event_size_info,
                                const SkeletonEventBinding& skeleton_event_binding)
-    -> std::optional<typename SkeletonEventBinding::SendTraceCallback>;
+    -> std::optional<SkeletonEventBinding::SendTraceCallback>;
 
+/// \brief Creates the (optional) callback used to trace a SkeletonEvent::Send(SampleAllocateePtr) call.
+/// \details See CreateTracingSendCallback() above for the rationale behind capturing skeleton_event_reference instead
+/// of the SkeletonEventBase's members directly.
 auto CreateTracingSendWithAllocateCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
                                            memory::DataTypeSizeInfo skeleton_event_size_info,
                                            const SkeletonEventBinding& skeleton_event_binding)
-    -> std::optional<typename SkeletonEventBinding::SendTraceCallback>;
+    -> std::optional<SkeletonEventBinding::SendTraceCallback>;
 
 void TraceSendWithAllocate(SkeletonEventTracingData& skeleton_event_tracing_data,
                            memory::DataTypeSizeInfo skeleton_event_size_info,

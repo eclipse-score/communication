@@ -305,9 +305,9 @@ SkeletonEventTracingData GenerateSkeletonTracingStructFromFieldConfig(const Inst
 auto CreateTracingSendCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
                                memory::DataTypeSizeInfo skeleton_event_size_info,
                                const SkeletonEventBinding& skeleton_event_binding)
-    -> std::optional<typename SkeletonEventBinding::SendTraceCallback>
+    -> std::optional<SkeletonEventBinding::SendTraceCallback>
 {
-    std::optional<typename SkeletonEventBinding::SendTraceCallback> tracing_handler{};
+    std::optional<SkeletonEventBinding::SendTraceCallback> tracing_handler{};
     if (skeleton_event_tracing_data.enable_send)
     {
         tracing_handler = [&skeleton_event_tracing_data, skeleton_event_size_info, &skeleton_event_binding](
@@ -321,9 +321,9 @@ auto CreateTracingSendCallback(SkeletonEventTracingData& skeleton_event_tracing_
 auto CreateTracingSendWithAllocateCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
                                            memory::DataTypeSizeInfo skeleton_event_size_info,
                                            const SkeletonEventBinding& skeleton_event_binding)
-    -> std::optional<typename SkeletonEventBinding::SendTraceCallback>
+    -> std::optional<SkeletonEventBinding::SendTraceCallback>
 {
-    std::optional<typename SkeletonEventBinding::SendTraceCallback> tracing_handler{};
+    std::optional<SkeletonEventBinding::SendTraceCallback> tracing_handler{};
     if (skeleton_event_tracing_data.enable_send_with_allocate)
     {
         tracing_handler = [&skeleton_event_tracing_data, skeleton_event_size_info, &skeleton_event_binding](
