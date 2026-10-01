@@ -1,0 +1,287 @@
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+@startuml static_design_proxy
+
+top to bottom direction
+skinparam linetype ortho
+hide empty members
+
+class App #90EE90 {
+    using AppProxyNeeds = ProxyNeeds<<Name>Proxy, Multiple<<Name>Proxy>, Optional<<Name>Proxy>>
+    + App(AppProxyNeeds&& needs)
+    --
+    - proxies_: AppProxyNeeds::Container
+    --
+    Note: Parameters provided for AppProxyNeeds are examples. Actual ProxySpecs depend on the application's needs.
+}
+
+class "ProxyNeedsFactory<ProxyNeeds>" as ProxyNeedsFactory {
+    + Create<Strategies...>(): ProxyNeeds
+}
+
+class "ProxyNeeds<ProxySpec...>" as ProxyNeeds {
+    using Container = RequestedProxies<ProxySpec...>::Container
+    using HolderTypes = tuple<ProxySpecTraits<ProxySpec>::HolderType...>
+    using UserCallbacks = tuple<ProxySpecTraits<ProxySpec>::UserCallback...>
+    + ProxyNeeds()
+    + WithOnServiceFound(UserCallbacks): ProxyNeeds
+    + WithOnServiceFound(InitCallbacks): ProxyNeeds
+    + WithOnServiceFound(UserCallbacks) &&: ProxyNeeds&&
+    + InitiateServiceDiscovery(): RequestedProxies
+    + InitiateServiceDiscovery(stop_token): RequestedProxies
+    + WaitForMandatoryProxies(stop_token): ProxyContainer
+    ---
+    using Builders = tuple<unique_ptr<ProxySpecTraits<ProxySpec>::BuilderType>...>
+    - ProxyNeeds(Builders)
+    - builder_instances_: optional<Builders>
+}
+
+class "RequestedProxies<ProxySpec...>" as RequestedProxies {
+    using Container = ProxyContainer<ProxySpec...>
+    + GetProxyContainer(): ProxyContainer
+    + WaitForMandatoryProxies(...): ProxyContainer
+    + Count(): size_t
+    --
+    - builder_results_: optional<tuple<BuilderReturn...>>
+    --
+    Note: GetProxyContainer() is not supported when all requested ProxySpecs are mandatory.
+}
+
+class "ProxyContainer<ProxySpec...>" as ProxyContainer {
+    + Has<ProxySpec, Index>(): bool
+    + Get<ProxySpec, Index>(): non-owning accessor
+    + Extract<ProxySpec, Index>(): owning result
+    --
+    - proxies_with_service_discovery_: tuple<optional<ResolvedType>...>
+    --
+    Get<Mandatory>() -> SingleInstanceHolder
+    Get<Variant>() -> variant<SingleInstanceHolder<...>>
+    Get<Optional>() -> ProxyFuture
+    Get<Multiple>() -> MultiInstanceHolder
+    Extract<Mandatory>() -> SingleInstanceHolder
+    Extract<Variant>() -> variant<SingleInstanceHolder<...>>
+    Extract<Optional>() -> OptionalProxyData
+    Extract<Multiple>() -> MultipleProxyData
+}
+
+class ProxySpecTraits {
+    base      -> HolderType = SingleInstanceHolder<ProxyType>
+    base      -> BuilderReturn = BuilderReturnType<ContainerType>
+    single    -> ResolvedType = SingleInstanceHolder<ProxyType>
+    multiple  -> ResolvedType = MultipleProxyData<ProxySpec>
+    optional  -> ResolvedType = OptionalProxyData<ProxySpec>
+    variant   -> ResolvedType = variant<SingleInstanceHolder<ProxySpec>...>
+}
+
+class "ProxySpecTraits<Multiple<ProxySpec>>" as ProxySpecTraitsMultiple <<specialization>> {
+    using ContainerType = MultiInstanceHolder<ProxyType, HolderType>
+    using BuilderType = ProxyBuilderBase<Multiple<ProxySpec>>
+    using ResolvedType = MultipleProxyData<ProxySpec>
+}
+
+class "ProxySpecTraits<Optional<ProxySpec>>" as ProxySpecTraitsOptional <<specialization>> {
+    using ContainerType = ProxySpecTraits<ProxySpec>::ContainerType
+    using BuilderType = ProxyBuilderBase<ProxySpec>
+    using ResolvedType = OptionalProxyData<ProxySpec>
+}
+
+class "ProxySpecTraits<Variant<ProxySpec...>>" as ProxySpecTraitsVariant <<specialization>> {
+    using ContainerType = variant<SingleInstanceHolder<ProxySpec>...>
+    using BuilderType = ProxyBuilderBase<Variant<ProxySpec...>>
+    using ResolvedType = ContainerType
+}
+
+class "ProxyBuilderBase<ProxySpec>" as ProxyBuilderBase {
+    using BuilderCallback = ProxySpecTraits<ProxySpec>::BuilderCallback
+    using UserCallback = ProxySpecTraits<ProxySpec>::UserCallback
+    + WithOnServiceFound(...): void
+    + Build(...): BuilderReturnType
+}
+
+class "ProxyBuilder<Strategy>" as ProxyBuilder {
+    + Build(...): BuilderReturnType
+    --
+    Note: Uses a local ActiveServiceDiscovery type inside Build().
+}
+
+class "InterruptiblePromise<T>" as InterruptiblePromise {
+    [...]
+}
+
+class BuilderReturnType {
+    + proxy_future: ProxyFuture<ContainerType>
+    + service_discovery: unique_ptr<StopServiceDiscoveryAction>
+}
+
+class "InterruptibleFuture<T>" as InterruptibleFuture {
+    [...]
+}
+
+class "ProxyFuture<T>" as ProxyFuture {
+    + Get(...): value/error
+}
+
+class "ProxyData<StoredType>" as ProxyData {
+    + StopServiceDiscovery(): void
+    --
+    - stored_data_: StoredType
+    - service_discovery_: unique_ptr<StopServiceDiscoveryAction>
+}
+
+class "OptionalProxyData<ProxySpec>" as OptionalProxyData {
+    + GetProxyFuture(): ProxyFuture&
+}
+
+class "MultipleProxyData<ProxySpec>" as MultipleProxyData {
+    + GetProxyInstances(): MultiInstanceHolder&
+}
+
+class MultiInstanceHolder {
+    + Visit(...): void
+    + FoundInstance(...): void
+    + NumInstances(): size_t
+}
+
+class StopServiceDiscoveryAction {
+    + {abstract} Stop(): void
+}
+
+class ActiveServiceDiscovery {
+    + Stop(): void
+    --
+    - strategy_: unique_ptr<Strategy>
+    - stop_callback_: optional<score::cpp::stop_callback>
+}
+
+class "<Name>FindStrategy" as NameFindStrategy <<concept>> #A0FFA0 {
+    + using BaseProxy = I<Name>Proxy
+    + Find(unique_ptr<BuilderCallback>)
+    + StopFind() noexcept
+}
+
+class "ImmediateInstantiationStrategy<Impl>" as ImmediateInstantiationStrategy
+class "AdaptiveImmediateInstantiationStrategy<Impl, Proxy>" as AdaptiveImmediateInstantiationStrategy
+class "MultipleImmediateInstantiationStrategy<Impl, Strategy...>" as MultipleImmediateInstantiationStrategy
+
+class "I<Name>Proxy" as INameProxy #90EE90 {
+    Receive data
+    Call methods
+}
+
+class "<Name>Impl" as NameImpl #90EE90 {
+    - proxy_: Generated<Name>Proxy
+}
+
+class "<Name>Mock" as NameMock #90EE90
+class "Generated <Name>Proxy" as GeneratedNameProxy <<generated>>
+class "Generated <Name>Data" as GeneratedNameData <<generated>>
+
+note left of App #90EE90
+    Application Surface
+
+    Classes colored green are provided by
+    the user of this framework.
+end note
+
+note left of ProxySpecTraits
+    mw::service Internals
+
+    ProxySpecTraits is an internal
+    compile-time mapping used by
+    ProxyNeeds, ProxyBuilderBase,
+    and ProxyContainer.
+end note
+
+note left of INameProxy
+    Service-Specific Extension Points
+end note
+
+note right of ProxyContainer
+    Mandatory path exposes no explicit stop API
+    on the App-facing accessor.
+
+    Extract transfers ownership of stop control.
+
+    MultiInstanceHolder itself does not own stop logic.
+end note
+
+App -down-> ProxyNeedsFactory : composition root uses
+ProxyNeedsFactory -down-> ProxyNeeds : creates
+ProxyNeeds -down-> RequestedProxies : starts discovery
+RequestedProxies -down-> ProxyContainer : returns to App
+App ..> ProxyContainer : stores resolved proxies
+ProxyNeedsFactory ..> ProxyBuilder : instantiates strategy-bound builders
+ProxyNeeds *-- ProxyBuilderBase : owns builder instances
+
+ProxyContainer -down-> ProxySpecTraits : resolves stored/access types
+ProxySpecTraits <|.. ProxySpecTraitsMultiple
+ProxySpecTraits <|.. ProxySpecTraitsOptional
+ProxySpecTraits <|.. ProxySpecTraitsVariant
+ProxyBuilderBase <|-- ProxyBuilder
+ProxyBuilder -down-> BuilderReturnType : creates
+ProxyBuilder ..> InterruptiblePromise : creates promise
+BuilderReturnType *-- ProxyFuture
+BuilderReturnType *-- StopServiceDiscoveryAction
+InterruptibleFuture <|-- ProxyFuture
+StopServiceDiscoveryAction <|-- ActiveServiceDiscovery
+
+ProxyData <|-- OptionalProxyData
+ProxyData <|-- MultipleProxyData
+ProxyData o-- StopServiceDiscoveryAction
+MultipleProxyData *-- MultiInstanceHolder
+ProxyContainer *-- OptionalProxyData
+ProxyContainer *-- MultipleProxyData
+
+ProxyBuilder ..> NameFindStrategy : delegates discovery to
+ProxyBuilder ..> ActiveServiceDiscovery : owns stop hook
+
+NameFindStrategy <|.. ImmediateInstantiationStrategy
+NameFindStrategy <|.. AdaptiveImmediateInstantiationStrategy
+NameFindStrategy <|.. MultipleImmediateInstantiationStrategy
+
+INameProxy <|-- NameImpl
+INameProxy <|-- NameMock
+NameImpl *-- GeneratedNameProxy
+GeneratedNameProxy --> GeneratedNameData : receive
+NameFindStrategy ..> NameImpl : creates and forwards to callback
+
+App -[hidden]down-> ProxyNeedsFactory
+ProxyNeedsFactory -[hidden]down-> ProxyNeeds
+ProxyNeeds -[hidden]down-> RequestedProxies
+RequestedProxies -[hidden]down-> ProxyContainer
+ProxyContainer -[hidden]down-> ProxySpecTraits
+ProxySpecTraits -[hidden]down-> ProxyBuilderBase
+ProxySpecTraits -[hidden]down-> ProxySpecTraitsMultiple
+ProxySpecTraitsMultiple -[hidden]down-> ProxySpecTraitsOptional
+ProxySpecTraitsOptional -[hidden]down-> ProxySpecTraitsVariant
+ProxySpecTraitsVariant -[hidden]down-> ProxyBuilderBase
+ProxyBuilderBase -[hidden]down-> ProxyBuilder
+ProxyBuilder -[hidden]down-> BuilderReturnType
+BuilderReturnType -[hidden]down-> InterruptibleFuture
+InterruptibleFuture -[hidden]down-> InterruptiblePromise
+InterruptiblePromise -[hidden]down-> ProxyData
+BuilderReturnType -[hidden]down-> ProxyData
+ProxyData -[hidden]down-> OptionalProxyData
+OptionalProxyData -[hidden]down-> MultipleProxyData
+MultipleProxyData -[hidden]down-> MultiInstanceHolder
+MultiInstanceHolder -[hidden]down-> NameFindStrategy
+NameFindStrategy -[hidden]down-> ImmediateInstantiationStrategy
+ImmediateInstantiationStrategy -[hidden]down-> AdaptiveImmediateInstantiationStrategy
+AdaptiveImmediateInstantiationStrategy -[hidden]down-> MultipleImmediateInstantiationStrategy
+NameFindStrategy -[hidden]right-> INameProxy
+
+INameProxy -[hidden]down-> NameMock
+NameMock -[hidden]down-> NameImpl
+NameImpl -[hidden]down-> GeneratedNameProxy
+GeneratedNameProxy -[hidden]down-> GeneratedNameData
+
+@enduml
