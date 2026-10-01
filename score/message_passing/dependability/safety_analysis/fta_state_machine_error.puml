@@ -15,10 +15,10 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("GetState or GetStopReason returns incorrect connection lifecycle state", "MessagePassing.StateMachineError")
+$FailureMode("GetState or GetStopReason returns incorrect connection lifecycle state", "MessagePassing.StateMachineError")
 
 $OrGate("OG1", "MessagePassing.StateMachineError")
 
-$BasicEvent("State machine transitions not covered by verification", "MessagePassing.StateMachineVerification", "OG1")
+$RootCause("State machine transitions not covered by verification", "StateMachineVerification", "OG1")
 
 @enduml

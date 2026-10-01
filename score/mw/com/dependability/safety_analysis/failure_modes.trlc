@@ -357,7 +357,7 @@ section "LoLa" {
         }
         section "Handle Method Calls" {
 
-            // Fault-Tree $TopEvent [Communication.WrongInArgsUsed]
+            // Fault-Tree $FailureMode [Communication.WrongInArgsUsed]
             // Reference as mitigation measures:
             // - Callee used InArgs in wrong layout: Mitigated by AoU ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide
             // - Callee used InArgs while concurrently updated: Mitigated by AoU ScoreReq.AoU ValidityOfPointerOnLoLaPointer. ToDo: extend this AoU for MethodElementPtrs!
@@ -375,7 +375,7 @@ section "LoLa" {
                 // potentialcause = "A: Either the user interpreted the InArgs in the wrong layout or accesses the InArgs after return from the call. B: The mw::com implementation signals the call before all InArgs are provided or provides in-arg pointers to the wrong location."
             }
 
-            // Fault-Tree $TopEvent [Communication.WrongMethodCalled]
+            // Fault-Tree $FailureMode [Communication.WrongMethodCalled]
             // Reference as mitigation measures:
             // - Wrongly configured: Is covered here: [ISSUE:Failuremode [InMemoryConfigurationWrong]
             // Reference as prevention measures:
@@ -391,7 +391,7 @@ section "LoLa" {
                 // potentialcause = "A: The configuration between provider and consumer mismatches regarding method identification. B: The methodid used in assignment of user provided handlers is corrupted or the assignment/storage/lookup of the user provided handler fails."
             }
 
-            // Fault-Tree $TopEvent [Communication.WrongResultsProvided]
+            // Fault-Tree $FailureMode [Communication.WrongResultsProvided]
             // Reference as mitigation measures:
             // - Callee provided result in wrong layout: Mitigated by AoU ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide
             // - Callee signalled call finished before or without providing result completely: ToDo: Add an AoU, which states, that a user provided method handler always has to completely update the return-type reference before returning from its handler.
@@ -743,8 +743,8 @@ section "LoLa" {
         }
 
         section "Call Method" {
-            // Fault-Tree $TopEvent [Communication.CallBlocks]
-            // Reference as mitigation for all three leaf-nodes/BasicEvents in the fault-tree: ScoreReq.AoU [NoGuaranteesForTimelyMethodCallExecution]
+            // Fault-Tree $FailureMode [Communication.CallBlocks]
+            // Reference as mitigation for all three leaf-nodes/RootCauses in the fault-tree: ScoreReq.AoU [NoGuaranteesForTimelyMethodCallExecution]
             ScoreReq.FailureMode MethodCallBlocksLongerThanExpected {
                 guidewords = [ ScoreReq.Guideword.DelayedFunction ]
                 description = "A call to a service-method on the client/consumer side blocks longer than expected (or indefinite). This is a specific instance of FailureMode [AnyFunctionBlocksLongerThanExpected], but since with service-methods we have concrete root causes in the form of message-passing behaviour and behaviour of user-provided handler, we have this specific failure mode."
@@ -755,7 +755,7 @@ section "LoLa" {
                 // potentialcause = "Underlying message-passing mechanism is blocked (e.g. the opposite side is not receiving messages) or the user provided handler is blocking."
             }
 
-            // Fault-Tree $TopEvent [Communication.WrongInArgsProvided]
+            // Fault-Tree $FailureMode [Communication.WrongInArgsProvided]
             // Reference as mitigation measures:
             // - Caller provided InArgs in wrong layout: Mitigated by AoU ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide
             // - Caller updates InArgs concurrently after call signalling: Mitigated by AoU ScoreReq.AoU ValidityOfPointerOnLoLaPointer. ToDo: extend this AoU for MethodElementPtrs!
@@ -772,7 +772,7 @@ section "LoLa" {
                 // potentialcause = "A: Either the user provides the InArgs in the wrong layout or updates the InArgs concurrently after call signalling. B: The mw::com implementation signals the call before all InArgs are provided or provides in-arg pointers to the wrong location."
             }
 
-            // Fault-Tree $TopEvent [Communication.WrongResultsUsed]
+            // Fault-Tree $FailureMode [Communication.WrongResultsUsed]
             // Reference as mitigation measures:
             // - Caller used result in wrong layout: Mitigated by AoU ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide
             // - Caller used result while concurrently updated: Mitigated by AoU ScoreReq.AoU ValidityOfPointerOnLoLaPointer. ToDo: extend this AoU for MethodElementPtrs!
@@ -854,7 +854,7 @@ section "LoLa" {
 
         section "MethodSignatureElementPtr" {
 
-            // Fault-Tree $TopEvent [Communication.MethodSignatureElementPtrWrongTarget]
+            // Fault-Tree $FailureMode [Communication.MethodSignatureElementPtrWrongTarget]
             // Reference as mitigation measures:
             // - References outdated valid memory inside shared-memory: Mitigated by AoU ScoreReq.AoU ValidityOfPointerOnLoLaPointer. ToDo: extend this AoU for MethodElementPtrs!
             // Reference as prevention measures:
@@ -872,7 +872,7 @@ section "LoLa" {
                 // potentialcause = "A: The user didn't obey the lifetime rules of the MethodSignatureElementPtr and thus accesses it after it has been invalidated. B: The pointers were either wrongly initialized or point to locations, which were invalidated before the access happens."
             }
 
-            // Fault-Tree $TopEvent [Communication.MethodSignatureElementPtrFailsToFree]
+            // Fault-Tree $FailureMode [Communication.MethodSignatureElementPtrFailsToFree]
             // Reference as mitigation measures:
             // - Does not free method signature element: Mitigated by AoU ScoreReq.AoU [NoGuaranteesForTimelyMethodCallExecution]
             // Reference as prevention measures:

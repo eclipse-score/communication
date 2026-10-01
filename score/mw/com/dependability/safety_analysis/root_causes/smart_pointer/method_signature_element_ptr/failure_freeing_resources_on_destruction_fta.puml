@@ -15,11 +15,11 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Failure freeing resources on destruction", "Communication.MethodSignatureElementPtrFailsToFree")
+$FailureMode("Failure freeing resources on destruction", "Communication.MethodSignatureElementPtrFailsToFree")
 
 $OrGate("Gate1", "Communication.MethodSignatureElementPtrFailsToFree")
-$BasicEvent("Does not free method signature element", "Communication.DoesNotFreeMethodSignatureElement", "Gate1")
+$RootCause("Does not free method signature element", "DoesNotFreeMethodSignatureElement", "Gate1")
 $IntermediateEvent("Frees wrong method signature element", "Event2", "Gate1")
-$BasicEvent("Overwrite of element in use", "Communication.OverwriteOfElementInUse", "Event2")
+$RootCause("Overwrite of element in use", "OverwriteOfElementInUse", "Event2")
 
 @enduml

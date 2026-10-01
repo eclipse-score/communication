@@ -15,15 +15,15 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Wrong service found", "Communication.WrongServiceFound")
+$FailureMode("Wrong service found", "Communication.WrongServiceFound")
 
 $OrGate("Gate1", "Communication.WrongServiceFound")
 $IntermediateEvent("Service is offered under wrong IDs", "Event2", "Gate1")
 $TransferInGate("Transfer2", "Event2")
 $IntermediateEvent("Wrong service discovery marker file searched for", "Event3", "Gate1")
 $OrGate("Gate2", "Event3")
-$BasicEvent("Wrong path resolved from InstanceIdentifier", "Communication.WrongPathResolvedFromInstanceidentifier", "Gate2")
-$BasicEvent("InstanceSpecifier resolved to wrong InstanceIdentifier", "Communication.InstancespecifierResolvedToWrongInstanceidentifier", "Gate2")
+$RootCause("Wrong path resolved from InstanceIdentifier", "WrongPathResolvedFromInstanceidentifier", "Gate2")
+$RootCause("InstanceSpecifier resolved to wrong InstanceIdentifier", "InstancespecifierResolvedToWrongInstanceidentifier", "Gate2")
 $IntermediateEvent("Wrongly configured", "Event1", "Gate1")
 $TransferInGate("Transfer1", "Event1")
 

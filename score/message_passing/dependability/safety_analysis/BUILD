@@ -14,7 +14,7 @@
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
     "dependability_analysis",
-    "fmea",
+    "safety_analysis",
 )
 
 filegroup(
@@ -32,19 +32,20 @@ filegroup(
     visibility = ["//score/message_passing/dependability:__pkg__"],
 )
 
-fmea(
-    name = "message_passing_fmea",
+safety_analysis(
+    name = "message_passing_safety_analysis",
     arch_design = "//score/message_passing/dependability/software_architectural_design:message_passing_architectural_design",
-    controlmeasures = ["control_measures.trlc"],
     failuremodes = ["failure_modes.trlc"],
+    fta_package = "message_passing_fta",
     root_causes = [":fta_files"],
+    safetymeasures = ["safetymeasures.trlc"],
     visibility = ["//score/message_passing/dependability:__pkg__"],
 )
 
 dependability_analysis(
     name = "message_passing_dependability_analysis",
     arch_design = "//score/message_passing/dependability/software_architectural_design:message_passing_architectural_design",
-    fmea = ["//score/message_passing/dependability/safety_analysis:message_passing_fmea"],
+    safety_analysis = ["//score/message_passing/dependability/safety_analysis:message_passing_safety_analysis"],
     tags = ["manual"],
     visibility = ["//score/message_passing/dependability:__pkg__"],
 )

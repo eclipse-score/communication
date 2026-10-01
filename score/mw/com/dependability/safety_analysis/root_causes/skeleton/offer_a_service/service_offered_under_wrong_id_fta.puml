@@ -15,19 +15,19 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Service is offered under wrong IDs", "Communication.ServiceOfferedUnderWrongIds")
+$FailureMode("Service is offered under wrong IDs", "Communication.ServiceOfferedUnderWrongIds")
 
 $OrGate("Gate1", "Communication.ServiceOfferedUnderWrongIds")
 $IntermediateEvent("Instance Identifier contains wrong values", "Event1", "Gate1")
 $OrGate("Gate2", "Event1")
-$BasicEvent("Instance Specifier resolution faulty", "Communication.InstanceSpecifierResolutionFaulty", "Gate2")
+$RootCause("Instance Specifier resolution faulty", "InstanceSpecifierResolutionFaulty", "Gate2")
 $IntermediateEvent("Configuration broken", "Event7", "Gate2")
 $TransferInGate("Transfer1", "Event7")
 $IntermediateEvent("Service Discovery Marker files have been incorrectly created", "Event3", "Gate1")
 $TransferInGate("Transfer2", "Event3")
 $IntermediateEvent("Shared Memory file name wrong", "Event2", "Gate1")
 $OrGate("Gate3", "Event2")
-$BasicEvent("Filename creation from config failed", "Communication.FilenameCreationFromConfigFailed", "Gate3")
-$BasicEvent("OS creates file with wrong name", "Communication.OsCreatesFileWithWrongName", "Gate3")
+$RootCause("Filename creation from config failed", "FilenameCreationFromConfigFailed", "Gate3")
+$RootCause("OS creates file with wrong name", "OsCreatesFileWithWrongName", "Gate3")
 
 @enduml

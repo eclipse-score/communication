@@ -15,15 +15,15 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Points to wrong data", "Communication.MethodSignatureElementPtrWrongTarget")
+$FailureMode("Points to wrong data", "Communication.MethodSignatureElementPtrWrongTarget")
 
 $OrGate("Gate1", "Communication.MethodSignatureElementPtrWrongTarget")
 $IntermediateEvent("Shared Memory no longer valid", "Event2", "Gate1")
-$BasicEvent("Life-Cycle issues", "Communication.LifeCycleIssuesElementPtr", "Event2")
+$RootCause("Life-Cycle issues", "LifeCycleIssuesElementPtr", "Event2")
 $IntermediateEvent("Wrong memory location referenced", "Event3", "Gate1")
 $OrGate("Gate2", "Event3")
-$BasicEvent("References valid memory outside shared-memory", "Communication.ReferencesValidMemoryOutsideSHM", "Gate2")
-$BasicEvent("References valid memory inside shared-memory", "Communication.ReferencesValidMemoryInsideSHM", "Gate2")
-$BasicEvent("References invalid memory", "Communication.ReferencesInvalidMemory", "Gate2")
+$RootCause("References valid memory outside shared-memory", "ReferencesValidMemoryOutsideSHM", "Gate2")
+$RootCause("References valid memory inside shared-memory", "ReferencesValidMemoryInsideSHM", "Gate2")
+$RootCause("References invalid memory", "ReferencesInvalidMemory", "Gate2")
 
 @enduml

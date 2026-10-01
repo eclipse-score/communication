@@ -15,12 +15,12 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Wrong call result used", "Communication.WrongReturnValueUsed")
+$FailureMode("Wrong call result used", "Communication.WrongReturnValueUsed")
 
 $OrGate("Gate1", "Communication.WrongReturnValueUsed")
-$BasicEvent("Caller used result from wrong location", "Communication.CallerUsedResultFromWrongLocation", "Gate1")
-$BasicEvent("Caller used result in wrong layout", "Communication.CallerUsedResultInWrongLayout", "Gate1")
-$BasicEvent("Caller used result before fully provided", "Communication.CallerUsedResultBeforeFullyProvided", "Gate1")
-$BasicEvent("Caller used result while concurrently updated", "Communication.CallerUsedResultWhileConcurrentlyUpdated", "Gate1")
+$RootCause("Caller used result from wrong location", "CallerUsedResultFromWrongLocation", "Gate1")
+$RootCause("Caller used result in wrong layout", "CallerUsedResultInWrongLayout", "Gate1")
+$RootCause("Caller used result before fully provided", "CallerUsedResultBeforeFullyProvided", "Gate1")
+$RootCause("Caller used result while concurrently updated", "CallerUsedResultWhileConcurrentlyUpdated", "Gate1")
 
 @enduml
