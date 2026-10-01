@@ -111,10 +111,11 @@ inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
 
 inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
     const LolaFieldInstanceDeployment& lola_field_instance_deployment,
-    const std::optional<FieldTagsStore> field_tags_store)
+    const std::optional<FieldTagsStore> field_tags_store,
+    const std::optional<E2EEventTypeDeployment> e2e_event_deployment = {})
 {
-    return CreateSkeletonEventProperties(lola_field_instance_deployment.lola_event_instance_deployment_,
-                                         field_tags_store);
+    return CreateSkeletonEventProperties(
+        lola_field_instance_deployment.lola_event_instance_deployment_, field_tags_store, e2e_event_deployment);
 }
 
 /// \brief Creates SkeletonEventProperties for the SOME/IP binding from the configuration and field tags.
