@@ -51,6 +51,5 @@ cc_library(
     deps = [
         ":fake_memory_resources",
         "//score/memory/shared:i_shared_memory_resource",
-        "@score_baselibs//score/language/futurecpp",
     ],
 )

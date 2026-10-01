@@ -26,6 +26,7 @@ cc_library(
     deps = [
         ":offset_ptr_test_resources",
         "//score/memory/shared:offset_ptr",
+        "//score/memory/shared:pointer_arithmetic_util",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -38,9 +39,10 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/memory/shared/test:__subpackages__"],
     deps = [
+        "//score/memory/shared:managed_memory_resource",
         "//score/memory/shared:offset_ptr",
         "//score/memory/shared/fake:fake_memory_resources",
-        "@googletest//:gtest_main",
+        "@googletest//:gtest",
         "@score_baselibs//score/language/futurecpp",
     ],
 )

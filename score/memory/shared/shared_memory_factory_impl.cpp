@@ -15,6 +15,7 @@
 #include "score/memory/shared/typedshm/utils/typed_memory_utils.h"
 #include "score/mw/log/logging.h"
 #include "score/os/errno_logging.h"
+#include "score/os/utils/acl/access_control_list.h"
 
 #include "score/os/mman.h"
 #include "score/os/unistd.h"
