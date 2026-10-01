@@ -73,7 +73,11 @@ coverage:qnx_x86_64 --noexperimental_use_llvm_covmap
 coverage:qnx_x86_64 --test_env=GENERATE_LLVM_LCOV
 coverage:qnx_x86_64 --test_env=COVERAGE_GCOV_PATH
 coverage:qnx_x86_64 --test_env=LLVM_PROFILE_CONTINUOUS_MODE
-coverage:qnx_x86_64 --@rules_rust//rust/settings:extra_rustc_flags=
+# rules_rust adds --codegen=instrument-coverage whenever the Rust toolchain
+# declares llvm_cov, which makes rustc pass `-u __llvm_profile_runtime` to the
+# linker; q++ rejects it ("cc: unknown option: '-u'"). Extra rustc flags come
+# after that flag and the last -C instrument-coverage wins, so switch it off.
+coverage:qnx_x86_64 --@rules_rust//rust/settings:extra_rustc_flags=-Cinstrument-coverage=no
 # Bazel's own per-test gcov collector; score_coverage's gcov reporter for the
 # final report. Tests are instrumented too so header-only code that only a
 # test translation unit instantiates is measured (the scope drops the tests).
