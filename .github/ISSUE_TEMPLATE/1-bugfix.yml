@@ -57,6 +57,7 @@ body:
   validations:
     required: true
 - type: dropdown
+  id: _version
   attributes:
     label: Affected Version
     options:

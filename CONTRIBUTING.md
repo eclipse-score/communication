@@ -166,6 +166,7 @@ bazel test //score/mw/com/message_passing:all
 ## Additional Resources
 
 For project details, documentation, and support resources, please refer to the main [README.md](README.md).
+For the release process, see [RELEASING.md](RELEASING.md).
 
 ---
 

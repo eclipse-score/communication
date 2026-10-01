@@ -1,5 +1,5 @@
 ---
-name: release-notes
+name: create-release-notes
 description: Create complete, significance-focused release notes with traceable links for improvements, bug fixes, and known issues.
 ---
 
@@ -46,11 +46,21 @@ When in doubt, prefer a broader semantic review over relying on PR titles alone.
 2. **If user asks to adapt/update markdown in the repo**
    - Write/update the target markdown file in the repository.
    - Do not only provide release notes in chat; ensure in-repo artifact exists.
-3**If both template and existing release-note file exist**
+3. **If both template and existing release-note file exist**
    - Keep template headings intact and adapt content to that shape.
    - Preserve existing repo conventions (path, naming, section order).
 
 ## Release-note workflow
+
+### 0) Track progress with the session `sql` tool
+This workflow has many steps spanning a long tool-use session; use the session database (`sql` tool, `todos`/`todo_deps` tables) to track progress instead of relying on memory alone. Do this at the start, before step 1:
+- Insert one todo per major phase, using stable kebab-case ids, for example:
+  `define-release-scope`, `build-evidence-set`, `issue-tracker-sweep`, `compatibility-sweep`, `candidate-inventory`, `classify-changes`, `write-sections`, `verify-completeness`, `review-loop`, `publish-release-notes`.
+- Record true prerequisites in `todo_deps` (for example `classify-changes` depends on `candidate-inventory`, which depends on `build-evidence-set`, `issue-tracker-sweep`, and `compatibility-sweep`; `write-sections` depends on `classify-changes`; `verify-completeness` depends on `write-sections`; `review-loop` depends on `verify-completeness`; `publish-release-notes` depends on `review-loop`).
+- Set a todo to `in_progress` before starting it and `done` immediately after finishing it; do not batch status updates at the end.
+- If the user requests changes during the review loop (see below), reopen `review-loop` (and any upstream todo it depends on, such as `write-sections`, if content must be reworked) by setting it back to `in_progress` rather than creating duplicate todos.
+- Query remaining/ready todos periodically (see the example "ready todo" query in the `sql` tool description) to confirm nothing significant was skipped before finalizing.
+- This tracking is internal bookkeeping only; do not expose todo ids or SQL details to the user — report progress to them in plain language.
 
 ### 1) Define release scope
 - Confirm release tag commit hash and date.
@@ -195,6 +205,13 @@ Within **Known Issues**:
 - Include ecosystem compatibility issues explicitly when open (at minimum: Bazel version compatibility and Python/rules_python compatibility, if applicable to the repo).
 - Include active local patch/workaround notes when the repo ships with patched external dependencies, especially for SDK, OS, Bazel-module, or ruleset compatibility.
 
+### 5b) Document public API changes in Upgrade Instructions
+- Diff the public API surface lock file(s) between the origin tag and the release commit (for example `git diff <origin>..<release> -- score/mw/com/api_surface.lock.json`; locate others via `git ls-files | grep -i surface`).
+- Under "Upgrade Instructions" (after the backward-compatibility sentence), add a "Public API changes" subsection grouped as **Added**, **Deprecated/Removed**, and **Signature changes** (including `noexcept`, parameter-passing and constructor changes).
+- State the migration path for deprecated/removed symbols and the caller impact of signature changes.
+- Attribute changes to PRs via `git log <origin>..<release> -- <lock file>`, and verify the PR numbers; mark inferred attributions as such.
+- If the lock file is unchanged, state that no public API changes occurred.
+
 ### 6) Verify completeness before finalizing
 Run this checklist:
 - [ ] Metadata filled (release tag, origin tag, commit hash, date).
@@ -213,6 +230,7 @@ Run this checklist:
 - [ ] No large-scale file-churn PR (≥ 30 files) has been silently collapsed into an adjacent bullet without its own explicit coverage.
 - [ ] Test-expansion clusters are represented in Improvements, not only in Bug Fixes.
 - [ ] PRs with dual fix+improvement nature are represented on the improvement side as well as the fix side where warranted.
+- [ ] API surface lock diff reviewed and reflected in Upgrade Instructions (or explicitly noted as unchanged).
 - [ ] Known issues include open issue links and active patch/workaround notes.
 - [ ] Any open major compatibility issue found in the sweep is represented in Known Issues (or explicitly excluded with rationale).
 - [ ] Reviewed top-level build/dependency configuration (`MODULE.bazel`/`WORKSPACE`/lock files/README prerequisites) for Bazel, Python, ruleset, compiler, and SDK version restrictions.
@@ -221,6 +239,9 @@ Run this checklist:
 - [ ] Improvements section length is proportional to release breadth (no under-sized Improvements with over-sized Bug Fixes in broad releases).
 - [ ] No major change in range is omitted without rationale.
 - [ ] No claims without evidence.
+- [ ] User has explicitly confirmed the release notes are fine via the review loop before publication.
+- [ ] GitHub checked for a matching draft release for `<release-tag>`; updated if found.
+- [ ] If no draft release was found, user informed it could not be pushed, and notes saved to `docs/release-notes/<release-tag>.md` as a fallback (file not created when a draft release was updated).
 
 ## Quality bar for final output
 - Accurate and evidence-backed.
@@ -259,4 +280,29 @@ Run this checklist:
 - In each section, use domain subheadings where change volume is high.
 - Put highest-impact topics first.
 - Prefer short, factual bullets with explicit links.
+
+## Review loop (mandatory before publication)
+Release notes are never finalized unilaterally. After producing a draft (and after every subsequent revision):
+1. Present the full current draft to the user in chat.
+2. Ask explicitly whether the release notes are fine as-is or whether changes are requested (use the `ask_user` tool with a yes/no-style field plus a freeform field for requested changes).
+3. If the user requests changes, apply them and return to step 1 with the revised draft.
+4. Repeat until the user confirms the release notes are fine. Do not proceed to publication (Section "Publish the release notes") before this explicit confirmation.
+
+## Save location in the repository (fallback only)
+Saving release notes to the repository is a **fallback**, used only when they could not be pushed to a GitHub draft release (see "Publish the release notes" below). Do not create this file when a draft release was successfully updated.
+- Path: `docs/release-notes/<release-tag>.md` (for example `docs/release-notes/v0.5.0.md`).
+- Create the `docs/release-notes/` directory if it does not exist yet.
+- Content: the final, user-confirmed release notes, following the structure of `.github/RELEASE_TEMPLATE.md` with the metadata header (release tag, origin tag, commit hash, date) filled in.
+- If a file for the same release tag already exists, overwrite it with the latest confirmed content (do not create duplicate/numbered files).
+
+## Publish the release notes
+After the user has confirmed the release notes:
+1. **Search for a matching draft release on GitHub** for the provided release tag (for example via `gh release list` / `gh release view <tag>` or the equivalent API, filtering for `draft == true` and `tag_name == <release-tag>`).
+2. **If a draft release is found:**
+   - Update that draft release's body with the final release notes content (preserve the draft state; do not publish/un-draft it).
+   - Confirm to the user that the GitHub draft release for `<release-tag>` was updated. Do **not** also save a file under `docs/release-notes/` in this case.
+3. **If no draft release is found for that tag:**
+   - Tell the user explicitly that no matching draft release could be found on GitHub, so the release notes could not be pushed there.
+   - Only in this case, save the release notes to the repository at `docs/release-notes/<release-tag>.md` (see "Save location in the repository (fallback only)" above) and confirm this to the user.
+   - Do not create a new (non-draft) release or guess at a different tag; only report and rely on the saved file.
 
