@@ -23,6 +23,7 @@
 #include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
+#include "score/mw/com/impl/e2e/e2e_profile_stub.h"
 #include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
@@ -37,6 +38,7 @@
 #include <score/utility.hpp>
 
 #include <atomic>
+#include <memory>
 #include <optional>
 #include <string_view>
 #include <utility>
@@ -75,7 +77,8 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
                   const std::string_view event_name,
                   const memory::DataTypeSizeInfo size_info,
                   const SkeletonEventProperties properties,
-                  impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept;
+                  impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data,
+                  std::shared_ptr<e2e::HeaderStorage> e2e_header_storage = nullptr) noexcept;
 
     SkeletonEvent(const SkeletonEvent&) = delete;
     SkeletonEvent(SkeletonEvent&&) noexcept = delete;
@@ -181,6 +184,11 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_asil_b_;
     std::optional<tracing::TypeErasedSamplePtrsGuard> type_erased_sample_ptrs_guard_;
     std::optional<ReceiveHandlerRegistrationChangedCallback> receive_handler_registration_changed_callback_;
+
+    /// \brief Injected, scaffolding-only per-slot POC E2E header storage; shared with consuming proxy events by the
+    ///        harness that wires them together. Null when the event has no configured E2E profile.
+    std::shared_ptr<e2e::HeaderStorage> e2e_header_storage_;
+    e2e::ProtectContext e2e_protect_context_{};
 };
 
 }  // namespace score::mw::com::impl::lola
