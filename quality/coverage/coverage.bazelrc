@@ -10,108 +10,86 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+# Coverage configuration for the score_coverage pipeline
+# (https://eclipse-score.github.io/coverage_tool/main/).
+#
+#   Linux, LLVM backend (C++ + Rust):  bazel coverage //... --build_tests_only
+#   QNX x86_64, gcov backend (C++):    bazel coverage --config=qnx //score/... --build_tests_only
+#   Report + gate, both:               bazel run @score_coverage//:generate_coverage_html -- [--platform qnx] ...
+#
+# The default `coverage` command is the LLVM backend; --config=qnx resets the
+# LLVM settings and switches to Bazel's own per-test gcov collector plus the
+# gcov reporter of score_coverage.
 
 # ============================================================================
-# Platform-agnostic coverage settings
+# Platform-agnostic
 # ============================================================================
 coverage --nocache_test_results
 coverage --cxxopt=-O0
 coverage --combined_report=lcov
 coverage --experimental_fetch_all_coverage_outputs
-
-# By default Bazel creates for each library a *.so for its tests. If there is a header that is used by multiple *.so files
-# and these *.so files have different instrumentation (production code has, test has not) a conflict arises which one to use when calculating coverage.
-# Then the first object is used, and it is pure luck if it contains the correct data or not. Even worse, small changes can change the order and then lead
-# to big coverage gaps. All these problems do not arise if no dynamic libs are used. Thus, we rather take bigger build times and binaries in advance for correct data.
+# Shared objects with mixed instrumentation make llvm-cov pick the wrong
+# object for a header; static linking avoids that (score_coverage CSTR-05).
 coverage --dynamic_mode=off
+# Coverage builds must not fail on instrumentation-related warnings.
+coverage --features=-score_communication_treat_warnings_as_errors
+# FORTIFY_SOURCE conflicts with the LLVM coverage runtime at link time.
+coverage --features=-score_communication_fortify_source
+coverage --host_features=-score_communication_fortify_source
 
 # ============================================================================
-# LLVM source-based coverage (Linux)
+# Linux: LLVM source-based coverage (default)
 # ============================================================================
-# Use with: bazel coverage //...
-#
-# Uses LLVM's source-based coverage instrumentation (--experimental_use_llvm_covmap)
-# with custom merger/reporter that produce HTML reports via llvm-cov directly.
-#
-# NOTE: --experimental_use_llvm_covmap causes Bazel to instrument ALL targets.
-# Source filtering is handled at report time by the reporter using the coverage
-# allowlist generated from dependable_element declarations (coverage_scope rule).
-# See quality/coverage/coverage_scope.bzl for details.
-
 coverage --experimental_generate_llvm_lcov
 coverage --experimental_use_llvm_covmap
 coverage --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 coverage --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-
-# Use llvm-cov directly for HTML report generation instead of genhtml/lcov.
-# The custom merger (per-test) receives profraw files and produces a zip with profdata + HTML.
-# The custom reporter (final) merges all profdata and generates the combined HTML report.
-coverage --coverage_output_generator=//quality/coverage/llvm_cov:merger
-coverage --coverage_report_generator=//quality/coverage/llvm_cov:reporter_wrapper
-
-# Override GENERATE_LLVM_LCOV to keep raw profraw files instead of converting to LCOV.
-# The custom merger handles profraw→profdata→HTML directly.
+coverage --coverage_output_generator=@score_coverage//:merger
+coverage --coverage_report_generator=//quality/coverage:reporter_wrapper
 coverage --test_env=GENERATE_LLVM_LCOV=0
-# Suppress the default gcov path since we use llvm-cov directly.
 coverage --test_env=COVERAGE_GCOV_PATH=/usr/bin/true
-
-# These compile time options are required to cover abnormal termination cases. In GCC one can use `__gcc_dump()`, but this does not work with LLVM.
-# LLVM provides these compile-time options in combination with a specific profile setting which is enabled in bazel via `LLVM_PROFILE_CONTINUOUS_MODE`.
+# Continuous-mode profiling so coverage survives abnormal termination
+# (death tests); needs runtime counter relocation, see the cc_feature.
 coverage --test_env=LLVM_PROFILE_CONTINUOUS_MODE=1
 coverage --features=enable_llvm_coverage_for_death_tests
-
-# Rust coverage instrumentation (LLVM pipeline only; reset for QNX below).
-# Requires score_toolchains_rust >= 0.9.2 + ferrocene_toolchain_builder >=
-# 1.3.0 coverage-tools: the extension then declares llvm_cov/llvm_profdata on
-# the rust_toolchain, which makes rules_rust add -Cinstrument-coverage under
-# `bazel coverage`.
-#
-# The list-typed extra_rustc_flags setting is used (not the repeatable
-# extra_rustc_flag) so the QNX section can reset it to empty.
-#   -Cllvm-args=-runtime-counter-relocation: Rust equivalent of the
-#     enable_llvm_coverage_for_death_tests cc_feature — continuous-mode
-#     profiling (%c in LLVM_PROFILE_FILE) requires runtime counter relocation,
-#     otherwise the profile runtime errors out and writes no .profraw.
-#   -Clink-dead-code: keep unlinked functions in the coverage map so
-#     unreferenced code shows as uncovered instead of vanishing.
-#   -Zcoverage-options=branch: branch coverage instrumentation. NOTE: -Z flags
-#     are unstable rustc options; this works because the Ferrocene toolchain
-#     in use is a rolling (nightly-based) build. If a stable-channel Ferrocene
-#     is ever pinned, drop this flag (Rust branch columns revert to "-").
+# Rust: rules_rust adds -Cinstrument-coverage once the toolchain declares
+# llvm_cov (score_toolchains_rust >= 0.9.2 with coverage tools).
+#   -runtime-counter-relocation: continuous mode, as above
+#   -Clink-dead-code: unreferenced functions stay in the coverage map
+#   -Zcoverage-options=branch: branch regions; unstable flag, works on the
+#     rolling Ferrocene build in use (drop if a stable channel is pinned)
 coverage --@rules_rust//rust/settings:extra_rustc_flags=-Cllvm-args=-runtime-counter-relocation,-Clink-dead-code,-Zcoverage-options=branch
 
 # ============================================================================
-# QNX x86_64 coverage configuration (gcov-based)
+# QNX x86_64: gcov backend (tests run in QEMU through score_qnx_unit_tests,
+# which brings the .gcda counters back)
 # ============================================================================
-# Use with: bazel coverage //score/... --config=qnx
-#
-# QNX SDP 8 uses QCC which is GCC-based. Coverage uses the standard gcov
-# pipeline: QCC compiles with --coverage flags, tests produce .gcda/.gcno
-# files, and Bazel's default LCOV pipeline aggregates the results.
-
 coverage:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx-sdp_8.0.0-posix
 coverage:qnx_x86_64 --extra_toolchains=@score_qcc_x86_64_toolchain//:x86_64-qnx-sdp_8.0.0
 coverage:qnx_x86_64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_pc_nto_qnx800
-
-# Reset all values that were added for the default Linux coverage with llvm-cov
+# Reset the LLVM settings above
 coverage:qnx_x86_64 --noexperimental_generate_llvm_lcov
 coverage:qnx_x86_64 --noexperimental_use_llvm_covmap
-coverage:qnx_x86_64 --noexperimental_fetch_all_coverage_outputs
-coverage:qnx_x86_64 --coverage_output_generator=@bazel_tools//tools/test:lcov_merger
-coverage:qnx_x86_64 --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator
 coverage:qnx_x86_64 --test_env=GENERATE_LLVM_LCOV
 coverage:qnx_x86_64 --test_env=COVERAGE_GCOV_PATH
 coverage:qnx_x86_64 --test_env=LLVM_PROFILE_CONTINUOUS_MODE
-# Reset the Rust LLVM-coverage rustc flags: the QNX pipeline is gcov-based
-# and must not carry llvm covmap instrumentation options.
 coverage:qnx_x86_64 --@rules_rust//rust/settings:extra_rustc_flags=
-
-# Shorthand: --config=qnx uses qnx_x86_64 (consistent with .bazelrc).
+# Bazel's own per-test gcov collector; score_coverage's gcov reporter for the
+# final report. Tests are instrumented too so header-only code that only a
+# test translation unit instantiates is measured (the scope drops the tests).
+coverage:qnx_x86_64 --coverage_output_generator=@bazel_tools//tools/test:lcov_merger
+coverage:qnx_x86_64 --coverage_report_generator=//quality/coverage:gcov_reporter_wrapper
+coverage:qnx_x86_64 --instrument_test_targets
+# Bazel guesses --instrumentation_filter from the packages of the test targets
+# and only strips a trailing "/tests" (plural) to reach the code under test.
+# Libraries whose tests live in a "test" subpackage would fall outside the
+# guess and the stock collector of the gcov backend would drop their counters
+# (seen as 0 % for score/os in baselibs). The LLVM backend on Linux is
+# unaffected (its merger does not consult the filter).
+coverage:qnx_x86_64 --instrumentation_filter=^//score[/:]
+# NOTE: no --test_lang_filters=cc here. QNX unit tests are wrapped by
+# cc_unit_test/score_qnx_unit_tests as a Starlark _forwarding_test rule (which
+# dispatches to a sh_test running the binary under QEMU), not a native
+# cc_test. --test_lang_filters matches on the rule class' language prefix, so
+# any non-empty value (including "cc") silently excludes every QNX test.
 coverage:qnx --config=qnx_x86_64
-
-# Disable treat_warnings_as_errors for coverage builds to avoid build failures from instrumentation-related warnings
-coverage --features=-score_communication_treat_warnings_as_errors
-
-# Disable fortify_source for coverage builds to avoid linking failures with LLVM coverage runtime.
-coverage --features=-score_communication_fortify_source
-coverage --host_features=-score_communication_fortify_source

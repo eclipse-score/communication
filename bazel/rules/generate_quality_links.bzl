@@ -61,6 +61,7 @@ def _generate_quality_links_impl(ctx):
         )
 
     release_coverage_asset_url = _release_asset_url(docs_base_url, docs_version, "coverage_report")
+    release_coverage_qnx_asset_url = _release_asset_url(docs_base_url, docs_version, "coverage_report_qnx")
     release_clang_tidy_asset_url = _release_asset_url(docs_base_url, docs_version, "clang_tidy_report")
     release_codeql_asset_url = _release_asset_url(docs_base_url, docs_version, "codeql_report")
     release_dashboard_asset_url = _release_asset_url(docs_base_url, docs_version, "quality_dashboard")
@@ -68,6 +69,7 @@ def _generate_quality_links_impl(ctx):
     if docs_version == "latest":
         # quality reports are published alongside the latest/ docs
         coverage_ref = "`Coverage report <quality/coverage/index.html>`__"
+        coverage_qnx_ref = "`Coverage report (QNX) <quality/coverage_qnx/index.html>`__"
         dashboard_ref = "`Quality Dashboard <quality/index.html>`__"
         clang_tidy_ref = "`Clang-Tidy report <quality/clang_tidy_findings.txt>`__"
         codeql_ref = "`CodeQL findings <quality/codeql_findings.sarif>`__"
@@ -87,6 +89,14 @@ def _generate_quality_links_impl(ctx):
         else:
             coverage_ref = ("`Coverage report (latest) <" + latest +
                             "/quality/coverage/index.html>`__")
+        if release_coverage_qnx_asset_url:
+            coverage_qnx_ref = (
+                "`Coverage report (QNX, release artifact) <" +
+                release_coverage_qnx_asset_url + ">`__"
+            )
+        else:
+            coverage_qnx_ref = ("`Coverage report (QNX, latest) <" + latest +
+                                "/quality/coverage_qnx/index.html>`__")
         if release_dashboard_asset_url:
             dashboard_ref = (
                 "`Quality Dashboard (release artifact) <" +
@@ -129,7 +139,11 @@ def _generate_quality_links_impl(ctx):
         # local build — no published reports; show the equivalent bazel command
         coverage_ref = (
             "*local build* — run " +
-            "``bazel run //quality/coverage:generate_coverage_html``"
+            "``bazel run @score_coverage//:generate_coverage_html``"
+        )
+        coverage_qnx_ref = (
+            "*local build* — run " +
+            "``bazel run @score_coverage//:generate_coverage_html -- --platform qnx``"
         )
         dashboard_ref = (
             "*local build* — dashboard only available on GitHub Pages"
@@ -153,6 +167,7 @@ def _generate_quality_links_impl(ctx):
     content = (
         ":orphan:\n\n" +
         ".. |coverage_report_link| replace:: " + coverage_ref + "\n" +
+        ".. |coverage_qnx_report_link| replace:: " + coverage_qnx_ref + "\n" +
         ".. |quality_dashboard_link| replace:: " + dashboard_ref + "\n" +
         ".. |clang_tidy_report_link| replace:: " + clang_tidy_ref + "\n" +
         ".. |codeql_report_link| replace:: " + codeql_ref + "\n" +
