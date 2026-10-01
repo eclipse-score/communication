@@ -40,7 +40,7 @@ SkeletonEvent::SkeletonEvent(Skeleton& parent,
 }
 
 Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void> sample,
-                                 std::optional<SendTraceCallback> send_trace_callback) noexcept
+                                 const std::optional<SendTraceCallback>& send_trace_callback) noexcept
 {
     const impl::SampleAllocateePtrView<void> view{sample};
     const auto* ptr = view.template As<lola::SampleAllocateePtr>();
