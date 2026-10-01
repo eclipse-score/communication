@@ -1,0 +1,217 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Formatting
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install formatting tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang-format-18
+
+      - name: Check formatting
+        run: |
+          find src daemon examples/someip tests tools -type f \
+            \( -name '*.h' -o -name '*.hpp' -o -name '*.cpp' -o -name '*.cc' \) \
+            -print0 | xargs -0 clang-format-18 --dry-run --Werror
+
+  static-analysis:
+    name: Static analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install analysis tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang-18 \
+            clang-tidy-18 \
+            build-essential \
+            cmake \
+            ninja-build \
+            rapidjson-dev \
+            libgtest-dev
+
+      - name: Configure
+        run: >-
+          cmake -S . -B build-ci-tidy -G Ninja
+          -DCMAKE_C_COMPILER=clang-18
+          -DCMAKE_CXX_COMPILER=clang++-18
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          -DBUILD_TESTING=ON
+          -DENABLE_TEST_BUILD=ON
+          -DENABLE_EXAMPLES=ON
+          -DENABLE_TOOLS=ON
+
+      - name: Run clang-tidy
+        run: |
+          find src daemon examples/someip tests tools -type f -name '*.cpp' -print0 \
+            | xargs -0 clang-tidy-18 -p build-ci-tidy --quiet
+
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            ninja-build \
+            rapidjson-dev \
+            libgtest-dev
+
+      - name: Configure
+        run: >-
+          cmake -S . -B build-ci -G Ninja
+          -DENABLE_EXAMPLES=OFF
+          -DENABLE_TOOLS=ON
+
+      - name: Build
+        run: cmake --build build-ci --parallel
+
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            ninja-build \
+            rapidjson-dev \
+            libgtest-dev
+
+      - name: Configure
+        run: >-
+          cmake -S . -B build-ci-tests -G Ninja
+          -DBUILD_TESTING=ON
+          -DENABLE_TEST_BUILD=ON
+          -DENABLE_EXAMPLES=OFF
+          -DENABLE_TOOLS=OFF
+
+      - name: Build tests
+        run: cmake --build build-ci-tests --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build-ci-tests --output-on-failure
+
+  ipc:
+    name: IPC build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            ninja-build \
+            rapidjson-dev \
+            libgtest-dev
+
+      - name: Configure
+        run: >-
+          cmake -S . -B build-ci-ipc -G Ninja
+          -DBUILD_TESTING=ON
+          -DENABLE_TEST_BUILD=ON
+          -DENABLE_SOMEIP_IPC=ON
+          -DENABLE_EXAMPLES=OFF
+          -DENABLE_TOOLS=OFF
+
+      - name: Build tests
+        run: cmake --build build-ci-ipc --parallel
+
+  filtering:
+    name: Packet filtering tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            ninja-build \
+            rapidjson-dev \
+            libgtest-dev
+
+      - name: Configure
+        run: >-
+          cmake -S . -B build-ci-filtering -G Ninja
+          -DBUILD_TESTING=ON
+          -DENABLE_TEST_BUILD=ON
+          -DENABLE_SOMEIP_PACKET_FILTERING=ON
+          -DENABLE_EXAMPLES=OFF
+          -DENABLE_TOOLS=OFF
+
+      - name: Build tests
+        run: cmake --build build-ci-filtering --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build-ci-filtering --output-on-failure
+
+  tls:
+    name: TLS build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            ninja-build \
+            libssl-dev \
+            rapidjson-dev
+
+      - name: Configure
+        run: >-
+          cmake -S . -B build-ci-tls -G Ninja
+          -DENABLE_TLS=ON
+          -DENABLE_EXAMPLES=OFF
+          -DENABLE_TOOLS=OFF
+
+      - name: Build
+        run: cmake --build build-ci-tls --parallel

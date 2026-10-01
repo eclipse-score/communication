@@ -1,0 +1,48 @@
+# CMake build trees and generated metadata
+/build/
+/build-tests/
+/test_report/
+/tests/test_report/
+/cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+build.ninja
+.ninja_deps
+.ninja_log
+rules.ninja
+CTestTestfile.cmake
+install_manifest.txt
+
+# Compiled and linked artifacts
+*.o
+*.obj
+*.a
+*.lo
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+
+# Coverage and profiling output
+*.gcda
+*.gcno
+*.gcov
+*.prof
+*.profraw
+*.profdata
+
+# Local IDE files
+.vscode/
+.idea/
+
+# Logs, temporary files, and OS metadata
+*.log
+*.tmp
+*.bak
+*~
+*.swp
+.DS_Store
+Thumbs.db

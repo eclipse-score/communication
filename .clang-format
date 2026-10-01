@@ -1,0 +1,27 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+AccessModifierOffset: -4
+AlignAfterOpenBracket: Align
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+BreakBeforeBraces: Attach
+ColumnLimit: 120
+Cpp11BracedListStyle: true
+DerivePointerAlignment: false
+IndentCaseLabels: false
+IndentPPDirectives: None
+IndentWidth: 4
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: None
+PointerAlignment: Left
+ReflowComments: true
+SortIncludes: false
+SpaceBeforeParens: ControlStatements
+SpacesInContainerLiterals: false
+TabWidth: 4
+UseTab: Never
