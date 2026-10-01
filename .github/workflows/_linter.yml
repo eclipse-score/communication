@@ -132,6 +132,16 @@ jobs:
           bep-json: /tmp/bep.json
           output-file: ${{ matrix.id }}.sarif
 
+      - name: Add rule IDs to Ruff SARIF results
+        # rules_lint's Ruff SARIF keeps the rule code only in the message text.
+        if: ${{ !cancelled() && inputs.fetch-only != 'true' && matrix.id == 'ruff' && steps.sarif.outcome == 'success' }}
+        run: |
+          jq '.runs |= map(
+                .results |= map(.ruleId //= ((.message.text | capture("^(?<id>[A-Z]+[0-9]+)") | .id) // "ruff"))
+                | .tool.driver.rules = ([.results[].ruleId] | unique | map({id: .}))
+              )' ruff.sarif > ruff.sarif.tmp
+          mv ruff.sarif.tmp ruff.sarif
+
       - name: Upload SARIF reports to GitHub Code Scanning
         if: ${{ !cancelled() && inputs.fetch-only != 'true' }}
         uses: github/codeql-action/upload-sarif@v4
