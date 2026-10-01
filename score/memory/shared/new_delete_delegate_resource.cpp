@@ -70,10 +70,11 @@ void* NewDeleteDelegateMemoryResource::getBaseAddress() const noexcept
     // Thus, we have to come up with arbitrary pointers that represent the size of the buffer.
     // In fact the values are not arbitrary, we start at an aligned pointer that represents one memory page.
     // We stop at the last possible pointer (maximum buffer that would ever be possible)
-    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast): Since above.
+    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast, performance-no-int-to-ptr): Since above. A real pointer
+    // value is intentionally fabricated from an integer; no memory is ever dereferenced through it.
     // coverity[autosar_cpp14_a5_2_4_violation]
     return reinterpret_cast<void*>(PAGE_SIZE);
-    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast): see above
+    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast, performance-no-int-to-ptr): see above
 }
 
 void* NewDeleteDelegateMemoryResource::getUsableBaseAddress() const noexcept
@@ -88,10 +89,11 @@ const void* NewDeleteDelegateMemoryResource::getEndAddress() const noexcept
     // Thus, we have to come up with arbitrary pointers that represent the size of the buffer.
     // In fact the values are not arbitrary, we start at an aligned pointer that represents one memory page.
     // We stop at the last possible pointer (maximum buffer that would ever be possible)
-    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast): Since above.
+    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast, performance-no-int-to-ptr): Since above. A real pointer
+    // value is intentionally fabricated from an integer; no memory is ever dereferenced through it.
     // coverity[autosar_cpp14_a5_2_4_violation]
     return reinterpret_cast<void*>(std::numeric_limits<std::uintptr_t>::max());
-    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast): see above
+    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast, performance-no-int-to-ptr): see above
 }
 
 const MemoryResourceProxy* NewDeleteDelegateMemoryResource::getMemoryResourceProxy() noexcept
