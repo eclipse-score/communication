@@ -79,6 +79,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola/messaging:message_passing_service_mock",
         "//score/mw/com/impl/bindings/mock_binding/tracing:tracing_runtime",
         "//score/mw/com/impl/configuration",
+        "//score/mw/com/impl/e2e:e2e_profile_stub",
         "//score/mw/com/impl/tracing:tracing_runtime_mock",
         "@googletest//:gtest_main",
         "@score_baselibs//score/filesystem:mock",
