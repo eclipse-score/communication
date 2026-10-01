@@ -74,6 +74,7 @@
 #include "score/mw/com/types.h"
 
 #include <score/assert.hpp>
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -802,21 +803,22 @@ inline ::score::mw::com::impl::rust::TypeOperationImpl<T>& get_type_operations()
 /// \param type_tag Type name tag is currently not used but we may need for method and field.
 /// \param type Actual C++ type for which operations are registered
 /// \note Example usage: EXPORT_MW_COM_TYPE(TireType, Tire)
-#define EXPORT_MW_COM_TYPE(type_tag, type)                                                                    \
-    template <>                                                                                               \
-    class score::mw::com::impl::rust::RustRefMutCallable<void, ::score::mw::com::impl::SamplePtr<type>>       \
-    {                                                                                                         \
-      public:                                                                                                 \
-        static void invoke(::score::mw::com::impl::rust::FatPtr ptr_,                                         \
-                           ::score::mw::com::impl::SamplePtr<type> sample) noexcept                           \
-        {                                                                                                     \
-            /* Wrap in placement-new and call the Rust FFI function for closure invocation */                 \
-            alignas(::score::mw::com::impl::SamplePtr<type>) char                                             \
-                storage[sizeof(::score::mw::com::impl::SamplePtr<type>)];                                     \
-            auto* placement_sample = new (storage)::score::mw::com::impl::SamplePtr<type>(std::move(sample)); \
-            ::score::mw::com::impl::rust::mw_com_impl_call_dyn_ref_fnmut_sample(&ptr_, placement_sample);     \
-        }                                                                                                     \
-        static void dispose(::score::mw::com::impl::rust::FatPtr) noexcept {}                                 \
+#define EXPORT_MW_COM_TYPE(type_tag, type)                                                                           \
+    template <>                                                                                                      \
+    class score::mw::com::impl::rust::RustRefMutCallable<void, ::score::mw::com::impl::SamplePtr<type>>              \
+    {                                                                                                                \
+      public:                                                                                                        \
+        static void invoke(::score::mw::com::impl::rust::FatPtr ptr_,                                                \
+                           ::score::mw::com::impl::SamplePtr<type> sample) noexcept                                  \
+        {                                                                                                            \
+            /* Wrap in placement-new and call the Rust FFI function for closure invocation */                        \
+            alignas(::score::mw::com::impl::SamplePtr<type>)                                                         \
+                std::array<char, sizeof(::score::mw::com::impl::SamplePtr<type>)>                                    \
+                    storage;                                                                                         \
+            auto* placement_sample = new (storage.data())::score::mw::com::impl::SamplePtr<type>(std::move(sample)); \
+            ::score::mw::com::impl::rust::mw_com_impl_call_dyn_ref_fnmut_sample(&ptr_, placement_sample);            \
+        }                                                                                                            \
+        static void dispose(::score::mw::com::impl::rust::FatPtr) noexcept {}                                        \
     };
 
 }  // namespace score::mw::com::impl::rust
