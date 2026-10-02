@@ -35,7 +35,7 @@
 
 namespace lgsomeip {
 
-// Section: PacketRouter Proxy : Public Method
+// PacketRouterProxy public methods.
 PacketRouterProxy::PacketRouterProxy(ApplicationManager* host)
     : host_(host), multiplexer_(nullptr), receiver_(nullptr), listener_(nullptr), sender_(nullptr),
       message_passing_receiver_(nullptr), message_passing_listener_(nullptr), message_passing_sender_(nullptr) {}
@@ -244,7 +244,7 @@ void PacketRouterProxy::start() {
     if (running_ == false) {
         running_ = true;
 
-        // connect Receiver Socket to Multiplexer
+        // Connect the receiver socket to the multiplexer.
         if (multiplexer_ != nullptr) {
             multiplexer_->start();
             if (receiver_ != nullptr) {
@@ -256,7 +256,7 @@ void PacketRouterProxy::start() {
             message_passing_receiver_->start_listen();
         }
 
-        // send Application Register Message to Daemon Application
+        // Send an application-registration message to the daemon.
         if (sender_ != nullptr) {
             do_register_application();
         }
@@ -269,13 +269,13 @@ void PacketRouterProxy::start() {
 
 void PacketRouterProxy::stop() {
     if (running_ == true) {
-        // stop trying connect if it exists
+        // Stop any pending connection retry.
         stop_retry_connect();
 
-        // send Application Register Message to Daemon Application
+        // Send an application-unregistration message to the daemon.
         do_un_register_application();
 
-        // disconnect Receiver Socket to Multiplexer
+        // Disconnect the receiver socket from the multiplexer.
         if (receiver_ != nullptr) {
             receiver_->stop_listen();
         }
@@ -345,7 +345,7 @@ void PacketRouterProxy::on_message(std::shared_ptr<Endpoint> endpoint, std::uint
     if (is_sd_message) {
         std::shared_ptr<MessageSD> sdmessage = MessageBuilder::create<SOMEIPSD>();
 
-        // Process Service Control Message : send to application manager
+        // Process the service-control message and send it to ApplicationManager.
         if (false == MessageBuilder::build_message(*sdmessage, message_data, message_length)) {
             LGSOMEIP_LOG_INFO << "PacketRouterProxy::on_message / Fail to build_message of the SOMEIPSD!!!";
             return;
@@ -365,7 +365,7 @@ void PacketRouterProxy::on_message(std::shared_ptr<Endpoint> endpoint, std::uint
             }
         }
 
-        // process SOME/IP Message : send to application manager
+        // Process the SOME/IP message and send it to ApplicationManager.
         if (false == MessageBuilder::build_message(*someip_message, message_data, message_length)) {
             LGSOMEIP_LOG_INFO << "PacketRouterProxy::on_message / Fail to build_message of the SOMEIP!!!";
             return;
@@ -571,7 +571,6 @@ void PacketRouterProxy::on_message_passing_connect(std::shared_ptr<Endpoint> ser
             connected_endpoints_[clientfd] = info;
             client_endpoint->start_listen();
         }
-        // message_passing_listener_->start_listen();
     } else {
         LGSOMEIP_LOG_ERROR << "PacketRouterProxy::onMessagePassingConnect / Invalid Case";
     }
@@ -607,8 +606,8 @@ void PacketRouterProxy::send_message(std::shared_ptr<MessageSD> message) {
 
     std::uint32_t length;
 
-    // A static buffer is used to serialize a SOME/IP-SD
-    // and can be protected from multi-threads by using a mutex(send_message_mutex_).
+    // Serialize SOME/IP-SD messages into a static buffer protected by
+    // send_message_mutex_.
     MessageBuilder::build_byte_stream(send_buffer_someip_sd_, &length, *message);
 
     if (sender_ != nullptr) {
@@ -637,10 +636,10 @@ void PacketRouterProxy::send_message(MessageSOMEIP& message) {
 
     MessageBuilder::build_byte_stream_some_ip_header(payload_byte, &length_header, message);
 
-    // Add the payload data to sendBuffer which is created with SOME/IP Header.
+    // Append the payload to the SOME/IP header buffer.
     send_buffer.insert(std::end(send_buffer), std::begin(payload_vector), std::end(payload_vector));
 
-    // Add instanceID in the end of the payload to deliver to the SOME/IP daemon.
+    // Append the instance ID for delivery to the SOME/IP daemon.
     send_buffer.insert(std::end(send_buffer), 2, 0x00);
     payload_byte = send_buffer.data();
     instance_id = message.get_instance_id();
@@ -672,14 +671,13 @@ void PacketRouterProxy::send_ipc_response_message(MessageSOMEIP& message, std::u
     MessageBuilder::build_byte_stream(buffer.data(), &length, message);
     std::uint16_t instance_id = message.get_instance_id();
 
-    // For example, the payload vector of the EventManager notification can be reused
+    // Reuse the EventManager notification payload buffer during cyclic updates.
     if (ipc_senders_.find(app_id) == ipc_senders_.end()) {
         throw LSAR_APPLICATION_ERROR(SOMEIP_RETURN_CODE::E_UNKNOWN_SERVICE);
     } else {
         set_byte_stream(buffer.data() + length, &instance_id, 2);
         length += 2;
         service_id = static_cast<std::uint16_t>(message.get_message_id() >> 16);
-        // during cyclic update.
         LGSOMEIP_LOG_DEBUG << "PacketRouterProxy::send_ipc_response_message / "
                            << format_service_instance_id(service_id, instance_id);
 
@@ -767,7 +765,7 @@ void PacketRouterProxy::on_internal_request(std::uint16_t service_id, std::uint1
 }
 #endif // ENABLE_SOMEIP_IPC
 
-// Section: PacketRouter Proxy : Private Method
+// PacketRouterProxy private methods.
 
 std::shared_ptr<MessageSD> PacketRouterProxy::compose_application_register(bool register_application) {
     // Composing SOME/IP-SD Message

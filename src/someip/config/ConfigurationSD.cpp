@@ -49,7 +49,7 @@ void ConfigurationSD::initialize(const rapidjson::Value& sd) {
         return;
     }
 
-    // Set initial value
+    // Initialize Service Discovery defaults.
     vlan_priority_ = 0xff;
     initial_delay_min_ = 1050;
     initial_delay_max_ = 1450;

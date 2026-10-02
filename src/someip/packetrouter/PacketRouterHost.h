@@ -85,7 +85,7 @@ public:
     void reboot_route(std::shared_ptr<lgsomeip::osabstraction::Address> address) override;
 
 public:
-    // Section: Multiple Service-Instances : Mapping (Service ID, Socket Addr) to Instance ID
+    // Map multiple service instances from service ID and socket address to instance ID.
     //  Transport protocol Binding (4.2.1)
     //  Transport Protocol Bindings / Service Instance Mapped to L4 Port
     //  Multiple Service-Instances (4.2.1.3)
@@ -96,7 +96,7 @@ public:
     std::uint16_t find_instance_id(std::uint16_t service_id, std::shared_ptr<Endpoint> endpoint);
     struct RoutingServiceInfo* get_service_instance(std::uint16_t service_id, std::shared_ptr<Endpoint> endpoint);
 
-    // Section: Message Receiver
+    // Message reception.
     bool is_reboot(const std::shared_ptr<Endpoint> endpoint, bool reboot_flag, std::uint32_t request_id);
     void on_message(std::shared_ptr<Endpoint> endpoint, std::uint8_t* message, std::size_t message_length);
 
@@ -143,7 +143,7 @@ public:
 #endif // ENABLE_QNX_MESSAGE_PASSING
 
 public:
-    // Section: Service Control Operation
+    // Service control operations.
     //  Transport protocol Binding (4.2.1)
     //  UDP Binding (4.2.1.1)
     //  TCP Binding (4.2.1.2)
@@ -193,7 +193,7 @@ private:
                                   const std::shared_ptr<lgsomeip::osabstraction::Address>& remote_addr = nullptr);
 
 public:
-    // Section: Event Subscribe Control Operation
+    // Event subscription control operations.
     void add_subscribe_route(std::uint16_t service_id, std::uint16_t instance_id, std::uint16_t event_id,
                              std::uint16_t app_id = 0,
                              std::shared_ptr<lgsomeip::osabstraction::Address> address = nullptr,
@@ -207,7 +207,7 @@ public:
     void remove_subscribe_route(std::shared_ptr<lgsomeip::osabstraction::Address> address);
 
 public:
-    // Section: Message Send Operation
+    // Message sending operations.
     void send_internal_message(std::uint8_t* message, std::size_t message_length, std::uint16_t target_app_id) override;
     void send_external_sd_message(std::uint8_t* message, std::size_t message_length,
                                   std::shared_ptr<lgsomeip::osabstraction::Address> target_address = nullptr,
@@ -219,7 +219,7 @@ private:
                     std::uint8_t return_code);
 
 private:
-    // Section: Internal & External Connection Management
+    // Internal and external connection management.
     void register_connected_endpoint(std::shared_ptr<Endpoint> ep, std::uint16_t app_id = 0);
     void remove_app_before_connection(const std::int32_t& file_descriptor,
                                       const RoutingConnectionInfo& connection_info);
@@ -271,7 +271,7 @@ private:
         e2e_custom_checkers_;
 
 private:
-    // Section: Service / Message Management (Property)
+    // Service and message management properties.
     // External Socket (for External ECU) / Mappping service id to app id
     std::map<std::uint16_t, std::map<std::uint16_t, struct RoutingServiceInfo>> registered_service_info_;
 

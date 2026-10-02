@@ -32,7 +32,7 @@
 #include <cmath>
 #include <sstream>
 
-// To write the current state of SOME/IP services to json files
+// Write the current SOME/IP service state to JSON files.
 #include "rapidjson/filewritestream.h"
 #include <rapidjson/writer.h>
 #include "rapidjson/prettywriter.h"
@@ -45,7 +45,7 @@
 
 namespace lgsomeip {
 
-// To handle ODR-use
+// Provide the out-of-line definition required for ODR-use.
 const std::uint8_t ServiceManager::RETRY_CONNECTION_PERIOD;
 
 ServiceManager::ServiceManager(std::string name, std::string config_path, std::shared_ptr<ServiceRouter> packet_router)
@@ -56,13 +56,12 @@ ServiceManager::ServiceManager(std::string name, std::string config_path, std::s
     configuration_ = std::make_shared<Configuration>(config_path);
 
 #if defined(ENABLE_SOMEIP_PACKET_FILTERING)
-    // loading packet fileters for protecting SOME/IP overload
+    // Load packet filters to protect against SOME/IP overload.
     // Only someip-daemon loads and uses this configuration.
     configuration_->configure_someip_packet_filter();
 #endif // ENABLE_SOMEIP_PACKET_FILTERING
 
-    // Initialize gathered_subscribe_list_ and gathered_subscribe_ack_list_ which are going to be used in the
-    // on_external_message() funciton
+    // Initialize the subscription lists used by on_external_message().
     gathered_subscribe_list_ = MessageBuilder::create<SOMEIPSD>();
     gathered_subscribe_ack_list_ = MessageBuilder::create<SOMEIPSD>();
 }
@@ -108,7 +107,7 @@ void ServiceManager::stop() {
 }
 
 void ServiceManager::on_timer() {
-    // Send 1) CyclicMainOfferService 2)RepetitionOfferService 3)RepetitionFindService
+    // Send cyclic main offers, repeated offers, and repeated FindService messages.
     on_send_cyclic_offer_find_service();
 
     on_check_ttl_service();
@@ -126,7 +125,7 @@ void ServiceManager::on_send_cyclic_repetition_offer_service(std::shared_ptr<Mes
         for (auto& instance : service.second) {
             std::uint16_t instanceid = instance.first;
 
-            // Send Offer message only on providing services in the point of server
+            // Send an OfferService message only for services provided by this server.
             if (instance.second.app_id > 0 && instance.second.is_in_config_file == true) {
                 auto service_config = get_configuration()->get_service_info(serviceid, instanceid);
                 if (service_config == nullptr) {
@@ -137,7 +136,7 @@ void ServiceManager::on_send_cyclic_repetition_offer_service(std::shared_ptr<Mes
                     continue;
                 }
 
-                // Send Offer service
+                // Add the OfferService entry.
                 auto& item = instance.second;
                 std::uint32_t state = item.state & 0xffff0000;
                 std::uint32_t count = item.state & 0x0000ffff;
@@ -156,7 +155,7 @@ void ServiceManager::on_send_cyclic_repetition_offer_service(std::shared_ptr<Mes
 
                     item.timer = (timer > SOMEIP_DEFAULT_TIMER_CYCLE) ? timer - SOMEIP_DEFAULT_TIMER_CYCLE : 0;
                     if (item.timer == 0) {
-                        // Add entry to message
+                        // Add the OfferService entry to the message.
                         SDEntry entry(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
                         entry.set_service_id(serviceid);
                         entry.set_instance_id(instanceid);
@@ -182,7 +181,6 @@ void ServiceManager::on_send_cyclic_repetition_offer_service(std::shared_ptr<Mes
                         }
 
                         MessageComposer::add_entry(message, &entry, option1, nullptr);
-                        // Added
 
                         item.state = SOMEIP_SERVICE_STATE_REPETITION;
                         item.timer = sd_config->get_repetitions_base_delay();
@@ -210,7 +208,7 @@ void ServiceManager::on_send_cyclic_repetition_offer_service(std::shared_ptr<Mes
 
                     item.timer = (timer > SOMEIP_DEFAULT_TIMER_CYCLE) ? timer - SOMEIP_DEFAULT_TIMER_CYCLE : 0;
                     if (item.timer == 0) {
-                        // Add entry to message
+                        // Add the OfferService entry to the message.
                         SDEntry entry(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
                         entry.set_service_id(serviceid);
                         entry.set_instance_id(instanceid);
@@ -236,7 +234,6 @@ void ServiceManager::on_send_cyclic_repetition_offer_service(std::shared_ptr<Mes
                         }
 
                         MessageComposer::add_entry(message, &entry, option1, nullptr);
-                        // Added
 
                         item.state = item.state + 1;
                         const std::uint64_t base_delay = sd_config->get_repetitions_base_delay();
@@ -318,8 +315,8 @@ void ServiceManager::on_send_cyclic_repetition_find_service(std::shared_ptr<Mess
             if (instanceid != SOMEIP_DEFAULT_ANY_INSTANCE && service_config->is_provider() == true)
                 continue;
 
-            // Send FindService only on first service
-            // Not send FindService of all services duplicated
+            // Send FindService only for the first request for each service.
+            // Do not send duplicate FindService messages for the same service.
             auto& item_vector = instance.second;
             if (item_vector.begin() != item_vector.end()) {
                 auto& item = item_vector.front();
@@ -327,7 +324,7 @@ void ServiceManager::on_send_cyclic_repetition_find_service(std::shared_ptr<Mess
                 std::uint32_t count = item.state & 0x0000ffff;
                 std::uint32_t timer = item.timer;
 
-                // construct find service list;
+                // Construct the FindService list.
                 switch (state) {
                 case SOMEIP_SERVICE_STATE_INITIAL: {
                     if (timer == 0) {
@@ -341,7 +338,7 @@ void ServiceManager::on_send_cyclic_repetition_find_service(std::shared_ptr<Mess
 
                     item.timer = (timer > SOMEIP_DEFAULT_TIMER_CYCLE) ? timer - SOMEIP_DEFAULT_TIMER_CYCLE : 0;
                     if (item.timer == 0) {
-                        // Add entry to message
+                        // Add the FindService entry to the message.
                         SDEntry entry(SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID);
                         entry.set_service_id(serviceid);
                         entry.set_instance_id(instanceid);
@@ -350,7 +347,6 @@ void ServiceManager::on_send_cyclic_repetition_find_service(std::shared_ptr<Mess
                         entry.set_ttl(3);
 
                         MessageComposer::add_entry(message, &entry, nullptr, nullptr);
-                        // Added
 
                         item.state = SOMEIP_SERVICE_STATE_REPETITION;
                         item.timer = sd_config->get_repetitions_base_delay();
@@ -379,7 +375,7 @@ void ServiceManager::on_send_cyclic_repetition_find_service(std::shared_ptr<Mess
 
                     item.timer = (timer > SOMEIP_DEFAULT_TIMER_CYCLE) ? timer - SOMEIP_DEFAULT_TIMER_CYCLE : 0;
                     if (item.timer == 0) {
-                        // Add entry to message
+                        // Add the FindService entry to the message.
                         SDEntry entry(SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID);
                         entry.set_service_id(serviceid);
                         entry.set_instance_id(instanceid);
@@ -388,7 +384,6 @@ void ServiceManager::on_send_cyclic_repetition_find_service(std::shared_ptr<Mess
                         entry.set_ttl(3);
 
                         MessageComposer::add_entry(message, &entry, nullptr, nullptr);
-                        // Added
 
                         item.state = item.state + 1;
                         item.timer = sd_config->get_repetitions_base_delay() * std::pow(2, count + 1);
@@ -446,7 +441,7 @@ void ServiceManager::on_send_cyclic_main_offer_service(std::shared_ptr<MessageSD
 
             std::uint32_t state = instance.second.state & 0xffff0000;
 
-            // Send Offer message only on providing services in the point of server and state SOMEIP_SERVICE_STATE_MAIN
+            // Send an OfferService message for services in the main offer phase.
             if (instance.second.app_id > 0 && instance.second.is_in_config_file == true &&
                 state == SOMEIP_SERVICE_STATE_MAIN) {
                 LGSOMEIP_LOG_DEBUG << "ServiceManager::on_send_cyclic_main_offer_service / Service "
@@ -454,7 +449,7 @@ void ServiceManager::on_send_cyclic_main_offer_service(std::shared_ptr<MessageSD
 
                 auto& item = instance.second;
 
-                // Add entry to message
+                // Add the OfferService entry to the message.
                 SDEntry entry(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
                 entry.set_service_id(serviceid);
                 entry.set_instance_id(instanceid);
@@ -479,7 +474,6 @@ void ServiceManager::on_send_cyclic_main_offer_service(std::shared_ptr<MessageSD
                 }
 
                 MessageComposer::add_entry(message, &entry, option1, nullptr);
-                // Added
             }
         }
     }
@@ -492,13 +486,13 @@ void ServiceManager::on_send_cyclic_offer_find_service() {
 
     auto message = MessageBuilder::create<SOMEIPSD>();
 
-    // 0. on_send_cyclic_main_offer_service
+    // Send the cyclic main offer service message.
     on_send_cyclic_main_offer_service(message);
 
-    // 1. on_send_cyclic_repetition_offer_service
+    // Send the cyclic repeated offer service message.
     on_send_cyclic_repetition_offer_service(message);
 
-    // 2. onSencCyclicRepetitionFindService
+    // Send the cyclic repeated FindService message.
     on_send_cyclic_repetition_find_service(message);
 
     // If message is not empty, send SD message
@@ -523,7 +517,7 @@ void ServiceManager::on_check_ttl_service() {
     } else
         ttl_timer = 1000;
 
-    // reduce TTL and when TTL reach at 0, remove service info.
+    // Decrease the service TTL and remove the service when it reaches zero.
     std::lock_guard<std::recursive_mutex> lock(available_list_mutex_);
     for (auto& service : available_service_list_) {
         auto instance = std::begin(service.second);
@@ -560,7 +554,7 @@ void ServiceManager::on_check_ttl_subscribe() {
     } else
         ttl_timer = 1000;
 
-    // reduce TTL and when TTL reach at 0, remove subscribe info.
+    // Decrease the subscription TTL and remove the subscription when it reaches zero.
     std::lock_guard<std::recursive_mutex> lock(available_list_mutex_);
     for (auto& service : available_service_list_) {
         std::uint16_t sid = service.first;
@@ -578,10 +572,10 @@ void ServiceManager::on_check_ttl_subscribe() {
                             << "ServiceManager::on_check_ttl_subscribe " << format_service_instance_id(sid, iid) << " "
                             << format_named_id("EventGroupID", egid, 4) << " is removed due to TTL time out.";
 
-                        // Remove Routing Info
+                        // Remove routing information.
                         auto config_service_info = get_configuration()->get_service_info(sid, iid);
                         if (config_service_info != nullptr) {
-                            // In case of external services
+                            // Remove routes for external services.
                             auto eventgroup = config_service_info->get_event_group(egid);
                             for (std::uint16_t event_id : *eventgroup) {
                                 if (subscribe->app_id > 0) {
@@ -600,8 +594,7 @@ void ServiceManager::on_check_ttl_subscribe() {
 
                             subscribe = subscribelist.erase(subscribe);
                         } else {
-                            // In case of internal services (IPC), do nothing since TTL of internal services has been
-                            // set to 0xFFFFFF and then it never decreases.
+                            // Keep internal IPC subscriptions; their TTL is set to 0xFFFFFF.
                         }
                     } else {
                         LGSOMEIP_LOG_VERBOSE
@@ -616,7 +609,7 @@ void ServiceManager::on_check_ttl_subscribe() {
                 }
             }
         }
-    } // end - for (auto& service)
+    } // for (auto& service)
 }
 
 void ServiceManager::on_send_magic_cookies() {
@@ -651,7 +644,7 @@ void ServiceManager::on_disconnected_service(std::shared_ptr<lgsomeip::osabstrac
 
                 // TCP server case
                 if (service_info.app_id > 0) {
-                    // remove route and send stop offer service
+                    // Remove the route and send StopOfferService.
                     packet_router_->remove_route(service_id, instance_id);
                     send_internal_offer_service_all(service_id, instance_id, SOMEIP_DEFAULT_TTL_OFF);
 
@@ -662,7 +655,7 @@ void ServiceManager::on_disconnected_service(std::shared_ptr<lgsomeip::osabstrac
                 }
                 // TCP client case
                 else {
-                    // Remove Subscribe Information
+                    // Remove subscription information.
                     auto& eventgroup_list = service_info.subscribe;
                     auto eventgroup_list_it = eventgroup_list.begin();
                     while (eventgroup_list_it != eventgroup_list.end()) {
@@ -706,7 +699,7 @@ void ServiceManager::on_disconnected_service(std::shared_ptr<lgsomeip::osabstrac
 void ServiceManager::on_disconnected_application(std::uint16_t app_id) {
     LGSOMEIP_LOG_INFO << "ServiceManager::on_disconnected_application / " << format_named_id("AppID", app_id, 4);
 
-    // Remove Available Service Information
+    // Remove available service information.
     std::set<std::uint16_t> remove_set;
     std::unique_lock<std::recursive_mutex> available_lck(available_list_mutex_);
     for (auto& service : available_service_list_) {
@@ -715,7 +708,7 @@ void ServiceManager::on_disconnected_application(std::uint16_t app_id) {
             std::uint16_t instance_id = instance.first;
             auto& service_info = instance.second;
             if (service_info.app_id == app_id) {
-                // If this app provides service, send stop offer and remove it from available list
+                // If this application provides the service, send StopOfferService and remove it from the available list.
                 send_internal_offer_service_all(service_id, instance_id, SOMEIP_DEFAULT_TTL_OFF);
 
                 if (service_info.is_in_config_file == true) {
@@ -727,7 +720,7 @@ void ServiceManager::on_disconnected_application(std::uint16_t app_id) {
 
                 remove_set.insert(service_id);
             } else {
-                // Remove Subscribe Information
+                // Remove subscription information.
                 auto& eventgroup_list = service_info.subscribe;
                 auto eventgroup_list_it = eventgroup_list.begin();
                 while (eventgroup_list_it != eventgroup_list.end()) {
@@ -761,13 +754,13 @@ void ServiceManager::on_disconnected_application(std::uint16_t app_id) {
     for (auto id : remove_set) {
         available_service_list_.erase(id);
 
-        // Erase service in repetition_offer_list_
+        // Erase the service from repetition_offer_list_.
         repetition_offer_list_.erase(id);
     }
     available_lck.unlock();
 
     std::lock_guard<std::mutex> request_lck(request_list_mutex_);
-    // Remove Request Service Information
+    // Remove requested-service information.
     for (auto& service : request_service_list_) {
         for (auto& instance : service.second) {
             auto& request_list = instance.second;
@@ -782,7 +775,7 @@ void ServiceManager::on_disconnected_application(std::uint16_t app_id) {
         }
     }
 
-    // Remove Repeated Find Service Information
+    // Remove repeated FindService information.
     for (auto& service : repetition_find_list_) {
         for (auto& instance : service.second) {
             auto& repetition_list = instance.second;
@@ -798,7 +791,7 @@ void ServiceManager::on_disconnected_application(std::uint16_t app_id) {
     }
 }
 
-// Section: ServiceManager : Callback for Control Message
+// ServiceManager control-message callbacks.
 void ServiceManager::on_internal_message(std::shared_ptr<MessageSD> message) {
     SDEntry* entry = nullptr;
     std::uint16_t service_id = 0;
@@ -849,7 +842,6 @@ void ServiceManager::on_internal_message(std::shared_ptr<MessageSD> message) {
                 check_subscribe_error(entry, nullptr, nullptr, "");
                 on_internal_subscribe_eventgroup(service_id, instance_id, eventgroup_id, major, ttl, req_id);
             } catch (const SubscribeErrorException& e) {
-                // std::cerr << e.what();
                 std::uint16_t app_id = static_cast<std::uint16_t>(req_id >> 16);
                 send_subscribe_eventgroup_ack(service_id, instance_id, eventgroup_id, SOMEIP_DEFAULT_TTL_OFF, major,
                                               app_id);
@@ -1075,7 +1067,7 @@ void ServiceManager::on_external_message(std::shared_ptr<Endpoint> endpoint, std
                                     }
                                 }
 
-                                // Set Multicast Option to SubscribeAck Message.
+                                // Set the multicast option on the SubscribeAck message.
                                 if (multicast != nullptr) {
                                     SDOption option(SOMEIP_SD_OPTION::IP4MULTI::TYPEID);
                                     if (get_configuration()->get_ip_type() == 6) {
@@ -1145,7 +1137,6 @@ void ServiceManager::on_external_message(std::shared_ptr<Endpoint> endpoint, std
                                                      tcp_address, udp_address);
                 }
             } catch (const SubscribeErrorException& e) {
-                // std::cerr << e.what();
                 LGSOMEIP_LOG_WARN << "ServiceManager::on_external_message / Subscribe Error "
                                   << format_service_instance_interface_major_version(service_id, instance_id, major)
                                   << " " << format_named_id("EventGroupID", eventgroup_id, 4) << " from "
@@ -1179,7 +1170,7 @@ void ServiceManager::on_external_message(std::shared_ptr<Endpoint> endpoint, std
 
             break;
         default:
-            // TODO : create an error message.
+            // TODO(lg-someip): Create an error message for an unsupported entry type.
             break;
         }
     }
@@ -1258,7 +1249,7 @@ bool ServiceManager::check_sd_message(std::shared_ptr<MessageSD> message, std::s
         return false;
     }
 
-    // check existing of options for each entities
+    // Check that options exist for each referenced entry.
     for (std::uint32_t i = 0; i < len; i++) {
         entry = &message->entry(i);
         index1 = entry->get_option1st_index() + entry->get_option1st_count();
@@ -1266,7 +1257,7 @@ bool ServiceManager::check_sd_message(std::shared_ptr<MessageSD> message, std::s
         options = message->options().size();
 
         if (options < index1 || options < index2) {
-            // the received SD message is wrong format!
+            // The received SD message has an invalid format.
             if (entry->get_type() == SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID) {
                 service_id = entry->get_service_id();
                 instance_id = entry->get_instance_id();
@@ -1308,7 +1299,7 @@ void ServiceManager::on_internal_find_service(std::uint16_t service_id, std::uin
     bool is_in_config = (config != nullptr);
 
     if (ttl > 0) {
-        // check pre-requested service & register request info
+        // Check for an existing request and register the request information.
         if (reqitem == std::end(req_app_list)) {
             req_app_list.emplace_back(app_id, major_version, minor_version);
         }
@@ -1330,7 +1321,7 @@ void ServiceManager::on_internal_find_service(std::uint16_t service_id, std::uin
                                           minimum_minor_version, has_minimum_minor)) {
                     req_app_list.back().state = SOMEIP_SERVICE_STATE_MAIN;
                     packet_router_->set_instance_id(service_id, instance_id, app_id);
-                    // send "offer service message" to requesting app.
+                    // Send an OfferService message to the requesting application.
                     send_internal_offer_service(service_id, instance_id, SOMEIP_DEFAULT_TTL_ON, service_info->major,
                                                 service_info->minor, app_id);
                 }
@@ -1442,7 +1433,7 @@ void ServiceManager::on_external_find_service(std::uint16_t service_id, std::uin
 
                     if (check_service_version(major_version, instance.second->major, minor_version,
                                               instance.second->minor, minimum_minor_version, has_minimum_minor)) {
-                        // send "offer service message" to requesting app.
+                        // Send an OfferService message to the requesting application.
                         // Gather an OfferService message to send it together in a packet
                         gathered_offer_list_[service_id][instance.first] = instance.second;
                     }
@@ -1468,7 +1459,7 @@ void ServiceManager::on_external_find_service(std::uint16_t service_id, std::uin
         return;
     }
 
-    // register service request to available service list.
+    // Register the service request in the available-service list.
     auto service_config = configuration_->get_service_info(service_id, instance_id);
     if (service_config != nullptr) {
         minimum_minor_version = service_config->get_minimum_minor_version();
@@ -1477,7 +1468,7 @@ void ServiceManager::on_external_find_service(std::uint16_t service_id, std::uin
 
     if (check_service_version(major_version, service_info->major, minor_version, service_info->minor,
                               minimum_minor_version, has_minimum_minor)) {
-        // send "offer service message" to requesting app.
+        // Send an OfferService message to the requesting application.
         // Gather an OfferService message to send it together in a packet
         if (service_info->app_id > 0 && service_info->is_in_config_file == true) {
             gathered_offer_list_[service_id][instance_id] = service_info;
@@ -1526,12 +1517,9 @@ void ServiceManager::on_internal_offer_service(std::uint16_t service_id, std::ui
 
     struct AvailableService* service_info = find_available_service_instance(service_id, instance_id);
 
-    //  Sending Find entries shall be stopped
-    // after receiving the coresponding Offer entries by jumping to the Main Phase
-    // in which no Find entries are sent.
-    // Erase the service in repetition_find_list_ when Offer service comes in.
-    // This erase part is implemented in on_external_offer_service and on_internal_offer_service.
-    // Thus, please modify together.
+    // Stop sending FindService entries once the corresponding OfferService entries arrive
+    // and the state moves to the Main phase. The service is erased from repetition_find_list_
+    // in both on_external_offer_service and on_internal_offer_service; keep them in sync.
     std::unique_lock<std::mutex> lock(request_list_mutex_);
     if (ttl > 0 && repetition_find_list_.find(service_id) != repetition_find_list_.end()) {
         repetition_find_list_[service_id].erase(instance_id);
@@ -1598,12 +1586,9 @@ void ServiceManager::on_external_offer_service(std::uint16_t service_id, std::ui
 
     AvailableService* service_info = find_available_service_instance(service_id, instance_id);
 
-    //  Sending Find entries shall be stopped
-    // after receiving the coresponding Offer entries by jumping to the Main Phase
-    // in which no Find entries are sent.
-    // Erase the service in repetition_find_list_ when Offer service comes in.
-    // This erase part is implemented in on_external_offer_service and on_internal_offer_service.
-    // Thus, please modify together.
+    // Stop sending FindService entries once the corresponding OfferService entries arrive
+    // and the state moves to the Main phase. The service is erased from repetition_find_list_
+    // in both on_external_offer_service and on_internal_offer_service; keep them in sync.
     std::unique_lock<std::mutex> lock(request_list_mutex_);
     if (ttl > 0 && repetition_find_list_.find(service_id) != repetition_find_list_.end()) {
         repetition_find_list_[service_id].erase(instance_id);
@@ -1619,15 +1604,15 @@ void ServiceManager::on_external_offer_service(std::uint16_t service_id, std::ui
     lock.unlock();
 
     if (service_info != nullptr && ttl > 0) {
-        // Update Offer Service Information : update TTL
+        // Update the offered service information and TTL.
         service_info->ttl = ttl;
 
-        // Update SubscribeEventgroup Info
+        // Update subscription information.
         auto& subscribelist = service_info->subscribe;
         for (auto& subscribe : subscribelist) {
             std::uint16_t eventgroup_id = subscribe.first;
             for (auto& request : subscribe.second) {
-                // TODO: TTL Time
+                // TODO(lg-someip): Clarify TTL handling for subscription requests.
                 request.ttl = 3;
             }
             // In the send_subscribe_eventgroup() function, a SubscribeEventgroup message will be gathered in
@@ -1847,7 +1832,7 @@ void ServiceManager::on_subscribe_eventgroup_ack(std::uint16_t service_id, std::
     auto& subscribe_list = service_info->subscribe[event_group_id];
     auto subscribe = std::begin(subscribe_list);
 
-    // Update Routing Info
+    // Update routing information.
     while (subscribe != std::end(subscribe_list)) {
         std::uint16_t subscribe_app_id = subscribe->app_id;
         bool is_subscribed_from_internal = (subscribe_app_id != 0);
@@ -1859,7 +1844,7 @@ void ServiceManager::on_subscribe_eventgroup_ack(std::uint16_t service_id, std::
 
         if (ttl > 0) {
             if (is_subscribed_from_internal && subscribe->state == SubscribeState::UPDATE) {
-                // Don't send ack message to app, when internal subscribe state.
+                // Do not send an acknowledgement while an internal subscription is being updated.
                 subscribe->state = SubscribeState::SUBSCRIBED;
                 subscribe++;
                 continue;
@@ -1911,14 +1896,14 @@ void ServiceManager::on_subscribe_eventgroup_ack(std::uint16_t service_id, std::
                 }
             }
 
-            // ttl on subscribe ack if it is different with ttl on subscribe
+            // Update the SubscribeAck TTL when the external subscription TTL changes.
             if (is_offered_from_external) {
                 subscribe->ttl = ttl;
             }
-            // update info according to subscribe ack
+            // Mark the subscription as acknowledged.
             subscribe->state = SubscribeState::SUBSCRIBED;
         } else {
-            // Remove Routing Info
+            // Remove routing information.
             if (eventgroup != nullptr) {
                 for (std::uint16_t event_id : *eventgroup) {
                     packet_router_->remove_subscribe_route(service_id, instance_id, event_id, subscribe_app_id);
@@ -1929,12 +1914,12 @@ void ServiceManager::on_subscribe_eventgroup_ack(std::uint16_t service_id, std::
             }
         }
 
-        // Send SubscribeAck Message for internal
+        // Send a SubscribeAck message to the internal client.
         if (is_subscribed_from_internal) {
             send_subscribe_eventgroup_ack(service_id, instance_id, event_group_id, ttl, major_version,
                                           subscribe_app_id);
         }
-        // Send SubscribeAck Message for external
+        // Send a SubscribeAck message to the external client.
         else {
             std::string target_ip;
             if (subscribe->tcp_address != nullptr)
@@ -1960,7 +1945,7 @@ void ServiceManager::on_subscribe_eventgroup_ack(std::uint16_t service_id, std::
         }
 
         if (ttl == 0) {
-            // update info according to subscribe nack
+            // Remove the rejected subscription.
             subscribe = subscribe_list.erase(subscribe);
         }
     }
@@ -1973,7 +1958,7 @@ void ServiceManager::handle_stop_offer_service(std::uint16_t service_id, std::ui
         if (major_version != service_info->major || minor_version != service_info->minor)
             return;
 
-        // Send "stop offer service" message to request app
+        // Send a StopOfferService message to the requesting application.
         send_internal_offer_service_all(service_id, instance_id, SOMEIP_DEFAULT_TTL_OFF, major_version, minor_version);
 
         bool is_need_to_send_external = (config != nullptr);
@@ -1998,7 +1983,7 @@ void ServiceManager::handle_stop_offer_service(std::uint16_t service_id, std::ui
 
         packet_router_->remove_route(service_id, instance_id);
 
-        // Erase service in repetition_offer_list_
+        // Erase the service from repetition_offer_list_.
         if (repetition_offer_list_.find(service_id) != repetition_offer_list_.end()) {
             repetition_offer_list_[service_id].erase(instance_id);
 
@@ -2067,21 +2052,21 @@ void ServiceManager::handle_new_offer_service(std::uint16_t service_id, std::uin
     }
 
     {
-        // Offer Service : Add new service
+        // Add a new OfferService entry.
         std::lock_guard<std::recursive_mutex> lock(available_list_mutex_);
         available_service_list_[service_id].emplace(
             instance_id, AvailableService(app_id, is_in_config, major_version, minor_version, ttl, tcp_addr, udp_addr));
     }
 
-    // It's for CyclicOfferService
+    // Track this offer for the cyclic OfferService.
     if (is_offer_from_internal && is_in_config) {
         std::lock_guard<std::mutex> repetition_lock(repetition_offer_list_mutex_);
         repetition_offer_list_[service_id].emplace(
             instance_id, AvailableService(app_id, is_in_config, major_version, minor_version, ttl, tcp_addr, udp_addr));
     }
 
-    // Add route information in a new thread and retry in case of failure.
-    // If retry also fails remove service information from DB.
+    // Add route information in a new thread and retry after a failure.
+    // Remove the service information if the retry also fails.
     std::thread add_connection_th([=]() {
         // Assign a descriptive name to this worker thread.
         pthread_setname_np(pthread_self(), "SomeipSvcConn");
@@ -2191,7 +2176,7 @@ void ServiceManager::update_subscribe_info(std::uint16_t service_id, std::uint16
                                            std::uint16_t event_group_id, std::uint8_t major_version, std::uint32_t ttl,
                                            std::uint32_t request_id,
                                            std::vector<RequestedSubscribe>::iterator subscription) {
-    // update subscribe info
+    // Update subscription information.
     LGSOMEIP_LOG_DEBUG << "ServiceManager::update_subscribe_info / Update subscribe";
     std::uint16_t app_id = static_cast<std::uint16_t>(request_id >> 16);
 
@@ -2212,26 +2197,25 @@ void ServiceManager::handle_stop_subscribe_eventgroup(std::uint16_t service_id, 
                                                       std::shared_ptr<lgsomeip::osabstraction::Address> udp_address) {
     LGSOMEIP_LOG_DEBUG << "ServiceManager::handle_stop_subscribe_eventgroup / Stop subscribe";
 
-    // If the service is subscribed from external, send stop subscribe eventgroup
+    // For external subscriptions, send a StopSubscribeEventgroup message.
     if (service_info->app_id == 0) {
         send_subscribe_eventgroup(service_id, instance_id, event_group_id, ttl, major_version, app_id);
     } else {
         send_subscribe_eventgroup_ack(service_id, instance_id, event_group_id, ttl, major_version, app_id);
     }
 
-    // remove subscribe info
+    // Remove subscription information.
     auto& subscribe_list = service_info->subscribe[event_group_id];
     subscribe_list.erase(subscription);
 
-    // If there are no subscribes in this eventgroup,
-    // remove it from subscribe list.
+    // Remove the event group from the subscription list when it has no subscribers.
     if (subscribe_list.empty()) {
         service_info->subscribe.erase(event_group_id);
     }
 
     auto config_service_info = get_configuration()->get_service_info(service_id, instance_id);
     if (config_service_info != nullptr) {
-        // In case of external services
+        // Remove routes for external services.
         auto eventgroup = config_service_info->get_event_group(event_group_id);
         if (tcp_address == nullptr && udp_address == nullptr) {
             for (std::uint16_t event_id : *eventgroup) {
@@ -2248,9 +2232,8 @@ void ServiceManager::handle_stop_subscribe_eventgroup(std::uint16_t service_id, 
             }
         }
     } else {
-        // In case of internal services (IPC), since the event of this eventgroup has been registered
-        // as SOMEIP_DEFAULT_ANY_EVENT,
-        // SOMEIP_DEFAULT_ANY_EVENT with appID is used to remove the subscribe route.
+        // Internal IPC services use SOMEIP_DEFAULT_ANY_EVENT with the application ID
+        // to remove the subscription route.
         packet_router_->remove_subscribe_route(service_id, instance_id, SOMEIP_DEFAULT_ANY_EVENT, app_id);
     }
 }
@@ -2263,7 +2246,7 @@ void ServiceManager::handle_new_subscribe_eventgroup(std::uint16_t service_id, s
                                                      std::shared_ptr<lgsomeip::osabstraction::Address> udp_address) {
     LGSOMEIP_LOG_DEBUG << "ServiceManager::handle_new_subscribe_eventgroup / Add subscribe";
 
-    // add subscribe info
+    // Add subscription information.
     auto& subscribe_list = service_info->subscribe[event_group_id];
     std::uint16_t app_id = static_cast<std::uint16_t>(request_id >> 16);
 
@@ -2277,7 +2260,7 @@ void ServiceManager::handle_new_subscribe_eventgroup(std::uint16_t service_id, s
     send_subscribe_eventgroup(service_id, instance_id, event_group_id, ttl, major_version, app_id);
 }
 
-// Section: ServiceManager : Message Utils
+// ServiceManager message utilities.
 struct AvailableService* ServiceManager::find_available_service_instance(std::uint16_t service_id,
                                                                          std::uint16_t instance_id) {
     struct AvailableService* service_info = nullptr;
@@ -2327,7 +2310,7 @@ bool ServiceManager::find_option_address(std::shared_ptr<lgsomeip::osabstraction
             LGSOMEIP_LOG_DEBUG << "ServiceManager::find_option_address / Option Address = " << addr->to_string()
                                << (addr->get_reliable() ? " (TCP)" : " (UDP)");
 
-            // if there are two TCP or Two UDP, it handles error
+            // Reject duplicate TCP or UDP options.
             if (addr->get_reliable() && tcp_address == nullptr) {
                 tcp_address = addr;
             } else if (!addr->get_reliable() && udp_address == nullptr) {
@@ -2350,7 +2333,7 @@ bool ServiceManager::find_option_address(std::shared_ptr<lgsomeip::osabstraction
             LGSOMEIP_LOG_DEBUG << "ServiceManager::find_option_address / Option Address = " << addr->to_string()
                                << (addr->get_reliable() ? " (TCP)" : " (UDP)");
 
-            // if there are two TCP or Two UDP, it handles error
+            // Reject duplicate TCP or UDP options.
             if (addr->get_reliable() && tcp_address == nullptr) {
                 tcp_address = addr;
             } else if (!addr->get_reliable() && udp_address == nullptr) {
@@ -2374,17 +2357,17 @@ void ServiceManager::check_subscribe_error(SDEntry* entry,
     struct AvailableService* service_info = find_available_service_instance(serviceid, instanceid);
     auto serviceconfig = get_configuration()->get_service_info(serviceid, instanceid);
 
-    // Check if the Service ID is known.
+    // Check whether the service ID is known.
     if (service_info == nullptr) {
         throw LSAR_SUBSCRIBE_ERROR("serviceInfo is null");
     }
 
-    // Check if the Major Version of this Service Instance is known
+    // Check whether the major version of this service instance is known.
     if (service_info->major != entry->get_major_version() && entry->get_major_version() != SOMEIP_DEFAULT_ANY_MAJOR) {
         throw LSAR_SUBSCRIBE_ERROR("Major number Error");
     }
 
-    // case : internal subscribe has no option information
+    // Internal subscriptions do not include endpoint options.
     if (tcp_address == nullptr && udp_address == nullptr)
         return;
 
@@ -2392,7 +2375,7 @@ void ServiceManager::check_subscribe_error(SDEntry* entry,
         LGSOMEIP_LOG_WARN << "ServiceManager::check_subscribe_error / Serviceconfig is null "
                           << format_service_instance_id(serviceid, instanceid);
     }
-    // Check if the Eventgroup ID of the Service Instance with Major Version is known
+    // Check whether the event-group ID and major version are known.
     else if (serviceconfig->get_event_group(entry->get_event_group_id()) == nullptr) {
         LGSOMEIP_LOG_WARN << "ServiceManager::check_subscribe_error / unknown "
                           << format_named_id("EventGroupID", entry->get_event_group_id(), 4) << " for "
@@ -2401,10 +2384,10 @@ void ServiceManager::check_subscribe_error(SDEntry* entry,
         throw LSAR_SUBSCRIBE_ERROR("Unknown EventgroupID");
     }
 
-    // Check that at least enough bytes for an empty SOME/IP-SD message are present
-    // Check if the referenced Options exist in the options array and are syntactically ok
-    //          TODO : Endpoint Options with valid L4-Protocol field
-    //                 Length of Options Array is consistent
+    // Ensure that the message contains enough bytes for an empty SOME/IP-SD message.
+    // Ensure that referenced options exist in the options array and are syntactically valid.
+    // TODO(lg-someip): Validate endpoint options against the L4 protocol field.
+    // TODO(lg-someip): Validate that the options-array length is consistent.
     if (entry->get_option1st_count() == 0 && entry->get_option1st_index() != 0) {
         throw LSAR_SUBSCRIBE_ERROR("getOption1st Error");
     }
@@ -2453,7 +2436,7 @@ void ServiceManager::remove_service_info(std::shared_ptr<lgsomeip::osabstraction
                 instance_id = instance.first;
 
                 packet_router_->remove_route(service_id, instance_id);
-                // Send "stop offer service" message to request app
+                // Send a StopOfferService message to the requesting application.
                 send_internal_offer_service_all(service_id, instance_id, SOMEIP_DEFAULT_TTL_OFF);
             }
         }
@@ -2461,7 +2444,7 @@ void ServiceManager::remove_service_info(std::shared_ptr<lgsomeip::osabstraction
         if (service_id != 0) {
             service_it = available_service_list_.erase(service_it);
 
-            // Erase service in repetition_offer_list_
+            // Erase the service from repetition_offer_list_.
             repetition_offer_list_.erase(service_id);
         } else {
             ++service_it;
@@ -2469,7 +2452,7 @@ void ServiceManager::remove_service_info(std::shared_ptr<lgsomeip::osabstraction
     }
 }
 
-// Section: ServiceManager : Send Message
+// ServiceManager message sending.
 
 void ServiceManager::send_internal_offer_service_all(std::uint16_t service_id, std::uint16_t instance_id,
                                                      std::uint32_t ttl, std::uint8_t major_version,
@@ -2498,7 +2481,7 @@ void ServiceManager::send_internal_offer_service_all(std::uint16_t service_id, s
         for (auto& request : req_app_list) {
             if (check_service_version(request.major, major_version, request.minor, minor_version, minimum_minor_version,
                                       has_minimum_minor)) {
-                // send "offer service message" to requesting app.
+                // Send an OfferService message to the requesting application.
                 request.state = SOMEIP_SERVICE_STATE_MAIN;
                 packet_router_->set_instance_id(service_id, instance_id, request.app_id);
                 send_internal_offer_service(service_id, instance_id, ttl, request.major, request.minor, request.app_id);
@@ -2513,7 +2496,7 @@ void ServiceManager::send_internal_offer_service(std::uint16_t service_id, std::
     std::uint8_t send_buffer[100];
     std::uint32_t len = 0;
 
-    // Composing SOME/IP-SD Message
+    // Compose the SOME/IP-SD message.
     auto message = MessageBuilder::create<SOMEIPSD>();
     SDEntry entry(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
     entry.set_service_id(service_id);
@@ -2571,8 +2554,7 @@ void ServiceManager::send_subscribe_eventgroup(std::uint16_t service_id, std::ui
     std::uint32_t len = 0;
     std::shared_ptr<SOMEIPSD::type> message;
 
-    // if this message is supposed to be gathered and this message is for External,
-    // gathered_subscribe_list_ will be used.
+    // Gather into gathered_subscribe_list_ when sending alongside an external message.
     if (send_alone == false && target_appid == 0) {
         message = gathered_subscribe_list_;
     } else {
@@ -2655,9 +2637,8 @@ void ServiceManager::send_subscribe_eventgroup(std::uint16_t service_id, std::ui
             MessageBuilder::build_byte_stream(send_buffer, &len, *message);
             packet_router_->send_external_sd_message(send_buffer, len, dest_sd_addr, LGSOMEIP_UNI_ENDPOINT);
         }
-        // if send_alone is false, which means this SD message is gathered in gathered_subscribe_list_,
-        // this message is not sent alone because it will be sent together with other messages
-        // in the on_external_offer_service() function.
+        // The message is sent later, together with others, from on_external_offer_service()
+        // when send_alone is false (it was gathered into gathered_subscribe_list_).
     }
 }
 
@@ -2679,7 +2660,7 @@ void ServiceManager::send_subscribe_eventgroup_ack(std::uint16_t service_id, std
     entry.set_ttl(ttl);
     entry.set_flag(0x00);
 
-    // Set Multicast Option to SubscribeAck Message
+    // Set the multicast option on the SubscribeAck message.
     if (multicast != nullptr) {
         SDOption option(SOMEIP_SD_OPTION::IP4MULTI::TYPEID);
         if (get_configuration()->get_ip_type() == 6) {
@@ -3139,7 +3120,7 @@ bool ServiceManager::write_current_state_someip_services(std::map<std::uint16_t,
         dump_dir = dump_dir + "dumpservices/";
         if (access(dump_dir.c_str(), 0) != 0) {
             if (mkdir(dump_dir.c_str(), S_IRWXU) == 0) {
-                // set permission of domain socket directory
+                // Set the domain-socket directory permissions.
                 chmod(dump_dir.c_str(), S_IRWXU);
             }
         }

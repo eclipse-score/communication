@@ -127,7 +127,7 @@ bool SDEntry::deserialize(std::uint8_t* data, std::uint32_t length) {
         break;
 
     default:
-        // TODO: make runtime exception!
+        // TODO(lg-someip): Throw a runtime exception for an unsupported entry type.
         LGSOMEIP_LOG_ERROR << "SDEntry::deserialize / type : " << type << " is wrong";
         return false;
     }
@@ -222,7 +222,7 @@ std::uint32_t SDEntry::serialize(std::uint8_t* data) {
         break;
 
     default:
-        // TODO: make runtime exception!
+        // TODO(lg-someip): Throw a runtime exception for an unsupported entry type.
         break;
     }
 

@@ -36,7 +36,7 @@
 
 namespace lgsomeip {
 
-// Section: PacketRouter Endpoint TCP : Endpoint Types
+// PacketRouter TCP endpoint types.
 template <typename BASETYPE> class EndpointTCPServer;
 
 constexpr std::uint32_t kMaxNumRetry = 10;
@@ -61,13 +61,13 @@ public:
         std::uint32_t rest_len = 0;
         std::vector<uint8_t> receive_buffer_dynamic;
 
-        // Static allocatin for receiving the packet will be used to improve the performance
-        // if the length of the packet is shorter than SOMEIP_UDP_MAX_PAYLOAD_SIZE (about 1400 bytes).
+        // Use the static receive buffer for packets shorter than SOMEIP_UDP_MAX_PAYLOAD_SIZE
+        // (about 1400 bytes) to improve performance.
         tcp_receive_buffer_ = static_buffer_;
 
         std::uint32_t rest_header_len(SOMEIP_HEADER::ACCUM_LEN::LENGTH);
         do {
-            // Receive SOMEIP Header (Message ID + Length field)
+            // Receive the SOME/IP header, including the message ID and length field.
             received_len = socket_->receive((char*)tcp_receive_buffer_, rest_header_len);
 
             if (received_len > 0) {
@@ -77,10 +77,7 @@ public:
                 if (is_packet_need_discard(received_len, num_retry)) {
                     return;
                 } else {
-                    // 100bytes(SOME/IP 46bytes) need 1usec to be sent in 100Mbps Ethernet.
-                    // Regarding thread operation, 1usec x 1000 = 1ms
-                    // Since 1ms is not enough to receive packets separated from SOME/IP lib (PacketRouterProxy),
-                    // 1ms should be 10ms.
+                    // Allow time for packets whose header and payload are sent separately by PacketRouterProxy.
                     // In PacketRouterProxy, a SOME/IP packet is separated to SOME/IP header and payload.
                     ++num_retry;
                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -88,15 +85,12 @@ public:
             }
         } while (rest_header_len > 0);
 
-        // Length field shall contain the length in Byte starting from Request ID/Client ID
-        // until the end of the SOME/IP message.
+        // The length field covers the bytes from the request ID/client ID to the end of the SOME/IP message.
         get_byte_stream(&packet_length_field, tcp_receive_buffer_ + SOMEIP_HEADER::POS::LENGTH);
         rest_len = packet_length_field;
 
         if ((packet_length_field == 0) || (packet_length_field > MAX_TRANSFER_PACKET_LENGTH)) {
-            // If the length field of the received SOME/IP packet is zero or larger than MAX_TRANSFER_PACKET_LENGTH, the
-            // packet might crash. So, the rest of TCP receive buffer should be removed from the buffer to ignore the
-            // packet and receive the next packet.
+            // Discard the remaining bytes when the length field is invalid so the next packet can be received safely.
             LGSOMEIP_LOG_WARN << "EndpointTCPClient::callback / the length field is invalid!! Length = "
                               << packet_length_field;
 
@@ -111,10 +105,8 @@ public:
             return;
         }
 
-        // If the length of a packet is larger than SOMEIP_UDP_MAX_PAYLOAD_SIZE,
-        // dynamic allocation for receiving the packet should be used.
-        // The length of dynamic allocation will be packetLengthField + SOMEIP_HEADER::ACCUM_LEN::LENGTH + 2.
-        // 2 bytes are for storing the instance ID.
+        // Use dynamic allocation for packets larger than SOMEIP_UDP_MAX_PAYLOAD_SIZE.
+        // Reserve two additional bytes for the instance ID.
         if (packet_length_field + SOMEIP_HEADER::ACCUM_LEN::LENGTH + 2 > SOMEIP_UDP_MAX_PAYLOAD_SIZE) {
             receive_buffer_dynamic.assign(tcp_receive_buffer_, tcp_receive_buffer_ + SOMEIP_HEADER::ACCUM_LEN::LENGTH);
             receive_buffer_dynamic.resize(packet_length_field + SOMEIP_HEADER::ACCUM_LEN::LENGTH + 2);
@@ -125,7 +117,7 @@ public:
 
         num_retry = 0;
         do {
-            // Receive SOMEIP Body (From Request ID to the end)
+            // Receive the SOME/IP body, from the request ID to the end of the message.
             received_len = socket_->receive(
                 (char*)tcp_receive_buffer_ + SOMEIP_HEADER::POS::REQUESTID + packet_length_field - rest_len, rest_len);
 
@@ -138,8 +130,7 @@ public:
                 if (is_packet_need_discard(received_len, num_retry)) {
                     return;
                 } else {
-                    // 100bytes(SOME/IP 46bytes) need 1usec to be sent in 100Mbps Ethernet.
-                    // Regarding thread operation, 1usec x 1000 x 10 = 10ms
+                    // Allow time for the remaining packet bytes to arrive.
                     ++num_retry;
                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 }
@@ -148,16 +139,16 @@ public:
 
         std::uint32_t total_message_len = SOMEIP_HEADER::ACCUM_LEN::LENGTH + packet_length_field;
 
-        // Only if this is an internal socket (domain socket)
+        // Internal domain sockets carry an additional instance ID.
         if (get_socket()->get_dst_address()->get_type() == AF_UNIX) {
             set_instance_id(0);
 
-            // Only if this is a SOME/IP packet not a SOME/IP-SD one
+            // SOME/IP-SD packets do not carry the additional instance ID.
             if (!(tcp_receive_buffer_[0] == 0xff && tcp_receive_buffer_[1] == 0xff)) {
                 std::uint8_t buf[2];
                 std::uint16_t instance_id;
 
-                // Extract Instance ID from SOME/IP packet
+                // Extract the instance ID from the SOME/IP packet.
                 std::uint8_t rest_len = 2;
                 num_retry = 0;
                 do {
@@ -197,9 +188,9 @@ public:
     inline bool is_packet_need_discard(std::int32_t read_len, std::uint8_t num_retry) {
         bool ret(false);
 
-        //  1. len = 0 means ::read() reads 0 byte or EWOULDBLOCK occurs.
-        //     If retry exceeds kMaxNumRetry, discard packet.
-        //  2. len < 0 means ::read() returns with error. Discard packet immediately.
+        // A zero-length read means that ::read() returned no data or EWOULDBLOCK occurred.
+        // Discard the packet when retries exceed kMaxNumRetry.
+        // A negative length means that ::read() returned an error; discard the packet immediately.
         if (read_len == 0) {
             if (num_retry > kMaxNumRetry) {
                 LGSOMEIP_LOG_WARN << "EndpointTCPClient::callback / Stop retrying to receive";

@@ -62,7 +62,7 @@ std::shared_ptr<MessageSOMEIP> MessageBuilder::create_response_message(MessageSO
         response->set_return_code(SOMEIP_RETURN_CODE::E_OK);
         response->set_message_type(SOMEIP_MESSAGE_TYPE::RESPONSE);
     } else {
-        // TODO : PRINT Error Message
+        // TODO(lg-someip): Report an error when a response is requested for a non-request message.
     }
 
     return response;

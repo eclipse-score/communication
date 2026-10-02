@@ -26,7 +26,7 @@
 
 namespace lgsomeip {
 
-// Section: EventManager : Method Impl
+// EventManager method implementations.
 EventManager::EventManager(ApplicationManager* host) : host_(host) {}
 
 EventManager::~EventManager() {}
@@ -77,7 +77,7 @@ void EventManager::add_event(std::uint16_t service_id, std::uint16_t instance_id
                              epsilon_change_func_t epsilon_change_function) {
     std::unique_lock<std::mutex> lock(thread_mutex_);
 
-    // Find Registered Event;
+    // Find the registered event.
     for (auto& event : offered_events_) {
         if (event->service_id_ == service_id && event->instance_id_ == instance_id && event->event_id_ == event_id) {
             LGSOMEIP_LOG_WARN << "EventManager::add_event / Event already registered "
@@ -86,7 +86,7 @@ void EventManager::add_event(std::uint16_t service_id, std::uint16_t instance_id
         }
     }
 
-    // Case1 : Not Registered. Do Register Event
+    // Register the event when it is not already registered.
     auto event = std::make_shared<OfferedEvent>(host_, service_id, instance_id, event_id, major_version, is_field,
                                                 cycle, epsilon_change_function);
     if (event != nullptr) {
@@ -100,14 +100,14 @@ void EventManager::add_event(std::uint16_t service_id, std::uint16_t instance_id
 void EventManager::remove_event(std::uint16_t service_id, std::uint16_t instance_id, std::uint16_t event_id) {
     std::unique_lock<std::mutex> lock(thread_mutex_);
 
-    // Find Registered Event;
+    // Find the registered event.
     for (auto iter = offered_events_.begin(); iter != offered_events_.end(); ++iter) {
         if ((*iter)->service_id_ == service_id && (*iter)->instance_id_ == instance_id &&
             (*iter)->event_id_ == event_id) {
             LGSOMEIP_LOG_DEBUG << "EventManager::remove_event / Deregister Offered Event "
                                << format_service_instance_event_id(service_id, instance_id, event_id);
 
-            // remove the event
+            // Remove the event.
             offered_events_.erase(iter);
             return;
         }
@@ -118,7 +118,7 @@ void EventManager::set_service_enabled(std::uint16_t service_id, std::uint16_t i
                                        bool state) {
     std::unique_lock<std::mutex> lock(thread_mutex_);
 
-    // Set Payload in registered event;
+    // Update the registered event's service state.
     for (auto& event : offered_events_) {
         if (event->service_id_ == service_id && event->instance_id_ == instance_id) {
             event->set_service_enabled(service_id, instance_id, major_version, state);
@@ -133,7 +133,7 @@ void EventManager::notify(std::uint16_t service_id, std::uint16_t instance_id, s
 
     std::unique_lock<std::mutex> lock(thread_mutex_);
 
-    // Set Payload in registered event;
+    // Update the registered event payload.
     for (auto& event : offered_events_) {
         if (event->service_id_ == service_id && event->instance_id_ == instance_id && event->event_id_ == event_id) {
             event->set_payload(*payload, client, force);
@@ -145,7 +145,7 @@ void EventManager::notify(std::uint16_t service_id, std::uint16_t instance_id, s
 void EventManager::notify_initial_event(std::uint16_t service_id, std::uint16_t instance_id, std::uint16_t event_id) {
     std::unique_lock<std::mutex> lock(thread_mutex_);
 
-    // Find Registered Event;
+    // Find the registered event.
     for (auto& event : offered_events_) {
         if (event->service_id_ == service_id && event->instance_id_ == instance_id && event->event_id_ == event_id) {
             if (event->is_field() == true) {
@@ -160,7 +160,7 @@ void EventManager::notify_initial_event(std::uint16_t service_id, std::uint16_t 
     }
 }
 
-// Section: OfferedEvent : Method Impl
+// OfferedEvent method implementations.
 OfferedEvent::OfferedEvent(ApplicationManager* host, std::uint16_t service_id, std::uint16_t instance_id,
                            std::uint16_t event_id, std::uint8_t major_version, bool is_field, std::uint32_t cycle,
                            epsilon_change_func_t epsilon_change_function)

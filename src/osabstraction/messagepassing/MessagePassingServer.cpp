@@ -229,7 +229,7 @@ void MessagePassingServer::receive_thread() {
                 std::vector<std::uint8_t> receive_buffer_dynamic;
                 std::uint32_t message_length = (std::uint32_t)(message_info.srcmsglen - sizeof(header.type));
 
-                // Static allocatin for receiving the packet will be used to improve the performance
+                // Use static allocation for packet reception to improve performance.
                 // if the length of the packet is shorter than SOMEIP_UDP_MAX_PAYLOAD_SIZE (about 1400 bytes).
                 receive_buffer_ = static_buffer_;
 

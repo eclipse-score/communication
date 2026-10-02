@@ -221,7 +221,7 @@ public:
             auto it = periods_.insert(std::make_pair(
                 id, std::make_shared<PeriodRecord>(this, id, std::chrono::milliseconds(filter_config_iter->second))));
             if (!it.second) {
-                // TODO: fatal error
+                // TODO(lg-someip): Treat failure to create a PeriodRecord as a fatal error.
                 LGSOMEIP_LOG_WARN << "Failed to create PeriodRecord for " << format_named_id("MessageID", id, 8);
                 return kPass;
             }

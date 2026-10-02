@@ -141,7 +141,7 @@ int Socket::bind() {
 
     // Allow socket descriptor to be reuseable.
     if (setsockopt(get_socket_fd(), SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) {
-        // TODO Exception!!
+        // TODO(lg-someip): Report socket-option failures as exceptions.
         LGSOMEIP_LOG_ERROR << "Socket::bind / SO_REUSEADDR failed!";
         close_socket();
         return -1;

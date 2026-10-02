@@ -68,7 +68,7 @@ int TCPServerSocket::listen() {
 std::shared_ptr<Socket> TCPServerSocket::accept() {
     if (get_socket_fd() == kInvalidSocket) {
         LGSOMEIP_LOG_ERROR << "TCPServerSocket::acceptTCPServer / kInvalidSocket";
-        // TODO :: exception
+        // TODO(lg-someip): Throw a socket exception for an invalid listening socket.
     }
 
     std::shared_ptr<Address> addr{nullptr};
@@ -77,7 +77,7 @@ std::shared_ptr<Socket> TCPServerSocket::accept() {
     int new_socket = ::accept(get_socket_fd(), NULL, NULL);
     if (new_socket == kInvalidSocket) {
         LGSOMEIP_LOG_ERROR << "TCPServerSocket::accept / accept failed";
-        // TODO :: create exception
+        // TODO(lg-someip): Throw a socket exception when accept() fails.
     }
 
     LGSOMEIP_LOG_DEBUG << "TCPServerSocket::accept / newSocket FD : " << new_socket;

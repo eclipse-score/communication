@@ -54,12 +54,12 @@ int LocalAddress::get_address_size() const {
 }
 
 void LocalAddress::set_ip_address(std::string address) {
-    // TODO exception
+    // TODO(lg-someip): Report unsupported IP-address operations as exceptions.
     LGSOMEIP_LOG_ERROR << "LocalAddress::set_ip_address / Failed!";
 }
 
 std::string LocalAddress::get_ip_address() const {
-    // TODO exception
+    // TODO(lg-someip): Report unsupported IP-address operations as exceptions.
     LGSOMEIP_LOG_ERROR << "LocalAddress::get_ip_address / Failed!";
     return std::string();
 }
@@ -124,7 +124,8 @@ void LocalAddress::set_file_path(std::string path) {
 #endif
     lock_fd_ = ::open(lock_path.c_str(), open_flags, S_IRUSR | S_IWUSR);
 
-    if (lock_fd_ == -1) { // TODO make an exception.
+    if (lock_fd_ == -1) {
+        // TODO(lg-someip): Report lock-file open failures as exceptions.
         if (errno == EACCES) {
             LGSOMEIP_LOG_DEBUG << "LocalAddress::set_file_path / This file is owned by the other process: "
                                << lock_path.c_str();

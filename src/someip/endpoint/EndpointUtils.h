@@ -35,7 +35,7 @@
 
 namespace lgsomeip {
 
-// Section: PacketRouter Endpoint Utils : Socket Utils for Endpoint
+// PacketRouter endpoint socket utilities.
 class EndpointUtils {
 public:
     template <typename SOCKETTYPE>

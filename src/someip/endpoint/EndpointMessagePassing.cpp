@@ -19,9 +19,7 @@
 
 namespace lgsomeip {
 
-/*
-  EndpointMessagePassingServer
-*/
+// EndpointMessagePassingServer.
 EndpointMessagePassingServer::EndpointMessagePassingServer(EndPointMessagePassingListener* listener,
                                                            const std::string& name)
     : listener_(listener), message_passing_server_(name) {}
@@ -85,9 +83,7 @@ void EndpointMessagePassingServer::on_timer(const std::int32_t id) {
     listener_->on_message_passing_timer(id);
 }
 
-/*
-  EndpointMessagePassingReceiver
-*/
+// EndpointMessagePassingReceiver.
 EndpointMessagePassingReceiver::EndpointMessagePassingReceiver(EndPointMessagePassingListener* listener)
     : listener_(listener), message_passing_server_(nullptr) {}
 
@@ -163,9 +159,7 @@ int EndpointMessagePassingReceiver::get_connection_id() {
     return connection_information_.scoid_;
 }
 
-/*
-  EndpointMessagePassingSender
-*/
+// EndpointMessagePassingSender.
 EndpointMessagePassingSender::EndpointMessagePassingSender(const std::string& server_name) {
     is_connected_ = message_passing_sender_.connect(server_name);
 }

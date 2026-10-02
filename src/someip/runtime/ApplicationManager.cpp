@@ -39,7 +39,7 @@
 
 namespace lgsomeip {
 
-// Section: PacketRouter Proxy : Public Method
+// ApplicationManager public methods.
 
 ApplicationManager::ApplicationManager(std::string name, std::string config_path,
                                        std::shared_ptr<ApplicationRouter> packet_router)
@@ -140,9 +140,9 @@ void ApplicationManager::clear_all_handler() {
     }
 }
 
-// Section: PacketRouter Proxy : Public Method (Service Management)
+// ApplicationManager public service-management methods.
 
-// OFFER SERVICE
+// OfferService handling.
 void ApplicationManager::offer_service(std::uint16_t service, std::uint16_t instance, std::uint8_t major_version,
                                        std::uint32_t minor_version) {
     std::unique_lock<std::recursive_mutex> lck_offer(offer_service_list_mutex_);
@@ -208,7 +208,7 @@ void ApplicationManager::stop_offer_service(std::uint16_t service, std::uint16_t
     }
 }
 
-// FIND SERVICE
+// FindService handling.
 void ApplicationManager::find_service(std::uint16_t service, std::uint16_t instance, std::uint8_t major_version,
                                       std::uint32_t minor_version) {
     std::lock_guard<std::mutex> guard(service_management_mutex_);
@@ -238,10 +238,10 @@ void ApplicationManager::request_service(std::uint16_t service, std::uint16_t in
     }
 
     auto service_config = configuration_->get_service_info(service, instance);
-    // If service_config == nullptr, It's IPC
+    // If service_config is null, handle the service through IPC.
     if (service_config != nullptr) {
-        // Set InstanceID, MajorVersion, MinorVersion from lgsomeip_config.json when the factors are in the config file.
-        // Otherwise, the values are set from the SOME/IP binding layer
+        // Read the instance ID, major version, and minor version from configuration when available.
+        // Otherwise, use the values supplied by the SOME/IP binding layer.
         if (service_config->has_instance_id()) {
             instance = service_config->get_instance_id();
         }
@@ -328,11 +328,11 @@ void ApplicationManager::set_requested_service_state(std::uint16_t service, std:
         for (auto& instance_entry : service_entry.second) {
             if (instance_entry.first != instance && instance_entry.first != SOMEIP_DEFAULT_ANY_INSTANCE)
                 continue;
-            // major.first is the value stored in request_service_list_ by FindService
-            // major_version is the value stored in incomming OfferService
+            // major.first stores the value recorded in request_service_list_ by FindService.
+            // major_version stores the value received in OfferService.
             for (auto& major : instance_entry.second) {
                 for (auto& minor : major.second) {
-                    // Service has already been requested (FindService)
+                    // The service has already been requested by FindService.
                     LGSOMEIP_LOG_DEBUG << "ApplicationManager::set_requested_service_state "
                                        << format_service_instance_interface_version(
                                               service_entry.first, instance_entry.first, major.first, minor.first)
@@ -346,7 +346,7 @@ void ApplicationManager::set_requested_service_state(std::uint16_t service, std:
     }
 
     if (request_service_list_[service][instance][major_version][minor_version] == 0) {
-        // Service has not been requested (FindService)
+        // The service has not been requested by FindService.
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::set_requested_service_state "
                            << format_service_instance_interface_version(service, instance, major_version, minor_version)
                            << " Has not requested. set state: " << get_request_service_state_string(state);
@@ -354,14 +354,14 @@ void ApplicationManager::set_requested_service_state(std::uint16_t service, std:
         request_service_list_[service][instance][major_version][minor_version] = state;
     }
 
-    // TODO : implement the routine when Service ID is ANY_MAJOR(0xFFFF).
+    // TODO(lg-someip): Implement handling for service ID ANY_MAJOR (0xFFFF).
 }
 
 std::uint8_t ApplicationManager::get_requested_service_state(std::uint16_t service, std::uint16_t instance,
                                                              std::uint8_t major_version,
                                                              std::uint32_t minor_version) const {
-    // get Request Service State : SOMEIP_SERVICE_AVAILABLE or SOMEIP_SERVICE_REQUEST
-    // when to fail to find the state : return 0
+    // Get the requested service state: SOMEIP_SERVICE_AVAILABLE or SOMEIP_SERVICE_REQUEST.
+    // Return 0 when no state is found.
     for (auto& service_entry : request_service_list_) {
         if (service_entry.first != service && service_entry.first != SOMEIP_DEFAULT_ANY_SERVICE)
             continue;
@@ -389,7 +389,7 @@ std::uint8_t ApplicationManager::get_requested_service_state(std::uint16_t servi
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::get_requested_service_state "
                        << format_service_instance_interface_version(service, instance, major_version, minor_version)
                        << " has not requested yet.";
-    // TODO : implement the routine when Service ID is ANY_MAJOR(0xFFFF).
+    // TODO(lg-someip): Implement handling for service ID ANY_MAJOR (0xFFFF).
 
     return std::uint8_t{0};
 }
@@ -481,8 +481,7 @@ void ApplicationManager::on_offer_service(const std::shared_ptr<MessageSD> messa
                 for (auto& minor : major.second) {
                     handler = minor.second;
                     if (handler != nullptr) {
-                        // Check whether ServiceAvailablilityHandler has been already called or not to prevent calling
-                        // ServiceAvailablityHandler many times
+                        // Notify the availability handler only once.
                         if (get_requested_service_state(service_id, instance_id, major_version, minor_version) !=
                                 SOMEIP_SERVICE_AVAILABLE ||
                             ttl == 0) {
@@ -515,14 +514,14 @@ void ApplicationManager::on_offer_service(const std::shared_ptr<MessageSD> messa
         }
     }
     if (ttl > 0) {
-        // Set Request Service State to SOMEIP_SERVICE_AVAILABLE
+        // Mark the request as SOMEIP_SERVICE_AVAILABLE.
         set_requested_service_state(service_id, instance_id, major_version, minor_version, SOMEIP_SERVICE_AVAILABLE);
     } else {
         set_requested_service_state(service_id, instance_id, major_version, minor_version, SOMEIP_SERVICE_REQUEST);
     }
     lck_service.unlock();
 
-    // Send SubscribeEventgroup
+    // Send a SubscribeEventgroup message.
     std::lock_guard<std::mutex> guard(subscribe_event_list_mutex_);
     auto& subscribelist = subscribe_event_list_[service_id][instance_id];
     if (subscribelist.size() == 0) {
@@ -610,10 +609,10 @@ void ApplicationManager::on_find_service(std::shared_ptr<MessageSD> message) {
                                                                     minor_version)
                        << ", " << format_named_id("AppID", app_id, 4) << ", TTL: " << ttl;
 
-    // TODO :: Implementation of processing find service message
+    // TODO(lg-someip): Implement processing for FindService messages.
 }
 
-// Section: PacketRouter Proxy : Public Method (EVENT MANAGEMENT)
+// ApplicationManager public event-management methods.
 void ApplicationManager::offer_event(std::uint16_t service, std::uint16_t instance, std::uint16_t event_id,
                                      const std::set<std::uint16_t>& event_groups, bool is_field, std::uint32_t cycle,
                                      epsilon_change_func_t epsilon_change_function) {
@@ -644,10 +643,10 @@ void ApplicationManager::offer_event(std::uint16_t service, std::uint16_t instan
     }
     lck_offerevent.unlock();
 
-    // add event object to event manager
+    // Add the event object to EventManager.
     event_manager_->add_event(service, instance, event_id, major, is_field, cycle, epsilon_change_function);
 
-    // enable event when service offered previous
+    // Enable the event when the service was previously offered.
     lck_service.lock();
     auto& service_state = offer_service_list_[service][instance];
     for (auto& majors : service_state) {
@@ -670,17 +669,17 @@ void ApplicationManager::stop_offer_event(std::uint16_t service, std::uint16_t i
     }
     lck_offerevent.unlock();
 
-    // remove event object
+    // Remove the event object.
     event_manager_->remove_event(service, instance, event_id);
 }
 
-// Section: PacketRouter Proxy : Public Method (Event Message Management)
+// ApplicationManager public event-message management methods.
 void ApplicationManager::request_event(std::uint16_t service, std::uint16_t instance, std::uint16_t event_id,
                                        const std::set<std::uint16_t>& event_groups) {
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::request_event "
                        << format_service_instance_event_id(service, instance, event_id) << " start";
 
-    // Check Consistency between Configuration Data and requested Subscribe data(Event / Event Group)
+    // Validate configuration data against the requested event and event-group subscriptions.
     auto service_config = configuration_->get_service_info(service, instance);
 
     if (service_config == nullptr) {
@@ -747,7 +746,7 @@ void ApplicationManager::subscribe(std::uint16_t service, std::uint16_t instance
                        << format_service_instance_event_id(service, instance, event_id) << " "
                        << format_named_id("EventGroupID", event_group, 4) << " start";
 
-    // Check Consistency between Configuration Data and requested Subscribe data(Event / Event Group)
+    // Validate configuration data against the requested event and event-group subscriptions.
     auto service_config = configuration_->get_service_info(service, instance);
 
     if (service_config == nullptr) {
@@ -783,7 +782,7 @@ void ApplicationManager::subscribe(std::uint16_t service, std::uint16_t instance
         return;
     }
 
-    // Set Service Info.
+    // Set service information.
     if (application_state_ == false) {
         LGSOMEIP_LOG_WARN << "ApplicationManager::subscribe / Application is disconnected.";
     }
@@ -816,7 +815,7 @@ void ApplicationManager::unsubscribe(std::uint16_t service, std::uint16_t instan
         auto& eventgroup = item.second;
         auto it = eventgroup.find(event_group);
         if (it != eventgroup.end()) {
-            // send unsubscribe even before receiving subscribe ack
+            // Send UnsubscribeEventgroup before receiving SubscribeAck.
             if (it->second == SOMEIP_EVENT_SUBSCRIBE_ACK || it->second == SOMEIP_EVENT_SUBSCRIBE) {
                 it->second = SOMEIP_EVENT_UNSUBSCRIBE;
 
@@ -830,14 +829,14 @@ void ApplicationManager::unsubscribe(std::uint16_t service, std::uint16_t instan
     }
 }
 
-// Compose and Send SD-Message
+// Compose and send the SOME/IP-SD message.
 void ApplicationManager::send_offer_service(std::uint16_t service, std::uint16_t instance, std::uint8_t major_version,
                                             std::uint32_t minor_version, std::uint32_t ttl) {
     LGSOMEIP_LOG_INFO << "ApplicationManager::send_offer_service "
                       << format_service_instance_interface_version(service, instance, major_version, minor_version)
                       << ", TTL: " << ttl;
 
-    // Composing SOME/IP-SD Message
+    // Compose the SOME/IP-SD message.
     std::shared_ptr<MessageSD> message = MessageBuilder::create<SOMEIPSD>();
     std::uint32_t req_id = get_sd_request_id();
     message->set_request_id(req_id);
@@ -860,7 +859,7 @@ void ApplicationManager::send_find_service(std::uint16_t service, std::uint16_t 
                       << format_service_instance_interface_version(service, instance, major_version, minor_version)
                       << ", TTL: " << ttl;
 
-    // Composing SOME/IP-SD Message
+    // Compose the SOME/IP-SD message.
     std::shared_ptr<MessageSD> message = MessageBuilder::create<SOMEIPSD>();
     std::uint32_t req_id = get_sd_request_id();
     message->set_request_id(req_id);
@@ -884,7 +883,7 @@ void ApplicationManager::send_subscribe_eventgroup(std::uint16_t service, std::u
                       << format_service_instance_interface_major_version(service, instance, major_version) << " "
                       << format_named_id("EventGroupID", event_group, 4) << ", TTL: " << ttl;
 
-    // Composing SOME/IP-SD Message
+    // Compose the SOME/IP-SD message.
     std::shared_ptr<MessageSD> message = MessageBuilder::create<SOMEIPSD>();
     std::uint32_t req_id = get_sd_request_id();
     message->set_request_id(req_id);
@@ -944,7 +943,7 @@ void ApplicationManager::on_subscribe_eventgroup(std::shared_ptr<MessageSD> mess
                       << format_named_id("EventGroupID", eventgroup_id, 4) << ", "
                       << format_named_id("AppID", app_id, 4) << ", TTL: " << ttl;
 
-    // Send Subscribe Ack/Nack
+    // Send a SubscribeAck or SubscribeNack message.
     int result = 0;
 
     std::unique_lock<std::recursive_mutex> lck_offer(offer_service_list_mutex_);
@@ -991,14 +990,11 @@ void ApplicationManager::on_subscribe_eventgroup(std::shared_ptr<MessageSD> mess
                               << format_service_instance_id(service_id, instance_id) << " "
                               << format_named_id("EventGroupID", eventgroup_id, 4) << ", SubscribeAck";
             packet_router_->send_message(message);
-            //
-            // The server shall send the first notifications/events(i.e. initial events)
-            // immediately after sending the Subscribe Eventgroup Ack
 
-            // The ApplicaionManager::sendSubscribeAckFunc is called only once
-            // on the first subscribe.
-            // Since the first subscribeAck, subscribeAck is sent by someip-daemon not lib.
-            // Therefore, the send_initial_event method is also called once.
+            // The server must send the first notifications (initial events) immediately after
+            // sending the SubscribeEventgroupAck. ApplicationManager::sendSubscribeAckFunc runs
+            // only once, on the first subscribe; subsequent SubscribeAcks are sent directly by
+            // someip-daemon, so send_initial_event() also runs only once here.
             send_initial_event(service_id, instance_id, eventgroup_id);
         } else {
             entry.set_ttl(SOMEIP_DEFAULT_TTL_OFF);
@@ -1072,7 +1068,7 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
 
     lck_subevent.unlock();
 
-    // Callback SubscribeStatusHandler
+    // Subscribe-status callback.
     std::lock_guard<std::mutex> guard(requested_event_list_mutex_);
     auto& eventlist = requested_event_list_[service_id][instance_id];
     auto handle_subscribe_eventgroup_ack = [&](std::uint16_t service_id, std::uint16_t instance_id) -> void {
@@ -1152,7 +1148,7 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
     handle_subscribe_eventgroup_ack(SOMEIP_DEFAULT_ANY_SERVICE, SOMEIP_DEFAULT_ANY_INSTANCE);
 }
 
-// Section: PacketRouter Proxy : Public Method (HANDLER MANAGEMENT)
+// ApplicationManager public handler-management methods.
 void ApplicationManager::register_application_state_handler(application_state_handler_t handler) {
     std::lock_guard<std::mutex> guard(application_handler_mutex_);
 
@@ -1445,7 +1441,7 @@ void ApplicationManager::register_availability_handler(std::uint16_t service, st
             }
         }
     } else {
-        // when to fail to find the state : return 0
+        // Check whether the requested instance has already been offered.
         for (auto& service_entry : request_service_list_) {
             if (service_entry.first != service)
                 continue;
@@ -1592,7 +1588,7 @@ void ApplicationManager::on_application_state(bool connected) {
     }
 }
 
-// Section: PacketRouter Proxy : Private Method (SOME/IP-TP)
+// ApplicationManager private SOME/IP-TP methods.
 #if defined(ENABLE_SOMEIP_TP)
 bool ApplicationManager::check_enabled_tp_message(MessageSOMEIP& message) {
     std::uint16_t svcid = static_cast<std::uint16_t>(message.get_message_id() >> 16);
@@ -1608,7 +1604,7 @@ bool ApplicationManager::check_enabled_tp_message(MessageSOMEIP& message) {
         return false;
     }
 
-    // TP list: std::vector<std::uint16_t> tp_list_
+    // Store SOME/IP-TP method and event identifiers.
     auto tp_list = service_config->get_tp_list();
 
     auto it = find(tp_list.begin(), tp_list.end(), methodid);
@@ -1640,7 +1636,7 @@ void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
     std::uint32_t session_id = static_cast<std::uint32_t>(req_id & 0x0000ffff);
     std::uint8_t type = message.get_message_type();
 
-    // Get TPHeader
+    // Read the SOME/IP-TP header.
     int max_payload_size = configuration_->get_max_payload_size();
     auto recv_payload = message.get_payload_type();
 
@@ -1676,7 +1672,7 @@ void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
 
     std::shared_ptr<MessageSOMEIP> msg = nullptr;
 
-    // New SOME/IP-TP segments first in
+    // Process the new SOME/IP-TP segment first.
     if (msg_id != previous_message_id_) {
         tp_message_cache_ = std::make_shared<MessageSOMEIP>();
         msg = std::make_shared<MessageSOMEIP>();
@@ -1711,8 +1707,7 @@ void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
         if (more == 0x00) {
             msg->set_payload(msg->get_payload_type());
 
-            // Compare the size of ressembled message and received message.
-            // The size of received message can be calculated by Length.
+            // Compare the reassembled message size with the received message length.
             if ((tp_header / offset_value * bytes_of_offset) + (message.get_length() - 4 - 8) ==
                 (msg->get_length() - 8)) {
                 on_message(msg);
@@ -1723,7 +1718,7 @@ void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
             order = 0;
         }
     } else {
-        // Clear the reassembly buffers
+        // Clear the reassembly buffers.
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_message_tp / Clear the reassembly buffers";
 
         tp_message_cache_ == nullptr;
@@ -1788,7 +1783,7 @@ void ApplicationManager::send_tp_message(MessageSOMEIP& message) {
 }
 #endif // ENABLE_SOMEIP_TP
 
-// Section: PacketRouter Proxy : Public Method (Message Sender)
+// ApplicationManager public message-sending methods.
 void ApplicationManager::send(std::shared_ptr<MessageSOMEIP> message, bool flush) {
     send(*message, flush);
 }
@@ -1813,7 +1808,7 @@ void ApplicationManager::send(MessageSOMEIP& message, bool flush) {
     }
     message.set_request_id(req_id);
 
-    // check isEnabledTP;
+    // Check whether SOME/IP-TP is enabled.
 #if !defined(ENABLE_SOMEIP_IPC)
 #if defined(ENABLE_SOMEIP_TP)
     if (check_enabled_tp_message(message)) {
@@ -1866,8 +1861,8 @@ void ApplicationManager::notify(std::uint16_t service, std::uint16_t instance, s
     event_manager_->notify(service, instance, event_id, payload, client, force, flush);
 }
 
-// Section: PacketRouter Proxy : Public Method (Message Receiver)
-// Callback for Control Message
+// ApplicationManager public message-receiving methods.
+// Handle control-message callbacks.
 void ApplicationManager::on_message(std::shared_ptr<MessageSD> message) {
     for (auto& entry : message->entries()) {
         std::uint8_t type = entry.get_type();
@@ -1920,43 +1915,24 @@ void ApplicationManager::on_message(std::shared_ptr<MessageSD> message) {
     }
 }
 
-/*
-   Return Codes in the Response Messages of methods shall
-   be used to transport application errors and the response data of a method from the
-   provider to the caller of a method.
-
-   Explicit Error Messages shall be used to transport application
-   errors and the response data or generic SOME/IP errors from the provider to the
-   caller of a method.
-
-   If more detailed error information need to be transmitted, the
-   payload of the Error Message (Message Type 0x81) shall be filled with error specific
-   data, e.g. an exception string. Error Messages shall be sent instead of Response
-   Messages.
-
-   Only responses (Response Messages (message type 0x80)
-   and Error Messages (message type 0x81) shall use the return code field to carry a
-   return code to the request (Message Type 0x00) they answer.
-
-   All other messages than 0x80 and 0x81
-   (see Chapter 4.1.1.6) shall set this field to 0x00.
-
-   A SOME/IP error message (i.e. return code 0x01 - 0x1f)
-   shall not be answered with an error message.
-
-   The receiver of a SOME/IP message shall not return an error
-   message for events/notifications.
-
-   For Request/Response methods the error message shall
-   copy over the fields of the SOME/IP header (i.e. Message ID, Request ID, and Interface
-   Version) but not the payload. In addition Message Type and Return Code have
-   to be set to the appropriate values.
-
-   Error handling shall be based on the message type received
-   (e.g. only methods can be answered with a return code) and shall be checked in a defined
-   order of [].
-
-*/
+// Response return codes carry application errors and response data from the
+// provider to the caller.
+//
+// Explicit Error Messages carry application errors, response data, or generic
+// SOME/IP errors. Use the error payload for more detailed error information.
+//
+// Only Response Messages (0x80) and Error Messages (0x81) use the return-code
+// field. All other message types set it to 0x00.
+//
+// A SOME/IP error message must not be answered with another error message, and
+// events or notifications must not receive error responses.
+//
+// For Request/Response methods, copy the SOME/IP header fields (Message ID,
+// Request ID, and Interface Version) to the error message, but not the payload.
+// Set the Message Type and Return Code to the appropriate values.
+//
+// Base error handling on the received message type and validate fields in the
+// order defined by the SOME/IP specification.
 
 void ApplicationManager::send_error(std::shared_ptr<MessageSOMEIP> message, std::uint8_t return_code,
                                     std::uint8_t* error_message) {
@@ -2001,7 +1977,7 @@ ApplicationManager::get_message_handler(std::uint16_t service_id, std::uint16_t 
                        << format_service_instance_id(serviceid, instanceid) << " "
                        << format_named_id("MethodID", methodid, 4) << " start";
 
-    // check major version and IPC info
+    // Check the major version and IPC routing.
     if (type == SOMEIP_MESSAGE_TYPE::REQUEST || type == SOMEIP_MESSAGE_TYPE::REQUEST_NO_RETURN) {
         is_provider = true;
         std::lock_guard<std::recursive_mutex> guard(offer_service_list_mutex_);
@@ -2032,7 +2008,7 @@ ApplicationManager::get_message_handler(std::uint16_t service_id, std::uint16_t 
 #endif // ENABLE_SOMEIP_IPC
     }
 
-    // find message handler
+    // Find the registered message handler.
     std::lock_guard<std::mutex> guard(message_handler_mutex_);
     for (auto& svc : message_handler_set_) {
         if (svc.first != serviceid && svc.first != SOMEIP_DEFAULT_ANY_SERVICE)
@@ -2100,7 +2076,7 @@ std::uint32_t ApplicationManager::get_sd_request_id() {
     return req_id;
 }
 
-// Callback for Data Message
+// Handle data-message callbacks.
 void ApplicationManager::on_message(std::shared_ptr<MessageSOMEIP> message) {
     std::uint16_t serviceid = static_cast<std::uint16_t>(message->get_message_id() >> 16);
     std::uint16_t methodid = static_cast<std::uint16_t>(message->get_message_id() & 0xffff);
@@ -2113,7 +2089,7 @@ void ApplicationManager::on_message(std::shared_ptr<MessageSOMEIP> message) {
 #endif // ENABLE_SOMEIP_IPC
     bool can_handle = false;
 
-    // check the InstanceID
+    // Check the instance ID.
     if (instanceid == 0) {
         std::lock_guard<std::mutex> guard(message_handler_mutex_);
         auto instance_list = message_handler_set_.find(serviceid);
@@ -2178,8 +2154,7 @@ void ApplicationManager::on_message(std::shared_ptr<MessageSOMEIP> message) {
                                    << format_service_instance_id(serviceid, instanceid) << " "
                                    << format_named_id("MethodID", methodid, 4) << " call the callback function.";
 
-                // Push the callback method(it) to queue
-                // and thread runs the method with message.
+                // Queue the callback for execution on the worker thread.
                 thread_pool_->enqueue_job(it, message);
             }
 

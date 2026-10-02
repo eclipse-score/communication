@@ -30,7 +30,7 @@ class Serializer;
 class Deserializer;
 class SizeHelper;
 
-// Section: Enumerable
+// Enumerable type support.
 template <typename T, typename Tagged = void> struct IsEnumerable {
     static const bool value = false;
 };
@@ -42,33 +42,33 @@ template <typename T> struct IsEnumerable<T, typename T::IsEnumerable> {
 class Enumerable {
 public:
     using IsEnumerable = void;
-    virtual void enumerate(Serializer& serializer) = 0;   // for Serializer
-    virtual void enumerate(Deserializer& serializer) = 0; // for Deserializer
+    virtual void enumerate(Serializer& serializer) = 0;   // Used by Serializer.
+    virtual void enumerate(Deserializer& serializer) = 0; // Used by Deserializer.
     virtual std::uint32_t size() const = 0;
 };
 
-// Section: Serializer
+// Serialization interface.
 class Serializer {
 public:
     Serializer(bool big_endian = true) : big_endian_(big_endian) {}
 
     ~Serializer() {}
 
-    // for enumerable type : complex data type inherit Enumerable
+    // Serialize a complex type derived from Enumerable.
     template <typename T> void push(T data, typename std::enable_if<IsEnumerable<T>::value>::type* = 0);
 
-    // for primitives & not enumrable types
+    // Serialize a trivially copyable, non-enumerable type.
     template <typename T>
     void push(T data,
               typename std::enable_if<!IsEnumerable<T>::value && std::is_trivially_copyable<T>::value>::type* = 0);
 
-    // for variable length array
+    // Serialize a variable-length array.
     template <typename T> void push(const std::vector<T>& data);
 
-    // for fixed length array
+    // Serialize a fixed-length array.
     template <typename T, int N> void push(const T data[N]);
 
-    // for variable string
+    // Serialize a variable-length string.
     template <int N> void push(const std::string& string);
 
     std::vector<uint8_t>& get_data() {
@@ -80,28 +80,28 @@ private:
     std::vector<uint8_t> data_;
 };
 
-// Section: Deserializer
+// Deserialization interface.
 class Deserializer {
 public:
     Deserializer(bool big_endian = true) : big_endian_(big_endian), current_position_(0) {}
 
     ~Deserializer() {}
 
-    // for enumerable type : complex data type inherit SerializerEnumerable
+    // Deserialize a complex type derived from Enumerable.
     template <typename T> void pop(T& data, typename std::enable_if<IsEnumerable<T>::value>::type* = 0);
 
-    // for primitives & not enumrable types
+    // Deserialize a trivially copyable, non-enumerable type.
     template <typename T>
     void pop(T& data,
              typename std::enable_if<!IsEnumerable<T>::value && std::is_trivially_copyable<T>::value>::type* = 0);
 
-    // for variable length array
+    // Deserialize a variable-length array.
     template <typename T> void pop(std::vector<T>& data);
 
-    // for fixed length array
+    // Deserialize a fixed-length array.
     template <typename T, int N> void pop(T (&data)[N]);
 
-    // for variable string
+    // Deserialize a variable-length string.
     template <int N> void pop(std::string& string);
 
     void set_data(std::vector<uint8_t>& data) {
@@ -115,7 +115,7 @@ private:
     std::uint32_t current_position_{0};
 };
 
-// Section: SizeHelper
+// Serialized-size calculation.
 class SizeHelper {
 public:
     template <typename U>
@@ -125,13 +125,13 @@ public:
     static typename std::enable_if<IsEnumerable<U>::value, std::size_t>::type get_type_size(U& type);
 };
 
-// Section: Implementation : Serializer
-// for enumerable type : complex data type inherit Enumerable
+// Serializer implementation.
+// Serialize a complex type derived from Enumerable.
 template <typename T> void Serializer::push(T data, typename std::enable_if<IsEnumerable<T>::value>::type*) {
     data.enumerate(*this);
 }
 
-// for primitives & not enumrable types
+// Serialize a trivially copyable, non-enumerable type.
 template <typename T>
 void Serializer::push(T input_data,
                       typename std::enable_if<!IsEnumerable<T>::value && std::is_trivially_copyable<T>::value>::type*) {
@@ -143,7 +143,7 @@ void Serializer::push(T input_data,
         data_.push_back(*(item + index));
 }
 
-// for variable length array
+// Serialize a variable-length array.
 template <typename T> void Serializer::push(const std::vector<T>& data) {
     std::uint32_t size = 0;
     if (data.size() > 0) {
@@ -155,15 +155,15 @@ template <typename T> void Serializer::push(const std::vector<T>& data) {
         push(item);
 }
 
-// for fixed length array
+// Serialize a fixed-length array.
 template <typename T, int N> void Serializer::push(const T data[N]) {
     for (int index = 0; index < N; index++) {
         push(data[index]);
     }
 }
 
-// for dynamic length string : N is the length of string (1, 2, 4)
-// Only support ASCII(Char size is 1)
+// Serialize a string prefixed by a one-, two-, or four-byte length.
+// This supports only ASCII strings with one-byte characters.
 template <int N> void Serializer::push(const std::string& data) {
     int size = data.size();
     if (N == 1)
@@ -179,13 +179,13 @@ template <int N> void Serializer::push(const std::string& data) {
         push(item);
 }
 
-// Section: Implementation : Deserializer
-// for enumerable type : complex data type inherit Enumerable
+// Deserializer implementation.
+// Deserialize a complex type derived from Enumerable.
 template <typename T> void Deserializer::pop(T& data, typename std::enable_if<IsEnumerable<T>::value>::type*) {
     data.enumerate(*this);
 }
 
-// for primitives & not enumrable types
+// Deserialize a trivially copyable, non-enumerable type.
 template <typename T>
 void Deserializer::pop(
     T& data, typename std::enable_if<!IsEnumerable<T>::value && std::is_trivially_copyable<T>::value>::type*) {
@@ -194,7 +194,7 @@ void Deserializer::pop(
     current_position_ += length;
 }
 
-// for variable length array
+// Deserialize a variable-length array.
 template <typename T> void Deserializer::pop(std::vector<T>& data) {
     T item;
     std::uint32_t total_length = 0;
@@ -212,7 +212,7 @@ template <typename T> void Deserializer::pop(std::vector<T>& data) {
     }
 }
 
-// for fixed length array
+// Deserialize a fixed-length array.
 template <typename T, int N> void Deserializer::pop(T (&data)[N]) {
     for (int index = 0; index < N; index++) {
         pop(data[index]);
@@ -244,8 +244,8 @@ template <int N> void Deserializer::pop(std::string& data) {
     current_position_ += size;
 }
 
-// Section: Implementation : SizeHelper
-// for get length of the data type!
+// SizeHelper implementation.
+// Calculate the serialized size of a data type.
 template <typename U>
 typename std::enable_if<!IsEnumerable<U>::value, std::size_t>::type SizeHelper::get_type_size(U& type) {
     return sizeof(U);

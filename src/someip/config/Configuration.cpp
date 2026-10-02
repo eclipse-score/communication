@@ -349,17 +349,16 @@ void Configuration::initialize(std::string path) {
         }
     }
 
-    // To assign the level of the instance, first of all the constructor of the lgsomeip::Logger class
-    // should be called with the configured value.
+    // Initialize the logger with the configured level and output destinations.
     lgsomeip::Logger::instance().init(log_level_, log_console_enabled_, log_file_enabled_, log_file_path_);
 
-    // loading information of address
+    // Load the unicast address.
     if ((member_iterator = document.FindMember(kConfigAddress)) == document.MemberEnd()) {
         throw LSAR_CONFIGURATION_ERROR("Configuration must include 'unicast' item");
     }
 
     address_ = member_iterator->value.GetString();
-    // default value of ip_type_ is 4 (ipv4)
+    // Use IPv4 by default when the configuration does not specify an IP version.
     if ((member_iterator = document.FindMember(kConfigIpType)) != document.MemberEnd()) {
         std::string ip_type_name = (member_iterator->value).GetString();
         std::for_each(ip_type_name.begin(), ip_type_name.end(), [](char& c) { c = tolower(c); });
@@ -368,12 +367,12 @@ void Configuration::initialize(std::string path) {
         ip_type_ = 6;
     }
 
-    // loading maxpayload size
+    // Load the maximum payload size.
     if ((member_iterator = document.FindMember(kConfigMaxPayloadSize)) != document.MemberEnd()) {
         max_payload_size_ = parse_unsigned<int>(member_iterator->value, kConfigMaxPayloadSize, 10);
     }
 
-    // loading information of applications
+    // Load application names and IDs.
     const rapidjson::Value& applications = document[kConfigApplications];
     std::set<std::uint16_t> application_ids;
     for (rapidjson::SizeType i = 0; i < applications.Size(); i++) { // Uses SizeType instead of size_t

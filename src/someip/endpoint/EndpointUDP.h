@@ -33,7 +33,7 @@
 
 namespace lgsomeip {
 
-// Section: PacketRouter Endpoint UDP : Endpoint Types
+// PacketRouter UDP endpoint types.
 template <typename BASETYPE> class EndpointUDP : public Endpoint {
 public:
     EndpointUDP(BASETYPE* host) {

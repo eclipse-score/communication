@@ -19,7 +19,7 @@
 
 namespace lgsomeip {
 
-// Section: SOMEIP-SD ENTRY INFORMATION (INTERNAL) For Application Management
+// Internal SOME/IP-SD entry information for application management.
 namespace SOMEIP_SD_ENTRY {
 
 namespace INTERNAL {

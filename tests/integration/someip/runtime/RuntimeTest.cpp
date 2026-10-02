@@ -45,21 +45,6 @@ using namespace std::placeholders;
 class RuntimeTest : public ::testing::Test {
 protected:
     virtual void SetUp() {
-        /*
-            std::string path { getenv("PWD") };
-
-            auto command_path = getenv("_");
-            if (command_path[0] == '.') {
-                path += command_path + 1;
-            } else {
-                path += "/";
-                path += command_path;
-            }
-
-            auto const pos = path.find_last_of('/');
-            path_ = path.substr(0, pos+1);
-        */
-
         path_ = LGSOMEIP_TEST_CONFIG_DIR "/";
         missing_config_path_ = path_ + "config.json_no_file";
         config_path_ = path_ + "someip_config.json";
@@ -99,7 +84,7 @@ private:
     std::shared_ptr<ServiceManager> service_manager_{nullptr};
 };
 
-// Section: Server application test helper.
+// Server application test helper.
 class ServerAppSample {
 public:
     ServerAppSample(std::string name, std::string path)
@@ -194,7 +179,7 @@ private:
     bool connected_ = false;
 };
 
-// Section: Client application test helper.
+// Client application test helper.
 class ClientAppSample {
 public:
     ClientAppSample(std::string name, std::string path)

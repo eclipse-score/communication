@@ -244,11 +244,11 @@ void SDOption::set_address_option(std::shared_ptr<lgsomeip::osabstraction::Addre
         break;
 
     case AF_UNIX:
-        // TODO : implement SDOption(Local Address)
+        // TODO(lg-someip): Implement SD options for local addresses.
         break;
 
     default:
-        // TODO : throw Runtime Exception
+        // TODO(lg-someip): Throw a runtime exception for unsupported address types.
         break;
     }
 }
@@ -283,7 +283,7 @@ std::shared_ptr<lgsomeip::osabstraction::Address> SDOption::get_address_option()
         break;
 
     default:
-        // TODO : throw Runtime Exception!
+        // TODO(lg-someip): Throw a runtime exception for unsupported option types.
         break;
     }
 
@@ -380,7 +380,7 @@ bool operator==(const SDOption& lhs, const SDOption& rhs) {
         return (lhs.port_ == rhs.port_) && (lhs.protocol_ == rhs.protocol_) && address_matches == 0;
 
     default:
-        // TODO : throw Runtime Exception!
+        // TODO(lg-someip): Throw a runtime exception for unsupported option types.
         break;
     }
     return false;

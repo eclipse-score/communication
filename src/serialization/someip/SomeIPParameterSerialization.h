@@ -82,7 +82,7 @@ template <typename T> inline T from_network_byte_order(T src) {
 
 using PacketBuffer = std::vector<std::uint8_t>;
 
-// Base Serializer
+// Serializer.
 class Serializer {
 private:
     std::unique_ptr<PacketBuffer> buffer_;
@@ -92,7 +92,7 @@ public:
     Serializer() : buffer_{new PacketBuffer}, size_(0) {}
     explicit Serializer(std::unique_ptr<PacketBuffer> buf) : buffer_{std::move(buf)}, size_{buffer_->size()} {}
 
-    // No implementation. If this template function is not used, it will be instantiated.
+    // Deliberately undefined so unsupported types fail during instantiation.
     template <typename T> void push_back(T v);
 
     void push_back(bool v) {
@@ -150,17 +150,17 @@ public:
         size_ += 8;
     }
 
-    // Push Length Field
+    // Write a length field at the specified position.
     void push(std::uint8_t v, std::size_t pos) {
         serialize<std::uint8_t>(v, pos);
     }
 
-    // Push Length Field
+    // Write a length field at the specified position.
     void push(std::uint16_t v, std::size_t pos) {
         serialize<std::uint16_t>(v, pos);
     }
 
-    // Push Length Field
+    // Write a length field at the specified position.
     void push(std::uint32_t v, std::size_t pos) {
         serialize<std::uint32_t>(v, pos);
     }

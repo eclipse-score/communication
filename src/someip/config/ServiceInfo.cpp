@@ -26,44 +26,44 @@ namespace lgsomeip {
 void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, std::uint16_t ip_type) {
     multicast_addresses_ = std::make_shared<std::vector<std::shared_ptr<lgsomeip::osabstraction::Address>>>();
 
-    // loading service id of service
+    // Load the service ID.
     if (service.HasMember(kConfigService)) {
         service_id_ = std::stoi(service[kConfigService].GetString(), nullptr, 16);
     } else {
         throw LSAR_CONFIGURATION_ERROR("field[service] must be included in service");
     }
-    // loading service id of service
+    // Load the service name.
     if (service.HasMember(kConfigName)) {
         service_name_ = service[kConfigName].GetString();
     } else {
         service_name_ = "no-name";
     }
-    // loading instance id of service
+    // Load the instance ID.
     if (service.HasMember(kConfigInstance)) {
         instance_id_ = std::stoi(service[kConfigInstance].GetString(), nullptr, 16);
         has_instance_id_ = true;
     } else {
         throw LSAR_CONFIGURATION_ERROR("field[instance] must be included in service");
     }
-    // loading major version of service
+    // Load the major service version.
     if (service.HasMember(kConfigMajorVersion)) {
         major_version_ = std::stoi(service[kConfigMajorVersion].GetString(), nullptr, 16);
         has_major_version_ = true;
     }
 
-    // loading minor version of service
+    // Load the minor service version.
     if (service.HasMember(kConfigMinorVersion)) {
         minor_version_ = std::stoul(service[kConfigMinorVersion].GetString(), nullptr, 16);
         has_minor_version_ = true;
     }
 
-    // loading minimum minor version of service
+    // Load the minimum minor service version.
     if (service.HasMember(kConfigMinimumMinorVersion)) {
         minimum_minor_version_ = std::stoul(service[kConfigMinimumMinorVersion].GetString(), nullptr, 16);
         has_minimum_minor_version_ = true;
     }
 
-    // loading reliable of service
+    // Load the reliable transport configuration.
     if (service.HasMember(kConfigReliable)) {
         const rapidjson::Value& reliable = service[kConfigReliable];
 
@@ -92,7 +92,7 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
         }
     }
 
-    // loading unreliable of service
+    // Load the unreliable transport configuration.
     if (service.HasMember(kConfigUnreliable)) {
         unreliable_port_ = std::stoi(service[kConfigUnreliable].GetString());
         if (service.HasMember(kConfigVlanPriority)) {
@@ -110,7 +110,7 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
         unreliable_address_->set_vlan_priority(vlan_priority_);
     }
 
-    // loading SOME/IP-TP method,event of service
+    // Load SOME/IP-TP method and event identifiers.
     if (service.HasMember(kConfigSomeIpTp)) {
         const rapidjson::Value& t_pids = service[kConfigSomeIpTp];
         for (rapidjson::SizeType j = 0; j < t_pids.Size(); j++) {
@@ -119,7 +119,7 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
         }
     }
 
-    // loading multicast address of service
+    // Load the multicast address configuration.
     if (service.HasMember(kConfigMulticast)) {
         const rapidjson::Value& multicast = service[kConfigMulticast];
 
@@ -140,7 +140,7 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
         }
     }
 
-    // loading is-provider of service
+    // Load whether the service is provided locally.
     if (service.HasMember(kConfigIsProvider)) {
         if (service[kConfigIsProvider].IsBool()) {
             provider_ = service[kConfigIsProvider].GetBool();
@@ -149,13 +149,7 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
         }
     }
 
-    /*
-        if (provider_ == false) {
-            multicast_addresses_ = nullptr;
-        }
-    */
-
-    // loading secure-connection of service
+    // Load the secure-connection setting.
     if (service.HasMember(kConfigSecureConnection)) {
         if (service[kConfigSecureConnection].IsBool()) {
             secure_connection_ = service[kConfigSecureConnection].GetBool();

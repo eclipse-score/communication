@@ -24,13 +24,13 @@
 namespace lgsomeip {
 
 TimerMux::TimerMux(std::string name) {
-    // TODO : Make Unique File Name;
+    // TODO(lg-someip): Generate a unique file name.
     file_name_ += name;
 
     // Timer init
     timer_init();
 
-    // TODO : Make & Open Socket File;
+    // TODO(lg-someip): Create and open the socket file.
     std::shared_ptr<lgsomeip::osabstraction::Address> address =
         std::make_shared<lgsomeip::osabstraction::LocalAddress>();
     address->set_reliable(false);
@@ -60,7 +60,7 @@ void TimerMux::set_timer(std::uint32_t interval_milliseconds, bool periodic) {
         timer_interval_ = interval_milliseconds;
         condition_.notify_one();
     } else {
-        // TODO : Error Report
+        // TODO(lg-someip): Report the missing timer socket.
     }
 }
 
@@ -78,7 +78,7 @@ void TimerMux::start_listen(std::shared_ptr<lgsomeip::osabstraction::Multiplexer
         multiplexer_ = multiplexer;
         multiplexer_->set(socket_->get_socket_fd(), std::bind(&TimerMux::callback, this));
     } else {
-        // TODO : throw Exception
+        // TODO(lg-someip): Throw an exception when no multiplexer is available.
     }
 }
 
@@ -87,7 +87,7 @@ void TimerMux::stop_listen() {
         multiplexer_->unset(socket_->get_socket_fd());
         multiplexer_ = nullptr;
     } else {
-        // TODO : throw Exception
+        // TODO(lg-someip): Throw an exception when no multiplexer is available.
     }
 }
 

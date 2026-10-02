@@ -159,11 +159,11 @@ public:
 private:
     std::map<std::uint16_t, std::map<std::uint16_t, struct AvailableService>> available_service_list_;
     std::map<std::uint16_t, std::map<std::uint16_t, struct AvailableService>> repetition_offer_list_;
-    std::vector<std::pair<std::uint16_t, std::uint16_t>> deleted_repetition_offer_list_; // serviceid, instanceid
+    std::vector<std::pair<std::uint16_t, std::uint16_t>> deleted_repetition_offer_list_; // service ID, instance ID
 
     std::map<std::uint16_t, std::map<std::uint16_t, std::vector<struct RequestedService>>> request_service_list_;
     std::map<std::uint16_t, std::map<std::uint16_t, std::vector<struct RequestedService>>> repetition_find_list_;
-    std::vector<std::pair<std::uint16_t, std::uint16_t>> deleted_repetition_find_list_; // serviceid, instanceid
+    std::vector<std::pair<std::uint16_t, std::uint16_t>> deleted_repetition_find_list_; // service ID, instance ID
 
     std::recursive_mutex available_list_mutex_;
     std::mutex repetition_offer_list_mutex_;

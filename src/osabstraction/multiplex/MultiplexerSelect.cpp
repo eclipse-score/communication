@@ -78,7 +78,7 @@ void Multiplexer::run() {
         select_result = select(max_file_descriptor, &working_set, NULL, NULL, &timeout);
 
         if (select_result < 0) {
-            // TODO: create exception
+            // TODO(lg-someip): Throw an exception when select() fails.
             LGSOMEIP_LOG_ERROR << "Multiplexer::run / select failed / " << strerror(errno);
         } else if (select_result > 0) {
             descriptors_ready = select_result;

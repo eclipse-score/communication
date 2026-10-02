@@ -59,7 +59,6 @@ private:
     bool log_console_enabled_{true};
     bool log_file_enabled_{false};
     std::string log_file_path_;
-    // TODO: change ServiceInfo to shared_ptr<ServiceInfo>
     std::unordered_map<std::uint16_t, std::unordered_map<std::uint16_t, ServiceInfo>> services_;
     std::map<vsomeip::e2exf::data_identifier, std::shared_ptr<ConfigE2E>> e2e_configs_;
     ConfigurationSD service_discovery_;

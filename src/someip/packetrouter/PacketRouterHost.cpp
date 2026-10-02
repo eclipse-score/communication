@@ -41,7 +41,7 @@
 
 namespace lgsomeip {
 
-// Section: Daemon Process / Signal SIGPIPE Handler
+// Daemon process SIGPIPE signal handler.
 static void sig_handler(int signo) {
     LGSOMEIP_LOG_FATAL << "PacketRouterHost : sig_handler / signal caught : " << strsignal(signo);
     return;
@@ -76,7 +76,7 @@ static bool is_valid_application_name(const std::string& name) {
     });
 }
 
-// Section: PacketRouter Host : Public Method
+// PacketRouterHost public methods.
 PacketRouterHost::PacketRouterHost(ServiceManager* host)
     : host_(host), local_receiver_(nullptr), local_message_passing_receiver_(nullptr) {}
 
@@ -88,7 +88,7 @@ void PacketRouterHost::init() {
     signal_init();
     auto configuration = host_->get_configuration();
 
-    // Initialize Network
+    // Initialize the network.
     auto& network_device = lgsomeip::osabstraction::NetworkDevice::instance();
     network_device.initialize(configuration->get_address(), configuration->get_ip_type());
 
@@ -132,17 +132,16 @@ void PacketRouterHost::init() {
 #endif
             on_external_message(endpoint, message, message_length);
         });
-// Unless SOME/IP Delivery Statistics is not used, monitoring packetfiltering, which prints statistics for packet
-// filtering, is enabled.
+// When SOME/IP delivery statistics are enabled, packet-filter monitoring has been enabled as well.
 #if !defined(ENABLE_SOMEIP_DELIVERY_STATISTICS)
     packet_filtering_->enable_monitor(std::chrono::milliseconds(10000));
 #endif // ENABLE_SOMEIP_DELIVERY_STATISTICS
 #endif // ENABLE_SOMEIP_PACKET_FILTERING
 
-    // open sd port
+    // Open the Service Discovery port.
     auto sd_config = configuration->get_service_discovery_info();
 
-    // For the multicast address
+    // Configure the multicast address.
     service_discovery_address_ = make_address(false, sd_config->get_port(), sd_config->get_vlan_priority());
     service_discovery_address_->set_ip_address(sd_config->get_multicast());
     auto new_socket = std::make_shared<lgsomeip::osabstraction::UDPSocket>(service_discovery_address_);
@@ -160,8 +159,8 @@ void PacketRouterHost::init() {
     LGSOMEIP_LOG_DEBUG << "PacketRouterHost::init / SD fd = " << new_socket->get_socket_fd()
                        << ", IP = " << sd_config->get_multicast() << ", Port = " << sd_config->get_port();
 
-    // Run a thread to create the listening socket for the unicast address receiving SOME/IP-SD packets,
-    // since binding socket sometimes takes long due to a series of socket binding failures.
+    // Start a thread to create the unicast listening socket for SOME/IP-SD packets.
+    // Binding can take a while after repeated socket failures.
     {
         std::lock_guard<std::mutex> lock(sd_unicast_binding_mutex_);
         sd_unicast_binding_success_ = false;
@@ -317,7 +316,7 @@ void PacketRouterHost::stop() {
         sd_unicast_start_listen_thread_.join();
     }
 
-    // disconnect Receiver Socket to Multiplexer
+    // Disconnect the receiver socket from the multiplexer.
     if (local_receiver_ != nullptr) {
         local_receiver_->stop_listen();
     }
@@ -367,7 +366,7 @@ void PacketRouterHost::on_connect(std::shared_ptr<Endpoint> server_endpoint,
         client_endpoint->start_listen(get_multiplexer());
 #endif // ENABLE_TLS
     } else {
-        // TODO : implement connection management for process another connection
+        // TODO(lg-someip): Implement connection management for additional process connections.
         LGSOMEIP_LOG_DEBUG << "PacketRouterHost::on_connect / TCP Server receives connection from "
                            << client_endpoint->get_socket()->get_dst_address()->to_string() << " to "
                            << server_endpoint->get_socket()->get_src_address()->to_string();
@@ -399,7 +398,7 @@ void PacketRouterHost::reboot_route(std::shared_ptr<lgsomeip::osabstraction::Add
         LGSOMEIP_LOG_DEBUG << "PacketRouterHost::reboot_route / Remove subscribe info "
                            << "[Addr:" << sender_address->to_string() << "]";
 
-        // Remove subscribe info related to the addr
+        // Remove subscription information for the address.
         remove_subscribe_route(sender_address);
 
         auto it = request_map_.begin();
@@ -435,12 +434,12 @@ void PacketRouterHost::on_disconnect(std::shared_ptr<Endpoint> endpoint) {
 
     auto& connection_info = conn_info_it->second;
 
-    // Disconnection from internal app
+    // Handle disconnection from an internal application.
     if (connection_info.is_internal == true) {
         std::uint16_t app_id = connection_info.app_id;
         LGSOMEIP_LOG_INFO << "PacketRouterHost::on_disconnect / Listener Stop " << format_named_id("AppID", app_id, 4);
 
-        // If appId = 0, there is a socket error before receiving ApplicationControlMessage.
+        // An app ID of zero indicates a socket error before ApplicationControlMessage was received.
         if (app_id == 0) {
             LGSOMEIP_LOG_INFO << "PacketRouterHost::on_disconnect / there is a socket error before receiving "
                               << "ApplicationControlMessage, FD = " << fd;
@@ -449,13 +448,13 @@ void PacketRouterHost::on_disconnect(std::shared_ptr<Endpoint> endpoint) {
             return;
         }
 
-        // Remove service info related to the appId
+        // Remove service information associated with the application ID.
         remove_subscribe_route(app_id);
 
-        // Remove route info for all provided/consumed services related with appId.
+        // Remove routes for all services provided or consumed by the application.
         remove_route(app_id);
 
-        // Remove request map for routing request/response.
+        // Remove the request map used for request/response routing.
         auto req_map_it = request_map_.begin();
         while (req_map_it != request_map_.end()) {
             if (req_map_it->second.endpoint == local_applications_[app_id].sender) {
@@ -465,7 +464,7 @@ void PacketRouterHost::on_disconnect(std::shared_ptr<Endpoint> endpoint) {
             }
         }
 
-        // Stop Application Socket
+        // Stop the application socket.
         local_applications_[app_id].receiver->stop_listen();
         local_applications_.erase(app_id);
 
@@ -481,12 +480,11 @@ void PacketRouterHost::on_disconnect(std::shared_ptr<Endpoint> endpoint) {
         local_receiver_->remove_client_endpoint(fd);
         host_->on_disconnected_application(app_id);
     }
-    // Disconnection on external service endpoint
+    // Handle disconnection from an external service endpoint.
     else {
         std::shared_ptr<lgsomeip::osabstraction::Address> addr;
 
-        // Our TCP server socket gets disconnected.
-        // This case will barely happen.
+        // The TCP server socket was disconnected. This case is rare.
         if (connection_info.serverfd == 0) {
             addr = endpoint->get_socket()->get_src_address();
             LGSOMEIP_LOG_INFO << "PacketRouterHost::on_disconnect / Disconnected on TCP server Endpoint "
@@ -516,16 +514,16 @@ void PacketRouterHost::on_disconnect(std::shared_ptr<Endpoint> endpoint) {
 
             connected_endpoints_.erase(fd);
         }
-        // Our TCP client socket is disconnected.
+        // The TCP client socket was disconnected.
         else {
             addr = endpoint->get_socket()->get_dst_address();
             LGSOMEIP_LOG_INFO << "PacketRouterHost::on_disconnect / Disconnected on TCP client Endpoint "
                               << "[Addr:" << addr->to_string() << "]";
 
-            // Remove subscribe info related to the addr
+            // Remove subscription information for the address.
             remove_subscribe_route(addr);
 
-            // Remove request map for routing request/response.
+            // Remove the request map used for request/response routing.
             auto req_map_it = request_map_.begin();
             while (req_map_it != request_map_.end()) {
                 auto map_fd = req_map_it->second.endpoint->get_socket()->get_socket_fd();
@@ -563,19 +561,6 @@ void PacketRouterHost::on_disconnect(std::shared_ptr<Endpoint> endpoint) {
         host_->on_disconnected_service(addr);
     }
 }
-
-/*
-std::shared_ptr<lgsomeip::osabstraction::Address> PacketRouterHost::get_address(std::uint16_t app_id)
-{
-    std::shared_ptr<lgsomeip::osabstraction::Address> addr = nullptr;
-
-    if (local_applications_.find(app_id) != local_applications_.end()) {
-        addr = local_applications_[app_id].sender->get_socket()->get_dst_address();
-    }
-
-    return addr;
-}
-*/
 
 bool PacketRouterHost::is_reboot(const std::shared_ptr<Endpoint> endpoint, bool reboot_flag, std::uint32_t request_id) {
     LGSOMEIP_LOG_DEBUG << "PacketRouterHost::is_reboot Check reboot";
@@ -620,15 +605,15 @@ bool PacketRouterHost::is_reboot(const std::shared_ptr<Endpoint> endpoint, bool 
 void PacketRouterHost::process_trigger_writing_service_state(void) {
     LGSOMEIP_LOG_INFO << "PacketRouterHost::process_trigger_writing_service_state / Start";
 
-    // Write the current states of SOME/IP services to files
-    // Create the list having the current connected applications
+    // Write the current SOME/IP service states to files.
+    // Build a list of currently connected applications.
     std::map<std::uint16_t, std::string> list_apps;
 
     for (auto& element : local_applications_) {
         LGSOMEIP_LOG_INFO << "PacketRouterHost::process_trigger_writing_service_state / "
                           << format_named_id("AppID", element.first, 4) << ", app_name: " << element.second.name;
 
-        // If an application uses only local SOME/IP services, it should not inlcuded in the list
+        // Exclude applications that use only local SOME/IP services.
         if ((element.second.name.compare("no-name") == 0) || (element.second.name.compare("") == 0)) {
             continue;
         }
@@ -636,7 +621,7 @@ void PacketRouterHost::process_trigger_writing_service_state(void) {
         list_apps[element.first] = element.second.name;
     }
 
-    // Try to write the current states of SOME/IP services in the ServiceManager class
+    // Ask ServiceManager to write the current SOME/IP service states.
     if (!host_->write_current_state_someip_services(list_apps)) {
         LGSOMEIP_LOG_INFO << "PacketRouterHost::process_trigger_writing_service_state / Fail to write files!!!";
     }
@@ -659,7 +644,7 @@ void PacketRouterHost::on_message(std::shared_ptr<Endpoint> endpoint, std::uint8
     lock_manage_route.unlock();
 
     if (is_sd_message) {
-        // Check if this message is for trigger to create the files including the current states of SOME/IP services
+        // Check whether this message requests current-state file generation.
         if (message_length >= 26 && message[24] == 0xF1 && message[25] == 0xF2) {
 #if defined(ENABLE_SOMEIP_DELIVERY_STATISTICS)
             SomeipPacketStatistics::get_instance().increase_sd_type_packet(
@@ -672,7 +657,7 @@ void PacketRouterHost::on_message(std::shared_ptr<Endpoint> endpoint, std::uint8
                 return;
             }
 
-            // Create the files including the current states of SOME/IP services
+            // Create files containing the current SOME/IP service states.
             process_trigger_writing_service_state();
 
             return;
@@ -691,10 +676,10 @@ void PacketRouterHost::on_message(std::shared_ptr<Endpoint> endpoint, std::uint8
                 return;
             }
             if (sd_message->entry(0).get_type() == SOMEIP_SD_ENTRY::INTERNAL::TYPEID) {
-                // Process Applcation Control Message
+                // Process the application-control message.
                 on_application_control_message(endpoint, sd_message);
             } else {
-                // Process Service Control Message : send to service manager
+                // Process the service-control message and send it to ServiceManager.
                 host_->on_internal_message(sd_message);
             }
         } else {
@@ -728,7 +713,7 @@ void PacketRouterHost::on_message(std::shared_ptr<Endpoint> endpoint, std::uint8
                 return;
             }
 
-            // Process Service Control Message : send to service manager
+            // Process the service-control message and send it to ServiceManager.
             host_->on_external_message(endpoint, sd_message, reboot);
         }
 
@@ -740,7 +725,7 @@ void PacketRouterHost::on_message(std::shared_ptr<Endpoint> endpoint, std::uint8
     get_byte_stream(&incoming_message_id, message);
 #endif // ENABLE_SOMEIP_DELIVERY_STATISTICS
 
-    // SOME/IP Message
+    // Process the SOME/IP message.
     if (from_internal) {
 #if defined(ENABLE_SOMEIP_DELIVERY_STATISTICS)
         SomeipPacketStatistics::get_instance().increase_received_packet(SomeipPacketStatistics::kOutgoing,
@@ -757,11 +742,11 @@ void PacketRouterHost::on_message(std::shared_ptr<Endpoint> endpoint, std::uint8
         std::uint32_t message_id;
 
         if (check_byte_order() == true) {
-            // Little endian
+            // Serialize using little-endian byte order.
             message_id = (std::uint32_t)message[0] << 24 | (std::uint32_t)message[1] << 16 |
                          (std::uint32_t)message[2] << 8 | (std::uint32_t)message[3];
         } else {
-            // Big endian
+            // Serialize using big-endian byte order.
             message_id = (std::uint32_t)message[3] << 24 | (std::uint32_t)message[2] << 16 |
                          (std::uint32_t)message[1] << 8 | (std::uint32_t)message[0];
         }
@@ -781,16 +766,12 @@ void PacketRouterHost::on_message(std::shared_ptr<Endpoint> endpoint, std::uint8
     }
 }
 
-// Section: PacketRouter Host : Mapping (Service ID, Socket Addr) to Instance ID
-/*
- *  Service-Instances of the same Service are identified through
- *                             different Instance IDs
- *  Multiple Service-Instances of the same service on one single
- *                             ECU shall listen on different ports per Service-Instance
- *
- * A Service Instance can be identified through the combination of the Service ID combined
- * with the socket (i.e. IP-address, transport protocol (UDP/TCP), and port number).
- */
+// PacketRouterHost mapping from service ID and socket address to instance ID.
+// Service instances of the same service are identified by different instance IDs.
+// Multiple service instances on one ECU must listen on different ports.
+//
+// A service instance is identified by the service ID and socket address,
+// transport protocol, and port.
 
 static std::uint32_t PORT_TCPTAG = 0x00010000;
 static std::uint32_t PORT_UDPTAG = 0x00020000;
@@ -836,7 +817,7 @@ std::uint16_t PacketRouterHost::find_instance_id(std::uint16_t service_id, std::
             LGSOMEIP_LOG_DEBUG << "PacketRouterHost::find_instance_id / "
                                << format_named_id("InstanceID", endpoint->get_instance_id(), 4);
 
-            // If this endpoint has an instanceID, this function just returns the instanceID.
+            // Return the endpoint's instance ID when one is available.
             if (endpoint->get_instance_id() != 0) {
                 return endpoint->get_instance_id();
             }
@@ -864,13 +845,6 @@ std::uint16_t PacketRouterHost::find_instance_id(std::uint16_t service_id, std::
     if (iter != svcmap->second.end()) {
         iid = iter->second;
     }
-
-    // LGSOMEIP_LOG_DEBUG << "PacketRouterHost::find_instance_id / List";
-    // for (auto& svc : svcmap->second) {
-    //     LGSOMEIP_LOG_DEBUG << "PacketRouterHost::find_instance_id"
-    //                        << " / addrid:" << MSGID_FORMAT6(svc.first)
-    //                        << " / iid: " << MSGID_FORMAT4(svc.second);
-    // }
 
     LGSOMEIP_LOG_DEBUG << "PacketRouterHost::find_instance_id / " << format_named_id("ServiceID", service_id, 4)
                        << " => " << format_named_id("InstanceID", iid, 4);
@@ -928,8 +902,7 @@ struct RoutingServiceInfo* PacketRouterHost::get_service_instance(std::uint16_t 
     return info;
 }
 
-// Section: PacketRouter Host : Internal / Callback for Data Message
-// Callback for Data Message
+// PacketRouterHost internal data-message callbacks.
 void PacketRouterHost::on_internal_message(std::shared_ptr<Endpoint> endpoint, std::uint8_t* message,
                                            std::size_t message_length) {
     MessageHeader header;
@@ -1135,7 +1108,7 @@ void PacketRouterHost::on_internal_notification(std::shared_ptr<Endpoint> endpoi
 
     auto& subscribelist = *subscribe_list_ptr;
 
-    // for notify_one
+    // Target a single client for notify_one().
     if (target_client > 0) {
         request_id = (request_id & 0x0000FFFF);
         set_byte_stream(message + SOMEIP_HEADER::POS::REQUESTID, &request_id);
@@ -1327,14 +1300,12 @@ void PacketRouterHost::send_error(std::shared_ptr<Endpoint> endpoint, std::uint8
     }
 }
 
-// Section: PacketRouter Host : External / Callback for Data Message
-/*
-    The UDP datagram size shall be at least 16 Bytes (minimum size of a SOME/IP message).
-    The value of the length field shall be less than or equal to the remaining bytes in the UDP datagram payload.
-
-    SOME/IP messages shall be checked by error processing. This does not include
-    the application based error handling but just covers the error handling in messaging and RPC.
-*/
+// PacketRouterHost external data-message callbacks.
+// UDP datagrams must be at least 16 bytes, the minimum SOME/IP message size.
+// The length field must not exceed the remaining UDP payload.
+//
+// SOME/IP error processing covers messaging and RPC errors, not application-level
+// error handling.
 void PacketRouterHost::on_external_message(std::shared_ptr<Endpoint> endpoint, std::uint8_t* message,
                                            std::size_t message_length) {
     MessageHeader header;
@@ -1446,8 +1417,7 @@ void PacketRouterHost::on_external_request(std::shared_ptr<Endpoint> endpoint, s
     std::uint8_t return_code;
     get_byte_stream(&return_code, message + SOMEIP_HEADER::POS::RETURNCODE);
     if (return_code >= 0x01 && return_code <= 0x1f) {
-        // if the message is request and it has return code (0x01 ~ 0x1f),
-        // then just ignore the message (do not response)
+        // A request with a SOME/IP error return code (0x01-0x1f) is dropped instead of answered.
         LGSOMEIP_LOG_WARN << "PacketRouterHost::on_external_request "
                           << format_service_instance_event_id(sid, endpoint->get_instance_id(), iid) << " "
                           << format_named_id("RequestID", request_id, 8) << " return code (" << return_code
@@ -1622,7 +1592,7 @@ void PacketRouterHost::on_external_notification(std::shared_ptr<Endpoint> endpoi
                 std::size_t retrans_msg_len = message_length;
                 std::uint8_t retry_counter = retry_count;
 
-                // wait for SubscribeEventgroupAck to be processed
+                // Wait for SubscribeEventgroupAck to be processed.
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
 #if defined(ENABLE_QNX_MESSAGE_PASSING) || defined(ENABLE_TLS)
@@ -1721,7 +1691,7 @@ PacketRouterHost::find_endpoint(std::shared_ptr<lgsomeip::osabstraction::Address
     return found_ep;
 }
 
-// Section: PacketRouter Host : Service Control Opertion
+// PacketRouterHost service-control operations.
 bool PacketRouterHost::add_route(
     std::uint16_t service_id, std::uint16_t instance_id, std::uint16_t app_id,
     std::shared_ptr<lgsomeip::osabstraction::Address> remote_tcp_address, std::uint16_t local_tcp_port,
@@ -2154,7 +2124,7 @@ void PacketRouterHost::remove_route(std::uint16_t service_id, std::uint16_t inst
     auto& service_info = instance_it->second;
 
     if (service_info.app_id > 0) {
-        // remove TCP Client information
+        // Remove TCP client information.
         auto tcp_endpoint = std::dynamic_pointer_cast<EndpointTCPServer<PacketRouterHost>>(service_info.tcpendpoint);
         if (tcp_endpoint != nullptr) {
             for (auto& client : tcp_endpoint->get_client_list()) {
@@ -2213,7 +2183,7 @@ void PacketRouterHost::remove_route(std::uint16_t app_id) {
 
             // Remove route info offered by this app
             if (provider_app_id == app_id) {
-                // remove TCP Client information
+                // Remove TCP client information.
                 auto tcp_endpoint =
                     std::dynamic_pointer_cast<EndpointTCPServer<PacketRouterHost>>(service_info.tcpendpoint);
                 if (tcp_endpoint != nullptr) {
@@ -2326,7 +2296,7 @@ void PacketRouterHost::remove_route(std::shared_ptr<lgsomeip::osabstraction::Add
     }
 }
 
-// Section: PacketRouter Host : Event Subscribe Control Operation
+// PacketRouterHost event-subscription control operations.
 std::int32_t PacketRouterHost::find_connection(std::uint16_t service_id, std::uint16_t instance_id,
                                                std::shared_ptr<lgsomeip::osabstraction::Address> address) {
     std::int32_t retfd = -1;
@@ -2418,8 +2388,7 @@ void PacketRouterHost::add_subscribe_route(std::uint16_t service_id, std::uint16
                 service_info.multicasts.push_back(connected_endpoints_[fd_id].endpoint);
                 LGSOMEIP_LOG_INFO << "PacketRouterHost::add_subscribe_route / reuse Connection, FD = " << fd_id;
             } else {
-                // TODO: Handling DTLS in case of multicast, if necessary.
-                // I'm not sure if DTLS can be applied to multicast.
+                // TODO(lg-someip): Determine whether DTLS is required for multicast.
                 auto new_socket = std::make_shared<lgsomeip::osabstraction::UDPSocket>(address);
                 new_socket->join_multicast(address->get_ip_address().c_str());
                 new_socket->bind();
@@ -2573,7 +2542,7 @@ void PacketRouterHost::remove_subscribe_route(std::uint16_t service_id, std::uin
             service_info.multicasts.clear();
         }
     } else {
-        // TODO : remove external subscribe
+        // TODO(lg-someip): Remove external subscriptions.
         if (address == nullptr) {
             return;
         }
@@ -2628,7 +2597,7 @@ void PacketRouterHost::remove_subscribe_route(std::uint16_t app_id) {
 
             auto event_it = event_map.begin();
             while (event_it != event_map.end()) {
-                // remove subscribe info
+                // Remove subscription information.
                 auto& subscribe_list = event_it->second;
                 auto remove_item =
                     std::find_if(subscribe_list.begin(), subscribe_list.end(),
@@ -2657,7 +2626,7 @@ void PacketRouterHost::remove_subscribe_route(std::uint16_t app_id) {
 void PacketRouterHost::remove_subscribe_route(std::shared_ptr<lgsomeip::osabstraction::Address> address) {
     LGSOMEIP_LOG_DEBUG << "PacketRouterHost::remove_subscribe_route / [Addr:" << address->to_string() << "]";
 
-    // Remove service info related to the addr
+    // Remove subscription information for the address.
     std::lock_guard<std::recursive_mutex> guard(route_management_mutex_);
 
     for (auto& service : registered_service_info_) {
@@ -2668,7 +2637,7 @@ void PacketRouterHost::remove_subscribe_route(std::shared_ptr<lgsomeip::osabstra
 
             auto event_it = event_map.begin();
             while (event_it != event_map.end()) {
-                // remove subscribe info
+                // Remove subscription information.
                 auto& subscribe_list = event_it->second;
                 auto remove_item =
                     std::find_if(subscribe_list.begin(), subscribe_list.end(), [&](struct RoutingSubscribeInfo& info) {
@@ -2709,7 +2678,7 @@ void PacketRouterHost::remove_subscribe_route(std::shared_ptr<lgsomeip::osabstra
     }
 }
 
-// Section: PacketRouter Host : Application Control Operation
+// PacketRouterHost application-control operations.
 void PacketRouterHost::on_application_control_message(std::shared_ptr<Endpoint> endpoint,
                                                       std::shared_ptr<MessageSD> message) {
     if (message == nullptr || message->options().empty()) {
@@ -2823,10 +2792,9 @@ void PacketRouterHost::check_and_send_magic_cookies() {
             continue;
         }
 
-        // Check if magic cookie is enabled, connection is TCP, and is NOT internal connection.
-        // serverfd == 0 means that this endpoint is EndpointTCPServer.
-        // There is nothing to do with this listening only endpoint,
-        // so move on to the next enpoint.
+        // Check whether magic cookies are enabled, the connection is TCP, and it is not internal.
+        // serverfd == 0 means this endpoint is an EndpointTCPServer (listening only);
+        // skip it and move on to the next endpoint.
         if ((routing_info.endpoint->get_magic_cookie_enabled() == true) &&
             (routing_info.endpoint->get_socket()->get_reliable() == true) && (routing_info.is_internal == false) &&
             (routing_info.serverfd != 0)) {
@@ -3021,10 +2989,10 @@ void PacketRouterHost::on_message_passing_message(std::shared_ptr<Endpoint> endp
         }
 
         if (sd_message->entry(0).get_type() == SOMEIP_SD_ENTRY::INTERNAL::TYPEID) {
-            // Process Applcation Control Message
+            // Process the application-control message.
             on_message_passing_application_control_message(endpoint, sd_message);
         } else {
-            // Process Service Control Message : send to service manager
+            // Process the service-control message and send it to ServiceManager.
             host_->on_internal_message(sd_message);
         }
     } else {

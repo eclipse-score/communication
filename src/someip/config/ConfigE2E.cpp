@@ -16,27 +16,26 @@
 #include "ConfigConstant.h"
 #include <exception/Exception.h>
 
-/*
-    "e2e" :
-    {
-        "e2e_enabled" : "true",
-        "protected" :
-        [
-            {
-                "data_id" : "28",
-                "service_id" : "0x7532",
-                "event_id" : "0x8002",
-                "variant" : "checker",
-                "profile" : "CRC8",
-                "crc_offset" : "0",
-                "counter_offset" : "8",
-                "data_id_mode" : "0",
-                "data_id_nibble_offset" : "0",
-                "data_length" : "56"
-            }
-        ]
-    }
-*/
+// Example E2E configuration:
+// {
+//     "e2e": {
+//         "e2e_enabled": "true",
+//         "protected": [
+//             {
+//                 "data_id": "28",
+//                 "service_id": "0x7532",
+//                 "event_id": "0x8002",
+//                 "variant": "checker",
+//                 "profile": "CRC8",
+//                 "crc_offset": "0",
+//                 "counter_offset": "8",
+//                 "data_id_mode": "0",
+//                 "data_id_nibble_offset": "0",
+//                 "data_length": "56"
+//             }
+//         ]
+//     }
+// }
 
 namespace lgsomeip {
 
