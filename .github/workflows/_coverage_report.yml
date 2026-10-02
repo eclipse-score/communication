@@ -27,6 +27,12 @@ on:
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL:
         required: false
+      SCORE_QNX_LICENSE:
+        required: false
+      SCORE_QNX_USER:
+        required: false
+      SCORE_QNX_PASSWORD:
+        required: false
 
 jobs:
   coverage:
@@ -72,3 +78,64 @@ jobs:
         with:
           name: ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}
           path: ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}.zip
+
+  # QNX on-target coverage (C++): the gcov backend of score_coverage. The tests
+  # run in QEMU through score_qnx_unit_tests, which brings the .gcda counters
+  # back; Bazel's collector turns them into LCOV and the gcov reporter produces
+  # the same archive layout as the Linux job. Rust is measured by the Linux
+  # job only (rustc emits no gcov counters). Needs the QNX secrets, so it runs
+  # where this workflow is called with them (nightly_quality.yml).
+  coverage-qnx:
+    name: Coverage QNX (gcov, on target)
+    runs-on: ubuntu-24.04
+    # A QNX SDP download hiccup must not take the Linux report down with it:
+    # the nightly deploy job skips the QNX pages when this artifact is missing.
+    continue-on-error: true
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Setup QNX and QEMU environment
+        uses: ./.github/actions/00_infrastructure/setup_qnx_environment
+        with:
+          qnx-license: ${{ secrets.SCORE_QNX_LICENSE }}
+      - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
+        with:
+          disk-cache: ${{ inputs.fetch-only != 'true' && 'coverage_report_qnx' || '' }}
+          cache-mode: ${{ inputs.cache-mode }}
+          ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+      - name: Fetch dependencies (--nobuild)
+        if: inputs.fetch-only == 'true'
+        env:
+          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+        run: bazel build --nobuild --config=ci --config=qnx -- //score/...
+      - name: Run coverage on QNX
+        if: inputs.fetch-only != 'true'
+        id: run-coverage
+        env:
+          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+        run: bazel coverage --config=ci --config=qnx --build_tests_only -- //score/...
+      - name: Generate QNX coverage report
+        if: inputs.fetch-only != 'true' && steps.run-coverage.outcome == 'success'
+        id: generate-report
+        env:
+          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+          # Report-only: the effective-coverage gate is not enforced yet.
+          COVERAGE_THRESHOLD: "0"
+        run: |
+          bazel run --config=ci --config=qnx @score_coverage//:generate_coverage_html -- \
+            --platform qnx \
+            --yaml quality/coverage/coverage_justifications.yaml \
+            --testlogs-subdir score \
+            --archive "${{ github.event.repository.name }}_coverage_report_qnx_${{ github.sha }}" \
+            cpp_coverage_qnx
+      - name: Upload QNX coverage artifacts
+        if: inputs.fetch-only != 'true' && steps.generate-report.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}_coverage_report_qnx_${{ github.sha }}
+          path: ${{ github.event.repository.name }}_coverage_report_qnx_${{ github.sha }}.zip

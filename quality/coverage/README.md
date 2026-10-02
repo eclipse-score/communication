@@ -31,10 +31,15 @@ compares effective line coverage against `COVERAGE_THRESHOLD` (default 100)
 and exits 1 when it is not met, 2 when no verdict is possible.
 
 What the QNX report does not contain, by design of that backend: Rust
-sources (listed as `not-instrumented`, measured on Linux) and headers vendored
-from external repositories. gcov counts lines differently from LLVM (no unused
-inline functions, no closing braces), so the two reports are compared per
-file, not merged.
+sources (listed as `not-instrumented`, measured on Linux). gcov counts lines
+differently from LLVM (no unused inline functions, no closing braces), so the
+two reports are compared per file, not merged.
+
+In CI both reports are produced by the nightly quality workflow
+(`.github/workflows/_coverage_report.yml`, jobs `coverage` and
+`coverage-qnx`) and published under `quality/coverage/` and
+`quality/coverage_qnx/` of the latest documentation, next to the quality
+dashboard; the release workflow packages them with the other quality reports.
 
 Justifications: a `COV_JUSTIFIED <id>` marker in the source or a `locations`
 entry in the YAML, both referencing an entry with `id`, `category`,

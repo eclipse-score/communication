@@ -65,6 +65,9 @@ jobs:
       actions: write
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+      SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
+      SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+      SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
 
   # --------------------------------------------------------------------
   # Quality job 2: Linters
@@ -139,6 +142,28 @@ jobs:
           bash quality/scripts/extract_coverage_artifact.sh \
             /tmp/coverage_zip \
             "${GITHUB_WORKSPACE}/_quality/coverage"
+
+      # ------------------------------------------------------------------
+      # QNX on-target coverage (gcov backend): published next to the Linux
+      # report as quality/coverage_qnx/. The two are compared per file, not
+      # merged (different line semantics, Rust only on Linux).
+      # ------------------------------------------------------------------
+      - name: Download QNX coverage artifact
+        id: download-coverage-qnx
+        if: needs.run-coverage.result == 'success'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}_coverage_report_qnx_${{ github.sha }}
+          path: /tmp/coverage_zip_qnx
+
+      - name: Extract QNX coverage HTML report
+        if: needs.run-coverage.result == 'success' && steps.download-coverage-qnx.outcome == 'success'
+        run: |
+          bash quality/scripts/extract_coverage_artifact.sh \
+            /tmp/coverage_zip_qnx \
+            "${GITHUB_WORKSPACE}/_quality/coverage_qnx" \
+            cpp_coverage_qnx
 
       # ------------------------------------------------------------------
       # Download clang-tidy findings artifact

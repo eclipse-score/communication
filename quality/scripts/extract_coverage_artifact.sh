@@ -15,19 +15,22 @@
 # quality output directory for the dashboard generator.
 #
 # Usage:
-#   bash quality/scripts/extract_coverage_artifact.sh [zip-dir] [output-dir]
+#   bash quality/scripts/extract_coverage_artifact.sh [zip-dir] [output-dir] [report-subdir]
 #
 # Arguments:
-#   zip-dir     Directory containing the downloaded coverage zip (default: /tmp/coverage_zip)
-#   output-dir  Directory to copy the HTML report into (default: ${GITHUB_WORKSPACE}/_quality/coverage)
+#   zip-dir        Directory containing the downloaded coverage zip (default: /tmp/coverage_zip)
+#   output-dir     Directory to copy the HTML report into (default: ${GITHUB_WORKSPACE}/_quality/coverage)
+#   report-subdir  HTML directory inside the archive (default: cpp_coverage_linux; the
+#                  QNX job writes cpp_coverage_qnx)
 
 set -euo pipefail
 
 ZIP_DIR="${1:-/tmp/coverage_zip}"
 OUTPUT_DIR="${2:-${GITHUB_WORKSPACE}/_quality/coverage}"
+REPORT_SUBDIR="${3:-cpp_coverage_linux}"
 
 cd "${ZIP_DIR}"
 unzip *.zip -d extracted
 
 mkdir -p "${OUTPUT_DIR}"
-cp -r extracted/artifacts/cpp_coverage_linux/. "${OUTPUT_DIR}/"
+cp -r "extracted/artifacts/${REPORT_SUBDIR}/." "${OUTPUT_DIR}/"

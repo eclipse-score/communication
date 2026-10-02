@@ -28,8 +28,14 @@ nightly run of the `Nightly Quality Jobs`_ workflow.
      - Description
      - Report
    * - Coverage
-     - Line, function, and branch coverage from C++ unit tests (gcov/lcov)
+     - Line and branch coverage of the C++ and Rust unit tests on Linux
+       (LLVM source-based coverage, ``score_coverage``)
      - |coverage_report_link|
+   * - Coverage (QNX)
+     - Line and branch coverage of the C++ unit tests run on QNX in QEMU
+       (gcov backend of ``score_coverage``); compared with the Linux report per
+       file, not merged
+     - |coverage_qnx_report_link|
    * - Clang-Tidy
      - Static analysis findings (errors and warnings) across all C++ targets
      - |clang_tidy_report_link|
