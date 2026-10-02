@@ -147,6 +147,16 @@ def cc_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
     )
 
 def rust_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
+    """Macro in order to declare a Rust unit test.
+
+    Declares a Linux rust_test, a QNX counterpart and a public forwarding test that selects between them.
+
+    Args:
+      name: Target name of the public forwarding test.
+      target_compatible_with: Platform constraints of the public forwarding test.
+      tags: Additional tags; it must not contain the tag unit, which is added automatically.
+      **kwargs: Additional parameters forwarded to rust_test.
+    """
     if "unit" in tags:
         fail("'unit' tag already provided, please refrain from adding it manually.")
 

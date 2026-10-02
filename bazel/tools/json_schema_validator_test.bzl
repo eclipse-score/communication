@@ -35,6 +35,12 @@ def _testcase(name, json_content, schema_content, expected_failure):
     )
 
 def json_schema_validator_tests(name):
+    """Declares the test suite covering the JSON schema validator.
+
+    Args:
+      name: Name of the test suite.
+    """
+
     # link testcases to single name
     native.test_suite(
         name = name,
