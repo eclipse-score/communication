@@ -23,18 +23,36 @@ project.
 
 ## Public API
 
-Applications and adaptation middleware should use the `vsomeip` compatibility
-interface. It is the supported public API and is installed under
-`include/vsomeip`:
+LG SOME/IP provides its own `lgsomeip` API and a `vsomeip` compatibility API.
+New applications should use the `lgsomeip` API, installed under
+`include/lgsomeip`:
+
+```
+find_package(lgsomeip CONFIG REQUIRED)
+target_link_libraries(your_application PRIVATE lgsomeip::api)
+```
+
+The API is declared in `<lgsomeip/LgsomeipApi.h>` and provides application lifecycle,
+service and event management, message callbacks, message sending, and
+notifications. `lgsomeip::api::Runtime::instance()` creates application
+objects.
+
+`Application::start()` returns immediately after beginning registration with
+the daemon; it does not block. Register an `ApplicationStateHandler` before
+calling `start()`, and call `offer_service()`/`request_service()` from inside
+that handler once the application reports it is registered. Call `join()`
+afterwards (or otherwise keep the process alive) to process messages for the
+application's lifetime.
+
+Existing applications can continue to use the installed `vsomeip` interface:
 
 ```
 find_package(vsomeip CONFIG REQUIRED)
 target_link_libraries(your_application PRIVATE vsomeip)
 ```
 
-The `lgsomeip` core, `lgsomeip::osabstraction`, serializer, and bundled E2E
-headers are implementation details. They are not installed as public headers
-and are not covered by the compatibility API contract.
+`ApplicationManager`, the `lgsomeip` message implementation, OS abstraction,
+serializer, and bundled E2E headers remain internal implementation details.
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the C++ formatting, static
 analysis, and validation workflow.

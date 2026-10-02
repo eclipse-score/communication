@@ -12,71 +12,75 @@
  *
  ********************************************************************************/
 
-#include <atomic>
-#include <cstdint>
 #include <iostream>
-#include <unistd.h>
+#include <memory>
+#include <thread>
+#include <chrono>
 
-#include <message/Message.h>
-#include <runtime/ApplicationManager.h>
+#include <lgsomeip/LgsomeipApi.h>
 
-using namespace std;
-using namespace lgsomeip;
+// Event consumer example: request two event IDs, subscribe to their shared
+// event group, and print each notification as text.
+namespace {
 
-#define SOMEIP_SERVICE_ID 0x1001
-#define SOMEIP_INSTANCE_ID 0x0001
-#define SOMEIP_METHOD_ID 0x0001
-#define SOMEIP_MAJOR_VERSION 0x01
+constexpr lgsomeip::api::service_t kServiceId = 0x1001;
+constexpr lgsomeip::api::instance_t kInstanceId = 0x0001;
+constexpr lgsomeip::api::major_version_t kMajorVersion = 0x01;
+// The provider offers both events in this group.
+constexpr lgsomeip::api::eventgroup_t kEventGroup = 0x4455;
+constexpr lgsomeip::api::event_t kEventId1 = 0x8777;
+constexpr lgsomeip::api::event_t kEventId2 = 0x8778;
 
-#define SOMEIP_EVENT_GROUP 0x4455
-#define SOMEIP_EVENT_ID_1 0x8777
-#define SOMEIP_EVENT_ID_2 0x8778
+std::shared_ptr<lgsomeip::api::Application> application;
+bool subscriptions_requested = false;
 
-std::string appname = "subscribe-1";
-std::shared_ptr<ApplicationManager> appMgmt;
-
-int cnt = 0;
-
-void on_message(std::shared_ptr<Message> msg) {
-    std::cout << "subscribe-1 / on_message Called : MessageID = " << std::hex << msg->get_message_id()
-              << " / Message Len = " << std::dec << msg->get_length() << " / recv message : ";
-
-    auto& payload = msg->get_payload_type()->get_payload_vector();
-    for (auto data : payload)
-        std::cout << data;
+void on_message(const std::shared_ptr<lgsomeip::api::Message>& message) {
+    std::cout << "subscribe-1 / service=0x" << std::hex << message->service << " event=0x" << message->method
+              << std::dec << " / payload=";
+    for (const auto byte : message->payload) {
+        // This sample's provider sends ASCII bytes; real payloads need their
+        // service-specific decoder here.
+        std::cout << static_cast<char>(byte);
+    }
     std::cout << std::endl;
 }
 
-void on_availability(std::uint16_t serviceid, std::uint16_t instanceid, bool available) {
-    std::cout << "subscribe-1 / on_availability Called!! / state = " << available << std::endl;
+void on_availability(lgsomeip::api::service_t, lgsomeip::api::instance_t, bool available) {
+    std::cout << "subscribe-1 / service available = " << available << std::endl;
     if (available) {
-        appMgmt->subscribe(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_EVENT_GROUP, 0x01);
+        // request_event() declares which event IDs this app consumes;
+        // subscribe() joins the provider's event group to start delivery.
+        application->subscribe(kServiceId, kInstanceId, kEventGroup, kMajorVersion);
     } else {
-        appMgmt->unsubscribe(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_EVENT_GROUP);
+        application->unsubscribe(kServiceId, kInstanceId, kEventGroup);
     }
 }
 
-void on_state(std::uint16_t state) {
-    std::cout << "subscribe-1 / on_state Called!! / state = " << state << std::endl;
-    if (state) {
-        appMgmt->request_event(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_EVENT_ID_1, {SOMEIP_EVENT_GROUP});
-        appMgmt->request_event(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_EVENT_ID_2, {SOMEIP_EVENT_GROUP});
-        appMgmt->request_service(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_MAJOR_VERSION, 0x00);
+void on_state(bool registered) {
+    // Declare event interest once after connecting to the daemon. The separate
+    // availability callback below controls the actual group subscription.
+    if (registered && !subscriptions_requested) {
+        application->request_event(kServiceId, kInstanceId, kEventId1, {kEventGroup});
+        application->request_event(kServiceId, kInstanceId, kEventId2, {kEventGroup});
+        application->request_service(kServiceId, kInstanceId, kMajorVersion);
+        subscriptions_requested = true;
     }
 }
+
+} // namespace
 
 int main() {
-    appMgmt = std::make_shared<ApplicationManager>(appname);
-    appMgmt->init();
-    appMgmt->register_application_state_handler(on_state);
-    appMgmt->register_availability_handler(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, on_availability);
-    appMgmt->register_message_handler(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_EVENT_ID_1, on_message);
-    appMgmt->register_message_handler(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_EVENT_ID_2, on_message);
-    appMgmt->start();
-
-    while (true) {
-        sleep(1);
+    application = lgsomeip::api::Runtime::instance().create_application("subscribe-1");
+    if (!application->init()) {
+        return 1;
     }
 
-    return 0;
+    // Event notifications arrive through the ordinary message callback, with
+    // the event ID exposed in Message::method.
+    application->register_message_handler(kServiceId, kInstanceId, kEventId1, on_message);
+    application->register_message_handler(kServiceId, kInstanceId, kEventId2, on_message);
+    application->register_availability_handler(kServiceId, kInstanceId, on_availability, kMajorVersion);
+    application->register_application_state_handler(on_state);
+    application->start();
+    application->join();
 }

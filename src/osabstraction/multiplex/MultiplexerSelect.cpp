@@ -32,14 +32,14 @@ Multiplexer::~Multiplexer() {}
 void Multiplexer::start() {
     running_ = true;
     thread_ = std::make_shared<std::thread>(&Multiplexer::run, this);
-    // For assigning thread name
+    // Assign a descriptive name to this worker thread.
     pthread_setname_np(thread_->native_handle(), "SomeipSelectMux");
 }
 
 void Multiplexer::stop() {
     if (running_.load()) {
         running_.store(false);
-        // Wakeup notify
+        // Wake the multiplexer thread.
         condition_.notify_one();
     }
 }
@@ -78,7 +78,7 @@ void Multiplexer::run() {
         select_result = select(max_file_descriptor, &working_set, NULL, NULL, &timeout);
 
         if (select_result < 0) {
-            // TODO : create exception
+            // TODO: create exception
             LGSOMEIP_LOG_ERROR << "Multiplexer::run / select failed / " << strerror(errno);
         } else if (select_result > 0) {
             descriptors_ready = select_result;

@@ -798,9 +798,7 @@ void ServiceManager::on_disconnected_application(std::uint16_t app_id) {
     }
 }
 
-// -----------------------------------------------------------------------------
-//  ServiceManager : Callback for Control Message
-// -----------------------------------------------------------------------------
+// Section: ServiceManager : Callback for Control Message
 void ServiceManager::on_internal_message(std::shared_ptr<MessageSD> message) {
     SDEntry* entry = nullptr;
     std::uint16_t service_id = 0;
@@ -1629,7 +1627,7 @@ void ServiceManager::on_external_offer_service(std::uint16_t service_id, std::ui
         for (auto& subscribe : subscribelist) {
             std::uint16_t eventgroup_id = subscribe.first;
             for (auto& request : subscribe.second) {
-                // TODO : TTL Time
+                // TODO: TTL Time
                 request.ttl = 3;
             }
             // In the send_subscribe_eventgroup() function, a SubscribeEventgroup message will be gathered in
@@ -2085,7 +2083,7 @@ void ServiceManager::handle_new_offer_service(std::uint16_t service_id, std::uin
     // Add route information in a new thread and retry in case of failure.
     // If retry also fails remove service information from DB.
     std::thread add_connection_th([=]() {
-        // For assigning thread name
+        // Assign a descriptive name to this worker thread.
         pthread_setname_np(pthread_self(), "SomeipSvcConn");
 
         LGSOMEIP_LOG_DEBUG << "ServiceManager::handle_new_offer_service / "
@@ -2279,9 +2277,7 @@ void ServiceManager::handle_new_subscribe_eventgroup(std::uint16_t service_id, s
     send_subscribe_eventgroup(service_id, instance_id, event_group_id, ttl, major_version, app_id);
 }
 
-// -----------------------------------------------------------------------------
-//  ServiceManager : Message Utils
-// -----------------------------------------------------------------------------
+// Section: ServiceManager : Message Utils
 struct AvailableService* ServiceManager::find_available_service_instance(std::uint16_t service_id,
                                                                          std::uint16_t instance_id) {
     struct AvailableService* service_info = nullptr;
@@ -2473,9 +2469,7 @@ void ServiceManager::remove_service_info(std::shared_ptr<lgsomeip::osabstraction
     }
 }
 
-// -----------------------------------------------------------------------------
-//  ServiceManager : Send Message
-// -----------------------------------------------------------------------------
+// Section: ServiceManager : Send Message
 
 void ServiceManager::send_internal_offer_service_all(std::uint16_t service_id, std::uint16_t instance_id,
                                                      std::uint32_t ttl, std::uint8_t major_version,

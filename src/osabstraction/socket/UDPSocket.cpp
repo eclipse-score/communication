@@ -39,7 +39,7 @@ UDPSocket::UDPSocket(std::shared_ptr<Address> address, const SecureConfig& secur
 
     uint8_t int_vlan_prio = address->get_vlan_priority();
     if (int_vlan_prio != 0xff) {
-        // Set VLAN_Priority
+        // Set the VLAN priority.
         LGSOMEIP_LOG_DEBUG << "Set VLAN_Priority in UDPSocket";
 
 #if defined(LINUX)
@@ -342,7 +342,7 @@ int UDPSocket::receive_dtls_packet(char* buffer, std::size_t size, std::shared_p
             new_dtls_connection_threads_.insert(
                 std::make_pair(address_key, std::thread(&SecureConnector::start_dtls, secure_connector_.get(),
                                                         get_socket_fd(), from_address)));
-            // For assigning thread name
+            // Assign a descriptive name to this worker thread.
             pthread_setname_np(new_dtls_connection_threads_[address_key].native_handle(), "SomeipDTLSConn");
             new_dtls_connection_threads_[address_key].detach();
         } else {

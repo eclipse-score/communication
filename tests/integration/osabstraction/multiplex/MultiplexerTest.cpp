@@ -154,7 +154,7 @@ TEST(Multiplexer, Multiplexer) {
     }
     mux->start();
 
-    // Add TCP Server Socket to Multiplexer
+    // Register the TCP server socket with the multiplexer.
     std::shared_ptr<Address> addr = std::make_shared<IP4Address>();
     addr->set_ip_address("127.0.0.1");
     addr->set_reliable(true);

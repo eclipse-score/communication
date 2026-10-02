@@ -60,7 +60,7 @@ void EndpointBase::start_listen(std::shared_ptr<lgsomeip::osabstraction::Multipl
         auto callback = std::bind(&EndpointBase::callback, this, std::placeholders::_1);
         multiplexer_->set(socket_->get_socket_fd(), callback);
     } else {
-        // TODO : listen using thread
+        // TODO: listen using thread
     }
 }
 
@@ -69,7 +69,7 @@ void EndpointBase::stop_listen() {
         multiplexer_->unset(socket_->get_socket_fd());
         multiplexer_ = nullptr;
     } else {
-        // TODO : stop listen using thread
+        // TODO: stop listen using thread
     }
 }
 

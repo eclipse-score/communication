@@ -26,9 +26,7 @@
 
 namespace lgsomeip {
 
-// -----------------------------------------------------------------------------
-//  EventManager : Method Impl
-// -----------------------------------------------------------------------------
+// Section: EventManager : Method Impl
 EventManager::EventManager(ApplicationManager* host) : host_(host) {}
 
 EventManager::~EventManager() {}
@@ -37,7 +35,7 @@ void EventManager::start() {
     if (running_ == false) {
         running_ = true;
         thread_ = std::make_shared<std::thread>(&EventManager::run, this);
-        // For assigning thread name
+        // Assign a descriptive name to this worker thread.
         pthread_setname_np(thread_->native_handle(), "SomeipEventHdl");
     }
 }
@@ -162,9 +160,7 @@ void EventManager::notify_initial_event(std::uint16_t service_id, std::uint16_t 
     }
 }
 
-// -----------------------------------------------------------------------------
-//  OfferedEvent : Method Impl
-// -----------------------------------------------------------------------------
+// Section: OfferedEvent : Method Impl
 OfferedEvent::OfferedEvent(ApplicationManager* host, std::uint16_t service_id, std::uint16_t instance_id,
                            std::uint16_t event_id, std::uint8_t major_version, bool is_field, std::uint32_t cycle,
                            epsilon_change_func_t epsilon_change_function)

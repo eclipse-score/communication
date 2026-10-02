@@ -35,9 +35,7 @@
 
 namespace lgsomeip {
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Proxy : Public Method
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Proxy : Public Method
 PacketRouterProxy::PacketRouterProxy(ApplicationManager* host)
     : host_(host), multiplexer_(nullptr), receiver_(nullptr), listener_(nullptr), sender_(nullptr),
       message_passing_receiver_(nullptr), message_passing_listener_(nullptr), message_passing_sender_(nullptr) {}
@@ -769,9 +767,7 @@ void PacketRouterProxy::on_internal_request(std::uint16_t service_id, std::uint1
 }
 #endif // ENABLE_SOMEIP_IPC
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Proxy : Private Method
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Proxy : Private Method
 
 std::shared_ptr<MessageSD> PacketRouterProxy::compose_application_register(bool register_application) {
     // Composing SOME/IP-SD Message

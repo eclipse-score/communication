@@ -39,9 +39,7 @@
 
 namespace lgsomeip {
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Proxy : Public Method
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Proxy : Public Method
 
 ApplicationManager::ApplicationManager(std::string name, std::string config_path,
                                        std::shared_ptr<ApplicationRouter> packet_router)
@@ -73,6 +71,12 @@ ApplicationManager::ApplicationManager(std::string name, std::string config_path
                       << format_named_id("AppID", this->application_id_, 4);
 }
 
+ApplicationManager::~ApplicationManager() {
+    stop();
+    join();
+    thread_pool_.reset();
+}
+
 void ApplicationManager::init() {
     packet_router_->init();
     event_manager_ = std::make_shared<EventManager>(this);
@@ -96,8 +100,12 @@ void ApplicationManager::stop() {
 }
 
 void ApplicationManager::join() {
-    event_manager_->join();
-    packet_router_->join();
+    if (event_manager_ != nullptr) {
+        event_manager_->join();
+    }
+    if (packet_router_ != nullptr) {
+        packet_router_->join();
+    }
 }
 
 std::uint16_t ApplicationManager::get_application_id() {
@@ -132,9 +140,7 @@ void ApplicationManager::clear_all_handler() {
     }
 }
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Proxy : Public Method (Service Management)
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Proxy : Public Method (Service Management)
 
 // OFFER SERVICE
 void ApplicationManager::offer_service(std::uint16_t service, std::uint16_t instance, std::uint8_t major_version,
@@ -607,9 +613,7 @@ void ApplicationManager::on_find_service(std::shared_ptr<MessageSD> message) {
     // TODO :: Implementation of processing find service message
 }
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Proxy : Public Method (EVENT MANAGEMENT)
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Proxy : Public Method (EVENT MANAGEMENT)
 void ApplicationManager::offer_event(std::uint16_t service, std::uint16_t instance, std::uint16_t event_id,
                                      const std::set<std::uint16_t>& event_groups, bool is_field, std::uint32_t cycle,
                                      epsilon_change_func_t epsilon_change_function) {
@@ -670,9 +674,7 @@ void ApplicationManager::stop_offer_event(std::uint16_t service, std::uint16_t i
     event_manager_->remove_event(service, instance, event_id);
 }
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Proxy : Public Method (Event Message Management)
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Proxy : Public Method (Event Message Management)
 void ApplicationManager::request_event(std::uint16_t service, std::uint16_t instance, std::uint16_t event_id,
                                        const std::set<std::uint16_t>& event_groups) {
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::request_event "
@@ -1150,9 +1152,7 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
     handle_subscribe_eventgroup_ack(SOMEIP_DEFAULT_ANY_SERVICE, SOMEIP_DEFAULT_ANY_INSTANCE);
 }
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Proxy : Public Method (HANDLER MANAGEMENT)
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Proxy : Public Method (HANDLER MANAGEMENT)
 void ApplicationManager::register_application_state_handler(application_state_handler_t handler) {
     std::lock_guard<std::mutex> guard(application_handler_mutex_);
 
@@ -1495,11 +1495,14 @@ void ApplicationManager::on_application_state(bool connected) {
 
     if (application_state_ != connected) {
         application_state_ = connected;
-        std::unique_lock<std::mutex> lck(application_handler_mutex_);
-        if (application_state_handler_) {
-            application_state_handler_(connected ? SOMEIP_APPLICATION_REGISTERED : SOMEIP_APPLICATION_DEREGISTERED);
+        application_state_handler_t handler;
+        {
+            std::lock_guard<std::mutex> guard(application_handler_mutex_);
+            handler = application_state_handler_;
         }
-        lck.unlock();
+        if (handler) {
+            handler(connected ? SOMEIP_APPLICATION_REGISTERED : SOMEIP_APPLICATION_DEREGISTERED);
+        }
 
         if (connected == true) { // OnConnected
             {
@@ -1589,9 +1592,7 @@ void ApplicationManager::on_application_state(bool connected) {
     }
 }
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Proxy : Private Method (SOME/IP-TP)
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Proxy : Private Method (SOME/IP-TP)
 #if defined(ENABLE_SOMEIP_TP)
 bool ApplicationManager::check_enabled_tp_message(MessageSOMEIP& message) {
     std::uint16_t svcid = static_cast<std::uint16_t>(message.get_message_id() >> 16);
@@ -1787,9 +1788,7 @@ void ApplicationManager::send_tp_message(MessageSOMEIP& message) {
 }
 #endif // ENABLE_SOMEIP_TP
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Proxy : Public Method (Message Sender)
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Proxy : Public Method (Message Sender)
 void ApplicationManager::send(std::shared_ptr<MessageSOMEIP> message, bool flush) {
     send(*message, flush);
 }
@@ -1867,9 +1866,7 @@ void ApplicationManager::notify(std::uint16_t service, std::uint16_t instance, s
     event_manager_->notify(service, instance, event_id, payload, client, force, flush);
 }
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Proxy : Public Method (Message Receiver)
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Proxy : Public Method (Message Receiver)
 // Callback for Control Message
 void ApplicationManager::on_message(std::shared_ptr<MessageSD> message) {
     for (auto& entry : message->entries()) {
@@ -2081,7 +2078,8 @@ std::uint32_t ApplicationManager::get_new_request_id(std::uint32_t request_id, s
     std::uint32_t clientid = static_cast<std::uint32_t>(get_application_id()) << 16;
     std::uint32_t sessionid = static_cast<std::uint32_t>(request_id & 0x0000ffff);
 
-    if (type == SOMEIP_MESSAGE_TYPE::REQUEST) {
+    if (type == SOMEIP_MESSAGE_TYPE::REQUEST || type == SOMEIP_MESSAGE_TYPE::REQUEST_NO_RETURN ||
+        type == SOMEIP_MESSAGE_TYPE::TP_REQUEST || type == SOMEIP_MESSAGE_TYPE::TP_REQUEST_NO_RETURN) {
         if (sessionid == 0)
             sessionid = get_new_session_id();
         std::uint32_t req_id = clientid | sessionid;

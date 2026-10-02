@@ -12,83 +12,115 @@
  *
  ********************************************************************************/
 
-#include <cstdint>
+#include <atomic>
+#include <chrono>
 #include <iostream>
-#include <unistd.h>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <thread>
 
-#include <message/Message.h>
-#include <runtime/ApplicationManager.h>
-#include <utils/time/TimeCheck.h>
+#include <lgsomeip/LgsomeipApi.h>
 
-using namespace std;
-using namespace lgsomeip;
+// Latency example: send 100,000 requests and report every thousandth response.
+namespace {
 
-#define SOMEIP_SERVICE_ID 0x1001
-#define SOMEIP_INSTANCE_ID 0x0001
-#define SOMEIP_METHOD_ID 0x0001
-#define SOMEIP_MAJOR_VERSION 0x01
-#define SOMEIP_MINOR_VERSION 0x000000
+constexpr lgsomeip::api::service_t kServiceId = 0x1001;
+constexpr lgsomeip::api::instance_t kInstanceId = 0x0001;
+constexpr lgsomeip::api::method_t kMethodId = 0x0001;
+constexpr lgsomeip::api::major_version_t kMajorVersion = 0x01;
 
-std::string appname = "request-2";
-ApplicationManager appMgmt(appname);
+using Clock = std::chrono::steady_clock;
+std::shared_ptr<lgsomeip::api::Application> application;
+// Key timings by session so responses can be matched to their requests.
+std::map<std::uint16_t, Clock::time_point> request_start_times;
+// The request loop and message callbacks run on different threads.
+std::mutex request_times_mutex;
+std::atomic<std::uint16_t> next_session{0};
+std::atomic<std::uint32_t> response_count{0};
+std::atomic<bool> service_available{false};
+bool service_requested = false;
 
-std::map<std::uint32_t, TimeCheck> timecheck;
-int cnt = 0;
-int sendcnt = 0;
+void on_message(const std::shared_ptr<lgsomeip::api::Message>& message) {
+    Clock::time_point start_time;
+    {
+        // The callback runs on a worker thread, so protect the timing map shared
+        // with the request-producing main thread.
+        std::lock_guard<std::mutex> lock(request_times_mutex);
+        const auto found = request_start_times.find(message->session);
+        if (found == request_start_times.end()) {
+            return;
+        }
+        start_time = found->second;
+        request_start_times.erase(found);
+    }
 
-void on_message(std::shared_ptr<Message> msg) {
-    std::uint32_t reqid = msg->get_request_id();
-    timecheck[reqid].end();
-
-    if (cnt % 1000 == 0) {
-        std::cout << appname << " / on_message Called : MessageID = 0x" << std::hex << msg->get_message_id()
-                  << " / response time = " << std::dec << timecheck[reqid].get_duration() * 1000000 << " microsecond"
+    const auto count = ++response_count;
+    if (count % 1000 == 0) {
+        const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - start_time);
+        std::cout << application->name() << " response " << count << " latency=" << elapsed.count() << " us"
                   << std::endl;
     }
-
-    cnt++;
 }
 
-void on_availability(std::uint16_t serviceid, std::uint16_t instanceid, bool available) {
-    std::cout << appname << " on_availability Called!! / state = " << available << std::endl;
-    if (available) {
-        appMgmt.register_message_handler(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID, on_message);
-    } else {
-        appMgmt.unregister_message_handler(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID);
+void on_availability(lgsomeip::api::service_t, lgsomeip::api::instance_t, bool available) {
+    service_available = available;
+}
+
+void on_state(bool registered) {
+    // Register the service request once; the core retries this stored request
+    // after reconnects. Availability is tracked separately below.
+    if (registered && !service_requested) {
+        application->request_service(kServiceId, kInstanceId, kMajorVersion);
+        service_requested = true;
     }
 }
 
-void on_state(std::uint16_t state) {
-    std::cout << appname << " on_state Called!! / state = " << state << std::endl;
-
-    appMgmt.request_service(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_MAJOR_VERSION, SOMEIP_MINOR_VERSION);
-    appMgmt.register_message_handler(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID, on_message);
-}
+} // namespace
 
 int main() {
-    appMgmt.init();
-    appMgmt.register_application_state_handler(on_state);
-    appMgmt.start();
-
-    while (true) {
-        auto message =
-            MessageBuilder::create_request_message(SOMEIP_SERVICE_ID, SOMEIP_METHOD_ID, SOMEIP_MAJOR_VERSION);
-
-        appMgmt.send(message);
-        std::uint32_t reqid = message->get_request_id();
-        timecheck[reqid].start();
-
-        usleep(50);
-
-        sendcnt++;
-        if (sendcnt == 100000)
-            break;
+    application = lgsomeip::api::Runtime::instance().create_application("request-2");
+    if (!application->init()) {
+        return 1;
     }
 
-    sleep(1);
+    application->register_message_handler(kServiceId, kInstanceId, kMethodId, on_message);
+    application->register_availability_handler(kServiceId, kInstanceId, on_availability, kMajorVersion);
+    application->register_application_state_handler(on_state);
+    application->start();
+    // Do not send until discovery reports the provider is available.
+    while (!service_available) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
 
-    std::cout << appname << " Message : send cnt = " << sendcnt << " - recv cnt = " << cnt << std::endl;
-    appMgmt.stop();
+    constexpr std::uint32_t kRequestCount = 100000;
+    for (std::uint32_t sent = 0; sent < kRequestCount; ++sent) {
+        // SOME/IP's nonzero 16-bit session ID correlates this response with
+        // its request; it also indexes the local latency timestamp.
+        auto session = static_cast<std::uint16_t>(++next_session);
+        if (session == 0) {
+            session = static_cast<std::uint16_t>(++next_session);
+        }
 
-    return 0;
+        lgsomeip::api::Message request;
+        request.service = kServiceId;
+        request.instance = kInstanceId;
+        request.method = kMethodId;
+        request.session = session;
+        request.interface_version = kMajorVersion;
+        request.type = lgsomeip::api::MessageType::Request;
+        // Insert before send() so a fast response callback always finds its timestamp.
+        {
+            std::lock_guard<std::mutex> lock(request_times_mutex);
+            request_start_times[session] = Clock::now();
+        }
+        application->send(request);
+        std::this_thread::sleep_for(std::chrono::microseconds(50));
+    }
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::cout << application->name() << " sent=" << kRequestCount << " received=" << response_count << std::endl;
+    application->stop();
+    application->join();
+
 }

@@ -99,9 +99,7 @@ private:
     std::shared_ptr<ServiceManager> service_manager_{nullptr};
 };
 
-//
-// class ServerAppSample
-//
+// Section: Server application test helper.
 class ServerAppSample {
 public:
     ServerAppSample(std::string name, std::string path)
@@ -196,9 +194,7 @@ private:
     bool connected_ = false;
 };
 
-//
-// class ClientAppSample
-//
+// Section: Client application test helper.
 class ClientAppSample {
 public:
     ClientAppSample(std::string name, std::string path)
@@ -499,7 +495,7 @@ TEST_F(RuntimeTest, EventConfiguration) {
 
     DaemonSample daemon(daemon_name_, config_path_);
 
-    // run client thread
+    // Start the client application and wait for daemon registration.
     ClientAppSample client1(client_app_, config_path_);
     ASSERT_TRUE(client1.wait_connected(std::chrono::seconds(10)));
 
@@ -526,7 +522,6 @@ TEST_F(RuntimeTest, EventConfiguration) {
 
     client1.deinit();
     daemon.deinit();
-    // for Auto Configuration
     EXPECT_EQ(count, 0);
 }
 
@@ -534,14 +529,14 @@ TEST_F(RuntimeTest, OfferServiceTest) {
     try {
         DaemonSample daemon(daemon_name_, config_path_);
 
-        // run server thread
+        // Start the server application and wait for daemon registration.
         ServerAppSample server1(server_app_, config_path_);
         ASSERT_TRUE(server1.wait_connected(std::chrono::seconds(10)));
 
         server1.register_message_handler();
         server1.offer_service();
 
-        // run client thread
+        // Start the client application and wait for daemon registration.
         ClientAppSample client1(client_app_, config_path_);
         ASSERT_TRUE(client1.wait_connected(std::chrono::seconds(10)));
 
@@ -551,7 +546,7 @@ TEST_F(RuntimeTest, OfferServiceTest) {
 
         ASSERT_TRUE(client1.wait_available(true, std::chrono::seconds(10)));
 
-        // test stop_offer_service
+        // Verify that withdrawing the offer reports the service unavailable.
         server1.stop_offer_service();
         ASSERT_TRUE(client1.wait_available(false, std::chrono::seconds(10)));
 
@@ -562,7 +557,7 @@ TEST_F(RuntimeTest, OfferServiceTest) {
         server1.deinit();
         daemon.deinit();
     } catch (const std::exception& e) {
-        // Case Test Failed!
+        // Report unexpected exceptions as test failures.
         FAIL() << "Unexpected exception: " << e.what();
     }
 }
@@ -573,14 +568,14 @@ TEST_F(RuntimeTest, RequestAndReleaseServiceTest) {
     try {
         DaemonSample daemon(daemon_name_, config_path_);
 
-        // run server thread
+        // Start the server application and wait for daemon registration.
         ServerAppSample server1(server_app_, config_path_);
         ASSERT_TRUE(server1.wait_connected(timeout));
 
         server1.register_message_handler();
         server1.offer_service();
 
-        // run client thread
+        // Start the client application and wait for daemon registration.
         ClientAppSample client1(client_app_, config_path_);
         ASSERT_TRUE(client1.wait_connected(timeout));
 
@@ -590,11 +585,11 @@ TEST_F(RuntimeTest, RequestAndReleaseServiceTest) {
 
         ASSERT_TRUE(client1.wait_available(true, timeout));
 
-        // test stop_offer_service
+        // Verify that withdrawing the offer reports the service unavailable.
         server1.stop_offer_service();
         ASSERT_TRUE(client1.wait_available(false, timeout));
 
-        // test release_service
+        // Verify that releasing interest prevents future availability updates.
         client1.release_service();
 
         auto availability_updates = client1.get_availability_update_count();
@@ -605,7 +600,7 @@ TEST_F(RuntimeTest, RequestAndReleaseServiceTest) {
         client1.deinit();
         daemon.deinit();
     } catch (const std::exception& e) {
-        // Case Test Failed!
+        // Report unexpected exceptions as test failures.
         FAIL() << "Unexpected exception: " << e.what();
     }
 }
@@ -614,14 +609,14 @@ TEST_F(RuntimeTest, MethodTest1) {
     try {
         DaemonSample daemon(daemon_name_, config_path_);
 
-        // run server thread
+        // Start the server application and wait for daemon registration.
         ServerAppSample server1(server_app_, config_path_);
         ASSERT_TRUE(server1.wait_connected(std::chrono::seconds(10)));
 
         server1.register_message_handler();
         server1.offer_service();
 
-        // run client thread
+        // Start the client application and wait for daemon registration.
         ClientAppSample client1(client_app_, config_path_);
         ASSERT_TRUE(client1.wait_connected(std::chrono::seconds(10)));
 
@@ -631,7 +626,7 @@ TEST_F(RuntimeTest, MethodTest1) {
 
         ASSERT_TRUE(client1.wait_available(true, std::chrono::seconds(10)));
 
-        // test send method
+        // Send a method request and verify its response.
         client1.send_request();
         ASSERT_TRUE(client1.wait_received_messages(1, std::chrono::seconds(10)));
 
@@ -646,7 +641,7 @@ TEST_F(RuntimeTest, MethodTest1) {
         server1.deinit();
         daemon.deinit();
     } catch (const std::exception& e) {
-        // Case Test Failed!
+        // Report unexpected exceptions as test failures.
         FAIL() << "Unexpected exception: " << e.what();
     }
 }
@@ -655,14 +650,14 @@ TEST_F(RuntimeTest, MethodTest2) {
     try {
         DaemonSample daemon(daemon_name_, config_path_);
 
-        // run server thread
+        // Start the server application and wait for daemon registration.
         ServerAppSample server1(server_app_, config_path_);
         ASSERT_TRUE(server1.wait_connected(std::chrono::seconds(10)));
 
         server1.register_message_handler();
         server1.offer_service();
 
-        // run client thread
+        // Start the client application and wait for daemon registration.
         ClientAppSample client1(client_app_, config_path_);
         ASSERT_TRUE(client1.wait_connected(std::chrono::seconds(10)));
 
@@ -670,10 +665,10 @@ TEST_F(RuntimeTest, MethodTest2) {
         client1.register_message_handler(SOMEIP_SERVICE_ID, SOMEIP_DEFAULT_ANY_INSTANCE, SOMEIP_DEFAULT_ANY_METHOD);
         client1.request_service(SOMEIP_SERVICE_ID, SOMEIP_DEFAULT_ANY_INSTANCE);
 
-        // test available handler, check OfferService result
+        // Verify that the availability callback reports the offer.
         ASSERT_TRUE(client1.wait_available(true, std::chrono::seconds(10)));
 
-        // test send method
+        // Send a method request and verify its response.
         client1.send_request();
         ASSERT_TRUE(client1.wait_received_messages(1, std::chrono::seconds(10)));
         auto send_message = client1.get_send_message();
@@ -683,7 +678,7 @@ TEST_F(RuntimeTest, MethodTest2) {
         EXPECT_EQ(send_message->get_request_id(), received_message->get_request_id());
         EXPECT_EQ(received_message->get_payload_type()->get_length(), 2);
 
-        // test send method (ERROR)
+        // Send a request with an unsupported interface version and verify its error.
         client1.send_request(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_MAJOR_VERSION + 1);
         ASSERT_TRUE(client1.wait_received_messages(2, std::chrono::seconds(10)));
         send_message = client1.get_send_message();
@@ -699,7 +694,7 @@ TEST_F(RuntimeTest, MethodTest2) {
         server1.deinit();
         daemon.deinit();
     } catch (const std::exception& e) {
-        // Case Test Failed!
+        // Report unexpected exceptions as test failures.
         FAIL() << "Unexpected exception: " << e.what();
     }
 }
@@ -710,7 +705,7 @@ TEST_F(RuntimeTest, EventTest1) {
     try {
         DaemonSample daemon(daemon_name_, config_path_);
 
-        // run client thread
+        // Start the client application and wait for daemon registration.
         ClientAppSample client1(client_app_, config_path_);
         ASSERT_TRUE(client1.wait_connected(timeout));
 
@@ -720,7 +715,7 @@ TEST_F(RuntimeTest, EventTest1) {
         client1.request_event();
         client1.request_service(SOMEIP_SERVICE_ID, SOMEIP_DEFAULT_ANY_INSTANCE);
 
-        // run server thread
+        // Start the server application and wait for daemon registration.
         ServerAppSample server1(server_app_, config_path_);
         ASSERT_TRUE(server1.wait_connected(timeout));
 
@@ -728,7 +723,7 @@ TEST_F(RuntimeTest, EventTest1) {
         server1.offer_event();
         server1.offer_service();
 
-        // test available handler, check OfferService result
+        // Verify that the availability callback reports the offer.
         ASSERT_TRUE(client1.wait_available(true, timeout));
         client1.subscribe();
         ASSERT_TRUE(client1.wait_subscription_status(0, timeout));
@@ -759,7 +754,7 @@ TEST_F(RuntimeTest, EventTest1) {
         server1.deinit();
         daemon.deinit();
     } catch (const std::exception& e) {
-        // Case Test Failed!
+        // Report unexpected exceptions as test failures.
         FAIL() << "Unexpected exception: " << e.what();
     }
 }
@@ -771,14 +766,14 @@ TEST_F(RuntimeTest, SOMEIPTPTest1) {
     try {
         DaemonSample daemon(daemon_name_, config_path_);
 
-        // run server thread
+        // Start the server application and wait for daemon registration.
         ServerAppSample server1(server_app_, config_path_);
         ASSERT_TRUE(server1.wait_connected(timeout));
 
         server1.register_message_handler();
         server1.offer_service();
 
-        // run client thread
+        // Start the client application and wait for daemon registration.
         ClientAppSample client1(client_app_, config_path_);
         ASSERT_TRUE(client1.wait_connected(timeout));
 
@@ -788,7 +783,7 @@ TEST_F(RuntimeTest, SOMEIPTPTest1) {
 
         ASSERT_TRUE(client1.wait_available(true, timeout));
 
-        // test send method
+        // Send a method request and verify its response.
         std::shared_ptr<Payload> payload = std::make_shared<Payload>();
 
         std::vector<std::uint8_t> data;
@@ -819,7 +814,7 @@ TEST_F(RuntimeTest, SOMEIPTPTest1) {
         server1.deinit();
         daemon.deinit();
     } catch (const std::exception& e) {
-        // Case Test Failed!
+        // Report unexpected exceptions as test failures.
         FAIL() << "Unexpected exception: " << e.what();
     }
 }

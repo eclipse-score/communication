@@ -21,9 +21,7 @@
 
 namespace lgsomeip {
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Proxy : Public Method
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Proxy : Public Method
 
 std::shared_ptr<MessageSD> MessageComposer::add_entry(std::shared_ptr<MessageSD> message, SDEntry* entry,
                                                       SDOption* first_option, SDOption* second_option) {

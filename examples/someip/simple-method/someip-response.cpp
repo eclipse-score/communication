@@ -12,51 +12,65 @@
  *
  ********************************************************************************/
 
-#include <cstdint>
 #include <iostream>
-#include <unistd.h>
+#include <memory>
 
-#include <message/Message.h>
-#include <runtime/ApplicationManager.h>
+#include <lgsomeip/LgsomeipApi.h>
 
-using namespace std;
-using namespace lgsomeip;
+// Provider example: offer one service and answer requests for one method.
+namespace {
 
-#define SOMEIP_SERVICE_ID 0x1001
-#define SOMEIP_INSTANCE_ID 0x0001
-#define SOMEIP_METHOD_ID 0x0001
-#define SOMEIP_MAJOR_VERSION 0x01
-#define SOMEIP_MINOR_VERSION 0x000000
+constexpr lgsomeip::api::service_t kServiceId = 0x1001;
+constexpr lgsomeip::api::instance_t kInstanceId = 0x0001;
+constexpr lgsomeip::api::method_t kMethodId = 0x0001;
+constexpr lgsomeip::api::major_version_t kMajorVersion = 0x01;
 
-std::string appname = "response";
-ApplicationManager appMgmt(appname);
+std::shared_ptr<lgsomeip::api::Application> application;
+// Offers are retained by the core and announced again after reconnects.
+bool service_offered = false;
 
-void on_message(std::shared_ptr<Message> msg) {
-    std::cout << "Response App / on_message Called!!" << std::endl;
-    if (msg->get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST) {
-        auto message = MessageBuilder::create_response_message(*msg);
-        appMgmt.send(message);
+void on_message(const std::shared_ptr<lgsomeip::api::Message>& request) {
+    if (!request || request->type != lgsomeip::api::MessageType::Request) {
+        return;
     }
+
+    // Preserve the request's service, instance, method, client, and session so
+    // the requester can correlate this response with its outstanding call.
+    lgsomeip::api::Message response;
+    response.service = request->service;
+    response.instance = request->instance;
+    response.method = request->method;
+    response.client = request->client;
+    response.session = request->session;
+    response.interface_version = request->interface_version;
+    response.type = lgsomeip::api::MessageType::Response;
+    application->send(response);
 }
 
-void on_availability(std::uint16_t serviceid, std::uint16_t instanceid, bool available) {
-    std::cout << "Response App / on_availability Called!! / state = " << available << std::endl;
+void on_state(bool registered) {
+    // Application registration means the daemon connection is ready; it is
+    // distinct from offering a service, which this callback does next.
+    if (!registered || service_offered) {
+        return;
+    }
+
+    application->offer_service(kServiceId, kInstanceId, kMajorVersion);
+    service_offered = true;
 }
 
-void on_state(std::uint16_t state) {
-    std::cout << "Response App / on_state Called!! / state = " << state << std::endl;
-    appMgmt.register_message_handler(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID, on_message, true);
-    appMgmt.offer_service(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_MAJOR_VERSION, SOMEIP_MINOR_VERSION);
-}
+} // namespace
 
 int main() {
-    appMgmt.init();
-    appMgmt.register_application_state_handler(on_state);
-    appMgmt.start();
-
-    while (true) {
-        sleep(1);
+    application = lgsomeip::api::Runtime::instance().create_application("response");
+    if (!application->init()) {
+        return 1;
     }
 
-    return 0;
+    // Register callbacks before start(); they remain installed across reconnects.
+    application->register_message_handler(kServiceId, kInstanceId, kMethodId, on_message, true);
+    application->register_application_state_handler(on_state);
+    application->start();
+    // start() begins processing and returns; join() keeps this provider alive
+    // until stop() is called or the process is interrupted.
+    application->join();
 }

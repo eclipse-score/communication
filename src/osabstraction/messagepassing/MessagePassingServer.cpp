@@ -69,7 +69,7 @@ void MessagePassingServer::run(MessagePassingConnectionListener* listener) {
 
         thread_receive_run_ = true;
         thread_receive_ = new std::thread([this]() {
-            // For assigning thread name
+            // Assign a descriptive name to this worker thread.
             pthread_setname_np(pthread_self(), "SomeipMsgPsRcv");
 
             receive_thread();

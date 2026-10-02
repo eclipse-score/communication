@@ -13,64 +13,77 @@
  ********************************************************************************/
 
 #include <atomic>
-#include <cstdint>
+#include <chrono>
 #include <iostream>
-#include <unistd.h>
+#include <memory>
+#include <thread>
 
-#include <message/Message.h>
-#include <runtime/ApplicationManager.h>
+#include <lgsomeip/LgsomeipApi.h>
 
-using namespace std;
-using namespace lgsomeip;
+// Consumer example: discover a service, then send one request per second while
+// the provider is available.
+namespace {
 
-#define SOMEIP_SERVICE_ID 0x1001
-#define SOMEIP_INSTANCE_ID 0x0001
-#define SOMEIP_METHOD_ID 0x0001
-#define SOMEIP_MAJOR_VERSION 0x01
-#define SOMEIP_MINOR_VERSION 0x000000
+constexpr lgsomeip::api::service_t kServiceId = 0x1001;
+constexpr lgsomeip::api::instance_t kInstanceId = 0x0001;
+constexpr lgsomeip::api::method_t kMethodId = 0x0001;
+constexpr lgsomeip::api::major_version_t kMajorVersion = 0x01;
 
-std::string appname = "request-1";
-ApplicationManager appMgmt(appname);
-int cnt = 0;
+std::shared_ptr<lgsomeip::api::Application> application;
+std::atomic<bool> service_available{false};
+// The core remembers requested services and retries discovery after reconnects.
+bool service_requested = false;
 
-void on_message(std::shared_ptr<Message> msg) {
-    std::cout << appname << " on_message Called : MessageID = 0x" << std::hex << msg->get_message_id() << std::dec
-              << std::endl;
+void on_message(const std::shared_ptr<lgsomeip::api::Message>& message) {
+    std::cout << application->name() << " response: service=0x" << std::hex << message->service << " method=0x"
+              << message->method << std::dec << std::endl;
 }
 
-void on_availability(std::uint16_t serviceid, std::uint16_t instanceid, bool available) {
-    std::cout << appname << " on_availability Called!! / available = " << available << std::endl;
-    if (available) {
-        appMgmt.register_message_handler(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID, on_message);
-    } else {
-        appMgmt.unregister_message_handler(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID);
+void on_availability(lgsomeip::api::service_t, lgsomeip::api::instance_t, bool available) {
+    std::cout << application->name() << " service available = " << available << std::endl;
+    // Availability is separate from application registration. This callback
+    // can run on a worker thread while main sends requests.
+    service_available = available;
+}
+
+void on_state(bool registered) {
+    // Request discovery once. The core retains the request and retries it
+    // after reconnects, so repeated registration must not add duplicate state.
+    if (registered && !service_requested) {
+        application->request_service(kServiceId, kInstanceId, kMajorVersion);
+        service_requested = true;
     }
 }
 
-void on_state(std::uint16_t state) {
-    std::cout << appname << " on_state Called!! / state = " << state << std::endl;
-
-    appMgmt.request_service(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_MAJOR_VERSION, SOMEIP_MINOR_VERSION);
-    appMgmt.register_availability_handler(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, on_availability);
-}
+} // namespace
 
 int main() {
-    appMgmt.init();
-    appMgmt.register_application_state_handler(on_state);
-    appMgmt.start();
-
-    while (true) {
-        auto message =
-            MessageBuilder::create_request_message(SOMEIP_SERVICE_ID, SOMEIP_METHOD_ID, SOMEIP_MAJOR_VERSION);
-
-        if (message != nullptr) {
-            std::cout << "message is not null" << std::endl;
-        }
-
-        appMgmt.send(message);
-
-        sleep(1);
+    application = lgsomeip::api::Runtime::instance().create_application("request-1");
+    if (!application->init()) {
+        return 1;
     }
 
-    return 0;
+    application->register_application_state_handler(on_state);
+    // Install callbacks before start() so the first response or availability
+    // transition cannot arrive before its handler is registered.
+    application->register_message_handler(kServiceId, kInstanceId, kMethodId, on_message);
+    application->register_availability_handler(kServiceId, kInstanceId, on_availability, kMajorVersion);
+    application->start();
+
+    while (true) {
+        if (service_available) {
+            // A request is identified by its service/instance/method and
+            // interface version. The core assigns the client/session ID on send.
+            lgsomeip::api::Message request;
+            request.service = kServiceId;
+            request.instance = kInstanceId;
+            request.method = kMethodId;
+            request.interface_version = kMajorVersion;
+            request.type = lgsomeip::api::MessageType::Request;
+            application->send(request);
+        }
+        // Back off between calls; service_available gates sends while the
+        // service is absent without stopping the application's receive loop.
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 }

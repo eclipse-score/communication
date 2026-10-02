@@ -12,72 +12,85 @@
  *
  ********************************************************************************/
 
+#include <atomic>
+#include <chrono>
 #include <condition_variable>
-#include <cstdint>
 #include <iostream>
+#include <memory>
 #include <mutex>
-#include <unistd.h>
 
-#include <message/Message.h>
-#include <runtime/ApplicationManager.h>
-#include <utils/time/TimeCheck.h>
+#include <lgsomeip/LgsomeipApi.h>
 
-using namespace std;
-using namespace lgsomeip;
+// Negative test: method 0x0002 is not offered by the response example, so the
+// client expects the daemon/provider path to return a SOME/IP error response.
+namespace {
 
-#define SOMEIP_SERVICE_ID 0x1001
-#define SOMEIP_INSTANCE_ID 0x0001
-#define SOMEIP_METHOD_ID 0x0002 // WRONG MESSAGE ID (Server does not know this method id)
+constexpr lgsomeip::api::service_t kServiceId = 0x1001;
+constexpr lgsomeip::api::instance_t kInstanceId = 0x0001;
+// This method is intentionally not offered by the response sample.
+constexpr lgsomeip::api::method_t kMethodId = 0x0002;
 
-std::string appname = "wrongmethod-test";
-ApplicationManager appMgmt(appname);
 bool response_done = false;
-
-std::mutex method_mutex;
 std::condition_variable condition_var;
+std::mutex method_mutex;
+std::shared_ptr<lgsomeip::api::Application> application;
+bool service_requested = false;
+std::atomic<bool> request_sent{false};
 
-void on_message(std::shared_ptr<Message> msg) {
+void on_message(const std::shared_ptr<lgsomeip::api::Message>&) {
     std::cout << "[Wrong Method Request Test] Response was arrived even though wrong method id used. What happens?"
               << std::endl;
 
-    response_done = true;
+    {
+        std::lock_guard<std::mutex> lock(method_mutex);
+        response_done = true;
+    }
     condition_var.notify_one();
 }
 
-void on_availability(std::uint16_t serviceid, std::uint16_t instanceid, bool available) {
-    std::cout << "[Wrong Method Request Test] available is " << available << std::endl;
-    if (available) {
-        appMgmt.register_message_handler(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID, on_message);
-    } else {
-        appMgmt.unregister_message_handler(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID);
+void on_availability(lgsomeip::api::service_t, lgsomeip::api::instance_t, bool available) {
+    if (available && !request_sent.exchange(true)) {
+        lgsomeip::api::Message request;
+        request.service = kServiceId;
+        request.instance = kInstanceId;
+        request.method = kMethodId;
+        request.session = 1;
+        request.type = lgsomeip::api::MessageType::Request;
+        application->send(request);
     }
 }
 
-void on_state(std::uint16_t state) {
-    std::cout << "[Wrong Method Request Test] state is " << state << std::endl;
-    if (state) {
-        appMgmt.request_service(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID);
-        appMgmt.register_message_handler(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID, on_message);
+void on_state(bool registered) {
+    if (registered && !service_requested) {
+        application->request_service(kServiceId, kInstanceId);
+        service_requested = true;
     }
 }
+
+} // namespace
 
 int main() {
-    appMgmt.init();
-    appMgmt.register_application_state_handler(on_state);
-    appMgmt.start();
+    application = lgsomeip::api::Runtime::instance().create_application("wrongmethod-test");
+    if (!application->init()) {
+        return 1;
+    }
+    application->register_message_handler(kServiceId, kInstanceId, kMethodId, on_message);
+    application->register_availability_handler(kServiceId, kInstanceId, on_availability);
+    application->register_application_state_handler(on_state);
+    application->start();
 
-    auto message = MessageBuilder::create<SOMEIP>();
-    message->set_message_id(SOMEIP_SERVICE_ID << 16 | SOMEIP_METHOD_ID);
-    message->set_interface_version(0x00);
-    message->set_message_type(SOMEIP_MESSAGE_TYPE::REQUEST);
-
-    appMgmt.send(message);
-
-    std::unique_lock<std::mutex> lock(method_mutex);
-    condition_var.wait(lock, [&] { return response_done; });
+    // The message callback signals this condition when the error response arrives.
+    {
+        std::unique_lock<std::mutex> lock(method_mutex);
+        if (!condition_var.wait_for(lock, std::chrono::seconds(10), [] { return response_done; })) {
+            std::cerr << "[Wrong Method Request Test] Timed out waiting for the error response" << std::endl;
+            application->stop();
+            application->join();
+            return 1;
+        }
+    }
 
     std::cout << "[Wrong Method Request Test] Done" << std::endl;
-    appMgmt.stop();
-
-    return 0;
+    application->stop();
+    application->join();
 }

@@ -70,14 +70,14 @@ Multiplexer::~Multiplexer() {
 void Multiplexer::start() {
     running_ = true;
     thread_ = std::make_shared<std::thread>(&Multiplexer::run, this);
-    // For assigning thread name
+    // Assign a descriptive name to this worker thread.
     pthread_setname_np(thread_->native_handle(), "SomeipEpollMux");
 }
 
 void Multiplexer::stop() {
     if (running_.load()) {
         running_.store(false);
-        // Wakeup notify
+        // Wake the multiplexer thread.
         if (condition_fd_ != -1) {
             eventfd_write(condition_fd_, 1);
         }

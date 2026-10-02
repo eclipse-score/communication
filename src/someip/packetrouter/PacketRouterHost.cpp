@@ -41,9 +41,7 @@
 
 namespace lgsomeip {
 
-// -----------------------------------------------------------------------------
-//  Daemon Process / Signal SIGPIPE Handler
-// -----------------------------------------------------------------------------
+// Section: Daemon Process / Signal SIGPIPE Handler
 static void sig_handler(int signo) {
     LGSOMEIP_LOG_FATAL << "PacketRouterHost : sig_handler / signal caught : " << strsignal(signo);
     return;
@@ -78,9 +76,7 @@ static bool is_valid_application_name(const std::string& name) {
     });
 }
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Host : Public Method
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Host : Public Method
 PacketRouterHost::PacketRouterHost(ServiceManager* host)
     : host_(host), local_receiver_(nullptr), local_message_passing_receiver_(nullptr) {}
 
@@ -785,9 +781,7 @@ void PacketRouterHost::on_message(std::shared_ptr<Endpoint> endpoint, std::uint8
     }
 }
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Host : Mapping (Service ID, Socket Addr) to Instance ID
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Host : Mapping (Service ID, Socket Addr) to Instance ID
 /*
  *  Service-Instances of the same Service are identified through
  *                             different Instance IDs
@@ -934,9 +928,7 @@ struct RoutingServiceInfo* PacketRouterHost::get_service_instance(std::uint16_t 
     return info;
 }
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Host : Internal / Callback for Data Message
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Host : Internal / Callback for Data Message
 // Callback for Data Message
 void PacketRouterHost::on_internal_message(std::shared_ptr<Endpoint> endpoint, std::uint8_t* message,
                                            std::size_t message_length) {
@@ -1335,9 +1327,7 @@ void PacketRouterHost::send_error(std::shared_ptr<Endpoint> endpoint, std::uint8
     }
 }
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Host : External / Callback for Data Message
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Host : External / Callback for Data Message
 /*
     The UDP datagram size shall be at least 16 Bytes (minimum size of a SOME/IP message).
     The value of the length field shall be less than or equal to the remaining bytes in the UDP datagram payload.
@@ -1731,9 +1721,7 @@ PacketRouterHost::find_endpoint(std::shared_ptr<lgsomeip::osabstraction::Address
     return found_ep;
 }
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Host : Service Control Opertion
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Host : Service Control Opertion
 bool PacketRouterHost::add_route(
     std::uint16_t service_id, std::uint16_t instance_id, std::uint16_t app_id,
     std::shared_ptr<lgsomeip::osabstraction::Address> remote_tcp_address, std::uint16_t local_tcp_port,
@@ -2338,9 +2326,7 @@ void PacketRouterHost::remove_route(std::shared_ptr<lgsomeip::osabstraction::Add
     }
 }
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Host : Event Subscribe Control Operation
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Host : Event Subscribe Control Operation
 std::int32_t PacketRouterHost::find_connection(std::uint16_t service_id, std::uint16_t instance_id,
                                                std::shared_ptr<lgsomeip::osabstraction::Address> address) {
     std::int32_t retfd = -1;
@@ -2723,9 +2709,7 @@ void PacketRouterHost::remove_subscribe_route(std::shared_ptr<lgsomeip::osabstra
     }
 }
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Host : Application Control Operation
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Host : Application Control Operation
 void PacketRouterHost::on_application_control_message(std::shared_ptr<Endpoint> endpoint,
                                                       std::shared_ptr<MessageSD> message) {
     if (message == nullptr || message->options().empty()) {

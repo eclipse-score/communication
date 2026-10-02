@@ -36,9 +36,7 @@
 
 namespace lgsomeip {
 
-// -----------------------------------------------------------------------------
-//  PacketRouter Endpoint TCP : Endpoint Types
-// -----------------------------------------------------------------------------
+// Section: PacketRouter Endpoint TCP : Endpoint Types
 template <typename BASETYPE> class EndpointTCPServer;
 
 constexpr std::uint32_t kMaxNumRetry = 10;

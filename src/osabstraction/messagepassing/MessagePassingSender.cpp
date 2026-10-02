@@ -55,7 +55,7 @@ bool MessagePassingSender::connect(const std::string& server_name) {
             if (thread_send_run_ == false) {
                 thread_send_run_ = true;
                 thread_send_ = new std::thread([this, server_name] {
-                    // For assigning thread name
+                    // Assign a descriptive name to this worker thread.
                     pthread_setname_np(pthread_self(), "SomeipMsgPsSnd");
 
                     send_thread(server_name);

@@ -20,9 +20,7 @@
 
 namespace lgsomeip {
 
-// -----------------------------------------------------------------------------
-// SOMEIP HEADER INFORMATION
-// -----------------------------------------------------------------------------
+// Section: SOMEIP HEADER INFORMATION
 namespace SOMEIP_HEADER {
 const std::uint32_t SIZE = 16;
 namespace POS {
@@ -89,9 +87,7 @@ const std::uint8_t E_E2E_NOT_AVAILABLE = 0x0E;
 const std::uint8_t E_E2E_NO_NEW_DATA = 0x0F;
 } // namespace SOMEIP_RETURN_CODE
 
-// -----------------------------------------------------------------------------
-// SOMEIP-SD HEADER INFORMATION (4BYTE)
-// -----------------------------------------------------------------------------
+// Section: SOMEIP-SD HEADER INFORMATION (4BYTE)
 namespace SOMEIP_SD_HEADER {
 const std::uint32_t SIZE = 4;
 namespace POS {
@@ -99,9 +95,7 @@ const std::uint32_t FLAGS = 0;
 }
 } // namespace SOMEIP_SD_HEADER
 
-// -----------------------------------------------------------------------------
-// SOMEIP-SD ENTRY INFORMATION
-// -----------------------------------------------------------------------------
+// Section: SOMEIP-SD ENTRY INFORMATION
 namespace SOMEIP_SD_ENTRY {
 const std::uint32_t SIZE = 16;
 
@@ -172,9 +166,7 @@ const std::uint32_t EVENTGROUPID = 14;
 } // namespace SUBSCRIBEACK
 } // namespace SOMEIP_SD_ENTRY
 
-// -----------------------------------------------------------------------------
-// SOMEIP-SD OPTION INFORMATION
-// -----------------------------------------------------------------------------
+// Section: SOMEIP-SD OPTION INFORMATION
 namespace SOMEIP_SD_OPTION {
 namespace HEADER {
 const std::uint32_t SIZE = 3;

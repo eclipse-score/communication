@@ -244,8 +244,20 @@ configure_package_config_file(
     NO_SET_AND_CHECK_MACRO
 )
 
+configure_package_config_file(
+    ${PROJECT_SOURCE_DIR}/cmake/lgsomeip-config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/lgsomeip-config.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/lgsomeip
+    NO_SET_AND_CHECK_MACRO
+)
+
 write_basic_package_version_file(
     ${CMAKE_CURRENT_BINARY_DIR}/vsomeip-config-version.cmake
+    COMPATIBILITY ExactVersion
+)
+
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/lgsomeip-config-version.cmake
     COMPATIBILITY ExactVersion
 )
 
@@ -254,8 +266,24 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/vsomeip-config.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vsomeip
 )
 
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lgsomeip-config.cmake
+          ${CMAKE_CURRENT_BINARY_DIR}/lgsomeip-config-version.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/lgsomeip
+)
+
 install(EXPORT ${LGSOMEIP_EXPORT_NAME}
     FILE vsomeip-implementation-targets.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vsomeip
         NAMESPACE lgsomeip::
+)
+
+install(EXPORT ${LGSOMEIP_EXPORT_NAME}
+    FILE lgsomeip-targets.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/lgsomeip
+        NAMESPACE lgsomeip::
+)
+
+install(DIRECTORY include/lgsomeip
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    COMPONENT dev
 )

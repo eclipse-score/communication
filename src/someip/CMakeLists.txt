@@ -19,6 +19,7 @@ file(GLOB_RECURSE SOMEIP_SOURCE_LIB CONFIGURE_DEPENDS
     message/*.cpp
     packetrouter/PacketRouterProxy.cpp
     runtime/ApplicationManager.cpp
+    runtime/LgsomeipApi.cpp
     runtime/EventManager.cpp
     utils/byteorder/*.cpp
     utils/time/*.cpp
@@ -35,6 +36,7 @@ message(STATUS "* SOMEIP Sources: ${SOMEIP_SOURCE_LIB}")
 
 add_library(lgsomeip-common-objects OBJECT ${SOMEIP_SOURCE_LIB})
 someip_configure_target(lgsomeip-common-objects)
+target_include_directories(lgsomeip-common-objects PRIVATE ${LGSOMEIP_SOURCE_DIR}/include)
 target_compile_definitions(lgsomeip-common-objects PRIVATE SOMEIP_VERSION="${LGSOMEIP_VERSION}")
 set_target_properties(lgsomeip-common-objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -42,6 +44,11 @@ set_target_properties(lgsomeip-common-objects PROPERTIES POSITION_INDEPENDENT_CO
 set(LIBRARY_NAME "lgsomeip-shared")
 add_library(${LIBRARY_NAME} SHARED $<TARGET_OBJECTS:lgsomeip-common-objects>)
 someip_configure_target(${LIBRARY_NAME})
+target_include_directories(${LIBRARY_NAME}
+    PUBLIC
+        $<BUILD_INTERFACE:${LGSOMEIP_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 
 target_link_libraries(${LIBRARY_NAME}
     PUBLIC
@@ -51,6 +58,7 @@ target_link_libraries(${LIBRARY_NAME}
 )
 
 add_library(lgsomeip::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
+add_library(lgsomeip::api ALIAS ${LIBRARY_NAME})
 
 set_target_properties(${LIBRARY_NAME} PROPERTIES
         OUTPUT_NAME "lgsomeip"

@@ -30,8 +30,7 @@ class Serializer;
 class Deserializer;
 class SizeHelper;
 
-// ----------------------------------------------------------
-// Enumerable
+// Section: Enumerable
 template <typename T, typename Tagged = void> struct IsEnumerable {
     static const bool value = false;
 };
@@ -48,8 +47,7 @@ public:
     virtual std::uint32_t size() const = 0;
 };
 
-// ----------------------------------------------------------
-// Serializer
+// Section: Serializer
 class Serializer {
 public:
     Serializer(bool big_endian = true) : big_endian_(big_endian) {}
@@ -82,8 +80,7 @@ private:
     std::vector<uint8_t> data_;
 };
 
-// ----------------------------------------------------------
-// Deserializer
+// Section: Deserializer
 class Deserializer {
 public:
     Deserializer(bool big_endian = true) : big_endian_(big_endian), current_position_(0) {}
@@ -118,8 +115,7 @@ private:
     std::uint32_t current_position_{0};
 };
 
-// ----------------------------------------------------------
-// SizeHelper
+// Section: SizeHelper
 class SizeHelper {
 public:
     template <typename U>
@@ -129,8 +125,7 @@ public:
     static typename std::enable_if<IsEnumerable<U>::value, std::size_t>::type get_type_size(U& type);
 };
 
-// ----------------------------------------------------------
-// Implementation : Serializer
+// Section: Implementation : Serializer
 // for enumerable type : complex data type inherit Enumerable
 template <typename T> void Serializer::push(T data, typename std::enable_if<IsEnumerable<T>::value>::type*) {
     data.enumerate(*this);
@@ -184,8 +179,7 @@ template <int N> void Serializer::push(const std::string& data) {
         push(item);
 }
 
-// ----------------------------------------------------------
-// Implementation : Deserializer
+// Section: Implementation : Deserializer
 // for enumerable type : complex data type inherit Enumerable
 template <typename T> void Deserializer::pop(T& data, typename std::enable_if<IsEnumerable<T>::value>::type*) {
     data.enumerate(*this);
@@ -250,8 +244,7 @@ template <int N> void Deserializer::pop(std::string& data) {
     current_position_ += size;
 }
 
-// ----------------------------------------------------------
-// Implementation : SizeHelper
+// Section: Implementation : SizeHelper
 // for get length of the data type!
 template <typename U>
 typename std::enable_if<!IsEnumerable<U>::value, std::size_t>::type SizeHelper::get_type_size(U& type) {

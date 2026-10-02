@@ -45,6 +45,7 @@ class ApplicationManager {
 public:
     ApplicationManager(std::string name, std::string config_path = "",
                        std::shared_ptr<ApplicationRouter> packet_router = nullptr);
+    ~ApplicationManager();
 
     void init();
     void start();
