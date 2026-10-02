@@ -4,6 +4,7 @@
 #include "score/mw/log/logging.h"
 #include "score/string_manipulation/arguments/arguments.h"
 
+#include <score/span.hpp>
 #include <score/stop_token.hpp>
 
 #include <chrono>
@@ -226,11 +227,12 @@ int run_consumer()
 int main(int argc, const char* argv[])
 {
     std::string mode;
-    for (int i = 1; i < argc; ++i)
+    const score::cpp::span<const char*> args{argv, static_cast<std::size_t>(argc)};
+    for (std::size_t i = 1U; i < args.size(); ++i)
     {
-        if (std::string(argv[i]) == "--mode" && i + 1 < argc)
+        if (std::string(args[i]) == "--mode" && i + 1U < args.size())
         {
-            mode = argv[++i];
+            mode = args[++i];
         }
     }
     score::mw::com::runtime::InitializeRuntime(

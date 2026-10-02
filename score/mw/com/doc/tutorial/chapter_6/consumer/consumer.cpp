@@ -13,6 +13,8 @@
 #include "score/mw/com/doc/tutorial/chapter_6/hello_world_service.h"
 #include "score/mw/com/types.h"
 
+#include <score/span.hpp>
+
 #include <atomic>
 #include <chrono>
 #include <csignal>
@@ -50,15 +52,16 @@ int main(int argc, const char** argv)
 {
     // The consumer takes exactly one command-line argument: the "max_sample_count" it uses when subscribing. This value
     // expresses how many samples (SamplePtrs) the consumer wants to be able to hold in parallel.
-    if (argc != 2)
+    const score::cpp::span<const char*> args{argv, static_cast<std::size_t>(argc)};
+    if (args.size() != 2U)
     {
-        std::cerr << "Usage: " << argv[0] << " <max_sample_count>" << std::endl;
+        std::cerr << "Usage: " << args[0] << " <max_sample_count>" << std::endl;
         return EXIT_FAILURE;
     }
-    const auto parsed_max_sample_count = std::atoi(argv[1]);
+    const auto parsed_max_sample_count = std::atoi(args[1]);
     if (parsed_max_sample_count <= 0)
     {
-        std::cerr << "Invalid max_sample_count '" << argv[1] << "'. It must be a positive integer." << std::endl;
+        std::cerr << "Invalid max_sample_count '" << args[1] << "'. It must be a positive integer." << std::endl;
         return EXIT_FAILURE;
     }
     const auto max_sample_count = static_cast<std::size_t>(parsed_max_sample_count);

@@ -13,6 +13,8 @@
 #include "score/mw/com/gateway/transport_layer/sample/bidirectional_transport.h"
 #include "score/mw/com/gateway/transport_layer/sample/configuration/hypervisor_socket_configuration.h"
 
+#include <score/span.hpp>
+
 #include <atomic>
 #include <iostream>
 #include <string>
@@ -159,9 +161,10 @@ int ExecuteWithReconnect()
 int main(int argc, char* argv[])
 {
     std::string mode = "regular_case";
-    if (argc > 1)
+    const score::cpp::span<char*> args{argv, static_cast<std::size_t>(argc)};
+    if (args.size() > 1U)
     {
-        mode = argv[1];
+        mode = args[1];
     }
 
     if (mode == "reconnect")

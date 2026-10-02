@@ -14,6 +14,7 @@
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/log/logging.h"
+#include <score/span.hpp>
 #include <score/stop_token.hpp>
 
 #include <chrono>
@@ -217,12 +218,13 @@ int run_consumer()
 int main(int argc, const char* argv[])
 {
     std::string mode;
-    for (int i = 1; i < argc; ++i)
+    const score::cpp::span<const char*> args{argv, static_cast<std::size_t>(argc)};
+    for (std::size_t i = 1U; i < args.size(); ++i)
     {
-        std::string arg = argv[i];
-        if (arg == "--mode" && i + 1 < argc)
+        const std::string arg = args[i];
+        if (arg == "--mode" && i + 1U < args.size())
         {
-            mode = argv[++i];
+            mode = args[++i];
         }
     }
 

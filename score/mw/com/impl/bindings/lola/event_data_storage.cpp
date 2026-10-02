@@ -77,12 +77,13 @@ void EventDataStorage::InitializeSlots(const InitializeSampleCallback& initializ
     auto* last_slot_raw_ptr = last_slot_ptr.get();
 
     // This is our low-level data storage, where we work on type-erased data, thus pointer arithmetic can't be avoided.
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic) see above
+    // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic) see above
     for (auto* current_slot_raw_ptr = first_slot_raw_ptr; current_slot_raw_ptr <= last_slot_raw_ptr;
          current_slot_raw_ptr += sample_size_info_.Size())
     {
         std::invoke(initialization_callback, current_slot_raw_ptr);
     }
+    // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 }
 
 void* EventDataStorage::GetTypeErasedDataSlot(SlotIndexType index, size_t data_size) const
