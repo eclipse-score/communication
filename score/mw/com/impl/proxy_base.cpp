@@ -44,7 +44,7 @@ const HandleType& ProxyBase::GetHandle() const& noexcept
 
 auto ProxyBase::FindService(InstanceSpecifier specifier) -> Result<ServiceHandleContainer<HandleType>>
 {
-    const auto find_service_result = Runtime::getInstance().GetServiceDiscovery().FindService(std::move(specifier));
+    auto find_service_result = Runtime::getInstance().GetServiceDiscovery().FindService(std::move(specifier));
     if (!find_service_result.has_value())
     {
         return MakeUnexpected(ComErrc::kBindingFailure);
@@ -54,8 +54,7 @@ auto ProxyBase::FindService(InstanceSpecifier specifier) -> Result<ServiceHandle
 
 auto ProxyBase::FindService(InstanceIdentifier instance_identifier) -> Result<ServiceHandleContainer<HandleType>>
 {
-    const auto find_service_result =
-        Runtime::getInstance().GetServiceDiscovery().FindService(std::move(instance_identifier));
+    auto find_service_result = Runtime::getInstance().GetServiceDiscovery().FindService(std::move(instance_identifier));
 
     if (!find_service_result.has_value())
     {

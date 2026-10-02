@@ -38,7 +38,7 @@ score::Result<InstanceIdentifierContainer> ResolveInstanceIDs(const impl::Instan
         return runtime_mock_holder->ResolveInstanceIDs(model_name);
     }
 
-    const auto instance_identifier_container = impl::Runtime::getInstance().resolve(model_name);
+    auto instance_identifier_container = impl::Runtime::getInstance().resolve(model_name);
     if (instance_identifier_container.empty())
     {
         return MakeUnexpected(impl::ComErrc::kInstanceIDCouldNotBeResolved,
