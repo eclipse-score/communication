@@ -19,22 +19,24 @@ dependencies:
     versions:
       - version: "8.6.0"
       - version: "8.7.0"
+      - version: "8.8.1"
       - version: "9.0.2"
         skip: "https://github.com/eclipse-score/communication/issues/694"
+      - version: "9.1.1"
+      - version: "9.2.0"
   rules_cc:
     versions:
       - version: "0.2.17"
-      - version: "0.2.22"
+      - version: "0.2.25"
   rules_python:
     versions:
       - version: "1.8.5"
-      - version: "1.9.1"
+      - version: "1.9.2"
       - version: "2.0.3"
         skip: "https://github.com/eclipse-score/communication/issues/695"
       - version: "2.1.0"
-        skip: "https://github.com/eclipse-score/communication/issues/695"
       - version: "2.2.0"
-        skip: "https://github.com/eclipse-score/communication/issues/695"
+      - version: "2.3.4"
   rules_rust:
     versions:
       - version: "0.68.2-score"
