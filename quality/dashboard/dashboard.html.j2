@@ -54,6 +54,22 @@
 <p class="muted" style="margin-bottom:1.5rem">No coverage data available.</p>
 {% endif %}
 
+{# ── QNX coverage cards ── #}
+<h2>Coverage (QNX)</h2>
+{% if cov_qnx %}
+<div class="cards">
+  {% for key, hk, label in [('line_pct','qnx_line_cov','Line Coverage'),('func_pct','qnx_func_cov','Function Coverage'),('branch_pct','qnx_branch_cov','Branch Coverage')] %}
+  <div class="card">
+    <div class="num" style="color:{{ cov_colour(cov_qnx[key]) }}">{{ '%.1f'|format(cov_qnx[key]) }}%</div>
+    {% if prev and prev[hk] is not none %}<div class="delta">{{ delta(cov_qnx[key], prev[hk], true) }}</div>{% endif %}
+    <div class="label">{{ label }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="muted" style="margin-bottom:1.5rem">No QNX coverage data available.</p>
+{% endif %}
+
 {# ── Clang-Tidy summary cards ── #}
 <h2>Clang-Tidy</h2>
 {% if clang_tidy %}
