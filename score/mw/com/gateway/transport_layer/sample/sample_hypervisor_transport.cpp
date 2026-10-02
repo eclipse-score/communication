@@ -249,22 +249,21 @@ score::Result<void> SampleHyperVisorTransport::ProvideService(
 {
     const auto shm_sizes = GetShmSizes(service_instance_specifier);
 
-    ProvideServiceRequest request{
-        std::move(service_instance_specifier), std::move(service_elements), shm_sizes.control, shm_sizes.data};
+    ProvideServiceRequest request{service_instance_specifier, service_elements, shm_sizes.control, shm_sizes.data};
     return message_transport_->SendRequest(request);
 }
 
 score::Result<void> SampleHyperVisorTransport::OfferService(
     score::mw::com::InstanceSpecifier service_instance_specifier)
 {
-    OfferServiceRequest request{std::move(service_instance_specifier)};
+    OfferServiceRequest request{service_instance_specifier};
     return message_transport_->SendRequest(request);
 }
 
 score::Result<void> SampleHyperVisorTransport::StopOfferService(
     score::mw::com::InstanceSpecifier service_instance_specifier)
 {
-    StopOfferServiceRequest request{std::move(service_instance_specifier)};
+    StopOfferServiceRequest request{service_instance_specifier};
     return message_transport_->SendRequest(request);
 }
 
@@ -273,8 +272,7 @@ score::Result<void> SampleHyperVisorTransport::NotifyUpdate(
     impl::ServiceElementType updated_element_type,
     std::string updated_element_name)
 {
-    UpdateNotification notification{
-        std::move(service_instance_specifier), updated_element_type, std::move(updated_element_name)};
+    UpdateNotification notification{service_instance_specifier, updated_element_type, std::move(updated_element_name)};
     return message_transport_->SendNotification(notification);
 }
 
@@ -283,7 +281,7 @@ score::Result<void> SampleHyperVisorTransport::RegisterUpdateNotification(
     impl::ServiceElementType element_type,
     std::string element_name)
 {
-    RegisterNotificationRequest request{std::move(service_instance_specifier), element_type, std::move(element_name)};
+    RegisterNotificationRequest request{service_instance_specifier, element_type, std::move(element_name)};
     return message_transport_->SendRequest(request);
 }
 
@@ -292,7 +290,7 @@ score::Result<void> SampleHyperVisorTransport::UnregisterUpdateNotification(
     impl::ServiceElementType element_type,
     std::string element_name)
 {
-    UnregisterNotificationRequest request{std::move(service_instance_specifier), element_type, std::move(element_name)};
+    UnregisterNotificationRequest request{service_instance_specifier, element_type, std::move(element_name)};
     return message_transport_->SendRequest(request);
 }
 

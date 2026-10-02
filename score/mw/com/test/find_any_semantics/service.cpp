@@ -74,7 +74,7 @@ score::Result<TestDataSkeleton> offer_service(const std::string& instance_specif
     }
     auto instance_specifier = std::move(instance_specifier_result).value();
 
-    auto service_result = TestDataSkeleton::Create(std::move(instance_specifier));
+    auto service_result = TestDataSkeleton::Create(instance_specifier);
     if (!service_result.has_value())
     {
         std::cerr << "Unable to construct TestDataSkeleton: " << service_result.error() << "\n";

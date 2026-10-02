@@ -48,7 +48,7 @@ void run_service(const score::cpp::stop_token& stop_token)
     }
     auto instance_specifier = std::move(instance_specifier_result).value();
 
-    auto service_result = TestDataSkeleton::Create(std::move(instance_specifier));
+    auto service_result = TestDataSkeleton::Create(instance_specifier);
     if (!service_result.has_value())
     {
         FailTest("Service: Unable to construct TestDataSkeleton: ", service_result.error());
