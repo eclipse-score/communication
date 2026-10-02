@@ -51,11 +51,13 @@ std::ostream& operator<<(std::ostream& stream, const InstanceSpecifier& instance
 template <typename T>
 void ToStringImpl(std::ostream& o, const T& t)
 {
+    // String literals are streamed through this generic helper; operator<<(ostream&, const char*) requires the decay.
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
     o << t;
 }
 
 template <typename T, typename... Args>
-void ToStringImpl(std::ostream& o, const T& t, Args... args)
+void ToStringImpl(std::ostream& o, const T& t, const Args&... args)
 {
     ToStringImpl(o, t);
     ToStringImpl(o, args...);
