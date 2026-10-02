@@ -16,6 +16,83 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "un
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
+component(
+    name = "binding_independent",
+    components = [
+        ":binding_independent_skeleton_and_service_elements",
+        ":binding_independent_proxy_and_service_elements",
+        ":binding_independent_generic_skeleton_and_service_elements",
+        ":binding_independent_generic_proxy_and_service_elements",
+        ":binding_independent_service_discovery",
+        ":binding_independent_runtime",
+        "//score/mw/com/impl/mocking:binding_independent_mocks",
+    ],
+    requirements = [],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    visibility = ["//score/mw/com/dependability:__pkg__"],
+)
+
+unit(
+    name = "binding_independent_skeleton_and_service_elements",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/skeleton_and_service_elements:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "binding_independent_proxy_and_service_elements",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/proxy_and_service_elements:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "binding_independent_generic_skeleton_and_service_elements",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/generic_skeleton_and_service_elements:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "binding_independent_generic_proxy_and_service_elements",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/generic_proxy_and_service_elements:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "binding_independent_runtime",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/runtime:unit_design",
+    ],
+    implementation = [],
+)
+
+unit(
+    name = "binding_independent_service_discovery",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/dependability/service_discovery:unit_design",
+    ],
+    implementation = [],
+)
+
 package(default_visibility = [
     "//score/mw/com/impl:__subpackages__",
 ])
@@ -1364,6 +1441,7 @@ cc_unit_test(
         ":generic_skeleton",
         ":generic_skeleton_event",
         ":service_discovery_mock",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "//score/mw/com/impl/test:runtime_mock_guard",

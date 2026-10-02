@@ -12,8 +12,20 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+unit(
+    name = "lola_service_discovery",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/bindings/lola/service_discovery/dependability:unit_design",
+    ],
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    implementation = [],
+)
 
 package(default_visibility = [
     "//score/mw/com/impl/bindings/lola/service_discovery:__subpackages__",
