@@ -16,6 +16,10 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
+# The scope of a unit is resolved by rules_score relative to its own repository,
+# so it has to be passed in its canonical form.
+MESSAGE_PASSING_SCOPE = str(package_relative_label("//score/message_passing:__subpackages__"))
+
 test_suite(
     name = "unit_tests",
     tests = [
@@ -106,7 +110,7 @@ cc_library(
 unit(
     name = "client_connection",
     scope = [
-        "@@//score/message_passing:__subpackages__",
+        MESSAGE_PASSING_SCOPE,
     ],
     tests = [
         "//score/message_passing:client_connection_test_linux",
@@ -121,7 +125,7 @@ unit(
 unit(
     name = "server_connection",
     scope = [
-        "@@//score/message_passing:__subpackages__",
+        MESSAGE_PASSING_SCOPE,
     ],
     tests = [],
     unit_design = ["//score/message_passing/dependability/software_unit_design:server_connection_unit_design"],
@@ -163,7 +167,7 @@ cc_library(
 unit(
     name = "unix_domain",
     scope = [
-        "@@//score/message_passing:__subpackages__",
+        MESSAGE_PASSING_SCOPE,
     ],
     tests = [
         ":unix_domain_test_linux",
@@ -229,7 +233,7 @@ cc_library(
 unit(
     name = "qnx_dispatch",
     scope = [
-        "@@//score/message_passing:__subpackages__",
+        MESSAGE_PASSING_SCOPE,
     ],
     tests = [],
     unit_design = ["//score/message_passing/dependability/software_unit_design:qnx_dispatch_unit_design"],

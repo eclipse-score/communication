@@ -67,7 +67,7 @@ def _coverage_scope_aspect_impl(target, ctx):
                             direct_files.append(f.short_path)
 
         # Only collect workspace-internal labels and archives
-        if not str(target.label).startswith("@@") or str(target.label).startswith("@@//"):
+        if target.label.repo_name == "":
             # Collect .a archive files for baseline coverage.
             for linker_input in target[CcInfo].linking_context.linker_inputs.to_list():
                 for lib in linker_input.libraries:

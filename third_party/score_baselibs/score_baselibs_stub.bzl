@@ -32,15 +32,15 @@ def score_baselibs_stub(
 
     Args:
         name:            Base name; produces <name>_unit, <name>_component, and <name> targets.
-        scope_path:      The Bazel label pattern passed to unit.scope, e.g.
-                         "@@score_baselibs+//score/containers:__subpackages__".
+        scope_path:      The Bazel label pattern of the scope, converted to its canonical form for unit.scope, e.g.
+                         "@score_baselibs//score/containers:__subpackages__".
         integrity_level: Forwarded to dependable_element (default "B").
         maturity:        Forwarded to dependable_element (default "development").
         visibility:      Forwarded to dependable_element (default public).
     """
     unit(
         name = name + "_unit",
-        scope = [scope_path],
+        scope = [str(native.package_relative_label(scope_path))],
         tests = [],
         unit_design = [],
         implementation = [],
