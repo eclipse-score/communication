@@ -145,8 +145,8 @@ class MmanMock : public os::Mman
     }
 
   private:
-    mutable char last_shm_open_path_[1024];
-    mutable std::uint32_t shm_open_callcount_;
+    mutable char last_shm_open_path_[1024]{};
+    mutable std::uint32_t shm_open_callcount_{0U};
 };
 
 class SampleReceiver

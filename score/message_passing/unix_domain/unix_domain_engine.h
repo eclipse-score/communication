@@ -136,7 +136,7 @@ class UnixDomainEngine final : public ISharedResourceEngine
     OsResources os_resources_;
     LoggingCallback logger_;
 
-    std::array<std::int32_t, 2> pipe_fds_;
+    std::array<std::int32_t, 2> pipe_fds_{};
     bool quit_flag_;
     std::thread thread_;
     std::mutex thread_mutex_;

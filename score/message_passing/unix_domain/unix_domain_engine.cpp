@@ -192,11 +192,10 @@ score::cpp::expected_blank<score::os::Error> UnixDomainEngine::SendProtocolMessa
     std::uint8_t code,
     const score::cpp::span<const std::uint8_t> message) noexcept
 {
-    struct msghdr msg;
-    std::ignore = std::memset(static_cast<void*>(&msg), 0, sizeof(msg));
+    struct msghdr msg{};
     constexpr auto kVectorCount = 3UL;
     auto size = static_cast<std::uint16_t>(message.size());
-    std::array<iovec, kVectorCount> io;
+    std::array<iovec, kVectorCount> io{};
     // Deviation of MISRA RULE-6-8-3: codeql::misra_deviation_next_line(unix-domain-iovec-stack-buffers)
     io[0].iov_base = &code;
     io[0].iov_len = sizeof(code);
@@ -222,11 +221,10 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Uni
     const std::int32_t fd,
     std::uint8_t& code) noexcept
 {
-    struct msghdr msg;
-    std::ignore = std::memset(static_cast<void*>(&msg), 0, sizeof(msg));
+    struct msghdr msg{};
     constexpr auto kVectorCount = 2UL;
     std::uint16_t size{};
-    std::array<iovec, kVectorCount> io;
+    std::array<iovec, kVectorCount> io{};
     // Deviation of MISRA RULE-6-8-3: codeql::misra_deviation_next_line(unix-domain-iovec-stack-buffers)
     io[0].iov_base = &code;
     io[0].iov_len = sizeof(code);
