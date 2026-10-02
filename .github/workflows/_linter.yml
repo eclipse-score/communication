@@ -164,3 +164,52 @@ jobs:
             ${{ matrix.id }}.sarif
           if-no-files-found: ignore
           retention-days: 7
+
+  buildifier:
+    # Not part of the matrix above: buildifier is not run via a rules_lint aspect.
+    # //tools/lint:buildifier_json discovers all BUILD files with `find` (like
+    # buildifier_prebuilt's own rules), so no package needs any wiring.
+    # //tools/lint:buildifier_sarif runs it and converts the findings to SARIF.
+    name: buildifier
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+      security-events: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
+        with:
+          disk-cache: ${{ inputs.fetch-only != 'true' && 'buildifier' || '' }}
+          cache-mode: ${{ inputs.cache-mode }}
+          ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+      - name: Fetch dependencies (--nobuild)
+        if: inputs.fetch-only == 'true'
+        run: bazel build --nobuild --config=ci //tools/lint:buildifier_sarif
+
+      - name: Run buildifier lint and convert findings to SARIF
+        if: inputs.fetch-only != 'true'
+        run: |
+          bazel run --config=ci --ui_event_filters=-info,-stdout --noshow_progress \
+            //tools/lint:buildifier_sarif > buildifier.sarif
+
+      - name: Upload SARIF reports to GitHub Code Scanning
+        if: ${{ !cancelled() && inputs.fetch-only != 'true' }}
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: buildifier.sarif
+          category: buildifier
+          wait-for-processing: true
+
+      - name: Upload buildifier findings as artifact
+        if: ${{ !cancelled() && inputs.fetch-only != 'true' }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: buildifier-findings
+          path: buildifier.sarif
+          if-no-files-found: ignore
+          retention-days: 7
