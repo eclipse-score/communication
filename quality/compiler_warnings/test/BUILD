@@ -14,6 +14,7 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_build_error//lang/cc:defs.bzl", "cc_build_error_test")
 load("@rules_build_error//matcher:defs.bzl", "matcher")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 # Compiler warning feature tests.

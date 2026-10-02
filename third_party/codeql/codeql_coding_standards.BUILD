@@ -11,22 +11,24 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@codeql_coding_standards_pip_hub//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 py_binary(
     name = "process_coding_standards_config",
     srcs = ["scripts/configuration/process_coding_standards_config.py"],
-    deps = [requirement("pyyaml")],
     visibility = ["//visibility:public"],
+    deps = [requirement("pyyaml")],
 )
 
 py_binary(
     name = "guideline_recategorize",
     srcs = ["scripts/guideline_recategorization/recategorize.py"],
-    main = "scripts/guideline_recategorization/recategorize.py",
     data = [
         "schemas/coding-standards-schema-1.0.0.json",
         "schemas/sarif-schema-2.1.0.json",
     ],
+    main = "scripts/guideline_recategorization/recategorize.py",
+    visibility = ["//visibility:public"],
     deps = [
         requirement("jsonpath-ng"),
         requirement("jsonpatch"),
@@ -34,21 +36,25 @@ py_binary(
         requirement("jsonschema"),
         requirement("pyyaml"),
     ],
-    visibility = ["//visibility:public"],
 )
 
 py_binary(
     name = "analysis_report",
-    srcs = ["scripts/reports/analysis_report.py",
-            "scripts/reports/diagnostics.py" ,
-            "scripts/reports/deviations.py",
-            "scripts/reports/error.py",
-            "scripts/reports/codeqlvalidation.py",
-            "scripts/reports/utils.py",
-            "scripts/shared/codeql.py",
-            "scripts/reports/guideline_recategorizations.py"],
+    srcs = [
+        "scripts/reports/analysis_report.py",
+        "scripts/reports/codeqlvalidation.py",
+        "scripts/reports/deviations.py",
+        "scripts/reports/diagnostics.py",
+        "scripts/reports/error.py",
+        "scripts/reports/guideline_recategorizations.py",
+        "scripts/reports/utils.py",
+        "scripts/shared/codeql.py",
+    ],
     data = ["supported_codeql_configs.json"] + glob(["cpp/**"]),
-    deps = [requirement("pyyaml")],
-    imports = ["scripts/reports","scripts/shared"],
+    imports = [
+        "scripts/reports",
+        "scripts/shared",
+    ],
     visibility = ["//visibility:public"],
+    deps = [requirement("pyyaml")],
 )
