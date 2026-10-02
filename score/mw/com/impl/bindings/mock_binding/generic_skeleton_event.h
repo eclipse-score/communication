@@ -63,7 +63,7 @@ class GenericSkeletonEventFacade : public GenericSkeletonEventBinding
 
     ~GenericSkeletonEventFacade() override = default;
     Result<void> Send(score::mw::com::impl::SampleAllocateePtr<void> sample,
-                      std::optional<SendTraceCallback> callback) noexcept override
+                      std::optional<SendTraceCallback> callback) override
     {
         return skeleton_event_.Send(std::move(sample), std::move(callback));
     }
@@ -96,7 +96,7 @@ class GenericSkeletonEventFacade : public GenericSkeletonEventBinding
     {
         return skeleton_event_.SetSkeletonEventTracingData(tracing_data);
     }
-    Result<void> Notify() noexcept override
+    Result<void> Notify() override
     {
         return skeleton_event_.Notify();
     }

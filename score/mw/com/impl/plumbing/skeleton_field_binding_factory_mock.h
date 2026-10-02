@@ -30,7 +30,7 @@ class SkeletonFieldBindingFactoryMock : public ISkeletonFieldBindingFactory
                  const std::string_view,
                  memory::DataTypeSizeInfo,
                  const FieldTagsStore),
-                (noexcept, override));
+                (override));
 };
 
 }  // namespace score::mw::com::impl

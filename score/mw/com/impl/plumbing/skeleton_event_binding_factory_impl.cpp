@@ -30,7 +30,7 @@ namespace score::mw::com::impl
 auto SkeletonEventBindingFactoryImpl::Create(const InstanceIdentifier& identifier,
                                              SkeletonBinding& parent_binding,
                                              const std::string_view event_name,
-                                             memory::DataTypeSizeInfo sample_type_size_info) noexcept
+                                             memory::DataTypeSizeInfo sample_type_size_info)
     -> std::unique_ptr<SkeletonEventBinding>
 {
     const std::optional<FieldTagsStore> empty_field_tags_store{};

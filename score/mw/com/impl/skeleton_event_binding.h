@@ -62,7 +62,7 @@ class SkeletonEventBinding
 
     /// \brief SampleType is previously allocated by middleware and provided by the user to indicate that he is finished
     /// filling the provided pointer with live.
-    virtual Result<void> Send(SampleAllocateePtr<void>, std::optional<SendTraceCallback>) noexcept = 0;
+    virtual Result<void> Send(SampleAllocateePtr<void>, std::optional<SendTraceCallback>) = 0;
 
     /// \brief Allocates memory for SampleType for the user to fill it. This is especially necessary for Zero-Copy
     /// implementations.

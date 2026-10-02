@@ -377,7 +377,7 @@
       "name": "StopOfferService",
       "qualified_name": "score::mw::com::GenericSkeleton::StopOfferService",
       "kind": "method",
-      "signature": "StopOfferService : void () noexcept"
+      "signature": "StopOfferService : void ()"
     },
     {
       "name": "DataTypeMetaInfo",
@@ -1015,7 +1015,7 @@
       "name": "Notify",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::Notify",
       "kind": "method",
-      "signature": "Notify : Result<void> () noexcept"
+      "signature": "Notify : Result<void> ()"
     },
     {
       "name": "PrepareOffer",
@@ -1033,7 +1033,7 @@
       "name": "Send",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::Send",
       "kind": "method",
-      "signature": "Send : Result<void> (SampleAllocateePtr<void>) noexcept"
+      "signature": "Send : Result<void> (SampleAllocateePtr<void>)"
     },
     {
       "name": "SetReceiveHandlerRegistrationChangedHandler",

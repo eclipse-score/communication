@@ -100,7 +100,7 @@ class SkeletonEvent : public SkeletonEventBase
      * \param sample_value The event data to be sent to subscribers.
      * \return On failure, returns an error code.
      */
-    Result<void> Send(const EventType& sample_value) noexcept;
+    Result<void> Send(const EventType& sample_value);
 
     /**
      * \api
@@ -110,7 +110,7 @@ class SkeletonEvent : public SkeletonEventBase
      * \param sample The pre-allocated sample pointer containing the event data to be sent.
      * \return On failure, returns an error code.
      */
-    Result<void> Send(SampleAllocateePtr<EventType> sample) noexcept;
+    Result<void> Send(SampleAllocateePtr<EventType> sample);
 
     /**
      * \api
@@ -188,7 +188,7 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& /*skeleton_base*/,
 }
 
 template <typename SampleDataType>
-Result<void> SkeletonEvent<SampleDataType>::Send(const EventType& sample_value) noexcept
+Result<void> SkeletonEvent<SampleDataType>::Send(const EventType& sample_value)
 {
     if (skeleton_event_mock_ != nullptr)
     {
@@ -226,7 +226,7 @@ Result<void> SkeletonEvent<SampleDataType>::Send(const EventType& sample_value) 
 }
 
 template <typename SampleDataType>
-Result<void> SkeletonEvent<SampleDataType>::Send(SampleAllocateePtr<EventType> sample) noexcept
+Result<void> SkeletonEvent<SampleDataType>::Send(SampleAllocateePtr<EventType> sample)
 {
     if (skeleton_event_mock_ != nullptr)
     {

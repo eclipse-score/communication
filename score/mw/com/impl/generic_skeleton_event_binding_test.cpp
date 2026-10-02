@@ -32,8 +32,7 @@ class MyGenericEvent final : public GenericSkeletonEventBinding
         return {};
     }
     void PrepareStopOffer() noexcept override {}
-    Result<void> Send(SampleAllocateePtr<void>,
-                      std::optional<SkeletonEventBinding::SendTraceCallback>) noexcept override
+    Result<void> Send(SampleAllocateePtr<void>, std::optional<SkeletonEventBinding::SendTraceCallback>) override
     {
         return {};
     }
@@ -56,7 +55,7 @@ class MyGenericEvent final : public GenericSkeletonEventBinding
     {
         return sample_data_type_size_info;
     }
-    Result<void> Notify() noexcept override
+    Result<void> Notify() override
     {
         return {};
     }

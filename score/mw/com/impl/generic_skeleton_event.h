@@ -34,13 +34,13 @@ class GenericSkeletonEvent : public SkeletonEventBase
                          const std::string_view event_name,
                          std::unique_ptr<SkeletonEventBinding> binding);
 
-    Result<void> Send(SampleAllocateePtr<void> sample) noexcept;
+    Result<void> Send(SampleAllocateePtr<void> sample);
 
     Result<SampleAllocateePtr<void>> Allocate() noexcept;
 
     /// \brief Explicitly trigger event-update-notifications without sending new data.
     /// \note Caller must have already committed data to shared memory (gateway use).
-    Result<void> Notify() noexcept;
+    Result<void> Notify();
     DataTypeMetaInfo GetSizeInfo() const noexcept;
 
     /// \brief Set callback, to get notified, when either the 1st event-notification has been registered or the last

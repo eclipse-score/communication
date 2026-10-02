@@ -31,7 +31,7 @@ class SkeletonEventBindingFactoryImpl : public ISkeletonEventBindingFactory
     std::unique_ptr<SkeletonEventBinding> Create(const InstanceIdentifier& identifier,
                                                  SkeletonBinding& parent_binding,
                                                  const std::string_view event_name,
-                                                 memory::DataTypeSizeInfo sample_type_size_info) noexcept override;
+                                                 memory::DataTypeSizeInfo sample_type_size_info) override;
 };
 
 }  // namespace score::mw::com::impl

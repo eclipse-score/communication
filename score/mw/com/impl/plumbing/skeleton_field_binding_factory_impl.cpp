@@ -28,7 +28,7 @@ auto SkeletonFieldBindingFactoryImpl::CreateEventBinding(const InstanceIdentifie
                                                          SkeletonBinding& parent_binding,
                                                          const std::string_view field_name,
                                                          memory::DataTypeSizeInfo sample_type_size_info,
-                                                         const FieldTagsStore field_tags_store) noexcept
+                                                         const FieldTagsStore field_tags_store)
     -> std::unique_ptr<SkeletonEventBinding>
 {
     return CreateSkeletonEventOrField<SkeletonEventBinding, lola::SkeletonEvent, ServiceElementType::FIELD>(

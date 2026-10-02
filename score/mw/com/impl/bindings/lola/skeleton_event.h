@@ -85,7 +85,7 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     ~SkeletonEvent() noexcept override = default;
 
     Result<void> Send(impl::SampleAllocateePtr<void> sample,
-                      std::optional<SendTraceCallback> send_trace_callback) noexcept override;
+                      std::optional<SendTraceCallback> send_trace_callback) override;
 
     Result<impl::SampleAllocateePtr<void>> Allocate(SampleAllocateeGuard guard) override;
 
@@ -108,7 +108,7 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
 
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override;
 
-    Result<void> Notify() noexcept override;
+    Result<void> Notify() override;
 
     Result<void> SetReceiveHandlerRegistrationChangedHandler(
         ReceiveHandlerRegistrationChangedCallback callback) noexcept override;

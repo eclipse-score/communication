@@ -99,9 +99,9 @@ class LinearSearchMap
 
     bool empty() const noexcept;
 
-    iterator find(const Key& key) noexcept;
+    iterator find(const Key& key);
 
-    const_iterator find(const Key& key) const noexcept;
+    const_iterator find(const Key& key) const;
 
     /// \brief Returns the key-equality predicate used by this map.
     key_compare key_eq() const;
@@ -203,7 +203,7 @@ bool LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::empty() const noexce
 
 template <typename Key, typename MappedType, typename KeyEqual, typename Allocator>
 typename LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::iterator
-LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::find(const Key& key) noexcept
+LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::find(const Key& key)
 {
     for (auto it = begin(); it != end(); ++it)
     {
@@ -217,7 +217,7 @@ LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::find(const Key& key) noex
 
 template <typename Key, typename MappedType, typename KeyEqual, typename Allocator>
 typename LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::const_iterator
-LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::find(const Key& key) const noexcept
+LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::find(const Key& key) const
 {
     for (auto it = cbegin(); it != cend(); ++it)
     {

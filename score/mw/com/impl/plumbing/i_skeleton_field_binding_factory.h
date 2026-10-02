@@ -50,8 +50,7 @@ class ISkeletonFieldBindingFactory
                                     SkeletonBinding& parent_binding,
                                     const std::string_view field_name,
                                     memory::DataTypeSizeInfo sample_type_size_info,
-                                    const FieldTagsStore field_tags_store) noexcept
-        -> std::unique_ptr<SkeletonEventBinding> = 0;
+                                    const FieldTagsStore field_tags_store) -> std::unique_ptr<SkeletonEventBinding> = 0;
 };
 
 }  // namespace score::mw::com::impl

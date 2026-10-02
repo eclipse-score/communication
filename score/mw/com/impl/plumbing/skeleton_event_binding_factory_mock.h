@@ -26,7 +26,7 @@ class SkeletonEventBindingFactoryMock : public ISkeletonEventBindingFactory
     MOCK_METHOD(std::unique_ptr<SkeletonEventBinding>,
                 Create,
                 (const InstanceIdentifier&, SkeletonBinding&, std::string_view, memory::DataTypeSizeInfo),
-                (noexcept, override));
+                (override));
 };
 
 }  // namespace score::mw::com::impl

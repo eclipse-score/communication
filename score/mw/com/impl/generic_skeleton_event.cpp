@@ -56,7 +56,7 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
     }
 }
 
-Result<void> GenericSkeletonEvent::Send(SampleAllocateePtr<void> sample) noexcept
+Result<void> GenericSkeletonEvent::Send(SampleAllocateePtr<void> sample)
 {
     if (!service_offered_flag_.IsSet())
     {
@@ -100,7 +100,7 @@ Result<SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
     return result;
 }
 
-Result<void> GenericSkeletonEvent::Notify() noexcept
+Result<void> GenericSkeletonEvent::Notify()
 {
     if (!service_offered_flag_.IsSet())
     {
