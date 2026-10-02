@@ -115,11 +115,23 @@ SlotIndexType EventDataStorage::GetNumberOfSlots() const
 }
 
 void AddEventDataStorageShmSizeAllocation(std::vector<score::memory::DataTypeSizeInfo>& allocation_sequence,
-                                          memory::DataTypeSizeInfo event_sample_array_size_info)
+                                          EventDataStorageSizeInfo event_data_storage_size_info)
 {
     std::ignore = allocation_sequence.emplace_back(sizeof(EventDataStorage), alignof(EventDataStorage));
+
+    // This mirrors exactly how EventDataStorage's constructor computes the size of its type_erased_data_slots_
+    // allocation (see above): number_of_slots * per_sample_size_info.Size(), aligned to per_sample_size_info's
+    // alignment.
+    const auto& per_sample_size_info = event_data_storage_size_info.per_sample_size_info;
+    const auto storage_bytes_needed_result =
+        safe_math::Multiply<safe_math::ReturnMode::kReturnResultOnError, std::size_t>(
+            event_data_storage_size_info.number_of_slots, per_sample_size_info.Size());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        storage_bytes_needed_result.has_value(),
+        "Overflow while calculating the total size of the raw event-data slot-array.");
+
     std::ignore =
-        allocation_sequence.emplace_back(event_sample_array_size_info.Size(), event_sample_array_size_info.Alignment());
+        allocation_sequence.emplace_back(storage_bytes_needed_result.value(), per_sample_size_info.Alignment());
 }
 
 }  // namespace score::mw::com::impl::lola

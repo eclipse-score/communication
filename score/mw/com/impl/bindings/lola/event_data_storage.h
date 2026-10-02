@@ -21,6 +21,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
@@ -90,16 +91,23 @@ class EventDataStorage final
     std::size_t type_erased_data_slots_storage_size_in_bytes_;
 };
 
+/// \brief Per service-element (event/field) information required to analytically size the EventDataStorage of a
+/// service-element, i.e. the exact number of (type-erased) slots plus the size/alignment of a single slot.
+struct EventDataStorageSizeInfo
+{
+    /// \brief Number of (type-erased) event-data slots for the service-element.
+    std::size_t number_of_slots;
+    /// \brief Size/alignment of a single sample of the service-element's datatype.
+    memory::DataTypeSizeInfo per_sample_size_info;
+};
+
 /// \brief Adds allocation done by EventDataStorage to an existing allocation_sequence
 /// \details Gets called by the "parent" CalculateServiceDataStorageShmSize() in its calculation.
 /// \param allocation_sequence The sequence of allocations to which the EventDataStorage allocations will be added.
-/// \param event_sample_array_size_info The size information of the event sample array.
-/// \todo Handing over the complete event sample array should be changed, because it already contains the expectation,
-/// how EventDataStorage will internally store the events/slots! But it needs a rework in the call chain!
-/// I.e. we should hand down number_of_slots/DataTypeSizeInfo per single event separately.
-/// Ticket: SWP-281780
+/// \param event_data_storage_size_info The number of slots plus the size/alignment of a single slot of the
+///        service-element's EventDataStorage.
 void AddEventDataStorageShmSizeAllocation(std::vector<score::memory::DataTypeSizeInfo>& allocation_sequence,
-                                          memory::DataTypeSizeInfo event_sample_array_size_info);
+                                          EventDataStorageSizeInfo event_data_storage_size_info);
 
 }  // namespace score::mw::com::impl::lola
 
