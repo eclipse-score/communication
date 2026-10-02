@@ -488,7 +488,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillUpdateThePidInTheDataSegment
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
 
     // and the ServiceDataStorage contains the PID returned by the lola runtime
-    EXPECT_EQ(existing_service_data_storage_.skeleton_pid_, pid);
+    EXPECT_EQ(existing_service_data_storage_.GetSkeletonPid(), pid);
 }
 
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillCallRegisterShmObjectTraceCallbackWhenOpeningSharedMemory)
@@ -1365,25 +1365,23 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
 
     // Expect, that we can then retrieve the meta-info of the registered events
     SkeletonAttorney skeleton_test_attorney{*skeleton_};
-    auto event_foo_meta_info_ptr = skeleton_test_attorney.GetEventMetaInfo(ElementFqId{
+    const auto& event_foo_meta_info = skeleton_test_attorney.GetEventMetaInfo(ElementFqId{
         lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, element_type});
-    auto event_dumb_meta_info_ptr = skeleton_test_attorney.GetEventMetaInfo(ElementFqId{
+    const auto& event_dumb_meta_info = skeleton_test_attorney.GetEventMetaInfo(ElementFqId{
         lola_service_type_deployment->service_id_, test::kDumbEventId, test::kDefaultLolaInstanceId, element_type});
 
-    // and the meta-info for these events is valid
-    ASSERT_TRUE(event_foo_meta_info_ptr.has_value());
-    ASSERT_TRUE(event_dumb_meta_info_ptr.has_value());
     // and they have the expected properties
-    ASSERT_EQ(event_foo_meta_info_ptr->data_type_info_.Size(), sizeof(std::uint8_t));
-    ASSERT_EQ(event_foo_meta_info_ptr->data_type_info_.Alignment(), alignof(std::uint8_t));
+    ASSERT_EQ(event_foo_meta_info.data_type_info_.Size(), sizeof(std::uint8_t));
+    ASSERT_EQ(event_foo_meta_info.data_type_info_.Alignment(), alignof(std::uint8_t));
 
-    ASSERT_EQ(event_dumb_meta_info_ptr->data_type_info_.Size(), sizeof(VeryComplexType));
-    ASSERT_EQ(event_dumb_meta_info_ptr->data_type_info_.Alignment(), alignof(VeryComplexType));
+    ASSERT_EQ(event_dumb_meta_info.data_type_info_.Size(), sizeof(VeryComplexType));
+    ASSERT_EQ(event_dumb_meta_info.data_type_info_.Alignment(), alignof(VeryComplexType));
 
     CleanUpSkeleton();
 }
 
-TEST_P(SkeletonRegisterParamaterisedFixture, NoMetaInfoExistsForInvalidElementId)
+using SkeletonRegisterParamaterisedDeathTest = SkeletonRegisterParamaterisedFixture;
+TEST_P(SkeletonRegisterParamaterisedDeathTest, NoMetaInfoExistsForInvalidElementId)
 {
     const ServiceElementType element_type = GetParam();
 
@@ -1418,15 +1416,13 @@ TEST_P(SkeletonRegisterParamaterisedFixture, NoMetaInfoExistsForInvalidElementId
     ElementFqId event_unknown_fqn{
         lola_service_type_deployment->service_id_, UNKNOWN_EVENT_ID, test::kDefaultLolaInstanceId, element_type};
     SkeletonAttorney skeleton_test_attorney{*skeleton_};
-    auto event_unknown_meta_info = skeleton_test_attorney.GetEventMetaInfo(event_unknown_fqn);
 
-    // we expect the meta-info for this event is invalid
-    ASSERT_FALSE(event_unknown_meta_info.has_value());
+    // Then the program terminates, since no meta-info is registered for this (unknown) ElementFqId.
+    EXPECT_DEATH(score::cpp::ignore = skeleton_test_attorney.GetEventMetaInfo(event_unknown_fqn), ".*");
 
     CleanUpSkeleton();
 }
 
-using SkeletonRegisterParamaterisedDeathTest = SkeletonRegisterParamaterisedFixture;
 TEST_P(SkeletonRegisterParamaterisedFixture, CallingRegisterWithSameServiceElementTwiceWillTerminate)
 {
     RecordProperty("Verifies", "SCR-21555839");
@@ -1535,6 +1531,10 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillOpenEventDataForReopene
 
 INSTANTIATE_TEST_SUITE_P(SkeletonRegisterParamaterisedFixture,
                          SkeletonRegisterParamaterisedFixture,
+                         Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
+
+INSTANTIATE_TEST_SUITE_P(SkeletonRegisterParamaterisedDeathTest,
+                         SkeletonRegisterParamaterisedDeathTest,
                          Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
 
 class SkeletonCreateFixture : public Test

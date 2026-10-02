@@ -14,13 +14,13 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_STORAGE_H
 
 #include "score/memory/data_type_size_info.h"
-#include "score/memory/shared/managed_memory_resource.h"
 #include "score/memory/shared/offset_ptr.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/initialize_sample_callback.h"
 
 #include <cstddef>
 #include <optional>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
@@ -39,6 +39,10 @@ namespace score::mw::com::impl::lola
 class EventDataStorage final
 {
   public:
+    /// \brief Constructs an EventDataStorage with the given number of slots and the given size/alignment of a single
+    /// slot.
+    /// \param memory_resource_proxy The memory resource proxy used to allocate the type-erased storage slots. It is
+    ///                              stored as a member as it is also needed for deallocation in destruction.
     /// \param initialize_sample_callback Optional callback used to initialize every slot right away during
     ///        construction, by calling the callback once for each slot. EventDataStorage itself is type-erased, but
     ///        in the end strongly typed elements are stored. Since EventDataStorage itself has no
@@ -46,7 +50,7 @@ class EventDataStorage final
     ///        hands over a callback, which does the correct initialization. The callback is optional, since some
     ///        callers don't have type knowledge (e.g. GenericSkeletonEvent) or don't need type-correct
     ///        initialization (e.g. a simulation-only call solely used to calculate the required shared-memory size).
-    EventDataStorage(memory::shared::ManagedMemoryResource& resource,
+    EventDataStorage(const memory::shared::MemoryResourceProxy* memory_resource_proxy,
                      SlotIndexType number_of_slots,
                      memory::DataTypeSizeInfo event_sample_size_info,
                      const std::optional<InitializeSampleCallback>& initialize_sample_callback = std::nullopt);
@@ -82,24 +86,34 @@ class EventDataStorage final
 
     SlotIndexType number_of_slots_;
     memory::DataTypeSizeInfo sample_size_info_;
-    memory::shared::ManagedMemoryResource& memory_resource_;
-
     memory::shared::OffsetPtr<std::byte> type_erased_data_slots_;
 
     /// size of type_erased_data_slots_ storage in bytes. This is equal to number_of_slots_ * sample_size_info_.Size()
     std::size_t type_erased_data_slots_storage_size_in_bytes_;
+    /// Since EventDataStorage resides in shared-memory, we have to store a MemoryResourceProxy instead of a
+    /// ManagedMemoryResource. We can't use/store a PolymorphicOffsetPtrAllocator here (which would embed a
+    /// MemoryResourceProxy) as we need to allocate type-erased bytes with a specific alignment! An allocator can't do
+    /// that, thus we need to store the memory_resource itself.
+    const memory::shared::MemoryResourceProxy* memory_resource_proxy_;
+};
+
+/// \brief Per service-element (event/field) information required to analytically size the EventDataStorage of a
+/// service-element, i.e. the exact number of (type-erased) slots plus the size/alignment of a single slot.
+struct EventDataStorageSizeInfo
+{
+    /// \brief Number of (type-erased) event-data slots for the service-element.
+    std::size_t number_of_slots;
+    /// \brief Size/alignment of a single sample of the service-element's datatype.
+    memory::DataTypeSizeInfo per_sample_size_info;
 };
 
 /// \brief Adds allocation done by EventDataStorage to an existing allocation_sequence
 /// \details Gets called by the "parent" CalculateServiceDataStorageShmSize() in its calculation.
 /// \param allocation_sequence The sequence of allocations to which the EventDataStorage allocations will be added.
-/// \param event_sample_array_size_info The size information of the event sample array.
-/// \todo Handing over the complete event sample array should be changed, because it already contains the expectation,
-/// how EventDataStorage will internally store the events/slots! But it needs a rework in the call chain!
-/// I.e. we should hand down number_of_slots/DataTypeSizeInfo per single event separately.
-/// Ticket: SWP-281780
+/// \param event_data_storage_size_info The number of slots plus the size/alignment of a single slot of the
+///        service-element's EventDataStorage.
 void AddEventDataStorageShmSizeAllocation(std::vector<score::memory::DataTypeSizeInfo>& allocation_sequence,
-                                          memory::DataTypeSizeInfo event_sample_array_size_info);
+                                          EventDataStorageSizeInfo event_data_storage_size_info);
 
 }  // namespace score::mw::com::impl::lola
 
