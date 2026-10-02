@@ -1,0 +1,149 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+<style>
+.OS {
+    LineThickness 5.0
+}
+</style>
+
+skinparam sequenceArrowColor Black
+skinparam sequenceParticipantBackgroundColor White
+skinparam sequenceParticipantBorderColor Black
+skinparam sequenceLifeLineBorderColor Black
+skinparam sequenceGroupBorderColor DarkGray
+skinparam sequenceGroupBodyBackgroundColor #FAFAFA
+skinparam NoteBackgroundColor LightYellow
+skinparam NoteBorderColor Gray
+skinparam NoteTextAlignment left
+skinparam ParticipantFontName Courier
+skinparam sequenceFontName Courier
+skinparam ArrowFontName Courier
+
+title Server <-> Client Sequence Diagram: Underlying-Layer (OS/Transport) Faults
+
+note over client_connection, server_connection : Companion to server_client_sequence.puml (happy path) and\nserver_client_internal_fault_sequence.puml (library-internal resource limits).\nThis diagram covers faults originating in the OS/transport layer that the\nlibrary detects and reports, but does not itself cause or prevent -\ni.e. non-happy paths of the underlying layers, not user contract misuse\nand not library-internal bookkeeping limits.
+
+participant "ExternalEndpoint" as ExternalEndpoint
+participant "ClientConnection" as client_connection
+participant "UnixDomain" as unix_domain
+participant "QnxDispatch" as qnx_dispatch
+participant "ServerConnection" as server_connection
+
+' -----------------------------------------------------------------
+== Connection Refused: Insufficient Permissions (StopReason::kPermission) ==
+' -----------------------------------------------------------------
+
+ExternalEndpoint -> client_connection : (Start(\n  state_callback,\n  notify_callback\n))
+note over client_connection : Invokes state_callback(kStarting)
+alt Linux (Unix Domain Sockets)
+  client_connection -> unix_domain : TryOpenClientConnection(identifier)
+  note over unix_domain : Returns score::os::Error (EACCES-equivalent)
+else QNX (QNX Dispatch)
+  client_connection -> qnx_dispatch : TryOpenClientConnection(identifier)
+  note over qnx_dispatch : Returns score::os::Error (EACCES-equivalent)
+end
+note over client_connection : Invokes state_callback(kStopping),\nthen state_callback(kStopped)
+note left : GetStopReason() == StopReason::kPermission\nPer i_client_connection.h: "highly unlikely to\nhave a successful Restart()" for this reason
+
+' -----------------------------------------------------------------
+== Server Bind/Startup Failure ==
+' -----------------------------------------------------------------
+
+alt Linux (Unix Domain Sockets)
+  ExternalEndpoint -> unix_domain : (Create(protocol_config, server_config))
+  ExternalEndpoint -> unix_domain : (StartListening(...))
+  note over unix_domain : Returns score::cpp::expected_blank<Error> (error)
+else QNX (QNX Dispatch)
+  ExternalEndpoint -> qnx_dispatch : (Create(protocol_config, server_config))
+  ExternalEndpoint -> qnx_dispatch : (StartListening(...))
+  note over qnx_dispatch : Returns score::cpp::expected_blank<Error> (error)
+end
+note right : IServer::StartListening() returning an error is\nthe only signal; the server never starts accepting\nconnections. Grounds the previously un-evidenced FTA\nbasic events "Duplicate Server Name" and "Server\nfactory queue size configured below the required\nminimum" (fta_ipc_channel_unavailable.puml, IE_Startup).
+
+' -----------------------------------------------------------------
+== Peer Crash / Unexpected Disconnect While Ready (StopReason::kClosedByPeer) ==
+' -----------------------------------------------------------------
+
+note over client_connection, server_connection : Setup and connection establishment already completed as in\nserver_client_sequence.puml (omitted here for brevity); both\nendpoints are in their Ready-equivalent state.
+
+note over server_connection : (server process crashes / exits)
+alt Linux (Unix Domain Sockets)
+  client_connection -> unix_domain : ReceiveProtocolMessage(fd, code)
+  note over unix_domain : => peer closed / broken pipe detected
+else QNX (QNX Dispatch)
+  client_connection -> qnx_dispatch : ReceiveProtocolMessage(fd, code)
+  note over qnx_dispatch : => peer closed / broken pipe detected
+end
+note over client_connection : Invokes state_callback(kStopping),\nthen state_callback(kStopped)
+note left : GetStopReason() == StopReason::kClosedByPeer
+
+note over server_connection, ExternalEndpoint : Detected independently on the server side once the OS reports\nthe peer gone; invokes DisconnectCallback(connection) or\nIConnectionHandler::OnDisconnect(connection)
+destroy server_connection
+
+' -----------------------------------------------------------------
+== Communication Error Prevents Continuation (StopReason::kIoError) ==
+' -----------------------------------------------------------------
+
+ExternalEndpoint -> client_connection : (Send(message) / SendWaitReply(...) / SendWithCallback(...))
+alt Linux (Unix Domain Sockets)
+  client_connection -> unix_domain : SendProtocolMessage(fd, code, message)
+  note over unix_domain : Returns score::os::Error\n(e.g. corrupted framing, unexpected errno)
+else QNX (QNX Dispatch)
+  client_connection -> qnx_dispatch : SendProtocolMessage(fd, code, message)
+  note over qnx_dispatch : Returns score::os::Error\n(e.g. corrupted framing, unexpected errno)
+end
+note over client_connection : Invokes state_callback(kStopping),\nthen state_callback(kStopped)
+note left : GetStopReason() == StopReason::kIoError
+
+' -----------------------------------------------------------------
+== SendWithCallback: Reply Lost Because Peer Disconnects Mid-Flight ==
+' -----------------------------------------------------------------
+
+ExternalEndpoint -> client_connection : (SendWithCallback(message, reply_callback))
+alt Linux (Unix Domain Sockets)
+  client_connection -> unix_domain : SendProtocolMessage(fd, code, message)
+  note over unix_domain : Delivers the message directly to its own\nServerConnection object
+else QNX (QNX Dispatch)
+  client_connection -> qnx_dispatch : SendProtocolMessage(fd, code, message)
+  note over qnx_dispatch : Delivers the message directly to its own\nServerConnection object
+end
+note over server_connection : Invokes IConnectionHandler::OnMessageSentWithReply(\n  connection, message\n)
+note over server_connection : (server disconnects/crashes\nbefore calling Reply())
+note over client_connection : Invokes reply_callback(error)
+note left : Per i_client_connection.h: "if the server receives\nthe message but dies or disconnects before the reply\narrives to the client, the error will be passed to\nthe callback; the method itself will not return\nan error."
+
+' -----------------------------------------------------------------
+== System-Wide Memory Exhaustion (ENOMEM) ==
+' -----------------------------------------------------------------
+
+ExternalEndpoint -> client_connection : (Start(...) / Send(...))
+client_connection -> unix_domain : TryOpenClientConnection(identifier)
+note over unix_domain : Or SendProtocolMessage(), or the QnxDispatch\nequivalent; returns ENOMEM (system memory\nallocation limit reached)
+note left : Per client-server.md: "We don't expect to be able to\npreallocate all the needed system memory resources.\nWe rely on ENOMEM error for handling of system memory\nallocation limits on QNX." Not preventable by the\nlibrary; reported the same way as other transport\nerrors (kIoError or a Send()/SendWaitReply() error).
+
+' -----------------------------------------------------------------
+== Server-Side Incoming Backpressure Delegated to the OS ==
+' -----------------------------------------------------------------
+
+ExternalEndpoint -> client_connection : (Send(message) [rapid, repeated])
+alt Linux (Unix Domain Sockets)
+  client_connection -> unix_domain : SendProtocolMessage(fd, code, message)
+else QNX (QNX Dispatch)
+  client_connection -> qnx_dispatch : SendProtocolMessage(fd, code, message)
+end
+note over unix_domain, qnx_dispatch : Today, neither UnixDomainServer nor QnxDispatchServer\nimplements ServerConfig::max_queued_sends as an\ninternal ring buffer (see memory_and_size_limits_findings.md,\nfinding 4). Backpressure for incoming Send/REQUEST\nmessages is delegated entirely to the OS socket/channel\nbuffer, not to library-managed queueing. If that OS-level\nbuffer is full, SendProtocolMessage() itself blocks or\nfails (EAGAIN-equivalent) before the message is considered\nsent by the library - i.e. this is an OS-layer fault, not\nthe library-internal, deterministic rejection shown for\nmax_queued_sends/max_async_replies in\nserver_client_internal_fault_sequence.puml.
+
+@enduml
