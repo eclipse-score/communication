@@ -29,6 +29,7 @@ branch covers them. rust_binary targets provide no CcInfo; a dedicated
 CrateInfo branch collects their sources and the coverage-built executable.
 """
 
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_rust//rust:rust_common.bzl", "CrateInfo")
 
 visibility(["//..."])
@@ -66,11 +67,12 @@ def _coverage_scope_aspect_impl(target, ctx):
                             direct_files.append(f.short_path)
 
         # Only collect workspace-internal labels and archives
-        if not str(target.label).startswith("@@") or str(target.label).startswith("@@//"):
+        if target.label.repo_name == "":
             # Collect .a archive files for baseline coverage.
             for linker_input in target[CcInfo].linking_context.linker_inputs.to_list():
                 for lib in linker_input.libraries:
                     for archive in [lib.static_library, lib.pic_static_library]:
+                        # buildifier: disable=external-path
                         if archive and "/external/" not in archive.path and not archive.path.startswith("external/"):
                             direct_archives.append(archive)
                             break
@@ -81,6 +83,8 @@ def _coverage_scope_aspect_impl(target, ctx):
             if not f.path.startswith("external/") and f.is_source:
                 direct_files.append(f.short_path)
         out = target[CrateInfo].output
+
+        # buildifier: disable=external-path
         if out and "/external/" not in out.path and not out.path.startswith("external/"):
             direct_archives.append(out)
 
@@ -146,7 +150,7 @@ def _coverage_scope_impl(ctx):
         ),
     ]
 
-def _coverage_transition_impl(settings, attr):
+def _coverage_transition_impl(_settings, _attr):
     # This dictionary modifies the build configuration
     return {
         "//command_line_option:collect_code_coverage": True,

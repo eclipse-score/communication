@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@score_baselibs//score/flatbuffers/bazel:codegen.bzl", "generate_cpp")
 load("@score_baselibs//score/flatbuffers/bazel:tools.bzl", "generate_json_schema")

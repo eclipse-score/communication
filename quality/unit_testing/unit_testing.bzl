@@ -1,5 +1,7 @@
+"""Macros for declaring C++ and Rust unit tests that also run on QNX."""
+
 load("@rules_cc//cc:defs.bzl", "cc_test")
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_test")
 load("@score_qnx_unit_tests//:defs.bzl", "cc_test_qnx", "rust_test_qnx")
 
 visibility(["//..."])
@@ -74,7 +76,7 @@ def cc_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
       target_compatible_with: Forwarded to the public
       forwarding test target so that incompatible platforms are correctly skipped instead of
       being silently ignored. Calling an underlying platform specific target will circumvent this for obvious reasons.
-
+      tags: Additional tags; it must not contain the tag unit, which is added automatically.
       **kwargs: Additional parameters to be forwarded to cc_unit_test and transitively to cc_test. size and timeout
       cannot be provided and if tags is provided, it should not contain the tag unit.
       The following dependencies are already added to deps:
@@ -145,6 +147,16 @@ def cc_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
     )
 
 def rust_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
+    """Macro in order to declare a Rust unit test.
+
+    Declares a Linux rust_test, a QNX counterpart and a public forwarding test that selects between them.
+
+    Args:
+      name: Target name of the public forwarding test.
+      target_compatible_with: Platform constraints of the public forwarding test.
+      tags: Additional tags; it must not contain the tag unit, which is added automatically.
+      **kwargs: Additional parameters forwarded to rust_test.
+    """
     if "unit" in tags:
         fail("'unit' tag already provided, please refrain from adding it manually.")
 
@@ -179,6 +191,7 @@ def rust_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
             ],
             "//conditions:default": [],
         }),
+        target_compatible_with = target_compatible_with,
         tags = tags + ["unit"],
         visibility = kwargs["visibility"],
     )

@@ -11,8 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//bazel/rules:expand_template.bzl", "expand_template")
+load(":linters.bzl", "BUILDIFIER_EXCLUDE_PATTERNS")
 
 # Makes tools/lint/ a Bazel package so linters.bzl can be referenced as a
 # label target (e.g. //tools/lint:linters.bzl%clang_tidy) in bazelrc.
@@ -39,8 +42,8 @@ expand_template(
     name = "rustfmt_with_config_script",
     out = "rustfmt_wrapper.sh",
     expression_substitutions = {
-        "@@RUSTFMT_BIN@@": "$(rlocationpath @rules_rust//tools/upstream_wrapper:rustfmt)",
-        "@@RUSTFMT_TOML@@": "$(rlocationpath :rustfmt_toml)",
+        "%RUSTFMT_BIN%": "$(rlocationpath @rules_rust//tools/upstream_wrapper:rustfmt)",
+        "%RUSTFMT_TOML%": "$(rlocationpath :rustfmt_toml)",
     },
     is_executable = True,
     template = "rustfmt_wrapper.sh.tpl",
@@ -64,4 +67,45 @@ sh_binary(
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//:__pkg__"],
     deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+buildifier(
+    name = "buildifier_json",
+    exclude_patterns = BUILDIFIER_EXCLUDE_PATTERNS,
+    format = "json",
+    lint_mode = "warn",
+    mode = "check",
+    tags = ["manual"],
+)
+
+py_binary(
+    name = "buildifier_sarif",
+    srcs = ["buildifier_to_sarif.py"],
+    args = ["$(rootpath :buildifier_json)"],
+    data = [":buildifier_json"],
+    main = "buildifier_to_sarif.py",
+    tags = ["manual"],
+)
+
+exports_files([
+    "buildifier.py",
+    "buildifier_files.py",
+])
+
+py_test(
+    name = "buildifier_files_test",
+    srcs = [
+        "buildifier_files.py",
+        "buildifier_files_test.py",
+    ],
+    main = "buildifier_files_test.py",
+)
+
+py_test(
+    name = "buildifier_to_sarif_test",
+    srcs = [
+        "buildifier_to_sarif.py",
+        "buildifier_to_sarif_test.py",
+    ],
+    main = "buildifier_to_sarif_test.py",
 )

@@ -11,6 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+"""Rule generating the configuration files of the macro benchmark."""
+
 visibility(["public"])
 
 def _make_configs(ctx):
