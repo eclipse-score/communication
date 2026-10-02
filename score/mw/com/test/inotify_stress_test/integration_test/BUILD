@@ -14,7 +14,36 @@
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
 
 integration_test(
-    name = "inotify_stress_test",
-    srcs = ["test_inotify_stress_test.py"],
+    name = "test_watch_churn",
+    srcs = [
+        "test_fixture.py",
+        "test_watch_churn.py",
+    ],
     filesystem = "//score/mw/com/test/inotify_stress_test:inotify-stress-test-pkg",
+)
+
+integration_test(
+    name = "test_notify_latency",
+    srcs = [
+        "test_fixture.py",
+        "test_notify_latency.py",
+    ],
+    filesystem = "//score/mw/com/test/inotify_stress_test:inotify-stress-test-pkg",
+)
+
+integration_test(
+    name = "test_burst_loss",
+    srcs = [
+        "test_burst_loss.py",
+        "test_fixture.py",
+    ],
+    filesystem = "//score/mw/com/test/inotify_stress_test:inotify-stress-test-pkg",
+)
+
+integration_test(
+    name = "test_event_loss",
+    srcs = [
+        "test_event_loss.py",
+    ],
+    filesystem = "//score/mw/com/test/inotify_stress_test:inotify-event-loss-pkg",
 )
