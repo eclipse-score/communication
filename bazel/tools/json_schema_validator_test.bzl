@@ -1,3 +1,5 @@
+"""Test cases for the JSON schema validator rules."""
+
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 
 visibility(["//..."])
