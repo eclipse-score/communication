@@ -26,10 +26,37 @@ import sys
 _INFORMATION_URI = "https://github.com/bazelbuild/buildtools/tree/main/buildifier"
 
 
+# Buildifier has no severity levels; all of its findings fail the check and
+# are therefore reported as errors.
+def _file_result(uri: str, rule_id: str, text: str) -> dict:
+    # Buildifier reports neither a position nor a message for these, so they
+    # are attached to the start of the file.
+    return {
+        "ruleId": rule_id,
+        "level": "error",
+        "message": {"text": text},
+        "locations": [
+            {
+                "physicalLocation": {
+                    "artifactLocation": {"uri": uri},
+                    "region": {"startLine": 1, "startColumn": 1},
+                }
+            }
+        ],
+    }
+
+
 def to_sarif(buildifier_json: dict) -> dict:
     results = []
     for file in buildifier_json.get("files", []):
         uri = file["filename"].removeprefix("./")
+        if not file.get("valid", True):
+            results.append(_file_result(uri, "syntax-error", "The file has a syntax error."))
+            continue
+        if not file.get("formatted", True):
+            results.append(
+                _file_result(uri, "reformat", "The file is not formatted. Run `bazel run //:buildifier.fix`.")
+            )
         for warning in file.get("warnings") or []:
             text = warning["message"]
             if warning.get("url"):
@@ -37,7 +64,7 @@ def to_sarif(buildifier_json: dict) -> dict:
             results.append(
                 {
                     "ruleId": warning["category"],
-                    "level": "warning",
+                    "level": "error",
                     "message": {"text": text},
                     "locations": [
                         {
