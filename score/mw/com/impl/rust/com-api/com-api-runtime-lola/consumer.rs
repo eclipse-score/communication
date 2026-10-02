@@ -1068,7 +1068,7 @@ pub struct LolaConsumerBuilder<I: Interface, B: FFIBridge> {
 }
 
 impl<I: Interface, B: FFIBridge> ConsumerDescriptor<LolaRuntimeImpl<B>> for LolaConsumerBuilder<I, B> {
-    fn get_instance_identifier(&self) -> &InstanceSpecifier {
+    fn get_instance_specifier(&self) -> &InstanceSpecifier {
         //if InstanceSpecifier::ANY support enable by lola
         //then this API should get InstanceSpecifier from FFI Call
         panic!(
