@@ -25,6 +25,8 @@
 namespace score::mw::com::impl
 {
 
+class SerializerManager;
+
 /// \brief Interface for our generic (binding independent) runtime.
 /// \details Interface is introduced for testing/mocking reasons.
 class IRuntime
@@ -53,6 +55,9 @@ class IRuntime
     /// \brief Returns TracingFilterConfig that is parsed from a json config file.
     /// \return TracingFilterConfig pointer or nullptr in case the config file could not be found or parsed.
     virtual const tracing::ITracingFilterConfig* GetTracingFilterConfig() const = 0;
+
+    /// \brief Returns the binding-independent serializer manager owning the process-wide serializers.
+    virtual SerializerManager& GetSerializerManager() noexcept = 0;
 
   protected:
     IRuntime(const IRuntime&) = default;

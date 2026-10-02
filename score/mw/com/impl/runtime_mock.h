@@ -32,6 +32,7 @@ class RuntimeMock : public IRuntime
     MOCK_METHOD(IServiceDiscovery&, GetServiceDiscovery, (), (ref(&), noexcept, override));
     MOCK_METHOD(const tracing::ITracingFilterConfig*, GetTracingFilterConfig, (), (const, override));
     MOCK_METHOD(tracing::ITracingRuntime*, GetTracingRuntime, (), (const, noexcept, override));
+    MOCK_METHOD(SerializerManager&, GetSerializerManager, (), (noexcept, override));
 };
 
 }  // namespace score::mw::com::impl
