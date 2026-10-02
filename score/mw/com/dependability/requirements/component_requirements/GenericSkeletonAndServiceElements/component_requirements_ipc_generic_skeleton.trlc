@@ -33,7 +33,7 @@ section "com" {
                 ScoreReq.CompReq GenericSkeletonEventTypeInfoSource {
                     description = '''The type information for each of the events supported by a {{GenericSkeleton}} instance, has to be provided by the user code in the form of {{GenericSkeletonServiceElementInfo}}.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_EventType@1]
+                    derived_from = [Communication.FEAT_EventTypeStructure@1]
                     version = 1
                 }
 
@@ -157,7 +157,7 @@ section "com" {
 
                     Return value: the read-only view to the map of events the {{GenericSkeleton}} provides (See GenericSkeleton EventMapView class [[GenericSkeletonEventMapViewClass]]).'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_EventType@1]
+                    derived_from = [Communication.FEAT_EventTypeStructure@1]
                     version = 1
                 }
 
@@ -165,7 +165,7 @@ section "com" {
                 ScoreReq.CompReq GenericSkeletonEventMapViewClass {
                     description = '''{{GenericSkeleton}} class shall have a {{public}} nested class {{EventMapView}}. The {{GenericSkeletonEvent}}s that shall be contained in {{EventMapView}} are according to Event List Source.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_EventType@1]
+                    derived_from = [Communication.FEAT_EventTypeStructure@1]
                     version = 1
                 }
 
@@ -175,7 +175,7 @@ section "com" {
 
                     It shall provide the same signature as {{GenericProxy::EventMapView}}, see [GenericProxy.Functionality.GenericProxyEventMapClassProperties].'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_EventType@1]
+                    derived_from = [Communication.FEAT_EventTypeStructure@1]
                     version = 1
                 }
 
@@ -187,7 +187,7 @@ section "com" {
 
                     Return value: the read-only view to the map of fields the {{GenericSkeleton}} provides (See GenericSkeleton FieldMapView class, [[GenericSkeletonFieldMapViewClass]]).'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_Field@1]
+                    derived_from = [Communication.FEAT_FieldStructure@1]
                     version = 1
                 }
 
@@ -195,7 +195,7 @@ section "com" {
                 ScoreReq.CompReq GenericSkeletonFieldMapViewClass {
                     description = '''{{GenericSkeleton}} class shall have a {{public}} nested class FieldMapView. The {{GenericSkeletonField}}s that shall be contained in {{FieldMapView}} are according to Field List Source.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_Field@1]
+                    derived_from = [Communication.FEAT_FieldStructure@1]
                     version = 1
                 }
 
@@ -205,7 +205,7 @@ section "com" {
 
                     It shall provide the same signature as {{GenericProxy::FieldMapView}}, see [GenericProxy.Functionality.GenericProxyEventViewMapClassProperties].'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_Field@1]
+                    derived_from = [Communication.FEAT_FieldStructure@1]
                     version = 1
                 }   
             }

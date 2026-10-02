@@ -36,7 +36,7 @@ section "com" {
 
                     Note: This information is needed for the [GetSampleSize() API|ISSUE:14035184].'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_EventType@1]
+                    derived_from = [Communication.FEAT_EventTypeStructure@1]
                     version = 1
                 }
 
@@ -45,7 +45,7 @@ section "com" {
 
                     No corresponding Event shall be inserted into the event map member of the {{GenericProxy}} instance.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_EventType@1]
+                    derived_from = [Communication.FEAT_EventTypeStructure@1]
                     version = 1
                 }
 
@@ -214,7 +214,7 @@ section "com" {
 
                     Return value: the read-only view of the map of events the {{GenericProxy}} provides (See GenericProxy EventMapView class, [[GenericProxyEventMapViewClass]]).'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_EventType@1]
+                    derived_from = [Communication.FEAT_EventTypeStructure@1]
                     version = 1
                 }
 
@@ -226,7 +226,7 @@ section "com" {
 
                     Return value: the read-only view of the map of fields the {{GenericProxy}} provides (See GenericProxy FieldMapView class, [[GenericProxyFieldMapViewClass]]).'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_Field@1]
+                    derived_from = [Communication.FEAT_FieldStructure@1]
                     version = 1
                 }
 
@@ -254,7 +254,7 @@ section "com" {
                 ScoreReq.CompReq GenericProxyEventMapViewClass {
                     description = '''{{GenericProxy}} class shall have a {{public}} nested class EventMapView. The {{GenericProxyEvent}}s that shall be contained in {{EventMap}} are according to Event List Source.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_EventType@1]
+                    derived_from = [Communication.FEAT_EventTypeStructure@1]
                     version = 1
                 }
 
@@ -273,7 +273,7 @@ section "com" {
 
                     * empty()'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_EventType@1]
+                    derived_from = [Communication.FEAT_EventTypeStructure@1]
                     version = 1
                 }
 
@@ -281,7 +281,7 @@ section "com" {
                 ScoreReq.CompReq GenericProxyFieldMapViewClass {
                     description = '''{{GenericProxy}} class shall have a {{public}} nested class FieldMapView. The {{GenericProxyField}}s that shall be contained in {{FieldMapView}} are according to Field List Source.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_Field@1]
+                    derived_from = [Communication.FEAT_FieldStructure@1]
                     version = 1
                 }
 
@@ -301,7 +301,7 @@ section "com" {
 
                     * empty()'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_Field@1]
+                    derived_from = [Communication.FEAT_FieldStructure@1]
                     version = 1
                 }
             }

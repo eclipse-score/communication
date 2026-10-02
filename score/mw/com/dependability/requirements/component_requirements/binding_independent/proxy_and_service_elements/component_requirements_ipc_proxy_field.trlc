@@ -123,7 +123,7 @@ section "com" {
 
                     Behaviour: is described in Behaviour of UnsetSubscriptionStateChangeHandler.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_Method@1]
+                    derived_from = [Communication.FEAT_MethodStructure@1]
                     version = 1
                 }
 
@@ -168,7 +168,7 @@ section "com" {
 
                     Return value: In case {{SetReceiveHandler()}} fails, {{ComErrc::kSetHandlerNotSet}} shall be returned in the {{Result}}.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_Method@1]
+                    derived_from = [Communication.FEAT_MethodStructure@1]
                     version = 1
                 }
 
@@ -183,7 +183,7 @@ section "com" {
 
                     Return value: {{UnsetReceiveHandler()}}{{ComErrc::kUnsetFailure}}{{Result}}In case  fails,  shall be returned in the '''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_Method@1]
+                    derived_from = [Communication.FEAT_MethodStructure@1]
                     version = 1
                 }
 
