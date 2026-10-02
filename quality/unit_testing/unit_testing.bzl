@@ -76,7 +76,7 @@ def cc_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
       target_compatible_with: Forwarded to the public
       forwarding test target so that incompatible platforms are correctly skipped instead of
       being silently ignored. Calling an underlying platform specific target will circumvent this for obvious reasons.
-
+      tags: Additional tags; it must not contain the tag unit, which is added automatically.
       **kwargs: Additional parameters to be forwarded to cc_unit_test and transitively to cc_test. size and timeout
       cannot be provided and if tags is provided, it should not contain the tag unit.
       The following dependencies are already added to deps:
