@@ -71,6 +71,7 @@ def _coverage_scope_aspect_impl(target, ctx):
             for linker_input in target[CcInfo].linking_context.linker_inputs.to_list():
                 for lib in linker_input.libraries:
                     for archive in [lib.static_library, lib.pic_static_library]:
+                        # buildifier: disable=external-path
                         if archive and "/external/" not in archive.path and not archive.path.startswith("external/"):
                             direct_archives.append(archive)
                             break
@@ -81,6 +82,8 @@ def _coverage_scope_aspect_impl(target, ctx):
             if not f.path.startswith("external/") and f.is_source:
                 direct_files.append(f.short_path)
         out = target[CrateInfo].output
+
+        # buildifier: disable=external-path
         if out and "/external/" not in out.path and not out.path.startswith("external/"):
             direct_archives.append(out)
 
