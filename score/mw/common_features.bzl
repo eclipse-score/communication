@@ -11,6 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+"""Compiler warning features shared by the targets of this module."""
+
 visibility(["//..."])
 
 COMPILER_WARNING_FEATURES = [
