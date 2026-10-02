@@ -57,6 +57,25 @@ class ToSarifTest(unittest.TestCase):
         self.assertEqual(sarif["runs"][0]["results"], [])
 
 
+class FileLevelFindingsTest(unittest.TestCase):
+    def results(self, *files):
+        return to_sarif({"files": list(files)})["runs"][0]["results"]
+
+    def test_syntax_error_is_reported_without_reformat(self):
+        (result,) = self.results({"filename": "./BAD.bzl", "valid": False, "formatted": False, "warnings": []})
+        self.assertEqual(result["ruleId"], "syntax-error")
+        self.assertEqual(result["level"], "error")
+        self.assertEqual(result["locations"][0]["physicalLocation"]["artifactLocation"]["uri"], "BAD.bzl")
+
+    def test_unformatted_file_is_reported_as_error(self):
+        (result,) = self.results({"filename": "./fmt.bzl", "valid": True, "formatted": False, "warnings": []})
+        self.assertEqual(result["ruleId"], "reformat")
+        self.assertEqual(result["level"], "error")
+
+    def test_valid_and_formatted_file_has_no_result(self):
+        self.assertEqual(self.results({"filename": "./ok.bzl", "valid": True, "formatted": True, "warnings": []}), [])
+
+
 class MainTest(unittest.TestCase):
     def run_main(self, buildifier_json):
         completed = mock.Mock(stdout=json.dumps(buildifier_json))
