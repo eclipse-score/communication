@@ -257,13 +257,12 @@ ScoreReq.AoU LoLaSpecificQnxMessagingEndPointsOnlyAccessedThroughLoLa {
     mitigates = "SendingEventOnlyPartiallyNotifiesConsumer"
 }
 
-/* broken_link_c/issue/5835432 */
-ScoreReq.AoU AragenNotSafe {
-    description = "Input artifacts shall be manually reviewed for correctness"
+ScoreReq.AoU ArtifactsRequireManualReview {
+    description = "Input artifacts (proxy/skeleton code and mw::config) shall be manually reviewed for correctness"
     safety = ScoreReq.Asil.B
-    note = "aragen is not safety qualified, thus its outputs are not safe also. Usage of aragen is not mandatory as the LoLa specific interfaces can be written manually in C++ using LoLa provided support templates."
+    note = "Proxy/skeleton code and mw::config are hand-written artifacts and might not be in sync or match."
     version = 1
-    mitigates = "GeneratedCodeDoesNotMatchGenerationInputs"
+    mitigates = "CodeDoesNotMatchConfiguration"
 }
 
 /* broken_link_c/issue/5835457 */
@@ -314,7 +313,7 @@ ScoreReq.AoU CorrectlyConfiguredEventsFieldsPerServiceType {
     description = "It shall be ensured that all safety relevant events/fields in the service type are the same in all configurations."
     safety = ScoreReq.Asil.B
     version = 1
-    mitigates = "MapContainingNonexistentEvents, IncompleteMapOfEvents"
+    mitigates = "MapContainingNonexistentEvents, IncompleteMapOfEvents, CodeDoesNotMatchConfiguration"
 }
 
 /* added for method FMEA */

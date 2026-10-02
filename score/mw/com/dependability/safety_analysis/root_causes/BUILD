@@ -14,6 +14,7 @@
 filegroup(
     name = "general",
     srcs = [
+        "fta_code_does_not_match_configuration.puml",
         "in_memory_configuration_wrong_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],

@@ -50,14 +50,13 @@ section "LoLa" {
     }
 
     // ID: 6370898
-    ScoreReq.FailureMode GeneratedCodeDoesNotMatchGenerationInputs {
+    ScoreReq.FailureMode CodeDoesNotMatchConfiguration {
         guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-        description = "Proxys and Skeletons as data-types are generated using the aragen and not handwritten, may not match to the input (Meta-Model)."
+        description = "Definitions of proxies, skeletons and data-types may not match the given mw::com configuration."
         failureeffect = "A faulty configuration which does not lead to compile issues could lead to safety issues according to analysis."
         version = 1
         safety = ScoreReq.Asil.B
-        rationale = "Add an AoU that all configurations should be reviewed before use in a safety context."
-        // potentialcause = "aragen was not implemented according to safety standards and no code-review or safety analysis was performed. Thus any potential issue could happen."
+        rationale = "Add an AoU that all code artifacts and configurations should be reviewed before use in a safety context."
     }
 
     // ID: 6370915

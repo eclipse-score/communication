@@ -1,0 +1,37 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$TopEvent("Proxy/skeleton code does not match mw::com configuration", "Communication.CodeDoesNotMatchConfiguration")
+
+$OrGate("Gate1", "Communication.CodeDoesNotMatchConfiguration")
+
+$IntermediateEvent("Service element name used in code has no matching entry in the JSON configuration", "Event2", "Gate1")
+$OrGate("Gate2", "Event2")
+
+$BasicEvent("JSON configuration edited without syncing proxy/skeleton code (or vice versa)", "Communication.ArtifactsRequireManualReview", "Gate2")
+
+note right of Communication.ArtifactsRequireManualReview
+     Either as a fail-stop crash (typed Proxy/Skeleton or tracing runtime) or silent loss (GenericSkeleton).
+end note
+
+$BasicEvent("Skeleton and Proxy built/deployed from inconsistent revisions of underlying datatypes", "Communication.CorrectlyConfiguredEventsFieldsPerServiceType", "Gate1")
+
+note right of Communication.CorrectlyConfiguredEventsFieldsPerServiceType
+     Datatype definitions have no version information.
+end note
+
+@enduml
