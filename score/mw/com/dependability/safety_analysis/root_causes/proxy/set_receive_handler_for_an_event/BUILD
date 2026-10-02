@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -12,11 +12,12 @@
 # *******************************************************************************
 
 filegroup(
-    name = "subscribe_for_an_event_fta",
+    name = "set_receive_handler_for_an_event_fta",
     srcs = [
-        "does_not_subscribe_fta.puml",
-        "subscribe_to_wrong_event_fta.puml",
-        "subscribe_with_wrong_max_sample_count_fta.puml",
+        "receive_handler_invoked_multiple_times_fta.puml",
+        "receive_handler_invoked_with_wrong_event_fta.puml",
+        "receive_handler_invoked_without_event_notification_fta.puml",
+        "receive_handler_not_invoked_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

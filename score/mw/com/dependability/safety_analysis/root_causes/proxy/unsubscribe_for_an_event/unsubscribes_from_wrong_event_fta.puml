@@ -14,10 +14,10 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Does not unsubscribe", "Communication.DoesNotUnsubscribe")
+$TopEvent("Unsubscribes from wrong event", "Communication.UnsubscribesFromWrongEvent")
 
-$OrGate("Gate1", "Communication.DoesNotUnsubscribe")
-$BasicEvent("Explicit unsubscribe by user failed", "Communication.ExplicitUnsubscribeByUserFailed", "Gate1")
-$BasicEvent("Proxy crashes without unsubscription", "Communication.ProxyCrashesWithoutUnsubscription", "Gate1")
+$OrGate("Gate1", "Communication.UnsubscribesFromWrongEvent")
+$IntermediateEvent("Subscribe to wrong event", "Event1", "Gate1")
+$TransferInGate("Transfer1", "Event1")
 
 @enduml
