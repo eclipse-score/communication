@@ -29,6 +29,7 @@ branch covers them. rust_binary targets provide no CcInfo; a dedicated
 CrateInfo branch collects their sources and the coverage-built executable.
 """
 
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_rust//rust:rust_common.bzl", "CrateInfo")
 
 visibility(["//..."])

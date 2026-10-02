@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes", "pkg_files")
 
 cc_binary(
