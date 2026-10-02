@@ -125,9 +125,9 @@ std::size_t CalculateLowerBoundDataShmSize(const std::vector<EventInfo>& events)
     std::size_t lower_bound{sizeof(ServiceDataStorage)};
     for (const auto event_info : events)
     {
-        lower_bound += sizeof(decltype(ServiceDataStorage::events_)::value_type);
+        lower_bound += sizeof(ServiceDataStorage::EventDataStorageMap::value_type);
         lower_bound += event_info.max_samples * event_info.event_size;
-        lower_bound += sizeof(decltype(ServiceDataStorage::events_metainfo_)::value_type);
+        lower_bound += sizeof(ServiceDataStorage::EventMetaInfoMap::value_type);
     }
     return lower_bound;
 }

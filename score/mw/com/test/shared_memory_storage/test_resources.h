@@ -45,13 +45,8 @@ class ProxyTestAttorney
         {
             return {};
         }
-        const auto event_meta_info_entry = service_data_storage->events_metainfo_.find(element_fq_id);
-        if (event_meta_info_entry == service_data_storage->events_metainfo_.end())
-        {
-            return {};
-        }
-        void* const meta_info_address = &event_meta_info_entry->second;
-        return memory::shared::SubtractPointersBytes(meta_info_address, proxy_.data_->getBaseAddress());
+        const auto& event_meta_info = service_data_storage->GetEventMetaInfo(element_fq_id);
+        return memory::shared::SubtractPointersBytes(&event_meta_info, proxy_.data_->getBaseAddress());
     }
 
   private:
@@ -92,15 +87,10 @@ class SkeletonAttorney
         SkeletonMemoryManagerTestAttorney skeleton_memory_manager_attorney{skeleton_.memory_manager_};
 
         auto& service_data_storage = skeleton_memory_manager_attorney.GetServiceDataStorage();
-        auto search = service_data_storage.events_metainfo_.find(element_fq_id);
-        if (search == service_data_storage.events_metainfo_.cend())
-        {
-            return {};
-        }
-        void* const meta_info_address = &search->second;
+        const auto& event_meta_info = service_data_storage.GetEventMetaInfo(element_fq_id);
 
         const auto& service_data_storage_resource = skeleton_memory_manager_attorney.GetServiceDataStorageResource();
-        return memory::shared::SubtractPointersBytes(meta_info_address, service_data_storage_resource.getBaseAddress());
+        return memory::shared::SubtractPointersBytes(&event_meta_info, service_data_storage_resource.getBaseAddress());
     }
 
   private:
