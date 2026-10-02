@@ -536,21 +536,19 @@ std::size_t SkeletonMemoryManager::CalculateDataShmResourceStorageSize(
     // event bindings. The layout-dependent size algorithm itself lives next to ServiceDataStorage
     // (CalculateServiceDataStorageShmSize), so that the data-structure and the algorithm reasoning about its memory
     // footprint stay closely coupled.
-    const auto collect_service_elements =
-        [this](std::vector<score::memory::DataTypeSizeInfo>& events_and_fields_size_infos,
-               auto& bindings,
-               const bool are_fields) {
-            for (const auto& binding : bindings)
-            {
-                const std::size_t number_of_slots = GetNumberOfSampleSlotsFromConfig(binding.first, are_fields);
-                SkeletonEventBinding& event_binding = binding.second.get();
+    const auto collect_service_elements = [this](std::vector<EventDataStorageSizeInfo>& events_and_fields_size_infos,
+                                                 auto& bindings,
+                                                 const bool are_fields) {
+        for (const auto& binding : bindings)
+        {
+            const std::size_t number_of_slots = GetNumberOfSampleSlotsFromConfig(binding.first, are_fields);
+            SkeletonEventBinding& event_binding = binding.second.get();
 
-                const std::size_t slot_array_size = number_of_slots * event_binding.GetEventDataTypeSizeInfo().Size();
-                std::ignore = events_and_fields_size_infos.emplace_back(
-                    slot_array_size, event_binding.GetEventDataTypeSizeInfo().Alignment());
-            }
-        };
-    std::vector<score::memory::DataTypeSizeInfo> events_and_fields_size_infos{};
+            std::ignore = events_and_fields_size_infos.emplace_back(
+                EventDataStorageSizeInfo{number_of_slots, event_binding.GetEventDataTypeSizeInfo()});
+        }
+    };
+    std::vector<EventDataStorageSizeInfo> events_and_fields_size_infos{};
     collect_service_elements(events_and_fields_size_infos, events, false);
     collect_service_elements(events_and_fields_size_infos, fields, true);
 

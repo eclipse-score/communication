@@ -25,7 +25,7 @@ namespace score::mw::com::impl::lola
 {
 
 std::size_t CalculateServiceDataStorageShmSize(
-    const score::cpp::span<const score::memory::DataTypeSizeInfo> event_and_fields_size_info)
+    const score::cpp::span<const EventDataStorageSizeInfo> event_and_fields_size_info)
 {
     // The number of events + fields determines the (fixed) capacity of the two LinearSearchMaps within the
     // ServiceDataStorage. It equals the number of sizing entries handed over.
@@ -52,12 +52,9 @@ std::size_t CalculateServiceDataStorageShmSize(
         alignof(ServiceDataStorage::EventMetaInfoMap::value_type));
 
     // (3) For each event/field (in the exact order it gets registered/offered): the EventDataStorage object plus its
-    // data-slot-array (type_erased_data_slots_). The exact size/alignment of the slot-array (see
-    // SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory()) is provided by the caller.
-    // \ToDo see also comment in AddEventDataStorageShmSizeAllocation(): We should eventually hand down number_of_slots/
-    // event sample size info separated, instead of aggregated arrays as it "anticipates", what EventDataStorage does!
-    // Ticket: SWP-281780
-
+    // data-slot-array (type_erased_data_slots_). The number of slots plus the size/alignment of a single slot is
+    // provided by the caller; AddEventDataStorageShmSizeAllocation() itself computes the actual slot-array allocation
+    // size/alignment needs.
     for (const auto& service_element : event_and_fields_size_info)
     {
         AddEventDataStorageShmSizeAllocation(allocation_sequence, service_element);

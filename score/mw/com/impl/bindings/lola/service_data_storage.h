@@ -84,15 +84,14 @@ class ServiceDataStorage
 ///          aligned location) and we know the size/alignment/order of every individual allocation performed by the
 ///          real construction, we can reconstruct the exact same sequence of allocations here and compute the exact
 ///          alignment-padding between them (see score::memory::shared::CalculateAlignedSizeOfSequence()).
-/// \param event_and_fields_size_info per service-element sizing information (Size() being the exact size, in bytes,
-///        of the raw slot-array that will be allocated for the service-element; Alignment() being its required
-///        alignment). The caller (SkeletonMemoryManager) is responsible for computing these values
-///        (see SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory()).
+/// \param event_and_fields_size_info per service-element sizing information: the number of (type-erased) slots plus
+///        the size/alignment of a single slot. The caller (SkeletonMemoryManager) is responsible for providing these
+///        values (see SkeletonMemoryManager::CalculateDataShmResourceStorageSize()).
 ///        The size of the span equals the number of service-elements (events + fields), which is the fixed capacity
 ///        the ServiceDataStorage containers are constructed with.
 /// \return the exact number of bytes needed for the data shm-object.
 std::size_t CalculateServiceDataStorageShmSize(
-    score::cpp::span<const score::memory::DataTypeSizeInfo> event_and_fields_size_info);
+    score::cpp::span<const EventDataStorageSizeInfo> event_and_fields_size_info);
 
 }  // namespace score::mw::com::impl::lola
 

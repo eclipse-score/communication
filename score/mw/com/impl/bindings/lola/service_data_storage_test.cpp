@@ -112,16 +112,16 @@ TEST_F(ServiceDataStorageFixture, GetsUidFromRuntimAndStoresItOnConstruction)
 TEST(ServiceDataStorageShmSizeTest, IncreasingAlignedSlotArraySizeOfAServiceElementIncreasesCalculatedSize)
 {
     // Given two sizing infos for a single service-element that only differ in the size of their raw slot-array
-    const std::vector<score::memory::DataTypeSizeInfo> service_elements_with_smaller_slot_array{
-        score::memory::DataTypeSizeInfo{32U, 16U}};
-    const std::vector<score::memory::DataTypeSizeInfo> service_elements_with_bigger_slot_array{
-        score::memory::DataTypeSizeInfo{320U, 16U}};
+    const std::vector<EventDataStorageSizeInfo> service_elements_with_smaller_slot_array{
+        EventDataStorageSizeInfo{2U, score::memory::DataTypeSizeInfo{32U, 16U}}};
+    const std::vector<EventDataStorageSizeInfo> service_elements_with_bigger_slot_array{
+        EventDataStorageSizeInfo{20U, score::memory::DataTypeSizeInfo{32U, 16U}}};
 
     // When calculating the required shm-size for both sizing infos
     const auto size_with_fewer_slots = CalculateServiceDataStorageShmSize(
-        score::cpp::span<const score::memory::DataTypeSizeInfo>{service_elements_with_smaller_slot_array});
+        score::cpp::span<const EventDataStorageSizeInfo>{service_elements_with_smaller_slot_array});
     const auto size_with_more_slots = CalculateServiceDataStorageShmSize(
-        score::cpp::span<const score::memory::DataTypeSizeInfo>{service_elements_with_bigger_slot_array});
+        score::cpp::span<const EventDataStorageSizeInfo>{service_elements_with_bigger_slot_array});
 
     // Then the calculated size for the service-element with the bigger raw slot-array is bigger.
     EXPECT_GT(size_with_more_slots, size_with_fewer_slots);
@@ -131,31 +131,23 @@ TEST(ServiceDataStorageShmSizeTest, AddingAnAdditionalServiceElementIncreasesCal
 {
     // Given the sizing information of one service-element and, additionally, the very same sizing information for
     // two service-elements
-    const std::vector<score::memory::DataTypeSizeInfo> single_service_element{
-        score::memory::DataTypeSizeInfo{48U, 16U}};
-    const std::vector<score::memory::DataTypeSizeInfo> two_service_elements{score::memory::DataTypeSizeInfo{48U, 16U},
-                                                                            score::memory::DataTypeSizeInfo{48U, 16U}};
+    const std::vector<EventDataStorageSizeInfo> single_service_element{
+        EventDataStorageSizeInfo{1U, score::memory::DataTypeSizeInfo{48U, 16U}}};
+    const std::vector<EventDataStorageSizeInfo> two_service_elements{
+        EventDataStorageSizeInfo{1U, score::memory::DataTypeSizeInfo{48U, 16U}},
+        EventDataStorageSizeInfo{1U, score::memory::DataTypeSizeInfo{48U, 16U}}};
 
     // When calculating the required shm-size for both sizing infos
-    const auto size_for_single_service_element = CalculateServiceDataStorageShmSize(
-        score::cpp::span<const score::memory::DataTypeSizeInfo>{single_service_element});
-    const auto size_for_two_service_elements = CalculateServiceDataStorageShmSize(
-        score::cpp::span<const score::memory::DataTypeSizeInfo>{two_service_elements});
+    const auto size_for_single_service_element =
+        CalculateServiceDataStorageShmSize(score::cpp::span<const EventDataStorageSizeInfo>{single_service_element});
+    const auto size_for_two_service_elements =
+        CalculateServiceDataStorageShmSize(score::cpp::span<const EventDataStorageSizeInfo>{two_service_elements});
 
     // Then the calculated size for two service-elements is bigger than for a single one.
     EXPECT_GT(size_for_two_service_elements, size_for_single_service_element);
 }
 
-/// \brief Sizing information of a single service-element (event/field): the size/alignment of a single sample of
-/// its datatype plus the number of slots in its raw slot-array. This mirrors exactly what
-/// SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory() passes to EventDataStorage's constructor at runtime.
-struct EventOrFieldSizeInfo
-{
-    score::memory::DataTypeSizeInfo per_sample_size_info;
-    std::size_t number_of_slots;
-};
-
-using EventsOrFieldsSizeInfo = std::vector<EventOrFieldSizeInfo>;
+using EventsOrFieldsSizeInfo = std::vector<EventDataStorageSizeInfo>;
 
 /// \brief Constructs a real ServiceDataStorage on the given resource and, for each entry of
 /// service_elements_size_info, a real EventDataStorage whose raw slot-array's size/alignment matches the entry
@@ -179,23 +171,6 @@ std::size_t ConstructServiceDataStorageAndGetAllocatedBytes(const EventsOrFields
     return resource.GetUserAllocatedBytes();
 }
 
-/// \brief Converts the given per-service-element sizing information (one sample's size/alignment plus the number of
-/// slots) into the per-service-element TOTAL raw slot-array sizing information expected by
-/// CalculateServiceDataStorageShmSize().
-std::vector<score::memory::DataTypeSizeInfo> ToSlotArraySizeInfos(
-    const EventsOrFieldsSizeInfo& service_elements_size_info)
-{
-    std::vector<score::memory::DataTypeSizeInfo> slot_array_size_infos{};
-    slot_array_size_infos.reserve(service_elements_size_info.size());
-    for (const auto& service_element : service_elements_size_info)
-    {
-        slot_array_size_infos.emplace_back(
-            service_element.number_of_slots * service_element.per_sample_size_info.Size(),
-            service_element.per_sample_size_info.Alignment());
-    }
-    return slot_array_size_infos;
-}
-
 class ServiceDataStorageShmSizeParameterizedTestFixture : public ServiceDataStorageFixture,
                                                           public ::testing::WithParamInterface<EventsOrFieldsSizeInfo>
 {
@@ -208,9 +183,8 @@ TEST_P(ServiceDataStorageShmSizeParameterizedTestFixture, CalculatedSizeMatchesA
     const auto& service_elements_size_info = GetParam();
 
     // When calculating the required shm-size for a ServiceDataStorage holding these service-elements
-    const auto slot_array_size_infos = ToSlotArraySizeInfos(service_elements_size_info);
     const auto calculated_size = CalculateServiceDataStorageShmSize(
-        score::cpp::span<const score::memory::DataTypeSizeInfo>{slot_array_size_infos});
+        score::cpp::span<const EventDataStorageSizeInfo>{service_elements_size_info});
 
     // Then the calculated size exactly matches the number of bytes actually allocated when constructing a real
     // ServiceDataStorage (and its EventDataStorages) with the very same sizing information.
@@ -228,12 +202,14 @@ INSTANTIATE_TEST_SUITE_P(
         // No service-elements at all (an empty span)
         EventsOrFieldsSizeInfo{},
         // A single service-element (event/field): 5 slots of a datatype of size/alignment 16
-        EventsOrFieldsSizeInfo{EventOrFieldSizeInfo{score::memory::DataTypeSizeInfo{16U, 16U}, 5U}},
+        EventsOrFieldsSizeInfo{EventDataStorageSizeInfo{5U, score::memory::DataTypeSizeInfo{16U, 16U}}},
         // Multiple service-elements (events/fields) with differing per-sample sizes/alignments and slot-counts
         EventsOrFieldsSizeInfo{
-            EventOrFieldSizeInfo{score::memory::DataTypeSizeInfo{8U, 8U}, 2U},
-            EventOrFieldSizeInfo{score::memory::DataTypeSizeInfo{kMaxSupportedAlignment, kMaxSupportedAlignment}, 14U},
-            EventOrFieldSizeInfo{score::memory::DataTypeSizeInfo{kMaxSupportedAlignment, kMaxSupportedAlignment}, 8U},
+            EventDataStorageSizeInfo{2U, score::memory::DataTypeSizeInfo{8U, 8U}},
+            EventDataStorageSizeInfo{14U,
+                                     score::memory::DataTypeSizeInfo{kMaxSupportedAlignment, kMaxSupportedAlignment}},
+            EventDataStorageSizeInfo{8U,
+                                     score::memory::DataTypeSizeInfo{kMaxSupportedAlignment, kMaxSupportedAlignment}},
         }));
 
 }  // namespace
