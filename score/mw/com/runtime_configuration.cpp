@@ -50,9 +50,10 @@ RuntimeConfiguration::RuntimeConfiguration(const std::int32_t argc, const char* 
     // This is a deprecated API for a reason! If the given argv[] is not null-terminated, it can lead to undefined
     // behavior. But this isn't introduced newly by this conversion!
     std::vector<safecpp::zstring_view> command_line_arguments{};
-    for (std::int32_t arg_idx = 0U; arg_idx < argc; arg_idx++)
+    const cpp::span<const char*> arguments{argv, static_cast<std::size_t>(argc)};
+    for (const char* const raw_argument : arguments)
     {
-        auto argument = std::string_view{argv[arg_idx]};
+        auto argument = std::string_view{raw_argument};
         command_line_arguments.emplace_back(argument.data(), argument.size());
     }
 

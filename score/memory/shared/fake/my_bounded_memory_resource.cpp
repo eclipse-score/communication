@@ -23,6 +23,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 
 namespace score::memory::shared::test
 {
@@ -34,7 +35,7 @@ std::pair<void*, void*> AllocateMemoryRange(const std::size_t memory_resource_si
 {
     auto* memory_allocation = static_cast<std::uint8_t*>(std::malloc(memory_resource_size));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(memory_allocation != nullptr, "Malloc must return allocated memory!");
-    return {memory_allocation, memory_allocation + memory_resource_size};
+    return {memory_allocation, std::next(memory_allocation, static_cast<std::ptrdiff_t>(memory_resource_size))};
 }
 
 }  // namespace

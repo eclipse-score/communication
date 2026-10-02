@@ -19,6 +19,7 @@
 #include <csignal>
 #include <cstdio>
 #include <cstring>
+#include <iterator>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -83,7 +84,7 @@ void SendSample(HelloWorldSkeleton& service_instance,
     const auto capacity = sample_allocatee_ptr.value().Get()->size();
     const auto chars_to_copy = std::min(message.size(), capacity - 1U);
     std::memcpy(buf, message.data(), chars_to_copy);
-    buf[chars_to_copy] = '\0';
+    *std::next(buf, chars_to_copy) = '\0';
 
     // Send the new event sample (make it visible to potential consumers)
     auto send_result = service_instance.message.Send(std::move(sample_allocatee_ptr.value()));
