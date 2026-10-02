@@ -15,13 +15,13 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("The size returned is bigger / smaller then the actual value", "Communication.TheSizeReturnedIsBiggerThenTheActualValue")
+$FailureMode("The size returned is bigger / smaller then the actual value", "Communication.TheSizeReturnedIsBiggerThenTheActualValue")
 
 $OrGate("Gate1", "Communication.TheSizeReturnedIsBiggerThenTheActualValue")
 $IntermediateEvent("Provider side set wrong size in Shared Memory", "Event1", "Gate1")
 $OrGate("Gate2", "Event1")
-$BasicEvent("Size was wrongly set in Shared Memory", "Communication.SizeWasWronglySetInSharedMemory", "Gate2")
-$BasicEvent("Size was manipulated in Shared Memory", "Communication.SizeWasManipulatedInSharedMemory", "Gate2")
-$BasicEvent("Consumer looked up size in wrong location", "Communication.ConsumerLookedUpSizeInWrongLocation", "Gate1")
+$RootCause("Size was wrongly set in Shared Memory", "SizeWasWronglySetInSharedMemory", "Gate2")
+$RootCause("Size was manipulated in Shared Memory", "SizeWasManipulatedInSharedMemory", "Gate2")
+$RootCause("Consumer looked up size in wrong location", "ConsumerLookedUpSizeInWrongLocation", "Gate1")
 
 @enduml

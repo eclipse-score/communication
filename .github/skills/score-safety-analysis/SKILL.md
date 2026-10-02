@@ -1,6 +1,6 @@
 ---
 name: score-safety-analysis
-description: "Step-by-step workflow for creating or extending a FMEA-based safety analysis in TRLC format for S-CORE software components. Use when asked to: add failure modes, create FTA diagrams, add control measures, or validate the safety analysis traceability chain. Covers clustering, FailureMode records, FTA PlantUML files, ControlMeasure records, BUILD wiring, and trlc validation."
+description: "Step-by-step workflow for creating or extending a FMEA-based safety analysis in TRLC format for S-CORE software components. Use when asked to: add failure modes, create FTA diagrams, add mitigations, or validate the safety analysis traceability chain. Covers clustering, FailureMode records, FTA PlantUML files, Mitigation records, BUILD wiring, and trlc validation."
 argument-hint: "interface or component name to analyse"
 ---
 
@@ -23,7 +23,7 @@ argument-hint: "interface or component name to analyse"
 
 - Adding new failure modes to an existing safety analysis
 - Creating FTA diagrams for root-cause decomposition
-- Defining ControlMeasure / AoU records for identified root causes
+- Defining Mitigation / CompReq / AoU records for identified root causes
 - Validating the full traceability chain before a review of a safety analysis
 
 ## Key Files and Locations
@@ -32,9 +32,9 @@ argument-hint: "interface or component name to analyse"
 score/<component>/dependability/
 ├── safety_analysis/
 │   ├── failure_modes.trlc      # FailureMode records (one per unique root-cause cluster)
-│   ├── control_measures.trlc   # ControlMeasure / PreventiveMeasure / AoU records
+│   ├── safetymeasures.trlc     # Mitigation / AoU / CompReq records
 │   ├── fta_<failure_mode>.puml # One FTA diagram per FailureMode
-│   └── BUILD                   # fmea() rule — must list all .puml in fta_files filegroup
+│   └── BUILD                   # safety_analysis() rule — must list all .puml in fta_files filegroup
 ├── assumed_system/
 │   └── aous.trlc               # AoU records (caller obligations)
 └── requirements/
@@ -64,7 +64,7 @@ than inventing it.
 
 Only once the failure modes, causes, and measures are decided, transcribe them into the files
 below (Steps 1–5). This is mechanical: one `FailureMode` per decided effect, one FTA per failure
-mode, one measure record per `$BasicEvent`, matching aliases, BUILD wired, `trlc` clean.
+mode, one measure record per `$RootCause`, matching aliases, BUILD wired, `trlc` clean.
 
 ## Authoring guidance: performing the FMEA
 
@@ -85,16 +85,15 @@ safety goal?"* Dismiss low-relevance models with a short rationale.
 worst-case terms relative to the safety goal. Then build the FTA top-down to **actionable root
 causes**: `$OrGate` (default) when any single cause suffices; `$AndGate` only when all must
 co-occur (a fault *and* a failed safety mechanism — this justifies lower residual risk). Decompose
-until each `$BasicEvent` is something you can place a measure on.
+until each `$RootCause` is something you can place a measure on.
 
-**Step 3 — one measure per root cause**, chosen by *when* it acts:
+**Step 3 — one measure per root cause**, chosen by *who* closes it:
 
-| Type | Use when it… | Acts |
-|------|--------------|------|
-| `PreventiveMeasure` | removes the cause so the fault cannot occur | before |
-| `ControlMeasure` | detects/handles the fault at runtime (plausibility check, monitor) | during |
-| `Mitigation` | reduces severity/probability after occurrence | after |
-| `AoU` | can only be guaranteed by the **integrator/caller** | at integration |
+| Type | Use when it… | Closed via |
+|------|--------------|------------|
+| `Mitigation` | the SEooC itself provides a dedicated safety measure (with a mandatory `justification`) | `root_causes` |
+| `CompReq` | a normal, implemented-and-tested component requirement already closes it | `derived_from` |
+| `AoU` | can only be guaranteed by the **integrator/caller** | `root_causes` (optional) |
 
 Use an `AoU` to **push an obligation outward** when the SEooC cannot close a cause itself; it must
 be forwarded to the integrating project. Record *why* a measure is sufficient (AND-gate argument,
@@ -128,19 +127,22 @@ ScoreReq.FailureMode <RecordName> {
 
 ## Step 2 — Create FTA Diagrams (`fta_<snake_name>.puml`)
 
-One `.puml` file per `FailureMode` record. The `$TopEvent` alias **must** equal the fully-qualified TRLC record name (`<Package>.<RecordName>`).
+Use `$FailureMode(name, fm1, fm2="", ..., fm8="")` to link the diagram's top-level node
+directly to the `FailureMode` record(s) it covers — `fm1` is mandatory, up to
+`fm8` may be given, each a fully-qualified `<Pkg>.<FailureModeRecord>` name.
+`fm1` also doubles as the node's connection point for gates.
 
 ```plantuml
 @startuml
 
 !include fta_metamodel.puml
 
-$TopEvent("<Human-readable top event label>", "<Pkg>.<FailureModeRecord>")
+$FailureMode("<Human-readable failure-mode node label>", "<Pkg>.<FailureModeRecord>", "<Pkg>.<FailureModeRecord2>")
 
 $OrGate("OG1", "<Pkg>.<FailureModeRecord>")
 
-$BasicEvent("<Root cause label>", "<Pkg>.<ControlMeasureRecord>", "OG1")
-$BasicEvent("<Root cause label 2>", "<Pkg>.<ControlMeasureRecord2>", "OG1")
+$RootCause("<Root cause label>", "<RootCauseAlias>", "OG1")
+$RootCause("<Root cause label 2>", "<RootCauseAlias2>", "OG1")
 
 @enduml
 ```
@@ -149,37 +151,40 @@ $BasicEvent("<Root cause label 2>", "<Pkg>.<ControlMeasureRecord2>", "OG1")
 
 | Procedure | Purpose | `connection` points to |
 |-----------|---------|------------------------|
-| `$TopEvent(name, alias)` | Top failure mode | — (root, no connection) |
+| `$FailureMode(name, fm1, fm2, ..., fm8)` | Top failure mode; `fm1`..`fm8` are `FailureMode` FQNs it covers | — (root, no connection); `fm1` is the alias used by child gates |
 | `$OrGate(alias, connection)` | Any child sufficient | parent alias |
 | `$AndGate(alias, connection)` | All children required | parent alias |
-| `$BasicEvent(name, alias, connection)` | Root cause / leaf | enclosing gate alias |
+| `$RootCause(name, alias, connection)` | Root cause / leaf — `alias` must be a **plain TRLC identifier** (no dotted `Package.Name`) | enclosing gate alias |
 | `$IntermediateEvent(name, alias, connection)` | Intermediate cause | parent gate alias |
 | `$TransferInGate(name, alias, connection)` | Link to sub-tree | parent alias |
 
 **Rules:**
-- `$BasicEvent` alias = `<Package>.<ControlMeasureRecordName>` — this IS the traceability link.
-- Build bottom-up in the file: `$TopEvent` first, then gates, then `$BasicEvent` leaves.
-- The same `ControlMeasure` alias may appear in multiple FTAs (shared root cause).
+- `$RootCause` alias is a plain identifier; the `puml_cli` FTA parser auto-generates a `fta_events.trlc` stub (imported as `<name>_fta`) containing a `RootCause` record named after that alias — `Mitigation`/`CompReq`/`AoU` records reference it explicitly (e.g. `root_causes = [sample_safety_analysis_fta.JustBadLuck]`); there is no implicit name-matching.
+- Build top-down in the file: `$FailureMode` first, then gates, then `$RootCause` leaves.
+- The same `$RootCause` alias may appear in multiple FTAs (shared root cause).
 - `$OrGate` is the default for independent root causes; use `$AndGate` only when all causes must co-occur.
 
-## Step 3 — Write ControlMeasure Records (`control_measures.trlc`)
+## Step 3 — Write Mitigation Records (`safetymeasures.trlc`)
 
-For every `$BasicEvent` alias in every FTA, define a matching record:
+For every `$RootCause` alias in every FTA that isn't already closed by a `CompReq` or `AoU`,
+define a matching `Mitigation` record. `root_causes` and `justification` are both
+**mandatory**, and `root_causes` must reference the generated `RootCause` stub(s):
 
 ```trlc
-ScoreReq.ControlMeasure <RecordName> {
-    safety      = ScoreReq.Asil.B
-    description = "Normative measure text"
-    version     = 1
+ScoreReq.Mitigation <RecordName> {
+    safety        = ScoreReq.Asil.B
+    description   = "Normative measure text"
+    justification = "Why this measure is sufficient to close the root cause"
+    version       = 1
+    root_causes   = [<fta_package>.<RootCauseAlias>]
 }
 ```
 
-Other available types (same pattern, different semantics):
-- `ScoreReq.PreventiveMeasure` — prevents the failure from occurring
-- `ScoreReq.Mitigation` — reduces severity/probability after occurrence
-- `ScoreReq.AoU` — assumption the caller must satisfy; add `mitigates = "<RecordName>"` field
+Other ways to close a root cause:
+- `ScoreReq.CompReq` — closes it via `derived_from`, referencing the `RootCause` stub alongside any `FeatReq`/`AssumedSystemReq`/`AoU` it also derives from
+- `ScoreReq.AoU` — assumption the caller must satisfy; does **not** extend `SafetyMeasure` and has its own independent, optional `root_causes` field (no `justification` required)
 
-**Rule:** `<Package>.<RecordName>` in TRLC must match the `$BasicEvent` alias verbatim.
+**Rule:** every `$RootCause` alias must be referenced by at least one `Mitigation.root_causes`, `CompReq.derived_from`, or `AoU.root_causes` — this is validated by `bazel test` on the owning `dependability_analysis` target.
 
 ## Step 4 — Update BUILD
 
@@ -199,22 +204,24 @@ filegroup(
 
 ## Step 5 — Validate
 
-**Pass criteria:** zero errors in `failure_modes.trlc`, `control_measures.trlc`, `aous.trlc`.
+**Pass criteria:** zero errors in `failure_modes.trlc`, `safetymeasures.trlc`, `aous.trlc`.
 Pre-existing RSL union-type errors (`expected identifier, encountered '['`) are a known trlc v2 / RSL version mismatch — ignore if they appear only in the tooling RSL, not in component files.
 
 **Traceability chain that must be complete:**
 
 ```
 FailureMode.interface  →  public_api interface name
-FailureMode record     →  $TopEvent alias
-$BasicEvent alias      →  ControlMeasure / AoU record name
+FailureMode record     →  $FailureMode fm1..fm8 arguments
+$RootCause alias      →  Mitigation.root_causes / CompReq.derived_from / AoU.root_causes
 ```
 
 ## Common Mistakes
 
 | Mistake | Fix |
 |---------|-----|
-| `$BasicEvent` alias does not match any TRLC record | Ensure `<Pkg>.<RecordName>` is spelled identically in both places |
+| `$RootCause` alias is dotted (`Pkg.Name`) | Use a plain identifier — dotted aliases are rejected for root causes |
+| `$FailureMode` fm1..fm8 argument does not match any TRLC record | Ensure `<Pkg>.<RecordName>` is spelled identically in both places |
+| A root cause (`$RootCause`) is not referenced by any `Mitigation`/`CompReq`/`AoU` | Add an explicit reference to the generated `<fta_package>.<Alias>` `RootCause` stub |
 | New `.puml` not in BUILD `fta_files` | Add the file path to the `srcs` list |
-| AoU added to `control_measures.trlc` | AoUs belong in `aous.trlc`; both extend `Measure` so the FTA alias still resolves |
+| AoU added to `safetymeasures.trlc` | AoUs belong in `aous.trlc`; `AoU` does not extend `SafetyMeasure`, it has its own independent `root_causes` field |
 | Wrong RSL used for trlc validation   | Always pass the tooling RSL as the first directory argument |

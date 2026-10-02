@@ -1,0 +1,54 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package MessagePassing
+
+import ScoreReq
+import message_passing_fta
+
+// ---------------------------------------------------------------------------
+// Safety measures for fta_message_not_delivered_correctly.puml
+// Each CompReq closes the $RootCause with the same alias via derived_from.
+// ---------------------------------------------------------------------------
+
+// "OS IPC transport failure not detected or handled"
+ScoreReq.CompReq OsIpcFaultHandling {
+    description  = "The component shall detect OS IPC transport failures by checking the return value of every OS call."
+    safety       = ScoreReq.Asil.B
+    derived_from = [message_passing_fta.OsIpcFaultHandling]
+    version      = 1
+}
+
+// "Invalid buffer or size argument passed to SendWaitReply"
+ScoreReq.CompReq SendBufferArgumentValidation {
+    description  = "The component shall validate all arguments of Send, SendWaitReply, and SendWithCallback before any IPC operation is initiated."
+    safety       = ScoreReq.Asil.B
+    derived_from = [message_passing_fta.SendBufferArgumentValidation]
+    version      = 1
+}
+
+// "Message exceeds configured max_send_size or max_reply_size"
+ScoreReq.CompReq BE_MessageTooBig {
+    description  = "The component shall enforce the configured max_send_size, max_reply_size, and max_notify_size limits on every client send path and every server Reply and Notify path."
+    safety       = ScoreReq.Asil.B
+    derived_from = [message_passing_fta.BE_MessageTooBig]
+    version      = 1
+}
+
+// "Send queue capacity exhausted or configured as zero"
+ScoreReq.CompReq BE_SendQueueExhausted {
+    description  = "The component shall use a pre-allocated, bounded pool for asynchronous client send messages and return an error when the pool is exhausted without blocking or silently dropping the message."
+    safety       = ScoreReq.Asil.B
+    derived_from = [message_passing_fta.BE_SendQueueExhausted]
+    version      = 1
+}
+
