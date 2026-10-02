@@ -16,6 +16,7 @@
 #include "score/mw/log/logging.h"
 #include <score/stop_token.hpp>
 
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
@@ -36,7 +37,7 @@ struct MyEventData
 {
     std::uint64_t counter;
 #if PAYLOAD_SIZE > 8
-    char padding[PAYLOAD_SIZE - 8];
+    std::array<char, PAYLOAD_SIZE - 8> padding;
 #endif
 };
 

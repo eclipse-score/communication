@@ -23,6 +23,7 @@
 #include <optional>
 
 #include <unistd.h>
+#include <array>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -104,7 +105,7 @@ class MmanMock : public os::Mman
                                                            const os::Stat::Mode mode) const noexcept override
     {
         // shm_open calls are INTERESTING for this test - we memorize the pathname - and then forward
-        std::strcpy(last_shm_open_path_, pathname);
+        std::strcpy(last_shm_open_path_.data(), pathname);
         shm_open_callcount_++;
         return utils::StaticDestructionGuard<os::internal::MmanImpl>::GetStorage().shm_open(pathname, oflag, mode);
     };
@@ -141,11 +142,11 @@ class MmanMock : public os::Mman
 
     const char* GetLastShmOpenPath() const noexcept
     {
-        return last_shm_open_path_;
+        return last_shm_open_path_.data();
     }
 
   private:
-    mutable char last_shm_open_path_[1024]{};
+    mutable std::array<char, 1024> last_shm_open_path_{};
     mutable std::uint32_t shm_open_callcount_{0U};
 };
 

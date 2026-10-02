@@ -18,6 +18,7 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <array>
 #include <csignal>
 #include <cstring>
 #include <iostream>
@@ -288,8 +289,8 @@ bool WaitForChildFinished(int fd_to_read_from)
 int main()
 {
     // We use a simple pipe to communicate with a child, we will fork.
-    int client_pipe_fds[2];
-    if (pipe(client_pipe_fds) != 0)
+    std::array<int, 2> client_pipe_fds{};
+    if (pipe(client_pipe_fds.data()) != 0)
     {
         std::cerr << "Controller: Error creating pipe: " << strerror(errno) << ", terminating.";
         return EXIT_FAILURE;
@@ -305,13 +306,13 @@ int main()
 
         case 0:
             // this is the case of the child process
-            close(client_pipe_fds[0]);
-            score::mw::com::test::DoChildActions(client_pipe_fds[1]);
+            close(client_pipe_fds.at(0));
+            score::mw::com::test::DoChildActions(client_pipe_fds.at(1));
             return EXIT_SUCCESS;
 
         default:
             std::cout << "Controller: Child process forked successfully." << std::endl;
-            auto child_is_done = score::mw::com::test::WaitForChildFinished(client_pipe_fds[0]);
+            auto child_is_done = score::mw::com::test::WaitForChildFinished(client_pipe_fds.at(0));
             if (!child_is_done)
             {
                 std::cerr << "Controller: Didn't get child notification in time, terminating." << std::endl;
