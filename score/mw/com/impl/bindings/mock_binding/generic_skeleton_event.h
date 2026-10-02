@@ -28,7 +28,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
   public:
     MOCK_METHOD(Result<void>,
                 Send,
-                (score::mw::com::impl::SampleAllocateePtr<void> sample, std::optional<SendTraceCallback>),
+                (score::mw::com::impl::SampleAllocateePtr<void> sample, const std::optional<SendTraceCallback>&),
                 (noexcept, override));
     MOCK_METHOD(Result<score::mw::com::impl::SampleAllocateePtr<void>>,
                 Allocate,
@@ -63,9 +63,9 @@ class GenericSkeletonEventFacade : public GenericSkeletonEventBinding
 
     ~GenericSkeletonEventFacade() override = default;
     Result<void> Send(score::mw::com::impl::SampleAllocateePtr<void> sample,
-                      std::optional<SendTraceCallback> callback) noexcept override
+                      const std::optional<SendTraceCallback>& callback) noexcept override
     {
-        return skeleton_event_.Send(std::move(sample), std::move(callback));
+        return skeleton_event_.Send(std::move(sample), callback);
     }
     Result<impl::SampleAllocateePtr<void>> Allocate(SampleAllocateeGuard guard) noexcept override
     {

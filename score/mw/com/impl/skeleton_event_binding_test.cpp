@@ -33,7 +33,7 @@ class MyEvent final : public SkeletonEventBinding
     }
     void PrepareStopOffer() noexcept override {}
     Result<void> Send(SampleAllocateePtr<void>,
-                      std::optional<SkeletonEventBinding::SendTraceCallback>) noexcept override
+                      const std::optional<SkeletonEventBinding::SendTraceCallback>&) noexcept override
     {
         return {};
     }
