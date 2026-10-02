@@ -335,7 +335,7 @@ void SharedMemoryResource::UnlinkFilesystemEntry() const noexcept
             return;
         }
 
-        const auto unlink_result = typed_memory_ptr_->Unlink(path->c_str());
+        const auto unlink_result = typed_memory_ptr_->Unlink(*path);
         if (unlink_result.has_value())
         {
             score::mw::log::LogDebug("shm") << __func__ << "Shm " << *path << " unlinked";
@@ -1036,7 +1036,7 @@ void SharedMemoryResource::AllocateInTypedMemory(const UserPermissions& permissi
     if (path != nullptr)
     {
         const auto allocate_named_typed_memory_result =
-            typed_memory_ptr_->AllocateNamedTypedMemory(virtual_address_space_to_reserve_, path->c_str(), permissions);
+            typed_memory_ptr_->AllocateNamedTypedMemory(virtual_address_space_to_reserve_, *path, permissions);
         if (allocate_named_typed_memory_result.has_value())
         {
             score::mw::log::LogDebug("shm") << __func__ << "Shm is in TypedMemory. Set file open flags";
