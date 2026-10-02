@@ -46,6 +46,10 @@ SamplePtr<void> CreateSamplePtrFromSampleAllocateePtr(SampleAllocateePtr<void>& 
             lola::SamplePtr lola_sample_ptr{managed_object, consumer_event_data_control_local, event_slot_index};
             return SamplePtr<void>{std::move(lola_sample_ptr), SampleReferenceGuard{}};
         },
+        // Tracing is not supported on SomeIP.
+        [](someip::SampleAllocateePtr&) -> SamplePtr<void> {
+            std::terminate();
+        },
         // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
         // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
         // the function replaces the managed object".

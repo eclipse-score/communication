@@ -51,7 +51,8 @@
                                     "title": "Type of binding",
                                     "description": "Binding technology",
                                     "enum": [
-                                        "SHM"
+                                        "SHM",
+                                        "SOMEIP"
                                     ]
                                 },
                                 "serviceId": {
@@ -216,7 +217,8 @@
                                     "title": "Binding",
                                     "description": "Binding technology",
                                     "enum": [
-                                        "SHM"
+                                        "SHM",
+                                        "SOMEIP"
                                     ]
                                 },
                                 "shm-size": {
