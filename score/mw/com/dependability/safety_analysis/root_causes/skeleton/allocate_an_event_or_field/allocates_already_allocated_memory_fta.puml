@@ -1,0 +1,35 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$TopEvent("Allocates already allocated memory", "Communication.AllocatesAlreadyAllocatedMemory")
+
+$OrGate("Gate1", "Communication.AllocatesAlreadyAllocatedMemory")
+
+$IntermediateEvent("Shared Memory Resource hands out memory that is already allocated", "Event1", "Gate1")
+$OrGate("Gate2", "Event1")
+$BasicEvent("Allocation algorithm (offset, padding or alignment calculation) returns an address inside an already allocated block", "Communication.AllocationAlgorithmReturnsAlreadyAllocatedAddress", "Gate2")
+$BasicEvent("Lock-free update of the bump pointer is broken, so concurrent allocations receive overlapping memory", "Communication.ConcurrentAllocationsReceiveOverlappingMemory", "Gate2")
+$BasicEvent("Already-allocated-bytes counter in the control block is corrupted or reset (e.g. control block re-initialized)", "Communication.AllocatedBytesCounterCorruptedOrReset", "Gate2")
+$BasicEvent("More than one memory resource manages the same shared memory region", "Communication.MultipleMemoryResourcesManageSameMemoryRegion", "Gate2")
+
+$IntermediateEvent("Event slot that is still in use is allocated again", "Event2", "Gate1")
+$OrGate("Gate3", "Event2")
+$BasicEvent("Slot selection does not respect the in-writing or referenced state of a slot", "Communication.SlotSelectionIgnoresSlotStillInUse", "Gate3")
+$BasicEvent("Lock-free update of the slot status is broken, so concurrent allocations receive the same slot", "Communication.ConcurrentAllocationsReceiveSameSlot", "Gate3")
+$BasicEvent("Slot status in shared memory is corrupted", "Communication.SlotStatusCorrupted", "Gate3")
+
+@enduml
