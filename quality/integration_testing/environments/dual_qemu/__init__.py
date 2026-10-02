@@ -19,6 +19,9 @@ file, and (c) distinct host SSH ports per VM.
 
 Exposed session fixtures:
     - ``target_a`` / ``target_b`` -- the two booted VMs (``QemuTarget``).
+    - ``console_a`` / ``console_b`` -- their serial consoles.
+    - ``vm_a`` / ``vm_b`` -- their ``DualQemuProcess`` wrappers.
+    - ``intervm_host_port`` -- host port of the inter-VM socket.
     - ``ivshmem_backend``         -- path of the shared host backing file.
 """
 
@@ -33,6 +36,8 @@ from .config import load_configuration, parse_size
 from .dual_qemu_process import DualQemuProcess
 
 logger = logging.getLogger(__name__)
+
+_INTERVM_ADDRESSES = ("10.0.3.1", "10.0.3.2")
 
 
 def pytest_addoption(parser):
@@ -111,6 +116,7 @@ def _targets(config, ivshmem_backend):
         ivshmem_size=dual_config.ivshmem.size,
         intervm=intervm_roles[0],
         vm_index=0,
+        intervm_address=_INTERVM_ADDRESSES[0] if intervm.enabled else None,
     ) as process_a:
         with DualQemuProcess(
             config.qemu_images[1],
@@ -122,19 +128,50 @@ def _targets(config, ivshmem_backend):
             ivshmem_size=dual_config.ivshmem.size,
             intervm=intervm_roles[1],
             vm_index=1,
+            intervm_address=_INTERVM_ADDRESSES[1] if intervm.enabled else None,
         ) as process_b:
             # Re-verify VM-A is still responsive (it may have gone quiet while VM-B booted).
-            process_a.ensure_responsive()
-            yield [process_a.target, process_b.target]
+            if not intervm.enabled:
+                process_a.ensure_responsive()
+            else:
+                process_a.configure_intervm_nic()
+                process_b.configure_intervm_nic()
+            yield [process_a, process_b]
+
+
+@pytest.fixture(scope="session")
+def console_a(_targets):
+    return _targets[0].console
+
+
+@pytest.fixture(scope="session")
+def console_b(_targets):
+    return _targets[1].console
+
+
+@pytest.fixture(scope="session")
+def vm_a(_targets):
+    return _targets[0]
+
+
+@pytest.fixture(scope="session")
+def vm_b(_targets):
+    return _targets[1]
+
+
+@pytest.fixture(scope="session")
+def intervm_host_port(config):
+    intervm = config.dual_config.intervm_network
+    return intervm.host_port if intervm.enabled else None
 
 
 @pytest.fixture(scope="session")
 def target_a(_targets):
     """The first VM (VM-A) in the inter-VM shared-memory tests."""
-    return _targets[0]
+    return _targets[0].target
 
 
 @pytest.fixture(scope="session")
 def target_b(_targets):
     """The second VM (VM-B) in the inter-VM shared-memory tests."""
-    return _targets[1]
+    return _targets[1].target

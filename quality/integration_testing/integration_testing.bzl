@@ -226,20 +226,12 @@ def dual_qemu_integration_test(
     if "timeout" not in kwargs:
         kwargs["timeout"] = "moderate"
 
-    # Driving two real QNX guests under KVM has rare, environment-induced boot
-    # nondeterminism (e.g. a guest occasionally wedging during device bring-up).
-    # The fixtures already stagger boots and wait for stable SSH; mark the test
-    # flaky so bazel transparently retries such infrastructure hiccups.
-    if "flaky" not in kwargs:
-        kwargs["flaky"] = True
-
-    # This test is intentionally marked flaky (above) to retry environment-induced
-    # QEMU boot hiccups, so exclude it from the nightly flaky-test detection to
-    # avoid reporting expected, infrastructure-level nondeterminism.
     _extend_list_in_kwargs_without_duplicates(
         kwargs,
         "tags",
-        ["no-flaky-test-detection"],
+        # "requires-network": the two VMs talk over a host socket, the sandbox
+        # network namespace (--nosandbox_default_allow_network) cuts that link.
+        ["no-flaky-test-detection", "requires-network"],
     )
 
     _extend_list_in_kwargs_without_duplicates(
