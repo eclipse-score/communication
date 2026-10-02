@@ -33,6 +33,15 @@ def _extend_list_in_kwargs_without_duplicates(kwargs, key, values):
     return kwargs
 
 def integration_test(name, srcs, filesystem, **kwargs):
+    """Declares an integration test that runs on a Linux docker image or a QNX QEMU image.
+
+    Args:
+      name: Name of the test target.
+      srcs: Test sources, forwarded to the underlying py_itf_test.
+      filesystem: Target providing the files that are installed in the image under test.
+      **kwargs: Additional parameters forwarded to py_itf_test. Size, timeout, tags and target_compatible_with
+        are extended with defaults for integration tests.
+    """
     image_name = "_image_{}".format(name)
     image_loader = "_image_{}_loader".format(name)
     repo_tag = "{}:latest".format(name)
