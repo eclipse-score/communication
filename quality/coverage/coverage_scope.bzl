@@ -147,7 +147,7 @@ def _coverage_scope_impl(ctx):
         ),
     ]
 
-def _coverage_transition_impl(settings, attr):
+def _coverage_transition_impl(_settings, _attr):
     # This dictionary modifies the build configuration
     return {
         "//command_line_option:collect_code_coverage": True,

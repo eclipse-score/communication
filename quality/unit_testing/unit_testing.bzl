@@ -191,6 +191,7 @@ def rust_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
             ],
             "//conditions:default": [],
         }),
+        target_compatible_with = target_compatible_with,
         tags = tags + ["unit"],
         visibility = kwargs["visibility"],
     )
