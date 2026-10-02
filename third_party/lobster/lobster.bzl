@@ -20,7 +20,7 @@ def github_urls(path):
         "https://github.com/" + path,
     ]
 
-def _lobster_impl(ctx):
+def _lobster_impl(_ctx):
     _VERSION = "0.14.1"
     _PATH = "bmw-software-engineering/lobster/archive/refs/tags/lobster-{version}.tar.gz".format(version = _VERSION)
 
