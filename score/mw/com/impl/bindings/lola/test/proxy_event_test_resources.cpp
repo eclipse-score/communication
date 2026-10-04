@@ -160,6 +160,8 @@ void ProxyMockedMemoryFixture::InitialiseDummySkeletonEvent(const ElementFqId el
         fake_data_->AddEvent<SampleType>(element_fq_id, skeleton_event_properties);
     SCORE_LANGUAGE_FUTURECPP_ASSERT(event_control_ != nullptr);
     SCORE_LANGUAGE_FUTURECPP_ASSERT(event_data_storage_ != nullptr);
+    event_data_storage_local_view_.emplace(*event_data_storage_,
+                                           memory::DataTypeSizeInfo{sizeof(SampleType), alignof(SampleType)});
     consumer_event_data_control_local_.emplace(event_control_->data_control);
     provider_event_data_control_local_.emplace(event_control_->data_control);
 }
@@ -223,7 +225,7 @@ SlotIndexType LolaProxyEventResources::PutData(const std::uint32_t value,
     auto slot_result = provider_event_data_control_local_->AllocateNextSlot();
     EXPECT_TRUE(slot_result.has_value());
     auto slot_index = slot_result.value();
-    auto* storage_slot = event_data_storage_->GetTypeErasedDataSlot(slot_index, sizeof(value));
+    auto* storage_slot = event_data_storage_local_view_->GetTypeErasedDataSlot(slot_index);
     memcpy(storage_slot, &value, sizeof(value));
     provider_event_data_control_local_->EventReady(slot_index, timestamp);
     return slot_index;
