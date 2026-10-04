@@ -62,6 +62,18 @@ bool BytesEqual(const T& lhs, const T& rhs)
     return std::memcmp(&lhs, &rhs, sizeof(T)) == 0;
 }
 
+/// \brief Computes the type-erased pointer to the data slot at slot_index, using only the (reduced) public API that
+/// EventDataStorage exposes directly (i.e. GetTypeErasedDataSlotsStart()).
+/// \details This mirrors exactly the offset calculation that EventDataStorageLocalView::GetTypeErasedDataSlot()
+/// performs on top of EventDataStorage, which is the only (and now exclusive) way production code accesses
+/// individual, bounds-checked slots.
+template <typename T>
+void* GetSlotPointer(const EventDataStorage& storage, SlotIndexType slot_index)
+{
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic) low-level, type-erased test helper
+    return storage.GetTypeErasedDataSlotsStart() + (static_cast<std::size_t>(slot_index) * sizeof(T));
+}
+
 /// \brief Templated test fixture that constructs a real EventDataStorage for TypeParam, sized/aligned according to
 /// TypeParam's actual memory::DataTypeSizeInfo.
 template <typename T>
@@ -76,14 +88,29 @@ class EventDataStorageTypedTest : public ::testing::Test
 using SampleTypes = ::testing::Types<std::uint16_t, std::uint64_t, MaxAlignedDummyStruct>;
 TYPED_TEST_SUITE(EventDataStorageTypedTest, SampleTypes, );
 
-TYPED_TEST(EventDataStorageTypedTest, GetTypeErasedDataSlotReturnsCorrectlyAlignedAndWritableSlotForEveryIndex)
+TYPED_TEST(EventDataStorageTypedTest, TypeErasedDataSlotsStartAndEndSpanExactlyAllSlots)
+{
+    // Given an EventDataStorage constructed for TypeParam with kNumberOfSlots slots (see fixture)
+
+    // Then the raw byte-range delimited by GetTypeErasedDataSlotsStart()/GetTypeErasedDataSlotsEnd() is non-null,
+    // well-formed (end >= start) and exactly large enough to hold kNumberOfSlots instances of TypeParam.
+    auto* const start = this->unit_.GetTypeErasedDataSlotsStart();
+    auto* const end = this->unit_.GetTypeErasedDataSlotsEnd();
+    ASSERT_NE(start, nullptr);
+    ASSERT_GE(end, start);
+    EXPECT_EQ(static_cast<std::size_t>(end - start), kNumberOfSlots * sizeof(TypeParam));
+    EXPECT_EQ(reinterpret_cast<std::uintptr_t>(start) % alignof(TypeParam), 0U);
+}
+
+TYPED_TEST(EventDataStorageTypedTest, DataSlotPointersAreCorrectlyAlignedAndWritableForEveryIndex)
 {
     // Given an EventDataStorage constructed for TypeParam (see fixture)
 
     for (SlotIndexType slot_index = 0U; slot_index < kNumberOfSlots; ++slot_index)
     {
-        // When retrieving the type-erased pointer to the data slot at slot_index
-        void* const type_erased_slot = this->unit_.GetTypeErasedDataSlot(slot_index, sizeof(TypeParam));
+        // When computing the type-erased pointer to the data slot at slot_index, based on
+        // GetTypeErasedDataSlotsStart()
+        void* const type_erased_slot = GetSlotPointer<TypeParam>(this->unit_, slot_index);
 
         // Then the returned pointer is non-null and correctly aligned for TypeParam
         ASSERT_NE(type_erased_slot, nullptr);
@@ -110,8 +137,7 @@ TYPED_TEST(EventDataStorageTypedTest, DataSlotsOfDifferentIndicesDoNotOverlap)
         const TypeParam value = MakeValue<TypeParam>(static_cast<std::uint8_t>(slot_index + 1U));
         written_values.push_back(value);
 
-        auto* const typed_slot =
-            static_cast<TypeParam*>(this->unit_.GetTypeErasedDataSlot(slot_index, sizeof(TypeParam)));
+        auto* const typed_slot = static_cast<TypeParam*>(GetSlotPointer<TypeParam>(this->unit_, slot_index));
         *typed_slot = value;
     }
 
@@ -119,8 +145,7 @@ TYPED_TEST(EventDataStorageTypedTest, DataSlotsOfDifferentIndicesDoNotOverlap)
     // slot did not corrupt/overlap the contents of another slot.
     for (SlotIndexType slot_index = 0U; slot_index < kNumberOfSlots; ++slot_index)
     {
-        auto* const typed_slot =
-            static_cast<TypeParam*>(this->unit_.GetTypeErasedDataSlot(slot_index, sizeof(TypeParam)));
+        auto* const typed_slot = static_cast<TypeParam*>(GetSlotPointer<TypeParam>(this->unit_, slot_index));
         EXPECT_TRUE(BytesEqual(*typed_slot, written_values[slot_index]));
     }
 }
@@ -146,9 +171,9 @@ TYPED_TEST(EventDataStorageTypedTest, CtorCallsInitializeSampleCallbackOnceForEv
     const TypeParam default_constructed_value{};
     for (SlotIndexType slot_index = 0U; slot_index < kNumberOfSlots; ++slot_index)
     {
-        // and every recorded pointer is equal to the corresponding slot's type-erased pointer as returned by
-        // GetTypeErasedDataSlot()
-        auto* const type_erased_slot = unit.GetTypeErasedDataSlot(slot_index, sizeof(TypeParam));
+        // and every recorded pointer is equal to the corresponding slot's type-erased pointer, as computed from
+        // GetTypeErasedDataSlotsStart()
+        auto* const type_erased_slot = GetSlotPointer<TypeParam>(unit, slot_index);
         EXPECT_EQ(received_slot_pointers[slot_index], type_erased_slot);
 
         // and the slot was correctly initialized to a default-constructed TypeParam by the callback
@@ -158,32 +183,6 @@ TYPED_TEST(EventDataStorageTypedTest, CtorCallsInitializeSampleCallbackOnceForEv
     // and all recorded pointers are distinct, i.e. every slot was only visited once
     const std::set<void*> unique_slot_pointers{received_slot_pointers.begin(), received_slot_pointers.end()};
     EXPECT_EQ(unique_slot_pointers.size(), received_slot_pointers.size());
-}
-
-TEST(EventDataStorageDeathTest, GetTypeErasedDataSlotTerminatesOnDataSizeMismatch)
-{
-    // Given an EventDataStorage constructed for a std::uint32_t sample type
-    memory::shared::NewDeleteDelegateMemoryResource memory_resource{kMemoryResourceId};
-    const memory::DataTypeSizeInfo sample_size_info{sizeof(std::uint32_t), alignof(std::uint32_t)};
-    EventDataStorage unit{memory_resource, kNumberOfSlots, sample_size_info};
-
-    // When requesting a data slot with a data_size that does not match the sample type's actual size
-    // Then the program terminates, since the caller's size expectation doesn't match the storage's sample size.
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
-                                                          unit.GetTypeErasedDataSlot(0U, sizeof(std::uint32_t) + 1U));
-}
-
-TEST(EventDataStorageDeathTest, GetTypeErasedDataSlotTerminatesOnOutOfBoundsIndex)
-{
-    // Given an EventDataStorage constructed for a std::uint32_t sample type with kNumberOfSlots slots
-    memory::shared::NewDeleteDelegateMemoryResource memory_resource{kMemoryResourceId};
-    const memory::DataTypeSizeInfo sample_size_info{sizeof(std::uint32_t), alignof(std::uint32_t)};
-    EventDataStorage unit{memory_resource, kNumberOfSlots, sample_size_info};
-
-    // When requesting a data slot with an index that is out of bounds
-    // Then the program terminates.
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::cpp::ignore = unit.GetTypeErasedDataSlot(kNumberOfSlots, sizeof(std::uint32_t)));
 }
 
 TEST(EventDataStorageDeathTest, ConstructionTerminatesOnRawSlotArraySizeOverflow)

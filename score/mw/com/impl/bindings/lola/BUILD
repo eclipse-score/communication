@@ -311,6 +311,7 @@ cc_library(
     ],
     deps = [
         ":event",
+        ":event_data_storage_local_view",
         ":i_partial_restart_path_builder",
         ":i_shm_path_builder",
         ":partial_restart_path_builder",
@@ -377,6 +378,7 @@ cc_library(
     deps = [
         ":event",
         ":event_control",
+        ":event_data_storage_local_view",
         ":event_subscription_control",
         ":proxy_instance_identifier",
         ":service_data_storage",
@@ -694,6 +696,24 @@ cc_library(
         "//score/memory/shared:offset_ptr",
         "//score/mw/com/impl:initialize_sample_callback",
         "@score_baselibs//score/memory:data_type_size_info",
+    ],
+)
+
+cc_library(
+    name = "event_data_storage_local_view",
+    srcs = ["event_data_storage_local_view.cpp"],
+    hdrs = ["event_data_storage_local_view.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/language/safecpp/safe_math",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":event_data_storage",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -1058,6 +1078,7 @@ cc_unit_test(
         "aborts_upon_exception",
     ],
     deps = [
+        ":event_data_storage_local_view",
         ":skeleton",
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
@@ -1221,6 +1242,25 @@ cc_unit_test(
     ],
     deps = [
         ":event_data_storage",
+        "//score/memory/shared:new_delete_delegate_resource",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+        "@score_baselibs//score/memory:data_type_size_info",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "event_data_storage_local_view_test",
+    srcs = [
+        "event_data_storage_local_view_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES + [
+        # SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED catches an exception, so disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":event_data_storage",
+        ":event_data_storage_local_view",
         "//score/memory/shared:new_delete_delegate_resource",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/memory:data_type_size_info",
