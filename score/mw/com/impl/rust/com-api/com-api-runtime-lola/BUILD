@@ -36,6 +36,8 @@ rust_library(
 rust_test(
     name = "com-api-runtime-lola-tests",
     crate = ":com-api-runtime-lola",
+    # Linux only until QNX build is enabled for Rust tests: https://github.com/eclipse-score/communication/issues/1278
+    target_compatible_with = ["@platforms//os:linux"],
     deps = [
         ":com-api-runtime-lola",
         "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:bridge_ffi_mock",
