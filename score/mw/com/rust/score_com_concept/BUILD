@@ -35,7 +35,6 @@ rust_library(
 rust_test(
     name = "score_com_concept-test",
     crate = ":score_com_concept",
-    tags = ["manual"],
     deps = [
         ":score_com_concept",
         "//score/mw/com/rust:score_com",

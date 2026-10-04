@@ -36,8 +36,6 @@ rust_library(
 rust_test(
     name = "com-api-runtime-lola-tests",
     crate = ":com-api-runtime-lola",
-    #tag will be removed wwhen sanitizer issue resolved for this
-    tags = ["manual"],
     deps = [
         ":com-api-runtime-lola",
         "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:bridge_ffi_mock",
