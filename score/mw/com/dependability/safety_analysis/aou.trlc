@@ -119,11 +119,13 @@ ScoreReq.AoU OnlyLoLaSupportedTypes {
 
 /* broken_link_c/issue/5835119 */
 ScoreReq.AoU NoApisFromImplementationNamespace {
-    // mitigates = "MisusedApis"
     description = "It shall be ensured that no API calls from the implementation namespace (e.g `impl`) are directly invoked or types from within are directly used."
     safety = ScoreReq.Asil.B
     note = "Certain measurements and maybe implemented around the implementation namespace, while it is theoretically possible to directly use these functions, this could lead to unknown and untested side-effects."
     version = 1
+    root_causes = [
+            mw_com_fta.InternalApiUsed
+    ]
 }
 
 /* broken_link_c/issue/5835135 */
@@ -191,11 +193,13 @@ ScoreReq.AoU ConfigOnASafeFilesystem {
 
 /* broken_link_c/issue/5835198 */
 ScoreReq.AoU NoStaticContextSupport {
-    // mitigates = "MisusedApis"
     description = "It shall be ensured that LoLa is not used within static context within C++."
     safety = ScoreReq.Asil.B
     note = "LoLa uses itself static context within C++. A usage within static context could possibly cause the static (De-)Initialization-Fiasco."
     version = 1
+    root_causes = [
+            mw_com_fta.ApiUsedInWrongContext
+    ]
 }
 
 /* broken_link_c/issue/5835213 */
@@ -316,11 +320,13 @@ ScoreReq.AoU EventSubscriptionActiveWhileHoldingSamplePtr {
 
 /* broken_link_c/issue/5835351 */
 ScoreReq.AoU NoneTerminatingCallbacks {
-    // mitigates = "MisusedApis"
     description = "It shall be ensured that any callback passed to LoLa for invocation is not throwing."
     safety = ScoreReq.Asil.B
     note = "The behavior is undefined if a callback is throwing."
     version = 1
+    root_causes = [
+        mw_com_fta.TerminatingUserCallback
+    ]
 }
 
 /* broken_link_c/issue/5835363 */

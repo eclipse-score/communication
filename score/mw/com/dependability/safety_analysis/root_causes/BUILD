@@ -15,6 +15,7 @@ filegroup(
     name = "general",
     srcs = [
         "in_memory_configuration_wrong_fta.puml",
+        "misused_apis_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
