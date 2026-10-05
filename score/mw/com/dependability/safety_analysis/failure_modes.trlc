@@ -305,7 +305,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "The only possible fault cause is eliminated with our preventive measure."
-                // potentialcause = "The only possibility that this happens is on copy-on send. For that copy-on send would need to call allocate multiple times."
+                interface = "mw.com.Event.Send"
             }
 
             // ID: 6165624
