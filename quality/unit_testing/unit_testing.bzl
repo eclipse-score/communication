@@ -1,5 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_test")
 load("@score_qnx_unit_tests//:defs.bzl", "cc_test_qnx", "rust_test_qnx")
 
 visibility(["//..."])
