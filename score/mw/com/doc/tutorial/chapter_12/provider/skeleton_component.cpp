@@ -12,8 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/doc/tutorial/chapter_12/provider/skeleton_component.h"
 
-#include <cstdio>
-#include <cstring>
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -46,15 +45,11 @@ SkeletonComponent::SendSampleResult SkeletonComponent::SendSample(std::size_t se
         return SendSampleResult::kNoSampleAllocated;
     }
 
-    std::memcpy(sample_allocatee_ptr.value().Get()->data(), kHelloWorld.data(), kHelloWorld.size());
-    auto* buf = sample_allocatee_ptr.value().Get()->data();
-    const auto remaining = sample_allocatee_ptr.value().Get()->size() - kHelloWorld.size();
-    const auto chars_written = std::snprintf(buf + kHelloWorld.size(), remaining, "%zu", send_counter);
-    if (chars_written < 0)
-    {
-        std::cerr << "Failed to write 'send_counter' to sample_allocatee_ptr!" << std::endl;
-        return SendSampleResult::kFatalError;
-    }
+    const std::string message = std::string{kHelloWorld} + std::to_string(send_counter);
+    auto& sample = *sample_allocatee_ptr.value().Get();
+    auto* buf = sample.data();
+    const auto chars_to_copy = std::min(message.size(), sample.size() - 1U);
+    *std::copy_n(message.begin(), chars_to_copy, sample.begin()) = '\0';
 
     const std::string payload_for_log{buf};
     auto send_result = hello_world_skeleton_->message.Send(std::move(sample_allocatee_ptr.value()));
