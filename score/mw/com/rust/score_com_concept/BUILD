@@ -19,7 +19,7 @@ rust_library(
     srcs = glob(["**/*.rs"]),
     proc_macro_deps = [
         "//score/mw/com/rust/score_com_macros:score-com-macros",
-        "@score_communication_crate_index//:paste",
+        "@score_communication_crate_index//:pastey",
     ],
     visibility = [
         "//score/mw/com:__subpackages__",

@@ -27,5 +27,5 @@ mod reloc;
 pub use concept::*;
 pub use error::*;
 #[doc(hidden)]
-pub use paste;
+pub use pastey;
 pub use reloc::Reloc;

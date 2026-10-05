@@ -142,5 +142,5 @@ pub use score_com_concept::{
 };
 
 #[doc(hidden)]
-// See eclipse-score/communication/issues/173 - `paste`crate is still in discussion regarding rust safety certification.
-pub use score_com_concept::paste;
+// See eclipse-score/communication/issues/173 - `pastey` replaces `paste` for identifier concatenation in the interface macros.
+pub use score_com_concept::pastey;

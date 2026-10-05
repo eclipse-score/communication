@@ -131,7 +131,7 @@ macro_rules! interface {
 macro_rules! interface_common {
     // Default: auto ID = module path + type name
     ($id:ident) => {
-        score_com::paste::paste! {
+        score_com::pastey::paste! {
             pub struct [<$id Interface>] {}
             impl score_com::Interface for [<$id Interface>] {
                 const INTERFACE_ID: &'static str =
@@ -143,7 +143,7 @@ macro_rules! interface_common {
     };
     // Explicit ID override
     ($id:ident, $uid:expr) => {
-        score_com::paste::paste! {
+        score_com::pastey::paste! {
             pub struct [<$id Interface>] {}
             impl score_com::Interface for [<$id Interface>] {
                 const INTERFACE_ID: &'static str = $uid;
@@ -160,7 +160,7 @@ macro_rules! interface_common {
 #[macro_export]
 macro_rules! interface_consumer {
     ($id:ident, $($event_name:ident, Event<$event_type:ty>),+$(,)?) => {
-        score_com::paste::paste!  {
+        score_com::pastey::paste! {
             pub struct [<$id Consumer>]<R: score_com::Runtime + ?Sized> {
                 $(
                     pub $event_name: R::Subscriber<$event_type>,
@@ -192,7 +192,7 @@ macro_rules! interface_consumer {
 #[macro_export]
 macro_rules! interface_producer {
     ($id:ident, $($event_name:ident, Event<$event_type:ty>),+$(,)?) => {
-        score_com::paste::paste!  {
+        score_com::pastey::paste! {
             pub struct [<$id Producer>]<R: score_com::Runtime + ?Sized> {
                 _runtime: core::marker::PhantomData<R>,
                 instance_info: R::ProviderInfo,
