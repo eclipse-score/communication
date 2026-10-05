@@ -6,7 +6,7 @@ information than the InstanceIdentifier used as starting point on the skeleton s
 `SkeletonBase`,`SkeletonBinding`and `SkeletonBindingFactory` are `ProxyBase`, `ProxyBinding`/`ProxyBindingFactory`.
 
 So the user creates instances of generated proxy classes (referred to as `DummyProxy` in our class diagrams)
-(see [Introduction](#introduction)) via static `<DummyProxy>::Create(HandleType)`. These instances inherit from
+(see [Introduction](../../impl/dependability/binding_independent_component_design.md#introduction)) via static `<DummyProxy>::Create(HandleType)`. These instances inherit from
 `ProxyBase`, which follows the same architectural `pImpl` paradigm as the skeleton side by dispatching to a binding
 specific implementation of `ProxyBinding`.
 
@@ -50,7 +50,7 @@ in place:
 
 #### Extract type agnostic code
 
-The [class diagram](#classdiagram) also shows, that our `LoLa` proxy event binding implementation (`lola::ProxyEvent`)
+The [class diagram](../../impl/dependability/binding_independent_component_design.md#classdiagram) also shows, that our `LoLa` proxy event binding implementation (`lola::ProxyEvent`)
 aggregates an object of type `lola::ProxyEventCommon`, to which it dispatches all its `SampleType` agnostic method
 calls, it has to implement to fulfill its interface `ProxyEventBindingBase`.
 The reason for this architectural decision is described in the [design extension for generic proxies](./generic_proxy/README.md)

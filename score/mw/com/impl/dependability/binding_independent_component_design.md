@@ -5,7 +5,7 @@
 The following structural view shows, how the separation of generic/binding independent part of a proxy/skeleton from
 its flexible/variable technical binding implementation is achieved. **Note**: It does **only** reflect the common use
 case of strongly typed proxies and skeletons. The special case of "generic proxies" and "generic skeletons" are described in
-[design extension for generic proxies](generic_proxy/README.md#) and [design extension for generic skeletons](generic_skeleton/README.md#) to not bloat this class diagram even more:
+[design extension for generic proxies](../../design/skeleton_proxy/generic_proxy/README.md#) and [design extension for generic skeletons](../../design/skeleton_proxy/generic_skeleton/README.md#) to not bloat this class diagram even more:
 
 <a name="classdiagram"></a>
 
