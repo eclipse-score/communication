@@ -1,0 +1,8 @@
+{
+    "serviceInstances": [],
+    "serviceTypes": [],
+    "tracing": {
+        "enable": true,
+        "applicationInstanceID": "test_application_id"
+    }
+}

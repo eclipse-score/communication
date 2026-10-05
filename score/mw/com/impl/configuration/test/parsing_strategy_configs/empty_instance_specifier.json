@@ -1,0 +1,48 @@
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1234,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "eventId": 20
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 1234,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "shm-size": 10000,
+                    "control-asil-b-shm-size": 20000,
+                    "control-qm-shm-size": 30000,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
