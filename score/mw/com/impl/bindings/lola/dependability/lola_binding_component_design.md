@@ -1,3 +1,6 @@
+
+# Shared Memory Access
+
 In the case of our shared memory implementation (also called `LoLa`), it is necessary to access an underlying, not yet
 further specified shared memory region which is specific to each communication instance. A problem can arise if the same
 process includes a skeleton and proxy side of the same service instance. In this case we have to ensure that the shared
