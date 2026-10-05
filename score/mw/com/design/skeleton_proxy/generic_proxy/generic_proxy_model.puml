@@ -142,7 +142,6 @@ abstract class "mw::com::impl::ProxyEventBase" #yellow {
 }
 
 class "mw::com::impl::GenericProxyEvent" #yellow {
-  +GetSampleSize() const : std::size_t
   +GetDataTypeSizeInfo() const : memory::DataTypeSizeInfo
   +HasSerializedFormat() const : bool
   +GetNewSamples(F&& receiver, size_t max_num_samples): Result<size_t>
@@ -151,7 +150,6 @@ class "mw::com::impl::GenericProxyEvent" #yellow {
 abstract class "GenericProxyEventBinding" #yellow {
   using Callback = score::cpp::callback<void(SamplePtr<void>) noexcept>
   ..
-  +GetSampleSize() const : std::size_t
   +GetDataTypeSizeInfo() const : memory::DataTypeSizeInfo
   +HasSerializedFormat() const : bool
   +{abstract} GetNewSamples(Callback&&, size_t max_num_samples) = 0: Result<size_t>

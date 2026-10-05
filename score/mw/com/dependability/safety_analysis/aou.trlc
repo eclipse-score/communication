@@ -303,7 +303,7 @@ ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide {
 
 /* broken_link_c/issue/21209491 */
 ScoreReq.AoU EventOrFieldReceptionViaGenericProxyNeedsSpecificCare {
-    description = "When receiving event or field data via untyped {{GenericProxyEvent}} or {{GenericProxyField}}, care has to be taken when accessing the corresponding {{SamplePtr<void>}} delivered by calls to {{GetNewSamples()}}: When casting it to the expected type, it needs to be checked that no access behind the size returned by {{GetSampleSize()}} will happen."
+    description = "When receiving event or field data via untyped {{GenericProxyEvent}} or {{GenericProxyField}}, care has to be taken when accessing the corresponding {{SamplePtr<void>}} delivered by calls to {{GetNewSamples()}}: When casting it to the expected type, it needs to be checked that no access behind the size returned by {{GetDataTypeSizeInfo().Size()}} will happen."
     safety = ScoreReq.Asil.B
     version = 1
     mitigates = ""
