@@ -18,6 +18,6 @@ $TopEvent("Unsubscribes from wrong event", "Communication.UnsubscribesFromWrongE
 
 $OrGate("Gate1", "Communication.UnsubscribesFromWrongEvent")
 $IntermediateEvent("Subscribe to wrong event", "Event1", "Gate1")
-$TransferInGate("Transfer1", "Event1")
+$TransferInGate("Communication.SubscribeToWrongEvent", "Event1")
 
 @enduml

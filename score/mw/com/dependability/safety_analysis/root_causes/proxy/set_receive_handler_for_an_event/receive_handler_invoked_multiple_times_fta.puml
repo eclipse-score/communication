@@ -24,7 +24,7 @@ $BasicEvent("Previous receive handler registration is not replaced", "Communicat
 $BasicEvent("Receive handler registration is repeated on re-subscription", "Communication.ReceiveHandlerRegistrationRepeatedOnResubscription", "Gate2")
 $IntermediateEvent("Dispatch multiplies handler invocations", "Event2", "Gate1")
 $OrGate("Gate3", "Event2")
-$BasicEvent("Queued notifications are not deduplicated before dispatch", "Communication.NotificationsNotDeduplicatedByDispatch", "Gate3")
+$BasicEvent("Pending notifications for the same event are not conflated", "Communication.NotificationsNotConflatedByDispatch", "Gate3")
 $BasicEvent("Same receive handler entered concurrently by the local notification thread pool", "Communication.ReceiveHandlerInvokedConcurrentlyByWorkerThreads", "Gate3")
 
 @enduml

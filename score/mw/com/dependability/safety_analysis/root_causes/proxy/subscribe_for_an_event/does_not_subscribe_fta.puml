@@ -29,6 +29,6 @@ $IntermediateEvent("Subscription never reaches the provider", "Event2", "Gate1")
 $BasicEvent("Provider unavailable at subscribe", "Communication.ProviderUnavailableAtSubscription", "Event2")
 
 $IntermediateEvent("Subscribe to wrong event", "Event3", "Gate1")
-$TransferInGate("Transfer1", "Event3")
+$TransferInGate("Communication.SubscribeToWrongEvent", "Event3")
 
 @enduml

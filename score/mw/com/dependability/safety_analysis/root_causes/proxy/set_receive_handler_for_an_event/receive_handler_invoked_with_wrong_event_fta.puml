@@ -22,7 +22,7 @@ $IntermediateEvent("Handler is associated with the wrong event", "Event1", "Gate
 $OrGate("Gate2", "Event1")
 $BasicEvent("Mapping from event to registered receive handler is wrong", "Communication.EventToReceiveHandlerMappingWrong", "Gate2")
 $IntermediateEvent("Subscribe to Wrong Event", "Event2", "Gate2")
-$TransferInGate("Transfer1", "Event2")
+$TransferInGate("Communication.SubscribeToWrongEvent", "Event2")
 $BasicEvent("Notification dispatch resolves the wrong ElementFqId", "Communication.NotificationDispatchResolvesWrongElementFqId", "Gate1")
 
 @enduml
