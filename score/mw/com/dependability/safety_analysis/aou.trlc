@@ -136,7 +136,11 @@ ScoreReq.AoU NoGuaranteesForNotifications {
     root_causes = [
         mw_com_fta.ReceiveErrorOnRegistration,
         mw_com_fta.ServerProcessCrash,
-        mw_com_fta.AlgorithmicBug
+        mw_com_fta.AlgorithmicBug,
+        mw_com_fta.RootCauseReceiveHandlerNotInvoked,
+        mw_com_fta.RootCauseReceiveHandlerInvokedWithWrongEvent,
+        mw_com_fta.RootCauseReceiveHandlerInvokedMultipleTimes,
+        mw_com_fta.RootCauseReceiveHandlerInvokedWithoutEventNotification
     ]
 }
 
