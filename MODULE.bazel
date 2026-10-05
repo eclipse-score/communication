@@ -157,6 +157,7 @@ use_repo(
     "score_qcc_x86_64_toolchain_pkg",
 )
 
+bazel_dep(name = "score_coverage", version = "0.3.1", dev_dependency = True)
 bazel_dep(name = "score_itf", version = "0.5.0", dev_dependency = True)
 
 # Use pinned score_itf fork commit for integration testing changes.
@@ -256,7 +257,7 @@ llvm.toolchain(
         "@score_cpp_policies//sanitizers/features:lsan",
         "@score_cpp_policies//sanitizers/features:tsan",
         "//quality/compiler_warnings:treat_warnings_as_errors",
-        "//quality/coverage:enable_llvm_coverage_for_death_tests",
+        "@score_coverage//:enable_llvm_coverage_for_death_tests",
     ],
     link_libs = {"": [
         "-lrt",
