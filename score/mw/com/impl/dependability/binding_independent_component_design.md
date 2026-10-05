@@ -78,23 +78,39 @@ stored in `protected` members `events_`, `fields_` and `methods_`. In the future
 accessible to the generated (user facing) proxy / skeleton. Since these user facing proxies / skeletons have discrete
 event/field/method members anyhow, there is currently no need for such a generalized access.
 
+#### How we handle moving of Proxies / Skeletons and their events/fields
+
+In the previous section we have seen that `impl::ProxyEvent`, `impl::ProxyField` and `impl::ProxyMethod`, as well as
+`impl::SkeletonEvent`, `impl::SkeletonField` and `impl::SkeletonMethod`, register themselves at their parent
+`impl::ProxyBase` / `impl::SkeletonBase` during their construction with a reference to their parent.
+The special reference is not a normal reference, but a `ReferenceToMoveable<ProxyEventBase>::Reference` /
+`ReferenceToMoveable<SkeletonEventBase>::Reference`, `ReferenceToMoveable<ProxyFieldBase>::Reference` etc.
+If we stored a normal reference to the event/field/method in the parent proxy / skeleton, we would have the
+following problem: whenever the event/field/method instances get moved (which happens, when the user moves their outer
+proxy / skeleton instance), the references within the `impl::ProxyBase` / `impl::SkeletonBase` need to be updated. To
+accomplish this, the event/field/method instances would also need a reference to their parent to do the update! This again
+complicates things further! In case the `impl::ProxyBase` / `impl::SkeletonBase` moves (also happens, when the user moves
+their outer proxy / skeleton instance), then also the parent reference has to be updated within all the
+event/field/method instances.
 
 Our solution to this issue is the following:
 For each event/field/method instance, we store a `ReferenceToMoveable<T>::Reference` on the heap.
 `T` is in this case one of:
 
-- `SkeletonEventBase`
-- `SkeletonFieldBase`
-- `SkeletonMethodBase`
+- `ProxyEventBase` / `SkeletonEventBase`
+- `ProxyFieldBase` / `SkeletonFieldBase`
+- `ProxyMethodBase` / `SkeletonMethodBase`
 
 This "special reference" is created during the construction of the event/field/method instance and is passed to the
-`impl::SkeletonBase` during the registration call by reference. But since the `ReferenceToMoveable<T>::Reference` is
-stored on the heap and is **neither** copyable nor moveable, it doesn't get moved when the event/field/method is moved!
-Instead, the `ReferenceToMoveable<T>::Reference` instance is updated with the new address of the moved event/field/method
-instance within the move constructor/move assign op of the event/field/method. So the `impl::SkeletonBase` always has a
-valid reference to the event/field/method instance, even if the user moves the outer skeleton instance as long as it
-uses the `ReferenceToMoveable<T>::Reference::Get()` API to access the event/field/method instance!
+`impl::ProxyBase` / `impl::SkeletonBase` during the registration call by reference. But since the
+`ReferenceToMoveable<T>::Reference` is stored on the heap and is **neither** copyable nor moveable, it doesn't get moved
+when the event/field/method is moved! Instead, the `ReferenceToMoveable<T>::Reference` instance is updated with the new
+address of the moved event/field/method instance within the move constructor/move assign op of the event/field/method. So
+the `impl::ProxyBase` / `impl::SkeletonBase` always has a valid reference to the event/field/method instance, even if
+the user moves the outer proxy / skeleton instance as long as it uses the
+`ReferenceToMoveable<T>::Reference::Get()` API to access the event/field/method instance!
 
-The mechanism to provide such a "special reference" for  `impl::SkeletonEventBase`, `impl::SkeletonFieldBase` and
-`impl::SkeletonMethodBase` is realized by inheriting from `EnableReferenceToMoveableFromThis<T>`, where `T` is one of
-the above-mentioned types. making it a `CRTP` pattern!
+The mechanism to provide such a "special reference" for `impl::ProxyEventBase`, `impl::ProxyFieldBase` and
+`impl::ProxyMethodBase`, as well as `impl::SkeletonEventBase`, `impl::SkeletonFieldBase` and
+`impl::SkeletonMethodBase`, is realized by inheriting from `EnableReferenceToMoveableFromThis<T>`, where `T` is one of
+the above-mentioned types, making it a `CRTP` pattern!
