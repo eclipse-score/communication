@@ -109,7 +109,7 @@ ScoreReq.CompReq IClientConnectionSendWaitReplyAPI {
 ScoreReq.CompReq IClientConnectionSendWithCallbackAPI {
     description = "`IClientConnection` shall provide a `SendWithCallback` method that accepts a message byte span and a reply callback and returns after the message has been accepted by the local message passing layer."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.AsynchronousUnidirectionalCommunication@2]
+    derived_from = [MessagePassing.AsynchronousUnidirectionalCommunication@3]
     version = 1
 }
 
