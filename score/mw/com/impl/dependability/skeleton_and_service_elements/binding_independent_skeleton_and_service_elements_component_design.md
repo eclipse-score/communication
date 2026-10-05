@@ -11,7 +11,9 @@ implementation. All (technical) bindings have to implement `SkeletonBinding`.
 
 During construction of `SkeletonBase` the `pImpl` gets initialized from the information contained in the given
 `InstanceIdentifier` (or `InstanceSpecifier`, which gets resolved into an `InstanceIdentifier`). The resolution of the
-correct binding and the construction of the correct subclass of `SkeletonBinding` is performed by `SkeletonBindingFactory`.
+correct binding and the construction of the correct subclass of `SkeletonBinding` is performed by `SkeletonBindingFactory`
+(TODO: Link to the binding factory component).
+
 
 However, the generated skeleton is a composite, potentially containing  (depending on its interface description) a number
 of different event (or also field) members. For those composite members the same `pImpl` pattern is applied.
@@ -23,4 +25,3 @@ The following sequence shows the instantiation of a service class up to its serv
 (shared-mem) binding:
 
 <img alt="SKELETON_CREATE_OFFER_SEQ" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/skeleton_create_offer_seq.puml">
-
