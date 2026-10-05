@@ -36,7 +36,7 @@ Communication Management (binding-independent)
 E2E Supervisor / Historical Health Tracker (binding-independent)  <- interprets categorical results over time
     │
     ▼
-Binding Interface Contract                                <- crosses as a single categorical result only
+Binding Interface Contract                                <- always: categorical check results; optionally: header-stripped payload (never the E2E header / protected-data span)
     │
     ▼
 LoLa Binding / SOME/IP Binding (binding-dependent)        <- owns ProtectMessage()/CheckMessage(), counter & CRC state
@@ -46,6 +46,11 @@ Transport
 ```
 
 The binding layer understands the wire format of a transport and owns the profile-level Protect/Check algorithm and its state, while the binding-independent layer interprets the *sequence* of categorical results the binding produces over time — it does not compute them.
+
+Two terms are used consistently below:
+
+- **Check material** — the E2E header and the CRC-protected data span. Consumed only by `ProtectMessage()`/`CheckMessage()`; never leaves the binding.
+- **Payload** (`raw_sample`, see [Proposed Contract](#proposed-contract)) — the header-stripped bytes the binding can hand up to the frontend alongside the categorical check results. The check results are always produced; whether the payload is consumed at all, and whether it is deserialized or passed through as raw bytes, is the frontend's/application's decision (driven by the payload type declared in the service interface), not the binding's.
 
 ---
 
@@ -271,7 +276,7 @@ E2E Manager: historical health tracking
 
 **Option B — Check state in the binding layer — recommended**
 
-The binding owns `CheckState` and calls `CheckMessage()` internally, on the same buffer it already parsed, returning only the already-computed `DataIntegrityStatus`/`SequenceStatus` pair (no empty-cycle case is synthesized — see [Binding Independence Assessment](#binding-independence-assessment-review-feedback)).
+The binding owns `CheckState` and calls `CheckMessage()` internally, on the same buffer it already parsed, returning the already-computed `DataIntegrityStatus`/`SequenceStatus` pair, optionally accompanied by the header-stripped payload (`raw_sample`, see [Proposed Contract](#proposed-contract)) — no empty-cycle case is synthesized, see [Binding Independence Assessment](#binding-independence-assessment-review-feedback).
 
 ```text
 Transport
@@ -280,13 +285,15 @@ Transport
 Binding (owns E2ECheckContext)                      <- check state lives here
     │  parses wire format AND calls CheckMessage() internally, on its own buffer
     ▼
-DataIntegrityStatus + SequenceStatus
+[raw_sample (payload, optional)] + DataIntegrityStatus + SequenceStatus
     │
     ▼
-E2E Manager (binding-independent): historical health tracking
+E2E Manager (binding-independent): historical health tracking (consumes the two enums only)
 ```
 
-*Pros:* No raw protected-data/header spans ever cross the binding boundary — the binding already has everything `CheckMessage()` needs, because it just parsed it. Keeps the boundary contract to two small categorical enums, trivially mockable for binding-independent health-tracking tests (see [Testing Strategy](#testing-strategy)).
+> **`raw_sample` is not an unconditional output.** `DataIntegrityStatus`/`SequenceStatus` are produced for every checked frame; the payload is only handed up when the frontend has use for it, and what happens to it is decided by the frontend from the payload type declared in the service interface, not by the binding (see [Proposed Contract](#proposed-contract)). It is also empty whenever `DataIntegrityStatus` is `kError`.
+
+*Pros:* No check material (E2E header, protected-data span) ever crosses the binding boundary — the binding already has everything `CheckMessage()` needs, because it just parsed it. Only the two small categorical enums (and, optionally, the header-stripped payload `raw_sample`) cross, and the health tracker consumes just the enums, which are trivially mockable for binding-independent health-tracking tests (see [Testing Strategy](#testing-strategy)).
 
 *Cons:* The profile-check algorithm itself must be reused as a shared library across bindings to avoid duplicating it (addressed below — the algorithm is shared as a library across bindings). The binding is no longer a purely stateless wire-format adapter — it owns `E2ECheckContext` per consumer alongside its own subscription/queue state, a natural extension of state the binding already manages per consumer (e.g. LoLa's per-consumer slot/queue bookkeeping).
 
@@ -414,7 +421,7 @@ This does not apply to LoLa: its E2E header lives in a separate, binding-interna
 
 A consumer may need parameters that differ from other consumers of the same event — e.g. a consumer that intentionally receives a decimated sample stream needs a wider `MaxDeltaCounter` than other consumers. `mw::com`'s deployment model addresses this by attaching E2E configuration entirely to `ServiceInstance`, described next.
 
-`mw::com`'s E2E configuration is instead attached entirely to `ServiceInstance` (see [Example Deployment Mapping](#example-deployment-mapping-illustrative) for the resulting schema): every consuming instance declares its own complete, resolved E2E configuration (Profile Configuration, health-tracker tuning, check-enablement flags), rather than inheriting a shared default from the provider/service-interface level and overriding only the delta. This has three implications for the deployment model:
+`mw::com`'s E2E configuration is attached entirely to `ServiceInstance` (see [Example Deployment Mapping](#example-deployment-mapping-illustrative) for the resulting schema): every consuming instance declares its own complete, resolved E2E configuration (Profile Configuration, health-tracker tuning, check-enablement flags), rather than inheriting a shared default from the provider/service-interface level and overriding only the delta. This has four implications for the deployment model:
 
 1. Per-consumer tuning applies to Profile/Check parameters (e.g. `MaxDeltaCounter`), not only to health-tracker tuning — the illustrative example in [Example Deployment Mapping](#example-deployment-mapping-illustrative) models this for both `max_delta_counter` and `error_threshold`.
 2. Each instance's full configuration is resolved once, at deployment time, from that instance's own static deployment entry (e.g. `mw_com_config.json`) — a plain read of static data at process startup, with no runtime reconfiguration mechanism.
@@ -601,7 +608,7 @@ The following sketch illustrates how the parameters above could be expressed as 
       "version": { "major": 1, "minor": 0 },
       "instances": [
         {
-          "instanceId": 2, "asil-level": "ASIL_B", "binding": "LOLA",
+          "instanceId": 2, "asil-level": "ASIL_B", "binding": "SHM",
           "events": [
             {
               "eventName": "VehicleSpeed",
@@ -628,18 +635,26 @@ The interface shall allow the binding-independent layer to evaluate E2E status *
 
 ### Proposed Contract
 
-The binding owns Protect/Check state and invokes `ProtectMessage()`/`CheckMessage()` directly on the buffer/slot it already owns (see [Sender-Side Protect State](#sender-side-protect-state) and [Receiver-Side Check State](#receiver-side-check-state)). What crosses the binding/binding-independent boundary is therefore a **plain categorical result pair**, never a raw protected-data span or header span — the binding-independent E2E Supervisor combines that pair with its own historical health tracking to produce the final, user-visible `E2EResult`.
+The binding owns Protect/Check state and invokes `ProtectMessage()`/`CheckMessage()` directly on the buffer/slot it already owns (see [Sender-Side Protect State](#sender-side-protect-state) and [Receiver-Side Check State](#receiver-side-check-state)). What always crosses the binding/binding-independent boundary is therefore a **plain categorical result pair**, never the check material (the E2E header or the protected-data span) — the binding-independent E2E Supervisor combines that pair with its own historical health tracking to produce the final, user-visible `E2EResult`. The header-stripped payload (`raw_sample`) may accompany the pair, but whether and how it is consumed is the frontend's decision, not the binding's (see below).
 
 ```cpp
 // Receive path: binding has already run CheckMessage() on its own buffer before this crosses the boundary
 struct BindingReceivedFrame {
-    std::span<std::byte> raw_sample;      // non-owning view over the wire/slot bytes CheckMessage() examined; empty when the binding's own check reported kError
+    std::span<std::byte> raw_sample;      // non-owning view over the wire/slot bytes CheckMessage() examined; empty when the binding's own check reported kError; whether it is consumed is the frontend's decision
     DataIntegrityStatus  data_integrity;  // already computed by the binding
     SequenceStatus       sequence;        // already computed by the binding
 };
 ```
 
 > **No longer templated on `T`.** [eclipse-score/communication#1079](https://github.com/eclipse-score/communication/pull/1079) (proxy-side type erasure — pending merge at the time of writing; `main` already carries the skeleton-side equivalent via [#897](https://github.com/eclipse-score/communication/pull/897), see [Where the Header Bytes Actually Live](#where-the-header-bytes-actually-live-transmit-path-api-shape)) makes `ProxyEventBinding` a single, non-template, type-erased interface. `BindingReceivedFrame` reflects that here: `raw_sample` is a non-owning `std::span<std::byte>` — the binding hands up exactly the bytes it just ran `CheckMessage()` on, with no dependency on `SampleType`. The actual zero-copy/reference-counted sample handle is constructed separately, by `ProxyEventBinding::MakeSamplePtr()` (also generalized to `SamplePtr<void>` by #1079), and is later rebound to the app-facing `SamplePtr<const SampleType>` by `ProxyEvent<SampleType>` — `BindingReceivedFrame` itself is only a short-lived, boundary-crossing carrier for the raw bytes plus the already-computed check results, not the sample handle itself.
+
+**`raw_sample` is not an unconditional output, and its use is the frontend's decision.** `data_integrity`/`sequence` are produced for every checked frame; the payload is only worth handing up when the frontend has use for it, and what it does with it follows from the payload type declared in the service interface, not from anything the binding decides:
+
+- **Raw byte payload type ("no deserialization" marker):** the frontend passes the header-stripped payload through to the application as raw bytes.
+- **Typed payload with a codec:** the frontend runs `ISerializer::Deserialize()` on the payload.
+- **LoLa:** the sample is already a typed object in the shared-memory slot, delivered through `MakeSamplePtr()`, so the frontend need not consume the byte view at all.
+
+In every case `raw_sample` is empty when `data_integrity` is `kError`, so rejected bytes are never decoded or delivered.
 
 **Named `raw_sample`, not `sample`, deliberately.** This is always a byte view over the pre-decode material the binding produced, whether or not any further decoding ever happens: for LoLa it is a byte view over the already-finalized typed object sitting in its shared-memory slot, since there is no wire encoding to undo and no extra copy is made; for SOME/IP it may be a view over still-undecoded bytes, since whether and when to turn it into a typed object is the binding-independent frontend's decision (or the app's, via `SampleView`) — not something the binding presumes on the frontend's behalf.
 
@@ -672,7 +687,7 @@ E2E Supervisor (binding-independent)                      <- owns E2EHealthConte
     ▲  combines DataIntegrityStatus + SequenceStatus with tracked health → E2EResult
     │
 ProxyEventBinding::GetNewSamples()                        <- owns E2ECheckContext; parses wire format AND calls CheckMessage()
-    ▲  produces BindingReceivedFrame{ raw_sample (std::span<std::byte>), data_integrity, sequence }
+    ▲  produces BindingReceivedFrame{ raw_sample (std::span<std::byte>; use is frontend's decision), data_integrity, sequence }
     │
 Wire / Transport
 ```
@@ -687,7 +702,7 @@ See [API Shape Options](#api-shape-options) for the full trade-off discussion be
 
 This contract has several advantages:
 
-- A single, narrow, trivially-mockable boundary value pair (`DataIntegrityStatus`/`SequenceStatus`) — no raw byte spans ever cross into binding-independent code
+- A narrow boundary: a trivially-mockable value pair (`DataIntegrityStatus`/`SequenceStatus`), optionally accompanied by the header-stripped payload — no check material (E2E header, protected-data span) ever crosses into binding-independent code, and the health tracker only ever consumes the pair
 - No cross-layer buffer handoff on the transmit path — the binding writes its own header in place
 - Deterministic unit testing of historical health tracking: inject `DataIntegrityStatus`/`SequenceStatus` values directly, no transport or binding needed
 - Stable separation between transport/profile-check logic (binding + shared profile-algorithm library) and communication-supervision logic (binding-independent health tracker)
@@ -781,7 +796,7 @@ Verify:
 - Wrong-sequence behavior
 - Health context reset on resubscription (see [E2E Context Lifecycle](#e2e-context-lifecycle))
 
-These tests can be executed without any transport or binding implementation at all — `DataIntegrityStatus`/`SequenceStatus` are plain enums, and injecting them directly is now the *only* way any test reaches the health tracker, since no binding ever hands it raw bytes to work with.
+These tests can be executed without any transport or binding implementation at all — `DataIntegrityStatus`/`SequenceStatus` are plain enums, and injecting them directly is now the *only* way any test reaches the health tracker, since the tracker consumes only the enums and never the payload or check material.
 
 Given the [Binding Independence Assessment](#binding-independence-assessment-review-feedback), tests must also cover:
 
@@ -843,6 +858,7 @@ The chosen allocation follows the `mw::com` layering principles:
 | Counter increment / protect state    | ✔ (owns `E2EProtectContext`) |               |
 | CRC / counter verification (`CheckMessage`) | ✔ (owns `E2ECheckContext`) |         |
 | Raw per-message result (`DataIntegrityStatus`/`SequenceStatus`) | ✔ (produced by `CheckMessage`) | consumed by historical health tracking |
+| Payload hand-off (`raw_sample`, header-stripped) | ✔ (strips transport/E2E headers, optionally hands up payload bytes; empty on `DataIntegrityStatus::kError`) | ✔ frontend decides whether to use it, deserialize it, or pass it through raw |
 | Health-tracker config (error/recovery thresholds) |               | ✔                         |
 | Historical health tracking (hysteresis counter) |          | ✔ (updated only on an actually-checked message) |
 | Invocation trigger | ✔ (runs `CheckMessage()`/`ProtectMessage()` inside its own `GetNewSamples()`/`Send()`, only when a real message is present) | ✔ (updates the health counter on the resulting `DataIntegrityStatus`/`SequenceStatus` inside the same wrapping call — no separate timer) |
@@ -855,7 +871,7 @@ This separation ensures:
 
 - a reusable, once-tested profile-algorithm library underneath every binding's Protect/Check orchestration,
 - reusable E2E supervision (historical health tracking and hysteresis accounting) across all bindings,
-- minimal cross-layer contract surface — a single categorical enum, never raw protected bytes,
+- minimal cross-layer contract surface — two categorical enums plus, only when the frontend needs it, the header-stripped payload; never the E2E header or protected-data span,
 - independent testing of protocol handling and state management,
 - and alignment with the existing `mw::com` architecture that separates transport bindings from communication management logic.
 
