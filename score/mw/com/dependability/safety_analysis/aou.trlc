@@ -22,6 +22,9 @@ ScoreReq.AoU MonotonicSemiDynamicMemoryAllocation {
     safety = ScoreReq.Asil.B
     note = "LoLa implements a Monotonic Memory Resource. Once memory is claimed, there is no possibility to release it. LoLa pre-allocates a memory pool, only within this memory pool the monotonic allocations will happen."
     version = 1
+    root_causes = [
+        mw_com_fta.TooMuchMemoryAllocated
+    ]
 }
 
 /* broken_link_c/issue/5835013 */
@@ -46,8 +49,9 @@ ScoreReq.AoU CorrectlyConfiguredMaximumNumberOfSubscriber {
         mw_com_fta.IssueInLockFreeSychronization,
         mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
         mw_com_fta.AllocateClaimsTooFewMemory,
-        mw_com_fta.NecessarySizeCalculationRetreivesWrongValue,
-        mw_com_fta.SharedMemoryTruncationFails
+        mw_com_fta.NecessarySizeCalculationRetrievesWrongValue,
+        mw_com_fta.SharedMemoryTruncationFails,
+        mw_com_fta.TooMuchMemoryAllocated
     ]
 }
 
@@ -73,8 +77,9 @@ ScoreReq.AoU CorrectlyConfiguredMaximumNumberOfMaximumElementsPerSubscriber {
         mw_com_fta.IssueInLockFreeSychronization,
         mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
         mw_com_fta.AllocateClaimsTooFewMemory,
-        mw_com_fta.NecessarySizeCalculationRetreivesWrongValue,
-        mw_com_fta.SharedMemoryTruncationFails
+        mw_com_fta.NecessarySizeCalculationRetrievesWrongValue,
+        mw_com_fta.SharedMemoryTruncationFails,
+        mw_com_fta.TooMuchMemoryAllocated
     ]
 }
 
@@ -245,7 +250,7 @@ ScoreReq.AoU CheckForNullptrOnAllocate {
         mw_com_fta.IssueInLockFreeSychronization,
         mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
         mw_com_fta.AllocateClaimsTooFewMemory,
-        mw_com_fta.NecessarySizeCalculationRetreivesWrongValue,
+        mw_com_fta.NecessarySizeCalculationRetrievesWrongValue,
         mw_com_fta.SharedMemoryTruncationFails
     ]
 }
@@ -267,7 +272,7 @@ ScoreReq.AoU OneProducerOnlyOneAllocateePtr {
         mw_com_fta.IssueInLockFreeSychronization,
         mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
         mw_com_fta.AllocateClaimsTooFewMemory,
-        mw_com_fta.NecessarySizeCalculationRetreivesWrongValue,
+        mw_com_fta.NecessarySizeCalculationRetrievesWrongValue,
         mw_com_fta.SharedMemoryTruncationFails
     ]
 }
