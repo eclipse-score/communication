@@ -272,7 +272,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "issue not possible with current design. no additional measures required."
-                // potentialcause = "This issue cannot happen. If then it is a memory allocation topic and covered by [ISSUE:Failuremode TooFewMemoryAllocated]"
+                interface = "mw.com.Event.Send"
             }
 
             // ID: 6164996
