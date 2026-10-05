@@ -68,7 +68,7 @@ ScoreReq.CompReq MessageOrderPreservationPerConnection {
 }
 
 ScoreReq.CompReq SingleServerInstancePerServiceIdentifier {
-    description = "The message passing component shall prevent more than one active `IServer` instance serves a any given service identifier at any point in time."
+    description = "The message passing component shall prevent more than one active `IServer` instance serves any given service identifier at any point in time."
     safety = ScoreReq.Asil.B
     derived_from = [MessagePassing.PointToPointConnections@2]
     version = 1
@@ -231,7 +231,7 @@ ScoreReq.CompReq ServerConnectionRefusal {
 }
 
 ScoreReq.CompReq ServerIConnectionHandlerDispatch {
-    description = "The server shall invoke the `IConnectionHandler` virtual methods of the `UserData` object for a given `IServerConnection` in place of the server-wide callbacks, when the UserData holds an `IConnectionHandler` instance."
+    description = "The server shall invoke the `IConnectionHandler` virtual methods of the `UserData` object for a given `IServerConnection` instead of the server-wide callbacks, when the UserData holds an `IConnectionHandler` instance."
     safety = ScoreReq.Asil.B
     derived_from = [MessagePassing.ServerInterface@2]
     version = 1

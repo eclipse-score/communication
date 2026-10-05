@@ -43,7 +43,7 @@ ScoreReq.FeatReq OSIndependentAPI {
 ScoreReq.FeatReq QMImplementationOnNonQnxOS {
     description = "The message passing component shall provide a QM-quality implementation of its API on host operating systems other than QNX, to support development, evaluation, testing, and QM deployment off the ASIL B certified target."
     safety = ScoreReq.Asil.QM
-    derived_from = [MessagePassing.CrossPlatformAbstraction@1]
+    derived_from = [MessagePassing.PlatformAbstraction@1]
     version = 1
 }
 
@@ -58,13 +58,6 @@ ScoreReq.FeatReq PointToPointConnections {
     description = "The message passing component shall support only point-to-point (1:1) connections between communication endpoints. N:M connections are explicitly excluded."
     safety = ScoreReq.Asil.B
     derived_from = [MessagePassing.PointToPointConnectionTopology@1]
-    version = 2
-}
-
-ScoreReq.FeatReq SmallDataLowLatencyCommunication {
-    description = "The message passing component shall provide low-latency communication for small data between dedicated endpoints. "
-    safety = ScoreReq.Asil.QM
-    derived_from = [MessagePassing.ClientServerCommunicationModel@1]
     version = 2
 }
 
@@ -84,7 +77,7 @@ ScoreReq.FeatReq SynchronousBidirectionalCommunication {
 }
 
 ScoreReq.FeatReq AsynchronousUnidirectionalCommunication {
-    description = "The communication shall support client-initiated one-way message sending (Send) on a given connection, where the send call instead enqueues the message for asynchronous delivery by the background transport and returns after local acceptance, whenever client configuration or a reply currently pending on the same connection requires it. No guarantee is provided that an enqueued message is delivered to or processed by the receiver."
+    description = "The communication shall support client-initiated one-way message sending (Send) on a given connection, where the send call enqueues the message for asynchronous delivery by the background transport and returns after local acceptance, whenever client configuration or a reply currently pending on the same connection requires it. No guarantee is provided that an enqueued message is delivered to or processed by the receiver."
     safety = ScoreReq.Asil.B
     derived_from = [MessagePassing.OneWayMessageDeliveryCapability@1]
     version = 3

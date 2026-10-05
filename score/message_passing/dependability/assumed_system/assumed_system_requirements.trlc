@@ -61,7 +61,7 @@ ScoreReq.AssumedSystemReq IntegrationMisconfigurationDetectability {
     version = 1
 }
 
-ScoreReq.AssumedSystemReq CrossPlatformAbstraction {
+ScoreReq.AssumedSystemReq PlatformAbstraction {
     description = "The system shall provide its client-server communication API in a form usable across more than one host operating system, to support development, evaluation, and testing convenience, and deployment in non-safety (QM) contexts on platforms other than the certified safety target."
     safety = ScoreReq.Asil.QM
     rationale = "The component is developed, evaluated, and partly tested on a general-purpose host OS before being deployed on its certified safety target; this capability is not itself safety-relevant, which is why it is tagged QM rather than inheriting the certified target's ASIL B."
