@@ -1,4 +1,5 @@
 #### LoLa binding level Registration of skeleton events/fields at their parent skeleton
+#### Registration of skeleton events/fields for shared memory creation at their parent skeleton
 
 Despite the last paragraph in the previous chapter, we are doing still "some registration" in our `LoLa`/shared-memory
 binding from `lola::SkeletonEvent` at its parent `lola::Skeleton`!
