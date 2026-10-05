@@ -42,7 +42,7 @@ Bazel build/test rules.
 ## Not for
 
 - Architecture diagrams, `unit` / `component` / `dependable_element` structure → **score-architecture**
-- FMEA / FailureMode / ControlMeasure / FTA safety analysis → **score-safety-analysis**
+- FMEA / FailureMode / SafetyMeasure / FTA safety analysis → **score-safety-analysis**
 - Test annotation and coverage → **score-testing**
 - End-to-end SEooC assembly / choosing which skill to use → **rules-score**
 
@@ -159,7 +159,7 @@ Requirement          → description (Markup_String), version (Integer),
   RequirementSafety   → + safety (Asil)
     AssumedSystemReq  → + rationale (String)
     FeatReq           → + derived_from (AssumedSystemReqId[1..*])
-    CompReq           → + derived_from (CompReqSourceId[1..*])   # FeatReq or AssumedSystemReq
+    CompReq           → + derived_from (CompReqSourceId[1..*])   # FeatReq, AssumedSystemReq, received AoU, or RootCause (control measure)
 ```
 
 - `description` is a `Markup_String` — it may contain `:term:` references and embedded
@@ -243,7 +243,8 @@ component-internal requirements with no feature-level parent.
 
 ### Assumptions of Use (AoU)
 
-`AoU` extends `ControlMeasure` and captures conditions the integrating project must satisfy.
+`AoU` extends `RequirementSafety` (not `SafetyMeasure`) and captures conditions the integrating
+project must satisfy, via its own independent, optional `root_causes` field.
 The `assumptions_of_use` rule accepts raw `.trlc` **or** `.rst` files carrying `aou_req`
 directives (converted to TRLC automatically).
 

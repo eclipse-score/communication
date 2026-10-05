@@ -15,11 +15,11 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Returns wrong data", "Communication.ReturnsWrongData")
+$FailureMode("Returns wrong data", "Communication.ReturnsWrongData")
 
 $OrGate("Gate1", "Communication.ReturnsWrongData")
 $IntermediateEvent("Shared Memory no longer valid", "Event2", "Gate1")
-$BasicEvent("Life-Cycle issues", "Communication.LifeCycleIssuesSamplePtr", "Event2")
-$BasicEvent("Wrong slot referenced", "Communication.WrongSlotReferenced", "Gate1")
+$RootCause("Life-Cycle issues", "LifeCycleIssuesSamplePtr", "Event2")
+$RootCause("Wrong slot referenced", "WrongSlotReferenced", "Gate1")
 
 @enduml

@@ -15,10 +15,10 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Service Offer stopped for wrong instance in SD", "Communication.StopOfferWrongInstanceStoppedInSD")
+$FailureMode("Service Offer stopped for wrong instance in SD", "Communication.StopOfferWrongInstanceStoppedInSD")
 
 $OrGate("Gate1", "Communication.StopOfferWrongInstanceStoppedInSD")
-$BasicEvent("Service Discovery Client deletes wrong marker file", "Communication.SDClientWrongMarkerFile", "Gate1")
-$BasicEvent("inotify notifies wrong FD", "Communication.SDNotifyWrongFD", "Gate1")
+$RootCause("Service Discovery Client deletes wrong marker file", "SDClientWrongMarkerFile", "Gate1")
+$RootCause("inotify notifies wrong FD", "SDNotifyWrongFD", "Gate1")
 
 @enduml

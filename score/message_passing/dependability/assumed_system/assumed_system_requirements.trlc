@@ -26,7 +26,7 @@ ScoreReq.AssumedSystemReq SystemMessagingProtocol {
     version = 1
 }
 
-ScoreReq.Mitigation SafeState {
+ScoreReq.AssumedSystemReq SafeState {
     description = "The Safe State of the system shall be *safe-silent*"
     safety = ScoreReq.Asil.B
     rationale = "Currently only fail safe systems are in scope"

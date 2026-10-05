@@ -15,7 +15,7 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Allocate in Wrong Memory", "Communication.MemoryAllocatedInWrongSection")
+$FailureMode("Allocate in Wrong Memory", "Communication.MemoryAllocatedInWrongSection")
 
 $OrGate("Gate1", "Communication.MemoryAllocatedInWrongSection")
 $IntermediateEvent("Allocate in Heap", "Event1", "Gate1")
@@ -24,12 +24,12 @@ $IntermediateEvent("Usage of wrong memory ressource", "Event11", "Gate2")
 $OrGate("Gate4", "Event11")
 $IntermediateEvent("getMemoryResourceProxy returns wrong ressource", "Event14", "Gate4")
 $OrGate("Gate5", "Event14")
-$BasicEvent("Shared Memory resource returns wrong proxy", "Communication.SharedMemoryResourceReturnsWrongProxy", "Gate5")
-$BasicEvent("SharedMemoryFactory returns wrong memory ressource", "Communication.SharedmemoryfactoryReturnsWrongMemoryRessource", "Gate4")
+$RootCause("Shared Memory resource returns wrong proxy", "SharedMemoryResourceReturnsWrongProxy", "Gate5")
+$RootCause("SharedMemoryFactory returns wrong memory ressource", "SharedmemoryfactoryReturnsWrongMemoryRessource", "Gate4")
 $IntermediateEvent("Usage of no memory ressource", "Event10", "Gate2")
 $OrGate("Gate3", "Event10")
-$BasicEvent("Shared Memory ressource not forwarded", "Communication.SharedMemoryRessourceNotForwarded", "Gate3")
-$BasicEvent("User Fehler", "Communication.UserFehler", "Gate3")
+$RootCause("Shared Memory ressource not forwarded", "SharedMemoryRessourceNotForwarded", "Gate3")
+$RootCause("User Fehler", "UserFehler", "Gate3")
 $IntermediateEvent("Usage of Wrong Allocator", "Event9", "Gate2")
 note left of Event9
   This includes usage
@@ -37,19 +37,19 @@ note left of Event9
   types
 end note
 $OrGate("Gate6", "Event9")
-$BasicEvent("Middleware provided type is wrong", "Communication.MiddlewareProvidedTypeIsWrong", "Gate6")
-$BasicEvent("User provided type is wrong", "Communication.UserProvidedTypeIsWrong", "Gate6")
+$RootCause("Middleware provided type is wrong", "MiddlewareProvidedTypeIsWrong", "Gate6")
+$RootCause("User provided type is wrong", "UserProvidedTypeIsWrong", "Gate6")
 $IntermediateEvent("Allocate in other SHM", "Event2", "Gate1")
 $OrGate("Gate7", "Event2")
-$BasicEvent("Shared memory Resource opens wrong shared memory segment", "Communication.SharedMemoryResourceOpensWrongSharedMemorySegment", "Gate7")
-$BasicEvent("Forwarded the wrong shared memory segment from the beginning", "Communication.ForwardedTheWrongSharedMemorySegmentFromTheBeginning", "Gate7")
+$RootCause("Shared memory Resource opens wrong shared memory segment", "SharedMemoryResourceOpensWrongSharedMemorySegment", "Gate7")
+$RootCause("Forwarded the wrong shared memory segment from the beginning", "ForwardedTheWrongSharedMemorySegmentFromTheBeginning", "Gate7")
 $IntermediateEvent("Allocator dispatches to wrong memory ressource", "Event4", "Gate7")
 $OrGate("Gate8", "Event4")
-$BasicEvent("Offset PTR corruption", "Communication.OffsetPtrCorruption", "Gate8")
+$RootCause("Offset PTR corruption", "OffsetPtrCorruption", "Gate8")
 $IntermediateEvent("Allocate on Stack", "Event3", "Gate1")
 $OrGate("Gate9", "Event3")
-$BasicEvent("Broken allocator", "Communication.BrokenAllocator", "Gate9")
-$BasicEvent("Data-Type itself is allocated on stack", "Communication.DataTypeItselfIsAllocatedOnStack", "Gate9")
-$BasicEvent("Proxy ID overwritten", "Communication.ProxyIdOverwritten", "Gate1")
+$RootCause("Broken allocator", "BrokenAllocator", "Gate9")
+$RootCause("Data-Type itself is allocated on stack", "DataTypeItselfIsAllocatedOnStack", "Gate9")
+$RootCause("Proxy ID overwritten", "ProxyIdOverwritten", "Gate1")
 
 @enduml

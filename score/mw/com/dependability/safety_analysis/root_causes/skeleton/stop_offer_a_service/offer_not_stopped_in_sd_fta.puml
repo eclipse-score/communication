@@ -15,15 +15,15 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Service Offer (partially) not stopped in SD", "Communication.StopOfferNotStoppedInSD")
+$FailureMode("Service Offer (partially) not stopped in SD", "Communication.StopOfferNotStoppedInSD")
 
 $OrGate("Gate1", "Communication.StopOfferNotStoppedInSD")
 $IntermediateEvent("Service Discovery Client StopOfferService failed", "Communication.StopOfferSDClientServiceFailure", "Gate1")
-$BasicEvent("Marker File Deletion Failure", "Communication.SDFileDeletionFailure", "Gate1")
-$BasicEvent("inotify Event Failure", "Communication.SDNotifyFailed", "Gate1")
+$RootCause("Marker File Deletion Failure", "SDFileDeletionFailure", "Gate1")
+$RootCause("inotify Event Failure", "SDNotifyFailed", "Gate1")
 $OrGate("Gate2", "Communication.StopOfferSDClientServiceFailure")
-$BasicEvent("Marker File Not found", "Communication.SDClientMarkerFileNotFound", "Gate2")
-$BasicEvent("Marker File Wrong path", "Communication.SDClientMarkerFileWrongPath", "Gate2")
+$RootCause("Marker File Not found", "SDClientMarkerFileNotFound", "Gate2")
+$RootCause("Marker File Wrong path", "SDClientMarkerFileWrongPath", "Gate2")
 
 
 

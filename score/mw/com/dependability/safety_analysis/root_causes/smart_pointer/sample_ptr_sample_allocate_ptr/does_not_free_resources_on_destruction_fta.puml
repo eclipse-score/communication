@@ -15,14 +15,14 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Does not free resources on destruction", "Communication.DoesNotFreeResourcesOnDestruction")
+$FailureMode("Does not free resources on destruction", "Communication.DoesNotFreeResourcesOnDestruction")
 
 $IntermediateEvent("Does not free slot", "Event1", "Communication.DoesNotFreeResourcesOnDestruction")
 $OrGate("Gate1", "Event1")
 $IntermediateEvent("Slot Status is not updated correctly", "Event2", "Gate1")
 $OrGate("Gate2", "Event2")
-$BasicEvent("Changing state fails", "Communication.ChangingStateFails", "Gate2")
-$BasicEvent("Increasing / Decreasing ref-count fails", "Communication.IncreasingDecreasingRefCountFails", "Gate2")
-$BasicEvent("Slot reference broken e.g. non-valid", "Communication.SlotReferenceBrokenEGNonValid", "Gate1")
+$RootCause("Changing state fails", "ChangingStateFails", "Gate2")
+$RootCause("Increasing / Decreasing ref-count fails", "IncreasingDecreasingRefCountFails", "Gate2")
+$RootCause("Slot reference broken e.g. non-valid", "SlotReferenceBrokenEGNonValid", "Gate1")
 
 @enduml
