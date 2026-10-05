@@ -414,6 +414,7 @@ def api_surface_test(name, lock_file, target, check_docs = True, tags = [], **kw
         target: cc_library target whose transitive direct public headers define the public API.
         check_docs: If True, also check all public symbols have \\api docs.
         tags: Additional tags for the test target.
+        **kwargs: Additional parameters forwarded to the underlying test target.
     """
     _linux_only = ["@platforms//os:linux"]
 

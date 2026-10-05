@@ -11,6 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+"""Macro creating certified-scope stubs for score_baselibs packages."""
+
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
     "component",
