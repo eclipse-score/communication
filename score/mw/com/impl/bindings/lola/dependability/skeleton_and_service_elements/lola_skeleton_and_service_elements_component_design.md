@@ -10,11 +10,11 @@ This registration differs from the registration done on the binding independent 
 2. During this call to `lola::Skeleton::Register()` the `lola::Skeleton` does **NOT** store any references/links to the
   `lola::SkeletonEvent`, which is doing this call.
 
-Instead, this registration approach via the `lola::Skeleton::Register()` is done, to allow the `lola::SkeletonEvent` to
+Instead, this registration approach via `lola::Skeleton::Register()` is done to allow the `lola::SkeletonEvent` to
 set up its specific storage in shared memory! Since the `lola::Skeleton` is the owner/creator of the whole shared-memory
 object, where all the events/fields/(later also methods) belonging to this `lola::Skeleton` are stored, the access to
 the shared-memory object has to be done through the parent `lola::Skeleton` instance. As shown in the 2nd part of the
-sequence diagram in [chapter for skeleton creation](#skeleton-creation), the `lola::SkeletonEvent`s are enriching the
+sequence diagram in [chapter for skeleton creation](../../../../dependability/skeleton_and_service_elements/binding_independent_skeleton_and_service_elements_component_design.md#skeleton-and-service-element-creation), the `lola::SkeletonEvent`s are enriching the
 event maps prepared by the `lola::Skeleton` in `lola::Skeleton::PrepareOffer()` (and stored within shared-memory) with
 their event specific storage. This job has to be done by/shifted to the `lola::SkeletonEvent` as it needs the event/
 field type information, which only the `lola::SkeletonEvent` has (not the `lola::Skeleton`!). This is also the reason,

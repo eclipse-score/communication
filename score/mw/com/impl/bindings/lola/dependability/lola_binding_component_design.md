@@ -6,4 +6,4 @@ memory region is not mapped twice into the process space. In order to do that, t
 or create the necessary resources if necessary.
 
 The details, if and when a shared memory object created by a communication instance gets cleaned up, can be read in the
-[detailed design of partial restart functionality](../partial_restart/README.md#partial-restart-specific-extensions-to-skeletonpreparestopoffer)
+[detailed design of partial restart functionality](../../../../design/partial_restart/README.md#partial-restart-specific-extensions-to-skeletonpreparestopoffer)
