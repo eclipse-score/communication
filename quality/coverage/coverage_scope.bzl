@@ -71,6 +71,9 @@ def _coverage_scope_aspect_impl(target, ctx):
             for linker_input in target[CcInfo].linking_context.linker_inputs.to_list():
                 for lib in linker_input.libraries:
                     for archive in [lib.static_library, lib.pic_static_library]:
+                        # The "external" path check is deliberate: artifacts of external repositories
+                        # (path contains "external/") must be excluded from the baseline coverage,
+                        # and Bazel offers no API to ask which repository an artifact belongs to.
                         # buildifier: disable=external-path
                         if archive and "/external/" not in archive.path and not archive.path.startswith("external/"):
                             direct_archives.append(archive)
@@ -83,6 +86,9 @@ def _coverage_scope_aspect_impl(target, ctx):
                 direct_files.append(f.short_path)
         out = target[CrateInfo].output
 
+        # The "external" path check is deliberate: outputs of external repositories
+        # (path contains "external/") must be excluded from the baseline coverage,
+        # and Bazel offers no API to ask which repository a file belongs to.
         # buildifier: disable=external-path
         if out and "/external/" not in out.path and not out.path.startswith("external/"):
             direct_archives.append(out)
