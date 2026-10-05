@@ -22,10 +22,9 @@ namespace score::mw::com::impl::e2e
 void ValidateHealthTrackerConfiguration(const HealthTrackerConfiguration& config) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config.error_threshold >= 1U,
-                                                       "error_threshold must be at least 1");
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        config.recovery_threshold < config.error_threshold,
-        "recovery_threshold must be strictly less than error_threshold");
+                                                      "error_threshold must be at least 1");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config.recovery_threshold < config.error_threshold,
+                                                      "recovery_threshold must be strictly less than error_threshold");
 }
 
 HistoricalHealthStatus UpdateHistoricalHealth(const DataIntegrityStatus data_integrity,
@@ -42,7 +41,7 @@ HistoricalHealthStatus UpdateHistoricalHealth(const DataIntegrityStatus data_int
 
     const bool data_integrity_failed{data_integrity == DataIntegrityStatus::kError};
     const bool sequence_failed{(sequence == SequenceStatus::kErrorRepeated) ||
-                                (sequence == SequenceStatus::kErrorGapExceedsThreshold)};
+                               (sequence == SequenceStatus::kErrorGapExceedsThreshold)};
     const bool this_sample_failed{data_integrity_failed || sequence_failed};
 
     if (this_sample_failed)

@@ -20,19 +20,19 @@ namespace
 {
 
 constexpr HealthTrackerConfiguration kEnabledConfiguration{/* enabled */ true,
-                                                            /* error_threshold */ 3U,
-                                                            /* recovery_threshold */ 1U};
+                                                           /* error_threshold */ 3U,
+                                                           /* recovery_threshold */ 1U};
 
 constexpr HealthTrackerConfiguration kDisabledConfiguration{/* enabled */ false,
-                                                             /* error_threshold */ 3U,
-                                                             /* recovery_threshold */ 1U};
+                                                            /* error_threshold */ 3U,
+                                                            /* recovery_threshold */ 1U};
 
 TEST(E2eHealthTrackerTest, DisabledConfigurationAlwaysReportsDisabledAndDoesNotTouchContext)
 {
     HealthContext context{};
 
-    const auto status =
-        UpdateHistoricalHealth(DataIntegrityStatus::kError, SequenceStatus::kErrorRepeated, kDisabledConfiguration, context);
+    const auto status = UpdateHistoricalHealth(
+        DataIntegrityStatus::kError, SequenceStatus::kErrorRepeated, kDisabledConfiguration, context);
 
     EXPECT_EQ(status, HistoricalHealthStatus::kDisabled);
     EXPECT_EQ(context.error_counter, 0U);
@@ -79,7 +79,8 @@ TEST(E2eHealthTrackerTest, RepeatedFailuresReachingErrorThresholdLatchIntoError)
 
     for (std::uint8_t i = 0U; i < kEnabledConfiguration.error_threshold; ++i)
     {
-        status = UpdateHistoricalHealth(DataIntegrityStatus::kError, SequenceStatus::kOk, kEnabledConfiguration, context);
+        status =
+            UpdateHistoricalHealth(DataIntegrityStatus::kError, SequenceStatus::kOk, kEnabledConfiguration, context);
     }
 
     EXPECT_EQ(status, HistoricalHealthStatus::kError);

@@ -36,3 +36,18 @@ cc_library(
         "@score_baselibs//score/language/futurecpp",
     ],
 )
+
+cc_library(
+    name = "e2e_summary",
+    srcs = ["e2e_summary.cpp"],
+    hdrs = [
+        "e2e_summary.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        ":e2e_health_tracker",
+        ":e2e_result",
+    ],
+)

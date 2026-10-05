@@ -20,52 +20,35 @@
 namespace score::mw::com::impl::e2e
 {
 
-/// \brief Configuration for the binding-independent historical health tracker.
-///
-/// One configuration is shared by all samples of a given event/field; it is resolved once from the
-/// deployment configuration and does not change afterwards.
+/// \brief Configuration of the historical health tracker (shared per event/field).
 struct HealthTrackerConfiguration
 {
-    /// \brief Whether historical health tracking is active for this event/field.
+    /// \brief Whether tracking is active.
     bool enabled;
 
-    /// \brief Number of accumulated errors at/above which the tracker latches into HistoricalHealthStatus::kError.
-    /// Must be >= 1.
+    /// \brief Error count at/above which the state latches to kError. Must be >= 1.
     std::uint8_t error_threshold;
 
-    /// \brief Number of accumulated errors at/below which the tracker latches back into
-    /// HistoricalHealthStatus::kOk. Must be strictly less than error_threshold.
+    /// \brief Error count at/below which the state latches back to kOk. Must be < error_threshold.
     std::uint8_t recovery_threshold;
 };
 
-/// \brief Mutable, per-consumer state of the historical health tracker.
-///
-/// Cardinality mirrors ProtectContext/CheckContext: one HealthContext instance per consuming proxy event.
+/// \brief Per-consumer state of the historical health tracker.
 struct HealthContext
 {
-    /// \brief Saturating error counter: incremented on a failed sample, decremented on a passed one.
+    /// \brief Saturating counter: +1 on a failed sample, -1 on a passed one.
     std::uint8_t error_counter{0U};
 
-    /// \brief Current latched state of the hysteresis (true once error_threshold is reached, false again
-    /// only once recovery_threshold is reached).
+    /// \brief Latched hysteresis state.
     bool is_currently_error{false};
 };
 
-/// \brief Validates that a HealthTrackerConfiguration is internally consistent.
-///
-/// Intended to be called once, when the configuration is resolved (e.g. at construction/deployment-resolution
-/// time), not per message. Terminates the process on violation, mirroring the precondition-check idiom used
-/// elsewhere in this codebase (see EnrichedInstanceIdentifier).
+/// \brief Terminates if the configuration is inconsistent.
 void ValidateHealthTrackerConfiguration(const HealthTrackerConfiguration& config) noexcept;
 
-/// \brief Updates the historical health hysteresis from one already-checked sample's categorical results
-/// and returns the resulting HistoricalHealthStatus.
+/// \brief Updates the hysteresis from one checked sample and returns the resulting status.
 ///
-/// Binding-independent: only consumes the abstracted DataIntegrityStatus/SequenceStatus of the sample,
-/// never binding-specific wire data. Must only be called once per received/checked sample.
-///
-/// Validates config on every call (see ValidateHealthTrackerConfiguration) so that an inconsistent
-/// configuration can never silently latch the tracker into a wrong state.
+/// Call once per sample. Validates the configuration on every call.
 HistoricalHealthStatus UpdateHistoricalHealth(DataIntegrityStatus data_integrity,
                                               SequenceStatus sequence,
                                               const HealthTrackerConfiguration& config,
