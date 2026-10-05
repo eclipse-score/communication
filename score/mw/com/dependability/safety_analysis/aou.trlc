@@ -132,10 +132,10 @@ ScoreReq.AoU NoNotificationOnTerminationOfProducer {
 }
 
 /* broken_link_c/issue/5835311 */
-ScoreReq.AoU CheckForNullptrOnAllocate {
-    description = "It shall be checked if Allocate() on an event will return a nullptr. If a nullptr is returned, the system shall transition to safe state."
+ScoreReq.AoU CheckForAllocationError {
+    description = "It shall be checked if Allocate() returns an error. If an error is returned, the system shall transition to safe state."
     safety = ScoreReq.Asil.B
-    note = "A nullptr indicates in this case a non-recoverable error and indicates further an issue in the memory control."
+    note = "An error returned by Allocate() indicates a non-recoverable error and further indicates an issue in the memory control."
     version = 1
     mitigates = "TooFewMemoryAllocated"
 }
