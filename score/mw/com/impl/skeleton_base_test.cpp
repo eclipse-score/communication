@@ -100,7 +100,24 @@ class MyDummySkeleton final : public SkeletonBase
     SkeletonField<TestSampleType, WithNotifier> dummy_field2{*this, kDummyFieldName2};
 };
 
+/// \brief A minimal skeleton with a single event
+class MyMinimalSkeleton final : public SkeletonBase
+{
+  public:
+    using SkeletonBase::SkeletonBase;
+
+    SkeletonEvent<TestSampleType> dummy_event{*this, kDummyEventName};
+};
+
 mock_binding::Skeleton& GetMockBinding(MyDummySkeleton& skeleton) noexcept
+{
+    auto& binding_mock_ref = SkeletonBaseView{skeleton}.GetBinding();
+    auto* const mock_binding = dynamic_cast<mock_binding::Skeleton*>(&binding_mock_ref);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(mock_binding != nullptr);
+    return *mock_binding;
+}
+
+mock_binding::Skeleton& GetMinimalMockBinding(MyMinimalSkeleton& skeleton) noexcept
 {
     auto& binding_mock_ref = SkeletonBaseView{skeleton}.GetBinding();
     auto* const mock_binding = dynamic_cast<mock_binding::Skeleton*>(&binding_mock_ref);
@@ -187,6 +204,35 @@ class SkeletonBaseFixture : public ::testing::Test
         ON_CALL(*binding_mock_, VerifyAllMethodHandlersRegistered()).WillByDefault(Return(true));
     }
 
+    void ExpectSimpleEventCreation(const InstanceIdentifier& instance_identifier) noexcept
+    {
+        auto skeleton_event_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
+
+        minimal_event_binding_mock__ = skeleton_event_mock_ptr.get();
+
+        EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
+                    Create(instance_identifier, _, kDummyEventName, kTestSampleTypeSizeInfo))
+            .WillOnce(Return(ByMove(std::move(skeleton_event_mock_ptr))));
+
+        EXPECT_CALL(*minimal_event_binding_mock__, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
+    }
+
+    void CreateMinimalSkeleton(const InstanceIdentifier& instance_identifier) noexcept
+    {
+        ON_CALL(runtime_mock_guard_.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+
+        // Expect that the single event is created with a mock binding
+        ExpectSimpleEventCreation(instance_identifier);
+
+        simple_skeleton_ =
+            std::make_unique<MyMinimalSkeleton>(std::make_unique<mock_binding::Skeleton>(), instance_identifier);
+
+        minimal_binding_mock_ = &GetMinimalMockBinding(*simple_skeleton_);
+        ASSERT_NE(minimal_binding_mock_, nullptr);
+        ON_CALL(*minimal_binding_mock_, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
+        ON_CALL(*minimal_binding_mock_, VerifyAllMethodHandlersRegistered()).WillByDefault(Return(true));
+    }
+
     void ExpectOfferService() noexcept
     {
         // Expecting that PrepareOffer gets called on the skeleton binding and both events which all return a valid
@@ -207,6 +253,23 @@ class SkeletonBaseFixture : public ::testing::Test
         EXPECT_CALL(*field_binding_mock_1_, PrepareStopOffer());
         EXPECT_CALL(*field_binding_mock_2_, PrepareStopOffer());
         EXPECT_CALL(*binding_mock_, PrepareStopOffer(_));
+        EXPECT_CALL(service_discovery_mock_, StopOfferService(_));
+    }
+
+    void ExpectMinimalOfferService() noexcept
+    {
+        // Expecting that PrepareOffer gets called on the skeleton binding and the single event which all return a
+        // valid result
+        EXPECT_CALL(*minimal_binding_mock_, PrepareOffer(_, _, _));
+        EXPECT_CALL(*minimal_event_binding_mock__, PrepareOffer(_));
+        EXPECT_CALL(service_discovery_mock_, OfferService(_));
+    }
+
+    void ExpectMinimalStopOfferService() noexcept
+    {
+        // PrepareStopOffer is called on the skeleton binding and the single event
+        EXPECT_CALL(*minimal_event_binding_mock__, PrepareStopOffer());
+        EXPECT_CALL(*minimal_binding_mock_, PrepareStopOffer(_));
         EXPECT_CALL(service_discovery_mock_, StopOfferService(_));
     }
 
@@ -237,10 +300,14 @@ class SkeletonBaseFixture : public ::testing::Test
     mock_binding::SkeletonEvent* field_binding_mock_1_{nullptr};
     mock_binding::SkeletonEvent* field_binding_mock_2_{nullptr};
 
+    mock_binding::Skeleton* minimal_binding_mock_{nullptr};
+    mock_binding::SkeletonEvent* minimal_event_binding_mock__{nullptr};
+
     SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard_{};
     SkeletonFieldBindingFactoryMockGuard skeleton_field_binding_factory_mock_guard_{};
 
     std::unique_ptr<MyDummySkeleton> skeleton_{nullptr};
+    std::unique_ptr<MyMinimalSkeleton> simple_skeleton_{nullptr};
 };
 
 using SkeletonBaseCreationDeathTest = SkeletonBaseFixture;
@@ -286,6 +353,23 @@ TEST_F(SkeletonBaseOfferFixture, OfferService)
 
     // Then no error is returned
     ASSERT_TRUE(offer_result.has_value());
+}
+
+TEST_F(SkeletonBaseOfferFixture, SecondOfferServiceCallWorks)
+{
+    // Given a constructed Skeleton with a valid identifier
+    CreateMinimalSkeleton(GetInstanceIdentifierWithValidBinding());
+
+    // Expecting that PrepareOffer gets called on the skeleton binding and the event
+    ExpectMinimalOfferService();
+
+    // When offering a Service twice
+    const auto offer_result_1 = simple_skeleton_->OfferService();
+    const auto offer_result_2 = simple_skeleton_->OfferService();
+
+    // Then no error is returned for both calls
+    ASSERT_TRUE(offer_result_1.has_value());
+    ASSERT_TRUE(offer_result_2.has_value());
 }
 
 TEST_F(SkeletonBaseOfferFixture, OfferServiceFailsIfAllMethodsHaveNotBeenRegistered)
@@ -570,6 +654,31 @@ TEST_F(SkeletonBaseStopOfferFixture, PrepareStopOffer)
 
     // When stop offering a Service
     skeleton_->StopOfferService();
+}
+
+TEST_F(SkeletonBaseStopOfferFixture, SecondStopOfferServiceCallWorks)
+{
+    // Given a constructed Skeleton with a valid identifier with one event registered with the skeleton
+    CreateMinimalSkeleton(GetInstanceIdentifierWithValidBinding());
+
+    // Expecting that PrepareOffer gets called on the skeleton binding and the event
+    ExpectMinimalOfferService();
+
+    // and expecting PrepareStopOffer is called on the skeleton binding and the event exactly once, even though
+    // StopOfferService() is called twice
+    ExpectMinimalStopOfferService();
+
+    // When offering a Service
+    const auto offer_result = simple_skeleton_->OfferService();
+
+    // Then no error is returned
+    ASSERT_TRUE(offer_result.has_value());
+
+    // When stop offering a Service twice
+    simple_skeleton_->StopOfferService();
+    simple_skeleton_->StopOfferService();
+
+    // Then no crash occurs and the bindings are only stop-offered once (verified via ExpectMinimalStopOfferService)
 }
 
 TEST_F(SkeletonBaseStopOfferFixture, StopOfferIsNotCalledIfServiceWasNotOffered)
