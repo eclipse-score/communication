@@ -23,6 +23,7 @@
 #include <score/assert.hpp>
 #include <score/utility.hpp>
 
+#include <algorithm>
 #include <memory>
 #include <string_view>
 #include <utility>
@@ -70,14 +71,7 @@ bool checkUidMatch(const uid_t providerUid, const score::cpp::span<const uid_t> 
     {
         return true;
     }
-    for (const auto uid : allowedProviders)
-    {
-        if (providerUid == uid)
-        {
-            return true;
-        }
-    }
-    return false;
+    return std::find(allowedProviders.begin(), allowedProviders.end(), providerUid) != allowedProviders.end();
 }
 
 void InsertResourceIntoMap(
