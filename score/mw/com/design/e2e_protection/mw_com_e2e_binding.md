@@ -523,7 +523,7 @@ The following sketch illustrates how the parameters above could be expressed as 
       "version": { "major": 1, "minor": 0 },
       "instances": [
         {
-          "instanceId": 1, "asil-level": "ASIL_B", "binding": "SOMEIP",
+          "instanceId": 1, "asil-level": "B", "binding": "SOMEIP",
           "events": [
             {
               "eventName": "VehicleSpeed", "numberOfSampleSlots": 20, "maxSubscribers": 4,
@@ -539,27 +539,11 @@ The following sketch illustrates how the parameters above could be expressed as 
       "version": { "major": 1, "minor": 0 },
       "instances": [
         {
-          "instanceId": 1, "asil-level": "ASIL_B", "binding": "SOMEIP",
+          "instanceId": 2, "asil-level": "B", "binding": "SOMEIP",
           "events": [
             {
               "eventName": "VehicleSpeed",
               "e2e": { "profile": "P04", "offset_bytes": 8, "data_id": 4097, "max_delta_counter": 5, "error_threshold": 5 }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "instanceSpecifier": "abc/abc/DisplayProxy",
-      "serviceTypeName": "/vehicle/services/VehicleStateService",
-      "version": { "major": 1, "minor": 0 },
-      "instances": [
-        {
-          "instanceId": 1, "asil-level": "QM", "binding": "SOMEIP",
-          "events": [
-            {
-              "eventName": "VehicleSpeed",
-              "e2e": { "profile": "P04", "offset_bytes": 8, "data_id": 4097, "max_delta_counter": 2 }
             }
           ]
         }
@@ -571,7 +555,7 @@ The following sketch illustrates how the parameters above could be expressed as 
       "version": { "major": 1, "minor": 0 },
       "instances": [
         {
-          "instanceId": 1, "asil-level": "QM", "binding": "SOMEIP",
+          "instanceId": 3, "asil-level": "QM", "binding": "SOMEIP",
           "events": [
             {
               "eventName": "VehicleSpeed",
@@ -585,45 +569,13 @@ The following sketch illustrates how the parameters above could be expressed as 
           ]
         }
       ]
-    },
-    {
-      "instanceSpecifier": "abc/abc/DashboardAggregatorProxy",
-      "serviceTypeName": "/vehicle/services/VehicleStateService",
-      "version": { "major": 1, "minor": 0 },
-      "instances": [
-        {
-          "instanceId": 1, "asil-level": "QM", "binding": "SOMEIP",
-          "events": [
-            {
-              "eventName": "VehicleSpeed", "numberOfSampleSlots": 12,
-              "e2e": { "profile": "P04", "offset_bytes": 8, "data_id": 4097, "max_delta_counter": 2 }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "instanceSpecifier": "abc/abc/LolaConsumerProxy",
-      "serviceTypeName": "/vehicle/services/VehicleStateService",
-      "version": { "major": 1, "minor": 0 },
-      "instances": [
-        {
-          "instanceId": 2, "asil-level": "ASIL_B", "binding": "SHM",
-          "events": [
-            {
-              "eventName": "VehicleSpeed",
-              "e2e": { "profile": "P04", "data_id": 4097, "max_delta_counter": 2 }
-            }
-          ]
-        }
-      ]
     }
   ],
   "global": { "asil-level": "QM", "applicationID": 100 }
 }
 ```
 
-Every instance's `"e2e"` object repeats the full resolved Profile Configuration (`profile`/`offset_bytes`/`data_id`/`max_delta_counter`) needed for its own binding to run Protect()/Check() and, for SOME/IP, to skip header bytes during deserialization (see [Profile Resolution Is Mandatory, Even When Checking Is Not](#profile-resolution-is-mandatory-even-when-checking-is-not)) — `VehicleStateServiceProvider` (the provider) and `DisplayProxy`/`DashboardAggregatorProxy` (consumers with no tuning needs) all repeat the identical default profile, illustrating the accepted duplication tradeoff noted above. `BrakeControllerProxy` (ASIL_B) overrides `max_delta_counter` and additionally supplies its own health-tracker tuning (`error_threshold`) in the same self-contained entry, see [Per-Consumer Configuration Overrides](#per-consumer-configuration-overrides) — and consumes the resulting `E2EResult`. `DiagnosticLoggerProxy` (QM) still resolves the full profile (mandatory for SOME/IP deserialization) but additionally disables all three check-enablement flags, receiving `Summary::kDisabled` rather than a populated result it would otherwise have to ignore. `DashboardAggregatorProxy` (QM) illustrates the recommended per-consumer `numberOfSampleSlots` sizing for a consumer that intentionally reads every 10th sample on the assumed-queued SOME/IP transport — no `MaxDeltaCounter`/tolerance override needed, since the queue keeps the counter sequence gapless regardless of how many samples the consumer skips. The supplementary `LolaConsumerProxy` entry shows the same logical event consumed over LoLa instead of SOME/IP: its `"e2e"` object has no `offset_bytes` field at all, since the LoLa-specific config struct that parses it doesn't declare one — supplying `offset_bytes` there is a config error caught at deployment-time parsing, not a runtime concern.
+Every instance's `"e2e"` object carries the full resolved Profile Configuration (`profile`/`offset_bytes`/`data_id`/`max_delta_counter`) its binding needs to run Protect()/Check() and, for SOME/IP, to skip header bytes during deserialization (see [Profile Resolution Is Mandatory, Even When Checking Is Not](#profile-resolution-is-mandatory-even-when-checking-is-not)). The provider and each consumer therefore repeat the same profile, illustrating the accepted duplication tradeoff noted above. `BrakeControllerProxy` (ASIL_B) overrides `max_delta_counter` and supplies its own health-tracker tuning (`error_threshold`), see [Per-Consumer Configuration Overrides](#per-consumer-configuration-overrides). `DiagnosticLoggerProxy` (QM) keeps the full profile (mandatory for SOME/IP deserialization) but disables all three check-enablement flags, so it receives `Summary::kDisabled`.
 
 ---
 
