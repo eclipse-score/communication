@@ -52,12 +52,6 @@ using score::mw::com::impl::InstanceSpecifier;
 namespace
 {
 
-// Static IPs on the "intervm" NIC (vtnet1), assigned by the dual_qemu fixture.
-constexpr char kIntervmIpVmA[] = "10.0.3.1";
-constexpr char kIntervmIpVmB[] = "10.0.3.2";  // this VM's transport peer
-constexpr std::uint16_t kTransportPortVmA = 46001U;
-constexpr std::uint16_t kTransportPortVmB = 46002U;
-
 HyperVisorSocketConfiguration CreateConfiguration()
 {
     HyperVisorSocketConfiguration config{};

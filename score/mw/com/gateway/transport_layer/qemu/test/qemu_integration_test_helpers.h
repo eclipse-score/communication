@@ -44,6 +44,12 @@ constexpr std::uint32_t kShmSize = 4096U;
 constexpr std::uint32_t kMagicA = 0xCAFEBABEU;  // VM-A → VM-B
 constexpr std::uint32_t kMagicB = 0xDEADBEEFU;  // VM-B → VM-A
 
+// Static IPs on the "intervm" NIC (vtnet1), assigned by the dual_qemu fixture.
+constexpr char kIntervmIpVmA[] = "10.0.3.1";
+constexpr char kIntervmIpVmB[] = "10.0.3.2";
+constexpr std::uint16_t kTransportPortVmA = 46001U;
+constexpr std::uint16_t kTransportPortVmB = 46002U;
+
 // Service specifiers for each direction.
 constexpr char kServiceA[] = "service_a";  // produced by VM-A, consumed on VM-B
 constexpr char kServiceB[] = "service_b";  // produced by VM-B, consumed on VM-A
