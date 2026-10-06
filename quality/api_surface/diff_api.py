@@ -55,7 +55,13 @@ def _format_undocumented_symbols(data: dict) -> str:
     ]
     for symbol in undocumented:
         lines.append(f"  {symbol['qualified_name']} ({symbol['kind']})")
-        lines.append(f"    at {symbol['file']}:{symbol['line']}")
+        # Lock entries only carry the API shape (see to_lock_entry in extract_api.py), so location
+        # information is optional. Print whatever is available to help users find the symbol.
+        if "file" in symbol:
+            location = symbol["file"]
+            if "line" in symbol:
+                location = f"{location}:{symbol['line']}"
+            lines.append(f"    at {location}")
     lines.extend(
         [
             "",
