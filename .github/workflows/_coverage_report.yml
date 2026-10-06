@@ -126,8 +126,10 @@ jobs:
           SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
           # Report-only: the effective-coverage gate is not enforced yet.
           COVERAGE_THRESHOLD: "0"
+        # Host tool: no --config=qnx here (the QNX platform has no Python
+        # toolchain); the report reads the per-test data of the QNX run.
         run: |
-          bazel run --config=ci --config=qnx @score_coverage//:generate_coverage_html -- \
+          bazel run --config=ci @score_coverage//:generate_coverage_html -- \
             --platform qnx \
             --yaml quality/coverage/coverage_justifications.yaml \
             --testlogs-subdir score \
