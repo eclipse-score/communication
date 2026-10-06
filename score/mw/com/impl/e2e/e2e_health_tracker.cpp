@@ -32,8 +32,6 @@ HistoricalHealthStatus UpdateHistoricalHealth(const DataIntegrityStatus data_int
                                               const HealthTrackerConfiguration& config,
                                               HealthContext& context) noexcept
 {
-    ValidateHealthTrackerConfiguration(config);
-
     if (!config.enabled)
     {
         return HistoricalHealthStatus::kDisabled;
