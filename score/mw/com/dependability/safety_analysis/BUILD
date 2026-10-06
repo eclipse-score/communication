@@ -32,7 +32,7 @@ filegroup(
 
 safety_analysis(
     name = "mw_com_safety_analysis",
-    arch_design = "//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design",
+    arch_design = "//score/mw/com/dependability/architectural_design:software_architectural_design",
     failuremodes = ["failure_modes.trlc"],
     fta_package = "mw_com_fta",
     root_causes = [":root_causes"],
@@ -55,7 +55,7 @@ assumptions_of_use(
 # links) is not complete yet -- see communication#1075 for the migration plan.
 dependability_analysis(
     name = "mw_com_dependability_analysis",
-    arch_design = "//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design",
+    arch_design = "//score/mw/com/dependability/architectural_design:software_architectural_design",
     maturity = "development",
     safety_analysis = [":mw_com_safety_analysis"],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
