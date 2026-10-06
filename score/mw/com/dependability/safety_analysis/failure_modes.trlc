@@ -838,7 +838,6 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "By ensuring a correct behavior of the SamplePtr, this fault can be omitted."
-                // potentialcause = "The only possible cause is a wrong behavior of our reference counting mechanism."
             }
 
             // ID: 6166385
