@@ -16,13 +16,14 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "un
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 component(
-    name = "mock_binding",
+    name = "mock_binding_component",
     components = [
         ":proxy_and_service_elements",
         ":generic_proxy_and_service_elements",
         ":skeleton_and_service_elements",
         ":generic_skeleton_and_service_elements",
     ],
+    design_name = "mock_binding",
     requirements = [],
     target_compatible_with = ["@platforms//os:linux"],
     tests = [],
@@ -70,7 +71,7 @@ unit(
 )
 
 cc_library(
-    name = "mock_binding_lib",
+    name = "mock_binding",
     testonly = True,
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com:__subpackages__"],
