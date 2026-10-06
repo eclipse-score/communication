@@ -814,7 +814,7 @@ inline ::score::mw::com::impl::rust::TypeOperationImpl<T>& get_type_operations()
             /* Wrap in placement-new and call the Rust FFI function for closure invocation */                        \
             alignas(::score::mw::com::impl::SamplePtr<type>)                                                         \
                 std::array<char, sizeof(::score::mw::com::impl::SamplePtr<type>)>                                    \
-                    storage;                                                                                         \
+                    storage{};                                                                                       \
             auto* placement_sample = new (storage.data())::score::mw::com::impl::SamplePtr<type>(std::move(sample)); \
             ::score::mw::com::impl::rust::mw_com_impl_call_dyn_ref_fnmut_sample(&ptr_, placement_sample);            \
         }                                                                                                            \
