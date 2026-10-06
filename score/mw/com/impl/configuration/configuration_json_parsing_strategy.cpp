@@ -901,7 +901,7 @@ auto ParseServiceInstances(const score::json::Object& object, TracingConfigurati
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseE2EEventTypeDeployment(const score::json::Object& event_object) -> std::optional<E2EEventTypeDeployment>
 {
-    const auto e2e = event_object.find(kE2EKey.data());
+    const auto e2e = event_object.find(kE2EKey);
     if (e2e == event_object.cend())
     {
         return std::nullopt;
@@ -911,9 +911,9 @@ auto ParseE2EEventTypeDeployment(const score::json::Object& event_object) -> std
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(e2e_object.has_value(),
                                                       "Configuration corrupted, check with json schema");
     const auto& e2e_map = e2e_object.value().get();
-    const auto profile = e2e_map.find(kE2EProfileKey.data());
-    const auto data_id = e2e_map.find(kE2EDataIdKey.data());
-    const auto max_delta_counter = e2e_map.find(kE2EMaxDeltaCounterKey.data());
+    const auto profile = e2e_map.find(kE2EProfileKey);
+    const auto data_id = e2e_map.find(kE2EDataIdKey);
+    const auto max_delta_counter = e2e_map.find(kE2EMaxDeltaCounterKey);
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         (profile != e2e_map.cend()) && (data_id != e2e_map.cend()) && (max_delta_counter != e2e_map.cend()),
         "Configuration corrupted, check with json schema");
