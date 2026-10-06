@@ -15,13 +15,14 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "unit")
 
 component(
-    name = "mock_binding",
+    name = "mock_binding_component",
     components = [
         ":proxy_and_service_elements",
         ":generic_proxy_and_service_elements",
         ":skeleton_and_service_elements",
         ":generic_skeleton_and_service_elements",
     ],
+    design_name = "mock_binding",
     requirements = [],
     target_compatible_with = ["@platforms//os:linux"],
     tests = [],
@@ -69,7 +70,7 @@ unit(
 )
 
 cc_library(
-    name = "mock_binding_lib",
+    name = "mock_binding",
     testonly = True,
     srcs = [
         "generic_proxy_event.cpp",
