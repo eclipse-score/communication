@@ -830,7 +830,7 @@ int EventSenderReceiver::RunAsProxyCheckValuesCreatedFromConfig(
                   << ". Failed with error: " << handle_result.error() << ", bailing!\n";
         return EXIT_FAILURE;
     }
-    auto handle = handle_result.value();
+    const auto& handle = handle_result.value();
 
     auto proxy_result = BigDataProxy::Create(handle);
     if (!proxy_result.has_value())
@@ -899,7 +899,7 @@ int EventSenderReceiver::RunAsProxyReceiveHandlerOnly(const score::mw::com::Inst
                   << ". Failed with error: " << handle_result.error() << ", bailing!\n";
         return EXIT_FAILURE;
     }
-    auto handle = handle_result.value();
+    const auto& handle = handle_result.value();
 
     auto proxy_result = BigDataProxy::Create(handle);
     if (!proxy_result.has_value())
@@ -979,7 +979,7 @@ int EventSenderReceiver::RunAsProxyCheckEventSlots(const score::mw::com::Instanc
                   << ". Failed with error: " << handle_result.error() << ", bailing!\n";
         return EXIT_FAILURE;
     }
-    auto handle = handle_result.value();
+    const auto& handle = handle_result.value();
 
     auto proxy_result = BigDataProxy::Create(handle);
     if (!proxy_result.has_value())
@@ -1062,7 +1062,7 @@ int EventSenderReceiver::RunAsProxyCheckSubscribeHandler(const score::mw::com::I
                   << ". Failed with error: " << handle_result.error() << ", bailing!\n";
         return EXIT_FAILURE;
     }
-    auto handle = handle_result.value();
+    const auto& handle = handle_result.value();
 
     auto proxy_result = BigDataProxy::Create(handle);
     if (!proxy_result.has_value())
