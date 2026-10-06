@@ -52,7 +52,7 @@ std::uint16_t ReadChecksum(const score::cpp::span<const std::byte> header) noexc
 void WriteChecksum(score::cpp::span<std::byte> header, const std::uint16_t checksum) noexcept
 {
     header[kChecksumLowOffset] = static_cast<std::byte>(checksum & 0x00FFU);
-    header[kChecksumHighOffset] = static_cast<std::byte>((checksum >> 8U) & 0x00FFU);
+    header[kChecksumHighOffset] = static_cast<std::byte>(static_cast<std::uint16_t>(checksum >> 8U) & 0x00FFU);
 }
 
 }  // namespace
