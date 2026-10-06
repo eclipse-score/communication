@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The following structural view shows, how the separation of generic/binding independent part of a proxy/skeleton from
+The following structural view shows, how the separation of the binding independent part of a proxy/skeleton from
 its flexible/variable technical binding implementation is achieved. **Note**: It does **only** reflect the common use
 case of strongly typed proxies and skeletons. The special case of "generic proxies" and "generic skeletons" are described in
 [design extension for generic proxies](../../design/skeleton_proxy/generic_proxy/README.md#) and [design extension for generic skeletons](../../design/skeleton_proxy/generic_skeleton/README.md#) to not bloat this class diagram even more:
@@ -14,7 +14,7 @@ case of strongly typed proxies and skeletons. The special case of "generic proxi
 <img alt="PROXY_BINDING_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/proxy_binding_model.puml">
 
 
-The overall structure foresees proxies (`DummyProxy`) and skeletons (`DummySkeleton`), which are generated from IDL.
+The overall structure foresees proxies (`DummyProxy`) and skeletons (`DummySkeleton`) which the user interacts with.
 Both inherit from a respective base class, where otherwise redundant code that can be reused by any proxy or skeleton is
 shifted to.
 A concrete instance of a proxy or skeleton is always bound to a specific technical binding. Nevertheless, we want to have
