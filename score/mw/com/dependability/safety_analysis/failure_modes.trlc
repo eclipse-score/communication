@@ -598,7 +598,7 @@ section "LoLa" {
             }
 
             // ID: 6166350
-            ScoreReq.FailureMode UsesToManySampleptr {
+            ScoreReq.FailureMode UsesTooManySampleptr {
                 guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
                 description = "User is already max. sample count SamplePtr, but we are still handing out SamplePtrs in callback F()."
                 failureeffect = "Synchronization algorithm can no longer hold guarantees, which can cause an exceeding of resources. In worst case another proxy might fail to get updated samples (messages lost without full queues aka not detectable)."
