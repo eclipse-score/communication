@@ -34,3 +34,11 @@ filegroup(
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
+
+filegroup(
+    name = "succeeds_despite_an_error_fta",
+    srcs = [
+        "succeeds_despite_an_error_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
