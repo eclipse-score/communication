@@ -72,9 +72,9 @@ EnrichedInstanceIdentifier ConfigurationStore::GetEnrichedInstanceIdentifier(
 {
     if (instance_id.has_value())
     {
-        return EnrichedInstanceIdentifier(GetInstanceIdentifier(), instance_id.value());
+        return {GetInstanceIdentifier(), instance_id.value()};
     }
-    return EnrichedInstanceIdentifier(GetInstanceIdentifier());
+    return EnrichedInstanceIdentifier{GetInstanceIdentifier()};
 }
 
 HandleType ConfigurationStore::GetHandle(std::optional<ServiceInstanceId> instance_id) const noexcept
