@@ -241,9 +241,10 @@ bool BidirectionalTransport::WaitForConnection(score::cpp::stop_token stop_token
 
     while (!stop_token.stop_requested())
     {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast) required by POSIX sockaddr API
+        // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast) required by POSIX sockaddr API
         auto accept_result = Socket::instance().accept(
             listen_socket_.Get(), reinterpret_cast<struct sockaddr*>(&client_addr), &client_len);
+        // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
         if (!accept_result.has_value())
         {

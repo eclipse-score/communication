@@ -74,11 +74,9 @@ std::string ToString(const Args&... args)
 
 void HashArray(const std::array<LaneIdType, 16U>& array, std::size_t& seed)
 {
-    const std::ptrdiff_t buffer_size =
-        reinterpret_cast<const std::uint8_t*>(&*array.cend()) - reinterpret_cast<const std::uint8_t*>(&*array.cbegin());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(buffer_size > 0);
-    seed = score::cpp::hash_bytes_fnv1a(
-        static_cast<const void*>(array.data()), static_cast<std::size_t>(buffer_size), seed);
+    const std::size_t buffer_size = array.size() * sizeof(LaneIdType);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(buffer_size > 0U);
+    seed = score::cpp::hash_bytes_fnv1a(static_cast<const void*>(array.data()), buffer_size, seed);
 }
 
 class MmanMock : public os::Mman
