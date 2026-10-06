@@ -233,6 +233,7 @@ int LockBothFilesExclusively()
 bool WaitForChildFinished(int fd_to_read_from)
 {
     // we set our pipe/fd to non-blocking.
+    // NOLINTNEXTLINE(hicpp-signed-bitwise): fcntl flags are non-negative POSIX constants and the API is int-based
     auto fcntl_result = fcntl(fd_to_read_from, F_SETFL, fcntl(fd_to_read_from, F_GETFL) | O_NONBLOCK);
     if (fcntl_result == -1)
     {
