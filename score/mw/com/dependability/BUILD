@@ -17,7 +17,7 @@ dependable_element(
     architectural_design = ["//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design"],
     assumptions_of_use = ["//score/mw/com/dependability/safety_analysis:aous"],
     components = [
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_component",
         "//score/mw/com/impl/bindings/lola:lola_binding",
         "//score/mw/com/impl:binding_independent",
         "//score/mw/com/impl/configuration:mw_com_configuration",
