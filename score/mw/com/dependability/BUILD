@@ -16,7 +16,6 @@ dependable_element(
     name = "mw_com",
     architectural_design = ["//score/mw/com/dependability/architectural_design:software_architectural_design"],
     components = [
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding",
         "//score/mw/com/impl/bindings/lola:lola_binding",
         "//score/mw/com/impl:binding_independent",
         "//score/mw/com/impl/configuration:mw_com_configuration",
@@ -24,6 +23,7 @@ dependable_element(
         "//score/mw/com/impl/tracing:mw_com_tracing",
         "//score/mw/com/impl:errors",
         "//score/mw/com/impl:service_instance_identifiers",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_component",
     ],
     dependability_analysis = ["//score/mw/com/dependability/safety_analysis:mw_com_dependability_analysis"],
     integrity_level = "B",
