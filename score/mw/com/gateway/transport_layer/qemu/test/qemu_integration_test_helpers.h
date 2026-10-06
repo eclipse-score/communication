@@ -31,18 +31,35 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
-#include <cstdio>
 #include <string>
 #include <thread>
+#include <vector>
 
 namespace
 {
+
+// GatewayCore's own interface still exposes impl::ServiceElementType and mw::com publishes no
+// public alias for it, so this is the single deliberate impl reference in the test apps.
+using ServiceElementType = score::mw::com::impl::ServiceElementType;
 
 constexpr std::uint32_t kShmSize = 4096U;
 
 // Payload magic values — different per direction to prove correct routing.
 constexpr std::uint32_t kMagicA = 0xCAFEBABEU;  // VM-A → VM-B
 constexpr std::uint32_t kMagicB = 0xDEADBEEFU;  // VM-B → VM-A
+
+// Payload values each VM writes; the peer verifies it reads back exactly these.
+constexpr std::uint32_t kValueOneFromVmA = 100U;
+constexpr std::uint32_t kValueTwoFromVmA = 200U;
+constexpr std::uint32_t kValueOneFromVmB = 300U;
+constexpr std::uint32_t kValueTwoFromVmB = 400U;
+
+// event_count a provider publishes once its DATA payload is fully written.
+constexpr std::uint32_t kDataReadyEventCount = 1U;
+
+// Bounds for WaitForFlag; generous because the peer VM boots independently.
+constexpr std::chrono::milliseconds kFlagWaitTimeout{60000};
+constexpr std::chrono::milliseconds kFlagPollInterval{50};
 
 // Static IPs on the "intervm" NIC (vtnet1), assigned by the dual_qemu fixture.
 constexpr char kIntervmIpVmA[] = "10.0.3.1";
@@ -64,19 +81,31 @@ constexpr char kElementNameVerified[] = "Verified";
 /// realistic data-plane artifact.
 struct ServiceControl
 {
-    volatile std::uint32_t event_count;  // incremented by provider after writing DATA
+    // Atomic rather than volatile, matching production's ServiceDataControl: volatile alone
+    // gives neither atomicity nor the cross-core ordering this hands off to the reader with.
+    std::atomic<std::uint32_t> event_count;
+};
+
+// A lock-based atomic would keep its lock in this process, not in the shm the peer VM maps.
+static_assert(std::atomic<std::uint32_t>::is_always_lock_free, "event_count must be lock-free to cross VMs");
+
+/// Payload laid out at the start of each service's DATA shm.
+struct ServicePayload
+{
+    std::uint32_t magic;
+    std::uint32_t value_one;
+    std::uint32_t value_two;
 };
 
 /// Polls a bool flag until it becomes true or times out — used to wait for a message
 /// delivered asynchronously by the real BidirectionalTransport.
-bool WaitForFlag(const std::atomic<bool>& flag, int timeout_ms = 60000)
+bool WaitForFlag(const std::atomic<bool>& flag, std::chrono::milliseconds timeout = kFlagWaitTimeout)
 {
-    constexpr int kSleepMs = 50;
-    int elapsed = 0;
-    while (!flag.load(std::memory_order_acquire) && elapsed < timeout_ms)
+    std::chrono::milliseconds elapsed{0};
+    while (!flag.load(std::memory_order_acquire) && elapsed < timeout)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(kSleepMs));
-        elapsed += kSleepMs;
+        std::this_thread::sleep_for(kFlagPollInterval);
+        elapsed += kFlagPollInterval;
     }
     return flag.load(std::memory_order_acquire);
 }
@@ -93,8 +122,8 @@ class TestGatewayCore final : public score::mw::com::gateway::GatewayCore
     std::atomic<bool> verified_service_a_notified{false};
     std::atomic<bool> verified_service_b_notified{false};
 
-    score::Result<void> ProvideService(score::mw::com::impl::InstanceSpecifier s,
-                                       std::vector<score::mw::com::impl::EventInfo> /*e*/) override
+    score::Result<void> ProvideService(score::mw::com::InstanceSpecifier s,
+                                       std::vector<score::mw::com::EventInfo> /*e*/) override
     {
         if (s.ToString() == kServiceA)
         {
@@ -106,13 +135,13 @@ class TestGatewayCore final : public score::mw::com::gateway::GatewayCore
         }
         return {};
     }
-    score::Result<void> OfferService(score::mw::com::impl::InstanceSpecifier /*s*/) override
+    score::Result<void> OfferService(score::mw::com::InstanceSpecifier /*s*/) override
     {
         return {};
     }
-    void StopOfferService(score::mw::com::impl::InstanceSpecifier /*s*/) override {}
-    score::Result<void> NotifyUpdate(score::mw::com::impl::InstanceSpecifier s,
-                                     score::mw::com::impl::ServiceElementType /*t*/,
+    void StopOfferService(score::mw::com::InstanceSpecifier /*s*/) override {}
+    score::Result<void> NotifyUpdate(score::mw::com::InstanceSpecifier s,
+                                     ServiceElementType /*t*/,
                                      std::string element_name) override
     {
         const auto service = s.ToString();
@@ -134,14 +163,14 @@ class TestGatewayCore final : public score::mw::com::gateway::GatewayCore
         }
         return {};
     }
-    score::Result<void> RegisterUpdateNotification(score::mw::com::impl::InstanceSpecifier /*s*/,
-                                                   score::mw::com::impl::ServiceElementType /*t*/,
+    score::Result<void> RegisterUpdateNotification(score::mw::com::InstanceSpecifier /*s*/,
+                                                   ServiceElementType /*t*/,
                                                    std::string /*n*/) override
     {
         return {};
     }
-    score::Result<void> UnregisterUpdateNotification(score::mw::com::impl::InstanceSpecifier /*s*/,
-                                                     score::mw::com::impl::ServiceElementType /*t*/,
+    score::Result<void> UnregisterUpdateNotification(score::mw::com::InstanceSpecifier /*s*/,
+                                                     ServiceElementType /*t*/,
                                                      std::string /*n*/) override
     {
         return {};

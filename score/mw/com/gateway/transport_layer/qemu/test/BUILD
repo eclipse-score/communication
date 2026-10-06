@@ -25,43 +25,29 @@ cc_library(
     ],
 )
 
-cc_binary(
-    name = "app1",
-    srcs = ["app1_main.cpp"],
-    features = COMPILER_WARNING_FEATURES + ["aborts_upon_exception"],
-    target_compatible_with = ["@platforms//os:qnx"],
-    deps = [
-        ":qemu_integration_test_helpers",
-        "//score/memory/shared",
-        "//score/mw/com/gateway/transport_layer/qemu:qemu_hypervisor_transport",
-        "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_bar_discovery",
-        "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_typed_memory_provider",
-        "//score/mw/com/gateway/transport_layer/sample:bidirectional_transport",
-        "//score/mw/com/gateway/transport_layer/sample/configuration:hypervisor_socket_configuration",
-        "//score/mw/com/gateway/transport_layer/sample/messages:gateway_messages",
-        "@score_baselibs//score/mw/log:console",
-        "@score_baselibs//score/result",
-    ],
-)
-
-cc_binary(
-    name = "app2",
-    srcs = ["app2_main.cpp"],
-    features = COMPILER_WARNING_FEATURES + ["aborts_upon_exception"],
-    target_compatible_with = ["@platforms//os:qnx"],
-    deps = [
-        ":qemu_integration_test_helpers",
-        "//score/memory/shared",
-        "//score/mw/com/gateway/transport_layer/qemu:qemu_hypervisor_transport",
-        "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_bar_discovery",
-        "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_typed_memory_provider",
-        "//score/mw/com/gateway/transport_layer/sample:bidirectional_transport",
-        "//score/mw/com/gateway/transport_layer/sample/configuration:hypervisor_socket_configuration",
-        "//score/mw/com/gateway/transport_layer/sample/messages:gateway_messages",
-        "@score_baselibs//score/mw/log:console",
-        "@score_baselibs//score/result",
-    ],
-)
+# app1 (VM-A) and app2 (VM-B) run the identical protocol in mirrored roles.
+[
+    cc_binary(
+        name = app,
+        srcs = [app + "_main.cpp"],
+        features = COMPILER_WARNING_FEATURES + ["aborts_upon_exception"],
+        target_compatible_with = ["@platforms//os:qnx"],
+        deps = [
+            ":qemu_integration_test_helpers",
+            "//score/memory/shared",
+            "//score/mw/com/gateway/transport_layer/qemu:qemu_hypervisor_transport",
+            "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_bar_discovery",
+            "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_typed_memory_provider",
+            "//score/mw/com/gateway/transport_layer/sample:bidirectional_transport",
+            "//score/mw/com/gateway/transport_layer/sample/configuration:hypervisor_socket_configuration",
+            "@score_baselibs//score/result",
+        ],
+    )
+    for app in [
+        "app1",
+        "app2",
+    ]
+]
 
 pkg_application(
     name = "qemu_transport_test_apps",

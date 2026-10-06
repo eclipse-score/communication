@@ -28,7 +28,6 @@
 #include "score/mw/com/gateway/transport_layer/qemu/test/qemu_integration_test_helpers.h"
 #include "score/mw/com/gateway/transport_layer/sample/bidirectional_transport.h"
 #include "score/mw/com/gateway/transport_layer/sample/configuration/hypervisor_socket_configuration.h"
-#include "score/mw/com/gateway/transport_layer/sample/messages/gateway_messages.h"
 
 #include "score/memory/shared/i_shared_memory_resource.h"
 #include "score/memory/shared/shared_memory_factory.h"
@@ -36,18 +35,18 @@
 
 #include <atomic>
 #include <cstdint>
-#include <cstdio>
-#include <cstring>
+#include <cstdlib>
+#include <iomanip>
+#include <iostream>
 #include <memory>
-#include <thread>
 
+using score::mw::com::InstanceSpecifier;
 using score::mw::com::gateway::BidirectionalTransport;
 using score::mw::com::gateway::HyperVisorSocketConfiguration;
 using score::mw::com::gateway::QemuHypervisorTransport;
 using score::mw::com::gateway::ResolveInterVmShmPaths;
 using score::mw::com::gateway::qemu::ivshmem::DiscoverIvshmemBar;
 using score::mw::com::gateway::qemu::ivshmem::IvshmemTypedMemoryProvider;
-using score::mw::com::impl::InstanceSpecifier;
 
 namespace
 {
@@ -65,20 +64,17 @@ HyperVisorSocketConfiguration CreateConfiguration()
 
 int main()
 {
-    std::fprintf(stderr, "=== app1 (VM-A): bidirectional gateway transport test ===\n");
+    std::cerr << "=== app1 (VM-A): bidirectional gateway transport test ===\n";
 
     // --- Setup: discover BAR, create provider, create transport ---
     std::uint64_t paddr = 0U;
     std::uint64_t size = 0U;
     if (!DiscoverIvshmemBar(paddr, size))
     {
-        std::fprintf(stderr, "app1: failed to discover ivshmem BAR\n");
-        return 1;
+        std::cerr << "app1: failed to discover ivshmem BAR\n";
+        return EXIT_FAILURE;
     }
-    std::fprintf(stderr,
-                 "app1: BAR paddr=0x%llx size=0x%llx\n",
-                 static_cast<unsigned long long>(paddr),
-                 static_cast<unsigned long long>(size));
+    std::cerr << "app1: BAR paddr=0x" << std::hex << paddr << " size=0x" << size << std::dec << '\n';
 
     // The entire BAR is usable for shm allocations (no reserved handshake page needed).
     auto provider = std::make_shared<IvshmemTypedMemoryProvider>(paddr, size);
@@ -87,13 +83,13 @@ int main()
     TestGatewayCore gateway_core;
     auto message_transport = std::make_unique<BidirectionalTransport>(CreateConfiguration());
     QemuHypervisorTransport qemu_transport{gateway_core, std::move(message_transport), provider};
-    std::fprintf(stderr, "app1: starting transport setup\n");
+    std::cerr << "app1: starting transport setup\n";
     if (!qemu_transport.Setup().has_value())
     {
-        std::fprintf(stderr, "app1: QemuHypervisorTransport::Setup failed\n");
-        return 1;
+        std::cerr << "app1: QemuHypervisorTransport::Setup failed\n";
+        return EXIT_FAILURE;
     }
-    std::fprintf(stderr, "app1: transport setup complete\n");
+    std::cerr << "app1: transport setup complete\n";
 
     // ========================================================================
     // SOURCE SIDE: Create CTRL + DATA shm for service_a, matching the LoLa skeleton pattern.
@@ -101,13 +97,13 @@ int main()
     auto spec_a = InstanceSpecifier::Create(std::string{kServiceA});
     if (!spec_a.has_value())
     {
-        std::fprintf(stderr, "app1: failed to create InstanceSpecifier for service_a\n");
-        return 1;
+        std::cerr << "app1: failed to create InstanceSpecifier for service_a\n";
+        return EXIT_FAILURE;
     }
     const auto paths_a = ResolveInterVmShmPaths(spec_a.value());
 
     // Create CTRL shm for service_a — holds the ServiceControl signaling structure.
-    std::fprintf(stderr, "app1: creating service_a CTRL shm\n");
+    std::cerr << "app1: creating service_a CTRL shm\n";
     auto ctrl_a = score::memory::shared::SharedMemoryFactory::Create(
         paths_a.control,
         [](std::shared_ptr<score::memory::shared::ISharedMemoryResource> /*res*/) {},
@@ -115,10 +111,10 @@ int main()
         score::memory::shared::SharedMemoryFactory::WorldWritable{});
     if (ctrl_a == nullptr)
     {
-        std::fprintf(stderr, "app1: SharedMemoryFactory::Create for service_a CTRL failed\n");
-        return 1;
+        std::cerr << "app1: SharedMemoryFactory::Create for service_a CTRL failed\n";
+        return EXIT_FAILURE;
     }
-    std::fprintf(stderr, "app1: service_a CTRL shm created\n");
+    std::cerr << "app1: service_a CTRL shm created\n";
 
     // Create DATA shm for service_a — holds the actual payload.
     auto data_a = score::memory::shared::SharedMemoryFactory::Create(
@@ -128,47 +124,46 @@ int main()
         score::memory::shared::SharedMemoryFactory::WorldWritable{});
     if (data_a == nullptr)
     {
-        std::fprintf(stderr, "app1: SharedMemoryFactory::Create for service_a DATA failed\n");
-        return 1;
+        std::cerr << "app1: SharedMemoryFactory::Create for service_a DATA failed\n";
+        return EXIT_FAILURE;
     }
 
     // Initialize CTRL to zero (no events yet).
     auto* ctrl_a_ptr = static_cast<ServiceControl*>(ctrl_a->getUsableBaseAddress());
-    ctrl_a_ptr->event_count = 0U;
+    ctrl_a_ptr->event_count.store(0U, std::memory_order_relaxed);
 
     // Write payload into DATA shm.
-    auto* write_data = static_cast<std::uint32_t*>(data_a->getUsableBaseAddress());
-    write_data[0] = kMagicA;
-    write_data[1] = 100U;
-    write_data[2] = 200U;
+    auto* write_data = static_cast<ServicePayload*>(data_a->getUsableBaseAddress());
+    write_data->magic = kMagicA;
+    write_data->value_one = kValueOneFromVmA;
+    write_data->value_two = kValueTwoFromVmA;
 
-    // Signal readiness via CTRL shm — like the skeleton updating EventDataControl.
-    std::atomic_thread_fence(std::memory_order_release);
-    ctrl_a_ptr->event_count = 1U;
-    std::fprintf(stderr, "app1: wrote service_a [magic=0x%08x, 100, 200] and signalled via CTRL\n", kMagicA);
+    // Release-store publishes the payload writes above to whoever acquires event_count.
+    ctrl_a_ptr->event_count.store(kDataReadyEventCount, std::memory_order_release);
+    std::cerr << "app1: wrote service_a [magic=0x" << std::hex << std::setw(8) << std::setfill('0') << kMagicA
+              << std::dec << ", " << kValueOneFromVmA << ", " << kValueTwoFromVmA << "] and signalled via CTRL\n";
 
     // Notify VM-B over the real transport that service_a is available. Waits for the ACK
     // (BidirectionalTransport retries internally), not for VM-B to have processed it.
-    const auto provide_result =
-        qemu_transport.ProvideService(spec_a.value(), std::vector<score::mw::com::impl::EventInfo>{});
+    const auto provide_result = qemu_transport.ProvideService(spec_a.value(), std::vector<score::mw::com::EventInfo>{});
     if (!provide_result.has_value())
     {
-        std::fprintf(stderr, "app1: ProvideService for service_a failed to send\n");
-        return 1;
+        std::cerr << "app1: ProvideService for service_a failed to send\n";
+        return EXIT_FAILURE;
     }
-    std::fprintf(stderr, "app1: sent ProvideServiceRequest for service_a to VM-B\n");
+    std::cerr << "app1: sent ProvideServiceRequest for service_a to VM-B\n";
 
     // Notify VM-B (over the transport, not shared memory) that service_a's DATA is ready.
     // Both messages share one TCP connection with FIFO dispatch on the receiver, so this is
     // guaranteed to be handled after the ProvideServiceRequest above (shm already bound).
-    const auto notify_result = qemu_transport.NotifyUpdate(
-        spec_a.value(), score::mw::com::impl::ServiceElementType::EVENT, kElementNameDataReady);
+    const auto notify_result =
+        qemu_transport.NotifyUpdate(spec_a.value(), ServiceElementType::EVENT, kElementNameDataReady);
     if (!notify_result.has_value())
     {
-        std::fprintf(stderr, "app1: DataReady notification for service_a failed to send\n");
-        return 1;
+        std::cerr << "app1: DataReady notification for service_a failed to send\n";
+        return EXIT_FAILURE;
     }
-    std::fprintf(stderr, "app1: sent DataReady notification for service_a to VM-B\n");
+    std::cerr << "app1: sent DataReady notification for service_a to VM-B\n";
 
     // ========================================================================
     // DESTINATION SIDE: Wait for service_b's data-ready notification, then read.
@@ -177,88 +172,87 @@ int main()
     auto spec_b = InstanceSpecifier::Create(std::string{kServiceB});
     if (!spec_b.has_value())
     {
-        std::fprintf(stderr, "app1: failed to create InstanceSpecifier for service_b\n");
-        return 1;
+        std::cerr << "app1: failed to create InstanceSpecifier for service_b\n";
+        return EXIT_FAILURE;
     }
     const auto paths_b = ResolveInterVmShmPaths(spec_b.value());
 
     // Wait for VM-B's ProvideServiceRequest for service_b. On arrival, OnMessageReceived binds
     // service_b's CTRL+DATA to this VM's shm before calling GatewayCore::ProvideService.
-    std::fprintf(stderr, "app1: waiting for ProvideServiceRequest for service_b from VM-B...\n");
+    std::cerr << "app1: waiting for ProvideServiceRequest for service_b from VM-B...\n";
     if (!WaitForFlag(gateway_core.provide_service_b_called))
     {
-        std::fprintf(stderr, "app1: transport did not call GatewayCore::ProvideService for service_b\n");
-        return 1;
+        std::cerr << "app1: transport did not call GatewayCore::ProvideService for service_b\n";
+        return EXIT_FAILURE;
     }
-    std::fprintf(stderr, "app1: transport made service_b CTRL+DATA visible on this VM\n");
+    std::cerr << "app1: transport made service_b CTRL+DATA visible on this VM\n";
 
     // Wait for VM-B's "DataReady" notification instead of polling service_b's CTRL shm.
-    std::fprintf(stderr, "app1: waiting for DataReady notification for service_b from VM-B...\n");
+    std::cerr << "app1: waiting for DataReady notification for service_b from VM-B...\n";
     if (!WaitForFlag(gateway_core.data_ready_service_b_notified))
     {
-        std::fprintf(stderr, "app1: timed out waiting for DataReady notification for service_b\n");
-        return 1;
+        std::cerr << "app1: timed out waiting for DataReady notification for service_b\n";
+        return EXIT_FAILURE;
     }
-    std::fprintf(stderr, "app1: DataReady notification for service_b received\n");
+    std::cerr << "app1: DataReady notification for service_b received\n";
 
     // Sanity-check event_count (FIFO ordering guarantees it's already set by this point) —
     // the notification above is the actual synchronization signal, not this check.
     auto ctrl_b = score::memory::shared::SharedMemoryFactory::Open(paths_b.control, /*is_read_write=*/true);
     if (ctrl_b == nullptr)
     {
-        std::fprintf(stderr, "app1: Open for service_b CTRL failed\n");
-        return 1;
+        std::cerr << "app1: Open for service_b CTRL failed\n";
+        return EXIT_FAILURE;
     }
-    auto* ctrl_b_ptr = static_cast<ServiceControl*>(ctrl_b->getUsableBaseAddress());
-    std::atomic_thread_fence(std::memory_order_acquire);
-    if (ctrl_b_ptr->event_count < 1U)
+    const auto* ctrl_b_ptr = static_cast<const ServiceControl*>(ctrl_b->getUsableBaseAddress());
+    const auto event_count = ctrl_b_ptr->event_count.load(std::memory_order_acquire);
+    if (event_count < kDataReadyEventCount)
     {
-        std::fprintf(stderr,
-                     "app1: service_b event_count not signalled despite DataReady notification (value=%u)\n",
-                     ctrl_b_ptr->event_count);
-        return 1;
+        std::cerr << "app1: service_b event_count not signalled despite DataReady notification (value=" << event_count
+                  << ")\n";
+        return EXIT_FAILURE;
     }
 
     // Open service_b's DATA shm and verify the payload.
     auto data_b = score::memory::shared::SharedMemoryFactory::Open(paths_b.data, /*is_read_write=*/false);
     if (data_b == nullptr)
     {
-        std::fprintf(stderr, "app1: Open for service_b DATA failed\n");
-        return 1;
+        std::cerr << "app1: Open for service_b DATA failed\n";
+        return EXIT_FAILURE;
     }
 
-    const auto* read_data = static_cast<const std::uint32_t*>(data_b->getUsableBaseAddress());
-    if (read_data[0] != kMagicB || read_data[1] != 300U || read_data[2] != 400U)
+    const auto* read_data = static_cast<const ServicePayload*>(data_b->getUsableBaseAddress());
+    if (read_data->magic != kMagicB || read_data->value_one != kValueOneFromVmB ||
+        read_data->value_two != kValueTwoFromVmB)
     {
-        std::fprintf(stderr,
-                     "app1: service_b verification FAILED (magic=0x%08x d[1]=%u d[2]=%u)\n",
-                     read_data[0],
-                     read_data[1],
-                     read_data[2]);
-        return 1;
+        std::cerr << "app1: service_b verification FAILED (magic=0x" << std::hex << std::setw(8) << std::setfill('0')
+                  << read_data->magic << std::dec << " value_one=" << read_data->value_one
+                  << " value_two=" << read_data->value_two << ")\n";
+        return EXIT_FAILURE;
     }
-    std::fprintf(stderr, "app1: service_b verified [magic=0x%08x, 300, 400] — read from VM-B OK\n", kMagicB);
+    std::cerr << "app1: service_b verified [magic=0x" << std::hex << std::setw(8) << std::setfill('0') << kMagicB
+              << std::dec << ", " << kValueOneFromVmB << ", " << kValueTwoFromVmB << "] — read from VM-B OK\n";
 
     // Confirm back to VM-B over the transport that we verified its data.
-    const auto verified_result = qemu_transport.NotifyUpdate(
-        spec_b.value(), score::mw::com::impl::ServiceElementType::EVENT, kElementNameVerified);
+    const auto verified_result =
+        qemu_transport.NotifyUpdate(spec_b.value(), ServiceElementType::EVENT, kElementNameVerified);
     if (!verified_result.has_value())
     {
-        std::fprintf(stderr, "app1: Verified notification for service_b failed to send\n");
-        return 1;
+        std::cerr << "app1: Verified notification for service_b failed to send\n";
+        return EXIT_FAILURE;
     }
-    std::fprintf(stderr, "app1: sent Verified notification for service_b to VM-B\n");
+    std::cerr << "app1: sent Verified notification for service_b to VM-B\n";
 
     // Wait for VM-B to confirm it verified our data.
-    std::fprintf(stderr, "app1: waiting for VM-B to verify service_a...\n");
+    std::cerr << "app1: waiting for VM-B to verify service_a...\n";
     if (!WaitForFlag(gateway_core.verified_service_a_notified))
     {
-        std::fprintf(stderr, "app1: timed out waiting for VM-B's Verified notification for service_a\n");
-        return 1;
+        std::cerr << "app1: timed out waiting for VM-B's Verified notification for service_a\n";
+        return EXIT_FAILURE;
     }
-    std::fprintf(stderr, "app1: VM-B verified service_a successfully!\n");
+    std::cerr << "app1: VM-B verified service_a successfully!\n";
 
-    std::fprintf(stderr, "app1: both directions verified successfully!\n");
-    std::printf("verified\n");
-    return 0;
+    std::cerr << "app1: both directions verified successfully!\n";
+    std::cout << "verified\n";
+    return EXIT_SUCCESS;
 }
