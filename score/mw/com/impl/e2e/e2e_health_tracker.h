@@ -44,11 +44,13 @@ struct HealthContext
 };
 
 /// \brief Terminates if the configuration is inconsistent.
+///
+/// Call once at construction of the owning Proxy/Skeleton event; the configuration is assumed constant afterwards.
 void ValidateHealthTrackerConfiguration(const HealthTrackerConfiguration& config) noexcept;
 
 /// \brief Updates the hysteresis from one checked sample and returns the resulting status.
 ///
-/// Call once per sample. Validates the configuration on every call.
+/// Call once per sample. The configuration must already have been validated.
 HistoricalHealthStatus UpdateHistoricalHealth(DataIntegrityStatus data_integrity,
                                               SequenceStatus sequence,
                                               const HealthTrackerConfiguration& config,
