@@ -129,7 +129,6 @@ Checks: >
   readability-container-data-pointer,
   readability-math-missing-parentheses,
   readability-redundant-casting,
-  readability-redundant-inline-specifier,
   readability-simplify-boolean-expr,
   readability-use-anyofallof,
   readability-use-std-min-max,
@@ -241,8 +240,6 @@ CheckOptions:
   - key: readability-container-data-pointer.IgnoredContainers
     value: ""
   - key: readability-redundant-casting.IgnoreTypeAliases
-    value: true
-  - key: readability-redundant-inline-specifier.StrictMode
     value: true
   - key: misc-uniqueptr-reset-release.IncludeStyle
     value: "llvm"
