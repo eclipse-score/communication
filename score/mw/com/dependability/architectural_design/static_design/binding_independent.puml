@@ -18,13 +18,13 @@ package "Binding Independent" as binding_independent <<component>> {
   component "Mocks" as mocks <<unit>> 
   component "Runtime" as runtime <<unit>> 
 
-  package "SkeletonAndServiceElements" as skeleton_and_service_elements <<unit>>
+  component "SkeletonAndServiceElements" as skeleton_and_service_elements <<unit>>
 
-  package "ProxyAndServiceElements" as proxy_and_service_elements <<unit>>
+  component "ProxyAndServiceElements" as proxy_and_service_elements <<unit>>
 
-  package "GenericSkeletonAndServiceElements" as generic_skeleton_and_service_elements <<unit>>
+  component "GenericSkeletonAndServiceElements" as generic_skeleton_and_service_elements <<unit>>
 
-  package "GenericProxyAndServiceElements" as generic_proxy_and_service_elements <<unit>>
+  component "GenericProxyAndServiceElements" as generic_proxy_and_service_elements <<unit>>
 }
 
 @enduml

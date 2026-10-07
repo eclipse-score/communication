@@ -21,9 +21,9 @@ package "Lola Binding" as lola_binding <<component>> {
   component "Event Data and Control" as event_data_control <<unit>> 
   component "Message Passing Service" as message_passing_service <<unit>> 
 
-  package "SkeletonAndServiceElements" as skeleton_and_service_elements <<unit>> 
+  component "SkeletonAndServiceElements" as skeleton_and_service_elements <<unit>> 
   
-  package "ProxyAndServiceElements" as proxy_and_service_elements <<unit>> 
+  component "ProxyAndServiceElements" as proxy_and_service_elements <<unit>> 
 }
 
 @enduml
