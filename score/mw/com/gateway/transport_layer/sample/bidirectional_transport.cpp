@@ -376,14 +376,14 @@ void BidirectionalTransport::DispatchLoop(const score::cpp::stop_token& stop_tok
 
 void BidirectionalTransport::HandleResponse(std::unique_ptr<TransportMessage> response)
 {
-    if (response->GetType() != MessageType::kAckResponse)
+    const auto* const ack = dynamic_cast<const AckResponse*>(response.get());
+    if (ack == nullptr)
     // COV_JUSTIFIED_START gateway-handle-response-only-ack-response
     {
         return;
     }
     // COV_JUSTIFIED_STOP
 
-    const auto* ack = static_cast<AckResponse*>(response.get());
     pending_tracker_->Acknowledge(ack->GetAckedSequence());
 }
 
