@@ -14,6 +14,7 @@
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/log/logging.h"
+#include "score/string_manipulation/arguments/arguments.h"
 #include <score/stop_token.hpp>
 
 #include <array>
@@ -217,13 +218,14 @@ int run_consumer()
 
 int main(int argc, const char* argv[])
 {
+    const auto arguments = score::string_manipulation::GetArguments(argc, argv);
     std::string mode;
-    for (int i = 1; i < argc; ++i)
+    for (std::size_t i = 1U; i < arguments.size(); ++i)
     {
-        std::string arg = argv[i];
-        if (arg == "--mode" && i + 1 < argc)
+        const std::string_view arg{arguments[i]};
+        if (arg == "--mode" && i + 1U < arguments.size())
         {
-            mode = argv[++i];
+            mode = arguments[++i];
         }
     }
 
