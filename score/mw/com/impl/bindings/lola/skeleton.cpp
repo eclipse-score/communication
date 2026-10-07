@@ -240,7 +240,7 @@ std::unique_ptr<Skeleton> Skeleton::Create(const InstanceIdentifier& identifier,
                                             std::move(service_instance_existence_mutex_and_lock));
 }
 
-Skeleton::Skeleton(const InstanceIdentifier& identifier,
+Skeleton::Skeleton(InstanceIdentifier identifier,
                    const LolaServiceInstanceDeployment& lola_service_instance_deployment,
                    const LolaServiceTypeDeployment& lola_service_type_deployment,
                    score::filesystem::Filesystem filesystem,
@@ -250,7 +250,7 @@ Skeleton::Skeleton(const InstanceIdentifier& identifier,
                    std::unique_ptr<memory::shared::FlockMutexAndLock<memory::shared::ExclusiveFlockMutex>>
                        service_instance_existence_flock_mutex_and_lock)
     : SkeletonBinding{},
-      identifier_{identifier},
+      identifier_{std::move(identifier)},
       quality_type_{InstanceIdentifierView{identifier_}.GetServiceInstanceDeployment().asilLevel_},
       lola_instance_id_{lola_service_instance_deployment.instance_id_.value().GetId()},
       lola_service_id_{lola_service_type_deployment.service_id_},

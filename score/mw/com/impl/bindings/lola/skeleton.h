@@ -90,7 +90,7 @@ class Skeleton final : public SkeletonBinding
 
     /// \brief Construct a Skeleton instance for this specific instance with possibility of passing mock objects
     /// during construction. It is only for testing. For production code Skeleton::Create shall be used.
-    Skeleton(const InstanceIdentifier& identifier,
+    Skeleton(InstanceIdentifier identifier,
              const LolaServiceInstanceDeployment& lola_service_instance_deployment,
              const LolaServiceTypeDeployment& lola_service_type_deployment,
              score::filesystem::Filesystem filesystem,
