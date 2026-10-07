@@ -94,7 +94,7 @@ class UnixDomainEngine final : public ISharedResourceEngine
     void EnqueueCommand(CommandQueueEntry& entry,
                         const TimePoint until,
                         CommandCallback callback,
-                        const void* const owner = nullptr) noexcept override;
+                        const void* const owner) noexcept override;
 
     // this call is blocking
     void CleanUpOwner(const void* const owner) noexcept override;
