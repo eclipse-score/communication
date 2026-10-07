@@ -15,7 +15,7 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("No resources freed", "Communication.NoResourcesFreed")
+$FailureMode("No resources freed", "Communication.NoResourcesFreed", "Communication.EarlyCleanUp")
 
 $IntermediateEvent("No Unlink / unmap shm-region", "Event1", "Communication.NoResourcesFreed")
 $OrGate("Gate1", "Event1")

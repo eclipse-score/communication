@@ -352,7 +352,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "By only freeing resources on destruction, we can avoid early resource clean ups."
-                // potentialcause = "nearly the same as [ISSUE:Failuremode NoResourcesFreed] The only difference is that unlink / unmap will happen early."
+                interface = "mw.com.Skeleton.Destroy"
             }
         }
         section "Handle Method Calls" {
