@@ -230,8 +230,7 @@ std::vector<std::uint8_t> BuildConfigurationWithout(const RequiredScalar omitted
     {
         method.add_methodId(3U);
     }
-    const auto methods =
-        fbb.CreateVector(std::vector<::flatbuffers::Offset<fbs::ServiceTypeMethod>>{method.Finish()});
+    const auto methods = fbb.CreateVector(std::vector<::flatbuffers::Offset<fbs::ServiceTypeMethod>>{method.Finish()});
 
     fbs::ServiceTypeBindingBuilder type_binding{fbb};
     if (omitted != RequiredScalar::kServiceTypeBinding)
@@ -267,8 +266,8 @@ std::vector<std::uint8_t> BuildConfigurationWithout(const RequiredScalar omitted
     {
         instance_binding.add_binding(fbs::Binding::SHM);
     }
-    const auto instance_bindings = fbb.CreateVector(
-        std::vector<::flatbuffers::Offset<fbs::ServiceInstanceBinding>>{instance_binding.Finish()});
+    const auto instance_bindings =
+        fbb.CreateVector(std::vector<::flatbuffers::Offset<fbs::ServiceInstanceBinding>>{instance_binding.Finish()});
 
     const auto instance_version =
         build_version(RequiredScalar::kServiceInstanceVersionMajor, RequiredScalar::kServiceInstanceVersionMinor);
