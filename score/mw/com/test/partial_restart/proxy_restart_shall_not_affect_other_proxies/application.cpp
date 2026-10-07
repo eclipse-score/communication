@@ -46,11 +46,127 @@ struct TestParameters
 };
 
 using score::mw::com::test::CheckPointControl;
+using score::mw::com::test::ChildProcessGuard;
 using score::mw::com::test::CreateSharedCheckPointControl;
 using score::mw::com::test::ForkProcessAndRunInChildProcess;
 using score::mw::com::test::ObjectCleanupGuard;
 using score::mw::com::test::WaitAndVerifyCheckPoint;
 using score::mw::com::test::WaitForChildProcessToTerminate;
+
+bool WaitForCheckpointOrReturnFalse(const std::string& step_tag,
+                                    CheckPointControl& checkpoint_control,
+                                    const std::uint8_t checkpoint_number,
+                                    const score::cpp::stop_token& stop_token)
+{
+    return WaitAndVerifyCheckPoint(
+               step_tag, checkpoint_control, checkpoint_number, stop_token, kMaxWaitTimeToReachCheckpoint) ==
+           EXIT_SUCCESS;
+}
+
+bool RestartConsumerAndAdvanceSecondConsumer(const TestParameters& test_parameters,
+                                             score::cpp::stop_token stop_token,
+                                             ObjectCleanupGuard& object_cleanup_guard,
+                                             CheckPointControl& consumer_1_checkpoint_control,
+                                             CheckPointControl& consumer_2_checkpoint_control,
+                                             ChildProcessGuard& consumer_1_pid_guard)
+{
+    assert(test_parameters.number_consumer_restart >= 1);
+    for (std::size_t i = 0; i < test_parameters.number_consumer_restart; i++)
+    {
+        //***************************************************
+        // Step (9)- in the case of normal restart c1 will finish execution.
+        // In the case of crash restart c1 will be killed.
+        //***************************************************
+        if (test_parameters.kill_consumer)
+        {
+            std::cout << "Controller (Step 9): killing c1:" << consumer_1_pid_guard.GetPid() << " \n";
+            auto kill_result = consumer_1_pid_guard.KillChildProcess();
+            if (!kill_result)
+            {
+                std::cerr << "Controller: Step (9) failed. Error killing provider child process" << std::endl;
+                object_cleanup_guard.CleanUp();
+                return false;
+            }
+        }
+        else
+        {
+            std::cout << "Controller (Step 9): Let c1 finish execution\n";
+            consumer_1_checkpoint_control.FinishActions();
+
+            std::cout << "Controller Step (9): Waiting for first consumer to finish" << std::endl;
+            const auto consumer_terminated = WaitForChildProcessToTerminate(
+                "Controller Step (9)", consumer_1_pid_guard, kMaxWaitTimeToReachCheckpoint);
+            if (!consumer_terminated)
+            {
+                object_cleanup_guard.CleanUp();
+                return false;
+            }
+        }
+
+        //***************************************************
+        // Step (10)- fork c1
+        //***************************************************
+        auto restarted_consumer_1_pid_guard = ForkProcessAndRunInChildProcess(
+            "Controller Step (11):", "Consumer 1:", [&consumer_1_checkpoint_control, &stop_token]() {
+                PerformFirstConsumerActions(consumer_1_checkpoint_control, kConsumer1ConfigurationPath, stop_token);
+            });
+        if (!restarted_consumer_1_pid_guard.has_value())
+        {
+            object_cleanup_guard.CleanUp();
+            return false;
+        }
+        consumer_1_pid_guard = std::move(restarted_consumer_1_pid_guard).value();
+        object_cleanup_guard.AddForkConsumerGuard(consumer_1_pid_guard);
+
+        //***************************************************
+        // Step (11)- wait till c1 reaches check point 1
+        //***************************************************
+        if (!WaitForCheckpointOrReturnFalse("Controller Step (11):", consumer_1_checkpoint_control, 1, stop_token))
+        {
+            object_cleanup_guard.CleanUp();
+            return false;
+        }
+
+        //***************************************************
+        // Step (12)- tell c2 to proceed
+        //***************************************************
+        std::cout << "Controller Step (12): tell consumer 2 to proceed\n";
+        consumer_2_checkpoint_control.ProceedToNextCheckpoint();
+
+        //***************************************************
+        // Step (13)- wait till c2 reaches check point M. Where M ranges from 2 to a specific number.
+        //***************************************************
+        const std::uint8_t checkpoint_no{static_cast<std::uint8_t>(i + 2)};
+        if (!WaitForCheckpointOrReturnFalse(
+                "Controller Step (13):", consumer_2_checkpoint_control, checkpoint_no, stop_token))
+        {
+            object_cleanup_guard.CleanUp();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool FinishChildAndWait(const std::string& trigger_log_message,
+                        const std::string& wait_step,
+                        CheckPointControl& checkpoint_control,
+                        ChildProcessGuard& child_process_guard,
+                        ObjectCleanupGuard& object_cleanup_guard)
+{
+    std::cout << trigger_log_message << std::endl;
+    checkpoint_control.FinishActions();
+
+    const auto child_terminated =
+        WaitForChildProcessToTerminate(wait_step, child_process_guard, kMaxWaitTimeToReachCheckpoint);
+    if (!child_terminated)
+    {
+        object_cleanup_guard.CleanUp();
+        return false;
+    }
+
+    return true;
+}
 
 bool DoControllerActions(const TestParameters& test_parameters, score::cpp::stop_token stop_token)
 {
@@ -114,9 +230,7 @@ bool DoControllerActions(const TestParameters& test_parameters, score::cpp::stop
     //***************************************************
     // Step (5)- wait till c1 reaches check point 1
     //***************************************************
-    if ((WaitAndVerifyCheckPoint(
-             "Controller Step (5):", consumer_1_checkpoint_control, 1, stop_token, kMaxWaitTimeToReachCheckpoint) !=
-         EXIT_SUCCESS))
+    if (!WaitForCheckpointOrReturnFalse("Controller Step (5):", consumer_1_checkpoint_control, 1, stop_token))
     {
         object_cleanup_guard.CleanUp();
         return false;
@@ -157,142 +271,55 @@ bool DoControllerActions(const TestParameters& test_parameters, score::cpp::stop
     //***************************************************
     // Step (8)- wait till c2 reaches check point 1
     //***************************************************
-    if ((WaitAndVerifyCheckPoint(
-             "Controller Step (8):", consumer_2_checkpoint_control, 1, stop_token, kMaxWaitTimeToReachCheckpoint) !=
-         EXIT_SUCCESS))
+    if (!WaitForCheckpointOrReturnFalse("Controller Step (8):", consumer_2_checkpoint_control, 1, stop_token))
     {
         object_cleanup_guard.CleanUp();
         return false;
     }
 
-    assert(test_parameters.number_consumer_restart >= 1);
-    for (std::size_t i = 0; i < test_parameters.number_consumer_restart; i++)
+    if (!RestartConsumerAndAdvanceSecondConsumer(test_parameters,
+                                                 stop_token,
+                                                 object_cleanup_guard,
+                                                 consumer_1_checkpoint_control,
+                                                 consumer_2_checkpoint_control,
+                                                 consumer_1_pid_guard.value()))
     {
-        //***************************************************
-        // Step (9)- in the case of normal restart c1 will finish execution.
-        // In the case of crash restart c1 will be killed.
-        //***************************************************
-        if (test_parameters.kill_consumer)
-        {
-            std::cout << "Controller (Step 9): killing c1:" << consumer_1_pid_guard.value().GetPid() << " \n";
-            auto kill_result = consumer_1_pid_guard.value().KillChildProcess();
-            if (!kill_result)
-            {
-                std::cerr << "Controller: Step (9) failed. Error killing provider child process" << std::endl;
-                object_cleanup_guard.CleanUp();
-                return false;
-            }
-        }
-        else
-        {
-            std::cout << "Controller (Step 9): Let c1 finish execution\n";
-            consumer_1_checkpoint_control.FinishActions();
-
-            std::cout << "Controller Step (9): Waiting for first consumer to finish" << std::endl;
-            const auto consumer_terminated = WaitForChildProcessToTerminate(
-                "Controller Step (9)", consumer_1_pid_guard.value(), kMaxWaitTimeToReachCheckpoint);
-            if (!consumer_terminated)
-            {
-                object_cleanup_guard.CleanUp();
-                return false;
-            }
-        }
-
-        //***************************************************
-        // Step (10)- fork c1
-        //***************************************************
-        consumer_1_pid_guard = ForkProcessAndRunInChildProcess(
-            "Controller Step (11):", "Consumer 1:", [&consumer_1_checkpoint_control, &stop_token]() {
-                PerformFirstConsumerActions(consumer_1_checkpoint_control, kConsumer1ConfigurationPath, stop_token);
-            });
-        if (!consumer_1_pid_guard.has_value())
-        {
-            object_cleanup_guard.CleanUp();
-            return false;
-        }
-        object_cleanup_guard.AddForkConsumerGuard(consumer_1_pid_guard.value());
-
-        //***************************************************
-        // Step (11)- wait till c1 reaches check point 1
-        //***************************************************
-        if ((WaitAndVerifyCheckPoint("Controller Step (11):",
-                                     consumer_1_checkpoint_control,
-                                     1,
-                                     stop_token,
-                                     kMaxWaitTimeToReachCheckpoint) != EXIT_SUCCESS))
-        {
-            object_cleanup_guard.CleanUp();
-            return false;
-        }
-
-        //***************************************************
-        // Step (12)- tell c2 to proceed
-        //***************************************************
-        std::cout << "Controller Step (12): tell consumer 2 to proceed\n";
-        consumer_2_checkpoint_control.ProceedToNextCheckpoint();
-
-        //***************************************************
-        // Step (13)- wait till c2 reaches check point M. Where M ranges from 2 to a specific number.
-        //***************************************************
-        const std::uint8_t checkpoint_no{static_cast<std::uint8_t>(i + 2)};
-        if ((WaitAndVerifyCheckPoint("Controller Step (13):",
-                                     consumer_2_checkpoint_control,
-                                     checkpoint_no,
-                                     stop_token,
-                                     kMaxWaitTimeToReachCheckpoint) != EXIT_SUCCESS))
-        {
-            object_cleanup_guard.CleanUp();
-            return false;
-        }
+        return false;
     }
+
     //***************************************************
     // Step (14)- Trigger p to finish
     //***************************************************
-    std::cout << "Controller Step (14): Trigger provider to finish" << std::endl;
-    provider_checkpoint_control.FinishActions();
-
-    // ********************************************************************************
-    // Step (15) - Wait for p to finish
-    // ********************************************************************************
-    const auto provider_terminated = WaitForChildProcessToTerminate(
-        "Controller: Step (15)", provider_pid_guard.value(), kMaxWaitTimeToReachCheckpoint);
-    if (!provider_terminated)
+    if (!FinishChildAndWait("Controller Step (14): Trigger provider to finish",
+                            "Controller: Step (15)",
+                            provider_checkpoint_control,
+                            provider_pid_guard.value(),
+                            object_cleanup_guard))
     {
-        object_cleanup_guard.CleanUp();
         return false;
     }
 
     //***************************************************
     // Step (16)- Trigger c1 to finish
     //***************************************************
-    std::cout << "Controller Step (16): Trigger first consumer to finish" << std::endl;
-    consumer_1_checkpoint_control.FinishActions();
-
-    // ********************************************************************************
-    // Step (17) - Wait for c1 to finish
-    // ********************************************************************************
-    const auto consumer_1_terminated = WaitForChildProcessToTerminate(
-        "Controller: Step (17)", consumer_1_pid_guard.value(), kMaxWaitTimeToReachCheckpoint);
-    if (!consumer_1_terminated)
+    if (!FinishChildAndWait("Controller Step (16): Trigger first consumer to finish",
+                            "Controller: Step (17)",
+                            consumer_1_checkpoint_control,
+                            consumer_1_pid_guard.value(),
+                            object_cleanup_guard))
     {
-        object_cleanup_guard.CleanUp();
         return false;
     }
 
     //***************************************************
     // Step (18)- Trigger c2 to finish
     //***************************************************
-    std::cout << "Controller Step (18): Trigger provider to finish" << std::endl;
-    consumer_2_checkpoint_control.FinishActions();
-
-    // ********************************************************************************
-    // Step (19) - Wait for c2 to finish
-    // ********************************************************************************
-    const auto consumer_2_terminated = WaitForChildProcessToTerminate(
-        "Controller: Step (17)", consumer_2_pid_guard.value(), kMaxWaitTimeToReachCheckpoint);
-    if (!consumer_2_terminated)
+    if (!FinishChildAndWait("Controller Step (18): Trigger provider to finish",
+                            "Controller: Step (17)",
+                            consumer_2_checkpoint_control,
+                            consumer_2_pid_guard.value(),
+                            object_cleanup_guard))
     {
-        object_cleanup_guard.CleanUp();
         return false;
     }
 
