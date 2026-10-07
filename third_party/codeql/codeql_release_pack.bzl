@@ -62,17 +62,17 @@ codeql_release_pack = repository_rule(
     implementation = _codeql_release_pack_impl,
     doc = "Downloads and unpacks a pre-compiled coding-standards CodeQL pack.",
     attrs = {
-        "urls": attr.string_list(
+        "pack_tarball": attr.string(
             mandatory = True,
-            doc = "URL(s) of the coding-standards-codeql-packs.zip release asset.",
+            doc = "Name of the per-standard .tgz inside the zip to extract.",
         ),
         "sha256": attr.string(
             mandatory = True,
             doc = "Expected sha256 of the downloaded zip.",
         ),
-        "pack_tarball": attr.string(
+        "urls": attr.string_list(
             mandatory = True,
-            doc = "Name of the per-standard .tgz inside the zip to extract.",
+            doc = "URL(s) of the coding-standards-codeql-packs.zip release asset.",
         ),
     },
 )

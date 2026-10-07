@@ -73,15 +73,15 @@ reporter_wrapper = rule(
     implementation = _reporter_wrapper_impl,
     executable = True,
     attrs = {
-        "reporter": attr.label(
-            executable = True,
-            cfg = "exec",
-        ),
         "coverage_scope": attr.label(
             cfg = "target",
         ),
         "module_bazel": attr.label(
             allow_single_file = True,
+        ),
+        "reporter": attr.label(
+            executable = True,
+            cfg = "exec",
         ),
     },
 )

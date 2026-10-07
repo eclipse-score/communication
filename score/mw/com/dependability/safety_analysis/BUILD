@@ -41,12 +41,22 @@ safety_analysis(
 )
 
 assumptions_of_use(
-    name = "aous",
+    name = "aous_internal",
     srcs = ["aou.trlc"],
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
     # Resolves mw_com_fta.<RootCause> in AoU.root_causes.
     deps = [":mw_com_safety_analysis"],
+)
+
+# Public alias for external Config Management consumption. The underlying
+# assumptions_of_use target remains restricted; this alias only exposes the
+# providers needed for AoU forwarding and component-requirement derived_from
+# references.
+alias(
+    name = "aous",
+    actual = ":aous_internal",
+    visibility = ["//visibility:public"],
 )
 
 # dependable_element consumes DependabilityAnalysisInfo, which only this rule

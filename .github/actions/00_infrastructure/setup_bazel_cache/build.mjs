@@ -1,5 +1,20 @@
-// SPDX-License-Identifier: Apache-2.0
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+
 import * as esbuild from "esbuild";
+import { readFileSync } from "node:fs";
+
+const licenseBanner = readFileSync(new URL("./license-banner.txt", import.meta.url), "utf8");
 
 // When bundling ESM packages (e.g. @actions/cache -> @azure/storage-common) into
 // a CJS bundle, esbuild replaces `import.meta.url` with an empty object property
@@ -11,7 +26,7 @@ const sharedOptions = {
   platform: "node",
   format: "cjs",
   banner: {
-    js: 'var __importMetaUrl__ = require("url").pathToFileURL(__filename).href;',
+    js: licenseBanner + 'var __importMetaUrl__ = require("url").pathToFileURL(__filename).href;',
   },
   define: {
     "import.meta.url": "__importMetaUrl__",

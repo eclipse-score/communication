@@ -1,0 +1,54 @@
+diff --git a/lang/private/script/check_each_message.bash b/lang/private/script/check_each_message.bash
+--- a/lang/private/script/check_each_message.bash
++++ b/lang/private/script/check_each_message.bash
+@@ -1 +1,5 @@
++#!/usr/bin/env bash
++# SPDX-License-Identifier: CC0-1.0
++# Upstream: rules_build_error 0.11.0; see its LICENSE file.
++
+ set -euo pipefail
+diff --git a/lang/private/script/check_emptiness.bash b/lang/private/script/check_emptiness.bash
+--- a/lang/private/script/check_emptiness.bash
++++ b/lang/private/script/check_emptiness.bash
+@@ -1 +1,5 @@
++#!/usr/bin/env bash
++# SPDX-License-Identifier: CC0-1.0
++# Upstream: rules_build_error 0.11.0; see its LICENSE file.
++
+ set -euo pipefail
+diff --git a/lang/private/script/try_build.bash b/lang/private/script/try_build.bash
+--- a/lang/private/script/try_build.bash
++++ b/lang/private/script/try_build.bash
+@@ -1 +1,5 @@
++#!/usr/bin/env bash
++# SPDX-License-Identifier: CC0-1.0
++# Upstream: rules_build_error 0.11.0; see its LICENSE file.
++
+ set -euo pipefail
+diff --git a/matcher/executable/contains_basic_regex.bash b/matcher/executable/contains_basic_regex.bash
+--- a/matcher/executable/contains_basic_regex.bash
++++ b/matcher/executable/contains_basic_regex.bash
+@@ -1 +1,5 @@
++#!/usr/bin/env bash
++# SPDX-License-Identifier: CC0-1.0
++# Upstream: rules_build_error 0.11.0; see its LICENSE file.
++
+ #
+diff --git a/matcher/executable/contains_extended_regex.bash b/matcher/executable/contains_extended_regex.bash
+--- a/matcher/executable/contains_extended_regex.bash
++++ b/matcher/executable/contains_extended_regex.bash
+@@ -1 +1,5 @@
++#!/usr/bin/env bash
++# SPDX-License-Identifier: CC0-1.0
++# Upstream: rules_build_error 0.11.0; see its LICENSE file.
++
+ #
+diff --git a/matcher/executable/has_substr.bash b/matcher/executable/has_substr.bash
+--- a/matcher/executable/has_substr.bash
++++ b/matcher/executable/has_substr.bash
+@@ -1 +1,5 @@
++#!/usr/bin/env bash
++# SPDX-License-Identifier: CC0-1.0
++# Upstream: rules_build_error 0.11.0; see its LICENSE file.
++
+ #

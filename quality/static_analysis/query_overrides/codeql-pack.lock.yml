@@ -1,0 +1,42 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+---
+lockVersion: 1.0.0
+dependencies:
+  codeql/misra-cpp-coding-standards:
+    version: 2.62.0
+  advanced-security/qtil:
+    version: 0.0.3
+  codeql/cpp-all:
+    version: 5.0.0
+  codeql/dataflow:
+    version: 2.0.8
+  codeql/mad:
+    version: 1.0.24
+  codeql/quantum:
+    version: 0.0.2
+  codeql/rangeanalysis:
+    version: 1.0.24
+  codeql/ssa:
+    version: 2.0.0
+  codeql/tutorial:
+    version: 1.0.24
+  codeql/typeflow:
+    version: 1.0.24
+  codeql/typetracking:
+    version: 2.0.8
+  codeql/util:
+    version: 2.0.11
+  codeql/xml:
+    version: 1.0.24
+compiled: false

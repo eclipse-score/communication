@@ -105,6 +105,14 @@ Note: Not yet implemented, it will be done with https://github.com/eclipse-score
 Ensure that all Bazel files (`BUILD`, `*.bzl`, `WORKSPACE`, etc.) are formatted in the same way.
 Also, it lints the files to ensure the basic Bazel best practices.
 
+The buildifier job in `_linter.yml` checks formatting and rejects buildifier
+warnings with the module-pinned tool. Reproduce it locally with
+`bazel run //tools/lint/buildifier:buildifier_lint -- --recursive`; its diagnostic output
+identifies the offending file and line. Run the positive/negative regression
+fixtures with `bazel test //tools/lint/buildifier:buildifier_lint_test`.
+The separate `format.check` command checks formatting; this lint job also
+enforces the warning policy.
+
 #### Clang format
 
 Ensure that the modified C++ files are formatted following our decided style.

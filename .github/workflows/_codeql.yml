@@ -87,7 +87,9 @@ jobs:
           bazel run --config=ci //quality/static_analysis:codeql_lint -- \
             --output-dir /tmp/codeql-results/linux \
             --output-prefix codeql-nightly \
-            --target //score/message_passing //score/mw/com
+            --production-targets \
+            --target //score/message_passing //score/mw/com \
+            --audit-source score/mw/com/impl/plumbing/proxy_binding_factory_impl.cpp
 
       - name: Upload Linux SARIF (intermediate)
         if: inputs.fetch-only != 'true' && steps.run-codeql.outcome == 'success'
@@ -142,7 +144,9 @@ jobs:
             --build-config qnx \
             --output-dir /tmp/codeql-results/qnx \
             --output-prefix codeql-nightly-qnx \
-            --target //score/message_passing //score/mw/com
+            --production-targets \
+            --target //score/message_passing //score/mw/com \
+            --audit-source score/mw/com/impl/plumbing/proxy_binding_factory_impl.cpp
 
       - name: Upload QNX SARIF (intermediate)
         if: steps.run-codeql-qnx.outcome == 'success'

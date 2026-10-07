@@ -54,14 +54,14 @@ _normalize_json = rule(
             mandatory = True,
             doc = "The JSON configuration file (public, hyphenated format).",
         ),
+        "output": attr.string(
+            mandatory = True,
+            doc = "Name of the normalized JSON output file.",
+        ),
         "schema": attr.label(
             allow_single_file = [".json"],
             mandatory = True,
             doc = "Rich JSON schema (source of enum symbols) from generate_json_schema.",
-        ),
-        "output": attr.string(
-            mandatory = True,
-            doc = "Name of the normalized JSON output file.",
         ),
         "_converter": attr.label(
             default = "//score/mw/com/impl/configuration/converter:json_to_flatbuffer",
@@ -96,15 +96,15 @@ def _json_to_flatbuffer_impl(name, visibility, json, fbs, schema):
 json_to_flatbuffer = macro(
     doc = "Generates ``<name>.bin`` from a public (hyphenated) JSON config via the .fbs schema.",
     attrs = {
-        "json": attr.label(
-            allow_single_file = [".json"],
-            mandatory = True,
-            doc = "The JSON configuration file (public, hyphenated format).",
-        ),
         "fbs": attr.label(
             allow_single_file = [".fbs"],
             default = Label("//score/mw/com/impl/configuration:mw_com_config.fbs"),
             doc = "The FlatBuffers schema.",
+        ),
+        "json": attr.label(
+            allow_single_file = [".json"],
+            mandatory = True,
+            doc = "The JSON configuration file (public, hyphenated format).",
         ),
         "schema": attr.label(
             allow_single_file = [".json"],

@@ -111,8 +111,8 @@ def _get_hermetic_clang_command(ctx, include_args, source_file):
 _ApiSurfaceHeadersInfo = provider(
     doc = "Aggregated header sets for API surface extraction.",
     fields = {
-        "public_headers": "depset(File) of transitive direct public headers",
         "all_headers": "depset(File) of transitive compilation headers",
+        "public_headers": "depset(File) of transitive direct public headers",
     },
 )
 
@@ -317,6 +317,10 @@ _api_surface_compare_test = rule(
     implementation = _api_surface_test_impl,
     test = True,
     attrs = {
+        "check_docs": attr.bool(
+            default = True,
+            doc = "If true, fail when public symbols lack \\api documentation.",
+        ),
         "generated": attr.label(
             allow_single_file = [".json"],
             mandatory = True,
@@ -326,10 +330,6 @@ _api_surface_compare_test = rule(
             allow_single_file = [".json"],
             mandatory = True,
             doc = "Committed lock file to compare against.",
-        ),
-        "check_docs": attr.bool(
-            default = True,
-            doc = "If true, fail when public symbols lack \\api documentation.",
         ),
         "_diff_tool": attr.label(
             default = Label("//quality/api_surface:diff_api"),

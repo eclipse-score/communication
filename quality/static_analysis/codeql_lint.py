@@ -17,6 +17,7 @@ import json
 import subprocess
 import datetime
 import shutil
+import zipfile
 
 
 TMP_PATH_FOR_DATABASES = "/var/tmp/codeql_databases"
@@ -28,6 +29,12 @@ CODING_STANDARDS_CONFIG_RELATIVE_PATH = "quality/static_analysis/coding-standard
 # to this run and doesn't accumulate stale state across workspaces/versions.
 CODEQL_FAKE_HOME_DIR_NAME = "codeql_home"
 
+# CodeQL stores the extracted source files for a database in this archive.
+# The audit below deliberately checks this archive instead of the SARIF output:
+# a production source file can have zero findings and therefore no SARIF result,
+# while still being present in the database.
+DATABASE_SRC_ARCHIVE = "src.zip"
+
 
 # Default query suite (relative to the MISRA C++ pack root) run by the analysis.
 # Forward-slash relative path, used both to locate the suite on disk and as the
@@ -38,6 +45,148 @@ MISRA_DEFAULT_SUITE_NAME = "codeql-suites/misra-cpp-default.qls"
 # used to anchor the pack root. Provided by the @codeql_coding_standards_compiled
 # repository (see third_party/codeql/codeql_release_pack.bzl).
 COMPILED_PACK_RUNFILE = "codeql_coding_standards_compiled/pack/qlpack.yml"
+
+
+def audit_database_source_coverage(database_path, source_root, expected_sources):
+    """Audit that expected source files were extracted into the CodeQL database.
+
+    CodeQL databases retain extracted sources in a ``src.zip`` archive.  This
+    check intentionally inspects that archive instead of the SARIF output: a
+    production source file can legitimately have zero findings and therefore no
+    SARIF result, while still being present in the database.  Conversely, a
+    missing database entry is real evidence that the traced build did not cover
+    the file (for example because the Bazel target pattern was too narrow).
+
+    Args:
+        database_path: Path to the finalized CodeQL database directory.
+        source_root: Root of the source tree used for the traced build.
+        expected_sources: Iterable of source paths (relative to source_root or
+            absolute) that must be present in the database.
+
+    Returns:
+        A sorted list of expected source paths that were not found.
+    """
+    src_zip = os.path.join(database_path, DATABASE_SRC_ARCHIVE)
+    if not os.path.isfile(src_zip):
+        raise RuntimeError(
+            f"CodeQL database source archive not found: {src_zip}. Cannot audit database source coverage."
+        )
+
+    source_root_abs = os.path.abspath(source_root).replace(os.sep, "/").lstrip("/")
+
+    def _normalize_expected(source):
+        if os.path.isabs(source):
+            try:
+                rel = os.path.relpath(source, source_root)
+            except ValueError:
+                # On Windows, paths on different drives cannot be relative.
+                rel = source
+        else:
+            rel = source
+        return rel.replace(os.sep, "/").lstrip("/")
+
+    with zipfile.ZipFile(src_zip, "r") as archive:
+        archive_names = set(archive.namelist())
+
+    missing = []
+    for source in expected_sources:
+        rel = _normalize_expected(source)
+        candidates = {
+            rel,
+            f"./{rel}",
+        }
+        if source_root_abs:
+            candidates.add(f"{source_root_abs}/{rel}")
+            candidates.add(f"./{source_root_abs}/{rel}")
+        # Compile actions can name external and generated files. CodeQL stores
+        # their absolute paths; resolve Bazel's workspace symlinks as well.
+        absolute = os.path.abspath(os.path.join(source_root, source))
+        for path in (absolute, os.path.realpath(absolute)):
+            normalized = path.replace(os.sep, "/").lstrip("/")
+            candidates.update((normalized, f"./{normalized}"))
+        if not (candidates & archive_names):
+            missing.append(rel)
+    return sorted(missing)
+
+
+def _production_target_patterns(target_spec):
+    patterns = []
+    for label in target_spec.split():
+        label = label.strip()
+        if not label.startswith("//"):
+            continue
+        patterns.append(label)
+    if not patterns:
+        raise RuntimeError(
+            "No main-repository targets found in the supplied target list; cannot derive production targets."
+        )
+    return patterns
+
+
+def _parse_production_targets(cquery_stdout):
+    labels = [line.split()[0] for line in cquery_stdout.splitlines() if line.strip()]
+    return sorted({label for label in labels if label.startswith("//") or (label.startswith("@") and "//" in label)})
+
+
+def _compute_production_targets(source_root, build_configs, target_spec):
+    patterns = _production_target_patterns(target_spec)
+    query_expr = f'attr("testonly", "0", kind("cc_library|cc_binary", deps(set({" ".join(patterns)}))))'
+    cquery_cmd = "bazel cquery --config=codeql"
+    for extra_config in build_configs or []:
+        cquery_cmd += f" --config={extra_config}"
+    cquery_cmd += f" --output=label '{query_expr}'"
+    result = subprocess.run(
+        cquery_cmd,
+        shell=True,
+        cwd=source_root,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    labels = _parse_production_targets(result.stdout)
+    if not labels:
+        raise RuntimeError(f"No production C/C++ targets found in dependency closure of {patterns}.")
+    return labels
+
+
+def _compile_sources_from_actions(actions, execution_root, external_root=None):
+    sources = set()
+    for action in actions.get("actions", []):
+        if action.get("mnemonic") != "CppCompile":
+            continue
+        arguments = action.get("arguments", [])
+        for index, argument in enumerate(arguments[:-1]):
+            if argument == "-c":
+                source = arguments[index + 1]
+                if external_root and source.startswith("external/"):
+                    source = os.path.join(external_root, source[len("external/") :])
+                sources.add(os.path.realpath(os.path.join(execution_root, source)))
+                break
+        else:
+            raise RuntimeError("C++ compile action has no source argument; cannot audit extraction.")
+    if not sources:
+        raise RuntimeError("No C++ compile actions found; cannot audit extraction.")
+    return sorted(sources)
+
+
+def _compute_compile_sources(source_root, build_configs, targets):
+    command = ["bazel", "aquery", "--config=codeql", "--output=jsonproto"]
+    command.extend(f"--config={config}" for config in build_configs or [])
+    command.append(f'mnemonic("CppCompile", deps(set({" ".join(targets)})))')
+    result = subprocess.run(command, cwd=source_root, capture_output=True, text=True, check=True)
+    info = _get_bazel_info(source_root)
+    return _compile_sources_from_actions(
+        json.loads(result.stdout), info["execution_root"], os.path.join(info["output_base"], "external")
+    )
+
+
+def _find_query_overrides_root():
+    from python.runfiles import Runfiles
+
+    anchor = Runfiles.Create().Rlocation("_main/quality/static_analysis/query_overrides/qlpack.yml")
+    if not anchor or not os.path.isfile(anchor):
+        raise RuntimeError("Unable to locate Communication query overrides in runfiles")
+    return os.path.dirname(anchor)
 
 
 def _find_coding_standards_root():
@@ -161,7 +310,9 @@ def _read_pack_identity(pack_root):
     return name, version
 
 
-def create_database(code_ql_path, config_path, target, source_root, database_path, build_configs=None):
+def create_database(
+    code_ql_path, config_path, target, source_root, database_path, build_configs=None, production_targets=False
+):
     """Create the CodeQL database: init, build with tracing, finalize.
 
     ``build_configs`` is an optional list of additional Bazel ``--config`` names
@@ -171,8 +322,11 @@ def create_database(code_ql_path, config_path, target, source_root, database_pat
     (see ``//.bazelrc`` ``common:qnx``). With no extra configs the build is the
     unchanged Linux analysis.
     """
+    if os.path.exists(database_path) and os.listdir(database_path):
+        raise RuntimeError("Refusing to reuse a nonempty CodeQL database directory: " + database_path)
+
     subprocess.run(
-        f"{code_ql_path} database init --overwrite --begin-tracing --language=cpp "
+        f"{code_ql_path} database init --begin-tracing --language=cpp "
         f"--codescanning-config={config_path} --source-root={source_root} -- {database_path}",
         shell=True,
         check=True,
@@ -198,6 +352,11 @@ def create_database(code_ql_path, config_path, target, source_root, database_pat
     for extra_config in build_configs or []:
         bazel_cmd += f" --config={extra_config}"
     bazel_cmd += _get_action_env_extension(codeql_env)
+    if production_targets:
+        production_target_list = _compute_production_targets(source_root, build_configs, target)
+        target = " ".join(production_target_list)
+        bazel_cmd += " --skip_incompatible_explicit_targets"
+        expected_compile_sources = _compute_compile_sources(source_root, build_configs, production_target_list)
     subprocess.run(f"{bazel_cmd} {target}", shell=True, env=env, cwd=source_root, check=True)
 
     # Finalize database
@@ -206,6 +365,14 @@ def create_database(code_ql_path, config_path, target, source_root, database_pat
         shell=True,
         check=True,
     )
+    if production_targets:
+        missing = audit_database_source_coverage(database_path, source_root, expected_compile_sources)
+        manifest = {"expected_compile_sources": expected_compile_sources, "missing": missing}
+        with open(os.path.join(database_path, "compile-source-coverage.json"), "w", encoding="utf-8") as stream:
+            json.dump(manifest, stream, indent=2)
+            stream.write("\n")
+        if missing:
+            raise RuntimeError("CodeQL omitted configured compilation sources: " + ", ".join(missing))
 
 
 def analyze_database(
@@ -240,9 +407,14 @@ def analyze_database(
         common_analyze_flags = f"--additional-packs={_find_coding_standards_root()}"
     else:
         pack_root = _find_compiled_pack_root()
-        pack_name, pack_version = _read_pack_identity(pack_root)
-        query_target = f"{pack_name}@{pack_version}:{MISRA_DEFAULT_SUITE_NAME}"
-        common_analyze_flags = f"--search-path={pack_root}"
+        # Keep the pinned precompiled suite, replacing only the location query.
+        # The imported suite excludes its old ID before the fixed query is added.
+        overrides = _find_query_overrides_root()
+        query_target = os.path.join(overrides, "communication-default.qls")
+        libraries_root = os.path.join(pack_root, ".codeql", "libraries")
+        common_analyze_flags = f"--search-path={pack_root} --additional-packs={pack_root}:{libraries_root}"
+        fake_home = os.path.join(output_base, CODEQL_FAKE_HOME_DIR_NAME)
+        _prepare_offline_codeql_home(os.path.join(pack_root, ".codeql", "libraries"), fake_home)
     query_arg = f" {query_target}"
     sarif_path = f"{output_base}/{output_prefix}.sarif"
 
@@ -251,11 +423,15 @@ def analyze_database(
     # _codeql.yml) is published and consumed directly by the quality
     # dashboard afterward; no CSV is ever generated.
     print("\n Running CodeQL analysis...")
+    analyze_env = os.environ.copy()
+    if not query_spec:
+        analyze_env["HOME"] = fake_home
     subprocess.run(
         f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} "
         f"{common_analyze_flags} "
         f"--format=sarifv2.1.0 --output={sarif_path}",
         shell=True,
+        env=analyze_env,
         check=True,
     )
 
@@ -454,6 +630,23 @@ def main():
         help="Additional Bazel --config to layer on the traced build (repeatable). "
         "E.g. --build-config qnx runs 'bazel build --config=codeql --config=qnx'.",
     )
+    parser.add_argument(
+        "--audit-source",
+        action="append",
+        default=[],
+        dest="audit_sources",
+        metavar="PATH",
+        help="Source file expected to be present in the CodeQL database. "
+        "Repeatable. Used to audit database source coverage independently of "
+        "SARIF results.",
+    )
+    parser.add_argument(
+        "--production-targets",
+        action="store_true",
+        help="Build C/C++ library and binary targets, including dependencies, not marked "
+        "test-only from the dependency closure of the supplied roots, including "
+        "implementation_deps that would otherwise be built lazily.",
+    )
 
     args = parser.parse_args()
     target = " ".join(args.target) if args.target else ""
@@ -474,9 +667,22 @@ def main():
             source_root,
             args.database_path,
             build_configs=args.build_configs,
+            production_targets=args.production_targets,
         )
+        if args.audit_sources:
+            missing = audit_database_source_coverage(args.database_path, source_root, args.audit_sources)
+            if missing:
+                raise RuntimeError(
+                    "CodeQL database source coverage audit failed; missing expected sources: " + ", ".join(missing)
+                )
 
     elif args.phase == "analyze-database":
+        if args.audit_sources:
+            missing = audit_database_source_coverage(args.database_path, source_root, args.audit_sources)
+            if missing:
+                raise RuntimeError(
+                    "CodeQL database source coverage audit failed; missing expected sources: " + ", ".join(missing)
+                )
         analyze_database(
             codeql_path,
             args.database_path,
@@ -505,7 +711,14 @@ def main():
                 source_root,
                 database_location,
                 build_configs=args.build_configs,
+                production_targets=args.production_targets,
             )
+            if args.audit_sources:
+                missing = audit_database_source_coverage(database_location, source_root, args.audit_sources)
+                if missing:
+                    raise RuntimeError(
+                        "CodeQL database source coverage audit failed; missing expected sources: " + ", ".join(missing)
+                    )
             analyze_database(
                 codeql_path,
                 database_location,

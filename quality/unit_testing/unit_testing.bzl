@@ -1,3 +1,16 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
 """Macros for declaring C++ and Rust unit tests that also run on QNX."""
 
 load("@rules_cc//cc:defs.bzl", "cc_test")
@@ -53,14 +66,14 @@ _forwarding_test = rule(
             default = [],
             allow_files = True,
         ),
-        # Implicit dependencies used by Bazel to generate coverage reports.
-        "_lcov_merger": attr.label(
-            default = configuration_field(fragment = "coverage", name = "output_generator"),
+        "_collect_cc_coverage": attr.label(
+            default = "@bazel_tools//tools/test:collect_cc_coverage",
             executable = True,
             cfg = config.exec(exec_group = "test"),
         ),
-        "_collect_cc_coverage": attr.label(
-            default = "@bazel_tools//tools/test:collect_cc_coverage",
+        # Implicit dependencies used by Bazel to generate coverage reports.
+        "_lcov_merger": attr.label(
+            default = configuration_field(fragment = "coverage", name = "output_generator"),
             executable = True,
             cfg = config.exec(exec_group = "test"),
         ),
@@ -191,6 +204,7 @@ def rust_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
             ],
             "//conditions:default": [],
         }),
+        target_compatible_with = target_compatible_with,
         tags = tags + ["unit"],
         visibility = kwargs["visibility"],
     )
