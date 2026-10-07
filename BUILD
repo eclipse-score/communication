@@ -12,9 +12,11 @@
 # *******************************************************************************
 
 load("@aspect_rules_lint//format:defs.bzl", "format_multirun", "format_test")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@score_tooling//cr_checker:cr_checker.bzl", "copyright_checker")
 load("@score_tooling//skills_sync:sync_skills.bzl", "sync_skills")
 load("//tools/lint:linters.bzl", "use_clang_tidy_targets", "use_ruff_targets")
@@ -117,4 +119,47 @@ sh_binary(
     name = "ruff.check",
     srcs = [":ruff.check_script"],
     target_compatible_with = ["@platforms//os:linux"],
+)
+
+write_file(
+    name = "eof_newline_check_script",
+    out = "eof_newline_check.sh",
+    content = [
+        "#!/usr/bin/env bash",
+        "set -euo pipefail",
+        "cd \"${BUILD_WORKSPACE_DIRECTORY:-$(dirname \"$(readlink -f \"${TEST_SRCDIR}/${TEST_WORKSPACE}/MODULE.bazel\")\")}\"",
+        "violations=()",
+        "while IFS= read -r -d '' file; do",
+        "    size=$(wc -c < \"${file}\")",
+        "    [[ \"${size}\" -eq 0 ]] && continue",
+        "    bytes=$(tail -c 2 \"${file}\" | od -An -t x1 | tr -d ' \\n')",
+        "    if [[ \"${bytes}\" == *0a0a ]] || [[ \"${bytes}\" != *0a ]]; then violations+=(\"${file}\"); fi",
+        "done < <(git ls-files -z -- '*.py' '*.bzl' 'BUILD' 'BUILD.bazel' '**/BUILD' '**/BUILD.bazel' 'WORKSPACE' 'WORKSPACE.bazel' '*.rs')",
+        "if [[ \"${#violations[@]}\" -gt 0 ]]; then",
+        "    printf '%s\\n' 'The following files must end with exactly one newline:' >&2",
+        "    printf '  %s\\n' \"${violations[@]}\" >&2",
+        "    exit 1",
+        "fi",
+    ],
+    is_executable = True,
+)
+
+sh_test(
+    name = "eof_newline_test",
+    srcs = [":eof_newline_check_script"],
+    data = ["//:MODULE.bazel"],
+    local = True,
+    tags = [
+        "external",
+        "no-cache",
+        "no-sandbox",
+    ],
+)
+
+test_suite(
+    name = "format_all_test",
+    tests = [
+        ":eof_newline_test",
+        ":format_test",
+    ],
 )
