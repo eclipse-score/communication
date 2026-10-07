@@ -45,7 +45,7 @@ ScoreReq.AoU CorrectlyConfiguredMaximumNumberOfSubscriber {
         mw_com_fta.RetryLogicNotBulletProof,
         mw_com_fta.IssueInLockFreeSychronization,
         mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
-        mw_com_fta.AllocateClaimsToFewMemory,
+        mw_com_fta.AllocateClaimsTooFewMemory,
         mw_com_fta.NecessarySizeCalculationRetreivesWrongValue,
         mw_com_fta.SharedMemoryTruncationFails
     ]
@@ -72,7 +72,7 @@ ScoreReq.AoU CorrectlyConfiguredMaximumNumberOfMaximumElementsPerSubscriber {
         mw_com_fta.RetryLogicNotBulletProof,
         mw_com_fta.IssueInLockFreeSychronization,
         mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
-        mw_com_fta.AllocateClaimsToFewMemory,
+        mw_com_fta.AllocateClaimsTooFewMemory,
         mw_com_fta.NecessarySizeCalculationRetreivesWrongValue,
         mw_com_fta.SharedMemoryTruncationFails
     ]
@@ -240,7 +240,7 @@ ScoreReq.AoU CheckForNullptrOnAllocate {
         mw_com_fta.RetryLogicNotBulletProof,
         mw_com_fta.IssueInLockFreeSychronization,
         mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
-        mw_com_fta.AllocateClaimsToFewMemory,
+        mw_com_fta.AllocateClaimsTooFewMemory,
         mw_com_fta.NecessarySizeCalculationRetreivesWrongValue,
         mw_com_fta.SharedMemoryTruncationFails
     ]
@@ -262,7 +262,7 @@ ScoreReq.AoU OneProducerOnlyOneAllocateePtr {
         mw_com_fta.RetryLogicNotBulletProof,
         mw_com_fta.IssueInLockFreeSychronization,
         mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
-        mw_com_fta.AllocateClaimsToFewMemory,
+        mw_com_fta.AllocateClaimsTooFewMemory,
         mw_com_fta.NecessarySizeCalculationRetreivesWrongValue,
         mw_com_fta.SharedMemoryTruncationFails
     ]
