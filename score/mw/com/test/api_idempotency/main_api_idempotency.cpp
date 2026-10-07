@@ -127,37 +127,12 @@ void ReceiveSamples(ApiIdempotencyProxy& proxy,
     }
 }
 
-}  // namespace
-
-void RunApiIdempotencyTest()
+void CheckRepeatedDiscovery(
+    const InstanceSpecifier& instance_specifier,
+    const ServiceHandleContainer<HandleType>& offered_service_handles,
+    std::mutex& discovery_mutex,
+    std::vector<std::pair<FindServiceHandle, ServiceHandleContainer<HandleType>>>& discovery_results)
 {
-    const auto instance_specifier_result =
-        InstanceSpecifier::Create(std::string{kApiIdempotencyInstanceSpecifierString});
-    if (!instance_specifier_result.has_value())
-    {
-        FailTest(kFailureMessagePrefix, " Could not create instance specifier");
-    }
-    const auto instance_specifier = instance_specifier_result.value();
-
-    SkeletonContainer<ApiIdempotencySkeleton> skeleton_container{};
-    skeleton_container.CreateSkeleton(instance_specifier, kFailureMessagePrefix);
-    auto& skeleton = skeleton_container.GetSkeleton();
-
-    CheckResult(skeleton.OfferService(), "first OfferService");
-    const auto offered_service_handles = WaitForServiceAvailability(instance_specifier, true);
-    if (offered_service_handles.size() != 1U)
-    {
-        FailTest(kFailureMessagePrefix, " Expected the single configured service instance after first offer");
-    }
-
-    CheckResult(skeleton.OfferService(), "duplicate OfferService");
-    if (WaitForServiceAvailability(instance_specifier, true) != offered_service_handles)
-    {
-        FailTest(kFailureMessagePrefix, " Duplicate OfferService changed the discovered service handles");
-    }
-
-    std::mutex discovery_mutex;
-    std::vector<std::pair<FindServiceHandle, ServiceHandleContainer<HandleType>>> discovery_results;
     const auto handler = [&discovery_mutex, &discovery_results](ServiceHandleContainer<HandleType> handles,
                                                                 FindServiceHandle find_service_handle) noexcept {
         std::lock_guard<std::mutex> lock{discovery_mutex};
@@ -216,6 +191,40 @@ void RunApiIdempotencyTest()
     {
         CheckResult(ApiIdempotencyProxy::StopFindService(handle), "StopFindService");
     }
+}
+
+}  // namespace
+
+static void RunApiIdempotencyTest()
+{
+    const auto instance_specifier_result =
+        InstanceSpecifier::Create(std::string{kApiIdempotencyInstanceSpecifierString});
+    if (!instance_specifier_result.has_value())
+    {
+        FailTest(kFailureMessagePrefix, " Could not create instance specifier");
+    }
+    const auto& instance_specifier = instance_specifier_result.value();
+
+    SkeletonContainer<ApiIdempotencySkeleton> skeleton_container{};
+    skeleton_container.CreateSkeleton(instance_specifier, kFailureMessagePrefix);
+    auto& skeleton = skeleton_container.GetSkeleton();
+
+    CheckResult(skeleton.OfferService(), "first OfferService");
+    const auto offered_service_handles = WaitForServiceAvailability(instance_specifier, true);
+    if (offered_service_handles.size() != 1U)
+    {
+        FailTest(kFailureMessagePrefix, " Expected the single configured service instance after first offer");
+    }
+
+    CheckResult(skeleton.OfferService(), "duplicate OfferService");
+    if (WaitForServiceAvailability(instance_specifier, true) != offered_service_handles)
+    {
+        FailTest(kFailureMessagePrefix, " Duplicate OfferService changed the discovered service handles");
+    }
+
+    std::mutex discovery_mutex;
+    std::vector<std::pair<FindServiceHandle, ServiceHandleContainer<HandleType>>> discovery_results;
+    CheckRepeatedDiscovery(instance_specifier, offered_service_handles, discovery_mutex, discovery_results);
 
     {
         const auto find_result = ApiIdempotencyProxy::FindService(instance_specifier);
