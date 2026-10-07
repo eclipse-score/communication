@@ -10,17 +10,17 @@
 '
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
-@startuml safety_sentinel_mock_binding_design
-title "Mock Binding Static Architecture"
+@startuml safety_sentinel_mwcom_design
+title "mw_com_static_architecture"
 
-package "Mock Binding" as mock_binding <<component>> {
-  package "SkeletonAndServiceElements" as mock_binding_skeleton_and_service_elements <<unit>>  
+package "mw_com" as mw_com <<SEooC>>  {
+  component "Configuration" as mw_com_configuration <<unit>> 
+  component "Binding Factories" as mw_com_binding_factories <<unit>>
+  component "Tracing" as mw_com_tracing <<unit>> 
 
-  package "ProxyAndServiceElements" as mock_binding_proxy_and_service_elements <<unit>>  
-
-  package "GenericSkeletonAndServiceElements" as mock_binding_generic_skeleton_and_service_elements <<unit>>  
-
-  package "GenericProxyAndServiceElements" as mock_binding_generic_proxy_and_service_elements <<unit>>  
+  component "Binding Independent" as binding_independent <<component>>
+  component "Lola Binding" as lola_binding <<component>>
+  component "Mock Binding" as mock_binding <<component>>
 }
 
 @enduml
