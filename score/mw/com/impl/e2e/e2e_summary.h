@@ -19,20 +19,13 @@
 namespace score::mw::com::impl::e2e
 {
 
-/// \brief Derives the Summary from the three categorical results.
-///
-/// Precedence:
-///   1. Any error -> kError (wins over "all disabled").
-///   2. All disabled -> kDisabled.
-///   3. Some disabled -> kOkWithDisabledChecks.
-///   4. Otherwise -> kOk.
+// Combines the three results into one Summary.
+// Order: any error -> kError, all disabled -> kDisabled, some disabled -> kOkWithDisabledChecks, else kOk.
 Summary ComputeSummary(DataIntegrityStatus data_integrity,
                        SequenceStatus sequence,
                        HistoricalHealthStatus historical_health) noexcept;
 
-/// \brief Updates historical health, then derives Summary, returning the full E2EResult for one sample.
-///
-/// Attaching the result to a sample is the caller's responsibility.
+// Updates the historical health, computes the Summary and returns the full result for one sample.
 E2EResult BuildE2EResult(DataIntegrityStatus data_integrity,
                          SequenceStatus sequence,
                          const HealthTrackerConfiguration& health_config,
