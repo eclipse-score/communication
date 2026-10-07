@@ -20,37 +20,43 @@
 namespace score::mw::com::impl::e2e
 {
 
-/// \brief Configuration of the historical health tracker (shared per event/field).
+// Largest supported window size (one bit per sample).
+constexpr std::uint8_t kMaxHealthWindowSize{64U};
+
+// Looks at the last window_size samples. In kOk, error_threshold failed samples switch to kError.
+// In kError, recovery_threshold passed samples switch back to kOk.
 struct HealthTrackerConfiguration
 {
-    /// \brief Whether tracking is active.
     bool enabled;
 
-    /// \brief Error count at/above which the state latches to kError. Must be >= 1.
+    // Failed samples in the window needed to switch to kError. Must be >= 1.
     std::uint8_t error_threshold;
 
-    /// \brief Error count at/below which the state latches back to kOk. Must be < error_threshold.
+    // Passed samples in the window needed to switch back to kOk. Must be >= 1.
     std::uint8_t recovery_threshold;
+
+    // Number of most recent samples considered. Must be >= both thresholds and <= kMaxHealthWindowSize.
+    std::uint8_t window_size;
 };
 
-/// \brief Per-consumer state of the historical health tracker.
+// State kept per consumer.
 struct HealthContext
 {
-    /// \brief Saturating counter: +1 on a failed sample, -1 on a passed one.
-    std::uint8_t error_counter{0U};
+    // Bit 0 is the newest sample; a set bit marks a failed sample.
+    std::uint64_t failed_samples{0U};
 
-    /// \brief Latched hysteresis state.
+    // Number of valid samples in the window (<= window_size).
+    std::uint8_t samples_in_window{0U};
+
+    // false = kOk, true = kError.
     bool is_currently_error{false};
 };
 
-/// \brief Terminates if the configuration is inconsistent.
-///
-/// Call once at construction of the owning Proxy/Skeleton event; the configuration is assumed constant afterwards.
+// Terminates if the configuration is inconsistent. Call once at construction.
 void ValidateHealthTrackerConfiguration(const HealthTrackerConfiguration& config) noexcept;
 
-/// \brief Updates the hysteresis from one checked sample and returns the resulting status.
-///
-/// Call once per sample. The configuration must already have been validated.
+// Updates the state with one checked sample and returns the resulting status.
+// The window is cleared when the state flips.
 HistoricalHealthStatus UpdateHistoricalHealth(DataIntegrityStatus data_integrity,
                                               SequenceStatus sequence,
                                               const HealthTrackerConfiguration& config,

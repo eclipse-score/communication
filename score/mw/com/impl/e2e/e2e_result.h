@@ -18,42 +18,42 @@
 namespace score::mw::com::impl::e2e
 {
 
-/// \brief Result of a data-integrity check for one received sample.
+// Result of the data-integrity check for one sample.
 enum class DataIntegrityStatus : std::uint8_t
 {
-    kDisabled,
+    kDisabled = 0U,
     kOk,
     kError,
 };
 
-/// \brief Result of a sequence check for one received sample.
+// Result of the sequence check for one sample.
 enum class SequenceStatus : std::uint8_t
 {
-    kDisabled,
+    kDisabled = 0U,
     kOk,
     kOkGapWithinThreshold,
     kErrorRepeated,
     kErrorGapExceedsThreshold,
 };
 
-/// \brief Result of binding-independent historical E2E health tracking.
+// Result of the historical health tracking.
 enum class HistoricalHealthStatus : std::uint8_t
 {
-    kDisabled,
+    kDisabled = 0U,
     kOk,
     kError,
 };
 
-/// \brief Aggregated result for applications that do not need E2E detail.
+// Single combined result for applications that do not need the details.
 enum class Summary : std::uint8_t
 {
-    kDisabled,
+    kDisabled = 0U,
     kOk,
     kOkWithDisabledChecks,
     kError,
 };
 
-/// \brief Complete E2E result associated with one received sample.
+// All E2E results for one sample.
 struct E2EResult
 {
     DataIntegrityStatus data_integrity{DataIntegrityStatus::kDisabled};

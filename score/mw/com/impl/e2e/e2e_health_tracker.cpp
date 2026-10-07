@@ -14,7 +14,8 @@
 
 #include <score/assert.hpp>
 
-#include <limits>
+#include <bitset>
+#include <cstddef>
 
 namespace score::mw::com::impl::e2e
 {
@@ -23,8 +24,14 @@ void ValidateHealthTrackerConfiguration(const HealthTrackerConfiguration& config
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config.error_threshold >= 1U,
                                                       "error_threshold must be at least 1");
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config.recovery_threshold < config.error_threshold,
-                                                      "recovery_threshold must be strictly less than error_threshold");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config.recovery_threshold >= 1U,
+                                                      "recovery_threshold must be at least 1");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config.window_size >= config.error_threshold,
+                                                      "window_size must be at least error_threshold");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config.window_size >= config.recovery_threshold,
+                                                      "window_size must be at least recovery_threshold");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config.window_size <= kMaxHealthWindowSize,
+                                                      "window_size must not exceed kMaxHealthWindowSize");
 }
 
 HistoricalHealthStatus UpdateHistoricalHealth(const DataIntegrityStatus data_integrity,
@@ -42,25 +49,28 @@ HistoricalHealthStatus UpdateHistoricalHealth(const DataIntegrityStatus data_int
                                (sequence == SequenceStatus::kErrorGapExceedsThreshold)};
     const bool this_sample_failed{data_integrity_failed || sequence_failed};
 
-    if (this_sample_failed)
+    // Newest sample enters at bit 0; samples older than window_size are masked out.
+    context.failed_samples = (context.failed_samples << 1U) | (this_sample_failed ? 1U : 0U);
+    if (config.window_size < kMaxHealthWindowSize)
     {
-        if (context.error_counter < std::numeric_limits<std::uint8_t>::max())
-        {
-            ++context.error_counter;
-        }
+        context.failed_samples &= (std::uint64_t{1U} << config.window_size) - 1U;
     }
-    else if (context.error_counter > 0U)
+    if (context.samples_in_window < config.window_size)
     {
-        --context.error_counter;
+        ++context.samples_in_window;
     }
 
-    if (context.error_counter >= config.error_threshold)
+    const std::size_t failed_count{std::bitset<kMaxHealthWindowSize>{context.failed_samples}.count()};
+    const std::size_t passed_count{context.samples_in_window - failed_count};
+
+    const bool state_flips{context.is_currently_error ? (passed_count >= config.recovery_threshold)
+                                                      : (failed_count >= config.error_threshold)};
+    if (state_flips)
     {
-        context.is_currently_error = true;
-    }
-    else if (context.error_counter <= config.recovery_threshold)
-    {
-        context.is_currently_error = false;
+        context.is_currently_error = !context.is_currently_error;
+        // The samples which caused the flip must not influence the next decision.
+        context.failed_samples = 0U;
+        context.samples_in_window = 0U;
     }
 
     return context.is_currently_error ? HistoricalHealthStatus::kError : HistoricalHealthStatus::kOk;
