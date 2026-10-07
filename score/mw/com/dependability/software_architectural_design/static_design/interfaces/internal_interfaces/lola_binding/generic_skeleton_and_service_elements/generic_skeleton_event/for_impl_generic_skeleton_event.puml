@@ -1,0 +1,14 @@
+@startuml
+
+namespace mw_com {
+  namespace lola_binding {
+    interface "LolaSkeletonEventForImplSkeletonEventInterface" as lola_generic_skeleton_event_for_impl_generic_skeleton_event_interface <<interface>> {
+      Send()
+      Allocate()
+      PrepareOffer()
+      PrepareStopOffer()
+    }
+  }
+}
+
+@enduml

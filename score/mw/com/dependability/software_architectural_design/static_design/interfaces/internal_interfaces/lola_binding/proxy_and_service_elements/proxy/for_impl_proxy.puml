@@ -1,0 +1,13 @@
+@startuml
+
+namespace mw_com {
+  namespace lola_binding {
+    interface "LolaProxyForImplProxyInterface" as lola_proxy_for_impl_proxy_interface <<interface>> {
+      SetupMethods()
+      PrepareDeinitialize()
+      FinalizeDeinitialize()
+    }
+  }
+}
+
+@enduml
