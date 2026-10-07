@@ -67,38 +67,27 @@
   introduced — a developer receiving samples through a proxy event already has
   access to this API without any extra wiring.
 
-  ```mermaid
-  flowchart LR
-      A[Sender: encode E2E header\nCounter + CRC + Data ID] --> B[Transport / binding]
-      B --> C[Receiver: decode & verify E2E header]
-      C --> D1{DataIntegrityCheckEnabled?}
-      D1 -->|Yes| H1y["data_integrity:\nkOk / kError"]
-      D1 -->|No| H1n["data_integrity:\nkDisabled"]
-      C --> D2{SequenceCheckEnabled?}
-      D2 -->|Yes| H2y["sequence:\nkOk / kOkGapWithinThreshold /\nkErrorRepeated / kErrorGapExceedsThreshold"]
-      D2 -->|No| H2n["sequence:\nkDisabled"]
-      H1y --> D3{HistoricalHealthTrackingEnabled\nAND at least one check above enabled?}
-      H1n --> D3
-      H2y --> D3
-      H2n --> D3
-      D3 -->|Yes| E[Hysteresis check] --> G1["historical_health:\nkOk / kError"]
-      D3 -->|No| G2["historical_health:\nkDisabled"]
-      H1y --> I["SamplePtr::GetE2EResult()\nreturns E2EResult{data_integrity, sequence,\nhistorical_health, summary}"]
-      H1n --> I
-      H2y --> I
-      H2n --> I
-      G1 --> I
-      G2 --> I
-      I --> J["summary field\nreduced-view consumer\nchecks only this"]
-      I --> K["data_integrity / sequence / historical_health fields\ndetailed-view consumer inspects\nindividually for full diagnostics"]
-  ```
+  The E2E result evaluation flow (header verification, per-check status,
+  historical health and the reduced/detailed consumer views) is shown in
+  [e2e_result_evaluation.puml](e2e_result_evaluation.puml).
+
+  **Evaluation order:** `data_integrity` is evaluated first, then `sequence`.
+  If `data_integrity == kError`, the sequence check is bypassed (the counter
+  of a corrupted sample is not trustworthy) and the data-integrity error is
+  fed directly into historical-health tracking. `sequence` is then reported
+  as the existing `kDisabled` value, so
+  `E2EResult` always carries a concrete value. The failed sample is still
+  flagged through `data_integrity == kError` and `summary == kError`.
 
   ## 3. Design rationale
 
   The error classes are kept separate (`data_integrity`, `sequence`,
   `historical_health`) so each underlying concept stays easy to reason about;
   `summary` is provided purely as a simplification for callers that just want
-  to know whether a sample is "fine to use".
+  to know whether a sample is "fine to use". It is derived from all three
+  fields (`data_integrity`, `sequence` and `historical_health`): it is
+  `kError` if any enabled check failed, regardless of which field it came
+  from.
 
   This separation also matches the wire format itself, not just the API: not
   every profile sends a CRC and a sequence counter together — some profiles
@@ -121,7 +110,10 @@
 
   `DataIntegrityCheckEnabled` and `SequenceCheckEnabled` are independent
   knobs, not a combined one, since not every profile carries a CRC and a
-  counter together.
+  counter together. `DataIntegrityCheckEnabled` covers the CRC and the
+  Data ID (a profile configuration parameter that is part of the CRC
+  computation), so no separate Data ID knob exists; `SequenceCheckEnabled`
+  covers the counter only.
 
   **Defaults & misconfiguration:**
 
@@ -139,6 +131,7 @@
   | Case | `data_integrity` | `sequence` | `historical_health` | `summary` | Action |
   |---|---|---|---|---|---|
   | Both checks + historical health enabled | computed | computed | computed | `kOk` / `kError` | Accept only if `summary == kOk` |
+  | Both checks + historical health enabled, `data_integrity == kError` (bypass) | `kError` | `kDisabled` (skipped) | computed (error fed from `data_integrity` only) | `kError` | Reject — sequence check skipped |
   | Both checks enabled, historical health disabled | computed | computed | `kDisabled` | `kOkWithDisabledChecks` / `kError` | Decide from `data_integrity`/`sequence` |
   | Only data-integrity + historical health enabled | computed | `kDisabled` | computed (from `data_integrity` only) | `kOkWithDisabledChecks` / `kError` | Decide from `data_integrity`/`historical_health` |
   | Only data-integrity enabled | computed | `kDisabled` | `kDisabled` | `kOkWithDisabledChecks` / `kError` | Decide from `data_integrity` alone |
@@ -153,6 +146,14 @@ For the two "only one check enabled + historical health enabled" cases, the
 hysteresis counter behind `historical_health` is fed only by the pass/fail
 outcome of whichever single check is enabled — the other, disabled check
 contributes nothing to it.
+
+The sequence bypass applies only when `DataIntegrityCheckEnabled` is `true`
+and the check returns `kError`. If data integrity is disabled (e.g. a
+sequence-only deployment), the bypass is never taken and `sequence` is
+always evaluated. On the bypass path the hysteresis counter receives only the
+data-integrity error; no sequence outcome is fed to it. `data_integrity` and
+`sequence` are always returned in `E2EResult`, independent of whether
+historical health is enabled.
 
 The historical-health misconfiguration deliberately sets `historical_health
 = kError` to flag it, even though no underlying check ever fed the
@@ -173,12 +174,12 @@ without one, there never was a header. `summary == kDisabled` never means
   ```cpp
   enum class DataIntegrityStatus {
     kDisabled, // Check was disabled
-    kOk,       // Metadata and CRC match expectations — data is trustworthy
-    kError,    // Metadata or CRC differ from expectations — data is corrupted or forged
+    kOk,       // Metadata (incl. Data ID) and CRC match expectations — data is trustworthy
+    kError,    // Metadata (incl. Data ID) or CRC differ from expectations — data is corrupted or forged
 };
 
 enum class SequenceStatus {
-    kDisabled,                 // Check was disabled
+    kDisabled,                 // Check was disabled (also reported when skipped after data_integrity == kError)
     kOk,                       // In order, no loss (or this is the first sample)
     kOkGapWithinThreshold,     // Some loss, but within the allowed gap
     kErrorRepeated,            // Same counter as the previous sample

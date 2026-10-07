@@ -1,0 +1,89 @@
+@startuml e2e_result_evaluation
+title E2E result evaluation and consumer views
+
+skinparam shadowing false
+skinparam defaultFontSize 12
+
+start
+
+:Sender: encode E2E header
+(Counter + CRC + Data ID);
+:Transport / binding;
+:Receiver: decode & verify E2E header;
+
+if (DataIntegrityCheckEnabled?) then (yes)
+    :data_integrity:
+    kOk / kError;
+else (no)
+    :data_integrity:
+    kDisabled;
+endif
+
+if (DataIntegrityCheckEnabled\nAND data_integrity == kError?) then (yes)
+    :sequence:
+    kDisabled
+    (check skipped, no new enum value);
+    note right #Yellow
+        Bypass: the counter of a corrupted
+        sample is not trustworthy, so the
+        sequence check is skipped. The
+        data-integrity error is fed directly
+        into historical health.
+    end note
+else (no: kOk or check disabled)
+    if (SequenceCheckEnabled?) then (yes)
+        :sequence:
+        kOk / kOkGapWithinThreshold
+        / kErrorRepeated / kErrorGapExceedsThreshold;
+    else (no)
+        :sequence:
+        kDisabled;
+    endif
+endif
+
+if (HistoricalHealthTrackingEnabled\nAND at least one check enabled?) then (yes)
+    :Hysteresis check
+    (pass/fail of enabled checks only,
+    data-integrity error only on bypass);
+    :historical_health:
+    kOk / kError;
+else (no)
+    :historical_health:
+    kDisabled;
+endif
+
+:summary:
+kDisabled / kOk / kOkWithDisabledChecks / kError
+(aggregated from data_integrity, sequence,
+historical_health; disabled ones are skipped);
+note right #Yellow
+    No check needs to be enabled for the
+    summary to be computed. A kDisabled
+    field is skipped and never an error.
+    ----
+    kError: an enabled check failed
+    kOk: all checks enabled and passed
+    kOkWithDisabledChecks: enabled checks
+    passed, some checks disabled
+    kDisabled: nothing was checked
+end note
+
+:SamplePtr::GetE2EResult()
+returns E2EResult{data_integrity, sequence,
+historical_health, summary};
+note left #Yellow
+    Reduced view:
+    the consumer checks only the
+    summary field.
+end note
+note right #Yellow
+    Detailed view:
+    the consumer inspects data_integrity,
+    sequence and historical_health
+    individually for full diagnostics.
+    These fields are always returned,
+    independent of historical health.
+end note
+
+stop
+@enduml
