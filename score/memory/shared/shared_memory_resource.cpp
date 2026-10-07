@@ -127,7 +127,7 @@ class MakeSharedEnabler final : public SharedMemoryResource
 };
 
 template <typename... Args>
-static std::shared_ptr<SharedMemoryResource> CreateInstance(Args&&... args)
+std::shared_ptr<SharedMemoryResource> CreateInstance(Args&&... args)
 {
     return std::make_shared<MakeSharedEnabler>(std::forward<Args>(args)...);
 }
