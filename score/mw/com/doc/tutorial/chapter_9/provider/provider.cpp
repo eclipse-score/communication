@@ -206,8 +206,8 @@ int main()
         std::array<float, 4U> new_pressures{};
         for (std::size_t index = 0U; index < tires.size(); ++index)
         {
-            const auto& [field, field_name, tire] = tires[index];
-            new_pressures[index] = UpdateField(field, field_name, pressure_distribution(random_engine));
+            const auto& [field, field_name, tire] = tires.at(index);
+            new_pressures.at(index) = UpdateField(field, field_name, pressure_distribution(random_engine));
         }
 
         // Read the current threshold band and send a "tire_pressure_warning" event for every tire whose new pressure
@@ -220,8 +220,8 @@ int main()
 
         for (std::size_t index = 0U; index < tires.size(); ++index)
         {
-            const auto& [field, field_name, tire] = tires[index];
-            const float pressure = new_pressures[index];
+            const auto& [field, field_name, tire] = tires.at(index);
+            const float pressure = new_pressures.at(index);
             if ((pressure < thresholds.lower_threshold) || (pressure > thresholds.upper_threshold))
             {
                 std::cout << "  '" << field_name << "' (" << pressure

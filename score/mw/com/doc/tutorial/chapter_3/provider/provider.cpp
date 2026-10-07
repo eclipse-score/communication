@@ -117,7 +117,7 @@ int main()
         if ((next_instance_index < kInstanceSpecifierStrings.size()) &&
             (std::chrono::steady_clock::now() >= next_instance_time))
         {
-            const auto instance_specifier_string = kInstanceSpecifierStrings[next_instance_index];
+            const auto instance_specifier_string = kInstanceSpecifierStrings.at(next_instance_index);
             service_instances.push_back(CreateAndOfferInstance(instance_specifier_string));
             std::cout << "Created and offered HelloWorld service instance: " << instance_specifier_string << std::endl;
             ++next_instance_index;
@@ -129,7 +129,7 @@ int main()
         // Send a new event sample on every service instance that is already up and running.
         for (std::size_t i = 0; i < service_instances.size(); ++i)
         {
-            SendSample(service_instances[i], kInstanceSpecifierStrings[i], send_counter);
+            SendSample(service_instances.at(i), kInstanceSpecifierStrings.at(i), send_counter);
         }
         ++send_counter;
     }
