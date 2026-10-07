@@ -138,7 +138,7 @@ this chapter is more realistic:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 133-162
+   :lines: 137-166
    :caption: consumer/consumer.cpp
 
 
@@ -147,7 +147,7 @@ The concrete `SamplePtr` type is deduced from the proxy's event member (its publ
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 35-36
+   :lines: 37-38
    :caption: consumer/consumer.cpp
 
 
