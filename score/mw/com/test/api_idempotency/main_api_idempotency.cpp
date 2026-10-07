@@ -193,9 +193,7 @@ void CheckRepeatedDiscovery(
     }
 }
 
-}  // namespace
-
-static void RunApiIdempotencyTest()
+void RunApiIdempotencyTest()
 {
     const auto instance_specifier_result =
         InstanceSpecifier::Create(std::string{kApiIdempotencyInstanceSpecifierString});
@@ -308,6 +306,7 @@ static void RunApiIdempotencyTest()
     WaitForServiceAvailability(instance_specifier, false);
 }
 
+}  // namespace
 }  // namespace score::mw::com::test
 
 int main(int argc, const char** argv)
