@@ -76,6 +76,7 @@ std::int32_t use_const_safely(const std::int32_t* ptr)
 
 void safe_format_print(std::int32_t value)
 {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): printf usage is the clean pattern under test
     std::printf("value = %d\n", value);
 }
 

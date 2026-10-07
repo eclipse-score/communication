@@ -268,11 +268,13 @@ bool BidirectionalTransport::WaitForConnection(score::cpp::stop_token stop_token
 
         // On QNX, accepted sockets inherit SOCK_NONBLOCK from the listen socket.
         // Clear it so recv() blocks properly instead of returning EAGAIN immediately.
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): fcntl is a POSIX variadic function
         int flags = fcntl(client_sock.Get(), F_GETFL, 0);
         if (flags != -1)
         // COV_JUSTIFIED_START gateway-clear-nonblock-on-accepted-socket
         {
-            // NOLINTNEXTLINE(hicpp-signed-bitwise): fcntl flags are non-negative POSIX constants, API is int-based
+            // fcntl is a POSIX variadic function with int-based flags that are non-negative constants.
+            // NOLINTNEXTLINE(hicpp-signed-bitwise,cppcoreguidelines-pro-type-vararg)
             fcntl(client_sock.Get(), F_SETFL, flags & ~O_NONBLOCK);
         }
         // COV_JUSTIFIED_STOP
