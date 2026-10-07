@@ -830,8 +830,8 @@ section "LoLa" {
                 failureeffect = "Data is manipulated from different processes because they think its not owned. Which could cause garbage data and thus harm any safety goal."
                 version = 1
                 safety = ScoreReq.Asil.B
-                rationale = "Same as [ISSUE:FailureMode DoesNotFreeResourcesOnDestruction] since a decrease of the ref-count has the same issues as an increas."
-                // potentialcause = "Same as [ISSUE:Failuremode DoesNotFreeResourcesOnDestruction]"
+                rationale = "Same as [ISSUE:FailureMode DoesNotFreeResourcesOnDestruction] since a decrease of the ref-count has the same issues as an increase."
+                interface = "score.mw.com.SampleAllocateePtr<SampleType>"
             }
 
             // ID: 6166382
