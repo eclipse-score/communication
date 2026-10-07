@@ -225,7 +225,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "We ensure with our preventive measure that wrong alignment could happen."
-                // potentialcause = "This issue can only happen if the alignment calculation within the SharedMemoryResource fails."
+                interface = "score.mw.com.SkeletonEvent.Allocate"
             }
 
             // ID: 6164821
