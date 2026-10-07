@@ -164,7 +164,7 @@ auto ParseAsilLevel(fbs::AsilLevel asil_level) -> QualityType
         default:  // LCOV_EXCL_LINE defensive programming
             score::mw::log::LogFatal("lola") << "Invalid ASIL level. Terminating.";  // LCOV_EXCL_LINE
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);                              // LCOV_EXCL_LINE
-            return QualityType::kInvalid;                                           // LCOV_EXCL_LINE
+            return QualityType::kInvalid;                                            // LCOV_EXCL_LINE
     }
 }
 
@@ -179,12 +179,12 @@ auto ParseShmSizeCalcMode(fbs::ShmSizeCalcMode mode) -> ShmSizeCalculationMode
         default:  // LCOV_EXCL_LINE defensive programming
             score::mw::log::LogFatal("lola") << "Unknown shm-size-calc-mode. Terminating.";  // LCOV_EXCL_LINE
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);                                      // LCOV_EXCL_LINE
-            return ShmSizeCalculationMode::kSimulation;                                     // LCOV_EXCL_LINE
+            return ShmSizeCalculationMode::kSimulation;                                      // LCOV_EXCL_LINE
     }
 }
 
 auto ParseAllowedUser(const ::flatbuffers::Vector<std::uint32_t>* qm_ids,
-                     const ::flatbuffers::Vector<std::uint32_t>* b_ids)
+                      const ::flatbuffers::Vector<std::uint32_t>* b_ids)
     -> std::unordered_map<QualityType, std::vector<uid_t>>
 {
     std::unordered_map<QualityType, std::vector<uid_t>> user_map{};
@@ -226,8 +226,8 @@ auto ParseAllowedProvider(const fbs::AllowedProvider* allowed_provider)
     return ParseAllowedUser(allowed_provider->QM(), allowed_provider->B());
 }
 
-auto ParseLolaEventInstanceDeployment(const fbs::ServiceInstanceBinding& deployment, LolaServiceInstanceDeployment& service)
-    -> void
+auto ParseLolaEventInstanceDeployment(const fbs::ServiceInstanceBinding& deployment,
+                                      LolaServiceInstanceDeployment& service) -> void
 {
     const auto* events = deployment.events();
     if (events == nullptr)
@@ -256,8 +256,8 @@ auto ParseLolaEventInstanceDeployment(const fbs::ServiceInstanceBinding& deploym
     }
 }
 
-auto ParseLolaFieldInstanceDeployment(const fbs::ServiceInstanceBinding& deployment, LolaServiceInstanceDeployment& service)
-    -> void
+auto ParseLolaFieldInstanceDeployment(const fbs::ServiceInstanceBinding& deployment,
+                                      LolaServiceInstanceDeployment& service) -> void
 {
     const auto* fields = deployment.fields();
     if (fields == nullptr)
@@ -276,20 +276,19 @@ auto ParseLolaFieldInstanceDeployment(const fbs::ServiceInstanceBinding& deploym
         const auto number_of_tracing_slots =
             NarrowOrFatal<NumberOfIpcTracingSlots_t>(field->numberOfIpcTracingSlots(), "numberOfIpcTracingSlots");
 
-        auto field_deployment =
-            LolaFieldInstanceDeployment(LolaEventInstanceDeployment(number_of_sample_slots,
-                                                                    max_subscribers,
-                                                                    static_cast<std::uint8_t>(1U),
-                                                                    field->enforceMaxSamples(),
-                                                                    number_of_tracing_slots),
-                                        field->useGetIfAvailable(),
-                                        field->useSetIfAvailable());
+        auto field_deployment = LolaFieldInstanceDeployment(LolaEventInstanceDeployment(number_of_sample_slots,
+                                                                                        max_subscribers,
+                                                                                        static_cast<std::uint8_t>(1U),
+                                                                                        field->enforceMaxSamples(),
+                                                                                        number_of_tracing_slots),
+                                                            field->useGetIfAvailable(),
+                                                            field->useSetIfAvailable());
         EmplaceOrFatal(service.fields_, std::move(field_name), field_deployment, "A field instance");
     }
 }
 
-auto ParseLolaMethodInstanceDeployment(const fbs::ServiceInstanceBinding& deployment, LolaServiceInstanceDeployment& service)
-    -> void
+auto ParseLolaMethodInstanceDeployment(const fbs::ServiceInstanceBinding& deployment,
+                                       LolaServiceInstanceDeployment& service) -> void
 {
     const auto* methods = deployment.methods();
     if (methods == nullptr)
@@ -367,8 +366,8 @@ auto ParseLolaServiceInstanceDeployment(const fbs::ServiceInstanceBinding& deplo
     service.control_asil_b_memory_size_ = ToOptional(deployment.control_asil_b_shm_size());
     service.control_qm_memory_size_ = ToOptional(deployment.control_qm_shm_size());
 
-    const auto instance_id = NarrowOrFatal<LolaServiceInstanceId::InstanceId>(
-        ToOptional(deployment.instanceId()), "instanceId");
+    const auto instance_id =
+        NarrowOrFatal<LolaServiceInstanceId::InstanceId>(ToOptional(deployment.instanceId()), "instanceId");
     if (instance_id.has_value())
     {
         service.instance_id_ = LolaServiceInstanceId{instance_id.value()};
@@ -429,8 +428,10 @@ auto ParseServiceInstanceDeployments(const fbs::ServiceInstance& service_instanc
             constexpr auto EVENT = ServiceElementType::EVENT;
             constexpr auto FIELD = ServiceElementType::FIELD;
             const auto service_name = service.ToString();
-            ParseServiceElementTracingEnabled(*deployment, tracing_configuration, service_name, instance_specifier, EVENT);
-            ParseServiceElementTracingEnabled(*deployment, tracing_configuration, service_name, instance_specifier, FIELD);
+            ParseServiceElementTracingEnabled(
+                *deployment, tracing_configuration, service_name, instance_specifier, EVENT);
+            ParseServiceElementTracingEnabled(
+                *deployment, tracing_configuration, service_name, instance_specifier, FIELD);
         }
     }
     return deployments;
@@ -451,8 +452,8 @@ auto ParseServiceInstances(const fbs::Configuration& configuration, TracingConfi
         const auto& version = RequireNotNull(service_instance->version(), "version");
         auto service_identifier = ParseServiceTypeIdentifier(service_type_name, version);
 
-        auto instance_deployments =
-            ParseServiceInstanceDeployments(*service_instance, tracing_configuration, service_identifier, instance_specifier);
+        auto instance_deployments = ParseServiceInstanceDeployments(
+            *service_instance, tracing_configuration, service_identifier, instance_specifier);
         ValidateSingleDeployment(instance_deployments, service_identifier);
 
         EmplaceOrFatal(service_instance_deployments,
@@ -513,7 +514,8 @@ void ParseLolaMethodTypeDeployments(const fbs::ServiceTypeBinding& binding, Lola
 
 auto ParseLoLaServiceTypeDeployments(const fbs::ServiceTypeBinding& binding) -> LolaServiceTypeDeployment
 {
-    LolaServiceTypeDeployment lola{NarrowOrFatal<LolaServiceId>(RequireValue(binding.serviceId(), "serviceId"), "serviceId")};
+    LolaServiceTypeDeployment lola{
+        NarrowOrFatal<LolaServiceId>(RequireValue(binding.serviceId(), "serviceId"), "serviceId")};
     ParseLolaEventTypeDeployments(binding, lola);
     ParseLolaFieldTypeDeployments(binding, lola);
     ParseLolaMethodTypeDeployments(binding, lola);
@@ -532,9 +534,10 @@ auto ParseServiceTypeDeployment(const fbs::ServiceType& service_type) -> Service
             case fbs::Binding::SHM:
                 return ServiceTypeDeployment{ParseLoLaServiceTypeDeployments(*binding)};
             default:  // LCOV_EXCL_LINE defensive programming
-                score::mw::log::LogFatal("lola") << "No unknown binding provided. Required argument.";  // LCOV_EXCL_LINE
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);                                             // LCOV_EXCL_LINE
-                break;                                                                                  // LCOV_EXCL_LINE
+                score::mw::log::LogFatal("lola")
+                    << "No unknown binding provided. Required argument.";  // LCOV_EXCL_LINE
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);                // LCOV_EXCL_LINE
+                break;                                                     // LCOV_EXCL_LINE
         }
     }
     return ServiceTypeDeployment{score::cpp::blank{}};
@@ -629,9 +632,9 @@ Configuration ConfigurationFlatbufferParsingStrategy::Parse(const std::string_vi
     auto buffer_result = score::flatbuffers::LoadBuffer(score::filesystem::Path{owned_path});
     if (!buffer_result.has_value())
     {
-        ::score::mw::log::LogFatal("lola") << "Parsing config file" << path
-                                           << "failed with error:" << buffer_result.error().ToString()
-                                           << " . Terminating.";
+        ::score::mw::log::LogFatal("lola")
+            << "Parsing config file" << path << "failed with error:" << buffer_result.error().ToString()
+            << " . Terminating.";
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     const auto& buffer = buffer_result.value();
@@ -656,9 +659,9 @@ Configuration ConfigurationFlatbufferParsingStrategy::Parse(score::cpp::span<con
     auto global_configuration = ParseGlobalProperties(*config);
 
     return Configuration{std::move(service_type_deployments),
-                        std::move(service_instance_deployments),
-                        std::move(global_configuration),
-                        std::move(tracing_configuration)};
+                         std::move(service_instance_deployments),
+                         std::move(global_configuration),
+                         std::move(tracing_configuration)};
 }
 
 }  // namespace score::mw::com::impl::configuration
