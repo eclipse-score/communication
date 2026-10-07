@@ -138,7 +138,7 @@ sends strictly cyclically. Instead, it draws a random delay between `kMinSendDel
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 33-116
+   :lines: 33-114
    :caption: provider/provider.cpp
 
 
