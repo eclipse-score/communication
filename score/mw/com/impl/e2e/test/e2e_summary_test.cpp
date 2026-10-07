@@ -22,12 +22,12 @@ namespace
 constexpr HealthTrackerConfiguration kEnabledConfiguration{/* enabled */ true,
                                                            /* error_threshold */ 3U,
                                                            /* recovery_threshold */ 5U,
-                                                           /* window_size */ 8U};
+                                                           /* window_size */ 7U};
 
 constexpr HealthTrackerConfiguration kDisabledConfiguration{/* enabled */ false,
                                                             /* error_threshold */ 3U,
                                                             /* recovery_threshold */ 5U,
-                                                            /* window_size */ 8U};
+                                                            /* window_size */ 7U};
 
 // --- ComputeSummary --------------------------------------------------------
 
@@ -177,11 +177,11 @@ TEST(E2eSummaryTest, HistoricalHealthErrorWithOtherFieldsDisabledReportsErrorNot
 
 TEST(BuildE2EResultTest, BuildE2EResultPopulatesAllFourFieldsConsistently)
 {
-    // Given a fresh health context and an enabled health tracker configuration
-    HealthContext context{};
+    // Given a fresh health tracker with an enabled configuration
+    HealthTracker tracker{kEnabledConfiguration};
 
     // When building the E2E result from passing data integrity and sequence statuses
-    const auto result = BuildE2EResult(DataIntegrityStatus::kOk, SequenceStatus::kOk, kEnabledConfiguration, context);
+    const auto result = BuildE2EResult(DataIntegrityStatus::kOk, SequenceStatus::kOk, tracker);
 
     // Then all four fields of the result are populated consistently
     EXPECT_EQ(result.data_integrity, DataIntegrityStatus::kOk);
@@ -192,30 +192,33 @@ TEST(BuildE2EResultTest, BuildE2EResultPopulatesAllFourFieldsConsistently)
 
 TEST(BuildE2EResultTest, BuildE2EResultWithDisabledHealthTrackerStillComputesSummary)
 {
-    // Given a fresh health context and a disabled health tracker configuration
-    HealthContext context{};
+    // Given a fresh health tracker with a disabled configuration
+    HealthTracker tracker{kDisabledConfiguration};
 
     // When building the E2E result from passing data integrity and sequence statuses
-    const auto result = BuildE2EResult(DataIntegrityStatus::kOk, SequenceStatus::kOk, kDisabledConfiguration, context);
+    const auto result = BuildE2EResult(DataIntegrityStatus::kOk, SequenceStatus::kOk, tracker);
 
     // Then historical health is kDisabled and the summary is still computed as kOkWithDisabledChecks
     EXPECT_EQ(result.historical_health, HistoricalHealthStatus::kDisabled);
     EXPECT_EQ(result.summary, Summary::kOkWithDisabledChecks);
 }
 
-TEST(BuildE2EResultTest, BuildE2EResultWithFailingSampleReportsErrorAndAdvancesHealthContext)
+TEST(BuildE2EResultTest, BuildE2EResultWithFailingSampleReportsErrorAndAdvancesHealthTracker)
 {
-    // Given a fresh health context and an enabled health tracker configuration
-    HealthContext context{};
+    // Given a fresh health tracker with an enabled configuration
+    HealthTracker tracker{kEnabledConfiguration};
 
     // When building the E2E result from a failing data integrity status
-    const auto result =
-        BuildE2EResult(DataIntegrityStatus::kError, SequenceStatus::kOk, kEnabledConfiguration, context);
+    const auto first_result = BuildE2EResult(DataIntegrityStatus::kError, SequenceStatus::kOk, tracker);
 
-    // Then the summary is kError and the failed sample is recorded in the health context window
-    EXPECT_EQ(result.summary, Summary::kError);
-    EXPECT_EQ(context.samples_in_window, 1U);
-    EXPECT_EQ(context.failed_samples, 1U);
+    // Then the summary is kError although the historical health is still below the error threshold
+    EXPECT_EQ(first_result.summary, Summary::kError);
+    EXPECT_EQ(first_result.historical_health, HistoricalHealthStatus::kOk);
+
+    // And once the error threshold is reached the historical health reports kError as well
+    BuildE2EResult(DataIntegrityStatus::kError, SequenceStatus::kOk, tracker);
+    const auto third_result = BuildE2EResult(DataIntegrityStatus::kError, SequenceStatus::kOk, tracker);
+    EXPECT_EQ(third_result.historical_health, HistoricalHealthStatus::kError);
 }
 
 }  // namespace
