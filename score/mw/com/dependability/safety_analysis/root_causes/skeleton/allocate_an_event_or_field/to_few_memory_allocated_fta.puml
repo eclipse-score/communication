@@ -42,7 +42,7 @@ $OrGate("Gate5", "Event1")
 $RootCause("Allocate claims too few memory", "AllocateClaimsTooFewMemory", "Gate5")
 $IntermediateEvent("Configuration broken", "Event9", "Gate5")
 $TransferInGate("Transfer2", "Event9")
-$RootCause("Necessary size calculation retreives wrong value", "NecessarySizeCalculationRetreivesWrongValue", "Gate5")
+$RootCause("Necessary size calculation retreives wrong value", "NecessarySizeCalculationRetrievesWrongValue", "Gate5")
 $RootCause("Shared memory truncation fails", "SharedMemoryTruncationFails", "Gate5")
 
 @enduml
