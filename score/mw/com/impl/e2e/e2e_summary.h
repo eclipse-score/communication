@@ -28,8 +28,7 @@ Summary ComputeSummary(DataIntegrityStatus data_integrity,
 // Updates the historical health, computes the Summary and returns the full result for one sample.
 E2EResult BuildE2EResult(DataIntegrityStatus data_integrity,
                          SequenceStatus sequence,
-                         const HealthTrackerConfiguration& health_config,
-                         HealthContext& health_context) noexcept;
+                         HealthTracker& health_tracker) noexcept;
 
 }  // namespace score::mw::com::impl::e2e
 

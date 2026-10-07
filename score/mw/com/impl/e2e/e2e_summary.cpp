@@ -48,11 +48,9 @@ Summary ComputeSummary(const DataIntegrityStatus data_integrity,
 
 E2EResult BuildE2EResult(const DataIntegrityStatus data_integrity,
                          const SequenceStatus sequence,
-                         const HealthTrackerConfiguration& health_config,
-                         HealthContext& health_context) noexcept
+                         HealthTracker& health_tracker) noexcept
 {
-    const HistoricalHealthStatus historical_health{
-        UpdateHistoricalHealth(data_integrity, sequence, health_config, health_context)};
+    const HistoricalHealthStatus historical_health{health_tracker.Update(data_integrity, sequence)};
     const Summary summary{ComputeSummary(data_integrity, sequence, historical_health)};
 
     return E2EResult{data_integrity, sequence, historical_health, summary};
