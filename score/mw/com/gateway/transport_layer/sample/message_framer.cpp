@@ -26,48 +26,43 @@ namespace
 using score::os::Socket;
 
 /// \brief Helper function to send the buffer's data over a socket.
-int SendAll(std::int32_t socket_fd, const void* data, std::size_t length)
+int SendAll(std::int32_t socket_fd, score::cpp::span<const std::uint8_t> data)
 {
-    const auto* ptr = static_cast<const char*>(data);
-    while (length > 0)
+    while (!data.empty())
     {
-        auto result = Socket::instance().sendto(socket_fd, ptr, length, Socket::MessageFlag::kNone, nullptr, 0);
+        auto result =
+            Socket::instance().sendto(socket_fd, data.data(), data.size(), Socket::MessageFlag::kNone, nullptr, 0);
         if (!result.has_value())
         {
             return -1;
         }
-        const auto sent = static_cast<std::size_t>(result.value());
-        ptr += sent;
-        length -= sent;
+        data = data.subspan(static_cast<std::size_t>(result.value()));
     }
     return 0;
 }
 
 /// \brief Helper function to receive data from a socket until the expected amount of bytes is received or an error
 /// occurs.
-ssize_t ReceiveAll(std::int32_t socket_fd, void* buffer, std::size_t length)
+ssize_t ReceiveAll(std::int32_t socket_fd, score::cpp::span<std::uint8_t> buffer)
 {
-    auto* ptr = static_cast<char*>(buffer);
-    const auto original_length = length;
+    const auto original_length = buffer.size();
     const score::os::Socket::MessageFlag flags{};
-    while (length > 0)
+    while (!buffer.empty())
     {
-        auto result = Socket::instance().recv(socket_fd, ptr, length, flags);
+        auto result = Socket::instance().recv(socket_fd, buffer.data(), buffer.size(), flags);
         if (!result.has_value())
         {
             ::score::mw::log::LogError() << "ReceiveAll: recv error: " << result.error().ToString()
-                                         << " fd=" << socket_fd << " remaining=" << length;
+                                         << " fd=" << socket_fd << " remaining=" << buffer.size();
             return -1;
         }
         if (result.value() == 0)
         {
             ::score::mw::log::LogWarn() << "ReceiveAll: peer closed connection, fd=" << socket_fd
-                                        << " remaining=" << length << " of " << original_length;
+                                        << " remaining=" << buffer.size() << " of " << original_length;
             return 0;
         }
-        const auto received = static_cast<std::size_t>(result.value());
-        ptr += received;
-        length -= received;
+        buffer = buffer.subspan(static_cast<std::size_t>(result.value()));
     }
     return static_cast<ssize_t>(original_length);
 }
@@ -112,12 +107,12 @@ score::Result<void> MessageFramer::SendMessage(std::int32_t socket_fd, const Tra
     std::array<std::uint8_t, MessageHeader::kWireSize> header_buf{};
     header.SerializeToBuffer(header_buf.data());
 
-    if (SendAll(socket_fd, &header_buf, MessageHeader::kWireSize) != 0)
+    if (SendAll(socket_fd, header_buf) != 0)
     {
         return score::MakeUnexpected(TransportErrorc::kSendFailure);
     }
 
-    if (SendAll(socket_fd, send_buffer_.data(), payload_size) != 0)
+    if (SendAll(socket_fd, score::cpp::span<const std::uint8_t>{send_buffer_}.first(payload_size)) != 0)
     {
         return score::MakeUnexpected(TransportErrorc::kSendFailure);
     }
@@ -128,7 +123,7 @@ score::Result<void> MessageFramer::SendMessage(std::int32_t socket_fd, const Tra
 std::unique_ptr<TransportMessage> MessageFramer::ReceiveMessage(std::int32_t socket_fd)
 {
     std::array<std::uint8_t, MessageHeader::kWireSize> header_buf{};
-    if (ReceiveAll(socket_fd, &header_buf, MessageHeader::kWireSize) <= 0)
+    if (ReceiveAll(socket_fd, header_buf) <= 0)
     {
         return nullptr;
     }
@@ -145,7 +140,8 @@ std::unique_ptr<TransportMessage> MessageFramer::ReceiveMessage(std::int32_t soc
 
     if (header.payload_size > 0U)
     {
-        const auto bytes_received = ReceiveAll(socket_fd, receive_buffer_.data(), header.payload_size);
+        const auto bytes_received =
+            ReceiveAll(socket_fd, score::cpp::span<std::uint8_t>{receive_buffer_}.first(header.payload_size));
         if (bytes_received <= 0)
         {
             return nullptr;
