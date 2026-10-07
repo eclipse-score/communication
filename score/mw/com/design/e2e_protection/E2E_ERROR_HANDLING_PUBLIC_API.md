@@ -67,31 +67,9 @@
   introduced — a developer receiving samples through a proxy event already has
   access to this API without any extra wiring.
 
-  ```mermaid
-  flowchart LR
-      A[Sender: encode E2E header\nCounter + CRC + Data ID] --> B[Transport / binding]
-      B --> C[Receiver: decode & verify E2E header]
-      C --> D1{DataIntegrityCheckEnabled?}
-      D1 -->|Yes| H1y["data_integrity:\nkOk / kError"]
-      D1 -->|No| H1n["data_integrity:\nkDisabled"]
-      C --> D2{SequenceCheckEnabled?}
-      D2 -->|Yes| H2y["sequence:\nkOk / kOkGapWithinThreshold /\nkErrorRepeated / kErrorGapExceedsThreshold"]
-      D2 -->|No| H2n["sequence:\nkDisabled"]
-      H1y --> D3{HistoricalHealthTrackingEnabled\nAND at least one check above enabled?}
-      H1n --> D3
-      H2y --> D3
-      H2n --> D3
-      D3 -->|Yes| E[Hysteresis check] --> G1["historical_health:\nkOk / kError"]
-      D3 -->|No| G2["historical_health:\nkDisabled"]
-      H1y --> I["SamplePtr::GetE2EResult()\nreturns E2EResult{data_integrity, sequence,\nhistorical_health, summary}"]
-      H1n --> I
-      H2y --> I
-      H2n --> I
-      G1 --> I
-      G2 --> I
-      I --> J["summary field\nreduced-view consumer\nchecks only this"]
-      I --> K["data_integrity / sequence / historical_health fields\ndetailed-view consumer inspects\nindividually for full diagnostics"]
-  ```
+  The E2E result evaluation flow (header verification, per-check status,
+  historical health and the reduced/detailed consumer views) is shown in
+  [e2e_result_evaluation.puml](e2e_result_evaluation.puml).
 
   ## 3. Design rationale
 
@@ -121,7 +99,10 @@
 
   `DataIntegrityCheckEnabled` and `SequenceCheckEnabled` are independent
   knobs, not a combined one, since not every profile carries a CRC and a
-  counter together.
+  counter together. `DataIntegrityCheckEnabled` covers the CRC and the
+  Data ID (a profile configuration parameter that is part of the CRC
+  computation), so no separate Data ID knob exists; `SequenceCheckEnabled`
+  covers the counter only.
 
   **Defaults & misconfiguration:**
 
@@ -173,8 +154,8 @@ without one, there never was a header. `summary == kDisabled` never means
   ```cpp
   enum class DataIntegrityStatus {
     kDisabled, // Check was disabled
-    kOk,       // Metadata and CRC match expectations — data is trustworthy
-    kError,    // Metadata or CRC differ from expectations — data is corrupted or forged
+    kOk,       // Metadata (incl. Data ID) and CRC match expectations — data is trustworthy
+    kError,    // Metadata (incl. Data ID) or CRC differ from expectations — data is corrupted or forged
 };
 
 enum class SequenceStatus {
