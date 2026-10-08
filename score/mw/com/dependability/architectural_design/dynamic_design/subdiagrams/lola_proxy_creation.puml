@@ -1,0 +1,61 @@
+mw_com_binding_factories -> lola_proxy_and_service_elements: CreateLolaProxy()
+activate lola_proxy_and_service_elements
+
+lola_proxy_and_service_elements -> memory_shared: OpenLockFile(service_instance_usage_marker_file_path)
+activate memory_shared
+
+memory_shared --> lola_proxy_and_service_elements: Result<LockFile>(service_instance_usage_marker_file)
+deactivate memory_shared
+
+lola_proxy_and_service_elements -> memory_shared: ShareFlockMarkerFile(service_instance_usage_marker_file)
+activate memory_shared
+
+memory_shared --> lola_proxy_and_service_elements: bool
+deactivate memory_shared
+
+alt Could not share flock marker file
+lola_proxy_and_service_elements -> mw_com_binding_factories: Return nullptr
+end
+
+lola_proxy_and_service_elements -> event_data_control: OpenQmServiceDataControlInShm()
+activate event_data_control
+
+event_data_control -> memory_shared: OpenShm()
+activate memory_shared
+
+memory_shared --> event_data_control: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+event_data_control --> lola_proxy_and_service_elements
+deactivate event_data_control
+
+alt Process is AsilB
+
+lola_proxy_and_service_elements -> event_data_control: OpenAsilBServiceDataControlInShm()
+activate event_data_control
+
+event_data_control -> memory_shared: OpenShm()
+activate memory_shared
+
+memory_shared --> event_data_control: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+event_data_control --> lola_proxy_and_service_elements
+deactivate event_data_control
+
+end
+
+lola_proxy_and_service_elements -> event_data_control: OpenServiceDataStorageInShm()
+activate event_data_control
+
+event_data_control -> memory_shared: OpenShm()
+activate memory_shared
+
+memory_shared --> event_data_control: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+event_data_control --> lola_proxy_and_service_elements
+deactivate event_data_control
+
+mw_com_binding_factories <-- lola_proxy_and_service_elements: return: unique_ptr<lola::Proxy>
+deactivate lola_proxy_and_service_elements
