@@ -13,6 +13,7 @@
 package Communication
 
 import ScoreReq
+import mw_com_fta
 
 section "com" {
 
@@ -1099,6 +1100,14 @@ section "com" {
             version = 1
         }
 
+        // TODO This should be moved to the requirements of lib shared memory
+        ScoreReq.CompReq SharedMemoryShallBeAllocatedAccordingToCpuArchitectureAlignment {
+            description = '''SharedMemoryResource shall allocate memory in accordance to the alignment of that CPU architecture.'''
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, mw_com_fta.RootCauseWronglyAlignedMemoryAllocated@1]
+            version = 1
+        }
+
         /* broken_link_c/issue/5899175 */
         ScoreReq.CompReq SharedMemorySegmentsShallNotBeMappedToAFixedVirtualAddress {
             description = '''Shared Memory segments shall not be mapped to a fixed virtual address.'''
@@ -1120,6 +1129,45 @@ section "com" {
             description = '''It shall be configurable which user ids have access to data and control shared memory segments.'''
             safety = ScoreReq.Asil.B
             derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            version = 1
+        }
+
+        /* broken_link_c/issue/6225206 */
+        ScoreReq.CompReq SlotAllocationAndSynchronizationShallBeDoneAccordingToAlgorithm {
+            description = '''Slot allocation algorithm and its synchronization shall follow the appended Flowcharts, which formally describe the algorithm:
+                             1. to allocate a slot from the provider side in a pure ASIL-B setup (ASIL-B provider, ASIL-B consumer)
+                             2. to allocate a slot from the provider side in a mixed critically setup (ASIL-B provider, ASIL-B consumer and ASIL-QM consumer)
+                             3. to access/block samples for Read-access by the consumer.'''
+            note = '''Flow charts can be found here: score/mw/com/impl/dependability/proxy_and_service_elements/get_new_samples_activity.puml,
+                score/mw/com/impl/bindings/lola/dependability/event_data_control/lola_event_allocate_activity.puml,
+                score/mw/com/impl/bindings/lola/dependability/event_data_control/lola_event_allocate_mixed_critical_activity.puml,
+                score/mw/com/impl/bindings/lola/dependability/event_data_control/lola_coherent_set_writing_activity.puml,
+                score/mw/com/impl/bindings/lola/dependability/event_data_control/lola_reference_next_event_activity.puml'''
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1,
+                // This root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
+                mw_com_fta.ChangingStateFails@1,
+                // This root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
+                mw_com_fta.IncreasingDecreasingRefCountFails@1,
+                // This root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
+                mw_com_fta.SlotReferenceBrokenEGNonValid@1
+            ]
+            version = 1
+        }
+
+        /* broken_link_c/issue/6367235 */
+        ScoreReq.CompReq SampleAllocateePtrAndSamplePtrShallReferenceValidAndCorrectSlot {
+            description = '''A valid SampleAllocateePtr and SamplePtr shall reference a valid and correct slot.'''
+            safety = ScoreReq.Asil.B
+            derived_from = [
+                Communication.FEAT_SupportForTimeBasedArchitecture@1,
+                // This root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
+                mw_com_fta.ChangingStateFails@1,
+                // This root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
+                mw_com_fta.IncreasingDecreasingRefCountFails@1,
+                // This root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
+                mw_com_fta.SlotReferenceBrokenEGNonValid@1
+            ]
             version = 1
         }
 
