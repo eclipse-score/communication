@@ -25,32 +25,74 @@ component "Message Passing" as dependable_element_message_passing <<SEooC>> {
 
     component "Message Passing" as component_message_passing <<component>> {
 
-        component "ClientConnection" as client_connection <<unit>>
+        component "Client" as client <<component>> {
+            component "ClientConnection" as client_connection <<unit>>
+            component "Unix Domain Client Factory" as unix_domain_client_factory <<unit>>
+            component "QNX Dispatch Client Factory" as qnx_dispatch_client_factory <<unit>>
+        }
 
-        component "ServerConnection" as server_connection <<unit>>
+        component "Engine" as engine <<component>> {
+            component "Unix Domain Engine" as unix_domain_engine <<unit>>
+            component "QNX Dispatch Engine" as qnx_dispatch_engine <<unit>>
+        }
 
-        component "Dispatch" as dispatch <<component>> {
-            component "QNX Dispatch" as qnx_dispatch <<unit>>
-            component "Unix Domain" as unix_domain <<unit>>
+        component "Server" as server <<component>> {
+            component "Unix Domain Server" as unix_domain_server <<unit>>
+            component "QNX Dispatch Server" as qnx_dispatch_server <<unit>>
+            component "Unix Domain Server Factory" as unix_domain_server_factory <<unit>>
+            component "QNX Dispatch Server Factory" as qnx_dispatch_server_factory <<unit>>
         }
 
         interface "ISharedResourceEngine" as ISharedResourceEngine
-        note right of ISharedResourceEngine : Abstracts the engine for ClientConnection only;\nserver-side units use their own concrete engine directly.
+        interface "IUnixDomainServerSupport" as IUnixDomainServerSupport
+        interface "IQnxDispatchServerSupport" as IQnxDispatchServerSupport
+        note right of ISharedResourceEngine : Abstracts the engine for ClientConnection only;\nthe server units use their own platform engine directly.
+        note right of IQnxDispatchServerSupport : Informative: the engine services used by the\nserver units of the same platform. Not a real C++ interface.
 
-        client_connection -( ISharedResourceEngine
-        qnx_dispatch )- ISharedResourceEngine
-        unix_domain )- ISharedResourceEngine
+        client_connection -d-( ISharedResourceEngine
+        unix_domain_engine )-u- ISharedResourceEngine
+        qnx_dispatch_engine )-u- ISharedResourceEngine
+
+        unix_domain_server -u-( IUnixDomainServerSupport
+        unix_domain_engine )-d- IUnixDomainServerSupport
+
+        qnx_dispatch_server -u-( IQnxDispatchServerSupport
+        qnx_dispatch_engine )-d- IQnxDispatchServerSupport
+
+        qnx_dispatch_client_factory -l[hidden]- unix_domain_client_factory
+        unix_domain_client_factory -l[hidden]- client_connection
+
+        unix_domain_engine -l[hidden]- qnx_dispatch_engine
+
+        unix_domain_server -l[hidden]- qnx_dispatch_server
+        qnx_dispatch_server -l[hidden]- unix_domain_server_factory
+        qnx_dispatch_server_factory -l[hidden]- unix_domain_server_factory
     }
-    dispatch -u[hidden]- server_connection
-    dispatch -u[hidden]- client_connection
 }
 
-dependable_element_message_passing )-r- IClientConnection
-dependable_element_message_passing )-r- IClientFactory
-dependable_element_message_passing )-r- IServer
-dependable_element_message_passing )-r- IServerFactory
-dependable_element_message_passing )-r- IServerConnection
-dependable_element_message_passing -r-( IConnectionHandler : requires
-dependable_element_message_passing -u-( os : requires
+client_connection )-u- IClientConnection
+unix_domain_client_factory )-u- IClientFactory
+qnx_dispatch_client_factory )-u- IClientFactory
+
+unix_domain_server )-d- IServer
+qnx_dispatch_server )-d- IServer
+unix_domain_server )-d- IServerConnection
+qnx_dispatch_server )-d- IServerConnection
+unix_domain_server_factory )-d- IServerFactory
+qnx_dispatch_server_factory )-d- IServerFactory
+unix_domain_server -d-( IConnectionHandler
+qnx_dispatch_server -d-( IConnectionHandler
+
+unix_domain_engine -l-( os : requires
+qnx_dispatch_engine -l-( os : requires
+
+' SEooC boundary relations (not drawn; the interfaces above cross the boundary)
+dependable_element_message_passing -[hidden]- IClientConnection
+dependable_element_message_passing -[hidden]- IClientFactory
+dependable_element_message_passing -[hidden]- IServer
+dependable_element_message_passing -[hidden]- IServerFactory
+dependable_element_message_passing -[hidden]- IServerConnection
+dependable_element_message_passing -[hidden]- IConnectionHandler
+dependable_element_message_passing -[hidden]- "os"
 
 @enduml

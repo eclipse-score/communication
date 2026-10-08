@@ -1,0 +1,152 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+<style>
+.OS {
+    LineThickness 5.0
+}
+</style>
+
+skinparam sequenceArrowColor Black
+skinparam sequenceParticipantBackgroundColor White
+skinparam sequenceParticipantBorderColor Black
+skinparam sequenceLifeLineBorderColor Black
+skinparam sequenceGroupBorderColor DarkGray
+skinparam sequenceGroupBodyBackgroundColor #FAFAFA
+skinparam NoteBackgroundColor LightYellow
+skinparam NoteBorderColor Gray
+skinparam NoteTextAlignment left
+skinparam ParticipantFontName Courier
+skinparam sequenceFontName Courier
+skinparam ArrowFontName Courier
+
+title Server <-> Client Sequence Diagram (Linux: Unix Domain Sockets)
+
+note across : The QNX Dispatch counterpart is in server_client_sequence_qnx.puml.\nBoth platforms expose the same public API.
+
+participant "ExternalClient" as ExternalClient
+participant "ClientConnection" as client_connection
+participant "UnixDomainClientFactory" as unix_domain_client_factory
+participant "UnixDomainEngine" as unix_domain_engine
+participant "UnixDomainServer" as unix_domain_server
+participant "UnixDomainServerFactory" as unix_domain_server_factory
+participant "ExternalServer" as ExternalServer
+
+' -----------------------------------------------------------------
+== Setup ==
+' -----------------------------------------------------------------
+
+ExternalServer -> unix_domain_server_factory : (Create(protocol_config, server_config))
+note over unix_domain_server_factory : Creates a UnixDomainServer sharing\nthe factory's UnixDomainEngine
+ExternalServer -> unix_domain_server : (StartListening(\n  connect_callback,\n  disconnect_callback,\n  message_callback,\n  reply_callback\n))
+unix_domain_server -> unix_domain_engine : RegisterPosixEndpoint(listener_endpoint)
+note over unix_domain_server : Server now accepts\nincoming connections
+
+ExternalClient -> unix_domain_client_factory : (Create(protocol_config, client_config))
+note over client_connection : Created by the factory, sharing\nthe factory's engine
+ExternalClient -> client_connection : (Start(state_callback, notify_callback))
+note over client_connection : Invokes state_callback(kStarting)
+note left of client_connection : State: **kStarting**
+
+' -----------------------------------------------------------------
+== Connection Establishment ==
+' -----------------------------------------------------------------
+
+loop until server is available
+  client_connection -> unix_domain_engine : TryOpenClientConnection(identifier)
+end
+client_connection -> unix_domain_engine : RegisterPosixEndpoint(endpoint)
+note over unix_domain_engine, unix_domain_server : The listener endpoint callback fires on the engine thread:\nUnixDomainServer accepts the connection and creates its own\nServerConnection, using the engine directly - not the abstract\nISharedResourceEngine.
+unix_domain_server -> unix_domain_engine : RegisterPosixEndpoint(connection_endpoint)
+
+note over unix_domain_server : ConnectCallback(connection) invoked; server app returns UserData,\noptionally wrapping an IConnectionHandler instance
+
+note over client_connection : Invokes state_callback(kReady)
+note left of client_connection : State: **kReady**
+
+' -----------------------------------------------------------------
+== Fire-and-Forget: IClientConnection::Send() ==
+' -----------------------------------------------------------------
+
+ExternalClient -> client_connection : (Send(message))
+note left : Non-blocking;\nreturns immediately
+client_connection -> unix_domain_engine : SendProtocolMessage(fd, code, message)
+note over unix_domain_engine : Delivers the message over the connected socket
+unix_domain_server -> unix_domain_engine : ReceiveProtocolMessage(fd, code)
+note over unix_domain_server : Invokes MessageCallback(connection, message)\nor IConnectionHandler::OnMessageSent(connection, message)
+
+' -----------------------------------------------------------------
+== Synchronous Request/Reply: IClientConnection::SendWaitReply() ==
+' -----------------------------------------------------------------
+
+ExternalClient -> client_connection : (SendWaitReply(message, reply_buffer))
+note left : **Blocking** — caller\nwaits until reply arrives
+activate client_connection
+client_connection -> unix_domain_engine : SendProtocolMessage(fd, code, message)
+note over unix_domain_server : Invokes IConnectionHandler::OnMessageSentWithReply(\n  connection, message\n)
+ExternalServer -> unix_domain_server : (Reply(reply))
+note over ExternalServer : Reply is triggered from\nthe reply_callback
+unix_domain_server -> unix_domain_engine : SendProtocolMessage(fd, code, reply)
+client_connection --> ExternalClient : (return reply span)
+deactivate client_connection
+
+' -----------------------------------------------------------------
+== Asynchronous Request/Reply: IClientConnection::SendWithCallback() ==
+' -----------------------------------------------------------------
+
+ExternalClient -> client_connection : (SendWithCallback(message, reply_callback))
+note left : Non-blocking;\nreturns immediately
+client_connection -> unix_domain_engine : SendProtocolMessage(fd, code, message)
+note over unix_domain_server : Invokes IConnectionHandler::OnMessageSentWithReply(\n  connection, message\n)
+ExternalServer -> unix_domain_server : (Reply(reply))
+unix_domain_server -> unix_domain_engine : SendProtocolMessage(fd, code, reply)
+note over client_connection : Invokes reply_callback(reply)
+
+' -----------------------------------------------------------------
+== Server Notification: IServerConnection::Notify() ==
+' -----------------------------------------------------------------
+
+ExternalServer -> unix_domain_server : (Notify(message))
+note over ExternalServer : Unsolicited push\nfrom server to client
+unix_domain_server -> unix_domain_engine : SendProtocolMessage(fd, code, notification)
+note over client_connection : Invokes notify_callback(message)
+
+' -----------------------------------------------------------------
+== Disconnection ==
+' -----------------------------------------------------------------
+
+ExternalClient -> client_connection : (Stop())
+note left : Also triggered by:\n- IServerConnection::RequestDisconnect()\n- peer disconnect / IO error
+
+note over client_connection : Invokes state_callback(kStopping)
+note left of client_connection : State: **kStopping**
+
+client_connection -> unix_domain_engine : CloseClientConnection(client_fd)
+note over unix_domain_engine, unix_domain_server : The server detects the disconnect and tears\ndown its ServerConnection
+unix_domain_server -> unix_domain_engine : UnregisterPosixEndpoint(connection_endpoint)
+note over unix_domain_server : DisconnectCallback(connection) invoked\nor IConnectionHandler::OnDisconnect(connection)
+
+note over client_connection : Invokes state_callback(kStopped)
+note left of client_connection : State: **kStopped**\nSafe to destroy or Restart()
+
+' -----------------------------------------------------------------
+== Teardown ==
+' -----------------------------------------------------------------
+
+ExternalServer -> unix_domain_server : (StopListening())
+unix_domain_server -> unix_domain_engine : CleanUpOwner(owner)
+note over unix_domain_server : Releases callbacks;\ncloses all remaining\nserver connections
+
+@enduml
