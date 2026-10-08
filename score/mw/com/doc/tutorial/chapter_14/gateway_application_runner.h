@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
-#ifndef SCORE_MW_COM_GATEWAY_GATEWAY_APPLICATION_GATEWAY_APPLICATION_RUNNER_H
-#define SCORE_MW_COM_GATEWAY_GATEWAY_APPLICATION_GATEWAY_APPLICATION_RUNNER_H
+#ifndef SCORE_MW_COM_DOC_TUTORIAL_CHAPTER_14_GATEWAY_APPLICATION_RUNNER_H
+#define SCORE_MW_COM_DOC_TUTORIAL_CHAPTER_14_GATEWAY_APPLICATION_RUNNER_H
 
 #include <string>
 
@@ -29,4 +29,4 @@ void RunGatewayApplication(const std::string& config_path);
 
 }  // namespace score::mw::com::gateway
 
-#endif  // SCORE_MW_COM_GATEWAY_GATEWAY_APPLICATION_GATEWAY_APPLICATION_RUNNER_H
+#endif  // SCORE_MW_COM_DOC_TUTORIAL_CHAPTER_14_GATEWAY_APPLICATION_RUNNER_H
