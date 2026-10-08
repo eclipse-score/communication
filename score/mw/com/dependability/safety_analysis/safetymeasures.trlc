@@ -1,0 +1,25 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+import mw_com_fta
+
+// mitigates = "ReturnsWrongFreeSampleCount"
+ScoreReq.Mitigation FreeSampleCountCalculationSpecifiedAndTested {
+    safety        = ScoreReq.Asil.B
+    description   = "The free sample count returned by GetFreeSampleCount() shall be calculated according to CompReq CalculationOfFreeSampleCount and shall be verified together with the SamplePtr resource release."
+    justification = "The free/used sample counter is specified by CalculationOfFreeSampleCount and verified in proxy_event_test (SCR-21803116), so this root cause does not apply."
+    version       = 1
+    root_causes   = [mw_com_fta.RootCauseReturnsWrongFreeSampleCount]
+}
