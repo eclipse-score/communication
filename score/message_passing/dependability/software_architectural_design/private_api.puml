@@ -21,6 +21,21 @@ namespace dependable_element_message_passing {
             {abstract} ReceiveProtocolMessage(fd, code): expected<span, Error>
             {abstract} RegisterPosixEndpoint(endpoint): void
         }
+
+        ' Informative: engine services used by the server units; signatures are illustrative.
+        interface "IUnixDomainServerSupport" as IUnixDomainServerSupport <<interface>> {
+            {abstract} RegisterPosixEndpoint(endpoint): void
+            {abstract} UnregisterPosixEndpoint(endpoint): void
+            {abstract} CleanUpOwner(owner): void
+            {abstract} SendProtocolMessage(fd, code, message): expected_blank<Error>
+            {abstract} ReceiveProtocolMessage(fd, code): expected<span, Error>
+        }
+
+        interface "IQnxDispatchServerSupport" as IQnxDispatchServerSupport <<interface>> {
+            {abstract} StartResourceManager(path): expected_blank<Error>
+            {abstract} StopResourceManager(): void
+            {abstract} AttachConnection(connection): expected_blank<Error>
+        }
     }
 }
 

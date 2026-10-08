@@ -20,7 +20,7 @@ inter-process communication (IPC) across different platforms.
 
 .. note::
    For detailed design documentation, refer to the Message Passing design README
-   at ``score/mw/com/message_passing/design/README.md``.
+   at ``score/message_passing/docs/client-server.md``.
 
 Overview
 --------

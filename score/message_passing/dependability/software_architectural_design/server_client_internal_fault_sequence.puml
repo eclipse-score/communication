@@ -34,31 +34,35 @@ skinparam ArrowFontName Courier
 
 title Server <-> Client Sequence Diagram: Library-Internal Fault Handling
 
-note over client_connection, server_connection : Companion to server_client_sequence.puml (happy path) and\nserver_client_os_fault_sequence.puml (underlying-layer faults).\nThis diagram covers deterministic, library-internal rejections -\nbounded resources and configured limits that the library checks\nitself, before any OS/transport call is attempted. These are not\nOS-layer faults and not user contract misuse (see\nresearch/backlog.md for the latter, tracked as candidate AoUs).
-
-participant "ExternalEndpoint" as ExternalEndpoint
+participant "ExternalClient" as ExternalClient
 participant "ClientConnection" as client_connection
-participant "ServerConnection" as server_connection
+participant "UnixDomainServer" as unix_domain_server
+participant "QnxDispatchServer" as qnx_dispatch_server
+participant "ExternalServer" as ExternalServer
+
+note over client_connection, qnx_dispatch_server : Companion to the happy-path (server_client_sequence_*.puml) and\nunderlying-layer fault (server_client_os_fault_sequence_*.puml) diagrams.\nThis diagram covers deterministic, library-internal rejections -\nbounded resources and configured limits that the library checks\nitself, before any OS/transport call is attempted. These are not\nOS-layer faults and not user contract misuse (see\nresearch/backlog.md for the latter, tracked as candidate AoUs).
 
 ' -----------------------------------------------------------------
 == Message Exceeds Configured Size Limit (max_send_size / max_reply_size / max_notify_size) ==
 ' -----------------------------------------------------------------
 
-ExternalEndpoint -> client_connection : (Send(oversized_message))
+ExternalClient -> client_connection : (Send(oversized_message))
 note over client_connection : Validated against ServiceProtocolConfig::max_send_size;\nreturns score::os::Error (no IPC attempted)
 note left : Per i_client_connection.h Send() doc: "definitely fail"\nif the message is too big to transport. Validated before\nany OS call - control measure\nMessagePassing.SendBufferArgumentValidation.
 
-ExternalEndpoint -> client_connection : (SendWaitReply(message, reply_buffer))
+ExternalClient -> client_connection : (SendWaitReply(message, reply_buffer))
 note over client_connection : Validated reply_buffer size against\nServiceProtocolConfig::max_reply_size;\nreturns score::os::Error (no IPC attempted)
 
-ExternalEndpoint -> server_connection : (Notify(oversized_message))
-note over server_connection : Validated against ServiceProtocolConfig::max_notify_size;\nreturns score::os::Error (no IPC attempted)
+ExternalServer -> unix_domain_server : (Notify(oversized_message))
+note over unix_domain_server : Validated against ServiceProtocolConfig::max_notify_size;\nreturns score::os::Error (no IPC attempted)
+ExternalServer -> qnx_dispatch_server : (Notify(oversized_message))
+note over qnx_dispatch_server : Same validation on QNX Dispatch;\nreturns score::os::Error (no IPC attempted)
 
 ' -----------------------------------------------------------------
 == Client-Side Async Send Queue Exhausted (max_queued_sends / max_async_replies) ==
 ' -----------------------------------------------------------------
 
-ExternalEndpoint -> client_connection : (Send(message) [repeated, non-blocking])
+ExternalClient -> client_connection : (Send(message) [repeated, non-blocking])
 note over client_connection : Checked pre-allocated send_storage_ pool;\nreturns score::os::Error (pool exhausted; no IPC attempted)
 note left : Grounds control measure BE_SendQueueExhausted: "use a\npre-allocated, bounded pool for asynchronous client\nsend messages and return an error when the pool is\nexhausted without blocking or silently dropping the\nmessage." Same mechanism applies to\nSendWithCallback()'s max_async_replies limit.
 
@@ -66,20 +70,21 @@ note left : Grounds control measure BE_SendQueueExhausted: "use a\npre-allocated
 == Server-Side Notify Queue Exhausted (max_queued_notifies) ==
 ' -----------------------------------------------------------------
 
-ExternalEndpoint -> server_connection : (Notify(message) [repeated])
-note over server_connection : Checked per-connection notify queue (max_queued_notifies);\nreturns score::os::Error (queue exhausted; no IPC attempted)
-note right : Unlike the server-side incoming max_queued_sends\n(see server_client_os_fault_sequence.puml, "Server-Side\nIncoming Backpressure Delegated to the OS" - currently\nunimplemented as an internal queue), the per-connection\nNotify queue bound by max_queued_notifies is an\nactual internal, deterministic check today.
+ExternalServer -> qnx_dispatch_server : (Notify(message) [repeated])
+note over qnx_dispatch_server : Checked per-connection notify queue (max_queued_notifies);\nreturns score::os::Error (queue exhausted; no IPC attempted)
+note over unix_domain_server : Today, UnixDomainServer has no per-connection notify queue:\nit only checks max_notify_size and sends directly.
+note right : Unlike the server-side incoming max_queued_sends\n(see server_client_os_fault_sequence_*.puml, "Server-Side\nIncoming Backpressure Delegated to the OS" - currently\nunimplemented as an internal queue), the per-connection\nNotify queue bound by max_queued_notifies is an\nactual internal, deterministic check today on QNX Dispatch.
 
 ' -----------------------------------------------------------------
 == Safe Failure of Re-Entrant Calls From Within a Callback ==
 ' -----------------------------------------------------------------
 
-note over server_connection : Sends the notification using its own concrete\nengine, which delivers it to client_connection
+note over unix_domain_server, qnx_dispatch_server : Sends the notification using the platform engine,\nwhich delivers it to client_connection
 note over client_connection : Invokes notify_callback(message)
-activate ExternalEndpoint
-ExternalEndpoint -> client_connection : (SendWaitReply(message, reply_buffer)\n(called from within notify_callback))
+activate ExternalClient
+ExternalClient -> client_connection : (SendWaitReply(message, reply_buffer)\n(called from within notify_callback))
 note over client_connection : Detected callback-context re-entrancy;\nreturns score::os::Error (safely fails; no deadlock)
-deactivate ExternalEndpoint
+deactivate ExternalClient
 note left : Per client-server.md: "it is not allowed to call any\nblocking operation of the Message Passing library\nduring the execution of a Client Connection callback\n... the library provides the guarantee that such a\ncall will safely fail." Non-blocking calls (Send,\nSendWithCallback, Stop) remain allowed from callbacks.
 
 @enduml
