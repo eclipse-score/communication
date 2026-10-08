@@ -1,0 +1,242 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+@startuml
+
+namespace score::memory::shared {
+  interface "ISharedMemoryFactory" <<interface>> {
+    +{abstract}Open(const std::string&, bool, const std::optional<score::cpp::span<const uid_t>>&): std::shared_ptr<ISharedMemoryResource>
+    +{abstract}Create(std::string, InitializeCallback, std::size_t, const UserPermissions&, bool): std::shared_ptr<ISharedMemoryResource>
+    +{abstract}CreateAnonymous(std::uint64_t, InitializeCallback, std::size_t, const UserPermissions&, bool): std::shared_ptr<ISharedMemoryResource>
+    +{abstract}CreateOrOpen(std::string, InitializeCallback, std::size_t, AccessControl, bool): std::shared_ptr<ISharedMemoryResource>
+    +{abstract}Remove(const std::string&): void
+    +{abstract}RemoveStaleArtefacts(const std::string&): void
+    +{abstract}SetTypedMemoryProvider(std::shared_ptr<score::memory::shared::TypedMemory>): void
+    +{abstract}SetInterVMMemoryProvider(std::shared_ptr<score::memory::shared::TypedMemory>): void
+    +{abstract}GetControlBlockSize(): std::size_t
+    +{abstract}Clear(): void
+  }
+
+  interface "SharedMemoryFactory" <<interface>> {
+    +{static}Open(): std::shared_ptr<ISharedMemoryResource>
+    +{static}Create(): std::shared_ptr<ISharedMemoryResource>
+    +{static}CreateAnonymous(): std::shared_ptr<ISharedMemoryResource>
+    +{static}CreateOrOpen(): std::shared_ptr<ISharedMemoryResource>
+    +{static}Remove(): void
+    +{static}RemoveStaleArtefacts(): void
+    +{static}SetTypedMemoryProvider(std::shared_ptr<score::memory::shared::TypedMemory>): void
+    +{static}SetInterVMMemoryProvider(std::shared_ptr<score::memory::shared::TypedMemory>): void
+    +{static}GetControlBlockSize(): std::size_t
+    +{static}Clear(): void
+    +{static}InjectMock(ISharedMemoryFactory*): void
+  }
+
+  interface "ManagedMemoryResource" <<interface>> {
+    +construct<T, Args...>(Args&&...): T*
+    +destruct<T>(T&): void
+    +{abstract}getBaseAddress(): void*
+    +{abstract}getUsableBaseAddress(): void*
+    +{abstract}GetUserAllocatedBytes(): std::size_t
+    +IsOffsetPtrBoundsCheckBypassingEnabled(): bool
+  }
+
+  interface "ISharedMemoryResource" <<interface>> {
+    +{abstract}getPath(): const std::string*
+    +{abstract}UnlinkFilesystemEntry(): void
+    +{abstract}GetFileDescriptor(): FileDescriptor
+    +{abstract}IsShmInTypedMemory(): bool
+    +{abstract}GetIdentifier(): std::string_view
+  }
+
+  class "ISharedMemoryResource::AccessControl" {
+    +permissions_: const UserPermissions&
+    +allowedProviders_: const std::optional<score::cpp::span<const uid_t>>
+  }
+
+  class "SharedMemoryResource" {
+    +getMemoryResourceProxy(): const MemoryResourceProxy*
+    +getBaseAddress(): void*
+    +getUsableBaseAddress(): void*
+    +GetUserAllocatedBytes(): std::size_t
+    +IsOffsetPtrBoundsCheckBypassingEnabled(): bool
+    +getPath(): const std::string*
+    +GetIdentifier(): std::string_view
+    +GetFileDescriptor(): FileDescriptor
+    +IsShmInTypedMemory(): bool
+  }
+
+  class "LockFile" {
+    +{static}Create(std::string): std::optional<LockFile>
+    +{static}CreateOrOpen(std::string, bool): std::optional<LockFile>
+    +{static}Open(std::string): std::optional<LockFile>
+    +TakeOwnership(): void
+  }
+
+  class "FlockMutex" {
+    +FlockMutex(const LockFile&, score::os::Fcntl::Operation, score::os::Fcntl::Operation)
+    +lock(): void
+    +try_lock(): bool
+    +unlock(): void
+  }
+
+  class "ExclusiveFlockMutex" {
+    +ExclusiveFlockMutex(const LockFile&)
+    +lock(): void
+    +try_lock(): bool
+    +unlock(): void
+  }
+
+  class "SharedFlockMutex" {
+    +SharedFlockMutex(const LockFile&)
+    +lock(): void
+    +try_lock(): bool
+    +unlock(): void
+  }
+
+  class "FlockMutexAndLock<T>" {
+    +FlockMutexAndLock(const LockFile&)
+    +TryLock(): bool
+  }
+
+  class "MemoryResourceProxy" {
+    +MemoryResourceProxy(std::uint64_t)
+    +allocate(std::size_t, std::size_t): void*
+    +deallocate(void*, std::size_t): void
+    +{static}EnableBoundsChecking(bool): bool
+  }
+
+  class "OffsetPtr<PointedType>" {
+    +OffsetPtr(pointer)
+    +OffsetPtr(const OffsetPtr<PointedType>&)
+    +OffsetPtr(const OffsetPtr<OtherPointedType>&)
+    +operator=(pointer): OffsetPtr&
+    +operator=(const OffsetPtr&): OffsetPtr&
+    +operator=(const OffsetPtr<OtherPointedType>&): OffsetPtr&
+    +{static}pointer_to(T&): OffsetPtr
+    +{static}pointer_to(void*): OffsetPtr
+    +{static}pointer_to(const void*): OffsetPtr
+    +operator*(): reference
+    +operator[](difference_type): reference
+    +operator+=(difference_type): OffsetPtr&
+    +operator-=(difference_type): OffsetPtr&
+    +operator++(): OffsetPtr&
+    +operator++(std::int32_t): OffsetPtr
+    +operator--(): OffsetPtr&
+    +operator--(std::int32_t): OffsetPtr
+    +get(): pointer
+    +get<ExplicitPointedType>(): ExplicitPointedType*
+    +get(std::size_t): pointer
+    +operator pointer(): pointer
+    +operator->(): pointer
+    +operator bool(): bool
+    +operator!(): bool
+  }
+
+  class "OffsetRef<T>" {
+    +OffsetRef(T&)
+    +operator=(const T&): OffsetRef&
+    +get(): T&
+    +operator T&(): T&
+  }
+
+  class "PolymorphicOffsetPtrAllocator<T>" {
+    +PolymorphicOffsetPtrAllocator()
+    +PolymorphicOffsetPtrAllocator(ManagedMemoryResource&)
+    +PolymorphicOffsetPtrAllocator(const PolymorphicOffsetPtrAllocator<U>&)
+    +allocate(size_type): pointer
+    +deallocate(pointer, size_type): void
+    +getMemoryResourceProxy(): OffsetPtr<const MemoryResourceProxy>
+  }
+
+  class "SharedMemoryErrorDomain" {
+    +MessageFor(const score::result::ErrorCode&): std::string_view
+  }
+
+  enum "SharedMemoryErrorCode" {
+    UnknownSharedMemoryIdentifier
+  }
+
+  class "permission::WorldReadable" <<struct>>
+  class "permission::WorldWritable" <<struct>>
+
+  class "UserPermissionsMap" {
+    Note. UserPermissionsMap is a std::unordered_map<score::os::Acl::Permission, std::vector<uid_t>>
+  }
+
+  class "UserPermissions" {
+    Note. UserPermissions is a std::variant<UserPermissionsMap, WorldReadable, WorldWritable>
+  }
+
+  class "Map<K, V, Comp>" {
+    Note. Map is a std::unordered_map<K, V, Comp> on qnx and boost::interprocess:map on linux<K, V, Comp>
+  }
+
+  class "Vector<T>" {
+    Note. Vector is a std::vector<T, std::scoped_allocator_adaptor<PolymorphicOffsetPtrAllocator<T>>>
+  }
+
+  class "BasicString<CharT, Traits>" {
+    Note. BasicString is a std::basic_string<CharT, Traits, std::scoped_allocator_adaptor<PolymorphicOffsetPtrAllocator<CharT>>>
+  }
+
+  class "Pointer Arithmetic Utils" <<free functions>> {
+    +AddOffsetToPointerAsInteger(std::uintptr_t, std::size_t): std::uintptr_t
+    +AddSignedOffsetToPointerAsInteger(std::uintptr_t, std::ptrdiff_t): std::uintptr_t
+    +SubtractOffsetFromPointerAsInteger(std::uintptr_t, std::size_t): std::uintptr_t
+    +CalculateAlignedSize(std::size_t, std::size_t): std::size_t
+    +CalculateAlignedSizeOfSequence(const std::vector<DataTypeSizeInfo>&): std::size_t
+    +CastPointerToInteger(const void*): std::uintptr_t
+    +CastIntegerToPointer<PointerType>(std::uintptr_t): PointerType
+    +AddOffsetToPointer<PointerType>(const PointerType*, std::size_t): PointerType*
+    +AddOffsetToPointer<PointerType>(const PointerType*, std::ptrdiff_t): PointerType*
+    +PointerToLogValue(const void*): score::mw::log::LogHex64
+    +SubtractPointersBytes(const void*, const void*): std::ptrdiff_t
+    +AbsoluteValue<SignedInteger>(SignedInteger): std::make_unsigned_t<SignedInteger>
+    +UndoSignedToUnsignedIntegerCast<UnsignedInteger>(UnsignedInteger): std::make_signed_t<UnsignedInteger>
+    +AddUnsignedToSigned<SignedInteger>(SignedInteger, std::make_unsigned_t<SignedInteger>): SignedInteger
+    +SubtractUnsignedFromSigned<SignedInteger>(SignedInteger, std::make_unsigned_t<SignedInteger>): SignedInteger
+  }
+
+  class "Free functions" <<free functions>> {
+    +EnableOffsetPtrBoundsChecking(bool): bool
+    ' +DoesOffsetPtrInSharedMemoryPassBoundsChecks(const void*, std::ptrdiff_t, const MemoryRegionBounds&, std::size_t, std::size_t): bool
+    ' +DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(const void*, std::ptrdiff_t, const MemoryRegionBounds&, std::size_t, std::size_t): bool
+    +MakeError(SharedMemoryErrorCode, std::string_view): score::result::Error
+    ' +operator==(const MemoryRegionBounds&, const MemoryRegionBounds&): bool
+    ' +operator!=(const MemoryRegionBounds&, const MemoryRegionBounds&): bool
+    +operator==(const MemoryResourceProxy&, const MemoryResourceProxy&): bool
+    +operator!=(const MemoryResourceProxy&, const MemoryResourceProxy&): bool
+    +operator==(const OffsetRef<T>&, const OffsetRef<T>&): bool
+    +operator!=(const OffsetRef<T>&, const OffsetRef<T>&): bool
+    +operator==(const PolymorphicOffsetPtrAllocator<U>&, const PolymorphicOffsetPtrAllocator<U>&): bool
+    +operator!=(const PolymorphicOffsetPtrAllocator<U>&, const PolymorphicOffsetPtrAllocator<U>&): bool
+    +operator==(const BasicString<CharT, Traits>&, const std::string&): bool
+    +operator!=(const BasicString<CharT, Traits>&, const std::string&): bool
+    +operator==(const std::string&, const BasicString<CharT, Traits>&): bool
+    +operator!=(const std::string&, const BasicString<CharT, Traits>&): bool
+    +operator==(const Vector<T>&, std::vector<T>): bool
+    +operator==(std::vector<T>, const Vector<T>&): bool
+    +operator==(OffsetPtr, OffsetPtr / T* / std::nullptr_t): bool
+    +operator!=(OffsetPtr, OffsetPtr / T* / std::nullptr_t): bool
+    +operator<(OffsetPtr, OffsetPtr / T*): bool
+    +operator<=(OffsetPtr, OffsetPtr / T*): bool
+    +operator>(OffsetPtr, OffsetPtr / T*): bool
+    +operator>=(OffsetPtr, OffsetPtr / T*): bool
+    +operator+(OffsetPtr<T>, difference_type): OffsetPtr<T>
+    +operator+(difference_type, OffsetPtr<T>): OffsetPtr<T>
+    +operator-(OffsetPtr<T>, difference_type): OffsetPtr<T>
+    +operator-(OffsetPtr, OffsetPtr / T*): difference_type
+    +swap(OffsetPtr<T>&, OffsetPtr<T>&): void
+  }
+}
+
+@enduml
