@@ -15,11 +15,8 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("No resources freed", "Communication.NoResourcesFreed", "Communication.EarlyCleanUp")
+$FailureMode("Wrongly aligned memory is used", "Communication.WronglyAlignedMemoryAllocated")
 
-$IntermediateEvent("No Unlink / unmap shm-region", "Event1", "Communication.NoResourcesFreed")
-$OrGate("Gate1", "Event1")
-$RootCause("No unmap on destruction", "NoUnmapOnDestruction", "Gate1")
-$RootCause("Shared Memory segment is not unlinked", "SharedMemorySegmentIsNotUnlinked", "Gate1")
+$RootCause("Root cause: Wrongly aligned memory is sued", "RootCauseWronglyAlignedMemoryAllocated", "Communication.WronglyAlignedMemoryAllocated")
 
 @enduml
