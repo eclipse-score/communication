@@ -11,6 +11,118 @@
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
 
-@startuml class_diagram
+@startuml
+
+namespace score::mw::com::impl {
+
+   abstract class SkeletonBinding {
+       using SkeletonEventBindings = std::map<std::string_view, std::reference_wrapper<score::mw::com::impl::SkeletonEventBinding>>
+       using SkeletonFieldBindings = SkeletonBinding::SkeletonEventBindings
+       using RegisterShmObjectTraceCallback = score::cpp::move_only_function<void(std::string_view, score::mw::com::impl::ServiceElementType, score::memory::shared::ISharedMemoryResource::FileDescriptor, void *)>
+       using UnregisterShmObjectTraceCallback = score::cpp::move_only_function<void(std::string_view, score::mw::com::impl::ServiceElementType)>
+       +{abstract}PrepareOffer(SkeletonEventBindings&, SkeletonFieldBindings&, std::optional<RegisterShmObjectTraceCallback>): score::details::expected<void, score::result::Error>
+       +{abstract}PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback>): void
+       +{abstract}GetBindingType() const noexcept: score::mw::com::impl::BindingType
+       +{abstract}VerifyAllMethodHandlersRegistered() const: bool
+   }
+
+   abstract class SkeletonEventBinding {
+         using SubscribeTraceCallback = score::cpp::move_only_function<void(std::size_t, bool)>
+         using UnsubscribeTraceCallback = score::cpp::move_only_function<void()>
+         using SendTraceCallback = score::cpp::move_only_function<void(score::mw::com::impl::SampleAllocateePtr<void>&)>
+         +{abstract}Send(SampleAllocateePtr<void>, std::optional<SendTraceCallback>): score::details::expected<void, score::result::Error>
+         +{abstract}Allocate(guard: SampleAllocateeGuard): score::details::expected<score::mw::com::impl::SampleAllocateePtr<void>, score::result::Error>
+         +{abstract}GetLatestSample(quality_type: QualityType): score::details::expected<score::mw::com::impl::SamplePtr<void>, score::result::Error>
+         +{abstract}PrepareOffer(initialize_sample_callback: const std::optional<InitializeSampleCallback>&): score::details::expected<void, score::result::Error>
+         +{abstract}PrepareStopOffer(): void
+       +{abstract}GetEventDataTypeSizeInfo() const: memory::DataTypeSizeInfo
+       +{abstract}GetBindingType() const noexcept: score::mw::com::impl::BindingType
+       +{abstract}SetSkeletonEventTracingData(tracing_data: impl::tracing::SkeletonEventTracingData) noexcept: void
+   }
+
+   abstract class GenericSkeletonEventBinding {
+         +{abstract}Notify(): score::details::expected<void, score::result::Error>
+       +{abstract}SetReceiveHandlerRegistrationChangedHandler(callback: ReceiveHandlerRegistrationChangedCallback) noexcept: score::details::expected<void, score::result::Error>
+       +{abstract}UnsetReceiveHandlerRegistrationChangedHandler() noexcept: score::details::expected<void, score::result::Error>
+   }
+
+   abstract class SkeletonMethodBinding {
+         using TypeErasedCallbackSignature = void(score::mw::com::impl::QualityType, std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>)
+         using TypeErasedHandler = score::cpp::move_only_function<score::mw::com::impl::SkeletonMethodBinding::TypeErasedCallbackSignature>
+       +{abstract}RegisterHandler(callback: TypeErasedHandler&&): score::details::expected<void, score::result::Error>
+   }
+
+
+class SkeletonEvent<SampleDataType> {
+   +Send(sample_value: const EventType&): score::details::expected<void, score::result::Error>
+   +Send(sample: SampleAllocateePtr<EventType>): score::details::expected<void, score::result::Error>
+}
+
+class "SkeletonBase" as SkeletonBase {
+'    +using SkeletonEvents = std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonEventBase>::Reference>>
+'    +using SkeletonFields = std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonFieldBase>::Reference>>
+'    +using SkeletonMethods = std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonMethodBase>::Reference>>
+   --
+   +SkeletonBase(skeleton_binding: std::unique_ptr<SkeletonBinding>, instance_id: InstanceIdentifier)
+   +OfferService(): score::details::expected<void, score::result::Error>
+   +StopOfferService(): void
+   +InjectMock(skeleton_mock: ISkeletonBase&): void
+   --
+   #AreBindingsValid() const noexcept: bool
+}
+
+class SkeletonFieldImpl<SampleDataType, Tags...> {
+   using FieldType = SampleDataType
+   +Update(sample_value: const FieldType&) noexcept: score::details::expected<void, score::result::Error>
+   +Update(sample: SampleAllocateePtr<FieldType>) noexcept: score::details::expected<void, score::result::Error>
+   +InjectMock(skeleton_field_mock: ISkeletonField<FieldType>&): void
+}
+class SkeletonField<SampleDataType, Tags...>
+
+abstract class "SkeletonFieldBase" {
+   +PrepareOffer() noexcept: score::details::expected<void, score::result::Error>
+   +PrepareStopOffer() noexcept: void
+   #skeleton_event_dispatch_: std::unique_ptr<score::mw::com::impl::SkeletonEventBase>
+   -{abstract}IsInitialValueSaved() const noexcept: bool
+   -{abstract}IsSetHandlerMissing() const noexcept: bool
+   -{abstract}RegisterGetHandler(): score::details::expected<void, score::result::Error>
+   -{abstract}DoDeferredUpdate() noexcept: score::details::expected<void, score::result::Error>
+}
+
+class "SkeletonEventBase" {
+   +SkeletonEventBase(event_name: const std::string_view, initialize_sample_callback: std::optional<InitializeSampleCallback>, binding: std::unique_ptr<SkeletonEventBinding>)
+   +PrepareOffer() noexcept: score::details::expected<void>
+   +PrepareStopOffer() noexcept: void
+   #binding_: std::unique_ptr<score::mw::com::impl::SkeletonEventBinding>
+   #event_name_: std::string_view
+   #initialize_sample_callback_: std::optional<score::cpp::move_only_function<void(void*)>>
+   #tracing_data_: score::mw::com::impl::tracing::SkeletonEventTracingData
+   #service_offered_flag_: score::mw::com::impl::FlagOwner
+   #sample_allocatee_tracker_: std::unique_ptr<score::mw::com::impl::SampleAllocateeTracker>
+}
+
+class SkeletonMethod<Signature> {
+    +RegisterHandler<Callable>(callback: Callable&&): score::details::expected<void, score::result::Error>
+}
+
+class "SkeletonMethodBase" {
+   +SkeletonMethodBase(method_name: const std::string_view, skeleton_method_binding: std::unique_ptr<SkeletonMethodBinding>, method_type: MethodType)
+}
+
+SkeletonEvent --|> SkeletonEventBase
+SkeletonMethod --|> SkeletonMethodBase
+SkeletonFieldImpl --|> SkeletonFieldBase
+SkeletonField --|> SkeletonFieldImpl
+SkeletonFieldBase o-- SkeletonEventBase : dispatches to
+SkeletonEventBase o-- SkeletonEventBinding : dispatches to
+SkeletonMethodBase o-- SkeletonMethodBinding : dispatches to
+SkeletonBase o-- SkeletonBinding : dispatches to
+SkeletonEventBinding <|-- GenericSkeletonEventBinding
+
+SkeletonBase "1" --> "0..*" SkeletonEventBase : stores reference to
+SkeletonBase "1" --> "0..*" SkeletonFieldBase : stores reference to
+SkeletonBase "1" --> "0..*" SkeletonMethodBase : stores reference to
+
+}
 
 @enduml

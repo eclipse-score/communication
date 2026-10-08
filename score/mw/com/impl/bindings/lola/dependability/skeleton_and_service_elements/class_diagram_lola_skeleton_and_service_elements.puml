@@ -11,6 +11,96 @@
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
 
-@startuml class_diagram
+@startuml
+
+namespace score::mw::com::impl {
+    
+    abstract class SkeletonBinding
+    abstract class SkeletonEventBinding
+    abstract class GenericSkeletonEventBinding
+    abstract class SkeletonMethodBinding
+
+namespace lola {
+
+class "Skeleton" as lola_Skeleton {
+    -memory_manager_: score::mw::com::impl::lola::SkeletonMemoryManager
+    --
+    +{static} Create(identifier: const InstanceIdentifier&, filesystem: score::filesystem::Filesystem, shm_path_builder: std::unique_ptr<IShmPathBuilder>, partial_restart_path_builder: std::unique_ptr<IPartialRestartPathBuilder>): std::unique_ptr<score::mw::com::impl::lola::Skeleton>
+    +PrepareOffer(events: SkeletonEventBindings&, fields: SkeletonFieldBindings&, register_shm_object_trace_callback: std::optional<RegisterShmObjectTraceCallback>): score::details::expected<void, score::result::Error> override
+    +PrepareStopOffer(unregister_shm_object_callback: std::optional<UnregisterShmObjectTraceCallback>) override: void
+    +GetBindingType() const noexcept override: score::mw::com::impl::BindingType
+    +Register(element_fq_id: const ElementFqId, element_properties: const SkeletonEventProperties&, data_type_size_info: const memory::DataTypeSizeInfo, initialize_sample_callback: const std::optional<InitializeSampleCallback>& = std::nullopt): score::mw::com::impl::lola::Skeleton::RegistrationResult
+    +GetInstanceQualityType() const: score::mw::com::impl::QualityType
+    +CleanupSharedMemoryAfterCrash(): void
+    +DisconnectQmConsumers(): void
+    +RegisterMethod(method_id: const UniqueMethodIdentifier, skeleton_method: SkeletonMethod&): void
+    +VerifyAllMethodHandlersRegistered() const override: bool
+}
+
+struct "Skeleton.RegistrationResult" as lola_Skeleton_RegistrationResult {
+    +event_data_storage: score::mw::com::impl::lola::EventDataStorage&
+    +event_control_qm: score::mw::com::impl::lola::EventControl&
+    +event_control_asil_b: score::mw::com::impl::lola::EventControl*
+}
+
+class "SkeletonMemoryManager" as lola_SkeletonMemoryManager {
+    +SkeletonMemoryManager(quality_type: QualityType, shm_path_builder: const IShmPathBuilder&, lola_service_instance_deployment: const LolaServiceInstanceDeployment&, lola_service_type_deployment: const LolaServiceTypeDeployment&, lola_instance_id: const LolaServiceInstanceId::InstanceId, lola_service_id: const LolaServiceTypeDeployment::ServiceId)
+    +CreateSharedMemory(events: SkeletonBinding::SkeletonEventBindings&, fields: SkeletonBinding::SkeletonFieldBindings&, register_shm_object_trace_callback: std::optional<SkeletonBinding::RegisterShmObjectTraceCallback>): score::details::expected<void, score::result::Error>
+    +OpenExistingSharedMemory(register_shm_object_trace_callback: std::optional<SkeletonBinding::RegisterShmObjectTraceCallback>): score::details::expected<void, score::result::Error>
+    +CreateEventControlsInCreatedSharedMemory(element_fq_id: const ElementFqId, element_properties: const SkeletonEventProperties&): std::pair<std::reference_wrapper<score::mw::com::impl::lola::EventControl>, score::mw::com::impl::lola::EventControl*>
+    +CreateEventDataInCreatedSharedMemory(element_fq_id: const ElementFqId, element_properties: const SkeletonEventProperties&, sample_size_info: memory::DataTypeSizeInfo, initialize_sample_callback: const std::optional<InitializeSampleCallback>& = std::nullopt): score::mw::com::impl::lola::EventDataStorage&
+    +RetrieveEventControlsFromOpenedSharedMemory(element_fq_id: const ElementFqId): std::pair<std::reference_wrapper<score::mw::com::impl::lola::EventControl>, score::mw::com::impl::lola::EventControl*>
+    +RetrieveEventDataFromOpenedSharedMemory(element_fq_id: const ElementFqId): score::mw::com::impl::lola::EventDataStorage&
+    +RollbackSkeletonTracingTransactions(event_control: EventControl&): void
+    +RemoveSharedMemory(): void
+    +RemoveStaleSharedMemoryArtefacts() const: void
+    +CleanupSharedMemoryAfterCrash(): void
+    +Reset(): void
+}
+
+class "SkeletonEventProperties" as lola_SkeletonEventProperties {
+    +GetTotalNumberOfSlots() const: std::size_t
+    +GetNumberOfFieldGetterSlots() const: std::size_t
+    +max_subscribers: std::size_t
+    +enforce_max_samples: bool
+}
+
+class "SkeletonEvent" as lola_SkeletonEvent {
+    +SkeletonEvent(parent: Skeleton&, element_fq_id: const ElementFqId, event_name: const std::string_view, size_info: const memory::DataTypeSizeInfo, properties: const SkeletonEventProperties, skeleton_event_tracing_data: impl::tracing::SkeletonEventTracingData) noexcept
+    +Send(sample: impl::SampleAllocateePtr<void>, send_trace_callback: std::optional<SendTraceCallback>) override: score::details::expected<void, score::result::Error>
+    +Allocate(guard: SampleAllocateeGuard) override: score::details::expected<score::mw::com::impl::SampleAllocateePtr<void>>
+    +GetLatestSample(quality_type: QualityType) override: score::details::expected<score::mw::com::impl::SamplePtr<void>>
+    +PrepareOffer(initialize_sample_callback: const std::optional<InitializeSampleCallback>&) override: score::details::expected<void, score::result::Error>
+    +PrepareStopOffer() override: void
+    +GetEventDataTypeSizeInfo() const noexcept override: memory::DataTypeSizeInfo
+    +GetBindingType() const noexcept override: score::mw::com::impl::BindingType
+    +SetSkeletonEventTracingData(tracing_data: impl::tracing::SkeletonEventTracingData) noexcept override: void
+    +Notify() override: score::details::expected<void, score::result::Error>
+    +SetReceiveHandlerRegistrationChangedHandler(callback: ReceiveHandlerRegistrationChangedCallback) noexcept override: score::details::expected<void, score::result::Error>
+    +UnsetReceiveHandlerRegistrationChangedHandler() noexcept override: score::details::expected<void, score::result::Error>
+}
+
+class "SkeletonMethod" as lola_SkeletonMethod {
+    +SkeletonMethod(skeleton: Skeleton&, unique_method_identifier: const UniqueMethodIdentifier)
+    +RegisterHandler(type_erased_callback: SkeletonMethodBinding::TypeErasedHandler&&) override: score::details::expected<void, score::result::Error>
+    +OnProxyMethodSubscribeFinished(type_erased_element_info: const TypeErasedCallQueue::TypeErasedElementInfo, in_arg_queue_storage: const std::optional<score::cpp::span<std::byte>>, return_queue_storage: const std::optional<score::cpp::span<std::byte>>, proxy_method_instance_identifier: const ProxyMethodInstanceIdentifier, method_call_handler_scope: const safecpp::Scope<>&, allowed_proxy_uid: uid_t, proxy_pid: pid_t, asil_level: const QualityType): score::details::expected<void, score::result::Error>
+    +OnProxyMethodUnsubscribe(proxy_method_instance_identifier: const ProxyMethodInstanceIdentifier): bool
+    +IsRegistered() const: bool
+    +UnregisterMethodCallHandlers(): void
+}
+
+SkeletonBinding <|-d- lola_Skeleton : implements
+SkeletonEventBinding <|-- GenericSkeletonEventBinding
+GenericSkeletonEventBinding <|-d- lola_SkeletonEvent
+SkeletonMethodBinding <|-d- lola_SkeletonMethod
+lola_Skeleton --> lola_Skeleton_RegistrationResult : returns
+lola_Skeleton ..> lola_SkeletonEventProperties : uses
+lola_SkeletonMemoryManager ..> lola_SkeletonEventProperties : uses
+lola_Skeleton o-- lola_SkeletonMemoryManager : dispatches to
+
+lola_Skeleton "1" --> "0..*" lola_SkeletonMethod : stores reference to
+
+}
+}
 
 @enduml
