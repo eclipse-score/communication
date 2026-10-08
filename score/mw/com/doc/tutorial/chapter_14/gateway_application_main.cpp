@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 #include "score/filesystem/path.h"
-#include "score/mw/com/gateway/gateway_application/gateway_application_runner.h"
+#include "score/mw/com/doc/tutorial/chapter_14/gateway_application_runner.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/log/logging.h"
 
