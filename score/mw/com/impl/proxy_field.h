@@ -146,7 +146,7 @@ class ProxyFieldImpl : public ProxyFieldBase
     ProxyFieldImpl(ProxyFieldImpl&&) noexcept = default;
     ProxyFieldImpl& operator=(ProxyFieldImpl&&) noexcept = default;
 
-    ~ProxyFieldImpl() noexcept = default;
+    ~ProxyFieldImpl() noexcept override = default;
 
     /**
      * \api
