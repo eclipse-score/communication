@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-#include "score/mw/com/gateway/gateway_application/gateway_application_runner.h"
+#include "score/mw/com/doc/tutorial/chapter_14/gateway_application_runner.h"
 
 #include "score/mw/com/gateway/gateway_application/configuration/gateway_config_parser.h"
 #include "score/mw/com/gateway/gateway_application/gateway_application.h"
