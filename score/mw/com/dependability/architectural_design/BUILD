@@ -20,5 +20,9 @@ architectural_design(
         "static_design/lola_binding.puml",
         "static_design/mock_binding.puml",
     ],
+    dynamic = [
+        "dynamic_design/skeleton_create_offer_seq.puml",
+        "dynamic_design/proxy_create_seq.puml",
+    ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
