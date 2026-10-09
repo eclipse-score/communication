@@ -118,7 +118,7 @@ const auto& GetServiceElementInstanceDeployment(const LolaServiceInstanceDeploym
         // EVENT, FIELD, or METHOD (we have a static_assert at the start of this function).
         else
         {
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(0);
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
         }
         // LCOV_EXCL_STOP
     }();

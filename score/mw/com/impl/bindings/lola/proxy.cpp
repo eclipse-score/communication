@@ -635,8 +635,7 @@ const EventDataStorage& Proxy::GetEventDataStorage(const ElementFqId element_fq_
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__
                                          << "Unable to find data storage for given event instance. Terminating.";
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(false,
-                                                          "Unable to find data storage for given event instance.");
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Unable to find data storage for given event instance.");
     }
     // Suppress "AUTOSAR C++14 A5-3-2" rule finding. This rule declares: "Null pointers shall not be dereferenced.".
     // The "event_entry" variable is an iterator of interprocess map returned by the "find" method.

@@ -216,7 +216,7 @@ auto GetServiceElementId(
         // (we have a static_assert at the start of this function) so this branch can never be reached.
         else
         {
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(0);
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
         }
         // LCOV_EXCL_STOP
     }();
@@ -231,7 +231,7 @@ auto GetServiceElementId(
     {
         score::mw::log::LogFatal() << service_element_type << "name \"" << service_element_name
                                    << "\" does not exist in BindingServiceTypeDeployment. Terminating.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
     return service_element_id_it->second;
 }
