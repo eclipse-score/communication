@@ -526,7 +526,7 @@
                     "type": "boolean",
                     "title": "Enable IPC tracing",
                     "description": "enables (or disables) IPC Tracing for the current mw::com application/process.",
-                    "default": true
+                    "default": false
                 },
                 "applicationInstanceID": {
                     "type": "string",
