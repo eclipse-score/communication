@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_H
 
-#include "score/mw/com/impl/bindings/lola/event_data_storage.h"
+#include "score/mw/com/impl/bindings/lola/event_data_storage_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
@@ -120,7 +120,7 @@ class ProxyEvent final : public GenericProxyEventBinding
     SlotCollector::SlotIndices GetNewSamplesSlotIndices(const std::size_t max_count);
 
     const EventMetaInfo& meta_info_;
-    const EventDataStorage& event_data_storage_;
+    const EventDataStorageLocalView event_data_storage_local_;
 
     /// \brief Manually insert a slot collector. Only used for tests.
     // Suppress "AUTOSAR C++14 A0-1-3" rule finding. This rule states: "Every function defined in an anonymous

@@ -68,6 +68,41 @@ EventDataStorage::~EventDataStorage() noexcept
     }
 }
 
+std::byte* EventDataStorage::GetTypeErasedDataSlotsStart() const
+{
+    return type_erased_data_slots_.get();
+}
+
+std::byte* EventDataStorage::GetTypeErasedDataSlotsEnd() const
+{
+    if (type_erased_data_slots_storage_size_in_bytes_ == 0U)
+    {
+        return GetTypeErasedDataSlotsStart();
+    }
+
+    // A one-past-the-end pointer is a legal, but special, address: forming it is well-defined, but there is no
+    // guarantee that an object of the pointed-to type actually starts there (see
+    // score/memory/shared/design/offset_ptr_problems.md, "One-past-the-end-iterators"). Therefore we must not form an
+    // OffsetPtr<std::byte> at that address and call get() on it directly: that would additionally check that a
+    // complete std::byte (i.e. one-past-the-end address + 1) still fits within the memory region, which spuriously
+    // fails whenever the data slots storage happens to end exactly at the boundary of the shared-memory region (a
+    // common case, since this allocation is usually the last/biggest one in the region).
+    // Instead (mirroring the established pattern used e.g. by NonRelocatableVector::GetPastTheEndIterator()), we do a
+    // full, regular (i.e. start- and end-) bounds-check on the *last valid byte* of the storage via
+    // OffsetPtr<std::byte>::get(). Since the storage is contiguous, this implicitly already proves that
+    // last_valid_byte_address + 1 (== start + size, i.e. exactly the one-past-the-end address we want to return) is
+    // still within bounds. We can therefore safely compute the final, one-past-the-end address via plain pointer
+    // arithmetic on that already-validated raw pointer, without triggering another (incorrect) bounds-check.
+    const auto last_valid_byte_offset_ptr =
+        type_erased_data_slots_ +
+        decltype(type_erased_data_slots_)::difference_type(type_erased_data_slots_storage_size_in_bytes_ - 1U);
+    auto* const last_valid_byte_raw_ptr = last_valid_byte_offset_ptr.get();
+    // One-past-the-end is guaranteed to be within bounds by the get() call above, so plain pointer arithmetic (which
+    // performs no further bounds-check) is safe here.
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic) see rationale above
+    return last_valid_byte_raw_ptr + 1;
+}
+
 void EventDataStorage::InitializeSlots(const InitializeSampleCallback& initialization_callback)
 {
     // Retrieve 1st/last slot raw-pointers from OffsetPtrs, which includes bounds-checking.
@@ -83,35 +118,6 @@ void EventDataStorage::InitializeSlots(const InitializeSampleCallback& initializ
     {
         std::invoke(initialization_callback, current_slot_raw_ptr);
     }
-}
-
-void* EventDataStorage::GetTypeErasedDataSlot(SlotIndexType index, size_t data_size) const
-{
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(index < number_of_slots_);
-
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(data_size == sample_size_info_.Size());
-    const auto element_offset = data_size * index;
-
-    // we apply the required bounds-checking:
-    // Verify, that the start of the type-erased storage is still within bounds
-    auto* const slots_start_address = type_erased_data_slots_.get();
-    // Verify, that the complete slot to be accessed in the type-erased storage is still within bounds.
-    const auto slot_last_byte_offset_ptr =
-        type_erased_data_slots_ + decltype(type_erased_data_slots_)::difference_type(element_offset + data_size - 1U);
-    score::cpp::ignore = slot_last_byte_offset_ptr.get();
-
-    // In our architecture we have a one-to-one mapping between pointers and integral values.
-    // The preconditions above guarantee that element_address will always point inside type_erased_data_slots_.
-    // Therefore, casting between integers and pointers is well-defined in this case.
-    // NOLINTNEXTLINE(score-banned-function) see above
-    auto* const element_address = memory::shared::AddOffsetToPointer(slots_start_address, element_offset);
-
-    return element_address;
-}
-
-SlotIndexType EventDataStorage::GetNumberOfSlots() const
-{
-    return number_of_slots_;
 }
 
 void AddEventDataStorageShmSizeAllocation(std::vector<score::memory::DataTypeSizeInfo>& allocation_sequence,

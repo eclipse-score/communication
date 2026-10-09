@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
+#include "score/mw/com/impl/bindings/lola/event_data_storage_local_view.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
@@ -152,8 +153,10 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
             dummy_transaction_log_id, consumer_event_data_control_local);
         auto slot_index = consumer_event_data_control_local.ReferenceNextEvent(0);
         EXPECT_TRUE(slot_index.has_value());
-        auto* const value = static_cast<std::uint32_t*>(
-            event_data_storage->GetTypeErasedDataSlot(slot_index.value(), sizeof(std::uint32_t)));
+        const EventDataStorageLocalView event_data_storage_local_view{
+            *event_data_storage, memory::DataTypeSizeInfo{sizeof(std::uint32_t), alignof(std::uint32_t)}};
+        auto* const value =
+            static_cast<std::uint32_t*>(event_data_storage_local_view.GetTypeErasedDataSlot(slot_index.value()));
 
         consumer_event_data_control_local.DereferenceEvent(slot_index.value());
 

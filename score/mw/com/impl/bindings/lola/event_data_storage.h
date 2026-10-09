@@ -63,15 +63,12 @@ class EventDataStorage final
     EventDataStorage(EventDataStorage&&) = delete;
     EventDataStorage& operator=(EventDataStorage&&) = delete;
 
-    /// \brief Returns a pointer to the type-erased data slot at the given index.
-    /// \details This access also does a complete bounds-check to verify that the returned raw-pointer is within the
-    ///          bounds as well as the end-address (returned pointer plus data_size).
-    /// \param data_size The size of the data slot. This is used to verify, that the callers size expectation matches
-    ///        the size of the event data type, the EventDataStorage was constructed with.
-    /// @return A pointer to the type-erased data slot.
-    void* GetTypeErasedDataSlot(SlotIndexType index, size_t data_size) const;
+    /// \brief Returns a pointer to the start of the type-erased data slots (applying bounds-checking if enabled)
+    std::byte* GetTypeErasedDataSlotsStart() const;
 
-    SlotIndexType GetNumberOfSlots() const;
+    /// \brief Returns a pointer to the end (one-past-the-last-byte) of the type-erased data slots (applying
+    /// bounds-checking if enabled).
+    std::byte* GetTypeErasedDataSlotsEnd() const;
 
   private:
     /// \brief Initializes the (type erased) slots, by calling the callback for each slot.
