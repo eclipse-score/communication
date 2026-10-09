@@ -18,6 +18,7 @@
 #include "score/mw/com/types.h"
 #include "score/result/result.h"
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -85,10 +86,14 @@ class GatewayCore
     /// \param updated_element_type type of the element (currently only events supported) for which an update shall be
     /// notified.
     /// \param updated_element_name name of the element (e.g. event name) for which an update shall be notified.
+    /// \param updated_element_data raw byte payload of the updated sample, received from the source gateway. Empty
+    /// if the sample is expected to already be visible via shared memory (e.g. when memory sharing is supported), in
+    /// which case only a notification is triggered without writing any data.
     /// \return result indicating success or failure.
     virtual score::Result<void> NotifyUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
                                              impl::ServiceElementType updated_element_type,
-                                             std::string updated_element_name) = 0;
+                                             std::string updated_element_name,
+                                             std::vector<std::uint8_t> updated_element_data) = 0;
 };
 
 }  // namespace score::mw::com::gateway

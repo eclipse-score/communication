@@ -1,0 +1,8 @@
+{
+  "appId": "GWA",
+  "appDesc": "Gateway Application",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kConsole",
+  "dynamicDatarouterIdentifiers" : true
+}
