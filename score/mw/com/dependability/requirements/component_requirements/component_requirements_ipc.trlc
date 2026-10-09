@@ -13,6 +13,7 @@
 package Communication
 
 import ScoreReq
+import mw_com_fta
 
 section "com" {
 
@@ -1096,6 +1097,14 @@ section "com" {
             description = '''The shared memory segments described in The shared memory segments shall be divided into slots and One shared memory segment per ASIL level for control data shall exist per service instance.'''
             safety = ScoreReq.Asil.B
             derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            version = 1
+        }
+
+        // TODO This should be moved to the requirements of lib shared memory
+        ScoreReq.CompReq SharedMemoryShallBeAllocatedAccordingToCpuArchitectureAlignment {
+            description = '''SharedMemoryResource shall allocate memory in accordance to the alignment of that CPU architecture.'''
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, mw_com_fta.RootCauseWronglyAlignedMemoryAllocated@1]
             version = 1
         }
 
