@@ -12,8 +12,20 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+unit(
+    name = "binding_independent_mocks",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/mocking/dependability:unit_design",
+    ],
+    visibility = ["//score/mw/com/impl:__pkg__"],
+    implementation = [],
+)
 
 cc_library(
     name = "test_type_utilities",
@@ -178,7 +190,7 @@ cc_library(
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:instance_specifier",
         "//score/mw/com/impl:traits",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:binding_factory_resources",
         "@score_baselibs//score/result",
     ],
@@ -197,7 +209,7 @@ cc_library(
         ":proxy_event_mock",
         ":test_type_utilities",
         "//score/mw/com/impl:traits",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:binding_factory_resources",
         "@score_baselibs//score/result",
     ],
@@ -219,7 +231,7 @@ cc_unit_test(
         ":skeleton_base_mock",
         ":test_type_utilities",
         "//score/mw/com/impl:skeleton_base",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
     ],
 )
 
@@ -230,7 +242,7 @@ cc_unit_test(
         ":skeleton_event_mock",
         ":test_type_utilities",
         "//score/mw/com/impl:skeleton_event",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
     ],
 )
 
@@ -241,7 +253,7 @@ cc_unit_test(
         ":skeleton_field_mock",
         ":test_type_utilities",
         "//score/mw/com/impl:skeleton_field",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
     ],
 )
 
@@ -253,7 +265,7 @@ cc_unit_test(
         ":test_type_utilities",
         "//score/mw/com/impl:proxy_event",
         "//score/mw/com/impl:proxy_field",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
     ],
 )
 
@@ -277,6 +289,6 @@ cc_unit_test(
         ":proxy_event_mock",
         ":proxy_wrapper_class_test_view",
         "//score/mw/com:test_types",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
     ],
 )
