@@ -12,11 +12,9 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/configuration_flatbuffer_parsing_strategy.h"
 
-#include "score/mw/com/impl/configuration/configuration_json_parsing_strategy.h"
 #include "score/mw/com/impl/configuration/mw_com_config_generated_patched.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/instance_specifier.h"
-#include "score/mw/com/impl/tracing/configuration/service_element_identifier_view.h"
 
 #include <score/assert_support.hpp>
 
@@ -38,11 +36,8 @@ namespace
 using ::score::mw::com::impl::InstanceSpecifier;
 using ::score::mw::com::impl::LolaServiceInstanceDeployment;
 using ::score::mw::com::impl::LolaServiceInstanceId;
-using ::score::mw::com::impl::LolaServiceTypeDeployment;
 using ::score::mw::com::impl::QualityType;
-using ::score::mw::com::impl::ServiceElementType;
 
-const std::string kExampleJson{"example/mw_com_config.json"};
 const std::string kExampleBin{"converter/mw_com_config.bin"};
 const std::string kOptionalScalarsBin{"mw_com_config_optional_scalars.bin"};
 
@@ -74,56 +69,6 @@ std::vector<std::uint8_t> ReadBinaryFile(const std::string& path)
 class ConfigurationFlatbufferParsingStrategyFixture : public ::testing::Test
 {
 };
-
-// The headline test: the same source configuration (example/mw_com_config.json), taken down two
-// completely independent parsers -- ConfigurationJsonParsingStrategy over the JSON, and
-// ConfigurationFlatbufferParsingStrategy over converter:mw_com_config's FlatBuffer conversion of the
-// very same JSON -- must land on an equivalent in-memory Configuration. This is the real proof that
-// the two strategies are interchangeable.
-TEST_F(ConfigurationFlatbufferParsingStrategyFixture, ParsingFlatbufferBinaryMatchesParsingEquivalentJson)
-{
-    const auto json_config = ConfigurationJsonParsingStrategy{}.Parse(GetPath(kExampleJson));
-    const auto fbs_config = ConfigurationFlatbufferParsingStrategy{}.Parse(GetPath(kExampleBin));
-
-    const auto instance_specifier = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
-
-    const auto& json_deployment = json_config.GetServiceInstanceDeployment(instance_specifier).value().get();
-    const auto& fbs_deployment = fbs_config.GetServiceInstanceDeployment(instance_specifier).value().get();
-
-    // ServiceInstanceDeployment::operator== compares the service identifier, the full LoLa binding
-    // (including all events/fields/methods, allow-lists, shm sizes, inter-VM flags...), the ASIL
-    // level and the instance specifier -- i.e. everything the FlatBuffer parser had to reconstruct.
-    EXPECT_EQ(json_deployment, fbs_deployment);
-
-    const auto& json_type_deployment = json_config.GetServiceTypeDeployment(json_deployment.service_).value().get();
-    const auto& fbs_type_deployment = fbs_config.GetServiceTypeDeployment(fbs_deployment.service_).value().get();
-    EXPECT_EQ(json_type_deployment, fbs_type_deployment);
-
-    const auto& json_global = json_config.GetGlobalConfiguration();
-    const auto& fbs_global = fbs_config.GetGlobalConfiguration();
-    EXPECT_EQ(json_global.GetProcessAsilLevel(), fbs_global.GetProcessAsilLevel());
-    EXPECT_EQ(json_global.GetReceiverMessageQueueSize(QualityType::kASIL_QM),
-              fbs_global.GetReceiverMessageQueueSize(QualityType::kASIL_QM));
-    EXPECT_EQ(json_global.GetReceiverMessageQueueSize(QualityType::kASIL_B),
-              fbs_global.GetReceiverMessageQueueSize(QualityType::kASIL_B));
-    EXPECT_EQ(json_global.GetSenderMessageQueueSize(), fbs_global.GetSenderMessageQueueSize());
-    EXPECT_EQ(json_global.GetApplicationId(), fbs_global.GetApplicationId());
-    EXPECT_EQ(json_global.GetShmSizeCalcMode(), fbs_global.GetShmSizeCalcMode());
-
-    const auto& json_tracing = json_config.GetTracingConfiguration();
-    const auto& fbs_tracing = fbs_config.GetTracingConfiguration();
-    EXPECT_EQ(json_tracing.IsTracingEnabled(), fbs_tracing.IsTracingEnabled());
-    EXPECT_EQ(json_tracing.GetApplicationInstanceID(), fbs_tracing.GetApplicationInstanceID());
-    EXPECT_EQ(json_tracing.GetTracingFilterConfigPath(), fbs_tracing.GetTracingFilterConfigPath());
-
-    // example/mw_com_config.json enables tracing and sets numberOfIpcTracingSlots: 7 on
-    // CurrentTemperatureFrontLeft, so both parsers must have wired up per-element tracing identically.
-    const tracing::ServiceElementIdentifierView field_view{
-        json_deployment.service_.ToString(), "CurrentTemperatureFrontLeft", ServiceElementType::FIELD};
-    EXPECT_TRUE(json_tracing.IsServiceElementTracingEnabled(field_view, instance_specifier.ToString()));
-    EXPECT_EQ(json_tracing.IsServiceElementTracingEnabled(field_view, instance_specifier.ToString()),
-              fbs_tracing.IsServiceElementTracingEnabled(field_view, instance_specifier.ToString()));
-}
 
 // Parse(path) loads the buffer into a local std::vector that is destroyed once Parse() returns.
 // If any parsed string were left as a view into that buffer rather than a copy, it would read as
@@ -442,12 +387,6 @@ TEST_F(ConfigurationFlatbufferParsingStrategyFixture, WrongFileIdentifierWillDie
 
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
         ConfigurationFlatbufferParsingStrategy{}.Parse(score::cpp::span<const std::uint8_t>{buffer}));
-}
-
-TEST_F(ConfigurationFlatbufferParsingStrategyFixture, InvalidPathWillDie)
-{
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        ConfigurationFlatbufferParsingStrategy{}.Parse(std::string_view{"my_invalid_path_to_nowhere"}));
 }
 
 }  // namespace

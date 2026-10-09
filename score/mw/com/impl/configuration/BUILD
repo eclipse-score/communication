@@ -208,6 +208,8 @@ cc_library(
         ":lola_service_instance_deployment",
         ":quality_type",
         ":service_type_deployment",
+        ":someip_service_instance_deployment",
+        ":someip_service_type_deployment",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/quality/compiler_warnings",
     ] + select({
@@ -754,15 +756,31 @@ cc_unit_test(
     ],
 )
 
+# Runs the shared tests with ConfigurationJsonParsingStrategy and, if the FlatBuffers configuration flag is enabled,
+# additionally with ConfigurationFlatbufferParsingStrategy.
 cc_unit_test(
-    name = "configuration_json_parsing_strategy_test",
-    srcs = ["configuration_json_parsing_strategy_test.cpp"],
-    data = ["example/mw_com_config.json"],
+    name = "configuration_parsing_strategy_test",
+    srcs = ["configuration_parsing_strategy_test.cpp"],
+    data = [
+        "example/mw_com_config.json",
+        "//score/mw/com/impl/configuration/test/parsing_strategy_configs:test_configs_json",
+    ] + select({
+        "//score/mw/com/flags:flatbuffers_enabled": [
+            "//score/mw/com/impl/configuration/converter:mw_com_config",
+            "//score/mw/com/impl/configuration/test/parsing_strategy_configs:test_configs_bin",
+        ],
+        "//conditions:default": [],
+    }),
     features = COMPILER_WARNING_FEATURES + [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
+    local_defines = select({
+        "//score/mw/com/flags:flatbuffers_enabled": ["SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED"],
+        "//conditions:default": [],
+    }),
     deps = [
+        ":configuration_flatbuffer_parsing_strategy",
         ":configuration_json_parsing_strategy",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
@@ -777,7 +795,6 @@ cc_unit_test(
         ":mw_com_config_generated_h",
     ],
     data = [
-        "example/mw_com_config.json",
         ":mw_com_config_optional_scalars",
         "//score/mw/com/impl/configuration/converter:mw_com_config",
     ],
@@ -791,7 +808,6 @@ cc_unit_test(
     }),
     deps = [
         ":configuration_flatbuffer_parsing_strategy",
-        ":configuration_json_parsing_strategy",
         "@score_baselibs//score/flatbuffers:flatbufferscpp",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],

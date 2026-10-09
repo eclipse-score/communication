@@ -26,6 +26,8 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/tracing_configuration.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/service_element_type.h"
@@ -161,10 +163,11 @@ auto ParseAsilLevel(fbs::AsilLevel asil_level) -> QualityType
             return QualityType::kASIL_QM;
         case fbs::AsilLevel::B:
             return QualityType::kASIL_B;
-        default:  // LCOV_EXCL_LINE defensive programming
-            score::mw::log::LogFatal("lola") << "Invalid ASIL level. Terminating.";  // LCOV_EXCL_LINE
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);                              // LCOV_EXCL_LINE
-            return QualityType::kInvalid;                                            // LCOV_EXCL_LINE
+        default:
+            score::mw::log::LogFatal("lola") << "Invalid ASIL level. Terminating.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+            return QualityType::kInvalid;  // LCOV_EXCL_LINE defensive programming: SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD
+                                           // never returns
     }
 }
 
@@ -176,10 +179,26 @@ auto ParseShmSizeCalcMode(fbs::ShmSizeCalcMode mode) -> ShmSizeCalculationMode
             return ShmSizeCalculationMode::kSimulation;
         case fbs::ShmSizeCalcMode::ANALYSIS:
             return ShmSizeCalculationMode::kAnalysis;
-        default:  // LCOV_EXCL_LINE defensive programming
-            score::mw::log::LogFatal("lola") << "Unknown shm-size-calc-mode. Terminating.";  // LCOV_EXCL_LINE
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);                                      // LCOV_EXCL_LINE
-            return ShmSizeCalculationMode::kSimulation;                                      // LCOV_EXCL_LINE
+        default:
+            score::mw::log::LogFatal("lola") << "Unknown shm-size-calc-mode. Terminating.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+            return ShmSizeCalculationMode::kSimulation;  // LCOV_EXCL_LINE defensive programming:
+                                                         // SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD never returns
+    }
+}
+
+auto ParseStrictPermissions(fbs::PermissionChecks permission_checks) -> bool
+{
+    switch (permission_checks)
+    {
+        case fbs::PermissionChecks::file_permissions_on_empty:
+            return false;
+        case fbs::PermissionChecks::strict:
+            return true;
+        default:
+            score::mw::log::LogFatal("lola") << "Unknown permission-checks. Terminating.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+            return false;  // LCOV_EXCL_LINE defensive programming: SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD never returns
     }
 }
 
@@ -226,6 +245,27 @@ auto ParseAllowedProvider(const fbs::AllowedProvider* allowed_provider)
     return ParseAllowedUser(allowed_provider->QM(), allowed_provider->B());
 }
 
+template <typename SampleSlotCountType>
+auto ParseEventNumberOfSampleSlots(const fbs::InstanceEvent& event) -> std::optional<SampleSlotCountType>
+{
+    const auto number_of_sample_slots = ToOptional(event.numberOfSampleSlots());
+
+    // deprecation check "for max_samples"
+    const auto max_samples = ToOptional(event.maxSamples());
+    if (!max_samples.has_value())
+    {
+        return NarrowOrFatal<SampleSlotCountType>(number_of_sample_slots, "numberOfSampleSlots");
+    }
+
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(!number_of_sample_slots.has_value(),
+                                                      "Configuration corrupted, check with json schema");
+
+    score::mw::log::LogWarn("lola")
+        << "<maxSamples> property for event is DEPRECATED! use <numberOfSampleSlots> property for event ";
+
+    return NarrowOrFatal<SampleSlotCountType>(max_samples, "maxSamples");
+}
+
 auto ParseLolaEventInstanceDeployment(const fbs::ServiceInstanceBinding& deployment,
                                       LolaServiceInstanceDeployment& service) -> void
 {
@@ -239,8 +279,8 @@ auto ParseLolaEventInstanceDeployment(const fbs::ServiceInstanceBinding& deploym
         RequireNotNull(event, "an event instance");
         auto event_name = CopyString(event->eventName(), "event name");
 
-        const auto number_of_sample_slots = NarrowOrFatal<LolaEventInstanceDeployment::SampleSlotCountType>(
-            ToOptional(event->numberOfSampleSlots()), "numberOfSampleSlots");
+        const auto number_of_sample_slots =
+            ParseEventNumberOfSampleSlots<LolaEventInstanceDeployment::SampleSlotCountType>(*event);
         const auto max_subscribers = NarrowOrFatal<LolaEventInstanceDeployment::SubscriberCountType>(
             ToOptional(event->maxSubscribers()), "maxSubscribers");
         const auto number_of_tracing_slots =
@@ -389,10 +429,77 @@ auto ParseLolaServiceInstanceDeployment(const fbs::ServiceInstanceBinding& deplo
     ParseLolaFieldInstanceDeployment(deployment, service);
     ParseLolaMethodInstanceDeployment(deployment, service);
 
-    service.strict_permissions_ = deployment.permission_checks() == fbs::PermissionChecks::strict;
+    service.strict_permissions_ = ParseStrictPermissions(deployment.permission_checks());
 
     service.allowed_consumer_ = ParseAllowedConsumer(deployment.allowedConsumer());
     service.allowed_provider_ = ParseAllowedProvider(deployment.allowedProvider());
+
+    return service;
+}
+
+auto ParseSomeIpEventInstanceDeployment(const fbs::ServiceInstanceBinding& deployment,
+                                        SomeIpServiceInstanceDeployment& service) -> void
+{
+    const auto* events = deployment.events();
+    if (events == nullptr)
+    {
+        return;
+    }
+    for (const auto* event : *events)
+    {
+        RequireNotNull(event, "an event instance");
+        auto event_name = CopyString(event->eventName(), "event name");
+
+        const auto number_of_sample_slots =
+            ParseEventNumberOfSampleSlots<SomeIpEventInstanceDeployment::SampleSlotCountType>(*event);
+        const auto max_subscribers = NarrowOrFatal<SomeIpEventInstanceDeployment::SubscriberCountType>(
+            ToOptional(event->maxSubscribers()), "maxSubscribers");
+
+        auto event_deployment = SomeIpEventInstanceDeployment(
+            number_of_sample_slots, max_subscribers, static_cast<std::uint8_t>(1U), event->enforceMaxSamples());
+
+        EmplaceOrFatal(service.events_, std::move(event_name), event_deployment, "An event instance");
+    }
+}
+
+auto ParseSomeIpFieldInstanceDeployment(const fbs::ServiceInstanceBinding& deployment,
+                                        SomeIpServiceInstanceDeployment& service) -> void
+{
+    const auto* fields = deployment.fields();
+    if (fields == nullptr)
+    {
+        return;
+    }
+    for (const auto* field : *fields)
+    {
+        RequireNotNull(field, "a field instance");
+        auto field_name = CopyString(field->fieldName(), "field name");
+
+        const auto number_of_sample_slots = NarrowOrFatal<SomeIpEventInstanceDeployment::SampleSlotCountType>(
+            ToOptional(field->numberOfSampleSlots()), "numberOfSampleSlots");
+        const auto max_subscribers = NarrowOrFatal<SomeIpEventInstanceDeployment::SubscriberCountType>(
+            ToOptional(field->maxSubscribers()), "maxSubscribers");
+
+        auto field_deployment = SomeIpFieldInstanceDeployment(SomeIpEventInstanceDeployment(
+            number_of_sample_slots, max_subscribers, static_cast<std::uint8_t>(1U), field->enforceMaxSamples()));
+        EmplaceOrFatal(service.fields_, std::move(field_name), field_deployment, "A field instance");
+    }
+}
+
+auto ParseSomeIpServiceInstanceDeployment(const fbs::ServiceInstanceBinding& deployment)
+    -> SomeIpServiceInstanceDeployment
+{
+    SomeIpServiceInstanceDeployment service{};
+
+    const auto instance_id =
+        NarrowOrFatal<SomeIpServiceInstanceId::InstanceId>(ToOptional(deployment.instanceId()), "instanceId");
+    if (instance_id.has_value())
+    {
+        service.instance_id_ = SomeIpServiceInstanceId{instance_id.value()};
+    }
+
+    ParseSomeIpEventInstanceDeployment(deployment, service);
+    ParseSomeIpFieldInstanceDeployment(deployment, service);
 
     return service;
 }
@@ -416,6 +523,10 @@ auto ParseServiceInstanceDeployments(const fbs::ServiceInstance& service_instanc
             case fbs::Binding::SHM:
                 score::cpp::ignore = deployments.emplace_back(
                     service, ParseLolaServiceInstanceDeployment(*deployment), asil_level, instance_specifier);
+                break;
+            case fbs::Binding::SOMEIP:
+                score::cpp::ignore = deployments.emplace_back(
+                    service, ParseSomeIpServiceInstanceDeployment(*deployment), asil_level, instance_specifier);
                 break;
             default:  // LCOV_EXCL_LINE defensive programming
                 score::mw::log::LogFatal("lola") << "Unknown binding provided. Required argument.";  // LCOV_EXCL_LINE
@@ -464,7 +575,8 @@ auto ParseServiceInstances(const fbs::Configuration& configuration, TracingConfi
     return service_instance_deployments;
 }
 
-void ParseLolaEventTypeDeployments(const fbs::ServiceTypeBinding& binding, LolaServiceTypeDeployment& service)
+template <typename BindingServiceTypeDeployment>
+void ParseEventTypeDeployments(const fbs::ServiceTypeBinding& binding, BindingServiceTypeDeployment& service)
 {
     const auto* events = binding.events();
     if (events == nullptr)
@@ -475,12 +587,14 @@ void ParseLolaEventTypeDeployments(const fbs::ServiceTypeBinding& binding, LolaS
     {
         RequireNotNull(event, "an event");
         auto event_name = CopyString(event->eventName(), "eventName");
-        const auto event_id = NarrowOrFatal<LolaEventId>(RequireValue(event->eventId(), "eventId"), "eventId");
+        const auto event_id = NarrowOrFatal<typename BindingServiceTypeDeployment::EventIdMapping::mapped_type>(
+            RequireValue(event->eventId(), "eventId"), "eventId");
         EmplaceOrFatal(service.events_, std::move(event_name), event_id, "An event");
     }
 }
 
-void ParseLolaFieldTypeDeployments(const fbs::ServiceTypeBinding& binding, LolaServiceTypeDeployment& service)
+template <typename BindingServiceTypeDeployment>
+void ParseFieldTypeDeployments(const fbs::ServiceTypeBinding& binding, BindingServiceTypeDeployment& service)
 {
     const auto* fields = binding.fields();
     if (fields == nullptr)
@@ -491,12 +605,14 @@ void ParseLolaFieldTypeDeployments(const fbs::ServiceTypeBinding& binding, LolaS
     {
         RequireNotNull(field, "a field");
         auto field_name = CopyString(field->fieldName(), "fieldName");
-        const auto field_id = NarrowOrFatal<LolaFieldId>(RequireValue(field->fieldId(), "fieldId"), "fieldId");
+        const auto field_id = NarrowOrFatal<typename BindingServiceTypeDeployment::FieldIdMapping::mapped_type>(
+            RequireValue(field->fieldId(), "fieldId"), "fieldId");
         EmplaceOrFatal(service.fields_, std::move(field_name), field_id, "A field");
     }
 }
 
-void ParseLolaMethodTypeDeployments(const fbs::ServiceTypeBinding& binding, LolaServiceTypeDeployment& service)
+template <typename BindingServiceTypeDeployment>
+void ParseMethodTypeDeployments(const fbs::ServiceTypeBinding& binding, BindingServiceTypeDeployment& service)
 {
     const auto* methods = binding.methods();
     if (methods == nullptr)
@@ -507,7 +623,8 @@ void ParseLolaMethodTypeDeployments(const fbs::ServiceTypeBinding& binding, Lola
     {
         RequireNotNull(method, "a method");
         auto method_name = CopyString(method->methodName(), "methodName");
-        const auto method_id = NarrowOrFatal<LolaMethodId>(RequireValue(method->methodId(), "methodId"), "methodId");
+        const auto method_id = NarrowOrFatal<typename BindingServiceTypeDeployment::MethodIdMapping::mapped_type>(
+            RequireValue(method->methodId(), "methodId"), "methodId");
         EmplaceOrFatal(service.methods_, std::move(method_name), method_id, "A method");
     }
 }
@@ -516,11 +633,22 @@ auto ParseLoLaServiceTypeDeployments(const fbs::ServiceTypeBinding& binding) -> 
 {
     LolaServiceTypeDeployment lola{
         NarrowOrFatal<LolaServiceId>(RequireValue(binding.serviceId(), "serviceId"), "serviceId")};
-    ParseLolaEventTypeDeployments(binding, lola);
-    ParseLolaFieldTypeDeployments(binding, lola);
-    ParseLolaMethodTypeDeployments(binding, lola);
+    ParseEventTypeDeployments(binding, lola);
+    ParseFieldTypeDeployments(binding, lola);
+    ParseMethodTypeDeployments(binding, lola);
     ValidateUniqueServiceElementIds(lola);
     return lola;
+}
+
+auto ParseSomeIpServiceTypeDeployments(const fbs::ServiceTypeBinding& binding) -> SomeIpServiceTypeDeployment
+{
+    SomeIpServiceTypeDeployment someip{
+        NarrowOrFatal<SomeIpServiceId>(RequireValue(binding.serviceId(), "serviceId"), "serviceId")};
+    ParseEventTypeDeployments(binding, someip);
+    ParseFieldTypeDeployments(binding, someip);
+    ParseMethodTypeDeployments(binding, someip);
+    ValidateUniqueServiceElementIds(someip);
+    return someip;
 }
 
 auto ParseServiceTypeDeployment(const fbs::ServiceType& service_type) -> ServiceTypeDeployment
@@ -533,6 +661,8 @@ auto ParseServiceTypeDeployment(const fbs::ServiceType& service_type) -> Service
         {
             case fbs::Binding::SHM:
                 return ServiceTypeDeployment{ParseLoLaServiceTypeDeployments(*binding)};
+            case fbs::Binding::SOMEIP:
+                return ServiceTypeDeployment{ParseSomeIpServiceTypeDeployments(*binding)};
             default:  // LCOV_EXCL_LINE defensive programming
                 score::mw::log::LogFatal("lola")
                     << "No unknown binding provided. Required argument.";  // LCOV_EXCL_LINE

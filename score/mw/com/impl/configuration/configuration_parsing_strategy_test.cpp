@@ -10,6 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#include "score/mw/com/impl/configuration/configuration_flatbuffer_parsing_strategy.h"
 #include "score/mw/com/impl/configuration/configuration_json_parsing_strategy.h"
 
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
@@ -22,6 +23,7 @@
 #include "gmock/gmock.h"
 #include <gtest/gtest.h>
 
+#include <cstdint>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -31,13 +33,18 @@
 #include <fstream>
 #include <iostream>
 
+// Every configuration used by these tests is a file in test/parsing_strategy_configs. The tests of
+// ConfigurationParsingStrategyTest (and the other suites parametrised with kStrategies) run once per parsing strategy:
+// ConfigurationJsonParsingStrategy parses <config>.json and ConfigurationFlatbufferParsingStrategy parses <config>.bin,
+// which is converted from the very same <config>.json at build time. Configurations which flatc refuses to convert
+// (see FLATC_REJECTED_CONFIGS in test/parsing_strategy_configs/BUILD) are only tested with the JSON strategy, in
+// ConfigurationJsonOnlyParsingTest.
 namespace score::mw::com::impl
 {
 
 namespace
 {
 
-using score::json::operator""_json;
 using std::string_view_literals::operator""sv;
 
 using ::testing::NiceMock;
@@ -46,31 +53,98 @@ using ::testing::StrEq;
 
 const std::string kTracingTraceFilterConfigPathDefaultValue{"./etc/mw_com_trace_filter.json"};
 
-class ConfigurationJsonParsingStrategyFixture : public ::testing::Test
+enum class Strategy : std::uint8_t
+{
+    kJson,
+    kFlatbuffer,
+};
+
+// ConfigurationFlatbufferParsingStrategy is only implemented when built with --config=flatbuffers.
+const std::vector<Strategy> kStrategies{
+    Strategy::kJson,
+#if defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
+    Strategy::kFlatbuffer,
+#endif
+};
+
+std::string StrategyName(const ::testing::TestParamInfo<Strategy>& info)
+{
+    return info.param == Strategy::kFlatbuffer ? "Flatbuffer" : "Json";
+}
+
+// Tests may run either from the workspace root or from within an external repository's runfiles tree.
+std::string GetPath(const std::string& relative_path)
+{
+    const std::string default_path = "score/mw/com/impl/configuration/" + relative_path;
+
+    std::ifstream file(default_path);
+    if (file.is_open())
+    {
+        file.close();
+        return default_path;
+    }
+    else
+    {
+        return "external/safe_posix_platform/" + default_path;
+    }
+}
+
+Configuration ParseFile(const Strategy strategy, const std::string& relative_path_without_extension)
+{
+    if (strategy == Strategy::kFlatbuffer)
+    {
+        return configuration::ConfigurationFlatbufferParsingStrategy{}.Parse(
+            GetPath(relative_path_without_extension + ".bin"));
+    }
+    return configuration::ConfigurationJsonParsingStrategy{}.Parse(GetPath(relative_path_without_extension + ".json"));
+}
+
+/// \brief Parses the configuration test/parsing_strategy_configs/<config_name> with the given strategy.
+Configuration Parse(const Strategy strategy, const std::string& config_name)
+{
+    return ParseFile(strategy, "test/parsing_strategy_configs/" + config_name);
+}
+
+/// \brief Parses a configuration which only exists as JSON, since flatc rejects it.
+Configuration ParseJson(const std::string& config_name)
+{
+    return Parse(Strategy::kJson, config_name);
+}
+
+class ConfigurationParsingStrategyTest : public ::testing::TestWithParam<Strategy>
 {
   public:
-    const std::string get_path(const std::string& file_name)
-    {
-        const std::string default_path = "score/mw/com/impl/configuration/example/" + file_name;
-
-        std::ifstream file(default_path);
-        if (file.is_open())
-        {
-            file.close();
-            return default_path;
-        }
-        else
-        {
-            return "external/safe_posix_platform/" + default_path;
-        }
-    }
-
     ServiceIdentifierType si_{make_ServiceIdentifierType("/score/ncar/services/TirePressureService", 12U, 34U)};
     ServiceVersionType sv_{make_ServiceVersionType(12U, 34U)};
     std::pair<const ServiceIdentifierType*, const ServiceVersionType*> found_service_type_{&si_, &sv_};
 };
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, ParseExampleJson)
+using ConfigurationParsingStrategyDeathTest = ConfigurationParsingStrategyTest;
+using ConfigurationParsingStrategyTracingTest = ConfigurationParsingStrategyTest;
+using TracingFilterConfigGetNumberOfTraceingSlots = ConfigurationParsingStrategyTest;
+
+INSTANTIATE_TEST_SUITE_P(AllStrategies,
+                         ConfigurationParsingStrategyTest,
+                         ::testing::ValuesIn(kStrategies),
+                         StrategyName);
+INSTANTIATE_TEST_SUITE_P(AllStrategies,
+                         ConfigurationParsingStrategyDeathTest,
+                         ::testing::ValuesIn(kStrategies),
+                         StrategyName);
+INSTANTIATE_TEST_SUITE_P(AllStrategies,
+                         ConfigurationParsingStrategyTracingTest,
+                         ::testing::ValuesIn(kStrategies),
+                         StrategyName);
+INSTANTIATE_TEST_SUITE_P(AllStrategies,
+                         TracingFilterConfigGetNumberOfTraceingSlots,
+                         ::testing::ValuesIn(kStrategies),
+                         StrategyName);
+
+class ConfigurationJsonOnlyParsingTest : public ::testing::Test
+{
+};
+
+TEST_P(ConfigurationParsingStrategyTest, ParseExampleJson)
 {
     RecordProperty("Verifies", "SCR-21803701, SCR-21803702, SCR-5898925, SCR-5899090, SCR-5899184, SCR-7088394");
     RecordProperty("Description", "Checks whether all necessary configuration can be read at runtime");
@@ -78,8 +152,10 @@ TEST_F(ConfigurationJsonParsingStrategyFixture, ParseExampleJson)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    const auto config =
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(get_path("mw_com_config.json"));
+    // example/mw_com_config.json resp. its FlatBuffer conversion converter/mw_com_config.bin
+    const auto config = GetParam() == Strategy::kFlatbuffer
+                            ? ParseFile(Strategy::kFlatbuffer, "converter/mw_com_config")
+                            : ParseFile(Strategy::kJson, "example/mw_com_config");
 
     const auto& deployments =
         config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
@@ -135,6 +211,7 @@ TEST_F(ConfigurationJsonParsingStrategyFixture, ParseExampleJson)
     EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, true);
     EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, true);
     EXPECT_TRUE(secondDeploymentInfo.methods_.at("SetPressure").enabled_);
+    EXPECT_EQ(secondDeploymentInfo.methods_.at("SetPressure").queue_size_.value(), 20);
 
     const auto& service_deployment = config.GetServiceTypeDeployment(deployments.service_).value().get();
     const auto* const lola_service_type_deployment =
@@ -143,6 +220,16 @@ TEST_F(ConfigurationJsonParsingStrategyFixture, ParseExampleJson)
     EXPECT_EQ(lola_service_type_deployment->service_id_, 1234);
     EXPECT_EQ(lola_service_type_deployment->events_.at("CurrentPressureFrontLeft"), 20);
     EXPECT_EQ(lola_service_type_deployment->fields_.at("CurrentTemperatureFrontLeft"), 30);
+    EXPECT_EQ(lola_service_type_deployment->methods_.at("SetPressure"), 40);
+
+    const auto& tracing_config = config.GetTracingConfiguration();
+    EXPECT_TRUE(tracing_config.IsTracingEnabled());
+    EXPECT_EQ(tracing_config.GetApplicationInstanceID(), "ara_com_example");
+    EXPECT_EQ(tracing_config.GetTracingFilterConfigPath(), "./mw_com_trace_filter.json");
+    // CurrentTemperatureFrontLeft configures numberOfIpcTracingSlots, so tracing is enabled for it
+    const tracing::ServiceElementIdentifierView field_view{
+        "/score/ncar/services/TirePressureService", "CurrentTemperatureFrontLeft", ServiceElementType::FIELD};
+    EXPECT_TRUE(tracing_config.IsServiceElementTracingEnabled(field_view, "abc/abc/TirePressurePort"));
 
     EXPECT_EQ(config.GetGlobalConfiguration().GetProcessAsilLevel(), QualityType::kASIL_B);
     EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_QM), 8);
@@ -153,128 +240,46 @@ TEST_F(ConfigurationJsonParsingStrategyFixture, ParseExampleJson)
     EXPECT_EQ(config.GetGlobalConfiguration().GetShmSizeCalcMode(), ShmSizeCalculationMode::kSimulation);
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, InvalidPathWillDie)
+TEST_P(ConfigurationParsingStrategyTest, InvalidPathWillDie)
 {
-    // Given an invalid path that doesn't point to a JSON file
-    std::string invalid_path{"my_invalid_path_to_nowhere"};
+    // Given an invalid path that doesn't point to a configuration file
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(invalid_path)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ParseFile(GetParam(), "my_invalid_path_to_nowhere"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoServiceInstanceWillDie)
+TEST_P(ConfigurationParsingStrategyTest, NoServiceInstanceWillDie)
 {
     // Given a JSON without necessary attribute `serviceInstances`
-    auto j2 = R"(
-  {
-  }
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_service_instances"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoServiceNameInInstanceWillDie)
+TEST_P(ConfigurationParsingStrategyTest, NoServiceNameInInstanceWillDie)
 {
     // Given a JSON without necessary attribute `serviceName`
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {}
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_instance_specifier_in_empty_instance"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoServiceTypesWillDie)
+TEST_P(ConfigurationParsingStrategyTest, NoServiceTypesWillDie)
 {
     // Given a JSON without necessary attribute `serviceTypes`
-    auto j2 = R"(
-  {
-    "serviceInstances": []
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_service_types"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, ParseSomeIpBinding)
+TEST_P(ConfigurationParsingStrategyTest, ParseSomeIpBinding)
 {
     // Given a JSON which configures a service type and a service instance with a SOME/IP binding
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-          "binding": "SOMEIP",
-          "serviceId": 1234,
-          "events": [
-            {
-              "eventName": "CurrentPressureFrontLeft",
-              "eventId": 20
-            }
-          ],
-          "fields": []
-        }
-      ]
-    }
-  ],
-  "serviceInstances": [
-    {
-      "instanceSpecifier": "abc/abc/TirePressurePort",
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "instances": [
-        {
-          "instanceId": 1234,
-          "asil-level": "QM",
-          "binding": "SOMEIP",
-          "events": [
-            {
-              "eventName": "CurrentPressureFrontLeft",
-              "numberOfSampleSlots": 50,
-              "maxSubscribers": 5
-            }
-          ],
-          "fields": []
-        }
-      ]
-    }
-  ]
-}
-)"_json;
 
     // When parsing the JSON
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "someip_binding");
 
     // Then the service type deployment holds a SOME/IP binding with the configured ids
     const auto& service_type_deployment =
@@ -288,6 +293,8 @@ TEST_F(ConfigurationJsonParsingStrategyFixture, ParseSomeIpBinding)
     EXPECT_EQ(someip_service_type_deployment->service_id_, 1234U);
     ASSERT_EQ(someip_service_type_deployment->events_.count("CurrentPressureFrontLeft"), 1U);
     EXPECT_EQ(someip_service_type_deployment->events_.at("CurrentPressureFrontLeft"), 20U);
+    ASSERT_EQ(someip_service_type_deployment->methods_.count("SetPressure"), 1U);
+    EXPECT_EQ(someip_service_type_deployment->methods_.at("SetPressure"), 40U);
 
     // And the service instance deployment holds a SOME/IP binding with the configured instance id and event
     const auto& service_instance_deployment =
@@ -308,1372 +315,373 @@ TEST_F(ConfigurationJsonParsingStrategyFixture, ParseSomeIpBinding)
     EXPECT_EQ(event_instance_deployment.max_subscribers_.value(), 5U);
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoServiceNameForServiceType)
+TEST_P(ConfigurationParsingStrategyTest, NoServiceNameForServiceType)
 {
     // Given a JSON without necessary attribute `serviceTypeName`
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-             "binding": "SHM",
-             "serviceId": 1234
-        }
-      ]
-    }
-  ],
-  "serviceInstances": []
-}
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_service_type_name"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoVersionForServiceTypeDeployment)
+TEST_P(ConfigurationParsingStrategyTest, NoVersionForServiceTypeDeployment)
 {
     // Given a JSON without necessary attribute `version`
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "bindings": [
-        {
-             "binding": "SHM",
-             "serviceId": 1234
-        }
-      ]
-    }
-  ],
-  "serviceInstances": []
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_service_type_version"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoBindingsForServiceTypeDeployment)
+TEST_P(ConfigurationParsingStrategyTest, NoBindingsForServiceTypeDeployment)
 {
     // Given a JSON without necessary attribute `bindings`
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      }
-    }
-  ],
-  "serviceInstances": []
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_service_type_bindings"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoBindingIdentifierInServiceTypeDeployment)
+TEST_P(ConfigurationParsingStrategyTest, NoBindingIdentifierInServiceTypeDeployment)
 {
     // Given a JSON without necessary attribute `binding`
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-             "serviceId": 1234
-        }
-      ]
-    }
-  ],
-  "serviceInstances": []
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_service_type_binding_identifier"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoServiceIdInServiceTypeDeployment)
+TEST_P(ConfigurationParsingStrategyTest, NoServiceIdInServiceTypeDeployment)
 {
     // Given a JSON without necessary attribute `serviceId`
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-             "binding": "SHM"
-        }
-      ]
-    }
-  ],
-  "serviceInstances": []
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_service_type_service_id"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, UnknownBindingIdentifierInServiceTypeDeployment)
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, UnknownBindingIdentifierInServiceTypeDeployment)
 {
     // Given a JSON with an unknown binding identifier
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-             "binding": "unkown",
-             "serviceId": 1234
-        }
-      ]
-    }
-  ],
-  "serviceInstances": []
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ParseJson("unknown_service_type_binding"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoEventNameWillCauseTermination)
+TEST_P(ConfigurationParsingStrategyTest, NoEventNameWillCauseTermination)
 {
     // Given a JSON with a missing event name
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-             "binding": "SHM",
-             "serviceId": 1234,
-             "events": [
-                { "eventId": 20 }
-             ],
-             "fields": []
-        }
-      ]
-    }
-  ],
-  "serviceInstances": []
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_type_event_name"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoFieldNameWillCauseTermination)
+TEST_P(ConfigurationParsingStrategyTest, NoFieldNameWillCauseTermination)
 {
     // Given a JSON with a missing field name
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-             "binding": "SHM",
-             "serviceId": 1234,
-             "events": [],
-             "fields": [
-                { "fieldId": 20 }
-             ]
-        }
-      ]
-    }
-  ],
-  "serviceInstances": []
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_type_field_name"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoEventIdWillCauseTermination)
+TEST_P(ConfigurationParsingStrategyTest, NoEventIdWillCauseTermination)
 {
     // Given a JSON with a missing event id
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-          "binding": "SHM",
-          "serviceId": 1234,
-          "events": [
-            {
-              "eventName": "foo"
-            }
-          ],
-          "fields": []
-        }
-      ]
-    }
-  ],
-  "serviceInstances": []
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_type_event_id"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoFieldIdWillCauseTermination)
+TEST_P(ConfigurationParsingStrategyTest, NoFieldIdWillCauseTermination)
 {
     // Given a JSON with a missing field id
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-             "binding": "SHM",
-             "serviceId": 1234,
-             "events": [],
-             "fields": [
-                { "fieldName": "foo" }
-             ]
-        }
-      ]
-    }
-  ],
-  "serviceInstances": []
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_type_field_id"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, WrongPermissionValueWillCauseTermination)
+TEST_P(ConfigurationParsingStrategyTest, NoMethodNameWillCauseTermination)
+{
+    // Given a JSON with a missing method name
+
+    // When parsing the JSON
+    // That the application will terminate
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_type_method_name"));
+}
+
+TEST_P(ConfigurationParsingStrategyTest, NoMethodIdWillCauseTermination)
+{
+    // Given a JSON with a missing method id
+
+    // When parsing the JSON
+    // That the application will terminate
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_type_method_id"));
+}
+
+TEST_P(ConfigurationParsingStrategyTest, DuplicateTypeMethodNameWillDie)
+{
+    // Given a JSON with a duplicate LoLa method type deployment (duplicate methodName)
+
+    // When parsing the JSON
+    // That the application will terminate
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "duplicate_type_method_name"));
+}
+
+TEST_P(ConfigurationParsingStrategyTest, MethodIdMatchingEventIdIsNotAllowed)
+{
+    // Given a JSON with a method id which is the same as an event id of the same binding
+
+    // When parsing the JSON
+    // That the application will terminate
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "method_id_matches_event_id"));
+}
+
+TEST_P(ConfigurationParsingStrategyTest, LolaMethodWithoutNameCausesTermination)
+{
+    // Given a JSON with a LoLa method instance deployment without a methodName
+
+    // When parsing the JSON
+    // That the application will terminate
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "instance_method_without_name"));
+}
+
+TEST_P(ConfigurationParsingStrategyTest, DuplicateInstanceMethodNameWillDie)
+{
+    // Given a JSON with a duplicate LoLa method instance deployment (duplicate methodName)
+
+    // When parsing the JSON
+    // That the application will terminate
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "duplicate_instance_method_name"));
+}
+
+TEST_P(ConfigurationParsingStrategyTest, MethodAttributesAreParsed)
+{
+    // Given a JSON with a method which sets all of its attributes
+    // When parsing the JSON
+    const auto config = Parse(GetParam(), "method_all_attributes");
+
+    // Then the service type deployment contains the method id
+    const auto& service_type_deployment =
+        config
+            .GetServiceTypeDeployment(make_ServiceIdentifierType("/score/ncar/services/TirePressureService", 12U, 34U))
+            .value()
+            .get();
+    const auto& lola_service_type_deployment =
+        std::get<LolaServiceTypeDeployment>(service_type_deployment.binding_info_);
+    ASSERT_EQ(lola_service_type_deployment.methods_.count("SetPressure"), 1U);
+    EXPECT_EQ(lola_service_type_deployment.methods_.at("SetPressure"), 40U);
+
+    // And the service instance deployment contains the configured queue size and the disabled flag
+    const auto& deployment =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
+    const auto& lola_deployment = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+    ASSERT_TRUE(lola_deployment.ContainsMethod("SetPressure"));
+    const auto& method_deployment = lola_deployment.methods_.at("SetPressure");
+    ASSERT_TRUE(method_deployment.queue_size_.has_value());
+    EXPECT_EQ(method_deployment.queue_size_.value(), 255U);
+    EXPECT_FALSE(method_deployment.enabled_);
+}
+
+TEST_P(ConfigurationParsingStrategyTest, MethodOmittedOptionalsUseDefaults)
+{
+    // Given a JSON with a method instance deployment which only sets the methodName
+    // When parsing the JSON
+    const auto config = Parse(GetParam(), "method_defaults");
+
+    // Then the queue size is not set and the method is enabled
+    const auto& deployment =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
+    const auto& lola_deployment = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+    ASSERT_TRUE(lola_deployment.ContainsMethod("SetPressure"));
+    const auto& method_deployment = lola_deployment.methods_.at("SetPressure");
+    EXPECT_FALSE(method_deployment.queue_size_.has_value());
+    EXPECT_TRUE(method_deployment.enabled_);
+}
+
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, WrongPermissionValueWillCauseTermination)
 {
     // Given a JSON with an invalid permission in permission-check attribute
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-          "binding": "SHM",
-          "serviceId": 1234,
-          "events": [
-            {
-              "eventName": "CurrentPressureFrontLeft",
-              "eventId": 20
-            }
-          ],
-          "fields": [
-            {
-              "fieldName": "CurrentPressureFrontRight",
-              "fieldId": 21
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  "serviceInstances": [
-    {
-      "instanceSpecifier": "abc/abc/TirePressurePort",
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "instances": [
-        {
-          "instanceId": 1234,
-          "asil-level": "QM",
-          "binding": "SHM",
-          "events": [
-            {
-              "eventName": "CurrentPressureFrontLeft",
-              "maxSubscribers": 5,
-              "numberOfIpcTracingSlots": 0
-            }
-          ],
-          "fields": [
-            {
-              "fieldName": "CurrentPressureFrontRight",
-              "numberOfSampleSlots": 2,
-              "maxSubscribers": 3,
-              "numberOfIpcTracingSlots": 1
-            }
-          ],
-          "permission-checks": "wrong_permission"
-        }
-      ]
-    }
-  ]
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ParseJson("wrong_permission_checks_value"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, DuplicateEventTypeDeploymentWillCauseTermination)
+TEST_P(ConfigurationParsingStrategyTest, DuplicateEventTypeDeploymentWillCauseTermination)
 {
     // Given a JSON with an duplicate LoLa event type deployment (duplicate eventName)
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-             "binding": "SHM",
-             "serviceId": 1234,
-             "events": [
-                {
-                  "eventName": "foo",
-                  "eventId": 20
-                },
-                {
-                  "eventName": "foo",
-                  "eventId": 21
-                }
-             ],
-             "fields": []
-        }
-      ]
-    }
-  ],
-  "serviceInstances": []
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "duplicate_type_event_name"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, DuplicateFieldTypeDeploymentWillCauseTermination)
+TEST_P(ConfigurationParsingStrategyTest, DuplicateFieldTypeDeploymentWillCauseTermination)
 {
     // Given a JSON with an duplicate LoLa field type deployment (duplicate fieldName)
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-             "binding": "SHM",
-             "serviceId": 1234,
-             "events": [],
-             "fields": [
-              {
-                  "fieldName": "foo",
-                  "fieldId": 20
-                },
-                {
-                  "fieldName": "foo",
-                  "fieldId": 21
-                }
-             ]
-        }
-      ]
-    }
-  ],
-  "serviceInstances": []
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "duplicate_type_field_name"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, DuplicateServiceTypeDeploymentWillCauseTermination)
+TEST_P(ConfigurationParsingStrategyTest, DuplicateServiceTypeDeploymentWillCauseTermination)
 {
     // Given a JSON with a duplicate service type deployment (duplicate serviceTypeName/version)
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-             "binding": "SHM",
-             "serviceId": 1234,
-             "events": [],
-             "fields": []
-        }
-      ]
-    },
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-             "binding": "SHM",
-             "serviceId": 1235,
-             "events": [],
-             "fields": []
-        }
-      ]
-    }
-  ],
-  "serviceInstances": []
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "duplicate_service_type"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoInstanceSpecifierInInstanceWillDie)
+TEST_P(ConfigurationParsingStrategyTest, NoInstanceSpecifierInInstanceWillDie)
 {
     // Given a JSON without necessary attribute `instanceSpecifier`
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService"
-        }
-    ]
-  }
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_instance_specifier"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoVersionInInstanceWillDie)
+TEST_P(ConfigurationParsingStrategyTest, NoVersionInInstanceWillDie)
 {
     // Given a JSON without necessary attribute `version`
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService"
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_instance_version"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoVersionDetailsInInstanceWillDie)
+TEST_P(ConfigurationParsingStrategyTest, NoVersionDetailsInInstanceWillDie)
 {
     // Given a JSON without necessary attribute `major`
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "minor": 34
-            }
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_instance_major_version"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoDeploymentInstancesInInstanceWillDie)
+TEST_P(ConfigurationParsingStrategyTest, NoDeploymentInstancesInInstanceWillDie)
 {
     // Given a JSON without necessary attribute `instances`
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            }
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_deployment_instances"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, EmptyDeploymentInstancesInInstanceWillDie)
+TEST_P(ConfigurationParsingStrategyTest, EmptyDeploymentInstancesInInstanceWillDie)
 {
     // Given a JSON without elements in array `instances`.
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "empty_deployment_instances"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, UnknownDeploymentInstancesInInstanceWillDie)
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, UnknownDeploymentInstancesInInstanceWillDie)
 {
     // Given a JSON with an unknown binding "HappyHippo" in an instance deployment.
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "asil-level": "QM",
-                  "binding": "HappyHippo"
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ParseJson("unknown_instance_binding"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, DuplicateServiceInstanceWillDie)
-{
-    // Given a JSON with two service instances with same instanceSpecifier
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "asil-level": "QM",
-                  "binding": "SHM"
-                }
-            ]
-        },
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "asil-level": "QM",
-                  "binding": "SHM"
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
-    // When parsing the JSON
-    // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
-}
-
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoAsilInDeploymentInstancesInInstanceWillDie)
+TEST_P(ConfigurationParsingStrategyTest, NoAsilInDeploymentInstancesInInstanceWillDie)
 {
     // Given a JSON without necessary attribute `asil-level`
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "binding": "SHM"
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_instance_asil_level"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoBindingInfoInDeploymentInstancesInInstanceWillDie)
+TEST_P(ConfigurationParsingStrategyTest, NoBindingInfoInDeploymentInstancesInInstanceWillDie)
 {
     // Given a JSON without necessary attribute `binding`
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "asil-level": "QM"
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_instance_binding"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, LolaEventWithoutNameCausesTermination)
+TEST_P(ConfigurationParsingStrategyTest, LolaEventWithoutNameCausesTermination)
 {
     // Given a JSON without necessary attribute `name` for an event for Shm-Binding Info
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                    {}
-                  ],
-                  "fields": []
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "instance_event_without_name"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, LolaFieldWithoutNameCausesTermination)
+TEST_P(ConfigurationParsingStrategyTest, LolaFieldWithoutNameCausesTermination)
 {
     // Given a JSON without necessary attribute `name` for a field for Shm-Binding Info
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [],
-                  "fields": [
-                    {}
-                  ]
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "instance_field_without_name"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, LolaEventNameDuplicateCausesTermination)
-{
-    // Given a JSON where a LoLa event has been duplicated
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-            {
-              "binding": "SHM",
-              "serviceId": 1234,
-              "events": [
-                {
-                  "eventName": "CurrentPressureFrontLeft",
-                  "eventId": 20
-                },
-                {
-                  "eventName": "CurrentPressureFrontLeft",
-                  "eventId": 21
-                }
-              ],
-              "fields": []
-            }
-          ]
-        }
-    ],
-    "serviceInstances": []
-  }
-)"_json;
-    // When parsing the JSON
-    // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
-}
-
-TEST_F(ConfigurationJsonParsingStrategyFixture, LolaEventIdDuplicateCausesTermination)
+TEST_P(ConfigurationParsingStrategyTest, LolaEventIdDuplicateCausesTermination)
 {
     // Given a JSON where a LoLa event id has been duplicated
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-            {
-              "binding": "SHM",
-              "serviceId": 1234,
-              "events": [
-                {
-                  "eventName": "CurrentPressureFrontLeft",
-                  "eventId": 20
-                },
-                {
-                  "eventName": "CurrentPressureFrontRight",
-                  "eventId": 20
-                }
-              ],
-              "fields": []
-            }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                    {
-                      "eventName": "CurrentPressureFrontLeft"
-                    },
-                    {
-                      "eventName": "CurrentPressureFrontRight"
-                    }
-                  ],
-                  "fields": []
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "duplicate_type_event_id"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, LolaFieldNameDuplicateCausesTermination)
-{
-    // Given a JSON where a LoLa field has been duplicated
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-            {
-              "binding": "SHM",
-              "serviceId": 1234,
-              "events": [],
-              "fields": [
-                {
-                  "fieldName": "CurrentPressureFrontLeft",
-                  "fieldId": 20
-                },
-                {
-                  "fieldName": "CurrentPressureFrontLeft",
-                  "fieldId": 21
-                }
-              ]
-            }
-          ]
-        }
-    ],
-    "serviceInstances": []
-  }
-)"_json;
-    // When parsing the JSON
-    // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
-}
-
-TEST_F(ConfigurationJsonParsingStrategyFixture, LolaFieldIdDuplicateCausesTermination)
+TEST_P(ConfigurationParsingStrategyTest, LolaFieldIdDuplicateCausesTermination)
 {
     // Given a JSON where a LoLa event id has been duplicated
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-            {
-              "binding": "SHM",
-              "serviceId": 1234,
-              "events": [],
-              "fields": [
-                {
-                  "fieldName": "CurrentPressureFrontLeft",
-                  "fieldId": 20
-                },
-                {
-                  "fieldName": "CurrentPressureFrontRight",
-                  "fieldId": 20
-                }
-              ]
-            }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "fields": [
-                    {
-                      "fieldName": "CurrentPressureFrontLeft"
-                    },
-                    {
-                      "fieldName": "CurrentPressureFrontRight"
-                    }
-                  ]
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "duplicate_type_field_id"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, LolaMatchingEventAndFieldIdsIsNotAllowed)
+TEST_P(ConfigurationParsingStrategyTest, LolaMatchingEventAndFieldIdsIsNotAllowed)
 {
     // Given a JSON where a LoLa field has been duplicated
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-            {
-              "binding": "SHM",
-              "serviceId": 1234,
-              "events": [
-                {
-                  "eventName": "CurrentPressureFrontLeft",
-                  "eventId": 20
-                }
-              ],
-              "fields": [
-                {
-                  "fieldName": "CurrentPressureFrontRight",
-                  "fieldId": 20
-                }
-              ]
-            }
-          ]
-        }
-    ],
-    "serviceInstances": []
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "matching_event_and_field_ids"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, LolaIncorrectEventNameCausesTermination)
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, LolaIncorrectEventNameCausesTermination)
 {
     // Given a JSON where a LoLa event name is incorrect, not 'EventName'
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                    {
-                      "eventName1": "CurrentPressureFrontLeft"
-                    }
-                  ],
-                  "fields": []
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ParseJson("instance_event_unknown_name_key"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, LolaIncorrectFieldNameCausesTermination)
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, LolaIncorrectFieldNameCausesTermination)
 {
     // Given a JSON where a LoLa field name is incorrect, not 'fieldName'
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [],
-                  "fields": [
-                    {
-                      "fieldName1": "CurrentTemperatureFrontLeft"
-                    }
-                  ]
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ParseJson("instance_field_unknown_name_key"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, LolaEventMaxSamplesAndNumberOfSampleSlotsCausesTermination)
+TEST_P(ConfigurationParsingStrategyTest, LolaEventMaxSamplesAndNumberOfSampleSlotsCausesTermination)
 {
     // Given a JSON where a LoLa event has both properties configured maxSamples (deprecated) and numberOfSampleSlots
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                    {
-                      "eventName": "CurrentPressureFrontLeft",
-                      "maxSubscribers": 5,
-                      "maxSamples": 7,
-                      "numberOfSampleSlots": 7
-                    }
-                  ],
-                  "fields": []
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+        Parse(GetParam(), "event_max_samples_and_number_of_sample_slots"));
 }
 
-TEST(ConfigurationJsonParsingStrategy, NoEventMaxSubscribersLeavesValueOptional)
+TEST_P(ConfigurationParsingStrategyTest, NoEventMaxSubscribersLeavesValueOptional)
 {
     // Given a JSON where a LoLa event has no configured max-subscribers
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "events": [
-                      {
-                          "eventName": "CurrentPressureFrontLeft",
-                          "eventId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                    {
-                      "eventName": "CurrentPressureFrontLeft",
-                      "numberOfSampleSlots": 50
-                    }
-                  ],
-                  "fields": []
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "no_event_max_subscribers");
 
     const auto& deployment =
         config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
@@ -1685,61 +693,12 @@ TEST(ConfigurationJsonParsingStrategy, NoEventMaxSubscribersLeavesValueOptional)
     EXPECT_FALSE(deploymentInfo.events_.at("CurrentPressureFrontLeft").max_subscribers_.has_value());
 }
 
-TEST(ConfigurationJsonParsingStrategy, NoFieldMaxSubscribersLeavesValueOptional)
+TEST_P(ConfigurationParsingStrategyTest, NoFieldMaxSubscribersLeavesValueOptional)
 {
     // Given a JSON where a LoLa field has no configured max-subscribers
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "fields": [
-                      {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "fieldId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [],
-                  "fields": [
-                    {
-                      "fieldName": "CurrentTemperatureFrontLeft",
-                      "numberOfSampleSlots": 50
-                    }
-                  ]
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
 
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "no_field_max_subscribers");
 
     const auto& deployment =
         config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
@@ -1752,52 +711,10 @@ TEST(ConfigurationJsonParsingStrategy, NoFieldMaxSubscribersLeavesValueOptional)
                      .lola_event_instance_deployment_.max_subscribers_.has_value());
 }
 
-TEST(ConfigurationJsonParsingStrategy, NoSHMInstanceIdLeavesValueOptional)
+TEST_P(ConfigurationParsingStrategyTest, NoSHMInstanceIdLeavesValueOptional)
 {
     // Given a JSON without necessary attribute `instance_id_` for SHM-Binding Info
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "events": [
-                      {
-                          "eventName": "CurrentPressureFrontLeft",
-                          "eventId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "serviceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM"
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "no_shm_instance_id");
 
     const auto& deployment =
         config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
@@ -1808,122 +725,20 @@ TEST(ConfigurationJsonParsingStrategy, NoSHMInstanceIdLeavesValueOptional)
     ASSERT_FALSE(deploymentInfo.instance_id_.has_value());
 }
 
-TEST(ConfigurationJsonParsingStrategy, LolaEventOptionalMaxConcurrentAllocations)
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, LolaEventOptionalMaxConcurrentAllocations)
 {
     // Given a JSON with an event with optional max concurrent allocations set
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "events": [
-                      {
-                          "eventName": "CurrentPressureFrontLeft",
-                          "eventId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "serviceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                      {
-                          "eventName": "CurrentPressureFrontLeft",
-                          "numberOfSampleSlots": 50,
-                          "maxSubscribers": 5,
-                          "maxConcurrentAllocations": 2
-                      }
-                  ],
-                  "fields": []
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
 
     // When parsing such a configuration
     // Fail and abort
-    EXPECT_EXIT(score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)),
-                ::testing::KilledBySignal(SIGABRT),
-                ".*");
+    EXPECT_EXIT(ParseJson("event_max_concurrent_allocations"), ::testing::KilledBySignal(SIGABRT), ".*");
 }
 
-TEST(ConfigurationJsonParsingStrategy, LolaEventDeprecatedMaxSamplesGetsRecognized)
+TEST_P(ConfigurationParsingStrategyTest, LolaEventDeprecatedMaxSamplesGetsRecognized)
 {
     // Given a JSON with an event with deprecated maxSamples property is still recognized
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "events": [
-                      {
-                          "eventName": "CurrentPressureFrontLeft",
-                          "eventId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                      {
-                          "eventName": "CurrentPressureFrontLeft",
-                          "maxSamples": 50,
-                          "maxSubscribers": 5
-                      }
-                  ],
-                  "fields": []
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "event_deprecated_max_samples");
 
     const auto& deployment =
         config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
@@ -1934,68 +749,16 @@ TEST(ConfigurationJsonParsingStrategy, LolaEventDeprecatedMaxSamplesGetsRecogniz
     EXPECT_EQ(deploymentInfo.events_.at("CurrentPressureFrontLeft").GetNumberOfSampleSlots().value(), 50);
 }
 
-TEST(ConfigurationJsonParsingStrategy, LolaFieldOptionalMaxConcurrentAllocations)
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, LolaFieldOptionalMaxConcurrentAllocations)
 {
     // Given a JSON with a field with optional max concurrent allocations set
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "fields": [
-                      {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "fieldId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [],
-                  "fields": [
-                    {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "numberOfSampleSlots": 50,
-                          "maxSubscribers": 5,
-                          "maxConcurrentAllocations": 2
-                      }
-                  ]
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing such a configuration
     // Fail and abort
-    EXPECT_EXIT(score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)),
-                ::testing::KilledBySignal(SIGABRT),
-                ".*");
+    EXPECT_EXIT(ParseJson("field_max_concurrent_allocations"), ::testing::KilledBySignal(SIGABRT), ".*");
 }
 
-TEST(ConfigurationJsonParsingStrategy, LolaEventOptionalEnforceMaxSamples)
+TEST_P(ConfigurationParsingStrategyTest, LolaEventOptionalEnforceMaxSamples)
 {
     RecordProperty("Verifies", "SCR-7088394");
     RecordProperty("Description", "Checks whether optional 'enforceMaxSamples' configuration can be read at runtime");
@@ -2004,58 +767,7 @@ TEST(ConfigurationJsonParsingStrategy, LolaEventOptionalEnforceMaxSamples)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given a JSON with optional attribute `enforceMaxSamples` for SHM-Binding Info
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "events": [
-                      {
-                          "eventName": "CurrentPressureFrontLeft",
-                          "eventId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                      {
-                          "eventName": "CurrentPressureFrontLeft",
-                          "numberOfSampleSlots": 50,
-                          "maxSubscribers": 5,
-                          "enforceMaxSamples": false
-                      }
-                  ],
-                  "fields": []
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "event_enforce_max_samples_false");
 
     const auto& deployment =
         config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
@@ -2066,61 +778,10 @@ TEST(ConfigurationJsonParsingStrategy, LolaEventOptionalEnforceMaxSamples)
     EXPECT_EQ(deploymentInfo.events_.at("CurrentPressureFrontLeft").enforce_max_samples_, false);
 }
 
-TEST(ConfigurationJsonParsingStrategy, LolaFieldOptionalEnforceMaxSamples)
+TEST_P(ConfigurationParsingStrategyTest, LolaFieldOptionalEnforceMaxSamples)
 {
     // Given a JSON with optional attribute `enforceMaxSamples` for SHM-Binding Info
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "fields": [
-                      {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "fieldId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [],
-                  "fields": [
-                    {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "numberOfSampleSlots": 50,
-                          "maxSubscribers": 5,
-                          "enforceMaxSamples": false
-                      }
-                  ]
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "field_enforce_max_samples_false");
 
     const auto& deployment =
         config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
@@ -2133,63 +794,12 @@ TEST(ConfigurationJsonParsingStrategy, LolaFieldOptionalEnforceMaxSamples)
         false);
 }
 
-TEST(ConfigurationJsonParsingStrategy, LolaFieldUseGetIfAvailableSetToTrue)
+TEST_P(ConfigurationParsingStrategyTest, LolaFieldUseGetIfAvailableSetToFalse)
 {
-    // Given a JSON with optional attribute `useGetIfAvailable` set to true for a field
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "fields": [
-                      {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "fieldId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [],
-                  "fields": [
-                    {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "numberOfSampleSlots": 50,
-                          "maxSubscribers": 5,
-                          "useGetIfAvailable": true
-                      }
-                  ]
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
+    // Given a JSON with optional attribute `useGetIfAvailable` set to false for a field
 
     // When parsing the JSON
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "field_use_get_if_available_false");
 
     const auto& deployment =
         config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
@@ -2198,68 +808,17 @@ TEST(ConfigurationJsonParsingStrategy, LolaFieldUseGetIfAvailableSetToTrue)
 
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
 
-    // Then use_get_if_available_ is true and use_set_if_available_ defaults to true
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, true);
+    // Then use_get_if_available_ is false and use_set_if_available_ defaults to true
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, false);
     EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, true);
 }
 
-TEST(ConfigurationJsonParsingStrategy, LolaFieldUseSetIfAvailableSetToTrue)
+TEST_P(ConfigurationParsingStrategyTest, LolaFieldUseSetIfAvailableSetToFalse)
 {
-    // Given a JSON with optional attribute `useSetIfAvailable` set to true for a field
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "fields": [
-                      {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "fieldId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [],
-                  "fields": [
-                    {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "numberOfSampleSlots": 50,
-                          "maxSubscribers": 5,
-                          "useSetIfAvailable": true
-                      }
-                  ]
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
+    // Given a JSON with optional attribute `useSetIfAvailable` set to false for a field
 
     // When parsing the JSON
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "field_use_set_if_available_false");
 
     const auto& deployment =
         config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
@@ -2268,67 +827,17 @@ TEST(ConfigurationJsonParsingStrategy, LolaFieldUseSetIfAvailableSetToTrue)
 
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
 
-    // Then use_set_if_available_ is true and use_get_if_available_ defaults to true
+    // Then use_set_if_available_ is false and use_get_if_available_ defaults to true
     EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, true);
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, true);
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, false);
 }
 
-TEST(ConfigurationJsonParsingStrategy, LolaFieldOmittingBothFlagsDefaultsToBothTrue)
+TEST_P(ConfigurationParsingStrategyTest, LolaFieldOmittingBothFlagsDefaultsToBothTrue)
 {
     // Given a JSON for a field without `useGetIfAvailable` or `useSetIfAvailable`
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "fields": [
-                      {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "fieldId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [],
-                  "fields": [
-                    {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "numberOfSampleSlots": 50,
-                          "maxSubscribers": 5
-                      }
-                  ]
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
 
     // When parsing the JSON
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "field_use_flags_omitted");
 
     const auto& deployment =
         config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
@@ -2342,133 +851,12 @@ TEST(ConfigurationJsonParsingStrategy, LolaFieldOmittingBothFlagsDefaultsToBothT
     EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, true);
 }
 
-TEST(ConfigurationJsonParsingStrategy, LolaFieldBothFlagsSetToTrue)
-{
-    // Given a JSON with both `useGetIfAvailable` and `useSetIfAvailable` set to true for a field
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "fields": [
-                      {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "fieldId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [],
-                  "fields": [
-                    {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "numberOfSampleSlots": 50,
-                          "maxSubscribers": 5,
-                          "useGetIfAvailable": true,
-                          "useSetIfAvailable": true
-                      }
-                  ]
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
-
-    const auto& deployment =
-        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
-            .value()
-            .get();
-
-    const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
-
-    // Then both flags are true
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, true);
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, true);
-}
-
-TEST(ConfigurationJsonParsingStrategy, LolaFieldBothFlagsExplicitlySetToFalse)
+TEST_P(ConfigurationParsingStrategyTest, LolaFieldBothFlagsExplicitlySetToFalse)
 {
     // Given a JSON with both `useGetIfAvailable` and `useSetIfAvailable` explicitly set to false for a field
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "fields": [
-                      {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "fieldId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [],
-                  "fields": [
-                    {
-                          "fieldName": "CurrentTemperatureFrontLeft",
-                          "numberOfSampleSlots": 50,
-                          "maxSubscribers": 5,
-                          "useGetIfAvailable": false,
-                          "useSetIfAvailable": false
-                      }
-                  ]
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
 
     // When parsing the JSON
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "field_use_flags_both_false");
 
     const auto& deployment =
         config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
@@ -2482,77 +870,90 @@ TEST(ConfigurationJsonParsingStrategy, LolaFieldBothFlagsExplicitlySetToFalse)
     EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, false);
 }
 
-TEST(ConfigurationJsonParsingStrategy, EmptyServiceTypes)
+TEST_P(ConfigurationParsingStrategyTest, EmptyServiceTypes)
 {
     // Given a JSON with necessary attribute `serviceTypes` being empty (which is allowed)
-    auto j2 = R"(
-  {
-    "serviceInstances": [],
-    "serviceTypes": []
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
-    Configuration config{score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2))};
+    Configuration config{Parse(GetParam(), "empty_service_types_and_instances")};
     EXPECT_EQ(config.GetNumberOfServiceTypes(), 0);
+    EXPECT_EQ(config.GetNumberOfServiceInstances(), 0);
+    EXPECT_TRUE(config.IsServiceInstancesEmpty());
+
+    // And the omitted `global` and `tracing` sections fall back to their defaults
+    const auto& global = config.GetGlobalConfiguration();
+    EXPECT_EQ(global.GetProcessAsilLevel(), QualityType::kASIL_QM);
+    EXPECT_FALSE(global.GetApplicationId().has_value());
+    EXPECT_EQ(global.GetReceiverMessageQueueSize(QualityType::kASIL_QM),
+              GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_RX_QUEUE);
+    EXPECT_EQ(global.GetReceiverMessageQueueSize(QualityType::kASIL_B),
+              GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_RX_QUEUE);
+    EXPECT_EQ(global.GetSenderMessageQueueSize(), GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_TX_QUEUE);
+    EXPECT_EQ(global.GetShmSizeCalcMode(), ShmSizeCalculationMode::kSimulation);
+    EXPECT_FALSE(config.GetTracingConfiguration().IsTracingEnabled());
 }
 
-TEST(ConfigurationJsonParsingStrategy, StrictPermissionIsSet)
+TEST_P(ConfigurationParsingStrategyTest, EmptyServiceElementListsParse)
+{
+    // Given a JSON whose service type binding and service instance have empty events, fields and methods lists
+    // When parsing the JSON
+    const auto config = Parse(GetParam(), "empty_service_elements");
+
+    // Then neither the service type deployment nor the service instance deployment contain any service element
+    const auto& service_type_deployment =
+        config
+            .GetServiceTypeDeployment(make_ServiceIdentifierType("/score/ncar/services/TirePressureService", 12U, 34U))
+            .value()
+            .get();
+    const auto& lola_service_type_deployment =
+        std::get<LolaServiceTypeDeployment>(service_type_deployment.binding_info_);
+    EXPECT_TRUE(lola_service_type_deployment.events_.empty());
+    EXPECT_TRUE(lola_service_type_deployment.fields_.empty());
+    EXPECT_TRUE(lola_service_type_deployment.methods_.empty());
+
+    const auto& deployment =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
+    const auto& lola_deployment = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+    EXPECT_TRUE(lola_deployment.events_.empty());
+    EXPECT_TRUE(lola_deployment.fields_.empty());
+    EXPECT_TRUE(lola_deployment.methods_.empty());
+}
+
+TEST_P(ConfigurationParsingStrategyTest, OmittedServiceElementListsParse)
+{
+    // Given a JSON whose service type binding and service instance omit the events, fields and methods keys
+    // When parsing the JSON
+    const auto config = Parse(GetParam(), "no_service_element_lists");
+
+    // Then neither the service type deployment nor the service instance deployment contain any service element
+    const auto& service_type_deployment =
+        config
+            .GetServiceTypeDeployment(make_ServiceIdentifierType("/score/ncar/services/TirePressureService", 12U, 34U))
+            .value()
+            .get();
+    const auto& lola_service_type_deployment =
+        std::get<LolaServiceTypeDeployment>(service_type_deployment.binding_info_);
+    EXPECT_TRUE(lola_service_type_deployment.events_.empty());
+    EXPECT_TRUE(lola_service_type_deployment.fields_.empty());
+    EXPECT_TRUE(lola_service_type_deployment.methods_.empty());
+
+    const auto& deployment =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
+    const auto& lola_deployment = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+    EXPECT_TRUE(lola_deployment.events_.empty());
+    EXPECT_TRUE(lola_deployment.fields_.empty());
+    EXPECT_TRUE(lola_deployment.methods_.empty());
+}
+
+TEST_P(ConfigurationParsingStrategyTest, StrictPermissionIsSet)
 {
     // Given a JSON with `permission-checks` attribute which is set to `strict`
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "events": [
-                      {
-                          "eventName": "CurrentPressureFrontLeft",
-                          "eventId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                    {
-                      "eventName": "CurrentPressureFrontLeft",
-                      "numberOfSampleSlots": 50
-                    }
-                  ],
-                  "permission-checks": "strict",
-                  "fields": []
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
-    const auto configuration =
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto configuration = Parse(GetParam(), "permission_checks_strict");
     ASSERT_FALSE(configuration.IsServiceInstancesEmpty());
 
     // That LolaServiceInstanceDeployment instance is obtained
@@ -2566,61 +967,11 @@ TEST(ConfigurationJsonParsingStrategy, StrictPermissionIsSet)
     EXPECT_TRUE(lola_service_instance->strict_permissions_);
 }
 
-TEST(ConfigurationJsonParsingStrategy, GetNoneStrictIfNoPermissionFlagAttr)
+TEST_P(ConfigurationParsingStrategyTest, GetNoneStrictIfNoPermissionFlagAttr)
 {
     // Given a JSON without `permission-checks` attribute
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-              {
-                  "binding": "SHM",
-                  "serviceId": 1234,
-                  "events": [
-                      {
-                          "eventName": "CurrentPressureFrontLeft",
-                          "eventId": 20
-                      }
-                  ]
-              }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                    {
-                      "eventName": "CurrentPressureFrontLeft",
-                      "numberOfSampleSlots": 50
-                    }
-                  ],
-                  "fields": []
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
-    const auto configuration =
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto configuration = Parse(GetParam(), "no_event_max_subscribers");
     ASSERT_FALSE(configuration.IsServiceInstancesEmpty());
 
     // That LolaServiceInstanceDeployment instance is obtained
@@ -2634,26 +985,27 @@ TEST(ConfigurationJsonParsingStrategy, GetNoneStrictIfNoPermissionFlagAttr)
     EXPECT_FALSE(lola_service_instance->strict_permissions_);
 }
 
-class ProcessAsil : public ::testing::TestWithParam<std::tuple<std::string, QualityType>>
+class ProcessAsil : public ::testing::TestWithParam<std::tuple<Strategy, std::tuple<std::string, QualityType>>>
 {
 };
 
 TEST_P(ProcessAsil, ValidProcessAsilLevel)
 {
-    json::JsonParser json_parser_obj;
-    json::Any json{json_parser_obj.FromBuffer(std::get<std::string>(GetParam())).value()};
-    Configuration config{configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(json))};
-    EXPECT_EQ(config.GetGlobalConfiguration().GetProcessAsilLevel(), std::get<QualityType>(GetParam()));
+    const auto& [strategy, test_case] = GetParam();
+    const auto& [config_name, expected_asil_level] = test_case;
+    Configuration config{Parse(strategy, config_name)};
+    EXPECT_EQ(config.GetGlobalConfiguration().GetProcessAsilLevel(), expected_asil_level);
 }
 
 const std::vector<std::tuple<std::string, QualityType>> valid_global_asil{
-    {R"json({"serviceTypes": [], "serviceInstances": [], "global": { "asil-level": "QM" }})json",
-     QualityType::kASIL_QM},
-    {R"json({"serviceTypes": [], "serviceInstances": [], "global": { "asil-level": "B" }})json", QualityType::kASIL_B},
-    {R"json({"serviceTypes": [], "serviceInstances": [] })json", QualityType::kASIL_QM},
+    {"process_asil_qm", QualityType::kASIL_QM},
+    {"process_asil_b", QualityType::kASIL_B},
+    {"empty_service_types_and_instances", QualityType::kASIL_QM},
 };
 
-INSTANTIATE_TEST_SUITE_P(ValidProcessAsil, ProcessAsil, ::testing::ValuesIn(valid_global_asil));
+INSTANTIATE_TEST_SUITE_P(ValidProcessAsil,
+                         ProcessAsil,
+                         ::testing::Combine(::testing::ValuesIn(kStrategies), ::testing::ValuesIn(valid_global_asil)));
 
 class InvalidProcessAsil : public ::testing::TestWithParam<std::string>
 {
@@ -2661,24 +1013,18 @@ class InvalidProcessAsil : public ::testing::TestWithParam<std::string>
 
 TEST_P(InvalidProcessAsil, DieOnInvalidAsil)
 {
-    score::json::JsonParser json_parser_obj;
-    json::Any json{json_parser_obj.FromBuffer(GetParam()).value()};
-
     DISABLE_WARNING_PUSH
     DISABLE_WARNING_UNUSED_VALUE  // Comming from gtest, try removing when gtest 1.12 or higher
 
-        SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Configuration{
-            score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(json))});
+        SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Configuration{ParseJson(GetParam())});
 
     DISABLE_WARNING_POP
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    InvalidProcessAsil,
-    InvalidProcessAsil,
-    ::testing::Values(R"json({"serviceTypes": [], "serviceInstances": [], "global": { "asil-level": "ANY" }})json",
-                      R"json({"serviceTypes": [], "serviceInstances": [], "global": { "asil-level": "Elefant" }})json",
-                      R"json({"serviceTypes": [], "serviceInstances": [], "global": { "asil-level": "" }})json"));
+// JSON only: flatc rejects asil-levels which are no AsilLevel enum symbol.
+INSTANTIATE_TEST_SUITE_P(InvalidProcessAsil,
+                         InvalidProcessAsil,
+                         ::testing::Values("process_asil_any", "process_asil_elefant", "process_asil_empty_string"));
 
 class InvalidMsgQueueSizeFixture : public ::testing::TestWithParam<std::string>
 {
@@ -2686,66 +1032,52 @@ class InvalidMsgQueueSizeFixture : public ::testing::TestWithParam<std::string>
 
 TEST_P(InvalidMsgQueueSizeFixture, DieOnInvalidMessageQueueSize)
 {
-    score::json::JsonParser json_parser_obj;
-    json::Any json{json_parser_obj.FromBuffer(GetParam()).value()};
-
     DISABLE_WARNING_PUSH
     DISABLE_WARNING_UNUSED_VALUE  // Comming from gtest, try removing when gtest 1.12 or higher
 
-        SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-            Configuration{configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(json))});
+        SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Configuration{ParseJson(GetParam())});
 
     DISABLE_WARNING_POP
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    InvalidMsgQueueSizeTests,
-    InvalidMsgQueueSizeFixture,
-    ::testing::Values(
-        R"json({"serviceTypes": [], "serviceInstances": [], "global": { "asil-level": "B", "queue-size": {"QM-receiver": 8, "B-receiver": "bla"}}})json",
-        R"json({"serviceTypes": [], "serviceInstances": [], "global": { "asil-level": "B", "queue-size": {"QM-receiver": 8, "B-receiver": "bla", "B-sender": 15}}})json",
-        R"json({"serviceTypes": [], "serviceInstances": [], "global": { "asil-level": "B", "queue-size": {"QM-receiver": 8, "B-receiver": 5, "B-sender": "bla"}}})json",
-        R"json({"serviceTypes": [], "serviceInstances": [], "global": { "asil-level": "B", "queue-size": {"QM-receiver": "bla", "B-receiver": 9}}})json"));
+// JSON only: flatc rejects queue sizes which are no numbers.
+INSTANTIATE_TEST_SUITE_P(InvalidMsgQueueSizeTests,
+                         InvalidMsgQueueSizeFixture,
+                         ::testing::Values("queue_size_b_receiver_not_a_number",
+                                           "queue_size_b_receiver_not_a_number_with_b_sender",
+                                           "queue_size_b_sender_not_a_number",
+                                           "queue_size_qm_receiver_not_a_number"));
 
-class InvalidApplicationIdFixture : public ::testing::TestWithParam<std::string>
+class InvalidApplicationIdFixture : public ::testing::TestWithParam<std::tuple<Strategy, std::string>>
 {
 };
 
 TEST_P(InvalidApplicationIdFixture, DieOnInvalidApplicationId)
 {
-    score::json::JsonParser json_parser_obj;
-    // Given a JSON with invalid applicationID
-    json::Any json{json_parser_obj.FromBuffer(GetParam()).value()};
+    const auto& [strategy, config_name] = GetParam();
+    // Given a configuration with invalid applicationID
 
-    // When parsing the JSON then it will fail with a precondition violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::cpp::ignore = Configuration{configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(json))});
+    // When parsing the configuration then it will fail with a precondition violation
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = Configuration{Parse(strategy, config_name)});
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    InvalidApplicationIdTests,
-    InvalidApplicationIdFixture,
-    ::testing::Values(
-        R"json({"serviceTypes": [], "serviceInstances": [], "global": { "applicationID": 4294967295}})json",
-        R"json({"serviceTypes": [], "serviceInstances": [], "global": { "applicationID": 429496729533}})json",
-        R"json({"serviceTypes": [], "serviceInstances": [], "global": { "applicationID": -1}})json"));
+INSTANTIATE_TEST_SUITE_P(InvalidApplicationIdTests,
+                         InvalidApplicationIdFixture,
+                         ::testing::Combine(::testing::ValuesIn(kStrategies),
+                                            ::testing::Values(std::string{"application_id_uint32_max"})));
 
-TEST(ConfigurationJsonParsingStrategy, OnlyQmReceiverQueueSizes)
+// JSON only: flatc rejects applicationIDs which do not fit into an uint32.
+INSTANTIATE_TEST_SUITE_P(InvalidApplicationIdJsonOnlyTests,
+                         InvalidApplicationIdFixture,
+                         ::testing::Combine(::testing::Values(Strategy::kJson),
+                                            ::testing::Values(std::string{"application_id_too_large"},
+                                                              std::string{"application_id_negative"})));
+
+TEST_P(ConfigurationParsingStrategyTest, OnlyQmReceiverQueueSizes)
 {
     // Given a JSON with only QM-receiver queue size being explicitly configured
-    auto j2 = R"(
-  {
-    "serviceTypes": [],
-    "serviceInstances": [],
-    "global": {
-       "queue-size": {
-          "QM-receiver": 8
-      }
-    }
-  }
-)"_json;
     // When parsing the JSON
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "queue_size_only_qm_receiver");
     // expect that the QM-receiver has the configured value
     EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_QM), 8);
     // and that the not explicit configured B-receiver has the default value (DEFAULT_MIN_NUM_MESSAGES_RX_QUEUE)
@@ -2756,74 +1088,40 @@ TEST(ConfigurationJsonParsingStrategy, OnlyQmReceiverQueueSizes)
               GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_TX_QUEUE);
 }
 
-TEST(ConfigurationJsonParsingStrategy, InvalidQualityTypeForAllowedConsumersWillDie)
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, InvalidQualityTypeForAllowedConsumersWillDie)
 {
     // Given a JSON without invalid attribute consumer quality type
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "allowedConsumer": {
-                    "INVALID_QUALITY_TYPE": [
-                      42,
-                      43
-                    ]
-                  }
-                }
-            ]
-        }
-    ]
-  }
-)"_json;
     // When parsing the JSON
     // Then the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ParseJson("allowed_consumer_invalid_quality_type"));
 }
 
-class ShmSizeCalcMode : public ::testing::TestWithParam<std::tuple<std::string, ShmSizeCalculationMode>>
+class ShmSizeCalcMode
+    : public ::testing::TestWithParam<std::tuple<Strategy, std::tuple<std::string, ShmSizeCalculationMode>>>
 {
 };
 
 TEST_P(ShmSizeCalcMode, ValidShmSizeCalcMode)
 {
-    json::JsonParser json_parser_obj;
-    json::Any json{json_parser_obj.FromBuffer(std::get<std::string>(GetParam())).value()};
-    Configuration config{configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(json))};
-    EXPECT_EQ(config.GetGlobalConfiguration().GetShmSizeCalcMode(), std::get<ShmSizeCalculationMode>(GetParam()));
+    const auto& [strategy, test_case] = GetParam();
+    const auto& [config_name, expected_shm_size_calc_mode] = test_case;
+    Configuration config{Parse(strategy, config_name)};
+    EXPECT_EQ(config.GetGlobalConfiguration().GetShmSizeCalcMode(), expected_shm_size_calc_mode);
 }
 
 const std::vector<std::tuple<std::string, ShmSizeCalculationMode>> valid_global_shm_size_calc_modes{
-    {R"json({"serviceTypes": [], "serviceInstances": [], "global": { "shm-size-calc-mode": "SIMULATION" }})json",
-     ShmSizeCalculationMode::kSimulation},
-    {R"json({"serviceTypes": [], "serviceInstances": [], "global": { "shm-size-calc-mode": "ANALYSIS" }})json",
-     ShmSizeCalculationMode::kAnalysis},
-    {R"json({"serviceTypes": [], "serviceInstances": [] })json", ShmSizeCalculationMode::kSimulation},
+    {"shm_size_calc_mode_simulation", ShmSizeCalculationMode::kSimulation},
+    {"shm_size_calc_mode_analysis", ShmSizeCalculationMode::kAnalysis},
+    {"empty_service_types_and_instances", ShmSizeCalculationMode::kSimulation},
 };
 
-INSTANTIATE_TEST_SUITE_P(ValidShmSizeCalcMode, ShmSizeCalcMode, ::testing::ValuesIn(valid_global_shm_size_calc_modes));
+INSTANTIATE_TEST_SUITE_P(ValidShmSizeCalcMode,
+                         ShmSizeCalcMode,
+                         ::testing::Combine(::testing::ValuesIn(kStrategies),
+                                            ::testing::ValuesIn(valid_global_shm_size_calc_modes)));
 
-TEST(ConfigurationJsonParsingStrategyTracing, EnablingGlobalTracingFlagSetsTracingEnabled)
+TEST_P(ConfigurationParsingStrategyTracingTest, EnablingGlobalTracingFlagSetsTracingEnabled)
 {
     RecordProperty("Verifies", "SCR-18159733");
     RecordProperty("Description",
@@ -2833,82 +1131,36 @@ TEST(ConfigurationJsonParsingStrategyTracing, EnablingGlobalTracingFlagSetsTraci
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given a JSON with the global tracing flag enabled
-    auto j2 = R"(
-  {
-    "serviceInstances": [],
-    "serviceTypes": [],
-    "tracing": {
-        "enable": true,
-        "applicationInstanceID": "test_application_id",
-        "traceFilterConfigPath": "./test_filter_config.json"
-    }
-  }
-)"_json;
     // When parsing the JSON
-    Configuration config{score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2))};
+    Configuration config{Parse(GetParam(), "tracing_enabled")};
 
     // Then tracing is enabled in the TracingConfiguration
     EXPECT_TRUE(config.GetTracingConfiguration().IsTracingEnabled());
 }
 
-TEST(ConfigurationJsonParsingStrategyTracing, EnablingGlobalTracingFlagSetsTracingDisbled)
+TEST_P(ConfigurationParsingStrategyTracingTest, ProvidingAllTracingConfigElementsDoesNotCrash)
 {
-    RecordProperty("Verifies", "SCR-18159733");
+    RecordProperty("Verifies", "SCR-18143152, SCR-18159733");
     RecordProperty("Description",
-                   "TracingConfiguration IsTracingEnabled is false when global tracing enabled flag is not set.");
+                   "mw/com configuration file contains flag for enabling / disabling tracing (SCR-18143152). "
+                   "TracingConfiguration IsTracingEnabled is false when global tracing enabled flag is not set "
+                   "(SCR-18159733).");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // Given a JSON with the global tracing flag disabled
-    auto j2 = R"(
-  {
-    "serviceInstances": [],
-    "serviceTypes": [],
-    "tracing": {
-        "enable": false,
-        "applicationInstanceID": "test_application_id",
-        "traceFilterConfigPath": "./test_filter_config.json"
-    }
-  }
-)"_json;
-    // When parsing the JSON
-    Configuration config{score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2))};
-
-    // Then tracing is disabled in the TracingConfiguration
-    EXPECT_FALSE(config.GetTracingConfiguration().IsTracingEnabled());
-}
-
-TEST(ConfigurationJsonParsingStrategyTracing, ProvidingAllTracingConfigElementsDoesNotCrash)
-{
-    RecordProperty("Verifies", "SCR-18143152");
-    RecordProperty("Description", "mw/com configuration file contains flag for enabling / disabling tracing.");
-    RecordProperty("TestType", "Requirements-based test");
-    RecordProperty("Priority", "1");
-    RecordProperty("DerivationTechnique", "Analysis of requirements");
-
-    // Given a JSON with all tracing attributes
-    auto j2 = R"(
-  {
-    "serviceInstances": [],
-    "serviceTypes": [],
-    "tracing": {
-        "enable": false,
-        "applicationInstanceID": "test_application_id",
-        "traceFilterConfigPath": "./test_filter_config.json"
-    }
-  }
-)"_json;
+    // Given a JSON with all tracing attributes and the global tracing flag disabled
     // When parsing the JSON
     // That the application will not terminate
-    Configuration config{score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2))};
+    Configuration config{Parse(GetParam(), "tracing_disabled")};
 
+    // Then tracing is disabled in the TracingConfiguration and all other attributes are parsed
     EXPECT_FALSE(config.GetTracingConfiguration().IsTracingEnabled());
     EXPECT_EQ(config.GetTracingConfiguration().GetApplicationInstanceID(), "test_application_id");
     EXPECT_EQ(config.GetTracingConfiguration().GetTracingFilterConfigPath(), "./test_filter_config.json");
 }
 
-TEST(ConfigurationJsonParsingStrategyTracing, ProvidingAllRequiredTracingConfigElementsDoesNotCrash)
+TEST_P(ConfigurationParsingStrategyTracingTest, ProvidingAllRequiredTracingConfigElementsDoesNotCrash)
 {
     RecordProperty("Verifies", "SCR-18143152, SCR-18143480");
     RecordProperty("Description",
@@ -2919,53 +1171,34 @@ TEST(ConfigurationJsonParsingStrategyTracing, ProvidingAllRequiredTracingConfigE
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given a JSON with all tracing attributes
-    auto j2 = R"(
-  {
-    "serviceInstances": [],
-    "serviceTypes": [],
-    "tracing": {
-        "applicationInstanceID": "test_application_id"
-    }
-  }
-)"_json;
     // When parsing the JSON
     // That the application will not terminate
-    Configuration config{score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2))};
+    Configuration config{Parse(GetParam(), "tracing_only_application_instance_id")};
 
     EXPECT_FALSE(config.GetTracingConfiguration().IsTracingEnabled());
     EXPECT_EQ(config.GetTracingConfiguration().GetApplicationInstanceID(), "test_application_id");
 }
 
-TEST(ConfigurationJsonParsingStrategyTracing,
-     ParsingSucceedsIfApplicationInstanceIdentifierPropertyExistsWhenTracingIsEnabled)
+TEST_P(ConfigurationParsingStrategyTracingTest,
+       ParsingSucceedsIfApplicationInstanceIdentifierAndTraceFilterConfigPathPropertiesExistWhenTracingIsEnabled)
 {
-    RecordProperty("Verifies", "SCR-19177359");
-    RecordProperty(
-        "Description",
-        "Checks that parsing succeeds if applicationInstanceID property is provided when tracing is enabled.");
+    RecordProperty("Verifies", "SCR-19177359, SCR-18144291");
+    RecordProperty("Description",
+                   "Checks that parsing succeeds if applicationInstanceID property is provided when tracing is enabled "
+                   "(SCR-19177359) and if traceFilterConfigPath property is provided when the tracing section is "
+                   "present in the configuration file (SCR-18144291).");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given a JSON with all tracing attributes
-    auto j2 = R"(
-  {
-    "serviceInstances": [],
-    "serviceTypes": [],
-    "tracing": {
-        "enable": true,
-        "traceFilterConfigPath": "./mw_com_trace_filter.json",
-        "applicationInstanceID": "test_application_id"
-    }
-  }
-)"_json;
     // When parsing the JSON
     // That the application will not terminate
-    score::cpp::ignore = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    score::cpp::ignore = Parse(GetParam(), "tracing_enabled_with_application_instance_id");
 }
 
-TEST(ConfigurationJsonParsingStrategyTracing,
-     ParsingTerminatesIfApplicationInstanceIdentifierPropertyDoesNotExistWhenTracingIsEnabled)
+TEST_P(ConfigurationParsingStrategyTracingTest,
+       ParsingTerminatesIfApplicationInstanceIdentifierPropertyDoesNotExistWhenTracingIsEnabled)
 {
     RecordProperty("Verifies", "SCR-19177359");
     RecordProperty(
@@ -2976,52 +1209,14 @@ TEST(ConfigurationJsonParsingStrategyTracing,
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given a JSON which is missing applicationInstanceID
-    auto j2 = R"(
-  {
-    "serviceInstances": [],
-    "serviceTypes": [],
-    "tracing": {
-        "enable": true,
-        "traceFilterConfigPath": "./mw_com_trace_filter.json"
-    }
-  }
-)"_json;
     // When parsing the JSON
     // That the application will terminate
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+        Parse(GetParam(), "tracing_enabled_without_application_instance_id"));
 }
 
-TEST(ConfigurationJsonParsingStrategyTracing,
-     ParsingSucceedsIfTraceFilterConfigPathPropertyExistsWhenTracingSectionIsPresent)
-{
-    RecordProperty("Verifies", "SCR-18144291");
-    RecordProperty("Description",
-                   "Checks that parsing succeeds if traceFilterConfigPath property is provided when the tracing "
-                   "section is present in the configuration file.");
-    RecordProperty("TestType", "Requirements-based test");
-    RecordProperty("Priority", "1");
-    RecordProperty("DerivationTechnique", "Analysis of requirements");
-
-    // Given a JSON with all tracing attributes
-    auto j2 = R"(
-  {
-    "serviceInstances": [],
-    "serviceTypes": [],
-    "tracing": {
-        "enable": true,
-        "traceFilterConfigPath": "./mw_com_trace_filter.json",
-        "applicationInstanceID": "test_application_id"
-    }
-  }
-)"_json;
-    // When parsing the JSON
-    // That the application will not terminate
-    score::cpp::ignore = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
-}
-
-TEST(ConfigurationJsonParsingStrategyTracing,
-     ParsingSucceedsIfTraceFilterConfigPathPropertyDoesNotExistWhenTracingSectionIsPresent)
+TEST_P(ConfigurationParsingStrategyTracingTest,
+       ParsingSucceedsIfTraceFilterConfigPathPropertyDoesNotExistWhenTracingSectionIsPresent)
 {
     RecordProperty("Verifies", "SCR-18144411");
     RecordProperty("Description",
@@ -3032,153 +1227,19 @@ TEST(ConfigurationJsonParsingStrategyTracing,
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given a JSON with all tracing attributes except for traceFilterConfigPath
-    auto j2 = R"(
-  {
-    "serviceInstances": [],
-    "serviceTypes": [],
-    "tracing": {
-        "enable": true,
-        "applicationInstanceID": "test_application_id"
-    }
-  }
-)"_json;
     // When parsing the JSON
     // That the application will not terminate
-    const auto config{score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2))};
+    const auto config{Parse(GetParam(), "tracing_without_filter_config_path")};
 
     EXPECT_EQ(config.GetTracingConfiguration().GetTracingFilterConfigPath(), "./etc/mw_com_trace_filter.json");
 }
 
-TEST(ConfigurationJsonParsingStrategyTracing, ProvidingServiceElementEnabledEnablesServiceElementTracing)
+TEST_P(ConfigurationParsingStrategyTracingTest, ProvidingServiceElementEnabledEnablesServiceElementTracing)
 {
     // Given a JSON with all tracing attributes
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-            {
-                "binding": "SHM",
-                "serviceId": 1234,
-                "events": [
-                    {
-                        "eventName": "CurrentPressureFrontLeft",
-                        "eventId": 20
-                    }
-                ],
-                "fields": [
-                    {
-                        "fieldName": "CurrentPressureFrontRight",
-                        "fieldId": 30
-                    }
-                ]
-            }
-          ]
-        },
-        {
-          "serviceTypeName": "/score/ncar/services/TireTemperatureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-            {
-                "binding": "SHM",
-                "serviceId": 1235,
-                "events": [
-                    {
-                        "eventName": "CurrentTemperatureFrontLeft",
-                        "eventId": 20
-                    }
-                ],
-                "fields": [
-                    {
-                        "fieldName": "CurrentTemperatureFrontRight",
-                        "fieldId": 30
-                    }
-                ]
-            }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "maxSamples": 50,
-                            "maxSubscribers": 5,
-                            "numberOfIpcTracingSlots": 0
-                        }
-                    ],
-                    "fields": [
-                        {
-                            "fieldName": "CurrentPressureFrontRight",
-                            "numberOfSampleSlots": 60,
-                            "maxSubscribers": 6,
-                            "numberOfIpcTracingSlots": 1
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "instanceSpecifier": "abc/abc/TireTemperaturePort",
-            "serviceTypeName": "/score/ncar/services/TireTemperatureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 4567,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                        {
-                            "eventName": "CurrentTemperatureFrontLeft",
-                            "maxSamples": 50,
-                            "maxSubscribers": 5,
-                            "numberOfIpcTracingSlots": 1
-                        }
-                    ],
-                    "fields": [
-                        {
-                            "fieldName": "CurrentTemperatureFrontRight",
-                            "numberOfSampleSlots": 60,
-                            "maxSubscribers": 6,
-                            "numberOfIpcTracingSlots": 1
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "tracing": {
-        "enable": true,
-        "applicationInstanceID": "test_application_id"
-    }
-  }
-)"_json;
     // When parsing the JSON
     // That the application will not terminate
-    Configuration config{score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2))};
+    Configuration config{Parse(GetParam(), "tracing_service_elements_enabled")};
     const auto& tracing_config = config.GetTracingConfiguration();
     EXPECT_TRUE(tracing_config.IsTracingEnabled());
 
@@ -3209,137 +1270,13 @@ TEST(ConfigurationJsonParsingStrategyTracing, ProvidingServiceElementEnabledEnab
         tracing_config.IsServiceElementTracingEnabled(service_2_field, service_2_instance_specifier_string_view));
 }
 
-TEST(ConfigurationJsonParsingStrategyTracing,
-     DisablingGlobalTracingReturnsFalseForAllCallsToIsServiceElementTracingEnabled)
+TEST_P(ConfigurationParsingStrategyTracingTest,
+       DisablingGlobalTracingReturnsFalseForAllCallsToIsServiceElementTracingEnabled)
 {
     // Given a JSON with all tracing attributes
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-            {
-                "binding": "SHM",
-                "serviceId": 1234,
-                "events": [
-                    {
-                        "eventName": "CurrentPressureFrontLeft",
-                        "eventId": 20
-                    }
-                ],
-                "fields": [
-                    {
-                        "fieldName": "CurrentPressureFrontRight",
-                        "fieldId": 30
-                    }
-                ]
-            }
-          ]
-        },
-        {
-          "serviceTypeName": "/score/ncar/services/TireTemperatureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-            {
-                "binding": "SHM",
-                "serviceId": 1235,
-                "events": [
-                    {
-                        "eventName": "CurrentTemperatureFrontLeft",
-                        "eventId": 20
-                    }
-                ],
-                "fields": [
-                    {
-                        "fieldName": "CurrentTemperatureFrontRight",
-                        "fieldId": 30
-                    }
-                ]
-            }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "maxSamples": 50,
-                            "maxSubscribers": 5,
-                            "numberOfIpcTracingSlots": 0
-                        }
-                    ],
-                    "fields": [
-                        {
-                            "fieldName": "CurrentPressureFrontRight",
-                            "numberOfSampleSlots": 60,
-                            "maxSubscribers": 6,
-                            "numberOfIpcTracingSlots": 1
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "instanceSpecifier": "abc/abc/TireTemperaturePort",
-            "serviceTypeName": "/score/ncar/services/TireTemperatureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 4567,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                        {
-                            "eventName": "CurrentTemperatureFrontLeft",
-                            "maxSamples": 50,
-                            "maxSubscribers": 5,
-                            "numberOfIpcTracingSlots": 1
-                        }
-                    ],
-                    "fields": [
-                        {
-                            "fieldName": "CurrentTemperatureFrontRight",
-                            "numberOfSampleSlots": 60,
-                            "maxSubscribers": 6,
-                            "numberOfIpcTracingSlots": 1
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "tracing": {
-        "enable": false,
-        "applicationInstanceID": "test_application_id"
-    }
-  }
-)"_json;
     // When parsing the JSON
     // That the application will not terminate
-    Configuration config{score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2))};
+    Configuration config{Parse(GetParam(), "tracing_service_elements_global_disabled")};
     const auto& tracing_config = config.GetTracingConfiguration();
     EXPECT_FALSE(tracing_config.IsTracingEnabled());
 
@@ -3370,134 +1307,12 @@ TEST(ConfigurationJsonParsingStrategyTracing,
         tracing_config.IsServiceElementTracingEnabled(service_2_field, service_2_instance_specifier_string_view));
 }
 
-TEST(ConfigurationJsonParsingStrategyTracing, NotProvidingServiceElementEnabledDisablesServiceElementTracing)
+TEST_P(ConfigurationParsingStrategyTracingTest, NotProvidingServiceElementEnabledDisablesServiceElementTracing)
 {
     // Given a JSON with all tracing attributes
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-            {
-                "binding": "SHM",
-                "serviceId": 1234,
-                "events": [
-                    {
-                        "eventName": "CurrentPressureFrontLeft",
-                        "eventId": 20
-                    }
-                ],
-                "fields": [
-                    {
-                        "fieldName": "CurrentPressureFrontRight",
-                        "fieldId": 30
-                    }
-                ]
-            }
-          ]
-        },
-        {
-          "serviceTypeName": "/score/ncar/services/TireTemperatureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": [
-            {
-                "binding": "SHM",
-                "serviceId": 1235,
-                "events": [
-                    {
-                        "eventName": "CurrentTemperatureFrontLeft",
-                        "eventId": 20
-                    }
-                ],
-                "fields": [
-                    {
-                        "fieldName": "CurrentTemperatureFrontRight",
-                        "fieldId": 30
-                    }
-                ]
-            }
-          ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 1234,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "maxSamples": 50,
-                            "maxSubscribers": 5,
-                            "numberOfIpcTracingSlots": 0
-                        }
-                    ],
-                    "fields": [
-                        {
-                            "fieldName": "CurrentPressureFrontRight",
-                            "numberOfSampleSlots": 60,
-                            "maxSubscribers": 6
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "instanceSpecifier": "abc/abc/TireTemperaturePort",
-            "serviceTypeName": "/score/ncar/services/TireTemperatureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "instanceId": 4567,
-                  "asil-level": "QM",
-                  "binding": "SHM",
-                  "events": [
-                        {
-                            "eventName": "CurrentTemperatureFrontLeft",
-                            "maxSamples": 50,
-                            "maxSubscribers": 5,
-                            "numberOfIpcTracingSlots": 1
-                        }
-                    ],
-                    "fields": [
-                        {
-                            "fieldName": "CurrentTemperatureFrontRight",
-                            "numberOfSampleSlots": 60,
-                            "maxSubscribers": 6
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "tracing": {
-        "enable": true,
-        "applicationInstanceID": "test_application_id"
-    }
-  }
-)"_json;
     // When parsing the JSON
     // That the application will not terminate
-    Configuration config{score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2))};
+    Configuration config{Parse(GetParam(), "tracing_service_elements_partially_enabled")};
     const auto& tracing_config = config.GetTracingConfiguration();
     EXPECT_TRUE(tracing_config.IsTracingEnabled());
 
@@ -3528,86 +1343,15 @@ TEST(ConfigurationJsonParsingStrategyTracing, NotProvidingServiceElementEnabledD
         tracing_config.IsServiceElementTracingEnabled(service_2_field, service_2_instance_specifier_string_view));
 }
 
-score::json::Any generate_config_json(const std::string& instance_specifier,
-                                      const std::string& field_name,
-                                      const std::string& number_of_tracing_slots)
-{
-    std::stringstream config_json_strstr;
-    config_json_strstr << R"(
-    {
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "fields": [
-                        {
-                            "fieldName": "CurrentTemperatureFrontLeft",
-                            "fieldId": 30
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": ")"
-                       << instance_specifier << R"(",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "shm-size": 10000,
-                    "control-asil-b-shm-size": 20000,
-                    "control-qm-shm-size": 30000,
-                    "events": [
-                    ],
-                    "fields": [
-                        {
-                            "fieldName": ")"
-                       << field_name << R"(",
-                            "numberOfSampleSlots": 0,
-                            "maxSubscribers": 6,
-                            "numberOfIpcTracingSlots": )"
-                       << number_of_tracing_slots << R"(
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-
-)";
-    auto config_json = operator""_json(config_json_strstr.str().data(), config_json_strstr.str().size());
-    return config_json;
-}
-
-TEST(TracingFilterConfigGetNumberOfTraceingSlots, CorrectlyParseAJsonContainingNumberOfTracingSlotsInRange)
+TEST_P(TracingFilterConfigGetNumberOfTraceingSlots, CorrectlyParseAJsonContainingNumberOfTracingSlotsInRange)
 {
     const std::string instance_specifier_str{"abc/abc/TirePressurePort"};
     const std::string field_name_str{"CurrentTemperatureFrontLeft"};
     constexpr std::uint8_t number_of_tracing_slots{255};
 
-    // Given a config_json containing a numberOfSampleSlots which fits in its capacity
-    auto config_json = generate_config_json(
-        instance_specifier_str, field_name_str, std::to_string(static_cast<int>(number_of_tracing_slots)));
-
-    // When json is parsed into the configuration
-    auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(config_json));
+    // Given a configuration containing a numberOfIpcTracingSlots which fits in its capacity
+    // When it is parsed into the configuration
+    auto config = Parse(GetParam(), "tracing_slots_255");
 
     const auto instance_specifier = InstanceSpecifier::Create(std::string{instance_specifier_str}).value();
     const auto& serv_inst_depl = config.GetServiceInstanceDeployment(instance_specifier).value().get();
@@ -3618,1517 +1362,270 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, CorrectlyParseAJsonContainingN
     EXPECT_EQ(number_of_tracing_slots, field.lola_event_instance_deployment_.GetNumberOfTracingSlots());
 }
 
-TEST(TracingFilterConfigGetNumberOfTraceingSlots, FailParsingAJsonContainingNumberOfTracingSlotsOutOfRange)
+// JSON only: flatc rejects a numberOfIpcTracingSlots which does not fit into an ubyte.
+TEST_F(ConfigurationJsonOnlyParsingTest, FailParsingAJsonContainingNumberOfTracingSlotsOutOfRange)
 {
-    const std::string instance_specifier_str{"abc/abc/TirePressurePort"};
-    const std::string field_name_str{"CurrentTemperatureFrontLeft"};
-
-    // Given a config_json containing a numberOfSampleSlots which does not fit in its capacity, but is otherwise valid
-    auto config_json = generate_config_json(instance_specifier_str, field_name_str, "256");
-
+    // Given a configuration containing a numberOfIpcTracingSlots which does not fit in its capacity, but is otherwise
+    // valid
     // Then Expect parsing to fail
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(config_json)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ParseJson("tracing_slots_256"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, DuplicateServiceInstanceEventsWillDie)
+TEST_P(ConfigurationParsingStrategyTest, DuplicateServiceInstanceEventsWillDie)
 {
     // Given a JSON with duplicate event
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 30
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                   "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        },
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "duplicate_instance_event_name"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoDuplicateServiceInstanceEventsWillNotDie)
-{
-    // configuration is the same as the test above and is testing the positive case.
-    // Given a JSON without duplicate event
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 30
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                   "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-
-)"_json;
-
-    // When parsing the JSON
-    // That the application will not terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
-}
-
-TEST_F(ConfigurationJsonParsingStrategyFixture, DuplicateServiceInstanceFieldWillDie)
+TEST_P(ConfigurationParsingStrategyTest, DuplicateServiceInstanceFieldWillDie)
 {
     // Given a JSON with duplicate Field
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "fields": [
-                        {
-                            "fieldName": "CurrentTemperatureFrontLeft",
-                            "fieldId": 30
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "fields": [
-                        {
-                            "fieldName": "CurrentTemperatureFrontLeft"
-                        },
-                        {
-                            "fieldName": "CurrentTemperatureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "duplicate_instance_field_name"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoDuplicateServiceInstanceFieldWillNotDie)
+TEST_P(ConfigurationParsingStrategyTest, SpecifyingServiceInstanceFieldWhichCorrespondToAServiceTypeFieldWillNotDie)
 {
-    // configuration is the same as the test above and is testing the positive case.
-    // Given a JSON without duplicate Field
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "fields": [
-                        {
-                            "fieldName": "CurrentTemperatureFrontLeft",
-                            "fieldId": 30
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "fields": [
-                        {
-                            "fieldName": "CurrentTemperatureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-
-)"_json;
+    // configuration is testing the positive case of the test above.
+    // Given a JSON with a single known field
 
     // When parsing the JSON
     // That the application will not terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(Parse(GetParam(), "single_instance_field"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture,
-       SpecifyingServiceInstanceFieldWhichCorrespondToAServiceTypeFieldWillNotDie)
-{
-    // configuration is the same as the test above and is testing the positive case.
-    // Given a JSON with known field
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "fields": [
-                        {
-                            "fieldName": "CurrentTemperatureFrontLeft",
-                            "fieldId": 30
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "fields": [
-                        {
-                            "fieldName": "CurrentTemperatureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-)"_json;
-
-    // When parsing the JSON
-    // That the application will not terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
-}
-
-TEST_F(ConfigurationJsonParsingStrategyFixture, UnknownShmSizeCalcModeKeyWillDie)
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, UnknownShmSizeCalcModeKeyWillDie)
 {
     // Given a JSON with invalid shm size calcMode key
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 20
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "B",
-                    "binding": "SHM",
-                    "shm-size": 10000,
-                    "control-asil-b-shm-size": 20000,
-                    "control-qm-shm-size": 30000,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "global": {
-        "asil-level": "B",
-        "queue-size": {
-            "QM-receiver": 8,
-            "B-receiver": 5,
-            "B-sender": 12
-        },
-        "shm-size-calc-mode": "Unknown"
-    }
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ParseJson("shm_size_calc_mode_unknown"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, KnownShmSizeCalcModeKeyWillNotDie)
-{
-    // configuration is the same as the test above and is testing the positive case.
-    // Given a JSON with valid shm size calcMode key
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 20
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "B",
-                    "binding": "SHM",
-                    "shm-size": 10000,
-                    "control-asil-b-shm-size": 20000,
-                    "control-qm-shm-size": 30000,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "global": {
-        "asil-level": "B",
-        "queue-size": {
-            "QM-receiver": 8,
-            "B-receiver": 5,
-            "B-sender": 12
-        },
-        "shm-size-calc-mode": "SIMULATION"
-    }
-}
-)"_json;
-
-    // When parsing the JSON
-    // That the application will not terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
-}
-
-TEST_F(ConfigurationJsonParsingStrategyFixture, WithoutServiceinstancesWillDie)
+TEST_P(ConfigurationParsingStrategyTest, WithoutServiceinstancesWillDie)
 {
     // Given a JSON without necessary service instance
-    auto j2 = R"(
-  {
-    "serviceTypes": [
-        {
-          "serviceTypeName": "/score/ncar/services/TirePressureService",
-          "version": {
-              "major": 12,
-              "minor": 34
-          },
-          "bindings": []
-        }
-    ]
-  }
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "service_types_without_service_instances"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, WithServiceinstancesWillNotDie)
+TEST_P(ConfigurationParsingStrategyTest, WithServiceinstancesWillNotDie)
 {
     // configuration is the same as the test above and is testing the positive case.
     // Given a JSON with necessary service instance
-    auto j2 = R"(
- {
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-
-            ]
-        }
-    ],
-    "serviceInstances": [
-    ]
-}
-
-)"_json;
 
     // When parsing the JSON
     // That the application will not terminate
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+        Parse(GetParam(), "service_types_with_empty_service_instances"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, EmptyInstanceSpecifierWillDie)
+TEST_P(ConfigurationParsingStrategyTest, EmptyInstanceSpecifierWillDie)
 {
-    // configuration is the same as the test below and is testing the positive case.
     // Given a JSON with empty instance specifier
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 20
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "shm-size": 10000,
-                    "control-asil-b-shm-size": 20000,
-                    "control-qm-shm-size": 30000,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "empty_instance_specifier"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, KnownInstanceSpecifierWillNotDie)
+TEST_P(ConfigurationParsingStrategyTest, InvalidServiceInstanceSpecifierWillDie)
 {
-    // Given a JSON with known instance specifier
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 20
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "shm-size": 10000,
-                    "control-asil-b-shm-size": 20000,
-                    "control-qm-shm-size": 30000,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-)"_json;
-
-    // When parsing the JSON
-    // That the application will not terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
-}
-
-TEST_F(ConfigurationJsonParsingStrategyFixture, InvalidServiceInstanceSpecifierWillDie)
-{
-    // configuration is the same as the test above and is testing the positive case.
     // Given a JSON with invalid instance specifier
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 20
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "invalid_instance_specifier/",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "shm-size": 10000,
-                    "control-asil-b-shm-size": 20000,
-                    "control-qm-shm-size": 30000,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-)"_json;
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "invalid_instance_specifier"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, WithServiceTypeFieldsOrEventsWillNotDie)
+TEST_P(ConfigurationParsingStrategyTest, WithServiceTypeFieldsOrEventsWillNotDie)
 {
-    // configuration is the same as the test above and is testing the positive case.
-    // Given a JSON with service type fields or events
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 20
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "shm-size": 10000,
-                    "control-asil-b-shm-size": 20000,
-                    "control-qm-shm-size": 30000,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-
-)"_json;
+    // configuration is testing the positive case of the two tests above.
+    // Given a JSON with a valid instance specifier and service type fields or events
     // When parsing the JSON
     // That the application will not terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(Parse(GetParam(), "valid_instance_specifier"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, DuplicateServiceInstancesWillDie)
+TEST_P(ConfigurationParsingStrategyTest, DuplicateServiceInstancesWillDie)
 {
-    // Given a JSON with duplicate instances
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 20
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                  "asil-level": "QM",
-                  "binding": "SHM"
-                }
-            ]
-        }
-    ]
-}
-)"_json;
+    // Given a JSON with two service instances with same instanceSpecifier
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "duplicate_service_instance"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, NoDuplicateServiceInstancesWillNotDie)
+TEST_P(ConfigurationParsingStrategyTest, MissingServiceTypeVersionWillDie)
 {
-    // configuration is the same as the test above and is testing the positive case.
-    // Given a JSON without duplicate instances
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 20
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-)"_json;
-    // When parsing the JSON
-    // That the application will not terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
-}
-
-TEST_F(ConfigurationJsonParsingStrategyFixture, MissingServiceTypeVersionWillDie)
-{
-    // Given a JSON with duplicate instances
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 30
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                   "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-)"_json;
+    // Given a JSON with a service type without `version`
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "missing_service_type_version"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, MissingServiceTypeMajorVersionWillDie)
+TEST_P(ConfigurationParsingStrategyTest, MissingServiceTypeMajorVersionWillDie)
 {
-    // Given a JSON with duplicate instances
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 30
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                   "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-)"_json;
+    // Given a JSON with a service type version without `major`
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "missing_service_type_major_version"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, MissingServiceTypeMinorVersionWillDie)
+TEST_P(ConfigurationParsingStrategyTest, MissingServiceInstanceMinorVersionWillDie)
 {
-    // Given a JSON with duplicate instances
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 30
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                   "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-)"_json;
+    // Given a JSON with a service instance version without `minor`
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "missing_service_instance_minor_version"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, ValidServiceTypeVersionWillNotDie)
+TEST_P(ConfigurationParsingStrategyTest, ValidServiceTypeVersionWillNotDie)
 {
-    // configuration is the same as the two tests above and is testing the positive case.
-    // Given a JSON without duplicate event
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 30
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                   "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-
-)"_json;
+    // configuration is testing the positive case of the three tests above.
+    // Given a JSON with valid service type and service instance versions
 
     // When parsing the JSON
     // That the application will not terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(
-        score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(Parse(GetParam(), "single_instance_event"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, ParseWithMalformedServiceInstancesStructureCausesTermination)
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, ParseWithMalformedServiceInstancesStructureCausesTermination)
 {
     // Given a malformed JSON where serviceInstances is not an array
-    auto malformed_config = R"({
-        "serviceTypes": [],
-        "serviceInstances": "not_an_array"
-    })"_json;
 
     // When parsing the JSON
     // Then it shall issue a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED({
-        score::cpp::ignore =
-            score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(malformed_config));
-    });
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = ParseJson("malformed_service_instances_not_a_list"); });
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, ParseWithMalformedInstanceSpecifierCausesTermination)
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, ParseWithMalformedInstanceSpecifierCausesTermination)
 {
     // Given a malformed JSON where instance specifier is a number instead of a string
-    auto malformed_config = R"({
-        "serviceTypes": [{
-            "serviceTypeName": "/test/service",
-            "version": {"major": 1, "minor": 0},
-            "bindings": []
-        }],
-        "serviceInstances": [{
-            "instanceSpecifier": 123,
-            "serviceTypeName": "/test/service",
-            "version": {"major": 1, "minor": 0},
-            "instances": []
-        }]
-    })"_json;
 
     // When parsing the JSON
     // Then it shall issue a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED({
-        score::cpp::ignore =
-            score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(malformed_config));
-    });
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = ParseJson("malformed_instance_specifier_not_a_string"); });
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, ParseWithMalformedServiceTypeNameCausesTermination)
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, ParseWithMalformedServiceTypeNameCausesTermination)
 {
     // Given a malformed JSON where service type name is a number instead of a string
-    auto malformed_config = R"({
-        "serviceTypes": [{
-            "serviceTypeName": 123,
-            "version": {"major": 1, "minor": 0},
-            "bindings": []
-        }],
-        "serviceInstances": []
-    })"_json;
 
     // When parsing the JSON
     // Then it shall issue a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED({
-        score::cpp::ignore =
-            score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(malformed_config));
-    });
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = ParseJson("malformed_service_type_name_not_a_string"); });
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, ParseWithMalformedVersionObjectCausesTermination)
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, ParseWithMalformedVersionObjectCausesTermination)
 {
     // Given a malformed JSON where version is a string instead of an object
-    auto malformed_config = R"({
-        "serviceTypes": [{
-            "serviceTypeName": "/test/service",
-            "version": "not_an_object",
-            "bindings": []
-        }],
-        "serviceInstances": []
-    })"_json;
 
     // When parsing the JSON
     // Then it shall issue a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED({
-        score::cpp::ignore =
-            score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(malformed_config));
-    });
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = ParseJson("malformed_version_not_an_object"); });
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, ParseWithMalformedDeploymentInstanceCausesTermination)
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, ParseWithMalformedDeploymentInstanceCausesTermination)
 {
     // Given a malformed JSON where instances is an array of strings instead of objects
-    auto malformed_config = R"({
-        "serviceTypes": [{
-            "serviceTypeName": "/test/service",
-            "version": {"major": 1, "minor": 0},
-            "bindings": []
-        }],
-        "serviceInstances": [{
-            "instanceSpecifier": "/test/instance",
-            "serviceTypeName": "/test/service",
-            "version": {"major": 1, "minor": 0},
-            "instances": ["not_an_object"]
-        }]
-    })"_json;
 
     // When parsing the JSON
     // Then it shall issue a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED({
-        score::cpp::ignore =
-            score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(malformed_config));
-    });
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = ParseJson("malformed_deployment_instance_not_an_object"); });
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, ParseWithMalformedAsilLevelCausesTermination)
+TEST_P(ConfigurationParsingStrategyTest, ParseWithMalformedAsilLevelCausesTermination)
 {
     // Given a malformed JSON where asil level is a number instead of a string
-    auto config_with_invalid_asil = R"({
-        "serviceTypes": [{
-            "serviceTypeName": "/test/service",
-            "version": {"major": 1, "minor": 0},
-            "bindings": [{"binding": "SHM", "serviceId": 1, "events": [], "fields": [], "methods": []}]
-        }],
-        "serviceInstances": [{
-            "instanceSpecifier": "/test/instance",
-            "serviceTypeName": "/test/service",
-            "version": {"major": 1, "minor": 0},
-            "instances": [{
-                "instanceId": 1,
-                "asil-level": 123,
-                "binding": "SHM"
-            }]
-        }]
-    })"_json;
 
     // When parsing the JSON
     // Then it shall issue a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED({
-        score::cpp::ignore = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(
-            std::move(config_with_invalid_asil));
-    });
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = Parse(GetParam(), "malformed_asil_level_not_a_string"); });
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, ParseWithMalformedShmSizeCalcModeHandledGracefully)
+TEST_P(ConfigurationParsingStrategyTest, ParseWithMalformedShmSizeCalcModeHandledGracefully)
 {
     // Given a malformed JSON where shm-size-calc-mode is a number instead of a string
-    auto config_with_invalid_shm_mode = R"({
-        "serviceTypes": [{
-            "serviceTypeName": "/test/service",
-            "version": {"major": 1, "minor": 0},
-            "bindings": [{"binding": "SHM", "serviceId": 1, "events": [], "fields": [], "methods": []}]
-        }],
-        "serviceInstances": [{
-            "instanceSpecifier": "/test/instance",
-            "serviceTypeName": "/test/service",
-            "version": {"major": 1, "minor": 0},
-            "instances": [{
-                "instanceId": 1,
-                "binding": "SHM",
-                "shm-size-calc-mode": 123
-            }]
-        }]
-    })"_json;
 
     // When parsing the JSON
     // Then it shall issue a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED({
-        score::cpp::ignore = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(
-            std::move(config_with_invalid_shm_mode));
-    });
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = Parse(GetParam(), "malformed_shm_size_calc_mode_not_a_string"); });
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, ParseWithMalformedAllowedUserHandledGracefully)
+// JSON only: flatc rejects this configuration.
+TEST_F(ConfigurationJsonOnlyParsingTest, ParseWithMalformedAllowedUserHandledGracefully)
 {
     // Given a malformed JSON where allowedConsumer is a string instead of an object
-    auto config_with_invalid_allowed_user = R"({
-        "serviceTypes": [{
-            "serviceTypeName": "/test/service",
-            "version": {"major": 1, "minor": 0},
-            "bindings": [{"binding": "SHM", "serviceId": 1, "events": [], "fields": [], "methods": []}]
-        }],
-        "serviceInstances": [{
-            "instanceSpecifier": "/test/instance",
-            "serviceTypeName": "/test/service",
-            "version": {"major": 1, "minor": 0},
-            "instances": [{
-                "instanceId": 1,
-                "binding": "SHM",
-                "allowedConsumer": "not_an_object"
-            }]
-        }]
-    })"_json;
 
     // When parsing the JSON
     // Then it shall issue a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED({
-        score::cpp::ignore = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(
-            std::move(config_with_invalid_allowed_user));
-    });
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = ParseJson("malformed_allowed_consumer_not_an_object"); });
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixture, ParseWithMalformedPermissionChecksHandledGracefully)
+TEST_P(ConfigurationParsingStrategyTest, ParseWithMalformedPermissionChecksHandledGracefully)
 {
     // Given a malformed JSON where permission-checks is a number instead of an object
-    auto config_with_invalid_permissions = R"({
-        "serviceTypes": [{
-            "serviceTypeName": "/test/service",
-            "version": {"major": 1, "minor": 0},
-            "bindings": [{"binding": "SHM", "serviceId": 1, "events": [], "fields": [], "methods": []}]
-        }],
-        "serviceInstances": [{
-            "instanceSpecifier": "/test/instance",
-            "serviceTypeName": "/test/service",
-            "version": {"major": 1, "minor": 0},
-            "instances": [{
-                "instanceId": 1,
-                "binding": "SHM",
-                "permission-checks": 123
-            }]
-        }]
-    })"_json;
 
     // When parsing the JSON
     // Then it shall issue a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED({
-        score::cpp::ignore = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(
-            std::move(config_with_invalid_permissions));
-    });
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = Parse(GetParam(), "malformed_permission_checks_not_a_string"); });
 }
 
-using ConfigurationJsonParsingStrategyFixtureDeathTest = ConfigurationJsonParsingStrategyFixture;
-TEST_F(ConfigurationJsonParsingStrategyFixtureDeathTest, InvalidInterVmConfigurationWillDie)
+TEST_P(ConfigurationParsingStrategyDeathTest, InvalidInterVmConfigurationWillDie)
 {
     // Given a JSON where service instance is configured to be inter-VM forwarded but is not configured to have
     // interVM support, which is invalid
-    auto config_with_invalid_vm_configuration = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 30
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ],
-                    "interVmSupport": false,
-                    "interVmForwarded": true
-                }
-            ]
-        }
-    ]
-}
-)"_json;
     // When parsing the JSON
     // That the application will terminate
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::cpp::ignore = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(
-            std::move(config_with_invalid_vm_configuration)));
+        score::cpp::ignore = Parse(GetParam(), "inter_vm_forwarded_without_inter_vm_support"));
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixtureDeathTest, NoInterVmSupportWillNotDie)
+TEST_P(ConfigurationParsingStrategyDeathTest, NoInterVmSupportWillNotDie)
 {
     // Given a JSON where service instance is not configured to have inter VM support is fine
-    auto config_with_inter_vm_support_disabled = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 30
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ],
-                    "interVmSupport": false,
-                    "interVmForwarded": false
-                }
-            ]
-        }
-    ]
-}
-)"_json;
     // When parsing the JSON
     // That the application will not terminate
-    score::cpp::ignore = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(
-        std::move(config_with_inter_vm_support_disabled));
+    score::cpp::ignore = Parse(GetParam(), "no_inter_vm_support");
 }
 
-TEST_F(ConfigurationJsonParsingStrategyFixtureDeathTest, InterVmSupportButNotInterVmForwardedWillNotDie)
+TEST_P(ConfigurationParsingStrategyDeathTest, InterVmSupportButNotInterVmForwardedWillNotDie)
 {
     // Given a JSON where service instance is configured for inter VM support but will not forward it via inter VM is
     // fine
-    auto config_with_inter_vm_support_no_vm_forwarding = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 30
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ],
-                    "interVmSupport": true,
-                    "interVmForwarded": false
-                }
-            ]
-        }
-    ]
-}
-)"_json;
     // When parsing the JSON
     // That the application will not terminate
-    score::cpp::ignore = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(
-        std::move(config_with_inter_vm_support_no_vm_forwarding));
+    score::cpp::ignore = Parse(GetParam(), "inter_vm_support_without_inter_vm_forwarded");
 }
 
-TEST(ConfigurationJsonParsingStrategy, OnlyBReceiverQueueSizes)
+TEST_P(ConfigurationParsingStrategyTest, OnlyBReceiverQueueSizes)
 {
     // Given a JSON with only B-receiver queue size being explicitly configured
-    auto j2 = R"(
-  {
-    "serviceTypes": [],
-    "serviceInstances": [],
-    "global": {
-       "queue-size": {
-          "B-receiver": 5
-      }
-    }
-  }
-)"_json;
     // When parsing the JSON
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "queue_size_only_b_receiver");
     // expect that the QM-receiver has the default value
     EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_QM),
               GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_RX_QUEUE);
@@ -5139,22 +1636,11 @@ TEST(ConfigurationJsonParsingStrategy, OnlyBReceiverQueueSizes)
               GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_TX_QUEUE);
 }
 
-TEST(ConfigurationJsonParsingStrategy, OnlyBSenderQueueSize)
+TEST_P(ConfigurationParsingStrategyTest, OnlyBSenderQueueSize)
 {
     // Given a JSON with only B-sender queue size being explicitly configured
-    auto j2 = R"(
-  {
-    "serviceTypes": [],
-    "serviceInstances": [],
-    "global": {
-       "queue-size": {
-          "B-sender": 12
-      }
-    }
-  }
-)"_json;
     // When parsing the JSON
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "queue_size_only_b_sender");
     // expect that the QM-receiver has the default value
     EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_QM),
               GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_RX_QUEUE);
@@ -5165,160 +1651,21 @@ TEST(ConfigurationJsonParsingStrategy, OnlyBSenderQueueSize)
     EXPECT_EQ(config.GetGlobalConfiguration().GetSenderMessageQueueSize(), 12);
 }
 
-TEST(ConfigurationJsonParsingStrategy, MultipleServiceInstancesParseSuccessfully)
+TEST_P(ConfigurationParsingStrategyTest, MultipleServiceInstancesParseSuccessfully)
 {
     // Given a JSON with two valid service instances referencing the same service type
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 20
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort1",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort2",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 5678,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-)"_json;
     // When parsing the JSON
     // That the application will not terminate and both instances are present
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "multiple_service_instances");
     EXPECT_EQ(config.GetNumberOfServiceInstances(), 2U);
 }
 
-TEST(ConfigurationJsonParsingStrategy, ServiceInstanceWithMultipleEventsAndFieldsParseSuccessfully)
+TEST_P(ConfigurationParsingStrategyTest, ServiceInstanceWithMultipleEventsAndFieldsParseSuccessfully)
 {
     // Given a JSON with a service instance containing two events and two fields
-    auto j2 = R"(
-{
-    "serviceTypes": [
-        {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                    "binding": "SHM",
-                    "serviceId": 1234,
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 20
-                        },
-                        {
-                            "eventName": "CurrentPressureFrontRight",
-                            "eventId": 21
-                        }
-                    ],
-                    "fields": [
-                        {
-                            "fieldName": "CurrentTemperatureFrontLeft",
-                            "fieldId": 30
-                        },
-                        {
-                            "fieldName": "CurrentTemperatureFrontRight",
-                            "fieldId": 31
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "serviceInstances": [
-        {
-            "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "instances": [
-                {
-                    "instanceId": 1234,
-                    "asil-level": "QM",
-                    "binding": "SHM",
-                    "events": [
-                        {
-                            "eventName": "CurrentPressureFrontLeft"
-                        },
-                        {
-                            "eventName": "CurrentPressureFrontRight"
-                        }
-                    ],
-                    "fields": [
-                        {
-                            "fieldName": "CurrentTemperatureFrontLeft"
-                        },
-                        {
-                            "fieldName": "CurrentTemperatureFrontRight"
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-)"_json;
     // When parsing the JSON
     // That the application will not terminate
-    const auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
+    const auto config = Parse(GetParam(), "multiple_events_and_fields");
     const auto& deployment =
         config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
             .value()
@@ -5326,6 +1673,103 @@ TEST(ConfigurationJsonParsingStrategy, ServiceInstanceWithMultipleEventsAndField
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
     EXPECT_EQ(deploymentInfo.events_.size(), 2U);
     EXPECT_EQ(deploymentInfo.fields_.size(), 2U);
+}
+
+TEST_P(ConfigurationParsingStrategyTest, MultipleDeploymentsPerServiceInstanceWillDie)
+{
+    // Given a JSON with a service instance which has two deployments in its `instances` list
+    // When parsing the JSON
+    // That the application will terminate
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "multiple_deployments_per_instance"));
+}
+
+TEST_P(ConfigurationParsingStrategyTest, MaximumNestingParsesEveryLevel)
+{
+    // Given a JSON which populates every level of the configuration with more than one entry: two service types
+    // (SHM and SOME/IP) with two events, fields and methods each, two service instances with all optional
+    // attributes, and the global and tracing sections
+    // When parsing the JSON
+    const auto config = Parse(GetParam(), "maximum_nesting");
+
+    // Then all service types and service instances are present
+    EXPECT_EQ(config.GetNumberOfServiceTypes(), 2U);
+    EXPECT_EQ(config.GetNumberOfServiceInstances(), 2U);
+
+    // And the SHM service type deployment contains all its service elements
+    const auto pressure_service = make_ServiceIdentifierType("/score/ncar/services/TirePressureService", 12U, 34U);
+    const auto& lola_service_type_deployment = std::get<LolaServiceTypeDeployment>(
+        config.GetServiceTypeDeployment(pressure_service).value().get().binding_info_);
+    EXPECT_EQ(lola_service_type_deployment.service_id_, 1234U);
+    EXPECT_EQ(lola_service_type_deployment.events_.size(), 2U);
+    EXPECT_EQ(lola_service_type_deployment.fields_.size(), 2U);
+    EXPECT_EQ(lola_service_type_deployment.methods_.size(), 2U);
+    EXPECT_EQ(lola_service_type_deployment.events_.at("CurrentPressureFrontRight"), 21U);
+    EXPECT_EQ(lola_service_type_deployment.fields_.at("CurrentTemperatureFrontRight"), 31U);
+    EXPECT_EQ(lola_service_type_deployment.methods_.at("ResetPressure"), 41U);
+
+    // And the SOME/IP service type deployment contains all its service elements
+    const auto temperature_service = make_ServiceIdentifierType("/score/ncar/services/TireTemperatureService", 1U, 2U);
+    const auto& someip_service_type_deployment = std::get<SomeIpServiceTypeDeployment>(
+        config.GetServiceTypeDeployment(temperature_service).value().get().binding_info_);
+    EXPECT_EQ(someip_service_type_deployment.service_id_, 5678U);
+    EXPECT_EQ(someip_service_type_deployment.events_.size(), 2U);
+    EXPECT_EQ(someip_service_type_deployment.fields_.size(), 2U);
+    EXPECT_EQ(someip_service_type_deployment.methods_.size(), 2U);
+    EXPECT_EQ(someip_service_type_deployment.methods_.at("SelfTest"), 71U);
+
+    // And the SHM service instance deployment contains all its optional attributes and service elements
+    const auto pressure_instance_specifier = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
+    const auto& pressure_deployment = config.GetServiceInstanceDeployment(pressure_instance_specifier).value().get();
+    EXPECT_EQ(pressure_deployment.service_, pressure_service);
+    EXPECT_EQ(pressure_deployment.asilLevel_, QualityType::kASIL_B);
+    const auto& lola_deployment = std::get<LolaServiceInstanceDeployment>(pressure_deployment.bindingInfo_);
+    EXPECT_EQ(lola_deployment.instance_id_.value(), LolaServiceInstanceId{1234U});
+    EXPECT_EQ(lola_deployment.shared_memory_size_.value(), 10000U);
+    EXPECT_EQ(lola_deployment.control_asil_b_memory_size_.value(), 20000U);
+    EXPECT_EQ(lola_deployment.control_qm_memory_size_.value(), 30000U);
+    EXPECT_TRUE(lola_deployment.strict_permissions_);
+    EXPECT_TRUE(lola_deployment.inter_vm_support_);
+    EXPECT_TRUE(lola_deployment.inter_vm_forwarded_);
+    ASSERT_EQ(lola_deployment.allowed_consumer_.at(QualityType::kASIL_B).size(), 2U);
+    EXPECT_EQ(lola_deployment.allowed_consumer_.at(QualityType::kASIL_B)[1], 55U);
+    ASSERT_EQ(lola_deployment.allowed_provider_.at(QualityType::kASIL_B).size(), 1U);
+    EXPECT_EQ(lola_deployment.allowed_provider_.at(QualityType::kASIL_B)[0], 16U);
+    EXPECT_EQ(lola_deployment.events_.size(), 2U);
+    EXPECT_EQ(lola_deployment.fields_.size(), 2U);
+    EXPECT_EQ(lola_deployment.methods_.size(), 2U);
+    EXPECT_EQ(lola_deployment.events_.at("CurrentPressureFrontRight").max_subscribers_.value(), 6U);
+    EXPECT_TRUE(lola_deployment.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_);
+    EXPECT_FALSE(lola_deployment.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_);
+    EXPECT_EQ(lola_deployment.methods_.at("SetPressure").queue_size_.value(), 20U);
+    EXPECT_TRUE(lola_deployment.methods_.at("SetPressure").enabled_);
+    EXPECT_EQ(lola_deployment.methods_.at("ResetPressure").queue_size_.value(), 21U);
+    EXPECT_FALSE(lola_deployment.methods_.at("ResetPressure").enabled_);
+
+    // And the SOME/IP service instance deployment contains all its service elements
+    const auto& temperature_deployment =
+        config
+            .GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TireTemperaturePort"}).value())
+            .value()
+            .get();
+    EXPECT_EQ(temperature_deployment.service_, temperature_service);
+    const auto& someip_deployment = std::get<SomeIpServiceInstanceDeployment>(temperature_deployment.bindingInfo_);
+    EXPECT_EQ(someip_deployment.instance_id_.value().GetId(), 99U);
+    EXPECT_EQ(someip_deployment.events_.size(), 2U);
+    EXPECT_EQ(someip_deployment.fields_.size(), 2U);
+
+    // And the global and tracing sections are parsed
+    EXPECT_EQ(config.GetGlobalConfiguration().GetProcessAsilLevel(), QualityType::kASIL_B);
+    EXPECT_EQ(config.GetGlobalConfiguration().GetApplicationId(), 4321U);
+    EXPECT_EQ(config.GetGlobalConfiguration().GetSenderMessageQueueSize(), 12);
+    const auto& tracing_config = config.GetTracingConfiguration();
+    EXPECT_TRUE(tracing_config.IsTracingEnabled());
+    EXPECT_EQ(tracing_config.GetApplicationInstanceID(), "maximum_nesting");
+    const tracing::ServiceElementIdentifierView traced_event{
+        "/score/ncar/services/TirePressureService", "CurrentPressureFrontLeft", ServiceElementType::EVENT};
+    const tracing::ServiceElementIdentifierView untraced_event{
+        "/score/ncar/services/TirePressureService", "CurrentPressureFrontRight", ServiceElementType::EVENT};
+    EXPECT_TRUE(tracing_config.IsServiceElementTracingEnabled(traced_event, pressure_instance_specifier.ToString()));
+    EXPECT_FALSE(tracing_config.IsServiceElementTracingEnabled(untraced_event, pressure_instance_specifier.ToString()));
 }
 }  // namespace
 }  // namespace score::mw::com::impl

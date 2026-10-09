@@ -192,7 +192,7 @@ table InstanceEvent {
     eventName: string;
     /// @title: Maximum samples
     /// DEPRECATED! Use <numberOfSampleSlots> instead. Mandatory LoLa specific provider/skeleton side setting, how many sample slots shall be allocated. Value needs to be between 1 and 65535!
-    maxSamples: uint (deprecated);
+    maxSamples: uint = null;
     /// @title: Number of sample slots
     /// @min: 1
     /// @max: 65535
