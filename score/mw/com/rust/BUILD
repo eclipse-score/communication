@@ -29,7 +29,7 @@ rust_library(
 
 # Test-only target that additionally exposes the mock runtime.
 # Use this target (instead of :score_com) in test BUILD rules that need MockRuntimeBuilderImpl.
-# Mock Runtime is not yet ready - https://github.com/eclipse-score/communication/issues/490
+# Mock runtime is an in-process, backend-free implementation - https://github.com/eclipse-score/communication/issues/490
 rust_library(
     name = "score_com_mock",
     testonly = True,
