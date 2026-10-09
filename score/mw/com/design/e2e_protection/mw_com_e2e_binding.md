@@ -118,8 +118,8 @@ The binding owns the profile check state and invokes `CheckMessage()` itself (se
 ```cpp
 enum class DataIntegrityStatus {
     kDisabled, // Check was disabled
-    kOk,       // Metadata and CRC match expectations
-    kError,    // Metadata or CRC differ expectations
+    kOk,       // Metadata (incl. Data ID) and CRC match expectations — data is trustworthy
+    kError,    // Metadata (incl. Data ID) or CRC differ from expectations — data is corrupted or forged
 };
 
 enum class SequenceStatus {
@@ -366,15 +366,15 @@ Context ownership splits along the same line as [Context Ownership Cardinality](
 - **Transmit.** The binding resets `E2EProtectContext` on its own `OfferService()`/`StopOfferService()` (or equivalent) — a direct consequence of the binding owning both the protect state and the service-offer lifecycle hooks that bound it, so destroying and recreating the protect state alongside the offer/re-offer cycle requires no signal from any other layer.
 - **Receive.** LoLa's binding already implements the equivalent detection today: partial-restart/reconnection is handled by `lola::SubscriptionStateMachine` (`StopOfferEvent()`/`ReOfferEvent()`), driven by `ServiceDiscovery` notifications forwarded through `lola::Proxy`'s `FindServiceGuard` — entirely inside the binding. The binding resets its own `E2ECheckContext` on the same transition it already tracks for subscription-state purposes.
 
-**Historical health context — reset by the binding-independent layer, on a subscription-state-change signal from the binding.** The health counter has no wire-format dependency, so it stays binding-independent — but it still needs to know when communication continuity was intentionally broken, since a reset here is what prevents valid post-restart frames from being misread as a sequence error and driving `historical_health` toward `kError` even though the channel was correctly re-established (a safety-relevant failure mode, not merely cosmetic). This is already surfaced today via `ProxyEventBindingBase::GetSubscriptionState()` and `SetSubscriptionStateChangeHandler()`, which fire synchronously as the subscription transitions `SUBSCRIBED → SUBSCRIPTION_PENDING` (on `StopOfferEvent()`) and back to `SUBSCRIBED` (on `ReOfferEvent()`) (see `score/mw/com/design/skeleton_proxy/README.md` §"Proxy auto-reconnect functionality" and `score/mw/com/design/events_fields/README.md` §"Event subscription"). The binding-independent E2E Supervisor resets `E2EHealthContext` on this existing callback without any new binding interface. Future bindings (SOME/IP, DDS) must provide the equivalent subscription-state signal purely for this purpose — reset of their own `E2EProtectContext`/`E2ECheckContext` is their own internal concern.
+**Historical health context — reset by the binding-independent layer, on a subscription-state-change signal from the binding.** The health counter has no wire-format dependency, so it stays binding-independent — but it still needs to know when communication continuity was broken, since a reset here is what prevents valid post-restart frames from being misread as a sequence error and driving `historical_health` toward `kError` even though the channel was correctly re-established (a safety-relevant failure mode, not merely cosmetic). This is already surfaced today via `ProxyEventBindingBase::GetSubscriptionState()` and `SetSubscriptionStateChangeHandler()`, which fire synchronously as the subscription transitions `SUBSCRIBED → SUBSCRIPTION_PENDING` (on `StopOfferEvent()`) and back to `SUBSCRIBED` (on `ReOfferEvent()`) (see `score/mw/com/design/skeleton_proxy/README.md` §"Proxy auto-reconnect functionality" and `score/mw/com/design/events_fields/README.md` §"Event subscription"). The binding-independent E2E Supervisor resets `E2EHealthContext` on this existing callback without any new binding interface. Future bindings (SOME/IP, DDS) must provide the equivalent subscription-state signal purely for this purpose — reset of their own `E2EProtectContext`/`E2ECheckContext` is their own internal concern.
 
-These contexts (all three) shall be reinitialized whenever communication continuity is intentionally broken by the receiver, including:
+These contexts (all three) shall be reinitialized whenever communication continuity is broken, from either side:
 
-- provider (skeleton) restart,
-- service re-offer,
-- service instance change,
-- subscription re-establishment,
-- any event that creates a new logical communication session.
+- **Receiver-initiated:** subscription re-establishment.
+- **Provider-side:** provider (skeleton) restart, service re-offer, service instance change. The proxy sees `StopOfferEvent()` → `ReOfferEvent()`, resubscribes automatically and resets its contexts on that transition.
+- Any event that creates a new logical communication session.
+
+The reset is deliberately not reported through `E2EResult`: the first sample afterwards reads `SequenceStatus::kOk`, as for any first sample (see [Historical Health Tracking](#historical-health-tracking)). An application that needs to know the sender's sequence may have been interrupted uses the proxy event's `GetSubscriptionState()`/`SetSubscriptionStateChangeHandler()` and correlates it with the received samples.
 
 #### Binding Independence Assessment (Review Feedback)
 
@@ -406,14 +406,14 @@ The E2E Supervisor's historical health tracking requires per-event configuration
 | Profile ID | Which E2E profile applies |
 | Data ID | 16-bit identifier used in CRC computation |
 | Data ID mode | How Data ID is included (all, nibble, list — profile-dependent) |
-| MaxDeltaCounter | Maximum allowed counter jump before a `kWrongSequence` result |
+| MaxDeltaCounter | Maximum tolerated counter gap — a gap within it reports `SequenceStatus::kOkGapWithinThreshold`, a larger one `SequenceStatus::kErrorGapExceedsThreshold` |
 | Offset | Byte offset of the E2E header within the serialized message — **SOME/IP-specific**; not applicable, and not required in configuration, when the binding is LoLa (shared-memory) — see [Where the Header Bytes Actually Live](#where-the-header-bytes-actually-live-transmit-path-api-shape) |
 
 These parameters must be sourced from the service deployment configuration (a future extension to the existing `impl/configuration/` model) and injected into the binding and the E2E Manager at construction time.
 
 ### Profile Resolution Is Mandatory, Even When Checking Is Not
 
-Every consumer's resolved configuration must include the Profile Configuration parameters (Profile ID, Data ID, Offset, …), regardless of whether that consumer performs any E2E check at all. This is not an E2E-checking concern; it is a **deserialization** concern: for a wire-serializing binding (SOME/IP), the E2E header is embedded inline in the received buffer, so the binding must know its profile/offset/width just to locate where the application payload begins, before any check logic runs or is skipped. A consumer that disables checking (see [Per-Consumer Check Enablement](#per-consumer-check-enablement)) still needs its profile resolved for this reason — disabling *checking* only stops `CheckMessage()`/health-tracking from running; it never removes the need to correctly skip past the header bytes on the wire. "Mandatory" here means the resolved value must exist for every consumer — per the deployment model in [Example Deployment Mapping](#example-deployment-mapping-illustrative), each consumer's own deployment entry currently does repeat it verbatim, since there is no shared event-level default to inherit from instead; de-duplicating that repetition is a separate, later optimization, not a correctness requirement.
+Every consumer's resolved configuration must include the Profile Configuration parameters needed to locate the payload (Profile ID, Offset), regardless of whether that consumer performs any E2E check at all; check-only parameters (Data ID, `MaxDeltaCounter`) are required only when at least one per-message check is enabled. This is not an E2E-checking concern; it is a **deserialization** concern: for a wire-serializing binding (SOME/IP), the E2E header is embedded inline in the received buffer, so the binding must know its profile/offset/width just to locate where the application payload begins, before any check logic runs or is skipped. A consumer that disables checking (see [Per-Consumer Check Enablement](#per-consumer-check-enablement)) still needs its profile resolved for this reason — disabling *checking* only stops `CheckMessage()`/health-tracking from running; it never removes the need to correctly skip past the header bytes on the wire. "Mandatory" here means the resolved value must exist for every consumer — per the deployment model in [Example Deployment Mapping](#example-deployment-mapping-illustrative), each consumer's own deployment entry currently does repeat it verbatim, since there is no shared event-level default to inherit from instead; de-duplicating that repetition is a separate, later optimization, not a correctness requirement.
 
 This does not apply to LoLa: its E2E header lives in a separate, binding-internal parallel array (`EventDataE2EHeaderStorage`, see [Where the Header Bytes Actually Live](#where-the-header-bytes-actually-live-transmit-path-api-shape)), never inline with the application payload, so there is no header-skipping step for LoLa's deserialization to depend on. This requirement is therefore SOME/IP-specific (and applies to any future binding that serializes the header into the same buffer as the payload).
 
@@ -421,7 +421,7 @@ This does not apply to LoLa: its E2E header lives in a separate, binding-interna
 
 A consumer may need parameters that differ from other consumers of the same event — e.g. a consumer that intentionally receives a decimated sample stream needs a wider `MaxDeltaCounter` than other consumers. `mw::com`'s deployment model addresses this by attaching E2E configuration entirely to `ServiceInstance`, described next.
 
-`mw::com`'s E2E configuration is attached entirely to `ServiceInstance` (see [Example Deployment Mapping](#example-deployment-mapping-illustrative) for the resulting schema): every consuming instance declares its own complete, resolved E2E configuration (Profile Configuration, health-tracker tuning, check-enablement flags), rather than inheriting a shared default from the provider/service-interface level and overriding only the delta. This has four implications for the deployment model:
+`mw::com`'s E2E configuration is attached entirely to `ServiceInstance` (see [Example Deployment Mapping](#example-deployment-mapping-illustrative) for the resulting schema): every consuming instance declares its own self-contained E2E configuration (Profile Configuration, health-tracker tuning, check-enablement flags), rather than inheriting a shared default from the provider/service-interface level and overriding only the delta. This has four implications for the deployment model:
 
 1. Per-consumer tuning applies to Profile/Check parameters (e.g. `MaxDeltaCounter`), not only to health-tracker tuning — the illustrative example in [Example Deployment Mapping](#example-deployment-mapping-illustrative) models this for both `max_delta_counter` and `error_threshold`.
 2. Each instance's full configuration is resolved once, at deployment time, from that instance's own static deployment entry (e.g. `mw_com_config.json`) — a plain read of static data at process startup, with no runtime reconfiguration mechanism.
@@ -490,14 +490,16 @@ These are requirements this document's design places on that future integration,
 
 ### Example Deployment Mapping (Illustrative)
 
-The following sketch illustrates how the parameters above could be expressed as an extension of the **actual, existing** `mw_com_config.json` schema. The baseline structure (`serviceTypes`, `serviceInstances`, `instanceSpecifier`, `instanceId`, `asil-level`, `numberOfSampleSlots`, …) is taken directly from [`score/mw/com/impl/configuration/example/mw_com_config_someip.json`](https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/configuration/example/mw_com_config_someip.json); only the `"e2e"` key is new. The concrete schema for that key is still illustrative and a separate, later design/implementation task.
+The following sketch illustrates how the parameters above could be expressed as an extension of the **actual, existing** `mw_com_config.json` schema. The baseline structure (`serviceTypes`, `serviceInstances`, `instanceSpecifier`, `instanceId`, `asil-level`, `numberOfSampleSlots`, …) is taken directly from [`score/mw/com/impl/configuration/example/mw_com_config.json`](https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/configuration/example/mw_com_config.json); only the `"e2e"` key is new. The concrete schema for that key is still illustrative and a separate, later design/implementation task. Provider and consumer are separate applications, each with its own `mw_com_config.json` ([one file per application](../../impl/configuration/README.md#central-json-file-per-app)), so they are shown as two files.
 
 > **Configuration model.** The E2E deployment model is defined as follows:
 >
-> 1. **E2E configuration is owned entirely by `ServiceInstance`, not `ServiceType`.** Each `serviceInstances[].instances[].events[]` entry — including the provider and every consumer — carries a complete, self-contained `"e2e"` object. There is no shared default at the `serviceTypes[].bindings[].events[]` level for a consumer to inherit or override. This allows each instance to use a different profile or to disable E2E independently of other instances of the same event. The resulting duplication of identical configuration is accepted for the current design; deduplication through inheritance or shared defaults is deferred to a separate follow-up item.
+> 1. **E2E configuration is owned entirely by `ServiceInstance`, not `ServiceType`.** Each `serviceInstances[].instances[].events[]` entry — including the provider and every consumer — carries a self-contained `"e2e"` object with the parameters its role needs. There is no shared default at the `serviceTypes[].bindings[].events[]` level for a consumer to inherit or override. This allows each instance to use a different profile or to disable E2E independently of other instances of the same event. The resulting duplication of identical configuration is accepted for the current design; deduplication through inheritance or shared defaults is deferred to a separate follow-up item.
 > 2. **Binding-specific validity is enforced at construction time, not by a shared, all-fields-optional schema.** Parameters that apply only to one binding, such as `offset_bytes` for SOME/IP, are validated during deployment-time config parsing by binding-specific C++ configuration structs. A value that is meaningless for another binding, such as `offset_bytes` in a LoLa configuration, fails during parsing and terminates startup before the affected instance begins running, consistent with the fail-fast validation already used in `impl/configuration/` (see [Per-Consumer Check Enablement](#per-consumer-check-enablement)'s invalid-combination handling).
 >
 > Within this constraint, the distinction between binding-independent and binding-specific E2E configuration (Historical Health Configuration + check-enablement flags vs. Profile Configuration) remains valid, but it is enforced by the binding-specific C++ struct that parses the JSON, rather than by a nested `binding_independent`/`binding_specific` key inside `"e2e"`.
+
+Provider application (`mw_com_config.json`):
 
 ```json
 {
@@ -523,16 +525,41 @@ The following sketch illustrates how the parameters above could be expressed as 
       "version": { "major": 1, "minor": 0 },
       "instances": [
         {
-          "instanceId": 1, "asil-level": "B", "binding": "SOMEIP",
+          "instanceId": 2, "asil-level": "B", "binding": "SOMEIP",
           "events": [
             {
               "eventName": "VehicleSpeed", "numberOfSampleSlots": 20, "maxSubscribers": 4,
-              "e2e": { "profile": "P04", "offset_bytes": 8, "data_id": 4097, "max_delta_counter": 2 }
+              "e2e": { "profile": "P04", "offset_bytes": 8, "data_id": 4097 }
             }
           ]
         }
       ]
-    },
+    }
+  ],
+  "global": { "asil-level": "B", "applicationID": 100 }
+}
+```
+
+Consumer application (`mw_com_config.json`):
+
+```json
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/vehicle/services/VehicleStateService",
+      "version": { "major": 1, "minor": 0 },
+      "bindings": [
+        {
+          "binding": "SOMEIP",
+          "serviceId": 4096,
+          "events": [
+            { "eventName": "VehicleSpeed", "eventId": 32769 }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
     {
       "instanceSpecifier": "abc/abc/BrakeControllerProxy",
       "serviceTypeName": "/vehicle/services/VehicleStateService",
@@ -555,12 +582,12 @@ The following sketch illustrates how the parameters above could be expressed as 
       "version": { "major": 1, "minor": 0 },
       "instances": [
         {
-          "instanceId": 3, "asil-level": "QM", "binding": "SOMEIP",
+          "instanceId": 2, "asil-level": "QM", "binding": "SOMEIP",
           "events": [
             {
               "eventName": "VehicleSpeed",
               "e2e": {
-                "profile": "P04", "offset_bytes": 8, "data_id": 4097, "max_delta_counter": 2,
+                "profile": "P04", "offset_bytes": 8,
                 "data_integrity_check_enabled": false,
                 "sequence_check_enabled": false,
                 "historical_health_tracking_enabled": false
@@ -571,11 +598,13 @@ The following sketch illustrates how the parameters above could be expressed as 
       ]
     }
   ],
-  "global": { "asil-level": "QM", "applicationID": 100 }
+  "global": { "asil-level": "B", "applicationID": 200 }
 }
 ```
 
-Every instance's `"e2e"` object carries the full resolved Profile Configuration (`profile`/`offset_bytes`/`data_id`/`max_delta_counter`) its binding needs to run Protect()/Check() and, for SOME/IP, to skip header bytes during deserialization (see [Profile Resolution Is Mandatory, Even When Checking Is Not](#profile-resolution-is-mandatory-even-when-checking-is-not)). The provider and each consumer therefore repeat the same profile, illustrating the accepted duplication tradeoff noted above. `BrakeControllerProxy` (ASIL_B) overrides `max_delta_counter` and supplies its own health-tracker tuning (`error_threshold`), see [Per-Consumer Configuration Overrides](#per-consumer-configuration-overrides). `DiagnosticLoggerProxy` (QM) keeps the full profile (mandatory for SOME/IP deserialization) but disables all three check-enablement flags, so it receives `Summary::kDisabled`.
+The provider's `"e2e"` object carries only what Protect() needs (`profile`/`offset_bytes`/`data_id`); `max_delta_counter` and the health-tracker keys are check-side and appear only in consumer entries. `BrakeControllerProxy` (ASIL_B) enables checking with its own `max_delta_counter` and `error_threshold`, see [Per-Consumer Configuration Overrides](#per-consumer-configuration-overrides). `DiagnosticLoggerProxy` (QM) keeps only `profile` and `offset_bytes`, which SOME/IP needs to locate the payload (see [Profile Resolution Is Mandatory, Even When Checking Is Not](#profile-resolution-is-mandatory-even-when-checking-is-not)), and disables all three check-enablement flags, so it receives `Summary::kDisabled`. The provider and both consumers repeat the same `profile`/`offset_bytes`, illustrating the accepted duplication tradeoff noted above. Both consumer entries use the provider's `instanceId` and are separate `instanceSpecifier`s, since settings are resolved per specifier.
+
+> `DiagnosticLoggerProxy` shares the consumer file only to show two consumers with different E2E settings; as a separate QM application it would have its own `mw_com_config.json` with `global.asil-level` `QM`.
 
 ---
 
