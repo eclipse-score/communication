@@ -47,8 +47,8 @@ def integration_test(name, srcs, filesystem, **kwargs):
     repo_tag = "{}:latest".format(name)
 
     LINUX_TARGET_COMPATIBLE_WITH = select({
-        "@platforms//cpu:x86_64": ["@platforms//cpu:x86_64"],
         "@platforms//cpu:arm64": ["@platforms//cpu:arm64"],
+        "@platforms//cpu:x86_64": ["@platforms//cpu:x86_64"],
     }) + [
         "@platforms//os:linux",
     ]
@@ -88,8 +88,8 @@ def integration_test(name, srcs, filesystem, **kwargs):
     )
 
     QNX_TARGET_COMPATIBLE_WITH = select({
-        "@platforms//cpu:x86_64": ["@platforms//cpu:x86_64"],
         "@platforms//cpu:arm64": ["@platforms//cpu:arm64"],
+        "@platforms//cpu:x86_64": ["@platforms//cpu:x86_64"],
     }) + [
         "@platforms//os:qnx",
     ]
@@ -106,22 +106,22 @@ def integration_test(name, srcs, filesystem, **kwargs):
     qemu_config = Label("//quality/integration_testing/environments/qnx8_qemu:qemu_config")
 
     _extend_list_in_kwargs(kwargs, "data", select({
-        "//conditions:default": [image_loader],
         "@platforms//os:qnx": [qemu_image, qemu_config],
+        "//conditions:default": [image_loader],
     }))
     _extend_list_in_kwargs(
         kwargs,
         "args",
         select({
-            "//conditions:default": [
-                "--log-cli-level=DEBUG",
-                "--docker-image-bootstrap=$(location {})".format(image_loader),
-                "--docker-image={}".format(repo_tag),
-            ],
             "@platforms//os:qnx": [
                 "--log-cli-level=DEBUG",
                 "--qemu-config=$(location {})".format(qemu_config),
                 "--qemu-image=$(location {})".format(qemu_image),
+            ],
+            "//conditions:default": [
+                "--log-cli-level=DEBUG",
+                "--docker-image-bootstrap=$(location {})".format(image_loader),
+                "--docker-image={}".format(repo_tag),
             ],
         }),
     )
@@ -153,12 +153,12 @@ def integration_test(name, srcs, filesystem, **kwargs):
         name = name,
         srcs = srcs,
         plugins = select({
-            "//conditions:default": [
-                "@score_itf//score/itf/plugins:docker_plugin",
-                "@score_itf//score/itf/plugins:core_dump_plugin",
-            ],
             "@platforms//os:qnx": [
                 "@score_itf//score/itf/plugins:qemu_plugin",
+                "@score_itf//score/itf/plugins:core_dump_plugin",
+            ],
+            "//conditions:default": [
+                "@score_itf//score/itf/plugins:docker_plugin",
                 "@score_itf//score/itf/plugins:core_dump_plugin",
             ],
         }),
@@ -195,8 +195,8 @@ def dual_qemu_integration_test(
         filesystem_b = filesystem_a
 
     QNX_TARGET_COMPATIBLE_WITH = select({
-        "@platforms//cpu:x86_64": ["@platforms//cpu:x86_64"],
         "@platforms//cpu:arm64": ["@platforms//cpu:arm64"],
+        "@platforms//cpu:x86_64": ["@platforms//cpu:x86_64"],
     }) + [
         "@platforms//os:qnx",
     ]

@@ -164,3 +164,25 @@ jobs:
             ${{ matrix.id }}.sarif
           if-no-files-found: ignore
           retention-days: 7
+
+  buildifier:
+    name: buildifier
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
+        with:
+          disk-cache: ${{ inputs.fetch-only != 'true' && 'buildifier' || '' }}
+          cache-mode: ${{ inputs.cache-mode }}
+          ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+      - name: Run buildifier lint
+        if: inputs.fetch-only != 'true'
+        run: |
+          bazel run --config=ci //tools/lint/buildifier:buildifier_lint -- --recursive

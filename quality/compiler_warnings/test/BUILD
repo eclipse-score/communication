@@ -6,7 +6,7 @@
 #
 # This program and the accompanying materials are made available under the
 # terms of the Apache License Version 2.0 which is available at
-# https://apache.org
+# https://www.apache.org/licenses/LICENSE-2.0
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
@@ -19,13 +19,13 @@ load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 # Compiler warning feature tests.
 WARNING_FLAGS_BY_CASE = {
-    "conversion": ["-Wfloat-conversion"],
-    "shadow": ["-Wshadow"],
-    "sign_compare": ["-Wsign-compare"],
     "cast_qual": ["-Wcast-qual"],
-    "undef": ["-Wundef"],
+    "conversion": ["-Wfloat-conversion"],
     "delete_non_virtual_dtor": ["-Wdelete-non-virtual-dtor"],
     "overloaded_virtual": ["-Woverloaded-virtual"],
+    "shadow": ["-Wshadow"],
+    "sign_compare": ["-Wsign-compare"],
+    "undef": ["-Wundef"],
 }
 
 # Case 1: warning code should compile when warnings are not treated as errors.

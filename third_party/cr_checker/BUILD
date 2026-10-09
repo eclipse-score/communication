@@ -26,3 +26,9 @@ filegroup(
     ],
     visibility = ["//:__pkg__"],
 )
+
+filegroup(
+    name = "exclusions",
+    srcs = ["exclusion.txt"],
+    visibility = ["//:__pkg__"],
+)

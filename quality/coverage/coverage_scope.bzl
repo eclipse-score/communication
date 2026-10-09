@@ -41,8 +41,8 @@ visibility(["//..."])
 _CoverageScopeInfo = provider(
     doc = "Carries source file paths, cc_library labels, and object files collected by the coverage scope aspect.",
     fields = {
-        "source_files": "Depset of source file path strings (workspace-relative).",
         "object_files": "Depset of compiled .o File objects for baseline coverage.",
+        "source_files": "Depset of source file path strings (workspace-relative).",
     },
 )
 
@@ -67,12 +67,12 @@ def _coverage_scope_aspect_impl(target, ctx):
                             direct_files.append(f.short_path)
 
         # Only collect workspace-internal labels and archives
-        if not str(target.label).startswith("@@") or str(target.label).startswith("@@//"):
+        if target.label.repo_name == "":
             # Collect .a archive files for baseline coverage.
             for linker_input in target[CcInfo].linking_context.linker_inputs.to_list():
                 for lib in linker_input.libraries:
                     for archive in [lib.static_library, lib.pic_static_library]:
-                        if archive and "/external/" not in archive.path and not archive.path.startswith("external/"):
+                        if archive and archive.owner.repo_name == "":
                             direct_archives.append(archive)
                             break
     elif CrateInfo in target:
@@ -82,7 +82,7 @@ def _coverage_scope_aspect_impl(target, ctx):
             if not f.path.startswith("external/") and f.is_source:
                 direct_files.append(f.short_path)
         out = target[CrateInfo].output
-        if out and "/external/" not in out.path and not out.path.startswith("external/"):
+        if out and out.owner.repo_name == "":
             direct_archives.append(out)
 
     # Propagate from children traversed by the aspect
@@ -147,7 +147,7 @@ def _coverage_scope_impl(ctx):
         ),
     ]
 
-def _coverage_transition_impl(settings, attr):
+def _coverage_transition_impl(_settings, _attr):
     # This dictionary modifies the build configuration
     return {
         "//command_line_option:collect_code_coverage": True,

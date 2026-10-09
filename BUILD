@@ -53,16 +53,11 @@ compile_pip_requirements(
 
 copyright_checker(
     name = "copyright",
-    srcs = [
-        ".github",
-        "quality",
-        "score",
-        "third_party",
-        "tools",
-        "//:BUILD",
-        "//:MODULE.bazel",
-    ],
+    # Scan all repository code, including tooling and production subpackages.
+    srcs = ["."],
     config = "//third_party/cr_checker:config",
+    # This file contains literal header templates, not duplicate notices.
+    exclusion = "//third_party/cr_checker:exclusions",
     template = "//third_party/cr_checker:templates",
     visibility = ["//:__pkg__"],
 )

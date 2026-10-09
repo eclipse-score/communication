@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 
 py_binary(
     name = "codeql_lint",
@@ -22,7 +22,7 @@ py_binary(
         "--analysis_report_path=$(location @codeql_coding_standards//:analysis_report)",
         "--guideline_recategorize_path=$(location @codeql_coding_standards//:guideline_recategorize)",
     ],
-    data = [
+    data = glob(["query_overrides/**"]) + [
         ":config",
         "@codeql_bundle//:codeql_cli",
         "@codeql_coding_standards//:analysis_report",
@@ -34,6 +34,17 @@ py_binary(
     tags = ["local"],
     target_compatible_with = ["@platforms//os:linux"],
     deps = ["@rules_python//python/runfiles"],
+)
+
+py_test(
+    name = "codeql_lint_test",
+    srcs = [
+        "codeql_lint.py",
+        "codeql_lint_test.py",
+    ],
+    imports = ["."],
+    tags = ["local"],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 filegroup(
