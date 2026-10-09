@@ -124,6 +124,16 @@ class ManagedMemoryResource : public ::score::cpp::pmr::memory_resource
         return false;
     }
 
+    /**
+     * \brief Get a MemoryResourceProxy that identifies _this_ memory_resource.
+     * \details We need to return a raw pointer, since we need to convert this pointer into an OffsetPtr if it shall
+     *          be stored in shared memory.
+     * \todo: getMemoryResourceProxy should not return a non const pointer and the method should also be marked const.
+     *        This issue will be investigated and fixed in Ticket-146625"
+     * \return MemoryResourceProxy* that identifies _this_ memory_resource.
+     */
+    virtual const MemoryResourceProxy* getMemoryResourceProxy() noexcept = 0;
+
   protected:
     ManagedMemoryResource(const ManagedMemoryResource&) noexcept = default;
     ManagedMemoryResource(ManagedMemoryResource&&) noexcept = default;
@@ -139,12 +149,6 @@ class ManagedMemoryResource : public ::score::cpp::pmr::memory_resource
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class test::ManagedMemoryResourceTestAttorney;
 
-    // PolymorphicOffsetPtrAllocator template is a friend to access getMemoryResourceProxy() in its constructor
-    // that accepts a ManagedMemoryResource reference.
-    // coverity[autosar_cpp14_a11_3_1_violation]
-    template <typename T>
-    friend class PolymorphicOffsetPtrAllocator;
-
     // We make MemoryResourceRegistry a friend since it needs to access private internals of ManagedMemoryResource which
     // we do not want to expose to the user via the public interface of ManagedMemoryResource.
     // coverity[autosar_cpp14_a11_3_1_violation]
@@ -157,16 +161,6 @@ class ManagedMemoryResource : public ::score::cpp::pmr::memory_resource
      * @return void* past-the-end address of memory resource
      */
     virtual const void* getEndAddress() const noexcept = 0;
-
-    /**
-     * We need to return a raw pointer, since we need to convert this
-     * pointer into an OffsetPtr if it shall be stored in shared memory.
-     * @return MemoryResourceProxy* that identifies _this_ memory_resource.
-     */
-
-    /// \todo: getMemoryResourceProxy should not return a non const pointer and the method should also be marked const.
-    /// This issue will be investigated and fixed in Ticket-146625"
-    virtual const MemoryResourceProxy* getMemoryResourceProxy() noexcept = 0;
 };
 
 }  // namespace score::memory::shared

@@ -70,7 +70,7 @@ class EventDataStorageTypedTest : public ::testing::Test
   protected:
     memory::shared::NewDeleteDelegateMemoryResource memory_resource_{kMemoryResourceId};
     memory::DataTypeSizeInfo sample_size_info_{sizeof(T), alignof(T)};
-    EventDataStorage unit_{memory_resource_, kNumberOfSlots, sample_size_info_};
+    EventDataStorage unit_{memory_resource_.getMemoryResourceProxy(), kNumberOfSlots, sample_size_info_};
 };
 
 using SampleTypes = ::testing::Types<std::uint16_t, std::uint64_t, MaxAlignedDummyStruct>;
@@ -132,7 +132,7 @@ TYPED_TEST(EventDataStorageTypedTest, CtorCallsInitializeSampleCallbackOnceForEv
     std::vector<void*> received_slot_pointers{};
 
     // When constructing an EventDataStorage for TypeParam, handing over that callback
-    EventDataStorage unit{this->memory_resource_,
+    EventDataStorage unit{this->memory_resource_.getMemoryResourceProxy(),
                           kNumberOfSlots,
                           this->sample_size_info_,
                           InitializeSampleCallback{[&received_slot_pointers](void* const slot) noexcept {
@@ -165,7 +165,7 @@ TEST(EventDataStorageDeathTest, GetTypeErasedDataSlotTerminatesOnDataSizeMismatc
     // Given an EventDataStorage constructed for a std::uint32_t sample type
     memory::shared::NewDeleteDelegateMemoryResource memory_resource{kMemoryResourceId};
     const memory::DataTypeSizeInfo sample_size_info{sizeof(std::uint32_t), alignof(std::uint32_t)};
-    EventDataStorage unit{memory_resource, kNumberOfSlots, sample_size_info};
+    EventDataStorage unit{memory_resource.getMemoryResourceProxy(), kNumberOfSlots, sample_size_info};
 
     // When requesting a data slot with a data_size that does not match the sample type's actual size
     // Then the program terminates, since the caller's size expectation doesn't match the storage's sample size.
@@ -178,7 +178,7 @@ TEST(EventDataStorageDeathTest, GetTypeErasedDataSlotTerminatesOnOutOfBoundsInde
     // Given an EventDataStorage constructed for a std::uint32_t sample type with kNumberOfSlots slots
     memory::shared::NewDeleteDelegateMemoryResource memory_resource{kMemoryResourceId};
     const memory::DataTypeSizeInfo sample_size_info{sizeof(std::uint32_t), alignof(std::uint32_t)};
-    EventDataStorage unit{memory_resource, kNumberOfSlots, sample_size_info};
+    EventDataStorage unit{memory_resource.getMemoryResourceProxy(), kNumberOfSlots, sample_size_info};
 
     // When requesting a data slot with an index that is out of bounds
     // Then the program terminates.
@@ -199,7 +199,8 @@ TEST(EventDataStorageDeathTest, ConstructionTerminatesOnRawSlotArraySizeOverflow
     // When constructing an EventDataStorage from this sizing information
     // Then the program terminates, since calculating the total raw slot-array size would silently overflow.
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::cpp::ignore = (EventDataStorage{memory_resource, number_of_slots, overflowing_sample_size_info}));
+        score::cpp::ignore = (EventDataStorage{
+            memory_resource.getMemoryResourceProxy(), number_of_slots, overflowing_sample_size_info}));
 }
 
 }  // namespace

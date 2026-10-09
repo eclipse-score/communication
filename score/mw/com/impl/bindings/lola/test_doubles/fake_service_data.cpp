@@ -94,8 +94,8 @@ FakeServiceData::FakeServiceData(const std::string& control_file_name,
             {
                 data_storage =
                     memory_resource->construct<ServiceDataStorage>(kMaxNumberOfServiceElements, *memory_resource);
-                data_storage->skeleton_pid_ = skeleton_process_pid_in;
-                data_storage->skeleton_uid_ = skeleton_uid_in;
+                data_storage->UpdateSkeletonPid(skeleton_process_pid_in);
+                data_storage->UpdateSkeletonUid(skeleton_uid_in);
             }
         },
         65535U);
