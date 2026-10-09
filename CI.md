@@ -194,6 +194,10 @@ There are many linters for Python with no clear recommendation.
 We chose ruff because it is fast, and it has a good set of default checks.
 Runs the [ruff checks](./.ruff.toml) for the host.
 
+#### Linting for Bazel files
+
+Runs [buildifier](https://github.com/bazelbuild/buildtools/tree/main/buildifier) lint warnings on all Starlark files. Findings are uploaded as SARIF to Code Scanning and any finding fails the job.
+
 #### API checks
 
 Make sure that the publicly visible targets are part of the public API specification.
