@@ -15,6 +15,7 @@ filegroup(
     name = "general",
     srcs = [
         "any_function_blocks_longer_than_expected_fta.puml",
+        "fta_code_does_not_match_configuration.puml",
         "in_memory_configuration_wrong_fta.puml",
         "misused_apis_fta.puml",
     ],
