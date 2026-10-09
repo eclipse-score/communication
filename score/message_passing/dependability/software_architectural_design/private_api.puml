@@ -12,48 +12,31 @@
 ' *******************************************************************************
 @startuml
 
-namespace Server {
-    interface ServerConnection {
-        +GetClientIdentity()
-        +GetUserData()
-        +Notify()
-        +Reply()
-        +RequestDisconnect()
-    }
-}
-
-namespace Dispatch {
-    namespace QNX {
-        interface Client {
-            +Connect()
-            +SendMessage()
+namespace dependable_element_message_passing {
+    namespace component_message_passing {
+        interface "ISharedResourceEngine" as ISharedResourceEngine <<interface>> {
+            {abstract} TryOpenClientConnection(identifier): fd
+            {abstract} CloseClientConnection(client_fd): void
+            {abstract} SendProtocolMessage(fd, code, message): expected_blank<Error>
+            {abstract} ReceiveProtocolMessage(fd, code): expected<span, Error>
+            {abstract} RegisterPosixEndpoint(endpoint): void
         }
 
-        interface Server {
-            +Dispatch()
-            +Accept()
-        }
-    }
-
-    namespace UnixDomain {
-        interface Client {
-            +Connect()
-            +SendMessage()
+        ' Informative: engine services used by the server units; signatures are illustrative.
+        interface "IUnixDomainServerSupport" as IUnixDomainServerSupport <<interface>> {
+            {abstract} RegisterPosixEndpoint(endpoint): void
+            {abstract} UnregisterPosixEndpoint(endpoint): void
+            {abstract} CleanUpOwner(owner): void
+            {abstract} SendProtocolMessage(fd, code, message): expected_blank<Error>
+            {abstract} ReceiveProtocolMessage(fd, code): expected<span, Error>
         }
 
-        interface Server {
-            +Listen()
-            +Accept()
+        interface "IQnxDispatchServerSupport" as IQnxDispatchServerSupport <<interface>> {
+            {abstract} StartResourceManager(path): expected_blank<Error>
+            {abstract} StopResourceManager(): void
+            {abstract} AttachConnection(connection): expected_blank<Error>
         }
     }
 }
-
-interface IConnectionHandler <<user_provided>> {
-    +OnMessage()
-    +OnMessageWithReply()
-    +OnDisconnect()
-}
-
-Server.ServerConnection ..> IConnectionHandler : uses
 
 @enduml
