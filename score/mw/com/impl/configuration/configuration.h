@@ -130,6 +130,9 @@ class Configuration final
     /// \brief Returns whether the configuration contains at least one service type with a SOME/IP binding.
     score::Result<bool> HasSomeIpServiceDeployment() const noexcept;
 
+    /// \brief Returns whether the configuration contains at least one service type with a SOME/IP binding.
+    score::Result<bool> HasSomeIpServiceDeployment() const noexcept;
+
     /// \brief Returns the list of names (ToString()) of all configured ServiceIdentifierTypes
     std::set<std::string_view> GetServiceTypeNames() const noexcept;
 
