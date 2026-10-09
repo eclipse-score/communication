@@ -36,6 +36,134 @@ namespace
 
 const auto kProxyInstanceSpecifier = InstanceSpecifier::Create(std::string{"partial_restart/small_but_great0"}).value();
 const std::chrono::seconds kMaxHandleNotificationWaitTime{15U};
+
+bool WaitForProxyToResubscribe(TestServiceProxy& proxy, CheckPointControl& check_point_control) noexcept
+{
+    // ********************************************************************************
+    // Step (C.13) - Wait for the subscription state to be Subscribed
+    // ********************************************************************************
+    std::cout << "Consumer Step (C.13): Wait for the subscription state to be Subscribed" << std::endl;
+    const std::size_t max_retries{30U};
+    const std::chrono::milliseconds retry_sleep_time{20U};
+    std::size_t retry_count{0U};
+    while (proxy.simple_event_.GetSubscriptionState() != SubscriptionState::kSubscribed)
+    {
+        std::this_thread::sleep_for(retry_sleep_time);
+        if (retry_count > max_retries)
+        {
+            std::cerr << "Consumer Step (C.13): Max number of retries exceeded while waiting for ProxyEvent to "
+                         "resubscribe."
+                      << std::endl;
+            check_point_control.ErrorOccurred();
+            return false;
+        }
+        retry_count++;
+    }
+
+    return true;
+}
+
+bool WaitForExistingProxiesToResubscribe(std::vector<TestServiceProxy>& proxies,
+                                         CheckPointControl& check_point_control) noexcept
+{
+    for (std::size_t i = 0; i < proxies.size(); ++i)
+    {
+        std::cerr << "Consumer: Checking that existing proxy re-subscribes: " << i << std::endl;
+        if (!WaitForProxyToResubscribe(proxies[i], check_point_control))
+        {
+            return false;
+        }
+    }
+
+    std::cerr << "Consumer: All existing proxies have re-subscribed" << std::endl;
+    return true;
+}
+
+bool CreateAndSubscribeMaxNumberOfProxies(std::vector<TestServiceProxy>& proxies,
+                                          HandleNotificationData& handle_notification_data,
+                                          const ConsumerParameters& consumer_parameters,
+                                          CheckPointControl& check_point_control) noexcept
+{
+    // ********************************************************************************
+    // Step (C.14) - Create n Proxies for found service and store in vector - where n is the value of
+    //               max_subscribers in the configuration
+    // ********************************************************************************
+    std::cout << "Consumer Step (C.14): Create n Proxies for found service and store in vector" << std::endl;
+    for (std::size_t i = 0; i < consumer_parameters.max_number_subscribers; ++i)
+    {
+        auto proxy_wrapper_result =
+            CreateProxy<TestServiceProxy>("Consumer", *handle_notification_data.handle, check_point_control);
+        if (!(proxy_wrapper_result.has_value()))
+        {
+            return false;
+        }
+        proxies.push_back(std::move(proxy_wrapper_result).value());
+    }
+    std::cerr << "Consumer Step (C.14): Created N proxies" << std::endl;
+
+    for (std::size_t i = 0; i < proxies.size(); ++i)
+    {
+        auto& proxy = proxies[i];
+
+        std::cerr << "Consumer: Checking that existing proxy re-subscribes: " << i << std::endl;
+        // ********************************************************************************
+        // Step (C.15) - Subscribe to Event
+        // ********************************************************************************
+        std::cout << "Consumer Step (C.15): Subscribe to Event" << std::endl;
+        const std::size_t max_sample_count{1U};
+        auto subscribe_result = SubscribeProxyEvent<decltype(proxy.simple_event_)>(
+            "Consumer Step (C.15)", proxy.simple_event_, max_sample_count, check_point_control);
+        if (!(subscribe_result.has_value()))
+        {
+            return false;
+        }
+
+        // ********************************************************************************
+        // Step (C.16) - Check that subscription state is Subscribed
+        // ********************************************************************************
+        std::cout << "Consumer Step (C.16): Check that subscription state is Subscribed" << std::endl;
+        const auto subscription_state = proxy.simple_event_.GetSubscriptionState();
+        if (subscription_state != SubscriptionState::kSubscribed)
+        {
+            std::cerr << "Consumer: ProxyEvent is not subscribed!" << std::endl;
+            check_point_control.ErrorOccurred();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool VerifyAdditionalProxyCannotSubscribe(HandleNotificationData& handle_notification_data,
+                                          CheckPointControl& check_point_control) noexcept
+{
+    // ********************************************************************************
+    // Step (C.17) - Create single additional Proxy for found service
+    // ********************************************************************************
+    auto additional_proxy_wrapper_result =
+        CreateProxy<TestServiceProxy>("Consumer", *handle_notification_data.handle, check_point_control);
+    if (!(additional_proxy_wrapper_result.has_value()))
+    {
+        return false;
+    }
+    std::cerr << "Consumer: Created additional proxy" << std::endl;
+
+    // ********************************************************************************
+    // Step (C.18) - For single additional Proxy: Subscribe to SkeletonEvent and assert that error is returned
+    //               indicating that we couldn't subscribe
+    // ********************************************************************************
+    const std::size_t max_sample_count{1U};
+    const auto subscription_result = additional_proxy_wrapper_result.value().simple_event_.Subscribe(max_sample_count);
+    if (subscription_result.has_value())
+    {
+        std::cerr << "Consumer: ProxyEvent was able to subscribe even though max subscribers has already been reached!"
+                  << std::endl;
+        check_point_control.ErrorOccurred();
+        return false;
+    }
+
+    return true;
+}
 }  // namespace
 
 ConsumerActions::ConsumerActions(CheckPointControl& check_point_control,
@@ -271,105 +399,22 @@ void ConsumerActions::DoConsumerActionsAfterRestart() noexcept
     }
     if (consumer_parameters_.is_proxy_connected_during_restart)
     {
-        for (std::size_t i = 0; i < proxies_.size(); ++i)
+        if (!WaitForExistingProxiesToResubscribe(proxies_, check_point_control_))
         {
-            std::cerr << "Consumer: Checking that existing proxy re-subscribes: " << i << std::endl;
-
-            // ********************************************************************************
-            // Step (C.13) - Wait for the subscription state to be Subscribed
-            // ********************************************************************************
-            std::cout << "Consumer Step (C.13): Wait for the subscription state to be Subscribed" << std::endl;
-            const std::size_t max_retries{30U};
-            const std::chrono::milliseconds retry_sleep_time{20U};
-            std::size_t retry_count{0U};
-            while ((proxies_[i].simple_event_.GetSubscriptionState() != SubscriptionState::kSubscribed))
-            {
-                std::this_thread::sleep_for(retry_sleep_time);
-                if (retry_count > max_retries)
-                {
-                    std::cerr << "Consumer Step (C.13): Max number of retries exceeded while waiting for ProxyEvent to "
-                                 "resubscribe."
-                              << std::endl;
-                    check_point_control_.ErrorOccurred();
-                    return;
-                }
-                retry_count++;
-            }
+            return;
         }
-        std::cerr << "Consumer: All existing proxies have re-subscribed" << std::endl;
     }
     else
     {
-        // ********************************************************************************
-        // Step (C.14) - Create n Proxies for found service and store in vector - where n is the value of
-        //               max_subscribers in the configuration
-        // ********************************************************************************
-        std::cout << "Consumer Step (C.14): Create n Proxies for found service and store in vector" << std::endl;
-        for (std::size_t i = 0; i < consumer_parameters_.max_number_subscribers; ++i)
+        if (!CreateAndSubscribeMaxNumberOfProxies(
+                proxies_, handle_notification_data_, consumer_parameters_, check_point_control_))
         {
-            auto proxy_wrapper_result =
-                CreateProxy<TestServiceProxy>("Consumer", *handle_notification_data_.handle, check_point_control_);
-            if (!(proxy_wrapper_result.has_value()))
-            {
-                return;
-            }
-            proxies_.push_back(std::move(proxy_wrapper_result).value());
-        }
-        std::cerr << "Consumer Step (C.14): Created N proxies" << std::endl;
-
-        for (std::size_t i = 0; i < proxies_.size(); ++i)
-        {
-            auto& proxy = proxies_[i];
-
-            std::cerr << "Consumer: Checking that existing proxy re-subscribes: " << i << std::endl;
-            // ********************************************************************************
-            // Step (C.15) - Subscribe to Event
-            // ********************************************************************************
-            std::cout << "Consumer Step (C.15): Subscribe to Event" << std::endl;
-            const std::size_t max_sample_count{1U};
-            auto subscribe_result = SubscribeProxyEvent<decltype(proxy.simple_event_)>(
-                "Consumer Step (C.15)", proxy.simple_event_, max_sample_count, check_point_control_);
-            if (!(subscribe_result.has_value()))
-            {
-                return;
-            }
-
-            // ********************************************************************************
-            // Step (C.16) - Check that subscription state is Subscribed
-            // ********************************************************************************
-            std::cout << "Consumer Step (C.16): Check that subscription state is Subscribed" << std::endl;
-            const auto subscription_state = proxy.simple_event_.GetSubscriptionState();
-            if (subscription_state != SubscriptionState::kSubscribed)
-            {
-                std::cerr << "Consumer: ProxyEvent is not subscribed!" << std::endl;
-                check_point_control_.ErrorOccurred();
-                return;
-            }
+            return;
         }
     }
 
-    // ********************************************************************************
-    // Step (C.17) - Create single additional Proxy for found service
-    // ********************************************************************************
-    auto additional_proxy_wrapper_result =
-        CreateProxy<TestServiceProxy>("Consumer", *handle_notification_data_.handle, check_point_control_);
-    if (!(additional_proxy_wrapper_result.has_value()))
+    if (!VerifyAdditionalProxyCannotSubscribe(handle_notification_data_, check_point_control_))
     {
-        return;
-    }
-    std::cerr << "Consumer: Created additional proxy" << std::endl;
-
-    // ********************************************************************************
-    // Step (C.18) - For single additional Proxy: Subscribe to SkeletonEvent and assert that error is returned
-    //               indicating that we couldn't subscribe
-    // ********************************************************************************
-    const std::size_t max_sample_count{1U};
-    const auto subscription_result = additional_proxy_wrapper_result.value().simple_event_.Subscribe(max_sample_count);
-    if (subscription_result.has_value())
-    {
-        std::cerr << "Consumer: ProxyEvent was able to subscribe even though max subscribers has already been reached!"
-                  << std::endl;
-        check_point_control_.ErrorOccurred();
         return;
     }
 }

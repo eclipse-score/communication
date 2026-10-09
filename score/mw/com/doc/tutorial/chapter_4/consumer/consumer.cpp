@@ -137,6 +137,163 @@ struct SharedState
         score::mw::com::SubscriptionState::kNotSubscribed};
 };
 
+void MarkFatalProxySetupError(SharedState& state) noexcept
+{
+    state.fatal_error.store(true, std::memory_order_relaxed);
+}
+
+template <typename Result>
+bool LogProxySetupError(SharedState& state, const char* const message, const Result& result)
+{
+    std::cerr << message << result.error() << std::endl;
+    MarkFatalProxySetupError(state);
+    return false;
+}
+
+void StopServiceDiscoveryIfRunning(SharedState& state, const score::mw::com::FindServiceHandle find_service_handle)
+{
+    if (!state.search_stopped.exchange(true))
+    {
+        score::cpp::ignore = HelloWorldProxy::StopFindService(find_service_handle);
+    }
+}
+
+bool CreatePollingProxy(SharedState& state, const HelloWorldProxy::HandleType& handle)
+{
+    // --- proxy_1: poll the subscription state once ---------------------------------------------------------
+    auto proxy_1_result = HelloWorldProxy::Create(handle);
+    if (!proxy_1_result)
+    {
+        return LogProxySetupError(state, "Failed to create proxy_1: ", proxy_1_result);
+    }
+    auto proxy_1 = std::move(proxy_1_result).value();
+
+    const auto subscribe_1_result = proxy_1.message.Subscribe(1);
+    if (!subscribe_1_result)
+    {
+        return LogProxySetupError(state, "proxy_1: Failed to subscribe to 'message' event: ", subscribe_1_result);
+    }
+
+    // Poll the current subscription state exactly once. Only if the subscribe succeeded AND we are already in
+    // state kSubscribed do we enable cyclic reception on proxy_1.
+    const auto polled_state = proxy_1.message.GetSubscriptionState();
+    std::cout << "[proxy_1 poll] Subscription state directly after Subscribe(): " << ToString(polled_state)
+              << std::endl;
+    if (polled_state == score::mw::com::SubscriptionState::kSubscribed)
+    {
+        state.proxy_poll_receiving.store(true, std::memory_order_relaxed);
+        std::cout << "[proxy_1 poll] State is kSubscribed -> will start receiving samples cyclically." << std::endl;
+    }
+    else
+    {
+        std::cout << "[proxy_1 poll] State is not kSubscribed -> proxy_1 will NOT receive samples." << std::endl;
+    }
+
+    state.proxy_poll.emplace(std::move(proxy_1));
+    return true;
+}
+
+bool CreateHandlerProxy(SharedState& state, const HelloWorldProxy::HandleType& handle)
+{
+    // --- proxy_2: register a subscription-state-change handler ---------------------------------------------
+    auto proxy_2_result = HelloWorldProxy::Create(handle);
+    if (!proxy_2_result)
+    {
+        return LogProxySetupError(state, "Failed to create proxy_2: ", proxy_2_result);
+    }
+    auto proxy_2 = std::move(proxy_2_result).value();
+
+    // Register the state-change handler *before* subscribing so that we observe all state transitions. The
+    // handler is called on an internal middleware thread. It must be short and must not call any method on the
+    // same event instance - so we merely record the new state in an atomic and return true to keep the handler
+    // registered.
+    auto* const handler_state = &state.proxy_handler_state;
+    const auto set_handler_result = proxy_2.message.SetSubscriptionStateChangeHandler(
+        [handler_state](const score::mw::com::SubscriptionState new_state) noexcept -> bool {
+            std::cout << "[proxy_2 handler] Subscription state changed to: " << ToString(new_state) << std::endl;
+            handler_state->store(new_state, std::memory_order_relaxed);
+            return true;
+        });
+    if (!set_handler_result)
+    {
+        return LogProxySetupError(
+            state, "proxy_2: Failed to set subscription state change handler: ", set_handler_result);
+    }
+
+    const auto subscribe_2_result = proxy_2.message.Subscribe(1);
+    if (!subscribe_2_result)
+    {
+        return LogProxySetupError(state, "proxy_2: Failed to subscribe to 'message' event: ", subscribe_2_result);
+    }
+
+    state.proxy_handler.emplace(std::move(proxy_2));
+    return true;
+}
+
+void SetupProxiesForFoundService(SharedState& state,
+                                 score::mw::com::ServiceHandleContainer<HelloWorldProxy::HandleType> handles,
+                                 const score::mw::com::FindServiceHandle find_service_handle) noexcept
+{
+    std::lock_guard<std::mutex> lock{state.mutex};
+
+    // The very first invocation of this handler is guaranteed to carry at least one matching handle (an empty
+    // set is only ever reported later on, when a previously found instance vanishes). Since we do an explicit
+    // single-instance search and stop the discovery right below, this handler is only ever called once, with a
+    // non-empty set - so no empty-check is necessary here.
+
+    // We found the matching instance. As we only act on it once, we can stop the search right here, from within
+    // the callback (stopping a search from within a StartFindService callback is explicitly supported).
+    StopServiceDiscoveryIfRunning(state, find_service_handle);
+
+    const auto& handle = handles.front();
+    const auto instance_id_description = DescribeInstanceId(handle);
+    std::cout << "Found HelloWorld service instance (instance id: " << instance_id_description
+              << "). Creating two proxies for it." << std::endl;
+
+    if (!CreatePollingProxy(state, handle))
+    {
+        return;
+    }
+
+    if (!CreateHandlerProxy(state, handle))
+    {
+        state.proxy_poll.reset();
+        state.proxy_poll_receiving.store(false, std::memory_order_relaxed);
+        return;
+    }
+
+    state.proxies_created = true;
+}
+
+void DriveProxyReception(SharedState& state)
+{
+    std::lock_guard<std::mutex> lock{state.mutex};
+    if (!state.proxies_created)
+    {
+        return;
+    }
+
+    // proxy_1: keep calling GetNewSamples() unconditionally once reception was enabled by the initial
+    // subscription-state poll. During the provider's stop-offer phases the subscription state is
+    // kSubscriptionPending; GetNewSamples() is still a valid call, it just does not deliver new data during those
+    // phases.
+    if (state.proxy_poll_receiving.load(std::memory_order_relaxed))
+    {
+        ReceiveSamples(state.proxy_poll.value(), "proxy_1 poll");
+    }
+
+    // proxy_2: only call GetNewSamples() while the last state-change notification told us we are kSubscribed. When
+    // the provider stops offering, the handler reports kSubscriptionPending and proxy_2 stops calling
+    // GetNewSamples() until the state returns to kSubscribed.
+    if (state.proxy_handler_state.load(std::memory_order_relaxed) == score::mw::com::SubscriptionState::kSubscribed)
+    {
+        ReceiveSamples(state.proxy_handler.value(), "proxy_2 handler");
+        return;
+    }
+
+    std::cout << "[proxy_2 handler] State is not kSubscribed -> skipping GetNewSamples()." << std::endl;
+}
+
 }  // namespace
 
 int main()
@@ -164,98 +321,7 @@ int main()
     // instead of having to write two separate consumer applications.
     auto find_service_handler = [&state](score::mw::com::ServiceHandleContainer<HelloWorldProxy::HandleType> handles,
                                          score::mw::com::FindServiceHandle find_service_handle) noexcept {
-        std::lock_guard<std::mutex> lock{state.mutex};
-
-        // The very first invocation of this handler is guaranteed to carry at least one matching handle (an empty
-        // set is only ever reported later on, when a previously found instance vanishes). Since we do an explicit
-        // single-instance search and stop the discovery right below, this handler is only ever called once, with a
-        // non-empty set - so no empty-check is necessary here.
-
-        // We found the matching instance. As we only act on it once, we can stop the search right here, from within
-        // the callback (stopping a search from within a StartFindService callback is explicitly supported).
-        if (!state.search_stopped.exchange(true))
-        {
-            score::cpp::ignore = HelloWorldProxy::StopFindService(find_service_handle);
-        }
-
-        const auto& handle = handles.front();
-        const auto instance_id_description = DescribeInstanceId(handle);
-        std::cout << "Found HelloWorld service instance (instance id: " << instance_id_description
-                  << "). Creating two proxies for it." << std::endl;
-
-        // --- proxy_1: poll the subscription state once ---------------------------------------------------------
-        auto proxy_1_result = HelloWorldProxy::Create(handle);
-        if (!proxy_1_result)
-        {
-            std::cerr << "Failed to create proxy_1: " << proxy_1_result.error() << std::endl;
-            state.fatal_error.store(true, std::memory_order_relaxed);
-            return;
-        }
-        auto proxy_1 = std::move(proxy_1_result).value();
-
-        const auto subscribe_1_result = proxy_1.message.Subscribe(1);
-        if (!subscribe_1_result)
-        {
-            std::cerr << "proxy_1: Failed to subscribe to 'message' event: " << subscribe_1_result.error() << std::endl;
-            state.fatal_error.store(true, std::memory_order_relaxed);
-            return;
-        }
-
-        // Poll the current subscription state exactly once. Only if the subscribe succeeded AND we are already in
-        // state kSubscribed do we enable cyclic reception on proxy_1.
-        const auto polled_state = proxy_1.message.GetSubscriptionState();
-        std::cout << "[proxy_1 poll] Subscription state directly after Subscribe(): " << ToString(polled_state)
-                  << std::endl;
-        if (polled_state == score::mw::com::SubscriptionState::kSubscribed)
-        {
-            state.proxy_poll_receiving.store(true, std::memory_order_relaxed);
-            std::cout << "[proxy_1 poll] State is kSubscribed -> will start receiving samples cyclically." << std::endl;
-        }
-        else
-        {
-            std::cout << "[proxy_1 poll] State is not kSubscribed -> proxy_1 will NOT receive samples." << std::endl;
-        }
-
-        // --- proxy_2: register a subscription-state-change handler ---------------------------------------------
-        auto proxy_2_result = HelloWorldProxy::Create(handle);
-        if (!proxy_2_result)
-        {
-            std::cerr << "Failed to create proxy_2: " << proxy_2_result.error() << std::endl;
-            state.fatal_error.store(true, std::memory_order_relaxed);
-            return;
-        }
-        auto proxy_2 = std::move(proxy_2_result).value();
-
-        // Register the state-change handler *before* subscribing so that we observe all state transitions. The
-        // handler is called on an internal middleware thread. It must be short and must not call any method on the
-        // same event instance - so we merely record the new state in an atomic and return true to keep the handler
-        // registered.
-        auto* const handler_state = &state.proxy_handler_state;
-        const auto set_handler_result = proxy_2.message.SetSubscriptionStateChangeHandler(
-            [handler_state](const score::mw::com::SubscriptionState new_state) noexcept -> bool {
-                std::cout << "[proxy_2 handler] Subscription state changed to: " << ToString(new_state) << std::endl;
-                handler_state->store(new_state, std::memory_order_relaxed);
-                return true;
-            });
-        if (!set_handler_result)
-        {
-            std::cerr << "proxy_2: Failed to set subscription state change handler: " << set_handler_result.error()
-                      << std::endl;
-            state.fatal_error.store(true, std::memory_order_relaxed);
-            return;
-        }
-
-        const auto subscribe_2_result = proxy_2.message.Subscribe(1);
-        if (!subscribe_2_result)
-        {
-            std::cerr << "proxy_2: Failed to subscribe to 'message' event: " << subscribe_2_result.error() << std::endl;
-            state.fatal_error.store(true, std::memory_order_relaxed);
-            return;
-        }
-
-        state.proxy_poll.emplace(std::move(proxy_1));
-        state.proxy_handler.emplace(std::move(proxy_2));
-        state.proxies_created = true;
+        SetupProxiesForFoundService(state, std::move(handles), find_service_handle);
     };
 
     auto find_service_handle_result =
@@ -278,41 +344,12 @@ int main()
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-        std::lock_guard<std::mutex> lock{state.mutex};
-        if (!state.proxies_created)
-        {
-            continue;
-        }
-
-        // proxy_1: keep calling GetNewSamples() unconditionally once reception was enabled by the initial
-        // subscription-state poll. During the provider's stop-offer phases the subscription state is
-        // kSubscriptionPending; GetNewSamples() is still a valid call, it just does not deliver new data during those
-        // phases.
-        if (state.proxy_poll_receiving.load(std::memory_order_relaxed))
-        {
-            ReceiveSamples(state.proxy_poll.value(), "proxy_1 poll");
-        }
-
-        // proxy_2: only call GetNewSamples() while the last state-change notification told us we are kSubscribed. When
-        // the provider stops offering, the handler reports kSubscriptionPending and proxy_2 stops calling
-        // GetNewSamples() until the state returns to kSubscribed.
-        if (state.proxy_handler_state.load(std::memory_order_relaxed) == score::mw::com::SubscriptionState::kSubscribed)
-        {
-            ReceiveSamples(state.proxy_handler.value(), "proxy_2 handler");
-        }
-        else
-        {
-            std::cout << "[proxy_2 handler] State is not kSubscribed -> skipping GetNewSamples()." << std::endl;
-        }
+        DriveProxyReception(state);
     }
 
     // Stop the asynchronous service discovery before shutting down - unless it was already stopped from within the
     // find-service handler (once the instance was found).
-    if (!state.search_stopped.exchange(true))
-    {
-        score::cpp::ignore = HelloWorldProxy::StopFindService(find_service_handle_result.value());
-    }
+    StopServiceDiscoveryIfRunning(state, find_service_handle_result.value());
     std::cout << "HelloWorld service consumer going down." << std::endl;
 
     return state.fatal_error.load(std::memory_order_relaxed) ? 1 : 0;

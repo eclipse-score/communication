@@ -225,7 +225,7 @@ called once, with a non-empty set:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 178-178
+   :lines: 239-246
    :caption: consumer/consumer.cpp
 
 
@@ -236,13 +236,13 @@ terminating:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 188-191
+   :lines: 145-152
    :caption: consumer/consumer.cpp
 
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 278-281
+   :lines: 338-345
    :caption: consumer/consumer.cpp
 
 
@@ -255,7 +255,7 @@ After subscribing, proxy_1 polls the subscription state **exactly once** via `Ge
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 197-213
+   :lines: 171-190
    :caption: consumer/consumer.cpp
 
 
@@ -264,7 +264,7 @@ subscription state:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 296-298
+   :lines: 276-282
    :caption: consumer/consumer.cpp
 
 
@@ -284,7 +284,7 @@ records the new state in an atomic and returns `true` to stay registered:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 236-251
+   :lines: 206-226
    :caption: consumer/consumer.cpp
 
 
@@ -294,7 +294,7 @@ state returns to `kSubscribed`:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 304-311
+   :lines: 285-294
    :caption: consumer/consumer.cpp
 
 

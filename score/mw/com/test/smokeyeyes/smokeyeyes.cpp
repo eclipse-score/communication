@@ -160,6 +160,159 @@ enum class DataState
     kDataCorruption,
 };
 
+constexpr auto kFindServicePollInterval{20ms};
+constexpr std::size_t kFindServiceMaxNumRetries{250U};
+constexpr auto kSubscriptionPollInterval{10ms};
+constexpr std::size_t kSubscriptionMaxNumRetries{100U};
+
+struct HandleDiscoveryResult
+{
+    int status{0};
+    ServiceHandleContainer<DataProxy::HandleType> handles{};
+};
+
+HandleDiscoveryResult FindSenderHandles()
+{
+    HandleDiscoveryResult result{};
+
+    for (std::size_t retry = 0U; retry < kFindServiceMaxNumRetries; ++retry)
+    {
+        // We wait before checking for the service presence to increase the possibility of finding a fully populated
+        // service. Can be changed once TicketOld-81775 is implemented.
+        std::this_thread::sleep_for(kFindServicePollInterval);
+        auto instance_specifier_result =
+            score::mw::com::InstanceSpecifier::Create(std::string{"smokeyeyes/small_but_great"});
+        if (!instance_specifier_result.has_value())
+        {
+            std::cerr << "Could not create instance specifier due to error "
+                      << std::move(instance_specifier_result).error() << ", terminating!\n";
+            result.status = -4;
+            return result;
+        }
+
+        std::promise<std::vector<DataProxy::HandleType>> service_discovery_promise{};
+        auto service_discovery_future = service_discovery_promise.get_future();
+        auto handles_result = DataProxy::StartFindService(
+            [moved_service_discovery_promise = std::move(service_discovery_promise)](
+                // The enclosing FindServiceHandler is a type-erased callback whose call signature takes this
+                // parameter by value; the caller already copies it into that fixed signature before invoking this
+                // lambda, so taking it by const& here would not avoid any copy - it would only (misleadingly) hide
+                // the fact that one already happened.
+                // NOLINTNEXTLINE(performance-unnecessary-value-param)
+                auto found_handles,
+                auto handle) mutable {
+                moved_service_discovery_promise.set_value(found_handles);
+                score::cpp::ignore = DataProxy::StopFindService(handle);
+            },
+            std::move(instance_specifier_result).value());
+        if (!handles_result.has_value())
+        {
+            std::cerr << "FindService returned an error, terminating!\n";
+            result.status = -4;
+            return result;
+        }
+
+        result.handles = service_discovery_future.get();
+        if (!result.handles.empty())
+        {
+            return result;
+        }
+
+        // If we didn't find a service yet (because the sender is still busy spawning clients), we back off
+        // for some time. We currently cannot use StartFindService as it isn't implemented yet in Lola.
+        std::this_thread::sleep_for(kFindServicePollInterval);
+    }
+
+    std::cerr << "No sender instances found, terminating!\n";
+    result.status = -4;
+    return result;
+}
+
+int SubscribeReceiver(DataProxy& receiver, const std::size_t num_slots, std::ostream& out)
+{
+    std::ignore = receiver.struct_event_.Subscribe(num_slots);
+    for (std::size_t retry = 0U; retry < kSubscriptionMaxNumRetries; ++retry)
+    {
+        if (receiver.struct_event_.GetSubscriptionState() == SubscriptionState::kSubscribed)
+        {
+            out << "Subscribed after " << retry * 10 << "ms\n";
+            return 0;
+        }
+
+        std::this_thread::sleep_for(kSubscriptionPollInterval);
+    }
+
+    std::cerr << "PID " << getpid() << " unable to subscribe to service, terminating!\n";
+    return -7;
+}
+
+void UpdateDataState(const SamplePtr<Data>& sample, DataState& data_state, std::size_t& next_expected_sq) noexcept
+{
+    if (!sample->CheckHash())
+    {
+        data_state = DataState::kDataCorruption;
+    }
+
+    if (sample->GetSequenceCounter() != next_expected_sq)
+    {
+        data_state = DataState::kMessageLoss;
+    }
+
+    next_expected_sq = sample->GetSequenceCounter() + 1U;
+}
+
+void LogDataState(std::ostream& out, const DataState data_state)
+{
+    switch (data_state)
+    {
+        case DataState::kUnchanged:
+            break;
+
+        case DataState::kMessageLoss:
+            out << "Detected message loss!\n";
+            break;
+
+        case DataState::kDataCorruption:
+            out << "Detected data corruption\n";
+            break;
+
+        default:
+            out << "Unknown DataState, terminating\n";
+            std::terminate();
+            break;
+    }
+}
+
+int ReceiveBatch(DataProxy& receiver,
+                 const std::size_t batch_size,
+                 const std::size_t stop_after,
+                 std::size_t& next_expected_sq,
+                 DataState& data_state,
+                 std::ostream& out)
+{
+    std::size_t samples_received_in_batch{0U};
+    while (samples_received_in_batch < batch_size && next_expected_sq < stop_after &&
+           data_state == DataState::kUnchanged)
+    {
+        auto num_samples_received = receiver.struct_event_.GetNewSamples(
+            [&](SamplePtr<Data> sample) noexcept {
+                UpdateDataState(sample, data_state, next_expected_sq);
+            },
+            batch_size - samples_received_in_batch);
+
+        if (!num_samples_received.has_value())
+        {
+            out << "Error receiving sample: " << std::move(num_samples_received).error() << ", terminating!\n";
+            return -6;
+        }
+
+        samples_received_in_batch += *num_samples_received;
+        LogDataState(out, data_state);
+    }
+
+    return 0;
+}
+
 int run_sender(SharedState& shared_state, const std::size_t turns, const std::size_t batch_size, const bool no_wait)
 {
     auto instance_specifier_result =
@@ -228,64 +381,13 @@ int run_receiver(SharedState& shared_state,
                  const bool no_wait,
                  std::ostream& out)
 {
-    constexpr auto FIND_SERVICE_POLL_INTERVAL{20ms};
-    constexpr std::size_t FIND_SERVICE_MAX_NUM_RETRIES{250U};
-
-    ServiceHandleContainer<DataProxy::HandleType> handles{};
-    for (std::size_t retry = 0U; retry < FIND_SERVICE_MAX_NUM_RETRIES; ++retry)
+    auto handle_discovery_result = FindSenderHandles();
+    if (handle_discovery_result.status != 0)
     {
-        // We wait before checking for the service presence to increase the possibility of finding a fully populated
-        // service. Can be changed once TicketOld-81775 is implemented.
-        std::this_thread::sleep_for(FIND_SERVICE_POLL_INTERVAL);
-        auto instance_specifier_result =
-            score::mw::com::InstanceSpecifier::Create(std::string{"smokeyeyes/small_but_great"});
-        if (!instance_specifier_result.has_value())
-        {
-            std::cerr << "Could not create instance specifier due to error "
-                      << std::move(instance_specifier_result).error() << ", terminating!\n";
-            return -4;
-        }
-
-        std::promise<std::vector<DataProxy::HandleType>> service_discovery_promise{};
-        auto service_discovery_future = service_discovery_promise.get_future();
-        auto handles_result = DataProxy::StartFindService(
-            [moved_service_discovery_promise = std::move(service_discovery_promise)](
-                // The enclosing FindServiceHandler is a type-erased callback whose call signature takes this
-                // parameter by value; the caller already copies it into that fixed signature before invoking this
-                // lambda, so taking it by const& here would not avoid any copy - it would only (misleadingly) hide
-                // the fact that one already happened.
-                // NOLINTNEXTLINE(performance-unnecessary-value-param)
-                auto found_handles,
-                auto handle) mutable {
-                moved_service_discovery_promise.set_value(found_handles);
-                score::cpp::ignore = DataProxy::StopFindService(handle);
-            },
-            std::move(instance_specifier_result).value());
-        if (!handles_result.has_value())
-        {
-            std::cerr << "FindService returned an error, terminating!\n";
-            return -4;
-        }
-        handles = service_discovery_future.get();
-        if (handles.empty())
-        {
-            // If we didn't find a service yet (because the sender is still busy spawning clients), we back off
-            // for some time. We currently cannot use StartFindService as it isn't implemented yet in Lola.
-            std::this_thread::sleep_for(FIND_SERVICE_POLL_INTERVAL);
-        }
-        else
-        {
-            break;
-        }
+        return handle_discovery_result.status;
     }
 
-    if (handles.empty())
-    {
-        std::cerr << "No sender instances found, terminating!\n";
-        return -4;
-    }
-
-    auto receiver_result = DataProxy::Create(handles.front());
+    auto receiver_result = DataProxy::Create(handle_discovery_result.handles.front());
     if (!receiver_result.has_value())
     {
         std::cerr << "Unable to establish connection to sender: " << std::move(receiver_result).error()
@@ -293,83 +395,23 @@ int run_receiver(SharedState& shared_state,
         return -5;
     }
     auto& receiver = receiver_result.value();
-    std::ignore = receiver.struct_event_.Subscribe(num_slots);
-    for (std::size_t retry = 0U; retry < 100U; ++retry)
+    auto result = SubscribeReceiver(receiver, num_slots, out);
+    if (result != 0)
     {
-        if (receiver.struct_event_.GetSubscriptionState() != SubscriptionState::kSubscribed)
-        {
-            std::this_thread::sleep_for(10ms);
-        }
-        else
-        {
-            out << "Subscribed after " << retry * 10 << "ms\n";
-            break;
-        }
+        return result;
     }
-
-    if (receiver.struct_event_.GetSubscriptionState() != SubscriptionState::kSubscribed)
-    {
-        std::cerr << "PID " << getpid() << " unable to subscribe to service, terminating!\n";
-        return -7;
-    }
-
-    int result{0};
 
     std::size_t turn{0U};
     DataState data_state{DataState::kUnchanged};
     std::size_t next_expected_sq{0U};
-    while (next_expected_sq < shared_state.stop_after_.load() && data_state == DataState::kUnchanged)
+    const auto stop_after = shared_state.stop_after_.load();
+    while (next_expected_sq < stop_after && data_state == DataState::kUnchanged)
     {
         out << "Turn " << turn << std::endl;
-        std::size_t samples_received_in_batch{0U};
-        while (samples_received_in_batch < batch_size && next_expected_sq < shared_state.stop_after_.load() &&
-               data_state == DataState::kUnchanged)
+        result = ReceiveBatch(receiver, batch_size, stop_after, next_expected_sq, data_state, out);
+        if (result != 0)
         {
-            auto num_samples_received = receiver.struct_event_.GetNewSamples(
-                [&](SamplePtr<Data> sample) noexcept {
-                    if (!sample->CheckHash())
-                    {
-                        data_state = DataState::kDataCorruption;
-                    }
-
-                    if (sample->GetSequenceCounter() != next_expected_sq)
-                    {
-                        data_state = DataState::kMessageLoss;
-                    }
-
-                    next_expected_sq = sample->GetSequenceCounter() + 1U;
-                },
-                batch_size - samples_received_in_batch);
-
-            if (!num_samples_received.has_value())
-            {
-                out << "Error receiving sample: " << std::move(num_samples_received).error() << ", terminating!\n";
-                result = -6;
-                break;
-            }
-            else
-            {
-                samples_received_in_batch += *num_samples_received;
-            }
-
-            switch (data_state)
-            {
-                case DataState::kUnchanged:
-                    break;
-
-                case DataState::kMessageLoss:
-                    out << "Detected message loss!\n";
-                    break;
-
-                case DataState::kDataCorruption:
-                    out << "Detected data corruption\n";
-                    break;
-
-                default:
-                    out << "Unknown DataState, terminating\n";
-                    std::terminate();
-                    break;
-            }
+            break;
         }
 
         if (!no_wait)
