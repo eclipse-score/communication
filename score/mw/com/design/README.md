@@ -136,6 +136,12 @@ Our implementation of `mw::com` depends on the following components/libraries:
 * `//platform/aas/lib/result`
 * amp (broken_link_g/swh/amp)
 
+## Topic-Specific Design Documentation
+
+The following design documents cover feature-specific aspects of `mw::com`:
+
+* [E2E Error Handling — Requirements & Public API](./e2e_protection/E2E_ERROR_HANDLING_PUBLIC_API.md) — Finalized proposal for E2E error-handling public API, covering requirements, design rationale, configuration, and usage examples.
+
 ## Pictures and Diagrams
 
 We decided to put the architectural description close to the source code to enable a common source of truth, ensure that

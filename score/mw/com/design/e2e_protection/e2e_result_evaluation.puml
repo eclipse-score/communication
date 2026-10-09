@@ -1,0 +1,64 @@
+@startuml e2e_result_evaluation
+title E2E result evaluation and consumer views
+
+skinparam shadowing false
+skinparam defaultFontSize 12
+
+start
+
+:Sender: encode E2E header
+(Counter + CRC + Data ID);
+:Transport / binding;
+:Receiver: decode & verify E2E header;
+
+if (DataIntegrityCheckEnabled?) then (yes)
+    :data_integrity:
+    kOk / kError;
+else (no)
+    :data_integrity:
+    kDisabled;
+endif
+
+if (data_integrity == kError?) then (yes)
+    note right
+        Bypass: counter of a corrupted
+        sample is not trustworthy
+    end note
+    :Skip sequence check
+    (sequence not evaluated);
+else (no)
+    if (SequenceCheckEnabled?) then (yes)
+        :sequence:
+        kOk / kOkGapWithinThreshold
+        / kErrorRepeated / kErrorGapExceedsThreshold;
+    else (no)
+        :sequence:
+        kDisabled;
+    endif
+endif
+
+if (HistoricalHealthTrackingEnabled\nAND at least one check enabled?) then (yes)
+    :Hysteresis check
+    (data_integrity / sequence result as input);
+    :historical_health:
+    kOk / kError;
+else (no)
+    :historical_health:
+    kDisabled;
+endif
+
+:SamplePtr::GetE2EResult()
+returns E2EResult{data_integrity, sequence,
+historical_health, summary};
+
+fork
+    :summary field
+    (reduced-view consumer checks only this);
+fork again
+    :data_integrity / sequence / historical_health fields
+    (detailed-view consumer inspects individually
+    for full diagnostics);
+end merge
+
+stop
+@enduml
