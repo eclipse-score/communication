@@ -127,7 +127,7 @@ auto LolaEventInstanceDeployment::GetNumberOfSampleSlots() const -> std::optiona
     {
         ::score::mw::log::LogFatal("lola")
             << "Number of sample slots + number of tracing slots exceeds sample slot limit. Terminating.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
     return static_cast<std::uint16_t>(intermediate);
 }

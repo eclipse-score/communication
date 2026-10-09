@@ -365,7 +365,7 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
         // LCOV_EXCL_START (DetermineShmReuseStrategy always returns a valid strategy; kUnknownStrategy is unreachable)
         case ShmReuseStrategy::kUnknownStrategy:
         default:
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Unknown SHM reuse strategy.");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Unknown SHM reuse strategy.");
             break;
             // LCOV_EXCL_STOP
     }
@@ -511,7 +511,7 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
         // unreachable)
         case ShmRemovalStrategy::kUnknownStrategy:
         default:
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Unknown SHM removal strategy.");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Unknown SHM removal strategy.");
             break;
             // LCOV_EXCL_STOP
     }

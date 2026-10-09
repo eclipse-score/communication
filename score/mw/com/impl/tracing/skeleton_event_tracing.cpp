@@ -110,7 +110,7 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
         // EVENT or FIELD (we have a static_assert at the start of this function).
         else
         {
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(0);
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
         }
     }();
 
@@ -357,7 +357,7 @@ void TraceSend(SkeletonEventTracingData& skeleton_event_tracing_data,
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Service element type must be EVENT or FIELD");
         }
 
         const auto tracing_data = ExtractBindingTracingData(sample_data_ptr, skeleton_event_size_info);
@@ -402,7 +402,7 @@ void TraceSendWithAllocate(SkeletonEventTracingData& skeleton_event_tracing_data
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Service element type must be EVENT or FIELD");
         }
 
         const auto tracing_data = ExtractBindingTracingData(sample_data_ptr, skeleton_event_size_info);

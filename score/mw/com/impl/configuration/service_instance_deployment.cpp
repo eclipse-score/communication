@@ -49,7 +49,7 @@ QualityType GetQualityTypeFromJson(const score::json::Object& json_object, std::
     {
         score::mw::log::LogFatal("lola") << "Failed to parse JSON configuration key '" << key
                                          << "' to string type. Configuration parsing failed. Terminating.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
     return FromString(json_result.value());
 }

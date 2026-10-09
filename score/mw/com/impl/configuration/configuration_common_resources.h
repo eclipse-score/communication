@@ -55,7 +55,7 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
     {
         score::mw::log::LogFatal("lola") << "Failed to parse JSON configuration key '" << key
                                          << "'. Configuration parsing failed. Terminating.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
     return json_result.value();
 }
@@ -71,7 +71,7 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
     {
         score::mw::log::LogFatal("lola") << "Failed to parse JSON configuration key '" << key
                                          << "'. Configuration parsing failed. Terminating.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
     return json_result.value();
 }
@@ -87,7 +87,7 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
     {
         score::mw::log::LogFatal("lola") << "Failed to parse JSON configuration key '" << key
                                          << "'. Configuration parsing failed. Terminating.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
     return json_result.value();
 }
@@ -107,7 +107,7 @@ auto GetOptionalValueFromJson(const score::json::Object& json_object, std::strin
     return ResultToOptionalOrElse(val_candidate->second.As<element_type>(), [key](auto) {
         score::mw::log::LogFatal("lola") << "provided key" << key
                                          << "contains a value that can not be parsed. Terminating.\n";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     });
 }
 
@@ -155,7 +155,7 @@ auto DeserializeVariant(const score::json::Object& /* json_object */,
                         std::ptrdiff_t /* variant_index */,
                         std::string_view /* json_variant_key */) -> VariantType
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
 }
 
 template <std::size_t VariantIndex,

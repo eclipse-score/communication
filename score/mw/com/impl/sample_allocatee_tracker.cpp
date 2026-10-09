@@ -28,7 +28,7 @@ SampleAllocateeTracker::~SampleAllocateeTracker() noexcept
     {
         score::mw::log::LogFatal("lola") << "SampleAllocateeTracker destroyed while still holding" << num_allocated
                                          << "outstanding SampleAllocateePtr instance(s), terminating.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
 }
 

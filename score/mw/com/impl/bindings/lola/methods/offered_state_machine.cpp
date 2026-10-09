@@ -55,12 +55,12 @@ OfferedStateMachine::State StopOfferedState::Offer()
 
 OfferedStateMachine::State StopOfferedState::StopOffer()
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(0);
+    SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
 }
 
 OfferedStateMachine::State ReOfferedState::Offer()
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(0);
+    SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
 }
 
 OfferedStateMachine::State ReOfferedState::StopOffer()
