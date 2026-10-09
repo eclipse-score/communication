@@ -28,6 +28,11 @@ class UnixDomainServerFactory final : public IServerFactory
     explicit UnixDomainServerFactory(const std::shared_ptr<UnixDomainEngine> engine) noexcept;
     ~UnixDomainServerFactory() noexcept;
 
+    UnixDomainServerFactory(const UnixDomainServerFactory&) = delete;
+    UnixDomainServerFactory& operator=(const UnixDomainServerFactory&) = delete;
+    UnixDomainServerFactory(UnixDomainServerFactory&&) = delete;
+    UnixDomainServerFactory& operator=(UnixDomainServerFactory&&) = delete;
+
     score::cpp::pmr::unique_ptr<IServer> Create(const ServiceProtocolConfig& protocol_config,
                                                 const ServerConfig& server_config) noexcept override;
 
