@@ -14,11 +14,18 @@
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/bindings/mock_binding/proxy.h"
+#include "score/mw/com/impl/bindings/someip/element_fq_id.h"
+#include "score/mw/com/impl/bindings/someip/proxy.h"
+#include "score/mw/com/impl/bindings/someip/proxy_event.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/configuration/service_instance_id.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
+#include "score/mw/com/impl/configuration/service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/service_type_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
@@ -67,6 +74,20 @@ const LolaServiceTypeDeployment kLolaServiceTypeDeployment{
     kServiceId,
     {{kDummyEventName, kDummyEventId}, {kDummyGenericProxyEventName, kDummyGenericProxyId}},
     {{kDummyFieldName, kDummyFieldId}}};
+
+constexpr SomeIpServiceId kSomeIpServiceId{2U};
+constexpr SomeIpServiceElementId kSomeIpEventId{15U};
+constexpr SomeIpServiceElementId kSomeIpFieldId{16U};
+constexpr SomeIpServiceInstanceId::InstanceId kSomeIpInstanceId{0x42U};
+const SomeIpServiceTypeDeployment kSomeIpServiceTypeDeployment{
+    kSomeIpServiceId,
+    {{kDummyEventName, kSomeIpEventId}},
+    {{kDummyFieldName, kSomeIpFieldId}}};
+const auto kSomeIpEventInstanceDeployment = SomeIpEventInstanceDeployment{1U, 1U, 1U, true};
+const SomeIpServiceInstanceDeployment kSomeIpServiceInstanceDeployment{
+    SomeIpServiceInstanceId{kSomeIpInstanceId},
+    {{kDummyEventName, kSomeIpEventInstanceDeployment}},
+    {{kDummyFieldName, SomeIpFieldInstanceDeployment{kSomeIpEventInstanceDeployment}}}};
 
 constexpr auto kQualityType = QualityType::kASIL_B;
 ConfigurationStore kConfigStoreAsilB{kInstanceSpecifier,
@@ -192,6 +213,83 @@ TEST_P(ProxyServiceElementBindingFactoryParamaterisedFixture, CannotConstructEve
 
     // Then an error is returned
     EXPECT_FALSE(unit.has_value());
+}
+
+class SomeIpProxyEventBindingFactoryFixture : public ::testing::Test
+{
+  protected:
+    SomeIpProxyEventBindingFactoryFixture()
+        : instance_specifier_{InstanceSpecifier::Create(std::string{"/someip_proxy_event_factory_test"}).value()},
+          service_identifier_{make_ServiceIdentifierType("SomeIpProxyEventFactoryTestService", 1U, 0U)},
+                    type_deployment_{kSomeIpServiceTypeDeployment},
+          service_instance_deployment_{service_identifier_,
+                                       kSomeIpServiceInstanceDeployment,
+                                       QualityType::kASIL_QM,
+                                                                             instance_specifier_}
+    {
+    }
+
+    HandleType GetHandle()
+    {
+        const auto instance_identifier = make_InstanceIdentifier(service_instance_deployment_, type_deployment_);
+        return make_HandleType(instance_identifier);
+    }
+
+    InstanceSpecifier instance_specifier_;
+    ServiceIdentifierType service_identifier_;
+    ServiceTypeDeployment type_deployment_;
+    ServiceInstanceDeployment service_instance_deployment_;
+};
+
+TEST_F(SomeIpProxyEventBindingFactoryFixture, CreatesTypedEventWithDeploymentElementId)
+{
+    someip::Proxy parent_binding{};
+
+    const auto result = ProxyEventBindingFactory<TestSampleType>::Create(
+        GetHandle(), parent_binding, kDummyEventName, ServiceElementType::EVENT);
+
+    ASSERT_TRUE(result.has_value());
+    const auto* const event_binding = dynamic_cast<someip::ProxyEvent*>(result.value().get());
+    ASSERT_NE(event_binding, nullptr);
+    EXPECT_EQ(event_binding->GetBindingType(), BindingType::kSomeIp);
+    const someip::ElementFqId expected_element_fq_id{
+        kSomeIpServiceId, kSomeIpEventId, kSomeIpInstanceId, ServiceElementType::EVENT};
+    EXPECT_EQ(event_binding->GetElementFQId(), expected_element_fq_id);
+}
+
+TEST_F(SomeIpProxyEventBindingFactoryFixture, CreatesTypedFieldEventWithDeploymentElementId)
+{
+    someip::Proxy parent_binding{};
+
+    const auto result = ProxyFieldBindingFactory<TestSampleType>::CreateEventBinding(
+        GetHandle(), parent_binding, kDummyFieldName);
+
+    ASSERT_TRUE(result.has_value());
+    const auto* const event_binding = dynamic_cast<someip::ProxyEvent*>(result.value().get());
+    ASSERT_NE(event_binding, nullptr);
+    const someip::ElementFqId expected_element_fq_id{
+        kSomeIpServiceId, kSomeIpFieldId, kSomeIpInstanceId, ServiceElementType::FIELD};
+    EXPECT_EQ(event_binding->GetElementFQId(), expected_element_fq_id);
+}
+
+TEST_F(SomeIpProxyEventBindingFactoryFixture, RejectsNonSomeIpParentBinding)
+{
+    mock_binding::Proxy parent_binding{};
+
+    const auto result = ProxyEventBindingFactory<TestSampleType>::Create(
+        GetHandle(), parent_binding, kDummyEventName, ServiceElementType::EVENT);
+
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST_F(SomeIpProxyEventBindingFactoryFixture, GenericSomeIpEventRemainsUnsupportedWithoutSampleMetadata)
+{
+    someip::Proxy parent_binding{};
+
+    const auto result = GenericProxyEventBindingFactory::Create(
+        GetHandle(), parent_binding, kDummyEventName, ServiceElementType::EVENT);
+
+    EXPECT_FALSE(result.has_value());
 }
 
 }  // namespace score::mw::com::impl
