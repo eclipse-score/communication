@@ -70,17 +70,20 @@ EventDataStorage::~EventDataStorage() noexcept
 
 void EventDataStorage::InitializeSlots(const InitializeSampleCallback& initialization_callback)
 {
-    // Retrieve 1st/last slot raw-pointers from OffsetPtrs, which includes bounds-checking.
-    auto* first_slot_raw_ptr = type_erased_data_slots_.get();
+    // Retrieve 1st slot raw-pointer from OffsetPtr, which includes bounds-checking.
+    auto* const first_slot_raw_ptr = type_erased_data_slots_.get();
     const auto last_slot_offset = sample_size_info_.Size() * (number_of_slots_ - 1U);
-    auto last_slot_ptr = type_erased_data_slots_ + decltype(type_erased_data_slots_)::difference_type(last_slot_offset);
-    auto* last_slot_raw_ptr = last_slot_ptr.get();
+    // Verify that the last slot is still within bounds of the OffsetPtr's bounds-checking.
+    score::cpp::ignore =
+        (type_erased_data_slots_ + decltype(type_erased_data_slots_)::difference_type(last_slot_offset)).get();
 
-    // This is our low-level data storage, where we work on type-erased data, thus pointer arithmetic can't be avoided.
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic) see above
-    for (auto* current_slot_raw_ptr = first_slot_raw_ptr; current_slot_raw_ptr <= last_slot_raw_ptr;
-         current_slot_raw_ptr += sample_size_info_.Size())
+    for (SlotIndexType slot_index = 0U; slot_index < number_of_slots_; ++slot_index)
     {
+        // This is our low-level data storage, where we work on type-erased data. The bounds check above guarantees
+        // that every slot address lies within type_erased_data_slots_.
+        // NOLINTNEXTLINE(score-banned-function) see above
+        auto* const current_slot_raw_ptr =
+            memory::shared::AddOffsetToPointer(first_slot_raw_ptr, sample_size_info_.Size() * slot_index);
         std::invoke(initialization_callback, current_slot_raw_ptr);
     }
 }

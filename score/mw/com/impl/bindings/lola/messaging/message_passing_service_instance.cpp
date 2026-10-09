@@ -149,12 +149,13 @@ auto SerializeToMessage(const std::uint8_t message_id, const T& t) noexcept -> s
     // cpp/misra/pointer-argument-to-cstring-function-is-invalid check reasons about the size of memcpy's read
     // buffer per call site, but for a templated memcpy call it can conflate the buffer size of one instantiation
     // of T with the size argument of another instantiation, producing a false-positive size mismatch. Deriving the
-    // source range directly from the same pointer (source_begin / source_end) that is copied keeps the range
+    // source range directly from the same pointer (source_begin, sizeof(T)) that is copied keeps the range
     // trivially self-consistent for every instantiation of T.
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): byte-wise view of a trivially copyable object
     const auto* const source_begin = reinterpret_cast<const std::uint8_t*>(&t);
-    const auto* const source_end = source_begin + sizeof(T);
-    std::ignore = std::copy(source_begin, source_end, std::next(out.begin()));
+    const score::cpp::span<const std::uint8_t> source{source_begin, sizeof(T)};
+    const score::cpp::span<std::uint8_t> destination{out};
+    std::ignore = std::copy(source.begin(), source.end(), destination.subspan(1U).begin());
     return out;
 }
 
