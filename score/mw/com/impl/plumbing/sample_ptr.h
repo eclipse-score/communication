@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_PLUMBING_SAMPLE_PTR_H
 #define SCORE_MW_COM_IMPL_PLUMBING_SAMPLE_PTR_H
 
+#include "score/mw/com/impl/e2e/e2e_result.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
 
 #include "score/mw/com/impl/bindings/lola/sample_ptr.h"
@@ -29,6 +30,8 @@
 
 namespace score::mw::com::impl
 {
+
+class ProxyEventBase;
 
 /// \brief Binding agnostic reference to a sample received from a proxy event binding.
 ///
@@ -73,7 +76,9 @@ class SamplePtr final
     SamplePtr(const SamplePtr<SampleType>&) = delete;
     // coverity[autosar_cpp14_a13_3_1_violation]
     SamplePtr(SamplePtr<SampleType>&& other) noexcept
-        : binding_sample_ptr_{std::move(other.binding_sample_ptr_)}, reference_guard_{std::move(other.reference_guard_)}
+        : binding_sample_ptr_{std::move(other.binding_sample_ptr_)},
+          reference_guard_{std::move(other.reference_guard_)},
+          e2e_result_{other.e2e_result_}
     {
         other.binding_sample_ptr_ = score::cpp::blank{};
     }
@@ -153,6 +158,12 @@ class SamplePtr final
         return get();
     }
 
+    /// \brief Returns the E2E result associated with this received sample.
+    e2e::E2EResult GetE2EResult() const noexcept
+    {
+        return e2e_result_;
+    }
+
     /// \brief deref underlying managed object.
     ///
     /// Only enabled if the SampleType is not void
@@ -207,6 +218,7 @@ class SamplePtr final
 
         swap(binding_sample_ptr_, other.binding_sample_ptr_);
         swap(reference_guard_, other.reference_guard_);
+        swap(e2e_result_, other.e2e_result_);
     }
 
     /// \brief Swaps the managed objects of *this and another SamplePtr object other, even if other has a
@@ -235,6 +247,17 @@ class SamplePtr final
 
     std::variant<score::cpp::blank, lola::SamplePtr, mock_binding::SamplePtr> binding_sample_ptr_;
     SampleReferenceGuard reference_guard_;
+    e2e::E2EResult e2e_result_{};
+
+    // Suppress "AUTOSAR C++14 A11-3-1" rule finding.
+    // The binding-independent proxy base is the sole owner of final E2E-result attachment.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend class ProxyEventBase;
+
+    void SetE2EResult(const e2e::E2EResult result) noexcept
+    {
+        e2e_result_ = result;
+    }
 
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
     // Design decision: needed so that the interim rebind ctor above can access the private members of a

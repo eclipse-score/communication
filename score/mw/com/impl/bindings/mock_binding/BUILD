@@ -49,6 +49,7 @@ cc_library(
         "//score/mw/com/impl:proxy_event_binding",
         "//score/mw/com/impl:skeleton_binding",
         "//score/mw/com/impl:skeleton_event_binding",
+        "//score/mw/com/impl/e2e:e2e_result",
         "//score/mw/com/impl/methods:proxy_method_binding",
         "//score/mw/com/impl/methods:skeleton_method_binding",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",

@@ -20,6 +20,8 @@
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
+#include "score/mw/com/impl/configuration/e2e_event_type_deployment.h"
+#include "score/mw/com/impl/e2e/e2e_profile_stub.h"
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
 #include "score/mw/com/impl/subscription_state.h"
@@ -54,7 +56,14 @@ class ProxyEvent final : public GenericProxyEventBinding
     /// \param parent Parent proxy of the proxy event.
     /// \param element_fq_id The ID of the event inside the proxy type.
     /// \param event_name The name of the event inside the proxy type.
-    ProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name);
+    /// \param e2e_event_deployment The event's POC E2E deployment; empty when no E2E profile is configured.
+    /// \param e2e_header_storage Scaffolding-only per-slot POC header storage shared with the provider's
+    ///        SkeletonEvent; null when E2E is not configured.
+    ProxyEvent(Proxy& parent,
+               const ElementFqId element_fq_id,
+               const std::string_view event_name,
+               std::optional<E2EEventTypeDeployment> e2e_event_deployment = {},
+               std::shared_ptr<e2e::HeaderStorage> e2e_header_storage = nullptr);
 
     ProxyEvent(const ProxyEvent&) = delete;
     ProxyEvent(ProxyEvent&&) noexcept = delete;
@@ -110,6 +119,17 @@ class ProxyEvent final : public GenericProxyEventBinding
         return event_fq_id_;
     }
 
+    /// \brief Returns this consumer's resolved POC E2E deployment.
+    const std::optional<E2EEventTypeDeployment>& GetE2EEventDeployment() const noexcept
+    {
+        return e2e_event_deployment_;
+    }
+
+    e2e::E2EResult GetLastE2EResult() const noexcept override
+    {
+        return last_e2e_result_;
+    }
+
   private:
     /// \brief Get the indicators of the slots containing samples that are pending for reception in ascending order.
     ///        I.e. returned SlotIndices begin with the oldest slots/events (lowest timestamp) first and end at the
@@ -118,6 +138,9 @@ class ProxyEvent final : public GenericProxyEventBinding
     /// The call is dispatched to SlotCollector. It is the responsibility of the calling code to ensure that
     /// GetNewSamplesSlotIndices() is only called when the event is in the subscribed state.
     SlotCollector::SlotIndices GetNewSamplesSlotIndices(const std::size_t max_count);
+
+    /// \brief Runs the POC E2E check for the given slot and stores the outcome in last_e2e_result_.
+    void CheckE2E(const SlotIndexType slot_index, const void* sample_data);
 
     const EventMetaInfo& meta_info_;
     const EventDataStorage& event_data_storage_;
@@ -142,6 +165,10 @@ class ProxyEvent final : public GenericProxyEventBinding
     std::reference_wrapper<EventSubscriptionControl<>> subscription_control_;
     std::reference_wrapper<TransactionLogSet> transaction_log_set_;
     SubscriptionStateMachine subscription_event_state_machine_;
+    std::optional<E2EEventTypeDeployment> e2e_event_deployment_;
+    std::shared_ptr<e2e::HeaderStorage> e2e_header_storage_;
+    e2e::CheckContext e2e_check_context_{};
+    e2e::E2EResult last_e2e_result_{};
 };
 
 }  // namespace score::mw::com::impl::lola

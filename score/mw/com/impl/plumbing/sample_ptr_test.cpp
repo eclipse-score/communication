@@ -99,6 +99,12 @@ TYPED_TEST(SamplePtrGenericTypeTest, CanBeDefaultConstructed)
     ::testing::Test::RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     SamplePtr<TypeParam> unit{};
+
+    const auto e2e_result = unit.GetE2EResult();
+    EXPECT_EQ(e2e_result.data_integrity, e2e::DataIntegrityStatus::kDisabled);
+    EXPECT_EQ(e2e_result.sequence, e2e::SequenceStatus::kDisabled);
+    EXPECT_EQ(e2e_result.historical_health, e2e::HistoricalHealthStatus::kDisabled);
+    EXPECT_EQ(e2e_result.summary, e2e::Summary::kDisabled);
 }
 
 TYPED_TEST(SamplePtrGenericTypeTest, CanBeNullptrConstructed)

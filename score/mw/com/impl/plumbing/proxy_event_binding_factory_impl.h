@@ -62,7 +62,19 @@ ReturnType CreateLolaProxyEvent(const HandleType& parent_handle,
 
     const auto element_fq_id =
         GetElementFqId(parent_handle, lola_type_deployment, std::string{event_or_field_name}, service_element_type);
-    return std::make_unique<lola::ProxyEvent>(*lola_proxy, element_fq_id, event_or_field_name);
+
+    std::optional<E2EEventTypeDeployment> e2e_event_deployment{};
+    if (service_element_type == ServiceElementType::EVENT)
+    {
+        const auto e2e_deployment_it = lola_type_deployment.e2e_events_.find(std::string{event_or_field_name});
+        if (e2e_deployment_it != lola_type_deployment.e2e_events_.cend())
+        {
+            e2e_event_deployment = e2e_deployment_it->second;
+        }
+    }
+
+    return std::make_unique<lola::ProxyEvent>(
+        *lola_proxy, element_fq_id, event_or_field_name, e2e_event_deployment);
 }
 }  // namespace detail
 

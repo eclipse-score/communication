@@ -213,8 +213,16 @@ Result<std::size_t> ProxyEvent<SampleType>::GetNewSamples(F&& receiver, std::siz
     // dispatches to the user provided receiver, it conditionally traces the received sample and then does a "rebind"
     // from the type-erased SamplePtr<void>, the binding provides to the typed SamplePtr<SampleType>, the user provided
     // receiver expects.
-    auto tracing_receiver =
-        tracing::CreateTracingGetNewSamplesCallback<SampleType, F>(tracing_data_, *binding_, std::forward<F>(receiver));
+    // The e2e_receiver wraps the user provided receiver and attaches the POC E2E result computed by the binding for
+    // this sample to the typed SamplePtr before forwarding it.
+    auto e2e_receiver = [this, binding = binding_.get(), receiver = std::forward<F>(receiver)](
+                            SamplePtr<SampleType> sample_ptr) {
+        AttachE2EResult(sample_ptr, binding->GetLastE2EResult());
+        receiver(std::move(sample_ptr));
+    };
+
+    auto tracing_receiver = tracing::CreateTracingGetNewSamplesCallback<SampleType, decltype(e2e_receiver)>(
+        tracing_data_, *binding_, std::move(e2e_receiver));
 
     const auto get_new_samples_result = binding_->GetNewSamples(std::move(tracing_receiver), guard_factory);
     if (!get_new_samples_result.has_value())

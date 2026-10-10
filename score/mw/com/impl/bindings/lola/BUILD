@@ -334,6 +334,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola/methods:method_resource_map",
         "//score/mw/com/impl/bindings/lola/methods:type_erased_call_queue",
         "//score/mw/com/impl/configuration",
+        "//score/mw/com/impl/e2e:e2e_profile_stub",
         "//score/mw/com/impl/methods:skeleton_method_binding",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/plumbing:sample_ptr",
@@ -400,6 +401,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola/methods:offered_state_machine",
         "//score/mw/com/impl/bindings/lola/methods:type_erased_call_queue",
         "//score/mw/com/impl/configuration",
+        "//score/mw/com/impl/e2e:e2e_profile_stub",
         "//score/mw/com/impl/methods:proxy_method_binding",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing:i_tracing_runtime",
@@ -1167,6 +1169,18 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "proxy_event_e2e_test",
+    srcs = ["proxy_event_e2e_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":proxy",
+        "//score/mw/com/impl/configuration",
+        "//score/mw/com/impl/e2e:e2e_profile_stub",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+    ],
+)
+
+cc_unit_test(
     name = "slot_decrementer_test",
     srcs = ["slot_decrementer_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -1348,6 +1362,19 @@ cc_unit_test(
     deps = [
         "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
+cc_unit_test(
+    name = "skeleton_event_e2e_test",
+    srcs = [
+        "skeleton_event_e2e_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
+        "//score/mw/com/impl/configuration",
+        "//score/mw/com/impl/e2e:e2e_profile_stub",
     ],
 )
 

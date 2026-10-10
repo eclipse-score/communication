@@ -22,7 +22,8 @@ SkeletonEvent::SkeletonEvent(Skeleton& parent,
                              const std::string_view event_name,
                              const memory::DataTypeSizeInfo size_info,
                              const SkeletonEventProperties properties,
-                             impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept
+                             impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data,
+                             std::shared_ptr<e2e::HeaderStorage> e2e_header_storage) noexcept
     : parent_{parent},
       event_name_{event_name},
       element_fq_id_(element_fq_id),
@@ -35,7 +36,8 @@ SkeletonEvent::SkeletonEvent(Skeleton& parent,
       field_getter_enabled_{event_properties_.GetNumberOfFieldGetterSlots() > 0U},
       getter_sample_tracker_{kMaxConcurrentFieldGetterSamplePtrs},
       qm_event_update_notifications_registered_{false},
-      asil_b_event_update_notifications_registered_{false}
+      asil_b_event_update_notifications_registered_{false},
+      e2e_header_storage_{std::move(e2e_header_storage)}
 {
 }
 
@@ -49,6 +51,23 @@ Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void> sample,
     // The "ptr" variable is checked before dereferencing.
     // coverity[autosar_cpp14_a5_3_2_violation]
     auto slot = ptr->GetReferencedSlot();
+
+    if (event_properties_.GetE2EEventDeployment().has_value() && (e2e_header_storage_ != nullptr) &&
+        (slot < e2e_header_storage_->size()))
+    {
+        const auto& e2e_event_deployment = event_properties_.GetE2EEventDeployment().value();
+        const e2e::ProfileConfiguration profile_config{e2e_event_deployment.data_id_,
+                                                       e2e_event_deployment.max_delta_counter_};
+        auto& header = (*e2e_header_storage_)[slot];
+        const score::cpp::span<std::byte> header_span{header.data(), header.size()};
+        const score::cpp::span<const std::byte> payload_span{static_cast<const std::byte*>(ptr->get()),
+                                                             event_sample_size_info_.Size()};
+        const auto counter_used = e2e_protect_context_.next_counter;
+        score::cpp::ignore = e2e::ProtectMessage(header_span, payload_span, profile_config, e2e_protect_context_);
+        score::mw::log::LogDebug("lola") << "E2E protect: element" << element_fq_id_ << "slot" << slot << "data_id"
+                                         << e2e_event_deployment.data_id_ << "counter" << counter_used;
+    }
+
     // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
     // not lead to data loss.".
     // The current logic will not exceed the maximum value.

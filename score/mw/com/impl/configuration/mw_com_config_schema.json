@@ -83,6 +83,38 @@
                                                 "type": "integer",
                                                 "title": "Service Event Id",
                                                 "description": "Binding technology specific event id. LoLa supports 16 bit values. The value needs to be unique across all events/fields/methods within the same binding, in case it is a SHM/LoLa binding."
+                                            },
+                                            "e2e": {
+                                                "type": "object",
+                                                "title": "E2E Configuration",
+                                                "description": "Optional POC E2E protection configuration of this event.",
+                                                "required": [
+                                                    "profile",
+                                                    "dataId",
+                                                    "maxDeltaCounter"
+                                                ],
+                                                "additionalProperties": false,
+                                                "properties": {
+                                                    "profile": {
+                                                        "type": "string",
+                                                        "title": "E2E Profile",
+                                                        "enum": [
+                                                            "P04"
+                                                        ]
+                                                    },
+                                                    "dataId": {
+                                                        "type": "integer",
+                                                        "title": "E2E Data Id",
+                                                        "minimum": 0,
+                                                        "maximum": 255
+                                                    },
+                                                    "maxDeltaCounter": {
+                                                        "type": "integer",
+                                                        "title": "E2E Max Delta Counter",
+                                                        "minimum": 0,
+                                                        "maximum": 255
+                                                    }
+                                                }
                                             }
                                         }
                                     }
