@@ -157,9 +157,9 @@ void ProxyEvent::CheckE2E(const SlotIndexType slot_index, const void* sample_dat
     last_e2e_result_.data_integrity = outcome.data_integrity;
     last_e2e_result_.sequence = outcome.sequence;
     last_e2e_result_.historical_health = e2e::HistoricalHealthStatus::kDisabled;
-    last_e2e_result_.summary =
-        ((outcome.data_integrity == e2e::DataIntegrityStatus::kOk) && sequence_ok) ? e2e::Summary::kOk
-                                                                                      : e2e::Summary::kError;
+    last_e2e_result_.summary = ((outcome.data_integrity == e2e::DataIntegrityStatus::kOk) && sequence_ok)
+                                   ? e2e::Summary::kOk
+                                   : e2e::Summary::kError;
     if (last_e2e_result_.summary == e2e::Summary::kError)
     {
         score::mw::log::LogWarn("lola") << "E2E check failed: slot" << slot_index << "data_integrity"

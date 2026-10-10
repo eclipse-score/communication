@@ -59,7 +59,7 @@ TEST_F(SkeletonEventE2EFixture, SendWritesHeaderThatChecksOutForTheSentValue)
     e2e::CheckContext check_context{};
     const e2e::ProfileConfiguration profile_config{kE2EDeployment.data_id_, kE2EDeployment.max_delta_counter_};
     const score::cpp::span<const std::byte> payload_span{reinterpret_cast<const std::byte*>(&sent_value),
-                                                          sizeof(sent_value)};
+                                                         sizeof(sent_value)};
 
     bool found_valid_header{false};
     for (const auto& header : *header_storage_)

@@ -40,8 +40,7 @@ class ProxyEventE2EFixture : public LolaProxyEventResources
     void ProtectDataAtSlot(const SlotIndexType slot_index, const SampleType& value)
     {
         const e2e::ProfileConfiguration profile_config{kE2EDeployment.data_id_, kE2EDeployment.max_delta_counter_};
-        const score::cpp::span<const std::byte> payload_span{reinterpret_cast<const std::byte*>(&value),
-                                                              sizeof(value)};
+        const score::cpp::span<const std::byte> payload_span{reinterpret_cast<const std::byte*>(&value), sizeof(value)};
         ASSERT_TRUE(e2e::ProtectMessage(
             AsWritableSpan((*header_storage_)[slot_index]), payload_span, profile_config, protect_context_));
     }
@@ -65,8 +64,7 @@ TEST_F(ProxyEventE2EFixture, ValidHeaderProducesOkResultOnDeliveredSample)
     // When receiving the sample
     e2e::E2EResult delivered_result{};
     const auto result = proxy_event.GetNewSamples(
-        [&proxy_event, &delivered_result](impl::SamplePtr<void>,
-                                          const tracing::ITracingRuntime::TracePointDataId) {
+        [&proxy_event, &delivered_result](impl::SamplePtr<void>, const tracing::ITracingRuntime::TracePointDataId) {
             delivered_result = proxy_event.GetLastE2EResult();
         },
         guard_factory);
@@ -96,8 +94,7 @@ TEST_F(ProxyEventE2EFixture, TamperedHeaderProducesErrorResultOnDeliveredSample)
     // When receiving the sample
     e2e::E2EResult delivered_result{};
     const auto result = proxy_event.GetNewSamples(
-        [&proxy_event, &delivered_result](impl::SamplePtr<void>,
-                                          const tracing::ITracingRuntime::TracePointDataId) {
+        [&proxy_event, &delivered_result](impl::SamplePtr<void>, const tracing::ITracingRuntime::TracePointDataId) {
             delivered_result = proxy_event.GetLastE2EResult();
         },
         guard_factory);
