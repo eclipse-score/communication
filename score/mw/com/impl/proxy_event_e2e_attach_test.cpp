@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/proxy_event.h"
 #include "score/mw/com/impl/bindings/mock_binding/proxy_event.h"
+#include "score/mw/com/impl/proxy_event.h"
 
 #include <gtest/gtest.h>
 
@@ -46,9 +46,10 @@ class ProxyEventE2EAttachFixture : public ::testing::Test
 TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleCarriesTheBindingsE2EResult)
 {
     // Given a binding that reports a non-default E2E result for the next delivered sample
-    const e2e::E2EResult expected_result{
-        e2e::DataIntegrityStatus::kOk, e2e::SequenceStatus::kOk, e2e::HistoricalHealthStatus::kDisabled,
-        e2e::Summary::kOk};
+    const e2e::E2EResult expected_result{e2e::DataIntegrityStatus::kOk,
+                                         e2e::SequenceStatus::kOk,
+                                         e2e::HistoricalHealthStatus::kDisabled,
+                                         e2e::Summary::kOk};
     ON_CALL(mock_proxy_event_, GetLastE2EResult()).WillByDefault(::testing::Return(expected_result));
     mock_proxy_event_.PushFakeSample(TestSampleType{4242U});
     std::ignore = proxy_event_.Subscribe(1U);
@@ -56,7 +57,10 @@ TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleCarriesTheBindingsE2EResult)
     // When receiving the sample
     e2e::E2EResult delivered_result{};
     const auto result = proxy_event_.GetNewSamples(
-        [&delivered_result](SamplePtr<TestSampleType> sample) { delivered_result = sample.GetE2EResult(); }, 1U);
+        [&delivered_result](SamplePtr<TestSampleType> sample) {
+            delivered_result = sample.GetE2EResult();
+        },
+        1U);
 
     // Then the delivered SamplePtr carries the binding's E2E result
     ASSERT_TRUE(result.has_value());
@@ -71,12 +75,13 @@ TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleDefaultsToDisabledWhenBindingH
     std::ignore = proxy_event_.Subscribe(1U);
 
     // When receiving the sample
-    e2e::E2EResult delivered_result{e2e::DataIntegrityStatus::kOk,
-                                    e2e::SequenceStatus::kOk,
-                                    e2e::HistoricalHealthStatus::kOk,
-                                    e2e::Summary::kOk};
+    e2e::E2EResult delivered_result{
+        e2e::DataIntegrityStatus::kOk, e2e::SequenceStatus::kOk, e2e::HistoricalHealthStatus::kOk, e2e::Summary::kOk};
     const auto result = proxy_event_.GetNewSamples(
-        [&delivered_result](SamplePtr<TestSampleType> sample) { delivered_result = sample.GetE2EResult(); }, 1U);
+        [&delivered_result](SamplePtr<TestSampleType> sample) {
+            delivered_result = sample.GetE2EResult();
+        },
+        1U);
 
     // Then the delivered SamplePtr reports the default, disabled result
     ASSERT_TRUE(result.has_value());
