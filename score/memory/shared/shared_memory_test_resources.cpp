@@ -15,6 +15,7 @@
 #include "score/memory/shared/shared_memory_factory.h"
 #include "score/os/utils/acl/i_access_control_list.h"
 
+// NOLINTNEXTLINE(bugprone-reserved-identifier): GoogleMock wildcard matcher, the name is fixed by GoogleMock
 using ::testing::_;
 using ::testing::AtMost;
 using ::testing::DoAll;

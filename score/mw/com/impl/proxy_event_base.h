@@ -69,7 +69,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     ProxyEventBase(ProxyEventBase&&) noexcept;
     ProxyEventBase& operator=(ProxyEventBase&&) noexcept;
 
-    virtual ~ProxyEventBase() noexcept;
+    ~ProxyEventBase() noexcept override;
 
     /**
      * \api

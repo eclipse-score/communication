@@ -15,6 +15,7 @@ filegroup(
     name = "sample_ptr_sample_allocate_ptr",
     srcs = [
         "does_not_free_resources_on_destruction_fta.puml",
+        "does_not_update_free_sample_count_correctly_fta.puml",
         "returns_wrong_data_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],

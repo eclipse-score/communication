@@ -1,5 +1,5 @@
 ' *******************************************************************************
-' Copyright (c) {year} Contributors to the Eclipse Foundation
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
 '
 ' See the NOTICE file(s) distributed with this work for additional
 ' information regarding copyright ownership.
@@ -15,7 +15,7 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("No resources freed", "Communication.NoResourcesFreed")
+$FailureMode("No resources freed", "Communication.NoResourcesFreed", "Communication.EarlyCleanUp")
 
 $IntermediateEvent("No Unlink / unmap shm-region", "Event1", "Communication.NoResourcesFreed")
 $OrGate("Gate1", "Event1")

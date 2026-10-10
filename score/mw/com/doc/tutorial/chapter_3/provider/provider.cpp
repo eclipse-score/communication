@@ -79,11 +79,9 @@ void SendSample(HelloWorldSkeleton& service_instance,
     // which service instance a received sample originates.
     const std::string message =
         std::string{"Hello World from "} + std::string{instance_specifier_string} + " #" + std::to_string(send_counter);
-    auto* const buf = sample_allocatee_ptr.value().Get()->data();
-    const auto capacity = sample_allocatee_ptr.value().Get()->size();
-    const auto chars_to_copy = std::min(message.size(), capacity - 1U);
-    std::memcpy(buf, message.data(), chars_to_copy);
-    buf[chars_to_copy] = '\0';
+    auto& sample = *sample_allocatee_ptr.value().Get();
+    const auto chars_to_copy = std::min(message.size(), sample.size() - 1U);
+    *std::copy_n(message.begin(), chars_to_copy, sample.begin()) = '\0';
 
     // Send the new event sample (make it visible to potential consumers)
     auto send_result = service_instance.message.Send(std::move(sample_allocatee_ptr.value()));
@@ -93,7 +91,7 @@ void SendSample(HelloWorldSkeleton& service_instance,
     }
     else
     {
-        std::cout << "Sample send completed. Event \"message\" update sent: " << buf << std::endl;
+        std::cout << "Sample send completed. Event \"message\" update sent: " << message << std::endl;
     }
 }
 }  // namespace

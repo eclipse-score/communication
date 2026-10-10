@@ -142,7 +142,7 @@ of its instances by 5 seconds each:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 106-134
+   :lines: 104-132
    :caption: provider/provider.cpp
 
 

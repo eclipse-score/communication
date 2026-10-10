@@ -10,17 +10,13 @@
 '
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
-@startuml safety_sentinel_mwcom_design
-title "mw_com_static_architecture"
 
-package "mw_com" as mw_com <<SEooC>>  {
-  component "Configuration" as mw_com_configuration <<unit>> 
-  component "Binding Factories" as mw_com_binding_factories <<unit>>
-  component "Tracing" as mw_com_tracing <<unit>> 
+@startuml
 
-  package "Binding Independent" as binding_independent <<component>>
-  package "Lola Binding" as lola_binding <<component>>
-  package "Mock Binding" as mock_binding <<component>>
-}
+!include fta_metamodel.puml
+
+$FailureMode("Same sample is sent N times", "Communication.SendingAnEventOrFieldSendsSameSampleNtimes")
+
+$RootCause("Copy on Send allocates multiple SampleAllocateePtrs", "Communication.CopyOnSendAllocatesMultipleSampleAllocateePtrs", "Communication.SendingAnEventOrFieldSendsSameSampleNtimes")
 
 @enduml

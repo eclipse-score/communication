@@ -10,15 +10,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "architectural_design")
 
-architectural_design(
-    name = "software_architectural_design",
-    static = [
-        "overall.puml",
-        "binding_independent.puml",
-        "lola_binding.puml",
-        "mock_binding.puml",
+filegroup(
+    name = "returns_wrong_free_sample_count_fta",
+    srcs = [
+        "returns_wrong_free_sample_count_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

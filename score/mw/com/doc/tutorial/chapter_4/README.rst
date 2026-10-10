@@ -175,7 +175,7 @@ phase change is due. On each phase change it either stops or (re-)starts offerin
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 110-124
+   :lines: 108-122
    :caption: provider/provider.cpp
 
 
@@ -183,7 +183,7 @@ Event updates (`SendSample()`) are only published while the service is currently
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 135-136
+   :lines: 133-134
    :caption: provider/provider.cpp
 
 
