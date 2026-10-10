@@ -86,8 +86,8 @@
                                             },
                                             "e2e": {
                                                 "type": "object",
-                                                "title": "POC E2E Event Configuration",
-                                                "description": "Binding-specific POC configuration for a protected LoLa event.",
+                                                "title": "E2E Configuration",
+                                                "description": "Optional POC E2E protection configuration of this event.",
                                                 "required": [
                                                     "profile",
                                                     "dataId",
@@ -97,17 +97,20 @@
                                                 "properties": {
                                                     "profile": {
                                                         "type": "string",
+                                                        "title": "E2E Profile",
                                                         "enum": [
                                                             "P04"
                                                         ]
                                                     },
                                                     "dataId": {
                                                         "type": "integer",
+                                                        "title": "E2E Data Id",
                                                         "minimum": 0,
                                                         "maximum": 255
                                                     },
                                                     "maxDeltaCounter": {
                                                         "type": "integer",
+                                                        "title": "E2E Max Delta Counter",
                                                         "minimum": 0,
                                                         "maximum": 255
                                                     }

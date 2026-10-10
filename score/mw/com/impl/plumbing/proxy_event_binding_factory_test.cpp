@@ -71,8 +71,7 @@ TEST_F(ProxyEventBindingFactoryE2EFixture, CreatedProxyEventResolvesSameE2EConfi
 
     // Then the created lola proxy event resolves the same E2E deployment the provider resolved into
     // SkeletonEventProperties, from the identical LolaServiceTypeDeployment
-    auto* const proxy_event_lola_binding =
-        dynamic_cast<lola::ProxyEvent*>(proxy_event_binding.value().get());
+    auto* const proxy_event_lola_binding = dynamic_cast<lola::ProxyEvent*>(proxy_event_binding.value().get());
     ASSERT_NE(proxy_event_lola_binding, nullptr);
     ASSERT_TRUE(proxy_event_lola_binding->GetE2EEventDeployment().has_value());
     EXPECT_EQ(proxy_event_lola_binding->GetE2EEventDeployment()->profile_, E2EProfile::kP4);

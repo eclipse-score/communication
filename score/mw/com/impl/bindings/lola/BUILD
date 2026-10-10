@@ -1174,9 +1174,9 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":proxy",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/e2e:e2e_profile_stub",
-        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
     ],
 )
 

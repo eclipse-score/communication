@@ -56,20 +56,19 @@ void SkeletonEventFixture::InitialiseSkeletonEvent(const ElementFqId element_fq_
 
     const auto number_of_field_getter_slots = field_getter_enabled ? kMaxConcurrentFieldGetterSamplePtrs : 0U;
 
-    skeleton_event_ = std::make_unique<SkeletonEvent>(
-        *skeleton_,
-        element_fq_id,
-        service_element_name,
-        test::kEventSampleTypeSizeInfo,
-        SkeletonEventProperties{max_samples,
-                                0U,
-                                number_of_field_getter_slots,
-                                false,
-                                max_subscribers,
-                                enforce_max_samples,
-                                e2e_event_deployment},
-        skeleton_event_tracing_data,
-        std::move(e2e_header_storage));
+    skeleton_event_ = std::make_unique<SkeletonEvent>(*skeleton_,
+                                                      element_fq_id,
+                                                      service_element_name,
+                                                      test::kEventSampleTypeSizeInfo,
+                                                      SkeletonEventProperties{max_samples,
+                                                                              0U,
+                                                                              number_of_field_getter_slots,
+                                                                              false,
+                                                                              max_subscribers,
+                                                                              enforce_max_samples,
+                                                                              e2e_event_deployment},
+                                                      skeleton_event_tracing_data,
+                                                      std::move(e2e_header_storage));
 }
 
 EventControl* SkeletonEventFixture::GetEventControl(const ElementFqId element_fq_id,

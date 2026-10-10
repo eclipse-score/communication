@@ -73,8 +73,7 @@ ReturnType CreateLolaProxyEvent(const HandleType& parent_handle,
         }
     }
 
-    return std::make_unique<lola::ProxyEvent>(
-        *lola_proxy, element_fq_id, event_or_field_name, e2e_event_deployment);
+    return std::make_unique<lola::ProxyEvent>(*lola_proxy, element_fq_id, event_or_field_name, e2e_event_deployment);
 }
 }  // namespace detail
 
