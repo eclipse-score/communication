@@ -261,6 +261,37 @@ TEST(PacketRouterHost, detects_repeated_reboot_session) {
     EXPECT_FALSE(router.is_reboot(endpoint, false, 2));
 }
 
+TEST(PacketRouterHost, detects_peer_reboot_once_across_multicast_and_unicast) {
+    auto manager = make_service_manager();
+    PacketRouterHost router(manager.get());
+
+    auto make_sd_endpoint = [](const std::string& receiver_ip, const std::string& sender_ip) {
+        auto receiver = std::make_shared<IP4Address>();
+        receiver->set_ip_address(receiver_ip);
+        receiver->set_reliable(false);
+        receiver->set_port_address(30490);
+        auto endpoint = std::make_shared<EndpointBase>(std::make_shared<Socket>(receiver));
+        endpoint->get_sender_address()->set_ip_address(sender_ip);
+        return endpoint;
+    };
+    auto multicast = make_sd_endpoint("224.244.224.245", "192.0.2.20");
+    auto unicast = make_sd_endpoint("192.0.2.21", "192.0.2.20");
+    auto other_peer = make_sd_endpoint("192.0.2.21", "192.0.2.30");
+
+    EXPECT_FALSE(router.is_reboot(multicast, true, 5));
+    EXPECT_FALSE(router.is_reboot(unicast, true, 7));
+    EXPECT_FALSE(router.is_reboot(other_peer, true, 7));
+
+    // The restarted peer's first multicast offer reports the reboot; its first unicast reply must not again.
+    EXPECT_TRUE(router.is_reboot(multicast, true, 1));
+    EXPECT_FALSE(router.is_reboot(unicast, true, 1));
+    EXPECT_FALSE(router.is_reboot(unicast, true, 2));
+
+    // A later reboot is still detected, and other peers keep their history.
+    EXPECT_TRUE(router.is_reboot(unicast, true, 1));
+    EXPECT_TRUE(router.is_reboot(other_peer, true, 1));
+}
+
 TEST(PacketRouterHost, empty_send_and_cookie_operations_are_safe) {
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());

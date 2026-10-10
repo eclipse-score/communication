@@ -597,6 +597,14 @@ bool PacketRouterHost::is_reboot(const std::shared_ptr<Endpoint> endpoint, bool 
         }
     }
 
+    if (reboot_detect) {
+        // The peer's other channel restarted too; forget it so the same reboot is not reported again there.
+        auto peer_it = reboot_info_.lower_bound(std::make_pair(sender_ip_address, std::string()));
+        while (peer_it != reboot_info_.end() && peer_it->first.first == sender_ip_address) {
+            peer_it = reboot_info_.erase(peer_it);
+        }
+    }
+
     reboot_info_[temp_key] = std::make_pair(temp_session, temp_reboot_flag);
 
     return reboot_detect;
