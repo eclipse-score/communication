@@ -67,7 +67,7 @@ class GenericProxy : public ProxyBase
      */
     static Result<GenericProxy> Create(HandleType instance_handle);
 
-    ~GenericProxy() noexcept;
+    ~GenericProxy() noexcept override;
 
     GenericProxy(const GenericProxy&) = delete;
     GenericProxy& operator=(const GenericProxy&) = delete;

@@ -33,7 +33,7 @@ namespace score::mw::com::impl
 class GenericSkeletonEventBinding : public SkeletonEventBinding
 {
   public:
-    virtual ~GenericSkeletonEventBinding() = default;
+    ~GenericSkeletonEventBinding() override = default;
 
     GenericSkeletonEventBinding() = default;
     // A GenericSkeletonEventBinding is always held via a pointer in the binding independent impl::SkeletonEvent.

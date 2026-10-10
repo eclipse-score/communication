@@ -14,16 +14,16 @@
 title "Lola Binding Static Architecture"
 
 package "Lola Binding" as lola_binding <<component>> {
-  component "Service Discovery" as lola_service_discovery <<unit>> 
-  component "Runtime" as lola_runtime <<unit>> 
-  component "Partial Restart" as lola_partial_restart <<unit>>
-  component "Method Data and Control" as lola_method_data_control <<unit>> 
-  component "Event Data and Control" as lola_event_data_control <<unit>> 
-  component "Message Passing Service" as lola_message_passing_service <<unit>> 
+  component "Service Discovery" as service_discovery <<unit>> 
+  component "Runtime" as runtime <<unit>> 
+  component "Partial Restart" as partial_restart <<unit>>
+  component "Method Data and Control" as method_data_control <<unit>> 
+  component "Event Data and Control" as event_data_control <<unit>> 
+  component "Message Passing Service" as message_passing_service <<unit>> 
 
-  package "SkeletonAndServiceElements" as lola_skeleton_and_service_elements <<unit>> 
+  component "SkeletonAndServiceElements" as skeleton_and_service_elements <<unit>> 
   
-  package "ProxyAndServiceElements" as lola_proxy_and_service_elements <<unit>> 
+  component "ProxyAndServiceElements" as proxy_and_service_elements <<unit>> 
 }
 
 @enduml

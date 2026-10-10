@@ -79,11 +79,9 @@ void SendSample(HelloWorldSkeleton& service_instance,
     // which service instance a received sample originates.
     const std::string message =
         std::string{"Hello World from "} + std::string{instance_specifier_string} + " #" + std::to_string(send_counter);
-    auto* const buf = sample_allocatee_ptr.value().Get()->data();
-    const auto capacity = sample_allocatee_ptr.value().Get()->size();
-    const auto chars_to_copy = std::min(message.size(), capacity - 1U);
-    std::memcpy(buf, message.data(), chars_to_copy);
-    buf[chars_to_copy] = '\0';
+    auto& sample = *sample_allocatee_ptr.value().Get();
+    const auto chars_to_copy = std::min(message.size(), sample.size() - 1U);
+    *std::copy_n(message.begin(), chars_to_copy, sample.begin()) = '\0';
 
     // Send the new event sample (make it visible to potential consumers)
     auto send_result = service_instance.message.Send(std::move(sample_allocatee_ptr.value()));
@@ -93,7 +91,7 @@ void SendSample(HelloWorldSkeleton& service_instance,
     }
     else
     {
-        std::cout << "Sample send completed. Event \"message\" update sent: " << buf << std::endl;
+        std::cout << "Sample send completed. Event \"message\" update sent: " << message << std::endl;
     }
 }
 }  // namespace
@@ -117,7 +115,7 @@ int main()
         if ((next_instance_index < kInstanceSpecifierStrings.size()) &&
             (std::chrono::steady_clock::now() >= next_instance_time))
         {
-            const auto instance_specifier_string = kInstanceSpecifierStrings[next_instance_index];
+            const auto instance_specifier_string = kInstanceSpecifierStrings.at(next_instance_index);
             service_instances.push_back(CreateAndOfferInstance(instance_specifier_string));
             std::cout << "Created and offered HelloWorld service instance: " << instance_specifier_string << std::endl;
             ++next_instance_index;
@@ -129,7 +127,7 @@ int main()
         // Send a new event sample on every service instance that is already up and running.
         for (std::size_t i = 0; i < service_instances.size(); ++i)
         {
-            SendSample(service_instances[i], kInstanceSpecifierStrings[i], send_counter);
+            SendSample(service_instances.at(i), kInstanceSpecifierStrings.at(i), send_counter);
         }
         ++send_counter;
     }

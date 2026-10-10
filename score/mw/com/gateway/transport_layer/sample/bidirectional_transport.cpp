@@ -241,9 +241,10 @@ bool BidirectionalTransport::WaitForConnection(score::cpp::stop_token stop_token
 
     while (!stop_token.stop_requested())
     {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast) required by POSIX sockaddr API
+        // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast) required by POSIX sockaddr API
         auto accept_result = Socket::instance().accept(
             listen_socket_.Get(), reinterpret_cast<struct sockaddr*>(&client_addr), &client_len);
+        // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
         if (!accept_result.has_value())
         {
@@ -268,10 +269,13 @@ bool BidirectionalTransport::WaitForConnection(score::cpp::stop_token stop_token
 
         // On QNX, accepted sockets inherit SOCK_NONBLOCK from the listen socket.
         // Clear it so recv() blocks properly instead of returning EAGAIN immediately.
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): fcntl is a POSIX variadic function
         int flags = fcntl(client_sock.Get(), F_GETFL, 0);
         if (flags != -1)
         // COV_JUSTIFIED_START gateway-clear-nonblock-on-accepted-socket
         {
+            // fcntl is a POSIX variadic function with int-based flags that are non-negative constants.
+            // NOLINTNEXTLINE(hicpp-signed-bitwise,cppcoreguidelines-pro-type-vararg)
             fcntl(client_sock.Get(), F_SETFL, flags & ~O_NONBLOCK);
         }
         // COV_JUSTIFIED_STOP
@@ -372,14 +376,14 @@ void BidirectionalTransport::DispatchLoop(const score::cpp::stop_token& stop_tok
 
 void BidirectionalTransport::HandleResponse(std::unique_ptr<TransportMessage> response)
 {
-    if (response->GetType() != MessageType::kAckResponse)
+    const auto* const ack = dynamic_cast<const AckResponse*>(response.get());
+    if (ack == nullptr)
     // COV_JUSTIFIED_START gateway-handle-response-only-ack-response
     {
         return;
     }
     // COV_JUSTIFIED_STOP
 
-    const auto* ack = static_cast<AckResponse*>(response.get());
     pending_tracker_->Acknowledge(ack->GetAckedSequence());
 }
 

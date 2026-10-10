@@ -330,7 +330,7 @@ TEST_F(ProxyMethodHandlingFixture, EnablingZeroMethodsDoesNotCreateSharedMemory)
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Create(StartsWith(kMethodChannelPrefix), _, _, _, _)).Times(0);
 
     // When calling SetupMethods with an empty enabled_method_names vector
-    const auto result = proxy_->SetupMethods();
+    const auto result = proxy_->SetupMethods(0U);
 
     // Then no error is returned
     EXPECT_TRUE(result.has_value());
@@ -353,7 +353,7 @@ TEST_F(ProxyMethodHandlingFixture, SuccessfullyCreatingSharedMemoryReturnsSucces
         .WillOnce(Return(mock_method_memory_resource_));
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    const auto result = proxy_->SetupMethods();
+    const auto result = proxy_->SetupMethods(0U);
 
     // Then no error is returned
     EXPECT_TRUE(result.has_value());
@@ -376,7 +376,7 @@ TEST_F(ProxyMethodHandlingFixture, FailingToCreateSharedMemoryReturnsError)
         .WillOnce(Return(nullptr));
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    const auto result = proxy_->SetupMethods();
+    const auto result = proxy_->SetupMethods(0U);
 
     // Then an error is returned
     ASSERT_FALSE(result.has_value());
@@ -400,7 +400,7 @@ TEST_F(ProxyMethodHandlingFixture, CreatesMethodCallQueueForEachMethodInShm)
               MethodType::kMethod}});
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // Then a MethodData object will be created which contains TypeErasedCallQueues
     // for each method
@@ -429,7 +429,7 @@ TEST_F(ProxyMethodHandlingFixture, SetsInArgsAndReturnStoragesForEachMethodInShm
               MethodType::kMethod}});
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // Then the SetInArgsAndReturnStorages will be set for each method (which we validate by checking whether the method
     // can allocate InArgs without crashing, since the allocation is using the inserted storages)
@@ -474,7 +474,7 @@ TEST_F(ProxyMethodHandlingFixture, FieldMethodsAreCreatedInShmOnlyForEnabledComb
               MethodType::kSet}});
 
     // When setting up methods
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // Then the shm contains exactly the enabled method call queues:
     // field0 Get+Set,
@@ -505,7 +505,7 @@ TEST_F(ProxyMethodHandlingFixture, FieldMethodGetEnabledInConfigurationWhichIsNo
               MethodType::kSet}});
 
     // When setting up methods.
-    const auto setup_methods_result = proxy_->SetupMethods();
+    const auto setup_methods_result = proxy_->SetupMethods(0U);
 
     // Then a valid result is returned
     EXPECT_TRUE(setup_methods_result.has_value());
@@ -527,7 +527,7 @@ TEST_F(ProxyMethodHandlingFixture, FieldMethodSetEnabledInConfigurationWhichIsNo
               MethodType::kGet}});
 
     // When setting up methods.
-    const auto setup_methods_result = proxy_->SetupMethods();
+    const auto setup_methods_result = proxy_->SetupMethods(0U);
 
     // Then a valid result is returned
     EXPECT_TRUE(setup_methods_result.has_value());
@@ -571,7 +571,7 @@ TEST_F(ProxyMethodHandlingFixture, CreatesSharedMemoryWithUserPermissionsContain
             })));
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 }
 
 using ProxySetupMethodsPartialRestartFixture = ProxyMethodHandlingFixture;
@@ -597,7 +597,7 @@ TEST_F(ProxySetupMethodsPartialRestartFixture, RemovesStaleArtefactsIfShmFileAlr
         .Times(1);
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 }
 
 TEST_F(ProxySetupMethodsPartialRestartFixture, ReturnsErrorWhenCheckingIfShmFileAlreadyExistsReturnsError)
@@ -617,7 +617,7 @@ TEST_F(ProxySetupMethodsPartialRestartFixture, ReturnsErrorWhenCheckingIfShmFile
         .WillOnce(Return(MakeUnexpected(filesystem::ErrorCode::kCouldNotRetrieveStatus)));
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    const auto result = proxy_->SetupMethods();
+    const auto result = proxy_->SetupMethods(0U);
 
     // Then an error is returned
     ASSERT_FALSE(result.has_value());
@@ -667,7 +667,7 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, ResendsSubscribeMethodEveryTi
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).Times(3);
 
     // Given that SetupMethods was called
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // Given that the service was initially offered
     OfferService();
@@ -697,7 +697,7 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, MarksProxyMethodsUnsubscribed
               MethodType::kMethod}});
 
     // Given that SetupMethods was called which should mark the ProxyMethods as subscribed
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
     EXPECT_TRUE(proxy_method_storage_.at(0).IsSubscribed());
     EXPECT_TRUE(proxy_method_storage_.at(1).IsSubscribed());
 
@@ -735,7 +735,7 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
         .WillRepeatedly(Return(score::Result<void>{}));
 
     // Given that SetupMethods was called
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // and given that the service was initially offered and then stop-offered
     OfferService();
@@ -776,7 +776,7 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
         .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
 
     // Given that SetupMethods was called
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // and given that the service was initially offered and then stop-offered
     OfferService();
@@ -805,7 +805,7 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, DoesNotResendSubscribeMethodI
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).Times(1);
 
     // Given that SetupMethods was called
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // When the service is initially offered (but never crashed)
     OfferService();
@@ -826,7 +826,7 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, DoesNotResendSubscribeMethodI
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).Times(1);
 
     // Given that SetupMethods was called
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // Given that the service was initially offered
     OfferService();
@@ -859,7 +859,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesCalls
         })));
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 }
 
 TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesForwardsErrorFromSubscribeServiceMethod)
@@ -880,7 +880,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesForwa
         .WillOnce(Return(MakeUnexpected(call_service_method_subscribed_error_code)));
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    const auto setup_methods_result = proxy_->SetupMethods();
+    const auto setup_methods_result = proxy_->SetupMethods(0U);
 
     // Then the result contains the error returned by message passing
     ASSERT_FALSE(setup_methods_result.has_value());
@@ -907,7 +907,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, ProxyMethodsMarkedAsSubscribedWhe
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).WillOnce(Return(score::Result<void>{}));
 
     // When calling SetupMethods with the name of the registered ProxyMethods
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // Then all registered proxy methods should be marked as subscribed
     EXPECT_TRUE(proxy_method_storage_.at(0).IsSubscribed());
@@ -937,7 +937,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture,
         .WillOnce(Return(MakeUnexpected(call_service_method_subscribed_error_code)));
 
     // When calling SetupMethods with the name of the registered ProxyMethods
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // Then all registered proxy methods should be marked as unsubscribed
     EXPECT_FALSE(proxy_method_storage_.at(0).IsSubscribed());
@@ -953,7 +953,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, EnablingZeroMethodsDoesNotNotifie
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).Times(0);
 
     // When calling SetupMethods with an empty enabled_method_names vector
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 }
 
 TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithoutArgsOrReturnTypesForwardsErrorFromSubscribeServiceMethod)
@@ -971,7 +971,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithoutArgsOrReturnTypesFo
         .WillOnce(Return(MakeUnexpected(call_service_method_subscribed_error_code)));
 
     // When calling SetupMethods with the names of the two registered ProxyMethods
-    const auto setup_methods_result = proxy_->SetupMethods();
+    const auto setup_methods_result = proxy_->SetupMethods(0U);
 
     // Then the result contains the error returned by message passing
     ASSERT_FALSE(setup_methods_result.has_value());
@@ -998,7 +998,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, EnablingMethodsWithoutArgsOrRetur
         })));
 
     // When calling SetupMethods with the names of the two registered ProxyMethods
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 }
 
 TEST_F(ProxySetupMethodsMessagePassingFixture, FailingToGetLolaRuntimeTerminates)
@@ -1019,7 +1019,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, FailingToGetLolaRuntimeTerminates
 
     // When calling SetupMethods with the name of the registered ProxyMethod
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods());
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods(0U));
 }
 
 class ProxySetupMethodsShmSizeParamaterizedFixture
@@ -1162,7 +1162,7 @@ TEST_P(ProxySetupMethodsShmSizeParamaterizedFixture, AllocatesEveryByteInSpecifi
         })));
 
     // When calling SetupMethods
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // Then the number of bytes allocated should equal the size that the shm region
     // was created with
@@ -1179,7 +1179,7 @@ TEST_F(ProxyMethodHandlingFixture, EnabledMethodWithoutRegisteredProxyMethodTerm
 
     // When calling SetupMethods with a ProxyMethod name which does not correspond
     // to the registered ProxyMethod Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods());
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods(0U));
 }
 
 TEST_F(ProxyMethodHandlingFixture, EnabledMethodPresentOnlyInInstanceDeploymentTerminates)
@@ -1206,7 +1206,7 @@ TEST_F(ProxyMethodHandlingFixture, EnabledMethodPresentOnlyInInstanceDeploymentT
 
     // When calling SetupMethods for a method that is enabled in the instance deployment but missing in the type
     // deployment Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods());
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods(0U));
 }
 
 TEST_F(ProxyMethodHandlingFixture, MethodPresentOnlyInTypeDeploymentDoesNotCreateSharedMemory)
@@ -1232,7 +1232,7 @@ TEST_F(ProxyMethodHandlingFixture, MethodPresentOnlyInTypeDeploymentDoesNotCreat
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Create(StartsWith(kMethodChannelPrefix), _, _, _, _)).Times(0);
 
     // When calling SetupMethods
-    const auto result = proxy_->SetupMethods();
+    const auto result = proxy_->SetupMethods(0U);
 
     // Then SetupMethods succeeds
     EXPECT_TRUE(result.has_value());
@@ -1266,7 +1266,7 @@ TEST_F(ProxyMethodHandlingFixture, EnablingMethodThatDoesNotContainQueueSizeInCo
 
     // When calling SetupMethods with a ProxyMethod name which corresponds to the
     // registered ProxyMethod Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods());
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods(0U));
 }
 
 using ProxyCleanupMethodsFixture = ProxyMethodHandlingFixture;
@@ -1305,7 +1305,7 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyAfterSetupMethodsCallsUnsubscr
     // Expecting that UnsubscribeServiceMethod is called exactly once on destruction
     EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, _)).Times(1);
 
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // When the proxy is cleaned up
     TearDown();
@@ -1333,7 +1333,7 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyCallsUnsubscribeServiceMethodW
             return {};
         })));
 
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // When the proxy is cleaned up
     TearDown();
@@ -1355,7 +1355,7 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyCompletesNormallyEvenWhenUnsub
     EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, _))
         .WillOnce(Return(MakeUnexpected(ComErrc::kCommunicationLinkError)));
 
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // When the proxy is cleaned up, CleanupMethods is best-effort and should not crash or throw
     EXPECT_NO_FATAL_FAILURE(TearDown());
@@ -1381,7 +1381,7 @@ TEST_F(ProxyCleanupMethodsFixture,
         .WillOnce(Return(MakeUnexpected(ComErrc::kCommunicationLinkError)));
     EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, _)).Times(0);
 
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // When the proxy is cleaned up
     TearDown();
@@ -1402,7 +1402,7 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyAfterSetupMethodsRemovesShmReg
     // Expecting that Remove is called exactly once on destruction to unlink the method SHM.
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Remove(StartsWith(kMethodChannelPrefix))).Times(1);
 
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // When the proxy is cleaned up
     TearDown();
@@ -1443,7 +1443,7 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyAfterSkeletonStopOfferedDoesNo
     // cleaned up its side when it stopped offering (the subscribed flag was cleared by StopOffer).
     EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, _)).Times(0);
 
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
     StopOfferService();
 
     // When the proxy is cleaned up
@@ -1467,7 +1467,7 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyAfterSetupMethodsWithFailedSub
         .WillOnce(Return(MakeUnexpected(ComErrc::kCommunicationLinkError)));
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Remove(StartsWith(kMethodChannelPrefix))).Times(1);
 
-    score::cpp::ignore = proxy_->SetupMethods();
+    score::cpp::ignore = proxy_->SetupMethods(0U);
 
     // When the proxy is cleaned up
     TearDown();

@@ -233,6 +233,8 @@ int LockBothFilesExclusively()
 bool WaitForChildFinished(int fd_to_read_from)
 {
     // we set our pipe/fd to non-blocking.
+    // fcntl is a POSIX variadic function with int-based flags that are non-negative constants.
+    // NOLINTNEXTLINE(hicpp-signed-bitwise,cppcoreguidelines-pro-type-vararg)
     auto fcntl_result = fcntl(fd_to_read_from, F_SETFL, fcntl(fd_to_read_from, F_GETFL) | O_NONBLOCK);
     if (fcntl_result == -1)
     {

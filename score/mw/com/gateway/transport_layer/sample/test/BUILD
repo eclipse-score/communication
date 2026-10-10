@@ -19,6 +19,7 @@ cc_binary(
     srcs = ["app2_main.cpp"],
     deps = [
         "//score/mw/com/gateway/transport_layer/sample:bidirectional_transport",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 
@@ -27,6 +28,7 @@ cc_binary(
     srcs = ["app1_main.cpp"],
     deps = [
         "//score/mw/com/gateway/transport_layer/sample:bidirectional_transport",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 

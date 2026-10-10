@@ -53,6 +53,14 @@ std::vector<std::string_view> GetEventNameList(const InstanceIdentifier& identif
             }
             return event_names;
         },
+        [](const SomeIpServiceTypeDeployment& deployment) -> ReturnType {
+            ReturnType event_names;
+            for (const auto& event : deployment.events_)
+            {
+                event_names.push_back(std::string_view{event.first});
+            }
+            return event_names;
+        },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return {};
         });
@@ -118,7 +126,7 @@ GenericProxy::~GenericProxy() noexcept
 }
 
 GenericProxy::GenericProxy(GenericProxy&& other) noexcept
-    : ProxyBase{std::move(other)},
+    : ProxyBase{std::move(static_cast<ProxyBase&>(other))},
       generic_events_{std::move(other.generic_events_)},
       is_proxy_owner_{std::move(other.is_proxy_owner_)}
 {
@@ -133,7 +141,7 @@ GenericProxy& GenericProxy::operator=(GenericProxy&& other) noexcept
         {
             this->Deinitialize();
         }
-        ProxyBase::operator=(std::move(other));
+        ProxyBase::operator=(std::move(static_cast<ProxyBase&>(other)));
         generic_events_ = std::move(other.generic_events_);
         is_proxy_owner_ = std::move(other.is_proxy_owner_);
     }

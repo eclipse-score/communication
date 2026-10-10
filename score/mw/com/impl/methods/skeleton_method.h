@@ -118,7 +118,7 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
                    std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding,
                    ::score::mw::com::impl::MethodType method_type = ::score::mw::com::impl::MethodType::kMethod);
 
-    ~SkeletonMethod() = default;
+    ~SkeletonMethod() override = default;
 
     SkeletonMethod(const SkeletonMethod&) = delete;
     SkeletonMethod& operator=(const SkeletonMethod&) & = delete;

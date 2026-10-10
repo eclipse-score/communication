@@ -25,7 +25,7 @@ TrackerGuardFactory makeTrakerGuardFactory(SampleReferenceTracker& tracker,
                                            const std::size_t num_available_guards) noexcept
 {
     // NOLINTNEXTLINE(score-no-unnamed-temporary-objects): By returning the unnammed object, we allow for copy-elision.
-    return TrackerGuardFactory(tracker, num_available_guards);
+    return {tracker, num_available_guards};
 }
 
 void deallocateSampleReferenceTracker(SampleReferenceTracker& instance,

@@ -32,8 +32,8 @@ namespace
 
 std::pair<void*, void*> AllocateMemoryRange(const std::size_t memory_resource_size) noexcept
 {
-    auto* memory_allocation = static_cast<std::uint8_t*>(std::malloc(memory_resource_size));
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(memory_allocation != nullptr, "Malloc must return allocated memory!");
+    auto* memory_allocation = new std::uint8_t[memory_resource_size];
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(memory_allocation != nullptr, "Allocation must return allocated memory!");
     return {memory_allocation, memory_allocation + memory_resource_size};
 }
 
@@ -83,7 +83,7 @@ MyBoundedMemoryResource::~MyBoundedMemoryResource()
 {
     if (should_free_memory_on_destruction_)
     {
-        std::free(baseAddress_);
+        delete[] static_cast<std::uint8_t*>(baseAddress_);
     }
     MemoryResourceRegistry::getInstance().remove_resource(memoryResourceId_);
 }

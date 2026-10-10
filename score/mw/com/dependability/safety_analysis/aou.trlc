@@ -22,6 +22,9 @@ ScoreReq.AoU MonotonicSemiDynamicMemoryAllocation {
     safety = ScoreReq.Asil.B
     note = "LoLa implements a Monotonic Memory Resource. Once memory is claimed, there is no possibility to release it. LoLa pre-allocates a memory pool, only within this memory pool the monotonic allocations will happen."
     version = 1
+    root_causes = [
+        mw_com_fta.TooMuchMemoryAllocated
+    ]
 }
 
 /* broken_link_c/issue/5835013 */
@@ -45,9 +48,10 @@ ScoreReq.AoU CorrectlyConfiguredMaximumNumberOfSubscriber {
         mw_com_fta.RetryLogicNotBulletProof,
         mw_com_fta.IssueInLockFreeSychronization,
         mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
-        mw_com_fta.AllocateClaimsToFewMemory,
-        mw_com_fta.NecessarySizeCalculationRetreivesWrongValue,
-        mw_com_fta.SharedMemoryTruncationFails
+        mw_com_fta.AllocateClaimsTooFewMemory,
+        mw_com_fta.NecessarySizeCalculationRetrievesWrongValue,
+        mw_com_fta.SharedMemoryTruncationFails,
+        mw_com_fta.TooMuchMemoryAllocated
     ]
 }
 
@@ -72,9 +76,10 @@ ScoreReq.AoU CorrectlyConfiguredMaximumNumberOfMaximumElementsPerSubscriber {
         mw_com_fta.RetryLogicNotBulletProof,
         mw_com_fta.IssueInLockFreeSychronization,
         mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
-        mw_com_fta.AllocateClaimsToFewMemory,
-        mw_com_fta.NecessarySizeCalculationRetreivesWrongValue,
-        mw_com_fta.SharedMemoryTruncationFails
+        mw_com_fta.AllocateClaimsTooFewMemory,
+        mw_com_fta.NecessarySizeCalculationRetrievesWrongValue,
+        mw_com_fta.SharedMemoryTruncationFails,
+        mw_com_fta.TooMuchMemoryAllocated
     ]
 }
 
@@ -119,11 +124,13 @@ ScoreReq.AoU OnlyLoLaSupportedTypes {
 
 /* broken_link_c/issue/5835119 */
 ScoreReq.AoU NoApisFromImplementationNamespace {
-    // mitigates = "MisusedApis"
     description = "It shall be ensured that no API calls from the implementation namespace (e.g `impl`) are directly invoked or types from within are directly used."
     safety = ScoreReq.Asil.B
     note = "Certain measurements and maybe implemented around the implementation namespace, while it is theoretically possible to directly use these functions, this could lead to unknown and untested side-effects."
     version = 1
+    root_causes = [
+            mw_com_fta.InternalApiUsed
+    ]
 }
 
 /* broken_link_c/issue/5835135 */
@@ -136,7 +143,11 @@ ScoreReq.AoU NoGuaranteesForNotifications {
     root_causes = [
         mw_com_fta.ReceiveErrorOnRegistration,
         mw_com_fta.ServerProcessCrash,
-        mw_com_fta.AlgorithmicBug
+        mw_com_fta.AlgorithmicBug,
+        mw_com_fta.RootCauseReceiveHandlerNotInvoked,
+        mw_com_fta.RootCauseReceiveHandlerInvokedWithWrongEvent,
+        mw_com_fta.RootCauseReceiveHandlerInvokedMultipleTimes,
+        mw_com_fta.RootCauseReceiveHandlerInvokedWithoutEventNotification
     ]
 }
 
@@ -191,11 +202,13 @@ ScoreReq.AoU ConfigOnASafeFilesystem {
 
 /* broken_link_c/issue/5835198 */
 ScoreReq.AoU NoStaticContextSupport {
-    // mitigates = "MisusedApis"
     description = "It shall be ensured that LoLa is not used within static context within C++."
     safety = ScoreReq.Asil.B
     note = "LoLa uses itself static context within C++. A usage within static context could possibly cause the static (De-)Initialization-Fiasco."
     version = 1
+    root_causes = [
+            mw_com_fta.ApiUsedInWrongContext
+    ]
 }
 
 /* broken_link_c/issue/5835213 */
@@ -236,8 +249,8 @@ ScoreReq.AoU CheckForNullptrOnAllocate {
         mw_com_fta.RetryLogicNotBulletProof,
         mw_com_fta.IssueInLockFreeSychronization,
         mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
-        mw_com_fta.AllocateClaimsToFewMemory,
-        mw_com_fta.NecessarySizeCalculationRetreivesWrongValue,
+        mw_com_fta.AllocateClaimsTooFewMemory,
+        mw_com_fta.NecessarySizeCalculationRetrievesWrongValue,
         mw_com_fta.SharedMemoryTruncationFails
     ]
 }
@@ -258,8 +271,8 @@ ScoreReq.AoU OneProducerOnlyOneAllocateePtr {
         mw_com_fta.RetryLogicNotBulletProof,
         mw_com_fta.IssueInLockFreeSychronization,
         mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
-        mw_com_fta.AllocateClaimsToFewMemory,
-        mw_com_fta.NecessarySizeCalculationRetreivesWrongValue,
+        mw_com_fta.AllocateClaimsTooFewMemory,
+        mw_com_fta.NecessarySizeCalculationRetrievesWrongValue,
         mw_com_fta.SharedMemoryTruncationFails
     ]
 }
@@ -316,11 +329,13 @@ ScoreReq.AoU EventSubscriptionActiveWhileHoldingSamplePtr {
 
 /* broken_link_c/issue/5835351 */
 ScoreReq.AoU NoneTerminatingCallbacks {
-    // mitigates = "MisusedApis"
     description = "It shall be ensured that any callback passed to LoLa for invocation is not throwing."
     safety = ScoreReq.Asil.B
     note = "The behavior is undefined if a callback is throwing."
     version = 1
+    root_causes = [
+        mw_com_fta.TerminatingUserCallback
+    ]
 }
 
 /* broken_link_c/issue/5835363 */
@@ -494,6 +509,9 @@ ScoreReq.AoU NoGuaranteeOnExecutionTime {
     safety = ScoreReq.Asil.B
     note = "This implies that safety-relevant code, where the safety goal is dependent on timing, needs to be supervised."
     version = 1
+    root_causes = [
+        mw_com_fta.RootCauseAnyFunctionBlocksLongerThanExpected
+    ]
 }
 
 /* broken_link_c/issue/7091801 */

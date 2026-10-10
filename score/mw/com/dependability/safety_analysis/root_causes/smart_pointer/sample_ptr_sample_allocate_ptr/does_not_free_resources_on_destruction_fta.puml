@@ -1,5 +1,5 @@
 ' *******************************************************************************
-' Copyright (c) {year} Contributors to the Eclipse Foundation
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
 '
 ' See the NOTICE file(s) distributed with this work for additional
 ' information regarding copyright ownership.
@@ -15,7 +15,7 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("Does not free resources on destruction", "Communication.DoesNotFreeResourcesOnDestruction")
+$FailureMode("Does not free resources on destruction", "Communication.DoesNotFreeResourcesOnDestruction", "Communication.DoesNotReserveResources")
 
 $IntermediateEvent("Does not free slot", "Event1", "Communication.DoesNotFreeResourcesOnDestruction")
 $OrGate("Gate1", "Event1")

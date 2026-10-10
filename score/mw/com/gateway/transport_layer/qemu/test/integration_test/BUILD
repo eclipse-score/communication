@@ -10,15 +10,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "architectural_design")
+load("//quality/integration_testing:integration_testing.bzl", "dual_qemu_integration_test")
 
-architectural_design(
-    name = "software_architectural_design",
-    static = [
-        "overall.puml",
-        "binding_independent.puml",
-        "lola_binding.puml",
-        "mock_binding.puml",
-    ],
-    visibility = ["//score/mw/com/dependability:__subpackages__"],
+exports_files(["dual_qemu_transport_config.json"])
+
+dual_qemu_integration_test(
+    name = "test_qemu_transport",
+    srcs = ["test_qemu_transport.py"],
+    dual_config = "dual_qemu_transport_config.json",
+    filesystem_a = "//score/mw/com/gateway/transport_layer/qemu/test:qemu_transport_test_apps",
+    filesystem_b = "//score/mw/com/gateway/transport_layer/qemu/test:qemu_transport_test_apps",
 )
