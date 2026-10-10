@@ -30,7 +30,7 @@ class IRuntime : public impl::IBindingRuntime
   public:
     IRuntime() noexcept = default;
 
-    virtual ~IRuntime() noexcept = default;
+    ~IRuntime() noexcept override = default;
 
     /// \brief returns the message passing service instance needed by/used by LoLa skeletons/proxies.
     /// \return message passing service instance

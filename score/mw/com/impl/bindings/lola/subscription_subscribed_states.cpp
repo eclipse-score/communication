@@ -86,10 +86,11 @@ void SubscribedState::UnsetReceiveHandler()
 
 std::optional<std::uint16_t> SubscribedState::GetMaxSampleCount() const
 {
+    const auto max_sample_count = state_machine_.subscription_data_.max_sample_count_.value();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
-        state_machine_.subscription_data_.max_sample_count_.value() > 0U,
+        max_sample_count > 0U,
         "The subscription dispatch manager and the contained max sample count should be initialised on subscription.");
-    return state_machine_.subscription_data_.max_sample_count_.value();
+    return max_sample_count;
 }
 
 std::optional<SlotCollector>& SubscribedState::GetSlotCollector() & noexcept

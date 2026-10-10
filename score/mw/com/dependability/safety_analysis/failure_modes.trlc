@@ -225,7 +225,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "We ensure with our preventive measure that wrong alignment could happen."
-                // potentialcause = "This issue can only happen if the alignment calculation within the SharedMemoryResource fails."
+                interface = "score.mw.com.SkeletonEvent.Allocate"
             }
 
             // ID: 6164821
@@ -352,7 +352,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "By only freeing resources on destruction, we can avoid early resource clean ups."
-                // potentialcause = "nearly the same as [ISSUE:Failuremode NoResourcesFreed] The only difference is that unlink / unmap will happen early."
+                interface = "mw.com.Skeleton.Destroy"
             }
         }
         section "Handle Method Calls" {
@@ -598,7 +598,7 @@ section "LoLa" {
             }
 
             // ID: 6166350
-            ScoreReq.FailureMode UsesToManySampleptr {
+            ScoreReq.FailureMode UsesTooManySampleptr {
                 guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
                 description = "User is already max. sample count SamplePtr, but we are still handing out SamplePtrs in callback F()."
                 failureeffect = "Synchronization algorithm can no longer hold guarantees, which can cause an exceeding of resources. In worst case another proxy might fail to get updated samples (messages lost without full queues aka not detectable)."
@@ -830,8 +830,8 @@ section "LoLa" {
                 failureeffect = "Data is manipulated from different processes because they think its not owned. Which could cause garbage data and thus harm any safety goal."
                 version = 1
                 safety = ScoreReq.Asil.B
-                rationale = "Same as [ISSUE:FailureMode DoesNotFreeResourcesOnDestruction] since a decrease of the ref-count has the same issues as an increas."
-                // potentialcause = "Same as [ISSUE:Failuremode DoesNotFreeResourcesOnDestruction]"
+                rationale = "Same as [ISSUE:FailureMode DoesNotFreeResourcesOnDestruction] since a decrease of the ref-count has the same issues as an increase."
+                interface = "score.mw.com.SampleAllocateePtr<SampleType>"
             }
 
             // ID: 6166382

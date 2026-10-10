@@ -1,5 +1,5 @@
 ' *******************************************************************************
-' Copyright (c) {year} Contributors to the Eclipse Foundation
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
 '
 ' See the NOTICE file(s) distributed with this work for additional
 ' information regarding copyright ownership.
@@ -15,9 +15,8 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("Map containing non-existent events", "Communication.MapContainingNonexistentEvents", "Communication.IncompleteMapOfEvents")
+$FailureMode("User already holds max sample count, but another SamplePtr is handed out", "Communication.UsesTooManySampleptr")
 
-$IntermediateEvent("Configuration is wrong", "Event1", "Communication.MapContainingNonexistentEvents")
-$TransferInGate("Transfer1", "Event1")
+$RootCause("Reference counting facility for SamplePtr is broken", "ReferenceCountingFacilityForSampleptrIsBroken", "Communication.UsesTooManySampleptr")
 
 @enduml

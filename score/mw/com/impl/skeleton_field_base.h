@@ -46,7 +46,7 @@ class SkeletonFieldBase : public EnableReferenceToMoveableFromThis<SkeletonField
     {
     }
 
-    virtual ~SkeletonFieldBase() = default;
+    ~SkeletonFieldBase() override = default;
 
     SkeletonFieldBase(const SkeletonFieldBase&) = delete;
     SkeletonFieldBase& operator=(const SkeletonFieldBase&) & = delete;

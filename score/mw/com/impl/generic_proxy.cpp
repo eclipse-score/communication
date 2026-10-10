@@ -126,7 +126,7 @@ GenericProxy::~GenericProxy() noexcept
 }
 
 GenericProxy::GenericProxy(GenericProxy&& other) noexcept
-    : ProxyBase{std::move(other)},
+    : ProxyBase{std::move(static_cast<ProxyBase&>(other))},
       generic_events_{std::move(other.generic_events_)},
       is_proxy_owner_{std::move(other.is_proxy_owner_)}
 {
@@ -141,7 +141,7 @@ GenericProxy& GenericProxy::operator=(GenericProxy&& other) noexcept
         {
             this->Deinitialize();
         }
-        ProxyBase::operator=(std::move(other));
+        ProxyBase::operator=(std::move(static_cast<ProxyBase&>(other)));
         generic_events_ = std::move(other.generic_events_);
         is_proxy_owner_ = std::move(other.is_proxy_owner_);
     }

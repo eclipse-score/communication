@@ -34,3 +34,11 @@ filegroup(
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
+
+filegroup(
+    name = "wrongly_alligned_memory_allocated_fta",
+    srcs = [
+        "wrongly_alligned_memory_allocated_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)

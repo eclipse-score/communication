@@ -175,8 +175,10 @@ Result<void> TransactionLogLocalView::RollbackProxyElementLog(const DereferenceS
                                          !subscribe_transactions_.get().GetTransactionEnd()};
     if (was_no_subscribe_recorded)
     {
+        [[maybe_unused]] const bool contains_increment_or_decrement_transactions{
+            DoesLogContainIncrementOrDecrementTransactions(reference_count_slots_local_)};
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_MESSAGE(
-            !DoesLogContainIncrementOrDecrementTransactions(reference_count_slots_local_),
+            !contains_increment_or_decrement_transactions,
             "All slot increment transactions should be reversed before calling unsubscribe");
     }
 

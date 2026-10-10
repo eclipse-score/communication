@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -12,25 +12,9 @@
 # *******************************************************************************
 
 filegroup(
-    name = "callback_invoked_with_wrong_data_fta",
+    name = "returns_wrong_free_sample_count_fta",
     srcs = [
-        "callback_invoked_with_wrong_data_fta.puml",
-    ],
-    visibility = ["//score/mw/com/dependability:__subpackages__"],
-)
-
-filegroup(
-    name = "callback_not_invoked_despite_samples_available_fta",
-    srcs = [
-        "callback_not_invoked_despite_samples_available_fta.puml",
-    ],
-    visibility = ["//score/mw/com/dependability:__subpackages__"],
-)
-
-filegroup(
-    name = "uses_too_many_sampleptr_fta",
-    srcs = [
-        "uses_too_many_sampleptr_fta.puml",
+        "returns_wrong_free_sample_count_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
