@@ -103,14 +103,6 @@ build --host_per_file_copt=external/.*score_baselibs.*string_manipulation.*argum
 build --per_file_copt=external/.*score_qnx_unit_tests.*virtio9p.*@-Wno-error=sign-conversion
 build --host_per_file_copt=external/.*score_qnx_unit_tests.*virtio9p.*@-Wno-error=sign-conversion
 
-# Places with warnings that we need to fix
-# Issue to track it https://github.com/eclipse-score/communication/issues/1180
-build --per_file_copt=score/message_passing/qnx_dispatch_mocked_server.*@-Wno-error=sign-conversion
-build --host_per_file_copt=score/message_passing/qnx_dispatch_mocked_server.*@-Wno-error=sign-conversion
-build --per_file_copt=score/message_passing/qnx_dispatch_engine_test.*@-Wno-error=sign-conversion
-build --host_per_file_copt=score/message_passing/qnx_dispatch_engine_test.*@-Wno-error=sign-conversion
-build --per_file_copt=score/message_passing/dispatch_thread_runner_test.*@-Wno-error=sign-conversion
-build --host_per_file_copt=score/message_passing/dispatch_thread_runner_test.*@-Wno-error=sign-conversion
 
 # Enable the experimental FlatBuffers configuration path.
 build:flatbuffers --//score/mw/com/flags:experimental_enable_flatbuffers_configuration=True
