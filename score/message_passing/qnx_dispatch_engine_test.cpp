@@ -303,9 +303,9 @@ TEST_F(QnxDispatchEngineTestFixture, ServerWriteChecksSuccess)
     EXPECT_CALL(connection_, ProcessInput)
         .Times(1)
         .WillOnce([](const std::uint8_t code, const score::cpp::span<const std::uint8_t> message) noexcept {
-            EXPECT_EQ(code, 1);
-            EXPECT_EQ(message.size(), 3);
-            return EOK;
+            EXPECT_EQ(code, 1U);
+            EXPECT_EQ(message.size(), 3U);
+            return true;
         });
 
     server_helper_.HelperInsertIoWrite(score::cpp::blank{}, _IO_XTYPE_NONE, 4UL, 4UL);
@@ -430,7 +430,7 @@ TEST_F(QnxDispatchEngineTestFixture, PosixEndpointEventFailures)
     std::int32_t send_error_counter{0};
     LoggingCallback logger = [&register_error_counter, &send_error_counter](LogSeverity severity,
                                                                             LogItems items) -> void {
-        if ((severity == LogSeverity::kError) && (items.size() > 2) &&
+        if ((severity == LogSeverity::kError) && (items.size() > 2U) &&
             std::holds_alternative<std::string_view>(items[2]))
         {
             const auto& desc = std::get<std::string_view>(items[2]);
@@ -482,8 +482,7 @@ TEST_F(QnxDispatchEngineTestFixture, PosixEndpointCoidDeathPulse)
     std::int32_t obsolete_counter{0};
     std::int32_t crash_counter{0};
     LoggingCallback logger = [&obsolete_counter, &crash_counter](LogSeverity severity, LogItems items) -> void {
-        if ((severity == LogSeverity::kDebug) && (items.size() > 0) &&
-            std::holds_alternative<std::string_view>(items[0]))
+        if ((severity == LogSeverity::kDebug) && (!items.empty()) && std::holds_alternative<std::string_view>(items[0]))
         {
             const auto& desc = std::get<std::string_view>(items[0]);
             if (desc.find("obsolete") != desc.npos)
