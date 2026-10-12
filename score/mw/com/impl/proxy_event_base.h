@@ -173,13 +173,27 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     }
 
     /**
-     * \brief Attaches the POC E2E result onto a sample handle delivered by this event's binding.
-     * \details Only ProxyEventBase may set the result on a SamplePtr; see SamplePtr::SetE2EResult(). Derived,
+     * \brief Completes the E2E result of a sample delivered by this event's binding.
+     * \details The binding only provides data_integrity/sequence on the sample. This adds the binding-independent
+     *          verdict and stores it on the sample. The summary below is a stub (historical health tracking and the
+     *          final summary builder are not implemented yet).
+     *          Only ProxyEventBase may set the result on a SamplePtr; see SamplePtr::SetE2EResult(). Derived,
      *          binding-independent event classes call this from their GetNewSamples() wrapper.
      */
     template <typename SampleType>
-    void AttachE2EResult(SamplePtr<SampleType>& sample, const e2e::E2EResult& result) const noexcept
+    void AttachE2EResult(SamplePtr<SampleType>& sample) const
     {
+        auto result = sample.GetE2EResult();
+        const bool checked = (result.data_integrity != e2e::DataIntegrityStatus::kDisabled) ||
+                             (result.sequence != e2e::SequenceStatus::kDisabled);
+        if (checked)
+        {
+            const bool sequence_ok = (result.sequence == e2e::SequenceStatus::kOk) ||
+                                     (result.sequence == e2e::SequenceStatus::kOkGapWithinThreshold);
+            result.summary = ((result.data_integrity == e2e::DataIntegrityStatus::kOk) && sequence_ok)
+                                 ? e2e::Summary::kOk
+                                 : e2e::Summary::kError;
+        }
         sample.SetE2EResult(result);
     }
 
