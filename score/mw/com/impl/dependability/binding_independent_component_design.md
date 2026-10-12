@@ -121,9 +121,7 @@ the above-mentioned types, making it a `CRTP` pattern!
 
 Events and Fields in `ara::com` are class templates parameterized with the `SampleType`. They differ between provider
 (skeleton) and consumer (proxy) side regarding their functionality.
-`ara::com` proxies and skeletons contain members of the related template classes. The binding independent structural
-model/class diagram is discussed in
-[Skeleton/Proxy Binding architecture](../skeleton_proxy/README.md)
+`ara::com` proxies and skeletons contain members of the related template classes.
 
 ## Field as a composite
 
@@ -138,7 +136,4 @@ A field in ara::com is semantically an event, with some additional properties:
   consumer.
 
 Therefore, we decided to realize a field on the **binding independent** level as composition of an event and
-service-methods for set/get. Since we don't have implemented service-methods yet, the latter are "placeholders".
-
-The related field classes and their composite nature can be seen in the class diagram of the proxy/skeleton design
-chapter [here](../skeleton_proxy/README.md#introduction).
+service-methods for set/get.
