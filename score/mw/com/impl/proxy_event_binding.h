@@ -125,14 +125,6 @@ class ProxyEventBinding
     /// \return Number of samples that were handed over to the callable.
     virtual Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) = 0;
 
-    /// \brief Returns the POC E2E result computed for the sample most recently delivered by GetNewSamples(), or a
-    ///        disabled result if this event has no configured E2E profile. Bindings without E2E support keep the
-    ///        default (disabled) implementation.
-    virtual e2e::E2EResult GetLastE2EResult() const noexcept
-    {
-        return {};
-    }
-
   protected:
     /// Create a binding-independent SamplePtr from a binding-specific sample pointer.
     ///
@@ -142,16 +134,21 @@ class ProxyEventBinding
     /// \tparam BindingSamplePtr The sample pointer from the binding.
     /// \param binding_ptr Type of the binding-specific sample pointer.
     /// \param reference_guard Reference counting guard managing the count of SamplePtrs that are alive.
+    /// \param raw_check_outcome Outcome of the binding's own E2E check for this sample. Leave at default for
+    ///                          bindings/events without E2E.
     /// \return Binding-independent SamplePtr instance.
     template <typename BindingSamplePtr>
-    static SamplePtr<void> MakeSamplePtr(BindingSamplePtr&& binding_ptr, SampleReferenceGuard reference_guard) noexcept;
+    static SamplePtr<void> MakeSamplePtr(BindingSamplePtr&& binding_ptr,
+                                         SampleReferenceGuard reference_guard,
+                                         const e2e::RawCheckOutcome raw_check_outcome = {}) noexcept;
 };
 
 template <typename BindingSamplePtr>
 inline SamplePtr<void> ProxyEventBinding::MakeSamplePtr(BindingSamplePtr&& binding_ptr,
-                                                        SampleReferenceGuard reference_guard) noexcept
+                                                        SampleReferenceGuard reference_guard,
+                                                        const e2e::RawCheckOutcome raw_check_outcome) noexcept
 {
-    return SamplePtr<void>{std::forward<BindingSamplePtr>(binding_ptr), std::move(reference_guard)};
+    return SamplePtr<void>{std::forward<BindingSamplePtr>(binding_ptr), std::move(reference_guard), raw_check_outcome};
 }
 
 }  // namespace score::mw::com::impl

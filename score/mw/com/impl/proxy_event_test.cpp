@@ -475,7 +475,6 @@ TEST(ProxyEventTest, SamplePtrsToSlotDataAreConst)
 
     mock_proxy.PushFakeSample(1U);
     EXPECT_CALL(mock_proxy, GetSubscriptionState()).WillOnce(::testing::Return(SubscriptionState::kNotSubscribed));
-    EXPECT_CALL(mock_proxy, GetLastE2EResult());
 
     auto get_new_samples_callback = [](SamplePtr<SampleType> ptr) noexcept {
         using GetSlotType = typename std::remove_pointer<decltype(ptr.get())>::type;
@@ -507,7 +506,6 @@ TEST(ProxyEventDeathTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
 
     mock_proxy.PushFakeSample(3U);
     EXPECT_CALL(mock_proxy, GetSubscriptionState()).WillOnce(::testing::Return(SubscriptionState::kNotSubscribed));
-    EXPECT_CALL(mock_proxy, GetLastE2EResult());
 
     std::optional<SamplePtr<SampleType>> ptr{};
     std::ignore = proxy->Subscribe(max_num_samples);

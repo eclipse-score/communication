@@ -64,17 +64,16 @@ TEST_F(ProxyEventE2EFixture, ValidHeaderProducesOkResultOnDeliveredSample)
     // When receiving the sample
     e2e::E2EResult delivered_result{};
     const auto result = proxy_event.GetNewSamples(
-        [&proxy_event, &delivered_result](impl::SamplePtr<void>, const tracing::ITracingRuntime::TracePointDataId) {
-            delivered_result = proxy_event.GetLastE2EResult();
+        [&delivered_result](impl::SamplePtr<void> sample, const tracing::ITracingRuntime::TracePointDataId) {
+            delivered_result = sample.GetE2EResult();
         },
         guard_factory);
 
-    // Then the E2E result reports the sample as valid
+    // Then the sample carries the binding's check result as valid
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(*result, 1U);
     EXPECT_EQ(delivered_result.data_integrity, e2e::DataIntegrityStatus::kOk);
     EXPECT_EQ(delivered_result.sequence, e2e::SequenceStatus::kOk);
-    EXPECT_EQ(delivered_result.summary, e2e::Summary::kOk);
 
     proxy_event.Unsubscribe();
 }
@@ -94,16 +93,15 @@ TEST_F(ProxyEventE2EFixture, TamperedHeaderProducesErrorResultOnDeliveredSample)
     // When receiving the sample
     e2e::E2EResult delivered_result{};
     const auto result = proxy_event.GetNewSamples(
-        [&proxy_event, &delivered_result](impl::SamplePtr<void>, const tracing::ITracingRuntime::TracePointDataId) {
-            delivered_result = proxy_event.GetLastE2EResult();
+        [&delivered_result](impl::SamplePtr<void> sample, const tracing::ITracingRuntime::TracePointDataId) {
+            delivered_result = sample.GetE2EResult();
         },
         guard_factory);
 
-    // Then the E2E result reports a data-integrity error
+    // Then the sample carries a data-integrity error
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(*result, 1U);
     EXPECT_EQ(delivered_result.data_integrity, e2e::DataIntegrityStatus::kError);
-    EXPECT_EQ(delivered_result.summary, e2e::Summary::kError);
 
     proxy_event.Unsubscribe();
 }
