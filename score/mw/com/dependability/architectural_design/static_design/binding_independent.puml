@@ -14,9 +14,10 @@
 title "Binding Independent Static Architecture"
 
 package "Binding Independent" as binding_independent <<component>> {
-  component "Service Discovery" as service_discovery <<unit>> 
-  component "Mocks" as mocks <<unit>> 
-  component "Runtime" as runtime <<unit>> 
+  component "Service Discovery" as service_discovery <<unit>>
+  component "Mocks" as mocks <<unit>>
+  component "Runtime" as runtime <<unit>>
+  component "Sample Management Pointers" as slot_pointers <<unit>>
 
   component "SkeletonAndServiceElements" as skeleton_and_service_elements <<unit>>
 

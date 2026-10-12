@@ -20,6 +20,7 @@ package "Lola Binding" as lola_binding <<component>> {
   component "Method Data and Control" as method_data_control <<unit>> 
   component "Event Data and Control" as event_data_control <<unit>> 
   component "Message Passing Service" as message_passing_service <<unit>> 
+  component "Sample Management Pointers" as slot_pointers <<unit>>
 
   component "SkeletonAndServiceElements" as skeleton_and_service_elements <<unit>> 
   
