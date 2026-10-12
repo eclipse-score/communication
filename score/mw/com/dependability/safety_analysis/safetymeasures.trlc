@@ -22,3 +22,11 @@ ScoreReq.Mitigation ProxyRejectsConstructionWhenSharedMemoryObjectIsMissing {
     version = 1
     root_causes = [mw_com_fta.SharedMemoryObjectDoesNotExist]
 }
+
+ScoreReq.Mitigation ProxyRequiresServiceInstanceUsageMarkerFileBeforeOpeningSharedMemory {
+    safety = ScoreReq.Asil.B
+    description = "The LoLa proxy binding shall open the service instance usage marker file before opening the control and data shared memory objects, and shall fail proxy construction if the marker file cannot be opened, since the skeleton only creates this marker file once the shared memory objects have been successfully offered."
+    justification = "Proxy::Create() opens the service instance usage marker file via LockFile::Open() (is_create=false) before opening the shared memory segments, and returns nullptr if the marker file does not exist, preventing the shared memory from being opened without a corresponding active offer. This is verified by ProxyCreationReturnsNullPtrWhenFailedToOpenUsageMarkerFile in proxy_test.cpp."
+    version = 1
+    root_causes = [mw_com_fta.SharedMemoryIsOpenedEventhoughFileDoesNotExist]
+}
