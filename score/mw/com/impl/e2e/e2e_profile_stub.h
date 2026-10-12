@@ -45,13 +45,6 @@ struct CheckContext
     bool has_last_counter{false};
 };
 
-/// \brief Categorised outcome produced for one checked POC frame.
-struct CheckOutcome
-{
-    DataIntegrityStatus data_integrity;
-    SequenceStatus sequence;
-};
-
 /// \brief Fixed header size used only by this POC profile stub.
 constexpr std::size_t kProfileStubHeaderSize{4U};
 
@@ -73,10 +66,10 @@ bool ProtectMessage(score::cpp::span<std::byte> header,
 
 /// \brief Verifies one POC header and updates the receiver-local sequence state for valid headers.
 /// \details An invalid header or checksum produces kError and does not update check_context.
-CheckOutcome CheckMessage(score::cpp::span<const std::byte> header,
-                          score::cpp::span<const std::byte> payload,
-                          ProfileConfiguration configuration,
-                          CheckContext& check_context) noexcept;
+RawCheckOutcome CheckMessage(score::cpp::span<const std::byte> header,
+                             score::cpp::span<const std::byte> payload,
+                             ProfileConfiguration configuration,
+                             CheckContext& check_context) noexcept;
 
 }  // namespace score::mw::com::impl::e2e
 
