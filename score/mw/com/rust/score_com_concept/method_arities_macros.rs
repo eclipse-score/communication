@@ -34,8 +34,8 @@
 //! This macro covers arities 1 through 8 (inclusive) by default, but can be extended to higher arities if needed.
 
 use crate::{
-    CommData, MethodArgs, MethodArgsAllocate, MethodArgsPtrTuple, MethodCallInput, MethodCaller,
-    MethodHandlerCall, MethodInArgAllocator, Reloc, Result, Runtime, ZeroCopyArgs,
+    CommData, MethodArgs, MethodArgsAllocate, MethodArgsPtrTuple, MethodCallInput, MethodCaller, MethodHandlerCall,
+    MethodInArgAllocator, Reloc, Result, Runtime, ZeroCopyArgs,
 };
 use core::future::Future;
 

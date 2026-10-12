@@ -20,8 +20,8 @@
 // as this are not part of any callable because of that unused warning is suppressed for this file.
 
 use score_com::{
-    Builder, FindServiceSpecifier, InstanceSpecifier, Interface, Runtime, SampleContainer,
-    ServiceDiscovery, Subscriber, Subscription,
+    Builder, FindServiceSpecifier, InstanceSpecifier, Interface, Runtime, SampleContainer, ServiceDiscovery,
+    Subscriber, Subscription,
 };
 
 use com_api_gen::{Tire, VehicleFieldInterface};
@@ -31,12 +31,8 @@ type VehicleFieldConsumer<R> = <VehicleFieldInterface as Interface>::Consumer<R>
 
 // create the consumer.
 #[allow(dead_code)]
-fn create_consumer_field<R: Runtime>(
-    runtime: &R,
-    service_id: InstanceSpecifier,
-) -> VehicleFieldConsumer<R> {
-    let consumer_discovery =
-        runtime.find_service::<VehicleFieldInterface>(FindServiceSpecifier::Specific(service_id));
+fn create_consumer_field<R: Runtime>(runtime: &R, service_id: InstanceSpecifier) -> VehicleFieldConsumer<R> {
+    let consumer_discovery = runtime.find_service::<VehicleFieldInterface>(FindServiceSpecifier::Specific(service_id));
     let available_service_instances = consumer_discovery
         .get_available_instances()
         .expect("Failed to get available service instances");
@@ -48,9 +44,7 @@ fn create_consumer_field<R: Runtime>(
         .nth(handle_index)
         .expect("Failed to get consumer builder at specified handle index");
 
-    consumer_builder
-        .build()
-        .expect("Failed to build consumer instance")
+    consumer_builder.build().expect("Failed to build consumer instance")
 }
 
 // Function to demonstrate the usage of the consumer to get and set fields,
@@ -81,10 +75,7 @@ async fn consumer_processing_field<R: Runtime>(consumer: VehicleFieldConsumer<R>
     // Subscribe to the field to receive update notifications (field value changes).
     // Note: subscribe() takes `left_tire` by value. The get/set callers are separate
     // struct fields so they are not consumed here, but the consumer is partially moved.
-    let subscription = consumer
-        .left_tire
-        .subscribe(3)
-        .expect("Failed to subscribe to field");
+    let subscription = consumer.left_tire.subscribe(3).expect("Failed to subscribe to field");
 
     // Poll for updates (non-blocking)
     let mut sample_buf = SampleContainer::new(3);
@@ -93,7 +84,7 @@ async fn consumer_processing_field<R: Runtime>(consumer: VehicleFieldConsumer<R>
             while let Some(sample) = sample_buf.pop_front() {
                 println!("Updated tire pressure: {:?}", *sample);
             }
-        }
+        },
         _ => println!("No new tire pressure updates available"),
     }
 

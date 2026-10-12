@@ -148,10 +148,7 @@ pub trait MethodCaller<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> 
     /// which provides `Deref<Target = Return>` access to the return value,
     /// analogous to `Sample<T>` for events — allowing zero-copy access to the return data
     /// when the runtime backs it with shared memory.
-    fn invoke_with_copy<'a>(
-        &'a self,
-        args: Args,
-    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a;
+    fn invoke_with_copy<'a>(&'a self, args: Args) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a;
 
     /// Allocate uninitialized method arguments for a zero-copy method call.
     ///
@@ -166,9 +163,7 @@ pub trait MethodCaller<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> 
     /// the `Args` type would be `(T1, T2)`,
     /// and the `UninitTuple` type would be `(A::MethodInArgMaybeUninit<T1>, A::MethodInArgMaybeUninit<T2>)`
     /// where `A` is the runtime's method argument allocator.
-    fn allocate(
-        &self,
-    ) -> Result<<Args as MethodArgsAllocate<R::MethodInArgAllocator>>::UninitTuple>
+    fn allocate(&self) -> Result<<Args as MethodArgsAllocate<R::MethodInArgAllocator>>::UninitTuple>
     where
         Args: MethodArgsAllocate<R::MethodInArgAllocator>;
 
@@ -219,10 +214,7 @@ pub trait MethodInArgAllocator {
     type MethodInArgPtr<T: CommData>: MethodInArgPtr<T>;
 
     /// The concrete uninitialized method argument type this allocator produces for argument type `T`.
-    type MethodInArgMaybeUninit<T: CommData>: MethodInArgMaybeUninit<
-        T,
-        Ptr = Self::MethodInArgPtr<T>,
-    >;
+    type MethodInArgMaybeUninit<T: CommData>: MethodInArgMaybeUninit<T, Ptr = Self::MethodInArgPtr<T>>;
 
     /// Produce a new uninitialized method argument for argument type `T`.
     ///
@@ -334,9 +326,7 @@ where
     where
         R::MethodCaller<Args, Return>: MethodCaller<Args, Return, R> + 'a,
     {
-        <R::MethodCaller<Args, Return> as MethodCaller<Args, Return, R>>::invoke_with_copy(
-            caller, self,
-        )
+        <R::MethodCaller<Args, Return> as MethodCaller<Args, Return, R>>::invoke_with_copy(caller, self)
     }
 }
 
