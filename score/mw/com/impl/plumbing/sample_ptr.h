@@ -51,10 +51,17 @@ class SamplePtr final
     /// \tparam BindingSamplePtrType The type of the sample pointer. Needs to be one of the types listed in the variant
     ///                              holding the actual pointer.
     /// \param binding_sample_ptr The binding-specific sample pointer.
+    /// \param reference_guard Reference counting guard managing the count of SamplePtrs that are alive.
+    /// \param raw_check_outcome Per-sample outcome of the binding's own E2E check. The binding cannot set the summary
+    ///                          or historical health; ProxyEventBase completes the E2EResult before the sample reaches
+    ///                          the application.
     template <typename BindingSamplePtrType>
-    SamplePtr(BindingSamplePtrType&& binding_sample_ptr, SampleReferenceGuard reference_guard)
+    SamplePtr(BindingSamplePtrType&& binding_sample_ptr,
+              SampleReferenceGuard reference_guard,
+              const e2e::RawCheckOutcome raw_check_outcome = {})
         : binding_sample_ptr_{std::forward<BindingSamplePtrType>(binding_sample_ptr)},
-          reference_guard_{std::move(reference_guard)}
+          reference_guard_{std::move(reference_guard)},
+          e2e_result_{raw_check_outcome.data_integrity, raw_check_outcome.sequence}
     {
     }
 
@@ -159,7 +166,7 @@ class SamplePtr final
     }
 
     /// \brief Returns the E2E result associated with this received sample.
-    e2e::E2EResult GetE2EResult() const noexcept
+    e2e::E2EResult GetE2EResult() const
     {
         return e2e_result_;
     }
@@ -231,6 +238,7 @@ class SamplePtr final
         using std::swap;
         swap(binding_sample_ptr_, other.binding_sample_ptr_);
         swap(reference_guard_, other.reference_guard_);
+        swap(e2e_result_, other.e2e_result_);
     }
 
     void Reset(SamplePtr other = nullptr) noexcept
@@ -254,7 +262,7 @@ class SamplePtr final
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class ProxyEventBase;
 
-    void SetE2EResult(const e2e::E2EResult result) noexcept
+    void SetE2EResult(const e2e::E2EResult result)
     {
         e2e_result_ = result;
     }
