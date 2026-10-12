@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 
 #include "score/language/safecpp/safe_math/safe_math.h"
+#include "score/memory/shared/memory_resource_proxy.h"
 
 #include <score/assert.hpp>
 
@@ -22,15 +23,15 @@
 namespace score::mw::com::impl::lola
 {
 
-EventDataStorage::EventDataStorage(memory::shared::ManagedMemoryResource& resource,
+EventDataStorage::EventDataStorage(const memory::shared::MemoryResourceProxy* memory_resource_proxy,
                                    SlotIndexType number_of_slots,
                                    memory::DataTypeSizeInfo event_sample_size_info,
                                    const std::optional<InitializeSampleCallback>& initialize_sample_callback)
     : number_of_slots_(number_of_slots),
       sample_size_info_(event_sample_size_info),
-      memory_resource_(resource),
       type_erased_data_slots_(nullptr),
-      type_erased_data_slots_storage_size_in_bytes_(0)
+      type_erased_data_slots_storage_size_in_bytes_(0),
+      memory_resource_proxy_(memory_resource_proxy)
 {
     const auto storage_bytes_needed_result =
         safe_math::Multiply<safe_math::ReturnMode::kReturnResultOnError, std::size_t>(number_of_slots,
@@ -44,7 +45,7 @@ EventDataStorage::EventDataStorage(memory::shared::ManagedMemoryResource& resour
     // allocation (see service_data_storage.cpp), i.e. event_sample_size_info.Alignment(). Using a different (e.g.
     // hardcoded, stricter) alignment here would make the analytically calculated shm-size wrong (too small).
     void* const type_erased_data_slots_start =
-        memory_resource_.allocate(storage_bytes_needed, event_sample_size_info.Alignment());
+        memory_resource_proxy_->allocate(storage_bytes_needed, event_sample_size_info.Alignment());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(nullptr != type_erased_data_slots_start);
     type_erased_data_slots_ = static_cast<std::byte*>(type_erased_data_slots_start);
     type_erased_data_slots_storage_size_in_bytes_ = storage_bytes_needed;
@@ -64,7 +65,8 @@ EventDataStorage::~EventDataStorage() noexcept
 {
     if (type_erased_data_slots_ != nullptr)
     {
-        memory_resource_.deallocate(type_erased_data_slots_.get(), type_erased_data_slots_storage_size_in_bytes_);
+        memory_resource_proxy_->deallocate(type_erased_data_slots_.get(),
+                                           type_erased_data_slots_storage_size_in_bytes_);
     }
 }
 
@@ -115,11 +117,23 @@ SlotIndexType EventDataStorage::GetNumberOfSlots() const
 }
 
 void AddEventDataStorageShmSizeAllocation(std::vector<score::memory::DataTypeSizeInfo>& allocation_sequence,
-                                          memory::DataTypeSizeInfo event_sample_array_size_info)
+                                          EventDataStorageSizeInfo event_data_storage_size_info)
 {
     std::ignore = allocation_sequence.emplace_back(sizeof(EventDataStorage), alignof(EventDataStorage));
+
+    // This mirrors exactly how EventDataStorage's constructor computes the size of its type_erased_data_slots_
+    // allocation (see above): number_of_slots * per_sample_size_info.Size(), aligned to per_sample_size_info's
+    // alignment.
+    const auto& per_sample_size_info = event_data_storage_size_info.per_sample_size_info;
+    const auto storage_bytes_needed_result =
+        safe_math::Multiply<safe_math::ReturnMode::kReturnResultOnError, std::size_t>(
+            event_data_storage_size_info.number_of_slots, per_sample_size_info.Size());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        storage_bytes_needed_result.has_value(),
+        "Overflow while calculating the total size of the raw event-data slot-array.");
+
     std::ignore =
-        allocation_sequence.emplace_back(event_sample_array_size_info.Size(), event_sample_array_size_info.Alignment());
+        allocation_sequence.emplace_back(storage_bytes_needed_result.value(), per_sample_size_info.Alignment());
 }
 
 }  // namespace score::mw::com::impl::lola

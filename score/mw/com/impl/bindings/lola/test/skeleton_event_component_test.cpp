@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -134,7 +134,7 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
             score::memory::shared::SharedMemoryFactory::Open(path_builder.GetDataChannelShmName(instance_id), false);
 
         auto* storage = static_cast<ServiceDataStorage*>(memory->getUsableBaseAddress());
-        auto* event_data_storage = storage->events_.at(fake_element_fq_id_).get();
+        auto& event_data_storage = storage->GetEventDataStorage(fake_element_fq_id_);
 
         auto path = path_builder.GetControlChannelShmName(instance_id, QualityType::kASIL_QM);
         auto memory_control = score::memory::shared::SharedMemoryFactory::Open(path, false);
@@ -153,7 +153,7 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         auto slot_index = consumer_event_data_control_local.ReferenceNextEvent(0);
         EXPECT_TRUE(slot_index.has_value());
         auto* const value = static_cast<std::uint32_t*>(
-            event_data_storage->GetTypeErasedDataSlot(slot_index.value(), sizeof(std::uint32_t)));
+            event_data_storage.GetTypeErasedDataSlot(slot_index.value(), sizeof(std::uint32_t)));
 
         consumer_event_data_control_local.DereferenceEvent(slot_index.value());
 
@@ -305,12 +305,11 @@ TEST_F(SkeletonEventComponentTestFixture, SkeletonWillCalculateEventMetaInfoFrom
     ASSERT_TRUE(prepare_offer_result.has_value());
 
     // When getting the EventMetaInfo for the skeleton event
-    const auto event_meta_info = SkeletonAttorney{*parent_skeleton_}.GetEventMetaInfo(fake_element_fq_id_);
+    const auto& event_meta_info = SkeletonAttorney{*parent_skeleton_}.GetEventMetaInfo(fake_element_fq_id_);
 
     // Then the event meta info should correspond to the type of the skeleton event
-    ASSERT_TRUE(event_meta_info.has_value());
-    EXPECT_EQ(event_meta_info.value().data_type_info_.Alignment(), alignof(SkeletonEventSampleType));
-    EXPECT_EQ(event_meta_info.value().data_type_info_.Size(), sizeof(SkeletonEventSampleType));
+    EXPECT_EQ(event_meta_info.data_type_info_.Alignment(), alignof(SkeletonEventSampleType));
+    EXPECT_EQ(event_meta_info.data_type_info_.Size(), sizeof(SkeletonEventSampleType));
 }
 
 using SkeletonEventSingleSlotComponentTestFixture = SkeletonEventComponentTestTemplateFixture<1>;
