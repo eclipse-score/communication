@@ -55,9 +55,7 @@ pub trait FieldSubscriber<T: CommData + Debug, R: Runtime + ?Sized>:
 /// In addition to the base subscription APIs, a field subscription exposes:
 /// - `get_num_new_samples_available()` — how many fresh samples are ready to receive.
 /// - `get_free_sample_count()` — remaining capacity in the subscription buffer.
-pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>:
-    concept::Subscription<T, R>
-{
+pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>: concept::Subscription<T, R> {
     /// Returns the number of new samples a call to `try_receive` (given that
     /// `max_num_samples` does not restrict it) would currently provide.
     fn get_num_new_samples_available(&self) -> Result<usize>;

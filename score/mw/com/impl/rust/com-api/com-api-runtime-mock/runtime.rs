@@ -36,14 +36,12 @@ use std::collections::VecDeque;
 use std::path::Path;
 
 use score_com_concept::{
-    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, EventSampleMut,
-    FieldPublisher, FieldSampleMut, FieldSubscriber, FieldSubscription, FindServiceSpecifier,
-    InstanceSpecifier, Interface, MethodArgs, MethodArgsAllocate, MethodArgsPtrTuple, MethodCaller,
-    MethodHandler, MethodHandlerCall, MethodInArgAllocator, MethodInArgMaybeUninit, MethodInArgPtr,
-    MethodReturnSample, Producer, ProducerBuilder, ProviderInfo, Publisher,
-    Result, Runtime, RuntimeBuilder, Sample, SampleContainer,
-    SampleMaybeUninit as SampleMaybeUninitTrait, SampleMaybeUninit, SampleMut, ServiceDiscovery,
-    Subscriber, Subscription, ZeroCopyArgs,
+    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, EventSampleMut, FieldPublisher, FieldSampleMut,
+    FieldSubscriber, FieldSubscription, FindServiceSpecifier, InstanceSpecifier, Interface, MethodArgs,
+    MethodArgsAllocate, MethodArgsPtrTuple, MethodCaller, MethodHandler, MethodHandlerCall, MethodInArgAllocator,
+    MethodInArgMaybeUninit, MethodInArgPtr, MethodReturnSample, Producer, ProducerBuilder, ProviderInfo, Publisher,
+    Result, Runtime, RuntimeBuilder, Sample, SampleContainer, SampleMaybeUninit as SampleMaybeUninitTrait,
+    SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription, ZeroCopyArgs,
 };
 
 pub struct MockRuntimeImpl {}
@@ -609,10 +607,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
     }
 
     #[allow(clippy::manual_async_fn)]
-    fn invoke_with_copy<'a>(
-        &'a self,
-        _args: Args,
-    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a {
+    fn invoke_with_copy<'a>(&'a self, _args: Args) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a {
         async move { todo!("Implement the logic to call the method with copied arguments") }
     }
 
@@ -631,9 +626,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
     where
         Args: MethodArgsPtrTuple<R>,
     {
-        async move {
-            todo!("Implement the logic to call the method with pre-allocated argument pointers")
-        }
+        async move { todo!("Implement the logic to call the method with pre-allocated argument pointers") }
     }
 }
 
@@ -823,9 +816,7 @@ impl<T: CommData + Debug> FieldPublisher<T, MockRuntimeImpl> for MockFieldPublis
 
 #[cfg(test)]
 mod test {
-    use score_com_concept::{
-        Publisher, SampleContainer, SampleMaybeUninit, SampleMut, Subscription,
-    };
+    use score_com_concept::{Publisher, SampleContainer, SampleMaybeUninit, SampleMut, Subscription};
 
     #[test]
     fn receive_stuff() {

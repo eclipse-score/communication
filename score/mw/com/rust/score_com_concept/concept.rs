@@ -50,9 +50,7 @@
 
 use crate::error::*;
 use crate::field_concept::{FieldPublisher, FieldSubscriber};
-use crate::method_concept::{
-    MethodArgs, MethodCaller, MethodHandler, MethodInArgAllocator, MethodReturnSample,
-};
+use crate::method_concept::{MethodArgs, MethodCaller, MethodHandler, MethodInArgAllocator, MethodReturnSample};
 use crate::Reloc;
 use containers::fixed_capacity::FixedCapacityQueue;
 use core::fmt::Debug;

@@ -39,14 +39,9 @@ type VehicleMethodOfferedProducer<R> =
 // Here assumption of use is user must call`init()` and register all method handlers ,
 // direct call to `offer()` API will panic.
 #[allow(dead_code)]
-fn create_producer_method<R: Runtime>(
-    runtime: &R,
-    service_id: InstanceSpecifier,
-) -> VehicleMethodOfferedProducer<R> {
+fn create_producer_method<R: Runtime>(runtime: &R, service_id: InstanceSpecifier) -> VehicleMethodOfferedProducer<R> {
     let producer_builder = runtime.producer_builder::<VehicleMethodsInterface>(service_id);
-    let producer = producer_builder
-        .build()
-        .expect("Failed to build producer instance");
+    let producer = producer_builder.build().expect("Failed to build producer instance");
     producer
         .init()
         // register method handler like function pointer.

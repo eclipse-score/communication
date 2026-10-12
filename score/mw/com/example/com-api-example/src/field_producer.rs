@@ -48,9 +48,7 @@ where
     <R as Runtime>::FieldPublisher<Exhaust>: Send,
 {
     let producer_builder = runtime.producer_builder::<VehicleFieldInterface>(service_id);
-    let producer = producer_builder
-        .build()
-        .expect("Failed to build producer instance");
+    let producer = producer_builder.build().expect("Failed to build producer instance");
 
     // Use validator pattern with compile-time type-state validation
     // Must register handlers and initialize all fields before offer() is available

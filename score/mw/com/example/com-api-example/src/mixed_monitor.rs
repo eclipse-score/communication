@@ -43,9 +43,8 @@
 // This builds fine, but cannot run as field and method APIs in Lola runtime are not implemented yet.
 
 use score_com::{
-    Builder, FieldPublisher, FindServiceSpecifier, InstanceSpecifier, Interface, MethodCaller,
-    MethodInArgMaybeUninit, Producer, Publisher, Runtime, SampleContainer, ServiceDiscovery,
-    Subscriber, Subscription,
+    Builder, FieldPublisher, FindServiceSpecifier, InstanceSpecifier, Interface, MethodCaller, MethodInArgMaybeUninit,
+    Producer, Publisher, Runtime, SampleContainer, ServiceDiscovery, Subscriber, Subscription,
 };
 
 use com_api_gen::{Exhaust, PressureImbalance, Tire, VehicleMonitorInterface};
@@ -173,12 +172,8 @@ fn update_fields<R: Runtime>(offered: &VehicleMonitorOfferedProducer<R>) {
 
 /// Create a VehicleMonitor consumer by discovering the service instance.
 #[allow(dead_code)]
-fn create_monitor_consumer<R: Runtime>(
-    runtime: &R,
-    service_id: InstanceSpecifier,
-) -> VehicleMonitorConsumer<R> {
-    let discovery =
-        runtime.find_service::<VehicleMonitorInterface>(FindServiceSpecifier::Specific(service_id));
+fn create_monitor_consumer<R: Runtime>(runtime: &R, service_id: InstanceSpecifier) -> VehicleMonitorConsumer<R> {
+    let discovery = runtime.find_service::<VehicleMonitorInterface>(FindServiceSpecifier::Specific(service_id));
 
     let instances = discovery
         .get_available_instances()
@@ -261,18 +256,9 @@ async fn consume_monitor<R: Runtime>(consumer: VehicleMonitorConsumer<R>) {
         .expect("Failed to allocate method arguments");
     let tire1_ptr = uninit1.write(Tire { pressure: 33.0 });
     let tire2_ptr = uninit2.write(Tire { pressure: 34.0 });
-    match consumer
-        .calculate_pressure_imbalance(tire1_ptr, tire2_ptr)
-        .await
-    {
-        Ok(imbalance) => println!(
-            "[Consumer] calculate_pressure_imbalance (zero-copy): {:?}",
-            *imbalance
-        ),
-        Err(e) => eprintln!(
-            "[Consumer] calculate_pressure_imbalance (zero-copy) failed: {:?}",
-            e
-        ),
+    match consumer.calculate_pressure_imbalance(tire1_ptr, tire2_ptr).await {
+        Ok(imbalance) => println!("[Consumer] calculate_pressure_imbalance (zero-copy): {:?}", *imbalance),
+        Err(e) => eprintln!("[Consumer] calculate_pressure_imbalance (zero-copy) failed: {:?}", e),
     }
 
     //  Events
@@ -291,7 +277,7 @@ async fn consume_monitor<R: Runtime>(consumer: VehicleMonitorConsumer<R>) {
                 while let Some(sample) = event_buf.pop_front() {
                     println!("[Consumer] left_tire event: {:?}", *sample);
                 }
-            }
+            },
             _ => println!("[Consumer] No new left_tire event samples"),
         }
         // Drop event_buf before event_subscription: Sample<'_> borrows from the
@@ -315,7 +301,7 @@ async fn consume_monitor<R: Runtime>(consumer: VehicleMonitorConsumer<R>) {
                 while let Some(sample) = field_buf.pop_front() {
                     println!("[Consumer] left_tire_field notification: {:?}", *sample);
                 }
-            }
+            },
             _ => println!("[Consumer] No new left_tire_field notifications"),
         }
         drop(field_buf);

@@ -16,14 +16,12 @@ use core::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use crate::{
-    LolaConsumerDiscovery, LolaConsumerInfo, LolaFieldGetCaller, LolaFieldPublisher,
-    LolaFieldSetCaller, LolaFieldSubscriber, LolaMethodCaller, LolaMethodHandler,
-    LolaMethodInArgAllocator, LolaMethodReturnSample, LolaProducerBuilder, LolaProviderInfo,
-    LolaPublisher, LolaSubscribableImpl,
+    LolaConsumerDiscovery, LolaConsumerInfo, LolaFieldGetCaller, LolaFieldPublisher, LolaFieldSetCaller,
+    LolaFieldSubscriber, LolaMethodCaller, LolaMethodHandler, LolaMethodInArgAllocator, LolaMethodReturnSample,
+    LolaProducerBuilder, LolaProviderInfo, LolaPublisher, LolaSubscribableImpl,
 };
 use score_com_concept::{
-    Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, MethodArgs, Result,
-    Runtime, RuntimeBuilder,
+    Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, MethodArgs, Result, Runtime, RuntimeBuilder,
 };
 
 use bridge_ffi_lola::LolaFFIBridge;

@@ -61,9 +61,7 @@ pub struct LolaFieldSampleMaybeUninit<'a, T> {
     _lt: PhantomData<&'a T>,
 }
 
-impl<'a, T: CommData + Debug> AsMut<core::mem::MaybeUninit<T>>
-    for LolaFieldSampleMaybeUninit<'a, T>
-{
+impl<'a, T: CommData + Debug> AsMut<core::mem::MaybeUninit<T>> for LolaFieldSampleMaybeUninit<'a, T> {
     fn as_mut(&mut self) -> &mut core::mem::MaybeUninit<T> {
         &mut self._data
     }
@@ -78,9 +76,7 @@ impl<'a, T: CommData + Debug> SampleMaybeUninitTrait<T> for LolaFieldSampleMaybe
     }
 }
 
-impl<T: CommData + Debug, B: FFIBridge> FieldPublisher<T, LolaRuntimeImpl<B>>
-    for LolaFieldPublisher<T, B>
-{
+impl<T: CommData + Debug, B: FFIBridge> FieldPublisher<T, LolaRuntimeImpl<B>> for LolaFieldPublisher<T, B> {
     type SampleMaybeUninit<'a>
         = LolaFieldSampleMaybeUninit<'a, T>
     where
