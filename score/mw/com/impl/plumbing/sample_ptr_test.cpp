@@ -386,6 +386,22 @@ TYPED_TEST(SamplePtrGenericTypeTest, MovingSamplePtrWillMoveSampleReferenceGuard
     EXPECT_EQ(tracker.GetNumAvailableSamples(), max_num_samples - 1);
 }
 
+TEST(SamplePtr, RawCheckOutcomeProvidedAtConstructionIsCarriedThroughRebindToTypedSamplePtr)
+{
+    // Given a type-erased SamplePtr constructed with the outcome of the binding's E2E check
+    const e2e::RawCheckOutcome binding_outcome{e2e::DataIntegrityStatus::kError, e2e::SequenceStatus::kErrorRepeated};
+    SamplePtr<void> type_erased{
+        mock_binding::MakeSamplePtr(new TestSampleType{42U}), SampleReferenceGuard{}, binding_outcome};
+
+    // When rebinding it to a typed SamplePtr
+    SamplePtr<TestSampleType> typed{std::move(type_erased)};
+
+    // Then the typed SamplePtr carries the same E2E result
+    EXPECT_EQ(typed.GetE2EResult().data_integrity, e2e::DataIntegrityStatus::kError);
+    EXPECT_EQ(typed.GetE2EResult().sequence, e2e::SequenceStatus::kErrorRepeated);
+    EXPECT_EQ(typed.GetE2EResult().summary, e2e::Summary::kDisabled);
+}
+
 TEST_F(LolaForwardingSamplePtrTest, GreaterThanReturnsTrueWhenForwardedLolaSampleIsNewer)
 {
     auto older_sample = CreateImplSamplePtr(10U, 0U);
