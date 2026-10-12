@@ -1076,7 +1076,7 @@ section "com" {
 
             Underlying files shall only be finally removed from the file-system once no consumer access them anymore.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, mw_com_fta.ServiceWasOfferedButNotUnlinkedOnStopOffer@1]
             version = 1
         }
 
