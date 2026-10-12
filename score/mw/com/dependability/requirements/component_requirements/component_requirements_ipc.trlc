@@ -1131,6 +1131,13 @@ section "com" {
             version = 1
         }
 
+        ScoreReq.CompReq ProxyRejectsConstructionWhenSharedMemoryObjectIsMissing {
+            description = '''{{Proxy}} construction shall fail, returning an {{score::result::Error}} containing {{ComErrc::kBindingFailure}} to the user via {{Proxy::Create()}} or {{GenericProxy::Create()}}, if either the control or the data shared memory object of the corresponding service instance does not exist, instead of proceeding with a missing or inconsistent memory region.'''
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.FEAT_SafeCommunication@1, mw_com_fta.SharedMemoryObjectDoesNotExist]
+            version = 1
+        }
+
         /* broken_link_c/issue/5899238 */
         ScoreReq.CompReq PerformActiveBoundCheckingOnDereferencingOfOffsetPointer {
             description = '''Any dereferenciation of an offset pointer shall be subject to active bound checking.
