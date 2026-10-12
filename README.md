@@ -36,19 +36,23 @@ The Communication Module (also known as **LoLa** - Low Latency) is an open-sourc
 
 ## Architecture
 
-The module consists of two main components:
+The module consists of three main components:
 
 ### 1. LoLa/mw::com (High-Level Middleware)
-- **Service Discovery**: Automatic service registration and discovery [`score/mw/com/impl/find_service_handler.h`](score/mw/com/impl/find_service_handler.h)
-- **Event/Field Communication**: Publish-subscribe messaging patterns [`score/mw/com/impl/generic_proxy_event.h`](score/mw/com/impl/generic_proxy_event.h)
-- **Method Invocation**: Remote procedure call (RPC) support [`score/mw/com/impl/generic_proxy.h`](score/mw/com/impl/generic_proxy.h)
-- **Quality of Service**: ASIL-B and QM (Quality Management) support [`score/mw/com/types.h`](score/mw/com/types.h)
-- **Zero-Copy**: Shared-memory based data exchange [`score/mw/com/message_passing/`](score/mw/com/message_passing/)
+
+- **Service Discovery**: Automatic service registration and discovery
+- **Event/Field Communication**: Publish-subscribe messaging patterns
+- **Method Invocation**: Remote procedure call (RPC) support
+- **Quality of Service**: ASIL-B and QM (Quality Management) support
+- **Zero-Copy**: Shared-memory based data exchange
 
 ### 2. Message Passing (Low-Level Foundation)
-- **Asynchronous Communication**: Non-blocking message exchange [`score/message_passing/dependability/software_architectural_design/`](score/message_passing/dependability/software_architectural_design/client-server.md)
-- **Multi-Channel**: Multiple senders to single receiver communication (unidirectional n-to-1) [`score/message_passing/`](score/message_passing/)
-- **OS Abstraction**: POSIX and QNX-specific implementations [`score/message_passing/unix_domain/`](score/message_passing/unix_domain/) | [`score/message_passing/qnx_dispatch/`](score/message_passing/qnx_dispatch/)
+
+- **Asynchronous Communication**: Non-blocking message exchange
+- **Multi-Channel**: Multiple senders to single receiver communication (unidirectional n-to-1)
+- **OS Abstraction**: POSIX and QNX-specific implementations
+
+### 3. Shared memory abstraction (Low-Level Foundation)
 
 ## System Flow Diagram
 
@@ -121,9 +125,10 @@ communication/
 ## Documentation
 
 ### For Users
+
 - [User Guide](score/mw/com/README.md) - Getting started with the API
 - [API Reference](score/mw/com/design/README.md) - Detailed API documentation
-- [Tutorial](score/mw/com/doc/tutorial/README.md) - Guided user-facing API walkthrough
+- [Tutorial](https://eclipse-score.github.io/communication/latest/score/mw/com/doc/tutorial/README.html) - Guided user-facing API walkthrough
 
 ### For Developers
 - [Architecture Guide](score/mw/com/design/README.md) - System architecture overview
