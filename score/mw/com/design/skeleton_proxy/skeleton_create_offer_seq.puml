@@ -2,7 +2,7 @@
 title "Skeleton Creation and Offer Sequence"
 hide footbox
 
-participant "<u>:Process</u>\nara::com application" as Process
+participant "<u>:Process</u>\nmw::com application" as Process
 participant "<u>:<generated>Skeleton</u>" as GenSkeleton
 participant "impl::SkeletonBase:instance" as SkeletonBase
 participant "<u>SkeletonBindingFactory:class</u>" as SkeletonBindingFactory

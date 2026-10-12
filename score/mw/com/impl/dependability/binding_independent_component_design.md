@@ -23,7 +23,7 @@ and `ProxyBinding` are introduced for binding specific implementations. Based on
 `InstanceIdentifier`, the proxy and skeletons need to decide which binding to construct. This decision is encapsulated
 within the `.*BindingFactory`.
 
-One central strategy is to **_generate as little code as possible from the IDL_** (arxml), which then has the consequence
+One central strategy is to **_generate as little code as possible from the IDL_**, which then has the consequence
 that we have to resort to a generic templated C++ code base.
 
 ### Copy/Move support for binding independent proxies/skeletons and contained service elements
@@ -119,13 +119,13 @@ the above-mentioned types, making it a `CRTP` pattern!
 
 ## Introduction
 
-Events and Fields in `ara::com` are class templates parameterized with the `SampleType`. They differ between provider
+Events and Fields in `mw::com` are class templates parameterized with the `SampleType`. They differ between provider
 (skeleton) and consumer (proxy) side regarding their functionality.
-`ara::com` proxies and skeletons contain members of the related template classes.
+`mw::com` proxies and skeletons contain members of the related template classes.
 
 ## Field as a composite
 
-A field in ara::com is semantically an event, with some additional properties:
+A field in `mw::com` is semantically an event, with some additional properties:
 
 - it always has a value. I.e. also during creation/offering of a field on the provider (skeleton) side an initial value
   has to be provided. This also leads to the assurance, that on consumer (proxy) side after subscription a valid field

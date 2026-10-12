@@ -11,7 +11,7 @@ So the user creates instances of generated proxy classes (referred to as `DummyP
 specific implementation of `ProxyBinding`.
 
 `ProxyBase`/`ProxyBinding` do not contain any public/user facing instance methods beside the rather "technical"
-`GetHandle()` method, simply because `ara::com` does not currently define functionality/APIs on proxy instance level.
+`GetHandle()` method, simply because `mw::com` does not currently define functionality/APIs on proxy instance level.
 On `ProxyBase` level we have two types of methods:
 
 - public static/class methods for finding/stop finding service instances. These static methods dispatch to a binding

@@ -28,9 +28,7 @@ on a field that was not declared with `WithNotifier` does not compile.
 
 The notifier is a pure consumer-side concept. It only controls
 whether the proxy can subscribe and receive event-style notifications when the provider updates the value, and says
-nothing about the provider side. This follows `ara::com`, where the notifier is essentially "the event part" of a field
-(see AUTOSAR's [Explanation of ara::com API](https://www.autosar.org/fileadmin/standards/R24-11/AP/AUTOSAR_AP_EXP_ARAComAPI.pdf),
-chapter "Fields").
+nothing about the provider side. The notifier is essentially "the event part" of a field.
 
 The same asymmetry shows up in how each side builds the field's event dispatch:
 
@@ -138,7 +136,7 @@ The member `timestamp` in `EventSlotStatus` is overloaded, since there are speci
 interpreted as real timestamps, but as markers, whether this slot has not yet any valid sample data (data invalid) or
 whether it is currently blocked in a write-state as the slot has been currently handed out to skeleton application layer
 in the form of an `score::mw::com::SampleAllocateePtr`, where the application is currently busy creating event data using
-the zero-copy path of the `ara::com` event API.
+the zero-copy path of the `mw::com` event API.
 
 Based on this control data design, the concurrent functionalities mentioned above can be implemented lock-free, just
 using
@@ -181,7 +179,7 @@ benefit. [↩](#lockfreeref)
 
 ### Realization of `SamplePtr` and `SampleAllocateePtr`
 
-`ara::com` defines two `std::unique_ptr` like pointers for accessing sample data of an event:
+`mw::com` defines two `std::unique_ptr` like pointers for accessing sample data of an event:
 
 * `score::mw::com::SamplePtr` is the smartpointer used on the proxy side to access an event sample
 * `score::mw::com::SampleAllocateePtr` is the smartpointer used on the skeleton side in case of usage of the zero-copy API
@@ -241,7 +239,7 @@ need to be instantiated-then-merged by the build toolchain as this would be the 
 
 ## Notifications between skeleton and proxy
 
-As per `ara::com` spec, there are several notification like interactions between proxy and skeleton. E.g., proxy
+There are several notification like interactions between proxy and skeleton. E.g., proxy
 instance allows to register an event specific callback, which gets invoked as soon as the skeleton side has updated this
 event (sent a new sample). You see the according methods in `lola::ProxyEvent::SetReceiveHandler` and
 `lola::SkeletonEvent::notifyRegisteredReceiveHandlers` (which gets called in the context of `lola::SkeletonEvent::Send`)
@@ -328,7 +326,7 @@ proxies within our `score::mw` implementation, we did not name it as such to avo
 ### Setting up message passing infrastructure
 
 The `score::mw::com::message_passing::Receiver`s used by `lola::MessagePassingFacade` are created/set up during
-initialization of our `mw::com` runtime. Depending on the `ara::com`/`mw::com` deployment info for the
+initialization of our `mw::com` runtime. Depending on the `mw::com` deployment info for the
 executable/process, it can be decided, whether only QM (ASIL-QM) or QM and ASIL (ASIL-B) Receivers are needed.
 
 <img alt="LOLA_MSG_PASS_INITIALIZE_SEQ" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/lola_msg_pass_initialize_seq.puml">

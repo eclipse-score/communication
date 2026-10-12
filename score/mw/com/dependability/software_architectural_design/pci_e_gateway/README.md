@@ -459,8 +459,7 @@ Most likely we need to create specific FMEAs for these faults.
 
   For this we currently do have **no** solution on `mw::com` public API level. The "straight forward" solution would be
   to introduce additional meta-information to the existing public API. I.e. `GetNewSamples()` could provide additional
-  information like a data-loss indicator. This kind of enhancement is similar to `E2E`-extensions defined in `ara::com`
-  (AUTOSAR communication API). Maybe it really makes sense then to design such a generic `E2E` like extension also for
+  information like a data-loss indicator. Maybe it makes sense to design a generic `E2E` like extension also for
   the `mw::com` API, which then is also prepared for further bindings, which need fully fledged `E2E` state-machines in
   case the underlying transport is an untrusted "grey-channel".
 - `Insertion of information`: This has to be solved by implementing and testing the gateway implementation according to
