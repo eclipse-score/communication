@@ -20,6 +20,14 @@ filegroup(
 )
 
 filegroup(
+    name = "allocates_already_allocated_memory_fta",
+    srcs = [
+        "allocates_already_allocated_memory_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
     name = "to_few_memory_allocated_fta",
     srcs = [
         "to_few_memory_allocated_fta.puml",
