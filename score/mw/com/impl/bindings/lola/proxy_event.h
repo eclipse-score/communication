@@ -125,11 +125,6 @@ class ProxyEvent final : public GenericProxyEventBinding
         return e2e_event_deployment_;
     }
 
-    e2e::E2EResult GetLastE2EResult() const noexcept override
-    {
-        return last_e2e_result_;
-    }
-
   private:
     /// \brief Get the indicators of the slots containing samples that are pending for reception in ascending order.
     ///        I.e. returned SlotIndices begin with the oldest slots/events (lowest timestamp) first and end at the
@@ -139,8 +134,12 @@ class ProxyEvent final : public GenericProxyEventBinding
     /// GetNewSamplesSlotIndices() is only called when the event is in the subscribed state.
     SlotCollector::SlotIndices GetNewSamplesSlotIndices(const std::size_t max_count);
 
-    /// \brief Runs the POC E2E check for the given slot and stores the outcome in last_e2e_result_.
-    void CheckE2E(const SlotIndexType slot_index, const void* sample_data);
+    /// \brief Runs the POC E2E check for the given slot.
+    /// \details Only call when e2e_profile_config_ is set, which also guarantees a non-null e2e_header_storage_.
+    /// \return data_integrity/sequence of the check; all kDisabled if the slot has no header.
+    e2e::RawCheckOutcome CheckE2E(const e2e::ProfileConfiguration& profile_config,
+                                  const SlotIndexType slot_index,
+                                  const void* sample_data);
 
     const EventMetaInfo& meta_info_;
     const EventDataStorage& event_data_storage_;
@@ -167,8 +166,8 @@ class ProxyEvent final : public GenericProxyEventBinding
     SubscriptionStateMachine subscription_event_state_machine_;
     std::optional<E2EEventTypeDeployment> e2e_event_deployment_;
     std::shared_ptr<e2e::HeaderStorage> e2e_header_storage_;
+    std::optional<e2e::ProfileConfiguration> e2e_profile_config_;
     e2e::CheckContext e2e_check_context_{};
-    e2e::E2EResult last_e2e_result_{};
 };
 
 }  // namespace score::mw::com::impl::lola
