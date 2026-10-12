@@ -1120,7 +1120,7 @@ section "com" {
         ScoreReq.CompReq OnlyConfiguredUidsShallHaveAccessToTheLoLaSharedMemorySegments {
             description = '''It shall be configurable which user ids have access to data and control shared memory segments.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, mw_com_fta.WrongAcl@1]
             version = 1
         }
 
