@@ -1088,7 +1088,7 @@ section "com" {
 
             This name might be subject to calculation by deployment variables. e.g. a service id or instance id'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, mw_com_fta.WrongName@1]
             version = 1
         }
 
