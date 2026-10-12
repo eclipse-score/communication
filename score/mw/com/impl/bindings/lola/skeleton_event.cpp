@@ -17,6 +17,24 @@
 namespace score::mw::com::impl::lola
 {
 
+namespace
+{
+
+/// E2E is only active when the event has a deployment and a header storage; resolved once at construction.
+std::optional<e2e::ProfileConfiguration> ResolveE2EProfileConfiguration(
+    const SkeletonEventProperties& properties,
+    const std::shared_ptr<e2e::HeaderStorage>& e2e_header_storage) noexcept
+{
+    if (!properties.GetE2EEventDeployment().has_value() || (e2e_header_storage == nullptr))
+    {
+        return std::nullopt;
+    }
+    const auto& e2e_event_deployment = properties.GetE2EEventDeployment().value();
+    return e2e::ProfileConfiguration{e2e_event_deployment.data_id_, e2e_event_deployment.max_delta_counter_};
+}
+
+}  // namespace
+
 SkeletonEvent::SkeletonEvent(Skeleton& parent,
                              const ElementFqId element_fq_id,
                              const std::string_view event_name,
@@ -37,7 +55,8 @@ SkeletonEvent::SkeletonEvent(Skeleton& parent,
       getter_sample_tracker_{kMaxConcurrentFieldGetterSamplePtrs},
       qm_event_update_notifications_registered_{false},
       asil_b_event_update_notifications_registered_{false},
-      e2e_header_storage_{std::move(e2e_header_storage)}
+      e2e_header_storage_{std::move(e2e_header_storage)},
+      e2e_profile_config_{ResolveE2EProfileConfiguration(event_properties_, e2e_header_storage_)}
 {
 }
 
@@ -52,20 +71,14 @@ Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void> sample,
     // coverity[autosar_cpp14_a5_3_2_violation]
     auto slot = ptr->GetReferencedSlot();
 
-    if (event_properties_.GetE2EEventDeployment().has_value() && (e2e_header_storage_ != nullptr) &&
-        (slot < e2e_header_storage_->size()))
+    if (e2e_profile_config_.has_value() && (slot < e2e_header_storage_->size()))
     {
-        const auto& e2e_event_deployment = event_properties_.GetE2EEventDeployment().value();
-        const e2e::ProfileConfiguration profile_config{e2e_event_deployment.data_id_,
-                                                       e2e_event_deployment.max_delta_counter_};
         auto& header = (*e2e_header_storage_)[slot];
         const score::cpp::span<std::byte> header_span{header.data(), header.size()};
         const score::cpp::span<const std::byte> payload_span{static_cast<const std::byte*>(ptr->get()),
                                                              event_sample_size_info_.Size()};
-        const auto counter_used = e2e_protect_context_.next_counter;
-        score::cpp::ignore = e2e::ProtectMessage(header_span, payload_span, profile_config, e2e_protect_context_);
-        score::mw::log::LogDebug("lola") << "E2E protect: element" << element_fq_id_ << "slot" << slot << "data_id"
-                                         << e2e_event_deployment.data_id_ << "counter" << counter_used;
+        score::cpp::ignore =
+            e2e::ProtectMessage(header_span, payload_span, e2e_profile_config_.value(), e2e_protect_context_);
     }
 
     // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall

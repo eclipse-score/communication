@@ -188,6 +188,7 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     /// \brief Injected, scaffolding-only per-slot POC E2E header storage; shared with consuming proxy events by the
     ///        harness that wires them together. Null when the event has no configured E2E profile.
     std::shared_ptr<e2e::HeaderStorage> e2e_header_storage_;
+    std::optional<e2e::ProfileConfiguration> e2e_profile_config_;
     e2e::ProtectContext e2e_protect_context_{};
 };
 
