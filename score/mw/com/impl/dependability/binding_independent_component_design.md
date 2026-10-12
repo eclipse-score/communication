@@ -137,3 +137,14 @@ A field in ara::com is semantically an event, with some additional properties:
 
 Therefore, we decided to realize a field on the **binding independent** level as composition of an event and
 service-methods for set/get.
+
+# Method communication in `LoLa`
+
+## Introduction
+
+Methods in `mw::com` are class templates parameterized with the `MethodReturnType` and the `MethodInArgType`s.
+They differ between provider (skeleton) and consumer (proxy) side regarding their functionality.
+`mw::com` proxies and skeletons contain members of the related template classes. The binding independent structural
+model/class diagram is discussed in
+[Skeleton/Proxy Binding architecture](../skeleton_proxy/README.md)
+
