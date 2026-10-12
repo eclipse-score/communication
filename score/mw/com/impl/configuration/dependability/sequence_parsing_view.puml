@@ -2,7 +2,7 @@
 title "Sequence View: Configuration Parsing & Validation"
 hide footbox
 
-participant "<u>:Process</u>\nara::com User" as Process
+participant "<u>:Process</u>\nmw::com User" as Process
 participant "<u>impl::Runtime</u>" as Runtime
 participant "<u>:IConfigurationParsingStrategy</u>" as Strategy
 participant "<u>:ConfigurationValidator</u>" as Validator

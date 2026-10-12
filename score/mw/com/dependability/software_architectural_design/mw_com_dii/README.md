@@ -155,8 +155,7 @@ At least the following interfaces (taken from `mw::core::Map` resp. `std::map`) 
 - `size()`
 - `empty()`
 
-where `mw::com:GenericProxyEvent` is very similar to strongly typed/generated events as specified in SWS_CM_00005 and
-chapter 8.1.3 API Reference in the AUTOSAR SWS Communication Management.
+where `mw::com:GenericProxyEvent` is very similar to strongly typed/generated events.
 These are the deviations:
 
 1. The underlying event data type is `void` (as its exact type is unknown)
@@ -175,8 +174,7 @@ The data type (see [here](#high-level-solution-proposal-for-mwcom)) for the fiel
 `mw::com::GenericProxy` shall be structurally the same as the [EventMap](#map-for-events). Only difference is, that the
 type is an `mw::com:GenericProxyField` instead of `mw::com:GenericProxyEvent`
 
-where `mw::com:GenericProxyField` is very similar to strongly typed/generated fields as specified in SWS_CM_00008 and
-chapter 8.1.3 API Reference in the AUTOSAR SWS Communication Management.
+where `mw::com:GenericProxyField` is very similar to strongly typed/generated fields.
 These are the deviations:
 
 1. The underlying field data type is `void` (as its exact type is unknown)

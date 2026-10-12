@@ -3,7 +3,7 @@ title "Sequence Startup View"
 hide footbox
 
 participant "<u>:OS" as OS
-participant "<u>:Process</u>\nara::com User" as Process
+participant "<u>:Process</u>\nmw::com User" as Process
 participant "<u>impl::Runtime:static:</u>" as Runtime
 participant "<u>impl::Runtime:SingletonInstance</u>" as RuntimeInstance
 participant "<u>:Configuration</u>" as Configuration
