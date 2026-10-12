@@ -125,9 +125,10 @@ communication/
 ## Documentation
 
 ### For Users
+
 - [User Guide](score/mw/com/README.md) - Getting started with the API
 - [API Reference](score/mw/com/design/README.md) - Detailed API documentation
-- [Tutorial](score/mw/com/doc/tutorial/README.md) - Guided user-facing API walkthrough
+- [Tutorial](https://eclipse-score.github.io/communication/latest/score/mw/com/doc/tutorial/README.html) - Guided user-facing API walkthrough
 
 ### For Developers
 - [Architecture Guide](score/mw/com/design/README.md) - System architecture overview
