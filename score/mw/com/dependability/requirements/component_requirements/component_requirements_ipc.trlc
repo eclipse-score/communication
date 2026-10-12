@@ -1124,6 +1124,13 @@ section "com" {
             version = 1
         }
 
+        ScoreReq.CompReq ProxyRejectsConstructionWhenSharedMemoryAccessIsDeniedByAcl {
+            description = '''{{Proxy}} construction shall fail, returning an {{score::result::Error}} containing {{ComErrc::kBindingFailure}} to the user via {{Proxy::Create()}} or {{GenericProxy::Create()}}, if the configured ACL (access control list) of a control or data shared memory segment does not grant the consumer's user id access, instead of proceeding with an inaccessible memory region.'''
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.FEAT_AccessControlListForProducer@1, mw_com_fta.WrongAcl]
+            version = 1
+        }
+
         /* broken_link_c/issue/5899238 */
         ScoreReq.CompReq PerformActiveBoundCheckingOnDereferencingOfOffsetPointer {
             description = '''Any dereferenciation of an offset pointer shall be subject to active bound checking.
