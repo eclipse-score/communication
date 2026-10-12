@@ -750,9 +750,10 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferDoesNotRemoveSharedMemor
     const auto after_shared_memory_control_qm_usage_counter = control_qm_shared_memory_resource_mock_.use_count();
     const auto after_shared_memory_data_usage_counter = data_shared_memory_resource_mock_.use_count();
 
-    // Then the shared memory shared pointers in the skeleton will not be destroyed in PrepareStopOffer
-    EXPECT_EQ(after_shared_memory_control_qm_usage_counter, before_shared_memory_control_qm_usage_counter);
-    EXPECT_EQ(after_shared_memory_data_usage_counter, before_shared_memory_data_usage_counter);
+    // Then the skeleton drops its shared pointers to the shared memory (without removing it), so that a later
+    // PrepareOffer() of the same skeleton starts like a newly created skeleton
+    EXPECT_EQ(after_shared_memory_control_qm_usage_counter, before_shared_memory_control_qm_usage_counter - 1);
+    EXPECT_EQ(after_shared_memory_data_usage_counter, before_shared_memory_data_usage_counter - 1);
 }
 
 TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferDoesNotRemoveUsageMarkerFileIfUsageMarkerFileCannotBeLocked)

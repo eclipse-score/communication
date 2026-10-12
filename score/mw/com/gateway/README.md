@@ -147,8 +147,7 @@ Triggered when a locally provided service is discovered by the Source Gateway.
    `expected-received-services`. If not, it returns `GatewayErrorc::kNonWhitelistedService` immediately.
 9. On the destination side, if a skeleton for this `InstanceSpecifier` **already exists** (service bounced and
    reappeared), `GatewayApplication` reuses the existing `GenericSkeleton` — it calls `OfferService()` on it and
-   re-registers active event subscriptions, then returns. No new skeleton is created. This avoids zeroing the
-   shared-memory `EventSubscriptionControl` while local consumers hold active subscriptions.
+   re-registers active event subscriptions, then returns. No new skeleton is created.
 10. On the destination side, otherwise `GatewayApplication` calls `GenericSkeleton::Create(InstanceSpecifier,
     GenericSkeletonServiceElementInfo)`. The skeleton reads deployment info from `mw_com_config.json`. It either
     reuses source-domain shared-memory objects (MemorySharing) or creates its own (Copying).
@@ -173,9 +172,10 @@ Triggered when a previously forwarded service disappears on the source side.
 3. The transport layer forwards a `StopOfferService` message to the destination gateway.
 4. On the destination side, the transport layer calls `GatewayCore::StopOfferService(InstanceSpecifier)`.
 5. On the destination side, `GatewayApplication` calls `GenericSkeleton::StopOfferService()`.
-   > **Important:** The `GenericSkeleton` instance is **kept alive** (not destroyed). Destroying it would
-   > zero the shared-memory `EventSubscriptionControl`, crashing any local consumer proxy that still holds an
-   > active subscription. The skeleton is reused if the service reappears (see step 9 of Service Provision).
+   > **Note:** The `GenericSkeleton` instance is **kept alive** (not destroyed), so that it can be reused if the
+   > service reappears (see step 9 of Service Provision). Local consumer proxies do not depend on this: neither
+   > stopping nor destroying the skeleton zeroes the shared-memory `EventSubscriptionControl`, and while a proxy
+   > holds the service instance usage marker lock, a new or re-offered skeleton reuses the existing shared memory.
 
 ---
 
