@@ -13,11 +13,28 @@
 
 @startuml
 
+interface "OS" as os <<interface>> {
+  +score::os::Channel
+  +score::os::Dispatch
+  +score::os::IoFunc
+  +score::os::Fcntl
+  +score::os::Signal
+  +score::os::qnx::Timer
+  +score::os::SysUio
+  +score::os::Unistd
+}
+note right of os
+  QNX dispatch is the safety-relevant (ASIL B) backend and the
+  primary reason this dependency exists; Unix Domain (QM, Linux)
+  uses a smaller subset of the same score::os wrappers. Thread/
+  synchronization primitives are also arguably part of the OS
+  abstraction but are left out here for brevity.
+end note
+
 namespace score::message_passing {
 
     class Engine {
         +Engine(memory_resource, logger)
-        +{static} GetDefaultOsResources()
     }
 
     interface IClientFactory {

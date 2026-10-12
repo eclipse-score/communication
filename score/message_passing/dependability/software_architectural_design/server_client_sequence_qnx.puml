@@ -1,0 +1,150 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+<style>
+.OS {
+    LineThickness 5.0
+}
+</style>
+
+skinparam sequenceArrowColor Black
+skinparam sequenceParticipantBackgroundColor White
+skinparam sequenceParticipantBorderColor Black
+skinparam sequenceLifeLineBorderColor Black
+skinparam sequenceGroupBorderColor DarkGray
+skinparam sequenceGroupBodyBackgroundColor #FAFAFA
+skinparam NoteBackgroundColor LightYellow
+skinparam NoteBorderColor Gray
+skinparam NoteTextAlignment left
+skinparam ParticipantFontName Courier
+skinparam sequenceFontName Courier
+skinparam ArrowFontName Courier
+
+title Server <-> Client Sequence Diagram (QNX: QNX Dispatch)
+
+note across : The Unix Domain counterpart is in server_client_sequence_linux.puml.\nBoth platforms expose the same public API.
+
+participant "ExternalClient" as ExternalClient
+participant "ClientConnection" as client_connection
+participant "QnxDispatchClientFactory" as qnx_dispatch_client_factory
+participant "QnxDispatchEngine" as qnx_dispatch_engine
+participant "QnxDispatchServer" as qnx_dispatch_server
+participant "QnxDispatchServerFactory" as qnx_dispatch_server_factory
+participant "ExternalServer" as ExternalServer
+
+' -----------------------------------------------------------------
+== Setup ==
+' -----------------------------------------------------------------
+
+ExternalServer -> qnx_dispatch_server_factory : (Create(protocol_config, server_config))
+note over qnx_dispatch_server_factory : Creates a QnxDispatchServer sharing\nthe factory's QnxDispatchEngine
+ExternalServer -> qnx_dispatch_server : (StartListening(\n  connect_callback,\n  disconnect_callback,\n  message_callback,\n  reply_callback\n))
+qnx_dispatch_server -> qnx_dispatch_engine : StartResourceManager(path)
+note over qnx_dispatch_server : Server now accepts\nincoming connections
+
+ExternalClient -> qnx_dispatch_client_factory : (Create(protocol_config, client_config))
+note over client_connection : Created by the factory, sharing\nthe factory's engine
+ExternalClient -> client_connection : (Start(state_callback, notify_callback))
+note over client_connection : Invokes state_callback(kStarting)
+note left of client_connection : State: **kStarting**
+
+' -----------------------------------------------------------------
+== Connection Establishment ==
+' -----------------------------------------------------------------
+
+loop until server is available
+  client_connection -> qnx_dispatch_engine : TryOpenClientConnection(identifier)
+end
+client_connection -> qnx_dispatch_engine : RegisterPosixEndpoint(endpoint)
+note over qnx_dispatch_engine, qnx_dispatch_server : The resource manager connect handler runs on the engine thread:\nQnxDispatchServer creates its own ServerConnection, using the\nengine directly - not the abstract ISharedResourceEngine.
+qnx_dispatch_server -> qnx_dispatch_engine : AttachConnection(connection)
+
+note over qnx_dispatch_server : ConnectCallback(connection) invoked; server app returns UserData,\noptionally wrapping an IConnectionHandler instance
+
+note over client_connection : Invokes state_callback(kReady)
+note left of client_connection : State: **kReady**
+
+' -----------------------------------------------------------------
+== Fire-and-Forget: IClientConnection::Send() ==
+' -----------------------------------------------------------------
+
+ExternalClient -> client_connection : (Send(message))
+note left : Non-blocking;\nreturns immediately
+client_connection -> qnx_dispatch_engine : SendProtocolMessage(fd, code, message)
+note over qnx_dispatch_engine : Delivers the message through the resource manager,\nwhich calls into QnxDispatchServer
+note over qnx_dispatch_server : Invokes MessageCallback(connection, message)\nor IConnectionHandler::OnMessageSent(connection, message)
+
+' -----------------------------------------------------------------
+== Synchronous Request/Reply: IClientConnection::SendWaitReply() ==
+' -----------------------------------------------------------------
+
+ExternalClient -> client_connection : (SendWaitReply(message, reply_buffer))
+note left : **Blocking** — caller\nwaits until reply arrives
+activate client_connection
+client_connection -> qnx_dispatch_engine : SendProtocolMessage(fd, code, message)
+note over qnx_dispatch_server : Invokes IConnectionHandler::OnMessageSentWithReply(\n  connection, message\n)
+ExternalServer -> qnx_dispatch_server : (Reply(reply))
+note over ExternalServer : Reply is triggered from\nthe reply_callback
+note over qnx_dispatch_server : Sends the reply through the resource manager
+client_connection --> ExternalClient : (return reply span)
+deactivate client_connection
+
+' -----------------------------------------------------------------
+== Asynchronous Request/Reply: IClientConnection::SendWithCallback() ==
+' -----------------------------------------------------------------
+
+ExternalClient -> client_connection : (SendWithCallback(message, reply_callback))
+note left : Non-blocking;\nreturns immediately
+client_connection -> qnx_dispatch_engine : SendProtocolMessage(fd, code, message)
+note over qnx_dispatch_server : Invokes IConnectionHandler::OnMessageSentWithReply(\n  connection, message\n)
+ExternalServer -> qnx_dispatch_server : (Reply(reply))
+note over qnx_dispatch_server : Sends the reply through the resource manager
+note over client_connection : Invokes reply_callback(reply)
+
+' -----------------------------------------------------------------
+== Server Notification: IServerConnection::Notify() ==
+' -----------------------------------------------------------------
+
+ExternalServer -> qnx_dispatch_server : (Notify(message))
+note over ExternalServer : Unsolicited push\nfrom server to client
+note over qnx_dispatch_server : Sends the notification through the resource manager
+note over client_connection : Invokes notify_callback(message)
+
+' -----------------------------------------------------------------
+== Disconnection ==
+' -----------------------------------------------------------------
+
+ExternalClient -> client_connection : (Stop())
+note left : Also triggered by:\n- IServerConnection::RequestDisconnect()\n- peer disconnect / IO error
+
+note over client_connection : Invokes state_callback(kStopping)
+note left of client_connection : State: **kStopping**
+
+client_connection -> qnx_dispatch_engine : CloseClientConnection(client_fd)
+note over qnx_dispatch_engine, qnx_dispatch_server : The server detects the disconnect and tears\ndown its ServerConnection
+note over qnx_dispatch_server : DisconnectCallback(connection) invoked\nor IConnectionHandler::OnDisconnect(connection)
+
+note over client_connection : Invokes state_callback(kStopped)
+note left of client_connection : State: **kStopped**\nSafe to destroy or Restart()
+
+' -----------------------------------------------------------------
+== Teardown ==
+' -----------------------------------------------------------------
+
+ExternalServer -> qnx_dispatch_server : (StopListening())
+qnx_dispatch_server -> qnx_dispatch_engine : StopResourceManager()
+note over qnx_dispatch_server : Releases callbacks;\ncloses all remaining\nserver connections
+
+@enduml

@@ -46,7 +46,7 @@ The module consists of two main components:
 - **Zero-Copy**: Shared-memory based data exchange [`score/mw/com/message_passing/`](score/mw/com/message_passing/)
 
 ### 2. Message Passing (Low-Level Foundation)
-- **Asynchronous Communication**: Non-blocking message exchange [`score/message_passing/dependability/software_architectural_design/`](score/message_passing/dependability/software_architectural_design/client-server.md)
+- **Asynchronous Communication**: Non-blocking message exchange [`score/message_passing/docs/`](score/message_passing/docs/client-server.md)
 - **Multi-Channel**: Multiple senders to single receiver communication (unidirectional n-to-1) [`score/message_passing/`](score/message_passing/)
 - **OS Abstraction**: POSIX and QNX-specific implementations [`score/message_passing/unix_domain/`](score/message_passing/unix_domain/) | [`score/message_passing/qnx_dispatch/`](score/message_passing/qnx_dispatch/)
 
@@ -128,7 +128,7 @@ communication/
 ### For Developers
 - [Architecture Guide](score/mw/com/design/README.md) - System architecture overview
 - [Service Discovery Design](score/mw/com/design/service_discovery/README.md) - Service discovery implementation
-- [Message Passing Design](score/mw/com/message_passing/design/README.md) - Low-level messaging details
+- [Message Passing Design](score/message_passing/docs/client-server.md) - Low-level messaging details
 - [Safety Requirements](score/mw/com/doc/assumptions/README.md) - Safety assumptions and requirements
 
 ## Contributing

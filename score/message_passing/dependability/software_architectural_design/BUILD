@@ -18,14 +18,22 @@ load(
 
 architectural_design(
     name = "message_passing_architectural_design",
+    dynamic = [
+        "server_client_sequence_linux.puml",
+        "server_client_sequence_qnx.puml",
+        "server_client_os_fault_sequence_linux.puml",
+        "server_client_os_fault_sequence_qnx.puml",
+        "server_client_internal_fault_sequence.puml",
+    ],
+    internal_api = [
+        "private_api.puml",
+    ],
     maturity = "development",
     public_api = [
         "public_api.puml",
     ],
     static = [
         "static_design.puml",
-        "client-server.md",
-        "private_api.puml",
     ],
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/message_passing/dependability:__subpackages__"],
