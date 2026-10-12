@@ -75,10 +75,10 @@ bool ProtectMessage(const score::cpp::span<std::byte> header,
     return true;
 }
 
-CheckOutcome CheckMessage(const score::cpp::span<const std::byte> header,
-                          const score::cpp::span<const std::byte> payload,
-                          const ProfileConfiguration configuration,
-                          CheckContext& check_context) noexcept
+RawCheckOutcome CheckMessage(const score::cpp::span<const std::byte> header,
+                             const score::cpp::span<const std::byte> payload,
+                             const ProfileConfiguration configuration,
+                             CheckContext& check_context) noexcept
 {
     if (header.size() != kProfileStubHeaderSize)
     {
