@@ -620,7 +620,7 @@ section "LoLa" {
             }
 
             // ID: 6166357
-            ScoreReq.FailureMode SucceedsDespiteAnError {
+            ScoreReq.FailureMode GetNewSamplesSucceedsDespiteAnError {
                 guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
                 description = "A user calls GetNewSamples() on a proxy instance and receives a sample count, even though he should have received an error."
                 failureeffect = "Receive a sample count instead of an error, implies that the sample count is wrong. Receiving an error instead of a sample count, implies that the sample count is wrong."
