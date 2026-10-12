@@ -172,8 +172,9 @@ Triggered when a previously forwarded service disappears on the source side.
 3. The transport layer forwards a `StopOfferService` message to the destination gateway.
 4. On the destination side, the transport layer calls `GatewayCore::StopOfferService(InstanceSpecifier)`.
 5. On the destination side, `GatewayApplication` calls `GenericSkeleton::StopOfferService()`.
-   > **Note:** The `GenericSkeleton` instance is **kept alive** (not destroyed), so that it can be reused if the
-   > service reappears (see step 9 of Service Provision).
+   > **Important:** The `GenericSkeleton` instance is **kept alive** (not destroyed). Destroying it would
+   > zero the shared-memory `EventSubscriptionControl`, crashing any local consumer proxy that still holds an
+   > active subscription. The skeleton is reused if the service reappears (see step 9 of Service Provision).
 
 ---
 
