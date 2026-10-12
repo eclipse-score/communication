@@ -21,9 +21,8 @@ use core::fmt::Debug;
 use core::future::Future;
 use core::ops::Deref;
 use score_com_concept::{
-    CommData, MethodArgs, MethodArgsAllocate, MethodArgsPtrTuple, MethodCaller, MethodHandler,
-    MethodHandlerCall, MethodInArgAllocator, MethodInArgMaybeUninit, MethodInArgPtr,
-    MethodReturnSample, Result, Runtime, ZeroCopyArgs,
+    CommData, MethodArgs, MethodArgsAllocate, MethodArgsPtrTuple, MethodCaller, MethodHandler, MethodHandlerCall,
+    MethodInArgAllocator, MethodInArgMaybeUninit, MethodInArgPtr, MethodReturnSample, Result, Runtime, ZeroCopyArgs,
 };
 
 /// Placeholder return sample for a method call result.
@@ -90,10 +89,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
     }
 
     #[allow(clippy::manual_async_fn)]
-    fn invoke_with_copy<'a>(
-        &'a self,
-        _args: Args,
-    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a {
+    fn invoke_with_copy<'a>(&'a self, _args: Args) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a {
         async move { todo!("Implement the logic to call the method with copied arguments") }
     }
 
@@ -112,9 +108,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
     where
         Args: MethodArgsPtrTuple<R>,
     {
-        async move {
-            todo!("Implement the logic to call the method with pre-allocated argument pointers")
-        }
+        async move { todo!("Implement the logic to call the method with pre-allocated argument pointers") }
     }
 }
 
@@ -171,10 +165,7 @@ impl<T: CommData + Debug, R: Runtime> MethodCaller<(), T, R> for LolaFieldGetCal
     }
 
     #[allow(clippy::manual_async_fn)]
-    fn invoke_with_copy<'a>(
-        &'a self,
-        _args: (),
-    ) -> impl Future<Output = Result<R::MethodReturnSample<T>>> + 'a {
+    fn invoke_with_copy<'a>(&'a self, _args: ()) -> impl Future<Output = Result<R::MethodReturnSample<T>>> + 'a {
         async move { todo!("Implement field get via MethodType::kGet") }
     }
 
@@ -193,9 +184,7 @@ impl<T: CommData + Debug, R: Runtime> MethodCaller<(), T, R> for LolaFieldGetCal
     where
         (): MethodArgsPtrTuple<R>,
     {
-        async move {
-            todo!("Implement zero-copy invoke for LolaFieldGetCaller if C++ side support is available")
-        }
+        async move { todo!("Implement zero-copy invoke for LolaFieldGetCaller if C++ side support is available") }
     }
 }
 
@@ -217,10 +206,7 @@ impl<T: CommData + Debug, R: Runtime> MethodCaller<(T,), T, R> for LolaFieldSetC
     }
 
     #[allow(clippy::manual_async_fn)]
-    fn invoke_with_copy<'a>(
-        &'a self,
-        _args: (T,),
-    ) -> impl Future<Output = Result<R::MethodReturnSample<T>>> + 'a {
+    fn invoke_with_copy<'a>(&'a self, _args: (T,)) -> impl Future<Output = Result<R::MethodReturnSample<T>>> + 'a {
         async move { todo!("Implement field set via MethodType::kSet") }
     }
 
@@ -239,8 +225,6 @@ impl<T: CommData + Debug, R: Runtime> MethodCaller<(T,), T, R> for LolaFieldSetC
     where
         (T,): MethodArgsPtrTuple<R>,
     {
-        async move {
-            todo!("Implement zero-copy invoke for LolaFieldSetCaller if C++ side support is available")
-        }
+        async move { todo!("Implement zero-copy invoke for LolaFieldSetCaller if C++ side support is available") }
     }
 }

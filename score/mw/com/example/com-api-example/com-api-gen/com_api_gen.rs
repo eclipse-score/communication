@@ -102,4 +102,3 @@ interface!(
         calculate_pressure_imbalance: Method(Tire, Tire) -> PressureImbalance,
     }
 );
-
