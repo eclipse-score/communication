@@ -35,4 +35,4 @@ central counter buried inside `SampleReferenceTracker` is atomic.
 
 This sequence diagram depicts the mechanics behind the reference counting on proxy side:
 
-<img alt="SAMPLEPTR_REF_COUNTING" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/sampleptr_ref_counting.puml">
+<img alt="SAMPLEPTR_REF_COUNTING" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/dependability/sample_management_pointers/sampleptr_ref_counting.puml">

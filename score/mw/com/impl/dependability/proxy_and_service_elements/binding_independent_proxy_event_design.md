@@ -10,11 +10,11 @@ class template (just like `impl::SkeletonField<SampleType>`), but in this case t
 The central API entry point at proxy/consumer side to access event samples (after a successful subscription) is the
 `GetNewSamples()` method of an event instance. The activities taken by the proxy side implementation are as follows:
 
-<img alt="GET_NEW_SAMPLES_ACTIVITY" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/get_new_samples_activity.puml">
+<img alt="GET_NEW_SAMPLES_ACTIVITY" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/dependability/proxy_and_service_elements/get_new_samples_activity.puml">
 
 The activity shown above thereby relies on activity `ReferenceNextEvent`, which is shown here:
 
-<img alt="LOLA_REFERENCE_NEXT_EVENT_ACTIVITY" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/lola_reference_next_event_activity.puml">
+<img alt="LOLA_REFERENCE_NEXT_EVENT_ACTIVITY" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/bindings/lola/dependability/event_data_control/lola_reference_next_event_activity.puml">
 
 The main proxy algorithm above the shared memory data structures is broken into three entities:
 `score::mw::com::impl::lola::ProxyEvent`, `score::mw::com::impl::lola::ProxyEventCommon` and `score::mw::com::impl::lola::SlotCollector`.

@@ -44,7 +44,7 @@ specification) class (see [Sys-Req-13525992](broken_link_c/issue/13525992)), der
 `impl::ProxyBase` (like `DummyProxy` example) and contains one member `events_`, which is a map of
 `impl::GenericProxyEvent` in the form of `mw::com::EventMap`.
 
-<img alt="GENERIC_PROXY_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/generic_proxy/generic_proxy_model.puml">
+<img alt="GENERIC_PROXY_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/dependability/generic_proxy_and_service_elements/generic_proxy_model.puml">
 
 Classes drawn with yellow background are extensions of the class diagram to support `GenericProxy` functionality beside
 "normal" proxies.

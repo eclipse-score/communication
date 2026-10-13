@@ -70,7 +70,7 @@ once we resort back to sideband channel communication for `Subscribe` and `Unsub
 We encapsulate the low-level mechanisms provided by `score::mw::com::message_passing` via
 class `lola::MessagePassingFacade`, which is shown in the following class model:
 
-<img alt="LOLA_MESSAGE_PASSING_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/lola_message_passing_model.puml">
+<img alt="LOLA_MESSAGE_PASSING_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/bindings/lola/messaging/dependability/lola_message_passing_model.puml">
 
 ### Event subscription
 
