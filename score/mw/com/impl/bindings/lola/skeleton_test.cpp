@@ -252,6 +252,7 @@ TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferFailsOnShmCre
         skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
 }
 
+#ifdef REQUIRE_TYPED_MEMORY
 TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferWithTraceCallback)
 {
     RecordProperty("Verifies", "SCR-19178261, SCR-18166404");
@@ -269,6 +270,16 @@ TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferWithTraceCall
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
     InitialiseSkeleton(GetValidInstanceIdentifier());
+
+    EXPECT_CALL(shared_memory_factory_mock_,
+                Create(test::kControlChannelPathQm, _, _, WritablePermissionsMatcher(), false));
+    EXPECT_CALL(shared_memory_factory_mock_,
+                Create(test::kDataChannelPath, _, _, ReadablePermissionsMatcher(), true))
+        .WillOnce(
+            WithArg<1>([this](auto initialize_callback) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
+                std::invoke(initialize_callback, data_shared_memory_resource_mock_);
+                return data_shared_memory_resource_mock_;
+            }));
 
     EXPECT_CALL(*data_shared_memory_resource_mock_, IsShmInTypedMemory()).WillOnce(Return(true));
 
@@ -319,6 +330,50 @@ TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferWithTraceCall
     EXPECT_TRUE(
         skeleton_->PrepareOffer(events_, fields_, register_shm_object_trace_callback.AsStdFunction()).has_value());
 }
+#else
+TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferWithTraceCallbackWhenTypedMemoryIsNotRequired)
+{
+    RecordProperty("Verifies", "SCR-19178261, SCR-18166404");
+    RecordProperty("Description",
+                   "Checks whether trace registration is still performed for the DATA shm-object when typed-memory "
+                   "support is not required by the build configuration.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    using namespace memory::shared;
+
+    MockFunction<void(std::string_view, impl::ServiceElementType, ISharedMemoryResource::FileDescriptor, void*)>
+        register_shm_object_trace_callback{};
+
+    // Given a Skeleton constructed from a valid identifier referencing a QM deployment
+    InitialiseSkeleton(GetValidInstanceIdentifier()).WithNoConnectedProxy();
+
+    EXPECT_CALL(shared_memory_factory_mock_,
+                Create(test::kControlChannelPathQm, _, _, WritablePermissionsMatcher(), false));
+    EXPECT_CALL(shared_memory_factory_mock_,
+                Create(test::kDataChannelPath, _, _, ReadablePermissionsMatcher(), false))
+        .WillOnce(
+            WithArg<1>([this](auto initialize_callback) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
+                std::invoke(initialize_callback, data_shared_memory_resource_mock_);
+                return data_shared_memory_resource_mock_;
+            }));
+
+    EXPECT_CALL(*data_shared_memory_resource_mock_, IsShmInTypedMemory()).Times(0);
+    EXPECT_CALL(*data_shared_memory_resource_mock_, GetFileDescriptor())
+        .WillOnce(Return(kDummyShmObjectFileDescriptor));
+    EXPECT_CALL(*data_shared_memory_resource_mock_, getBaseAddress()).WillOnce(Return(kDummyShmObjectBaseAddress));
+
+    EXPECT_CALL(register_shm_object_trace_callback,
+                Call(tracing::TracingRuntime::kDummyElementNameForShmRegisterCallback,
+                     tracing::TracingRuntime::kDummyElementTypeForShmRegisterCallback,
+                     kDummyShmObjectFileDescriptor,
+                     kDummyShmObjectBaseAddress));
+
+    // Then PrepareOffer will succeed
+    EXPECT_TRUE(
+        skeleton_->PrepareOffer(events_, fields_, register_shm_object_trace_callback.AsStdFunction()).has_value());
+}
+#endif
 
 using SkeletonPrepareOfferFixture = SkeletonTestMockedSharedMemoryFixture;
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferCreatesSharedMemoryIfOpeningAndFLockingServiceUsageMarkerFileSucceeds)
