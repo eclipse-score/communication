@@ -171,7 +171,7 @@ class Proxy : public ProxyBinding
     ///
     /// \return result which contains an error if setup on the proxy or skeleton side failed or if the message passing
     /// communication with the skeleton failed.
-    score::Result<void> SetupMethods(const std::size_t additional_shm_size_bytes = 0) override;
+    score::Result<void> SetupMethods(const std::size_t additional_shm_size_bytes) override;
 
     QualityType GetQualityType() const noexcept;
 

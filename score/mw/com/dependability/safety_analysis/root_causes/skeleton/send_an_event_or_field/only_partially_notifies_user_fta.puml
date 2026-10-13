@@ -15,15 +15,15 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Only partially notifies user", "Communication.SendingEventOnlyPartiallyNotifiesConsumer")
+$FailureMode("Only partially notifies user", "Communication.SendingEventOnlyPartiallyNotifiesConsumer")
 
 $OrGate("Gate1", "Communication.SendingEventOnlyPartiallyNotifiesConsumer")
 $IntermediateEvent("Users did not successfully register", "Event1", "Gate1")
-$BasicEvent("Receive error on registration", "Communication.ReceiveErrorOnRegistration", "Event1")
+$RootCause("Receive error on registration", "ReceiveErrorOnRegistration", "Event1")
 $IntermediateEvent("Notification is not send out", "Event3", "Gate1")
 $IntermediateEvent("Internal registration was lost", "Event2", "Gate1")
 $OrGate("Gate2", "Event2")
-$BasicEvent("Server process crash", "Communication.ServerProcessCrash", "Gate2")
-$BasicEvent("Algorithmic Bug", "Communication.AlgorithmicBug", "Gate2")
+$RootCause("Server process crash", "ServerProcessCrash", "Gate2")
+$RootCause("Algorithmic Bug", "AlgorithmicBug", "Gate2")
 
 @enduml

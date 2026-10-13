@@ -22,6 +22,5 @@ ScoreReq.AoU ExampleAoU {
     safety = ScoreReq.Asil.B
     note = "Example note"
     version = 1
-    mitigates = "FailureModeName"
 }
 

@@ -14,6 +14,7 @@
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 
+#include <algorithm>
 #include <optional>
 
 namespace score::mw::com::impl::lola
@@ -250,10 +251,7 @@ EventSlotStatus::EventTimeStamp EventDataControlComposite<AtomicIndirectorType>:
         if (!slot.IsInvalid() && !slot.IsInWriting())
         {
             const auto slot_time_stamp = slot.GetTimeStamp();
-            if (latest_time_stamp < slot_time_stamp)
-            {
-                latest_time_stamp = slot_time_stamp;
-            }
+            latest_time_stamp = std::max(latest_time_stamp, slot_time_stamp);
         }
     }
     return latest_time_stamp;

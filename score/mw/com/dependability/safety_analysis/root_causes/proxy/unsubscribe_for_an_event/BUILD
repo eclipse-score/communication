@@ -12,8 +12,9 @@
 # *******************************************************************************
 
 filegroup(
-    name = "does_not_unsubscribe_fta",
+    name = "unsubscribe_for_an_event_fta",
     srcs = [
+        "does_not_implicit_remove_receive_handler_fta.puml",
         "does_not_unsubscribe_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],

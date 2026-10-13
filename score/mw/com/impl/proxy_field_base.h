@@ -62,7 +62,7 @@ class ProxyFieldBase : public EnableReferenceToMoveableFromThis<ProxyFieldBase>
     ProxyFieldBase(ProxyFieldBase&&) noexcept = default;
     ProxyFieldBase& operator=(ProxyFieldBase&&) noexcept = default;
 
-    virtual ~ProxyFieldBase() noexcept = default;
+    ~ProxyFieldBase() noexcept override = default;
 
     /**
      * \name Tag-gated interface

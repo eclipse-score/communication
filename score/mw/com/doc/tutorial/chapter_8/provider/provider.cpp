@@ -83,7 +83,7 @@ int main()
             std::uint64_t sum{0U};
             for (std::size_t index = 0U; index < count; ++index)
             {
-                sum += array.internal_array_[index];
+                sum += array.internal_array_.at(index);
             }
             result = static_cast<std::uint32_t>(sum / count);
             std::cout << "arithmetic_mean over " << count << " elements = " << result << std::endl;

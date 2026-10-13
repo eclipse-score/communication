@@ -11,6 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+
 # `Sarif.Multitool` is a self-contained, single-file .NET publish (bundles the
 # .NET runtime; no `dotnet`/`npm`/`npx`/network access needed at runtime), so
 # it runs standalone. `data = glob(["**"])` keeps its (unused but harmless)

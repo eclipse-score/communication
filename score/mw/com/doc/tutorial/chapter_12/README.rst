@@ -131,7 +131,7 @@ The `SkeletonComponent` implementation encapsulates offer/allocate/send behavior
 
 .. literalinclude:: provider/skeleton_component.cpp
    :language: cpp
-   :lines: 27-69
+   :lines: 26-64
    :caption: provider/skeleton_component.cpp
 
 

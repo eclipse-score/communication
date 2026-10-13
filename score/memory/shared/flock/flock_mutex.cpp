@@ -54,6 +54,8 @@ bool FlockMutex::try_lock() noexcept
     return true;
 }
 
+// unlock() releases the lock and is logically non-const, consistent with lock()/try_lock() (BasicLockable).
+// NOLINTNEXTLINE(readability-make-member-function-const)
 void FlockMutex::unlock() noexcept
 {
     constexpr auto unlocking_operation = score::os::Fcntl::Operation::kUnLock;

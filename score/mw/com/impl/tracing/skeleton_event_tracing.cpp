@@ -174,6 +174,16 @@ TracingData ExtractBindingTracingData(const impl::SampleAllocateePtr<void>& samp
         // Here we can't use a raw pointer / reference since we're using score::cpp::overload, and the function is not
         // replaceing the managed object, so this should be a const reference.
         // coverity[autosar_cpp14_a8_4_12_violation]
+        // Tracing is not supported on SomeIP
+        [](const someip::SampleAllocateePtr&) -> TracingData {
+            std::terminate();
+        },
+        // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
+        // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
+        // the function replaces the managed object".
+        // Here we can't use a raw pointer / reference since we're using score::cpp::overload, and the function is not
+        // replaceing the managed object, so this should be a const reference.
+        // coverity[autosar_cpp14_a8_4_12_violation]
         [&sample_type_size_info](const mock_binding::SampleAllocateePtr& ptr) -> TracingData {
             return {0U, {ptr.get(), sample_type_size_info.Size()}};
         },

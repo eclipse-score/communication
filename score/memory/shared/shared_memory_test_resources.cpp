@@ -15,6 +15,7 @@
 #include "score/memory/shared/shared_memory_factory.h"
 #include "score/os/utils/acl/i_access_control_list.h"
 
+// NOLINTNEXTLINE(bugprone-reserved-identifier): GoogleMock wildcard matcher, the name is fixed by GoogleMock
 using ::testing::_;
 using ::testing::AtMost;
 using ::testing::DoAll;
@@ -74,6 +75,7 @@ constexpr std::uint32_t kMaxBufferSize = 16384U;
 
 bool is_aligned(const volatile void* const p, const std::size_t n) noexcept
 {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): address-to-integer conversion is inherent here
     return reinterpret_cast<std::uintptr_t>(p) % n == 0;
 }
 

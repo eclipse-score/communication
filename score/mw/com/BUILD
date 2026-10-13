@@ -91,6 +91,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
     tags = ["FFI"],
     visibility = [

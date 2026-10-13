@@ -15,14 +15,13 @@
 Subclasses ``QemuProcess`` and replaces its internal ``_qemu`` with an
 :class:`IvshmemQemu` instance so the VM is launched with an ``ivshmem-plain`` device.
 
-The ``start()`` method is self-healing: it waits for stable SSH, runs ``pre_tests_phase``,
-and restarts the QEMU process up to ``max_boot_attempts`` times if sshd never comes up.
+The ``start()`` method is self-healing: it waits for stable SSH and restarts the QEMU
+process up to ``max_boot_attempts`` times if sshd never comes up.
 """
 
 import logging
 import time
 
-from score.itf.plugins.qemu.checks import pre_tests_phase
 from score.itf.plugins.qemu.qemu_process import QemuProcess
 from score.itf.plugins.qemu.qemu_target import QemuTarget
 
@@ -30,8 +29,11 @@ from .ivshmem_qemu import IvshmemQemu
 
 logger = logging.getLogger(__name__)
 
+INTERVM_INTERFACE = "vtnet1"
+INTERVM_NETMASK = "255.255.255.0"
 
-def _wait_for_ssh(target, total_timeout: int = 180, interval: int = 3, stable_successes: int = 3):
+
+def _wait_for_ssh(target, total_timeout: int = 180, interval: int = 1, stable_successes: int = 2):
     """Wait until the VM *stably* serves SSH.
 
     Early-boot sshd is briefly unstable, so require several consecutive successes to
@@ -80,18 +82,24 @@ class DualQemuProcess(QemuProcess):
         vm_index=0,
         max_boot_attempts=3,
         boot_timeout=100,
+        intervm_address=None,
     ):
         super().__init__(
             path_to_qemu_image,
             available_ram,
             available_cores,
+            network_adapters=[],
             port_forwarding=port_forwarding,
+            machine=vm_config.qemu_machine,
+            rootfs=None,
+            kernel_cmdline=vm_config.qemu_kernel_cmdline,
         )
         # Replace the base's default Qemu with our ivshmem-capable subclass.
         self._qemu = IvshmemQemu(
             path_to_qemu_image,
             available_ram,
             available_cores,
+            network_adapters=[],
             port_forwarding=port_forwarding,
             ivshmem_path=ivshmem_path,
             ivshmem_size=ivshmem_size,
@@ -99,8 +107,10 @@ class DualQemuProcess(QemuProcess):
             vm_index=vm_index,
         )
         self._vm_config = vm_config
+        self._vm_index = vm_index
         self._max_boot_attempts = max_boot_attempts
         self._boot_timeout = boot_timeout
+        self._intervm_address = intervm_address
         self._target = None
 
     def start(self):
@@ -110,8 +120,11 @@ class DualQemuProcess(QemuProcess):
             super().start()
             try:
                 self._target = QemuTarget(self, self._vm_config)
-                _wait_for_ssh(self._target, total_timeout=self._boot_timeout)
-                pre_tests_phase(self._target)
+                self._wait_for_console()
+                if self._intervm_address:
+                    logger.info("VM %d booted; using serial console for test control", self._vm_index)
+                else:
+                    _wait_for_ssh(self._target, total_timeout=self._boot_timeout)
                 return self
             except Exception as ex:  # pylint: disable=broad-except
                 last_error = ex
@@ -127,6 +140,51 @@ class DualQemuProcess(QemuProcess):
                     logger.exception("Failed to stop the wedged QEMU before retrying")
         raise RuntimeError(
             f"VM never booted into a usable state after {self._max_boot_attempts} attempts: {last_error}"
+        )
+
+    def _wait_for_console(self, timeout_s=90):
+        """Wait until the QNX shell on the serial console responds."""
+        deadline = time.monotonic() + timeout_s
+        last_error = None
+        while time.monotonic() < deadline:
+            try:
+                code, _ = self.console.run_sh_cmd_output("echo console-ready", timeout=5)
+                if code == 0:
+                    return
+                last_error = RuntimeError(f"rc={code}")
+            except Exception as error:  # pylint: disable=broad-except
+                last_error = error
+            time.sleep(1)
+        raise RuntimeError(f"VM console never responded within {timeout_s}s: {last_error}")
+
+    def configure_intervm_nic(self, timeout_s=90):
+        """Configure the test-only inter-VM NIC through the independent console."""
+        if not self._intervm_address:
+            return
+
+        deadline = time.monotonic() + timeout_s
+        last_error = None
+        while time.monotonic() < deadline:
+            try:
+                ready_code, _ = self.console.run_sh_cmd_output("echo console-ready", timeout=15)
+                if ready_code != 0:
+                    raise RuntimeError(f"console not ready (rc={ready_code})")
+                command = (
+                    f"if_up -p {INTERVM_INTERFACE} ; "
+                    f"ifconfig {INTERVM_INTERFACE} {self._intervm_address} "
+                    f"netmask {INTERVM_NETMASK} up ; "
+                    f"ifconfig {INTERVM_INTERFACE}"
+                )
+                exit_code, readback = self.console.run_sh_cmd_output(command, timeout=60)
+                if exit_code == 0 and self._intervm_address in readback:
+                    logger.info("VM configured %s as %s", INTERVM_INTERFACE, self._intervm_address)
+                    return
+                last_error = RuntimeError(f"rc={exit_code}, ifconfig said:\n{readback}")
+            except Exception as error:  # pylint: disable=broad-except
+                last_error = error
+            time.sleep(2)
+        raise RuntimeError(
+            f"Could not configure {INTERVM_INTERFACE} as {self._intervm_address} within {timeout_s}s: {last_error}"
         )
 
     def ensure_responsive(self, timeout: int = 30, stable_successes: int = 2):

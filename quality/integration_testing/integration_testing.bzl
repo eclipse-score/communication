@@ -11,6 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+"""Macros for declaring integration tests that run inside an image."""
+
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@score_itf//:defs.bzl", "py_itf_test")
@@ -31,6 +33,15 @@ def _extend_list_in_kwargs_without_duplicates(kwargs, key, values):
     return kwargs
 
 def integration_test(name, srcs, filesystem, **kwargs):
+    """Declares an integration test that runs on a Linux docker image or a QNX QEMU image.
+
+    Args:
+      name: Name of the test target.
+      srcs: Test sources, forwarded to the underlying py_itf_test.
+      filesystem: Target providing the files that are installed in the image under test.
+      **kwargs: Additional parameters forwarded to py_itf_test. Size, timeout, tags and target_compatible_with
+        are extended with defaults for integration tests.
+    """
     image_name = "_image_{}".format(name)
     image_loader = "_image_{}_loader".format(name)
     repo_tag = "{}:latest".format(name)
@@ -226,20 +237,12 @@ def dual_qemu_integration_test(
     if "timeout" not in kwargs:
         kwargs["timeout"] = "moderate"
 
-    # Driving two real QNX guests under KVM has rare, environment-induced boot
-    # nondeterminism (e.g. a guest occasionally wedging during device bring-up).
-    # The fixtures already stagger boots and wait for stable SSH; mark the test
-    # flaky so bazel transparently retries such infrastructure hiccups.
-    if "flaky" not in kwargs:
-        kwargs["flaky"] = True
-
-    # This test is intentionally marked flaky (above) to retry environment-induced
-    # QEMU boot hiccups, so exclude it from the nightly flaky-test detection to
-    # avoid reporting expected, infrastructure-level nondeterminism.
     _extend_list_in_kwargs_without_duplicates(
         kwargs,
         "tags",
-        ["no-flaky-test-detection"],
+        # "requires-network": the two VMs talk over a host socket, the sandbox
+        # network namespace (--nosandbox_default_allow_network) cuts that link.
+        ["requires-network"],
     )
 
     _extend_list_in_kwargs_without_duplicates(

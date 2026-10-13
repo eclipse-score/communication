@@ -15,7 +15,7 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Sends to wrong consumer", "Communication.SendingEventSendsToWrongConsumer")
+$FailureMode("Sends to wrong consumer", "Communication.SendingEventSendsToWrongConsumer")
 
 $OrGate("Gate1", "Communication.SendingEventSendsToWrongConsumer")
 $IntermediateEvent("Writing Data into totally wrong Shared Memory segment", "Event1", "Gate1")

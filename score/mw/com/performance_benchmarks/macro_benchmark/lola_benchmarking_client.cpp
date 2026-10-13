@@ -23,6 +23,7 @@
 #include <optional>
 #include <string_view>
 #include <thread>
+#include <utility>
 #include <vector>
 
 // LogContext BCLI -> BenchmarkClient ;)
@@ -61,7 +62,7 @@ class ServiceFinder
 
   public:
     ServiceFinder(ServiceFinderMode service_finder_mode, score::cpp::stop_token stop_token)
-        : service_finder_mode_{service_finder_mode}, stop_token_{stop_token}
+        : service_finder_mode_{service_finder_mode}, stop_token_{std::move(stop_token)}
     {
     }
 

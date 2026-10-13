@@ -225,7 +225,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "We ensure with our preventive measure that wrong alignment could happen."
-                // potentialcause = "This issue can only happen if the alignment calculation within the SharedMemoryResource fails."
+                interface = "score.mw.com.SkeletonEvent.Allocate"
             }
 
             // ID: 6164821
@@ -272,7 +272,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "issue not possible with current design. no additional measures required."
-                // potentialcause = "This issue cannot happen. If then it is a memory allocation topic and covered by [ISSUE:Failuremode TooFewMemoryAllocated]"
+                interface = "mw.com.Event.Send"
             }
 
             // ID: 6164996
@@ -305,7 +305,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "The only possible fault cause is eliminated with our preventive measure."
-                // potentialcause = "The only possibility that this happens is on copy-on send. For that copy-on send would need to call allocate multiple times."
+                interface = "mw.com.Event.Send"
             }
 
             // ID: 6165624
@@ -352,12 +352,12 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "By only freeing resources on destruction, we can avoid early resource clean ups."
-                // potentialcause = "nearly the same as [ISSUE:Failuremode NoResourcesFreed] The only difference is that unlink / unmap will happen early."
+                interface = "mw.com.Skeleton.Destroy"
             }
         }
         section "Handle Method Calls" {
 
-            // Fault-Tree $TopEvent [Communication.WrongInArgsUsed]
+            // Fault-Tree $FailureMode [Communication.WrongInArgsUsed]
             // Reference as mitigation measures:
             // - Callee used InArgs in wrong layout: Mitigated by AoU ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide
             // - Callee used InArgs while concurrently updated: Mitigated by AoU ScoreReq.AoU ValidityOfPointerOnLoLaPointer. ToDo: extend this AoU for MethodElementPtrs!
@@ -375,7 +375,7 @@ section "LoLa" {
                 // potentialcause = "A: Either the user interpreted the InArgs in the wrong layout or accesses the InArgs after return from the call. B: The mw::com implementation signals the call before all InArgs are provided or provides in-arg pointers to the wrong location."
             }
 
-            // Fault-Tree $TopEvent [Communication.WrongMethodCalled]
+            // Fault-Tree $FailureMode [Communication.WrongMethodCalled]
             // Reference as mitigation measures:
             // - Wrongly configured: Is covered here: [ISSUE:Failuremode [InMemoryConfigurationWrong]
             // Reference as prevention measures:
@@ -391,7 +391,7 @@ section "LoLa" {
                 // potentialcause = "A: The configuration between provider and consumer mismatches regarding method identification. B: The methodid used in assignment of user provided handlers is corrupted or the assignment/storage/lookup of the user provided handler fails."
             }
 
-            // Fault-Tree $TopEvent [Communication.WrongResultsProvided]
+            // Fault-Tree $FailureMode [Communication.WrongResultsProvided]
             // Reference as mitigation measures:
             // - Callee provided result in wrong layout: Mitigated by AoU ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide
             // - Callee signalled call finished before or without providing result completely: ToDo: Add an AoU, which states, that a user provided method handler always has to completely update the return-type reference before returning from its handler.
@@ -535,6 +535,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "N/A because root-cause covered by AoU."
+                interface = "score.mw.com.GenericProxyEvent.SetReceiveHandler"
                 // potentialcause = "N/A because root-cause covered by AoU."
             }
 
@@ -546,6 +547,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = ""
+                interface = "score.mw.com.GenericProxyEvent.SetReceiveHandler"
             }
 
             // ID: 6166306
@@ -556,6 +558,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "N/A because root-cause covered by AoU."
+                interface = "score.mw.com.GenericProxyEvent.SetReceiveHandler"
                 // potentialcause = "N/A because root-cause covered by AoU."
             }
 
@@ -567,6 +570,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "N/A because root-cause covered by AoU."
+                interface = "score.mw.com.GenericProxyEvent.SetReceiveHandler"
                 // potentialcause = "N/A because root-cause covered by AoU."
             }
         }
@@ -594,7 +598,7 @@ section "LoLa" {
             }
 
             // ID: 6166350
-            ScoreReq.FailureMode UsesToManySampleptr {
+            ScoreReq.FailureMode UsesTooManySampleptr {
                 guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
                 description = "User is already max. sample count SamplePtr, but we are still handing out SamplePtrs in callback F()."
                 failureeffect = "Synchronization algorithm can no longer hold guarantees, which can cause an exceeding of resources. In worst case another proxy might fail to get updated samples (messages lost without full queues aka not detectable)."
@@ -616,7 +620,7 @@ section "LoLa" {
             }
 
             // ID: 6166357
-            ScoreReq.FailureMode SucceedsDespiteAnError {
+            ScoreReq.FailureMode GetNewSamplesSucceedsDespiteAnError {
                 guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
                 description = "A user calls GetNewSamples() on a proxy instance and receives a sample count, even though he should have received an error."
                 failureeffect = "Receive a sample count instead of an error, implies that the sample count is wrong. Receiving an error instead of a sample count, implies that the sample count is wrong."
@@ -713,7 +717,7 @@ section "LoLa" {
                     version = 1
                     safety = ScoreReq.Asil.B
                     rationale = "A manipulated size is tackled, by \"Size information in read-only memory\". The right location is ensured via \"Location of type-meta-information information for Generic Proxy\" The wrong set size, is covered by \"The type-meta-information shall be calculated based on the provided event/field type"
-                    interface = "mw.com.GenericProxyEvent.GetSampleSize"
+                    interface = "mw.com.GenericProxyEvent.GetDataTypeSizeInfo"
                 }
 
                 // ID: 31545538
@@ -725,7 +729,7 @@ section "LoLa" {
                     safety = ScoreReq.Asil.B
                     rationale = "Potential faults and measures are the same as [ISSUE:Failuremode TheSizeReturnedIsBiggerThenTheActualValue]"
                     // potentialcause = "Same as [ISSUE:Failuremode TheSizeReturnedIsBiggerThenTheActualValue]"
-                    interface = "mw.com.GenericProxyEvent.GetSampleSize"
+                    interface = "mw.com.GenericProxyEvent.GetDataTypeSizeInfo"
                 }
 
                 // ID: 31545581
@@ -743,8 +747,8 @@ section "LoLa" {
         }
 
         section "Call Method" {
-            // Fault-Tree $TopEvent [Communication.CallBlocks]
-            // Reference as mitigation for all three leaf-nodes/BasicEvents in the fault-tree: ScoreReq.AoU [NoGuaranteesForTimelyMethodCallExecution]
+            // Fault-Tree $FailureMode [Communication.CallBlocks]
+            // Reference as mitigation for all three leaf-nodes/RootCauses in the fault-tree: ScoreReq.AoU [NoGuaranteesForTimelyMethodCallExecution]
             ScoreReq.FailureMode MethodCallBlocksLongerThanExpected {
                 guidewords = [ ScoreReq.Guideword.DelayedFunction ]
                 description = "A call to a service-method on the client/consumer side blocks longer than expected (or indefinite). This is a specific instance of FailureMode [AnyFunctionBlocksLongerThanExpected], but since with service-methods we have concrete root causes in the form of message-passing behaviour and behaviour of user-provided handler, we have this specific failure mode."
@@ -755,7 +759,7 @@ section "LoLa" {
                 // potentialcause = "Underlying message-passing mechanism is blocked (e.g. the opposite side is not receiving messages) or the user provided handler is blocking."
             }
 
-            // Fault-Tree $TopEvent [Communication.WrongInArgsProvided]
+            // Fault-Tree $FailureMode [Communication.WrongInArgsProvided]
             // Reference as mitigation measures:
             // - Caller provided InArgs in wrong layout: Mitigated by AoU ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide
             // - Caller updates InArgs concurrently after call signalling: Mitigated by AoU ScoreReq.AoU ValidityOfPointerOnLoLaPointer. ToDo: extend this AoU for MethodElementPtrs!
@@ -772,7 +776,7 @@ section "LoLa" {
                 // potentialcause = "A: Either the user provides the InArgs in the wrong layout or updates the InArgs concurrently after call signalling. B: The mw::com implementation signals the call before all InArgs are provided or provides in-arg pointers to the wrong location."
             }
 
-            // Fault-Tree $TopEvent [Communication.WrongResultsUsed]
+            // Fault-Tree $FailureMode [Communication.WrongResultsUsed]
             // Reference as mitigation measures:
             // - Caller used result in wrong layout: Mitigated by AoU ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide
             // - Caller used result while concurrently updated: Mitigated by AoU ScoreReq.AoU ValidityOfPointerOnLoLaPointer. ToDo: extend this AoU for MethodElementPtrs!
@@ -826,8 +830,8 @@ section "LoLa" {
                 failureeffect = "Data is manipulated from different processes because they think its not owned. Which could cause garbage data and thus harm any safety goal."
                 version = 1
                 safety = ScoreReq.Asil.B
-                rationale = "Same as [ISSUE:FailureMode DoesNotFreeResourcesOnDestruction] since a decrease of the ref-count has the same issues as an increas."
-                // potentialcause = "Same as [ISSUE:Failuremode DoesNotFreeResourcesOnDestruction]"
+                rationale = "Same as [ISSUE:FailureMode DoesNotFreeResourcesOnDestruction] since a decrease of the ref-count has the same issues as an increase."
+                interface = "score.mw.com.SampleAllocateePtr<SampleType>"
             }
 
             // ID: 6166382
@@ -838,7 +842,6 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "By ensuring a correct behavior of the SamplePtr, this fault can be omitted."
-                // potentialcause = "The only possible cause is a wrong behavior of our reference counting mechanism."
             }
 
             // ID: 6166385
@@ -854,7 +857,7 @@ section "LoLa" {
 
         section "MethodSignatureElementPtr" {
 
-            // Fault-Tree $TopEvent [Communication.MethodSignatureElementPtrWrongTarget]
+            // Fault-Tree $FailureMode [Communication.MethodSignatureElementPtrWrongTarget]
             // Reference as mitigation measures:
             // - References outdated valid memory inside shared-memory: Mitigated by AoU ScoreReq.AoU ValidityOfPointerOnLoLaPointer. ToDo: extend this AoU for MethodElementPtrs!
             // Reference as prevention measures:
@@ -872,7 +875,7 @@ section "LoLa" {
                 // potentialcause = "A: The user didn't obey the lifetime rules of the MethodSignatureElementPtr and thus accesses it after it has been invalidated. B: The pointers were either wrongly initialized or point to locations, which were invalidated before the access happens."
             }
 
-            // Fault-Tree $TopEvent [Communication.MethodSignatureElementPtrFailsToFree]
+            // Fault-Tree $FailureMode [Communication.MethodSignatureElementPtrFailsToFree]
             // Reference as mitigation measures:
             // - Does not free method signature element: Mitigated by AoU ScoreReq.AoU [NoGuaranteesForTimelyMethodCallExecution]
             // Reference as prevention measures:

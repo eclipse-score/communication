@@ -30,8 +30,8 @@ namespace
 
 using InstanceSpecifierView = ITracingFilterConfig::InstanceSpecifierView;
 
-const std::string_view GetOrInsertStringInSet(const std::string_view key,
-                                              std::set<std::string, std::less<>>& search_set) noexcept
+std::string_view GetOrInsertStringInSet(const std::string_view key,
+                                        std::set<std::string, std::less<>>& search_set) noexcept
 {
     const auto find_result = search_set.find(key);
     const bool does_string_already_exist{find_result != search_set.end()};

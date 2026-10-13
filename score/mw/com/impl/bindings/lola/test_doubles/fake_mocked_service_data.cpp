@@ -48,8 +48,8 @@ FakeMockedServiceData::FakeMockedServiceData(const pid_t skeleton_process_pid_in
     data_storage =
         data_memory_resource->construct<ServiceDataStorage>(kMaxNumberOfServiceElements, *data_memory_resource);
 
-    data_storage->skeleton_pid_ = skeleton_process_pid_in;
-    data_storage->skeleton_uid_ = skeleton_uid_in;
+    data_storage->UpdateSkeletonPid(skeleton_process_pid_in);
+    data_storage->UpdateSkeletonUid(skeleton_uid_in);
 }
 
 }  // namespace score::mw::com::impl::lola

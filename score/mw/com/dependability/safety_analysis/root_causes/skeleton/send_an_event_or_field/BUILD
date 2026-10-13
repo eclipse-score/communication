@@ -42,3 +42,11 @@ filegroup(
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
+
+filegroup(
+    name = "data_only_partially_sent_fta",
+    srcs = [
+        "data_only_partially_sent_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)

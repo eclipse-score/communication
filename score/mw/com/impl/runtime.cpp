@@ -34,13 +34,13 @@
 namespace
 {
 
-inline void warn_double_init()
+void warn_double_init()
 {
     score::mw::log::LogWarn("lola") << "score::mw::com::impl::Runtime is already initialized! Redundant call to a "
                                        "Runtime::Initialize() overload within production code needs to be checked.";
 }
 
-inline void error_double_init()
+void error_double_init()
 {
     score::mw::log::LogError("lola")
         << "score::mw::com::impl::Runtime is already initialized and locked! Redundant call to a "

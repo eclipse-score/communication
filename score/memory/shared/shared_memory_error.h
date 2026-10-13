@@ -39,7 +39,7 @@ class SharedMemoryErrorDomain final : public score::result::ErrorDomain
     // three specifiers: (1) virtual, (2) override, (3) final.
     // Rationale : See explanation above.
     // coverity[autosar_cpp14_a10_3_1_violation]
-    std::string_view MessageFor(const score::result::ErrorCode& code) const noexcept override final
+    std::string_view MessageFor(const score::result::ErrorCode& code) const noexcept final
     // coverity[autosar_cpp14_a10_3_1_violation]
     {
         // Suppress "AUTOSAR C++14 M6-4-5" and "AUTOSAR C++14 M6-4-3", The rule states: An unconditional throw or break

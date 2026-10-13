@@ -66,9 +66,9 @@ class UnixDomainServer final : public IServer
 
     score::cpp::expected_blank<score::os::Error> StartListening(
         ConnectCallback connect_callback,
-        DisconnectCallback disconnect_callback = DisconnectCallback{},
-        MessageCallback sent_callback = MessageCallback{},
-        MessageCallback sent_with_reply_callback = MessageCallback{}) noexcept override;
+        DisconnectCallback disconnect_callback,
+        MessageCallback sent_callback,
+        MessageCallback sent_with_reply_callback) noexcept override;
 
     void StopListening() noexcept override;
 

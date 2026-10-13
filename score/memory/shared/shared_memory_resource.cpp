@@ -127,7 +127,7 @@ class MakeSharedEnabler final : public SharedMemoryResource
 };
 
 template <typename... Args>
-static std::shared_ptr<SharedMemoryResource> CreateInstance(Args&&... args)
+std::shared_ptr<SharedMemoryResource> CreateInstance(Args&&... args)
 {
     return std::make_shared<MakeSharedEnabler>(std::forward<Args>(args)...);
 }
@@ -467,7 +467,7 @@ SharedMemoryResource::SharedMemoryResource(std::variant<std::string, std::uint64
                           ? std::optional{GetLockFilePath(std::get<std::string>(identifier))}
                           : std::nullopt},
       virtual_address_space_to_reserve_{},
-      typed_memory_ptr_{typed_memory_ptr},
+      typed_memory_ptr_{std::move(typed_memory_ptr)},
       opening_mode_{::score::os::Fcntl::Open::kReadOnly},
       map_mode_{::score::os::Mman::Protection::kRead},
       base_address_{nullptr},

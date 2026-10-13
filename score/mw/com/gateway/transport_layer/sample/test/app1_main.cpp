@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/gateway/transport_layer/sample/bidirectional_transport.h"
 #include "score/mw/com/gateway/transport_layer/sample/configuration/hypervisor_socket_configuration.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <atomic>
 #include <iostream>
@@ -156,12 +157,13 @@ int ExecuteWithReconnect()
 
 }  // namespace
 
-int main(int argc, char* argv[])
+int main(int argc, const char* argv[])
 {
     std::string mode = "regular_case";
-    if (argc > 1)
+    const auto arguments = score::string_manipulation::GetArguments(argc, argv);
+    if (arguments.size() > 1U)
     {
-        mode = argv[1];
+        mode = arguments[1];
     }
 
     if (mode == "reconnect")

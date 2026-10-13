@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -20,9 +20,33 @@ filegroup(
 )
 
 filegroup(
+    name = "allocates_already_allocated_memory_fta",
+    srcs = [
+        "allocates_already_allocated_memory_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
     name = "to_few_memory_allocated_fta",
     srcs = [
         "to_few_memory_allocated_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
+    name = "too_much_memory_allocated_fta",
+    srcs = [
+        "too_much_memory_allocated_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
+    name = "wrongly_alligned_memory_allocated_fta",
+    srcs = [
+        "wrongly_alligned_memory_allocated_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

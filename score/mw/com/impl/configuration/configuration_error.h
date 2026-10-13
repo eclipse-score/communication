@@ -47,7 +47,7 @@ class ConfigurationErrorDomain final : public score::result::ErrorDomain
     // \todo Gcc compiler bug leads to a compiler warning if override is not added, even if final keyword is there
     // (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=78010). When bug is fixed, remove the override keyword from the
     // MessageFor function signature and the coverity suppression.
-    std::string_view MessageFor(const score::result::ErrorCode& code) const noexcept override final
+    std::string_view MessageFor(const score::result::ErrorCode& code) const noexcept final
     // coverity[autosar_cpp14_a10_3_1_violation]
     {
         // Suppress "AUTOSAR C++14 M6-4-5" and "AUTOSAR C++14 M6-4-3", The rule states: An unconditional throw or break

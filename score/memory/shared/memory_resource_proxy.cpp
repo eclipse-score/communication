@@ -66,7 +66,7 @@ auto MemoryResourceProxy::deallocate(void* const memory, const std::size_t byte)
     auto* memoryResource = MemoryResourceRegistry::getInstance().at(this->memory_identifier_);
     if (memoryResource != nullptr)
     {
-        return memoryResource->deallocate(memory, byte);
+        memoryResource->deallocate(memory, byte);
     }
 }
 

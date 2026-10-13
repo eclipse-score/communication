@@ -32,7 +32,7 @@
 namespace
 {
 
-constexpr inline std::size_t kNumberOfLocalThreads = 2U;
+constexpr std::size_t kNumberOfLocalThreads = 2U;
 
 constexpr auto kLocalThreadPoolName = "mw::com MessageReceiver";
 

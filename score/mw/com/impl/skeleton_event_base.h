@@ -52,7 +52,7 @@ class SkeletonEventBase : public EnableReferenceToMoveableFromThis<SkeletonEvent
     {
     }
 
-    virtual ~SkeletonEventBase() = default;
+    ~SkeletonEventBase() override = default;
 
     /// \brief A SkeletonEventBase shall not be copyable
     SkeletonEventBase(const SkeletonEventBase&) = delete;

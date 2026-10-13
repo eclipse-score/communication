@@ -26,3 +26,19 @@ filegroup(
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
+
+filegroup(
+    name = "uses_too_many_sampleptr_fta",
+    srcs = [
+        "uses_too_many_sampleptr_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
+    name = "succeeds_despite_an_error_fta",
+    srcs = [
+        "succeeds_despite_an_error_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)

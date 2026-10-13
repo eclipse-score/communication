@@ -19,8 +19,7 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
-inline EventSubscriptionControl<>::SubscriberCountType GetSubscribersFromState(
-    std::uint32_t subscription_state) noexcept
+EventSubscriptionControl<>::SubscriberCountType GetSubscribersFromState(std::uint32_t subscription_state) noexcept
 {
     // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
     // not lead to data loss.".
@@ -29,8 +28,7 @@ inline EventSubscriptionControl<>::SubscriberCountType GetSubscribersFromState(
     return static_cast<EventSubscriptionControl<>::SubscriberCountType>(subscription_state >> 16U);
 }
 
-inline EventSubscriptionControl<>::SlotNumberType GetSubscribedSamplesFromState(
-    std::uint32_t subscription_state) noexcept
+EventSubscriptionControl<>::SlotNumberType GetSubscribedSamplesFromState(std::uint32_t subscription_state) noexcept
 {
     // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
     // not lead to data loss.".
@@ -39,8 +37,8 @@ inline EventSubscriptionControl<>::SlotNumberType GetSubscribedSamplesFromState(
     return static_cast<std::uint16_t>(subscription_state & 0x0000FFFFU);
 }
 
-inline std::uint32_t CreateState(EventSubscriptionControl<>::SubscriberCountType subscriber_count,
-                                 EventSubscriptionControl<>::SlotNumberType subscribed_slots)
+std::uint32_t CreateState(EventSubscriptionControl<>::SubscriberCountType subscriber_count,
+                          EventSubscriptionControl<>::SlotNumberType subscribed_slots)
 {
     std::uint32_t result{subscriber_count};
     result = result << 16U;

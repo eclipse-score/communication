@@ -22,6 +22,10 @@
 namespace compiler_warnings_test
 {
 
+// This file is a compile-only fixture. The helpers are intentionally unused and keep external linkage, since
+// internal linkage would trigger unused-function warnings, which are what this fixture checks to be absent.
+// NOLINTBEGIN(misc-use-internal-linkage)
+
 // strict_warnings: clean patterns
 
 std::int32_t truncate_to_int(double value)
@@ -72,6 +76,7 @@ std::int32_t use_const_safely(const std::int32_t* ptr)
 
 void safe_format_print(std::int32_t value)
 {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg): printf usage is the clean pattern under test
     std::printf("value = %d\n", value);
 }
 
@@ -126,5 +131,7 @@ inline std::int32_t get_feature_constant()
 {
     return feature_constant;
 }
+
+// NOLINTEND(misc-use-internal-linkage)
 
 }  // namespace compiler_warnings_test

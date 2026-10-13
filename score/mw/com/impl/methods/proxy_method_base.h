@@ -64,7 +64,7 @@ class ProxyMethodBase : public EnableReferenceToMoveableFromThis<ProxyMethodBase
     /// \brief A ProxyMethod shall be moveable. (Exactly like impl::ProxyBase and impl:ProxyEventBase)
     ProxyMethodBase(ProxyMethodBase&&) noexcept = default;
     ProxyMethodBase& operator=(ProxyMethodBase&&) noexcept = default;
-    virtual ~ProxyMethodBase() = default;
+    ~ProxyMethodBase() override = default;
 
     /// \brief Default initializes each method InArg and Return value (if they exist)
     ///

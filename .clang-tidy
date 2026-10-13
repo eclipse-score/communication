@@ -13,9 +13,13 @@
 
 ---
 # Clang-tidy configuration for SCORE Communication project
+#
+# NOTE: Do not put comment lines inside the `Checks` block below. It is a folded scalar (`>`), so a `#` line is not
+# a YAML comment: it gets joined with the following line and silently disables that check.
+# Intentionally disabled checks are listed explicitly with a leading `-` instead.
+# Check groups: autosar-severity-one/two, cert, qnx-checks, extra, style-readability.
 Checks: >
   -*,
-  # --- autosar-severity-one ---
   bugprone-use-after-move,
   bugprone-dynamic-static-initializers,
   bugprone-suspicious-enum-usage,
@@ -56,7 +60,6 @@ Checks: >
   readability-misplaced-array-index,
   readability-redundant-declaration,
   readability-function-cognitive-complexity,
-  # --- autosar-severity-two ---
   bugprone-forwarding-reference-overload,
   bugprone-move-forwarding-reference,
   bugprone-multiple-statement-macro,
@@ -79,14 +82,11 @@ Checks: >
   readability-implicit-bool-conversion,
   readability-isolate-declaration,
   readability-redundant-control-flow,
-  # --- cert ---
   cert-err52-cpp,
   clang-analyzer-alpha.security.ArrayBoundV2,
   clang-analyzer-core.UndefinedBinaryOperatorResult,
   clang-analyzer-cplusplus.NewDelete,
-  # --- qnx-checks ---
   bugprone-reserved-identifier,
-  # --- extra ---
   bugprone-assert-side-effect,
   bugprone-copy-constructor-init,
   bugprone-dangling-handle,
@@ -103,13 +103,11 @@ Checks: >
   modernize-redundant-void-arg,
   modernize-return-braced-init-list,
   modernize-shrink-to-fit,
-  #modernize-type-traits, Disabled because of too much noise, will later be re-enabled with a campaign to fix findings
   modernize-unary-static-assert,
   modernize-use-bool-literals,
   modernize-use-emplace,
   modernize-use-equals-delete,
   modernize-use-integer-sign-comparison,
-  #modernize-use-nodiscard, Disabled because of too much noise, will later be re-enabled with a campaign to fix findings
   modernize-use-nullptr,
   modernize-use-transparent-functors,
   performance-faster-string-find,
@@ -120,7 +118,6 @@ Checks: >
   performance-inefficient-vector-operation,
   performance-move-const-arg,
   performance-move-constructor-init,
-  performance-no-automatic-move,
   performance-no-int-to-ptr,
   performance-noexcept-swap,
   performance-trivially-destructible,
@@ -133,7 +130,6 @@ Checks: >
   readability-simplify-boolean-expr,
   readability-use-anyofallof,
   readability-use-std-min-max,
-  # --- style-readability ---
   misc-confusable-identifiers,
   misc-misleading-bidirectional,
   misc-misleading-identifier,
@@ -159,6 +155,8 @@ Checks: >
   readability-string-compare,
   readability-uniqueptr-delete-release,
   readability-uppercase-literal-suffix,
+  -modernize-type-traits,
+  -modernize-use-nodiscard,
 
 WarningsAsErrors: >
   clang-analyzer-*,
@@ -181,7 +179,7 @@ CheckOptions:
   - key: readability-braces-around-statements.ShortStatementLines
     value: 0
   - key: bugprone-assert-side-effect.AssertMacros
-    value: "assert,SCORE_LANGUAGE_FUTURECPP_ASSERT,SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG,SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD,SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE,SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG_MESSAGE,SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE,SCORE_LANGUAGE_FUTURECPP_PRECONDITION,SCORE_LANGUAGE_FUTURECPP_PRECONDITION_DBG,SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD,SCORE_LANGUAGE_FUTURECPP_PRECONDITION_MESSAGE,SCORE_LANGUAGE_FUTURECPP_PRECONDITION_DBG_MESSAGE,SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE"
+    value: "assert,SCORE_LANGUAGE_FUTURECPP_ASSERT,SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG,SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE,SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG_MESSAGE,SCORE_LANGUAGE_FUTURECPP_PRECONDITION,SCORE_LANGUAGE_FUTURECPP_PRECONDITION_DBG,SCORE_LANGUAGE_FUTURECPP_PRECONDITION_MESSAGE,SCORE_LANGUAGE_FUTURECPP_PRECONDITION_DBG_MESSAGE"
   - key: bugprone-assert-side-effect.CheckFunctionCalls
     value: true
   - key: bugprone-dangling-handle.HandleClasses
@@ -284,4 +282,6 @@ CheckOptions:
   - key: readability-implicit-bool-conversion.AllowPointerConditions
     value: true
   - key: readability-function-cognitive-complexity.IgnoreMacros
+    value: true
+  - key: cppcoreguidelines-pro-bounds-pointer-arithmetic.AllowIncrementDecrementOperators
     value: true

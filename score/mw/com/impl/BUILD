@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -486,6 +485,7 @@ cc_library(
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
+        "//score/mw/com/impl/bindings/someip:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -512,6 +512,7 @@ cc_library(
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
+        "//score/mw/com/impl/bindings/someip:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -560,6 +561,7 @@ cc_library(
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
+        "//score/mw/com/impl/bindings/someip:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -582,6 +584,7 @@ cc_library(
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
+        "//score/mw/com/impl/bindings/someip:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -612,6 +615,7 @@ cc_library(
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
+        "//score/mw/com/impl/bindings/someip:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
     ],

@@ -15,18 +15,18 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Connection context data absent, incomplete, or incorrect", "MessagePassing.ConnectionContextDataWrong")
+$FailureMode("Connection context data absent, incomplete, or incorrect", "MessagePassing.ConnectionContextDataWrong")
 
 $OrGate("OG1", "MessagePassing.ConnectionContextDataWrong")
 
 $IntermediateEvent("Client identity wrong or incomplete", "IE_Identity", "OG1")
 $OrGate("OG_Identity", "IE_Identity")
-$BasicEvent("Client Identity wrong or swapped", "MessagePassing.ClientIdentityIntegrityCheck", "OG_Identity")
-$BasicEvent("Client Identitiy incomplete or empty", "MessagePassing.ClientIdentityValidation", "OG_Identity")
+$RootCause("Client Identity wrong or swapped", "ClientIdentityIntegrityCheck", "OG_Identity")
+$RootCause("Client Identitiy incomplete or empty", "ClientIdentityValidation", "OG_Identity")
 
 $IntermediateEvent("User data wrong or incomplete", "IE_UserData", "OG1")
 $OrGate("OG_UserData", "IE_UserData")
-$BasicEvent("Connect callback returns wrong data", "MessagePassing.ConnectCallbackReturnValueValidation", "OG_UserData")
-$BasicEvent("Connect callback returns null or incomplete data", "MessagePassing.ConnectCallbackValidation", "OG_UserData")
+$RootCause("Connect callback returns wrong data", "ConnectCallbackReturnValueValidation", "OG_UserData")
+$RootCause("Connect callback returns null or incomplete data", "ConnectCallbackValidation", "OG_UserData")
 
 @enduml

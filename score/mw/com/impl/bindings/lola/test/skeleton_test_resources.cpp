@@ -68,17 +68,17 @@ LolaServiceInstanceDeployment CreateLolaServiceInstanceDeployment(
     lola_service_instance_deployment_.control_asil_b_memory_size_ = control_asil_b_shm_size;
     lola_service_instance_deployment_.control_qm_memory_size_ = control_qm_shm_size;
 
-    for (auto lola_event_inst_depl : lola_event_inst_depls)
+    for (const auto& lola_event_inst_depl : lola_event_inst_depls)
     {
         lola_service_instance_deployment_.events_.emplace(lola_event_inst_depl);
     }
 
-    for (auto lola_field_inst_depl : lola_field_inst_depls)
+    for (const auto& lola_field_inst_depl : lola_field_inst_depls)
     {
         lola_service_instance_deployment_.fields_.emplace(lola_field_inst_depl);
     }
 
-    for (auto lola_method_inst_depl : lola_method_inst_depls)
+    for (const auto& lola_method_inst_depl : lola_method_inst_depls)
     {
         lola_service_instance_deployment_.methods_.emplace(lola_method_inst_depl);
     }

@@ -15,10 +15,10 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Service not found", "Communication.ServiceNotFound")
+$FailureMode("Service not found", "Communication.ServiceNotFound")
 
 $OrGate("Gate1", "Communication.ServiceNotFound")
-$BasicEvent("Wrong service discovery marker file searched for", "Communication.WrongServiceDiscoveryMarkerFileSearchedFor", "Gate1")
+$RootCause("Wrong service discovery marker file searched for", "WrongServiceDiscoveryMarkerFileSearchedFor", "Gate1")
 $IntermediateEvent("Skeleton Not offered", "Event1", "Gate1")
 $TransferInGate("Transfer1", "Event1")
 

@@ -128,7 +128,7 @@ void CallArithmeticMean(CalculatorProxy& proxy, std::mt19937& random_engine)
     std::uniform_int_distribution<std::uint32_t> value_distribution{0U, 100U};
     for (std::size_t index = 0U; index < kNumberOfMeanElements; ++index)
     {
-        array_ptr->internal_array_[index] = value_distribution(random_engine);
+        array_ptr->internal_array_.at(index) = value_distribution(random_engine);
     }
     array_ptr->SetNumberOfElements(kNumberOfMeanElements);
 

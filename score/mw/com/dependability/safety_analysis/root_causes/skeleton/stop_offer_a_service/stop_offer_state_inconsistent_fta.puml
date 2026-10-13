@@ -15,13 +15,13 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Service Offer stopped inconsistent", "Communication.StopOfferInconsistent")
+$FailureMode("Service Offer stopped inconsistent", "Communication.StopOfferInconsistent")
 
 $OrGate("Gate1", "Communication.StopOfferInconsistent")
 $IntermediateEvent("Stop Offer not succeeded on dependent elements", "Communication.StopOfferNotSucceededOnDependentElements", "Gate1")
-$BasicEvent("Offer State inconsistent", "Communication.OfferStateInconsistent", "Gate1")
+$RootCause("Offer State inconsistent", "OfferStateInconsistent", "Gate1")
 $OrGate("Gate2", "Communication.StopOfferNotSucceededOnDependentElements")
-$BasicEvent("PrepareOffer on dependent elements not called", "Communication.DependentPrepareOfferNotCalled", "Gate2")
-$BasicEvent("PrepareOffer on dependent elements failed", "Communication.DependentPrepareOfferFailed", "Gate2")
+$RootCause("PrepareOffer on dependent elements not called", "DependentPrepareOfferNotCalled", "Gate2")
+$RootCause("PrepareOffer on dependent elements failed", "DependentPrepareOfferFailed", "Gate2")
 
 @enduml

@@ -226,12 +226,13 @@ int run_consumer()
 
 int main(int argc, const char* argv[])
 {
+    const auto arguments = score::string_manipulation::GetArguments(argc, argv);
     std::string mode;
-    for (int i = 1; i < argc; ++i)
+    for (std::size_t i = 1U; i < arguments.size(); ++i)
     {
-        if (std::string(argv[i]) == "--mode" && i + 1 < argc)
+        if (std::string_view{arguments[i]} == "--mode" && i + 1U < arguments.size())
         {
-            mode = argv[++i];
+            mode = arguments[++i];
         }
     }
     score::mw::com::runtime::InitializeRuntime(

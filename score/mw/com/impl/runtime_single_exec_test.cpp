@@ -115,6 +115,16 @@ std::vector<std::string_view> GetEventNameListFromHandle(const HandleType& handl
                            });
             return event_names;
         },
+        [](const SomeIpServiceTypeDeployment& deployment) -> ReturnType {
+            ReturnType event_names;
+            std::transform(deployment.events_.cbegin(),
+                           deployment.events_.cend(),
+                           std::back_inserter(event_names),
+                           [](const auto& event) -> std::string_view {
+                               return event.first;
+                           });
+            return event_names;
+        },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return {};
         });

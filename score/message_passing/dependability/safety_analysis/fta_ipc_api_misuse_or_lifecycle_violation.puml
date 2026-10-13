@@ -15,12 +15,12 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("IPC operation invoked at wrong lifecycle stage or outside valid call context", "MessagePassing.IpcApiMisuseOrLifecycleViolation")
+$FailureMode("IPC operation invoked at wrong lifecycle stage or outside valid call context", "MessagePassing.IpcApiMisuseOrLifecycleViolation")
 
 $OrGate("OG1", "MessagePassing.IpcApiMisuseOrLifecycleViolation")
 
-$BasicEvent("API invoked before lifecycle initialization completes", "MessagePassing.LifecycleOrderEnforcement", "OG1")
-$BasicEvent("Send or reply triggered outside intended call flow", "MessagePassing.CallFlowConformance", "OG1")
-$BasicEvent("RequestDisconnect invoked outside a valid call context", "BE_RequestDisconnectMisuse", "OG1")
+$RootCause("API invoked before lifecycle initialization completes", "LifecycleOrderEnforcement", "OG1")
+$RootCause("Send or reply triggered outside intended call flow", "CallFlowConformance", "OG1")
+$RootCause("RequestDisconnect invoked outside a valid call context", "BE_RequestDisconnectMisuse", "OG1")
 
 @enduml

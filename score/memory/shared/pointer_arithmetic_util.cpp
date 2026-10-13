@@ -124,7 +124,7 @@ score::mw::log::LogHex64 PointerToLogValue(const void* const pointer)
 
 std::ptrdiff_t SubtractPointersBytes(const void* const first, const void* const second)
 {
-    static_assert(sizeof(std::ptrdiff_t) == sizeof(std::uintptr_t), "");
+    static_assert(sizeof(std::ptrdiff_t) == sizeof(std::uintptr_t));
 
     const auto first_address_as_integer = CastPointerToInteger(first);
     const auto second_address_as_integer = CastPointerToInteger(second);

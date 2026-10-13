@@ -35,7 +35,8 @@ rust_library(
 rust_test(
     name = "score_com_concept-test",
     crate = ":score_com_concept",
-    tags = ["manual"],
+    # Linux only until QNX build is enabled for Rust tests: https://github.com/eclipse-score/communication/issues/1278
+    target_compatible_with = ["@platforms//os:linux"],
     deps = [
         ":score_com_concept",
         "//score/mw/com/rust:score_com",

@@ -103,11 +103,13 @@ void UnixDomainEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noexc
     std::int16_t events = 0;
     if (!endpoint.input.empty())
     {
+        // NOLINTNEXTLINE(hicpp-signed-bitwise): POLL* are non-negative POSIX constants and pollfd::events is signed
         events |= POLLIN;
     }
     if (!endpoint.output.empty())
     {
         // TODO: not used/not supported yet
+        // NOLINTNEXTLINE(hicpp-signed-bitwise): POLL* are non-negative POSIX constants and pollfd::events is signed
         events |= POLLOUT;
     }
     const auto found = std::find_if(poll_fds_.begin(), poll_fds_.end(), [](pollfd& poll) noexcept {

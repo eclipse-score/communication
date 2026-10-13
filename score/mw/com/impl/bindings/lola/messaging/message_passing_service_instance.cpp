@@ -151,6 +151,7 @@ auto SerializeToMessage(const std::uint8_t message_id, const T& t) noexcept -> s
     // of T with the size argument of another instantiation, producing a false-positive size mismatch. Deriving the
     // source range directly from the same pointer (source_begin / source_end) that is copied keeps the range
     // trivially self-consistent for every instantiation of T.
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): byte-wise view of a trivially copyable object
     const auto* const source_begin = reinterpret_cast<const std::uint8_t*>(&t);
     const auto* const source_end = source_begin + sizeof(T);
     std::ignore = std::copy(source_begin, source_end, std::next(out.begin()));

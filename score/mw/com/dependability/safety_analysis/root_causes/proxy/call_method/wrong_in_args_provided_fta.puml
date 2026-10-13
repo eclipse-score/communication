@@ -15,18 +15,18 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Wrong input arguments provided", "Communication.WrongMethodInArgsProvided")
+$FailureMode("Wrong input arguments provided", "Communication.WrongMethodInArgsProvided")
 
 $OrGate("Gate1", "Communication.WrongMethodInArgsProvided")
 
 $IntermediateEvent("Caller did not/only partially provide InArgs", "Event1", "Gate1")
 $OrGate("Gate2", "Event1")
-$BasicEvent("Call signalled before InArgs completely provided", "Communication.CallSignalledBeforeInArgsCompletelyProvided", "Gate2")
-$BasicEvent("Caller provided InArgs in wrong location", "Communication.CallerProvidedInArgsInWrongLocation", "Gate2")
+$RootCause("Call signalled before InArgs completely provided", "CallSignalledBeforeInArgsCompletelyProvided", "Gate2")
+$RootCause("Caller provided InArgs in wrong location", "CallerProvidedInArgsInWrongLocation", "Gate2")
 
 $IntermediateEvent("Caller provided wrong InArgs", "Event5", "Gate1")
 $OrGate("Gate4", "Event5")
-$BasicEvent("Caller provided InArgs in wrong layout", "Communication.InArgsWrongLayout", "Gate4")
-$BasicEvent("Caller updates InArgs concurrently after call signalling", "Communication.InArgsUpdateAfterCall", "Gate4")
+$RootCause("Caller provided InArgs in wrong layout", "InArgsWrongLayout", "Gate4")
+$RootCause("Caller updates InArgs concurrently after call signalling", "InArgsUpdateAfterCall", "Gate4")
 
 @enduml

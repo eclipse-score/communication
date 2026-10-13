@@ -14,10 +14,10 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Does not unsubscribe", "Communication.DoesNotUnsubscribe")
+$FailureMode("Does not unsubscribe", "Communication.DoesNotUnsubscribe")
 
 $OrGate("Gate1", "Communication.DoesNotUnsubscribe")
-$BasicEvent("Explicit unsubscribe by user failed", "Communication.ExplicitUnsubscribeByUserFailed", "Gate1")
-$BasicEvent("Proxy crashes without unsubscription", "Communication.ProxyCrashesWithoutUnsubscription", "Gate1")
+$RootCause("Explicit unsubscribe by user failed", "ExplicitUnsubscribeByUserFailed", "Gate1")
+$RootCause("Proxy crashes without unsubscription", "ProxyCrashesWithoutUnsubscription", "Gate1")
 
 @enduml
