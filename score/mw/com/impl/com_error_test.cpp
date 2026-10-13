@@ -159,10 +159,16 @@ TEST_F(ComErrorMessageForFixture, MessageForInvalidMetaModelShortname)
                      "Meta model short name does not adhere to naming requirements.");
 }
 
+// The use of a deprecated API is intended because this test is testing it.
+// score_baselibs does not provide yet a mechanism to suppress deprecated warnings
+// see: https://github.com/eclipse-score/baselibs/issues/627
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 TEST_F(ComErrorMessageForFixture, MessageForServiceInstanceAlreadyOffered)
 {
     testErrorMessage(ComErrc::kServiceInstanceAlreadyOffered, "Service instance is already offered");
 }
+#pragma GCC diagnostic pop
 
 TEST_F(ComErrorMessageForFixture, MessageForCouldNotRestartProxy)
 {
