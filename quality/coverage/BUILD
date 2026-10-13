@@ -17,15 +17,33 @@ load("@score_coverage//:defs.bzl", "score_coverage_reporter", "score_coverage_sc
 # transitive in-workspace deps; everything else (tests, mocks, external
 # dependencies) is filtered out of the report. A production library missing
 # here silently vanishes from the report, so keep this list complete.
+SCOPE_DEPS = [
+    "//score/message_passing",
+    "//score/mw/com",
+    "//score/mw/com/rust:score_com",
+]
+
 score_coverage_scope(
     name = "coverage_scope",
     testonly = True,
     visibility = ["//quality/coverage:__subpackages__"],
-    deps = [
-        "//score/message_passing",
-        "//score/mw/com",
-        "//score/mw/com/rust:score_com",
-    ],
+    deps = SCOPE_DEPS,
+)
+
+# Scope of the QNX run. Bazel analyses the scope in the exec configuration
+# (host platform); `platform` makes it follow the run's platform, so the
+# select()s inside the libraries resolve for QNX (eclipse-score/coverage_tool#23,
+# score_coverage 0.4.0). All three roots are compatible with x86_64 QNX, so the
+# same list serves both scopes.
+score_coverage_scope(
+    name = "coverage_scope_qnx",
+    testonly = True,
+    platform = "@score_bazel_platforms//:x86_64-qnx-sdp_8.0.0-posix",
+    # Manual, like the gcov reporter: a wildcard build on a Linux host would
+    # analyse the scope for QNX without the QNX toolchains registered.
+    tags = ["manual"],
+    visibility = ["//quality/coverage:__subpackages__"],
+    deps = SCOPE_DEPS,
 )
 
 # Linux: LLVM source-based coverage (C++ and Rust). Selected by the default
@@ -47,7 +65,7 @@ score_coverage_reporter(
     name = "gcov_reporter_wrapper",
     testonly = True,
     backend = "gcov",
-    coverage_scope = ":coverage_scope",
+    coverage_scope = ":coverage_scope_qnx",
     gcov = "@score_qcc_x86_64_toolchain_pkg//:gcov",
     tags = ["manual"],
 )

@@ -6,7 +6,7 @@ holds what is specific to this repository:
 
 | File | Role |
 |---|---|
-| `BUILD` | the coverage scope (which dependable elements are measured) and the two report generators: LLVM for Linux, gcov for QNX |
+| `BUILD` | the coverage scope (which dependable elements are measured), one per platform since the QNX scope is evaluated for the QNX platform, and the two report generators: LLVM for Linux, gcov for QNX |
 | `coverage.bazelrc` | the `bazel coverage` configuration, imported by the root `.bazelrc` |
 | `coverage_justifications.yaml` | reviewed justifications for lines that cannot be covered by tests |
 
