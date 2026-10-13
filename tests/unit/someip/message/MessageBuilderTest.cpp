@@ -12,6 +12,7 @@
  *
  ********************************************************************************/
 
+#include <algorithm>
 #include <cstring>
 #include <gtest/gtest.h>
 #include <iostream>
@@ -43,6 +44,31 @@ TEST(MessageBuilder, build_byte_stream) {
     MessageBuilder::build_byte_stream(buffer, &length, *msg);
 
     EXPECT_EQ(memcmp(buffer, test_message, length), 0);
+}
+
+TEST(MessageBuilder, build_byte_stream_rejects_insufficient_capacity) {
+    auto msg = MessageBuilder::create<SOMEIP>();
+    std::uint8_t payload[10] = {};
+    msg->set_payload(payload, sizeof(payload));
+
+    std::uint32_t length = 99;
+    std::vector<std::uint8_t> buffer(msg->get_serialized_size() - 1, 0xA5);
+
+    EXPECT_EQ(MessageBuilder::build_byte_stream(buffer.data(), buffer.size(), &length, *msg), 0U);
+    EXPECT_EQ(length, 0U);
+    EXPECT_EQ(std::count(buffer.begin(), buffer.end(), 0xA5), static_cast<std::ptrdiff_t>(buffer.size()));
+
+    buffer.resize(msg->get_serialized_size());
+    EXPECT_EQ(MessageBuilder::build_byte_stream(buffer.data(), buffer.size(), &length, *msg),
+              SOMEIP_HEADER::SIZE + sizeof(payload));
+    EXPECT_EQ(length, SOMEIP_HEADER::SIZE + sizeof(payload));
+}
+
+TEST(MessageBuilder, udp_limits_derive_from_payload_limit) {
+    EXPECT_EQ(SOMEIP_UDP::MAX_MESSAGE_SIZE, SOMEIP_HEADER::SIZE + SOMEIP_UDP::MAX_PAYLOAD_SIZE);
+    EXPECT_EQ(SOMEIP_UDP::TP_MAX_SEGMENT_SIZE % 16, 0U);
+    EXPECT_LE(4 + SOMEIP_UDP::TP_MAX_SEGMENT_SIZE, SOMEIP_UDP::MAX_PAYLOAD_SIZE);
+    EXPECT_GT(4 + SOMEIP_UDP::TP_MAX_SEGMENT_SIZE + 16, SOMEIP_UDP::MAX_PAYLOAD_SIZE);
 }
 
 TEST(MessageBuilder, is_sd_message) {

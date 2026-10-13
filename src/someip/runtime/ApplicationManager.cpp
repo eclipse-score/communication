@@ -1621,7 +1621,7 @@ bool ApplicationManager::check_enabled_tp_message(MessageSOMEIP& message) {
     if (service_config->get_reliable_port() != 0 || service_config->get_unreliable_port() == 0)
         return false;
 
-    if (message.get_length() <= SOMEIP_UDP_MAX_PAYLOAD_SIZE)
+    if (message.get_payload_type()->get_length() <= SOMEIP_UDP::MAX_PAYLOAD_SIZE)
         return false;
     return true;
 }
@@ -1762,20 +1762,20 @@ void ApplicationManager::send_tp_message(MessageSOMEIP& message) {
 
     auto original_payload = message.get_payload();
 
-    const std::uint32_t max_payload = SOMEIP_UDP_MAX_PAYLOAD_SIZE - 8;
+    const std::uint32_t max_segment = SOMEIP_UDP::TP_MAX_SEGMENT_SIZE;
 
     while (remains > 0) {
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::send_tp_message / remains : " << remains;
 
-        bool more = remains > max_payload;
+        bool more = remains > max_segment;
         std::shared_ptr<MessagePayload> payload = std::make_shared<MessagePayload>();
         std::uint32_t tp_header = (offset << 4) | more;
 
         payload->append(tp_header);
-        payload->append(original_payload + offset * 16, (more ? 1392 : remains));
+        payload->append(original_payload + offset * 16, (more ? max_segment : remains));
 
-        offset += (max_payload) / 16; // 87 : (1400 - 8) / 16
-        remains = (remains > max_payload) ? remains - max_payload : 0;
+        offset += max_segment / 16;
+        remains = (remains > max_segment) ? remains - max_segment : 0;
 
         msg.set_payload(payload);
         packet_router_->send_message(msg);

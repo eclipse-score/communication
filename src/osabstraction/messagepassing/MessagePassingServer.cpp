@@ -229,15 +229,12 @@ void MessagePassingServer::receive_thread() {
                 std::vector<std::uint8_t> receive_buffer_dynamic;
                 std::uint32_t message_length = (std::uint32_t)(message_info.srcmsglen - sizeof(header.type));
 
-                // Use static allocation for packet reception to improve performance.
-                // if the length of the packet is shorter than SOMEIP_UDP_MAX_PAYLOAD_SIZE (about 1400 bytes).
+                // Use static allocation for packet reception to improve performance
+                // when the packet and its 2-byte instance ID fit in static_buffer_.
                 receive_buffer_ = static_buffer_;
 
-                // If the length of a packet is larger than SOMEIP_UDP_MAX_PAYLOAD_SIZE,
-                // dynamic allocation for receiving the packet should be used.
-                // The length of dynamic allocation will be SOMEIP_UDP_MAX_PAYLOAD_SIZE + 2.
-                // 2 bytes will be used for storing the instance ID.
-                if (message_length + 2 > SOMEIP_UDP_MAX_PAYLOAD_SIZE) {
+                // Otherwise, dynamic allocation of message_length + 2 bytes is used.
+                if (message_length + 2 > sizeof(static_buffer_)) {
                     receive_buffer_dynamic.assign(message_length + 2, 0x00);
                     receive_buffer_ = receive_buffer_dynamic.data();
                 }

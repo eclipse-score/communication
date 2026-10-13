@@ -23,6 +23,7 @@
 
 #include <multiplex/Multiplexer.h>
 #include <socket/Socket.h>
+#include <message/MessageConstant.h>
 
 namespace lgsomeip {
 
@@ -30,6 +31,9 @@ class EndpointBase : public std::enable_shared_from_this<EndpointBase> {
 public:
     const static std::uint32_t MAX_TRANSFER_PACKET_LENGTH =
         524288 + 1000; // To support 512Kbytes including header (about 1000bytes)
+
+    // Stream messages up to this size avoid heap allocation; larger ones use a dynamic buffer.
+    const static std::uint32_t STATIC_BUFFER_SIZE = SOMEIP_UDP::MAX_MESSAGE_SIZE;
 
     EndpointBase(std::shared_ptr<lgsomeip::osabstraction::Socket> socket = nullptr);
     virtual ~EndpointBase();
@@ -94,8 +98,7 @@ protected:
 
     std::shared_ptr<lgsomeip::osabstraction::Address> sender_address_{nullptr};
 
-    uint8_t static_buffer_[SOMEIP_UDP_MAX_PAYLOAD_SIZE];
-    uint8_t* udp_receive_buffer_ = static_buffer_;
+    uint8_t static_buffer_[STATIC_BUFFER_SIZE];
     uint8_t* tcp_receive_buffer_ = static_buffer_;
 
     std::uint16_t current_received_someip_packet_instance_id_ = 0;

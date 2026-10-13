@@ -608,7 +608,12 @@ void PacketRouterProxy::send_message(std::shared_ptr<MessageSD> message) {
 
     // Serialize SOME/IP-SD messages into a static buffer protected by
     // send_message_mutex_.
-    MessageBuilder::build_byte_stream(send_buffer_someip_sd_, &length, *message);
+    MessageBuilder::build_byte_stream(send_buffer_someip_sd_, sizeof(send_buffer_someip_sd_), &length, *message);
+    if (length == 0) {
+        LGSOMEIP_LOG_ERROR << "PacketRouterProxy::send_message / SOME/IP-SD message exceeds "
+                           << sizeof(send_buffer_someip_sd_) << " bytes";
+        return;
+    }
 
     if (sender_ != nullptr) {
         do_send_message(sender_, send_buffer_someip_sd_, length);

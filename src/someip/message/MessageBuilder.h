@@ -55,6 +55,11 @@ public:
     template <typename MessageType>
     static std::uint32_t build_byte_stream(std::uint8_t* data, std::uint32_t* length, MessageType& message);
 
+    // Returns 0 and writes nothing when the serialized message does not fit in capacity.
+    template <typename MessageType>
+    static std::uint32_t build_byte_stream(std::uint8_t* data, std::uint32_t capacity, std::uint32_t* length,
+                                           MessageType& message);
+
     template <typename MessageType>
     static std::uint32_t build_byte_stream_some_ip_header(std::uint8_t* data, std::uint32_t* length,
                                                           MessageType& message);
@@ -73,6 +78,16 @@ template <typename MessageType>
 std::uint32_t MessageBuilder::build_byte_stream(std::uint8_t* data, std::uint32_t* length, MessageType& message) {
     *length = message.serialize(data);
     return *length;
+}
+
+template <typename MessageType>
+std::uint32_t MessageBuilder::build_byte_stream(std::uint8_t* data, std::uint32_t capacity, std::uint32_t* length,
+                                                MessageType& message) {
+    if (message.get_serialized_size() > capacity) {
+        *length = 0;
+        return 0;
+    }
+    return build_byte_stream(data, length, message);
 }
 
 template <typename MessageType>

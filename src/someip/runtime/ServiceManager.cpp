@@ -45,6 +45,26 @@
 
 namespace lgsomeip {
 
+namespace {
+std::vector<std::uint8_t> serialize_sd(MessageSD& message) {
+    std::vector<std::uint8_t> buffer(message.get_serialized_size());
+    std::uint32_t length = 0;
+    MessageBuilder::build_byte_stream(buffer.data(), &length, message);
+    return buffer;
+}
+
+// False means the SD message exceeds one UDP datagram and must not be sent externally.
+bool serialize_external_sd(MessageSD& message, std::vector<std::uint8_t>& buffer) {
+    if (message.get_serialized_size() > SOMEIP_UDP::MAX_MESSAGE_SIZE) {
+        LGSOMEIP_LOG_ERROR << "ServiceManager / SOME/IP-SD message of " << message.get_serialized_size()
+                           << " bytes exceeds the UDP limit of " << SOMEIP_UDP::MAX_MESSAGE_SIZE << " bytes; not sent";
+        return false;
+    }
+    buffer = serialize_sd(message);
+    return true;
+}
+} // namespace
+
 // Provide the out-of-line definition required for ODR-use.
 const std::uint8_t ServiceManager::RETRY_CONNECTION_PERIOD;
 
@@ -480,8 +500,6 @@ void ServiceManager::on_send_cyclic_main_offer_service(std::shared_ptr<MessageSD
 }
 
 void ServiceManager::on_send_cyclic_offer_find_service() {
-    std::uint8_t send_buffer[SOMEIP_UDP_MAX_PAYLOAD_SIZE];
-    std::uint32_t len = 0;
     std::shared_ptr<lgsomeip::osabstraction::Address> sdaddr = nullptr;
 
     auto message = MessageBuilder::create<SOMEIPSD>();
@@ -504,8 +522,11 @@ void ServiceManager::on_send_cyclic_offer_find_service() {
         // Add unicast flag
         message->set_flag(session_info.second | 0x40);
 
-        MessageBuilder::build_byte_stream(send_buffer, &len, *message);
-        packet_router_->send_external_sd_message(send_buffer, len, nullptr, LGSOMEIP_MULTI_ENDPOINT);
+        std::vector<std::uint8_t> send_buffer;
+        if (serialize_external_sd(*message, send_buffer)) {
+            packet_router_->send_external_sd_message(send_buffer.data(), send_buffer.size(), nullptr,
+                                                     LGSOMEIP_MULTI_ENDPOINT);
+        }
     }
 }
 
@@ -1191,29 +1212,27 @@ void ServiceManager::on_external_message(std::shared_ptr<Endpoint> endpoint, std
             }
         }
 
-        std::uint8_t send_buffer[SOMEIP_UDP_MAX_PAYLOAD_SIZE];
-        std::uint32_t len;
-
         auto session_info = get_session_id_and_reboot_flag(sender_ip_address);
         gathered_subscribe_ack_list_->set_request_id(static_cast<std::uint32_t>(session_info.first));
         // Unicast Flag
         gathered_subscribe_ack_list_->set_flag(session_info.second | 0x40);
 
-        MessageBuilder::build_byte_stream(send_buffer, &len, *gathered_subscribe_ack_list_);
-        packet_router_->send_external_sd_message(send_buffer, len, sender_address, multi);
+        std::vector<std::uint8_t> send_buffer;
+        if (serialize_external_sd(*gathered_subscribe_ack_list_, send_buffer)) {
+            packet_router_->send_external_sd_message(send_buffer.data(), send_buffer.size(), sender_address, multi);
+        }
     }
     // Send the gathered SubscribeEventgroup messages in a packet
     if (!gathered_subscribe_list_->entries().empty()) {
-        std::uint8_t send_buffer[SOMEIP_UDP_MAX_PAYLOAD_SIZE];
-        std::uint32_t len;
-
         auto session_info = get_session_id_and_reboot_flag(sender_ip_address);
         gathered_subscribe_list_->set_request_id(static_cast<std::uint32_t>(session_info.first));
         // Unicast Flag
         gathered_subscribe_list_->set_flag(session_info.second | 0x40);
 
-        MessageBuilder::build_byte_stream(send_buffer, &len, *gathered_subscribe_list_);
-        packet_router_->send_external_sd_message(send_buffer, len, sender_address, multi);
+        std::vector<std::uint8_t> send_buffer;
+        if (serialize_external_sd(*gathered_subscribe_list_, send_buffer)) {
+            packet_router_->send_external_sd_message(send_buffer.data(), send_buffer.size(), sender_address, multi);
+        }
     }
 }
 
@@ -2493,9 +2512,6 @@ void ServiceManager::send_internal_offer_service_all(std::uint16_t service_id, s
 void ServiceManager::send_internal_offer_service(std::uint16_t service_id, std::uint16_t instance_id, std::uint32_t ttl,
                                                  std::uint8_t major_version, std::uint32_t minor_version,
                                                  std::uint32_t app_id) {
-    std::uint8_t send_buffer[100];
-    std::uint32_t len = 0;
-
     // Compose the SOME/IP-SD message.
     auto message = MessageBuilder::create<SOMEIPSD>();
     SDEntry entry(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
@@ -2521,9 +2537,9 @@ void ServiceManager::send_internal_offer_service(std::uint16_t service_id, std::
                        << (source_appid > 0 ? ", Source " + format_named_id("AppID", source_appid, 4) : std::string());
 
     MessageComposer::add_entry(message, &entry, nullptr);
-    MessageBuilder::build_byte_stream(send_buffer, &len, *message);
+    auto send_buffer = serialize_sd(*message);
 
-    packet_router_->send_internal_message(send_buffer, len, app_id);
+    packet_router_->send_internal_message(send_buffer.data(), send_buffer.size(), app_id);
 }
 
 void ServiceManager::send_subscribe_eventgroup(std::uint16_t service_id, std::uint16_t instance_id,
@@ -2550,8 +2566,6 @@ void ServiceManager::send_subscribe_eventgroup(std::uint16_t service_id, std::ui
                            << " send_alone: " << send_alone << " to Addr[" << addr->get_ip_address() << "]";
     }
 
-    std::uint8_t send_buffer[100];
-    std::uint32_t len = 0;
     std::shared_ptr<SOMEIPSD::type> message;
 
     // Gather into gathered_subscribe_list_ when sending alongside an external message.
@@ -2578,8 +2592,8 @@ void ServiceManager::send_subscribe_eventgroup(std::uint16_t service_id, std::ui
         message->set_request_id(app_id << 16);
         message->set_flag(0xc0);
         message->entries().push_back(entry);
-        MessageBuilder::build_byte_stream(send_buffer, &len, *message);
-        packet_router_->send_internal_message(send_buffer, len, target_appid);
+        auto send_buffer = serialize_sd(*message);
+        packet_router_->send_internal_message(send_buffer.data(), send_buffer.size(), target_appid);
     } else {
         LGSOMEIP_LOG_DEBUG << "ServiceManager::send_subscribe_eventgroup / Send External Service";
 
@@ -2634,8 +2648,11 @@ void ServiceManager::send_subscribe_eventgroup(std::uint16_t service_id, std::ui
             // Add unicast flag
             message->set_flag(session_info.second | 0x40);
 
-            MessageBuilder::build_byte_stream(send_buffer, &len, *message);
-            packet_router_->send_external_sd_message(send_buffer, len, dest_sd_addr, LGSOMEIP_UNI_ENDPOINT);
+            std::vector<std::uint8_t> send_buffer;
+            if (serialize_external_sd(*message, send_buffer)) {
+                packet_router_->send_external_sd_message(send_buffer.data(), send_buffer.size(), dest_sd_addr,
+                                                         LGSOMEIP_UNI_ENDPOINT);
+            }
         }
         // The message is sent later, together with others, from on_external_offer_service()
         // when send_alone is false (it was gathered into gathered_subscribe_list_).
@@ -2647,9 +2664,6 @@ void ServiceManager::send_subscribe_eventgroup_ack(std::uint16_t service_id, std
                                                    std::uint8_t major_version, std::uint16_t app_id,
                                                    std::shared_ptr<lgsomeip::osabstraction::Address> multicast,
                                                    std::string target_ip) {
-    std::uint8_t send_buffer[100];
-    std::uint32_t len = 0;
-
     auto message = MessageBuilder::create<SOMEIPSD>();
 
     SDEntry entry(SOMEIP_SD_ENTRY::SUBSCRIBEACK::TYPEID);
@@ -2702,21 +2716,24 @@ void ServiceManager::send_subscribe_eventgroup_ack(std::uint16_t service_id, std
     if (target_appid > 0 && target_ip == "") {
         message->set_request_id(source_appid << 16);
         message->set_flag(0xc0);
-        MessageBuilder::build_byte_stream(send_buffer, &len, *message);
-        packet_router_->send_internal_message(send_buffer, len, target_appid);
+        auto send_buffer = serialize_sd(*message);
+        packet_router_->send_internal_message(send_buffer.data(), send_buffer.size(), target_appid);
     } else if (target_ip != "") {
         static std::shared_ptr<lgsomeip::osabstraction::Address> target_addr = packet_router_->make_address();
         auto session_info = get_session_id_and_reboot_flag(target_ip);
         message->set_request_id(static_cast<std::uint32_t>(session_info.first));
         // Add unicast flag
         message->set_flag(session_info.second | 0x40);
-        MessageBuilder::build_byte_stream(send_buffer, &len, *message);
 
         target_addr->set_ip_address(target_ip);
         target_addr->set_reliable(false);
         target_addr->set_port_address(get_configuration()->get_service_discovery_info()->get_port());
 
-        packet_router_->send_external_sd_message(send_buffer, len, target_addr, LGSOMEIP_UNI_ENDPOINT);
+        std::vector<std::uint8_t> send_buffer;
+        if (serialize_external_sd(*message, send_buffer)) {
+            packet_router_->send_external_sd_message(send_buffer.data(), send_buffer.size(), target_addr,
+                                                     LGSOMEIP_UNI_ENDPOINT);
+        }
     }
 }
 
@@ -2724,8 +2741,6 @@ void ServiceManager::send_external_find_service_all(
     std::map<std::uint16_t, std::map<std::uint16_t, struct RequestedService*>>& find_list) {
     LGSOMEIP_LOG_DEBUG << "ServiceManager::send_external_find_service_all";
 
-    std::uint8_t send_buffer[SOMEIP_UDP_MAX_PAYLOAD_SIZE];
-    std::uint32_t len = 0;
     auto message = MessageBuilder::create<SOMEIPSD>();
 
     for (auto& service : find_list) {
@@ -2750,8 +2765,11 @@ void ServiceManager::send_external_find_service_all(
     // Add unicast flag
     message->set_flag(session_info.second | 0x40);
 
-    MessageBuilder::build_byte_stream(send_buffer, &len, *message);
-    packet_router_->send_external_sd_message(send_buffer, len, nullptr, LGSOMEIP_MULTI_ENDPOINT);
+    std::vector<std::uint8_t> send_buffer;
+    if (serialize_external_sd(*message, send_buffer)) {
+        packet_router_->send_external_sd_message(send_buffer.data(), send_buffer.size(), nullptr,
+                                                 LGSOMEIP_MULTI_ENDPOINT);
+    }
 }
 
 void ServiceManager::send_external_find_service(std::uint16_t service, std::uint16_t instance, std::uint32_t ttl,
@@ -2760,8 +2778,6 @@ void ServiceManager::send_external_find_service(std::uint16_t service, std::uint
                        << format_service_instance_interface_version(service, instance, major_version, minor_version)
                        << " TTL=" << ttl;
 
-    std::uint8_t send_buffer[SOMEIP_UDP_MAX_PAYLOAD_SIZE];
-    std::uint32_t len = 0;
     auto message = MessageBuilder::create<SOMEIPSD>();
 
     SDEntry entry(SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID);
@@ -2779,17 +2795,17 @@ void ServiceManager::send_external_find_service(std::uint16_t service, std::uint
     // Add unicast flag
     message->set_flag(session_info.second | 0x40);
 
-    MessageBuilder::build_byte_stream(send_buffer, &len, *message);
-    packet_router_->send_external_sd_message(send_buffer, len, nullptr, LGSOMEIP_MULTI_ENDPOINT);
+    std::vector<std::uint8_t> send_buffer;
+    if (serialize_external_sd(*message, send_buffer)) {
+        packet_router_->send_external_sd_message(send_buffer.data(), send_buffer.size(), nullptr,
+                                                 LGSOMEIP_MULTI_ENDPOINT);
+    }
 }
 
 void ServiceManager::send_external_offer_service(
     std::map<std::uint16_t, std::map<std::uint16_t, struct AvailableService*>>& offer_list,
     std::shared_ptr<lgsomeip::osabstraction::Address> address, std::uint32_t ttl, bool multicast) {
     LGSOMEIP_LOG_DEBUG << "ServiceManager::send_external_offer_service";
-
-    std::uint8_t send_buffer[SOMEIP_UDP_MAX_PAYLOAD_SIZE];
-    std::uint32_t len = 0;
 
     std::shared_ptr<lgsomeip::osabstraction::Address> sdaddr = nullptr;
     if (address != nullptr)
@@ -2835,8 +2851,10 @@ void ServiceManager::send_external_offer_service(
     // Add unicast flag
     message->set_flag(session_info.second | 0x40);
 
-    MessageBuilder::build_byte_stream(send_buffer, &len, *message);
-    packet_router_->send_external_sd_message(send_buffer, len, sdaddr, multicast);
+    std::vector<std::uint8_t> send_buffer;
+    if (serialize_external_sd(*message, send_buffer)) {
+        packet_router_->send_external_sd_message(send_buffer.data(), send_buffer.size(), sdaddr, multicast);
+    }
 }
 
 std::pair<std::uint16_t, std::uint8_t> ServiceManager::get_session_id_and_reboot_flag(std::string address) {

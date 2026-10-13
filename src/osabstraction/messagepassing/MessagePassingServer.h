@@ -63,7 +63,9 @@ private:
     name_attach_t* attached_name_;
     int self_coid_{-1};
 
-    uint8_t static_buffer_[SOMEIP_UDP_MAX_PAYLOAD_SIZE];
+    // SOME/IP header (16 bytes) plus the UDP payload limit; osabstraction cannot include SOME/IP headers.
+    static constexpr std::size_t kStaticBufferSize = 16 + SOMEIP_UDP_MAX_PAYLOAD_SIZE;
+    uint8_t static_buffer_[kStaticBufferSize];
     uint8_t* receive_buffer_;
 
     MessagePassingConnectionListener* listener_;

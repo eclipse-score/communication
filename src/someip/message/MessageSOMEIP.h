@@ -32,6 +32,10 @@ public:
         return false;
     }
     virtual std::uint32_t get_length() const;
+    // Total bytes written by serialize(): SOME/IP header plus payload.
+    std::uint32_t get_serialized_size() const {
+        return get_length();
+    }
 
     virtual std::uint32_t serialize(std::uint8_t* data);
     std::uint32_t serialize_some_ip_header(std::uint8_t* data);

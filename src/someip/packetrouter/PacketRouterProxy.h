@@ -116,7 +116,7 @@ private:
     // When multiple threads try to send messages in the PacketRouterProxy, the messages can be overwritten.
     // This mutex prevents multiple threads from sending messages simultaneously.
     std::mutex send_message_mutex_;
-    std::uint8_t send_buffer_someip_sd_[SOMEIP_UDP_MAX_PAYLOAD_SIZE];
+    std::uint8_t send_buffer_someip_sd_[SOMEIP_UDP::MAX_MESSAGE_SIZE];
 
 private:
     ApplicationManager* host_;

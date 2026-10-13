@@ -359,6 +359,8 @@ public:
                       std::uint8_t major = SOMEIP_MAJOR_VERSION, std::shared_ptr<Payload> payload = nullptr) {
         std::cout << "ClientAppSample::send_message Called" << std::endl;
         sent_message_ = MessageBuilder::create_request_message(sid, iid, major);
+        // With IPC enabled, the instance ID decides whether the message is routed over IPC or the network.
+        sent_message_->set_instance_id(iid);
         if (payload != nullptr) {
             sent_message_->set_payload(payload);
         }

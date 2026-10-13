@@ -41,9 +41,19 @@ public:
 
 #if defined(ENABLE_SOMEIP_IPC)
     void add_ipc_route(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t, bool) override {}
-    void send_ipc_message(std::shared_ptr<MessageSOMEIP>) override {}
-    void send_ipc_message(MessageSOMEIP&, bool) override {}
-    void send_ipc_response_message(MessageSOMEIP&, std::uint16_t, std::uint16_t) override {}
+    // Services missing from the configuration are routed over IPC, so record them like regular messages.
+    void send_ipc_message(std::shared_ptr<MessageSOMEIP> message) override {
+        ++message_count;
+        last_message = std::move(message);
+    }
+    void send_ipc_message(MessageSOMEIP& message, bool) override {
+        ++message_count;
+        last_message = std::make_shared<MessageSOMEIP>(message);
+    }
+    void send_ipc_response_message(MessageSOMEIP& message, std::uint16_t, std::uint16_t) override {
+        ++message_count;
+        last_message = std::make_shared<MessageSOMEIP>(message);
+    }
     void on_internal_request(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t) override {}
 #endif // ENABLE_SOMEIP_IPC
 

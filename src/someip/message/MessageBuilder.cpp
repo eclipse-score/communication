@@ -56,6 +56,7 @@ std::shared_ptr<MessageSOMEIP> MessageBuilder::create_response_message(MessageSO
     if (message.get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST) {
         response = MessageBuilder::create<SOMEIP>();
         response->set_message_id(message.get_message_id());
+        response->set_instance_id(message.get_instance_id());
         response->set_interface_version(message.get_interface_version());
         response->set_protocol_version(message.get_protocol_version());
         response->set_request_id(message.get_request_id());

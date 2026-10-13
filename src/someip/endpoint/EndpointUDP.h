@@ -54,11 +54,8 @@ public:
 
         std::int32_t received_len = 0;
 
-        // The configured payload limit protects the UDP transport boundary.
-        // With UDP the SOME/IP payload shall be between 0 and 1400 Bytes. The limitation to 1400
-        // Bytes is needed in order to allow for future changes to protocol stack (e.g. changing to
-        // IPv6 or adding security means).
-        received_len = socket_->receive((char*)udp_receive_buffer_, SOMEIP_UDP_MAX_PAYLOAD_SIZE, sender_address_);
+        // Receive into a buffer one byte larger than any valid datagram so truncation is detectable.
+        received_len = socket_->receive((char*)udp_receive_buffer_, sizeof(udp_receive_buffer_), sender_address_);
 
         LGSOMEIP_LOG_DEBUG << "EndpointUDP::callback / received length = " << received_len;
 
@@ -73,6 +70,8 @@ public:
 #else  // ENABLE_TLS
             on_error();
 #endif // ENABLE_TLS
+        } else if (static_cast<std::size_t>(received_len) >= sizeof(udp_receive_buffer_)) {
+            LGSOMEIP_LOG_WARN << "EndpointUDP::callback / discard datagram that fills the receive buffer";
         } else if (received_len < static_cast<std::int32_t>(SOMEIP_HEADER::SIZE)) {
             LGSOMEIP_LOG_WARN << "EndpointUDP::callback / discard truncated SOME/IP header";
         } else {
@@ -98,6 +97,12 @@ public:
 
                 const std::size_t message_length =
                     static_cast<std::size_t>(packet_length_field) + rest_hdr_len_from_length;
+                if (message_length - SOMEIP_HEADER::SIZE > SOMEIP_UDP::MAX_PAYLOAD_SIZE) {
+                    LGSOMEIP_LOG_WARN << "EndpointUDP::callback / discard SOME/IP payload larger than "
+                                      << SOMEIP_UDP::MAX_PAYLOAD_SIZE << " bytes";
+                    break;
+                }
+
                 std::vector<std::uint8_t> message_buffer(message_length + 2);
                 std::copy(udp_receive_buffer_ + index, udp_receive_buffer_ + index + message_length,
                           message_buffer.begin());
@@ -113,6 +118,7 @@ public:
 
 private:
     BASETYPE* host_;
+    std::uint8_t udp_receive_buffer_[SOMEIP_UDP::RECEIVE_BUFFER_SIZE];
 };
 
 } // namespace lgsomeip

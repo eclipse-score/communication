@@ -61,8 +61,7 @@ public:
         std::uint32_t rest_len = 0;
         std::vector<uint8_t> receive_buffer_dynamic;
 
-        // Use the static receive buffer for packets shorter than SOMEIP_UDP_MAX_PAYLOAD_SIZE
-        // (about 1400 bytes) to improve performance.
+        // Use the static receive buffer when the message fits to improve performance.
         tcp_receive_buffer_ = static_buffer_;
 
         std::uint32_t rest_header_len(SOMEIP_HEADER::ACCUM_LEN::LENGTH);
@@ -105,9 +104,9 @@ public:
             return;
         }
 
-        // Use dynamic allocation for packets larger than SOMEIP_UDP_MAX_PAYLOAD_SIZE.
+        // Use dynamic allocation for messages that do not fit the static buffer.
         // Reserve two additional bytes for the instance ID.
-        if (packet_length_field + SOMEIP_HEADER::ACCUM_LEN::LENGTH + 2 > SOMEIP_UDP_MAX_PAYLOAD_SIZE) {
+        if (packet_length_field + SOMEIP_HEADER::ACCUM_LEN::LENGTH + 2 > sizeof(static_buffer_)) {
             receive_buffer_dynamic.assign(tcp_receive_buffer_, tcp_receive_buffer_ + SOMEIP_HEADER::ACCUM_LEN::LENGTH);
             receive_buffer_dynamic.resize(packet_length_field + SOMEIP_HEADER::ACCUM_LEN::LENGTH + 2);
             tcp_receive_buffer_ = receive_buffer_dynamic.data();

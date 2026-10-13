@@ -33,6 +33,10 @@ public:
     virtual ~MessageSD();
 
     virtual std::uint32_t get_length() const;
+    // Total bytes written by serialize(): SOME/IP header plus SD payload.
+    std::uint32_t get_serialized_size() const {
+        return get_length() + 8;
+    }
     virtual bool is_service_discovery() {
         return true;
     }

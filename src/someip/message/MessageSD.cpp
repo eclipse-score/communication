@@ -120,7 +120,8 @@ bool MessageSD::deserialize(std::uint8_t* data, std::uint32_t length) {
 std::uint32_t MessageSD::serialize(std::uint8_t* data) {
     std::uint32_t index;
     std::uint32_t position = 0;
-    std::uint32_t payload_length = get_length();
+    // get_length() is the SOME/IP length field value, which also counts 8 header bytes after the length field.
+    std::uint32_t payload_length = get_length() - 8;
 
     std::uint8_t* message_data = data + SOMEIP_HEADER::SIZE;
 

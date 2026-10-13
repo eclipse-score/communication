@@ -54,6 +54,20 @@ const std::uint32_t RETURNCODE = 16;
 } // namespace ACCUM_LEN
 } // namespace SOMEIP_HEADER
 
+// SOMEIP_UDP_MAX_PAYLOAD_SIZE limits only the SOME/IP payload (bytes after the 16-byte header).
+namespace SOMEIP_UDP {
+const std::uint32_t MAX_PAYLOAD_SIZE = SOMEIP_UDP_MAX_PAYLOAD_SIZE;
+// Largest serialized SOME/IP message (header + payload) in one UDP datagram.
+const std::uint32_t MAX_MESSAGE_SIZE = SOMEIP_HEADER::SIZE + MAX_PAYLOAD_SIZE;
+const std::uint32_t ETHERNET_MTU = 1500;
+// A datagram that fills this buffer is treated as truncated and dropped.
+const std::uint32_t RECEIVE_BUFFER_SIZE = (ETHERNET_MTU > MAX_MESSAGE_SIZE) ? ETHERNET_MTU : MAX_MESSAGE_SIZE + 1;
+// Largest non-final TP segment payload: 4-byte TP header plus a multiple of 16 bytes.
+const std::uint32_t TP_MAX_SEGMENT_SIZE = ((MAX_PAYLOAD_SIZE - 4) / 16) * 16;
+static_assert(MAX_PAYLOAD_SIZE >= 20, "SOMEIP_UDP_MAX_PAYLOAD_SIZE must hold a TP header and one 16-byte block");
+static_assert(MAX_MESSAGE_SIZE <= 65507, "SOMEIP_UDP_MAX_PAYLOAD_SIZE exceeds the UDP datagram limit");
+} // namespace SOMEIP_UDP
+
 namespace SOMEIP_MESSAGE_TYPE {
 const std::uint8_t REQUEST = 0x00;
 const std::uint8_t REQUEST_NO_RETURN = 0x01;
