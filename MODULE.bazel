@@ -280,6 +280,12 @@ use_repo(llvm, "llvm_toolchain", "llvm_toolchain_llvm")
 
 bazel_dep(name = "score_toolchains_rust", version = "0.10.0", dev_dependency = True)
 
+FERROCENE_TOOLCHAIN_BUILDER_URL = "https://github.com/eclipse-score/ferrocene_toolchain_builder/"
+
+FERROCENE_TOOLCHAIN_BUILDER_VERSION = "1.3.0"
+
+FERROCENE_UPSTREAM_COMMIT = "779fbed05ae9e9fe2a04137929d99cc9b3d516fd"
+
 gcc_ferrocene = use_extension(
     "@score_toolchains_rust//extensions:ferrocene_toolchain_ext.bzl",
     "ferrocene_toolchain_ext",
@@ -289,7 +295,11 @@ gcc_ferrocene.toolchain(
     name = "ferrocene_x86_64_unknown_linux_gnu_llvm",
     coverage_tools_sha256 = "f4b1cdcaf644b3dac429dfc50c674cde8f9620e1a563e3dcdfb313a7ce68c888",
     coverage_tools_strip_prefix = "779fbed05ae9e9fe2a04137929d99cc9b3d516fd/x86_64-unknown-linux-gnu",
-    coverage_tools_url = "https://github.com/eclipse-score/ferrocene_toolchain_builder/releases/download/1.3.0/coverage-tools-779fbed05ae9e9fe2a04137929d99cc9b3d516fd-x86_64-unknown-linux-gnu.tar.gz",
+    coverage_tools_url = "{url}releases/download/{version}/coverage-tools-{commit}-x86_64-unknown-linux-gnu.tar.gz".format(
+        commit = FERROCENE_UPSTREAM_COMMIT,
+        url = FERROCENE_TOOLCHAIN_BUILDER_URL,
+        version = FERROCENE_TOOLCHAIN_BUILDER_VERSION,
+    ),
     exec_triple = "x86_64-unknown-linux-gnu",
     extra_rustc_flags = [
         "-Clink-arg=-Wl,--no-as-needed",
@@ -303,7 +313,11 @@ gcc_ferrocene.toolchain(
         "@platforms//os:linux",
     ],
     target_triple = "x86_64-unknown-linux-gnu",
-    url = "https://github.com/eclipse-score/ferrocene_toolchain_builder/releases/download/1.0.1/ferrocene-779fbed05ae9e9fe2a04137929d99cc9b3d516fd-x86_64-unknown-linux-gnu.tar.gz",
+    url = "{url}releases/download/{version}/ferrocene-{commit}-x86_64-unknown-linux-gnu.tar.gz".format(
+        commit = FERROCENE_UPSTREAM_COMMIT,
+        url = FERROCENE_TOOLCHAIN_BUILDER_URL,
+        version = FERROCENE_TOOLCHAIN_BUILDER_VERSION,
+    ),
 )
 use_repo(
     gcc_ferrocene,
