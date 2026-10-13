@@ -29,11 +29,11 @@ The `score::mw::com::message_passing::Receiver`s used by `lola::MessagePassingFa
 initialization of our `mw::com` runtime. Depending on the `mw::com` deployment info for the
 executable/process, it can be decided, whether only QM (ASIL-QM) or QM and ASIL (ASIL-B) Receivers are needed.
 
-<img alt="LOLA_MSG_PASS_INITIALIZE_SEQ" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/lola_msg_pass_initialize_seq.puml">
+<img alt="LOLA_MSG_PASS_INITIALIZE_SEQ" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/bindings/lola/messaging/dependability/lola_msg_pass_initialize_seq.puml">
 
 ### Event Update Notification
 
 Event Notification is a good showcase for the "smart" behavior of `lola::MessagePassingFacade` as already mentioned (see
 example above). Here event notification registrations are aggregated and related messages are only sent once:
 
-<img alt="LOLA_MSG_PASS_EVENT_NOTIFY" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/lola_msg_pass_event_notify.puml">
+<img alt="LOLA_MSG_PASS_EVENT_NOTIFY" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/bindings/lola/messaging/dependability/lola_msg_pass_event_notify.puml">

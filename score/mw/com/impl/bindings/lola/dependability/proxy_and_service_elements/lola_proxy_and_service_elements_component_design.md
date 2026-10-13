@@ -84,11 +84,11 @@ instance has been described [here](../skeleton_proxy/README.md#proxy-auto-reconn
 
 The structure and transitions of the state machine are shown in:
 
-<img alt="PROXY_EVENT_STATE_MACHINE" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/proxy_event_state_machine.puml">
+<img alt="PROXY_EVENT_STATE_MACHINE" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/bindings/lola/dependability/proxy_and_service_elements/proxy_event_state_machine.puml">
 
 The structural model of the state machine design is as follows:
 
-<img alt="PROXY_EVENT_STATE_MACHINE_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/proxy_event_state_machine_model.puml">
+<img alt="PROXY_EVENT_STATE_MACHINE_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/bindings/lola/dependability/proxy_and_service_elements/proxy_event_state_machine_model.puml">
 
 #### User access to the subscription state
 

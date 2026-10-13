@@ -24,5 +24,5 @@ binding. The mechanism to initialize the `pImpl` is conceptually the same as wit
 The following sequence shows the instantiation of a service class up to its service offering based on our `LoLa`
 (shared-mem) binding:
 
-<img alt="SKELETON_CREATE_OFFER_SEQ" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/skeleton_create_offer_seq.puml">
+<img alt="SKELETON_CREATE_OFFER_SEQ" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/dependability/architectural_design/dynamic_design/skeleton_create_offer_seq.puml">
 
