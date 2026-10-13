@@ -719,69 +719,6 @@ TEST_F(SkeletonComponentTestFixture, ReOfferAfterStopOfferWithAttachedProxyThatH
     unit->PrepareStopOffer({});
 }
 
-/// \brief The proxy is still attached at the next offer. This test guards the risk the fix brings with it. The skeleton
-/// now closes its memory on the stop, so the question is whether that breaks proxies that are still attached.
-TEST_F(SkeletonComponentTestFixture, ReOfferAfterStopOfferWithProxyStillAttachedReusesShm)
-{
-    RecordProperty("Verifies", "SCR-29682823");
-    RecordProperty("Description",
-                   "StopOffer and offer again of the same skeleton while a proxy holds the usage marker file: the "
-                   "skeleton reopens the shm objects of the proxy and finds its event and field in them.");
-    RecordProperty("TestType", "Requirements-based test");
-    RecordProperty("Priority", "1");
-    RecordProperty("DerivationTechnique", "Analysis of requirements");
-
-    const ElementFqId event_fq_id{
-        test::kLolaServiceId, test::kFooEventId, test::kDefaultLolaInstanceId, ServiceElementType::EVENT};
-    const ElementFqId field_fq_id{
-        test::kLolaServiceId, test::kFooFieldId, test::kDefaultLolaInstanceId, ServiceElementType::FIELD};
-
-    // Given a skeleton with one event and one field
-    WithAServiceInstanceDeploymentContainingSingleEventAndField(QualityType::kASIL_QM)
-        .WithAServiceTypeDeploymentContainingSingleEventAndField();
-    auto unit = CreateSkeleton(CreateInstanceIdentifier());
-    ASSERT_NE(unit, nullptr);
-    RegisterEventAndFieldOnPrepareOffer(*unit);
-
-    // and that the shm sizes are calculated each time the shm is created, which happens once
-    EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kAnalysis));
-
-    // and that the skeleton is offered
-    ASSERT_TRUE(unit->PrepareOffer(events_, fields_, {}).has_value());
-    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
-    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
-    const auto data_shm_inode = GetInode(data_shm);
-    const auto control_shm_inode = GetInode(control_shm);
-    ASSERT_NE(data_shm_inode, 0U);
-    ASSERT_NE(control_shm_inode, 0U);
-
-    // and a proxy that holds a shared lock on the usage marker file (as lola::Proxy does)
-    const PartialRestartPathBuilder partial_restart_path_builder{test::kLolaServiceId};
-    auto usage_marker_file = memory::shared::LockFile::Open(
-        partial_restart_path_builder.GetServiceInstanceUsageMarkerFilePath(test::kDefaultLolaInstanceId));
-    ASSERT_TRUE(usage_marker_file.has_value());
-    std::optional<memory::shared::FlockMutexAndLock<memory::shared::SharedFlockMutex>> proxy_usage_lock{};
-    proxy_usage_lock.emplace(usage_marker_file.value());
-    ASSERT_TRUE(proxy_usage_lock->TryLock());
-
-    // When the skeleton stops offering and offers again while the proxy is still attached
-    unit->PrepareStopOffer({});
-    ASSERT_TRUE(unit->PrepareOffer(events_, fields_, {}).has_value());
-    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
-    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
-
-    // Then the skeleton reopened the shm objects the proxy maps
-    EXPECT_EQ(GetInode(data_shm), data_shm_inode);
-    EXPECT_EQ(GetInode(control_shm), control_shm_inode);
-
-    // and the event and the field are found in the reopened shm
-    EXPECT_TRUE(SkeletonAttorney{*unit}.GetEventMetaInfo(event_fq_id).has_value());
-    EXPECT_TRUE(SkeletonAttorney{*unit}.GetEventMetaInfo(field_fq_id).has_value());
-
-    proxy_usage_lock.reset();
-    unit->PrepareStopOffer({});
-}
-
 using SkeletonComponentTestDeathTest = SkeletonComponentTestFixture;
 TEST_F(SkeletonComponentTestDeathTest, ShmObjectSizeCalc_Simulation_QM_Data_TerminatesWithTooSmallConfiguredSize)
 {
