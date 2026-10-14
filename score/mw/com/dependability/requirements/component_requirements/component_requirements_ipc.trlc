@@ -677,6 +677,13 @@ section "com" {
             version = 1
         }
 
+        ScoreReq.CompReq FreeSampleCountHandling {
+            description = '''The number of free samples ({{GetFreeSampleCount()}}) shall be decreased with the creation of a SamplePtr and increased with a destruction of a SamplePtr.'''
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.FEAT_ProducerConsumerPattern@1, mw_com_fta.SlotReferenceCountNotDecremented@1]
+            version = 1
+        }
+
         /* broken_link_c/issue/21294278 */
         ScoreReq.CompReq BehaviourOfGetNumNewSamplesAvailable {
             description = '''{{GetNumNewSamplesAvailable}} queries the number of new data samples that are available since the last time {{GetNewSamples}} was called on the class instance that {{GetNumNewSamplesAvailable}} was called on.
