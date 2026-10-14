@@ -1,5 +1,6 @@
+# LoLa Sample Management Pointers Unit Design
 
-### Realization of `SamplePtr` and `SampleAllocateePtr`
+## Realization of `SamplePtr` and `SampleAllocateePtr`
 
 Our implementation of `score::mw::com::SamplePtr` resp. `score::mw::com::SampleAllocateePtr` hold a binding specific
 implementation of such a smartpointer. So in case of `LoLa` binding, we have `lola::SamplePtr`

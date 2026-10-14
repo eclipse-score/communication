@@ -1,4 +1,6 @@
-# Event/Field communication in `LoLa`
+# Binding-Independent Skeleton Event Unit Design
+
+## Event/Field communication in `LoLa`
 
 On the skeleton side, we have `impl::SkeletonField<SampleType>`, which is just like `impl::SkeletonEvent` a class
 template, with the `SampleType` (type of event/field value) as template argument. It inherits from

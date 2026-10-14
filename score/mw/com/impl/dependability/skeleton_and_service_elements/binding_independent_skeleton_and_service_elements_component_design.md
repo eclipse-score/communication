@@ -1,4 +1,6 @@
-### Skeleton and Service Element Creation
+# Binding-Independent Skeleton and Service Elements Component Design
+
+## Skeleton and Service Element Creation
 
 In order to perform any service discovery related operations on the skeleton side it is necessary to instantiate the
 skeleton by the user. This has no restrictions of any kind. For this purpose, the user would create an instance of a
