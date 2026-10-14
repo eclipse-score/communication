@@ -1,6 +1,6 @@
-# Skeleton/Proxy Binding architecture
+# Binding Independent Component Design
 
-## Introduction
+## Skeleton/Proxy Binding architecture
 
 The following structural view shows, how the separation of the binding independent part of a proxy/skeleton from
 its flexible/variable technical binding implementation is achieved. **Note**: It does **only** reflect the common use
@@ -115,15 +115,15 @@ The mechanism to provide such a "special reference" for `impl::ProxyEventBase`, 
 `impl::SkeletonMethodBase`, is realized by inheriting from `EnableReferenceToMoveableFromThis<T>`, where `T` is one of
 the above-mentioned types, making it a `CRTP` pattern!
 
-# Event/Field communication in `LoLa`
+## Event/Field communication in `LoLa`
 
-## Introduction
+### Introduction
 
 Events and Fields in `mw::com` are class templates parameterized with the `SampleType`. They differ between provider
 (skeleton) and consumer (proxy) side regarding their functionality.
 `mw::com` proxies and skeletons contain members of the related template classes.
 
-## Field as a composite
+### Field as a composite
 
 A field in `mw::com` is semantically an event, with some additional properties:
 
@@ -138,7 +138,7 @@ A field in `mw::com` is semantically an event, with some additional properties:
 Therefore, we decided to realize a field on the **binding independent** level as composition of an event and
 service-methods for set/get.
 
-### Event constructor extensions
+#### Event constructor extensions
 
 On both sides, we do have specific `ctor`s (`impl::SkeletonEvent` and `impl::ProxyEvent` for creation of events in
 the field context, as there are minimal differences in behavior.
@@ -148,7 +148,7 @@ normally registers itself at its parent skeleton in its event-collection. This i
 the field use case as in this case the `impl::SkeletonField<SampleType>` has already registered itself in its parents
 field-collection!
 
-### Field capability tags
+#### Field capability tags
 
 A field is declared with its `SampleType` plus a pack of marker tags from `field_tags.h`. Any combination of
 `WithGetter`, `WithSetter` and `WithNotifier` is allowed, and the tags decide which methods the user actually sees:
@@ -175,9 +175,9 @@ field must have at least one of `WithGetter` or `WithNotifier`. Without one of t
 the value, which makes the field useless. We deliberately do not require a setter, since a read-only field is perfectly 
 normal and the provider always sets the value itself via `Update()` with no explicit tag needed.
 
-# Method communication in `LoLa`
+## Method communication in `LoLa`
 
-## Introduction
+### Introduction
 
 Methods in `mw::com` are class templates parameterized with the `MethodReturnType` and the `MethodInArgType`s.
 They differ between provider (skeleton) and consumer (proxy) side regarding their functionality.

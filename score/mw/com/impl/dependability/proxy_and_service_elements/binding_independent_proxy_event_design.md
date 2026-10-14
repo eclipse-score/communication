@@ -1,4 +1,6 @@
-# Event/Field communication in `LoLa`
+# Binding-Independent Proxy Event Design
+
+## Event/Field communication in `LoLa`
 
 The field implementation on the proxy side looks similar to the skeleton side: We have `impl::ProxyField<SampleType>`
 class template (just like `impl::SkeletonField<SampleType>`), but in this case there is no base class!

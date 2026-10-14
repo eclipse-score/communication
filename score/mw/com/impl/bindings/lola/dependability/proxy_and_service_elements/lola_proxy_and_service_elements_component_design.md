@@ -1,4 +1,6 @@
-#### Binding level Registration of proxy events/fields at their parent proxy
+# LoLa Proxy and Service Elements Component Design
+
+## Binding level Registration of proxy events/fields at their parent proxy
 
 On the binding **specific** level things look similar:
 the binding specific proxy needs to interact with its dependent/child proxy events of type `ProxyEventBindingBase`
@@ -18,7 +20,7 @@ in place:
 2. The `ProxyBinding` (`ProxyBase::proxy_binding_`) has complete access to all its child events/fields as
    `lola::Proxy::RegisterEvent()` has been called for all contained events/fields.
 
-### Proxy auto-reconnect functionality
+## Proxy auto-reconnect functionality
 
 According to our requirements (namely requirement `SCR-29682823`), we need to support a functionality, which is known as
 `proxy auto-reconnect`.
@@ -28,7 +30,7 @@ functionality are already very generic.
 
 The `proxy auto-reconnect` function is solved within our architecture with a couple of mechanisms:
 
-#### Automated Start/Stop FindService
+### Automated Start/Stop FindService
 
 Our `lola::Proxy` has been extended with a `FindServiceGuard` member, which applies an `RAII` pattern:
 
@@ -40,7 +42,7 @@ Our `lola::Proxy` has been extended with a `FindServiceGuard` member, which appl
   `lola::Proxy` instance communicates with.
 - on destruction of `FindServiceGuard` member, it stops the **asynchronous** search again via `StopFindService()`.
 
-#### Reaction on service becoming unavailable
+### Reaction on service becoming unavailable
 
 When the registered `FindServiceHandler` gets called by the `ServiceDiscovery`, because the searched/monitored service
 instance has gone, it sets the `is_service_instance_available_` member variable of the `lola::Proxy` instance to `false`
@@ -49,7 +51,7 @@ and notifies all child proxy events about the fact, that the service instance is
 This again leads to a call to `lola::SubscriptionStateMachine::StopOfferEvent()`, which updates the event instance
 specific state machine. The subscription state switches to `SUBSCRIPTION_PENDING_STATE`.
 
-#### Reaction on service becoming available (again)
+### Reaction on service becoming available (again)
 
 When the registered `FindServiceHandler` gets called by the `ServiceDiscovery`, because the searched/monitored service
 instance has shown up again, it sets the `is_service_instance_available_` member variable of the `lola::Proxy` instance
@@ -65,7 +67,7 @@ This again leads to a call to `lola::SubscriptionStateMachine::ReOfferEvent()`, 
   messaging subsystem and only the remote `LoLa` node of the service provider has to be triggered to notify on updates.
 - it transitions to `SUBSCRIBED_STATE`
 
-#### State machine
+### State machine
 
 Event subscription and the (potentially) asynchronous subscription state change callbacks for a `ProxyEvent` instance
 are handled by the `lola::SubscriptionStateMachine`.
@@ -90,7 +92,7 @@ The structural model of the state machine design is as follows:
 
 <img alt="PROXY_EVENT_STATE_MACHINE_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/bindings/lola/dependability/proxy_and_service_elements/proxy_event_state_machine_model.puml">
 
-#### User access to the subscription state
+### User access to the subscription state
 
 The user can access the subscription state of a `ProxyEvent` or `ProxyField` instance via method `GetSubscriptionState()`.
 This method dispatches to the binding (`ProxyEventBindingBase::GetSubscriptionState()`), which in the case of the `LoLa`
@@ -121,9 +123,9 @@ machine called the handler, and before it releases the lock, it checks the retur
 &ndash; still under state-machine mutex lock &ndash; the internal `std::optional`, which holds the handler.
 
 
-## GenericProxy 
+## GenericProxy
 
-## Architecture enhancements for GenericProxy support
+### Architecture enhancements for GenericProxy support
 
 The main addition to the architecture for the interaction between a service providing instance (skeleton) and a service
 consuming instance (proxy) is, that there now is some additional meta-data needed in the `lola::ServiceDataStorage`,
@@ -151,7 +153,7 @@ I.e. beside the given map for the event data slots a second map is provided, whi
 provided by the service:
 `score::memory::shared::Map<ElementFqId, EventMetaInfo> events_metainfo_`
 
-### Meta-Info
+#### Meta-Info
 
 The `lola::EventMetaInfo` is displayed in the [class diagram for shared-mem data](../../shared_mem_layout/README.md#shared-memory-object-as-memory-resource).
 It contains meta-info of the events data type in the form of `lola::DataTypeMetaInfo` and an `OffsetPtr` to the
@@ -166,7 +168,7 @@ The `lola::DataTypeMetaInfo` contains the following members:
 * `size_of_` : the result of `sizeof()` operator on the data type (in case of event/field: `SampleType`)
 * `align_of_` : the result of `alignof()` operator on the data type (in case of event/field: `SampleType`)
 
-### initialization of `lola::EventMetaInfo`
+#### initialization of `lola::EventMetaInfo`
 
 The map containing the meta-information gets initialized by the skeleton instance together with the setup/creation of
 the vectors containing the sample slots in
@@ -179,7 +181,7 @@ std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>> lola::Skel
 This happens during initial offering-phase of a service instance, before potential consumers/proxies are able to access
 the shared-memory object.
 
-## GenericProxy class
+### GenericProxy class
 
 On `LoLa` implementation level for the proxy-event binding, we added `lola::GenericProxyEvent` beside
 `lola::ProxyEvent<SampleType>`.

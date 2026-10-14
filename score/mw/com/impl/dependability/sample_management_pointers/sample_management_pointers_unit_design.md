@@ -1,4 +1,6 @@
-### Realization of `SamplePtr` and `SampleAllocateePtr`
+# Binding-Independent Sample Management Pointers Unit Design
+
+## Realization of `SamplePtr` and `SampleAllocateePtr`
 
 `mw::com` defines two `std::unique_ptr` like pointers for accessing sample data of an event:
 

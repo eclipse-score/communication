@@ -1,5 +1,7 @@
 
-# Shared Memory Access
+# LoLa Binding Component Design
+
+## Shared Memory Access
 
 In the case of our shared memory implementation (also called `LoLa`), it is necessary to access an underlying, not yet
 further specified shared memory region which is specific to each communication instance. A problem can arise if the same

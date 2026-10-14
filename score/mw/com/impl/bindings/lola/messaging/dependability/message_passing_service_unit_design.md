@@ -1,4 +1,6 @@
-### `lola::MessagePassingFacade` is a Smart Proxy
+# LoLa Message Passing Service Unit Design
+
+## `lola::MessagePassingFacade` is a Smart Proxy
 
 All messaging interactions between the LoLa proxy/skeleton instances of two different LoLa enabled processes are routed
 through their single/per process `lola::MessagePassingFacade` instances:
@@ -23,7 +25,7 @@ messaging requirements of its local proxy/skeleton instances and should remove a
 Technically `lola::MessagePassingFacade` is a combination of a smart proxy and reverse-proxy. But since we have so many
 proxies within our `score::mw` implementation, we did not name it as such to avoid further confusion. :)
 
-### Setting up message passing infrastructure
+## Setting up message passing infrastructure
 
 The `score::mw::com::message_passing::Receiver`s used by `lola::MessagePassingFacade` are created/set up during
 initialization of our `mw::com` runtime. Depending on the `mw::com` deployment info for the
@@ -31,7 +33,7 @@ executable/process, it can be decided, whether only QM (ASIL-QM) or QM and ASIL 
 
 <img alt="LOLA_MSG_PASS_INITIALIZE_SEQ" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/bindings/lola/messaging/dependability/lola_msg_pass_initialize_seq.puml">
 
-### Event Update Notification
+## Event Update Notification
 
 Event Notification is a good showcase for the "smart" behavior of `lola::MessagePassingFacade` as already mentioned (see
 example above). Here event notification registrations are aggregated and related messages are only sent once:

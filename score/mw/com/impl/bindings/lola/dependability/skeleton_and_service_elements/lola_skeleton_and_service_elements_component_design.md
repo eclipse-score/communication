@@ -1,4 +1,6 @@
-#### Registration of references to skeleton events/fields/methods at their parent skeleton
+# LoLa Skeleton and Service Elements Component Design
+
+## Registration of references to skeleton events/fields/methods at their parent skeleton
 
 A `lola::Skeleton` is constructed via the `SkeletonBindingFactory` (TODO: add link) in the constructor of an `impl::SkeletonBase`.
 As described in (TODO: add link to registration of service elements with parent in binding indep level), the `impl::SkeletonBase`
@@ -31,7 +33,7 @@ The `lola::Skeleton` stores a map of references to each `lola::SkeletonMethod` w
 be valid (except during destruction which is described here TODO: add link).
 
 
-#### Registration of skeleton events/fields for shared memory creation at their parent skeleton
+## Registration of skeleton events/fields for shared memory creation at their parent skeleton
 
 Despite the last paragraph in the previous chapter, we are doing still "some registration" in our `LoLa`/shared-memory
 binding from `lola::SkeletonEvent` at its parent `lola::Skeleton`!
@@ -54,9 +56,9 @@ field type information, which only the `lola::SkeletonEvent` has (not the `lola:
 that `lola::Skeleton::Register()` is a method template. The `lola::SkeletonEvent` calls the method template
 instantiation with its event/field type.
 
-# Event/Field communication in `LoLa`
+## Event/Field communication in `LoLa`
 
-## Slot size calculation
+### Slot size calculation
 
 The number of slots required for a field is dependent on the presence of `WithNotifier`, `WithGetter`, and `WithSetter`.
 If `WithNotifier` is present, the proxy can subscribe and receive notifications, so the configured value of

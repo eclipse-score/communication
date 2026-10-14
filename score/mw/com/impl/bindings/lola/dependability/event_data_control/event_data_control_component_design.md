@@ -1,3 +1,4 @@
+# LoLa Event Data Control Unit Design
 
 ## Event related datastructures in LoLa binding
 
@@ -110,9 +111,9 @@ shared-mem-object. The adaption of the shown algo is as follows:
 The cost in memory for typical generic lock-free queues/vectors, which rely on copying and versioning far outweighs the
 benefit. [↩](#lockfreeref)
 
-# Layout of Shared Memory Objects
+## Layout of Shared Memory Objects
 
-## Introduction
+### Introduction
 
 This section shall provide a compact overview over the entire shared-memory layout. I.e. the data structures stored
 within shared-memory by `Lola`. Other parts of the design documentation e.g.
@@ -134,7 +135,7 @@ LoLa uses two different types of shared-memory objects per service instance:
 The **specific** content of those shared-memory objects will be described below. But first the **communality** of those two
 shared-memory types are described.
 
-## Shared-Memory Object as Memory Resource
+### Shared-Memory Object as Memory Resource
 
 All shared-memory objects are represented by `score::memory::shared::SharedMemoryResource` and as such they inherit from
 `ManagedMemoryResource` and `score::cpp::pmr::memory_resource`. Therefore, they provide the mechanisms needed by `C++17`
@@ -167,7 +168,7 @@ Accordingly, the first object/element created within the shared-memory object fo
 In the object diagram example we used a service instance with additional ASIL-B support, so besides a QM
 `SharedMemoryResource` we also do have an ASIL-B `SharedMemoryResource`.
 
-## Shared-Memory Object for Data
+### Shared-Memory Object for Data
 
 The anchor/root element (i.e. the location, where `SharedMemoryResource::ControlBlock::start` points to), which gets
 placed into the `SharedMemoryResource` for **Data** is an instance of `lola::ServiceDataStorage`. It gets created by a
@@ -198,7 +199,7 @@ This anchor element of the `SharedMemoryResource` contains two members:
 > `ShmSizeCalculationMode::kAnalysis` mode), avoiding the otherwise necessary (and costly) heap-based "simulation
 > run".
 
-## Shared-Memory Object for Control
+### Shared-Memory Object for Control
 
 The anchor/root element (i.e. the location, where `SharedMemoryResource::ControlBlock::start` points to), which gets
 placed into the `SharedMemoryResource` for **Control** is an instance of `lola::ServiceDataControl`. It also gets
@@ -213,7 +214,7 @@ This anchor element of the `SharedMemoryResource` contains the members:
 * `application_id_pid_mapping_`: a mapping from application identifiers to process IDs, used by proxy instances to
   detect crashes and register their current PID.
 
-## Local Views (Performance Optimization)
+### Local Views (Performance Optimization)
 
 Accessing data structures inside shared-memory objects via `OffsetPtr` has a runtime cost: every dereference of an
 `OffsetPtr` involves a pointer arithmetic computation relative to the base address of the shared-memory segment. In
