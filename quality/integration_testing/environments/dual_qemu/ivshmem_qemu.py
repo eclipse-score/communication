@@ -66,6 +66,7 @@ class IvshmemQemu(Qemu):
             port_forwarding=[],
             rootfs=rootfs,
             kernel_cmdline=kernel_cmdline,
+            disk=None,
         )
 
     def _extra_qemu_args(self):
