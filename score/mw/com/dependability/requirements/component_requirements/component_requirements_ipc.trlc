@@ -1137,7 +1137,8 @@ section "com" {
                 score/mw/com/design/events_fields/lola_reference_next_event_activity.puml'''
             safety = ScoreReq.Asil.B
             derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, mw_com_fta.ChangingStateFails@1,
-                mw_com_fta.IncreasingDecreasingRefCountFails@1, mw_com_fta.SlotReferenceBrokenEGNonValid@1]
+                mw_com_fta.IncreasingDecreasingRefCountFails@1, mw_com_fta.SlotReferenceBrokenEGNonValid@1,
+                mw_com_fta.DoesNotFreeMethodSignatureElement@1, mw_com_fta.OverwriteOfElementInUse@1]
             version = 1
         }
 
