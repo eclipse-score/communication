@@ -30,6 +30,9 @@ E2EResult BuildE2EResult(DataIntegrityStatus data_integrity,
                          SequenceStatus sequence,
                          HealthTracker& health_tracker) noexcept;
 
+// Same as above, taking the per-sample outcome handed up by the binding.
+E2EResult BuildE2EResult(const RawCheckOutcome& raw_check_outcome, HealthTracker& health_tracker) noexcept;
+
 }  // namespace score::mw::com::impl::e2e
 
 #endif  // SCORE_MW_COM_IMPL_E2E_E2E_SUMMARY_H

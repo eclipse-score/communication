@@ -53,4 +53,9 @@ E2EResult BuildE2EResult(const DataIntegrityStatus data_integrity,
     return E2EResult{data_integrity, sequence, historical_health, summary};
 }
 
+E2EResult BuildE2EResult(const RawCheckOutcome& raw_check_outcome, HealthTracker& health_tracker) noexcept
+{
+    return BuildE2EResult(raw_check_outcome.data_integrity, raw_check_outcome.sequence, health_tracker);
+}
+
 }  // namespace score::mw::com::impl::e2e

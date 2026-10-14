@@ -23,6 +23,12 @@ namespace score::mw::com::impl::e2e
 HealthTracker::HealthTracker(const HealthTrackerConfiguration& config) noexcept
     : config_{config}, failed_samples_{0U}, samples_in_window_{0U}, is_currently_error_{false}
 {
+    // A disabled tracker never reads the thresholds or the window, so they are only validated when enabled.
+    if (!config_.enabled)
+    {
+        return;
+    }
+
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config_.error_threshold >= 1U,
                                                       "error_threshold must be at least 1");
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config_.recovery_threshold >= 1U,
@@ -41,7 +47,10 @@ HealthTracker::HealthTracker(const HealthTrackerConfiguration& config) noexcept
 HistoricalHealthStatus HealthTracker::Update(const DataIntegrityStatus data_integrity,
                                              const SequenceStatus sequence) noexcept
 {
-    if (!config_.enabled)
+    // Without an enabled tracker or without any executed check there is nothing to judge, so the sample must neither
+    // be counted as passed nor as failed.
+    if (!config_.enabled ||
+        ((data_integrity == DataIntegrityStatus::kDisabled) && (sequence == SequenceStatus::kDisabled)))
     {
         return HistoricalHealthStatus::kDisabled;
     }
@@ -70,6 +79,13 @@ HistoricalHealthStatus HealthTracker::Update(const DataIntegrityStatus data_inte
     }
 
     return is_currently_error_ ? HistoricalHealthStatus::kError : HistoricalHealthStatus::kOk;
+}
+
+void HealthTracker::Reset() noexcept
+{
+    failed_samples_ = 0U;
+    samples_in_window_ = 0U;
+    is_currently_error_ = false;
 }
 
 }  // namespace score::mw::com::impl::e2e

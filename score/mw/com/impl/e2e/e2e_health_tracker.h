@@ -25,6 +25,7 @@ constexpr std::uint8_t kMaxHealthWindowSize{64U};
 
 // Looks at the last window_size samples. In kOk, error_threshold failed samples switch to kError.
 // In kError, recovery_threshold passed samples switch back to kOk.
+// The thresholds and the window size are only validated and used when enabled is true.
 struct HealthTrackerConfiguration
 {
     bool enabled{false};
@@ -50,6 +51,10 @@ class HealthTracker
 
     // Records one checked sample and returns the resulting status (kDisabled if the tracker is disabled).
     HistoricalHealthStatus Update(DataIntegrityStatus data_integrity, SequenceStatus sequence) noexcept;
+
+    // Clears the sample window and returns to kOk. To be called when communication continuity is broken (e.g.
+    // StopOfferEvent -> ReOfferEvent or resubscribe), so that old samples do not cause kError after a restart.
+    void Reset() noexcept;
 
   private:
     HealthTrackerConfiguration config_;

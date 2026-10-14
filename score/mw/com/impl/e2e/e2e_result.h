@@ -49,6 +49,14 @@ constexpr bool IsFailure(const SequenceStatus status) noexcept
            (status != SequenceStatus::kOkGapWithinThreshold);
 }
 
+// Per-sample outcome of the binding's own E2E check. Only this pair crosses the binding boundary; the
+// binding-independent layer completes it into an E2EResult.
+struct RawCheckOutcome
+{
+    DataIntegrityStatus data_integrity{DataIntegrityStatus::kDisabled};
+    SequenceStatus sequence{SequenceStatus::kDisabled};
+};
+
 // Result of the historical health tracking.
 enum class HistoricalHealthStatus : std::uint8_t
 {

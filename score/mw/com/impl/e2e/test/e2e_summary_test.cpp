@@ -161,10 +161,8 @@ TEST(E2eSummaryTest, HistoricalHealthErrorReportsError)
     EXPECT_EQ(summary, Summary::kError);
 }
 
-// Doc's misconfiguration Case 5: HistoricalHealthTrackingEnabled=true while both underlying checks
-// are disabled forces historical_health to kError even though data_integrity/sequence are
-// kDisabled. Error must take priority over the "all disabled" shortcut, so this must be kError,
-// not kDisabled.
+// Error must take priority over the "all disabled" shortcut, so a historical health error with
+// data_integrity/sequence kDisabled must be kError, not kDisabled.
 TEST(E2eSummaryTest, HistoricalHealthErrorWithOtherFieldsDisabledReportsErrorNotDisabled)
 {
     // Given historical health reports an error while data integrity and sequence are disabled
@@ -202,6 +200,51 @@ TEST(BuildE2EResultTest, BuildE2EResultWithDisabledHealthTrackerStillComputesSum
     // Then historical health is kDisabled and the summary is still computed as kOkWithDisabledChecks
     EXPECT_EQ(result.historical_health, HistoricalHealthStatus::kDisabled);
     EXPECT_EQ(result.summary, Summary::kOkWithDisabledChecks);
+}
+
+TEST(BuildE2EResultTest, BuildE2EResultWithBothChecksDisabledReportsDisabledSummary)
+{
+    // Given a fresh health tracker with an enabled configuration
+    HealthTracker tracker{kEnabledConfiguration};
+
+    // When building the E2E result from disabled data integrity and sequence statuses
+    const auto result = BuildE2EResult(DataIntegrityStatus::kDisabled, SequenceStatus::kDisabled, tracker);
+
+    // Then historical health and the summary are kDisabled
+    EXPECT_EQ(result.historical_health, HistoricalHealthStatus::kDisabled);
+    EXPECT_EQ(result.summary, Summary::kDisabled);
+}
+
+TEST(BuildE2EResultTest, BuildE2EResultFromRawCheckOutcomeMatchesBuildFromStatuses)
+{
+    // Given a binding outcome with a repeated-sequence error and two identical fresh health trackers
+    const RawCheckOutcome raw_check_outcome{DataIntegrityStatus::kOk, SequenceStatus::kErrorRepeated};
+    HealthTracker tracker_for_outcome{kEnabledConfiguration};
+    HealthTracker tracker_for_statuses{kEnabledConfiguration};
+
+    // When building the E2E result from the outcome and from its two statuses
+    const auto from_outcome = BuildE2EResult(raw_check_outcome, tracker_for_outcome);
+    const auto from_statuses =
+        BuildE2EResult(raw_check_outcome.data_integrity, raw_check_outcome.sequence, tracker_for_statuses);
+
+    // Then both results are identical
+    EXPECT_EQ(from_outcome.data_integrity, from_statuses.data_integrity);
+    EXPECT_EQ(from_outcome.sequence, from_statuses.sequence);
+    EXPECT_EQ(from_outcome.historical_health, from_statuses.historical_health);
+    EXPECT_EQ(from_outcome.summary, from_statuses.summary);
+    EXPECT_EQ(from_outcome.summary, Summary::kError);
+}
+
+TEST(BuildE2EResultTest, BuildE2EResultWithDefaultRawCheckOutcomeReportsDisabledSummary)
+{
+    // Given a default outcome, as delivered for an event without E2E, and an enabled health tracker
+    HealthTracker tracker{kEnabledConfiguration};
+
+    // When building the E2E result from it
+    const auto result = BuildE2EResult(RawCheckOutcome{}, tracker);
+
+    // Then the summary is kDisabled
+    EXPECT_EQ(result.summary, Summary::kDisabled);
 }
 
 TEST(BuildE2EResultTest, BuildE2EResultWithFailingSampleReportsErrorAndAdvancesHealthTracker)

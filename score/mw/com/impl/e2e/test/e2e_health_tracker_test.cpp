@@ -75,6 +75,23 @@ TEST(E2eHealthTrackerTest, DisabledConfigurationAlwaysReportsDisabled)
     }
 }
 
+TEST(E2eHealthTrackerTest, SampleWithBothChecksDisabledReportsDisabledAndDoesNotAdvanceWindow)
+{
+    // Given a health tracker with an enabled configuration
+    HealthTracker tracker{kEnabledConfiguration};
+
+    // When updating the historical health with a sample for which both checks are disabled
+    const auto status = tracker.Update(DataIntegrityStatus::kDisabled, SequenceStatus::kDisabled);
+
+    // Then the status is kDisabled
+    EXPECT_EQ(status, HistoricalHealthStatus::kDisabled);
+
+    // And the sample did not count as passed, so the error threshold is still reached by the same number of failures
+    ASSERT_EQ(UpdateWithFailedSamples(kEnabledConfiguration.error_threshold - 1U, tracker),
+              HistoricalHealthStatus::kOk);
+    EXPECT_EQ(UpdateWithFailedSample(tracker), HistoricalHealthStatus::kError);
+}
+
 TEST(E2eHealthTrackerTest, FirstValidSampleReportsOk)
 {
     // Given a fresh health tracker with an enabled configuration
@@ -258,10 +275,62 @@ TEST(E2eHealthTrackerTest, MaximumWindowSizeSwitchesToErrorAndBackToOk)
     EXPECT_EQ(UpdateWithPassedSample(tracker), HistoricalHealthStatus::kOk);
 }
 
+TEST(E2eHealthTrackerTest, ResetLeavesErrorStateAndStartsWithEmptyWindow)
+{
+    // Given a health tracker in state kError
+    HealthTracker tracker{kEnabledConfiguration};
+    ASSERT_EQ(UpdateWithFailedSamples(kEnabledConfiguration.error_threshold, tracker), HistoricalHealthStatus::kError);
+
+    // When resetting the tracker
+    tracker.Reset();
+
+    // Then one passed sample reports kOk, i.e. the state is not kError any more
+    EXPECT_EQ(UpdateWithPassedSample(tracker), HistoricalHealthStatus::kOk);
+}
+
+TEST(E2eHealthTrackerTest, ResetDiscardsFailedSamplesOfTheWindow)
+{
+    // Given a health tracker which is one failed sample away from kError
+    HealthTracker tracker{kEnabledConfiguration};
+    ASSERT_EQ(UpdateWithFailedSamples(kEnabledConfiguration.error_threshold - 1U, tracker),
+              HistoricalHealthStatus::kOk);
+
+    // When resetting the tracker and updating it with one failed sample
+    tracker.Reset();
+
+    // Then the earlier failed samples are not counted and the status stays kOk
+    EXPECT_EQ(UpdateWithFailedSample(tracker), HistoricalHealthStatus::kOk);
+}
+
+TEST(E2eHealthTrackerTest, ResetKeepsDisabledTrackerDisabled)
+{
+    // Given a disabled health tracker
+    HealthTracker tracker{kDisabledConfiguration};
+
+    // When resetting the tracker and updating it with a failed sample
+    tracker.Reset();
+
+    // Then the status is still kDisabled
+    EXPECT_EQ(UpdateWithFailedSample(tracker), HistoricalHealthStatus::kDisabled);
+}
+
 TEST(E2eHealthTrackerTest, DefaultConfigurationIsDisabledAndWellFormed)
 {
     // Given a default-constructed configuration
     constexpr HealthTrackerConfiguration kConfiguration{};
+
+    // When constructing a health tracker from it and updating it with a failing sample
+    HealthTracker tracker{kConfiguration};
+    const auto status = tracker.Update(DataIntegrityStatus::kError, SequenceStatus::kErrorRepeated);
+
+    // Then construction does not terminate and the status is kDisabled
+    EXPECT_EQ(status, HistoricalHealthStatus::kDisabled);
+}
+
+TEST(E2eHealthTrackerTest, DisabledConfigurationIsNotValidated)
+{
+    // Given a disabled configuration whose thresholds and window would be invalid if the tracker were enabled
+    constexpr HealthTrackerConfiguration kConfiguration{false, 0U, 0U, 0U};
 
     // When constructing a health tracker from it and updating it with a failing sample
     HealthTracker tracker{kConfiguration};
