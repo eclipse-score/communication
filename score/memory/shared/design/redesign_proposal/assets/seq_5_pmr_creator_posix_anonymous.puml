@@ -1,0 +1,103 @@
+@startuml seq_5_pmr_creator_qnx_anonymous
+title 5. PMR Creator: CreateQnxAnonymous
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+
+actor "PMR User\n(Creator)" as User
+participant "MemoryRegionFactory\n(singleton)" as MRF
+participant "QnxAnonymousMemoryRegion" as Region
+participant "SealedShm" as Seal
+participant "OS Kernel\n(QNX)" as OS
+participant "SharedMemoryFactory\n(singleton)" as SMF
+participant "SharedMemoryResource" as SMR
+participant "ControlBlock\n(in SHM)" as CB
+participant "MemoryResourceRegistry\n(singleton)" as REG
+
+== Step 1: Create Anonymous Region ==
+
+User -> MRF : CreateQnxAnonymous(id, size)
+activate MRF
+
+note right : id: user-chosen identifier\nfor dedup.
+
+MRF -> MRF : dedup check
+alt cache miss
+
+MRF -> Region ** : construct
+activate Region
+
+Region -> Seal : OpenAnonymous(mode)
+activate Seal
+Seal -> OS : shm_open(SHM_ANON,\n  O_RDWR|O_CREAT|O_ANON, mode)
+note right : SHM_ANON — anonymous,\nno filesystem path.
+OS --> Seal : fd
+Seal --> Region : fd
+deactivate Seal
+
+Region -> Seal : Seal(fd, size)
+activate Seal
+Seal -> OS : shm_ctl(fd,\n  SHMCTL_ANON|SHMCTL_SEAL, 0, size)
+note right : Allocates backing store +\nseals in one call.\nFallback: ftruncate if seal fails.
+OS --> Seal : ok
+Seal --> Region : done
+deactivate Seal
+
+Region -> OS : mmap(NULL, size,\n  PROT_RW, MAP_SHARED, fd, 0)
+OS --> Region : base_address
+
+deactivate Region
+
+note right : No LockFile, ACL, fchmod.
+
+MRF -> MRF : store weak_ptr for dedup
+
+else cache hit (weak_ptr alive)
+  note right : Return existing shared_ptr.
+end
+
+MRF --> User : Result<shared_ptr<MappedRegion>>
+deactivate MRF
+
+== Step 2: Wrap in Resource (SharedMemoryFactory) ==
+
+User -> SMF : Create(region)
+activate SMF
+
+SMF -> REG : Is region already managed?
+
+alt already managed
+    REG --> SMF : Yes
+    SMF --> User : Error(RegionAlreadyManaged)
+else not yet managed
+    REG --> SMF : No
+
+    SMF -> SMR ** : construct(region, next_id)
+    activate SMR
+
+    SMR -> CB ** : placement-new at\n  region->GetBaseAddress()
+    activate CB
+    note right #LightYellow : Same ControlBlock layout.\nUsable region = [base + ControlBlock::TotalSize(), end).
+    SMR --> SMF : ready
+    deactivate SMR
+
+    SMF -> REG : RegisterResource(id, resource)
+    REG --> SMF : registered
+
+    SMF --> User : Result<shared_ptr<SharedMemoryResource>>
+end
+deactivate SMF
+
+== Step 3: Allocate + Share fd ==
+
+User -> SMR : Allocate(512, align=8)
+activate SMR
+SMR -> CB : lock(mutex)
+CB --> SMR : LockResult
+SMR -> CB : bump already_allocated_bytes
+SMR -> CB : unlock(mutex)
+SMR --> User : ptr
+deactivate SMR
+
+note right #LightGreen : Share with another process via\nfd over IPC (msg_send / unix socket).\nSee Seq 7 for EOWNERDEAD handling.
+
+@enduml

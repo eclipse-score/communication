@@ -1,0 +1,111 @@
+@startuml seq_4_pmr_creator_safe_typed_named
+title 4. PMR Creator: CreateSafeTypedNamed (Daemon + SharedMemoryFactory)
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+
+actor "PMR User\n(Creator)" as User
+participant "MemoryRegionFactory\n(singleton)" as MRF
+participant "TypedNamedMemoryRegion" as Region
+participant "typedmemd\n(safe pool daemon)" as Daemon
+participant "OS Kernel" as OS
+participant "SharedMemoryFactory\n(singleton)" as SMF
+participant "SharedMemoryResource" as SMR
+participant "ControlBlock\n(in SHM)" as CB
+participant "MemoryResourceRegistry\n(singleton)" as REG
+
+== Step 1: Create Region via Typed Memory Daemon ==
+
+User -> MRF : CreateSafeTypedNamed(\n  path, size, perms)
+activate MRF
+
+MRF -> MRF : dedup check
+alt cache miss
+
+note right #LightBlue : Typed memory team\nimplements this method body.
+
+MRF -> Region ** : construct (via typed memory\n  team's implementation)
+activate Region
+
+Region -> Daemon : open("/dev/typedshm/cmd", O_RDONLY)
+activate Daemon
+Daemon --> Region : cmd_fd
+
+Region -> Daemon : devctl(cmd_fd,\n  DCM_TSHM_ALLOCATE_NAMED,\n  {path, size, perms})
+
+note right of Daemon #LightBlue
+  Inside daemon:
+  1. shm_open(path, O_RDWR|O_CREAT|O_EXCL, mode)
+  2. shm_ctl(fd, SHMCTL_ANON|SHMCTL_TYMEM
+       |SHMCTL_PHYS|SHMCTL_SEAL,
+       typed_mem_fd_, size)
+  3. ApplyPermissions(ACL on fd)
+  4. close(fd)
+end note
+Daemon --> Region : success
+deactivate Daemon
+
+Region -> OS : shm_open(path,\n  O_RDWR, mode)
+note right : No O_CREAT — daemon\nalready created it.
+OS --> Region : fd
+
+Region -> OS : fstat(fd)
+OS --> Region : size
+
+Region -> OS : mmap(NULL, size,\n  PROT_RW, MAP_SHARED, fd, 0)
+OS --> Region : base_address
+
+deactivate Region
+
+note right : No LockFile (daemon serializes).\nNo ACL, ftruncate (daemon handles).
+
+MRF -> MRF : store weak_ptr for dedup
+
+else cache hit (weak_ptr alive)
+  note right : Return existing shared_ptr.
+end
+
+MRF --> User : Result<shared_ptr<MappedRegion>>
+deactivate MRF
+
+== Step 2: Wrap in Resource (SharedMemoryFactory) ==
+
+User -> SMF : Create(region)
+activate SMF
+
+SMF -> REG : Is region already managed?
+
+alt already managed
+    REG --> SMF : Yes
+    SMF --> User : Error(RegionAlreadyManaged)
+else not yet managed
+    REG --> SMF : No
+
+    SMF -> SMR ** : construct(region, id_from_path)
+    activate SMR
+
+    SMR -> CB ** : placement-new at\n  region->GetBaseAddress()
+    activate CB
+    note right #LightYellow : Same ControlBlock as Seq 2.\nUsable region = [base + ControlBlock::TotalSize(), end).
+    SMR --> SMF : ready
+    deactivate SMR
+
+    SMF -> REG : RegisterResource(id, resource)
+    REG --> SMF : registered
+
+    SMF --> User : Result<shared_ptr<SharedMemoryResource>>
+end
+deactivate SMF
+
+== Step 3: Allocate in Safe Physical RAM ==
+
+User -> SMR : Allocate(1024, align=8)
+activate SMR
+SMR -> CB : lock(mutex)
+CB --> SMR : LockResult
+SMR -> CB : bump already_allocated_bytes
+SMR -> CB : unlock(mutex)
+SMR --> User : ptr
+deactivate SMR
+note right #LightGreen : See Seq 7 for full allocation\nwith EOWNERDEAD handling.
+
+@enduml

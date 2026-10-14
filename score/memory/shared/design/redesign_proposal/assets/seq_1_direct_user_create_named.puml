@@ -1,0 +1,80 @@
+@startuml seq_1_direct_user_create_named
+title 1. Direct User: CreateNamed (Posix)
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+
+actor "Direct User" as User
+participant "MemoryRegionFactory\n(singleton)" as MRF
+participant "PosixNamedMemoryRegion" as Region
+participant "LockFile" as LF
+participant "AccessControlApplier" as ACL
+participant "OS Kernel" as OS
+
+User -> MRF : CreateNamed(path, size, perms)
+activate MRF
+
+MRF -> MRF : dedup check (weak_ptr lookup)
+alt cache miss
+
+MRF -> Region ** : construct
+activate Region
+
+Region -> LF ** : Create(lock_path)
+activate LF
+LF -> OS : open(lock_path,\n  O_CREAT|O_EXCL|O_RDONLY, perms)
+alt lock file does not exist
+  OS --> LF : lock_fd
+else EEXIST — poll 10ms, retry up to 500ms
+  LF -> OS : poll / retry open()
+  alt lock file disappears within timeout
+    OS --> LF : lock_fd
+  else timeout exceeded
+    OS --> LF : error
+    LF --> Region : Error (lock timeout)
+    Region --> MRF : Error
+    MRF --> User : Error
+  end
+end
+
+Region -> OS : shm_open(path,\n  O_RDWR|O_CREAT|O_EXCL, mode)
+OS --> Region : fd
+
+Region -> OS : fchmod(fd, mode)
+OS --> Region : ok
+
+Region -> ACL : Apply(fd, perms)
+activate ACL
+ACL -> OS : acl_get_fd / acl_create_entry /\n  acl_set_qualifier / acl_set_fd
+ACL --> Region : done
+deactivate ACL
+
+Region -> OS : ftruncate(fd, size)
+OS --> Region : ok
+
+Region -> OS : mmap(NULL, size, PROT_RW,\n  MAP_SHARED, fd, 0)
+OS --> Region : base_address
+
+|||
+|||
+
+destroy LF
+note right : RAII: destructor\nunlinks lock file.
+
+Region --> MRF : PosixNamedMemoryRegion ready
+deactivate Region
+
+MRF -> MRF : store weak_ptr for dedup
+
+else cache hit (weak_ptr alive)
+  MRF --> User : Result<shared_ptr<MappedRegion>>
+end
+
+MRF --> User : Result<shared_ptr<MappedRegion>>
+deactivate MRF
+
+User -> User : region->UnlinkOnDestruction(true)
+note right : Creator owns lifecycle.
+
+User -> User : write data to region
+
+@enduml
