@@ -14,6 +14,11 @@
 # Use `bazel mod deps --lockfile_mode=update` to update the lock file
 common --lockfile_mode=error
 
+# devcontainer 1.11.1 was yanked and we transitively depend on it
+# this should be removed once devcontainer is removed from our transitive dependencies
+mod --allow_yanked_versions=score_devcontainer@1.11.1
+common --allow_yanked_versions=score_devcontainer@1.11.1
+
 # In order to overcome stability issues in GitHub
 common --experimental_repository_downloader_retries=10
 common --experimental_scale_timeouts=2.0
