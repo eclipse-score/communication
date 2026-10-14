@@ -24,6 +24,7 @@ enum class BindingFactoryErrorCode : score::result::ErrorCode
 {
     kInvalid,
     kParentBindingIsNotLola,
+    kParentBindingIsNotSomeIp,
     kUnsupportedBindingType,
     kProxyCreationFailed,
     kNumEnumElements
@@ -38,6 +39,8 @@ class BindingFactoryErrorDomain final : public score::result::ErrorDomain
         {
             case static_cast<score::result::ErrorCode>(BindingFactoryErrorCode::kParentBindingIsNotLola):
                 return "Parent proxy binding is not a LoLa binding.";
+            case static_cast<score::result::ErrorCode>(BindingFactoryErrorCode::kParentBindingIsNotSomeIp):
+                return "Parent proxy binding is not a SOME/IP binding.";
             case static_cast<score::result::ErrorCode>(BindingFactoryErrorCode::kUnsupportedBindingType):
                 return "Service type deployment contains an unsupported binding type.";
             case static_cast<score::result::ErrorCode>(BindingFactoryErrorCode::kProxyCreationFailed):

@@ -163,6 +163,38 @@ cc_library(
 )
 
 cc_library(
+    name = "proxy",
+    srcs = ["proxy.cpp"],
+    hdrs = ["proxy.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:proxy_binding",
+    ],
+)
+
+cc_library(
+    name = "proxy_event",
+    srcs = ["proxy_event.cpp"],
+    hdrs = ["proxy_event.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":element_fq_id",
+        "//score/mw/com/impl:binding_type",
+        "//score/mw/com/impl:error",
+        "//score/mw/com/impl:proxy_event_binding",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
     name = "someip",
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
@@ -172,6 +204,8 @@ cc_library(
     deps = [
         ":element_fq_id",
         ":event_data_storage",
+        ":proxy",
+        ":proxy_event",
         ":runtime",
         ":sample_allocatee_ptr",
         ":skeleton",
