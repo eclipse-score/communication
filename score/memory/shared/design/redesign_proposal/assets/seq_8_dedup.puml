@@ -1,0 +1,52 @@
+@startuml seq_8_dedup
+title 8. Dedup Hit: Same Path Returns Existing Region
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+
+actor "User" as User
+participant "MemoryRegionFactory\n(singleton)" as MRF
+
+note over User, MRF
+  Another component in the same process
+  requests the same SHM path. Region is
+  already in the factory's dedup map.
+end note
+
+== Scenario A: weak_ptr alive ==
+
+User -> MRF : OpenNamed(path)
+activate MRF
+
+MRF -> MRF : dedup check
+note right : weak_ptr found.
+
+MRF -> MRF : weak_ptr.lock()
+note right : Succeeds — original\nholder still alive.
+
+MRF --> User : Result<shared_ptr<MappedRegion>>
+deactivate MRF
+
+note right #LightGreen : No OS calls.\nSame physical memory, same fd.
+
+|||
+
+== Scenario B: weak_ptr expired ==
+
+User -> MRF : OpenNamed(path)
+activate MRF
+
+MRF -> MRF : dedup check
+note right : weak_ptr found, but...
+
+MRF -> MRF : weak_ptr.lock() -> nullptr
+note right : Expired. All shared_ptrs\nreleased, region munmap'd.
+
+MRF -> MRF : Erase stale entry.\nProceed with full Open.
+note right : Falls through to normal\nOpen path (no O_CREAT).
+
+MRF --> User : Result<shared_ptr<MappedRegion>>
+deactivate MRF
+
+note right : Freshly opened region.\nNew entry in dedup map.
+
+@enduml
