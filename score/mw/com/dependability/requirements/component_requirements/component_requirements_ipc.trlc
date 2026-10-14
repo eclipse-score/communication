@@ -1138,11 +1138,11 @@ section "com" {
                              1. to allocate a slot from the provider side in a pure ASIL-B setup (ASIL-B provider, ASIL-B consumer)
                              2. to allocate a slot from the provider side in a mixed critically setup (ASIL-B provider, ASIL-B consumer and ASIL-QM consumer)
                              3. to access/block samples for Read-access by the consumer.'''
-            note = '''Flow charts can be found here: score/mw/com/impl/dependability/proxy_and_service_elements/get_new_samples_activity.puml,
-                score/mw/com/impl/bindings/lola/dependability/event_data_control/lola_event_allocate_activity.puml,
-                score/mw/com/impl/bindings/lola/dependability/event_data_control/lola_event_allocate_mixed_critical_activity.puml,
-                score/mw/com/impl/bindings/lola/dependability/event_data_control/lola_coherent_set_writing_activity.puml,
-                score/mw/com/impl/bindings/lola/dependability/event_data_control/lola_reference_next_event_activity.puml'''
+            note = '''Flow charts can be found here: score/mw/com/design/events_fields/get_new_samples_activity.puml,
+                score/mw/com/design/events_fields/lola_event_allocate_activity.puml,
+                score/mw/com/design/events_fields/lola_event_allocate_mixed_critical_activity.puml,
+                score/mw/com/design/events_fields/lola_coherent_set_writing_activity.puml,
+                score/mw/com/design/events_fields/lola_reference_next_event_activity.puml'''
             safety = ScoreReq.Asil.B
             derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1,
                 // This root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
@@ -1150,7 +1150,11 @@ section "com" {
                 // This root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
                 mw_com_fta.IncreasingDecreasingRefCountFails@1,
                 // This root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
-                mw_com_fta.SlotReferenceBrokenEGNonValid@1
+                mw_com_fta.SlotReferenceBrokenEGNonValid@1,
+                // Similar to handling of events, this root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
+                mw_com_fta.DoesNotFreeMethodSignatureElement@1,
+                // Similar to handling of events, this root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
+                mw_com_fta.OverwriteOfElementInUse@1
             ]
             version = 1
         }
@@ -1166,7 +1170,11 @@ section "com" {
                 // This root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
                 mw_com_fta.IncreasingDecreasingRefCountFails@1,
                 // This root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
-                mw_com_fta.SlotReferenceBrokenEGNonValid@1
+                mw_com_fta.SlotReferenceBrokenEGNonValid@1,
+                // Similar to handling of events, this root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
+                mw_com_fta.DoesNotFreeMethodSignatureElement@1,
+                // Similar to handling of events, this root cause can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic.
+                mw_com_fta.OverwriteOfElementInUse@1
             ]
             version = 1
         }
