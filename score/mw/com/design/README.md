@@ -1,15 +1,12 @@
 # Software Design Description of `mw::com`
 
-This and the following documents shall act as software architecture for `mw::com`, an IPC library, comparable to
-`ara::com` API based on the adaptive
-[AUTOSAR 20.11 Standard](https://www.autosar.org/fileadmin/standards/R20-11/AP/AUTOSAR_SWS_CommunicationManagement.pdf).
+This and the following documents shall act as software architecture for `mw::com`, an IPC library.
 
 ## How to Start
 
 In order to start contributing or following this architecture description, one should be familiar with the basic
-adaptive AUTOSAR concepts and more specifically with the basic usage of `ara::com` API. Therefore, it makes sense to
-start reading
-the `ara::com` [explanatory document](https://www.autosar.org/fileadmin/standards/R20-11/AP/AUTOSAR_EXP_ARAComAPI.pdf).
+service-oriented communication concepts and more specifically with the basic usage of the `mw::com` API. Therefore, it
+makes sense to start reading the [tutorial](../doc/tutorial/README.rst).
 After that it might make sense to check the code of an example application
 like `//platform/aas/score/mw/com/test/bigdata/...`.
 
@@ -17,8 +14,6 @@ Once familiar with the API and the basic use cases, one should continue with
 the [Basic architectural thoughts](#basic-architectural-thoughts), before
 going into detail of the [involved components](#involved-components).
 
-The high-level requirements describing `ara::com` are provided by adaptive AUTOSAR. In our case these are mainly
-[AUTOSAR 20.11 Standard](https://www.autosar.org/fileadmin/standards/R20-11/AP/AUTOSAR_SWS_CommunicationManagement.pdf).
 Specific information related to `mw::com` can be found [here](../README.md#documentation-for-users).
 
 The architectural design concept and the corresponding requirements on system and component level can be found

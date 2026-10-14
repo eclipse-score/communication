@@ -10,13 +10,6 @@ This tutorial will guide you through the basics of using the `score::mw::com` AP
 feature and chapters build on each other to some degree. Most of the chapters come with specific code snippets/sample
 applications and Bazel BUILD files, to see the `score::mw::com` API in action.
 
-If diving into this tutorial and its code samples gives you a deja-vu, that might be because you already know `ara::com`
-from the `Adaptive AUTOSAR` standard. The similarities aren't incidental: `score::mw::com` rooted in an implementation
-of
-the AUTOSAR `ara::com` standard by some of the people, who initially developed the `ara::com` specification. Thus, if
-you are already an `ara::com` expert, there is a good chance that you will feel right at home with `score::mw::com`. If
-there are bigger deviations - beside the namespace differences - we will note this explicitly.
-
 In some of the chapters we will also shed some light on the design/architecture of `score::mw::com`, but in case you are
 really interested in a deeper understanding, please look into the `design documentation <https://github.com/eclipse-score/communication/blob/main/score/mw/com/design/README.md>`__.
 

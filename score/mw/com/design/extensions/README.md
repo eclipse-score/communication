@@ -1,6 +1,6 @@
-# Extensions to resp. deviations from the AUTOSAR `ara::com` spec
+# Extensions to the `mw::com` API
 
-The following extensions have been added to our `mw::com` implementation, which are not part of the AUTOSAR standard.
+The following extensions have been added to the `mw::com` API.
 
 ## Query ProxyEvent instance for number newly available samples
 

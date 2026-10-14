@@ -46,7 +46,7 @@ This document provides comprehensive information about error codes, messages, an
 
 | Error | Error Description | Error Handling |
 |-------|------------------|----------------|
-| `kInvalidMetaModelShortname` | Meta model short name does not adhere to naming requirements. | **Non-Recoverable**: Programming error in shortname format. <br> **Fix**: Correct shortname path to follow AUTOSAR conventions (e.g., "/ServiceName/InstanceName"). |
+| `kInvalidMetaModelShortname` | Meta model short name does not adhere to naming requirements. | **Non-Recoverable**: Programming error in shortname format. <br> **Fix**: Correct shortname path to follow the short-name-path convention (e.g., "/ServiceName/InstanceName"). |
 
 </details>
 

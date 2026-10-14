@@ -19,11 +19,11 @@ Other important differences:
 
 ### Skeleton side signature of service-method call
 
-While the `ara::com` standard requires the service-method to be a pure virtual method of an abstract service skeleton base class, that has to be overridden/implemented by the user in a derived class, we rather vote for an architecture, where the skeleton class is **not** abstract. Instead of deriving from an abstract/generated class the user registers per service method a handler/callback, which handles the related service method call.
+In `mw::com`, we vote for an architecture, where the skeleton class is **not** abstract and the service-method is not a pure virtual method that has to be overridden in a derived class. Instead of deriving from an abstract/generated class the user registers per service method a handler/callback, which handles the related service method call.
 
 ### Proxy side API signature of service-method call
 
-`ara::com` always mandates a `Future` based/async call signature on the caller/proxy side. However, we will initially only provide a **synchronous** signature and call semantics on the proxy side!
+A `Future` based/async call signature on the caller/proxy side is common for method calls. However, we will initially only provide a **synchronous** signature and call semantics on the proxy side!
 
 The two main drivers for this are described in [synchronous vs asynchronous API](#synchronous-vs-asynchronous-api)
 
@@ -52,7 +52,7 @@ This signature exactly matches the signature of the service-method handler regis
 
 ### Zero-copy extensions
 
-`ara::com` does **not** support zero-copy semantics for methods/method calls. This is bad as users might come up with the same (large) data types `IN` or `OUT args` of service methods, they are using with event/field communication. Zero-copy is the main performance asset, when dealing with large data types, so we should support it also with methods!
+Since a user might come up with the same (large) data types `IN` or `OUT args` of service methods, they are using with event/field communication, it is important that we support zero-copy semantics for methods/method calls. Zero-copy is the main performance asset, when dealing with large data types.
 
 Adding zero-copy semantics to the method-call API should be done similar to event/field communication:
 
@@ -66,7 +66,7 @@ Adding zero-copy semantics to the method-call API should be done similar to even
 
   I.e. the handler registered at the provider side will in the zero-copy case get a pre-allocated `OUT-args&`, where to put its out-args and returns an error (if there is one) by a `score::Result<void>` return.
 
-> @ToDo: With a zero-copy/shared-memory based infrastructure, we can also support **real** INOUT args! On semantic level AUTOSAR/`ara::com` did support INOUT args, but in any NON shared-memory based implementation this boils down to (inefficiently) splitting up INOUT args into a pair of IN and OUT arg, which get independently transported (duplicated) between caller and callee. In LoLa we could do much more efficiently! I.e. an INOUT parameter in a service-method will not only be a semantic idea/notion, but really a performance booster if used accordingly!
+> @ToDo: With a zero-copy/shared-memory based infrastructure, we can also support **real** INOUT args! On semantic level INOUT args are commonly supported by service-method APIs, but in any NON shared-memory based implementation this boils down to (inefficiently) splitting up INOUT args into a pair of IN and OUT arg, which get independently transported (duplicated) between caller and callee. In LoLa we could do much more efficiently! I.e. an INOUT parameter in a service-method will not only be a semantic idea/notion, but really a performance booster if used accordingly!
 
 ## Call parameter and result exchange via shared memory
 
@@ -165,7 +165,7 @@ The caller/proxy side, which was blocked in [Initiating call of method](#initiat
 
 ## Event based vs polling based method call execution
 
-`ara::com` explicitly differentiates between `event based` method call execution and a `polling based` variant on the skeleton/server side. The former means, that the consumer/proxy side notifies the provider/skeleton side about a new call via an "event". This is our `default behavior`, where we use our `message_passing` side-channel, which is described in [call queue management](#call-queue-management).
+Service-method call execution can be `event based` or `polling based` on the skeleton/server side. The former means, that the consumer/proxy side notifies the provider/skeleton side about a new call via an "event". This is our `default behavior`, where we use our `message_passing` side-channel, which is described in [call queue management](#call-queue-management).
 
 **Initially, we won't support a polling based solution**.
 

@@ -3,7 +3,7 @@ title "Sequence View"
 hide footbox
 
 participant "<u>:OS</u>" as OS
-participant "<u>:Process</u>\nara::com user" as Process
+participant "<u>:Process</u>\nmw::com user" as Process
 participant "<u>score::mw::com::impl::Runtime</u>" as Runtime
 participant "<u>:ConfigReader</u>" as ConfigReader
 participant "<u>:Configuration</u>" as Configuration
