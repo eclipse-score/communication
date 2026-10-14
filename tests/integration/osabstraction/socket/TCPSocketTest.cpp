@@ -18,6 +18,9 @@
 #include <socket/LocalAddress.h>
 #include <socket/TCPClientSocket.h>
 #include <socket/TCPServerSocket.h>
+#include <sys/socket.h>
+#include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -182,4 +185,89 @@ TEST(TCPSocketTest, LocalTCPSocket) {
     thread->join();
     ASSERT_EQ(tcp_client_received_length, sizeof(tcp_client_received));
     ASSERT_STREQ(local_message, tcp_client_received);
+}
+
+namespace {
+
+void set_socket_buffers(int fd, int size) {
+    setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &size, sizeof(size));
+    setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
+}
+
+// Connects a client to a server whose small socket buffers fill up quickly.
+struct BackpressureConnection {
+    std::unique_ptr<TCPServerSocket> server;
+    std::unique_ptr<TCPClientSocket> client;
+    std::shared_ptr<Socket> accepted;
+};
+
+void connect_with_small_buffers(BackpressureConnection& connection) {
+    std::shared_ptr<Address> addr = std::make_shared<IP4Address>();
+    addr->set_ip_address("127.0.0.1");
+    addr->set_reliable(true);
+    addr->set_port_address(get_test_port());
+
+    connection.server = std::make_unique<TCPServerSocket>(addr);
+    ASSERT_NE(connection.server->get_socket_fd(), -1);
+    // Accepted sockets inherit the receive buffer size of the listening socket.
+    set_socket_buffers(connection.server->get_socket_fd(), 32 * 1024);
+    ASSERT_EQ(0, connection.server->listen());
+
+    connection.client = std::make_unique<TCPClientSocket>(addr);
+    set_socket_buffers(connection.client->get_socket_fd(), 32 * 1024);
+    connection.accepted = connection.server->accept();
+    ASSERT_NE(connection.accepted->get_socket_fd(), -1);
+
+}
+
+} // namespace
+
+TEST(TCPSocketTest, SendWaitsForSlowReaderAcrossMultipleTimeouts) {
+    BackpressureConnection connection;
+    connect_with_small_buffers(connection);
+    ASSERT_NE(connection.client, nullptr);
+
+    // At about 3 MB/s the reader needs well over the 1 s send timeout, but it never stalls.
+    constexpr std::size_t kMessageSize = 6 * 1024 * 1024;
+    std::vector<char> message(kMessageSize, 'x');
+    std::atomic<std::size_t> received{0};
+    std::atomic<bool> send_failed{false};
+    std::thread reader([&] {
+        std::vector<char> buffer(16 * 1024);
+        while (received < kMessageSize && !send_failed) {
+            int length = connection.accepted->receive(buffer.data(), buffer.size());
+            if (length < 0) {
+                break;
+            }
+            received += static_cast<std::size_t>(length);
+            usleep(5000);
+        }
+    });
+
+    auto start = std::chrono::steady_clock::now();
+    int sent = connection.client->send(connection.client->get_socket_fd(), message.data(), message.size());
+    auto elapsed = std::chrono::steady_clock::now() - start;
+    // A failed send leaves the reader at end-of-stream; stop it, but let it drain everything after a success.
+    send_failed = (sent != static_cast<int>(kMessageSize));
+    reader.join();
+
+    EXPECT_EQ(sent, static_cast<int>(kMessageSize));
+    EXPECT_EQ(received, kMessageSize);
+    EXPECT_GT(elapsed, std::chrono::milliseconds(1200));
+}
+
+TEST(TCPSocketTest, SendGivesUpWhenReaderStalls) {
+    BackpressureConnection connection;
+    connect_with_small_buffers(connection);
+    ASSERT_NE(connection.client, nullptr);
+
+    std::vector<char> message(8 * 1024 * 1024, 'x');
+
+    auto start = std::chrono::steady_clock::now();
+    int sent = connection.client->send(connection.client->get_socket_fd(), message.data(), message.size());
+    auto elapsed = std::chrono::steady_clock::now() - start;
+
+    EXPECT_EQ(sent, -1);
+    EXPECT_GE(elapsed, std::chrono::milliseconds(900));
+    EXPECT_LT(elapsed, std::chrono::seconds(5));
 }

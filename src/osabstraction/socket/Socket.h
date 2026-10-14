@@ -17,6 +17,7 @@
 
 #include <cstdint>
 
+#include <atomic>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -77,7 +78,7 @@ public:
 
 protected:
     int socket_fd_;
-    bool non_blocking_{false};
+    std::atomic<bool> non_blocking_{false};
     std::shared_ptr<Address> source_address_{nullptr};
     std::shared_ptr<Address> destination_address_{nullptr};
 #if defined(ENABLE_TLS)

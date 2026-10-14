@@ -32,6 +32,9 @@ const std::uint8_t kClientMagicCookie[] = {0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0
                                            0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x01, 0x01, 0x00};
 const std::size_t kLenMagicCookie = 16;
 
+// Length of the instance ID that follows a SOME/IP message on internal domain sockets.
+const std::size_t kLenInstanceId = 2;
+
 } // namespace lgsomeip
 
 #endif // LG_SOMEIP_ENDPOINT_ENDPOINT_CONSTANT_H

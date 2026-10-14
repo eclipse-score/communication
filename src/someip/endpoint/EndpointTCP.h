@@ -16,6 +16,8 @@
 #define LG_SOMEIP_ENDPOINT_ENDPOINTTCP_H
 
 #include <cstdint>
+#include <poll.h>
+#include <sys/socket.h>
 
 #include <algorithm>
 #include <memory>
@@ -39,7 +41,8 @@ namespace lgsomeip {
 // PacketRouter TCP endpoint types.
 template <typename BASETYPE> class EndpointTCPServer;
 
-constexpr std::uint32_t kMaxNumRetry = 10;
+// How long a reader waits for the rest of a message that has partly arrived before it returns to the multiplexer.
+constexpr int kPartialMessageWaitMs = 1;
 
 // EndpointTCPClient
 template <typename BASETYPE> class EndpointTCPClient : public Endpoint {
@@ -49,158 +52,70 @@ public:
     }
     virtual ~EndpointTCPClient() {}
 
+    // Reads the next SOME/IP message from the stream. A message that has only partly arrived stays in the
+    // receive state, and the next callback continues where this one stopped. Each read asks for exactly the
+    // bytes still missing from the current part, so the reader never consumes bytes of the following message.
     virtual void callback(bool close) override {
         if (close) {
+            reset_receive_state();
             on_error();
             return;
         }
 
-        std::uint32_t num_retry = 0;
-        std::int32_t received_len = 0;
-        std::uint32_t packet_length_field = 0;
-        std::uint32_t rest_len = 0;
-        std::vector<uint8_t> receive_buffer_dynamic;
+        bool received_any = false;
+        bool waited_for_data = false;
 
-        // Use the static receive buffer when the message fits to improve performance.
-        tcp_receive_buffer_ = static_buffer_;
+        for (;;) {
+            const std::size_t part_size = receive_part_size();
+            const std::size_t missing_len = part_size - received_part_len_;
 
-        std::uint32_t rest_header_len(SOMEIP_HEADER::ACCUM_LEN::LENGTH);
-        do {
-            // Receive the SOME/IP header, including the message ID and length field.
-            received_len = socket_->receive((char*)tcp_receive_buffer_, rest_header_len);
+            std::int32_t received_len =
+                socket_->receive(reinterpret_cast<char*>(receive_part_buffer()) + received_part_len_, missing_len);
 
-            if (received_len > 0) {
-                rest_header_len -= received_len;
-                num_retry = 0;
-            } else {
-                if (is_packet_need_discard(received_len, num_retry)) {
-                    return;
-                } else {
-                    // Allow time for packets whose header and payload are sent separately by PacketRouterProxy.
-                    // In PacketRouterProxy, a SOME/IP packet is separated to SOME/IP header and payload.
-                    ++num_retry;
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            if (received_len < 0) {
+                LGSOMEIP_LOG_ERROR << "EndpointTCPClient::callback / Return due to socket error";
+                reset_receive_state();
+                return;
+            }
+
+            if (received_len == 0) {
+                // The rest of a message that has started usually follows within microseconds. Waiting briefly for
+                // it saves a round trip through the multiplexer. If it does not come, the state is kept for the
+                // next callback.
+                if (!waited_for_data && is_message_in_progress() && wait_for_more_data()) {
+                    waited_for_data = true;
+                    continue;
                 }
-            }
-        } while (rest_header_len > 0);
 
-        // The length field covers the bytes from the request ID/client ID to the end of the SOME/IP message.
-        get_byte_stream(&packet_length_field, tcp_receive_buffer_ + SOMEIP_HEADER::POS::LENGTH);
-        rest_len = packet_length_field;
-
-        if ((packet_length_field == 0) || (packet_length_field > MAX_TRANSFER_PACKET_LENGTH)) {
-            // Discard the remaining bytes when the length field is invalid so the next packet can be received safely.
-            LGSOMEIP_LOG_WARN << "EndpointTCPClient::callback / the length field is invalid!! Length = "
-                              << packet_length_field;
-
-            auto temp_buffer = std::make_unique<uint8_t[]>(MAX_TRANSFER_PACKET_LENGTH);
-
-            received_len = socket_->receive((char*)temp_buffer.get(), MAX_TRANSFER_PACKET_LENGTH);
-
-            print_byte_message("EndpointTCPClient::callback Header", tcp_receive_buffer_,
-                               SOMEIP_HEADER::ACCUM_LEN::LENGTH);
-            print_byte_message("EndpointTCPClient::callback Data", temp_buffer.get(), received_len);
-
-            return;
-        }
-
-        // Use dynamic allocation for messages that do not fit the static buffer.
-        // Reserve two additional bytes for the instance ID.
-        if (packet_length_field + SOMEIP_HEADER::ACCUM_LEN::LENGTH + 2 > sizeof(static_buffer_)) {
-            receive_buffer_dynamic.assign(tcp_receive_buffer_, tcp_receive_buffer_ + SOMEIP_HEADER::ACCUM_LEN::LENGTH);
-            receive_buffer_dynamic.resize(packet_length_field + SOMEIP_HEADER::ACCUM_LEN::LENGTH + 2);
-            tcp_receive_buffer_ = receive_buffer_dynamic.data();
-        }
-
-        LGSOMEIP_LOG_DEBUG << "EndpointTCPClient::callback / Endpoint TCP: " << rest_len << " will be read";
-
-        num_retry = 0;
-        do {
-            // Receive the SOME/IP body, from the request ID to the end of the message.
-            received_len = socket_->receive(
-                (char*)tcp_receive_buffer_ + SOMEIP_HEADER::POS::REQUESTID + packet_length_field - rest_len, rest_len);
-
-            if (received_len > 0) {
-                rest_len -= received_len;
-                num_retry = 0;
-                LGSOMEIP_LOG_DEBUG << "EndpointTCPClient::callback / Endpoint TCP: " << received_len << " read, "
-                                   << rest_len << " remains";
-            } else {
-                if (is_packet_need_discard(received_len, num_retry)) {
-                    return;
-                } else {
-                    // Allow time for the remaining packet bytes to arrive.
-                    ++num_retry;
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                // The socket is non-blocking, so zero means no data yet or end of stream.
+                // A stream socket that is readable without data has been closed by the peer.
+                if ((!received_any || waited_for_data) && is_peer_closed()) {
+                    LGSOMEIP_LOG_INFO << "EndpointTCPClient::callback / closed by the peer";
+                    reset_receive_state();
+                    on_error();
                 }
+                return;
             }
-        } while (rest_len > 0);
 
-        std::uint32_t total_message_len = SOMEIP_HEADER::ACCUM_LEN::LENGTH + packet_length_field;
+            received_any = true;
+            waited_for_data = false;
+            received_part_len_ += static_cast<std::size_t>(received_len);
 
-        // Internal domain sockets carry an additional instance ID.
-        if (get_socket()->get_dst_address()->get_type() == AF_UNIX) {
-            set_instance_id(0);
-
-            // SOME/IP-SD packets do not carry the additional instance ID.
-            if (!(tcp_receive_buffer_[0] == 0xff && tcp_receive_buffer_[1] == 0xff)) {
-                std::uint8_t buf[2];
-                std::uint16_t instance_id;
-
-                // Extract the instance ID from the SOME/IP packet.
-                std::uint8_t rest_len = 2;
-                num_retry = 0;
-                do {
-                    received_len = socket_->receive((char*)buf, rest_len);
-
-                    if (received_len > 0) {
-                        rest_len -= received_len;
-                        num_retry = 0;
-                    } else {
-                        if (is_packet_need_discard(received_len, num_retry)) {
-                            return;
-                        } else {
-                            ++num_retry;
-                            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                        }
-                    }
-                } while (rest_len > 0);
-
-                get_byte_stream(&instance_id, buf);
-                set_instance_id(instance_id);
-
-                LGSOMEIP_LOG_DEBUG << "EndpointTCPClient::callback / this packet has instanceID = "
-                                   << MSGID_FORMAT4(instance_id);
-            }
-        } else {
-            if (is_magic_cookie(tcp_receive_buffer_, total_message_len)) {
-                LGSOMEIP_LOG_DEBUG << "EndpointTCPClient::callback / Magic Cookie received from ["
-                                   << get_socket()->get_dst_address()->get_ip_address() << "]";
-
+            // Keep reading until the part is complete. A read that returns no data ends this callback.
+            if (received_part_len_ == part_size && !on_part_received()) {
                 return;
             }
         }
-
-        on_message(tcp_receive_buffer_, total_message_len);
     }
 
-    inline bool is_packet_need_discard(std::int32_t read_len, std::uint8_t num_retry) {
-        bool ret(false);
-
-        // A zero-length read means that ::read() returned no data or EWOULDBLOCK occurred.
-        // Discard the packet when retries exceed kMaxNumRetry.
-        // A negative length means that ::read() returned an error; discard the packet immediately.
-        if (read_len == 0) {
-            if (num_retry > kMaxNumRetry) {
-                LGSOMEIP_LOG_WARN << "EndpointTCPClient::callback / Stop retrying to receive";
-                ret = true;
-            }
-        } else {
-            LGSOMEIP_LOG_ERROR << "EndpointTCPClient::callback / Return due to socket error";
-            ret = true;
-        }
-
-        return ret;
+    // Drops a partly received message, for example when the connection is closed.
+    void reset_receive_state() {
+        receive_part_ = ReceivePart::kHeader;
+        received_part_len_ = 0;
+        packet_length_field_ = 0;
+        receive_buffer_dynamic_.clear();
+        receive_buffer_dynamic_.shrink_to_fit();
+        tcp_receive_buffer_ = static_buffer_;
     }
 
     virtual void on_message(std::uint8_t* message, std::size_t message_length) override {
@@ -262,6 +177,151 @@ public:
     }
 
 private:
+    // The parts of a stream message, in the order in which they arrive.
+    enum class ReceivePart {
+        kHeader,     // Message ID and length field.
+        kBody,       // Request ID up to the end of the message; its size is the length field.
+        kInstanceId, // Instance ID that follows a message on internal domain sockets.
+    };
+
+    std::size_t receive_part_size() const {
+        switch (receive_part_) {
+        case ReceivePart::kHeader:
+            return SOMEIP_HEADER::ACCUM_LEN::LENGTH;
+        case ReceivePart::kBody:
+            return packet_length_field_;
+        default:
+            return kLenInstanceId;
+        }
+    }
+
+    std::uint8_t* receive_part_buffer() {
+        switch (receive_part_) {
+        case ReceivePart::kHeader:
+            return tcp_receive_buffer_;
+        case ReceivePart::kBody:
+            return tcp_receive_buffer_ + SOMEIP_HEADER::ACCUM_LEN::LENGTH;
+        default:
+            return instance_id_buffer_;
+        }
+    }
+
+    // Handles a completely received part. Returns true when the next part should be read now.
+    bool on_part_received() {
+        switch (receive_part_) {
+        case ReceivePart::kHeader:
+            return on_header_received();
+        case ReceivePart::kBody:
+            return on_body_received();
+        default: {
+            std::uint16_t instance_id;
+            get_byte_stream(&instance_id, instance_id_buffer_);
+            set_instance_id(instance_id);
+
+            LGSOMEIP_LOG_DEBUG << "EndpointTCPClient::callback / this packet has instanceID = "
+                               << MSGID_FORMAT4(instance_id);
+
+            deliver_message();
+            return false;
+        }
+        }
+    }
+
+    bool on_header_received() {
+        // The length field covers the bytes from the request ID/client ID to the end of the SOME/IP message.
+        get_byte_stream(&packet_length_field_, tcp_receive_buffer_ + SOMEIP_HEADER::POS::LENGTH);
+
+        if ((packet_length_field_ == 0) || (packet_length_field_ > MAX_TRANSFER_PACKET_LENGTH)) {
+            // TCP has no message boundaries, so the next message cannot be located once the length is wrong.
+            // Close the connection instead of parsing the rest of the stream as headers.
+            LGSOMEIP_LOG_WARN << "EndpointTCPClient::callback / the length field is invalid!! Length = "
+                              << packet_length_field_ << "; closing the connection";
+
+            print_byte_message("EndpointTCPClient::callback Header", tcp_receive_buffer_,
+                               SOMEIP_HEADER::ACCUM_LEN::LENGTH);
+
+            reset_receive_state();
+            on_error();
+            return false;
+        }
+
+        // Use dynamic allocation for messages that do not fit the static buffer.
+        // Reserve additional bytes for the instance ID.
+        if (packet_length_field_ + SOMEIP_HEADER::ACCUM_LEN::LENGTH + kLenInstanceId > sizeof(static_buffer_)) {
+            receive_buffer_dynamic_.assign(tcp_receive_buffer_, tcp_receive_buffer_ + SOMEIP_HEADER::ACCUM_LEN::LENGTH);
+            receive_buffer_dynamic_.resize(packet_length_field_ + SOMEIP_HEADER::ACCUM_LEN::LENGTH + kLenInstanceId);
+            tcp_receive_buffer_ = receive_buffer_dynamic_.data();
+        }
+
+        LGSOMEIP_LOG_DEBUG << "EndpointTCPClient::callback / Endpoint TCP: " << packet_length_field_
+                           << " will be read";
+
+        receive_part_ = ReceivePart::kBody;
+        received_part_len_ = 0;
+        return true;
+    }
+
+    bool on_body_received() {
+        const std::uint32_t total_message_len = SOMEIP_HEADER::ACCUM_LEN::LENGTH + packet_length_field_;
+
+        // Internal domain sockets carry an additional instance ID.
+        if (get_socket()->get_dst_address()->get_type() == AF_UNIX) {
+            set_instance_id(0);
+
+            // SOME/IP-SD packets do not carry the additional instance ID.
+            if (!(tcp_receive_buffer_[0] == 0xff && tcp_receive_buffer_[1] == 0xff)) {
+                receive_part_ = ReceivePart::kInstanceId;
+                received_part_len_ = 0;
+                return true;
+            }
+        } else if (is_magic_cookie(tcp_receive_buffer_, total_message_len)) {
+            LGSOMEIP_LOG_DEBUG << "EndpointTCPClient::callback / Magic Cookie received from ["
+                               << get_socket()->get_dst_address()->get_ip_address() << "]";
+
+            reset_receive_state();
+            return false;
+        }
+
+        deliver_message();
+        return false;
+    }
+
+    // Hands the complete message to the host. The state is cleared first because the host may close this endpoint.
+    void deliver_message() {
+        std::uint8_t* message = tcp_receive_buffer_;
+        const std::size_t message_length = SOMEIP_HEADER::ACCUM_LEN::LENGTH + packet_length_field_;
+        std::vector<std::uint8_t> keep_alive = std::move(receive_buffer_dynamic_);
+
+        reset_receive_state();
+
+        on_message(message, message_length);
+    }
+
+    // The socket is non-blocking, so peeking one byte reports end of stream (0) without waiting.
+    bool is_peer_closed() const {
+        char byte;
+        return ::recv(socket_->get_socket_fd(), &byte, 1, MSG_PEEK) == 0;
+    }
+
+    bool is_message_in_progress() const {
+        return receive_part_ != ReceivePart::kHeader || received_part_len_ > 0;
+    }
+
+    // Waits up to kPartialMessageWaitMs until the socket is readable. Returns true if it is.
+    bool wait_for_more_data() const {
+        struct pollfd pfd;
+        pfd.fd = socket_->get_socket_fd();
+        pfd.events = POLLIN;
+        pfd.revents = 0;
+        return ::poll(&pfd, 1, kPartialMessageWaitMs) > 0;
+    }
+
+    ReceivePart receive_part_{ReceivePart::kHeader};
+    std::size_t received_part_len_{0};
+    std::uint32_t packet_length_field_{0};
+    std::vector<std::uint8_t> receive_buffer_dynamic_;
+    std::uint8_t instance_id_buffer_[kLenInstanceId] = {};
+
     std::chrono::system_clock::time_point last_cookie_sent_{std::chrono::system_clock::now()};
     BASETYPE* host_;
     std::shared_ptr<EndpointTCPServer<BASETYPE>> server_endpoint_{nullptr};
