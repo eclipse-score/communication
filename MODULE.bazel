@@ -37,6 +37,12 @@ single_version_override(
     patches = ["//third_party/score_baselibs:restore_qnx8_poll_workaround.patch"],
 )
 
+# Required to avoid depending on broken score_devcontainer 1.11.1 until baselibs uses this version
+single_version_override(
+    module_name = "score_docs_as_code",
+    version = "8.4.0",
+)
+
 bazel_dep(name = "score_bazel_platforms", version = "1.1.0")
 bazel_dep(name = "score_crates", version = "0.0.13", repo_name = "score_communication_crate_index")
 
