@@ -49,7 +49,6 @@ component(
 dependable_element(
     name = "dependable_element_message_passing",
     architectural_design = ["//score/message_passing/dependability/software_architectural_design:message_passing_architectural_design"],
-    assumptions_of_use = ["//score/message_passing/dependability/assumed_system:aous"],
     components = [":component_message_passing"],
     dependability_analysis = ["//score/message_passing/dependability/safety_analysis:message_passing_dependability_analysis"],
     integrity_level = "B",

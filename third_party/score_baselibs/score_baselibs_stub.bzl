@@ -54,7 +54,6 @@ def score_baselibs_stub(
     dependable_element(
         name = name,
         architectural_design = [],
-        assumptions_of_use = [],
         components = [":" + name + "_component"],
         dependability_analysis = [],
         integrity_level = integrity_level,
