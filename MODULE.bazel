@@ -64,6 +64,7 @@ gcc_toolchains.toolchain(
         "-Wno-maybe-uninitialized",  # GCC 8/9 false positives (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=80635)
     ],
     extra_enabled_features = [
+        "//quality/compiler_warnings:treat_warnings_as_errors",
         "//quality/compiler_warnings/gcc:minimal_warnings",
         "//quality/compiler_warnings/gcc:misra_warnings",
     ],
