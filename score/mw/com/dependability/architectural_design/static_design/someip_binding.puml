@@ -13,13 +13,13 @@
 @startuml safety_sentinel_someip_binding_design
 title "SomeIp Binding Static Architecture"
 
-package "SomeIp Binding" as someip_binding <<component>> {
-  component "Service Discovery" as service_discovery <<unit>> 
-  component "Runtime" as runtime <<unit>> 
+component someip_binding <<component>> {
+  component service_discovery <<unit>> 
+  component runtime <<unit>> 
 
-  component "SkeletonAndServiceElements" as skeleton_and_service_elements <<unit>> 
+  component skeleton_and_service_elements <<unit>> 
   
-  component "ProxyAndServiceElements" as proxy_and_service_elements <<unit>> 
+  component proxy_and_service_elements <<unit>> 
 }
 
 @enduml
