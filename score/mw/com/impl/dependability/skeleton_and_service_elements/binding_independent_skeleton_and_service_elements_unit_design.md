@@ -1,4 +1,4 @@
-# Binding-Independent Skeleton and Service Elements Component Design
+# Binding-Independent Skeleton and Service Elements Unit Design
 
 ## Skeleton and Service Element Creation
 

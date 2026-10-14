@@ -1,4 +1,4 @@
-# Binding-Independent Proxy Event Design
+# Binding-Independent Proxy Event Unit Design
 
 ## Event/Field communication in `LoLa`
 

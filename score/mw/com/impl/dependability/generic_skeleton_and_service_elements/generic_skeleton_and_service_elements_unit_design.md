@@ -1,4 +1,4 @@
-# Generic Skeleton
+# Generic Skeleton And Service Elements Unit Design
 
 A `GenericSkeleton` is a provider-side (skeleton) object that can be configured at runtime to offer any service. Unlike standard, code-generated skeletons, it is not tied to a specific service interface at compile-time.
 

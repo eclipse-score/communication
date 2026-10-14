@@ -1,4 +1,3 @@
-
 # LoLa Binding Component Design
 
 ## Shared Memory Access

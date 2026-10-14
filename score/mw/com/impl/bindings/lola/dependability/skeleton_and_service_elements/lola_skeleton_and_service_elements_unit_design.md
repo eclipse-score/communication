@@ -1,4 +1,4 @@
-# LoLa Skeleton and Service Elements Component Design
+# LoLa Skeleton and Service Elements Unit Design
 
 ## Registration of references to skeleton events/fields/methods at their parent skeleton
 
