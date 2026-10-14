@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(
@@ -45,4 +45,41 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = ["@score_baselibs//score/language/futurecpp"],
+)
+
+# Backend helper that owns dlopen/dlsym/dlclose for generated serializer libraries.
+cc_library(
+    name = "serializer_library",
+    srcs = ["serializer_library.cpp"],
+    hdrs = ["serializer_library.h"],
+    features = COMPILER_WARNING_FEATURES,
+    linkopts = ["-ldl"],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl/bindings/someip/serialization:serializer",
+    ],
+)
+
+cc_binary(
+    name = "backend_logic_test_plugin.so",
+    srcs = ["backend_logic_test_plugin.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    linkshared = True,
+)
+
+cc_test(
+    name = "backend_logic_integration_test",
+    size = "small",
+    timeout = "short",
+    srcs = ["backend_logic_integration_test.cpp"],
+    data = [":backend_logic_test_plugin.so"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":serializer_library",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@googletest//:gtest_main",
+    ],
 )
