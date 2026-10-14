@@ -1,0 +1,223 @@
+@startuml memory_resource_hierarchy
+
+title Shared Memory Resource Architecture
+
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam roundCorner 5
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 40
+skinparam classFontStyle bold
+
+
+together {
+    class SharedMemoryFactory <<singleton>> {
+        + {static} Instance() : SharedMemoryFactory&
+        + {static} InjectMock(SharedMemoryFactory*) : void
+        ..
+        + Create(shared_ptr<MappedRegion>) : Result<shared_ptr<SharedMemoryResource>>
+        + Open(shared_ptr<MappedRegion>) : Result<shared_ptr<SharedMemoryResource>>
+    }
+
+    class MemoryResourceRegistry <<singleton>> {
+        - by_id_ : map<id_type, ManagedMemoryResource*>
+        - bounds_map_ : MemoryRegionBoundsMap
+        --
+        + {static} Instance() : MemoryResourceRegistry&
+        ..
+        + LookupById(id) : ManagedMemoryResource*
+        + GetBoundsFromAddress(addr) : Result<MemoryRegionBounds>
+        + GetBoundsFromAddressAsInteger(addr) : Result<MemoryRegionBounds>
+        + GetBoundsFromIdentifier(id) : Result<MemoryRegionBounds>
+        ..
+        + RegisterResource(id, resource) : void
+        + DeregisterResource(id) : void
+    }
+}
+
+together {
+    abstract class "amp::pmr::memory_resource" as PmrBase <<STL>> {
+        + Allocate(bytes, align) : void*
+        + Deallocate(ptr, bytes, align) : void
+        # {abstract} DoAllocate(bytes, align) : void*
+        # {abstract} DoDeallocate(ptr, bytes, align) : void
+        # {abstract} DoIsEqual(other) : bool
+    }
+
+    abstract class ManagedMemoryResource <<abstract>> {
+        + GetBaseAddress() : void*
+        + GetUsableBaseAddress() : void*
+        + GetMemoryResourceProxy() : MemoryResourceProxy
+    }
+}
+
+class SharedMemoryResource <<impl>> {
+    - region_ : shared_ptr<MappedRegion>
+    - control_block_ : ControlBlock*
+    - strategy_ : MonotonicAllocationStrategy
+    --
+    + GetMappedRegion() : MappedRegion&
+}
+
+together {
+    class ControlBlock <<value>> {
+        + mutex : InterprocessMutex
+        + already_allocated_bytes : atomic<size_t>
+    }
+
+    interface AllocationStrategy <<interface>> {
+        + {abstract} Allocate(free_start, free_end, bytes, align) : void*
+        + {abstract} Deallocate(ptr, bytes, align) : void
+    }
+}
+
+class MonotonicAllocationStrategy <<strategy>> {
+    + Allocate(free_start, free_end, bytes, align) : void*
+    + Deallocate(ptr, bytes, align) : void
+}
+
+together {
+    class MemoryResourceProxy <<value>> {
+        - memory_identifier_ : id_type
+        --
+        + Allocate(bytes, align) : void*
+        + Deallocate(ptr, bytes, align) : void
+    }
+
+    class PolymorphicOffsetPtrAllocator <<utility>> {
+        - id_ : id_type
+        --
+        + Allocate(n) : OffsetPtr<T>
+        + Deallocate(p, n) : void
+    }
+}
+
+class MemoryRegionFactory <<singleton>> {
+    + {static} Instance() : MemoryRegionFactory&
+    + {static} InjectMock(MemoryRegionFactory*) : void
+    __ named (posix) __
+    + CreateNamed(path, size, perms)
+    + OpenNamed(path)
+    + CreateOrOpenNamed(path, size, perms)
+    __ anonymous (platform-specific) __
+    + CreateQnxAnonymous(id, size)
+    + CreateLinuxAnonymous(id, size)
+    __ safe typed __
+    + CreateSafeTypedNamed(path, size, perms)
+    + CreateSafeTypedAnonymous(id, size)
+    __ unsafe typed __
+    + CreateUnsafeTypedNamed(path, size, perms)
+    + CreateUnsafeTypedAnonymous(id, size)
+}
+
+interface MappedRegion <<interface>> {
+    + GetBaseAddress() : void*
+    + GetSize() : size_t
+}
+
+interface NamedMemoryRegion <<interface>> {
+    + GetPath() : const string&
+    + UnlinkOnDestruction(bool) : void
+}
+
+together {
+    class PosixNamedMemoryRegion <<impl>> {
+        - fd_ : FileDescriptor
+        - base_address_ : void*
+        - size_ : size_t
+        - path_ : string
+        --
+        + GetFileDescriptor() : FileDescriptor
+    }
+
+    class TypedNamedMemoryRegion <<impl>> {
+        - fd_ : FileDescriptor
+        - base_address_ : void*
+        - size_ : size_t
+        - typed_memory_ : TypedMemory*
+        - path_ : string
+        --
+        + GetFileDescriptor() : FileDescriptor
+    }
+}
+
+together {
+    class QnxAnonymousMemoryRegion <<impl>> {
+        - fd_ : FileDescriptor
+        - base_address_ : void*
+        - size_ : size_t
+        --
+        + GetFileDescriptor() : FileDescriptor
+        + CreateHandle(pid) : shm_handle_t
+    }
+
+    class LinuxAnonymousMemoryRegion <<impl>> {
+        - fd_ : FileDescriptor
+        - base_address_ : void*
+        - size_ : size_t
+        --
+        + GetFileDescriptor() : FileDescriptor
+    }
+
+    class QnxTypedAnonymousMemoryRegion <<impl>> {
+        - fd_ : FileDescriptor
+        - base_address_ : void*
+        - size_ : size_t
+        - typed_memory_ : TypedMemory*
+        --
+        + GetFileDescriptor() : FileDescriptor
+        + CreateHandle(pid) : shm_handle_t
+    }
+}
+
+together {
+    class AccessControlApplier <<utility>> {
+        + Apply(fd, permissions) : void
+        + CompensateUmask(fd, mode) : void
+    }
+
+    class LockFile <<RAII>> {
+    }
+}
+
+enum SharedMemoryErrorCode <<enum>> {
+    AlreadyExists
+    NotFound
+    TypedMemoryUnavailable
+    PermissionDenied
+    ResourceBusy
+    UnknownSharedMemoryIdentifier
+    RegionAlreadyManaged
+}
+
+PmrBase <|-- ManagedMemoryResource
+ManagedMemoryResource <|.. SharedMemoryResource
+
+MappedRegion <|-- NamedMemoryRegion
+NamedMemoryRegion <|.. PosixNamedMemoryRegion
+NamedMemoryRegion <|.. TypedNamedMemoryRegion
+MappedRegion <|.. QnxAnonymousMemoryRegion
+MappedRegion <|.. LinuxAnonymousMemoryRegion
+MappedRegion <|.. QnxTypedAnonymousMemoryRegion
+
+AllocationStrategy <|.. MonotonicAllocationStrategy
+
+SharedMemoryResource o--> MappedRegion : holds shared_ptr
+SharedMemoryResource ..> ControlBlock : places at base
+SharedMemoryResource *--> AllocationStrategy
+
+PosixNamedMemoryRegion ..> LockFile : uses
+PosixNamedMemoryRegion ..> AccessControlApplier : uses
+
+MemoryRegionFactory ..> MappedRegion : creates implementations
+
+SharedMemoryFactory ..> SharedMemoryResource : creates
+SharedMemoryFactory .right.> MemoryResourceRegistry : registers
+
+PolymorphicOffsetPtrAllocator -right-> MemoryResourceProxy : holds id
+MemoryResourceProxy -up-> MemoryResourceRegistry : LookupById
+MemoryResourceRegistry --> ManagedMemoryResource : returns resource*
+
+@enduml
