@@ -1,39 +1,3 @@
-# Event/Field communication in `LoLa`
-
-## Introduction
-
-Events and Fields in `ara::com` are class templates parameterized with the `SampleType`. They differ between provider
-(skeleton) and consumer (proxy) side regarding their functionality.
-`ara::com` proxies and skeletons contain members of the related template classes. The binding independent structural
-model/class diagram is discussed in
-[Skeleton/Proxy Binding architecture](../skeleton_proxy/README.md)
-
-## Field as a composite
-
-A field in ara::com is semantically an event, with some additional properties:
-
-- it always has a value. I.e. also during creation/offering of a field on the provider (skeleton) side an initial value
-  has to be provided. This also leads to the assurance, that on consumer (proxy) side after subscription a valid field
-  value can be retrieved.
-- it has optional getter/setter methods on the consumer (proxy) side. I.e. the latest field value can be retrieved
-  "on-demand" (get) on the consumer side (whether this really makes sense/is added value depends on the binding specific
-  implementation of events). The "setter" (if configured for a field) would allow the change of the field value by a
-  consumer.
-
-Therefore, we decided to realize a field on the **binding independent** level as composition of an event and
-service-methods for set/get. Since we don't have implemented service-methods yet, the latter are "placeholders".
-
-The related field classes and their composite nature can be seen in the class diagram of the proxy/skeleton design
-chapter [here](../skeleton_proxy/README.md#introduction).
-
-### Skeleton side
-
-On the skeleton side, we have `impl::SkeletonField<SampleType>`, which is just like `impl::SkeletonEvent` a class
-template, with the `SampleType` (type of event/field value) as template argument. It inherits from
-`impl::SkeletonFieldBase`, which reveals the composite nature, because it aggregates via member
-`skeleton_event_dispatch_` the `impl::SkeletonEventBase`, where it dispatches all its event specific behavior parts to.
-As soon as we have impl::SkeletonMethodBase. the `impl::SkeletonFieldBase` will be enriched with optional members
-`skeleton_method_get_dispatch_`/`skeleton_method_set_dispatch_`!
 
 ### Proxy side
 
