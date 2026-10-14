@@ -11,6 +11,201 @@
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
 
-@startuml class_diagram
+@startuml "ProxyBindingModel"
+title "Proxy Binding Model"
+
+' Proxy classes
+class "score::mw::com::impl::HandleType" as ScoreMwComImplHandleType {
+  -indentifier_: InstanceIdentifier
+  --
+  +operator==(const HandleType& other): bool
+  +operator<(const HandleType& other): bool
+  +GetInstanceId(): InstanceIdentifier&
+  +GetServiceInstanceDeployment(): ServiceInstanceDeployment&
+}
+
+abstract class "score::mw::com::impl::ProxyBase" as ScoreMwComImplProxyBase {
+  -proxy_binding_ : std::unique_ptr<ProxyBinding>
+  -handle_ : HandleType
+  --
+  using HandleType = score::mw::com::impl::HandleType
+
+  +ProxyBase(std::unique_ptr<ProxyBinding>, HandleType);
+  +{static} FindService(InstanceSpecifier): Result<ServiceHandleContainer<HandleType>>
+  +{static} FindService(InstanceIdentifier): Result<ServiceHandleContainer<HandleType>>
+  +{static} StartFindService(FindServiceHandler<HandleType>, InstanceSpecifier): Result<FindServiceHandle>
+  +{static} StartFindService(FindServiceHandler<HandleType>, InstanceIdentifier): Result<FindServiceHandle>
+  +{static} StopFindService(FindServiceHandle): Result<void>
+
+  +GetHandle() : const HandleType&
+  --
+  Note: ProxyBase is not copyable but moveable
+}
+
+abstract class "ProxyBinding" as ProxyBinding {
+}
+
+class "DummyProxy\n{{generated}}" as DummyProxy {
+  using DummyProxy::HandleType = HandleType
+
+  +DummyProxy(const HandleType &handle)
+
+  +DummyEvent : events::DummyEvent // using events::DummyEvent = ProxyEvent<SampleType>
+  +DummyFields : fields::Dummyfields // using fields::DummyField = ProxyFields<SampleType>
+}
+
+class "score::mw::com::impl::ProxyEventBase" as ScoreMwComImplProxyEventBase {
+  +ProxyEventBase(std::unique_ptr<ProxyEventBindingBase> proxy_event_binding)
+
+  +Subscribe(size_t max_sample_count): Result<void>
+  +GetSubscriptionState() : SubscriptionState
+  +Unsubscribe(): void
+  +GetFreeSampleCount(): Result<size_t>
+  +GetNumNewSamplesAvailable(): Result<std::size_t>
+  +SetReceiveHandler(EventReceiveHandler handler) : Result<void>
+  +UnsetReceiveHandler() : Result<void>
+  +IsBindingValid() : bool
+}
+
+class "score::mw::com::impl::ProxyEvent<SampleType>" as ScoreMwComImplProxyEventTemplate {
+  +ProxyEvent(ProxyBase& base, const std::string_view event_name)
+
+  template <typename F>
+  +GetNewSamples<F>(F&& receiver, size_t max_num_samples): Result<size_t>
+
+  --
+  -GetTypedEventBinding() : ProxyEventBinding<SampleType>*
+}
+
+abstract class "ProxyEventBindingBase" as ProxyEventBindingBase {
+  +{abstract} Subscribe(size_t maxSampleCount) = 0: void
+  +{abstract} GetSubscriptionState() = 0: SubscriptionState
+  +{abstract} Unsubscribe() = 0: void
+  +{abstract} SetReceiveHandler(EventReceiveHandler handler) = 0: void
+  +{abstract} UnsetReceiveHandler() = 0: void
+  +{abstract} GetNumNewSamplesAvailable(): Result<std::size_t>
+}
+
+abstract class "ProxyEventBinding<SampleType>" as ProxyEventBindingTemplate {
+  using Callback = score::cpp::callback<void(SamplePtr<SampleType>) noexcept>
+
+  +{abstract} GetNewSamples(Callback&&, TrackerGuardFactory&) = 0: Result<size_t>
+}
+
+class "mw::com::impl::ProxyField<SampleType>" as MwComImplProxyFieldTemplate {
+  +Subscribe(size_t max_sample_count): Result<void>
+  +GetSubscriptionState() : SubscriptionState
+  +Unsubscribe(): void
+  +GetFreeSampleCount(): Result<size_t>
+  +GetNumNewSamplesAvailable(): Result<std::size_t>
+  +SetReceiveHandler(EventReceiveHandler handler) : Result<void>
+  +UnsetReceiveHandler() : Result<void>
+  +GetNewSamples<F>(F&& receiver, size_t max_num_samples): Result<size_t>
+  +Get(): Future<SampleType>
+  +Set(const SampleType& value): Future<SampleType>
+  --
+  -event_dispatch_ : impl::ProxyEvent<SampleType>
+  -service_method_dispatch_get_<void , Future<SampleType>>: impl::Method
+  -service_method_dispatch_set_<SampleType, Future<SampleType>>: impl::Method
+}
+
+class "mw::com::impl::ProxyMethod<ServiceCallArgTypes>" as MwComImplProxyMethodTemplate {
+  +Call(ServiceCallArgTypes in, ServiceCallArgTypes out)
+}
+
+abstract class "ProxyMethodBindings<ServiceCallArgTypes>" as ProxyMethodBindingsTemplate {
+  +{abstract} Call(ServiceCallArgTypes in, ServiceCallArgTypes out) = 0
+}
+
+class "ProxyEventBindingFactory" {
+  +{static} Create<SampleType>(ProxyBase& parent, std::string_view event_name): std::unique_ptr<ProxyEventBinding<SampleType>>
+}
+
+class "ProxyFieldBindingFactory" {
+  +{static} CreateEventBinding<SampleType>(ProxyBase& parent, std::string_view field_name): std::unique_ptr<ProxyEventBinding<SampleType>>
+}
+
+class "SampleReferenceTracker" {
+  +SampleReferenceTracker()
+  +SampleReferenceTracker(size_t max_num_samples)
+  +GetNumAvailableSamples(): size_t
+  +Allocate(size_t count) : TrackerGuardFactory
+  +Reset(size_t new_max_count) : void
+  +IsUsed() : bool
+}
+
+class "TrackerGuardFactory" {
+  -tracker_: SampleReferenceTracker&
+  --
+  +GetNumAvailableGuards() : std::size_t
+  +TakeGuard() : std::optional<SampleReferenceGuard>
+  --
+  -TrackerGuardFactory(SampleReferenceTracker&, std::size_t)
+}
+
+class "SampleReferenceGuard" {
+  -tracker_: SampleReferenceTracker*
+  --
+  <u>Notes:</u>
+  SampleReferenceGuard is
+  not movable or copyable.
+}
+
+class "SamplePtr<SampleType>" as SamplePtrTemplate {
+  using pointer = const SampleType*
+  binding_sample_ptr_: std::variant<score::cpp::blank,
+      lola::SamplePtr<SampleType>, mock_binding::SamplePtr<SampleType>>
+  reference_guard_: SampleReferenceGuard
+  --
+  + SamplePtr(binding_sample_ptr : SamplePtrType&&,reference_guard : SampleReferenceGuard)
+  +get() : pointer
+  +Get() : pointer
+  +Swap( other : SamplePtr&) : void
+  +Reset(other :SamplePtr) : void
+  +operator*() : const SampleType&
+  +operator->() : pointer
+}
+
+class "ProxyBaseView" {
+  --
+  +ProxyBaseView(proxy_base : ProxyBase&)
+  +GetImpl() : ProxyBinding&
+}
+
+class "score::memory::shared::SharedMemoryFactory()" as shmfactory {
+}
+
+' Relationships
+ScoreResultErrorDomain <|-- "ComErrorDomain"
+"ComErrorDomain" <.. GlobalFunction : uses
+
+ScoreMwComImplHandleType <.down. ScoreMwComImplProxyBase #blue;text:blue : uses
+"ProxyBindingFactory" <.up. ScoreMwComImplProxyBase #blue;text:blue : uses
+ScoreMwComImplProxyBase <|-d- DummyProxy
+ScoreMwComImplProxyBase *-right- ProxyBinding
+
+"ProxyBindingFactory" .down.> ProxyBinding #red;text:red : <<creates>>
+ProxyBaseView .up.> ScoreMwComImplProxyBase #green;text:green : <<friend>>
+DummyProxy *-- ScoreMwComImplProxyEventTemplate : 0..n
+DummyProxy *-- MwComImplProxyFieldTemplate : 0..n
+ScoreMwComImplProxyEventBase <|-- ScoreMwComImplProxyEventTemplate
+ScoreMwComImplProxyEventBase *-- ProxyEventBindingBase
+ScoreMwComImplProxyEventTemplate ..> SamplePtrTemplate #red;text:red : <<creates>>
+ScoreMwComImplProxyEventTemplate ..> "ProxyEventBindingFactory" #blue;text:blue : uses
+ScoreMwComImplProxyEventTemplate *-- SampleReferenceTracker
+ScoreMwComImplProxyEventTemplate --* MwComImplProxyFieldTemplate : event_dispatch_
+ProxyEventBindingBase <|-- ProxyEventBindingTemplate
+"ProxyEventBindingFactory" ..> ProxyEventBindingTemplate #red;text:red : <<creates>>
+"ProxyFieldBindingFactory" ..> ProxyEventBindingTemplate #red;text:red : <<creates>>
+ProxyEventBindingTemplate <|-- LolaProxyEventTemplate
+MwComImplProxyFieldTemplate *-- "0..2" MwComImplProxyMethodTemplate : service_method_dispatch_
+ProxyMethodBindingsTemplate --* "1" MwComImplProxyMethodTemplate
+MwComImplProxyFieldTemplate ..> "ProxyFieldBindingFactory" #blue;text:blue : uses
+"TrackerGuardFactory" o-- "SampleReferenceTracker"
+"TrackerGuardFactory" <.. "SampleReferenceTracker" #red;text:red : <<creates>>
+"SampleReferenceGuard" o-- "SampleReferenceTracker"
+"TrackerGuardFactory" ..> "SampleReferenceGuard" #red;text:red : <<creates>>
+SamplePtrTemplate *-- "SampleReferenceGuard"
+ProxyBaseView --* ProxyEventBindingFactory
 
 @enduml
