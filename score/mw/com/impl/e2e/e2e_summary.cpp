@@ -19,12 +19,9 @@ Summary ComputeSummary(const DataIntegrityStatus data_integrity,
                        const SequenceStatus sequence,
                        const HistoricalHealthStatus historical_health) noexcept
 {
-    const bool data_integrity_failed{data_integrity == DataIntegrityStatus::kError};
-    const bool sequence_failed{(sequence == SequenceStatus::kErrorRepeated) ||
-                               (sequence == SequenceStatus::kErrorGapExceedsThreshold)};
     const bool historical_health_failed{historical_health == HistoricalHealthStatus::kError};
 
-    if (data_integrity_failed || sequence_failed || historical_health_failed)
+    if (IsFailure(data_integrity) || IsFailure(sequence) || historical_health_failed)
     {
         return Summary::kError;
     }

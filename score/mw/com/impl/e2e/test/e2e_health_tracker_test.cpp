@@ -31,7 +31,7 @@ constexpr HealthTrackerConfiguration kDisabledConfiguration{/* enabled */ false,
 
 HistoricalHealthStatus UpdateWithFailedSample(HealthTracker& tracker)
 {
-    return tracker.Update(DataIntegrityStatus::kError, SequenceStatus::kOk);
+    return tracker.Update(DataIntegrityStatus::kError, SequenceStatus::kDisabled);
 }
 
 HistoricalHealthStatus UpdateWithPassedSample(HealthTracker& tracker)
@@ -92,8 +92,8 @@ TEST(E2eHealthTrackerTest, SingleDataIntegrityErrorStaysOkBelowErrorThreshold)
     // Given a fresh health tracker with an enabled configuration
     HealthTracker tracker{kEnabledConfiguration};
 
-    // When updating the historical health with a single data integrity error
-    const auto status = tracker.Update(DataIntegrityStatus::kError, SequenceStatus::kOk);
+    // When updating the historical health with a single data integrity error and a skipped sequence check
+    const auto status = tracker.Update(DataIntegrityStatus::kError, SequenceStatus::kDisabled);
 
     // Then the status stays kOk as the error threshold is not reached
     EXPECT_EQ(status, HistoricalHealthStatus::kOk);
@@ -233,6 +233,42 @@ TEST(E2eHealthTrackerTest, ThresholdsAreRelativeToWindowAndCanDifferFromEachOthe
     // When updating the historical health with the 10th passed sample
     // Then the status switches back to kOk
     EXPECT_EQ(UpdateWithPassedSample(tracker), HistoricalHealthStatus::kOk);
+}
+
+TEST(E2eHealthTrackerTest, MaximumWindowSizeSwitchesToErrorAndBackToOk)
+{
+    // Given a configuration whose window uses all bits of the sample history
+    constexpr HealthTrackerConfiguration kConfiguration{true, 33U, 32U, kMaxHealthWindowSize};
+    HealthTracker tracker{kConfiguration};
+
+    // When updating the historical health with one failed sample less than the error threshold
+    // Then the status stays kOk
+    EXPECT_EQ(UpdateWithFailedSamples(kConfiguration.error_threshold - 1U, tracker), HistoricalHealthStatus::kOk);
+
+    // When updating the historical health with the failed sample reaching the error threshold
+    // Then the status switches to kError
+    EXPECT_EQ(UpdateWithFailedSample(tracker), HistoricalHealthStatus::kError);
+
+    // When updating the historical health with one passed sample less than the recovery threshold
+    // Then the status stays kError
+    EXPECT_EQ(UpdateWithPassedSamples(kConfiguration.recovery_threshold - 1U, tracker), HistoricalHealthStatus::kError);
+
+    // When updating the historical health with the passed sample reaching the recovery threshold
+    // Then the status switches back to kOk
+    EXPECT_EQ(UpdateWithPassedSample(tracker), HistoricalHealthStatus::kOk);
+}
+
+TEST(E2eHealthTrackerTest, DefaultConfigurationIsDisabledAndWellFormed)
+{
+    // Given a default-constructed configuration
+    constexpr HealthTrackerConfiguration kConfiguration{};
+
+    // When constructing a health tracker from it and updating it with a failing sample
+    HealthTracker tracker{kConfiguration};
+    const auto status = tracker.Update(DataIntegrityStatus::kError, SequenceStatus::kErrorRepeated);
+
+    // Then construction does not terminate and the status is kDisabled
+    EXPECT_EQ(status, HistoricalHealthStatus::kDisabled);
 }
 
 TEST(E2eHealthTrackerTest, ConstructionAcceptsWellFormedConfiguration)

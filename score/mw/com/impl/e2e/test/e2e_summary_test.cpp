@@ -120,9 +120,10 @@ TEST(E2eSummaryTest, OnlySequenceEnabledReportsOkWithDisabledChecks)
 
 TEST(E2eSummaryTest, DataIntegrityErrorReportsError)
 {
-    // Given data integrity reports an error while sequence and historical health are passing
+    // Given data integrity reports an error while the sequence check is skipped and historical health is passing
     // When computing the summary
-    const auto summary = ComputeSummary(DataIntegrityStatus::kError, SequenceStatus::kOk, HistoricalHealthStatus::kOk);
+    const auto summary =
+        ComputeSummary(DataIntegrityStatus::kError, SequenceStatus::kDisabled, HistoricalHealthStatus::kOk);
 
     // Then the summary is kError
     EXPECT_EQ(summary, Summary::kError);
@@ -208,16 +209,16 @@ TEST(BuildE2EResultTest, BuildE2EResultWithFailingSampleReportsErrorAndAdvancesH
     // Given a fresh health tracker with an enabled configuration
     HealthTracker tracker{kEnabledConfiguration};
 
-    // When building the E2E result from a failing data integrity status
-    const auto first_result = BuildE2EResult(DataIntegrityStatus::kError, SequenceStatus::kOk, tracker);
+    // When building the E2E result from a failing data integrity status and a skipped sequence check
+    const auto first_result = BuildE2EResult(DataIntegrityStatus::kError, SequenceStatus::kDisabled, tracker);
 
     // Then the summary is kError although the historical health is still below the error threshold
     EXPECT_EQ(first_result.summary, Summary::kError);
     EXPECT_EQ(first_result.historical_health, HistoricalHealthStatus::kOk);
 
     // And once the error threshold is reached the historical health reports kError as well
-    BuildE2EResult(DataIntegrityStatus::kError, SequenceStatus::kOk, tracker);
-    const auto third_result = BuildE2EResult(DataIntegrityStatus::kError, SequenceStatus::kOk, tracker);
+    BuildE2EResult(DataIntegrityStatus::kError, SequenceStatus::kDisabled, tracker);
+    const auto third_result = BuildE2EResult(DataIntegrityStatus::kError, SequenceStatus::kDisabled, tracker);
     EXPECT_EQ(third_result.historical_health, HistoricalHealthStatus::kError);
 }
 

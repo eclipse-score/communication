@@ -46,10 +46,7 @@ HistoricalHealthStatus HealthTracker::Update(const DataIntegrityStatus data_inte
         return HistoricalHealthStatus::kDisabled;
     }
 
-    const bool data_integrity_failed{data_integrity == DataIntegrityStatus::kError};
-    const bool sequence_failed{(sequence == SequenceStatus::kErrorRepeated) ||
-                               (sequence == SequenceStatus::kErrorGapExceedsThreshold)};
-    const bool this_sample_failed{data_integrity_failed || sequence_failed};
+    const bool this_sample_failed{IsFailure(data_integrity) || IsFailure(sequence)};
 
     // Newest sample enters at bit 0; samples older than window_size are masked out.
     failed_samples_ = (failed_samples_ << 1U) | (this_sample_failed ? 1U : 0U);
