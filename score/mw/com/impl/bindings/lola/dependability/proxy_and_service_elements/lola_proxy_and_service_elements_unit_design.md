@@ -1,4 +1,4 @@
-# LoLa Proxy and Service Elements Component Design
+# LoLa Proxy and Service Elements Unit Design
 
 ## Binding level Registration of proxy events/fields at their parent proxy
 
