@@ -30,13 +30,11 @@ bazel_dep(name = "score_qnx_unit_tests", version = "0.2.0")
 bazel_dep(name = "score_baselibs", version = "0.2.15")
 single_version_override(
     module_name = "score_baselibs",
-    commit = "513b9a9f8e20b79cab0e43e8bbbf364450e432d9",
     patch_strip = 1,
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
     # See https://github.com/eclipse-score/bazel_cpp_toolchains/issues/68
     patches = ["//third_party/score_baselibs:restore_qnx8_poll_workaround.patch"],
-    remote = "https://github.com/etas-contrib/score_baselibs.git",
 )
 
 bazel_dep(name = "score_bazel_platforms", version = "1.1.0")
