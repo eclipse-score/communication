@@ -42,7 +42,7 @@ _CoverageScopeInfo = provider(
     doc = "Carries source file paths, cc_library labels, and object files collected by the coverage scope aspect.",
     fields = {
         "source_files": "Depset of source file path strings (workspace-relative).",
-        "object_files": "Depset of compiled .o File objects for baseline coverage.",
+        "object_files": "Depset of structs(repo = canonical repo name, file = archive File) for baseline coverage.",
     },
 )
 
@@ -66,15 +66,18 @@ def _coverage_scope_aspect_impl(target, ctx):
                         if not f.path.startswith("external/") and f.is_source:
                             direct_files.append(f.short_path)
 
-        # Only collect workspace-internal labels and archives
-        if not str(target.label).startswith("@@") or str(target.label).startswith("@@//"):
-            # Collect .a archive files for baseline coverage.
-            for linker_input in target[CcInfo].linking_context.linker_inputs.to_list():
-                for lib in linker_input.libraries:
-                    for archive in [lib.static_library, lib.pic_static_library]:
-                        if archive and "/external/" not in archive.path and not archive.path.startswith("external/"):
-                            direct_archives.append(archive)
-                            break
+        # Collect .a archive files for baseline coverage. Each archive is tagged
+        # with the canonical repo of its owning target; the rule filters on it.
+        for linker_input in target[CcInfo].linking_context.linker_inputs.to_list():
+            for lib in linker_input.libraries:
+                for archive in [lib.static_library, lib.pic_static_library]:
+                    # The "external" path check is deliberate: artifacts of external repositories
+                    # (path contains "external/") must be excluded from the baseline coverage,
+                    # and Bazel offers no API to ask which repository an artifact belongs to.
+                    # buildifier: disable=external-path
+                    if archive and "/external/" not in archive.path and not archive.path.startswith("external/"):
+                        direct_archives.append(struct(repo = target.label.repo_name, file = archive))
+                        break
     elif CrateInfo in target:
         # rust_binary: no CcInfo, collect .rs sources from CrateInfo and use the
         # coverage-built executable as the baseline object.
@@ -82,8 +85,13 @@ def _coverage_scope_aspect_impl(target, ctx):
             if not f.path.startswith("external/") and f.is_source:
                 direct_files.append(f.short_path)
         out = target[CrateInfo].output
+
+        # The "external" path check is deliberate: outputs of external repositories
+        # (path contains "external/") must be excluded from the baseline coverage,
+        # and Bazel offers no API to ask which repository a file belongs to.
+        # buildifier: disable=external-path
         if out and "/external/" not in out.path and not out.path.startswith("external/"):
-            direct_archives.append(out)
+            direct_archives.append(struct(repo = target.label.repo_name, file = out))
 
     # Propagate from children traversed by the aspect
     for attr_name in ["components", "implementation", "deps", "implementation_deps", "exported_deps"]:
@@ -121,7 +129,16 @@ def _coverage_scope_impl(ctx):
             all_objects.append(dep[_CoverageScopeInfo].object_files)
 
     sorted_files = sorted(all_files.keys())
-    object_depset = depset(transitive = all_objects)
+
+    # Keep only archives owned by the repo in which this coverage_scope target is
+    # instantiated. Bazel canonicalizes all labels, so comparing canonical repo
+    # names is independent of how the labels were spelled (`//x`, `@repo//x`, ...).
+    scope_repo = ctx.label.repo_name
+    object_depset = depset([
+        entry.file
+        for entry in depset(transitive = all_objects).to_list()
+        if entry.repo == scope_repo
+    ])
 
     # Write the allowlist file
     output = ctx.actions.declare_file(ctx.attr.name + "_allowlist.txt")
@@ -147,7 +164,7 @@ def _coverage_scope_impl(ctx):
         ),
     ]
 
-def _coverage_transition_impl(settings, attr):
+def _coverage_transition_impl(_settings, _attr):
     # This dictionary modifies the build configuration
     return {
         "//command_line_option:collect_code_coverage": True,
