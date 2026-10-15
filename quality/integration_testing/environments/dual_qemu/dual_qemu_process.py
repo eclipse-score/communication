@@ -93,6 +93,7 @@ class DualQemuProcess(QemuProcess):
             machine=vm_config.qemu_machine,
             rootfs=None,
             kernel_cmdline=vm_config.qemu_kernel_cmdline,
+            disk=None,
         )
         # Replace the base's default Qemu with our ivshmem-capable subclass.
         self._qemu = IvshmemQemu(
