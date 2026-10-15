@@ -277,7 +277,7 @@ receives the two input arguments and just logs them) *before* offering the servi
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 98-114
+   :lines: 99-115
    :caption: consumer/consumer.cpp
 
 It then resolves the ``InstanceIdentifier`` of that callback instance via ``ResolveInstanceIDs``, expects exactly one
@@ -286,7 +286,7 @@ call:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 116-129
+   :lines: 117-130
    :caption: consumer/consumer.cpp
 
 Next it does a ``StartFindService``-based search for the ``LongRunningService`` instance provided by our provider and,
@@ -294,7 +294,7 @@ once found, creates a proxy for it:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 131-160
+   :lines: 132-161
    :caption: consumer/consumer.cpp
 
 Finally it **cyclically** (every 500 ms) calls ``PostLongRunningJob`` on the proxy – setting the dummy argument to a
@@ -304,7 +304,7 @@ above:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 170-200
+   :lines: 171-201
    :caption: consumer/consumer.cpp
 
 How to run the example

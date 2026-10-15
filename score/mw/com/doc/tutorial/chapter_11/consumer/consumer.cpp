@@ -13,6 +13,7 @@
 #include "score/mw/com/doc/tutorial/chapter_11/long_running_service.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <atomic>
 #include <chrono>
@@ -84,7 +85,7 @@ int main(int argc, const char* argv[])
     std::signal(SIGINT, SignalHandler);
     std::signal(SIGTERM, SignalHandler);
 
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
 
     // 1. Create and offer our own callback service instance (LongRunningServiceResult). The provider will later call
     //    SetJobResult() on exactly this instance.
