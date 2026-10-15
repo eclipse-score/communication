@@ -30,15 +30,6 @@ namespace
 std::size_t gGetNewSamplesBenchmarkIndex{0};
 constexpr std::string_view kBenchmarkInstanceSpecifier = "test/lolabenchmark";
 
-struct DataExchangeConfig
-{
-    std::size_t fill_data{12U};
-    std::size_t send_cycle_time_ms{1};
-    // NOTE: This variable has a significant impact on the overall runtime of the benchmark
-    std::size_t max_num_samples{25};
-};
-
-constexpr DataExchangeConfig kConfig{};
 }  // namespace
 
 // This fixture will be used to benchmark the LoLa runtime

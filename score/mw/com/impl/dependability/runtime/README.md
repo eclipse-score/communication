@@ -1,6 +1,6 @@
 # Runtime
 
-Our `mw::com` (`ara::com`) implementation has a `mw::com::impl::Runtime`, which implements a singleton pattern.
+Our `mw::com` implementation has a `mw::com::impl::Runtime`, which implements a singleton pattern.
 It is used/needed as we need a single entry-point and also "resource holder" per process for our implementation.
 The Runtime aspect is interwoven with our configuration approach, therefore you will see references to `Runtime`
 already in [configuration design](../configuration/README.md).
@@ -16,7 +16,7 @@ created.
 
 ## Binding specific Runtime extensions
 All concrete technical bindings will have their own runtime extension as they might need different central/common
-resources. Which technical bindings are used within one `mw::com` (`ara::com`) enabled process, depends on the
+resources. Which technical bindings are used within one `mw::com` enabled process, depends on the
 configuration.
 Since the configuration gets already read-in/parsed by the binding independent `impl::Runtime`, it is logical, that the
 creation/instantiation of binding specific runtimes is done by `impl::Runtime` with the help of

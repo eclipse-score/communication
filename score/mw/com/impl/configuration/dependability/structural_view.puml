@@ -201,16 +201,14 @@ class "score::mw::com::impl::HandleType" {
 class "<Proxy>::HandleType" {
   ..
   <u>Notes:</u>
-  AUTOSAR requires each generated proxy class to provide a "HandleType" data type. From an instance of such a type, a proxy instance shall be constructible and afterwards being able to communicate with the service instance.
+  Each generated proxy class provides a "HandleType" data type. From an instance of such a type, a proxy instance shall be constructible and afterwards being able to communicate with the service instance.
 }
 
-class "<Generated ara::com ServiceClass>" {
+class "<Generated ServiceClass>" {
   {static} + serviceIdentifier : ServiceIdentifierType
   {static} + serviceContractVersionMajor : static std::uint32_t
   {static} + serviceContractVersionMinor : static std::uint32_t
   ..
-  <u>Notes:</u>
-  [SWS_CM_01010]
 }
 
 class "nlhomann::json" {
@@ -229,8 +227,7 @@ class "score::mw::com::impl::Runtime" {
   + GetTracingRuntime() const : tracing::ITracingRuntime*
   ..
   <u>Notes:</u>
-  AUTOSAR SWS talks about a Runtime singleton in chapter 7.1.2 Design decisions without directly requiring it!
-  So we embrace the idea here! The only thing which AUTOSAR really requires in the context of "runtime" is the following signature:
+  The Runtime is implemented as a singleton. The only signature required in the context of "runtime" is the following:
   static score::mw::com::runtime::ResolveInstanceIDs(InstanceSpecifier modelName);
 }
 
@@ -252,7 +249,7 @@ class "score::mw::com::impl::Runtime" {
 "score::mw::com::impl::Runtime" *-- "score::mw::com::impl::Configuration"
 "score::mw::com::InstanceIdentifier" o-- "score::mw::com::impl::ServiceInstanceDeployment"
 "score::mw::com::InstanceIdentifier" o-- "score::mw::com::impl::ServiceTypeDeployment"
-"<Generated ara::com ServiceClass>" *-- "score::mw::com::ServiceIdentifierType"
+"<Generated ServiceClass>" *-- "score::mw::com::ServiceIdentifierType"
 "score::mw::com::impl::ServiceTypeDeployment" *-- "score::mw::com::impl::LolaServiceTypeDeployment"
 "<Proxy>::HandleType" --> "score::mw::com::impl::HandleType": is realized by
 "Global Functions" --> "score::mw::com::impl::Configuration" : creates

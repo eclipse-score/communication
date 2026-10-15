@@ -16,27 +16,22 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Overview
 
-`LoLa`/`mw::com`: A high-level communication middleware providing a partial implementation of the Adaptive AUTOSAR Communication Management specification. Within the Adaptive AUTOSAR ecosystem, it is commonly known as `ara::com`, reflecting the namespace defined by the standard.
+`LoLa`/`mw::com`: A high-level, service-oriented communication middleware for local interprocess / intraprocess communication.
 
 ## General introduction
 
-`mw::com` and `LoLa` are **synonyms** right now. While the former just expresses the namespace (`mw::com` = middleware
-communication), the latter is a hint on its technical implementation/unique selling point (`LoLa` = Low Latency).
-Since `LoLa`/`mw::com` is our in-house implementation of the AUTOSAR standard, which &ndash; according to this standard
-&ndash; resides under `ara::com`, the namespace similarity (`mw::com` ↔ `ara::com`) is **intentional**.
+`mw::com` and `LoLa` are have slightly different meanings. The former refers to the binding independent public API which is used by applications. It is 
+also the namespace (`mw::com` = middleware communication). The latter refers to the specific shared memory binding (`LoLa` = Low Latency).
 
 Low latency in our `mw::com` implementation is realized by basing our underlying `technical binding` on zero-copy
 shared-memory based communication.
-The notion of a `technical binding` also comes from the `ara::com` AUTOSAR standard:
-`ara::com` just defines a standardized user-level API and its behavior (which we generally follow with our
-`mw::com` implementation). **How** an implementation realizes the public API within its lower layers
-(`technical binding`) is completely up to it.
-It is even common, that implementations of the `ara::com` standard come up with several different `technical binding`s
-(e.g. one for local and one for network communication).
+`mw::com` defines a user-level API and its behavior. **How** this public API is realized within its lower layers
+(`technical binding`) is independent of the API itself.
+Thus, `mw::com` can support several different `technical binding`s (e.g. one for local and one for network communication).
 
 ## Documentation for users
 
-If you are an adaptive application developer in the IPNEXT project, and you want to use `mw::com` to do local
+If you are an adaptive application developer, and you want to use `mw::com` to do local
 interprocess communication, you will find the user documentation here: LINK TODO.
 
 Documentation of `mw::com`s public API with usage examples can be found in [doc/user_facing_API_examples.md](doc/user_facing_API_examples.md).

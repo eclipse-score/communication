@@ -79,8 +79,7 @@ files as service availability markers. What changes is the location. We will not
 
 ### Required variants of service instance supervision
 
-The find-semantics to be supported for our `mw::com::impl::lola::Proxy` are strongly coupled to the `mw::com` and
-`ara::com` API semantics:
+The find-semantics to be supported for our `mw::com::impl::lola::Proxy` are strongly coupled to the `mw::com` API semantics:
 
 - `FindService` for a specific single service instance
   - synchronously/one-shot
@@ -448,8 +447,8 @@ point in time, has already subscribed to an e.g. event and has even received `Sa
 into the shm-object, you want to keep exactly those shm-objects!
 
 If the skeleton stops offering and goes down regularly, the proxy shall still be able to access/follow the `SamplePtrs`
-he is holding! And if the provider/skeleton re-offers again, the proxy shall silently "auto-reconnect" as per the
-AUTOSAR specification. But this means, that the `lola::Skeleton` must not create new shm-objects in a new offer, but
+he is holding! And if the provider/skeleton re-offers again, the proxy shall silently "auto-reconnect". But this means, 
+that the `lola::Skeleton` must not create new shm-objects in a new offer, but
 re-use the existing one! Because a proxy can't open/mmap two versions of the (semantically) same shm-objects.
 That means, the proxy could only switch to the usage of the new shm-objects, in case he hasn't any remaining
 `SamplePtrs` pointing into the "old" shm-objects! This however, would mean, that we force the user to destroy

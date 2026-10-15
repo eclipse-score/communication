@@ -1,39 +1,3 @@
-# Event/Field communication in `LoLa`
-
-## Introduction
-
-Events and Fields in `ara::com` are class templates parameterized with the `SampleType`. They differ between provider
-(skeleton) and consumer (proxy) side regarding their functionality.
-`ara::com` proxies and skeletons contain members of the related template classes. The binding independent structural
-model/class diagram is discussed in
-[Skeleton/Proxy Binding architecture](../skeleton_proxy/README.md)
-
-## Field as a composite
-
-A field in ara::com is semantically an event, with some additional properties:
-
-- it always has a value. I.e. also during creation/offering of a field on the provider (skeleton) side an initial value
-  has to be provided. This also leads to the assurance, that on consumer (proxy) side after subscription a valid field
-  value can be retrieved.
-- it has optional getter/setter methods on the consumer (proxy) side. I.e. the latest field value can be retrieved
-  "on-demand" (get) on the consumer side (whether this really makes sense/is added value depends on the binding specific
-  implementation of events). The "setter" (if configured for a field) would allow the change of the field value by a
-  consumer.
-
-Therefore, we decided to realize a field on the **binding independent** level as composition of an event and
-service-methods for set/get. Since we don't have implemented service-methods yet, the latter are "placeholders".
-
-The related field classes and their composite nature can be seen in the class diagram of the proxy/skeleton design
-chapter [here](../skeleton_proxy/README.md#introduction).
-
-### Skeleton side
-
-On the skeleton side, we have `impl::SkeletonField<SampleType>`, which is just like `impl::SkeletonEvent` a class
-template, with the `SampleType` (type of event/field value) as template argument. It inherits from
-`impl::SkeletonFieldBase`, which reveals the composite nature, because it aggregates via member
-`skeleton_event_dispatch_` the `impl::SkeletonEventBase`, where it dispatches all its event specific behavior parts to.
-As soon as we have impl::SkeletonMethodBase. the `impl::SkeletonFieldBase` will be enriched with optional members
-`skeleton_method_get_dispatch_`/`skeleton_method_set_dispatch_`!
 
 ### Proxy side
 
@@ -64,9 +28,7 @@ on a field that was not declared with `WithNotifier` does not compile.
 
 The notifier is a pure consumer-side concept. It only controls
 whether the proxy can subscribe and receive event-style notifications when the provider updates the value, and says
-nothing about the provider side. This follows `ara::com`, where the notifier is essentially "the event part" of a field
-(see AUTOSAR's [Explanation of ara::com API](https://www.autosar.org/fileadmin/standards/R24-11/AP/AUTOSAR_AP_EXP_ARAComAPI.pdf),
-chapter "Fields").
+nothing about the provider side. The notifier is essentially "the event part" of a field.
 
 The same asymmetry shows up in how each side builds the field's event dispatch:
 
@@ -174,7 +136,7 @@ The member `timestamp` in `EventSlotStatus` is overloaded, since there are speci
 interpreted as real timestamps, but as markers, whether this slot has not yet any valid sample data (data invalid) or
 whether it is currently blocked in a write-state as the slot has been currently handed out to skeleton application layer
 in the form of an `score::mw::com::SampleAllocateePtr`, where the application is currently busy creating event data using
-the zero-copy path of the `ara::com` event API.
+the zero-copy path of the `mw::com` event API.
 
 Based on this control data design, the concurrent functionalities mentioned above can be implemented lock-free, just
 using
@@ -217,7 +179,7 @@ benefit. [↩](#lockfreeref)
 
 ### Realization of `SamplePtr` and `SampleAllocateePtr`
 
-`ara::com` defines two `std::unique_ptr` like pointers for accessing sample data of an event:
+`mw::com` defines two `std::unique_ptr` like pointers for accessing sample data of an event:
 
 * `score::mw::com::SamplePtr` is the smartpointer used on the proxy side to access an event sample
 * `score::mw::com::SampleAllocateePtr` is the smartpointer used on the skeleton side in case of usage of the zero-copy API
@@ -277,7 +239,7 @@ need to be instantiated-then-merged by the build toolchain as this would be the 
 
 ## Notifications between skeleton and proxy
 
-As per `ara::com` spec, there are several notification like interactions between proxy and skeleton. E.g., proxy
+There are several notification like interactions between proxy and skeleton. E.g., proxy
 instance allows to register an event specific callback, which gets invoked as soon as the skeleton side has updated this
 event (sent a new sample). You see the according methods in `lola::ProxyEvent::SetReceiveHandler` and
 `lola::SkeletonEvent::notifyRegisteredReceiveHandlers` (which gets called in the context of `lola::SkeletonEvent::Send`)
@@ -364,7 +326,7 @@ proxies within our `score::mw` implementation, we did not name it as such to avo
 ### Setting up message passing infrastructure
 
 The `score::mw::com::message_passing::Receiver`s used by `lola::MessagePassingFacade` are created/set up during
-initialization of our `mw::com` runtime. Depending on the `ara::com`/`mw::com` deployment info for the
+initialization of our `mw::com` runtime. Depending on the `mw::com` deployment info for the
 executable/process, it can be decided, whether only QM (ASIL-QM) or QM and ASIL (ASIL-B) Receivers are needed.
 
 <img alt="LOLA_MSG_PASS_INITIALIZE_SEQ" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/lola_msg_pass_initialize_seq.puml">

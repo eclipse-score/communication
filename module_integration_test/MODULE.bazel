@@ -15,6 +15,12 @@ single_version_override(
     patches = ["//:restore_qnx8_poll_workaround.patch"],
 )
 
+# Required to avoid depending on broken score_devcontainer 1.11.1 until baselibs uses this version
+single_version_override(
+    module_name = "score_docs_as_code",
+    version = "8.4.0",
+)
+
 # Only required to build the example, shall be replaceable with nearly every other C++ Toolchain setup
 bazel_dep(name = "score_bazel_platforms", version = "1.1.0", dev_dependency = True)
 bazel_dep(name = "score_bazel_cpp_toolchains", version = "1.0.4", dev_dependency = True)

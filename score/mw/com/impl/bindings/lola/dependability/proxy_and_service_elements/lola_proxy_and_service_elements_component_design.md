@@ -1,32 +1,3 @@
-### Proxy creation
-The mechanism regarding binding abstraction resp. runtime binding selection on proxy side is almost identical to the
-skeleton side. A small difference is, that the starting point of a proxy instance creation is a handle (`HandleType`).
-This handle is returned by the service discovery and includes (depending on the technical binding) maybe even more
-information than the InstanceIdentifier used as starting point on the skeleton side. So here the analog to the
-`SkeletonBase`,`SkeletonBinding`and `SkeletonBindingFactory` are `ProxyBase`, `ProxyBinding`/`ProxyBindingFactory`.
-
-So the user creates instances of generated proxy classes (referred to as `DummyProxy` in our class diagrams)
-(see [Introduction](../../impl/dependability/binding_independent_component_design.md#introduction)) via static `<DummyProxy>::Create(HandleType)`. These instances inherit from
-`ProxyBase`, which follows the same architectural `pImpl` paradigm as the skeleton side by dispatching to a binding
-specific implementation of `ProxyBinding`.
-
-`ProxyBase`/`ProxyBinding` do not contain any public/user facing instance methods beside the rather "technical"
-`GetHandle()` method, simply because `ara::com` does not currently define functionality/APIs on proxy instance level.
-On `ProxyBase` level we have two types of methods:
-
-- public static/class methods for finding/stop finding service instances. These static methods dispatch to a binding
-  specific implementation of service discovery (which gets retrieved via `Runtime::getInstance().GetServiceDiscovery()`)
-- internal/implementation specific method `AreBindingsValid()`, which is a method being called **after** construction of
-  a generated proxy instance, to detect, whether the instance can be successfully returned from
-  `static Result<generated proxy class> <generated proxy class>::Create()` or not.
-
-Similarly to the skeleton side, the `impl::ProxyBase` doesn't "know" its event/field/method children. Therefore,
-the `impl::ProxyEventBase` registers itself with the `impl::ProxyBase` in the same way as `impl::SkeletonEventBase`
-(as explained
-[here on the skeleton side](#binding-independent-level-registration-of-skeleton-eventsfields-at-their-parent-skeleton). 
-It will then call `impl::ProxyBase::GetConstructionResult()` and will return a valid proxy to the user if none of the 
-bindings received an error from the binding factory when trying to construct the binding.
-
 #### Binding level Registration of proxy events/fields at their parent proxy
 
 On the binding **specific** level things look similar:
@@ -46,16 +17,6 @@ in place:
    the case, then an error will be returned from `<DummyProxy>::Create()`.
 2. The `ProxyBinding` (`ProxyBase::proxy_binding_`) has complete access to all its child events/fields as
    `lola::Proxy::RegisterEvent()` has been called for all contained events/fields.
-
-
-#### Extract type agnostic code
-
-The [class diagram](../../impl/dependability/binding_independent_component_design.md#classdiagram) also shows, that our `LoLa` proxy event binding implementation (`lola::ProxyEvent`)
-aggregates an object of type `lola::ProxyEventCommon`, to which it dispatches all its `SampleType` agnostic method
-calls, it has to implement to fulfill its interface `ProxyEventBindingBase`.
-The reason for this architectural decision is described in the [design extension for generic proxies](./generic_proxy/README.md)
-
-Similarly, on the skeleton side, `lola::SkeletonEvent` aggregates an object of type `lola::SkeletonEventCommon`. This class encapsulates all `SampleTyp`e agnostic logic (such as interaction with `lola::Skeleton` for offering services, timestamp management, and notification handling). This allows both strongly typed skeletons and generic skeletons to share the same core implementation logic.
 
 ### Proxy auto-reconnect functionality
 

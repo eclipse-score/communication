@@ -22,7 +22,9 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     strip_include_prefix = "api_under_test",
     deps = [
-        "//score/memory/shared:types",
+        "//score/memory/shared:polymorphic_offset_ptr_allocator",
+        "//score/memory/shared:string",
+        "//score/memory/shared:vector",
         "//score/mw/com",
     ],
 )
