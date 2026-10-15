@@ -113,11 +113,6 @@ build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=shadow
 # Issue reported in https://github.com/eclipse-score/baselibs/issues/631
 build --per_file_copt=external/.*score_baselibs.*string_manipulation.*arguments.*@-Wno-error=sign-conversion
 build --host_per_file_copt=external/.*score_baselibs.*string_manipulation.*arguments.*@-Wno-error=sign-conversion
-# Issue reported in https://github.com/eclipse-score/baselibs/issues/686
-build --per_file_copt=external/.*score_baselibs.*vajson.*@-Wno-error=sign-conversion
-build --host_per_file_copt=external/.*score_baselibs.*vajson.*@-Wno-error=sign-conversion
-build --per_file_copt=external/.*score_baselibs.*vajson.*@-Wno-error=shadow
-build --host_per_file_copt=external/.*score_baselibs.*vajson.*@-Wno-error=shadow
 
 # score_qnx_unit_tests
 # Issue reported in https://github.com/eclipse-score/qnx_unit_tests/issues/44
