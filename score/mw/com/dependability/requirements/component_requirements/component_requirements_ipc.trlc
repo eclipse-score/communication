@@ -911,6 +911,13 @@ section "com" {
             version = 1
         }
 
+        ScoreReq.CompReq NoReuseOfAllocatedSharedMemory {
+            description = '''The shared memory resource used by {{mw::com}} shall hand out distinct memory sections, i.e. a memory section which is already allocated shall not be handed out by a subsequent or concurrent allocation.'''
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2, mw_com_fta.RootCauseAllocatesAlreadyAllocatedMemory]
+            version = 1
+        }
+
         /* broken_link_c/issue/21553375 */
         ScoreReq.CompReq BehaviourOfUpdateSendWithCopy {
             description = '''{{mw::com}} creates a copy of input parameter and shares it with all subscribed applications.
