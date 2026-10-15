@@ -142,6 +142,11 @@ TEST_F(ConfigurationJsonParsingStrategyFixture, ParseExampleJson)
     ASSERT_NE(lola_service_type_deployment, nullptr);
     EXPECT_EQ(lola_service_type_deployment->service_id_, 1234);
     EXPECT_EQ(lola_service_type_deployment->events_.at("CurrentPressureFrontLeft"), 20);
+    ASSERT_EQ(lola_service_type_deployment->e2e_events_.size(), 1U);
+    const auto& e2e_event_deployment = lola_service_type_deployment->e2e_events_.at("CurrentPressureFrontLeft");
+    EXPECT_EQ(e2e_event_deployment.profile_, E2EProfile::kP4);
+    EXPECT_EQ(e2e_event_deployment.data_id_, 58U);
+    EXPECT_EQ(e2e_event_deployment.max_delta_counter_, 2U);
     EXPECT_EQ(lola_service_type_deployment->fields_.at("CurrentTemperatureFrontLeft"), 30);
 
     EXPECT_EQ(config.GetGlobalConfiguration().GetProcessAsilLevel(), QualityType::kASIL_B);

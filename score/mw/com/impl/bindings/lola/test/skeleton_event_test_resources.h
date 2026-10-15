@@ -18,6 +18,8 @@
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_event.h"
+#include "score/mw/com/impl/configuration/e2e_event_type_deployment.h"
+#include "score/mw/com/impl/e2e/e2e_profile_stub.h"
 #include "score/mw/com/impl/sample_allocatee_guard.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 
@@ -41,7 +43,9 @@ class SkeletonEventFixture : public SkeletonMockedMemoryFixture
                                  bool enforce_max_samples = true,
                                  const QualityType quality_type = QualityType::kASIL_QM,
                                  impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {},
-                                 bool field_getter_enabled = false);
+                                 bool field_getter_enabled = false,
+                                 std::optional<E2EEventTypeDeployment> e2e_event_deployment = {},
+                                 std::shared_ptr<e2e::HeaderStorage> e2e_header_storage = nullptr);
 
     InstanceIdentifier GetValidInstanceIdentifier(QualityType quality_type);
 

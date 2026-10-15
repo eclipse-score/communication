@@ -55,6 +55,10 @@ enum AsilLevel : ubyte {
     B
 }
 
+enum E2EProfile : ubyte {
+    P04
+}
+
 // The `file_permissions_on_empty` symbol maps to the JSON enum value
 // "file-permissions-on-empty" (the tooling restores hyphens automatically).
 enum PermissionChecks : ubyte {
@@ -89,6 +93,24 @@ table ServiceVersion {
 // Service types
 // ---------------------------------------------------------------------------
 
+/// @title: POC E2E Event Configuration
+/// Binding-specific POC configuration for a protected LoLa event.
+table E2EEventConfig {
+    /// @title: E2E Profile
+    /// @required
+    profile: E2EProfile;
+    /// @title: E2E Data Id
+    /// @min: 0
+    /// @max: 255
+    /// @required
+    dataId: ubyte;
+    /// @title: E2E Max Delta Counter
+    /// @min: 0
+    /// @max: 255
+    /// @required
+    maxDeltaCounter: ubyte;
+}
+
 /// @title: Service Event
 /// Binding specific event configuration
 table ServiceTypeEvent {
@@ -100,6 +122,9 @@ table ServiceTypeEvent {
     /// @required
     /// Binding technology specific event id. LoLa supports 16 bit values. The value needs to be unique across all events/fields/methods within the same binding, in case it is a SHM/LoLa binding.
     eventId: uint;
+    /// @title: E2E Configuration
+    /// Optional POC E2E protection configuration of this event.
+    e2e: E2EEventConfig;
 }
 
 /// @title: Service Field
