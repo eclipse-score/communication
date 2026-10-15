@@ -63,7 +63,6 @@ gcc_toolchains.toolchain(
         "-Wswitch-enum",  # Warn on unhandled enum in switch (MISRA Rule 9.6.4)
         "-Wno-maybe-uninitialized",  # GCC 8/9 false positives (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=80635)
         "-Wno-dangling-reference",  # disabled for the moment
-        "-Wno-self-move",  # disabled for the moment
     ],
     extra_enabled_features = [
         "//quality/compiler_warnings:treat_warnings_as_errors",
