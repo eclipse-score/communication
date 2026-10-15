@@ -1,0 +1,227 @@
+@startuml proxy_create_offer_seq
+title "Lola Proxy Creation and Offer Sequence"
+hide footbox
+
+participant "<u>:Process</u>\nmw::com application" as Process
+participant "mw_com::binding_independent::ProxyAndServiceElements" as proxy_and_service_elements
+participant "mw_com::Binding Factories" as mw_com_binding_factories
+participant "mw_com::lola_binding::ProxyAndServiceElements" as lola_proxy_and_service_elements
+participant "mw_com::lola_binding::Event Data and Control" as event_data_control
+participant "mw_com::binding_independent::Service Discovery" as service_discovery
+participant "memory::shared::Memory Shared" as memory_shared
+
+activate Process
+
+' Service Discovery
+Process -> proxy_and_service_elements: FindService(InstanceSpecifier)
+activate proxy_and_service_elements
+
+proxy_and_service_elements -> service_discovery: FindService(InstanceSpecifier)
+activate service_discovery
+
+proxy_and_service_elements <-- service_discovery: return: ServiceHandleContainer<HandleType>
+deactivate service_discovery
+
+Process <-- proxy_and_service_elements: return: ServiceHandleContainer<HandleType>
+deactivate proxy_and_service_elements
+
+' Create Proxy and binding
+Process -> proxy_and_service_elements: Create(HandleType)
+activate proxy_and_service_elements
+
+proxy_and_service_elements -> mw_com_binding_factories: CreateProxyBinding(HandleType, ProxyBinding&)
+activate mw_com_binding_factories
+
+mw_com_binding_factories -> lola_proxy_and_service_elements: CreateLolaProxy()
+activate lola_proxy_and_service_elements
+
+lola_proxy_and_service_elements -> event_data_control: OpenQmServiceDataControlInShm()
+activate event_data_control
+
+event_data_control -> memory_shared: OpenShm()
+activate memory_shared
+
+memory_shared --> event_data_control: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+event_data_control --> lola_proxy_and_service_elements
+deactivate event_data_control
+
+alt Process is AsilB
+
+lola_proxy_and_service_elements -> event_data_control: OpenAsilBServiceDataControlInShm()
+activate event_data_control
+
+event_data_control -> memory_shared: OpenShm()
+activate memory_shared
+
+memory_shared --> event_data_control: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+event_data_control --> lola_proxy_and_service_elements
+deactivate event_data_control
+
+end
+
+lola_proxy_and_service_elements -> event_data_control: OpenServiceDataStorageInShm()
+activate event_data_control
+
+event_data_control -> memory_shared: OpenShm()
+activate memory_shared
+
+memory_shared --> event_data_control: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+event_data_control --> lola_proxy_and_service_elements
+deactivate event_data_control
+
+mw_com_binding_factories <-- lola_proxy_and_service_elements: return: unique_ptr<lola::Proxy>
+deactivate lola_proxy_and_service_elements
+
+mw_com_binding_factories --> proxy_and_service_elements: return: unique_ptr<ProxyBinding>
+deactivate mw_com_binding_factories
+
+' Create event bindings
+loop for all events
+
+proxy_and_service_elements -> mw_com_binding_factories: CreateProxyEventBinding(HandleType, ProxyBinding&)
+activate mw_com_binding_factories
+
+mw_com_binding_factories -> lola_proxy_and_service_elements: CreateLolaProxyEvent()
+activate lola_proxy_and_service_elements
+
+lola_proxy_and_service_elements -> event_data_control: OpenQmEventDataControlInShm()
+activate event_data_control
+
+event_data_control --> lola_proxy_and_service_elements
+deactivate event_data_control
+
+alt Process is AsilB
+
+lola_proxy_and_service_elements -> event_data_control: OpenAsilBEventDataControlInShm()
+activate event_data_control
+
+event_data_control --> lola_proxy_and_service_elements
+deactivate event_data_control
+
+end
+
+lola_proxy_and_service_elements -> event_data_control: OpenEventDataStorageInShm()
+activate event_data_control
+
+event_data_control --> lola_proxy_and_service_elements
+deactivate event_data_control
+
+mw_com_binding_factories <-- lola_proxy_and_service_elements: return: unique_ptr<lola::ProxyEvent>
+deactivate lola_proxy_and_service_elements
+
+mw_com_binding_factories --> proxy_and_service_elements: return: unique_ptr<ProxyEventBinding>
+deactivate mw_com_binding_factories
+
+end
+
+' Create field bindings
+loop for all fields
+
+proxy_and_service_elements -> mw_com_binding_factories: CreateProxyEventBinding(HandleType, ProxyBinding&)
+activate mw_com_binding_factories
+
+mw_com_binding_factories -> lola_proxy_and_service_elements: CreateLolaProxyEvent()
+activate lola_proxy_and_service_elements
+
+lola_proxy_and_service_elements -> event_data_control: OpenQmEventDataControlInShm()
+activate event_data_control
+
+event_data_control --> lola_proxy_and_service_elements
+deactivate event_data_control
+
+alt Process is AsilB
+
+lola_proxy_and_service_elements -> event_data_control: OpenAsilBEventDataControlInShm()
+activate event_data_control
+
+event_data_control --> lola_proxy_and_service_elements
+deactivate event_data_control
+
+end
+
+lola_proxy_and_service_elements -> event_data_control: OpenEventDataStorageInShm()
+activate event_data_control
+
+event_data_control --> lola_proxy_and_service_elements
+deactivate event_data_control
+
+mw_com_binding_factories <-- lola_proxy_and_service_elements: return: unique_ptr<lola::ProxyEvent>
+deactivate lola_proxy_and_service_elements
+
+mw_com_binding_factories --> proxy_and_service_elements: return: unique_ptr<ProxyEventBinding>
+deactivate mw_com_binding_factories
+
+alt if Setter enabled
+proxy_and_service_elements -> mw_com_binding_factories: CreateProxyMethodBinding(HandleType, ProxyBinding&, ::score::mw::com::impl::kSet)
+activate mw_com_binding_factories
+
+mw_com_binding_factories -> lola_proxy_and_service_elements: CreateLolaProxyMethod()
+activate lola_proxy_and_service_elements
+
+mw_com_binding_factories <-- lola_proxy_and_service_elements: return: unique_ptr<lola::ProxyMethod>
+deactivate lola_proxy_and_service_elements
+
+mw_com_binding_factories --> proxy_and_service_elements: return: unique_ptr<ProxyMethodBinding>
+deactivate mw_com_binding_factories
+
+end
+
+alt if Getter enabled
+proxy_and_service_elements -> mw_com_binding_factories: CreateProxyMethodBinding(HandleType, ProxyBinding&, ::score::mw::com::impl::kGet)
+activate mw_com_binding_factories
+
+mw_com_binding_factories -> lola_proxy_and_service_elements: CreateLolaProxyMethod()
+activate lola_proxy_and_service_elements
+
+mw_com_binding_factories <-- lola_proxy_and_service_elements: return: unique_ptr<lola::ProxyMethod>
+deactivate lola_proxy_and_service_elements
+
+mw_com_binding_factories --> proxy_and_service_elements: return: unique_ptr<ProxyMethodBinding>
+deactivate mw_com_binding_factories
+
+end
+
+end
+
+' Create method bindings
+loop for all methods
+
+proxy_and_service_elements -> mw_com_binding_factories: CreateProxyMethodBinding(HandleType, ProxyBinding&)
+activate mw_com_binding_factories
+
+mw_com_binding_factories -> lola_proxy_and_service_elements: CreateLolaProxyMethod()
+activate lola_proxy_and_service_elements
+
+mw_com_binding_factories <-- lola_proxy_and_service_elements: return: unique_ptr<lola::ProxyMethod>
+deactivate lola_proxy_and_service_elements
+
+mw_com_binding_factories --> proxy_and_service_elements: return: unique_ptr<ProxyMethodBinding>
+deactivate mw_com_binding_factories
+
+end
+
+' Setup methods
+proxy_and_service_elements -> lola_proxy_and_service_elements: SetupMethodsInShm()
+activate lola_proxy_and_service_elements
+
+lola_proxy_and_service_elements -> memory_shared: CreateShm()
+activate memory_shared
+
+memory_shared -> lola_proxy_and_service_elements: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+lola_proxy_and_service_elements --> proxy_and_service_elements
+deactivate lola_proxy_and_service_elements
+
+proxy_and_service_elements --> Process: return: ProxyWrapperClass<Interface>
+deactivate proxy_and_service_elements
+
+deactivate Process
+
+@enduml
