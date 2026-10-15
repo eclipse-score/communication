@@ -23,6 +23,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 
 namespace score::memory::shared::test
@@ -30,8 +31,10 @@ namespace score::memory::shared::test
 
 using ::testing::_;
 using ::testing::AtMost;
+using ::testing::DoAll;
 using ::testing::InSequence;
 using ::testing::Return;
+using ::testing::SetArgReferee;
 using ::testing::StrEq;
 
 using Mman = ::score::os::Mman;
@@ -75,7 +78,7 @@ TEST_F(SharedMemoryResourceAllocateTest, AssociatedMemoryResourceProxyForwardsCa
 
 TEST_F(SharedMemoryResourceAllocateTest, SharedMemoryResourceAllocatesAlignedMemoryDifferentTypes)
 {
-    RecordProperty("Verifies", "SCR-6241392");
+    RecordProperty("Verifies", "SCR-6241392, Communication.NoReuseOfAllocatedSharedMemory");
     RecordProperty(
         "Description",
         "SharedMemoryResource shall allocate memory in accordance to the alignment of that CPU architecture.");
@@ -106,6 +109,8 @@ TEST_F(SharedMemoryResourceAllocateTest, SharedMemoryResourceAllocatesAlignedMem
     // We respect the alignment requirements of both types
     EXPECT_TRUE(is_aligned(first_allocation, alignof(std::uint8_t)));
     EXPECT_TRUE(is_aligned(second_allocation, alignof(std::uint16_t)));
+    // and the second allocation does not overlap the first one
+    EXPECT_GE(reinterpret_cast<const std::uint8_t*>(second_allocation), first_allocation + sizeof(std::uint8_t));
 }
 
 TEST_F(SharedMemoryResourceAllocateTest,
@@ -174,6 +179,58 @@ TEST_F(SharedMemoryResourceAllocateTest, SharedMemoryResourceDeallocateDoesNoDea
     const auto already_allocated_bytes = resource->GetUserAllocatedBytes();
     resource->destruct(*allocation);
     EXPECT_EQ(resource->GetUserAllocatedBytes(), already_allocated_bytes);
+}
+
+TEST_F(SharedMemoryResourceAllocateTest, AllocationIsRecalculatedWhenMemoryWasHandedOutConcurrently)
+{
+    RecordProperty("Verifies", "Communication.NoReuseOfAllocatedSharedMemory");
+    RecordProperty("Description",
+                   "If another allocator advanced the allocation offset concurrently, SharedMemoryResource shall "
+                   "recalculate the allocation and not hand out the memory section allocated by the other allocator.");
+    RecordProperty("TestType", "requirements-based");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "requirements-analysis");
+
+    constexpr std::int32_t file_descriptor = 5;
+    constexpr bool is_read_write = true;
+
+    // Given an opened shared memory resource backed by a valid control block
+    alignas(std::max_align_t) std::array<std::uint8_t, 300U> dataRegion{};
+    auto id = score::cpp::hash_bytes(TestValues::sharedMemorySegmentPath, strlen(TestValues::sharedMemorySegmentPath));
+    auto* const control_block_addr = new (dataRegion.data()) ControlBlock(id);
+    control_block_addr->alreadyAllocatedBytes = sizeof(ControlBlock);
+
+    expectSharedMemorySuccessfullyOpened(file_descriptor, is_read_write, dataRegion.data());
+
+    auto resource_result = SharedMemoryResourceTestAttorney::Open(TestValues::sharedMemorySegmentPath, is_read_write);
+    ASSERT_TRUE(resource_result.has_value());
+    auto resource = resource_result.value();
+
+    // and another allocator concurrently handing out the section [sizeof(ControlBlock), concurrently_allocated_end)
+    constexpr std::size_t concurrently_allocated_end{sizeof(ControlBlock) + 32U};
+    constexpr std::size_t bytes{8U};
+    score::concurrency::AtomicMock<std::size_t> atomic_mock{};
+    score::concurrency::AtomicIndirectorMock<std::size_t>::SetMockObject(&atomic_mock);
+    InSequence sequence{};
+    EXPECT_CALL(atomic_mock, load(_)).WillOnce(Return(sizeof(ControlBlock)));
+    // first compare-exchange fails and reports the advanced offset of the other allocator
+    EXPECT_CALL(atomic_mock, compare_exchange_weak(_, _, _, _))
+        .WillOnce(DoAll(SetArgReferee<0>(concurrently_allocated_end), Return(false)));
+    // second compare-exchange must be based on the advanced offset
+    EXPECT_CALL(atomic_mock,
+                compare_exchange_weak(::testing::Eq(concurrently_allocated_end),
+                                      ::testing::Eq(concurrently_allocated_end + bytes),
+                                      _,
+                                      _))
+        .WillOnce(Return(true));
+
+    // When allocating
+    SharedMemoryResourceTestAttorney attorney(*resource);
+    void* const allocation = attorney.do_allocate_using_mock_atomic_indirector(bytes, 1U);
+    score::concurrency::AtomicIndirectorMock<std::size_t>::SetMockObject(nullptr);
+
+    // Then the handed out section starts after the concurrently allocated section
+    EXPECT_EQ(allocation, static_cast<void*>(dataRegion.data() + concurrently_allocated_end));
 }
 
 TEST_F(SharedMemoryResourceAllocateTest, WhenAllocatingNumberOfBytesGetUserAllocatedBytesFunctionShallReturnThisNumber)
