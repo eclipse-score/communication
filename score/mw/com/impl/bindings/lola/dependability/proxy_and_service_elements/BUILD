@@ -21,9 +21,9 @@ load(
 unit_design(
     name = "unit_design",
     # gtodo: Re-enable once the puml files are fixed according to the safety sentinel puml parser.
-    # glob([
-    #     "*.puml",
-    #     #"*.rst",
-    # ]),
+    static=glob([
+        "*.puml",
+        #"*.rst",
+    ]),
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
 )
