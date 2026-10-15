@@ -356,6 +356,74 @@ cc_library(
 )
 
 cc_library(
+    name = "skeleton_require_typed_memory",
+    testonly = True,
+    srcs = [
+        "skeleton.cpp",
+        "skeleton_event.cpp",
+        "skeleton_event_properties.cpp",
+        "skeleton_memory_manager.cpp",
+        "skeleton_method.cpp",
+    ],
+    hdrs = [
+        "skeleton.h",
+        "skeleton_event.h",
+        "skeleton_event_properties.h",
+        "skeleton_memory_manager.h",
+        "skeleton_method.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        ":sample_ptr",
+        "//score/mw/com/impl/bindings/lola/tracing:tracing_runtime",
+    ],
+    local_defines = ["REQUIRE_TYPED_MEMORY"],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/bindings/lola/test:__pkg__",
+        "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
+    ],
+    deps = [
+        ":event",
+        ":i_partial_restart_path_builder",
+        ":i_shm_path_builder",
+        ":partial_restart_path_builder",
+        ":proxy_instance_identifier",
+        ":service_data_control",
+        ":service_data_storage",
+        ":shm_path_builder",
+        ":skeleton_instance_identifier",
+        ":type_erased_sample_ptrs_guard",
+        "//score/memory/shared:i_shared_memory_resource",
+        "//score/memory/shared:lock_file",
+        "//score/memory/shared:managed_memory_resource",
+        "//score/memory/shared:new_delete_delegate_resource",
+        "//score/memory/shared/flock:exclusive_flock_mutex",
+        "//score/memory/shared/flock:flock_mutex_and_lock",
+        "//score/mw/com/impl:error",
+        "//score/mw/com/impl:generic_skeleton_event_binding",
+        "//score/mw/com/impl:instance_identifier",
+        "//score/mw/com/impl:runtime",
+        "//score/mw/com/impl:skeleton_binding",
+        "//score/mw/com/impl/bindings/lola/methods:method_data",
+        "//score/mw/com/impl/bindings/lola/methods:method_resource_map",
+        "//score/mw/com/impl/bindings/lola/methods:type_erased_call_queue",
+        "//score/mw/com/impl/configuration",
+        "//score/mw/com/impl/methods:skeleton_method_binding",
+        "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
+        "//score/mw/com/impl/plumbing:sample_ptr",
+        "//score/mw/com/impl/tracing:skeleton_event_tracing",
+        "//score/mw/com/impl/util:arithmetic_utils",
+        "@score_baselibs//score/filesystem",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/safecpp/safe_math",
+        "@score_baselibs//score/language/safecpp/scoped_function:scope",
+        "@score_baselibs//score/memory:data_type_size_info",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
     name = "proxy",
     srcs = [
         "proxy.cpp",
@@ -1071,6 +1139,23 @@ cc_unit_test(
     }),
     deps = [
         ":skeleton",
+        "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
+        "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/tracing:tracing_runtime_mock",
+    ],
+)
+
+cc_unit_test(
+    name = "skeleton_require_typed_memory_test",
+    testonly = True,
+    srcs = ["skeleton_test.cpp"],
+    features = COMPILER_WARNING_FEATURES + [
+        "aborts_upon_exception",
+    ],
+    local_defines = ["REQUIRE_TYPED_MEMORY"],
+    deps = [
+        ":skeleton_require_typed_memory",
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
         "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
