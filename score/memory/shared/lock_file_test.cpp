@@ -17,6 +17,7 @@
 #include "score/os/mocklib/stat_mock.h"
 #include "score/os/mocklib/unistdmock.h"
 #include "score/os/stat.h"
+#include "score/quality/compiler_warnings/warnings.h"
 
 #include <score/expected.hpp>
 
@@ -528,6 +529,8 @@ TEST_F(LockFileMoveFixture, LockFileShouldRemoveFileOnMoveAssignment)
     EXPECT_TRUE(unlink_called_2);
 }
 
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_SELF_MOVE  // We intentionally test self move
 TEST_F(LockFileMoveFixture, LockFileShouldNotRemoveFileWhenMoveAssigningToItself)
 {
     bool close_called{false};
@@ -564,6 +567,7 @@ TEST_F(LockFileMoveFixture, LockFileShouldNotRemoveFileWhenMoveAssigningToItself
     EXPECT_TRUE(close_called);
     EXPECT_TRUE(unlink_called);
 }
+DISABLE_WARNING_POP
 
 }  // namespace
 }  // namespace score::memory::shared
