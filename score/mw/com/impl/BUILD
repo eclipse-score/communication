@@ -1309,7 +1309,7 @@ cc_unit_test(
         ":impl",
         ":runtime_mock",
         ":service_discovery_mock",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "//score/mw/com/impl/test:runtime_mock_guard",
@@ -1416,7 +1416,7 @@ cc_unit_test(
     deps = [
         ":error",
         ":impl",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/test:runtime_mock_guard",
     ],
 )
@@ -1446,7 +1446,7 @@ cc_unit_test(
         ":impl",
         ":runtime_mock",
         ":service_discovery_mock",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:runtime_mock_guard",
         "@score_baselibs//score/language/futurecpp",
@@ -1479,7 +1479,7 @@ cc_unit_test(
         ":generic_skeleton",
         ":generic_skeleton_event",
         ":service_discovery_mock",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "//score/mw/com/impl/test:runtime_mock_guard",
@@ -1517,7 +1517,7 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":service_discovery_mock",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/mocking:test_type_utilities",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
@@ -1601,7 +1601,7 @@ cc_unit_test(
         ":generic_proxy_event",
         ":proxy_event_base",
         "//score/mw/com:types",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/test:proxy_resources",
     ],
 )
@@ -1651,7 +1651,7 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":impl",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/test:proxy_resources",
     ],
 )
@@ -1690,7 +1690,7 @@ cc_unit_test(
     deps = [
         ":impl",
         ":runtime_mock",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
     ],
 )
 
@@ -1720,7 +1720,7 @@ cc_unit_test(
     deps = [
         ":runtime_mock",
         ":skeleton_event",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/mocking:test_type_utilities",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
@@ -1734,7 +1734,7 @@ cc_unit_test(
     deps = [
         ":impl",
         ":runtime_mock",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
     ],
 )
 
@@ -1745,7 +1745,7 @@ cc_unit_test(
     deps = [
         ":runtime_mock",
         ":skeleton_field",
-        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/mocking:test_type_utilities",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
