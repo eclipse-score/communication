@@ -164,6 +164,18 @@ Result<void> ProxyEvent::UnsetSubscriptionStateChangeHandler() noexcept
     return {};
 }
 
+void ProxyEvent::SetSubscriptionStateChangeTracingCallback(
+    score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept
+{
+    subscription_event_state_machine_.SetSubscriptionStateChangeTracingCallback(std::move(callback));
+}
+
+void ProxyEvent::SetSubscriptionStateChangeHandlerTracingCallback(
+    score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept
+{
+    subscription_event_state_machine_.SetSubscriptionStateChangeHandlerTracingCallback(std::move(callback));
+}
+
 std::optional<std::uint16_t> ProxyEvent::GetMaxSampleCount() const noexcept
 {
     return subscription_event_state_machine_.GetMaxSampleCount();

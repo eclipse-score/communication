@@ -198,6 +198,10 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     IProxyEventBase* proxy_event_base_mock_;
 
   private:
+    /// \brief Tracks whether subscription state change tracing callbacks have been set up.
+    /// \details Since the SubscriptionStateMachine persists across Subscribe/Unsubscribe cycles,
+    /// we only need to set up tracing callbacks once. This flag ensures one-time setup.
+    bool subscription_state_change_tracing_setup_done_{false};
     /// \brief Expires the #receive_handler_scope_ in case not being called in the context of an EventReceiveHandler
     ///        (because trying to expire the scope in which we are running, would lead to a deadlock)
     void ExpireReceiveHandlerScopeIfNotInHandler();

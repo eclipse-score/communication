@@ -195,6 +195,38 @@ An additional feature of the "facade" `impl::tracing::TracingRuntime` is, that i
 multiple calls to the `GenericTraceAPI`. E.g. it monitors errors, when calling to `GenericTraceAPI` and decides, when
 to turn off tracing completely because of unrecoverable errors or a threshold of consecutive errors being reached.
 
+### Subscription State Change Tracing
+
+In addition to the API call tracing, `IPC Tracing` supports tracing the subscription lifecycle of proxy events/fields:
+
+- `TraceSubscriptionStateChanged`: a subscription state transition (e.g. `kNotSubscribed` to `kSubscribed`)
+- `TraceSetSubscriptionStateChangeHandler`: a user registers a subscription state change handler
+- `TraceUnsetSubscriptionStateChangeHandler`: a user unregisters a subscription state change handler
+- `TraceCallSubscriptionStateChangeHandler`: a state transition is about to be reported to the user's handler
+
+Each trace point is enabled independently in the trace filter config via `trace_subscription_state_changed`,
+`trace_subscription_state_change_handler_registered`, `trace_subscription_state_change_handler_deregistered` and
+`trace_subscription_state_change_handler_callback`.
+
+#### Implementation Pattern
+
+State transitions happen asynchronously within the binding's state machine, so they are not traced by wrapping user
+callbacks (which would exceed their callback capacity). Instead, two separate `score::cpp::callback<void(SubscriptionState), 64U>`
+tracing callbacks are installed on the binding via the optional `ProxyEventBinding` hooks
+`SetSubscriptionStateChangeTracingCallback()` and `SetSubscriptionStateChangeHandlerTracingCallback()` (default: no-op for
+bindings without tracing support):
+
+1. On the first `ProxyEventBase::Subscribe()` (before `binding_->Subscribe()`, so that the first transition is captured)
+   `SetupSubscriptionStateChangeTracing()` installs the state-changed callback. The state machine persists across
+   Subscribe/Unsubscribe cycles, so this is done only once.
+2. `ProxyEventBase::SetSubscriptionStateChangeHandler()` calls `TraceSetSubscriptionStateChangeHandler()` and
+   `SetupSubscriptionStateChangeHandlerTracing()`; `UnsetSubscriptionStateChangeHandler()` calls
+   `TraceUnsetSubscriptionStateChangeHandler()`.
+3. `lola::SubscriptionStateMachine::TransitionToState()` invokes the state-changed callback and then the handler
+   tracing callback, both before the user handler.
+
+<img alt="SEQUENCE_SUBSCRIPTION_STATE_TRACING" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/tracing/dependability/sequence_subscription_state_tracing.puml">
+
 ### Handling Trace calls
 
 At some point within a `LoLa`/`mw::com` public API call a call to `analysis::tracing::GenericTraceAPI::Trace()`
