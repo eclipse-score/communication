@@ -25,7 +25,10 @@ cc_library(
         "@platforms//os:qnx": ["-lpci"],
         "//conditions:default": [],
     }),
-    visibility = ["//score/mw/com/gateway/transport_layer:__subpackages__"],
+    visibility = [
+        "//score/mw/com/gateway/transport_layer:__subpackages__",
+        "//score/mw/com/test/hv_gateway_test:__subpackages__",
+    ],
     deps = [
         "@score_baselibs//score/mw/log",
     ],
@@ -38,7 +41,10 @@ cc_library(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    visibility = ["//score/mw/com/gateway/transport_layer:__subpackages__"],
+    visibility = [
+        "//score/mw/com/gateway/transport_layer:__subpackages__",
+        "//score/mw/com/test/hv_gateway_test:__subpackages__",
+    ],
     deps = [
         "//score/memory/shared",
         "//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
