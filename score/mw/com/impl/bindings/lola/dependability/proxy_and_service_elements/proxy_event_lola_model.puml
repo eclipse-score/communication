@@ -1,0 +1,275 @@
+@startuml event_lola_model
+title "Event Lola Model"
+
+namespace score::mw::com::impl::lola {
+
+abstract class ProxyEventBindingBase {
+  {abstract} +Subscribe(size_t maxSampleCount): void
+  {abstract} +Unsubscribe(): void
+  {abstract} +GetSubscriptionState(): SubscriptionState
+  {abstract} +SetReceiveHandler(EventReceiveHandler): void
+  {abstract} +UnsetReceiveHandler(): void
+  {abstract} +GetNumNewSamplesAvailable(): Result<size_t>
+}
+
+abstract class ProxyEventBinding<SampleType> {
+  {abstract} +GetNewSamples(score::cpp::callback<void(SamplePtr<SampleType>)>&&, TrackerGuardFactory): Result<size_t>
+  {static} # MakeSamplePtr(BindingSamplePtr&&, SampleReferenceGuard): SamplePtr<SampleType>
+}
+
+class ProxyEvent<SampleType> {
+  -parent: Proxy&
+  -subscription_state_machine: std::shared_ptr<SubscriptionStateMachine>
+  +ProxyEvent(ProxyBase& parent, ElementFqId)
+  +Subscribe(size_t maxSampleCount): void
+  +GetSubscriptionState(): SubscriptionState
+  +Unsubscribe(): void
+  +SetReceiveHandler(score::cpp::callback<void(void)>): void
+  +UnsetReceiveHandler(): void
+  +GetNewSamples(score::cpp::callback<void(SamplePtr<SampleType>)>&&, TrackerGuardFactory): Result<size_t>
+  +GetNumNewSamplesAvailable(): Result<size_t>
+}
+
+note right of ProxyEvent
+  Dispatches all calls to functions in ProxyEventBindingBase interface to\nProxyEventCommon.
+end note
+
+class ProxyEventCommon {
+  -element_fq_id_: ElementFqId
+  -parent_: Proxy&
+  -subscription_event_state_machine_: std::shared_ptr<SubscriptionStateMachine>
+  -test_slot_collector_: std::optional<SlotCollector>
+  --
+  +ProxyEventCommon(Proxy& parent, ElementFqId)
+  +Subscribe(size_t max_sample_count): void
+  +Unsubscribe(): void
+  +GetSubscriptionState(): SubscriptionState
+  +SetReceiveHandler(EventReceiveHandler handler): void
+  +UnsetReceiveHandler(EventReceiveHandler handler): void
+  +GetElementFQId(): ElementFqId
+  +GetNumNewSamplesAvailable(): Result<std::size_t>
+  +GetNewSamplesSlotIndices(size_t max_count): pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>
+  +GetEventControl(): ConsumerEventControlLocalView&
+}
+
+note right of ProxyEventCommon
+  ProxyEventCommon is not moveable or copyable.
+  event_control_local_ is obtained from ProxyServiceDataControlLocalView at
+  construction time. SlotCollector is instantiated by the SubscriptionStateMachine
+  when it enters the Subscribed state.
+  All subscription operations are implemented in the separate class
+  SubscriptionStateMachine and the associated states.
+end note
+
+class SubscriptionStateMachine {
+}
+
+note right of SubscriptionStateMachine
+  State machine that manages subscriptions to a ProxyEvent.\nDetails about the state machine can be found in\nproxy_event_state_machine.puml and proxy_event_state_machine_model.puml
+end note
+
+class SlotCollector {
+  -event_data_control_local_: ConsumerEventDataControlLocalView<>&
+  +SlotCollector(event_data_control_local: ConsumerEventDataControlLocalView<>&, const std::size_t max_slots)
+  +GetNumNewSamplesAvailable(): size_t
+  +GetNewSamplesSlotIndices(size_t max_count): pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>
+}
+
+note right of SlotCollector
+  SlotCollector is not copyable.
+  Uses ConsumerEventDataControlLocalView to avoid OffsetPtr overhead
+  when scanning shared-memory slot state during GetNewSamples().
+end note
+
+class ShmPathBuilder {
+  +ShmPathBuilder(instance_deployment: const LolaServiceInstanceDeployment&, type_deploymenttype_deployment: const LolaServiceTypeDeployment&)
+  +GetDataChannelShmName(): std::string
+  +GetControlChannelShmName(const LolaServiceInstanceId::InstanceId, const QualityType): std::string
+}
+
+class ::score::mw::com::impl::SamplePtr<SampleType> {
+  #internal: std::variant<SamplePtr>
+  +SamplePtr(std::nullptr_t)
+  +reset(const pointer ptr = SampleType*): void
+  +swap(other: SamplePtr<SampleType>&): void
+  +get(): SampleType*
+}
+
+' note right of ::score::mw::com::impl::SamplePtr
+'   Variant is used to enable future\nversion were multiple backends are supported
+' end note
+
+class SamplePtr<SampleType> {
+  -managed_object_: SampleType*
+  -slot_decrementer_: std::optional<SlotDecrementer>
+  +SamplePtr()
+  +SamplePtr(std::nullptr_t)
+  +SamplePtr(ptr: pointer, consumer_view: ConsumerEventDataControlLocalView<>&, slot_index: SlotIndexType)
+  +get() const: pointer
+  +swap(): void
+}
+
+note right of SamplePtr
+  SlotDecrementer (RAII) holds a reference to ConsumerEventDataControlLocalView
+  and calls DereferenceEvent() on destruction, decrementing the slot ref-count.
+end note
+
+class SlotDecrementer {
+  -event_data_control_local_: ConsumerEventDataControlLocalView<>*
+  -event_slot_index_: SlotIndexType
+  +SlotDecrementer(event_data_control: ConsumerEventDataControlLocalView<>&, slot_index: SlotIndexType)
+  +~SlotDecrementer() : void
+}
+
+' Shared memory classes
+class EventDataStorage<SampleType> <<SharedMemory>> <<typedef>> {
+  -storage: DynamicArray<SampleType, std::scoped_allocator_adaptor<memory::shared::PolymorphicOffsetPtrAllocator<SampleType>>>
+}
+
+note right of EventDataStorage
+  Exists once per Event\nOnly writable by Skeleton,\nreadable by all subscribed Proxies independent of ASIL level.
+end note
+
+class ServiceDataStorage<SampleType> <<SharedMemory>> <<typedef>> {
+  std::map<ElementFqId, offset_ptr<void>>
+}
+
+note right of ServiceDataStorage
+  The offset_ptr<void> ServiceDataStorage stored as the value in the map is an offset_ptr<EventDataStorage> which has its type erased.\nThe type is identified later when samples are retrieved, see GetNewSamples for an explanation.
+end note
+
+' Local view classes (non-shared-memory, live in process heap)
+class ProviderEventDataControlLocalView<AtomicIndirectorType> {
+  -state_slots_: LocalEventControlSlots (score::cpp::span<ControlSlotType>)
+  +ProviderEventDataControlLocalView(event_data_control: EventDataControl&)
+  +AllocateNextSlot(): std::optional<SlotIndexType>
+  +EventReady(slot_index: SlotIndexType, time_stamp: EventSlotStatus::EventTimeStamp): void
+  +Discard(slot_index: SlotIndexType): void
+  +operator[](slot_index: SlotIndexType) const: EventSlotStatus
+  +RemoveAllocationsForWriting(): void
+}
+
+note right of ProviderEventDataControlLocalView
+  Provider (skeleton) side local view of EventDataControl.\nHolds a raw span into shared-memory state_slots_ (no OffsetPtr on hot path).
+end note
+
+class ConsumerEventDataControlLocalView<AtomicIndirectorType> {
+  -state_slots_: LocalEventControlSlots (score::cpp::span<ControlSlotType>)
+  -transaction_log_local_view_: std::optional<TransactionLogLocalView>
+  +ConsumerEventDataControlLocalView(event_data_control: EventDataControl&)
+  +ReferenceNextEvent(last_search_time: EventSlotStatus::EventTimeStamp, upper_limit: EventSlotStatus::EventTimeStamp): std::optional<SlotIndexType>
+  +GetLatestSlot(): std::optional<SlotIndexType>
+  +ReferenceSpecificEvent(slot_index: SlotIndexType): void
+  +GetNumNewEvents(reference_time: EventSlotStatus::EventTimeStamp) const: std::size_t
+  +DereferenceEvent(slot_index: SlotIndexType): void
+  +DereferenceEventWithoutTransactionLogging(slot_index: SlotIndexType): void
+  +operator[](slot_index: SlotIndexType) const: EventSlotStatus
+}
+
+note right of ConsumerEventDataControlLocalView
+  Consumer (proxy/tracing) side local view of EventDataControl.\nHolds a raw span into shared-memory state_slots_ (no OffsetPtr on hot path).
+end note
+
+class ConsumerEventControlLocalView {
+  +data_control: ConsumerEventDataControlLocalView<>
+  +subscription_control: std::reference_wrapper<EventSubscriptionControl<>>
+  +transaction_log_set: std::reference_wrapper<TransactionLogSet>
+  +ConsumerEventControlLocalView(event_control: EventControl&)
+}
+
+note right of ConsumerEventControlLocalView
+  Aggregated local view of a single EventControl entry from shared memory.
+end note
+
+class ProxyServiceDataControlLocalView {
+  +event_controls_: Map<ElementFqId, ConsumerEventControlLocalView>
+  +application_id_pid_mapping_: ApplicationIdPidMapping&
+  +ProxyServiceDataControlLocalView(service_data_control: ServiceDataControl&)
+}
+
+note right of ProxyServiceDataControlLocalView
+  Created once per Proxy at construction. Builds ConsumerEventControlLocalView\nentries for every event in ServiceDataControl, avoiding per-call OffsetPtr\nindirection when accessing the control map at runtime.
+end note
+
+class ServiceDataControl <<SharedMemory>> {
+  +event_data_control_: std::map<ElementFqId, EventDataControl>
+  +skeleton_pid_: pid_t
+  +ServiceDataControl(proxy: score::memory::shared::MemoryResourceProxy*)
+}
+
+class EventDataControl <<SharedMemory>> {
+  +state_slots_: DynamicArray<ControlSlotType, PolymorphicOffsetPtrAllocator<ControlSlotType>>
+  +EventDataControl(max_slots: SlotIndexType, resource: ManagedMemoryResource&)
+}
+
+note right of EventDataControl
+  Pure data class stored in shared memory. Holds the atomic slot-state array.\nAll behaviour (AllocateNextSlot, EventReady, ReferenceNextEvent, etc.) has been\nmoved to ProviderEventDataControlLocalView / ConsumerEventDataControlLocalView\nto avoid OffsetPtr overhead in the hot path.\nExists at least once per provided Event. For ASIL-B providers with both ASIL-B\nand QM consumers it exists twice (one per quality level in separate shm objects).
+end note
+
+class EventSlotStatus <<SharedMemory>> {
+  +EventSlotStatus(init_val: const value_type)
+  +IsInvalid(): bool
+  +IsInWriting(): bool
+  +MarkInWriting(): void
+  +MarkInvalid(): void
+  +GetReferenceCount(): SubscriberCount
+  +GetTimeStamp(): EventTimeStamp
+  +SetTimeStamp(EventTimeStamp)
+  +SetReferenceCount(SubscriberCount)
+  +IsUsed(): bool
+  +IsTimeStampBetween(EventTimeStamp min, EventTimeStamp max): bool
+}
+
+class EventSubscriptionControl <<SharedMemory>>
+class TransactionLogSet <<SharedMemory>>
+class Proxy
+
+class EventDataControlComposite<AtomicIndirectorType> {
+  -asil_qm_control_local_: ProviderEventDataControlLocalView<>&
+  -asil_b_control_local_: ProviderEventDataControlLocalView<>*
+  +EventDataControlComposite(asil_qm_control_local: ProviderEventDataControlLocalView<>&)
+  +EventDataControlComposite(asil_qm_control_local: ProviderEventDataControlLocalView<>&, asil_b_control_local: ProviderEventDataControlLocalView<>*)
+  +AllocateNextSlot(): AllocationResult
+  +EventReady(slot_index: SlotIndexType, time_stamp: EventSlotStatus::EventTimeStamp): void
+  +Discard(slot_index: SlotIndexType): void
+  +IsQmControlDisconnected(): bool
+  +GetQmEventDataControlLocal(): ProviderEventDataControlLocalView<>&
+  +GetAsilBEventDataControlLocal(): ProviderEventDataControlLocalView<>*
+}
+
+enum SubscriptionState {
+  SUBSCRIBED
+  NOT_SUBSCRIBED
+  SUBSCRIPTION_PENDING
+}
+
+ProxyEventBindingBase <|-- ProxyEventBinding
+ProxyEventBinding <|-- ProxyEvent
+ServiceDataControl *-- EventDataControl : "0..n"
+EventDataControl ..> EventSlotStatus
+::score::mw::com::impl::SamplePtr o-- SamplePtr
+ProxyEvent *-- ProxyEventCommon
+ProxyEventCommon *-- SubscriptionStateMachine
+ProxyEventBindingBase o-- SubscriptionState
+SubscriptionStateMachine ..> SlotCollector : <<creates>>
+ProxyEvent ..> SamplePtr
+ServiceDataStorage *-- EventDataStorage : "0..n"
+ProxyEventBinding ..> SamplePtr
+
+' Local view relationships
+EventDataControlComposite o-- "1..2" ProviderEventDataControlLocalView
+ProviderEventDataControlLocalView ..> EventDataControl : accesses via span
+ConsumerEventDataControlLocalView ..> EventDataControl : accesses via span
+ProxyEventCommon o-- ConsumerEventControlLocalView : event_control_local_
+ConsumerEventControlLocalView *-- ConsumerEventDataControlLocalView
+ConsumerEventControlLocalView ..> EventSubscriptionControl : subscription_control ref
+ConsumerEventControlLocalView ..> TransactionLogSet : transaction_log_set ref
+SlotCollector o-- ConsumerEventDataControlLocalView
+SamplePtr *-- SlotDecrementer
+SlotDecrementer o-- ConsumerEventDataControlLocalView
+Proxy *-- ProxyServiceDataControlLocalView : service_data_control_local_
+ProxyServiceDataControlLocalView *-- "1..n" ConsumerEventControlLocalView
+
+}
+
+@enduml
