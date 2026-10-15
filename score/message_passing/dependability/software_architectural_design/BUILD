@@ -18,6 +18,9 @@ load(
 
 architectural_design(
     name = "message_passing_architectural_design",
+    internal_api = [
+        "private_api.puml",
+    ],
     maturity = "development",
     public_api = [
         "public_api.puml",
@@ -25,7 +28,6 @@ architectural_design(
     static = [
         "static_design.puml",
         "client-server.md",
-        "private_api.puml",
     ],
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/message_passing/dependability:__subpackages__"],
