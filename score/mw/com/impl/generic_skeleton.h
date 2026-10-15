@@ -42,7 +42,6 @@ struct FieldInfo
     DataTypeMetaInfo data_type_meta_info;
     bool has_getter{false};
     bool has_setter{false};
-    bool has_notifier{false};
 };
 
 struct GenericSkeletonServiceElementInfo
@@ -96,6 +95,11 @@ class GenericSkeleton : public SkeletonBase
   private:
     // Private constructor, only callable by static Create methods.
     GenericSkeleton(const InstanceIdentifier& identifier, std::unique_ptr<SkeletonBinding> binding);
+
+    [[nodiscard]] Result<void> CreateEvents(const InstanceIdentifier& identifier,
+                                            score::cpp::span<const EventInfo> events);
+    [[nodiscard]] Result<void> CreateFields(const InstanceIdentifier& identifier,
+                                            score::cpp::span<const FieldInfo> fields);
 
     /// \brief This map owns all GenericSkeletonEvent instances.
     /// \details This map needs to be covered in a unique_ptr as it shall not be relocated by a move of the
