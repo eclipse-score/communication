@@ -27,12 +27,18 @@ namespace score::mw::com::impl::configuration
 ///
 /// This class is only functional when mw::com is built with the (experimental) FlatBuffers configuration flag
 /// enabled (--config=flatbuffers, see //score/mw/com/flags:experimental_enable_flatbuffers_configuration). When
-/// built without the flag, both Parse() overloads log a fatal error and terminate, so the class always exists and
+/// built without the flag, Parse() logs a fatal error and terminates, so the class always exists and
 /// links, but the FlatBuffers dependencies are only ever linked in when the flag is enabled.
 class ConfigurationFlatbufferParsingStrategy final : public IConfigurationParsingStrategy
 {
+    // Design decision: The "*Attorney" class is a test-only helper, which accesses private members of this class to
+    // parse in-memory buffers directly.
+    friend class ConfigurationFlatbufferParsingStrategyAttorney;
+
   public:
     Configuration Parse(std::string_view path) const override;
+
+  private:
     Configuration Parse(score::cpp::span<const std::uint8_t> buffer) const;
 };
 

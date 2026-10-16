@@ -34,9 +34,9 @@
 //                                                $defs/<name> and reference it instead of
 //                                                inlining; use for tables shared by 2+ parents)
 //         /// <free-form description, one or more lines; joined with '\n'>
-//   * Scalars are optional must be declared `field: T = null;`.
-//     (absent != 0) e.g. instanceId, where 0 is a valid instance id
-//     but "no id given" has a different meaning
+//   * Scalars which are by design optional must be declared as 'field: T = null'.
+//     Absent != 0. For example: the instanceId can be 0, as well as non-existent. 
+//     Both are valid, but with different meanings.
 //     This makes flatc emit a `flatbuffers::Optional<T>` accessor
 //     instead of a plain scalar with a baked-in default. generate_json_schema now rewrites 
 //     ` = null;` to `;`; this is purely mechanical since optionality has no JSON-schema 

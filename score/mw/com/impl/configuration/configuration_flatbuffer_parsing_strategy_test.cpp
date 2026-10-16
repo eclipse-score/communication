@@ -30,6 +30,19 @@
 
 namespace score::mw::com::impl::configuration
 {
+
+// Test-only helper granting access to the private in-memory Parse(buffer) overload (befriended in
+// configuration_flatbuffer_parsing_strategy.h). Must live at score::mw::com::impl::configuration scope so its name
+// matches the friend declaration.
+class ConfigurationFlatbufferParsingStrategyAttorney
+{
+  public:
+    static Configuration Parse(score::cpp::span<const std::uint8_t> buffer)
+    {
+        return ConfigurationFlatbufferParsingStrategy{}.Parse(buffer);
+    }
+};
+
 namespace
 {
 
@@ -240,7 +253,8 @@ TEST_F(ConfigurationFlatbufferParsingStrategyFixture, ConfigurationWithAllRequir
 {
     const auto buffer = BuildConfigurationWithout(RequiredScalar::kNone);
 
-    const auto config = ConfigurationFlatbufferParsingStrategy{}.Parse(score::cpp::span<const std::uint8_t>{buffer});
+    const auto config =
+        ConfigurationFlatbufferParsingStrategyAttorney::Parse(score::cpp::span<const std::uint8_t>{buffer});
 
     const auto instance_specifier = InstanceSpecifier::Create(std::string{"test/Instance"}).value();
     const auto& deployment = config.GetServiceInstanceDeployment(instance_specifier).value().get();
@@ -257,7 +271,7 @@ TEST_P(RequiredScalarTest, MissingRequiredScalarWillDie)
     const auto buffer = BuildConfigurationWithout(GetParam());
 
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        ConfigurationFlatbufferParsingStrategy{}.Parse(score::cpp::span<const std::uint8_t>{buffer}));
+        ConfigurationFlatbufferParsingStrategyAttorney::Parse(score::cpp::span<const std::uint8_t>{buffer}));
 }
 
 INSTANTIATE_TEST_SUITE_P(ConfigurationFlatbufferParsingStrategy,
@@ -322,7 +336,7 @@ TEST_F(ConfigurationFlatbufferParsingStrategyFixture, MaxApplicationIdWillDie)
     const auto buffer = BuildConfigurationWithGlobal(std::numeric_limits<std::uint32_t>::max(), std::nullopt);
 
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        ConfigurationFlatbufferParsingStrategy{}.Parse(score::cpp::span<const std::uint8_t>{buffer}));
+        ConfigurationFlatbufferParsingStrategyAttorney::Parse(score::cpp::span<const std::uint8_t>{buffer}));
 }
 
 TEST_F(ConfigurationFlatbufferParsingStrategyFixture, QueueSizesUpToInt32MaxAreAccepted)
@@ -330,7 +344,8 @@ TEST_F(ConfigurationFlatbufferParsingStrategyFixture, QueueSizesUpToInt32MaxAreA
     constexpr auto kInt32Max = static_cast<std::uint32_t>(std::numeric_limits<std::int32_t>::max());
     const auto buffer = BuildConfigurationWithGlobal(std::nullopt, QueueSizes{kInt32Max, kInt32Max, kInt32Max});
 
-    const auto config = ConfigurationFlatbufferParsingStrategy{}.Parse(score::cpp::span<const std::uint8_t>{buffer});
+    const auto config =
+        ConfigurationFlatbufferParsingStrategyAttorney::Parse(score::cpp::span<const std::uint8_t>{buffer});
 
     const auto& global = config.GetGlobalConfiguration();
     EXPECT_EQ(global.GetReceiverMessageQueueSize(QualityType::kASIL_QM), std::numeric_limits<std::int32_t>::max());
@@ -352,7 +367,7 @@ TEST_F(ConfigurationFlatbufferParsingStrategyFixture, QueueSizeAboveInt32MaxWill
         const auto buffer = BuildConfigurationWithGlobal(std::nullopt, queue_sizes);
 
         SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-            ConfigurationFlatbufferParsingStrategy{}.Parse(score::cpp::span<const std::uint8_t>{buffer}));
+            ConfigurationFlatbufferParsingStrategyAttorney::Parse(score::cpp::span<const std::uint8_t>{buffer}));
     }
 }
 
@@ -361,7 +376,7 @@ TEST_F(ConfigurationFlatbufferParsingStrategyFixture, EmptyBufferWillDie)
     const std::vector<std::uint8_t> empty_buffer{};
 
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        ConfigurationFlatbufferParsingStrategy{}.Parse(score::cpp::span<const std::uint8_t>{empty_buffer}));
+        ConfigurationFlatbufferParsingStrategyAttorney::Parse(score::cpp::span<const std::uint8_t>{empty_buffer}));
 }
 
 TEST_F(ConfigurationFlatbufferParsingStrategyFixture, TruncatedBufferWillDie)
@@ -370,7 +385,7 @@ TEST_F(ConfigurationFlatbufferParsingStrategyFixture, TruncatedBufferWillDie)
     buffer.resize(buffer.size() / 2U);
 
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        ConfigurationFlatbufferParsingStrategy{}.Parse(score::cpp::span<const std::uint8_t>{buffer}));
+        ConfigurationFlatbufferParsingStrategyAttorney::Parse(score::cpp::span<const std::uint8_t>{buffer}));
 }
 
 // Bytes [4, 8) of a FlatBuffer binary hold the file_identifier ("MWCC" for this schema, right after
@@ -386,7 +401,7 @@ TEST_F(ConfigurationFlatbufferParsingStrategyFixture, WrongFileIdentifierWillDie
     }
 
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        ConfigurationFlatbufferParsingStrategy{}.Parse(score::cpp::span<const std::uint8_t>{buffer}));
+        ConfigurationFlatbufferParsingStrategyAttorney::Parse(score::cpp::span<const std::uint8_t>{buffer}));
 }
 
 }  // namespace
