@@ -63,7 +63,6 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
     ],
     args = [
-        "-Wno-literal-suffix",
         "-Wno-noexcept-type",
         "-Wdelete-non-virtual-dtor",
         "-Woverloaded-virtual",
