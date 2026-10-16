@@ -36,7 +36,7 @@ namespace score::mw::com::impl
 /// \brief Factory class that dispatches calls to the appropriate binding based on binding information in the
 /// deployment configuration.
 template <typename SampleType>
-class ProxyFieldBindingFactoryImpl final : public IProxyFieldBindingFactory<SampleType>
+class ProxyFieldBindingFactoryImpl final : public IProxyFieldBindingFactory
 {
   public:
     /// Creates instances of the event binding of a proxy field with a particular data type.
@@ -73,7 +73,7 @@ inline Result<std::unique_ptr<ProxyEventBinding>> ProxyFieldBindingFactoryImpl<S
     ProxyBinding& parent_binding,
     const std::string_view field_name) noexcept
 {
-    return ProxyEventBindingFactory<SampleType>::Create(
+    return ProxyEventBindingFactory::Create(
         std::move(parent_handle), parent_binding, field_name, ServiceElementType::FIELD);
 }
 

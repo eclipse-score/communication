@@ -78,7 +78,7 @@ class MyDummyProxyWithField : public ProxyBase
 struct ProxyEventStruct
 {
     using ProxyType = MyDummyProxyWithEvent;
-    using ProxyServiceElementBindingFactoryMockGuard = ProxyEventBindingFactoryMockGuard<TestSampleType>;
+    using ProxyServiceElementBindingFactoryMockGuard = ProxyEventBindingFactoryMockGuard;
     using TracePointType = tracing::ProxyEventTracePointType;
 };
 
@@ -115,7 +115,7 @@ class ProxyEventTracingFixture : public ::testing::Test
         proxy_ = std::make_unique<ProxyType>(std::make_unique<mock_binding::Proxy>(), kHandle);
     }
 
-    void ExpectProxyServiceElementBindingCreation(ProxyEventBindingFactoryMockGuard<TestSampleType>& factory_mock_guard)
+    void ExpectProxyServiceElementBindingCreation(ProxyEventBindingFactoryMockGuard& factory_mock_guard)
     {
         auto proxy_event_binding_mock_ptr = std::make_unique<mock_binding::ProxyEvent>();
         mock_proxy_event_binding_ = proxy_event_binding_mock_ptr.get();

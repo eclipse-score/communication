@@ -59,18 +59,18 @@ class ProxyFieldBindingFactory final
 
     /// \brief Inject a mock IProxyFieldBindingFactory. If a mock is injected, then all calls on
     /// ProxyFieldBindingFactory will be dispatched to the mock.
-    static void InjectMockBinding(IProxyFieldBindingFactory<SampleType>* const mock) noexcept
+    static void InjectMockBinding(IProxyFieldBindingFactory* const mock) noexcept
     {
         mock_ = mock;
     }
 
   private:
-    static IProxyFieldBindingFactory<SampleType>& instance() noexcept;
-    static IProxyFieldBindingFactory<SampleType>* mock_;
+    static IProxyFieldBindingFactory& instance() noexcept;
+    static IProxyFieldBindingFactory* mock_;
 };
 
 template <typename SampleType>
-auto ProxyFieldBindingFactory<SampleType>::instance() noexcept -> IProxyFieldBindingFactory<SampleType>&
+auto ProxyFieldBindingFactory<SampleType>::instance() noexcept -> IProxyFieldBindingFactory&
 {
     if (mock_ != nullptr)
     {
@@ -90,7 +90,7 @@ auto ProxyFieldBindingFactory<SampleType>::instance() noexcept -> IProxyFieldBin
 // to facilitate template instantiation across multiple translation units used in diff applications.
 template <typename SampleType>
 // coverity[autosar_cpp14_a3_1_1_violation]
-IProxyFieldBindingFactory<SampleType>* ProxyFieldBindingFactory<SampleType>::mock_{nullptr};
+IProxyFieldBindingFactory* ProxyFieldBindingFactory<SampleType>::mock_{nullptr};
 
 }  // namespace score::mw::com::impl
 
