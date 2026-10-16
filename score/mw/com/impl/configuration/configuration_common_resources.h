@@ -55,6 +55,9 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
     {
         score::mw::log::LogFatal("lola") << "Failed to parse JSON configuration key '" << key
                                          << "'. Configuration parsing failed. Terminating.";
+        // Reachable in principle, but must not be reached in production: The JSON value can have a type other than T if
+        // the configuration file is malformed. A configuration that passed the schema validation must not reach this in
+        // production.
         SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
     return json_result.value();
@@ -71,6 +74,9 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
     {
         score::mw::log::LogFatal("lola") << "Failed to parse JSON configuration key '" << key
                                          << "'. Configuration parsing failed. Terminating.";
+        // Reachable in principle, but must not be reached in production: The JSON value can have a type other than T if
+        // the configuration file is malformed. A configuration that passed the schema validation must not reach this in
+        // production.
         SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
     return json_result.value();
@@ -87,6 +93,9 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
     {
         score::mw::log::LogFatal("lola") << "Failed to parse JSON configuration key '" << key
                                          << "'. Configuration parsing failed. Terminating.";
+        // Reachable in principle, but must not be reached in production: The JSON value can have a type other than
+        // std::string_view if the configuration file is malformed. A configuration that passed the schema validation
+        // must not reach this in production.
         SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
     return json_result.value();
@@ -107,6 +116,9 @@ auto GetOptionalValueFromJson(const score::json::Object& json_object, std::strin
     return ResultToOptionalOrElse(val_candidate->second.As<element_type>(), [key](auto) {
         score::mw::log::LogFatal("lola") << "provided key" << key
                                          << "contains a value that can not be parsed. Terminating.\n";
+        // Reachable in principle, but must not be reached in production: The JSON value can have a type other than the
+        // requested one if the configuration file is malformed. A configuration that passed the schema validation must
+        // not reach this in production.
         SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     });
 }
@@ -155,6 +167,9 @@ auto DeserializeVariant(const score::json::Object& /* json_object */,
                         std::ptrdiff_t /* variant_index */,
                         std::string_view /* json_variant_key */) -> VariantType
 {
+    // Reachable in principle, but must not be reached in production: VariantIndex can reach the number of alternatives
+    // if the deserialized variant index is out of range. A configuration that passed the schema validation must not
+    // reach this in production.
     SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
 }
 

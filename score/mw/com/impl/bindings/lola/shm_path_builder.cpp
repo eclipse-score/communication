@@ -64,6 +64,8 @@ void EmitControlFileName(std::ostream& out,
             [[fallthrough]];
         default:
         {
+            // Reachable in principle, but must not be reached in production: An invalid QualityType can be passed in.
+            // Callers must pass QM or ASIL-B in production.
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is a false positive, this code is reachable due to fallthrough.
             // default case and break are necessary to have well-formed switch.

@@ -49,6 +49,9 @@ QualityType GetQualityTypeFromJson(const score::json::Object& json_object, std::
     {
         score::mw::log::LogFatal("lola") << "Failed to parse JSON configuration key '" << key
                                          << "' to string type. Configuration parsing failed. Terminating.";
+        // Reachable in principle, but must not be reached in production: The JSON value can be no string if the
+        // configuration file is malformed. A configuration that passed the schema validation must not reach this in
+        // production.
         SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
     return FromString(json_result.value());

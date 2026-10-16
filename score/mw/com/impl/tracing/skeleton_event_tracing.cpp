@@ -110,6 +110,9 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
         // EVENT or FIELD (we have a static_assert at the start of this function).
         else
         {
+            // Reachable in principle, but must not be reached in production: The else branch is compiled out for every
+            // valid service_element_type (static_assert at the start of the function). It can only be reached by an
+            // invalid template argument, which must not be used in production.
             SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
         }
     }();
@@ -354,6 +357,8 @@ void TraceSend(SkeletonEventTracingData& skeleton_event_tracing_data,
         }
         else
         {
+            // Reachable in principle, but must not be reached in production: Other ServiceElementType values exist, but
+            // skeleton events and fields are the only callers. Callers must pass EVENT or FIELD in production.
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
@@ -399,6 +404,8 @@ void TraceSendWithAllocate(SkeletonEventTracingData& skeleton_event_tracing_data
         }
         else
         {
+            // Reachable in principle, but must not be reached in production: Other ServiceElementType values exist, but
+            // skeleton events and fields are the only callers. Callers must pass EVENT or FIELD in production.
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
