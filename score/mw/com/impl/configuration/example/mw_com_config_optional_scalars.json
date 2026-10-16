@@ -1,0 +1,37 @@
+{
+    "serviceTypes": [],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "test/WithoutInstanceId",
+            "serviceTypeName": "/score/test/OptionalScalarsService",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "instances": [
+                {
+                    "asil-level": "QM",
+                    "binding": "SHM"
+                }
+            ]
+        },
+        {
+            "instanceSpecifier": "test/WithZeroInstanceId",
+            "serviceTypeName": "/score/test/OptionalScalarsService",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "instances": [
+                {
+                    "instanceId": 0,
+                    "asil-level": "QM",
+                    "binding": "SHM"
+                }
+            ]
+        }
+    ],
+    "global": {
+        "applicationID": 0
+    }
+}

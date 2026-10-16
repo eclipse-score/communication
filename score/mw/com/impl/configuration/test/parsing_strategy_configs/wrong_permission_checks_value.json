@@ -1,0 +1,62 @@
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1234,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "eventId": 20
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "CurrentPressureFrontRight",
+                            "fieldId": 21
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 1234,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "maxSubscribers": 5,
+                            "numberOfIpcTracingSlots": 0
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "CurrentPressureFrontRight",
+                            "numberOfSampleSlots": 2,
+                            "maxSubscribers": 3,
+                            "numberOfIpcTracingSlots": 1
+                        }
+                    ],
+                    "permission-checks": "wrong_permission"
+                }
+            ]
+        }
+    ]
+}

@@ -24,8 +24,15 @@ namespace score::mw::com::impl::configuration
 
 class ConfigurationJsonParsingStrategy final : public IConfigurationParsingStrategy
 {
+    // Grants the free function configuration::Parse(score::json::Any) (declared in config_parser.h) access to the
+    // private in-memory Parse() overload. Unqualified on purpose: this names the enclosing-namespace function without
+    // requiring a (redundant) forward declaration here.
+    friend Configuration Parse(score::json::Any json);
+
   public:
     Configuration Parse(std::string_view path) const override;
+
+  private:
     Configuration Parse(score::json::Any json) const;
 };
 
