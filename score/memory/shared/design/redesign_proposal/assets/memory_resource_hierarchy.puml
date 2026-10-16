@@ -17,12 +17,13 @@ together {
         + {static} Instance() : SharedMemoryFactory&
         + {static} InjectMock(SharedMemoryFactory*) : void
         ..
-        + Create(shared_ptr<MappedRegion>) : Result<shared_ptr<SharedMemoryResource>>
+        + Create(shared_ptr<MappedRegion>, InitializeCallback) : Result<shared_ptr<SharedMemoryResource>>
         + Open(shared_ptr<MappedRegion>) : Result<shared_ptr<SharedMemoryResource>>
     }
 
     class MemoryResourceRegistry <<singleton>> {
-        - by_id_ : map<id_type, ManagedMemoryResource*>
+        - mapped_region_registry_: unique_ptr<IMappedRegionRegistry>
+        - resource_map_: unordered_map<IdType, weak_ptr<ManagedMemoryResource>>
         - bounds_map_ : MemoryRegionBoundsMap
         --
         + {static} Instance() : MemoryResourceRegistry&
@@ -32,9 +33,23 @@ together {
         + GetBoundsFromAddressAsInteger(addr) : Result<MemoryRegionBounds>
         + GetBoundsFromIdentifier(id) : Result<MemoryRegionBounds>
         ..
-        + RegisterResource(id, resource) : void
-        + DeregisterResource(id) : void
+        + Register(id, resource) : bool
+        + Unregister(id) : void
     }
+
+    note top of MemoryResourceRegistry
+        Should the MemoryResourceRegistry be a singleton?
+        No: 
+        - Each MemoryResourceProxy would need to store an OffsetPtr to the registry. Every time
+        it allocates / deallocates, it would need to dereference the OffsetPtr and perform bounds 
+        checking. These can impact performance if called frequently. 
+        - If multiple registries are created, the correct one must be provided to the MemoryResourceProxy. 
+        Otherwise, it won't be able to find the correct resource or may find a different resource which was
+        registered with the same id but in the other registry.
+        Yes: 
+        - Ensures that only one registry ever exists.
+        - Accessing registry is quick and easy.
+    end note
 }
 
 together {
@@ -65,6 +80,7 @@ together {
     class ControlBlock <<value>> {
         + mutex : InterprocessMutex
         + already_allocated_bytes : atomic<size_t>
+        + memory_resource_proxy: MemoryResourceProxy
     }
 
     interface AllocationStrategy <<interface>> {
@@ -80,92 +96,141 @@ class MonotonicAllocationStrategy <<strategy>> {
 
 together {
     class MemoryResourceProxy <<value>> {
-        - memory_identifier_ : id_type
+        - memory_identifier_ : IdType
         --
         + Allocate(bytes, align) : void*
         + Deallocate(ptr, bytes, align) : void
     }
 
     class PolymorphicOffsetPtrAllocator <<utility>> {
-        - id_ : id_type
+        - id_ : IdType
         --
         + Allocate(n) : OffsetPtr<T>
         + Deallocate(p, n) : void
     }
 }
 
-class MemoryRegionFactory <<singleton>> {
-    + {static} Instance() : MemoryRegionFactory&
-    + {static} InjectMock(MemoryRegionFactory*) : void
-    __ named (posix) __
-    + CreateNamed(path, size, perms)
-    + OpenNamed(path)
-    + CreateOrOpenNamed(path, size, perms)
-    __ anonymous (platform-specific) __
-    + CreateQnxAnonymous(id, size)
-    + CreateLinuxAnonymous(id, size)
-    __ safe typed __
-    + CreateSafeTypedNamed(path, size, perms)
-    + CreateSafeTypedAnonymous(id, size)
-    __ unsafe typed __
-    + CreateUnsafeTypedNamed(path, size, perms)
-    + CreateUnsafeTypedAnonymous(id, size)
+interface IMappedRegionRegistry {
+   + {virtual} Register(IdType, shared_ptr<MappedRegion>) : Result<void>
+   + {virtual} Unregister(IdType) : void
+   + {virtual} Find(IdType) : shared_ptr<MappedRegion>
+   + {virtual} Clear(): void
 }
+
+class MappedRegionRegistry {
+    - region_registry_ : unordered_map<IdType, weak_ptr<MappedRegion>>
+    + {override} Register(IdType, shared_ptr<MappedRegion>) : Result<void>
+    + {override} Unregister(IdType) : void
+    + {override} Find(IdType) : shared_ptr<MappedRegion>
+    + {override} Clear(): void
+}
+
+class PersistentMappedRegionRegistry {
+    - region_registry_ : unordered_map<IdType, shared_ptr<MappedRegion>>
+   + {override} Register(IdType, shared_ptr<MappedRegion>) : Result<void>
+   + {override} Unregister(IdType) : void
+   + {override} Find(IdType) : shared_ptr<MappedRegion>
+   + {override} Clear(): void
+}
+
+class MappedRegionFactory{
+    __ named (posix) __
+    + {static} CreateNamed(IMappedRegionRegistry&, path, size, perms): shared_ptr<MappedRegion>
+    + {static} OpenNamed(IMappedRegionRegistry&, path): shared_ptr<MappedRegion>
+    + {static} CreateOrOpenNamed(IMappedRegionRegistry&, path, size, perms): shared_ptr<MappedRegion>
+    __ anonymous (platform-specific) __
+    + {static} CreateQnxAnonymous(IMappedRegionRegistry&, id, size): shared_ptr<MappedRegion>
+    + {static} CreateLinuxAnonymous(IMappedRegionRegistry&, id, size): shared_ptr<MappedRegion>
+    __ safe typed __
+    + {static} CreateSafeTypedNamed(IMappedRegionRegistry&, path, size, perms): shared_ptr<MappedRegion>
+    + {static} CreateSafeTypedAnonymous(IMappedRegionRegistry&, id, size): shared_ptr<MappedRegion>
+    __ unsafe typed __
+    + {static} CreateUnsafeTypedNamed(IMappedRegionRegistry&, path, size, perms): shared_ptr<MappedRegion>
+    + {static} CreateUnsafeTypedAnonymous(IMappedRegionRegistry&, id, size): shared_ptr<MappedRegion>
+}
+
+note right of MappedRegionFactory
+    In order to mock the MappedRegionFactory, we would need it to be a singleton (and 
+    dispatch either to a mock or to the real implementation). In order to avoid having 
+    a singleton but be able to mock the MappedRegionFactory, we would need to have the user
+    create and store an instance of the MappedRegionFactory themselves instead of the MemoryRegionRegistry.
+    This makes sense because the registry cannot exist without the factory. So rather than passing the 
+    registry to factory calls, the registry would instead be owned by the factory instance.
+end note
+
+note right of MappedRegionFactory
+    The MappedRegionFactory is a friend of all MappedRegions and 
+    can access their private constructors to create instances.
+end note
 
 interface MappedRegion <<interface>> {
     + GetBaseAddress() : void*
     + GetSize() : size_t
+    + GetId(): IdType
 }
 
-interface NamedMemoryRegion <<interface>> {
+note left of MappedRegion
+    The GetId() method returns a unique identifier for the memory region 
+    which depends on the specific memory type. E.g. a named region might 
+    create the id by hashing the path name, an anonymous region might 
+    use the anonymous handle id etc. It will be stored in the MemoryResourceProxy
+    and used to identify the memory region within the MemoryResourceRegistry.
+end note
+
+interface NamedMappedRegion <<interface>> {
     + GetPath() : const string&
     + UnlinkOnDestruction(bool) : void
 }
 
 together {
-    class PosixNamedMemoryRegion <<impl>> {
+    class PosixNamedMappedRegion <<impl>> {
         - fd_ : FileDescriptor
         - base_address_ : void*
         - size_ : size_t
         - path_ : string
         --
+        -PosixNamedMappedRegion(path, size, perms)
         + GetFileDescriptor() : FileDescriptor
     }
 
-    class TypedNamedMemoryRegion <<impl>> {
+    class TypedNamedMappedRegion <<impl>> {
         - fd_ : FileDescriptor
         - base_address_ : void*
         - size_ : size_t
         - typed_memory_ : TypedMemory*
         - path_ : string
         --
+        -TypedNamedMappedRegion(path, size, perms)
         + GetFileDescriptor() : FileDescriptor
     }
 }
 
 together {
-    class QnxAnonymousMemoryRegion <<impl>> {
+    class QnxAnonymousMappedRegion <<impl>> {
         - fd_ : FileDescriptor
         - base_address_ : void*
         - size_ : size_t
         --
+        -QnxAnonymousMappedRegion(id, size)
         + GetFileDescriptor() : FileDescriptor
         + CreateHandle(pid) : shm_handle_t
     }
 
-    class LinuxAnonymousMemoryRegion <<impl>> {
+    class LinuxAnonymousMappedRegion <<impl>> {
         - fd_ : FileDescriptor
         - base_address_ : void*
         - size_ : size_t
         --
+        -LinuxAnonymousMappedRegion(id, size)
         + GetFileDescriptor() : FileDescriptor
     }
 
-    class QnxTypedAnonymousMemoryRegion <<impl>> {
+    class QnxTypedAnonymousMappedRegion <<impl>> {
         - fd_ : FileDescriptor
         - base_address_ : void*
         - size_ : size_t
         - typed_memory_ : TypedMemory*
+        -QnxTypedAnonymousMappedRegion(id, size)
         --
         + GetFileDescriptor() : FileDescriptor
         + CreateHandle(pid) : shm_handle_t
@@ -195,12 +260,12 @@ enum SharedMemoryErrorCode <<enum>> {
 PmrBase <|-- ManagedMemoryResource
 ManagedMemoryResource <|.. SharedMemoryResource
 
-MappedRegion <|-- NamedMemoryRegion
-NamedMemoryRegion <|.. PosixNamedMemoryRegion
-NamedMemoryRegion <|.. TypedNamedMemoryRegion
-MappedRegion <|.. QnxAnonymousMemoryRegion
-MappedRegion <|.. LinuxAnonymousMemoryRegion
-MappedRegion <|.. QnxTypedAnonymousMemoryRegion
+MappedRegion <|-- NamedMappedRegion
+NamedMappedRegion <|.. PosixNamedMappedRegion
+NamedMappedRegion <|.. TypedNamedMappedRegion
+MappedRegion <|.. QnxAnonymousMappedRegion
+MappedRegion <|.. LinuxAnonymousMappedRegion
+MappedRegion <|.. QnxTypedAnonymousMappedRegion
 
 AllocationStrategy <|.. MonotonicAllocationStrategy
 
@@ -208,10 +273,14 @@ SharedMemoryResource o--> MappedRegion : holds shared_ptr
 SharedMemoryResource ..> ControlBlock : places at base
 SharedMemoryResource *--> AllocationStrategy
 
-PosixNamedMemoryRegion ..> LockFile : uses
-PosixNamedMemoryRegion ..> AccessControlApplier : uses
+PosixNamedMappedRegion ..> LockFile : uses
+PosixNamedMappedRegion ..> AccessControlApplier : uses
 
-MemoryRegionFactory ..> MappedRegion : creates implementations
+MappedRegionFactory ..> IMappedRegionRegistry
+IMappedRegionRegistry <|.. MappedRegionRegistry
+IMappedRegionRegistry <|.. PersistentMappedRegionRegistry
+
+MappedRegionFactory ..> MappedRegion : creates implementations
 
 SharedMemoryFactory ..> SharedMemoryResource : creates
 SharedMemoryFactory .right.> MemoryResourceRegistry : registers
