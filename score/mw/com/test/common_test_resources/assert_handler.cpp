@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <string_view>
 #include <thread>
 
 namespace score::mw::com::test
@@ -37,7 +38,9 @@ void assert_handler(const score::cpp::handler_parameters& params)
     std::cerr << " (" << params.file << ':' << params.line << ")" << std::endl;
     std::cerr.flush();
 
-    score::mw::log::LogFatal("AsHa") << params.condition << params.message << params.file << params.line;
+    const std::string_view message{params.message != nullptr ? params.message : ""};
+    score::mw::log::LogFatal("AsHa") << std::string_view{params.condition} << message << std::string_view{params.file}
+                                     << params.line;
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     const char* const no_abort = std::getenv("ASSERT_NO_CORE");

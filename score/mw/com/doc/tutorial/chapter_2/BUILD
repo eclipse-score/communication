@@ -55,6 +55,7 @@ cc_binary(
     deps = [
         ":service_interface",
         "//score/mw/com",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 
