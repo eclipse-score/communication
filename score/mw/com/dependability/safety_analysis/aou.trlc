@@ -232,7 +232,10 @@ ScoreReq.AoU NoNotificationOnTerminationOfProducer {
     note = "LoLa provides no mechanism to communicate the termination of an event data producer. It is also possible that a producer suddenly crashes and no events are any longer produced. A supervision can be implemented on application side, if events are polled in a certain interval. If no new events are present within a certain set of intervals, it can be assumed that the producer is malfunctioning."
     version = 1
     root_causes = [
-        mw_com_fta.ServiceInstanceUsageLockMechanismFailed
+        mw_com_fta.ServiceInstanceUsageLockMechanismFailed,
+        mw_com_fta.OfferStateInconsistent,
+        mw_com_fta.DependentPrepareOfferNotCalled,
+        mw_com_fta.DependentPrepareOfferFailed
     ]
 }
 
