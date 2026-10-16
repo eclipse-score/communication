@@ -1,0 +1,55 @@
+@startuml seq_11_mapped_region_factory_open
+title 11. MemoryRegionFactory: Open
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+
+actor "User" as User
+participant "MappedRegionFactory : instance" as mapped_region_factory
+participant "MappedRegionRegistry: instance" as mapped_region_registry
+' participant "IMappedRegionRegistry" as mapped_region_registry
+participant "{static} PosixNamedMappedRegion" as mapped_region
+participant "PosixNamedMappedRegionProperties: Instance" as posix_named_mapped_region_properties
+
+activate User
+
+Create mapped_region_registry
+User -> mapped_region_registry : make_unique<MappedRegionRegistry>()
+activate mapped_region_registry
+
+mapped_region_registry --> User : unique_ptr<MappedRegionRegistry>(mapped_region_registry)
+deactivate mapped_region_registry
+
+Create mapped_region_factory
+User -> mapped_region_factory : Construct(move(mapped_region_registry))
+activate mapped_region_factory
+
+mapped_region_factory -> User : mapped_region_factory
+deactivate mapped_region_factory
+
+User -> mapped_region_factory : OpenNamed(mapped_region_registry, path, size, perms)
+activate mapped_region_factory
+
+' mapped_region_factory -> mapped_region_factory : CreateId(path)
+
+mapped_region_factory -> mapped_region : PosixNamedMappedRegion::GetId(path)
+activate mapped_region
+
+mapped_region --> mapped_region_factory : IdType
+deactivate mapped_region
+
+mapped_region_factory -> mapped_region_registry : Find(id)
+activate mapped_region_registry
+
+mapped_region_registry --> mapped_region_factory : shared_ptr<IMappedRegion>
+deactivate mapped_region_registry
+
+note right of mapped_region_factory
+    Find will return a nullptr if the region is not found.
+end note
+
+mapped_region_factory --> User : shared_ptr<IMappedRegion>
+    
+deactivate mapped_region_factory
+deactivate User
+
+@enduml
