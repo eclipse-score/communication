@@ -233,7 +233,13 @@ ScoreReq.AoU NoNotificationOnTerminationOfProducer {
     version = 1
     root_causes = [
         // A crash or malfunction of the producer will not be communicated, which also covers the case that the service instance usage lock fails.
-        mw_com_fta.ServiceInstanceUsageLockMechanismFailed
+        mw_com_fta.ServiceInstanceUsageLockMechanismFailed,
+        // A crash or malfunction of the producer will not be communicated, which also covers the case that the offer state is inconsistent.
+        mw_com_fta.OfferStateInconsistent,
+        // A crash or malfunction of the producer will not be communicated, which also covers the case that PrepareStopOffer() has not been called for all interface elements.
+        mw_com_fta.DependentPrepareStopOfferNotCalled,
+        // A crash or malfunction of the producer will not be communicated, which also covers the case that calling PrepareStopOffer() was not successful for all interface elements.
+        mw_com_fta.DependentPrepareStopOfferFailed
     ]
 }
 
