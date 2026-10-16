@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/serialization/serialization_infrastructure.h"
+#include "score/mw/com/impl/serialization/serialization_registry.h"
 
 #include "score/mw/com/impl/com_error.h"
 
@@ -29,11 +29,11 @@ std::string CurrentDlError(const score::os::Dlfcn& dlfcn)
 }  // namespace
 
 SerializationInfrastructure::SerializationInfrastructure(const std::string& library_path,
-                                                       const score::os::Dlfcn* dlfcn) noexcept
+                                                         const score::os::Dlfcn* dlfcn) noexcept
     : default_dlfcn_{}, dlfcn_{dlfcn == nullptr ? &default_dlfcn_ : dlfcn}, handle_{nullptr}
 {
-    const auto handle_result = dlfcn_->dlopen(
-        library_path.c_str(), score::os::Dlfcn::DlOpenFlag::kNow | score::os::Dlfcn::DlOpenFlag::kLocal);
+    const auto handle_result =
+        dlfcn_->dlopen(library_path.c_str(), score::os::Dlfcn::DlOpenFlag::kNow | score::os::Dlfcn::DlOpenFlag::kLocal);
     if (!handle_result.has_value())
     {
         return;
@@ -85,7 +85,7 @@ score::Result<void> SerializationInfrastructure::Close() noexcept
     return {};
 }
 
-void* SerializationInfrastructure::FindSerializer(const char* symbol_name) const noexcept
+void* SerializationInfrastructure::FindSerializer(const char* symbol_name) noexcept
 {
     if (handle_ == nullptr)
     {

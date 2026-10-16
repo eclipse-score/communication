@@ -10,14 +10,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZATION_INFRASTRUCTURE_H
-#define SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZATION_INFRASTRUCTURE_H
+#ifndef SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZATION_REGISTRY_H
+#define SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZATION_REGISTRY_H
 
 #include "score/mw/com/impl/com_error.h"
 #include "score/os/dlfcn.h"
 #include "score/os/dlfcn_impl.h"
 #include "score/result/result.h"
 
+#include <cstddef>
 #include <string>
 #include <unordered_map>
 
@@ -32,7 +33,7 @@ class SerializationInfrastructure final
 {
   public:
     explicit SerializationInfrastructure(const std::string& library_path,
-                                        const score::os::Dlfcn* dlfcn = nullptr) noexcept;
+                                         const score::os::Dlfcn* dlfcn = nullptr) noexcept;
     ~SerializationInfrastructure() noexcept;
 
     SerializationInfrastructure(const SerializationInfrastructure&) = delete;
@@ -44,7 +45,7 @@ class SerializationInfrastructure final
     score::Result<void> Close() noexcept;
 
     template <typename FunctionType>
-    score::Result<FunctionType> ResolveSerializer(const char* symbol_name) const noexcept
+    score::Result<FunctionType> ResolveSerializer(const char* symbol_name) noexcept
     {
         void* const serializer_symbol = FindSerializer(symbol_name);
         if (serializer_symbol == nullptr)
@@ -56,14 +57,46 @@ class SerializationInfrastructure final
 
   private:
     const score::os::Dlfcn& dlfcn() const noexcept;
-    void* FindSerializer(const char* symbol_name) const noexcept;
+    void* FindSerializer(const char* symbol_name) noexcept;
 
     score::os::DlfcnImpl default_dlfcn_{};
     const score::os::Dlfcn* dlfcn_{nullptr};
     void* handle_{nullptr};
-    mutable std::unordered_map<std::string, void*> symbol_cache_{};
+    std::unordered_map<std::string, void*> symbol_cache_{};
+};
+
+/// \brief The serializer object resolved via dlsym from the loaded backend library.
+///
+/// Forward declared here; the concrete definition is provided by the dynamically loaded backend.
+class SerializerBackend;
+
+/// \brief Abstract interface describing the contract every serializer must fulfil.
+class ISerializer
+{
+  public:
+    virtual ~ISerializer() = default;
+
+    /// \brief Returns the maximum number of bytes a serialized sample can occupy.
+    ///
+    /// Callers use this to size the output buffer before invoking Serialize.
+    virtual score::Result<std::size_t> GetMaxSerializedSize() const noexcept = 0;
+
+    virtual score::Result<std::size_t> Serialize(const void* input,
+                                                 std::byte* output,
+                                                 std::size_t output_size) const noexcept = 0;
+
+    virtual score::Result<std::size_t> Deserialize(const std::byte* input,
+                                                   std::size_t input_size,
+                                                   void* output) const noexcept = 0;
+
+  protected:
+    ISerializer() = default;
+    ISerializer(const ISerializer&) = default;
+    ISerializer(ISerializer&&) = default;
+    ISerializer& operator=(const ISerializer&) = default;
+    ISerializer& operator=(ISerializer&&) = default;
 };
 
 }  // namespace score::mw::com::impl::serialization
 
-#endif  // SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZATION_INFRASTRUCTURE_H
+#endif  // SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZATION_REGISTRY_H
