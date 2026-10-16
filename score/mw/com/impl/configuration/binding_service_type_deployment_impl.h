@@ -216,7 +216,10 @@ auto GetServiceElementId(
         // (we have a static_assert at the start of this function) so this branch can never be reached.
         else
         {
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(0);
+            // Reachable in principle, but must not be reached in production: The else branch is compiled out for every
+            // valid service_element_type (static_assert at the start of the function). It can only be reached by an
+            // invalid template argument, which must not be used in production.
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
         }
         // LCOV_EXCL_STOP
     }();
@@ -231,7 +234,9 @@ auto GetServiceElementId(
     {
         score::mw::log::LogFatal() << service_element_type << "name \"" << service_element_name
                                    << "\" does not exist in BindingServiceTypeDeployment. Terminating.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        // Reachable in principle, but must not be reached in production: A service element name can be requested that
+        // is not part of the deployment. In production, callers only request elements taken from the deployment.
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
     return service_element_id_it->second;
 }

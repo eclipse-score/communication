@@ -201,8 +201,9 @@ bool IsMethodErrorRecoverable(const score::result::Error error)
     }
     else
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(false,
-                                                          "Provided error is not part of subset relating to methods.");
+        // Reachable in principle, but must not be reached in production: A caller can pass an error code outside the
+        // method-related subset. Callers must only pass method-related error codes in production.
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Provided error is not part of subset relating to methods.");
     }
 }
 

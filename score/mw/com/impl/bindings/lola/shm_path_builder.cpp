@@ -64,11 +64,13 @@ void EmitControlFileName(std::ostream& out,
             [[fallthrough]];
         default:
         {
+            // Reachable in principle, but must not be reached in production: An invalid QualityType can be passed in.
+            // Callers must pass QM or ASIL-B in production.
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is a false positive, this code is reachable due to fallthrough.
             // default case and break are necessary to have well-formed switch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Invalid quality type");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Invalid quality type");
 
             // Rationale: This code is actually unreachable due to the assert above which will always be triggered if
             // hit. However, rule M6-4-5 says that "An unconditional throw or break statement shall terminate every

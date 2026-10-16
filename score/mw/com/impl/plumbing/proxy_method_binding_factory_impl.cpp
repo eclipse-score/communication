@@ -55,8 +55,10 @@ LolaMethodInstanceDeployment::QueueSize GetQueueSize(const HandleType& parent_ha
     if (!contains_method)
     {
         mw::log::LogFatal("lola") << "Provided a method name which can not be found in LolaServiceInstanceDeployment";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-            false, "Provided a method name which can not be found in LolaServiceInstanceDeployment");
+        // Reachable in principle, but must not be reached in production: A method name can be passed that is not part
+        // of the deployment. In production, method names come from the generated proxy and are part of the deployment.
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE(
+            "Provided a method name which can not be found in LolaServiceInstanceDeployment");
     }
     const auto& lola_method_instance_deployment = method_it->second;
 
@@ -65,8 +67,10 @@ LolaMethodInstanceDeployment::QueueSize GetQueueSize(const HandleType& parent_ha
     {
         mw::log::LogFatal("lola")
             << "ProxyMethod can not be created if queue_size is not configured on the proxy side.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-            false, "ProxyMethod can not be created if queue_size is not configured on the proxy side.");
+        // Reachable in principle, but must not be reached in production: A deployment without queue_size for a proxy
+        // method is possible in principle. A deployment validated for production always configures it.
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE(
+            "ProxyMethod can not be created if queue_size is not configured on the proxy side.");
     }
     return lola_method_instance_deployment.queue_size_.value();
 }
