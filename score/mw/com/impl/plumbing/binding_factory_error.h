@@ -32,7 +32,7 @@ enum class BindingFactoryErrorCode : score::result::ErrorCode
 class BindingFactoryErrorDomain final : public score::result::ErrorDomain
 {
   public:
-    std::string_view MessageFor(const score::result::ErrorCode& code) const noexcept override final
+    std::string_view MessageFor(const score::result::ErrorCode& code) const noexcept final
     {
         switch (code)
         {

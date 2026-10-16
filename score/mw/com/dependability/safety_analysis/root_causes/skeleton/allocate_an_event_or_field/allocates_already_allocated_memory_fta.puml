@@ -11,6 +11,12 @@
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
 
-@startuml class_diagram
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("Allocates already allocated memory", "Communication.AllocatesAlreadyAllocatedMemory")
+$OrGate("Gate1", "Communication.AllocatesAlreadyAllocatedMemory")
+$RootCause("Root Cause Allocates already allocated memory", "RootCauseAllocatesAlreadyAllocatedMemory", "Gate1")
 
 @enduml

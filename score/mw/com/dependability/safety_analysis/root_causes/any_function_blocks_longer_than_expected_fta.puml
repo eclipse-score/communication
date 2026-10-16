@@ -11,6 +11,12 @@
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
 
-@startuml class_diagram
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("Any function of mw::com (LoLa) blocks longer than expected", "Communication.AnyFunctionBlocksLongerThanExpected")
+$OrGate("Gate1", "Communication.AnyFunctionBlocksLongerThanExpected")
+$RootCause("Root Cause Any function of mw::com (LoLa) blocks longer than expected", "RootCauseAnyFunctionBlocksLongerThanExpected", "Gate1")
 
 @enduml

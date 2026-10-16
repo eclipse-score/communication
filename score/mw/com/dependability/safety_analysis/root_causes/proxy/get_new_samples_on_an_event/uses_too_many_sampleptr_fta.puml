@@ -11,6 +11,12 @@
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
 
-@startuml class_diagram
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("User already holds max sample count, but another SamplePtr is handed out", "Communication.UsesTooManySampleptr")
+
+$RootCause("Reference counting facility for SamplePtr is broken", "ReferenceCountingFacilityForSampleptrIsBroken", "Communication.UsesTooManySampleptr")
 
 @enduml

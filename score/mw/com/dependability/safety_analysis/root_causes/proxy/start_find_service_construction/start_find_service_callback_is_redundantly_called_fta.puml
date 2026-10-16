@@ -15,7 +15,7 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("StartFindService callback is called unexpectedly", "Communication.StartFindServiceCallbackCalledUnexpectedly")
+$FailureMode("StartFindService callback is called unexpectedly", "Communication.StartFindServiceCallbackCalledUnexpectedly", "Communication.StartedFindServiceIsNotStopped")
 
 $OrGate("Gate1", "Communication.StartFindServiceCallbackCalledUnexpectedly")
 $RootCause("Called reduandently", "CalledReduandently", "Gate1")

@@ -11,6 +11,11 @@
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
 
-@startuml class_diagram
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("GetNewSamples succeeds despite an error", "Communication.GetNewSamplesSucceedsDespiteAnError")
+$RootCause("Root Cause GetNewSamples succeeds despite an error", "RootCauseGetNewSamplesSucceedsDespiteAnError", "Communication.GetNewSamplesSucceedsDespiteAnError")
 
 @enduml

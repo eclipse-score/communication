@@ -10,7 +10,16 @@
 '
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
+@startuml safety_sentinel_someip_binding_design
+title "SomeIp Binding Static Architecture"
 
-@startuml class_diagram
+package "SomeIp Binding" as someip_binding <<component>> {
+  component "Service Discovery" as service_discovery <<unit>> 
+  component "Runtime" as runtime <<unit>> 
+
+  component "SkeletonAndServiceElements" as skeleton_and_service_elements <<unit>> 
+  
+  component "ProxyAndServiceElements" as proxy_and_service_elements <<unit>> 
+}
 
 @enduml

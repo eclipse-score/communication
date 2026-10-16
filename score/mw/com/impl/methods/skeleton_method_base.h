@@ -43,7 +43,7 @@ class SkeletonMethodBase : public EnableReferenceToMoveableFromThis<SkeletonMeth
     {
     }
 
-    ~SkeletonMethodBase() = default;
+    ~SkeletonMethodBase() override = default;
 
     SkeletonMethodBase(const SkeletonMethodBase&) = delete;
     SkeletonMethodBase& operator=(const SkeletonMethodBase&) & = delete;

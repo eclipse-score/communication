@@ -23,7 +23,7 @@ section "com" {
             return value, of the service-method. In case of shm-binding this pre-allocated memory would be in shared
             memory, allowing a zero copy implementation."""
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_ZeroCopy@1, Communication.FEAT_Method@1]
+            derived_from = [Communication.FEAT_ZeroCopy@1, Communication.FEAT_MethodStructure@1]
             version = 1
         }
 
@@ -35,7 +35,7 @@ section "com" {
             """
 
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_ZeroCopy@1, Communication.FEAT_Method@1]
+            derived_from = [Communication.FEAT_ZeroCopy@1, Communication.FEAT_MethodInvocation@1]
             version = 1
         }
 

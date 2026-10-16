@@ -15,7 +15,7 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("The size returned is bigger / smaller then the actual value", "Communication.TheSizeReturnedIsBiggerThenTheActualValue")
+$FailureMode("The size returned is bigger / smaller then the actual value", "Communication.TheSizeReturnedIsBiggerThenTheActualValue", "Communication.TheSizeReturnedIsSmallerThenTheActualSize")
 
 $OrGate("Gate1", "Communication.TheSizeReturnedIsBiggerThenTheActualValue")
 $IntermediateEvent("Provider side set wrong size in Shared Memory", "Event1", "Gate1")

@@ -9,20 +9,18 @@ Of course, we do foresee arbitrary extensions.
 
 ## Service Type identification
 
-AUTOSAR specification demands (SWS_CM_01010), that for every Service interface a corresponding class gets generated,
+For every Service interface a corresponding class gets generated,
 which contains members of the following types:
 - `ServiceIdentifierType`
 - `ServiceVersionType`
 
-The exact type definitions are left to the implementer, but there are some strong hints to reflect the unique AUTOSAR
-metamodel names.
-So we decided to use the so called short-name-path of a service interface in the `ARXML` model to identify a service type.
+The exact type definitions are left to the implementer. But we use the so called short-name-path of a service interface to identify a service type.
 So our implementation of `score::mw::com::ServiceIdentifierType` contains the fully-qualified service interface name in the form
 of its short-name-path as its identifying name member.
 
 _Important_: `score::mw::com::ServiceIdentifierType` is a fully binding independent identification of a service type.
 The technical bindings might use complete different data types for identification of a specific service type.
-Service versioning is still a very immature topic in AUTOSAR and especially in the SWS Communication Management. So
+Service versioning is still an immature topic. So
 right now our implementation of `score::mw::com::ServiceVersionType` fulfills the minimal requirements by providing a major
 and minor part each typed as `std::uint32_t` to fulfill minimal model compatibility.
 
@@ -30,15 +28,15 @@ and minor part each typed as `std::uint32_t` to fulfill minimal model compatibil
 We have to clearly separate those two notions within our configuration.
 
 ### `ServiceTypeDeployment`
-The `ServiceTypeDeployment` aka `Service Interface Deployment` in AUTOSAR speech, maps a binding independent
+The `ServiceTypeDeployment` aka `Service Interface Deployment`, maps a binding independent
 `ServiceType` to a concrete technical implementation.
-The binding independent `ServiceType` is defined within AUTOSAR metamodel by its Service Interface and its
+The binding independent `ServiceType` is defined by its Service Interface and its
 corresponding [service type identification](#service-type-identification).
 So within the configuration we might need to express, how a certain abstract `ServiceType` shall be represented in a
 `LoLa` binding. For instance, the binding uses its own distinct service ID
 for identification and also configuration of the embedded service parts (events, fields, methods).
 
-Note here, that these `ServiceTypeDeployment`s are independent of their concrete instances! E.g. an AUTOSAR service
+Note here, that these `ServiceTypeDeployment`s are independent of their concrete instances! E.g. a service
 `/a/b/c/InterfaceName` will be once mapped to a `LoLa` service id **_SIDn_** and this applies then to ALL instances of
 this `/a/b/c/InterfaceName` service with a `LoLa` mapping!
 
@@ -51,10 +49,9 @@ specific properties are:
 - instance specific tuning like maximum event storage ...
 
 ### Deployment time decisions
-While AUTOSAR generally foresees, that `ServiceTypeDeployment` aka `Service Interface Deployment` is a
-generation, i.e. pre-compile step, this is **not** true for our implementation! The amount of code, which is affected at
-generation time is kept minimal and only applies to binding independent parts of `mw::com`. As this is required by the
-`ara::com` specification.
+A `ServiceTypeDeployment` aka `Service Interface Deployment` could be a
+generation, i.e. pre-compile step, but this is **not** the case for our implementation! The amount of code, which is affected at
+generation time is kept minimal and only applies to binding independent parts of `mw::com`.
 
 Our technical binding implementation is configured during runtime, when both artifacts `ServiceTypeDeployment` and
 `ServiceInstanceDeployment` are read from configuration.
@@ -71,9 +68,9 @@ optimization. Without any effect to the boardnet.
 
 ## Instance Specifiers
 
-`InstanceSpecifier` is an AUTOSAR AP mechanism to specify some instance of a service type in a binding or deployment
+`InstanceSpecifier` is a mechanism to specify some instance of a service type in a binding or deployment
 independent way **within the source code**!
-If you look at the underlying (`ARXML`) model of your software component, you express the provision of a specific
+If you look at the underlying model of your software component, you express the provision of a specific
 service instance or the requirement of a specific service instance with a P-port or R-port respectively, which is typed
 by the service interface, from which the [service type identification](#service-type-identification) is deduced.
 Such a port instance also has (like a service interface) a fully qualified name (expressed via a short-name-path),

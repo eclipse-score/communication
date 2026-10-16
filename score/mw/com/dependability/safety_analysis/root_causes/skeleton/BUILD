@@ -15,6 +15,7 @@ filegroup(
     name = "root_causes_skeleton",
     srcs = [
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/allocate_an_event_or_field:allocate_in_wrong_memory_fta",
+        "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/allocate_an_event_or_field:allocates_already_allocated_memory_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/allocate_an_event_or_field:to_few_memory_allocated_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/allocate_an_event_or_field:too_much_memory_allocated_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/allocate_an_event_or_field:wrongly_alligned_memory_allocated_fta",

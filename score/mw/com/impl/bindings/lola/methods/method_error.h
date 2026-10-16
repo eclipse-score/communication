@@ -48,7 +48,7 @@ class MethodErrorDomain final : public score::result::ErrorDomain
     /// \todo Gcc compiler bug leads to a compiler warning if override is not added, even if final keyword is there
     /// (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=78010). When bug is fixed, remove the override keyword from the
     /// MessageFor function signature and the AUTOSAR.MEMB.VIRTUAL.SPEC klocwork suppression.
-    std::string_view MessageFor(const score::result::ErrorCode& code) const noexcept override final
+    std::string_view MessageFor(const score::result::ErrorCode& code) const noexcept final
     // Suppress "AUTOSAR C++14 A10-3-1" rule finding: Virtual function declaration shall contain exactly one of the
     // three specifiers: (1) virtual, (2) override, (3) final.
     // Rationale : See explanation above.

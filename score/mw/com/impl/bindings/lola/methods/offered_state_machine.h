@@ -72,7 +72,13 @@ namespace detail
 class IOfferedState
 {
   public:
+    IOfferedState() = default;
     virtual ~IOfferedState() = default;
+
+    IOfferedState(const IOfferedState&) = default;
+    IOfferedState& operator=(const IOfferedState&) = default;
+    IOfferedState(IOfferedState&&) noexcept = default;
+    IOfferedState& operator=(IOfferedState&&) noexcept = default;
     virtual OfferedStateMachine::State Offer() = 0;
     virtual OfferedStateMachine::State StopOffer() = 0;
 };

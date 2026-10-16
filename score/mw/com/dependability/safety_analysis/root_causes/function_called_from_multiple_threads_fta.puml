@@ -10,7 +10,14 @@
 '
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
+@startuml
 
-@startuml class_diagram
+!include fta_metamodel.puml
+
+$FailureMode("Function called from multiple threads","Communication.FunctionCalledFromMultipleThreads")
+
+$OrGate("Gate1","Communication.FunctionCalledFromMultipleThreads")
+
+$RootCause("Event instance API called in a reentrant manner","EventInstanceAPICalledInAReentrantManner","Gate1")
 
 @enduml

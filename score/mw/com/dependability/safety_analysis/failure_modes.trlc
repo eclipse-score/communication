@@ -598,7 +598,7 @@ section "LoLa" {
             }
 
             // ID: 6166350
-            ScoreReq.FailureMode UsesToManySampleptr {
+            ScoreReq.FailureMode UsesTooManySampleptr {
                 guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
                 description = "User is already max. sample count SamplePtr, but we are still handing out SamplePtrs in callback F()."
                 failureeffect = "Synchronization algorithm can no longer hold guarantees, which can cause an exceeding of resources. In worst case another proxy might fail to get updated samples (messages lost without full queues aka not detectable)."
@@ -620,7 +620,7 @@ section "LoLa" {
             }
 
             // ID: 6166357
-            ScoreReq.FailureMode SucceedsDespiteAnError {
+            ScoreReq.FailureMode GetNewSamplesSucceedsDespiteAnError {
                 guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
                 description = "A user calls GetNewSamples() on a proxy instance and receives a sample count, even though he should have received an error."
                 failureeffect = "Receive a sample count instead of an error, implies that the sample count is wrong. Receiving an error instead of a sample count, implies that the sample count is wrong."
@@ -717,7 +717,7 @@ section "LoLa" {
                     version = 1
                     safety = ScoreReq.Asil.B
                     rationale = "A manipulated size is tackled, by \"Size information in read-only memory\". The right location is ensured via \"Location of type-meta-information information for Generic Proxy\" The wrong set size, is covered by \"The type-meta-information shall be calculated based on the provided event/field type"
-                    interface = "mw.com.GenericProxyEvent.GetSampleSize"
+                    interface = "mw.com.GenericProxyEvent.GetDataTypeSizeInfo"
                 }
 
                 // ID: 31545538
@@ -729,7 +729,7 @@ section "LoLa" {
                     safety = ScoreReq.Asil.B
                     rationale = "Potential faults and measures are the same as [ISSUE:Failuremode TheSizeReturnedIsBiggerThenTheActualValue]"
                     // potentialcause = "Same as [ISSUE:Failuremode TheSizeReturnedIsBiggerThenTheActualValue]"
-                    interface = "mw.com.GenericProxyEvent.GetSampleSize"
+                    interface = "mw.com.GenericProxyEvent.GetDataTypeSizeInfo"
                 }
 
                 // ID: 31545581
