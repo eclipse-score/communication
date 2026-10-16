@@ -236,7 +236,7 @@ its value in case of success), we move the skeleton instance out of the result:
 This is just for convenience, as we want to work with the skeleton instance and not with the result wrapper.
 But it also shows a detail here: The `std::move` is needed, because a skeleton instance is not copyable, but only movable.
 This is a design decision, which we made, because a skeleton instance holds a lot of internal state and resources, which
-we don't want to be copied implicitly! In our design documentation `here <https://github.com/eclipse-score/communication/blob/main/score/mw/com/design/skeleton_proxy/README.md#copymove-support-for-binding-independent-and-dependent-proxiesskeletons>`__
+we don't want to be copied implicitly! In our design documentation `here <https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/dependability/binding_independent_component_design.md#copymove-support-for-binding-independent-proxiesskeletons-and-contained-service-elements>`__
 you'll find a more detailed explanation, why skeletons (and also proxies by the way) are not copyable but only movable.
 
 After the call to `OfferService` succeeds:
