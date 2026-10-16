@@ -446,6 +446,17 @@ ScoreReq.AoU LoLaSpecificQnxMessagingEndPointsOnlyAccessedThroughLoLa {
     ]
 }
 
+ScoreReq.AoU ArtifactsRequireManualReview {
+    description = "Input artifacts (C++ service-interface definitions and mw::config) shall be manually reviewed for correctness"
+    safety = ScoreReq.Asil.B
+    note = "C++ service-interface definitions and mw::config are hand-written artifacts and might not be in sync or match."
+    version = 1
+    root_causes = [
+        mw_com_fta.MissingSyncCodeAndConfiguration,
+        mw_com_fta.DifferentRevisionsForProxyAndSkeletonBuilt
+    ]
+}
+
 /* broken_link_c/issue/5835457 */
 ScoreReq.AoU UnsupportedDataTypes {
     // mitigates = "MemoryAllocatedInWrongSection"

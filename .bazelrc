@@ -84,14 +84,14 @@ build --per_file_copt=external/.*googletest.*@-Wno-error=unused-macros
 build --host_per_file_copt=external/.*googletest.*@-Wno-error=unused-macros
 
 # google_benchmark
-build --per_file_copt=external/.*google_benchmark.*@-Wno-error=sign-conversion
-build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=sign-conversion
-build --per_file_copt=external/.*google_benchmark.*@-Wno-error=switch-enum
-build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=switch-enum
-build --per_file_copt=external/.*google_benchmark.*@-Wno-error=undef
-build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=undef
-build --per_file_copt=external/.*google_benchmark.*@-Wno-error=suggest-attribute=format
-build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=suggest-attribute=format
+# Ideally we would just do not treat as error individual warnings. However, some of the warnings
+# are specific to gcc or clang. This prevents to spell them here otherwise it will raise a warning about
+# unknown parameter on the other compiler.
+# If https://github.com/bazelbuild/rules_cc/issues/209#issuecomment-6211366257 would be available we could
+# disable them more prceisely
+# It could also be revisted if google_benchmark is updated and the new version fixes some warnings
+build --per_file_copt=external/.*google_benchmark.*@-w
+build --host_per_file_copt=external/.*google_benchmark.*@-w
 
 # json_schema_validator
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch
@@ -113,11 +113,6 @@ build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=shadow
 # Issue reported in https://github.com/eclipse-score/baselibs/issues/631
 build --per_file_copt=external/.*score_baselibs.*string_manipulation.*arguments.*@-Wno-error=sign-conversion
 build --host_per_file_copt=external/.*score_baselibs.*string_manipulation.*arguments.*@-Wno-error=sign-conversion
-# Issue reported in https://github.com/eclipse-score/baselibs/issues/686
-build --per_file_copt=external/.*score_baselibs.*vajson.*@-Wno-error=sign-conversion
-build --host_per_file_copt=external/.*score_baselibs.*vajson.*@-Wno-error=sign-conversion
-build --per_file_copt=external/.*score_baselibs.*vajson.*@-Wno-error=shadow
-build --host_per_file_copt=external/.*score_baselibs.*vajson.*@-Wno-error=shadow
 
 # score_qnx_unit_tests
 # Issue reported in https://github.com/eclipse-score/qnx_unit_tests/issues/44

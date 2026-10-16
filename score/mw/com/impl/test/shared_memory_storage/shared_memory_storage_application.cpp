@@ -29,6 +29,8 @@
 #include <optional>
 #include <ostream>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
@@ -61,6 +63,9 @@ score::mw::com::impl::lola::ElementFqId ExtractId(const score::mw::com::impl::lo
 using BigDataServiceElementData = score::mw::com::test::BigDataServiceElementData;
 using MapApiLanesStamped = score::mw::com::test::MapApiLanesStamped;
 using DummyDataStamped = score::mw::com::test::DummyDataStamped;
+using InterprocessNotificationCreator =
+    score::mw::com::test::SharedMemoryObjectCreator<score::os::InterprocessNotification>;
+using ServiceElementDataCreator = score::mw::com::test::SharedMemoryObjectCreator<BigDataServiceElementData>;
 
 const std::string kInterprocessElementAddressesShmPath{"/service_data_storage_element_addresses"};
 const std::string kProxyDoneInterprocessNotifierShmPath{"/proxy_done_interprocess_notifier_creator"};
@@ -106,6 +111,243 @@ std::optional<std::array<uintptr_t, 2>> GetTypeMetaInfoAddresses(
 
     return {{map_api_lanes_type_meta_information_address_result.value(),
              dummy_data_type_meta_information_address_result.value()}};
+}
+
+void HandleFindServiceCallback(score::mw::com::test::ProxyCreationData& proxy_creation_data,
+                               std::vector<score::mw::com::test::BigDataProxy::HandleType> service_handle_container,
+                               score::mw::com::FindServiceHandle find_service_handle) noexcept
+{
+    std::cout << "Proxy: find service handler called" << std::endl;
+    std::lock_guard lock{proxy_creation_data.mutex};
+    if (service_handle_container.size() != 1)
+    {
+        std::cerr << "Proxy: service handle container should contain 1 handle but contains: "
+                  << service_handle_container.size() << std::endl;
+        proxy_creation_data.condition_variable.notify_all();
+        return;
+    }
+    proxy_creation_data.handle =
+        std::make_unique<score::mw::com::test::BigDataProxy::HandleType>(service_handle_container[0]);
+    std::ignore = score::mw::com::test::BigDataProxy::StopFindService(find_service_handle);
+    proxy_creation_data.condition_variable.notify_all();
+}
+
+int RunSkeletonMode(const score::mw::com::InstanceSpecifier& instance_specifier,
+                    const score::cpp::stop_token& stop_token,
+                    ServiceElementDataCreator& skeleton_side_service_element_data_shm_creator,
+                    InterprocessNotificationCreator& proxy_done_interprocess_notifier_creator,
+                    InterprocessNotificationCreator& skeleton_done_interprocess_notifier_creator)
+{
+    std::cout << "Skeleton: Running as skeleton\n";
+
+    // Create NotifierGuard so that the skeleton_done notifier will be notified when it goes out of scope. This will
+    // occur when we exit either at the end of the test or if we return early with a failure.
+    score::mw::com::test::NotifierGuard skeleton_done_notifier_guard{
+        skeleton_done_interprocess_notifier_creator.GetObject()};
+
+    // ********************************************************************************
+    // Create Skeleton
+    // ********************************************************************************
+    auto bigdata_result = score::mw::com::test::BigDataSkeleton::Create(instance_specifier);
+    if (!bigdata_result.has_value())
+    {
+        std::cerr << "Skeleton: Unable to construct BigDataSkeleton: " << bigdata_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
+    auto& bigdata_skeleton = bigdata_result.value();
+
+    // ********************************************************************************
+    // Offer Skeleton
+    // ********************************************************************************
+    const auto offer_result = bigdata_skeleton.OfferService();
+    if (!offer_result.has_value())
+    {
+        std::cerr << "Skeleton: Unable to offer service for BigDataSkeleton: " << offer_result.error()
+                  << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
+
+    // ********************************************************************************
+    // Get ElementFqId of SkeletonEvents
+    // ********************************************************************************
+    const auto map_api_lanes_element_fq_id_result =
+        GetElementFqId<score::mw::com::impl::SkeletonEventView<MapApiLanesStamped>,
+                       score::mw::com::impl::lola::SkeletonEvent>(bigdata_skeleton.map_api_lanes_stamped_);
+    if (!(map_api_lanes_element_fq_id_result.has_value()))
+    {
+        std::cerr << "Skeleton: Could not get map_api_lanes ElementFqId, bailing\n";
+        return EXIT_FAILURE;
+    }
+    const auto dummy_data_element_fq_id_result =
+        GetElementFqId<score::mw::com::impl::SkeletonEventView<DummyDataStamped>,
+                       score::mw::com::impl::lola::SkeletonEvent>(bigdata_skeleton.dummy_data_stamped_);
+    if (!(map_api_lanes_element_fq_id_result.has_value()))
+    {
+        std::cerr << "Skeleton: Could not get dummy_data ElementFqId, bailing\n";
+        return EXIT_FAILURE;
+    }
+    const std::array<score::mw::com::impl::lola::ElementFqId, 2> element_fq_ids = {
+        map_api_lanes_element_fq_id_result.value(), dummy_data_element_fq_id_result.value()};
+
+    // ********************************************************************************
+    // Get address of meta information for SkeletonEvents
+    // ********************************************************************************
+    const auto event_meta_info_addresseses =
+        GetTypeMetaInfoAddresses<score::mw::com::test::BigDataSkeleton,
+                                 score::mw::com::impl::SkeletonBaseView,
+                                 score::mw::com::impl::lola::Skeleton,
+                                 score::mw::com::impl::lola::SkeletonAttorney>(bigdata_skeleton, element_fq_ids);
+    if (!(event_meta_info_addresseses.has_value()))
+    {
+        std::cerr << "Proxy: Could not get event meta info addresses\n";
+        return EXIT_FAILURE;
+    }
+
+    // ********************************************************************************
+    // Store addresses in interprocess object
+    // ********************************************************************************
+    const BigDataServiceElementData skeleton_side_service_element_data{element_fq_ids,
+                                                                       event_meta_info_addresseses.value()};
+    skeleton_side_service_element_data_shm_creator.GetObject() = skeleton_side_service_element_data;
+
+    // ********************************************************************************
+    // Notify proxy side that the skeleton has finished writing service element data to shared memory via
+    // interprocess object
+    // ********************************************************************************
+    skeleton_done_interprocess_notifier_creator.GetObject().notify();
+
+    // ********************************************************************************
+    // Wait on interprocess notifier in shared memory
+    // ********************************************************************************
+    if (!proxy_done_interprocess_notifier_creator.GetObject().waitWithAbort(stop_token))
+    {
+        std::cerr << "Abort received while waiting for proxy done notifier\n";
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}
+
+int RunProxyMode(const score::mw::com::InstanceSpecifier& instance_specifier,
+                 const score::cpp::stop_token& stop_token,
+                 ServiceElementDataCreator& skeleton_side_service_element_data_shm_creator,
+                 InterprocessNotificationCreator& proxy_done_interprocess_notifier_creator,
+                 InterprocessNotificationCreator& skeleton_done_interprocess_notifier_creator)
+{
+    std::cout << "Proxy: Running as proxy\n";
+
+    // Create NotifierGuard so that the proxy_done notifier will be notified when it goes out of scope. This will
+    // occur when we exit either at the end of the test or if we return early with a failure.
+    score::mw::com::test::NotifierGuard proxy_done_notifier_guard{proxy_done_interprocess_notifier_creator.GetObject()};
+
+    // ********************************************************************************
+    // StartFindService -> Create Proxy
+    // ********************************************************************************
+    score::mw::com::test::ProxyCreationData proxy_creation_data{};
+    auto find_service_callback = [&proxy_creation_data](auto service_handle_container,
+                                                        auto find_service_handle) mutable noexcept {
+        HandleFindServiceCallback(
+            proxy_creation_data, std::move(service_handle_container), std::move(find_service_handle));
+    };
+
+    auto start_find_service_result =
+        score::mw::com::test::BigDataProxy::StartFindService(find_service_callback, instance_specifier);
+    if (!start_find_service_result.has_value())
+    {
+        std::cerr << "Proxy: StartFindService() failed:" << start_find_service_result.error().Message() << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::cout << "Proxy: StartFindService called" << std::endl;
+
+    // Wait for the find service handler to be called
+    std::unique_lock proxy_creation_lock{proxy_creation_data.mutex};
+    proxy_creation_data.condition_variable.wait(proxy_creation_lock, [&proxy_creation_data] {
+        return proxy_creation_data.handle != nullptr;
+    });
+
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(proxy_creation_data.handle != nullptr,
+                                            "Service handle shouldn't be nullptr");
+    auto handle = *proxy_creation_data.handle;
+    proxy_creation_lock.unlock();
+    auto proxy_result = score::mw::com::test::BigDataProxy::Create(handle);
+    if (!proxy_result.has_value())
+    {
+        std::cerr << "Proxy: Unable to construct BigDataProxy: " << proxy_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
+    auto& bigdata_proxy = proxy_result.value();
+    std::cout << "Proxy: BigDataProxy created" << std::endl;
+
+    // ********************************************************************************
+    // Get ElementFqId of ProxyEvents
+    // ********************************************************************************
+    const auto map_api_lanes_element_fq_id_result =
+        GetElementFqId<score::mw::com::impl::ProxyEventView<MapApiLanesStamped>,
+                       score::mw::com::impl::lola::ProxyEvent>(bigdata_proxy.map_api_lanes_stamped_);
+    if (!(map_api_lanes_element_fq_id_result.has_value()))
+    {
+        std::cerr << "Proxy: Could not get map_api_lanes ElementFqId, bailing\n";
+        return EXIT_FAILURE;
+    }
+    const auto dummy_data_element_fq_id_result =
+        GetElementFqId<score::mw::com::impl::ProxyEventView<DummyDataStamped>, score::mw::com::impl::lola::ProxyEvent>(
+            bigdata_proxy.dummy_data_stamped_);
+    if (!(map_api_lanes_element_fq_id_result.has_value()))
+    {
+        std::cerr << "Proxy: Could not get dummy_data ElementFqId, bailing\n";
+        return EXIT_FAILURE;
+    }
+    const std::array<score::mw::com::impl::lola::ElementFqId, 2> element_fq_ids = {
+        map_api_lanes_element_fq_id_result.value(), dummy_data_element_fq_id_result.value()};
+
+    // ********************************************************************************
+    // Get address of meta information for an event from proxy
+    // ********************************************************************************
+    const auto event_meta_info_addresseses =
+        GetTypeMetaInfoAddresses<score::mw::com::test::BigDataProxy,
+                                 score::mw::com::impl::ProxyBaseView,
+                                 score::mw::com::impl::lola::Proxy,
+                                 score::mw::com::impl::lola::ProxyTestAttorney>(bigdata_proxy, element_fq_ids);
+    if (!(event_meta_info_addresseses.has_value()))
+    {
+        std::cerr << "Proxy: Could not get event meta info addresses\n";
+        return EXIT_FAILURE;
+    }
+
+    // ********************************************************************************
+    // Wait for the Skeleton to finish writing service element data to shared memory via interprocess object
+    // ********************************************************************************
+    if (!skeleton_done_interprocess_notifier_creator.GetObject().waitWithAbort(stop_token))
+    {
+        std::cerr << "Abort received while waiting for proxy done notifier\n";
+        return EXIT_FAILURE;
+    }
+
+    // ********************************************************************************
+    // Get service element data from the Skeleton via interprocess object
+    // ********************************************************************************
+    const BigDataServiceElementData proxy_side_service_element_data{element_fq_ids,
+                                                                    event_meta_info_addresseses.value()};
+
+    // ********************************************************************************
+    // Check that type event and meta information addresses are the same on skeleton
+    // and proxy side
+    // ********************************************************************************
+    std::cout << "Comparing Skeleton side service element data \n("
+              << skeleton_side_service_element_data_shm_creator.GetObject()
+              << ") to proxy side service element data \n(" << proxy_side_service_element_data << ").\n";
+    if (skeleton_side_service_element_data_shm_creator.GetObject() != proxy_side_service_element_data)
+    {
+        std::cerr << "Skeleton and proxy side service element data did not match\n.";
+        return EXIT_FAILURE;
+    }
+
+    // ********************************************************************************
+    // Notify skeleton side that the test is done and it can finish
+    // ********************************************************************************
+    proxy_done_interprocess_notifier_creator.GetObject().notify();
+
+    return EXIT_SUCCESS;
 }
 
 }  // namespace
@@ -178,225 +420,20 @@ int main(int argc, const char** argv)
         score::mw::com::InstanceSpecifier::Create(std::string{"score/cp60/MapApiLanesStamped"}).value();
     if (mode == "send" || mode == "skeleton")
     {
-        std::cout << "Skeleton: Running as skeleton\n";
-
-        // Create NotifierGuard so that the skeleton_done notifier will be notified when it goes out of scope. This will
-        // occur when we exit either at the end of the test or if we return early with a failure.
-        score::mw::com::test::NotifierGuard skeleton_done_notifier_guard{
-            skeleton_done_interprocess_notifier_creator.GetObject()};
-
-        // ********************************************************************************
-        // Create Skeleton
-        // ********************************************************************************
-        auto bigdata_result = score::mw::com::test::BigDataSkeleton::Create(instance_specifier);
-        if (!bigdata_result.has_value())
-        {
-            std::cerr << "Skeleton: Unable to construct BigDataSkeleton: " << bigdata_result.error() << ", bailing!\n";
-            return EXIT_FAILURE;
-        }
-        auto& bigdata_skeleton = bigdata_result.value();
-
-        // ********************************************************************************
-        // Offer Skeleton
-        // ********************************************************************************
-        const auto offer_result = bigdata_skeleton.OfferService();
-        if (!offer_result.has_value())
-        {
-            std::cerr << "Skeleton: Unable to offer service for BigDataSkeleton: " << offer_result.error()
-                      << ", bailing!\n";
-            return EXIT_FAILURE;
-        }
-
-        // ********************************************************************************
-        // Get ElementFqId of SkeletonEvents
-        // ********************************************************************************
-        const auto map_api_lanes_element_fq_id_result =
-            GetElementFqId<score::mw::com::impl::SkeletonEventView<MapApiLanesStamped>,
-                           score::mw::com::impl::lola::SkeletonEvent>(bigdata_skeleton.map_api_lanes_stamped_);
-        if (!(map_api_lanes_element_fq_id_result.has_value()))
-        {
-            std::cerr << "Skeleton: Could not get map_api_lanes ElementFqId, bailing\n";
-            return EXIT_FAILURE;
-        }
-        const auto dummy_data_element_fq_id_result =
-            GetElementFqId<score::mw::com::impl::SkeletonEventView<DummyDataStamped>,
-                           score::mw::com::impl::lola::SkeletonEvent>(bigdata_skeleton.dummy_data_stamped_);
-        if (!(map_api_lanes_element_fq_id_result.has_value()))
-        {
-            std::cerr << "Skeleton: Could not get dummy_data ElementFqId, bailing\n";
-            return EXIT_FAILURE;
-        }
-        const std::array<score::mw::com::impl::lola::ElementFqId, 2> element_fq_ids = {
-            map_api_lanes_element_fq_id_result.value(), dummy_data_element_fq_id_result.value()};
-
-        // ********************************************************************************
-        // Get address of meta information for SkeletonEvents
-        // ********************************************************************************
-        const auto event_meta_info_addresseses =
-            GetTypeMetaInfoAddresses<score::mw::com::test::BigDataSkeleton,
-                                     score::mw::com::impl::SkeletonBaseView,
-                                     score::mw::com::impl::lola::Skeleton,
-                                     score::mw::com::impl::lola::SkeletonAttorney>(bigdata_skeleton, element_fq_ids);
-        if (!(event_meta_info_addresseses.has_value()))
-        {
-            std::cerr << "Proxy: Could not get event meta info addresses\n";
-            return EXIT_FAILURE;
-        }
-
-        // ********************************************************************************
-        // Store addresses in interprocess object
-        // ********************************************************************************
-        const BigDataServiceElementData skeleton_side_service_element_data{element_fq_ids,
-                                                                           event_meta_info_addresseses.value()};
-        skeleton_side_service_element_data_shm_creator.GetObject() = skeleton_side_service_element_data;
-
-        // ********************************************************************************
-        // Notify proxy side that the skeleton has finished writing service element data to shared memory via
-        // interprocess object
-        // ********************************************************************************
-        skeleton_done_interprocess_notifier_creator.GetObject().notify();
-
-        // ********************************************************************************
-        // Wait on interprocess notifier in shared memory
-        // ********************************************************************************
-        if (!proxy_done_interprocess_notifier_creator.GetObject().waitWithAbort(stop_token))
-        {
-            std::cerr << "Abort received while waiting for proxy done notifier\n";
-            return EXIT_FAILURE;
-        }
-
-        return EXIT_SUCCESS;
+        return RunSkeletonMode(instance_specifier,
+                               stop_token,
+                               skeleton_side_service_element_data_shm_creator,
+                               proxy_done_interprocess_notifier_creator,
+                               skeleton_done_interprocess_notifier_creator);
     }
 
     if (mode == "recv" || mode == "proxy")
     {
-        std::cout << "Proxy: Running as proxy\n";
-
-        // Create NotifierGuard so that the proxy_done notifier will be notified when it goes out of scope. This will
-        // occur when we exit either at the end of the test or if we return early with a failure.
-        score::mw::com::test::NotifierGuard proxy_done_notifier_guard{
-            proxy_done_interprocess_notifier_creator.GetObject()};
-
-        // ********************************************************************************
-        // StartFindService -> Create Proxy
-        // ********************************************************************************
-        score::mw::com::test::ProxyCreationData proxy_creation_data{};
-        auto find_service_callback = [&proxy_creation_data](auto service_handle_container,
-                                                            auto find_service_handle) mutable noexcept {
-            std::cout << "Proxy: find service handler called" << std::endl;
-            std::lock_guard lock{proxy_creation_data.mutex};
-            if (service_handle_container.size() != 1)
-            {
-                std::cerr << "Proxy: service handle container should contain 1 handle but contains: "
-                          << service_handle_container.size() << std::endl;
-                proxy_creation_data.condition_variable.notify_all();
-                return;
-            }
-            proxy_creation_data.handle =
-                std::make_unique<score::mw::com::test::BigDataProxy::HandleType>(service_handle_container[0]);
-            std::ignore = score::mw::com::test::BigDataProxy::StopFindService(find_service_handle);
-            proxy_creation_data.condition_variable.notify_all();
-        };
-
-        auto start_find_service_result =
-            score::mw::com::test::BigDataProxy::StartFindService(find_service_callback, instance_specifier);
-        if (!start_find_service_result.has_value())
-        {
-            std::cerr << "Proxy: StartFindService() failed:" << start_find_service_result.error().Message()
-                      << std::endl;
-            return EXIT_FAILURE;
-        }
-        std::cout << "Proxy: StartFindService called" << std::endl;
-
-        // Wait for the find service handler to be called
-        std::unique_lock proxy_creation_lock{proxy_creation_data.mutex};
-        proxy_creation_data.condition_variable.wait(proxy_creation_lock, [&proxy_creation_data] {
-            return proxy_creation_data.handle != nullptr;
-        });
-
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(proxy_creation_data.handle != nullptr,
-                                                "Service handle shouldn't be nullptr");
-        auto handle = *proxy_creation_data.handle;
-        proxy_creation_lock.unlock();
-        auto proxy_result = score::mw::com::test::BigDataProxy::Create(handle);
-        if (!proxy_result.has_value())
-        {
-            std::cerr << "Proxy: Unable to construct BigDataProxy: " << proxy_result.error() << ", bailing!\n";
-            return EXIT_FAILURE;
-        }
-        auto& bigdata_proxy = proxy_result.value();
-        std::cout << "Proxy: BigDataProxy created" << std::endl;
-
-        // ********************************************************************************
-        // Get ElementFqId of ProxyEvents
-        // ********************************************************************************
-        const auto map_api_lanes_element_fq_id_result =
-            GetElementFqId<score::mw::com::impl::ProxyEventView<MapApiLanesStamped>,
-                           score::mw::com::impl::lola::ProxyEvent>(bigdata_proxy.map_api_lanes_stamped_);
-        if (!(map_api_lanes_element_fq_id_result.has_value()))
-        {
-            std::cerr << "Proxy: Could not get map_api_lanes ElementFqId, bailing\n";
-            return EXIT_FAILURE;
-        }
-        const auto dummy_data_element_fq_id_result =
-            GetElementFqId<score::mw::com::impl::ProxyEventView<DummyDataStamped>,
-                           score::mw::com::impl::lola::ProxyEvent>(bigdata_proxy.dummy_data_stamped_);
-        if (!(map_api_lanes_element_fq_id_result.has_value()))
-        {
-            std::cerr << "Proxy: Could not get dummy_data ElementFqId, bailing\n";
-            return EXIT_FAILURE;
-        }
-        const std::array<score::mw::com::impl::lola::ElementFqId, 2> element_fq_ids = {
-            map_api_lanes_element_fq_id_result.value(), dummy_data_element_fq_id_result.value()};
-
-        // ********************************************************************************
-        // Get address of meta information for an event from proxy
-        // ********************************************************************************
-        const auto event_meta_info_addresseses =
-            GetTypeMetaInfoAddresses<score::mw::com::test::BigDataProxy,
-                                     score::mw::com::impl::ProxyBaseView,
-                                     score::mw::com::impl::lola::Proxy,
-                                     score::mw::com::impl::lola::ProxyTestAttorney>(bigdata_proxy, element_fq_ids);
-        if (!(event_meta_info_addresseses.has_value()))
-        {
-            std::cerr << "Proxy: Could not get event meta info addresses\n";
-            return EXIT_FAILURE;
-        }
-
-        // ********************************************************************************
-        // Wait for the Skeleton to finish writing service element data to shared memory via interprocess object
-        // ********************************************************************************
-        if (!skeleton_done_interprocess_notifier_creator.GetObject().waitWithAbort(stop_token))
-        {
-            std::cerr << "Abort received while waiting for proxy done notifier\n";
-            return EXIT_FAILURE;
-        }
-
-        // ********************************************************************************
-        // Get service element data from the Skeleton via interprocess object
-        // ********************************************************************************
-        const BigDataServiceElementData proxy_side_service_element_data{element_fq_ids,
-                                                                        event_meta_info_addresseses.value()};
-
-        // ********************************************************************************
-        // Check that type event and meta information addresses are the same on skeleton
-        // and proxy side
-        // ********************************************************************************
-        std::cout << "Comparing Skeleton side service element data \n("
-                  << skeleton_side_service_element_data_shm_creator.GetObject()
-                  << ") to proxy side service element data \n(" << proxy_side_service_element_data << ").\n";
-        if (skeleton_side_service_element_data_shm_creator.GetObject() != proxy_side_service_element_data)
-        {
-            std::cerr << "Skeleton and proxy side service element data did not match\n.";
-            return EXIT_FAILURE;
-        }
-
-        // ********************************************************************************
-        // Notify skeleton side that the test is done and it can finish
-        // ********************************************************************************
-        proxy_done_interprocess_notifier_creator.GetObject().notify();
-
-        return EXIT_SUCCESS;
+        return RunProxyMode(instance_specifier,
+                            stop_token,
+                            skeleton_side_service_element_data_shm_creator,
+                            proxy_done_interprocess_notifier_creator,
+                            skeleton_done_interprocess_notifier_creator);
     }
 
     std::cerr << "Invalid mode: " << mode << ", bailing!\n";

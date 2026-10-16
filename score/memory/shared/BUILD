@@ -609,6 +609,7 @@ cc_unit_test(
     deps = [
         ":lock_file",
         ":shared_memory_test_resources",
+        "@score_baselibs//score/quality/compiler_warnings",
     ],
 )
 
