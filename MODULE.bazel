@@ -241,6 +241,7 @@ llvm.toolchain(
         "//quality/compiler_warnings/clang:default_flags",
         "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings/clang:minimal_warnings",
+        "//quality/compiler_warnings:treat_warnings_as_errors",
     ],
     extra_known_features = [
         "@score_cpp_policies//sanitizers/features:debug_symbols",
@@ -249,7 +250,6 @@ llvm.toolchain(
         "@score_cpp_policies//sanitizers/features:ubsan_clang",
         "@score_cpp_policies//sanitizers/features:lsan",
         "@score_cpp_policies//sanitizers/features:tsan",
-        "//quality/compiler_warnings:treat_warnings_as_errors",
         "//quality/coverage:enable_llvm_coverage_for_death_tests",
     ],
     link_libs = {"": [
