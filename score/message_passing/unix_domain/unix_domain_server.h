@@ -50,6 +50,11 @@ class UnixDomainServer final : public IServer
 
         ~ServerConnection() noexcept;
 
+        ServerConnection(const ServerConnection&) = delete;
+        ServerConnection& operator=(const ServerConnection&) = delete;
+        ServerConnection(ServerConnection&&) = delete;
+        ServerConnection& operator=(ServerConnection&&) = delete;
+
       private:
         UnixDomainServer& server_;
         std::optional<UserData> user_data_;
@@ -63,6 +68,11 @@ class UnixDomainServer final : public IServer
                      const ServiceProtocolConfig& protocol_config,
                      const IServerFactory::ServerConfig& server_config) noexcept;
     ~UnixDomainServer() noexcept override;
+
+    UnixDomainServer(const UnixDomainServer&) = delete;
+    UnixDomainServer& operator=(const UnixDomainServer&) = delete;
+    UnixDomainServer(UnixDomainServer&&) = delete;
+    UnixDomainServer& operator=(UnixDomainServer&&) = delete;
 
     score::cpp::expected_blank<score::os::Error> StartListening(
         ConnectCallback connect_callback,

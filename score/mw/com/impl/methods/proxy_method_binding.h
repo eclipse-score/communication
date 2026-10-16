@@ -31,7 +31,13 @@ namespace score::mw::com::impl
 class ProxyMethodBinding
 {
   public:
+    ProxyMethodBinding() = default;
     virtual ~ProxyMethodBinding() = default;
+
+    ProxyMethodBinding(const ProxyMethodBinding&) = default;
+    ProxyMethodBinding& operator=(const ProxyMethodBinding&) = default;
+    ProxyMethodBinding(ProxyMethodBinding&&) noexcept = default;
+    ProxyMethodBinding& operator=(ProxyMethodBinding&&) noexcept = default;
 
     /// \brief Allocates storage for the in-arguments of a method call at the given queue position.
     /// \param queue_position The call-queue position for which to allocate the in-arguments storage.
