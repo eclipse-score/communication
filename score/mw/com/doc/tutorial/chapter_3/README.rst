@@ -129,7 +129,8 @@ instance to offer:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 28-30
+   :start-after: [provider-instance-specifiers-start]
+   :end-before: [provider-instance-specifiers-end]
    :caption: provider/provider.cpp
 
 
@@ -142,7 +143,8 @@ of its instances by 5 seconds each:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 104-132
+   :start-after: [provider-main-loop-start]
+   :end-before: [provider-main-loop-end]
    :caption: provider/provider.cpp
 
 
@@ -177,7 +179,8 @@ handing over the container of **all** currently matching service handles.
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 116-152
+   :start-after: [consumer-find-service-handler-start]
+   :end-before: [consumer-find-service-handler-end]
    :caption: consumer/consumer.cpp
 
 
@@ -208,7 +211,8 @@ The portable way to get a representation of the instance id out of a handle is:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 53-59
+   :start-after: [consumer-describe-instance-id-start]
+   :end-before: [consumer-describe-instance-id-end]
    :caption: consumer/consumer.cpp
 
 
@@ -225,7 +229,8 @@ The main loop of the consumer then simply polls the `message` event of **every**
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 162-174
+   :start-after: [consumer-main-loop-start]
+   :end-before: [consumer-main-loop-end]
    :caption: consumer/consumer.cpp
 
 
@@ -235,7 +240,8 @@ longer be called):
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 184-184
+   :start-after: [consumer-stop-find-service-start]
+   :end-before: [consumer-stop-find-service-end]
    :caption: consumer/consumer.cpp
 
 
@@ -260,7 +266,7 @@ array. Each entry maps a distinct `instanceSpecifier` to a distinct `instanceId`
 
 .. literalinclude:: provider/mw_com_config.json
    :language: json
-   :lines: 25-69
+   :lines: 24-89
    :caption: provider/mw_com_config.json
 
 
@@ -277,7 +283,7 @@ The magic that enables the **"find-any"** search is in the consumer configuratio
 
 .. literalinclude:: consumer/mw_com_config.json
    :language: json
-   :lines: 25-34
+   :lines: 24-37
    :caption: consumer/mw_com_config.json
 
 

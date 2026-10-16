@@ -37,7 +37,9 @@ int main(int argc, const char* argv[])
     std::signal(SIGINT, SignalHandler);
     std::signal(SIGTERM, SignalHandler);
 
+    // [consumer-initialize-runtime-start]
     score::mw::com::runtime::InitializeRuntime(argc, argv);
+    // [consumer-initialize-runtime-end]
 
     auto instance_specifier = score::mw::com::InstanceSpecifier::Create(std::string{"MyHelloWorldServiceInstance"});
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(instance_specifier.has_value(), "Failed to create InstanceSpecifier!");

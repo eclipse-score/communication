@@ -55,6 +55,7 @@ int main()
                                                 "Failed to create CalculatorSkeleton instance!");
     auto service_instance = std::move(service_instance_result).value();
 
+    // [provider-register-handlers-start]
     // Register the implementation of the "add" method. With the rebased method API a handler no longer *returns* the
     // result; instead the return value is passed to the handler as its first argument by (mutable) reference - i.e. as
     // an out-parameter - followed by the (deserialized) input arguments by const-reference. The handler writes the
@@ -94,6 +95,7 @@ int main()
     auto offer_result = service_instance.OfferService();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(offer_result.has_value(),
                                                 "Failed to offer CalculatorSkeleton instance!");
+    // [provider-register-handlers-end]
     std::cout << "OfferService: Calculator service instance is now offered. Waiting for method calls ..." << std::endl;
 
     // A method provider is purely reactive: the registered handlers are invoked by the middleware (on an internal

@@ -79,6 +79,7 @@ int main()
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_result.has_value(), "Failed to create TirePressureProxy!");
     TirePressureProxy& proxy = proxy_result.value();
 
+    // [consumer-receive-handler-start]
     score::concurrency::Notification event_received{};
     score::cpp::stop_source stop_source{};
 
@@ -115,6 +116,7 @@ int main()
     }
 
     proxy.tire_pressure_update.Unsubscribe();
+    // [consumer-receive-handler-end]
 
     score::mw::log::LogInfo("PxEsH") << "Completed successfully";
     return 0;

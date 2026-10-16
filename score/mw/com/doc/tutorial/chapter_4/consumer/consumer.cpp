@@ -109,6 +109,7 @@ void ReceiveSamples(HelloWorldProxy& proxy, const char* const tag)
 // Bundles all state shared between the (asynchronously called) find-service handler and the main polling loop. We
 // group it into a single struct so that the find-service handler lambda only has to capture a single pointer (the
 // FindServiceHandler callback has a limited capture capacity).
+// [consumer-shared-state-start]
 struct SharedState
 {
     std::mutex mutex{};
@@ -136,6 +137,7 @@ struct SharedState
     std::atomic<score::mw::com::SubscriptionState> proxy_handler_state{
         score::mw::com::SubscriptionState::kNotSubscribed};
 };
+// [consumer-shared-state-end]
 
 }  // namespace
 
@@ -173,10 +175,12 @@ int main()
 
         // We found the matching instance. As we only act on it once, we can stop the search right here, from within
         // the callback (stopping a search from within a StartFindService callback is explicitly supported).
+        // [consumer-stop-search-in-handler-start]
         if (!state.search_stopped.exchange(true))
         {
             score::cpp::ignore = HelloWorldProxy::StopFindService(find_service_handle);
         }
+        // [consumer-stop-search-in-handler-end]
 
         const auto& handle = handles.front();
         const auto instance_id_description = DescribeInstanceId(handle);
@@ -185,12 +189,14 @@ int main()
 
         // --- proxy_1: poll the subscription state once ---------------------------------------------------------
         auto proxy_1_result = HelloWorldProxy::Create(handle);
+        // [consumer-proxy-1-fatal-error-start]
         if (!proxy_1_result)
         {
             std::cerr << "Failed to create proxy_1: " << proxy_1_result.error() << std::endl;
             state.fatal_error.store(true, std::memory_order_relaxed);
             return;
         }
+        // [consumer-proxy-1-fatal-error-end]
         auto proxy_1 = std::move(proxy_1_result).value();
 
         const auto subscribe_1_result = proxy_1.message.Subscribe(1);
@@ -201,6 +207,7 @@ int main()
             return;
         }
 
+        // [consumer-proxy-1-poll-state-start]
         // Poll the current subscription state exactly once. Only if the subscribe succeeded AND we are already in
         // state kSubscribed do we enable cyclic reception on proxy_1.
         const auto polled_state = proxy_1.message.GetSubscriptionState();
@@ -215,6 +222,7 @@ int main()
         {
             std::cout << "[proxy_1 poll] State is not kSubscribed -> proxy_1 will NOT receive samples." << std::endl;
         }
+        // [consumer-proxy-1-poll-state-end]
 
         // --- proxy_2: register a subscription-state-change handler ---------------------------------------------
         auto proxy_2_result = HelloWorldProxy::Create(handle);
@@ -230,6 +238,7 @@ int main()
         // handler is called on an internal middleware thread. It must be short and must not call any method on the
         // same event instance - so we merely record the new state in an atomic and return true to keep the handler
         // registered.
+        // [consumer-subscription-state-change-handler-start]
         auto* const handler_state = &state.proxy_handler_state;
         const auto set_handler_result = proxy_2.message.SetSubscriptionStateChangeHandler(
             [handler_state](const score::mw::com::SubscriptionState new_state) noexcept -> bool {
@@ -244,6 +253,7 @@ int main()
             state.fatal_error.store(true, std::memory_order_relaxed);
             return;
         }
+        // [consumer-subscription-state-change-handler-end]
 
         const auto subscribe_2_result = proxy_2.message.Subscribe(1);
         if (!subscribe_2_result)
@@ -271,11 +281,13 @@ int main()
     {
         // If the find-service handler hit an unrecoverable error while setting up the proxies, terminate: it is very
         // unlikely that a later invocation would succeed, so there is no point in looping forever.
+        // [consumer-main-loop-fatal-error-start]
         if (state.fatal_error.load(std::memory_order_relaxed))
         {
             std::cerr << "Unrecoverable error while setting up the proxies. Shutting down." << std::endl;
             break;
         }
+        // [consumer-main-loop-fatal-error-end]
 
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
@@ -285,6 +297,7 @@ int main()
             continue;
         }
 
+        // [consumer-proxy-1-receive-start]
         // proxy_1: keep calling GetNewSamples() unconditionally once reception was enabled by the initial
         // subscription-state poll. During the provider's stop-offer phases the subscription state is
         // kSubscriptionPending; GetNewSamples() is still a valid call, it just does not deliver new data during those
@@ -293,7 +306,9 @@ int main()
         {
             ReceiveSamples(state.proxy_poll.value(), "proxy_1 poll");
         }
+        // [consumer-proxy-1-receive-end]
 
+        // [consumer-proxy-2-receive-start]
         // proxy_2: only call GetNewSamples() while the last state-change notification told us we are kSubscribed. When
         // the provider stops offering, the handler reports kSubscriptionPending and proxy_2 stops calling
         // GetNewSamples() until the state returns to kSubscribed.
@@ -305,6 +320,7 @@ int main()
         {
             std::cout << "[proxy_2 handler] State is not kSubscribed -> skipping GetNewSamples()." << std::endl;
         }
+        // [consumer-proxy-2-receive-end]
     }
 
     // Stop the asynchronous service discovery before shutting down - unless it was already stopped from within the

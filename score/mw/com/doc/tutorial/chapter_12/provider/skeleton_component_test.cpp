@@ -10,6 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+// [test-includes-start]
 #include "score/mw/com/doc/tutorial/chapter_12/provider/skeleton_component.h"
 
 #include "score/mw/com/com_error_domain.h"
@@ -21,11 +22,13 @@
 #include <memory>
 #include <optional>
 #include <tuple>
+// [test-includes-end]
 
 using testing::_;
 using testing::Invoke;
 using testing::Return;
 
+// [skeleton-component-test-fixture-start]
 class SkeletonComponentTestFixture : public ::testing::Test
 {
   protected:
@@ -50,7 +53,9 @@ class SkeletonComponentTestFixture : public ::testing::Test
     std::tuple<score::mw::com::NamedSkeletonEventMock<FixedSizeString>> events_tuple_{"message"};
     std::optional<SkeletonComponent> skeleton_component_{};
 };
+// [skeleton-component-test-fixture-end]
 
+// [skeleton-component-test-cases-start]
 TEST_F(SkeletonComponentTestFixture, OfferServiceReturnsTrueWhenOfferServiceSucceeds)
 {
     // Expect, that OfferService is called on the mocked SkeletonBase and returns success
@@ -120,3 +125,4 @@ TEST_F(SkeletonComponentTestFixture, SendSampleWritesPayloadAndReturnsHandledWhe
     EXPECT_EQ(skeleton_component_->SendSample(42U), SkeletonComponent::SendSampleResult::kHandled);
     // and that the result indicates successful handling.
 }
+// [skeleton-component-test-cases-end]
