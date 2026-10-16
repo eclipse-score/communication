@@ -99,7 +99,7 @@ using MyReturnTypeTestData = ::testing::Types<
     ReturnTypeTestData<decltype(MutableNoexceptMethodLambdaFactory<void()>::Create()), void>
 
     >;
-TYPED_TEST_SUITE(CallableTraitsReturnTypeFixture, MyReturnTypeTestData);
+TYPED_TEST_SUITE(CallableTraitsReturnTypeFixture, MyReturnTypeTestData, );
 
 TYPED_TEST(CallableTraitsReturnTypeFixture, GetCallableReturnTypeForCallable)
 {
@@ -179,7 +179,7 @@ using MyInArgTypesTestData = ::testing::Types<
     >;
 // clang-format on
 
-TYPED_TEST_SUITE(CallableTraitsInArgTypesFixture, MyInArgTypesTestData);
+TYPED_TEST_SUITE(CallableTraitsInArgTypesFixture, MyInArgTypesTestData, );
 
 TYPED_TEST(CallableTraitsInArgTypesFixture, GetCallableInArgTypesForCallable)
 {
