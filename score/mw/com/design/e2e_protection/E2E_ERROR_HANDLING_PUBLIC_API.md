@@ -9,6 +9,7 @@
   5. [Public API reference](#5-public-api-reference)
   6. [Usage examples](#6-usage-examples)
   7. [Benefits](#7-benefits)
+  8. [No-new-data and periodic invocation](#8-no-new-data-and-periodic-invocation)
 
   ---
 
@@ -54,9 +55,9 @@
 
   ## 2. Overview
 
-  Every received sample carries a single `E2EResult` struct with four fields:
-  `data_integrity`, `sequence`, `historical_health`, and an aggregated
-  `summary`. `SamplePtr<T>::GetE2EResult()` always returns a concrete value,
+  Every received sample carries a single `E2EResult` struct with five fields:
+  `data_integrity`, `sequence`, `freshness`, `historical_health`, and an
+  aggregated `summary`. `SamplePtr<T>::GetE2EResult()` always returns a concrete value,
   because whether E2E protection is active for a given
   proxy is a **deployment-time** configuration decision, never something that
   needs to be detected at runtime.
@@ -78,6 +79,8 @@
   as the existing `kDisabled` value, so
   `E2EResult` always carries a concrete value. The failed sample is still
   flagged through `data_integrity == kError` and `summary == kError`.
+  `freshness` is evaluated after `sequence` and before `historical_health`
+  (see §8.3).
 
   ## 3. Design rationale
 
@@ -107,6 +110,8 @@
   | `DataIntegrityCheckEnabled` | Receiver only | Enables the check producing `data_integrity`; `false` → `kDisabled` |
   | `SequenceCheckEnabled` | Receiver only | Enables the check producing `sequence`; `false` → `kDisabled` |
   | `HistoricalHealthTrackingEnabled` | Receiver only | Enables the hysteresis check producing `historical_health`; `false` → `kDisabled` |
+  | `FreshnessCheckEnabled` | Receiver only | Enables the check producing `freshness`; `false` → `kDisabled`. Default `false` when `E2EProfile == None`, otherwise `true` |
+  | `MaxSampleAge` | Receiver only | Maximum age of the last accepted sample (duration); required when `FreshnessCheckEnabled == true`, missing/zero is a misconfiguration |
 
   `DataIntegrityCheckEnabled` and `SequenceCheckEnabled` are independent
   knobs, not a combined one, since not every profile carries a CRC and a
@@ -186,6 +191,13 @@ enum class SequenceStatus {
     kErrorGapExceedsThreshold, // Gap too large — too much loss/reorder
 };
 
+enum class SampleFreshnessStatus {
+    kDisabled,              // Check was disabled
+    kWaitingForFirstSample, // No sample received yet — normal start-up, not a fault
+    kFresh,                 // Last accepted sample is not older than MaxSampleAge
+    kStale,                 // Last accepted sample is older than MaxSampleAge — no new data in time
+};
+
 enum class HistoricalHealthStatus {
     kDisabled, // Check was disabled
     kOk,       // Error counter at/below recovery threshold — channel healthy
@@ -202,6 +214,7 @@ enum class Summary {
 struct E2EResult {
       DataIntegrityStatus data_integrity;
       SequenceStatus sequence;
+      SampleFreshnessStatus freshness;
       HistoricalHealthStatus historical_health;
       Summary summary;
   };
@@ -293,3 +306,75 @@ recorded sample for later forensic/offline analysis:
 - Caller can freely ignore whichever field it isn't interested in and
   rely on `summary` alone — no code bloat from having two accessors, since
   full evaluation needs all fields anyway
+
+## 8. No-new-data and periodic invocation
+
+E2E is evaluated when a sample arrives, so if the producer stops sending
+(crash, broken link, blocked channel), nothing is checked and nothing is
+reported — the consumer keeps using old data without knowing it. This is
+neither corruption (`data_integrity`) nor a counter fault (`sequence`), so
+it gets its own status: `freshness` (`SampleFreshnessStatus`, see §5.1).
+
+### 8.1 No-new-data: `freshness`
+
+| Value | Meaning |
+|---|---|
+| `kDisabled` | Freshness check is off |
+| `kWaitingForFirstSample` | No sample received yet — normal start-up, not a fault |
+| `kFresh` | Last accepted sample is not older than `MaxSampleAge` |
+| `kStale` | Last accepted sample is older than `MaxSampleAge` — no new data in time |
+
+Rules:
+
+- An accepted sample sets `kFresh` and resets the age timestamp. A sample
+  with `data_integrity == kError` does not reset it.
+- `kWaitingForFirstSample` is not fed into `historical_health` (R5).
+- A missed deadline is fed into `historical_health` once, not once per query.
+- `summary == kError` when `freshness == kStale`.
+- `freshness` is independent of the other checks; `sequence` stays
+  counter-based only (R6).
+
+### 8.2 Periodic invocation
+
+Assumption: no fixed-period check inside `mw::com`. Freshness is defined by
+time (`MaxSampleAge`), not by how often the check is called, and the age is
+evaluated when a sample arrives or when the consumer asks. No timer or
+thread is needed, and the result is the same for any polling rate.
+
+Two accessors cover the case where no sample arrives:
+
+```cpp
+// Evaluates the age at call time; works without a new sample.
+E2EResult ProxyEvent::GetE2EChannelStatus() const;
+
+// Optional: called once when the channel turns stale and once when it recovers.
+// Backed by one one-shot timer per proxy event, reset on every accepted sample.
+Result<void> ProxyEvent::SetStaleHandler(StaleHandler handler);
+```
+
+When stale, `data_integrity` and `sequence` keep the values of the last
+evaluated sample, `freshness == kStale` and `summary == kError`.
+
+Both accessors are optional ways to consume the same freshness state; the
+check itself is controlled only by `FreshnessCheckEnabled` / `MaxSampleAge`:
+
+- `GetE2EChannelStatus()` — pull: the consumer asks when it needs the status
+  (polling loop, or before using the last value).
+- `SetStaleHandler()` — push: the consumer is notified on `kFresh` → `kStale`
+  and `kStale` → `kFresh`, without polling.
+
+Consumers that do not use either still get `freshness` on every received
+sample.
+
+### 8.3 Layer and evaluation order
+
+| Layer | Checks |
+|---|---|
+| Binding-specific | `data_integrity`, `sequence` (checks on the received message) |
+| Binding-independent (`ProxyEventBase`) | `freshness`, `historical_health`, `summary` |
+
+`freshness` is time-based and does not look at the payload, so it sits in the
+binding-independent layer and works the same for every binding (R7).
+
+Order: `data_integrity` → `sequence` → `freshness` → `historical_health` →
+`summary`.
