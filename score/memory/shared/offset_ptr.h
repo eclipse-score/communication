@@ -679,7 +679,7 @@ auto OffsetPtr<PointedType>::operator+=(difference_type offset) -> OffsetPtr&
     }
     else if (offset < 0)
     {
-        DecrementOffset(static_cast<std::size_t>(AbsoluteValue(offset)));
+        DecrementOffset(AbsoluteValue(offset));
     }
     else
     {
@@ -697,7 +697,7 @@ auto OffsetPtr<PointedType>::operator-=(difference_type offset) -> OffsetPtr&
     }
     else if (offset < 0)
     {
-        IncrementOffset(static_cast<std::size_t>(AbsoluteValue(offset)));
+        IncrementOffset(AbsoluteValue(offset));
     }
     return *this;
 }
