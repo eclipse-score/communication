@@ -17,6 +17,7 @@
 #include "score/mw/com/types.h"
 #include "score/result/result.h"
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -83,10 +84,13 @@ class Transport
     /// \param updated_element_type type of the updated service element (event, field, method). Currently only EVENT
     /// is supported.
     /// \param updated_element_name name of the updated service element.
+    /// \param updated_element_data raw byte payload of the updated sample. Empty if the sample is expected to be
+    /// read directly from shared memory by the destination gateway (e.g. when memory sharing is supported).
     /// \return result indicating success or failure.
     virtual score::Result<void> NotifyUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
                                              impl::ServiceElementType updated_element_type,
-                                             std::string updated_element_name) = 0;
+                                             std::string updated_element_name,
+                                             std::vector<std::uint8_t> updated_element_data) = 0;
 
     /// \brief API to register for update notifications for service elements of a service instance at the source
     /// gateway side.
