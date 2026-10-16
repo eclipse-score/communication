@@ -25,7 +25,16 @@ unit(
         "//score/mw/com/impl/bindings/lola/service_discovery/dependability:unit_design",
     ],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
-    implementation = [],
+    implementation = [
+        # ":flag_file",
+        # ":flag_file_crawler",
+        # ":known_instances_container",
+        # ":lola_service_instance_identifier",
+        # ":quality_aware_container",
+        # ":service_discovery_client",
+        # ":destructor_notifier",
+        # ":file_system_guard",
+    ],
 )
 
 package(default_visibility = [
