@@ -1,6 +1,6 @@
-# Skeleton/Proxy Binding architecture
+# Binding Independent Component Design
 
-## Introduction
+## Skeleton/Proxy Binding architecture
 
 The following structural view shows, how the separation of the binding independent part of a proxy/skeleton from
 its flexible/variable technical binding implementation is achieved. **Note**: It does **only** reflect the common use
@@ -115,15 +115,15 @@ The mechanism to provide such a "special reference" for `impl::ProxyEventBase`, 
 `impl::SkeletonMethodBase`, is realized by inheriting from `EnableReferenceToMoveableFromThis<T>`, where `T` is one of
 the above-mentioned types, making it a `CRTP` pattern!
 
-# Event/Field communication in `LoLa`
+## Event/Field communication in `LoLa`
 
-## Introduction
+### Introduction
 
 Events and Fields in `mw::com` are class templates parameterized with the `SampleType`. They differ between provider
 (skeleton) and consumer (proxy) side regarding their functionality.
 `mw::com` proxies and skeletons contain members of the related template classes.
 
-## Field as a composite
+### Field as a composite
 
 A field in `mw::com` is semantically an event, with some additional properties:
 
@@ -138,9 +138,46 @@ A field in `mw::com` is semantically an event, with some additional properties:
 Therefore, we decided to realize a field on the **binding independent** level as composition of an event and
 service-methods for set/get.
 
-# Method communication in `LoLa`
+#### Event constructor extensions
 
-## Introduction
+On both sides, we do have specific `ctor`s (`impl::SkeletonEvent` and `impl::ProxyEvent` for creation of events in
+the field context, as there are minimal differences in behavior.
+E.g. on the proxy side, we need the "hint", that an event is created in the field context, to look up correct (field
+specific) configuration for `IPC-Tracing`. Same applies for the skeleton side. Additionally, the `ctor` of an event
+normally registers itself at its parent skeleton in its event-collection. This is bypassed in the specific ctor for
+the field use case as in this case the `impl::SkeletonField<SampleType>` has already registered itself in its parents
+field-collection!
+
+#### Field capability tags
+
+A field is declared with its `SampleType` plus a pack of marker tags from `field_tags.h`. Any combination of
+`WithGetter`, `WithSetter` and `WithNotifier` is allowed, and the tags decide which methods the user actually sees:
+`WithGetter` enables `Get()`, `WithSetter` enables `Set()`, and `WithNotifier` enables the notifier methods
+(`Subscribe()`, `Unsubscribe()`, `GetSubscriptionState()`, `GetNumNewSamplesAvailable()`, `GetNewSamples()`,
+`GetFreeSampleCount()`, `SetReceiveHandler()`, `UnsetReceiveHandler()`, `SetSubscriptionStateChangeHandler()` and
+`UnsetSubscriptionStateChangeHandler()`). The gating happens at compile time via SFINAE, so calling e.g. `Subscribe()`
+on a field that was not declared with `WithNotifier` does not compile.
+
+The notifier is a pure consumer-side concept. It only controls
+whether the proxy can subscribe and receive event-style notifications when the provider updates the value, and says
+nothing about the provider side. The notifier is essentially "the event part" of a field.
+
+The same asymmetry shows up in how each side builds the field's event dispatch:
+
+- On the skeleton side, value handling does not depend on the tags. `impl::SkeletonField` always creates its
+  `skeleton_event_dispatch_`, and `Update()`/`Allocate()` are always present. I.e. the provider can always set the
+  initial value and push new values later, whether or not a notifier was configured.
+- On the proxy side, the event dispatch (`proxy_event_dispatch_`) is only created when `WithNotifier` is set. Without it
+  the member stays `nullptr` and the notifier methods are removed at compile time.
+
+The only combination we actually enforce is a `static_assert` on both `impl::ProxyField` and `impl::SkeletonField`: a
+field must have at least one of `WithGetter` or `WithNotifier`. Without one of them the consumer has no way to observe
+the value, which makes the field useless. We deliberately do not require a setter, since a read-only field is perfectly 
+normal and the provider always sets the value itself via `Update()` with no explicit tag needed.
+
+## Method communication in `LoLa`
+
+### Introduction
 
 Methods in `mw::com` are class templates parameterized with the `MethodReturnType` and the `MethodInArgType`s.
 They differ between provider (skeleton) and consumer (proxy) side regarding their functionality.
