@@ -13,6 +13,7 @@
 package Communication
 
 import ScoreReq
+import mw_com_fta
 
 section "com" {
 
@@ -1107,11 +1108,22 @@ section "com" {
             version = 1
         }
 
+        /* broken_link_c/issue/6221534 */
+        ScoreReq.CompReq SharedMemoryFileNameDerivedFromInstanceIdentifier {
+            description = '''The Shared Memory Resource shall create the underlying shared memory file under the correct name, derived from the InstanceIdentifier.'''
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, mw_com_fta.SHMObjectWrongPath]
+            version = 1
+        }
+
         /* broken_link_c/issue/5899178 */
         ScoreReq.CompReq OnlyOffsetPointerWithinSharedMemorySegments {
             description = '''There shall be no usage of any other pointer type then offset pointer (aka fancy pointer, aka relative pointer) within a shared memory segment.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1,
+                mw_com_fta.ReferencesValidMemoryInsideSHM,
+                mw_com_fta.ReferencesInvalidMemory
+            ]
             version = 1
         }
 
@@ -1127,9 +1139,9 @@ section "com" {
         ScoreReq.CompReq PerformActiveBoundCheckingOnDereferencingOfOffsetPointer {
             description = '''Any dereferenciation of an offset pointer shall be subject to active bound checking.
 
-            Active bound checking referes to an active check, that the calculated target pointer is within the bounds of the mapped shared memory segment.'''
+            Active bound checking refers to an active check, that the calculated target pointer is within the bounds of the mapped shared memory segment.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, mw_com_fta.ReferencesValidMemoryOutsideSHM]
             version = 1
         }
 
@@ -1138,6 +1150,14 @@ section "com" {
             description = '''The synchronization between data and control segments shall ensure wait-freedom.'''
             safety = ScoreReq.Asil.B
             derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            version = 1
+        }
+
+        /* broken_link_c/issue/6367126 */
+        ScoreReq.CompReq SharedMemoryResourceFreedOnlyOnDestruction {
+            description = '''SharedMemoryResource shall free resources only on destruction.'''
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, mw_com_fta.LifeCycleIssuesElementPtr]
             version = 1
         }
 
