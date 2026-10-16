@@ -348,7 +348,8 @@ std::optional<std::uint8_t> MemoryRegionMapImpl<AtomicIndirectorType>::AcquireRe
         // probability of clashes with readers.
         for (std::uint32_t loop_idx = 1U; loop_idx < VERSION_COUNT; loop_idx++)
         {
-            const std::uint32_t current_version = latest_known_region_version_.load(std::memory_order_relaxed);
+            const auto current_version =
+                static_cast<std::uint32_t>(latest_known_region_version_.load(std::memory_order_relaxed));
             const auto version_idx = static_cast<std::uint8_t>((loop_idx + current_version) % VERSION_COUNT);
             RegionVersionRefCountType cur_ref_count =
                 known_regions_versions_refcounts_.at(static_cast<size_t>(version_idx)).load();

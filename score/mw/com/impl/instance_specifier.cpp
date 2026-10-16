@@ -44,14 +44,7 @@ bool IsShortNameValid(const std::string_view shortname) noexcept
 
     auto validate_chars = [](auto it_begin, auto it_end, const bool first_char) -> bool {
         const auto found_invalid_chars = std::find_if_not(it_begin, it_end, [first_char](const auto curent_char) {
-            const auto u_ch = static_cast<unsigned char>(curent_char);
-            // Suppress "AUTOSAR C++14 M5-0-3" and  "AUTOSAR C++14 M5-0-4" rules, which state: "A cvalue expression
-            // shall not be implicitly converted to a different underlying type." and "An implicit integral conversion
-            // shall not change the signedness of the underlying type." respectively Rationale: This is tolerated as
-            // static_cast from int to bool will not change the signedness and the type convertion is intended
-            // coverity[autosar_cpp14_m5_0_3_violation]
-            // coverity[autosar_cpp14_m5_0_4_violation]
-            // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(ctype-function-argument-promotion)
+            const auto u_ch = static_cast<int>(static_cast<unsigned char>(curent_char));
             const auto is_alpha_or_num = first_char ? std::isalpha(u_ch) : std::isalnum(u_ch);
             // coverity[autosar_cpp14_a5_2_6_violation: FALSE] False positive: each operand is parenthesized
             return ((static_cast<bool>(is_alpha_or_num)) || (curent_char == '_') || (curent_char == '/'));
