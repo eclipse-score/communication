@@ -231,6 +231,10 @@ ScoreReq.AoU NoNotificationOnTerminationOfProducer {
     safety = ScoreReq.Asil.B
     note = "LoLa provides no mechanism to communicate the termination of an event data producer. It is also possible that a producer suddenly crashes and no events are any longer produced. A supervision can be implemented on application side, if events are polled in a certain interval. If no new events are present within a certain set of intervals, it can be assumed that the producer is malfunctioning."
     version = 1
+    root_causes = [
+        // A crash or malfunction of the producer will not be communicated, which also covers the case that the service instance usage lock fails.
+        mw_com_fta.ServiceInstanceUsageLockMechanismFailed
+    ]
 }
 
 /* broken_link_c/issue/5835311 */
@@ -302,7 +306,9 @@ ScoreReq.AoU SkeletonAliveWhileItsAllocateePtrBeingUsed {
     version = 1
     root_causes = [
         mw_com_fta.LifeCycleIssuesSamplePtr,
-        mw_com_fta.WrongSlotReferenced
+        mw_com_fta.WrongSlotReferenced,
+        // Skeleton and shared memory object shall be kept alive as long as they are used. Before destroying them it has to be checked that they are not anymore in use.
+        mw_com_fta.ServiceInstanceUsageNotChecked
     ]
 }
 

@@ -1116,6 +1116,18 @@ section "com" {
             version = 1
         }
 
+        /* broken_link_c/issue/6221534 */
+        ScoreReq.CompReq SharedMemoryFileNameDerivedFromInstanceIdentifier {
+            description = '''The Shared Memory Resource shall create the underlying shared memory file under the correct name, derived from the InstanceIdentifier.'''
+            safety = ScoreReq.Asil.B
+            derived_from = [
+                Communication.FEAT_SupportForTimeBasedArchitecture@1,
+                // Using the Shared Memory Resource and its logic to generate the object path, it can be ensured that the correct SHM object path will be generated.
+                mw_com_fta.SHMObjectWrongPath
+            ]
+            version = 1
+        }
+
         /* broken_link_c/issue/5899178 */
         ScoreReq.CompReq OnlyOffsetPointerWithinSharedMemorySegments {
             description = '''There shall be no usage of any other pointer type then offset pointer (aka fancy pointer, aka relative pointer) within a shared memory segment.'''
