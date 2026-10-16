@@ -88,7 +88,7 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
         std::terminate();
     }();
 
-    const auto& service_instance_map = [&lola_service_instance_deployment]() constexpr {
+    const auto& service_instance_map = [&lola_service_instance_deployment]() {
         // Deviation from equivalent Rules A7-1-8 and  M6-4-1:
         // - A non-type specifier shall be placed before a type specifier in a declaration.
         // - An if ( condition ) construct shall be followed by a compound statement.
