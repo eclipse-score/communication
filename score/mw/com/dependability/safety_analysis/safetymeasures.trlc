@@ -1,0 +1,32 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+import mw_com_fta
+
+ScoreReq.Mitigation ProxyRejectsConstructionWhenSharedMemoryObjectIsMissing {
+    safety = ScoreReq.Asil.B
+    description = "The LoLa proxy binding shall verify that the control and data shared memory objects of a service instance can be opened and shall fail proxy construction (returning a null proxy) if either shared memory object does not exist, instead of proceeding with a missing or inconsistent memory region."
+    justification = "Proxy::Create() calls OpenSharedMemory(), which opens the control and data shared memory segments via SharedMemoryFactory::Open() and returns a null pair if either call returns nullptr ((control == nullptr) || (data == nullptr)), causing Proxy::Create() to abort with nullptr. This is verified by SharedMemoryFactoryOpenReturningNullPtrOnProxyCreationReturnsNullPtr in proxy_test.cpp (SCR-5878624, SCR-32158442, SCR-33047276), which mocks SharedMemoryFactory::Open() to return nullptr for both the control and data paths; the test does not isolate a control-only or data-only failure, though the OR-based implementation check covers both cases independently."
+    version = 1
+    root_causes = [mw_com_fta.SharedMemoryObjectDoesNotExist]
+}
+
+ScoreReq.Mitigation ProxyRequiresServiceInstanceUsageMarkerFileBeforeOpeningSharedMemory {
+    safety = ScoreReq.Asil.B
+    description = "The LoLa proxy binding shall open the service instance usage marker file before opening the control and data shared memory objects, and shall fail proxy construction if the marker file cannot be opened, since the skeleton only creates this marker file once the shared memory objects have been successfully offered."
+    justification = "Proxy::Create() opens the service instance usage marker file via LockFile::Open() (is_create=false) before opening the shared memory segments, and returns nullptr if the marker file does not exist, preventing the shared memory from being opened without a corresponding active offer. This is verified by ProxyCreationReturnsNullPtrWhenFailedToOpenUsageMarkerFile in proxy_test.cpp."
+    version = 1
+    root_causes = [mw_com_fta.SharedMemoryIsOpenedEventhoughFileDoesNotExist]
+}

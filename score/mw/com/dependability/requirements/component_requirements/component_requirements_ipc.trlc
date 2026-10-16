@@ -13,6 +13,7 @@
 package Communication
 
 import ScoreReq
+import mw_com_fta
 
 section "com" {
 
@@ -962,7 +963,7 @@ section "com" {
         ScoreReq.CompReq CheckTheUidOfTheProducer {
             description = '''A consumer consuming a provided service instance in the role of a proxy shall verify, whether the UID of the service instance provider matches its configured expectation. If the UID of the provider does not match the expectation, the consumer shall reject the communication with this provided service instance.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SafeCommunication@1]
+            derived_from = [Communication.FEAT_SafeCommunication@1, mw_com_fta.WrongProvider@1]
             version = 1
         }
 
@@ -1075,7 +1076,7 @@ section "com" {
 
             Underlying files shall only be finally removed from the file-system once no consumer access them anymore.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, mw_com_fta.ServiceWasOfferedButNotUnlinkedOnStopOffer@1]
             version = 1
         }
 
@@ -1087,7 +1088,7 @@ section "com" {
 
             This name might be subject to calculation by deployment variables. e.g. a service id or instance id'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, mw_com_fta.WrongName@1]
             version = 1
         }
 
@@ -1119,7 +1120,7 @@ section "com" {
         ScoreReq.CompReq OnlyConfiguredUidsShallHaveAccessToTheLoLaSharedMemorySegments {
             description = '''It shall be configurable which user ids have access to data and control shared memory segments.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, mw_com_fta.WrongAcl@1]
             version = 1
         }
 
