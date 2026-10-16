@@ -38,11 +38,26 @@ component(
 unit(
     name = "lola_proxy_and_service_elements",
     scope = [],
+    scope = [
+        # "//score/mw/com/impl/bindings/lola/methods:offered_state_machine",
+        # ":proxy",
+        # ":proxy_instance_identifier",
+        # ":subscription_state_machine",
+        # ":event_subscription_control",
+        # "//score/mw/com/impl/bindings/lola/methods:proxy_method_instance_identifier",
+    ],
     tests = [],
     unit_design = [
         "//score/mw/com/impl/bindings/lola/dependability/proxy_and_service_elements:unit_design",
     ],
-    implementation = [],
+    implementation = [
+        # "//score/mw/com/impl/bindings/lola/methods:offered_state_machine",
+        # ":proxy",
+        # ":proxy_instance_identifier",
+        # ":subscription_state_machine",
+        # ":event_subscription_control",
+        # "//score/mw/com/impl/bindings/lola/methods:proxy_method_instance_identifier",
+    ],
 )
 
 unit(
@@ -52,7 +67,11 @@ unit(
     unit_design = [
         "//score/mw/com/impl/bindings/lola/dependability/skeleton_and_service_elements:unit_design",
     ],
-    implementation = [],
+    implementation = [
+        # ":skeleton",
+        # ":skeleton_instance_identifier",
+        # ":method_resource_map",
+    ],
 )
 
 unit(
@@ -62,7 +81,25 @@ unit(
     unit_design = [
         "//score/mw/com/impl/bindings/lola/dependability/event_data_control:unit_design",
     ],
-    implementation = [],
+    implementation = [
+        # ":event_control",
+        # ":event_data_control",
+        # ":event_data_control_composite",
+        # ":event_data_storage",
+        # ":service_data_control",
+        # ":service_data_storage",
+        # ":consumer_event_data_control_local_view",
+        # ":provider_event_data_control_local_view",
+        # ":application_id_pid_mapping",
+        # ":application_id_pid_mapping_entry",
+        # ":control_slot_types",
+        # ":slot_collector",
+        # ":event_slot_status",
+        # ":i_shm_path_builder",
+        # ":shm_path_builder",
+        # ":linear_search_map",
+        # ":event_meta_info",
+    ],
 )
 
 unit(
@@ -72,7 +109,10 @@ unit(
     unit_design = [
         "//score/mw/com/impl/bindings/lola/dependability/runtime:unit_design",
     ],
-    implementation = [],
+    implementation = [
+        # ":runtime",
+        # ":i_runtime",
+    ],
 )
 
 unit(
@@ -82,17 +122,171 @@ unit(
     unit_design = [
         "//score/mw/com/impl/bindings/lola/dependability/partial_restart:unit_design",
     ],
-    implementation = [],
+    implementation = [
+        # ":transaction_log",
+        # ":transaction_log_id",
+        # ":transaction_log_index",
+        # ":transaction_log_local_view",
+        # ":transaction_log_rollback_executor",
+        # ":transaction_log_set",
+        # ":transaction_log_slot",
+        # ":rollback_synchronization",
+        # ":i_partial_restart_path_builder",
+        # ":partial_restart_path_builder",
+    ],
 )
 
 unit(
     name = "lola_sample_management_pointers",
     scope = [],
+    maturity="development",
+    scope = [
+        # "//score:__subpackages__",
+        # "//score/memory:__subpackages__",
+        # "@score_baselibs//score/concurrency:__subpackages__",
+        # "@score_baselibs//score/json/internal/model:__subpackages__",
+        # "@score_baselibs//score:__subpackages__",
+
+
+        # ":consumer_event_data_control_local_view",
+        # ":control_slot_types",
+        # ":event_data_control",
+        # ":event_data_control_composite",
+        # ":event_slot_status",
+        # ":provider_event_data_control_local_view",
+        # ":sample_allocatee_ptr",
+        # ":sample_ptr",
+        # ":slot_decrementer",
+        # ":transaction_log",
+        # ":transaction_log_local_view",
+        # ":transaction_log_slot",
+        # "//score/memory/shared:managed_memory_resource",
+        # "//score/memory/shared:memory_region_bounds",
+        # "//score/memory/shared:memory_region_map",
+        # "//score/memory/shared:memory_resource_proxy",
+        # "//score/memory/shared:memory_resource_registry",
+        # "//score/memory/shared:offset_ptr",
+        # "//score/memory/shared:offset_ptr_bounds_check",
+        # "//score/memory/shared:pointer_arithmetic_util",
+        # "//score/memory/shared:polymorphic_offset_ptr_allocator",
+        # "//score/memory/shared:shared_memory_error",
+        # "//score/mw/com/impl:error",
+        # "@score_baselibs//score/bitmanipulation:bitmask_operators",
+        # "@score_baselibs//score/concurrency:atomic_indirector",
+        # "@score_baselibs//score/concurrency:atomic_interface",
+        # "@score_baselibs//score/containers:dynamic_array",
+        # "@score_baselibs//score/containers:non_relocatable_vector",
+        # "@score_baselibs//score/filesystem/factory:factory",
+        # "@score_baselibs//score/filesystem/file_utils:file_utils",
+        # "@score_baselibs//score/filesystem/filestream:filestream",
+        # "@score_baselibs//score/filesystem:error",
+        # "@score_baselibs//score/filesystem:file_status",
+        # "@score_baselibs//score/filesystem:filesystem",
+        # "@score_baselibs//score/filesystem:path",
+        # "@score_baselibs//score/filesystem:standard_filesystem",
+        # "@score_baselibs//score/filesystem:struct",
+        # "@score_baselibs//score/json/internal/model:model",
+        # "@score_baselibs//score/json/internal/parser/vajson/vajson_impl:vajson_impl",
+        # "@score_baselibs//score/json/internal/parser/vajson:vajson_parser",
+        # "@score_baselibs//score/json/internal/writer/json_serialize:json_serialize",
+        # "@score_baselibs//score/json/internal/writer/json_serialize:json_serialize_backend",
+        # "@score_baselibs//score/json/internal/writer/vajson:vajson_backend",
+        # "@score_baselibs//score/json/internal/writer/vajson:vajson_serialize",
+        # "@score_baselibs//score/json/internal/writer:writer_backend",
+        # "@score_baselibs//score/json:json",
+        # "@score_baselibs//score/json:json_parser_impl",
+        # "@score_baselibs//score/json:json_writer_impl",
+        # "@score_baselibs//score/json:parser_interface",
+        # "@score_baselibs//score/json:writer_interface",
+        # "@score_baselibs//score/language/futurecpp:futurecpp",
+        # "@score_baselibs//score/language/futurecpp:math",
+        # "@score_baselibs//score/language/safecpp/safe_math/details/absolute:absolute",
+        # "@score_baselibs//score/language/safecpp/safe_math/details/addition_subtraction:addition_subtraction",
+        # "@score_baselibs//score/language/safecpp/safe_math/details/cast:cast",
+        # "@score_baselibs//score/language/safecpp/safe_math/details/comparison:comparison",
+        # "@score_baselibs//score/language/safecpp/safe_math/details/division:division",
+        # "@score_baselibs//score/language/safecpp/safe_math/details/multiplication:multiplication",
+        # "@score_baselibs//score/language/safecpp/safe_math/details/negate:negate",
+        # "@score_baselibs//score/language/safecpp/safe_math/details/type_traits:type_traits",
+        # "@score_baselibs//score/language/safecpp/safe_math/details:floating_point_environment",
+        # "@score_baselibs//score/language/safecpp/safe_math:error",
+        # "@score_baselibs//score/language/safecpp/safe_math:return_mode",
+        # "@score_baselibs//score/language/safecpp/safe_math:safe_math",
+        # "@score_baselibs//score/language/safecpp/string_view/details:zspan",
+        # "@score_baselibs//score/language/safecpp/string_view:char_traits_wrapper",
+        # "@score_baselibs//score/language/safecpp/string_view:null_termination_violation_policies",
+        # "@score_baselibs//score/language/safecpp/string_view:zstring_view",
+        # "@score_baselibs//score/memory:data_type_size_info",
+        # "@score_baselibs//score/mw/log/configuration:configuration",
+        # "@score_baselibs//score/mw/log/configuration:configuration_interface",
+        # "@score_baselibs//score/mw/log/configuration:configuration_parser",
+        # "@score_baselibs//score/mw/log/detail/text_recorder:console_recorder_factory",
+        # "@score_baselibs//score/mw/log/detail/text_recorder:file_output_backend",
+        # "@score_baselibs//score/mw/log/detail/text_recorder:message_builder_interface",
+        # "@score_baselibs//score/mw/log/detail/text_recorder:non_blocking_writer",
+        # "@score_baselibs//score/mw/log/detail/text_recorder:text_content_formatting",
+        # "@score_baselibs//score/mw/log/detail/text_recorder:text_recorder",
+        # "@score_baselibs//score/mw/log/detail/wait_free_stack:wait_free_stack",
+        # "@score_baselibs//score/mw/log/detail:backend_console",
+        # "@score_baselibs//score/mw/log/detail:backend_interface",
+        # "@score_baselibs//score/mw/log/detail:circular_allocator",
+        # "@score_baselibs//score/mw/log/detail:composite_recorder",
+        # "@score_baselibs//score/mw/log/detail:dlt_argument_counter",
+        # "@score_baselibs//score/mw/log/detail:empty_recorder",
+        # "@score_baselibs//score/mw/log/detail:helper_functions",
+        # "@score_baselibs//score/mw/log/detail:initialization_reporter",
+        # "@score_baselibs//score/mw/log/detail:integer_representation",
+        # "@score_baselibs//score/mw/log/detail:log_data_types",
+        # "@score_baselibs//score/mw/log/detail:log_entry",
+        # "@score_baselibs//score/mw/log/detail:log_recorder_factory",
+        # "@score_baselibs//score/mw/log/detail:logging_identifier",
+        # "@score_baselibs//score/mw/log/detail:recorder_interface",
+        # "@score_baselibs//score/mw/log/detail:registry_aware_recorder_factory",
+        # "@score_baselibs//score/mw/log/detail:thread_local_guard",
+        # "@score_baselibs//score/mw/log/detail:types_and_errors",
+        # "@score_baselibs//score/mw/log:backend_table",
+        # "@score_baselibs//score/mw/log:console",
+        # "@score_baselibs//score/mw/log:frontend",
+        # "@score_baselibs//score/mw/log:log_stream",
+        # "@score_baselibs//score/mw/log:recorder",
+        # "@score_baselibs//score/mw/log:shared_types",
+        # "@score_baselibs//score/os/utils:high_resolution_steady_clock",
+        # "@score_baselibs//score/os/utils:path",
+        # "@score_baselibs//score/os/utils:path_header",
+        # "@score_baselibs//score/os:dirent",
+        # "@score_baselibs//score/os:errno",
+        # "@score_baselibs//score/os:fcntl",
+        # "@score_baselibs//score/os:grp",
+        # "@score_baselibs//score/os:libgen",
+        # "@score_baselibs//score/os:object_seam",
+        # "@score_baselibs//score/os:stat",
+        # "@score_baselibs//score/os:stdio",
+        # "@score_baselibs//score/os:stdlib",
+        # "@score_baselibs//score/os:unistd",
+        # "@score_baselibs//score/quality/compiler_warnings:compiler_warnings",
+        # "@score_baselibs//score/quality/compiler_warnings:macro_deprecation",
+        # "@score_baselibs//score/result/details/expected:expected",
+        # "@score_baselibs//score/result/details/expected:extensions",
+        # "@score_baselibs//score/result:error",
+        # "@score_baselibs//score/result:result",
+        # "@score_baselibs//score/scope_exit:flag_owner",
+        # "@score_baselibs//score/scope_exit:scope_exit",
+        # "@score_baselibs//score/static_reflection_with_serialization/visitor:visitor",
+        # "@score_baselibs//score/string_manipulation:split_string_view",
+        # "@score_baselibs//score/string_manipulation:string_comparison_adaptor",
+        # "@score_baselibs//score/string_manipulation:string_literal",
+        # "@score_baselibs//score/utils/meyer_singleton:meyer_singleton",
+        # "@score_baselibs//score/utils:static_destruction_guard",
+    ],
     tests = [],
     unit_design = [
         "//score/mw/com/impl/bindings/lola/dependability/sample_management_pointers:unit_design",
     ],
-    implementation = [],
+    implementation = [
+        # ":sample_allocatee_ptr",
+        # ":sample_ptr",
+        # ":slot_decrementer",  # gtodo: This can be replaced by a ScopeExit
+    ],
 )
 
 cc_library(
@@ -115,6 +309,7 @@ cc_library(
     ],
 )
 
+# gtodo: used by both event_data_control and partial_restart(shm_path_builder and partial_restart_builder)
 cc_library(
     name = "path_builder",
     srcs = ["path_builder.cpp"],
@@ -497,6 +692,7 @@ cc_library(
     ],
 )
 
+# gtodo: Used on both proxy and skeleton side (and probably other units too)
 cc_library(
     name = "element_fq_id",
     srcs = ["element_fq_id.cpp"],
@@ -935,6 +1131,7 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
 )
 
+# gtodo: Move to tracing
 cc_library(
     name = "type_erased_sample_ptrs_guard",
     srcs = ["type_erased_sample_ptrs_guard.cpp"],

@@ -24,7 +24,10 @@ unit(
         "//score/mw/com/impl/bindings/lola/methods/dependability:unit_design",
     ],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
-    implementation = [],
+    implementation = [
+        # ":method_data",
+        # ":type_erased_call_queue",
+    ],
 )
 
 cc_library(
@@ -110,6 +113,7 @@ cc_library(
     ],
 )
 
+# gtodo: usend in multiple places
 cc_library(
     name = "method_error",
     srcs = ["method_error.cpp"],
@@ -135,6 +139,7 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
 )
 
+# gtodo: usend in multiple places
 cc_library(
     name = "unique_method_identifier",
     srcs = ["unique_method_identifier.cpp"],

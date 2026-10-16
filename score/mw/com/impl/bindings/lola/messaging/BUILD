@@ -24,7 +24,21 @@ unit(
         "//score/mw/com/impl/bindings/lola/messaging/dependability:unit_design",
     ],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
-    implementation = [],
+    implementation = [
+        # ":asil_specific_cfg",
+        # ":client_quality_type",
+        # ":i_message_passing_service",
+        # ":i_message_passing_service_instance",
+        # ":i_message_passing_service_instance_factory",
+        # ":message_passing_client_cache",
+        # ":message_passing_service",
+        # ":message_passing_service_instance",
+        # ":message_passing_service_instance_factory",
+        # ":messaging",
+        # ":mw_log_logger",
+        # ":node_identifier_copier",
+        # ":thread_abstraction",
+    ],
 )
 
 cc_library(
