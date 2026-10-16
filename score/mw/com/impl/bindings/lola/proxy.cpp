@@ -403,7 +403,8 @@ std::unique_ptr<Proxy> Proxy::Create(const HandleType& handle)
     }
 
     const auto proxy_instance_counter_result =
-        safe_atomics::TryAtomicAdd<ProxyInstanceIdentifier::ProxyInstanceCounter>(current_proxy_instance_counter_, 1U);
+        safe_atomics::TryAtomicAdd<ProxyInstanceIdentifier::ProxyInstanceCounter>(
+            current_proxy_instance_counter_, ProxyInstanceIdentifier::ProxyInstanceCounter{1U});
     if (!(proxy_instance_counter_result.has_value()))
     {
         score::mw::log::LogError("lola")

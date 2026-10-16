@@ -71,7 +71,7 @@ class ApplicationIdPidMapping
     /// IDs.
     /// \param alloc allocator to be used to allocate the mapping data structure
     ApplicationIdPidMapping(std::uint16_t max_mappings, const Allocator& alloc)
-        : mapping_entries_(max_mappings, alloc) {};
+        : mapping_entries_(static_cast<std::size_t>(max_mappings), alloc) {};
 
     /// \brief Registers the given pid for the given application ID. Eventually overwriting an existing mapping for this
     /// ID.

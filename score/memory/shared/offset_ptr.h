@@ -705,7 +705,7 @@ auto OffsetPtr<PointedType>::operator-=(difference_type offset) -> OffsetPtr&
 template <typename PointedType>
 auto OffsetPtr<PointedType>::operator++() -> OffsetPtr&
 {
-    IncrementOffset(1U);
+    IncrementOffset(std::size_t{1U});
     return *this;
 }
 
@@ -713,14 +713,14 @@ template <typename PointedType>
 auto OffsetPtr<PointedType>::operator++(std::int32_t) -> OffsetPtr
 {
     const OffsetPtr<PointedType> tmp(*this);
-    IncrementOffset(1U);
+    IncrementOffset(std::size_t{1U});
     return tmp;
 }
 
 template <typename PointedType>
 auto OffsetPtr<PointedType>::operator--() -> OffsetPtr&
 {
-    DecrementOffset(1U);
+    DecrementOffset(std::size_t{1U});
     return *this;
 }
 
@@ -728,7 +728,7 @@ template <typename PointedType>
 auto OffsetPtr<PointedType>::operator--(std::int32_t) -> OffsetPtr
 {
     const OffsetPtr<PointedType> tmp(*this);
-    DecrementOffset(1U);
+    DecrementOffset(std::size_t{1U});
     return tmp;
 }
 
