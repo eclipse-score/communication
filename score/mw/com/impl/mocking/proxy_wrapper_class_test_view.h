@@ -89,7 +89,9 @@ class ProxyWrapperClassTestView
         // Create service element binding factory guards which inject mocks into the binding factories. We rely on the
         // default behaviour that calls to Create on the factories will return nullptrs. This is required since the real
         // factories try to parse required information from a config file.
-        [[maybe_unused]] std::tuple<ProxyEventBindingFactoryMockGuard<EventTypes>...> event_binding_factories{};
+        // ProxyEventBindingFactory is a single non-templated factory (its binding Create() does not depend on the
+        // event's SampleType), so a single guard suffices for all event types.
+        [[maybe_unused]] ProxyEventBindingFactoryMockGuard event_binding_factory{};
         [[maybe_unused]] std::tuple<ProxyFieldBindingFactoryMockGuard<FieldTypes>...> field_binding_factories{};
 
         ProxyWrapperClass proxy{MakeFakeHandle(0U), std::make_unique<mock_binding::Proxy>()};

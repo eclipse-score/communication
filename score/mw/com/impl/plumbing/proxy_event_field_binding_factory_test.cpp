@@ -116,7 +116,7 @@ class ProxyServiceElementBindingFactoryParamaterisedFixture : public lola::Proxy
         {
             case ServiceElementTypes::PROXY_EVENT:
             {
-                return ProxyEventBindingFactory<TestSampleType>::Create(
+                return ProxyEventBindingFactory::Create(
                            handle, proxy_binding, kDummyEventName, ServiceElementType::EVENT)
                     .and_then([](auto&& binding) -> Result<std::unique_ptr<ProxyEventBinding>> {
                         return std::unique_ptr<ProxyEventBinding>{static_cast<ProxyEventBinding*>(binding.release())};

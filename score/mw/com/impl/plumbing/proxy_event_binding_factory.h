@@ -16,11 +16,8 @@
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/plumbing/i_proxy_event_binding_factory.h"
-#include "score/mw/com/impl/plumbing/proxy_event_binding_factory_impl.h"
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
-
-#include <score/overload.hpp>
 
 #include <memory>
 #include <string_view>
@@ -31,7 +28,6 @@ namespace score::mw::com::impl
 
 /// \brief Class that dispatches to either a real ProxyEventBindingFactoryImpl or a mocked version
 /// ProxyEventBindingFactoryMock, if a mock is injected.
-template <typename SampleType>
 class ProxyEventBindingFactory final
 {
   public:
@@ -46,14 +42,14 @@ class ProxyEventBindingFactory final
 
     /// \brief Inject a mock IProxyEventBindingFactory. If a mock is injected, then all calls on
     /// ProxyEventBindingFactory will be dispatched to the mock.
-    static void InjectMockBinding(IProxyEventBindingFactory<SampleType>* const mock) noexcept
+    static void InjectMockBinding(IProxyEventBindingFactory* const mock) noexcept
     {
         mock_ = mock;
     }
 
   private:
-    static IProxyEventBindingFactory<SampleType>& instance() noexcept;
-    static IProxyEventBindingFactory<SampleType>* mock_;
+    static IProxyEventBindingFactory& instance() noexcept;
+    static IProxyEventBindingFactory* mock_;
 };
 
 /// \brief Class that dispatches to either a real GenericProxyEventBindingFactoryImpl or a mocked version
@@ -81,27 +77,6 @@ class GenericProxyEventBindingFactory final
     static IGenericProxyEventBindingFactory& instance() noexcept;
     static IGenericProxyEventBindingFactory* mock_;
 };
-
-template <typename SampleType>
-auto ProxyEventBindingFactory<SampleType>::instance() noexcept -> IProxyEventBindingFactory<SampleType>&
-{
-    if (mock_ != nullptr)
-    {
-        return *mock_;
-    }
-
-    // Suppress "AUTOSAR C++14 A3-2-2", The rule states: "Static and thread-local objects shall be constant-initialized"
-    // It cannot be made const since we will need to call non-const methods from a static instance.
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    static ProxyEventBindingFactoryImpl<SampleType> instance{};
-    return instance;
-}
-
-// Suppress "AUTOSAR_C++14_A3-1-1" rule finding. This rule states:" It shall be possible to include any header file
-// in multiple translation units without violating the One Definition Rule".
-template <typename SampleType>
-// coverity[autosar_cpp14_a3_1_1_violation] This is false-positive, "mock_" is defined once
-IProxyEventBindingFactory<SampleType>* ProxyEventBindingFactory<SampleType>::mock_{nullptr};
 
 }  // namespace score::mw::com::impl
 

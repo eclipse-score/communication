@@ -20,8 +20,7 @@
 namespace score::mw::com::impl
 {
 
-template <typename SampleType>
-class ProxyEventBindingFactoryMock : public IProxyEventBindingFactory<SampleType>
+class ProxyEventBindingFactoryMock : public IProxyEventBindingFactory
 {
   public:
     MOCK_METHOD(

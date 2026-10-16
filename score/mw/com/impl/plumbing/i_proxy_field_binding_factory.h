@@ -28,7 +28,6 @@ namespace score::mw::com::impl
 
 /// \brief Interface for a factory class that dispatches calls to the appropriate binding based on
 /// binding information in the deployment configuration.
-template <typename SampleType>
 class IProxyFieldBindingFactory
 {
   public:
@@ -42,7 +41,6 @@ class IProxyFieldBindingFactory
     IProxyFieldBindingFactory& operator=(const IProxyFieldBindingFactory&) = delete;
 
     /// Creates instances of the event binding of a proxy field with a particular data type.
-    /// \tparam SampleType Type of the data that is exchanges
     /// \param handle The handle containing the binding information.
     /// \param field_name The binding unspecific name of the event inside the proxy denoted by handle.
     /// \return An instance of ProxyEventBinding or an error in case of binding construction failure.

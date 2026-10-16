@@ -163,7 +163,7 @@ class ProxyCreationFixture : public ::testing::Test
     const HandleType handle_{make_HandleType(identifier_with_valid_binding_)};
     RuntimeMockGuard runtime_mock_guard_{};
     ProxyBindingFactoryMockGuard proxy_binding_factory_mock_guard_{};
-    ProxyEventBindingFactoryMockGuard<TestSampleType> proxy_event_binding_factory_mock_guard_{};
+    ProxyEventBindingFactoryMockGuard proxy_event_binding_factory_mock_guard_{};
     ProxyFieldBindingFactoryMockGuard<TestSampleType> proxy_field_binding_factory_mock_guard_{};
     ProxyMethodBindingFactoryMockGuard<TestMethodType> proxy_method_binding_factory_mock_guard_{};
     NiceMock<mock_binding::Proxy> proxy_binding_mock_{};
