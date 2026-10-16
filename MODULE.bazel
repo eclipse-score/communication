@@ -33,7 +33,8 @@ git_override(
     # Required until a new release is available that contains:
     #  - https://github.com/eclipse-score/baselibs/pull/690
     #  - https://github.com/eclipse-score/baselibs/pull/693
-    commit = "c6c20e53264a5b7ee171ea20f2ebb7bfb4db42f2",
+    #  - https://github.com/eclipse-score/baselibs/pull/695
+    commit = "c83db5d57f3036e88e0b85add5529f60c5b73dd7",
     patch_strip = 1,
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
