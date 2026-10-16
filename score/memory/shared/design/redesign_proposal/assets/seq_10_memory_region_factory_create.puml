@@ -1,0 +1,84 @@
+@startuml seq_10_memory_region_factory_create
+title 10. MemoryRegionFactory: Create
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+
+actor "User" as User
+participant "MappedRegionFactory" as memory_region_factory
+participant "MappedRegionRegistry: memory_region_registry" as memory_region_registry
+participant "IMappedRegionRegistry" as i_memory_region_registry
+participant "TypedNamedMappedRegion" as mapped_region
+
+activate User
+
+User -> memory_region_registry : Construct()
+activate memory_region_registry
+
+memory_region_registry --> User : memory_region_registry
+deactivate memory_region_registry
+
+User -> memory_region_factory : CreateTypedNamed(memory_region_registry, path, size, perms)
+activate memory_region_factory
+
+memory_region_factory -> memory_region_factory : CreateId(path)
+
+memory_region_factory -> i_memory_region_registry : Find(id)
+activate i_memory_region_registry
+
+i_memory_region_registry --> memory_region_factory : shared_ptr<MappedRegion>
+
+deactivate i_memory_region_registry
+
+alt MappedRegion not found
+    create mapped_region
+
+    memory_region_factory -> mapped_region : make_shared<TypedNamedMappedRegion>(file_descriptor, size, perms)
+    activate mapped_region
+
+    mapped_region --> memory_region_factory : shared_ptr<MappedRegion>
+    deactivate mapped_region
+
+    memory_region_factory -> i_memory_region_registry : Register(id: IdType, shared_ptr<MappedRegion>)
+    activate i_memory_region_registry
+
+    i_memory_region_registry --> memory_region_factory : Result<void>
+    deactivate i_memory_region_registry
+
+    note right of memory_region_factory
+    Register can return an error if another thread has 
+    called Register since we checked if the region already exists with IMappedRegionRegistry::Find.
+    end note
+
+    memory_region_factory --> User : Result<shared_ptr<MappedRegion>>
+else MappedRegion found
+    memory_region_factory --> User : Error<shared_ptr<MappedRegion>>
+end
+deactivate memory_region_factory
+
+User -> memory_region_factory : OpenTypedNamed(memory_region_registry, path, size, perms)
+activate memory_region_factory
+
+memory_region_factory -> memory_region_factory : CreateId(path)
+
+memory_region_factory -> i_memory_region_registry : Find(id)
+activate i_memory_region_registry
+
+i_memory_region_registry --> memory_region_factory : shared_ptr<MappedRegion>
+deactivate i_memory_region_registry
+
+note right of memory_region_factory
+    Find will return a nullptr if the region is not found.
+end note
+
+memory_region_factory --> User : shared_ptr<MappedRegion>
+
+deactivate User
+
+@enduml
+
+' - finish off this seq diagram.
+' - figure out builder pattern to allow creating the SharedMemoryResource and MappedRegion at once.
+' - figure out if we can avoid having a shared_ptr to SharedMemoryResource.
+' - 2 classes implement MappedRegionRegistry: one stores map of shared_ptrs and other weak_ptrs.
+' - return shared_ptrs instead of unique_ptrs MappedRegionFactory
+' - figure out what map the MemoryResourceRegistry stores
