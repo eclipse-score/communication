@@ -45,7 +45,7 @@ class Skeleton final : public SkeletonBinding
 
     static std::unique_ptr<Skeleton> Create(const InstanceIdentifier& identifier) noexcept;
 
-    explicit Skeleton(const InstanceIdentifier& identifier) noexcept;
+    explicit Skeleton(InstanceIdentifier identifier) noexcept;
 
     ~Skeleton() noexcept override;
 
