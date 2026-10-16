@@ -45,6 +45,7 @@ component_requirements(
     deps = [
         "//score/mw/com/dependability/assumed_system:assumed_system_requirements",
         "//score/mw/com/dependability/requirements/feature_requirements:feature_requirements_ipc",
+        "//score/mw/com/dependability/safety_analysis:mw_com_safety_analysis",
     ],
 )
 
