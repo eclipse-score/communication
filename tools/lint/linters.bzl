@@ -17,6 +17,7 @@ load("@aspect_rules_lint//lint:clang_tidy.bzl", "lint_clang_tidy_aspect")
 load("@aspect_rules_lint//lint:lint_test.bzl", "lint_test")
 load("@aspect_rules_lint//lint:ruff.bzl", "lint_ruff_aspect")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 visibility(["//..."])
 
@@ -120,3 +121,35 @@ def use_ruff_targets(fix_name = "ruff.fix", check_name = "ruff.check"):
         'echo "=== ruff check: ${TARGETS} ==="',
         "bazel test --config=ruff ${TARGETS}",
     ])
+
+# Directories skipped by buildifier_prebuilt's `find`-based file discovery
+# (mirrors what buildifier_files.py skips: hidden directories and bazel-* links).
+BUILDIFIER_EXCLUDE_PATTERNS = [
+    "./.clwb/*",
+    "./.git/*",
+    "./bazel-*",
+]
+
+def use_buildifier_targets(fix_name = "buildifier.fix", check_name = "buildifier.check"):
+    """Declare buildifier check and fix targets.
+
+    Both accept Bazel-style package patterns (default `//...`, `-` prefix
+    excludes) like the other linters and operate on the Starlark files of the
+    packages they select (see buildifier_files.py). `check` prints
+    human-readable findings and fails if there are any.
+    """
+    for name, mode in ((fix_name, "fix"), (check_name, "check")):
+        py_binary(
+            name = name,
+            srcs = [
+                "//tools/lint:buildifier.py",
+                "//tools/lint:buildifier_files.py",
+            ],
+            main = "//tools/lint:buildifier.py",
+            args = [
+                "--mode=" + mode,
+                "--buildifier=$(rootpath @buildifier_prebuilt//:buildifier)",
+            ],
+            data = ["@buildifier_prebuilt//:buildifier"],
+            target_compatible_with = ["@platforms//os:linux"],
+        )

@@ -1,6 +1,6 @@
 # Quality Tools
 
-This document provides instructions for developers on how to execute the quality tools available in Score (Clang-Tidy, Ruff, CodeQL, Coverage, Sanitizers, Copyright Checker, and C++, Bazel Files Formatter) locally.
+This document provides instructions for developers on how to execute the quality tools available in Score (Clang-Tidy, Ruff, Buildifier, CodeQL, Coverage, Sanitizers, Copyright Checker, and C++, Bazel Files Formatter) locally.
 
 ## Clang-Tidy
 
@@ -362,6 +362,33 @@ bazel run //:ruff.fix -- //docs/sphinx/utils/...
 
 > **Note:** Violations without an automatic fix are still reported in the terminal but leave no
 > patch file, same as Clang-Tidy.
+
+### Buildifier
+
+Buildifier lints the `BUILD`, `.bzl`, `.bazel` and `.BUILD` files and is used like the other linters
+(`//:buildifier.check` / `//:buildifier.fix`, optionally with Bazel target patterns). Files are discovered
+per package directory, so no package needs any buildifier-specific configuration.
+
+```bash
+# Check all Starlark files (prints findings, fails if there are any)
+bazel run //:buildifier.check
+
+# Check / fix only some packages
+bazel run //:buildifier.check -- //score/mw/com/...
+bazel run //:buildifier.fix -- //score/mw/com/...
+bazel run //:buildifier.check -- //... -//third_party/...
+
+# Gating test (also part of `bazel test //...`)
+bazel test //:buildifier_test
+
+# Print the findings as SARIF (used by CI for Code Scanning)
+bazel run //tools/lint:buildifier_sarif
+```
+
+> **Note:** Unlike the other linters, buildifier is not run via a `rules_lint` aspect (it has no good way to
+> include BUILD files), so there is no `--config=buildifier` and no hold-the-line. Only
+> `//pkg`, `//pkg:target` and `//pkg/...` patterns and their `-` exclusions are supported.
+> Formatting is additionally checked by the formatter below.
 
 ### C++ and Bazel Files Formatter
 
