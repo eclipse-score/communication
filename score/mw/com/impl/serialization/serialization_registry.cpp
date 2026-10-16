@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/serialization/serialization_infrastructure.h"
+#include "score/mw/com/impl/serialization/serialization_registry.h"
 
 #include "score/mw/com/impl/com_error.h"
 
@@ -29,11 +29,11 @@ std::string CurrentDlError(const score::os::Dlfcn& dlfcn)
 }  // namespace
 
 SerializationInfrastructure::SerializationInfrastructure(const std::string& library_path,
-                                                       const score::os::Dlfcn* dlfcn) noexcept
+                                                         const score::os::Dlfcn* dlfcn) noexcept
     : default_dlfcn_{}, dlfcn_{dlfcn == nullptr ? &default_dlfcn_ : dlfcn}, handle_{nullptr}
 {
-    const auto handle_result = dlfcn_->dlopen(
-        library_path.c_str(), score::os::Dlfcn::DlOpenFlag::kNow | score::os::Dlfcn::DlOpenFlag::kLocal);
+    const auto handle_result =
+        dlfcn_->dlopen(library_path.c_str(), score::os::Dlfcn::DlOpenFlag::kNow | score::os::Dlfcn::DlOpenFlag::kLocal);
     if (!handle_result.has_value())
     {
         return;
@@ -85,7 +85,7 @@ score::Result<void> SerializationInfrastructure::Close() noexcept
     return {};
 }
 
-void* SerializationInfrastructure::FindSerializer(const char* symbol_name) const noexcept
+void* SerializationInfrastructure::FindSerializer(const char* symbol_name) noexcept
 {
     if (handle_ == nullptr)
     {
@@ -113,6 +113,47 @@ void* SerializationInfrastructure::FindSerializer(const char* symbol_name) const
     void* const symbol = symbol_result.value();
     symbol_cache_.emplace(symbol_key, symbol);
     return symbol;
+}
+
+Serializer::Serializer(InstanceSpecifier instance_specifier) noexcept
+    : instance_specifier_{std::move(instance_specifier)}
+{
+}
+
+Serializer::~Serializer() = default;
+
+std::string Serializer::GetSymbolName() const
+{
+    // TODO: derive the structural and attribute hashes from the service interface and deployment
+    // configuration. Placeholder below uses the instance specifier only.
+    return "create_serializer_" + std::string{instance_specifier_.ToString()};
+}
+
+void Serializer::SetResolvedSymbol(SerializerBackend* backend) noexcept
+{
+    backend_ = backend;
+}
+
+score::Result<std::size_t> Serializer::Serialize(const void* /*input*/,
+                                                 std::byte* /*output*/,
+                                                 std::size_t /*output_size*/) const noexcept
+{
+    if (backend_ == nullptr)
+    {
+        return score::MakeUnexpected(ComErrc::kBindingFailure, "serializer backend has not been resolved");
+    }
+    return score::MakeUnexpected(ComErrc::kBindingFailure, "serialize is not implemented yet");
+}
+
+score::Result<std::size_t> Serializer::Deserialize(const std::byte* /*input*/,
+                                                   std::size_t /*input_size*/,
+                                                   void* /*output*/) const noexcept
+{
+    if (backend_ == nullptr)
+    {
+        return score::MakeUnexpected(ComErrc::kBindingFailure, "serializer backend has not been resolved");
+    }
+    return score::MakeUnexpected(ComErrc::kBindingFailure, "deserialize is not implemented yet");
 }
 
 }  // namespace score::mw::com::impl::serialization

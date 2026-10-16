@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-#include "score/mw/com/impl/serialization/serialization_infrastructure.h"
+#include "score/mw/com/impl/serialization/serialization_registry.h"
 
 #include "score/os/dlfcn.h"
 #include "score/os/mocklib/dlfcn_mock.h"
@@ -50,17 +50,17 @@ class SerializationInfrastructureBackendIntegration : public ::testing::Test
   protected:
     void ExpectLibraryOpens() noexcept
     {
-        EXPECT_CALL(dlfcn_mock_, dlopen(StrEq(kPluginPath),
-                                        score::os::Dlfcn::DlOpenFlag::kNow |
-                                            score::os::Dlfcn::DlOpenFlag::kLocal))
+        EXPECT_CALL(
+            dlfcn_mock_,
+            dlopen(StrEq(kPluginPath), score::os::Dlfcn::DlOpenFlag::kNow | score::os::Dlfcn::DlOpenFlag::kLocal))
             .WillOnce(Return(score::cpp::expected<void*, score::os::Error>{loaded_handle_}));
     }
 
     void ExpectLibraryFailsToOpen(const std::string& library_path) noexcept
     {
-        EXPECT_CALL(dlfcn_mock_, dlopen(StrEq(library_path),
-                                        score::os::Dlfcn::DlOpenFlag::kNow |
-                                            score::os::Dlfcn::DlOpenFlag::kLocal))
+        EXPECT_CALL(
+            dlfcn_mock_,
+            dlopen(StrEq(library_path), score::os::Dlfcn::DlOpenFlag::kNow | score::os::Dlfcn::DlOpenFlag::kLocal))
             .WillOnce(Return(score::cpp::make_unexpected(score::os::Error::createUnspecifiedError())));
     }
 
