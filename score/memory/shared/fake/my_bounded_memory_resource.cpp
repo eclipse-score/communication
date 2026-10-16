@@ -34,7 +34,7 @@ std::pair<void*, void*> AllocateMemoryRange(const std::size_t memory_resource_si
 {
     auto* memory_allocation = new std::uint8_t[memory_resource_size];
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(memory_allocation != nullptr, "Allocation must return allocated memory!");
-    return {memory_allocation, memory_allocation + memory_resource_size};
+    return {memory_allocation, AddOffsetToPointer(memory_allocation, memory_resource_size)};
 }
 
 }  // namespace
