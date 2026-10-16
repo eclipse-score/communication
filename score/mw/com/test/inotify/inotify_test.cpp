@@ -38,6 +38,13 @@ namespace score::mw::com::test
 namespace
 {
 
+struct ReceivedEvents
+{
+    bool is_test_dir_create_event_received{false};
+    bool is_test_file_create_event_received{false};
+    bool is_test_file_delete_event_received{false};
+};
+
 void do_cleanup(const std::string& folder)
 {
     score::filesystem::StandardFilesystem fs;
@@ -81,6 +88,81 @@ std::string to_str(os::InotifyEvent::ReadMask mask)
     return "";
 }
 
+void UpdateReceivedEvents(const std::string& name,
+                          const os::InotifyEvent::ReadMask mask,
+                          ReceivedEvents& received_events)
+{
+    if (name == kTestDirName)
+    {
+        received_events.is_test_dir_create_event_received = mask & os::InotifyEvent::ReadMask::kInCreate;
+    }
+    else if (name == "C")
+    {
+        if (mask & os::InotifyEvent::ReadMask::kInCreate)
+        {
+            received_events.is_test_file_create_event_received = true;
+        }
+        else if (mask & os::InotifyEvent::ReadMask::kInDelete)
+        {
+            received_events.is_test_file_delete_event_received = true;
+        }
+    }
+}
+
+bool AllExpectedEventsReceived(const ReceivedEvents& received_events)
+{
+    return received_events.is_test_dir_create_event_received && received_events.is_test_file_create_event_received &&
+           received_events.is_test_file_delete_event_received;
+}
+
+void ReadEventsUntilExpected(os::InotifyInstanceImpl& i_notify, ReceivedEvents& received_events)
+{
+    while (true)
+    {
+        std::cout << "Calling inotify Read" << std::endl;
+        auto res = i_notify.Read();
+        if (!(res.has_value()))
+        {
+            std::cerr << __FILE__ << ":" << __LINE__ << ":Failed to read:" << res.error() << std::endl;
+            break;
+        }
+
+        for (auto& val : res.value())
+        {
+            const std::string name{val.GetName()};
+            const auto mask{val.GetMask()};
+            std::cout << "Received Event:" << name << ":" << to_str(mask) << std::endl;
+            UpdateReceivedEvents(name, mask, received_events);
+        }
+
+        if (AllExpectedEventsReceived(received_events))
+        {
+            break;
+        }
+    }
+}
+
+int VerifyReceivedEvents(const ReceivedEvents& received_events)
+{
+    if (!received_events.is_test_dir_create_event_received)
+    {
+        std::cerr << __FILE__ << ":" << __LINE__ << ":Failed to receive create directory event" << std::endl;
+        return -1;
+    }
+    if (!received_events.is_test_file_create_event_received)
+    {
+        std::cerr << __FILE__ << ":" << __LINE__ << ":Failed to receive create file event" << std::endl;
+        return -1;
+    }
+    if (!received_events.is_test_file_delete_event_received)
+    {
+        std::cerr << __FILE__ << ":" << __LINE__ << ":Failed to receive delete file event" << std::endl;
+        return -1;
+    }
+
+    return 0;
+}
+
 int run_inotify_test()
 {
     os::InotifyInstanceImpl i_notify{};
@@ -95,50 +177,11 @@ int run_inotify_test()
 
     const std::string test_file_name{"C"};
     const std::string test_file{kBaseFolder + "/" + test_file_name};
-    bool is_test_dir_create_event_received{false};
-    bool is_test_file_create_event_received{false};
-    bool is_test_file_delete_event_received{false};
+    ReceivedEvents received_events{};
 
     // spawn a thread and poll for events
     std::thread events_checker_thread([&]() {
-        while (true)
-        {
-            std::cout << "Calling inotify Read" << std::endl;
-            auto res = i_notify.Read();
-            if (!(res.has_value()))
-            {
-                std::cerr << __FILE__ << ":" << __LINE__ << ":Failed to read:" << res.error() << std::endl;
-                break;
-            }
-
-            for (auto& val : res.value())
-            {
-                const std::string name{val.GetName()};
-                const auto mask{val.GetMask()};
-                std::cout << "Received Event:" << name << ":" << to_str(mask) << std::endl;
-                if (name == kTestDirName)
-                {
-                    is_test_dir_create_event_received = mask & os::InotifyEvent::ReadMask::kInCreate;
-                }
-                else if (name == test_file_name)
-                {
-                    if (mask & os::InotifyEvent::ReadMask::kInCreate)
-                    {
-                        is_test_file_create_event_received = true;
-                    }
-                    else if (mask & os::InotifyEvent::ReadMask::kInDelete)
-                    {
-                        is_test_file_delete_event_received = true;
-                    }
-                }
-            }
-
-            if (is_test_dir_create_event_received && is_test_file_create_event_received &&
-                is_test_file_delete_event_received)
-            {
-                break;
-            }
-        }
+        ReadEventsUntilExpected(i_notify, received_events);
     });
 
     score::filesystem::StandardFilesystem fs;
@@ -179,23 +222,7 @@ int run_inotify_test()
     i_notify.Close();
     events_checker_thread.join();
 
-    if (!is_test_dir_create_event_received)
-    {
-        std::cerr << __FILE__ << ":" << __LINE__ << ":Failed to receive create directory event" << std::endl;
-        return -1;
-    }
-    if (!is_test_file_create_event_received)
-    {
-        std::cerr << __FILE__ << ":" << __LINE__ << ":Failed to receive create file event" << std::endl;
-        return -1;
-    }
-    if (!is_test_file_delete_event_received)
-    {
-        std::cerr << __FILE__ << ":" << __LINE__ << ":Failed to receive delete file event" << std::endl;
-        return -1;
-    }
-
-    return 0;
+    return VerifyReceivedEvents(received_events);
 }
 
 }  // namespace
