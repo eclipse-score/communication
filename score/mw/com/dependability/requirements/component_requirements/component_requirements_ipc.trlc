@@ -13,6 +13,7 @@
 package Communication
 
 import ScoreReq
+import mw_com_fta
 
 section "com" {
 
@@ -676,6 +677,13 @@ section "com" {
             version = 1
         }
 
+        ScoreReq.CompReq FreeSampleCountHandling {
+            description = '''The number of free samples ({{GetFreeSampleCount()}}) shall be decreased with the creation of a SamplePtr and increased with a destruction of a SamplePtr.'''
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.FEAT_ProducerConsumerPattern@1, mw_com_fta.SlotReferenceCountNotDecremented@1]
+            version = 1
+        }
+
         /* broken_link_c/issue/21294278 */
         ScoreReq.CompReq BehaviourOfGetNumNewSamplesAvailable {
             description = '''{{GetNumNewSamplesAvailable}} queries the number of new data samples that are available since the last time {{GetNewSamples}} was called on the class instance that {{GetNumNewSamplesAvailable}} was called on.
@@ -1120,6 +1128,24 @@ section "com" {
             description = '''It shall be configurable which user ids have access to data and control shared memory segments.'''
             safety = ScoreReq.Asil.B
             derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            version = 1
+        }
+
+        /* broken_link_c/issue/6225206 */
+        ScoreReq.CompReq SlotAllocationAndSynchronizationShallBeDoneAccordingToAlgorithm {
+            description = '''Slot allocation algorithm and its synchronization shall follow the appended Flowcharts, which formally describe the algorithm:
+                             1. to allocate a slot from the provider side in a pure ASIL-B setup (ASIL-B provider, ASIL-B consumer)
+                             2. to allocate a slot from the provider side in a mixed critically setup (ASIL-B provider, ASIL-B consumer and ASIL-QM consumer)
+                             3. to access/block samples for Read-access by the consumer.'''
+            note = '''Flow charts can be found here: score/mw/com/design/events_fields/get_new_samples_activity.puml,
+                score/mw/com/design/events_fields/lola_event_allocate_activity.puml,
+                score/mw/com/design/events_fields/lola_event_allocate_mixed_critical_activity.puml,
+                score/mw/com/design/events_fields/lola_coherent_set_writing_activity.puml,
+                score/mw/com/design/events_fields/lola_reference_next_event_activity.puml'''
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, mw_com_fta.ChangingStateFails@1,
+                mw_com_fta.IncreasingDecreasingRefCountFails@1, mw_com_fta.SlotReferenceBrokenEGNonValid@1,
+                mw_com_fta.DoesNotFreeMethodSignatureElement@1, mw_com_fta.OverwriteOfElementInUse@1]
             version = 1
         }
 
