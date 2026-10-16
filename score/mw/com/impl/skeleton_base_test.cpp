@@ -27,6 +27,7 @@
 #include "score/mw/com/impl/skeleton_field_base.h"
 #include "score/mw/com/impl/test/binding_factory_resources.h"
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
+#include "score/quality/compiler_warnings/warnings.h"
 #include "score/result/result.h"
 
 #include <score/utility.hpp>
@@ -723,6 +724,8 @@ TEST_F(SkeletonBaseOfferFixture, OfferServiceReturnsErrorWhenServiceDiscoveryOff
     EXPECT_EQ(offer_result.error(), ComErrc::kBindingFailure);
 }
 
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_SELF_MOVE  // We intentionally test self move
 TEST_F(SkeletonBaseMoveFixture, SelfMovingAssignmentDoesNotCauseIssues)
 {
     // Given a constructed Skeleton with a valid identifier with two events and a field registered with the skeleton
@@ -748,6 +751,7 @@ TEST_F(SkeletonBaseMoveFixture, SelfMovingAssignmentDoesNotCauseIssues)
     ASSERT_NE(field_binding_mock_1_, nullptr);
     ASSERT_NE(field_binding_mock_2_, nullptr);
 }
+DISABLE_WARNING_POP
 
 TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterMoveConstructingService)
 {
