@@ -13,6 +13,7 @@
 package Communication
 
 import ScoreReq
+import mw_com_fta
 
 section "com" {
 
@@ -907,6 +908,13 @@ section "com" {
             description = '''The {{Allocate}} method of the specific class allows the binding to allocate memory and provide a {{SampleAllocateePtr}} (See SampleAllocateePtr) which can be filled by the user.'''
             safety = ScoreReq.Asil.B
             derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+            version = 1
+        }
+
+        ScoreReq.CompReq NoReuseOfAllocatedSharedMemory {
+            description = '''The shared memory resource used by {{mw::com}} shall hand out distinct memory sections, i.e. a memory section which is already allocated shall not be handed out by a subsequent or concurrent allocation.'''
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2, mw_com_fta.RootCauseAllocatesAlreadyAllocatedMemory]
             version = 1
         }
 
