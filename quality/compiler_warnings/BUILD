@@ -99,7 +99,7 @@ cc_args(
         "-lstdc++",
         "-Wl,--build-id=sha1",
         "-Wl,--warn-execstack",
-        "-Wl,--no-fatal-warnings",
+        "-Wl,--fatal-warnings",
     ],
     visibility = ["//quality/compiler_warnings:__subpackages__"],
 )

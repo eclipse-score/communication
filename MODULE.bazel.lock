@@ -12104,7 +12104,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "9vykuWBXyexl10IT63VQquaIibqfgB0Z5qufh1D/vbQ=",
-        "usagesDigest": "NLMwqzn2RdFd4h8I/DnbmXHKA+tCcrdgYIjj1K+xuSY=",
+        "usagesDigest": "yoojN55ynHAvrH9ED88rzAmanII8C38//i9tMfRVGsQ=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -12186,7 +12186,6 @@
               ],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
-                "-Wno-literal-suffix",
                 "-Wno-noexcept-type"
               ],
               "extra_known_features": [],
@@ -12224,7 +12223,6 @@
               ],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
-                "-Wno-literal-suffix",
                 "-Wno-noexcept-type"
               ],
               "extra_known_features": [],
@@ -12262,7 +12260,6 @@
               ],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
-                "-Wno-literal-suffix",
                 "-Wno-noexcept-type"
               ],
               "extra_known_features": [],
@@ -12300,7 +12297,6 @@
               ],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [
-                "-Wno-literal-suffix",
                 "-Wno-noexcept-type"
               ],
               "extra_known_features": [],
