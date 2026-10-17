@@ -10,9 +10,13 @@ class "lola::SubscriptionStateMachine" {
   +SubscriptionStateChangeEvent(state_change_result : IMessagePassingService::SubscriptionStateChange ) : void
   +SetReceiveHandler(handler : EventReceiveHandler) : void
   +UnsetReceiveHandler() : void
+  +SetSubscriptionStateChangeTracingCallback(callback : callback<void(SubscriptionState), 64U>) : void
+  +SetSubscriptionStateChangeHandlerTracingCallback(callback : callback<void(SubscriptionState), 64U>) : void
   +MarkProxyForDestruction() : void
   -SubscriptionStateMachine(Proxy&, ElementFqId, pid_t, std::function<void(SlotCollector&&)> set_slot_collector, std::function<void()> remove_slot_collector)
   -states_ : std::array<std::unique_ptr<SubscriptionStateBase>, SubscriptionStateMachineState::STATE_COUNT)>
+  -subscription_state_change_tracing_callback_ : std::optional<callback<void(SubscriptionState), 64U>>
+  -subscription_state_change_handler_tracing_callback_ : std::optional<callback<void(SubscriptionState), 64U>>
 }
 
 class "lola::SubscriptionStateBase" {

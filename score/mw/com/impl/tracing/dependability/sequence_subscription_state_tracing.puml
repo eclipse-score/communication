@@ -1,0 +1,48 @@
+@startuml sequence_subscription_state_tracing
+title "Subscription State Change Tracing Setup and Invocation"
+hide footbox
+
+participant "<u>impl::ProxyEventBase</u>" as ProxyEventBase
+participant "<u>impl::tracing</u>" as Tracing
+participant "<u>ProxyEventBinding</u>" as Binding
+participant "<u>lola::SubscriptionStateMachine</u>" as StateMachine
+participant "<u>impl::tracing::TracingRuntime:Singleton</u>" as TracingRuntime
+
+== First Subscribe() ==
+ProxyEventBase -> Tracing: SetupSubscriptionStateChangeTracing(tracing_data_, *binding_)
+alt enable_subscription_state_changed
+    Tracing -> Binding: SetSubscriptionStateChangeTracingCallback(callback)
+    Binding -> StateMachine: SetSubscriptionStateChangeTracingCallback(callback)
+end
+ProxyEventBase -> Binding: Subscribe(max_sample_count)
+
+== SetSubscriptionStateChangeHandler() ==
+ProxyEventBase -> Tracing: TraceSetSubscriptionStateChangeHandler(tracing_data_, *binding_)
+ProxyEventBase -> Tracing: SetupSubscriptionStateChangeHandlerTracing(tracing_data_, *binding_)
+alt enable_call_subscription_state_change_handler
+    Tracing -> Binding: SetSubscriptionStateChangeHandlerTracingCallback(callback)
+    Binding -> StateMachine: SetSubscriptionStateChangeHandlerTracingCallback(callback)
+end
+ProxyEventBase -> Binding: SetSubscriptionStateChangeHandler(handler)
+
+== State transition ==
+[-> StateMachine: TransitionToState(new_state)
+activate StateMachine
+alt state change tracing callback set
+    StateMachine -> Tracing: TraceSubscriptionStateChanged(tracing_data, binding, new_state)
+    Tracing -> TracingRuntime: TraceData(...)
+end
+alt handler tracing callback set
+    StateMachine -> Tracing: TraceCallSubscriptionStateChangeHandler(tracing_data, binding, new_state)
+    Tracing -> TracingRuntime: TraceData(...)
+end
+alt user handler set
+    StateMachine -> StateMachine: invoke user handler
+end
+deactivate StateMachine
+
+== UnsetSubscriptionStateChangeHandler() ==
+ProxyEventBase -> Tracing: TraceUnsetSubscriptionStateChangeHandler(tracing_data_, *binding_)
+ProxyEventBase -> Binding: UnsetSubscriptionStateChangeHandler()
+
+@enduml
