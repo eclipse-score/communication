@@ -30,8 +30,10 @@ constexpr std::string_view kInstanceSpecifierString{"MyHelloWorldServiceInstance
 // waits a randomized amount of time (between kMinSendDelay and kMaxSendDelay) before it sends the next sample. This
 // models a provider that emits event updates only occasionally / at times not anticipated by the consumer - which is
 // exactly the scenario in which an event-driven (receive-handler based) consumer shines.
+// [provider-send-delay-limits-start]
 constexpr std::chrono::milliseconds kMinSendDelay{100};
 constexpr std::chrono::milliseconds kMaxSendDelay{3000};
+// [provider-send-delay-limits-end]
 
 namespace
 {
@@ -93,6 +95,7 @@ int main()
                                                 "Failed to offer HelloWorldSkeleton instance!");
     std::cout << "OfferService: HelloWorld service instance is now offered." << std::endl;
 
+    // [provider-random-send-delay-start]
     // Random number generator for the randomized send delay.
     std::mt19937 random_engine{std::random_device{}()};
     std::uniform_int_distribution<std::chrono::milliseconds::rep> delay_distribution{kMinSendDelay.count(),
@@ -114,5 +117,6 @@ int main()
         SendSample(service_instance, send_counter);
         ++send_counter;
     }
+    // [provider-random-send-delay-end]
     std::cout << "HelloWorld service provider going down." << std::endl;
 }

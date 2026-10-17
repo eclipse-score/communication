@@ -50,6 +50,7 @@ struct DiscoveredInstance
 // The only portable (public API) way to obtain a representation of the instance id from a handle is:
 //   HandleType::GetInstanceId() -> ServiceInstanceId::Serialize() -> score::json::Object
 // We then stringify that json object so it can be logged.
+// [consumer-describe-instance-id-start]
 std::string DescribeInstanceId(const HelloWorldProxy::HandleType& handle)
 {
     score::json::JsonWriter json_writer{};
@@ -83,6 +84,7 @@ std::string DescribeInstanceId(const HelloWorldProxy::HandleType& handle)
     }
     return compact;
 }
+// [consumer-describe-instance-id-end]
 
 }  // namespace
 
@@ -102,6 +104,7 @@ int main()
     std::vector<DiscoveredInstance> discovered_instances{};
     std::set<HelloWorldProxy::HandleType> known_handles{};
 
+    // [consumer-find-service-handler-start]
     // This handler is invoked asynchronously by score::mw::com whenever the set of matching service instances changes.
     // It receives *all* currently matching handles. We create a proxy for every newly discovered instance.
     auto find_service_handler = [&discovered_instances_mutex, &discovered_instances, &known_handles](
@@ -149,12 +152,14 @@ int main()
 
     auto find_service_handle_result =
         HelloWorldProxy::StartFindService(std::move(find_service_handler), instance_specifier.value());
+    // [consumer-find-service-handler-end]
     if (!find_service_handle_result)
     {
         std::cerr << "Failed to start service discovery: " << find_service_handle_result.error() << std::endl;
         exit(1);
     }
 
+    // [consumer-main-loop-start]
     // Main loop: poll the "message" event of every discovered service instance for new samples.
     while (g_running.load(std::memory_order_relaxed))
     {
@@ -178,8 +183,11 @@ int main()
             }
         }
     }
+    // [consumer-main-loop-end]
 
     // Stop the asynchronous service discovery before shutting down.
+    // [consumer-stop-find-service-start]
     score::cpp::ignore = HelloWorldProxy::StopFindService(find_service_handle_result.value());
+    // [consumer-stop-find-service-end]
     std::cout << "HelloWorld service consumer going down." << std::endl;
 }

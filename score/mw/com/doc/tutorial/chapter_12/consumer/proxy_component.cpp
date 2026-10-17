@@ -14,6 +14,7 @@
 
 namespace score::mw::com::tutorial
 {
+// [proxy-component-implementation-start]
 bool ProxyComponent::Subscribe()
 {
     auto result = hello_world_proxy_->message.Subscribe(1);
@@ -46,5 +47,6 @@ size_t ProxyComponent::GetReceiveCounter() const
 {
     return receive_counter_;
 }
+// [proxy-component-implementation-end]
 
 }  // namespace score::mw::com::tutorial

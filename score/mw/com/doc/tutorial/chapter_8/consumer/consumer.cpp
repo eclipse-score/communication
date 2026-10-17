@@ -89,6 +89,7 @@ std::string DescribeInstanceId(const CalculatorProxy::HandleType& handle)
 // Demonstrates the "copy" call operator: the arguments (two small scalars) are passed by const-reference and the
 // middleware copies them into the shared-memory slot for us. This is the most convenient way to call a method whose
 // arguments are cheap to copy.
+// [consumer-call-add-start]
 void CallAdd(CalculatorProxy& proxy, std::mt19937& random_engine)
 {
     std::uniform_int_distribution<std::uint32_t> value_distribution{};
@@ -105,6 +106,7 @@ void CallAdd(CalculatorProxy& proxy, std::mt19937& random_engine)
     // The result is returned as a MethodReturnTypePtr; dereference it to access the actual value.
     std::cout << "add returned: " << *(call_result.value()) << std::endl;
 }
+// [consumer-call-add-end]
 
 // Demonstrates the "zero-copy" call operator: for a (potentially large) argument we first Allocate() the argument
 // directly inside the shared-memory slot, fill it in place and then invoke the method with the obtained MethodInArgPtr.
@@ -113,6 +115,7 @@ void CallArithmeticMean(CalculatorProxy& proxy, std::mt19937& random_engine)
 {
     std::cout << "Calling arithmetic_mean(...) using the zero-copy call operator ..." << std::endl;
 
+    // [consumer-call-arithmetic-mean-start]
     // Step 1: Allocate the argument storage. On success we get a tuple with one MethodInArgPtr<IntegerArray> pointing
     // right into the shared-memory slot the argument will be transported in.
     auto allocate_result = proxy.arithmetic_mean_.Allocate();
@@ -141,6 +144,7 @@ void CallArithmeticMean(CalculatorProxy& proxy, std::mt19937& random_engine)
     }
     std::cout << "arithmetic_mean over " << kNumberOfMeanElements << " elements returned: " << *(call_result.value())
               << std::endl;
+    // [consumer-call-arithmetic-mean-end]
 }
 
 }  // namespace

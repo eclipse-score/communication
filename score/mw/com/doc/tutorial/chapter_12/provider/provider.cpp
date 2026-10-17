@@ -36,6 +36,7 @@ int main()
     auto instance_specifier = score::mw::com::InstanceSpecifier::Create(std::string{"MyHelloWorldServiceInstance"});
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(instance_specifier.has_value(), "Failed to create InstanceSpecifier!");
 
+    // [provider-skeleton-creation-start]
     auto hello_world_service_instance_result =
         score::mw::com::tutorial::HelloWorldSkeleton::Create(instance_specifier.value());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(hello_world_service_instance_result.has_value(),
@@ -43,6 +44,7 @@ int main()
     auto hello_world_service_instance = std::move(hello_world_service_instance_result).value();
 
     score::mw::com::tutorial::SkeletonComponent skeleton_component{std::move(hello_world_service_instance)};
+    // [provider-skeleton-creation-end]
     if (!skeleton_component.OfferService())
     {
         exit(1);

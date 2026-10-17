@@ -166,7 +166,8 @@ Two durations control the cycle:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 32-33
+   :start-after: [provider-offer-durations-start]
+   :end-before: [provider-offer-durations-end]
    :caption: provider/provider.cpp
 
 
@@ -175,7 +176,8 @@ phase change is due. On each phase change it either stops or (re-)starts offerin
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 108-122
+   :start-after: [provider-phase-change-start]
+   :end-before: [provider-phase-change-end]
    :caption: provider/provider.cpp
 
 
@@ -183,7 +185,8 @@ Event updates (`SendSample()`) are only published while the service is currently
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 133-134
+   :start-after: [provider-send-while-offered-start]
+   :end-before: [provider-send-while-offered-end]
    :caption: provider/provider.cpp
 
 
@@ -191,7 +194,7 @@ Note: `StopOfferService()` does **not** invalidate the consumer's proxy or its s
 "armed"; only its state changes to `kSubscriptionPending`. When the provider offers the service again, the state
 automatically goes back to `kSubscribed`. This functionality/behavior is called "proxy auto reconnect" and there is a
 specific chapter in the design documentation that explains it in detail
-(see `here <https://github.com/eclipse-score/communication/blob/main/score/mw/com/design/skeleton_proxy/README.md#proxy-auto-reconnect-functionality>`__).
+(see `here <https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/bindings/lola/dependability/proxy_and_service_elements/lola_proxy_and_service_elements_component_design.md#proxy-auto-reconnect-functionality>`__).
 
 Consumer application
 ~~~~~~~~~~~~~~~~~~~~
@@ -209,7 +212,8 @@ capture capacity):
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 112-137
+   :start-after: [consumer-shared-state-start]
+   :end-before: [consumer-shared-state-end]
    :caption: consumer/consumer.cpp
 
 
@@ -225,7 +229,8 @@ called once, with a non-empty set:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 236-243
+   :start-after: [consumer-stop-search-in-handler-start]
+   :end-before: [consumer-stop-search-in-handler-end]
    :caption: consumer/consumer.cpp
 
 
@@ -236,13 +241,15 @@ terminating:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 152-157
+   :start-after: [consumer-proxy-1-fatal-error-start]
+   :end-before: [consumer-proxy-1-fatal-error-end]
    :caption: consumer/consumer.cpp
 
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 335-342
+   :start-after: [consumer-main-loop-fatal-error-start]
+   :end-before: [consumer-main-loop-fatal-error-end]
    :caption: consumer/consumer.cpp
 
 
@@ -255,7 +262,8 @@ After subscribing, proxy_1 polls the subscription state **exactly once** via `Ge
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 160-181
+   :start-after: [consumer-proxy-1-poll-state-start]
+   :end-before: [consumer-proxy-1-poll-state-end]
    :caption: consumer/consumer.cpp
 
 
@@ -264,7 +272,8 @@ subscription state:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 273-279
+   :start-after: [consumer-proxy-1-receive-start]
+   :end-before: [consumer-proxy-1-receive-end]
    :caption: consumer/consumer.cpp
 
 
@@ -284,7 +293,8 @@ records the new state in an atomic and returns `true` to stay registered:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 199-220
+   :start-after: [consumer-subscription-state-change-handler-start]
+   :end-before: [consumer-subscription-state-change-handler-end]
    :caption: consumer/consumer.cpp
 
 
@@ -294,7 +304,8 @@ state returns to `kSubscribed`:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 282-291
+   :start-after: [consumer-proxy-2-receive-start]
+   :end-before: [consumer-proxy-2-receive-end]
    :caption: consumer/consumer.cpp
 
 

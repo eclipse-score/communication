@@ -352,7 +352,7 @@ These events can potentially happen concurrently. It is the job of the state mac
 a valid state.
 
 How the service discovery related notifications get forwarded to the `ProxyEvent`/its `lola::SubscriptionStateMachine`
-instance has been described [here](../skeleton_proxy/README.md#proxy-auto-reconnect-functionality).
+instance has been described [here](../../impl/bindings/lola/dependability/proxy_and_service_elements/lola_proxy_and_service_elements_component_design.md#proxy-auto-reconnect-functionality).
 
 The structure and transitions of the state machine are shown in:
 

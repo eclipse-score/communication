@@ -28,10 +28,12 @@ namespace score::mw::com::tutorial
 // std::array<char, N> is. The capacity is chosen generously so that it can hold the serialized InstanceIdentifier of
 // the callback service instance used in this chapter (the consumer asserts at runtime that the serialized form actually
 // fits).
+// [serialized-instance-identifier-start]
 using SerializedInstanceIdentifier = std::array<char, 2048>;
 
 static_assert(std::is_trivially_copyable_v<SerializedInstanceIdentifier>,
               "SerializedInstanceIdentifier must be trivially copyable to be usable as a method argument.");
+// [serialized-instance-identifier-end]
 
 // The "long running" service. Its single method PostLongRunningJob does - semantically - NOT execute the long running
 // job synchronously. Instead it just *queues* the job at the provider and returns immediately; its bool return value
@@ -42,6 +44,7 @@ static_assert(std::is_trivially_copyable_v<SerializedInstanceIdentifier>,
 // To let the provider find exactly that one callback instance (out of potentially many consumers, each providing its
 // own callback instance), the consumer passes the *serialized InstanceIdentifier* of its callback instance as the third
 // argument. This is the "power-user" use case of directly using an InstanceIdentifier that is shown in this chapter.
+// [long-running-service-interface-start]
 template <typename Trait>
 class LongRunningServiceInterface : public Trait::Base
 {
@@ -57,9 +60,11 @@ class LongRunningServiceInterface : public Trait::Base
     typename Trait::template Method<bool(std::uint32_t, std::uint32_t, SerializedInstanceIdentifier)>
         post_long_running_job_{*this, "PostLongRunningJob"};
 };
+// [long-running-service-interface-end]
 
 // The callback service. Each consumer of LongRunningService provides its *own* instance of this service. The provider
 // calls SetJobResult() on it once the previously queued job has finished.
+// [result-service-interface-start]
 template <typename Trait>
 class LongRunningServiceResultInterface : public Trait::Base
 {
@@ -71,11 +76,14 @@ class LongRunningServiceResultInterface : public Trait::Base
     //  - job_number: the job_number of the PostLongRunningJob() call this result belongs to.
     typename Trait::template Method<void(std::uint32_t, std::uint32_t)> set_job_result_{*this, "SetJobResult"};
 };
+// [result-service-interface-end]
 
+// [proxy-skeleton-aliases-start]
 using LongRunningServiceProxy = score::mw::com::AsProxy<LongRunningServiceInterface>;
 using LongRunningServiceSkeleton = score::mw::com::AsSkeleton<LongRunningServiceInterface>;
 using LongRunningServiceResultProxy = score::mw::com::AsProxy<LongRunningServiceResultInterface>;
 using LongRunningServiceResultSkeleton = score::mw::com::AsSkeleton<LongRunningServiceResultInterface>;
+// [proxy-skeleton-aliases-end]
 
 }  // namespace score::mw::com::tutorial
 

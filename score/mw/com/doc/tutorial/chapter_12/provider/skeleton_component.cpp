@@ -24,6 +24,7 @@ namespace
 constexpr std::string_view kHelloWorld{"Hello World"};
 }  // namespace
 
+// [skeleton-component-implementation-start]
 bool SkeletonComponent::OfferService()
 {
     auto offer_result = hello_world_skeleton_->OfferService();
@@ -62,5 +63,6 @@ SkeletonComponent::SendSampleResult SkeletonComponent::SendSample(std::size_t se
 
     return SendSampleResult::kHandled;
 }
+// [skeleton-component-implementation-end]
 
 }  // namespace score::mw::com::tutorial
