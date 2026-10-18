@@ -65,9 +65,7 @@ where
             println!("Received exhaust update");
             val
         })
-        // Register get-handler callbacks - required before offer() for WithGetter fields
-        .register_get_handler_left_tire(|| Tire { pressure: 32.0 })
-        .register_get_handler_exhaust(|| Exhaust {})
+        // No get-handler is registered: get requests are answered with the latest updated value.
         .update_left_tire(initial_tire_value)
         .expect("Failed to update left_tire field")
         .update_exhaust(initial_exhaust_value)

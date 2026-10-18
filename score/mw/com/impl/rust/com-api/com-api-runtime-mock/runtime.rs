@@ -805,11 +805,11 @@ impl<T: CommData + Debug> FieldPublisher<T, MockRuntimeImpl> for MockFieldPublis
         todo!()
     }
 
-    fn register_set_handler(&self, _callback: impl Fn(T) -> T + Send + 'static) {
+    fn register_set_handler(&self, _callback: impl Fn(T) -> T + Send + Sync + 'static) {
         todo!()
     }
 
-    fn register_get_handler(&self, _callback: impl Fn() -> T + Send + 'static) {
+    fn register_get_handler(&self, _callback: impl Fn() -> T + Send + Sync + 'static) {
         todo!()
     }
 }

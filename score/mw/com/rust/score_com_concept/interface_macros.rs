@@ -170,7 +170,7 @@ pub struct WithNotifier;
 /// producer.init()
 ///     .update_tire_pressure(&initial_value)?
 ///     .register_set_handler_tire_pressure(|v| { /* handle set */ })
-///     .register_get_handler_speed(|| Speed { value: 0 })
+///     .register_get_handler_speed(|| Speed { value: 0 }) // optional
 ///     .update_status(&initial_status)?
 ///     .register_calibrate_handler(|tire: &Tire| tire.clone())
 ///     .offer()?;

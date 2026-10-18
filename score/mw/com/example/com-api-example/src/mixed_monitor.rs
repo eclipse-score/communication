@@ -28,9 +28,9 @@
 // Producer side (skeleton):
 //   - Events are published via `offered.left_tire.send(...)` / `offered.exhaust.send(...)`.
 //   - Fields require an initial value (`update_left_tire_field` / `update_exhaust_field`) and
-//     a set-handler (`register_set_handler_*_field`) and a get-handler
-//     (`register_get_handler_*_field`) before `offer()` is available
-//     (both enforced at compile time via type state).
+//     a set-handler (`register_set_handler_*_field`) before `offer()` is available
+//     (both enforced at compile time via type state). A get-handler
+//     (`register_get_handler_*_field`) is optional; by default a get returns the latest value.
 //   - Methods require all handlers to be registered before `offer()` is available (same type state).
 //
 // Consumer side (proxy):
@@ -68,7 +68,6 @@ type VehicleMonitorConsumer<R> = <VehicleMonitorInterface as Interface>::Consume
 /// The type-state chain on `init()` enforces at **compile time** that:
 /// - every Field has an initial value set (`update_*_field`)
 /// - every Field has a set-handler registered (`register_set_handler_*_field`)
-/// - every Field has a get-handler registered (`register_get_handler_*_field`)
 /// - every Method has a handler registered (`register_*_handler`)
 ///
 /// Calling `offer()` before satisfying all of the above is a **compile error**.
@@ -98,9 +97,6 @@ where
             // Additional validation or side-effect logic can go here.
             val
         })
-        // Register get-handler: called by the middleware when a consumer calls Get on this field.
-        // Required before offer() for WithGetter fields.
-        .register_get_handler_left_tire_field(|| Tire { pressure: 32.0 })
         // Set initial field value (required before offer()).
         .update_left_tire_field(initial_tire)
         .expect("Failed to set initial value for left_tire_field")
@@ -109,7 +105,6 @@ where
             println!("[Producer] set_handler exhaust_field: {:?}", val);
             val
         })
-        .register_get_handler_exhaust_field(|| Exhaust {})
         .update_exhaust_field(initial_exhaust)
         .expect("Failed to set initial value for exhaust_field")
         //  Method: update_front_tires_pressure(Tire, Tire) -> ()
