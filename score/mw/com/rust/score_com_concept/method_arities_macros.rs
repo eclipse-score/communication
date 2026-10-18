@@ -116,11 +116,14 @@ macro_rules! impl_all_arities {
                 )
             }
         }
-        impl<F, $($T,)* $nextT, Return> MethodHandlerCall<($($T,)* $nextT,), Return> for F
+        impl<F, Fut, $($T,)* $nextT, Return> MethodHandlerCall<($($T,)* $nextT,), Return> for F
         where
-            F: Fn($(&$T,)* &$nextT,) -> Return + Send + Sync + 'static,
+            F: Fn($(&$T,)* &$nextT,) -> Fut + Send + Sync + 'static,
+            Fut: Future<Output = Return> + Send + 'static,
         {
-            fn call(&self, args: &($($T,)* $nextT,)) -> Return {
+            type Fut = Fut;
+
+            fn call(&self, args: &($($T,)* $nextT,)) -> Fut {
                 #[allow(non_snake_case)]
                 let ($($a,)* $nextA,) = args;
                 (self)($($a,)* $nextA,)

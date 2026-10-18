@@ -330,12 +330,13 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
                 where
                     <#runtime_param_name as score_com::Runtime>::FieldPublisher<#inner_ty>: Send,
                 {
-                    pub fn #register_fn<F>(
+                    pub fn #register_fn<F, Fut>(
                         self,
                         handler: F,
                     ) -> #validator_name<#runtime_param_name, #(#after),*>
                     where
-                        F: Fn(#inner_ty) -> #inner_ty + Send + Sync + 'static,
+                        F: Fn(#inner_ty) -> Fut + Send + Sync + 'static,
+                        Fut: core::future::Future<Output = #inner_ty> + Send + 'static,
                     {
                         self.producer.#field_ident.register_set_handler(handler);
                         #validator_name {

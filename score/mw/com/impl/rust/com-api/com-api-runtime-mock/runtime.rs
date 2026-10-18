@@ -805,7 +805,11 @@ impl<T: CommData + Debug> FieldPublisher<T, MockRuntimeImpl> for MockFieldPublis
         todo!()
     }
 
-    fn register_set_handler(&self, _callback: impl Fn(T) -> T + Send + Sync + 'static) {
+    fn register_set_handler<F, Fut>(&self, _callback: F)
+    where
+        F: Fn(T) -> Fut + Send + Sync + 'static,
+        Fut: core::future::Future<Output = T> + Send + 'static,
+    {
         todo!()
     }
 

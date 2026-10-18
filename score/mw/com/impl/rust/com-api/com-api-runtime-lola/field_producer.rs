@@ -91,7 +91,11 @@ impl<T: CommData + Debug, B: FFIBridge> FieldPublisher<T, LolaRuntimeImpl<B>> fo
     fn update(&self, _value: T) -> Result<()> {
         todo!()
     }
-    fn register_set_handler(&self, _callback: impl Fn(T) -> T + Send + Sync + 'static) {
+    fn register_set_handler<F, Fut>(&self, _callback: F)
+    where
+        F: Fn(T) -> Fut + Send + Sync + 'static,
+        Fut: core::future::Future<Output = T> + Send + 'static,
+    {
         // When the middleware receives a set request from a consumer:
         // - Invoke the callback with the proposed value; the callback may validate or modify it.
         // - Use the returned value as the final accepted field value to store and send to

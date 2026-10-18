@@ -73,8 +73,8 @@ interface "FieldPublisher<T, R>" as FieldPublisher {
   + new(identifier, instance_info) -> Result<Self>
   + allocate() -> Result<Self::SampleMaybeUninit<'_>>
   + update(value: T) -> Result<()>
-  + register_set_handler(callback: impl Fn(T) + Send + 'static)
-  + register_get_handler(callback: impl Fn() -> T + Send + 'static)
+  + register_set_handler<F, Fut>(callback: F) where F: Fn(T) -> Fut + Send + Sync + 'static, Fut: Future<Output = T> + Send + 'static
+  + register_get_handler(callback: impl Fn() -> T + Send + Sync + 'static)
   ---
   ' update() is the copy-path write; for zero-copy use allocate() then SampleMaybeUninit::write()
   ' register_set_handler: invoked by middleware when consumer calls set_{name}()

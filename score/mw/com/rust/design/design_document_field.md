@@ -39,7 +39,7 @@ Rust Communication library provides the Field based communication pattern (mostl
 - A field combines three orthogonal capabilities, each activated by a tag in the `interface!` macro: **`WithGetter`** (async get), **`WithSetter`** (async set), and **`WithNotifier`** (subscribe to value-change notifications like Event).
 - Field get and set on the consumer side are modelled as `MethodCaller`-based callers, reusing the full Method infrastructure (async futures, `MethodReturnSample<T>`, copy path) without a separate field-specific method design.
 - Field publish on the producer side uses a dedicated `FieldPublisher` trait that provides `update()` (copy path) and `allocate()` + `FieldSampleMut::update()` (zero-copy path).
-- Handler registration on the producer side is enforced at compile time via the type-state validator: `register_set_handler_{name}` must be called for every `WithSetter` field and the field's initial value must be set via `update_{name}()` for every field, all before `offer()` becomes available. `register_get_handler_{name}` is optional without it a get request is answered with the latest value. Through the `init()` chain, calling `offer()` too early is a compile error. Only if the validator is bypassed and `offer()` is called directly on the producer, it panics at runtime.
+- Handler registration on the producer side is enforced at compile time via the type-state validator: `register_set_handler_{name}` must be called for every `WithSetter` field and the field's initial value must be set via `update_{name}()` for every field, all before `offer()` becomes available. `register_get_handler_{name}` is optional. Without it a get request is answered with the latest value. Through the `init()` chain, calling `offer()` too early is a compile error. Only if the validator is bypassed and `offer()` is called directly on the producer, it panics at runtime.
 
 Fields are defined as part of an interface via the `interface!` macro alongside events and methods:
 
@@ -133,7 +133,10 @@ pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized> {
 
     fn update(&self, value: T) -> Result<()>;
 
-    fn register_set_handler(&self, callback: impl Fn(T) -> T + Send + Sync + 'static);
+    fn register_set_handler<F, Fut>(&self, callback: F)
+    where
+        F: Fn(T) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = T> + Send + 'static;
 
     fn register_get_handler(&self, callback: impl Fn() -> T + Send + Sync + 'static);
 }
@@ -141,7 +144,7 @@ pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized> {
 
 `update()` is the copy-path publish. For zero-copy writes, use `allocate()` to get an uninitialised slot and then call `write()` and then `update()`.
 
-`register_set_handler` is called by the middleware whenever a consumer calls `set_{name}()`. The callback receives the proposed value and returns the value to accept, as in C++ where the handler can adjust the accepted value. Handlers require `Send + Sync`, like method handlers, because they may be invoked concurrently with each other and with `update()`. It is required in the producer `init()` chain and tracked by the type-state validator (see [Type-State Validator](#type-state-validator)).
+`register_set_handler` is called by the middleware whenever a consumer calls `set_{name}()`. The callback receives the proposed value and returns a `Future` of the value to accept, as in C++ where the handler can adjust the accepted value. Like method handlers, the future is polled on the executor chosen by the application and must not borrow from the argument. Handlers require `Send + Sync`, like method handlers, because they may be invoked concurrently with each other and with `update()`. It is required in the producer `init()` chain and tracked by the type-state validator (see [Type-State Validator](#type-state-validator)).
 
 `register_get_handler` is optional. If it is not registered, the middleware answers a consumer `get_{name}()` with the latest value, as the C++ `SkeletonField` does. If registered, the callback is invoked for each get and overrides the default. This is a deliberate override: the returned value may differ from the one delivered to subscribers via `update()`, so a producer that registers it takes responsibility for keeping get results and notifications consistent. The default should be preferred unless custom read logic is needed. It is not tracked by the type-state validator. If the underlying communication layer turns out to require a get handler, it must be made mandatory again (see [Mandatory get handler if required by the underlying communication](#mandatory-get-handler-if-required-by-the-underlying-communication)).
 
@@ -272,7 +275,7 @@ For each field the macro generates:
 **On `VehicleFieldValidator<R, ...>`** (returned by `producer.init()`):
 - `update_left_tire(value: T) -> Result<Self>` — sets the initial field value; advances the type-state from `Uninit` to `Init`. **Generated for every field.**
 - `register_set_handler_left_tire(fn)` — registers the set callback advances `HandlerNotSet` - `HandlerSet`. **Generated only for `WithSetter` fields.**
-- `register_get_handler_left_tire(fn)` — optionally registers a custom get callback does not change the type-state. Without it a get returns the latest value. **Generated only for `WithGetter` fields.**
+- `register_get_handler_left_tire(fn)` — optionally registers a custom get callback and does not change the type-state. Without it a get returns the latest value. **Generated only for `WithGetter` fields.**
 
 The `interface_producer_mixed!` macro emits `#[field_setter_list(left_tire, exhaust)]` and `#[field_getter_list(left_tire, exhaust)]` struct-level attributes on the producer struct so the `TypeStateValidator` proc-macro knows which steps to generate.
 
@@ -307,11 +310,11 @@ producer.init()
 // Correct: all fields initialised and all required handlers registered
 producer
     .init()
-    .register_set_handler_left_tire(|val: Tire| {
+    .register_set_handler_left_tire(|val: Tire| async move {
         println!("Received tire set: {:?}", val);
         val
     })
-    .register_set_handler_exhaust(|val: Exhaust| val)
+    .register_set_handler_exhaust(|val: Exhaust| async move { val })
     .update_left_tire(initial_tire_value)?
     .update_exhaust(initial_exhaust_value)?
     .offer()?;
@@ -347,11 +350,11 @@ where
     producer
         .init()
         // Register set-handler callbacks - required before offer() for WithSetter fields
-        .register_set_handler_left_tire(move |val: Tire| {
+        .register_set_handler_left_tire(move |val: Tire| async move {
             println!("Received tire pressure update: {:?}", val);
             val
         })
-        .register_set_handler_exhaust(|val: Exhaust| val)
+        .register_set_handler_exhaust(|val: Exhaust| async move { val })
         // No get-handler is registered: get requests are answered with the latest updated value.
         // Set initial field values - required before offer() for all fields
         .update_left_tire(initial_tire_value)
@@ -365,9 +368,9 @@ where
 
 Key points:
 
-- `producer.init()` returns the generated `Validator` type each `register_set_handler_*` and `update_*` call advances the type-state. `register_get_handler_*` is optional and does not.
+- `producer.init()` returns the generated `Validator` type. Each `register_set_handler_*` and `update_*` call advances the type-state. `register_get_handler_*` is optional and does not.
 - All required steps must complete before `offer()` is available. The order of calls is flexible.
-- `register_set_handler_*` is only generated for `WithSetter` fields `register_get_handler_*` is only generated for `WithGetter` fields. Fields without `WithSetter` only require `update_*`.
+- `register_set_handler_*` is only generated for `WithSetter` fields. `register_get_handler_*` is only generated for `WithGetter` fields. Fields without `WithSetter` only require `update_*`.
 - After `offer()`, the returned `OfferedProducer` holds the live `FieldPublisher` instances for ongoing `update()` calls.
 
 To update a field at runtime after offering:

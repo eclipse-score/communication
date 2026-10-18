@@ -92,7 +92,7 @@ where
         //  Field: left_tire_field
         // Register set-handler: called by the middleware when a consumer calls Set on this field.
         // Receives the proposed value by value and must explicitly return the current value.
-        .register_set_handler_left_tire_field(|val: Tire| {
+        .register_set_handler_left_tire_field(|val: Tire| async move {
             println!("[Producer] set_handler left_tire_field: {:?}", val);
             // Additional validation or side-effect logic can go here.
             val
@@ -101,7 +101,7 @@ where
         .update_left_tire_field(initial_tire)
         .expect("Failed to set initial value for left_tire_field")
         //  Field: exhaust_field
-        .register_set_handler_exhaust_field(|val: Exhaust| {
+        .register_set_handler_exhaust_field(|val: Exhaust| async move {
             println!("[Producer] set_handler exhaust_field: {:?}", val);
             val
         })
@@ -113,6 +113,7 @@ where
                 "[Producer] update_front_tires_pressure called: {:?}, {:?}",
                 tire1, tire2
             );
+            async {}
         })
         //  Method: calculate_pressure_imbalance(Tire, Tire) -> PressureImbalance
         // Not a thin wrapper around a field's get/set: computes a derived result
@@ -122,9 +123,11 @@ where
                 "[Producer] calculate_pressure_imbalance called: {:?}, {:?}",
                 tire1, tire2
             );
-            PressureImbalance {
+            // The returned future must not borrow from the arguments, so compute the result first.
+            let result = PressureImbalance {
                 delta_kpa: (tire1.pressure - tire2.pressure).abs(),
-            }
+            };
+            async move { result }
         })
         // All states satisfied → offer() is available.
         .offer()

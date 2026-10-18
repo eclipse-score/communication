@@ -54,14 +54,15 @@ where
     // Must register handlers and initialize all fields before offer() is available
     producer
         .init()
-        // Register set-handler callbacks - required before offer() for WithSetter fields
-        .register_set_handler_left_tire(move |val: Tire| {
+        // Register set-handler callbacks - required before offer() for WithSetter fields.
+        // The handler returns a future of the accepted value, the application chooses the executor.
+        .register_set_handler_left_tire(move |val: Tire| async move {
             println!("Received tire pressure update: {:?}", val);
             // Additional logic: inspect or act on the accepted value (logging, telemetry, etc.).
             // TODO: in working example add that logic to demonstrate the set handler usage.
             val
         })
-        .register_set_handler_exhaust(|val: Exhaust| {
+        .register_set_handler_exhaust(|val: Exhaust| async move {
             println!("Received exhaust update");
             val
         })

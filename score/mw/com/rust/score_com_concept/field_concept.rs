@@ -93,9 +93,15 @@ pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized> {
     ///
     /// This registration is infallible (like `MethodHandler::register_handler`).
     ///
+    /// The callback returns a `Future` that resolves to the value to accept. The application chooses
+    /// the executor that polls it. The future must not borrow from the callback argument.
+    ///
     /// # Parameters
-    /// * `callback` - Receives the proposed value and returns the value to accept.
-    fn register_set_handler(&self, callback: impl Fn(T) -> T + Send + Sync + 'static);
+    /// * `callback` - Receives the proposed value and returns a future of the value to accept.
+    fn register_set_handler<F, Fut>(&self, callback: F)
+    where
+        F: Fn(T) -> Fut + Send + Sync + 'static,
+        Fut: core::future::Future<Output = T> + Send + 'static;
 
     /// Optionally register a callback invoked by the middleware whenever a consumer calls the field
     /// getter. The callback returns the value that will be delivered back to the consumer.

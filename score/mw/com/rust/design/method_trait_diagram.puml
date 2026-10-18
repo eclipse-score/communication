@@ -82,7 +82,8 @@ interface "MethodCallInput<Args, Return, R>" as MethodCallInput {
 
 interface "MethodHandlerCall<Args, Return>" as MethodHandlerCall {
   ---
-  + call(args: Args) -> Return
+  + type Fut: Future<Output = Return> + Send + 'static
+  + call(args: &Args) -> Self::Fut
   ---
   ' Blanket impl for Fn(...) -> Return + Send + Sync + 'static
   ' Covers all arities 0-8 via impl_all_arities!()
