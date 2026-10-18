@@ -42,8 +42,8 @@ fn parse_name_list_attr(attrs: &[syn::Attribute], attr_name: &str) -> HashSet<St
 /// Detects member type by the last segment of each field's type path:
 /// - `FieldPublisher<T>` - generates `update_{name}()` (Uninit-Init) per member.
 ///   Additionally generates `register_set_handler_{name}()` (HandlerNotSet-HandlerSet)
-///   for fields listed in `#[field_setter_list(...)]`, and
-///   `register_get_handler_{name}()` (HandlerNotSet-HandlerSet) for fields listed in
+///   for fields listed in `#[field_setter_list(...)]`, and an OPTIONAL
+///   `register_get_handler_{name}()` (no type-state change) for fields listed in
 ///   `#[field_getter_list(...)]`.
 /// - `MethodHandler<Args, Return>` - generates `register_{name}_handler()`
 ///   (HandlerNotSet - HandlerSet) per member.
@@ -56,22 +56,23 @@ fn parse_name_list_attr(attrs: &[syn::Attribute], attr_name: &str) -> HashSet<St
 ///   type-state step and an `Hi` generic parameter.
 /// - `#[field_getter_list(name1, name2, ...)]` - comma-separated field names that have
 ///   the `WithGetter` capability tag. Only these fields get a `register_get_handler_*`
-///   type-state step and a `Gi` generic parameter.
+///   method. It is optional: it does not change the type-state and `offer()` does not
+///   require it. If it is not called, a get request is answered with the latest value.
 ///
 /// Both attributes are emitted by `interface_producer_mixed!` based on the capability
 /// tags declared in the `interface!` macro invocation.
 ///
 /// # Generated validator struct
 ///
-/// `{Name}Validator<R, S0..Sn, H0..Hm, G0..Gk, M0..Mp>` where:
+/// `{Name}Validator<R, S0..Sn, H0..Hm, M0..Mp>` where:
 /// - `Si` tracks update state of field member `i` (`Uninit` / `Init`) - ALL fields
 /// - `Hj` tracks set-handler state of setter field `j` (`HandlerNotSet` / `HandlerSet`) - WithSetter fields only
-/// - `Gk` tracks get-handler state of getter field `k` (`HandlerNotSet` / `HandlerSet`) - WithGetter fields only
 /// - `Mp` tracks handler state of method member `p` (`HandlerNotSet` / `HandlerSet`)
 ///
+/// The get handler is optional and therefore has no type-state parameter.
+///
 /// `offer()` is only generated for the impl where ALL `Si = Init`, ALL `Hj = HandlerSet`,
-/// ALL `Gk = HandlerSet`, ALL `Mp = HandlerSet`. It calls `_offer_internal()` on the
-/// wrapped producer.
+/// ALL `Mp = HandlerSet`. It calls `_offer_internal()` on the wrapped producer.
 ///
 /// Entry point on the producer: `init()` - returns the validator with every state
 /// parameter set to its initial value (`Uninit` / `HandlerNotSet`).
@@ -202,9 +203,9 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
     // State param naming:
     //   S{i} - update state for field member i         (Uninit / Init)        - ALL fields
     //   H{j} - set-handler state for setter field j    (HandlerNotSet / HandlerSet) - WithSetter only
-    //   G{k} - get-handler state for getter field k    (HandlerNotSet / HandlerSet) - WithGetter only
     //   M{p} - handler state for method member p       (HandlerNotSet / HandlerSet)
-    // Combined order in the validator struct: [S0..Sn, H0..Hm, G0..Gk, M0..Mp]
+    // The get handler is optional and has no state parameter.
+    // Combined order in the validator struct: [S0..Sn, H0..Hm, M0..Mp]
 
     let field_update_params: Vec<syn::Ident> = (0..field_members.len())
         .map(|i| syn::Ident::new(&format!("S{}", i), proc_macro::Span::call_site().into()))
@@ -227,31 +228,25 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
     let field_setter_params: Vec<syn::Ident> = (0..setter_field_indices.len())
         .map(|j| syn::Ident::new(&format!("H{}", j), proc_macro::Span::call_site().into()))
         .collect();
-    let field_getter_params: Vec<syn::Ident> = (0..getter_field_indices.len())
-        .map(|k| syn::Ident::new(&format!("G{}", k), proc_macro::Span::call_site().into()))
-        .collect();
     let method_handler_params: Vec<syn::Ident> = (0..method_members.len())
         .map(|p| syn::Ident::new(&format!("M{}", p), proc_macro::Span::call_site().into()))
         .collect();
 
     // Flat list used in struct definition and impl generics:
-    // [S0..Sn, H0..Hm, G0..Gk, M0..Mp]
+    // [S0..Sn, H0..Hm, M0..Mp]
     let all_params: Vec<&syn::Ident> = field_update_params
         .iter()
         .chain(field_setter_params.iter())
-        .chain(field_getter_params.iter())
         .chain(method_handler_params.iter())
         .collect();
 
     let n_fields = field_members.len();
     let n_setters = setter_field_indices.len();
-    let n_getters = getter_field_indices.len();
 
     // Initial states for init() entry point.
     let init_states: Vec<_> = (0..n_fields)
         .map(|_| quote! { ::score_com::Uninit })
         .chain((0..n_setters).map(|_| quote! { ::score_com::HandlerNotSet }))
-        .chain((0..n_getters).map(|_| quote! { ::score_com::HandlerNotSet }))
         .chain((0..method_members.len()).map(|_| quote! { ::score_com::HandlerNotSet }))
         .collect();
 
@@ -259,7 +254,6 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
     let done_states: Vec<_> = (0..n_fields)
         .map(|_| quote! { ::score_com::Init })
         .chain((0..n_setters).map(|_| quote! { ::score_com::HandlerSet }))
-        .chain((0..n_getters).map(|_| quote! { ::score_com::HandlerSet }))
         .chain((0..method_members.len()).map(|_| quote! { ::score_com::HandlerSet }))
         .collect();
 
@@ -341,7 +335,7 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
                         handler: F,
                     ) -> #validator_name<#runtime_param_name, #(#after),*>
                     where
-                        F: Fn(#inner_ty) -> #inner_ty + Send + 'static,
+                        F: Fn(#inner_ty) -> #inner_ty + Send + Sync + 'static,
                     {
                         self.producer.#field_ident.register_set_handler(handler);
                         #validator_name {
@@ -355,29 +349,15 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
         .collect();
 
     // register_get_handler_{name}() impls - only for WithGetter fields.
-    // G{k} is at index n_fields + n_setters + k in all_params.
-    // Transitions Gk: HandlerNotSet - HandlerSet while all other state params stay generic.
+    // The get handler is optional: if it is not registered, a get request is answered with the
+    // latest value. Therefore the method does not change the type-state.
     let register_get_handler_methods: Vec<_> = getter_field_indices
         .iter()
-        .enumerate()
-        .map(|(k, &field_idx)| {
+        .map(|&field_idx| {
             let member = &field_members[field_idx];
             let register_fn = syn::Ident::new(&format!("register_get_handler_{}", member.ident), member.ident.span());
             let inner_ty = &member.inner_ty;
             let field_ident = &member.ident;
-            let gk_index = n_fields + n_setters + k;
-
-            let after: Vec<_> = all_params
-                .iter()
-                .enumerate()
-                .map(|(k2, p)| {
-                    if k2 == gk_index {
-                        quote! { ::score_com::HandlerSet }
-                    } else {
-                        quote! { #p }
-                    }
-                })
-                .collect();
 
             quote! {
                 impl<#runtime_param_with_bounds, #(#all_params),*>
@@ -388,9 +368,9 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
                     pub fn #register_fn<F>(
                         self,
                         handler: F,
-                    ) -> #validator_name<#runtime_param_name, #(#after),*>
+                    ) -> #validator_name<#runtime_param_name, #(#all_params),*>
                     where
-                        F: Fn() -> #inner_ty + Send + 'static,
+                        F: Fn() -> #inner_ty + Send + Sync + 'static,
                     {
                         self.producer.#field_ident.register_get_handler(handler);
                         #validator_name {
@@ -404,7 +384,7 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
         .collect();
 
     // register_{name}_handler() impls for each method member.
-    // M{p} is at index n_fields + n_setters + n_getters + p in all_params.
+    // M{p} is at index n_fields + n_setters + p in all_params.
     // Transitions Mp: HandlerNotSet - HandlerSet while all other state params stay generic.
     let register_handler_methods: Vec<_> = method_members
         .iter()
@@ -414,7 +394,7 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
             let args_ty = &member.args_ty;
             let return_ty = &member.return_ty;
             let method_ident = &member.ident;
-            let mp_index = n_fields + n_setters + n_getters + p;
+            let mp_index = n_fields + n_setters + p;
 
             let after: Vec<_> = all_params
                 .iter()
@@ -455,7 +435,7 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         // Validator struct type params track state of every Field and Method member.
-        // Layout: <R, S0..Sn (field updates), H0..Hm (set handlers), G0..Gk (get handlers), M0..Mp (method handlers)>
+        // Layout: <R, S0..Sn (field updates), H0..Hm (set handlers), M0..Mp (method handlers)>
         pub struct #validator_name<#runtime_param_with_bounds, #(#all_params),*> {
             producer: #name<#runtime_param_name>,
             _phantom: core::marker::PhantomData<(#(#all_params,)*)>,
@@ -467,14 +447,13 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
         // register_set_handler_{name}() - transitions Hj: HandlerNotSet - HandlerSet (WithSetter fields only)
         #(#register_set_handler_methods)*
 
-        // register_get_handler_{name}() - transitions Gk: HandlerNotSet - HandlerSet (WithGetter fields only)
+        // register_get_handler_{name}() - optional, no type-state change (WithGetter fields only)
         #(#register_get_handler_methods)*
 
         // register_{name}_handler() - transitions Mp: HandlerNotSet - HandlerSet (methods)
         #(#register_handler_methods)*
 
-        // offer() is only available when ALL Si = Init, ALL Hj = HandlerSet,
-        // ALL Gk = HandlerSet, ALL Mp = HandlerSet.
+        // offer() is only available when ALL Si = Init, ALL Hj = HandlerSet, ALL Mp = HandlerSet.
         impl<#runtime_param_with_bounds>
             #validator_name<#runtime_param_name, #(#done_states),*>
         {

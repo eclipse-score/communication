@@ -39,7 +39,7 @@ of the design-
 - Method calls are always async and every generated wrapper returns `impl Future` and must be `.await`ed.
 - Arguments can be passed by value (copy path) or via pre-allocated pointers (zero-copy path) using the same call site and the compiler selects the correct dispatch based on argument type.
 - Return values are wrapped in `R::MethodReturnSample<T>`, which provides `Deref<Target = T>` access, allowing the runtime to back the return with shared memory without an extra copy.
-- Handler registration on the producer side is enforced at compile time via the type-state validator, `offer()` is only callable after all method handlers are registered. Bypassing the validator and calling `offer()` directly will panic at runtime.
+- Handler registration on the producer side is enforced at compile time via the type-state validator, `offer()` is only callable after all method handlers are registered. Through the `init()` chain, calling `offer()` too early is a compile error. Only if the validator is bypassed and `offer()` is called directly on the producer, it panics at runtime.
 
 Methods are defined as part of an interface via the `interface!` macro alongside events and fields:
 
@@ -387,7 +387,7 @@ producer
     .offer()?;
 ```
 
-Note: For event-only interfaces, `producer.offer()` can be called directly. For methods and fields, `offer()` must be called via the type-state validator path using `producer.init()` and calling `offer()` directly will panic.
+Note: For event-only interfaces, `producer.offer()` can be called directly. For methods and fields, `offer()` must be called via the type-state validator path using `producer.init()` and calling `offer()` directly on the producer (bypassing the validator) will panic at runtime. Within the chain, a missing handler is a compile error.
 
 ---
 
@@ -514,3 +514,29 @@ See: <https://github.com/eclipse-score/communication/issues/781>
 ### If required add a blocking `.wait()` convenience for sync callers
 
 Method calls return futures. Callers without an async executor must bring their own (e.g. `futures::executor::block_on`). A convenience wrapper-similar to what `block_on` provides-should be added so that synchronous application code can call methods without pulling in an async runtime.
+
+### TBD: Application errors returned by method handlers
+
+Handlers currently return a plain `Return` value and have no way to report an application-level error to the caller. To be decided at runtime implementation time:
+
+- Use a `#[repr(C)]` tagged result (ok value or error code) as the handler return type, so it can cross the Rust and C++ boundary.
+- Define how it maps to the C++ side (`score::Result` and its error codes).
+- Both languages must agree on the wire representation (layout, tag values, error code space).
+
+The same applies to the field set handler, since fields reuse the method machinery.
+
+### TBD: Consumer-side error cases
+
+The following cases are not yet specified and are to be decided at runtime implementation time:
+
+- The provider stops offering the service during a pending call.
+- A call times out.
+- The consumer drops a pending call future.
+
+The same applies to field get and set calls.
+
+### TBD: Handler concurrency and signature
+
+The runtime may dispatch calls concurrently to the same handler (see the notes above) and `MethodHandlerCall` requires `Send + Sync`. This stays the contract. The current IPC engine serializes calls, but handlers must not rely on that, because enabling concurrency later would silently break them. To be decided before the API settles:
+
+- Whether handlers should return a `Future` instead of a plain value. Changing the handler signature later is a breaking change for every provider.

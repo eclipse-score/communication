@@ -91,7 +91,7 @@ impl<T: CommData + Debug, B: FFIBridge> FieldPublisher<T, LolaRuntimeImpl<B>> fo
     fn update(&self, _value: T) -> Result<()> {
         todo!()
     }
-    fn register_set_handler(&self, _callback: impl Fn(T) -> T + Send + 'static) {
+    fn register_set_handler(&self, _callback: impl Fn(T) -> T + Send + Sync + 'static) {
         // When the middleware receives a set request from a consumer:
         // - Invoke the callback with the proposed value; the callback may validate or modify it.
         // - Use the returned value as the final accepted field value to store and send to
@@ -100,7 +100,7 @@ impl<T: CommData + Debug, B: FFIBridge> FieldPublisher<T, LolaRuntimeImpl<B>> fo
         todo!()
     }
 
-    fn register_get_handler(&self, _callback: impl Fn() -> T + Send + 'static) {
+    fn register_get_handler(&self, _callback: impl Fn() -> T + Send + Sync + 'static) {
         // When the middleware receives a get request from a consumer:
         // - Invoke the callback and return its result to the consumer.
         // Default behaviour (if not registered): return the last Update()d value.

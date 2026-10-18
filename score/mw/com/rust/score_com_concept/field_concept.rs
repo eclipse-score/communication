@@ -95,20 +95,21 @@ pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized> {
     ///
     /// # Parameters
     /// * `callback` - Receives the proposed value and returns the value to accept.
-    fn register_set_handler(&self, callback: impl Fn(T) -> T + Send + 'static);
+    fn register_set_handler(&self, callback: impl Fn(T) -> T + Send + Sync + 'static);
 
-    /// Register a callback invoked by the middleware whenever a consumer calls the field getter.
-    /// The callback returns the value that will be delivered back to the consumer.
+    /// Optionally register a callback invoked by the middleware whenever a consumer calls the field
+    /// getter. The callback returns the value that will be delivered back to the consumer.
     ///
-    /// Note: In the C++ implementation the default get handler is registered automatically by the
-    /// framework (it returns the last `Update`d value). Rust exposes this explicitly so producers
-    /// can install custom read logic if needed.
+    /// This registration is optional. If it is not called, a get request is answered with the latest
+    /// value, as in the C++ implementation where the default get handler is registered automatically
+    /// by the framework. A custom callback can return a different value than the one delivered to
+    /// subscribers via `update()`, so use it only if that is intended.
     ///
     /// This registration is infallible (like `MethodHandler::register_handler`).
     ///
     /// # Parameters
     /// * `callback` - The callback function; must return the current field value.
-    fn register_get_handler(&self, callback: impl Fn() -> T + Send + 'static);
+    fn register_get_handler(&self, callback: impl Fn() -> T + Send + Sync + 'static);
 }
 
 /// FieldSampleMut trait is used to update the value of the field sample for zero-copy API.
