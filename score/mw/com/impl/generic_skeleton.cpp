@@ -61,7 +61,8 @@ std::string_view GetEventName(const InstanceIdentifier& identifier, std::string_
     return std::visit(visitor, service_type_deployment.binding_info_);
 }
 
-// Helper to fetch the stable field name from the Configuration
+/// \brief Returns the field name from the configuration as a string_view, which is assured to stay valid for the
+///        whole application lifecycle.
 std::string_view GetFieldName(const InstanceIdentifier& identifier, std::string_view search_name)
 {
     const auto& service_type_deployment = InstanceIdentifierView{identifier}.GetServiceTypeDeployment();
@@ -73,6 +74,9 @@ std::string_view GetFieldName(const InstanceIdentifier& identifier, std::string_
             {
                 return it->first;  // Return the stable address of the Key from the Config Map
             }
+            return {};
+        },
+        [](const SomeIpServiceTypeDeployment&) noexcept -> std::string_view {
             return {};
         },
         [](const score::cpp::blank&) noexcept -> std::string_view {
@@ -103,7 +107,6 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
     auto binding = SkeletonBindingFactory::Create(identifier);
     if (!binding)
     {
-
         score::mw::log::LogError("GenericSkeleton") << "Failed to create SkeletonBinding for the given identifier.";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
@@ -111,17 +114,34 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
     // 1. Create the Skeleton (Private Constructor)
     GenericSkeleton skeleton(identifier, std::move(binding));
 
-    // 2. Create events directly in the map
-    for (const auto& info : in.events)
+    // 2. Create events
+    const auto create_events_result = skeleton.CreateEvents(identifier, in.events);
+    if (!create_events_result.has_value())
     {
-        // Check for duplicates
-        if (skeleton.events_->find(info.name) != skeleton.events_->cend())
+        return MakeUnexpected<GenericSkeleton>(create_events_result.error());
+    }
+
+    // 3. Create fields
+    const auto create_fields_result = skeleton.CreateFields(identifier, in.fields);
+    if (!create_fields_result.has_value())
+    {
+        return MakeUnexpected<GenericSkeleton>(create_fields_result.error());
+    }
+
+    return skeleton;
+}
+
+Result<void> GenericSkeleton::CreateEvents(const InstanceIdentifier& identifier,
+                                           score::cpp::span<const EventInfo> events)
+{
+    for (const auto& info : events)
+    {
+        if (events_->find(info.name) != events_->cend())
         {
             score::mw::log::LogError("GenericSkeleton") << "Duplicate event name provided: " << info.name;
             return MakeUnexpected(ComErrc::kServiceElementAlreadyExists);
         }
 
-        // 1. Fetch the STABLE Name from Configuration
         std::string_view stable_name = GetEventName(identifier, info.name);
 
         if (stable_name.empty())
@@ -130,11 +150,6 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
-        // Validate & convert the public DataTypeMetaInfo into the internal DataTypeSizeInfo. Invalid meta-info (e.g.
-        // alignment not a power of two, or size not a multiple of alignment) results in an error instead of a later
-        // contract violation. Unfortunately our public interface DataTypeMetaInfo does not enforce these invariants,
-        // so we have to check them here. \todo: At some point we should already enforce this on DataTypeMetaInfo,
-        // but this would require a break in the public API!
         auto data_type_size_info_result = MakeDataTypeSizeInfo(info.data_type_meta_info);
         if (!data_type_size_info_result.has_value())
         {
@@ -144,7 +159,7 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
         }
 
         auto event_binding_ptr = SkeletonEventBindingFactory::Create(
-            identifier, SkeletonBaseView{skeleton}.GetBinding(), info.name, data_type_size_info_result.value());
+            identifier, SkeletonBaseView{*this}.GetBinding(), info.name, data_type_size_info_result.value());
 
         if (!event_binding_ptr)
         {
@@ -152,9 +167,9 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
         }
 
         const auto emplace_result =
-            skeleton.events_->emplace(std::piecewise_construct,
-                                      std::forward_as_tuple(stable_name),
-                                      std::forward_as_tuple(skeleton, stable_name, std::move(event_binding_ptr)));
+            events_->emplace(std::piecewise_construct,
+                             std::forward_as_tuple(stable_name),
+                             std::forward_as_tuple(*this, stable_name, std::move(event_binding_ptr)));
 
         if (!emplace_result.second)
         {
@@ -162,12 +177,15 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
     }
+    return {};
+}
 
-    // 3. Create fields directly in the map
-    for (const auto& info : in.fields)
+Result<void> GenericSkeleton::CreateFields(const InstanceIdentifier& identifier,
+                                           score::cpp::span<const FieldInfo> fields)
+{
+    for (const auto& info : fields)
     {
-        // Check for duplicates
-        if (skeleton.fields_->find(info.name) != skeleton.fields_->cend())
+        if (fields_->find(info.name) != fields_->cend())
         {
             score::mw::log::LogError("GenericSkeleton") << "Duplicate field name provided: " << info.name;
             return MakeUnexpected(ComErrc::kServiceElementAlreadyExists);
@@ -181,7 +199,6 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
-        // Validate & convert the public DataTypeMetaInfo into the internal DataTypeSizeInfo.
         auto data_type_size_info_result = MakeDataTypeSizeInfo(info.data_type_meta_info);
         if (!data_type_size_info_result.has_value())
         {
@@ -190,35 +207,25 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
             return MakeUnexpected(ComErrc::kInvalidConfiguration);
         }
 
-        auto event_binding_result =
-            GenericSkeletonEventBindingFactory::Create(skeleton, info.name, data_type_size_info_result.value());
-
-        if (!event_binding_result.has_value())
-        {
-            return MakeUnexpected(ComErrc::kBindingFailure);
-        }
-
-        // Use the hidden constructor tag so the event doesn't register itself in the events_ map
-        auto generic_event =
-            std::make_unique<GenericSkeletonEvent>(skeleton,
-                                                   stable_name,
-                                                   std::move(event_binding_result).value(),
-                                                   GenericSkeletonEvent::FieldOnlyConstructorEnabler{});
-
-        const auto emplace_result = skeleton.fields_->emplace(
+        const auto emplace_result = fields_->emplace(
             std::piecewise_construct,
             std::forward_as_tuple(stable_name),
             std::forward_as_tuple(
-                skeleton, stable_name, std::move(generic_event), info.has_getter, info.has_setter, info.has_notifier));
+                *this, stable_name, data_type_size_info_result.value(), info.has_getter, info.has_setter));
 
         if (!emplace_result.second)
         {
             score::mw::log::LogError("GenericSkeleton") << "Failed to emplace field in map: " << info.name;
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
-    }
 
-    return skeleton;
+        if (!emplace_result.first->second.HasValidBinding())
+        {
+            score::mw::log::LogError("GenericSkeleton") << "Failed to create event binding for field: " << info.name;
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+    }
+    return {};
 }
 
 ServiceElementMapView<GenericSkeletonEvent> GenericSkeleton::GetEvents() const noexcept

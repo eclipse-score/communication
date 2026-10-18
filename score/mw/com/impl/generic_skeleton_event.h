@@ -19,22 +19,26 @@
 #include "score/mw/com/impl/skeleton_event_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/result/result.h"
+#include <score/span.hpp>
 
+#include <cstdint>
 #include <string>
 
 namespace score::mw::com::impl
 {
 
 class SkeletonBase;
+class GenericSkeletonField;
 
 class GenericSkeletonEvent : public SkeletonEventBase
 {
-  public:
+    friend class GenericSkeletonField;
+
     struct FieldOnlyConstructorEnabler
     {
-        explicit FieldOnlyConstructorEnabler() = default;
     };
 
+  public:
     GenericSkeletonEvent(SkeletonBase& skeleton_base,
                          const std::string_view event_name,
                          std::unique_ptr<SkeletonEventBinding> binding);
@@ -45,6 +49,10 @@ class GenericSkeletonEvent : public SkeletonEventBase
                          FieldOnlyConstructorEnabler tag);
 
     Result<void> Send(SampleAllocateePtr<void> sample);
+
+    /// \brief Sends a payload of raw bytes using a copy into a newly allocated sample.
+    /// \param data The type-erased payload to send.
+    [[nodiscard]] Result<void> Send(score::cpp::span<const uint8_t> data);
 
     Result<SampleAllocateePtr<void>> Allocate() noexcept;
 

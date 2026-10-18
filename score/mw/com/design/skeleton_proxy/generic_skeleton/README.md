@@ -84,3 +84,58 @@ if (event_it != skeleton.GetEvents().cend()) {
     }
 }
 ```
+
+**Example: Creating a Generic Skeleton with a Field**
+
+```cpp
+#include "score/mw/com/impl/generic_skeleton.h"
+#include "score/mw/com/impl/data_type_meta_info.h"
+#include <vector>
+
+// 1. Define the metadata for the field.
+const auto field_name = "vehicle_speed";
+const score::mw::com::impl::DataTypeMetaInfo field_meta_info{
+    sizeof(uint32_t),
+    alignof(uint32_t)
+};
+
+// 2. Collect field definitions with configured flags (has_getter, has_setter).
+const std::vector<score::mw::com::impl::FieldInfo> fields = {
+    {field_name, field_meta_info, /*has_getter=*/true, /*has_setter=*/false}
+};
+
+score::mw::com::impl::GenericSkeletonServiceElementInfo create_params;
+create_params.fields = fields;
+
+// 3. Create the Generic Skeleton instance.
+auto create_result = score::mw::com::impl::GenericSkeleton::Create(
+    instance_specifier,
+    create_params
+);
+auto& skeleton = create_result.value();
+
+// 4. IMPORTANT: Set the initial value BEFORE offering the service!
+// Fields strictly require an initial value to be set prior to OfferService().
+auto field_it = skeleton.GetFields().find(field_name);
+if (field_it != skeleton.GetFields().cend()) {
+    auto& generic_field = const_cast<score::mw::com::impl::GenericSkeletonField&>(field_it->second);
+
+    uint32_t initial_speed = 0U;
+    score::cpp::span<const uint8_t> initial_bytes{
+        reinterpret_cast<const uint8_t*>(&initial_speed), sizeof(initial_speed)};
+    generic_field.Update(initial_bytes);
+}
+
+// 5. Offer the service (this executes DoDeferredUpdate to commit the initial value to shared memory).
+skeleton.OfferService();
+
+// 6. Update field values at runtime.
+if (field_it != skeleton.GetFields().cend()) {
+    auto& generic_field = const_cast<score::mw::com::impl::GenericSkeletonField&>(field_it->second);
+    uint32_t new_speed = 50U;
+    score::cpp::span<const uint8_t> new_bytes{
+        reinterpret_cast<const uint8_t*>(&new_speed), sizeof(new_speed)};
+    generic_field.Update(new_bytes);
+}
+```
+
