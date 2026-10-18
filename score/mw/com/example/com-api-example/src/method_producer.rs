@@ -45,11 +45,13 @@ fn create_producer_method<R: Runtime>(runtime: &R, service_id: InstanceSpecifier
     producer
         .init()
         // register method handler like function pointer.
+        // The handler returns a future of the result, the application chooses the executor.
         .register_update_front_tires_pressure_handler(|tire1: &Tire, tire2: &Tire| {
             println!(
                 "Received update_front_tires_pressure call with tire1: {:?}, tire2: {:?}",
                 tire1, tire2
             );
+            async {}
         })
         .register_calculate_pressure_imbalance_handler(process_pressure_imbalance)
         .offer()
@@ -57,14 +59,15 @@ fn create_producer_method<R: Runtime>(runtime: &R, service_id: InstanceSpecifier
 }
 
 #[allow(dead_code)]
-fn process_pressure_imbalance(tire1: &Tire, tire2: &Tire) -> PressureImbalance {
+fn process_pressure_imbalance(tire1: &Tire, tire2: &Tire) -> std::future::Ready<PressureImbalance> {
     // Unlike a plain update/get pair, this handler is not a thin wrapper around a field's
     // get/set: it computes a derived result (PressureImbalance) from two Tire readings.
+    // The returned future must not borrow from the arguments, so the result is computed first.
     println!(
         "Received calculate_pressure_imbalance call with tire1: {:?}, tire2: {:?}",
         tire1, tire2
     );
-    PressureImbalance {
+    std::future::ready(PressureImbalance {
         delta_kpa: (tire1.pressure - tire2.pressure).abs(),
-    }
+    })
 }

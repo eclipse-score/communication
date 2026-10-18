@@ -275,12 +275,24 @@ consumer.update_tire_pressure(tire_ptr)    // zero-copy path — ZeroCopyArgs Pt
 
 #### `MethodHandlerCall<Args, Return>`
 
-Callable abstraction for handler functions. Any `Fn` closure or function pointer with the matching signature automatically satisfies this trait through blanket impls for all arities.
+Callable abstraction for handler functions. Any `Fn` closure or function pointer with the matching signature that returns a `Future` automatically satisfies this trait through blanket impls for all arities.
 
 ```rust
 pub trait MethodHandlerCall<Args, Return>: Send + Sync + 'static {
-    fn call(&self, args: Args) -> Return;
+    type Fut: Future<Output = Return> + Send + 'static;
+
+    fn call(&self, args: &Args) -> Self::Fut;
 }
+```
+
+The handler receives its arguments by reference and returns a `Future` of the result. The future is `'static`, so it must not borrow from the arguments. A handler that needs argument data inside its async body copies or clones it first. The application chooses the executor that polls the future, the runtime only hands it over.
+
+```rust
+// Argument data is used synchronously, the future does not borrow from it
+.register_calculate_pressure_imbalance_handler(|t1: &Tire, t2: &Tire| {
+    let result = PressureImbalance { delta_kpa: (t1.pressure - t2.pressure).abs() };
+    async move { result }
+})
 ```
 
 ---
@@ -382,8 +394,8 @@ producer.init()
 producer
     .init()
     .register_update_tire_pressure_handler(process_tire)
-    .register_get_tire_pressure_handler(|| Tire { pressure: 32.0 })
-    .register_update_front_tires_pressure_handler(|t1, t2| { /* ... */ })
+    .register_get_tire_pressure_handler(|| async { Tire { pressure: 32.0 } })
+    .register_update_front_tires_pressure_handler(|t1, t2| { /* ... */ async {} })
     .offer()?;
 ```
 
@@ -413,17 +425,19 @@ fn create_producer<R: Runtime>(
         // Register with a named function pointer
         .register_update_tire_pressure_handler(process_tire)
         // Register with a closure-zero-argument method returning a value
-        .register_get_tire_pressure_handler(|| Tire { pressure: 32.0 })
+        .register_get_tire_pressure_handler(|| async { Tire { pressure: 32.0 } })
         // Register with a closure-two-argument method
-        .register_update_front_tires_pressure_handler(|t1: Tire, t2: Tire| {
+        .register_update_front_tires_pressure_handler(|t1: &Tire, t2: &Tire| {
             println!("Front tires: {:?}, {:?}", t1, t2);
+            async {}
         })
         .offer()
         .expect("Failed to offer producer")
 }
 
-fn process_tire(tire: Tire) {
+fn process_tire(tire: &Tire) -> std::future::Ready<()> {
     println!("Tire pressure: {:?}", tire);
+    std::future::ready(())
 }
 ```
 
@@ -431,7 +445,7 @@ Key points:
 
 - `producer.init()` returns the generated `Validator` type; each `register_*` call advances the type-state.
 - Handlers are registered before `offer()`, which is the only way to make the service discoverable.
-- Handlers may be closures or function pointers-any type satisfying `MethodHandlerCall<Args, Return>`.
+- Handlers may be closures or function pointers that return a `Future`, i.e. any type satisfying `MethodHandlerCall<Args, Return>`.
 - The runtime may call handlers concurrently. Handlers must synchronise any shared mutable state internally.
 
 ---
@@ -517,7 +531,7 @@ Method calls return futures. Callers without an async executor must bring their 
 
 ### TBD: Application errors returned by method handlers
 
-Handlers currently return a plain `Return` value and have no way to report an application-level error to the caller. To be decided at runtime implementation time:
+Handlers return a plain `Return` value (wrapped in a future) and have no way to report an application-level error to the caller. To be decided at runtime implementation time:
 
 - Use a `#[repr(C)]` tagged result (ok value or error code) as the handler return type, so it can cross the Rust and C++ boundary.
 - Define how it maps to the C++ side (`score::Result` and its error codes).
@@ -535,8 +549,29 @@ The following cases are not yet specified and are to be decided at runtime imple
 
 The same applies to field get and set calls.
 
-### TBD: Handler concurrency and signature
+### Handler concurrency and signature
 
-The runtime may dispatch calls concurrently to the same handler (see the notes above) and `MethodHandlerCall` requires `Send + Sync`. This stays the contract. The current IPC engine serializes calls, but handlers must not rely on that, because enabling concurrency later would silently break them. To be decided before the API settles:
+The runtime may dispatch calls concurrently to the same handler (see the notes above) and `MethodHandlerCall` requires `Send + Sync`. This stays the contract. The current IPC engine serializes calls, but handlers must not rely on that, because enabling concurrency later would silently break them.
 
-- Whether handlers should return a `Future` instead of a plain value. Changing the handler signature later is a breaking change for every provider.
+Decided: handlers return a `Future` instead of a plain value (implemented in `MethodHandlerCall` and the field set handler). Changing the signature later would be a breaking change for every provider. The alternative, spawning synchronous blocking callbacks on a LoLa thread pool, could exhaust the pool under contention.
+
+- A `Future` lets provider code suspend until the result is available. Synchronous handlers remain possible by returning an already completed future.
+- The executor is chosen by the user (the application), not owned by the runtime. The runtime produces the handler futures and the application can poll them on the executor of its choice through an optional hook (see below).
+- User code that cannot get rid of blocking calls must spawn its own thread (pool) and bridge between sync and async. This is expected to be a rare case.
+
+#### Executor hook and `block_on` fallback (LoLa)
+
+In the C++ LoLa binding the method handler callback has the form `void(QualityType, in_args, return_buf)` and the reply is sent right after it returns. The field set handler is also called synchronously. The LoLa runtime therefore cannot simply hand the handler future over. The callback thread has to wait until the future completes. Agreed approach:
+
+- The application can register an optional executor hook `spawn(future)`. The runtime passes the handler future to it and the callback thread waits for completion.
+- If no hook is set, the runtime runs the future with `block_on` on the callback thread.
+- A future that never completes blocks that connection, as a blocking C++ handler does today.
+- Without a hook, a handler that awaits something tied to the application's own executor (e.g. a tokio timer or channel) may hang or panic. Applications using such an executor should set the hook.
+- Each in-flight call occupies one callback thread until its future completes. The `Future` signature therefore does not avoid pool exhaustion on LoLa until the C++ side supports a deferred reply.
+- True async completion, timeouts and handler errors would need a deferred reply with an error result in the C++ `SkeletonMethod` (the reply already carries `MethodErrc`). This is not planned on the C++ side for now. If it is added, the Rust handler error type can be mapped onto `MethodErrc` (see the TBD on application errors above).
+
+Still to be decided at runtime implementation time:
+
+- The exact signature of the executor hook and how it fits the existing cancellation and tokio integration.
+- The returned future is `'static` and cannot borrow from the by-reference arguments. Whether owned or pointer-wrapped arguments would be more ergonomic is to be revisited.
+- The field get handler stays synchronous because it returns the latest value immediately.
