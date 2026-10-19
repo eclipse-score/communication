@@ -94,6 +94,11 @@ cmake .. && make
 sudo make install
 ```
 
+### QNX
+
+QNX is built by cross-compiling with the QNX SDP toolchain. See
+[docs/qnx.md](docs/qnx.md) for the build and run guide.
+
 ## Build Options
 
 Boolean options use the same `-D<OPTION>=ON|OFF` form. They are declared in
@@ -109,7 +114,7 @@ the root `CMakeLists.txt` and are applied consistently to all project targets.
 | `ENABLE_QNX_MESSAGE_PASSING` | QNX only | Use QNX message passing for local IPC. |
 | `ENABLE_SOMEIP_IPC` | `OFF` | Enable extended SOME/IP IPC routing support. |
 | `ENABLE_TEST_BUILD` | `OFF` | Build unit, component, and integration tests plus coverage instrumentation. Requires the standard CTest option `BUILD_TESTING=ON`. |
-| `ENABLE_EXAMPLES` | `ON` | Build Linux example applications. This option is ignored on QNX. |
+| `ENABLE_EXAMPLES` | `ON` | Build example applications. |
 | `ENABLE_TOOLS` | `ON` | Build diagnostic tools. |
 
 The numeric settings use the same root CMake cache with

@@ -208,7 +208,7 @@ if(ENABLE_TOOLS)
     add_subdirectory(${LGSOMEIP_SOURCE_DIR}/tools/dump-someipservices ${LGSOMEIP_BINARY_DIR}/tools/dump-someipservices)
 endif()
 
-if(ENABLE_EXAMPLES AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(ENABLE_EXAMPLES)
     add_subdirectory(${LGSOMEIP_SOURCE_DIR}/examples/someip/simple-event ${LGSOMEIP_BINARY_DIR}/examples/someip/simple-event)
     add_subdirectory(${LGSOMEIP_SOURCE_DIR}/examples/someip/simple-method ${LGSOMEIP_BINARY_DIR}/examples/someip/simple-method)
 endif()

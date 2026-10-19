@@ -54,6 +54,6 @@ install(TARGETS ${LIBRARY_NAME} EXPORT ${LGSOMEIP_EXPORT_NAME}
 
 # example, test
 
-if(ENABLE_EXAMPLES AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(ENABLE_EXAMPLES)
     add_subdirectory(examples)
 endif()
