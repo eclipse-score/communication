@@ -392,6 +392,14 @@ add a lot of complexity and potential for deadlocks. The solution via the return
 machine called the handler, and before it releases the lock, it checks the return value. If it is `false`, it just resets
 &ndash; still under state-machine mutex lock &ndash; the internal `std::optional`, which holds the handler.
 
+#### Tracing of Subscription State Changes
+
+If IPC Tracing is enabled for a proxy event, the `SubscriptionStateMachine` reports every state transition to two
+optional tracing callbacks (`SetSubscriptionStateChangeTracingCallback()` and
+`SetSubscriptionStateChangeHandlerTracingCallback()`), which are invoked in `TransitionToState()` before the
+user-provided handler. Registering/unregistering a handler is traced in `ProxyEventBase`. Details are described in the
+[IPC Tracing design](../../impl/tracing/dependability/README.md#subscription-state-change-tracing).
+
 ### Event Update Notification
 
 Event Notification is a good showcase for the "smart" behavior of `lola::MessagePassingFacade` as already mentioned (see
