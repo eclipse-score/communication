@@ -93,8 +93,8 @@ int main() {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    constexpr std::uint32_t kRequestCount = 100000;
-    for (std::uint32_t sent = 0; sent < kRequestCount; ++sent) {
+    constexpr std::uint32_t request_count = 100000;
+    for (std::uint32_t sent = 0; sent < request_count; ++sent) {
         // SOME/IP's nonzero 16-bit session ID correlates this response with
         // its request; it also indexes the local latency timestamp.
         auto session = static_cast<std::uint16_t>(++next_session);
@@ -119,8 +119,7 @@ int main() {
     }
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    std::cout << application->name() << " sent=" << kRequestCount << " received=" << response_count << std::endl;
+    std::cout << application->name() << " sent=" << request_count << " received=" << response_count << std::endl;
     application->stop();
     application->join();
-
 }

@@ -217,7 +217,6 @@ void connect_with_small_buffers(BackpressureConnection& connection) {
     set_socket_buffers(connection.client->get_socket_fd(), 32 * 1024);
     connection.accepted = connection.server->accept();
     ASSERT_NE(connection.accepted->get_socket_fd(), -1);
-
 }
 
 } // namespace
@@ -228,13 +227,13 @@ TEST(TCPSocketTest, SendWaitsForSlowReaderAcrossMultipleTimeouts) {
     ASSERT_NE(connection.client, nullptr);
 
     // At about 3 MB/s the reader needs well over the 1 s send timeout, but it never stalls.
-    constexpr std::size_t kMessageSize = 6 * 1024 * 1024;
-    std::vector<char> message(kMessageSize, 'x');
+    constexpr std::size_t message_size = 6 * 1024 * 1024;
+    std::vector<char> message(message_size, 'x');
     std::atomic<std::size_t> received{0};
     std::atomic<bool> send_failed{false};
     std::thread reader([&] {
         std::vector<char> buffer(16 * 1024);
-        while (received < kMessageSize && !send_failed) {
+        while (received < message_size && !send_failed) {
             int length = connection.accepted->receive(buffer.data(), buffer.size());
             if (length < 0) {
                 break;
@@ -248,11 +247,11 @@ TEST(TCPSocketTest, SendWaitsForSlowReaderAcrossMultipleTimeouts) {
     int sent = connection.client->send(connection.client->get_socket_fd(), message.data(), message.size());
     auto elapsed = std::chrono::steady_clock::now() - start;
     // A failed send leaves the reader at end-of-stream; stop it, but let it drain everything after a success.
-    send_failed = (sent != static_cast<int>(kMessageSize));
+    send_failed = (sent != static_cast<int>(message_size));
     reader.join();
 
-    EXPECT_EQ(sent, static_cast<int>(kMessageSize));
-    EXPECT_EQ(received, kMessageSize);
+    EXPECT_EQ(sent, static_cast<int>(message_size));
+    EXPECT_EQ(received, message_size);
     EXPECT_GT(elapsed, std::chrono::milliseconds(1200));
 }
 

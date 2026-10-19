@@ -64,7 +64,7 @@ void EventManager::run() {
     while (running_) {
         {
             std::unique_lock<std::mutex> lock(thread_mutex_);
-            for (auto event : offered_events_) {
+            for (const auto& event : offered_events_) {
                 event->send(base_interval_);
             }
         }

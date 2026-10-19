@@ -28,8 +28,8 @@ namespace osabstraction {
 
 // If LINUX is defined, the Epoll Multiplexer is executed.
 Multiplexer::Multiplexer() {
-    constexpr char kLockPath[] = "/tmp/someip/multiplexer.lock";
-    int lock_fd = ::open(kLockPath, O_RDONLY | O_CREAT, 0600);
+    constexpr char lock_path[] = "/tmp/someip/multiplexer.lock";
+    int lock_fd = ::open(lock_path, O_RDONLY | O_CREAT, 0600);
     // Just try to do best-effort. If there are error, just try to create epoll
     if (lock_fd != -1) {
         ::flock(lock_fd, LOCK_EX);

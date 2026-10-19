@@ -31,9 +31,10 @@ void create_msg(char* message, std::size_t max_length) {
 }
 
 std::uint16_t get_test_port(std::uint16_t offset) {
-    constexpr std::uint16_t kTestPortBase = 20000;
-    constexpr std::uint16_t kTestPortRange = 20000;
-    return static_cast<std::uint16_t>(kTestPortBase + (static_cast<unsigned long>(getpid()) % kTestPortRange) + offset);
+    constexpr std::uint16_t test_port_base = 20000;
+    constexpr std::uint16_t test_port_range = 20000;
+    return static_cast<std::uint16_t>(test_port_base + (static_cast<unsigned long>(getpid()) % test_port_range) +
+                                      offset);
 }
 
 std::string get_test_socket_path(const char* name) {

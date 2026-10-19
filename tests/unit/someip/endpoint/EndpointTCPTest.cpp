@@ -66,8 +66,9 @@ std::vector<std::uint8_t> slice(const std::vector<std::uint8_t>& bytes, std::siz
 }
 
 // Delivers the stream in pieces of chunk bytes, calling the endpoint after each piece, as the multiplexer would.
-template <typename EndpointT> void feed_in_chunks(FeedSocket& socket, EndpointT& endpoint,
-                                                 const std::vector<std::uint8_t>& stream, std::size_t chunk) {
+template <typename EndpointT>
+void feed_in_chunks(FeedSocket& socket, EndpointT& endpoint, const std::vector<std::uint8_t>& stream,
+                    std::size_t chunk) {
     for (std::size_t pos = 0; pos < stream.size(); pos += chunk) {
         socket.feed(slice(stream, pos, std::min(pos + chunk, stream.size())));
         endpoint.callback(false);
@@ -164,8 +165,8 @@ TEST(EndpointTCPClient, does_not_consume_bytes_of_the_following_message) {
 
 TEST(EndpointTCPClient, receives_message_larger_than_static_buffer_in_pieces) {
     const std::size_t payload_size = EndpointBase::STATIC_BUFFER_SIZE * 2 + 5;
-    std::vector<std::uint8_t> message = {0x12, 0x34, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-                                         0x00, 0x02, 0x01, 0x01, 0x00, 0x00};
+    std::vector<std::uint8_t> message = {0x12, 0x34, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00,
+                                         0x00, 0x01, 0x00, 0x02, 0x01, 0x01, 0x00, 0x00};
     const std::uint32_t length = static_cast<std::uint32_t>(8 + payload_size);
     message[4] = length >> 24;
     message[5] = length >> 16;

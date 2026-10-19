@@ -33,7 +33,7 @@ class UDPSocket : public Socket {
 
 public:
     UDPSocket(std::shared_ptr<Address> address, const SecureConfig& secure_config = SecureConfig());
-    ~UDPSocket(){};
+    ~UDPSocket() {}
 
     void send(const void* buffer, std::size_t size, std::shared_ptr<Address> to_address) override;
     int receive(char* buffer, std::size_t size, std::shared_ptr<Address> from_address) override;
