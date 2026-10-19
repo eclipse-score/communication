@@ -49,11 +49,15 @@ UDPSocket::UDPSocket(std::shared_ptr<Address> address, const SecureConfig& secur
                                << strerror(errno);
         }
 #elif defined(QNX)
+#ifdef SO_VLANPRIO
         unsigned char prio = static_cast<unsigned char>(int_vlan_prio);
         if (setsockopt(get_socket_fd(), SOL_SOCKET, SO_VLANPRIO, &prio, sizeof(prio))) {
             LGSOMEIP_LOG_ERROR << "UDPSocket::UDPSocket / Fail to set vlan priority with a socket. error#"
                                << strerror(errno);
         }
+#else
+        LGSOMEIP_LOG_WARN << "UDPSocket::UDPSocket / SO_VLANPRIO is not available on this QNX platform";
+#endif
 #endif
     }
 }

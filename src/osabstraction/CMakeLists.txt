@@ -36,6 +36,11 @@ add_library(${LIBRARY_NAME} STATIC ${OSABSTRACTION_SOURCE})
 lgsomeip_configure_target(${LIBRARY_NAME})
 target_include_directories(${LIBRARY_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
+# MessagePassingServer.cpp (QNX only) uses the header-only exception classes.
+if (CMAKE_SYSTEM_NAME STREQUAL "QNX")
+    target_include_directories(${LIBRARY_NAME} PRIVATE ${LGSOMEIP_SOURCE_DIR}/src/someip)
+endif()
+
 target_link_libraries(${LIBRARY_NAME} ${ADDITIONAL_LIBS})
 
 # ALIAS
