@@ -67,7 +67,7 @@ socket, and message primitives:
 - Each **application process** links the library and connects to the daemon over
   local IPC (Unix domain sockets on Linux, message passing on QNX).
 
-See [docs/lgsomeip.md](docs/lgsomeip.md) for the detailed software design.
+See [docs/lgsomeip-software-design.md](docs/lgsomeip-software-design.md) for the detailed software design.
 
 ## Requirements
 
@@ -97,7 +97,7 @@ sudo make install
 ### QNX
 
 QNX is built by cross-compiling with the QNX SDP toolchain. See
-[docs/qnx.md](docs/qnx.md) for the build and run guide.
+[docs/qnx-build-and-run-guide.md](docs/qnx-build-and-run-guide.md) for the build and run guide.
 
 ## Build Options
 

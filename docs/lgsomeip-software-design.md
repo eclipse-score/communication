@@ -24,26 +24,31 @@ The implementation is organized into the following namespaces:
 
 |Namespace|Scope|
 |:---|:---|
-|`lgsomeip`|Internal core SOME/IP stack: runtime, configuration, message model, packet router, endpoints, exceptions, and utilities.|
-|`lgsomeip::osabstraction`|Internal OS abstraction: sockets, addresses, multiplexer, message passing, timers, and logging.|
+|`lgsomeip::api`|Public native API (`include/lgsomeip/LgsomeipApi.h`): `Runtime`, `Application`, `Message`, handler types, and the SOME/IP `MessageType`/`ReturnCode` enumerations. Recommended for new applications.|
+|`lgsomeip`|Internal core SOME/IP stack: runtime, configuration, message model, packet router, endpoints, exceptions, utilities, and the logging and `TimerManager` helpers that live under `src/osabstraction/utils`.|
+|`lgsomeip::osabstraction`|Internal OS abstraction: sockets, addresses, `NetworkDevice`, multiplexer, and QNX message passing.|
+|`lgsomeip::serialization`|Internal parameter serialization helpers (`src/serialization/someip`).|
 |`vsomeip`|Supported public compatibility interface for applications and adaptation middleware.|
-|`vsomeip::e2e`, `vsomeip::e2exf`|Bundled E2E implementation namespaces; their headers remain internal and are not installed as public APIs.|
+|`vsomeip::e2e`, `vsomeip::e2exf`|Bundled E2E implementation namespaces (the CRC and buffer helpers `e2e_crc` and `e2e_buffer` are directly in `vsomeip`); their headers remain internal and are not installed as public APIs.|
 
-The source public header boundary is `third_party/vsomeip_interface/include/vsomeip` and
-is installed as `include/vsomeip`. Consumers should use the generated `vsomeip`
-CMake package and must not depend directly on internal `lgsomeip::*`, serializer,
-or E2E headers.
+There are two public header boundaries:
+
+* `include/lgsomeip` (`LgsomeipApi.h`), consumed through the `lgsomeip::api` CMake target (the `lgsomeip` package). It is implemented in `src/someip/runtime/LgsomeipApi.cpp` as a thin layer over `ApplicationManager`.
+* `third_party/vsomeip_interface/include/vsomeip`, installed as `include/vsomeip` and consumed through the `vsomeip` CMake package.
+
+Consumers must not depend directly on the internal `lgsomeip::*` core, serializer, or E2E headers.
 
 #### Process Model
 The stack is split into two cooperating roles that share the same endpoint, socket, and message primitives:
 
 * The **daemon process** (`someip-daemon`) runs a single `ServiceManager`, which owns a `PacketRouterHost`. It performs Service Discovery and routes SOME/IP traffic between local applications and remote ECUs.
-* Each **application process** links the library and drives an `ApplicationManager`, which owns a `PacketRouterProxy`. The proxy connects to the daemon over local IPC (Unix domain sockets on Linux, message passing on QNX).
+* Each **application process** links the library and drives an `ApplicationManager`, which owns a `PacketRouterProxy`. The proxy connects to the daemon over local IPC (Unix domain sockets on Linux, message passing on QNX). Applications reach `ApplicationManager` through either the native `lgsomeip::api` layer or the vSomeip-compatible `vsomeip` layer.
 
 ```mermaid
 flowchart LR
     subgraph App["Application process"]
-        VS["vsomeip::application_impl"] --> AM["ApplicationManager"]
+        API["lgsomeip::api::Application"] --> AM["ApplicationManager"]
+        VS["vsomeip::application_impl"] --> AM
         AM --> EM["EventManager / OfferedEvent"]
         AM --> PRP["PacketRouterProxy"]
         PRP --> EPc["Endpoints (local IPC)"]
@@ -71,6 +76,14 @@ flowchart LR
         }
 
         rectangle "LG SOME/IP" as LGSOMEIP {
+            Component "LGSOMEIP_API" as LGAPI {
+                rectangle "Runtime" as LRT
+                rectangle "Application" as LAPP
+                rectangle "Message" as LMSG
+
+                LRT -[hidden]l- LAPP
+                LAPP -[hidden]l- LMSG
+            }
             Component "VSOMEIP_Interface" as VSOMEIP {
                 rectangle "Runtime" as RT
                 rectangle "Application" as APP
@@ -116,29 +129,33 @@ flowchart LR
         }
         SOMEIP_CORE -[hidden]u- e2e
         SOMEIP_CORE -[hidden]u- VSOMEIP
+        SOMEIP_CORE -[hidden]u- LGAPI
         SOMEIP_CORE --[hidden]d-- OSAbs
 
     @enduml
     ```
 
-    The figure above shows the component and package diagram of the LG SOME/IP solution. It consists of an `OSAbstraction` component built on the POSIX socket API and a `SOME/IP Core` component that implements the SOME/IP protocol. To provide compatibility with the open-source vSomeip binding, it also contains a vSomeip interface wrapper component, and an `E2E_Protection` component (BMW AG, MPL-2.0) for end-to-end payload protection.
+    The figure above shows the component and package diagram of the LG SOME/IP solution. It consists of an `OSAbstraction` component built on the POSIX socket API and a `SOME/IP Core` component that implements the SOME/IP protocol. It exposes a native `LGSOMEIP_API` component (`lgsomeip::api`) for new applications and, to provide compatibility with the open-source vSomeip binding, a vSomeip interface wrapper component. It also contains an `E2E_Protection` component (BMW AG, MPL-2.0) for end-to-end payload protection.
 
     |Component|Package|Description|
     |:---|:---|:---|
     |OSAbstraction|socket|Contains the `NetworkDevice` singleton (device name / address / id) and the `Socket`/`Address` hierarchy used for TCP, UDP, and Unix-domain communication.|
-    |OSAbstraction|multiplex|The `Multiplexer` delivers I/O and connection events for event-driven I/O. It has two back-ends selected at build time: `epoll` on Linux and `select` on QNX.|
+    |OSAbstraction|multiplex|The `Multiplexer` delivers I/O and connection events for event-driven I/O. It has two back-ends selected by target platform in CMake: `epoll` on Linux and `select` on other targets (QNX).|
     |OSAbstraction|messagepassing|QNX-only IPC transport (`MessagePassingServer`/`MessagePassingSender` and listener interfaces) used instead of Unix-domain sockets.|
-    |OSAbstraction|utils|Logging (`logger`, `formatLog`) and `TimerManager`.|
-    |SOME/IP Core|runtime|`ApplicationManager` (application-side facade), `ServiceManager` (daemon-side SD), and `EventManager`/`OfferedEvent` (event notification).|
+    |OSAbstraction|utils|Logging (`logger`, `formatLog`; console or COVESA DLT) and `TimerManager`. These headers are compiled into the core library and declared in namespace `lgsomeip`.|
+    |SOME/IP Core|serialization|Header-only parameter serialization helpers (`SomeIPParameterSerialization.h`, namespace `lgsomeip::serialization`).|
+    |SOME/IP Core|runtime|`ApplicationManager` (application-side facade), `ServiceManager` (daemon-side SD), `EventManager`/`OfferedEvent` (event notification), and `LgsomeipApi.cpp` (implementation of the public `lgsomeip::api`).|
     |SOME/IP Core|config|`Configuration` and the owned `ServiceInfo`, `ConfigEvent`, `ConfigEventgroup`, `ConfigurationSD`, and `ConfigE2E` objects, parsed from JSON.|
     |SOME/IP Core|message|Implements SOME/IP and SOME/IP-SD packets as byte arrays (`MessageHeader`, `MessageSOMEIP`, `MessageSD`, `MessagePayload`, `SDEntry`, `SDOption`) and (de)serialization (`MessageBuilder`, `MessageComposer`, `Serializer`).|
-    |SOME/IP Core|packetrouter|Routes SOME/IP and SOME/IP-SD packets to their destination. `PacketRouterHost` runs in the daemon; `PacketRouterProxy` runs in the application. Includes optional `PacketFiltering`.|
+    |SOME/IP Core|packetrouter|Routes SOME/IP and SOME/IP-SD packets to their destination. `PacketRouterHost` (implements the `ServiceRouter` interface) runs in the daemon; `PacketRouterProxy` (implements the `ApplicationRouter` interface) runs in the application. Includes optional `PacketFiltering`.|
     |SOME/IP Core|endpoint|`EndpointBase` plus the `EndpointTCPClient`/`EndpointTCPServer`/`EndpointUDP` templates (and QNX message-passing endpoints) provide unified I/O over `Socket` and `Multiplexer`.|
     |SOME/IP Core|exception|`SOMEIPException` base class and the derived error types.|
-    |SOME/IP Core|daemon|`someip-daemon` entry point that hosts the `ServiceManager`.|
-    |SOME/IP Core|utils|`ThreadPool`, `TimerMux`, byte-order helpers, and `SomeipPacketStatistics`.|
+    |SOME/IP Core|daemon|`someip-daemon` entry point (`daemon/someipd.cpp`) that hosts the `ServiceManager`; the optional first argument is the configuration path and `-v` prints the version.|
+    |SOME/IP Core|utils|`ThreadPool`, `TimerMux`, `TimeCheck`, byte-order helpers, and `SomeipPacketStatistics`.|
+    |Tools|dump-someipservices|Diagnostic tool that triggers the daemon to dump its current SOME/IP service state (built with `ENABLE_TOOLS`).|
+    |LGSOMEIP API|runtime/application/message|Public `lgsomeip::api::Runtime` singleton (`instance()`, `create_application()`), the abstract `Application`, and the plain `Message` struct. `ApplicationImpl`/`RuntimeImpl` in `LgsomeipApi.cpp` delegate to `ApplicationManager`.|
     |VSOMEIP interface|runtime|Static factory (`runtime`/`runtime_impl`) used by the vSomeip binding to create application, message, and payload instances.|
-    |VSOMEIP interface|application/message/payload|`application_impl`, `message_impl`, and `payload_impl` wrap the core `ApplicationManager` and `Message` types behind the vSomeip API.|
+    |VSOMEIP interface|application/message/payload|`application_impl`, `message_base_impl`/`message_impl`, and `payload_impl` wrap the core `ApplicationManager` and `Message` (`MessageSOMEIP`) / `Payload` (`MessagePayload`) types behind the vSomeip API.|
     |E2E_Protection|buffer/crc/e2e/e2exf|End-to-end protection: CRC calculation, Profile 01 / custom profile checker and protector, and the `e2exf` configuration types.|
 
 The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, `Socket`, and `Multiplexer`) group source modules; they do not introduce C++ namespaces beyond those listed above.
@@ -162,10 +179,11 @@ The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, 
             class RequestedSubscribe <<struct>>
         }
         class SubscribeState<<Enumeration>>
-
+        class ServiceRouter<<interface>>
         ServiceManager *-right- AvailableService
         ServiceManager *-right- RequestedService
-        ServiceManager *-down- PacketRouterHost
+        ServiceManager o-down- ServiceRouter
+        ServiceRouter <|.. PacketRouterHost
         ServiceManager *-- Configuration
         ServiceManager *-- TimerMux
 
@@ -213,7 +231,7 @@ The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, 
     @enduml
     ```
 
-    The daemon process runs a single `ServiceManager`. It owns the `PacketRouterHost`, the `Configuration`, and a `TimerMux` used to drive the cyclic Service Discovery timers. `ServiceManager` keeps the discovery state in `AvailableService` and `RequestedService` records; each `AvailableService` holds a map of event groups to `RequestedSubscribe` entries, whose lifecycle is tracked by the `SubscribeState` enumeration (`SUBSCRIBED`, `UPDATE`, `UNSUBSCRIBED`). The `PacketRouterHost` owns the runtime routing tables (`RoutingServiceInfo`, `RoutingApplicationInfo`, `RoutingConnectionInfo`, `RoutingRequestPacket`, and the nested `RoutingSubscribeInfo`), the `Multiplexer`, and the endpoints.
+    The daemon process runs a single `ServiceManager`. It owns the router through the abstract `ServiceRouter` interface (implemented by `PacketRouterHost`), the `Configuration`, and, on non-QNX builds, a `TimerMux` used to drive the cyclic Service Discovery timers (QNX uses a message-passing timer provided by the router instead). `ServiceManager` keeps the discovery state in `AvailableService` and `RequestedService` records; each `AvailableService` holds a map of event groups to `RequestedSubscribe` entries, whose lifecycle is tracked by the `SubscribeState` enumeration (`SUBSCRIBED`, `UPDATE`, `UNSUBSCRIBED`). The `PacketRouterHost` owns the runtime routing tables (`RoutingServiceInfo`, `RoutingApplicationInfo`, `RoutingConnectionInfo`, `RoutingRequestPacket`, and the nested `RoutingSubscribeInfo`), the `Multiplexer`, and the endpoints.
 
     * **Application (ApplicationManager, EventManager & PacketRouterProxy)**
 
@@ -225,6 +243,7 @@ The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, 
 
     rectangle Application {
         class ApplicationManager
+        class ApplicationRouter<<interface>>
         class PacketRouterProxy
         class EventManager
         class OfferedEvent
@@ -232,7 +251,8 @@ The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, 
         class ThreadPool
         class EventStrategy<<Enumeration>>
 
-        ApplicationManager *-down- PacketRouterProxy
+        ApplicationManager o-down- ApplicationRouter
+        ApplicationRouter <|.. PacketRouterProxy
         ApplicationManager *-down- EventManager
         ApplicationManager *-down- Configuration
         ApplicationManager *-down- ThreadPool
@@ -243,7 +263,7 @@ The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, 
     @enduml
     ```
 
-    In an application process, `ApplicationManager` is the central facade. It owns a `PacketRouterProxy` (the connection to the daemon), an `EventManager` that manages the offered events, a `Configuration`, and a `ThreadPool` (`LGSOMEIP_NUM_OF_THREADS = 5`) used to dispatch handler callbacks. Each offered event is an `OfferedEvent` whose transmission mode is selected by the `EventStrategy` enumeration (`CyclicUpdate`, `UpdateOnChange`, `EpsilonChange`).
+    In an application process, `ApplicationManager` is the central facade. It holds an `ApplicationRouter` interface implemented by `PacketRouterProxy` (the connection to the daemon), an `EventManager` that manages the offered events, a `Configuration`, and a `ThreadPool` (`LGSOMEIP_NUM_OF_THREADS = 5`) used to dispatch handler callbacks. Each offered event is an `OfferedEvent` whose transmission mode is selected by the `EventStrategy` enumeration (`CyclicUpdate`, `UpdateOnChange`, `EpsilonChange`).
 
     * **OSAbstraction**
 
@@ -275,7 +295,7 @@ The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, 
             Address <|-down- IP4Address
             Address <|-down- IP6Address
             Address <|-down- LocalAddress
-            Address ..right..> AddressType : <<use>>
+            Socket ..right..> AddressType : <<use>>
 
             Socket <|-down- TCPSocket
             Socket <|-down- UDPSocket
@@ -302,7 +322,7 @@ The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, 
     @enduml
     ```
 
-    The socket hierarchy is `Socket` → `TCPSocket` → { `TCPClientSocket` (adds `connect()`), `TCPServerSocket` (adds `listen()`/`accept()`) }, and `Socket` → `UDPSocket` (adds multicast join/leave/TTL). `Address` is specialized by `IP4Address`, `IP6Address`, and `LocalAddress` (Unix-domain), and the concrete type is discriminated by the `AddressType` enum. `NetworkDevice` is a singleton that resolves the IP-based device name/id used by the router. When built with the `ENABLE_TLS` option, each `SecureConfig` passed into a `Socket` enables TLS/DTLS via the OpenSSL-backed `SecureConnector`.
+    The socket hierarchy is `Socket` → `TCPSocket` → { `TCPClientSocket` (adds `connect()`), `TCPServerSocket` (adds `listen()`/`accept()`) }, and `Socket` → `UDPSocket` (adds multicast join/leave/TTL). `Address` is specialized by `IP4Address`, `IP6Address`, and `LocalAddress` (Unix-domain), and `Socket::get_address_type()` reports the concrete kind through the `AddressType` enum (declared in `Socket.h`). `NetworkDevice` is a singleton that resolves the IP-based device name/id used by the router. When built with the `ENABLE_TLS` option, each `SecureConfig` passed into a `Socket` enables TLS/DTLS via the OpenSSL-backed `SecureConnector`.
 
     * **Multiplexer**
 
@@ -562,9 +582,9 @@ The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, 
     @enduml
     ```
 
-    The E2E protection library (BMW AG, MPL-2.0) exposes an abstract `checker` and `protector` (both deriving from `profile_interface`). Two profiles are provided: Profile 01 and a custom profile, each with a concrete `checker`/`protector` pair built on `profile_01`/`profile_custom` and the CRC routines in `e2e_crc`. `checker::check()` writes a `generic_check_status` (`E2E_OK`, `E2E_WRONG_CRC`, or `E2E_ERROR`) through an output parameter. Payloads are carried in an `e2e_buffer`/`buffer_view`, and each protected data item is identified by the `e2exf::data_identifier` (a `pair<session_id, instance_id>`).
+    The E2E protection library (BMW AG, MPL-2.0) exposes an abstract `checker` and `protector` (both deriving from `profile_interface`). Two profiles are provided: Profile 01 and a custom profile, each with a concrete `checker`/`protector` pair built on `profile_01`/`profile_custom` and the CRC routines in `e2e_crc`. `checker::check()` writes a `generic_check_status` (`E2E_OK`, `E2E_WRONG_CRC`, or `E2E_ERROR`) through an output parameter. Payloads are carried in an `e2e_buffer`/`buffer_view`, and each protected data item is identified by the `e2exf::data_identifier` (a `pair<session_id, instance_id>` of two 16-bit values).
 
-    At runtime, `PacketRouterHost` holds `e2e_custom_protectors_` and `e2e_custom_checkers_` (keyed by `data_identifier`). On the outgoing path it calls `protector::protect()` to write the counter/data-id/CRC. On incoming external traffic it calls `checker::check()` and writes return code `0x20` when the status is not `E2E_OK`; `PacketRouterProxy` translates that return code into `MessageSOMEIP::set_is_valid_crc(false)` before delivering the message. The feature is gated by `Configuration::is_e2e_enabled()`.
+    At runtime, `PacketRouterHost` builds `e2e_custom_protectors_` and `e2e_custom_checkers_` from the `ConfigE2E` entries, using Profile 01 (`"profile": "CRC8"`) or the custom profile (`"profile": "CRC32"`), and creating a protector and/or checker according to the entry's `variant` (`protector`, `checker`, or `both`). Both maps are keyed by `(service_id, method_id/event_id)` taken from the SOME/IP message ID (the `data_identifier` pair type). On the outgoing path it calls `protector::protect()` to write the counter/data-id/CRC. On incoming external traffic it calls `checker::check()` and writes return code `0x20` when the status is not `E2E_OK`; `PacketRouterProxy` translates that return code into `MessageSOMEIP::set_is_valid_crc(false)` before delivering the message. The feature is gated by `Configuration::is_e2e_enabled()`.
 
     * **vSomeip Interface**
     ```plantuml
@@ -608,7 +628,32 @@ The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, 
     @enduml
     ```
 
-    The `vsomeip` namespace provides a compatible public API (`runtime`, `application`, `message`, `payload`). The `*_impl` classes implement that API by delegating to the core `lgsomeip` stack: `runtime_impl` is the factory, `application_impl` wraps an `ApplicationManager`, and `message_impl`/`payload_impl` wrap the core `Message`/`MessagePayload`. This is the single bridge between binding code and the LG SOME/IP core.
+    The `vsomeip` namespace provides a compatible public API (`runtime`, `application`, `message`, `payload`). The `*_impl` classes implement that API by delegating to the core `lgsomeip` stack: `runtime_impl` is the factory, `application_impl` wraps an `ApplicationManager`, `message_base_impl`/`message_impl` wrap the core `lgsomeip::Message` (an alias of `MessageSOMEIP`), and `payload_impl` wraps `lgsomeip::Payload` (an alias of `MessagePayload`). This is the bridge between vSomeip-based binding code and the LG SOME/IP core.
+
+    * **LG SOME/IP API**
+    ```plantuml
+    @startuml
+    skinparam classAttributeIconSize 0
+    hide empty members
+    skinparam defaultTextAlignment center
+    rectangle "lgsomeip::api" {
+        abstract class Runtime
+        abstract class Application
+        class Message <<struct>>
+        class RuntimeImpl
+        class ApplicationImpl
+        class "ApplicationManager" as AM
+
+        Runtime <|-- RuntimeImpl
+        Application <|-- ApplicationImpl
+        RuntimeImpl ..> ApplicationImpl : <<create>>
+        ApplicationImpl *--> AM
+        Application ..> Message
+    }
+    @enduml
+    ```
+
+    `lgsomeip::api` (`include/lgsomeip/LgsomeipApi.h`) is the native public API. `Runtime::instance()` returns the process-wide runtime and `create_application(name, config_path)` returns an `Application`. `Application` covers the lifecycle (`init`, `start`, `join`, `stop`), service handling (`offer_service`, `request_service`, `find_service`, ...), event handling (`offer_event`, `request_event`, `subscribe`, `notify`), messaging (`send`), and handler registration (application state, message, availability, subscription). `Message` is a plain struct whose `service`/`method`/`client`/`session` fields are converted to and from the core `MessageSOMEIP` in `LgsomeipApi.cpp`. `start()` requires a prior successful `init()` and returns without blocking.
 
     * **Cross-cutting Utilities**
     ```plantuml
@@ -638,13 +683,13 @@ The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, 
     | Utility | Role |
     |:---|:---|
     | `ThreadPool` | Fixed worker pool (`enqueue_job<F,Args>` returns a `std::future`) used by `ApplicationManager` to dispatch handler callbacks off the I/O path. |
-    | `TimerMux` | Multiplexer-based one-shot/periodic timer (over a local UDP socket) used by `ServiceManager` to drive the cyclic SD timers. |
-    | `TimerManager` | Generic singleton timer registry (`start_timer`/`kill_timer`) used by `PacketFiltering`. |
+    | `TimerMux` | Multiplexer-based one-shot/periodic timer (over a local UDP socket) used by `ServiceManager` on non-QNX builds to drive the cyclic SD timers. |
+    | `TimerManager` | Generic singleton timer registry (`start_timer`/`kill_timer`) in `osabstraction/utils/time`, used by `PacketFiltering` and `SomeipPacketStatistics`. |
     | `PacketFiltering` | Optional per-message-ID rate limiter in `PacketRouterHost`; `filter_message()` returns `FilterResult` (`kBlocked`/`kPass`). |
     | `SomeipPacketStatistics` | Singleton counters for sent/received/dropped/SD packets, split by `Direction` (`kOutgoing`/`kIncoming`). |
 
     #### Optional / Build-time Features
-    Several capabilities are compiled in only when the corresponding macro is enabled:
+    Several capabilities are compiled in only when the corresponding macro is enabled (all `OFF` by default except where noted):
 
     | Macro | Feature |
     |:---|:---|
@@ -658,7 +703,7 @@ The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, 
     | `ENABLE_TEST_BUILD` | Unit, component, and integration test targets plus coverage instrumentation are included when CTest's `BUILD_TESTING` is also enabled. |
     | `BUILD_TESTING` | Standard CTest switch required with `ENABLE_TEST_BUILD` to add test targets. |
     | `ENABLE_SOMEIP_IPC` | Direct application-to-application IPC route in `PacketRouterProxy` (bypasses the daemon for local traffic). |
-    | `ENABLE_QNX_MESSAGE_PASSING` | QNX message-passing transport (`messagepassing/*`, `EndpointMessagePassing*`) and the `select`-based multiplexer back-end. |
+    | `ENABLE_QNX_MESSAGE_PASSING` | QNX message-passing transport (`messagepassing/*`, `EndpointMessagePassing*`) used for local IPC and the daemon SD timer. Defaults to `ON` only on QNX; configuring it on another OS is a fatal CMake error. |
 
 ##### Dynamic View
 ###### Initialize
