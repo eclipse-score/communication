@@ -79,8 +79,7 @@ int TCPSocket::send(int file_descriptor, const void* buffer, std::size_t size) {
     if (!non_blocking_.load()) {
 #endif // ENABLE_TLS
         if (set_nonblocking(file_descriptor, true) != 0) {
-            LGSOMEIP_LOG_ERROR << "TCPSocket::send / Failed to set FD:" << file_descriptor
-                               << " to non-blocking mode";
+            LGSOMEIP_LOG_ERROR << "TCPSocket::send / Failed to set FD:" << file_descriptor << " to non-blocking mode";
             return -1;
         }
         non_blocking_ = true;
@@ -158,8 +157,7 @@ int TCPSocket::receive(char* buffer, std::size_t size) {
 
     if (!non_blocking_.load()) {
         if (set_nonblocking(socket_fd_, true) != 0) {
-            LGSOMEIP_LOG_ERROR << "TCPSocket::receive / Failed to set FD:" << socket_fd_
-                               << " to non-blocking mode";
+            LGSOMEIP_LOG_ERROR << "TCPSocket::receive / Failed to set FD:" << socket_fd_ << " to non-blocking mode";
             return -1;
         }
         non_blocking_ = true;

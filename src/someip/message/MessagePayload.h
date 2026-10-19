@@ -29,8 +29,8 @@ namespace lgsomeip {
 
 class MessagePayload {
 public:
-    MessagePayload(){};
-    virtual ~MessagePayload(){};
+    MessagePayload() {}
+    virtual ~MessagePayload() {}
 
     template <typename Type> void append(Type data, bool to_big_order = true);
     void append(const std::uint8_t* data, std::uint32_t length);

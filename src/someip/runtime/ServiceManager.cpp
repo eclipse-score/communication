@@ -729,7 +729,8 @@ void ServiceManager::on_disconnected_application(std::uint16_t app_id) {
             std::uint16_t instance_id = instance.first;
             auto& service_info = instance.second;
             if (service_info.app_id == app_id) {
-                // If this application provides the service, send StopOfferService and remove it from the available list.
+                // If this application provides the service, send StopOfferService and remove it from the available
+                // list.
                 send_internal_offer_service_all(service_id, instance_id, SOMEIP_DEFAULT_TTL_OFF);
 
                 if (service_info.is_in_config_file == true) {

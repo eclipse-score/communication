@@ -28,7 +28,7 @@ jobs:
         run: |
           find src daemon examples/someip tests tools -type f \
             \( -name '*.h' -o -name '*.hpp' -o -name '*.cpp' -o -name '*.cc' \) \
-            -print0 | xargs -0 clang-format-18 --dry-run --Werror
+            -print0 | xargs -0 clang-format-18 --style=file --fallback-style=none --dry-run --Werror
 
   static-analysis:
     name: Static analysis
@@ -47,6 +47,7 @@ jobs:
             build-essential \
             cmake \
             ninja-build \
+            libssl-dev \
             rapidjson-dev \
             libgtest-dev
 
@@ -58,13 +59,19 @@ jobs:
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
           -DBUILD_TESTING=ON
           -DENABLE_TEST_BUILD=ON
+          -DENABLE_TLS=ON
           -DENABLE_EXAMPLES=ON
           -DENABLE_TOOLS=ON
 
       - name: Run clang-tidy
+        # Analyze only the files that this configuration compiles. Platform-specific sources
+        # (QNX message passing, select multiplexer) are not in the compilation database.
         run: |
-          find src daemon examples/someip tests tools -type f -name '*.cpp' -print0 \
-            | xargs -0 clang-tidy-18 -p build-ci-tidy --quiet
+          jq -r '.[].file' build-ci-tidy/compile_commands.json \
+            | grep -E "^${GITHUB_WORKSPACE}/(src|daemon|examples/someip|tests|tools)/.*\.cpp$" \
+            | sort -u > build-ci-tidy/tidy-files.txt
+          test -s build-ci-tidy/tidy-files.txt
+          xargs -a build-ci-tidy/tidy-files.txt clang-tidy-18 -p build-ci-tidy --quiet --warnings-as-errors='*'
 
   build:
     name: Build

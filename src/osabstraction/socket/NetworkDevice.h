@@ -38,7 +38,7 @@ private:
     static NetworkDevice device_;
 
 private:
-    NetworkDevice(){};
+    NetworkDevice() {}
     NetworkDevice(const NetworkDevice&) = delete;
     NetworkDevice operator=(const NetworkDevice&) = delete;
 

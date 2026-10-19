@@ -370,11 +370,12 @@ TEST(PacketRouterHost, rejects_unreachable_tcp_client_route) {
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto remote = std::make_shared<IP4Address>();
-    remote->set_ip_address("192.0.2.99");
+    // Loopback without a listener is refused immediately. A non-routable address can block until the SYN times out.
+    remote->set_ip_address("127.0.0.1");
     remote->set_port_address(40650);
     remote->set_reliable(true);
 
-    ASSERT_TRUE(router.add_route(0x1001, 0x0002, 0, remote, 35689));
+    EXPECT_FALSE(router.add_route(0x1001, 0x0002, 0, remote, 35689));
     router.remove_route(0x1001, 0x0002);
 }
 

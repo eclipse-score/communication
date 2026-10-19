@@ -69,8 +69,12 @@ public:
     ApplicationImpl(std::string name, std::string config_path)
         : manager_(std::make_shared<ApplicationManager>(std::move(name), std::move(config_path))) {}
 
-    const std::string& name() const override { return manager_->get_application_name(); }
-    client_t client_id() const override { return manager_->get_application_id(); }
+    const std::string& name() const override {
+        return manager_->get_application_name();
+    }
+    client_t client_id() const override {
+        return manager_->get_application_id();
+    }
     bool init() override {
         try {
             manager_->init();
@@ -91,7 +95,9 @@ public:
             manager_->join();
         }
     }
-    void stop() override { manager_->stop(); }
+    void stop() override {
+        manager_->stop();
+    }
 
     void offer_service(service_t service, instance_t instance, major_version_t major, minor_version_t minor) override {
         manager_->offer_service(service, instance, major, minor);
@@ -115,8 +121,8 @@ public:
         return manager_->is_service_available(service, instance, major, minor);
     }
 
-    void offer_event(service_t service, instance_t instance, event_t event,
-                     const std::set<eventgroup_t>& eventgroups, bool is_field) override {
+    void offer_event(service_t service, instance_t instance, event_t event, const std::set<eventgroup_t>& eventgroups,
+                     bool is_field) override {
         manager_->offer_event(service, instance, event, eventgroups, is_field);
     }
     void stop_offer_event(service_t service, instance_t instance, event_t event) override {
@@ -137,7 +143,9 @@ public:
         manager_->unsubscribe(service, instance, eventgroup);
     }
 
-    void send(const Message& message) override { manager_->send(to_internal_message(message)); }
+    void send(const Message& message) override {
+        manager_->send(to_internal_message(message));
+    }
     void notify(service_t service, instance_t instance, event_t event, const Payload& payload, bool force,
                 bool flush) override {
         auto internal_payload = std::make_shared<MessagePayload>();
@@ -159,11 +167,12 @@ public:
             manager_->unregister_message_handler(service, instance, method, is_provider);
             return;
         }
-        manager_->register_message_handler(service, instance, method,
-                                           [handler = std::move(handler)](std::shared_ptr<MessageSOMEIP> message) {
-                                               handler(from_internal_message(message));
-                                           },
-                                           is_provider);
+        manager_->register_message_handler(
+            service, instance, method,
+            [handler = std::move(handler)](std::shared_ptr<MessageSOMEIP> message) {
+                handler(from_internal_message(message));
+            },
+            is_provider);
     }
     void unregister_message_handler(service_t service, instance_t instance, method_t method,
                                     bool is_provider) override {
@@ -200,8 +209,7 @@ private:
 
 class RuntimeImpl final : public Runtime {
 public:
-    std::shared_ptr<Application> create_application(const std::string& name,
-                                                    const std::string& config_path) override {
+    std::shared_ptr<Application> create_application(const std::string& name, const std::string& config_path) override {
         return std::make_shared<ApplicationImpl>(name, config_path);
     }
 };

@@ -253,8 +253,7 @@ private:
             tcp_receive_buffer_ = receive_buffer_dynamic_.data();
         }
 
-        LGSOMEIP_LOG_DEBUG << "EndpointTCPClient::callback / Endpoint TCP: " << packet_length_field_
-                           << " will be read";
+        LGSOMEIP_LOG_DEBUG << "EndpointTCPClient::callback / Endpoint TCP: " << packet_length_field_ << " will be read";
 
         receive_part_ = ReceivePart::kBody;
         received_part_len_ = 0;
