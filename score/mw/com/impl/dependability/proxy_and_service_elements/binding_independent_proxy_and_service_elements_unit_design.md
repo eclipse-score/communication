@@ -1,4 +1,6 @@
-### Proxy creation
+# Binding-Independent Proxy and Service Elements Unit Design
+
+## Proxy creation
 The mechanism regarding binding abstraction resp. runtime binding selection on proxy side is almost identical to the
 skeleton side. A small difference is, that the starting point of a proxy instance creation is a handle (`HandleType`).
 This handle is returned by the service discovery and includes (depending on the technical binding) maybe even more
@@ -27,14 +29,14 @@ the `impl::ProxyEventBase` registers itself with the `impl::ProxyBase` in the sa
 It will then call `impl::ProxyBase::GetConstructionResult()` and will return a valid proxy to the user if none of the 
 bindings received an error from the binding factory when trying to construct the binding.
 
-# Methods
+## Methods
 
-## Binding independent class template for Method on the proxy side
+### Binding independent class template for Method on the proxy side
 
 On the proxy side, the `mw::com::impl::ProxyMethod` class template provides the functionality to call remote methods on
 the skeleton side:
 
-### Template parameters
+#### Template parameters
 
 ```cpp
 template <typename ReturnType, typename... ArgTypes>
@@ -54,7 +56,7 @@ mw::com::impl::ProxyMethod<int(double, std::array<char, 10>)>
 Note, that the signature does not include `const` or reference qualifiers and just support data types, which are
 generally supported by the `LoLa` communication framework. (see ScoreReq.AoU OnlyLoLaSupportedTypes).
 
-### API
+#### API
 
 The `ProxyMethod` class template provides the following public API:
 
@@ -78,7 +80,7 @@ The `ProxyMethod` class template provides the following public API:
   `MethodReturnPtr<ReturnType>`, which provides access to the return value data. So the access to the return value is
   always zero-copy.
 
-### Type erasure
+#### Type erasure
 
 While the `impl::ProxyMethod` class template is strongly typed regarding the method signature, the interface to the
 binding layer `impl::ProxyMethodBinding` is type-erased. I.e. the binding layer just transports the method call data as
@@ -108,7 +110,7 @@ needed.
 
 \todo: Describe, how the type erased info is forwarded to the binding layer.
 
-### Call queue handling
+#### Call queue handling
 
 Currently, we are restricting the call-queue size for a method in a proxy instance to a single entry. Since we currently
 only support synchronous method calls this is a sensible restriction. Nevertheless, the `impl::ProxyMethod` class
