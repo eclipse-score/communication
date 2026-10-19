@@ -270,6 +270,13 @@ TEST_F(LolaProxyEventGetNewSamplesFixture, TransmitEventInShmArea)
 
 TEST_F(LolaProxyEventGetNewSamplesFixture, ReturnsErrorWhenNotSubscribed)
 {
+    RecordProperty("lobster-tracing", "Communication.GetNewSamplesReturnsErrorInsteadOfSampleCount");
+    RecordProperty("Description",
+                   "Checks that GetNewSamples returns an error and does not call the receiver when not subscribed.");
+    RecordProperty("TestType", "requirements-based");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "requirements-analysis");
+
     // Given a ProxyEvent that has not subscribed to a SkeletonEvent
     this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
         .WithSkeletonEventData({{kDummySampleValue, kDummyInputTimestamp}});
