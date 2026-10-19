@@ -44,6 +44,11 @@
 #endif // LINUX
 #endif // ENABLE_DLT
 
+#if !defined(ENABLE_DLT) && !defined(_GNU_SOURCE)
+// Declared at global scope; inside namespace lgsomeip it would not link.
+extern char* __progname;
+#endif
+
 namespace lgsomeip {
 
 using LogStream = std::ostream;
@@ -60,8 +65,7 @@ inline std::size_t get_thread_id() {
 #if defined(_GNU_SOURCE)
 static const char* app_name = program_invocation_short_name;
 #else
-extern char* __progname;
-static const char* app_name = __progname;
+static const char* app_name = ::__progname;
 #endif // _GNU_SOURCE
 #endif // ENABLE_DLT
 
