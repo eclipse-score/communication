@@ -1,9 +1,11 @@
-### `LoLa` Service Discovery
+# LoLa Service Discovery Design
+
+## `LoLa` Service Discovery
 
 The service discovery for `LoLa` utilizes an OS mechanism called `inotify` for service discovery.
 The main idea was already presented in the high level architecture and the summary.
 
-#### Worker Thread
+### Worker Thread
 
 The main building block of the `ServiceDiscoveryClient` is a long-running thread.
 This thread is henceforth called worker thread.
@@ -17,9 +19,9 @@ It spins in an endless loop for the full lifetime of the `ServiceDiscoveryClient
 To keep the synchronization logic of the `ServiceDiscoveryClient` simple, a single recursive mutex (`worker_mutex_`)
 is used. This mutex is locked by the worker thread throughout tasks 2-4.
 
-#### Finding Services
+### Finding Services
 
-##### StartFindService
+#### StartFindService
 
 Any search for a service starts with locking the `worker_mutex_`, followed by the creation of `inotify` watches.
 The directory structure for service discovery spans two levels (service id, instance id).
@@ -46,7 +48,7 @@ Using a different store for the invocations of `StartFindService` has the benefi
 threads and the worker thread. The worker thread will update the actual ongoing search requests (`search_requests_`)
 in step two (see above).
 
-##### `StopFindService`
+#### `StopFindService`
 
 Stopping a search (`StopFindService`) consists of:
 
@@ -57,7 +59,7 @@ Stopping a search (`StopFindService`) consists of:
 2. This is followed by waiting for ongoing invocations of `OnFound` callbacks to finalize.
    To avoid deadlocks, the wait is skipped if `StopFindService` is called from within an `OnFound` callback.
 
-##### Basic Assurances
+#### Basic Assurances
 
 To summarize the above, the following basic assurances are provided:
 
@@ -70,7 +72,7 @@ To summarize the above, the following basic assurances are provided:
 - The `FindServiceHandler` associated to a search is no longer called once the call to `StopFindService` for this search
   has returned
 
-#### Offering Services
+### Offering Services
 
 Service offers and stopping them is also looped through the `ServiceDiscoveryClient`.
 This way, the logic of offering and finding offers is close together, which helps keep them in sync.
@@ -98,7 +100,7 @@ manner.
 Hence, simultaneously starting a search and offering an instance for the same service, may lead to race conditions.
 This is mitigated by adding several retries for the creation of the directory structure.
 
-#### Delay of the Service Discovery
+### Delay of the Service Discovery
 
 On QNX `inotify` events are cyclically polled by the resource manager (fsevmgr).
 The delay is configurable as

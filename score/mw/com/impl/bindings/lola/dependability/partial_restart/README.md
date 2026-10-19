@@ -1,8 +1,8 @@
-## Partial Restart/Crash Recovery
+# Partial Restart/Crash Recovery Unit Design
 
 The concept for partial restart/crash recovery is located [here](../../../../docs/features/ipc/lola/partial_restart/README.md)
 
-### Explanation of Notations being used throughout this design part
+## Explanation of Notations being used throughout this design part
 
 `TransactionLog`s as recovery mechanisms described within this document are applied per `ServiceElement` of a `Proxy`
 instance. I.e. for every *event*, *field* or *service-method* a given `Proxy` instance contains, a `TransactionLog` is maintained.
@@ -12,7 +12,7 @@ it is the provider side of the event. We typically do have a 1 to N relation; N 
 `SkeletonEvent`. A `SkeletonEvent` may also have a `TransactionLog` assigned to it, in case IPC-Tracing is enabled for
 it.
 
-### Structural and class diagram extensions
+## Structural and class diagram extensions
 
 The main extensions on structural level have been done by the addition of `TransactionLog`s. A `TransactionLog`
 is maintained per `ProxyEvent`. Each `ProxyEvent` during runtime modifies its shared state (subscribing and
@@ -35,9 +35,9 @@ Each `ProxyEvent` calls `lola::TransactionLogSet::RegisterProxyElement()` once d
 `SkeletonEvent`, thereby acquiring an index which uniquely identifies the `TransactionLog` in the
 `lola::TransactionLogSet`, allowing it to use the `TransactionLog` throughout its lifetime.
 
-<img alt="TRANSACTION_LOG_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/partial_restart/transaction_log_model.puml">
+<img alt="TRANSACTION_LOG_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/bindings/lola/dependability/partial_restart/transaction_log_model.puml">
 
-### Identification of transaction logs
+## Identification of transaction logs
 
 A transaction log is associated with a specific `ProxyEvent`. Since transaction logs of `ProxyEvent`s for the same
 `SkeletonEvent` are aggregated within one `TransactionLogSet` it needs still distinction to which specific
@@ -66,7 +66,7 @@ This is because when rolling back the `TransactionLog`s (see [transaction log ro
 it isn't necessary that a `ProxyEvent` of a certain proxy instance rolls back exactly the same `TransactionLog` it had
 created in a previous run. It will just roll back the first one with its `TransactionLogId`.
 
-### Synchronization of access to a `TransactionLogSet` instance
+## Synchronization of access to a `TransactionLogSet` instance
 
 The call to `TransactionLogSet::RegisterProxyElement()`, which a proxy event does during `Subscribe` to acquire its
 `TransactionLog`, can happen concurrently between different proxy instances in different processes, which all do
@@ -85,14 +85,14 @@ After a proxy event instance has successfully acquired an index/`TransactionLog`
 one proxy event instance. During `TransactionLogSet::Unregister()`, the `std::atomic<TransactionLogId>` gets reset to
 `kInvalidTransactionLogId` again.
 
-#### Potential failures
+### Potential failures
 
 If a proxy event instance crashes/dies after acquiring an index/`TransactionLog` and **before** releasing it again in
 `TransactionLogSet::Unregister()`, this is no problem: In its next restart, it will anyhow call
 `TransactionLogSet::RollbackProxyTransactions()`. This will either fail, in case there are only "broken" transaction
 logs for the given `TransactionLogId`, or it will reset the index/`TransactionLog` again to `kInvalidTransactionLogId`.
 
-#### Synchronization of concurrent rollbacks
+### Synchronization of concurrent rollbacks
 
 Since in specific configurations we could have multiple local proxy event instances (with the same `TransactionLogId`)
 [see here](#identification-of-transaction-logs), which are potentially concurrently calling
@@ -104,14 +104,14 @@ a mutex for the given `ServiceDataControl*`, which identifies the service instan
 relating to the same service instance can synchronize their rollback handling via the mutex returned by this API, which
 is described [here](#differentiation-between-oldnew-transaction-logs) more thoroughly.
 
-### Proxy side startup sequence
+## Proxy side startup sequence
 
 The main usage of the `lola::TransactionLogSet` (and `lola::TransactionLog`) takes place on the proxy side. Before a
 proxy instance **even** gets created, checks are done to discover, whether there was a previous run of an application
 with the same proxy instance, which has crashed and left a `lola::TransactionLog` with existing transactions
 (`TransactionLog::ContainsTransactions() == true`) for one of its `ProxyEvent`s to get recovered:
 
-<img alt="PROXY_RESTART_SEQUENCE" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/partial_restart/proxy_restart_sequence.puml">
+<img alt="PROXY_RESTART_SEQUENCE" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/bindings/lola/dependability/partial_restart/proxy_restart_sequence.puml">
 
 The (re)start sequence, done during the proxy instance creation, shows three main steps, which have been introduced newly
 for the partial restart support:
@@ -121,7 +121,7 @@ for the partial restart support:
 
 These steps take place within the static creation method `lola::Proxy::Create()`.
 
-#### Placing shared lock on service instance usage marker file
+### Placing shared lock on service instance usage marker file
 
 The reason for having a `service instance usage marker file` is documented in chapter
 [Usage indicator of shm-objects](broken_link_g/swh/xpad_documentation/blob/master/architecture/architecture_concept/communication/lola/partial_restart/README.md#usage-indicator-of-shm-objects)
@@ -134,7 +134,7 @@ The `service instance usage marker file` and the mutex/shared lock created for i
 proxy instance itself, to care for unlocking in the destruction of the proxy. For this reason class `FlockMutexAndLock`
 has been created, which allows moving of a mutex and lock in combination.
 
-#### Transaction log rollback
+### Transaction log rollback
 
 During the creation of a `lola::Proxy` a `lola::TransactionLog` gets rolled back (if one exists) for each of
 its `ProxyEvent`s. The transaction logs are contained in a `TransactionLogSet` and therefore specific for
@@ -154,7 +154,7 @@ This procedure allows for high-availability: As long as we can free resources pr
 in re-creation of a proxy instance! A restarting application therefore may be able to run, if it doesn't always create
 the same/maximum amount of proxy instances.
 
-##### Differentiation between old and new transaction logs
+#### Differentiation between old and new transaction logs
 
 Since potentially multiple instances of `lola::Proxy` are created during process startup, there will be some concurrency,
 so that one `lola::Proxy` instance is still in its creation phase, where it does rollbacks of transaction logs related
@@ -172,7 +172,7 @@ further instance sees it and skips doing this preparation step. Therefore, all t
 restarting proxy instance get marked as `needing rollback` initially and any transaction log created later does not have
 this marker, which allows for the needed differentiation.
 
-#### UID/PID registration
+### UID/PID registration
 A proxy instance registers its application identifier (configured `applicationID` or fallback `uid`) with its current
 `pid` at the `lola::ApplicationIdPidMapping` member held by `lola::ServiceDataControl`.
 If the application identifier wasn't previously registered, it will get back its current `pid`. Otherwise, it will get back the `pid`,
@@ -196,7 +196,7 @@ avoid redundant message sending, the implementation of `MessagePassingFacade::No
 technically a process wide singleton anyhow) could cache, to what target nodes it already sent
 `NotifyOutdatedNodeId message` and avoid unnecessary resending. Topic will be addressed in ticket `Ticket-130211`.
 
-### Skeleton side startup sequence
+## Skeleton side startup sequence
 
 Provider resp. skeleton side restart sequence specific extensions for partial restart can be divided in two phases:
 
@@ -205,9 +205,9 @@ Provider resp. skeleton side restart sequence specific extensions for partial re
 
 The following sequence diagram therefore shows both parts:
 
-<img alt="SKELETON_RESTART_SEQUENCE" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/partial_restart/skeleton_restart_sequence.puml">
+<img alt="SKELETON_RESTART_SEQUENCE" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/bindings/lola/dependability/partial_restart/skeleton_restart_sequence.puml">
 
-#### Partial restart specific extensions to Skeleton::Create
+### Partial restart specific extensions to Skeleton::Create
 
 So during `lola::Skeleton::Create()` the check/creation/verification of the `service instance existing marker file` is
 done (reasoning given in the concept linked in the [beginning](#partial-restartcrash-recovery)). Any failure in
@@ -215,7 +215,7 @@ applying an exclusive lock to this marker file results in `Skeleton::Create` fai
 Like in the `Proxy::Create` case a successfully acquired flock-mutex and its lock are handed over to the `lola::Skeleton`
 `ctor`, so that this exclusive lock is consistently held and only freed, when the skeleton instance gets destroyed.
 
-#### Partial restart specific extensions to `Skeleton::PrepareOffer`
+### Partial restart specific extensions to `Skeleton::PrepareOffer`
 
 In the `Skeleton::PrepareOffer` method the creation of shared-memory objects for the service instance takes place.
 Before (for partial restart reasons) the `service instance usage marker file` (reasoning see again the concept paper)
@@ -233,7 +233,7 @@ and re-create it.
 If the marker file can **not** be locked, existing shared-memory objects get re-used and slots in state `IN_WRITING`
 will be cleaned up.
 
-#### Partial restart specific extensions to `Skeleton::PrepareStopOffer`
+### Partial restart specific extensions to `Skeleton::PrepareStopOffer`
 
 Related to the activities in `PrepareOffer`, the skeleton has to decide within `PrepareStopOffer`, whether to remove
 shared memory objects created or (re)opened in `PrepareOffer` or not. The decision is done based on the fact, whether

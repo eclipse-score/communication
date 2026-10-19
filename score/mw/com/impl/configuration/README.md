@@ -1,3 +1,5 @@
+# mw::com Configuration
+
 ## mw::com Configuration Concept
 
 Following document contains a short documentation, how to configure a `mw::com` application.
