@@ -50,12 +50,12 @@ unit(
         "//score/mw/com/impl/bindings/lola/dependability/proxy_and_service_elements:unit_design",
     ],
     implementation = [
-        # "//score/mw/com/impl/bindings/lola/methods:offered_state_machine",
-        # ":proxy",
-        # ":proxy_instance_identifier",
-        # ":subscription_state_machine",
-        # ":event_subscription_control",
-        # "//score/mw/com/impl/bindings/lola/methods:proxy_method_instance_identifier",
+        "//score/mw/com/impl/bindings/lola/methods:offered_state_machine",
+        ":proxy",
+        ":proxy_instance_identifier",
+        ":subscription_state_machine",
+        ":event_subscription_control",
+        "//score/mw/com/impl/bindings/lola/methods:proxy_method_instance_identifier",
     ],
 )
 

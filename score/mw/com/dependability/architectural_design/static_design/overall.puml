@@ -22,7 +22,7 @@ package mw_com <<SEooC>>  {
 
   component binding_independent <<component>>
   component lola_binding <<component>>
-  component someip_binding <<component>>
+'  component someip_binding <<component>>
   component mock_binding <<component>>
 }
 
