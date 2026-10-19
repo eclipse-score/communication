@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
 
+#include <cstring>
 #include <functional>
 #include <optional>
 
@@ -56,6 +57,25 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
     }
 }
 
+GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
+                                           const std::string_view event_name,
+                                           std::unique_ptr<SkeletonEventBinding> binding,
+                                           FieldOnlyConstructorEnabler /*tag*/)
+    : SkeletonEventBase(event_name, kEmptyInitializeSampleCallback, std::move(binding))
+{
+    // Intentionally omitting SkeletonBaseView{skeleton_base}.RegisterEvent(event_name, *this);
+
+    if (binding_ != nullptr)
+    {
+        const SkeletonBaseView skeleton_base_view{skeleton_base};
+        const auto& instance_identifier = skeleton_base_view.GetAssociatedInstanceIdentifier();
+        const auto binding_type = binding_->GetBindingType();
+        tracing_data_ =
+            tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
+        binding_->SetSkeletonEventTracingData(tracing_data_);
+    }
+}
+
 Result<void> GenericSkeletonEvent::Send(SampleAllocateePtr<void> sample)
 {
     if (!service_offered_flag_.IsSet())
@@ -77,6 +97,22 @@ Result<void> GenericSkeletonEvent::Send(SampleAllocateePtr<void> sample)
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
     return send_result;
+}
+
+Result<void> GenericSkeletonEvent::Send(score::cpp::span<const uint8_t> data)
+{
+    auto allocate_result = Allocate();
+    if (!allocate_result.has_value())
+    {
+        return score::Unexpected{allocate_result.error()};
+    }
+
+    auto sample = std::move(allocate_result).value();
+    const auto size_info = GetSizeInfo();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(data.size() <= size_info.size,
+                                                "Data payload exceeds configured generic event size.");
+    std::memcpy(sample.Get(), data.data(), data.size());
+    return Send(std::move(sample));
 }
 
 Result<SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept

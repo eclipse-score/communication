@@ -104,6 +104,7 @@ class GenericSkeletonEventTest : public ::testing::Test
             mock_event_binding = std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>();
         }
         auto* mock_event_binding_ptr = mock_event_binding.get();
+        ON_CALL(*mock_event_binding_ptr, GetEventDataTypeSizeInfo()).WillByDefault(Return(data_type_size_info.value()));
 
         EXPECT_CALL(skeleton_event_binding_factory_mock_,
                     Create(instance_identifier, _, event_name, data_type_size_info.value()))
@@ -190,6 +191,48 @@ TEST_F(GenericSkeletonEventTest, SendBeforeOfferReturnsError)
     // Then it fails with kNotOffered
     ASSERT_FALSE(send_result.has_value());
     EXPECT_EQ(send_result.error(), ComErrc::kNotOffered);
+}
+
+TEST_F(GenericSkeletonEventTest, SendSpanBeforeOfferReturnsError)
+{
+    RecordProperty("Description", "Checks that calling Send(span) before OfferService() returns kNotOffered.");
+    RecordProperty("TestType", "Requirements-based test");
+
+    // Given a skeleton created with one event "test_event"
+    this->GivenAGenericSkeletonWithOneEvent();
+
+    std::vector<uint8_t> payload{0x12, 0x34};
+
+    // When calling Send(span) before OfferService()
+    auto send_result = event_->Send(score::cpp::span<const uint8_t>{payload});
+
+    // Then it fails with kNotOffered
+    ASSERT_FALSE(send_result.has_value());
+    EXPECT_EQ(send_result.error(), ComErrc::kNotOffered);
+}
+
+TEST_F(GenericSkeletonEventTest, SendSpanAllocatesAndDispatchesToBindingAfterOffer)
+{
+    RecordProperty("Description",
+                   "Checks that calling Send(span) after OfferService allocates a sample and sends it to the binding.");
+    RecordProperty("TestType", "Requirements-based test");
+
+    // Given a skeleton with a mock event binding, and the service is offered
+    this->GivenAGenericSkeletonWithOneEvent().OfferSkeletonService();
+
+    std::vector<uint8_t> payload{0x12, 0x34};
+    std::vector<uint8_t> dummy_memory(16, 0);
+    mock_binding::SampleAllocateePtr dummy_alloc{dummy_memory.data(), [](void*) {}};
+
+    EXPECT_CALL(*mock_event_binding_ptr_, Allocate(_))
+        .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc)))));
+    EXPECT_CALL(*mock_event_binding_ptr_, Send(_, _)).WillOnce(Return(score::Result<void>{}));
+
+    // When calling Send(span)
+    auto send_result = event_->Send(score::cpp::span<const uint8_t>{payload});
+
+    // Then Send succeeds
+    ASSERT_TRUE(send_result.has_value());
 }
 
 TEST_F(GenericSkeletonEventTest, AllocateAndSendDispatchesToBindingAfterOffer)
