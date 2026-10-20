@@ -92,7 +92,9 @@ class ProxyWrapperClassTestView
         // ProxyEventBindingFactory is a single non-templated factory (its binding Create() does not depend on the
         // event's SampleType), so a single guard suffices for all event types.
         [[maybe_unused]] ProxyEventBindingFactoryMockGuard event_binding_factory{};
-        [[maybe_unused]] std::tuple<ProxyFieldBindingFactoryMockGuard<FieldTypes>...> field_binding_factories{};
+        // ProxyFieldBindingFactory is likewise a single non-templated factory, so a single guard suffices for all
+        // field types.
+        [[maybe_unused]] ProxyFieldBindingFactoryMockGuard field_binding_factory{};
 
         ProxyWrapperClass proxy{MakeFakeHandle(0U), std::make_unique<mock_binding::Proxy>()};
         /// TODO: We should inject the event and field mocks that were provided to Create within this function (similar

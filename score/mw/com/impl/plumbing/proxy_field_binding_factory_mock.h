@@ -31,12 +31,12 @@ class ProxyFieldBindingFactoryMock : public IProxyFieldBindingFactory
 
     MOCK_METHOD(Result<std::unique_ptr<ProxyMethodBinding>>,
                 CreateGetMethodBinding,
-                (HandleType, ProxyBinding&, std::string_view),
+                (HandleType, ProxyBinding&, std::string_view, memory::DataTypeSizeInfo),
                 (noexcept, override));
 
     MOCK_METHOD(Result<std::unique_ptr<ProxyMethodBinding>>,
                 CreateSetMethodBinding,
-                (HandleType, ProxyBinding&, std::string_view),
+                (HandleType, ProxyBinding&, std::string_view, memory::DataTypeSizeInfo, memory::DataTypeSizeInfo),
                 (noexcept, override));
 };
 

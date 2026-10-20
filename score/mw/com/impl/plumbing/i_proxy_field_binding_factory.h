@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
+#include "score/memory/data_type_size_info.h"
 #include "score/result/result.h"
 
 #include <memory>
@@ -54,19 +55,27 @@ class IProxyFieldBindingFactory
     /// Creates an instance of the method binding for the get-method of a proxy field.
     /// \param parent The proxy base that contains this field.
     /// \param field_name The binding unspecific name of the field inside the proxy.
+    /// \param return_type_info Size/alignment info of the get-method's return type. A field get-method always
+    ///        returns a Result<FieldType>.
     /// \return An instance of ProxyMethodBinding or an error in case of binding construction failure.
     virtual auto CreateGetMethodBinding(HandleType parent_handle,
                                         ProxyBinding& parent_binding,
-                                        const std::string_view field_name) noexcept
+                                        const std::string_view field_name,
+                                        memory::DataTypeSizeInfo return_type_info) noexcept
         -> Result<std::unique_ptr<ProxyMethodBinding>> = 0;
 
     /// Creates an instance of the method binding for the set-method of a proxy field.
     /// \param parent The proxy base that contains this field.
     /// \param field_name The binding unspecific name of the field inside the proxy.
+    /// \param in_arg_type_info Size/alignment info of the set-method's argument.
+    /// \param return_type_info Size/alignment info of the set-method's return type. A field set-method always
+    ///        returns a Result<FieldType>.
     /// \return An instance of ProxyMethodBinding or an error in case of binding construction failure.
     virtual auto CreateSetMethodBinding(HandleType parent_handle,
                                         ProxyBinding& parent_binding,
-                                        const std::string_view field_name) noexcept
+                                        const std::string_view field_name,
+                                        memory::DataTypeSizeInfo in_arg_type_info,
+                                        memory::DataTypeSizeInfo return_type_info) noexcept
         -> Result<std::unique_ptr<ProxyMethodBinding>> = 0;
 };
 }  // namespace score::mw::com::impl
