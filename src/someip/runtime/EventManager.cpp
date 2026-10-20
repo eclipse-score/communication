@@ -136,7 +136,7 @@ void EventManager::notify(std::uint16_t service_id, std::uint16_t instance_id, s
     // Update the registered event payload.
     for (auto& event : offered_events_) {
         if (event->service_id_ == service_id && event->instance_id_ == instance_id && event->event_id_ == event_id) {
-            event->set_payload(*payload, client, force);
+            event->set_payload(*payload, client, force, flush);
             break;
         }
     }
@@ -288,8 +288,9 @@ void OfferedEvent::set_payload(Payload& event_payload, std::uint16_t client, boo
                                        << " / CyclicUpdate success to set initial message!";
                     initialized_ = true;
                 }
-                lock.unlock();
             }
+            // send() takes mutex_ itself, so release it first even when the payload was unchanged.
+            lock.unlock();
             if (flush) {
                 send(update_cycle_);
             }
