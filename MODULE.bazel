@@ -95,7 +95,6 @@ SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
 ]
 
 SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS = [
-    "-Wno-literal-suffix",
     "-Wno-noexcept-type",
 ]
 
