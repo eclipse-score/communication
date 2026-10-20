@@ -12102,7 +12102,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "9vykuWBXyexl10IT63VQquaIibqfgB0Z5qufh1D/vbQ=",
-        "usagesDigest": "yoojN55ynHAvrH9ED88rzAmanII8C38//i9tMfRVGsQ=",
+        "usagesDigest": "rK7tuGDH8+gyoOfQXeYt+2sjZ2AByrjl7skejkYJUuQ=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -12183,9 +12183,7 @@
                 "-Wunused-parameter"
               ],
               "extra_c_compile_flags": [],
-              "extra_cxx_compile_flags": [
-                "-Wno-noexcept-type"
-              ],
+              "extra_cxx_compile_flags": [],
               "extra_known_features": [],
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
@@ -12220,9 +12218,7 @@
                 "-Wunused-parameter"
               ],
               "extra_c_compile_flags": [],
-              "extra_cxx_compile_flags": [
-                "-Wno-noexcept-type"
-              ],
+              "extra_cxx_compile_flags": [],
               "extra_known_features": [],
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
@@ -12257,9 +12253,7 @@
                 "-Wunused-parameter"
               ],
               "extra_c_compile_flags": [],
-              "extra_cxx_compile_flags": [
-                "-Wno-noexcept-type"
-              ],
+              "extra_cxx_compile_flags": [],
               "extra_known_features": [],
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
@@ -12294,9 +12288,7 @@
                 "-Wunused-parameter"
               ],
               "extra_c_compile_flags": [],
-              "extra_cxx_compile_flags": [
-                "-Wno-noexcept-type"
-              ],
+              "extra_cxx_compile_flags": [],
               "extra_known_features": [],
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
