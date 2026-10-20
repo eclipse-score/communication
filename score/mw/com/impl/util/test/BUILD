@@ -22,6 +22,7 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl/util:copyable_atomic",
+        "@score_baselibs//score/quality/compiler_warnings",
     ],
 )
 
