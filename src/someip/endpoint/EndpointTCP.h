@@ -231,7 +231,10 @@ private:
         // The length field covers the bytes from the request ID/client ID to the end of the SOME/IP message.
         get_byte_stream(&packet_length_field_, tcp_receive_buffer_ + SOMEIP_HEADER::POS::LENGTH);
 
-        if ((packet_length_field_ == 0) || (packet_length_field_ > MAX_TRANSFER_PACKET_LENGTH)) {
+        // The length field counts at least the 8 header bytes behind it (request ID to return code).
+        constexpr std::uint32_t kMinLengthField = SOMEIP_HEADER::SIZE - SOMEIP_HEADER::ACCUM_LEN::LENGTH;
+
+        if ((packet_length_field_ < kMinLengthField) || (packet_length_field_ > MAX_TRANSFER_PACKET_LENGTH)) {
             // TCP has no message boundaries, so the next message cannot be located once the length is wrong.
             // Close the connection instead of parsing the rest of the stream as headers.
             LGSOMEIP_LOG_WARN << "EndpointTCPClient::callback / the length field is invalid!! Length = "
