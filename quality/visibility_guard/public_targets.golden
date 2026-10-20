@@ -7,6 +7,12 @@
 //quality/compiler_warnings:optimize_code
 //quality/compiler_warnings:treat_warnings_as_errors
 //quality/coverage:enable_llvm_coverage_for_death_tests
+//score/memory/shared/dependability:dependable_element_memory_shared
+//score/memory/shared/dependability:dependable_element_memory_shared.serve
+//score/memory/shared/dependability:dependable_element_memory_shared_doc
+//score/memory/shared/dependability:dependable_element_memory_shared_doc_needs
+//score/memory/shared/dependability:dependable_element_memory_shared_index
+//score/memory/shared/dependability:dependable_element_memory_shared_rst
 //score/memory/shared/fake:fake_memory_resources
 //score/memory/shared/fake:my_bounded_shared_memory_resource
 //score/memory/shared/flock:exclusive_flock_mutex
