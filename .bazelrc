@@ -108,11 +108,6 @@ build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=float-e
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=shadow
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=shadow
 
-# score_baselibs
-# Issue reported in https://github.com/eclipse-score/baselibs/issues/631
-build --per_file_copt=external/.*score_baselibs.*string_manipulation.*arguments.*@-Wno-error=sign-conversion
-build --host_per_file_copt=external/.*score_baselibs.*string_manipulation.*arguments.*@-Wno-error=sign-conversion
-
 # score_qnx_unit_tests
 # Issue reported in https://github.com/eclipse-score/qnx_unit_tests/issues/44
 build --per_file_copt=external/.*score_qnx_unit_tests.*virtio9p.*@-Wno-error=sign-conversion
