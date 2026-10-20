@@ -465,3 +465,28 @@ TEST(TlvSerializerTest, SerializeStructure) {
 
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
+
+TEST(TlvSerializerTest, DecodesWireTypeAndDataIdAbove255) {
+    const std::uint16_t kDataId = 0x0A23; // NOLINT(readability-identifier-naming)
+    const std::uint32_t kValue = 0xCAFEBABEU;
+
+    Serializer serializer;
+    {
+        TlvSerializer<LengthFieldConfig<std::uint32_t>> tlv_serializer{&serializer, WireTypeEnum::BaseType32Bit,
+                                                                       kDataId};
+        tlv_serializer.push_back(kValue);
+        tlv_serializer.finish();
+    }
+
+    Deserializer deserializer(serializer.finish());
+    TlvDeserializer<LengthFieldConfig<std::uint32_t>> tlv_deserializer{&deserializer};
+
+    TlvTag tag = tlv_deserializer.consume_tag();
+    ASSERT_EQ(kDataId, tag.data_id_);
+    ASSERT_EQ(4U, tag.len_);
+
+    std::uint32_t value{};
+    tlv_deserializer.pop_front(value);
+    ASSERT_EQ(kValue, value);
+    ASSERT_EQ(0, deserializer.get_remaining_length());
+}

@@ -508,8 +508,8 @@ public:
         std::array<std::uint8_t, 2U> tag;
         deserializer_->pop_front(tag[0]);
         deserializer_->pop_front(tag[1]);
-        wire_type_ = static_cast<WireTypeEnum>((tag[0] & 0x70U) >> 8U);
-        std::uint16_t data_id = ((tag[0] & 0x0FU) << 16) | tag[1];
+        wire_type_ = static_cast<WireTypeEnum>((tag[0] & 0x70U) >> 4U);
+        std::uint16_t data_id = static_cast<std::uint16_t>(((tag[0] & 0x0FU) << 8) | tag[1]);
         bytes_read_ = 0U;
 
         if (watcher_)
