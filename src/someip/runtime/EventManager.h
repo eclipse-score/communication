@@ -81,7 +81,7 @@ public:
     void set_service_enabled(std::uint16_t service_id, std::uint16_t instance_id, std::uint8_t major_version,
                              bool state);
     void set_payload(Payload& payload, std::uint16_t client = 0, bool force = false, bool flush = false);
-    void send(std::uint32_t interval = 0);
+    void send(std::uint32_t interval = 0, std::uint16_t client = 0);
     void send_initial_event();
 
     inline bool is_initialized() {
@@ -96,7 +96,7 @@ public:
 
 private:
     void init_event(ServiceInfo* config_event);
-    void send_notification();
+    void send_notification(std::uint16_t client = 0);
 
     ApplicationManager* host_ = nullptr;
     std::mutex mutex_;
@@ -106,7 +106,7 @@ private:
     std::uint16_t instance_id_{0};
     std::uint16_t event_id_{0};
     std::uint8_t major_version_{0};
-    std::uint32_t request_id_{0};
+    std::uint32_t session_id_{0};
 
     bool initialized_ = false;
     std::shared_ptr<Message> notification_{nullptr};
