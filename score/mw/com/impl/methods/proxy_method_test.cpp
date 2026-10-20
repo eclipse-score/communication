@@ -92,7 +92,12 @@ class ProxyMethodTestFixture : public ::testing::Test
     ProxyMethodTestFixture& GivenAProxyMethodWithoutBinding()
     {
         EXPECT_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_,
-                    Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
+                    Create(_ /*handle*/,
+                           _ /*parent binding*/,
+                           _ /*method_name*/,
+                           _ /*method_type*/,
+                           _ /*in_arg_type_info*/,
+                           _ /*return_type_info*/))
             .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kBindingFailure))));
 
         unit_ = std::make_unique<ProxyServiceMethodType>(proxy_base_, kMethodName);
@@ -124,7 +129,7 @@ class ProxyMethodTestFixture : public ::testing::Test
     mock_binding::ProxyMethod proxy_method_binding_mock_;
     TestProxyBase proxy_base_{std::make_unique<mock_binding::Proxy>(), config_store_.GetHandle()};
 
-    ProxyMethodBindingFactoryMockGuard<MethodType> proxy_method_binding_factory_mock_guard_{};
+    ProxyMethodBindingFactoryMockGuard proxy_method_binding_factory_mock_guard_{};
     std::unique_ptr<ProxyServiceMethodType> unit_{nullptr};
 };
 
@@ -263,7 +268,12 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, SucceedingToCreateMethodBin
 {
     // Expecting that a binding factory can create a binding
     EXPECT_CALL(this->proxy_method_binding_factory_mock_guard_.factory_mock_,
-                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
+                Create(_ /*handle*/,
+                       _ /*parent binding*/,
+                       _ /*method_name*/,
+                       _ /*method_type*/,
+                       _ /*in_arg_type_info*/,
+                       _ /*return_type_info*/))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_))));
 
     // When the 2-parameter constructor of the ProxyMethod class is called
@@ -276,7 +286,12 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, SucceedingToCreateMethodBin
 {
     // Expecting that a binding factory can create a binding
     EXPECT_CALL(this->proxy_method_binding_factory_mock_guard_.factory_mock_,
-                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
+                Create(_ /*handle*/,
+                       _ /*parent binding*/,
+                       _ /*method_name*/,
+                       _ /*method_type*/,
+                       _ /*in_arg_type_info*/,
+                       _ /*return_type_info*/))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_))));
 
     // When the 2-parameter constructor of the ProxyMethod class is called
@@ -291,7 +306,12 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, FailingToCreateMethodBindin
 {
     // Expecting that a binding factory fails to create a binding and returns an error
     EXPECT_CALL(this->proxy_method_binding_factory_mock_guard_.factory_mock_,
-                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
+                Create(_ /*handle*/,
+                       _ /*parent binding*/,
+                       _ /*method_name*/,
+                       _ /*method_type*/,
+                       _ /*in_arg_type_info*/,
+                       _ /*return_type_info*/))
         .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kBindingFailure))));
 
     // When the 2-parameter constructor of the ProxyMethod class is called
@@ -304,7 +324,12 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, FailingToCreateMethodBindin
 {
     // Expecting that a binding factory fails to create a binding and returns an error
     EXPECT_CALL(this->proxy_method_binding_factory_mock_guard_.factory_mock_,
-                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
+                Create(_ /*handle*/,
+                       _ /*parent binding*/,
+                       _ /*method_name*/,
+                       _ /*method_type*/,
+                       _ /*in_arg_type_info*/,
+                       _ /*return_type_info*/))
         .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kBindingFailure))));
 
     // When the 2-parameter constructor of the ProxyMethod class is called

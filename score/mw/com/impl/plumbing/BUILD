@@ -775,11 +775,13 @@ cc_unit_test(
         "-aborts_upon_exception",
     ],
     deps = [
+        ":binding_factory_error",
         ":proxy_method_binding_factory",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+        "//score/mw/com/impl/util:type_erased_storage",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )

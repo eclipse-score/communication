@@ -23,8 +23,10 @@
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/plumbing/binding_factory_error.h"
 #include "score/mw/com/impl/plumbing/proxy_method_binding_factory_impl.h"
 #include "score/mw/com/impl/test/dummy_instance_identifier_builder.h"
+#include "score/mw/com/impl/util/type_erased_storage.h"
 
 #include <score/assert_support.hpp>
 
@@ -166,8 +168,13 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructLolaProxyMethod)
 
     // When creating a ProxyMethod using MethodBindingFactory
     using MethodSignature = TypeParam;
-    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
-        handle, *this->proxy_, kDummyMethodName, MethodType::kMethod);
+    auto proxy_method =
+        ProxyMethodBindingFactory::Create(handle,
+                                          *this->proxy_,
+                                          kDummyMethodName,
+                                          MethodType::kMethod,
+                                          TypeErasedMethodSignatureInfo<MethodSignature>::InArgsTypeInfo(),
+                                          TypeErasedMethodSignatureInfo<MethodSignature>::ReturnTypeInfo());
 
     // Then a valid binding can be created
     ASSERT_TRUE(proxy_method.has_value());
@@ -185,7 +192,12 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructFieldGetAndSetMethods)
     for (const auto method_type : {MethodType::kGet, MethodType::kSet})
     {
         auto proxy_method =
-            ProxyMethodBindingFactory<MethodSignature>::Create(handle, *this->proxy_, kDummyFieldName, method_type);
+            ProxyMethodBindingFactory::Create(handle,
+                                              *this->proxy_,
+                                              kDummyFieldName,
+                                              method_type,
+                                              TypeErasedMethodSignatureInfo<MethodSignature>::InArgsTypeInfo(),
+                                              TypeErasedMethodSignatureInfo<MethodSignature>::ReturnTypeInfo());
 
         // Then a valid binding is created
         ASSERT_TRUE(proxy_method.has_value());
@@ -213,8 +225,13 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, ConstructingLolaMethodBindingWhichIsD
 
     // When creating a ProxyMethod using MethodBindingFactory
     using MethodSignature = TypeParam;
-    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
-        handle, *this->proxy_, kDummyMethodName, MethodType::kMethod);
+    auto proxy_method =
+        ProxyMethodBindingFactory::Create(handle,
+                                          *this->proxy_,
+                                          kDummyMethodName,
+                                          MethodType::kMethod,
+                                          TypeErasedMethodSignatureInfo<MethodSignature>::InArgsTypeInfo(),
+                                          TypeErasedMethodSignatureInfo<MethodSignature>::ReturnTypeInfo());
 
     // Then a null pointer is returned
     ASSERT_TRUE(proxy_method.has_value());
@@ -238,8 +255,13 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, ConstructingLolaMethodBindingWithInst
     // when creating a ProxyMethod using MethodBindingFactory
     // Then the program terminates
     using MethodSignature = TypeParam;
-    EXPECT_DEATH(score::cpp::ignore = ProxyMethodBindingFactory<MethodSignature>::Create(
-                     handle, *this->proxy_, kDummyMethodName, MethodType::kMethod),
+    EXPECT_DEATH(score::cpp::ignore = ProxyMethodBindingFactory::Create(
+                     handle,
+                     *this->proxy_,
+                     kDummyMethodName,
+                     MethodType::kMethod,
+                     TypeErasedMethodSignatureInfo<MethodSignature>::InArgsTypeInfo(),
+                     TypeErasedMethodSignatureInfo<MethodSignature>::ReturnTypeInfo()),
                  ".*");
 }
 
@@ -252,8 +274,13 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromBlankBinding)
 
     // When creating a ProxyMethod using MethodBindingFactory
     using MethodSignature = TypeParam;
-    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
-        handle, proxy_binding_mock, kDummyMethodName, MethodType::kMethod);
+    auto proxy_method =
+        ProxyMethodBindingFactory::Create(handle,
+                                          proxy_binding_mock,
+                                          kDummyMethodName,
+                                          MethodType::kMethod,
+                                          TypeErasedMethodSignatureInfo<MethodSignature>::InArgsTypeInfo(),
+                                          TypeErasedMethodSignatureInfo<MethodSignature>::ReturnTypeInfo());
 
     // Then an error is returned
     ASSERT_FALSE(proxy_method.has_value());
@@ -317,8 +344,13 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, ConstructingLolaMethodBindingWithUnkn
     // When creating a ProxyMethod using MethodBindingFactory with MethodType::kUnknown
     // Then the program terminates
     using MethodSignature = TypeParam;
-    EXPECT_DEATH(score::cpp::ignore = ProxyMethodBindingFactory<MethodSignature>::Create(
-                     handle, *this->proxy_, kDummyMethodName, MethodType::kUnknown),
+    EXPECT_DEATH(score::cpp::ignore = ProxyMethodBindingFactory::Create(
+                     handle,
+                     *this->proxy_,
+                     kDummyMethodName,
+                     MethodType::kUnknown,
+                     TypeErasedMethodSignatureInfo<MethodSignature>::InArgsTypeInfo(),
+                     TypeErasedMethodSignatureInfo<MethodSignature>::ReturnTypeInfo()),
                  ".*");
 }
 
@@ -353,7 +385,12 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructLolaProxyFieldGetMethodWh
     // When creating a field Get ProxyMethod using MethodBindingFactory
     using MethodSignature = TypeParam;
     auto proxy_method =
-        ProxyMethodBindingFactory<MethodSignature>::Create(handle, *this->proxy_, kDummyFieldName, MethodType::kGet);
+        ProxyMethodBindingFactory::Create(handle,
+                                          *this->proxy_,
+                                          kDummyFieldName,
+                                          MethodType::kGet,
+                                          TypeErasedMethodSignatureInfo<MethodSignature>::InArgsTypeInfo(),
+                                          TypeErasedMethodSignatureInfo<MethodSignature>::ReturnTypeInfo());
 
     // Then a valid binding can be created
     ASSERT_TRUE(proxy_method.has_value());
@@ -369,7 +406,12 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructLolaProxyFieldSetMethodWh
     // When creating a field Set ProxyMethod using MethodBindingFactory
     using MethodSignature = TypeParam;
     auto proxy_method =
-        ProxyMethodBindingFactory<MethodSignature>::Create(handle, *this->proxy_, kDummyFieldName, MethodType::kSet);
+        ProxyMethodBindingFactory::Create(handle,
+                                          *this->proxy_,
+                                          kDummyFieldName,
+                                          MethodType::kSet,
+                                          TypeErasedMethodSignatureInfo<MethodSignature>::InArgsTypeInfo(),
+                                          TypeErasedMethodSignatureInfo<MethodSignature>::ReturnTypeInfo());
 
     // Then a valid binding can be created
     ASSERT_TRUE(proxy_method.has_value());
@@ -386,7 +428,12 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture,
     // When creating a field Get ProxyMethod using MethodBindingFactory
     using MethodSignature = TypeParam;
     auto proxy_method =
-        ProxyMethodBindingFactory<MethodSignature>::Create(handle, *this->proxy_, kDummyFieldName, MethodType::kGet);
+        ProxyMethodBindingFactory::Create(handle,
+                                          *this->proxy_,
+                                          kDummyFieldName,
+                                          MethodType::kGet,
+                                          TypeErasedMethodSignatureInfo<MethodSignature>::InArgsTypeInfo(),
+                                          TypeErasedMethodSignatureInfo<MethodSignature>::ReturnTypeInfo());
 
     // Then a null pointer is returned
     ASSERT_TRUE(proxy_method.has_value());
@@ -403,7 +450,12 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture,
     // When creating a field Set ProxyMethod using MethodBindingFactory
     using MethodSignature = TypeParam;
     auto proxy_method =
-        ProxyMethodBindingFactory<MethodSignature>::Create(handle, *this->proxy_, kDummyFieldName, MethodType::kSet);
+        ProxyMethodBindingFactory::Create(handle,
+                                          *this->proxy_,
+                                          kDummyFieldName,
+                                          MethodType::kSet,
+                                          TypeErasedMethodSignatureInfo<MethodSignature>::InArgsTypeInfo(),
+                                          TypeErasedMethodSignatureInfo<MethodSignature>::ReturnTypeInfo());
 
     // Then a null pointer is returned
     ASSERT_TRUE(proxy_method.has_value());
@@ -427,8 +479,13 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, ConstructingFieldGetMethodWithInstanc
     // when creating a field Get ProxyMethod using MethodBindingFactory
     // Then the program terminates
     using MethodSignature = TypeParam;
-    EXPECT_DEATH(score::cpp::ignore = ProxyMethodBindingFactory<MethodSignature>::Create(
-                     handle, *this->proxy_, kDummyFieldName, MethodType::kGet),
+    EXPECT_DEATH(score::cpp::ignore = ProxyMethodBindingFactory::Create(
+                     handle,
+                     *this->proxy_,
+                     kDummyFieldName,
+                     MethodType::kGet,
+                     TypeErasedMethodSignatureInfo<MethodSignature>::InArgsTypeInfo(),
+                     TypeErasedMethodSignatureInfo<MethodSignature>::ReturnTypeInfo()),
                  ".*");
 }
 

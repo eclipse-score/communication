@@ -14,11 +14,10 @@
 #define SCORE_MW_COM_IMPL_PLUMBING_PROXY_FIELD_BINDING_FACTORY_H
 
 #include "score/mw/com/impl/plumbing/i_proxy_field_binding_factory.h"
-#include "score/mw/com/impl/plumbing/proxy_field_binding_factory_impl.h"
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
-#include <score/overload.hpp>
+#include "score/memory/data_type_size_info.h"
 
 #include <memory>
 #include <string_view>
@@ -29,7 +28,6 @@ namespace score::mw::com::impl
 
 /// \brief Class that dispatches to either a real ProxyFieldBindingFactoryImpl or a mocked version
 /// ProxyFieldBindingFactoryMock, if a mock is injected.
-template <typename SampleType>
 class ProxyFieldBindingFactory final
 {
   public:
@@ -44,19 +42,26 @@ class ProxyFieldBindingFactory final
     }
 
     /// \brief See documentation in IProxyFieldBindingFactory.
-    static Result<std::unique_ptr<ProxyMethodBinding>> CreateGetMethodBinding(HandleType parent_handle,
-                                                                              ProxyBinding& parent_binding,
-                                                                              std::string_view field_name) noexcept
+    static Result<std::unique_ptr<ProxyMethodBinding>> CreateGetMethodBinding(
+        HandleType parent_handle,
+        ProxyBinding& parent_binding,
+        std::string_view field_name,
+        memory::DataTypeSizeInfo return_type_info) noexcept
     {
-        return instance().CreateGetMethodBinding(std::move(parent_handle), parent_binding, field_name);
+        return instance().CreateGetMethodBinding(
+            std::move(parent_handle), parent_binding, field_name, return_type_info);
     }
 
     /// \brief See documentation in IProxyFieldBindingFactory.
-    static Result<std::unique_ptr<ProxyMethodBinding>> CreateSetMethodBinding(HandleType parent_handle,
-                                                                              ProxyBinding& parent_binding,
-                                                                              std::string_view field_name) noexcept
+    static Result<std::unique_ptr<ProxyMethodBinding>> CreateSetMethodBinding(
+        HandleType parent_handle,
+        ProxyBinding& parent_binding,
+        std::string_view field_name,
+        memory::DataTypeSizeInfo in_arg_type_info,
+        memory::DataTypeSizeInfo return_type_info) noexcept
     {
-        return instance().CreateSetMethodBinding(std::move(parent_handle), parent_binding, field_name);
+        return instance().CreateSetMethodBinding(
+            std::move(parent_handle), parent_binding, field_name, in_arg_type_info, return_type_info);
     }
 
     /// \brief Inject a mock IProxyFieldBindingFactory. If a mock is injected, then all calls on
@@ -70,29 +75,6 @@ class ProxyFieldBindingFactory final
     static IProxyFieldBindingFactory& instance() noexcept;
     static IProxyFieldBindingFactory* mock_;
 };
-
-template <typename SampleType>
-auto ProxyFieldBindingFactory<SampleType>::instance() noexcept -> IProxyFieldBindingFactory&
-{
-    if (mock_ != nullptr)
-    {
-        return *mock_;
-    }
-
-    // Suppress "AUTOSAR C++14 A3-2-2", The rule states: "Static and thread-local objects shall be constant-initialized"
-    // It cannot be made const since we will need to call non-const methods from a static instance.
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    static ProxyFieldBindingFactoryImpl<SampleType> instance{};
-    return instance;
-}
-
-// Suppress "AUTOSAR C++14 A3-1-1", The rule states: "It shall be possible to include any header file in multiple
-// translation units without violating the One Definition Rule."
-// The static member mock_ in the ProxyFieldBindingFactory template is intentionally defined in the header file
-// to facilitate template instantiation across multiple translation units used in diff applications.
-template <typename SampleType>
-// coverity[autosar_cpp14_a3_1_1_violation]
-IProxyFieldBindingFactory* ProxyFieldBindingFactory<SampleType>::mock_{nullptr};
 
 }  // namespace score::mw::com::impl
 

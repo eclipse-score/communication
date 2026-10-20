@@ -85,7 +85,7 @@ struct ProxyEventStruct
 struct ProxyFieldStruct
 {
     using ProxyType = MyDummyProxyWithField;
-    using ProxyServiceElementBindingFactoryMockGuard = ProxyFieldBindingFactoryMockGuard<TestSampleType>;
+    using ProxyServiceElementBindingFactoryMockGuard = ProxyFieldBindingFactoryMockGuard;
     using TracePointType = tracing::ProxyFieldTracePointType;
 };
 
@@ -128,7 +128,7 @@ class ProxyEventTracingFixture : public ::testing::Test
             .WillOnce(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
     }
 
-    void ExpectProxyServiceElementBindingCreation(ProxyFieldBindingFactoryMockGuard<TestSampleType>& factory_mock_guard)
+    void ExpectProxyServiceElementBindingCreation(ProxyFieldBindingFactoryMockGuard& factory_mock_guard)
     {
         auto proxy_event_binding_mock_ptr = std::make_unique<mock_binding::ProxyEvent>();
         mock_proxy_event_binding_ = proxy_event_binding_mock_ptr.get();

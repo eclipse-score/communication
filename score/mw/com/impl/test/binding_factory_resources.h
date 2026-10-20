@@ -88,33 +88,31 @@ class ProxyEventBindingFactoryMockGuard
     ::testing::NiceMock<ProxyEventBindingFactoryMock> factory_mock_;
 };
 
-template <typename SampleType>
 class ProxyFieldBindingFactoryMockGuard
 {
   public:
     ProxyFieldBindingFactoryMockGuard() noexcept
     {
-        ProxyFieldBindingFactory<SampleType>::InjectMockBinding(&factory_mock_);
+        ProxyFieldBindingFactory::InjectMockBinding(&factory_mock_);
     }
     ~ProxyFieldBindingFactoryMockGuard() noexcept
     {
-        ProxyFieldBindingFactory<SampleType>::InjectMockBinding(nullptr);
+        ProxyFieldBindingFactory::InjectMockBinding(nullptr);
     }
 
     ::testing::NiceMock<ProxyFieldBindingFactoryMock> factory_mock_;
 };
 
-template <typename MethodType>
 class ProxyMethodBindingFactoryMockGuard
 {
   public:
     ProxyMethodBindingFactoryMockGuard() noexcept
     {
-        ProxyMethodBindingFactory<MethodType>::InjectMockBinding(&factory_mock_);
+        ProxyMethodBindingFactory::InjectMockBinding(&factory_mock_);
     }
     ~ProxyMethodBindingFactoryMockGuard() noexcept
     {
-        ProxyMethodBindingFactory<MethodType>::InjectMockBinding(nullptr);
+        ProxyMethodBindingFactory::InjectMockBinding(nullptr);
     }
 
     ::testing::NiceMock<ProxyMethodBindingFactoryMock> factory_mock_;

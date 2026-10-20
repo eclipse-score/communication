@@ -15,39 +15,34 @@
 
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
 #include "score/mw/com/impl/plumbing/i_proxy_method_binding_factory.h"
-#include "score/mw/com/impl/plumbing/proxy_method_binding_factory_impl.h"
 #include "score/mw/com/impl/proxy_base.h"
 
-#include <score/overload.hpp>
+#include "score/memory/data_type_size_info.h"
 
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl
 {
 
-template <typename Signature>
-class ProxyMethodBindingFactory
-{
-    static_assert(sizeof(Signature) == 0,
-                  "ProxyMethodBindingFactory can only be instantiated with a function signature, e.g., "
-                  "ProxyMethodBindingFactory<void(int, double)>. "
-                  "You tried to use an unsupported signature type.");
-};
 /// \brief Class that dispatches to either a real ProxyMethodBindingFactoryImpl or a mocked version
 /// ProxyMethodBindingFactoryMock, if a mock is injected.
-template <typename ReturnType, typename... ArgTypes>
-class ProxyMethodBindingFactory<ReturnType(ArgTypes...)> final
+class ProxyMethodBindingFactory final
 {
   public:
     /// \brief See documentation in IProxyMethodBindingFactory.
-    static Result<std::unique_ptr<ProxyMethodBinding>> Create(HandleType parent_handle,
-                                                              ProxyBinding& parent_binding,
-                                                              const std::string_view method_name,
-                                                              MethodType method_type) noexcept
+    static Result<std::unique_ptr<ProxyMethodBinding>> Create(
+        HandleType parent_handle,
+        ProxyBinding& parent_binding,
+        const std::string_view method_name,
+        MethodType method_type,
+        std::optional<memory::DataTypeSizeInfo> in_arg_type_info,
+        std::optional<memory::DataTypeSizeInfo> return_type_info) noexcept
     {
-        return instance().Create(std::move(parent_handle), parent_binding, method_name, method_type);
+        return instance().Create(
+            std::move(parent_handle), parent_binding, method_name, method_type, in_arg_type_info, return_type_info);
     }
 
     /// \brief Inject a mock IProxyMethodBindingFactory. If a mock is injected, then all calls on
@@ -61,24 +56,6 @@ class ProxyMethodBindingFactory<ReturnType(ArgTypes...)> final
     static IProxyMethodBindingFactory& instance() noexcept;
     static IProxyMethodBindingFactory* mock_;
 };
-
-template <typename ReturnType, typename... ArgTypes>
-auto ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::instance() noexcept -> IProxyMethodBindingFactory&
-{
-    if (mock_ != nullptr)
-    {
-        return *mock_;
-    }
-
-    // Suppress "AUTOSAR C++14 A3-2-2", The rule states: "Static and thread-local objects shall be constant-initialized"
-    // It cannot be made const since we will need to call non-const methods from a static instance.
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    static ProxyMethodBindingFactoryImpl<ReturnType(ArgTypes...)> instance{};
-    return instance;
-}
-
-template <typename ReturnType, typename... ArgTypes>
-IProxyMethodBindingFactory* ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::mock_{nullptr};
 
 }  // namespace score::mw::com::impl
 
