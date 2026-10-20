@@ -296,6 +296,7 @@ void OfferedEvent::set_payload(Payload& event_payload, std::uint16_t client, boo
             }
             break;
         case EventStrategy::UpdateOnChange:
+            // Update on change (SOME/IP spec 6.4.1): send only when the value changes, event or field alike.
             if (payload->get_length() != event_payload.get_length() ||
                 payload->get_payload_vector() != event_payload.get_payload_vector() || force) {
                 notification_->set_payload(event_payload.get_payload(), event_payload.get_length());
