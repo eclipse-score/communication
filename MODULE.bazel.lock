@@ -12102,7 +12102,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "9vykuWBXyexl10IT63VQquaIibqfgB0Z5qufh1D/vbQ=",
-        "usagesDigest": "rK7tuGDH8+gyoOfQXeYt+2sjZ2AByrjl7skejkYJUuQ=",
+        "usagesDigest": "TSs4a7FtoFhqO9Tnj1cK0UIorb/I8B6zTdm21pqz5vY=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -12178,10 +12178,7 @@
           "score_gcc_x86_64_toolchain": {
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
-              "extra_compile_flags": [
-                "-Wswitch-bool",
-                "-Wunused-parameter"
-              ],
+              "extra_compile_flags": [],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [],
               "extra_known_features": [],
@@ -12213,10 +12210,7 @@
           "score_gcc_aarch64_toolchain": {
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
-              "extra_compile_flags": [
-                "-Wswitch-bool",
-                "-Wunused-parameter"
-              ],
+              "extra_compile_flags": [],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [],
               "extra_known_features": [],
@@ -12248,10 +12242,7 @@
           "score_qcc_x86_64_toolchain": {
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
-              "extra_compile_flags": [
-                "-Wswitch-bool",
-                "-Wunused-parameter"
-              ],
+              "extra_compile_flags": [],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [],
               "extra_known_features": [],
@@ -12283,10 +12274,7 @@
           "score_qcc_aarch64_toolchain": {
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
-              "extra_compile_flags": [
-                "-Wswitch-bool",
-                "-Wunused-parameter"
-              ],
+              "extra_compile_flags": [],
               "extra_c_compile_flags": [],
               "extra_cxx_compile_flags": [],
               "extra_known_features": [],
