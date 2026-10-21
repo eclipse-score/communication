@@ -15,7 +15,7 @@ source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
   { echo >&2 "ERROR: runfiles.bash initializer cannot find $f"; exit 1; }
 # --- end runfiles.bash initialization v3 ---
 
-config="$(rlocation "@@RUSTFMT_TOML@@")"
-rustfmt="$(rlocation "@@RUSTFMT_BIN@@")"
+config="$(rlocation "%RUSTFMT_TOML%")"
+rustfmt="$(rlocation "%RUSTFMT_BIN%")"
 
 exec "$rustfmt" --config-path "$config" "$@"
