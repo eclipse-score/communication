@@ -1185,7 +1185,7 @@ void ServiceManager::on_external_message(std::shared_ptr<Endpoint> endpoint, std
             if (entry->get_option1st_count() == 1 && message->options().size() == 1) {
                 multicast = message->option(0).get_address_option();
                 if (multicast->is_multicast() == false)
-                    multicast == nullptr;
+                    multicast = nullptr;
             }
 
             on_subscribe_eventgroup_ack(service_id, instance_id, eventgroup_id, major, ttl, false, multicast);
