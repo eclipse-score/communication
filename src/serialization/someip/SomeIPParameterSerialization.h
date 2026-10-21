@@ -954,6 +954,182 @@ inline std::size_t pop_front_fixed_string(Deserializer& deserializer, std::size_
                : 0U;
 }
 
+// ---------------------------------------------------------------------------
+// Union (feat_req_someip_263 ... 274, 563 ... 573, 583)
+//
+// A union consists of an optional length field, a type field and the selected element. The length field
+// counts the element and its padding, but neither the length nor the type field. The order of the two fields
+// can be configured; the default is the length field first. A type of 0 is NULL, i.e. the union holds no
+// element; the other types start at 1 and are defined by the interface specification.
+//
+// An element that is shorter than the longest type of the union has to be padded with zeros
+// (feat_req_someip_583). Without a length field all types need the same length, so the padded length
+// must be given to finish() and skip_remaining().
+// ---------------------------------------------------------------------------
+enum class UnionFieldOrder : std::uint8_t {
+    LengthFirst,
+    TypeFirst,
+};
+
+namespace detail {
+
+template <typename Config>
+using LengthFieldStorage = typename std::conditional<std::is_same<typename Config::LengthFieldType, void>::value,
+                                                     std::uint8_t, typename Config::LengthFieldType>::type;
+
+} // namespace detail
+
+template <typename Config = LengthFieldConfig<std::uint32_t>, typename TypeField = std::uint32_t,
+          UnionFieldOrder Order = UnionFieldOrder::LengthFirst>
+class UnionSerializer {
+    static_assert(std::is_unsigned<TypeField>::value && sizeof(TypeField) <= 4U, "The type field has 8, 16 or 32 bit");
+
+private:
+    using LengthType = detail::LengthFieldStorage<Config>;
+
+    Serializer* parent_;
+    std::size_t length_pos_{0};
+    std::size_t element_pos_{0};
+
+public:
+    UnionSerializer(Serializer* parent, TypeField type) : parent_{parent} {
+        if (Order == UnionFieldOrder::TypeFirst) {
+            parent_->push_back(type);
+        }
+        if (Config::lengthFieldActive) {
+            length_pos_ = parent_->get_length();
+            parent_->push_back(static_cast<LengthType>(0));
+        }
+        if (Order == UnionFieldOrder::LengthFirst) {
+            parent_->push_back(type);
+        }
+        element_pos_ = parent_->get_length();
+    }
+
+    template <typename DataType> void push_back(DataType value) {
+        parent_->push_back(value);
+    }
+
+    template <typename DataType> void push_back_le(DataType value) {
+        parent_->push_back_le(value);
+    }
+
+    // Pads the element with zeros up to padded_length (0: no padding) and writes the length field. Returns
+    // false when the element is longer than padded_length, or too long for the length field.
+    bool finish(std::size_t padded_length = 0) {
+        std::size_t length = parent_->get_length() - element_pos_;
+        if (padded_length != 0U && length > padded_length) {
+            return false;
+        }
+        for (; length < padded_length; length++) {
+            parent_->push_back(static_cast<std::uint8_t>(0));
+        }
+        if (!Config::lengthFieldActive) {
+            return true;
+        }
+        return push_length<LengthType>(*parent_, length, length_pos_);
+    }
+};
+
+template <typename Config = LengthFieldConfig<std::uint32_t>, typename TypeField = std::uint32_t,
+          UnionFieldOrder Order = UnionFieldOrder::LengthFirst>
+class UnionDeserializer : public ConsumeWatcher {
+    static_assert(std::is_unsigned<TypeField>::value && sizeof(TypeField) <= 4U, "The type field has 8, 16 or 32 bit");
+
+private:
+    using LengthType = detail::LengthFieldStorage<Config>;
+
+    Deserializer* parent_;
+    TypeField type_{0};
+    std::size_t length_{0};
+    std::size_t bytes_read_{0};
+    bool valid_{true};
+
+    void read_type() {
+        valid_ = valid_ && parent_->pop_front(type_) == sizeof(TypeField);
+    }
+
+    void read_length() {
+        LengthType field{};
+        if (valid_ && parent_->pop_front(field) == sizeof(LengthType)) {
+            length_ = field;
+        } else {
+            valid_ = false;
+        }
+    }
+
+public:
+    explicit UnionDeserializer(Deserializer* parent) : parent_(parent) {
+        if (Order == UnionFieldOrder::TypeFirst) {
+            read_type();
+        }
+        if (Config::lengthFieldActive) {
+            read_length();
+        }
+        if (Order == UnionFieldOrder::LengthFirst) {
+            read_type();
+        }
+    }
+
+    // False when the length or type field is missing.
+    bool valid() const {
+        return valid_;
+    }
+
+    // The type of the element; 0 is NULL.
+    TypeField type() const {
+        return type_;
+    }
+
+    template <typename DataType> std::size_t pop_front(DataType& data) {
+        std::size_t nbytes = 0;
+
+        if (valid_ && (!Config::lengthFieldActive || (bytes_read_ + sizeof(DataType)) <= length_)) {
+            nbytes = parent_->pop_front(data);
+            bytes_read_ += nbytes;
+        }
+
+        return nbytes;
+    }
+
+    template <typename DataType> std::size_t pop_front_le(DataType& data) {
+        std::size_t nbytes = 0;
+
+        if (valid_ && (!Config::lengthFieldActive || (bytes_read_ + sizeof(DataType)) <= length_)) {
+            nbytes = parent_->pop_front_le(data);
+            bytes_read_ += nbytes;
+        }
+
+        return nbytes;
+    }
+
+    void consumed(const std::size_t bytes) override {
+        if (!Config::lengthFieldActive || (bytes_read_ + bytes) <= length_) {
+            bytes_read_ += bytes;
+        }
+    }
+
+    bool has_remaining_data() const {
+        return valid_ && bytes_read_ < length_;
+    }
+
+    // Skip the padding of the element (feat_req_someip_274), or the whole element of an unknown type.
+    // Without a length field, padded_length is the length of the element including padding. Returns false
+    // when the bytes to skip are missing.
+    bool skip_remaining(std::size_t padded_length = 0) {
+        if (!valid_) {
+            return false;
+        }
+        const std::size_t total = Config::lengthFieldActive ? length_ : padded_length;
+        const std::size_t nbytes = total > bytes_read_ ? total - bytes_read_ : 0U;
+        if (nbytes != 0U && parent_->skip(nbytes) == 0U) {
+            return false;
+        }
+        bytes_read_ += nbytes;
+        return true;
+    }
+};
+
 } // namespace serialization
 } // namespace lgsomeip
 

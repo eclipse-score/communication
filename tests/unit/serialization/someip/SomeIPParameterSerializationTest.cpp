@@ -1045,3 +1045,192 @@ TEST(LittleEndianTest, StructAndTlvMembers) {
         ASSERT_EQ(0x0102, value);
     }
 }
+
+TEST(UnionTest, SpecificationExample) {
+    // Union of uint8 (type 1) and uint16 (type 2): the shorter element is padded to the longest one.
+    {
+        Serializer serializer;
+        UnionSerializer<> union_serializer{&serializer, 1};
+        union_serializer.push_back(static_cast<std::uint8_t>(0xAB));
+        ASSERT_TRUE(union_serializer.finish(4));
+        const PacketBuffer golden{0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0xAB, 0x00, 0x00, 0x00};
+        ASSERT_EQ(golden, bytes_of(serializer));
+
+        Deserializer deserializer{buffer_of(golden)};
+        UnionDeserializer<> union_deserializer{&deserializer};
+        ASSERT_TRUE(union_deserializer.valid());
+        ASSERT_EQ(1U, union_deserializer.type());
+        std::uint8_t value{};
+        ASSERT_EQ(1, union_deserializer.pop_front(value));
+        ASSERT_EQ(0xAB, value);
+        ASSERT_TRUE(union_deserializer.has_remaining_data());
+        ASSERT_TRUE(union_deserializer.skip_remaining());
+        ASSERT_EQ(0, deserializer.get_remaining_length());
+    }
+    {
+        Serializer serializer;
+        UnionSerializer<> union_serializer{&serializer, 2};
+        union_serializer.push_back(static_cast<std::uint16_t>(0xABCD));
+        ASSERT_TRUE(union_serializer.finish(4));
+        const PacketBuffer golden{0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x02, 0xAB, 0xCD, 0x00, 0x00};
+        ASSERT_EQ(golden, bytes_of(serializer));
+
+        Deserializer deserializer{buffer_of(golden)};
+        UnionDeserializer<> union_deserializer{&deserializer};
+        ASSERT_EQ(2U, union_deserializer.type());
+        std::uint16_t value{};
+        ASSERT_EQ(2, union_deserializer.pop_front(value));
+        ASSERT_EQ(0xABCD, value);
+        ASSERT_TRUE(union_deserializer.skip_remaining());
+        ASSERT_EQ(0, deserializer.get_remaining_length());
+    }
+}
+
+TEST(UnionTest, WithoutPaddingAndNull) {
+    Serializer serializer;
+    UnionSerializer<> unpadded{&serializer, 1};
+    unpadded.push_back(static_cast<std::uint8_t>(0x7F));
+    ASSERT_TRUE(unpadded.finish());
+    // Type 0 is NULL: the union has no element.
+    UnionSerializer<> null_union{&serializer, 0};
+    ASSERT_TRUE(null_union.finish());
+    const PacketBuffer golden{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x7F,
+                              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    ASSERT_EQ(golden, bytes_of(serializer));
+
+    Deserializer deserializer{buffer_of(golden)};
+    UnionDeserializer<> first{&deserializer};
+    ASSERT_EQ(1U, first.type());
+    std::uint8_t value{};
+    ASSERT_EQ(1, first.pop_front(value));
+    ASSERT_FALSE(first.has_remaining_data());
+    UnionDeserializer<> second{&deserializer};
+    ASSERT_TRUE(second.valid());
+    ASSERT_EQ(0U, second.type());
+    ASSERT_FALSE(second.has_remaining_data());
+    ASSERT_EQ(0, second.pop_front(value));
+}
+
+TEST(UnionTest, ConfiguredFieldsAndOrder) {
+    {
+        // 16 bit length and 8 bit type.
+        Serializer serializer;
+        UnionSerializer<LengthFieldConfig<std::uint16_t>, std::uint8_t> union_serializer{&serializer, 3};
+        union_serializer.push_back_le(static_cast<std::uint16_t>(0x0102));
+        ASSERT_TRUE(union_serializer.finish());
+        const PacketBuffer golden{0x00, 0x02, 0x03, 0x02, 0x01};
+        ASSERT_EQ(golden, bytes_of(serializer));
+
+        Deserializer deserializer{buffer_of(golden)};
+        UnionDeserializer<LengthFieldConfig<std::uint16_t>, std::uint8_t> union_deserializer{&deserializer};
+        ASSERT_EQ(3, union_deserializer.type());
+        std::uint16_t value{};
+        ASSERT_EQ(2, union_deserializer.pop_front_le(value));
+        ASSERT_EQ(0x0102, value);
+    }
+    {
+        // The type field in front of the length field.
+        Serializer serializer;
+        UnionSerializer<LengthFieldConfig<std::uint8_t>, std::uint16_t, UnionFieldOrder::TypeFirst> union_serializer{
+            &serializer, 5};
+        union_serializer.push_back(static_cast<std::uint8_t>(0x42));
+        ASSERT_TRUE(union_serializer.finish(2));
+        const PacketBuffer golden{0x00, 0x05, 0x02, 0x42, 0x00};
+        ASSERT_EQ(golden, bytes_of(serializer));
+
+        Deserializer deserializer{buffer_of(golden)};
+        UnionDeserializer<LengthFieldConfig<std::uint8_t>, std::uint16_t, UnionFieldOrder::TypeFirst>
+            union_deserializer{&deserializer};
+        ASSERT_EQ(5, union_deserializer.type());
+        std::uint8_t value{};
+        ASSERT_EQ(1, union_deserializer.pop_front(value));
+        ASSERT_EQ(0x42, value);
+        ASSERT_TRUE(union_deserializer.skip_remaining());
+        ASSERT_EQ(0, deserializer.get_remaining_length());
+    }
+}
+
+TEST(UnionTest, WithoutLengthField) {
+    // feat_req_someip_583: all types have the same length, the shorter ones are padded.
+    Serializer serializer;
+    UnionSerializer<LengthFieldConfig<void>, std::uint8_t> union_serializer{&serializer, 1};
+    union_serializer.push_back(static_cast<std::uint8_t>(0x42));
+    ASSERT_TRUE(union_serializer.finish(4));
+    const PacketBuffer golden{0x01, 0x42, 0x00, 0x00, 0x00, 0x99};
+    PacketBuffer wire = bytes_of(serializer);
+    wire.push_back(0x99);
+    ASSERT_EQ(golden, wire);
+
+    Deserializer deserializer{buffer_of(golden)};
+    UnionDeserializer<LengthFieldConfig<void>, std::uint8_t> union_deserializer{&deserializer};
+    ASSERT_EQ(1, union_deserializer.type());
+    std::uint8_t value{};
+    ASSERT_EQ(1, union_deserializer.pop_front(value));
+    ASSERT_TRUE(union_deserializer.skip_remaining(4));
+    ASSERT_EQ(1, deserializer.get_remaining_length());
+}
+
+TEST(UnionTest, ElementLongerThanPaddedLengthIsReported) {
+    Serializer serializer;
+    UnionSerializer<> union_serializer{&serializer, 1};
+    union_serializer.push_back(static_cast<std::uint32_t>(1));
+    ASSERT_FALSE(union_serializer.finish(2));
+}
+
+TEST(UnionTest, LengthFieldOverflowIsReported) {
+    Serializer serializer;
+    UnionSerializer<LengthFieldConfig<std::uint8_t>> union_serializer{&serializer, 1};
+    for (int i = 0; i < 256; i++) {
+        union_serializer.push_back(static_cast<std::uint8_t>(i));
+    }
+    ASSERT_FALSE(union_serializer.finish());
+}
+
+TEST(UnionTest, UnknownTypeIsSkipped) {
+    // An element of an unknown type is skipped as a whole; the next value is still read correctly.
+    const PacketBuffer input{0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x09, 0xAA, 0xBB, 0xCC, 0x12, 0x34};
+    Deserializer deserializer{buffer_of(input)};
+    UnionDeserializer<> union_deserializer{&deserializer};
+    ASSERT_EQ(9U, union_deserializer.type());
+    ASSERT_TRUE(union_deserializer.skip_remaining());
+    std::uint16_t next{};
+    ASSERT_EQ(2, deserializer.pop_front(next));
+    ASSERT_EQ(0x1234, next);
+}
+
+TEST(UnionTest, ReadingIsLimitedByTheLength) {
+    const PacketBuffer input{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0xAA, 0xBB};
+    Deserializer deserializer{buffer_of(input)};
+    UnionDeserializer<> union_deserializer{&deserializer};
+    std::uint16_t value{};
+    ASSERT_EQ(0, union_deserializer.pop_front(value));
+    std::uint8_t byte{};
+    ASSERT_EQ(1, union_deserializer.pop_front(byte));
+    ASSERT_EQ(0, union_deserializer.pop_front(byte));
+}
+
+TEST(UnionTest, TruncatedFieldsAreDetected) {
+    const PacketBuffer cases[] = {
+        {},
+        {0x00, 0x00},
+        {0x00, 0x00, 0x00, 0x04, 0x00, 0x00},
+    };
+    for (const auto& input : cases) {
+        Deserializer deserializer{buffer_of(input)};
+        UnionDeserializer<> union_deserializer{&deserializer};
+        ASSERT_FALSE(union_deserializer.valid());
+        std::uint8_t value{};
+        ASSERT_EQ(0, union_deserializer.pop_front(value));
+        ASSERT_FALSE(union_deserializer.skip_remaining());
+    }
+}
+
+TEST(UnionTest, AnnouncedElementIsMissing) {
+    const PacketBuffer input{0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0xAB};
+    Deserializer deserializer{buffer_of(input)};
+    UnionDeserializer<> union_deserializer{&deserializer};
+    ASSERT_TRUE(union_deserializer.valid());
+    std::uint8_t value{};
+    ASSERT_EQ(1, union_deserializer.pop_front(value));
+    ASSERT_FALSE(union_deserializer.skip_remaining());
+}
