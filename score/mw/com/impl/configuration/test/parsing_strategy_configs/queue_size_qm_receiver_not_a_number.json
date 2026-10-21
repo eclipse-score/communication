@@ -1,0 +1,11 @@
+{
+    "serviceTypes": [],
+    "serviceInstances": [],
+    "global": {
+        "asil-level": "B",
+        "queue-size": {
+            "QM-receiver": "bla",
+            "B-receiver": 9
+        }
+    }
+}
