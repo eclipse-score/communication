@@ -13,7 +13,9 @@
  ********************************************************************************/
 
 #include <cstdint>
+#include <cstring>
 #include <memory>
+#include <new>
 #include <gtest/gtest.h>
 #include <serialization/someip/SomeIPParameterSerialization.h>
 
@@ -431,39 +433,36 @@ TEST(TlvSerializerTest, SerializeStructure) {
     Deserializer deserializer(serializer.finish());
     ComplexTypeDeserializer<LengthFieldConfig<std::uint32_t>> complex_deserializer{&deserializer};
 
+    int members = 0;
     while (complex_deserializer.has_remaining_data()) {
+        ASSERT_LT(members, 2);
         TlvDeserializer<LengthFieldConfig<std::uint32_t>> tlv_deserializer_data{&deserializer, &complex_deserializer};
-        while (tlv_deserializer_data.has_remaining_data()) {
-            TlvTag tag = tlv_deserializer_data.consume_tag();
-            switch (tag.data_id_) {
-            case kDataIdA: {
-                std::uint8_t d;
-                tlv_deserializer_data.pop_front(d);
-                ASSERT_EQ(11, d);
-                break;
-            }
-            case kDataIdC: {
-                while (tlv_deserializer_data.has_remaining_data()) {
-                    TlvDeserializer<LengthFieldConfig<std::uint32_t>> tlv_deserializer_data_c{&deserializer,
-                                                                                              &tlv_deserializer_data};
-                    while (tlv_deserializer_data.has_remaining_data()) {
-                        TlvTag tag = tlv_deserializer_data.consume_tag();
-                        switch (tag.data_id_) {
-                        case kDataIdCC1: {
-                            std::uint8_t d;
-                            tlv_deserializer_data.pop_front(d);
-                            ASSERT_EQ(33, d);
-                            break;
-                        }
-                        }
-                    }
-                }
-                break;
-            }
-            }
+        TlvTag tag = tlv_deserializer_data.consume_tag();
+        switch (tag.data_id_) {
+        case kDataIdA: {
+            std::uint8_t d{};
+            ASSERT_EQ(1, tlv_deserializer_data.pop_front(d));
+            ASSERT_EQ(11, d);
+            break;
         }
+        case kDataIdC: {
+            // The nested member reports what it reads to the member that contains it.
+            TlvDeserializer<LengthFieldConfig<std::uint32_t>> tlv_deserializer_data_c{&deserializer,
+                                                                                      &tlv_deserializer_data};
+            TlvTag inner_tag = tlv_deserializer_data_c.consume_tag();
+            ASSERT_EQ(kDataIdCC1, inner_tag.data_id_);
+            std::uint8_t d{};
+            ASSERT_EQ(1, tlv_deserializer_data_c.pop_front(d));
+            ASSERT_EQ(33, d);
+            break;
+        }
+        default:
+            FAIL() << "unexpected data id " << tag.data_id_;
+        }
+        members++;
     }
 
+    ASSERT_EQ(2, members);
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
@@ -556,4 +555,27 @@ TEST(DeserializerTest, BooleanUsesOnlyLowestBit) {
         ASSERT_EQ(want, value);
     }
     ASSERT_EQ(0, deserializer.get_remaining_length());
+}
+
+TEST(TlvDeserializerTest, HasNoDataBeforeTheFirstTagIsRead) {
+    // Construct the object over memory filled with a pattern, as happens for a local variable on a used stack.
+    alignas(TlvDeserializer<LengthFieldConfig<std::uint16_t>>) unsigned char
+        storage[sizeof(TlvDeserializer<LengthFieldConfig<std::uint16_t>>)];
+    std::memset(storage, 0x55, sizeof(storage));
+
+    Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x20, 0x01, 0x11, 0x22, 0x33, 0x44})};
+    auto* tlv_deserializer = new (storage) TlvDeserializer<LengthFieldConfig<std::uint16_t>>(&deserializer);
+    ASSERT_FALSE(tlv_deserializer->has_remaining_data());
+    tlv_deserializer->~TlvDeserializer();
+}
+
+TEST(ComplexTypeDeserializerTest, NoLengthFieldHasNoAnnouncedData) {
+    alignas(ComplexTypeDeserializer<LengthFieldConfig<void>>) unsigned char
+        storage[sizeof(ComplexTypeDeserializer<LengthFieldConfig<void>>)];
+    std::memset(storage, 0x55, sizeof(storage));
+
+    Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x01, 0x02})};
+    auto* complex_deserializer = new (storage) ComplexTypeDeserializer<LengthFieldConfig<void>>(&deserializer);
+    ASSERT_FALSE(complex_deserializer->has_remaining_data());
+    complex_deserializer->~ComplexTypeDeserializer();
 }

@@ -451,7 +451,7 @@ public:
 template <typename Config> class ComplexTypeDeserializer : public ConsumeWatcher {
 private:
     Deserializer* parent_;
-    std::size_t length_;
+    std::size_t length_{0};
     std::size_t bytes_read_{0};
 
     std::size_t consume_length_field() {
@@ -511,15 +511,15 @@ private:
     Deserializer* deserializer_;
     ConsumeWatcher* watcher_;
     std::size_t bytes_read_{0};
-    std::size_t length_;
-    WireTypeEnum wire_type_;
+    std::size_t length_{0};
+    WireTypeEnum wire_type_{WireTypeEnum::BaseType8Bit};
 
 public:
     explicit TlvDeserializer(Deserializer* deserializer, ConsumeWatcher* watcher = NULL)
         : deserializer_(deserializer), watcher_(watcher) {}
 
     TlvTag consume_tag() {
-        std::array<std::uint8_t, 2U> tag;
+        std::array<std::uint8_t, 2U> tag{};
         deserializer_->pop_front(tag[0]);
         deserializer_->pop_front(tag[1]);
         wire_type_ = static_cast<WireTypeEnum>((tag[0] & 0x70U) >> 4U);
@@ -551,8 +551,12 @@ public:
     }
 
     void consumed(const std::size_t bytes) override {
-        if ((bytes_read_ + bytes) <= length_)
+        if ((bytes_read_ + bytes) <= length_) {
             bytes_read_ += bytes;
+            // A member nested in this one is part of the member that contains this one, too.
+            if (watcher_)
+                watcher_->consumed(bytes);
+        }
     }
 
 private:
