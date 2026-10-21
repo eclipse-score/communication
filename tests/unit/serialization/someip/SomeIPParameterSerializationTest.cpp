@@ -13,6 +13,7 @@
  ********************************************************************************/
 
 #include <cstdint>
+#include <memory>
 #include <gtest/gtest.h>
 #include <serialization/someip/SomeIPParameterSerialization.h>
 
@@ -489,4 +490,56 @@ TEST(TlvSerializerTest, DecodesWireTypeAndDataIdAbove255) {
     tlv_deserializer.pop_front(value);
     ASSERT_EQ(kValue, value);
     ASSERT_EQ(0, deserializer.get_remaining_length());
+}
+
+TEST(DeserializerTest, TruncatedInputReturnsZeroAndKeepsPosition) {
+    Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x01, 0x02, 0x03})};
+
+    std::uint32_t word{};
+    ASSERT_EQ(0, deserializer.pop_front(word));
+    ASSERT_EQ(3, deserializer.get_remaining_length());
+
+    std::uint16_t half{};
+    ASSERT_EQ(2, deserializer.pop_front(half));
+    ASSERT_EQ(0x0102, half);
+    ASSERT_EQ(1, deserializer.get_remaining_length());
+
+    ASSERT_EQ(0, deserializer.pop_front(half));
+    ASSERT_EQ(1, deserializer.get_remaining_length());
+}
+
+TEST(ComplexTypeDeserializerTest, LengthFieldLargerThanBuffer) {
+    // The length field announces 8 bytes but only 2 follow.
+    Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x00, 0x00, 0x00, 0x08, 0x01, 0x02})};
+    ComplexTypeDeserializer<LengthFieldConfig<std::uint32_t>> complex_deserializer{&deserializer};
+
+    std::uint8_t byte{};
+    ASSERT_EQ(1, complex_deserializer.pop_front(byte));
+    ASSERT_EQ(1, complex_deserializer.pop_front(byte));
+    ASSERT_EQ(0, complex_deserializer.pop_front(byte));
+    // The announced data never arrives, so callers must stop when pop_front() returns 0.
+    ASSERT_TRUE(complex_deserializer.has_remaining_data());
+}
+
+TEST(ComplexTypeDeserializerTest, MissingLengthField) {
+    Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x00, 0x00})};
+    ComplexTypeDeserializer<LengthFieldConfig<std::uint32_t>> complex_deserializer{&deserializer};
+
+    std::uint8_t byte{};
+    ASSERT_EQ(0, complex_deserializer.pop_front(byte));
+    ASSERT_FALSE(complex_deserializer.has_remaining_data());
+}
+
+TEST(TlvDeserializerTest, TruncatedMember) {
+    // 32-bit base type member whose value is cut off after two bytes.
+    Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x20, 0x01, 0x11, 0x22})};
+    TlvDeserializer<LengthFieldConfig<std::uint16_t>> tlv_deserializer{&deserializer};
+
+    TlvTag tag = tlv_deserializer.consume_tag();
+    ASSERT_EQ(1, tag.data_id_);
+    ASSERT_EQ(4, tag.len_);
+
+    std::uint32_t value{};
+    ASSERT_EQ(0, tlv_deserializer.pop_front(value));
+    ASSERT_EQ(2, deserializer.get_remaining_length());
 }
