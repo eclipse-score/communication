@@ -83,6 +83,15 @@ template <typename T> inline T from_network_byte_order(T src) {
     return is_host_network_byte_order() ? src : swap_order(src);
 }
 
+// Parameters may be defined as little endian in the interface specification (feat_req_someip_224).
+template <typename T> inline T to_little_endian(T src) {
+    return is_host_network_byte_order() ? swap_order(src) : src;
+}
+
+template <typename T> inline T from_little_endian(T src) {
+    return is_host_network_byte_order() ? swap_order(src) : src;
+}
+
 using PacketBuffer = std::vector<std::uint8_t>;
 
 // Serializer.
@@ -151,6 +160,16 @@ public:
     void push_back(double v) {
         serialize<double>(v);
         size_ += 8;
+    }
+
+    // Write a value in little endian byte order (feat_req_someip_224).
+    template <typename T> void push_back_le(T v) {
+        static_assert(std::is_arithmetic<T>::value && !std::is_same<T, bool>::value,
+                      "Only integers and floating point numbers have a byte order");
+        v = to_little_endian(v);
+        const auto* first = reinterpret_cast<const std::uint8_t*>(&v);
+        std::copy(first, first + sizeof(T), std::back_inserter(*buffer_));
+        size_ += sizeof(T);
     }
 
     // Write a length field at the specified position.
@@ -237,6 +256,10 @@ public:
 
     template <typename DataType> void push_back(DataType value) {
         parent_->push_back(value);
+    }
+
+    template <typename DataType> void push_back_le(DataType value) {
+        parent_->push_back_le(value);
     }
 
     std::size_t get_length() const {
@@ -384,6 +407,10 @@ public:
         parent_->push_back(value);
     }
 
+    template <typename DataType> void push_back_le(DataType value) {
+        parent_->push_back_le(value);
+    }
+
     std::size_t get_length() const {
         return parent_->get_length();
     }
@@ -406,6 +433,18 @@ public:
 
     template <typename DataType> std::size_t pop_front(DataType& data) {
         return deserialize<DataType>(data);
+    }
+
+    // Read a value in little endian byte order (feat_req_someip_224).
+    template <typename DataType> std::size_t pop_front_le(DataType& data) {
+        static_assert(std::is_arithmetic<DataType>::value && !std::is_same<DataType, bool>::value,
+                      "Only integers and floating point numbers have a byte order");
+        DataType value;
+        const std::size_t nbytes = read_raw(value);
+        if (nbytes != 0U) {
+            data = from_little_endian(value);
+        }
+        return nbytes;
     }
 
     // Only the lowest bit of a boolean is used; the other bits are reserved and ignored on receiving.
@@ -441,19 +480,27 @@ public:
     }
 
 private:
-    template <typename DataType> std::size_t deserialize(DataType& data) {
+    // Read the bytes as they are on the wire.
+    template <typename DataType> std::size_t read_raw(DataType& value) {
         std::size_t nbytes = 0;
 
         if ((bytes_read_ + sizeof(DataType)) <= length_) {
             // The data may start at any offset, so it must not be read through a typed pointer.
-            DataType value;
             std::memcpy(&value, pos_, sizeof(DataType));
-            data = from_network_byte_order(value);
             pos_ += sizeof(DataType);
             bytes_read_ += sizeof(DataType);
             nbytes = sizeof(DataType);
         }
 
+        return nbytes;
+    }
+
+    template <typename DataType> std::size_t deserialize(DataType& data) {
+        DataType value;
+        const std::size_t nbytes = read_raw(value);
+        if (nbytes != 0U) {
+            data = from_network_byte_order(value);
+        }
         return nbytes;
     }
 };
@@ -500,6 +547,17 @@ public:
             // If there is no length field active (for instance for structs)
             // we try to pop data for any case.
             nbytes = parent_->pop_front(data);
+            bytes_read_ += nbytes;
+        }
+
+        return nbytes;
+    }
+
+    template <typename DataType> std::size_t pop_front_le(DataType& data) {
+        std::size_t nbytes = 0;
+
+        if (!Config::lengthFieldActive || (bytes_read_ + sizeof(DataType)) <= length_) {
+            nbytes = parent_->pop_front_le(data);
             bytes_read_ += nbytes;
         }
 
@@ -567,6 +625,18 @@ public:
         std::size_t nbytes = 0;
         if ((bytes_read_ + sizeof(DataType)) <= length_) {
             nbytes = deserializer_->pop_front(data);
+            bytes_read_ += nbytes;
+            if (watcher_)
+                watcher_->consumed(nbytes);
+        }
+
+        return nbytes;
+    }
+
+    template <typename DataType> std::size_t pop_front_le(DataType& data) {
+        std::size_t nbytes = 0;
+        if ((bytes_read_ + sizeof(DataType)) <= length_) {
+            nbytes = deserializer_->pop_front_le(data);
             bytes_read_ += nbytes;
             if (watcher_)
                 watcher_->consumed(nbytes);

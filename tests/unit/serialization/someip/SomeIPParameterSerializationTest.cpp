@@ -951,3 +951,97 @@ TEST(StringTest, StringInsideAStruct) {
     ASSERT_EQ(2, value);
     ASSERT_FALSE(complex_deserializer.has_remaining_data());
 }
+
+TEST(LittleEndianTest, SerializerWritesLeastSignificantByteFirst) {
+    Serializer serializer;
+    serializer.push_back_le(static_cast<std::uint8_t>(0x12));
+    serializer.push_back_le(static_cast<std::uint16_t>(0x1234));
+    serializer.push_back_le(static_cast<std::int16_t>(-2));
+    serializer.push_back_le(static_cast<std::uint32_t>(0x01020304));
+    serializer.push_back_le(static_cast<std::uint64_t>(0x0102030405060708ULL));
+    serializer.push_back_le(1.0F);
+    serializer.push_back_le(1.0);
+    // Network byte order and little endian parameters may be mixed in one message.
+    serializer.push_back(static_cast<std::uint16_t>(0x1234));
+    ASSERT_EQ(1 + 2 + 2 + 4 + 8 + 4 + 8 + 2, serializer.get_length());
+
+    const PacketBuffer golden{0x12, 0x34, 0x12, 0xFE, 0xFF, 0x04, 0x03, 0x02, 0x01, 0x08, 0x07,
+                              0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00, 0x00, 0x80, 0x3F, 0x00,
+                              0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x3F, 0x12, 0x34};
+    ASSERT_EQ(golden, bytes_of(serializer));
+}
+
+TEST(LittleEndianTest, DeserializerReadsLeastSignificantByteFirst) {
+    const PacketBuffer input{0x12, 0x34, 0x12, 0xFE, 0xFF, 0x04, 0x03, 0x02, 0x01, 0x00, 0x00, 0x80, 0x3F, 0x12, 0x34};
+    Deserializer deserializer{buffer_of(input)};
+    std::uint8_t u8{};
+    std::uint16_t u16{};
+    std::int16_t i16{};
+    std::uint32_t u32{};
+    float f{};
+    std::uint16_t network{};
+    ASSERT_EQ(1, deserializer.pop_front_le(u8));
+    ASSERT_EQ(2, deserializer.pop_front_le(u16));
+    ASSERT_EQ(2, deserializer.pop_front_le(i16));
+    ASSERT_EQ(4, deserializer.pop_front_le(u32));
+    ASSERT_EQ(4, deserializer.pop_front_le(f));
+    ASSERT_EQ(2, deserializer.pop_front(network));
+    ASSERT_EQ(0x12, u8);
+    ASSERT_EQ(0x1234, u16);
+    ASSERT_EQ(-2, i16);
+    ASSERT_EQ(0x01020304U, u32);
+    ASSERT_EQ(1.0F, f);
+    ASSERT_EQ(0x1234, network);
+
+    std::uint32_t none{};
+    ASSERT_EQ(0, deserializer.pop_front_le(none));
+}
+
+TEST(LittleEndianTest, ShortInputKeepsTheValue) {
+    const PacketBuffer input{0x01, 0x02, 0x03};
+    Deserializer deserializer{buffer_of(input)};
+    std::uint32_t value{0xAAAAAAAAU};
+    ASSERT_EQ(0, deserializer.pop_front_le(value));
+    ASSERT_EQ(0xAAAAAAAAU, value);
+    ASSERT_EQ(3, deserializer.get_remaining_length());
+}
+
+TEST(LittleEndianTest, StructAndTlvMembers) {
+    {
+        Serializer serializer;
+        ComplexTypeSerializer<LengthFieldConfig<std::uint8_t>> complex_serializer{&serializer};
+        complex_serializer.push_back_le(static_cast<std::uint16_t>(0x0102));
+        complex_serializer.push_back_le(static_cast<std::uint32_t>(0x0A0B0C0D));
+        ASSERT_TRUE(complex_serializer.finish());
+        const PacketBuffer golden{0x06, 0x02, 0x01, 0x0D, 0x0C, 0x0B, 0x0A};
+        ASSERT_EQ(golden, bytes_of(serializer));
+
+        Deserializer deserializer{buffer_of(golden)};
+        ComplexTypeDeserializer<LengthFieldConfig<std::uint8_t>> complex_deserializer{&deserializer};
+        std::uint16_t first{};
+        std::uint32_t second{};
+        std::uint32_t beyond{};
+        ASSERT_EQ(2, complex_deserializer.pop_front_le(first));
+        ASSERT_EQ(4, complex_deserializer.pop_front_le(second));
+        ASSERT_EQ(0x0102, first);
+        ASSERT_EQ(0x0A0B0C0DU, second);
+        // The announced length is used up.
+        ASSERT_EQ(0, complex_deserializer.pop_front_le(beyond));
+    }
+    {
+        Serializer serializer;
+        TlvSerializer<LengthFieldConfig<std::uint8_t>> tlv_serializer{&serializer, WireTypeEnum::BaseType16Bit, 0x123};
+        tlv_serializer.push_back_le(static_cast<std::uint16_t>(0x0102));
+        ASSERT_TRUE(tlv_serializer.finish());
+        const PacketBuffer golden{0x11, 0x23, 0x02, 0x01};
+        ASSERT_EQ(golden, bytes_of(serializer));
+
+        Deserializer deserializer{buffer_of(golden)};
+        TlvDeserializer<LengthFieldConfig<std::uint8_t>> tlv_deserializer{&deserializer};
+        const TlvTag tag = tlv_deserializer.consume_tag();
+        ASSERT_EQ(0x123, tag.data_id_);
+        std::uint16_t value{};
+        ASSERT_EQ(2, tlv_deserializer.pop_front_le(value));
+        ASSERT_EQ(0x0102, value);
+    }
+}
