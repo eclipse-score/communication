@@ -17,13 +17,26 @@
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/service_element_type.h"
 
+#include <score/utility.hpp>
+
 namespace score::mw::com::impl
 {
 auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance_identifier,
                                               SkeletonBinding& parent_binding,
                                               const std::string_view method_name,
-                                              MethodType method_type) -> std::unique_ptr<SkeletonMethodBinding>
+                                              MethodType method_type,
+                                              std::optional<memory::DataTypeSizeInfo> in_arg_type_info,
+                                              std::optional<memory::DataTypeSizeInfo> return_type_info)
+    -> std::unique_ptr<SkeletonMethodBinding>
 {
+    // The LoLa binding does not (yet) need the in-arg/return type info: the proxy-side call queue (which is
+    // type-erased, too) already carries the size/alignment info needed at runtime (see
+    // TypeErasedCallQueue::TypeErasedElementInfo, written by the - typed - ProxyMethod which created it). They are
+    // accepted here nonetheless so that other (hypothetical) bindings, which may need this info to create their
+    // binding-specific SkeletonMethod, can rely on it being handed down from the caller (the only layer which knows
+    // the concrete method signature).
+    score::cpp::ignore = in_arg_type_info;
+    score::cpp::ignore = return_type_info;
 
     const InstanceIdentifierView instance_identifier_view{instance_identifier};
 

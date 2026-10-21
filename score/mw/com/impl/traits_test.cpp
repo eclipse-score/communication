@@ -707,13 +707,13 @@ class SkeletonCreationFixture : public ::testing::Test
 
         // By default the Create call on the SkeletonMethodBindingFactory returns valid bindings.
         ON_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kMethodName, MethodType::kMethod))
+                Create(identifier_with_valid_binding_, _, kMethodName, MethodType::kMethod, _, _))
             .WillByDefault(Return(ByMove(std::move(skeleton_method_binding_mock_ptr))));
         ON_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet))
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet, _, _))
             .WillByDefault(Return(ByMove(std::move(skeleton_field_set_binding_mock_ptr))));
         ON_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet))
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet, _, _))
             .WillByDefault(Return(ByMove(std::move(skeleton_field_get_binding_mock_ptr))));
 
         // By default the runtime configuration resolves instance identifiers
@@ -790,13 +790,13 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
                 CreateEventBinding(identifier_with_valid_binding_, _, kFieldName, kTestSampleTypeSizeInfo, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet))
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet, _, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_set_binding_mock_ptr))));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet))
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet, _, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_get_binding_mock_ptr))));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kMethodName, MethodType::kMethod))
+                Create(identifier_with_valid_binding_, _, kMethodName, MethodType::kMethod, _, _))
         .WillOnce(Return(ByMove(std::move(skeleton_method_binding_mock_ptr))));
 
     // When constructing a skeleton with an InstanceSpecifier
@@ -884,12 +884,12 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
 
     // Expecting that the Create call on the SkeletonMethodBindingFactory returns an invalid binding for the method.
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(_, _, kMethodName, MethodType::kMethod))
+                Create(_, _, kMethodName, MethodType::kMethod, _, _))
         .WillOnce(Return(ByMove(nullptr)));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet));
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet, _, _));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet));
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet, _, _));
 
     // When constructing a skeleton with an InstanceSpecifier
     const auto unit = MySkeleton::Create(kInstanceSpecifier);
@@ -1019,12 +1019,12 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromI
 TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromInvalidSkeletonMethodReturnsError)
 {
     // Expecting that the Create call on the SkeletonMethodBindingFactory returns an invalid binding for the method.
-    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kMethod))
+    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kMethod, _, _))
         .WillOnce(Return(ByMove(nullptr)));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet));
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet, _, _));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet));
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet, _, _));
 
     // When constructing a skeleton with an InstanceIdentifier
     const auto unit = MySkeleton::Create(identifier_with_valid_binding_);
@@ -1205,13 +1205,14 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
         EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, _, _, _))
             .WillOnce(
                 Return(ByMove(std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_field_binding_mock_))));
-        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kSet))
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kSet, _, _))
             .WillOnce(
                 Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_field_set_binding_mock_))));
-        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kGet))
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kGet, _, _))
             .WillOnce(
                 Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_field_get_binding_mock_))));
-        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kMethod))
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
+                    Create(_, _, _, MethodType::kMethod, _, _))
             .WillOnce(
                 Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock_))));
 
@@ -1223,13 +1224,14 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
         EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, _, _, _))
             .WillOnce(
                 Return(ByMove(std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_field_binding_mock_2_))));
-        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kSet))
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kSet, _, _))
             .WillOnce(Return(
                 ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_field_set_binding_mock_2_))));
-        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kGet))
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kGet, _, _))
             .WillOnce(Return(
                 ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_field_get_binding_mock_2_))));
-        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kMethod))
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
+                    Create(_, _, _, MethodType::kMethod, _, _))
             .WillOnce(
                 Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock_2_))));
 

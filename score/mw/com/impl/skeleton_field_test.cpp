@@ -141,13 +141,13 @@ class SkeletonFieldTestFixture : public ::testing::Test
             }));
 
         ON_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet))
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet, _, _))
             .WillByDefault(InvokeWithoutArgs([this]() {
                 return std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_field_get_binding_mock_);
             }));
 
         ON_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet))
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet, _, _))
             .WillByDefault(InvokeWithoutArgs([this]() {
                 return std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_field_set_binding_mock_);
             }));
@@ -851,7 +851,7 @@ TEST(SkeletonFieldInitialValueTest, MoveAssigningFieldBeforePrepareOfferWillKeep
     SkeletonMethodBindingFactoryMockGuard skeleton_method_binding_factory_mock_guard{};
 
     mock_binding::SkeletonMethod skeleton_method_mock{};
-    ON_CALL(skeleton_method_binding_factory_mock_guard.factory_mock_, Create(_, _, _, _))
+    ON_CALL(skeleton_method_binding_factory_mock_guard.factory_mock_, Create(_, _, _, _, _, _))
         .WillByDefault(InvokeWithoutArgs([&skeleton_method_mock]() {
             return std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_mock);
         }));

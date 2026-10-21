@@ -26,6 +26,7 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <optional>
 
 namespace score::mw::com::impl
 {
@@ -88,7 +89,7 @@ TEST_F(SkeletonMethodFactoryFixture, CanConstructSkeletonMethod)
 
     // When creating a SkeletonMethod using MethodBindingFactory
     auto skeleton_method = SkeletonMethodBindingFactory::Create(
-        instance_identifier, *skeleton_.get(), kDummyMethodName, MethodType::kMethod);
+        instance_identifier, *skeleton_.get(), kDummyMethodName, MethodType::kMethod, std::nullopt, std::nullopt);
 
     // Then a valid binding can be created
     ASSERT_NE(skeleton_method, nullptr);
@@ -103,7 +104,7 @@ TEST_F(SkeletonMethodFactoryFixture, CannotConstructEventFromBlankBinding)
 
     // When creating a SkeletonMethod using MethodBindingFactory
     auto skeleton_method = SkeletonMethodBindingFactory::Create(
-        instance_identifier, mock_skeleton_binding, kDummyMethodName, MethodType::kMethod);
+        instance_identifier, mock_skeleton_binding, kDummyMethodName, MethodType::kMethod, std::nullopt, std::nullopt);
 
     // Then a nullptr is returned
     EXPECT_EQ(skeleton_method, nullptr);
