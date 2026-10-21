@@ -32,7 +32,6 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
     args = [
-        "-Wno-builtin-macro-redefined",
         # Reduce known GCC false positives.
         "-Wno-maybe-uninitialized",
         "-Warray-bounds=2",  # A5-2-5
@@ -52,7 +51,6 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
     ],
     args = [
-        "-Wno-noexcept-type",
         "-Wdelete-non-virtual-dtor",
         "-Woverloaded-virtual",
         "-Wregister",
