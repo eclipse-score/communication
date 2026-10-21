@@ -219,7 +219,7 @@ sysroot_from_lock(
     lock = "@ubuntu24_04_sysroot_resolve//:lock.json",
 )
 
-bazel_dep(name = "score_cpp_policies", version = "0.1.1", dev_dependency = True)
+bazel_dep(name = "score_cpp_policies", version = "0.1.2", dev_dependency = True)
 bazel_dep(name = "toolchains_llvm", version = "1.8.0", dev_dependency = True)
 
 llvm = use_extension(
