@@ -369,9 +369,9 @@ TEST(ComplexTypeSerializerTest, FourByteLengthConfig) {
 }
 
 TEST(TlvSerializerTest, SerializeStructure) {
-    const std::uint32_t kDataIdA = 0;   // NOLINT(readability-identifier-naming)
-    const std::uint32_t kDataIdC = 2;   // NOLINT(readability-identifier-naming)
-    const std::uint32_t kDataIdCC1 = 1; // NOLINT(readability-identifier-naming)
+    const std::uint32_t data_id_a = 0;
+    const std::uint32_t data_id_c = 2;
+    const std::uint32_t data_id_cc1 = 1;
     struct {
         std::uint8_t a{};       // Data ID = 0, optional = false
         std::uint8_t b{};       // Data ID = 1, optional = false
@@ -391,17 +391,17 @@ TEST(TlvSerializerTest, SerializeStructure) {
 
     {
         TlvSerializer<LengthFieldConfig<std::uint32_t>> tlv_serializer_data_a{&serializer, WireTypeEnum::BaseType8Bit,
-                                                                              kDataIdA};
+                                                                              data_id_a};
         tlv_serializer_data_a.push_back(data.a);
         tlv_serializer_data_a.finish();
     }
 
     {
         TlvSerializer<LengthFieldConfig<std::uint32_t>> tlv_serializer_data_c{
-            &serializer, WireTypeEnum::ComplexDataTypeFromDataDefinition, kDataIdC};
+            &serializer, WireTypeEnum::ComplexDataTypeFromDataDefinition, data_id_c};
         {
             TlvSerializer<LengthFieldConfig<std::uint32_t>> tlv_serializer_data_c_c1{
-                &serializer, WireTypeEnum::BaseType8Bit, kDataIdCC1};
+                &serializer, WireTypeEnum::BaseType8Bit, data_id_cc1};
             tlv_serializer_data_c_c1.push_back(data.c.c1);
             tlv_serializer_data_c_c1.finish();
         }
@@ -418,11 +418,11 @@ TEST(TlvSerializerTest, SerializeStructure) {
     length1 = length1 << 8 | buffer[3];
     ASSERT_EQ(12, length1);
 
-    ASSERT_EQ(kDataIdA, buffer[5]); // data id = 0
-    ASSERT_EQ(11, buffer[6]);       // value 11
+    ASSERT_EQ(data_id_a, buffer[5]); // data id = 0
+    ASSERT_EQ(11, buffer[6]);        // value 11
 
     ASSERT_EQ(0x40, buffer[7] & 0x70); // Complext Data Type from data definition
-    ASSERT_EQ(kDataIdC, buffer[8]);    // data id = 2
+    ASSERT_EQ(data_id_c, buffer[8]);   // data id = 2
     std::uint32_t length2 = buffer[9];
     length2 = length2 << 8 | buffer[10];
     length2 = length2 << 8 | buffer[11];
@@ -439,18 +439,18 @@ TEST(TlvSerializerTest, SerializeStructure) {
         TlvDeserializer<LengthFieldConfig<std::uint32_t>> tlv_deserializer_data{&deserializer, &complex_deserializer};
         TlvTag tag = tlv_deserializer_data.consume_tag();
         switch (tag.data_id_) {
-        case kDataIdA: {
+        case data_id_a: {
             std::uint8_t d{};
             ASSERT_EQ(1, tlv_deserializer_data.pop_front(d));
             ASSERT_EQ(11, d);
             break;
         }
-        case kDataIdC: {
+        case data_id_c: {
             // The nested member reports what it reads to the member that contains it.
             TlvDeserializer<LengthFieldConfig<std::uint32_t>> tlv_deserializer_data_c{&deserializer,
                                                                                       &tlv_deserializer_data};
             TlvTag inner_tag = tlv_deserializer_data_c.consume_tag();
-            ASSERT_EQ(kDataIdCC1, inner_tag.data_id_);
+            ASSERT_EQ(data_id_cc1, inner_tag.data_id_);
             std::uint8_t d{};
             ASSERT_EQ(1, tlv_deserializer_data_c.pop_front(d));
             ASSERT_EQ(33, d);
@@ -467,14 +467,14 @@ TEST(TlvSerializerTest, SerializeStructure) {
 }
 
 TEST(TlvSerializerTest, DecodesWireTypeAndDataIdAbove255) {
-    const std::uint16_t kDataId = 0x0A23; // NOLINT(readability-identifier-naming)
-    const std::uint32_t kValue = 0xCAFEBABEU;
+    const std::uint16_t data_id = 0x0A23;
+    const std::uint32_t expected_value = 0xCAFEBABEU;
 
     Serializer serializer;
     {
         TlvSerializer<LengthFieldConfig<std::uint32_t>> tlv_serializer{&serializer, WireTypeEnum::BaseType32Bit,
-                                                                       kDataId};
-        tlv_serializer.push_back(kValue);
+                                                                       data_id};
+        tlv_serializer.push_back(expected_value);
         tlv_serializer.finish();
     }
 
@@ -482,12 +482,12 @@ TEST(TlvSerializerTest, DecodesWireTypeAndDataIdAbove255) {
     TlvDeserializer<LengthFieldConfig<std::uint32_t>> tlv_deserializer{&deserializer};
 
     TlvTag tag = tlv_deserializer.consume_tag();
-    ASSERT_EQ(kDataId, tag.data_id_);
+    ASSERT_EQ(data_id, tag.data_id_);
     ASSERT_EQ(4U, tag.len_);
 
     std::uint32_t value{};
     tlv_deserializer.pop_front(value);
-    ASSERT_EQ(kValue, value);
+    ASSERT_EQ(expected_value, value);
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
