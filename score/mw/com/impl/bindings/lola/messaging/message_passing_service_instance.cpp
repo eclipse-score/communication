@@ -342,6 +342,7 @@ message_passing::MessageCallback MessagePassingServiceInstance::CreateSendMessag
                                                     "expiring. Disconnecting from client.";
                 return score::cpp::make_unexpected(os::Error::createUnspecifiedError());
             }
+            return {};
         }
 
         const auto& message_handling_result = function_invocation_result.value();
