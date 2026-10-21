@@ -43,10 +43,12 @@ class IProxyFieldBindingFactory
     /// Creates instances of the event binding of a proxy field with a particular data type.
     /// \param handle The handle containing the binding information.
     /// \param field_name The binding unspecific name of the event inside the proxy denoted by handle.
+    /// \param data_type_size_info Size/alignment info of the field's data type.
     /// \return An instance of ProxyEventBinding or an error in case of binding construction failure.
     virtual auto CreateEventBinding(HandleType parent_handle,
                                     ProxyBinding& parent_binding,
-                                    const std::string_view field_name) noexcept
+                                    const std::string_view field_name,
+                                    memory::DataTypeSizeInfo data_type_size_info) noexcept
         -> Result<std::unique_ptr<ProxyEventBinding>> = 0;
 
     /// Creates an instance of the method binding for the get-method of a proxy field.

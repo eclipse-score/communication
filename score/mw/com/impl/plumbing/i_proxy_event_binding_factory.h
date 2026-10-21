@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
+#include "score/memory/data_type_size_info.h"
 #include "score/result/result.h"
 
 #include <memory>
@@ -43,11 +44,15 @@ class IProxyEventBindingFactory
     /// Creates instances of the binding specific implementations for a proxy event with a particular data type.
     /// \param handle The handle containing the binding information.
     /// \param event_name The binding unspecific name of the event inside the proxy denoted by handle.
+    /// \param data_type_size_info Size/alignment info of the event's data type. Since this factory is used for a
+    ///        proxy event with a known (non type-erased) data type, the caller (which knows the concrete SampleType)
+    ///        always has this information available.
     /// \return An instance of ProxyEventBinding or an error in case of binding construction failure.
     virtual auto Create(HandleType parent_handle,
                         ProxyBinding& parent_binding,
                         const std::string_view event_name,
-                        const ServiceElementType service_element_type) noexcept
+                        const ServiceElementType service_element_type,
+                        memory::DataTypeSizeInfo data_type_size_info) noexcept
         -> Result<std::unique_ptr<ProxyEventBinding>> = 0;
 };
 

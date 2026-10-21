@@ -43,10 +43,13 @@ class ProxyFieldBindingFactoryImpl final : public IProxyFieldBindingFactory
     /// \tparam SampleType Type of the data that is exchanges
     /// \param handle The handle containing the binding information.
     /// \param field_name The binding unspecific name of the event inside the proxy denoted by handle.
+    /// \param data_type_size_info Size/alignment info of the field's data type.
     /// \return An instance of ProxyEventBinding or an error in case binding creation fails.
-    Result<std::unique_ptr<ProxyEventBinding>> CreateEventBinding(HandleType parent_handle,
-                                                                  ProxyBinding& parent_binding,
-                                                                  const std::string_view field_name) noexcept override;
+    Result<std::unique_ptr<ProxyEventBinding>> CreateEventBinding(
+        HandleType parent_handle,
+        ProxyBinding& parent_binding,
+        const std::string_view field_name,
+        memory::DataTypeSizeInfo data_type_size_info) noexcept override;
 
     Result<std::unique_ptr<ProxyMethodBinding>> CreateGetMethodBinding(
         HandleType parent_handle,
@@ -71,10 +74,11 @@ template <typename SampleType>
 inline Result<std::unique_ptr<ProxyEventBinding>> ProxyFieldBindingFactoryImpl<SampleType>::CreateEventBinding(
     HandleType parent_handle,
     ProxyBinding& parent_binding,
-    const std::string_view field_name) noexcept
+    const std::string_view field_name,
+    memory::DataTypeSizeInfo data_type_size_info) noexcept
 {
     return ProxyEventBindingFactory::Create(
-        std::move(parent_handle), parent_binding, field_name, ServiceElementType::FIELD);
+        std::move(parent_handle), parent_binding, field_name, ServiceElementType::FIELD, data_type_size_info);
 }
 
 template <typename SampleType>

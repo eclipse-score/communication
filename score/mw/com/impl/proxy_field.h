@@ -365,8 +365,10 @@ class ProxyFieldImpl : public ProxyFieldBase
             return std::make_unique<ProxyEvent<FieldType>>(
                 proxy_base,
                 field_name,
-                ProxyFieldBindingFactory<FieldType>::CreateEventBinding(
-                    proxy_base.GetHandle(), ProxyBaseView{proxy_base}.GetBinding(), field_name),
+                ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base.GetHandle(),
+                                                                        ProxyBaseView{proxy_base}.GetBinding(),
+                                                                        field_name,
+                                                                        CreateDataTypeSizeInfoFromTypes<FieldType>()),
                 typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{});
         }
         else

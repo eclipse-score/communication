@@ -202,7 +202,7 @@ TEST_F(LolaProxyEventFixture, HasSerializedFormat)
     EXPECT_EQ(this->test_proxy_event_->HasSerializedFormat(), false);
 }
 
-TEST_F(LolaProxyEventFixture, HoldsEventMetaInfoAsConstReference)
+TEST_F(LolaProxyEventFixture, HoldsEventMetaInfoAsConstValue)
 {
     // Given a ProxyEvent
     this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
@@ -210,7 +210,8 @@ TEST_F(LolaProxyEventFixture, HoldsEventMetaInfoAsConstReference)
     // When accessing the proxy event through the test attorney
     ProxyEventAttorney proxy_event_attorney{*test_proxy_event_};
 
-    // Then the proxy stores EventMetaInfo as const data
+    // Then the proxy stores EventMetaInfo as const data, which it received via its constructor instead of looking it
+    // up from a shared-memory reference.
     using MetaInfoMemberType = typename std::remove_reference<decltype(proxy_event_attorney.GetMetaInfoMember())>::type;
     static_assert(std::is_const<MetaInfoMemberType>::value, "Proxy should hold const event meta info.");
 }

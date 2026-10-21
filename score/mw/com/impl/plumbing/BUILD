@@ -795,6 +795,7 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+        "//score/mw/com/impl/util:type_erased_storage",
     ],
 )
 
