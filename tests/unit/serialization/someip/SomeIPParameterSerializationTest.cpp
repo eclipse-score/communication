@@ -751,3 +751,203 @@ TEST(TlvDeserializerTest, SkipReportsBytesToTheContainingStruct) {
     ASSERT_EQ(7, value);
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
+
+namespace {
+
+PacketBuffer bytes_of(Serializer& serializer) {
+    return *serializer.finish();
+}
+
+std::unique_ptr<PacketBuffer> buffer_of(const PacketBuffer& bytes) {
+    return std::unique_ptr<PacketBuffer>(new PacketBuffer(bytes));
+}
+
+} // namespace
+
+TEST(StringTest, DynamicUtf8) {
+    Serializer serializer;
+    ASSERT_TRUE(push_back_string(serializer, std::string("Hi")));
+    // 32 bit length (6), BOM, "Hi", terminating zero; the length field does not count itself.
+    const PacketBuffer golden{0x00, 0x00, 0x00, 0x06, 0xEF, 0xBB, 0xBF, 0x48, 0x69, 0x00};
+    PacketBuffer encoded = bytes_of(serializer);
+    ASSERT_EQ(golden, encoded);
+
+    Deserializer deserializer{buffer_of(golden)};
+    std::string text;
+    ASSERT_EQ(golden.size(), pop_front_string(deserializer, text));
+    ASSERT_EQ("Hi", text);
+    ASSERT_EQ(0, deserializer.get_remaining_length());
+}
+
+TEST(StringTest, DynamicUtf8KoreanAndEmpty) {
+    const std::string korean = "\xED\x95\x9C\xEA\xB8\x80";
+    Serializer serializer;
+    ASSERT_TRUE(push_back_string(serializer, korean));
+    ASSERT_TRUE(push_back_string(serializer, std::string()));
+    const PacketBuffer golden{0x00, 0x00, 0x00, 0x0A, 0xEF, 0xBB, 0xBF, 0xED, 0x95, 0x9C, 0xEA,
+                              0xB8, 0x80, 0x00, 0x00, 0x00, 0x00, 0x04, 0xEF, 0xBB, 0xBF, 0x00};
+    ASSERT_EQ(golden, bytes_of(serializer));
+
+    Deserializer deserializer{buffer_of(golden)};
+    std::string text;
+    ASSERT_EQ(14, pop_front_string(deserializer, text));
+    ASSERT_EQ(korean, text);
+    ASSERT_EQ(8, pop_front_string(deserializer, text));
+    ASSERT_EQ("", text);
+}
+
+TEST(StringTest, DynamicUtf16) {
+    const std::u16string text16 = u"Hi";
+    {
+        Serializer serializer;
+        ASSERT_TRUE(push_back_string(serializer, text16, StringEncoding::Utf16BE));
+        const PacketBuffer golden{0x00, 0x00, 0x00, 0x08, 0xFE, 0xFF, 0x00, 0x48, 0x00, 0x69, 0x00, 0x00};
+        ASSERT_EQ(golden, bytes_of(serializer));
+
+        Deserializer deserializer{buffer_of(golden)};
+        std::u16string text;
+        ASSERT_EQ(golden.size(), pop_front_string(deserializer, text, StringEncoding::Utf16BE));
+        ASSERT_EQ(text16, text);
+    }
+    {
+        Serializer serializer;
+        ASSERT_TRUE(push_back_string(serializer, text16, StringEncoding::Utf16LE));
+        const PacketBuffer golden{0x00, 0x00, 0x00, 0x08, 0xFF, 0xFE, 0x48, 0x00, 0x69, 0x00, 0x00, 0x00};
+        ASSERT_EQ(golden, bytes_of(serializer));
+
+        Deserializer deserializer{buffer_of(golden)};
+        std::u16string text;
+        ASSERT_EQ(golden.size(), pop_front_string(deserializer, text, StringEncoding::Utf16LE));
+        ASSERT_EQ(text16, text);
+    }
+}
+
+TEST(StringTest, LengthFieldWidth) {
+    Serializer serializer;
+    ASSERT_TRUE(push_back_string<LengthFieldConfig<std::uint8_t>>(serializer, std::string("Hi")));
+    ASSERT_TRUE(push_back_string<LengthFieldConfig<std::uint16_t>>(serializer, std::string("Hi")));
+    const PacketBuffer golden{0x06, 0xEF, 0xBB, 0xBF, 0x48, 0x69, 0x00, 0x00, 0x06, 0xEF, 0xBB, 0xBF, 0x48, 0x69, 0x00};
+    ASSERT_EQ(golden, bytes_of(serializer));
+
+    Deserializer deserializer{buffer_of(golden)};
+    std::string text;
+    ASSERT_EQ(7, pop_front_string<LengthFieldConfig<std::uint8_t>>(deserializer, text));
+    ASSERT_EQ("Hi", text);
+    ASSERT_EQ(8, pop_front_string<LengthFieldConfig<std::uint16_t>>(deserializer, text));
+    ASSERT_EQ("Hi", text);
+}
+
+TEST(StringTest, LengthFieldOverflow) {
+    // BOM and terminator take 4 bytes; 251 characters make 255, which is the largest 8 bit length.
+    Serializer fitting;
+    ASSERT_TRUE(push_back_string<LengthFieldConfig<std::uint8_t>>(fitting, std::string(251, 'a')));
+    ASSERT_EQ(255, fitting.get_buffer()[0]);
+
+    Serializer too_long;
+    ASSERT_FALSE(push_back_string<LengthFieldConfig<std::uint8_t>>(too_long, std::string(252, 'a')));
+}
+
+TEST(StringTest, EmbeddedZeroIsRejected) {
+    Serializer serializer;
+    ASSERT_FALSE(push_back_string(serializer, std::string("a\0b", 3)));
+    ASSERT_FALSE(push_back_string(serializer, std::u16string(u"a\0b", 3), StringEncoding::Utf16BE));
+    ASSERT_FALSE(push_back_string(serializer, std::u16string(u"a"), StringEncoding::Utf8));
+}
+
+TEST(StringTest, FixedLength) {
+    {
+        // 8 bytes: BOM, "Hi", terminator, unused space filled with zeros.
+        Serializer serializer;
+        ASSERT_TRUE(push_back_fixed_string(serializer, 8, std::string("Hi")));
+        const PacketBuffer golden{0xEF, 0xBB, 0xBF, 0x48, 0x69, 0x00, 0x00, 0x00};
+        ASSERT_EQ(golden, bytes_of(serializer));
+
+        Deserializer deserializer{buffer_of(golden)};
+        std::string text;
+        ASSERT_EQ(8, pop_front_fixed_string(deserializer, 8, text));
+        ASSERT_EQ("Hi", text);
+    }
+    {
+        Serializer serializer;
+        ASSERT_TRUE(push_back_fixed_string(serializer, 10, std::u16string(u"Hi"), StringEncoding::Utf16BE));
+        const PacketBuffer golden{0xFE, 0xFF, 0x00, 0x48, 0x00, 0x69, 0x00, 0x00, 0x00, 0x00};
+        ASSERT_EQ(golden, bytes_of(serializer));
+
+        Deserializer deserializer{buffer_of(golden)};
+        std::u16string text;
+        ASSERT_EQ(10, pop_front_fixed_string(deserializer, 10, text, StringEncoding::Utf16BE));
+        ASSERT_EQ(u"Hi", text);
+    }
+    {
+        Serializer serializer;
+        // BOM, "Hi" and the terminator need 6 bytes.
+        ASSERT_FALSE(push_back_fixed_string(serializer, 5, std::string("Hi")));
+        // UTF-16 strings have an even length.
+        ASSERT_FALSE(push_back_fixed_string(serializer, 9, std::u16string(u"Hi"), StringEncoding::Utf16LE));
+        ASSERT_EQ(0, serializer.get_length());
+    }
+}
+
+TEST(StringTest, PaddingBehindTheTerminatorIsIgnored) {
+    // feat_req_someip_239: a string may be extended with zeros to reach an alignment.
+    const PacketBuffer input{0x00, 0x00, 0x00, 0x08, 0xEF, 0xBB, 0xBF, 0x48, 0x69, 0x00, 0x00, 0x00};
+    Deserializer deserializer{buffer_of(input)};
+    std::string text;
+    ASSERT_EQ(12, pop_front_string(deserializer, text));
+    ASSERT_EQ("Hi", text);
+}
+
+TEST(StringTest, OddUtf16LengthIgnoresTheLastByte) {
+    // feat_req_someip_641: BOM, "H", terminator, and one extra byte that is ignored.
+    const PacketBuffer input{0x00, 0x00, 0x00, 0x07, 0xFE, 0xFF, 0x00, 0x48, 0x00, 0x00, 0x99};
+    Deserializer deserializer{buffer_of(input)};
+    std::u16string text;
+    ASSERT_EQ(11, pop_front_string(deserializer, text, StringEncoding::Utf16BE));
+    ASSERT_EQ(u"H", text);
+}
+
+TEST(StringTest, MalformedStringsAreRejected) {
+    const PacketBuffer cases[] = {
+        {0x00, 0x00, 0x00, 0x03, 0x48, 0x69, 0x00},                         // no BOM
+        {0x00, 0x00, 0x00, 0x05, 0xEF, 0xBB, 0xBF, 0x48, 0x69},             // no terminator
+        {0x00, 0x00, 0x00, 0x08, 0xEF, 0xBB, 0xBF, 0x48, 0x69, 0x00},       // length exceeds the data
+        {0x00, 0x00, 0x00, 0x07, 0xEF, 0xBB, 0xBF, 0x48, 0x00, 0x69, 0x00}, // data behind the terminator
+        {0x00, 0x00, 0x00},                                                 // length field cut off
+    };
+    for (const auto& input : cases) {
+        Deserializer deserializer{buffer_of(input)};
+        std::string text;
+        ASSERT_EQ(0, pop_front_string(deserializer, text));
+    }
+
+    // The BOM must match the requested encoding (feat_req_someip_666).
+    const PacketBuffer utf16le{0x00, 0x00, 0x00, 0x06, 0xFF, 0xFE, 0x48, 0x00, 0x00, 0x00};
+    Deserializer deserializer{buffer_of(utf16le)};
+    std::u16string text;
+    ASSERT_EQ(0, pop_front_string(deserializer, text, StringEncoding::Utf16BE));
+}
+
+TEST(StringTest, StringInsideAStruct) {
+    // Struct (16 bit length) { uint8 1, string (8 bit length) "Hi", uint8 2 }
+    Serializer serializer;
+    ComplexTypeSerializer<LengthFieldConfig<std::uint16_t>> complex_serializer{&serializer};
+    complex_serializer.push_back(static_cast<std::uint8_t>(1));
+    ASSERT_TRUE(push_back_string<LengthFieldConfig<std::uint8_t>>(serializer, std::string("Hi")));
+    complex_serializer.push_back(static_cast<std::uint8_t>(2));
+    ASSERT_TRUE(complex_serializer.finish());
+    const PacketBuffer golden{0x00, 0x09, 0x01, 0x06, 0xEF, 0xBB, 0xBF, 0x48, 0x69, 0x00, 0x02};
+    ASSERT_EQ(golden, bytes_of(serializer));
+
+    Deserializer deserializer{buffer_of(golden)};
+    ComplexTypeDeserializer<LengthFieldConfig<std::uint16_t>> complex_deserializer{&deserializer};
+    std::uint8_t value{};
+    std::string text;
+    ASSERT_EQ(1, complex_deserializer.pop_front(value));
+    const std::size_t consumed = pop_front_string<LengthFieldConfig<std::uint8_t>>(deserializer, text);
+    ASSERT_EQ(7, consumed);
+    complex_deserializer.consumed(consumed);
+    ASSERT_EQ("Hi", text);
+    ASSERT_EQ(1, complex_deserializer.pop_front(value));
+    ASSERT_EQ(2, value);
+    ASSERT_FALSE(complex_deserializer.has_remaining_data());
+}

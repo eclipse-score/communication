@@ -26,6 +26,7 @@
 #include <iterator>
 #include <limits>
 #include <memory>
+#include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -664,6 +665,224 @@ private:
         return len;
     }
 };
+
+// ---------------------------------------------------------------------------
+// Strings (feat_req_someip_233 ... 239, 581, 582, 562, 639 ... 642, 662, 666, 687, 800)
+//
+// A string starts with a Byte Order Mark (BOM), which counts towards its length, and ends with a
+// terminating zero (one byte for UTF-8, two bytes for UTF-16). A dynamic length string has a length
+// field in front, which does not count itself. A fixed length string has no length field; its size is
+// given by the interface specification and unused space is filled with zeros.
+//
+// The text is passed as UTF-8 in a std::string, or as UTF-16 code units in a std::u16string. The
+// functions do not convert between encodings. The functions that read a string return the number of
+// bytes they consumed (0 on error); a struct that contains the string must report this number to its
+// ComplexTypeDeserializer with consumed(). On error the read position is undefined.
+// ---------------------------------------------------------------------------
+enum class StringEncoding : std::uint8_t {
+    Utf8,
+    Utf16BE,
+    Utf16LE,
+};
+
+namespace detail {
+
+constexpr std::uint8_t kUtf8Bom[3] = {0xEF, 0xBB, 0xBF};
+
+inline bool encode_utf8(const std::string& text, PacketBuffer& body) {
+    body.insert(body.end(), std::begin(kUtf8Bom), std::end(kUtf8Bom));
+    for (const char c : text) {
+        if (c == '\0') {
+            return false;
+        }
+        body.push_back(static_cast<std::uint8_t>(c));
+    }
+    body.push_back(0x00U);
+    return true;
+}
+
+inline void push_utf16_unit(PacketBuffer& body, std::uint16_t unit, StringEncoding encoding) {
+    const std::uint8_t high = static_cast<std::uint8_t>(unit >> 8U);
+    const std::uint8_t low = static_cast<std::uint8_t>(unit & 0xFFU);
+    if (encoding == StringEncoding::Utf16BE) {
+        body.push_back(high);
+        body.push_back(low);
+    } else {
+        body.push_back(low);
+        body.push_back(high);
+    }
+}
+
+inline bool encode_utf16(const std::u16string& text, StringEncoding encoding, PacketBuffer& body) {
+    if (encoding != StringEncoding::Utf16BE && encoding != StringEncoding::Utf16LE) {
+        return false;
+    }
+    push_utf16_unit(body, 0xFEFFU, encoding);
+    for (const char16_t unit : text) {
+        if (unit == 0U) {
+            return false;
+        }
+        push_utf16_unit(body, static_cast<std::uint16_t>(unit), encoding);
+    }
+    push_utf16_unit(body, 0x0000U, encoding);
+    return true;
+}
+
+// Everything behind the first zero must be zero, too (terminator and padding).
+inline bool decode_utf8(const PacketBuffer& body, std::string& text) {
+    const std::size_t n = body.size();
+    if (n < 4U || !std::equal(std::begin(kUtf8Bom), std::end(kUtf8Bom), body.begin()) || body[n - 1U] != 0U) {
+        return false;
+    }
+    std::size_t end = 3U;
+    while (body[end] != 0U) {
+        end++;
+    }
+    for (std::size_t i = end; i < n; i++) {
+        if (body[i] != 0U) {
+            return false;
+        }
+    }
+    text.assign(body.begin() + 3, body.begin() + static_cast<std::ptrdiff_t>(end));
+    return true;
+}
+
+inline bool decode_utf16(const PacketBuffer& body, StringEncoding encoding, std::u16string& text) {
+    if (encoding != StringEncoding::Utf16BE && encoding != StringEncoding::Utf16LE) {
+        return false;
+    }
+    // feat_req_someip_641: the last byte of an odd length is ignored.
+    const std::size_t n = body.size() & ~static_cast<std::size_t>(1U);
+    if (n < 4U) {
+        return false;
+    }
+    const auto unit_at = [&](std::size_t i) -> std::uint16_t {
+        const std::uint8_t first = body[i];
+        const std::uint8_t second = body[i + 1U];
+        return encoding == StringEncoding::Utf16BE ? static_cast<std::uint16_t>((first << 8U) | second)
+                                                   : static_cast<std::uint16_t>((second << 8U) | first);
+    };
+    if (unit_at(0U) != 0xFEFFU || unit_at(n - 2U) != 0U) {
+        return false;
+    }
+    std::size_t end = 2U;
+    while (unit_at(end) != 0U) {
+        end += 2U;
+    }
+    for (std::size_t i = end; i < n; i += 2U) {
+        if (unit_at(i) != 0U) {
+            return false;
+        }
+    }
+    text.clear();
+    for (std::size_t i = 2U; i < end; i += 2U) {
+        text.push_back(static_cast<char16_t>(unit_at(i)));
+    }
+    return true;
+}
+
+inline bool pop_bytes(Deserializer& deserializer, std::size_t size, PacketBuffer& body) {
+    if (size > deserializer.get_remaining_length()) {
+        return false;
+    }
+    body.resize(size);
+    for (std::size_t i = 0U; i < size; i++) {
+        if (deserializer.pop_front(body[i]) != 1U) {
+            return false;
+        }
+    }
+    return true;
+}
+
+inline void push_bytes(Serializer& serializer, const PacketBuffer& body) {
+    for (const std::uint8_t byte : body) {
+        serializer.push_back(byte);
+    }
+}
+
+template <typename Config> bool push_dynamic(Serializer& serializer, const PacketBuffer& body) {
+    static_assert(Config::lengthFieldActive, "A dynamic length string needs a length field");
+    ComplexTypeSerializer<Config> string_serializer{&serializer};
+    push_bytes(serializer, body);
+    return string_serializer.finish();
+}
+
+inline bool push_fixed(Serializer& serializer, std::size_t size, PacketBuffer& body, std::size_t unit) {
+    if (size % unit != 0U || body.size() > size) {
+        return false;
+    }
+    body.resize(size, 0x00U);
+    push_bytes(serializer, body);
+    return true;
+}
+
+template <typename Config> std::size_t pop_dynamic(Deserializer& deserializer, PacketBuffer& body) {
+    static_assert(Config::lengthFieldActive, "A dynamic length string needs a length field");
+    typename Config::LengthFieldType length{};
+    if (deserializer.pop_front(length) != sizeof(length) || !pop_bytes(deserializer, length, body)) {
+        return 0U;
+    }
+    return sizeof(length) + static_cast<std::size_t>(length);
+}
+
+} // namespace detail
+
+// Write a dynamic length string. Returns false when the string cannot be encoded or does not fit into the
+// length field; nothing may be sent then.
+template <typename Config = LengthFieldConfig<std::uint32_t>>
+bool push_back_string(Serializer& serializer, const std::string& text) {
+    PacketBuffer body;
+    return detail::encode_utf8(text, body) && detail::push_dynamic<Config>(serializer, body);
+}
+
+template <typename Config = LengthFieldConfig<std::uint32_t>>
+bool push_back_string(Serializer& serializer, const std::u16string& text, StringEncoding encoding) {
+    PacketBuffer body;
+    return detail::encode_utf16(text, encoding, body) && detail::push_dynamic<Config>(serializer, body);
+}
+
+// Write a fixed length string of size bytes (BOM and terminator included). Returns false when the string
+// does not fit, or when size is odd for UTF-16.
+inline bool push_back_fixed_string(Serializer& serializer, std::size_t size, const std::string& text) {
+    PacketBuffer body;
+    return detail::encode_utf8(text, body) && detail::push_fixed(serializer, size, body, 1U);
+}
+
+inline bool push_back_fixed_string(Serializer& serializer, std::size_t size, const std::u16string& text,
+                                   StringEncoding encoding) {
+    PacketBuffer body;
+    return detail::encode_utf16(text, encoding, body) && detail::push_fixed(serializer, size, body, 2U);
+}
+
+// Read a dynamic length string. Returns the bytes consumed including the length field, or 0 on error: a missing
+// or wrong BOM, a missing terminator, or a length that exceeds the data.
+template <typename Config = LengthFieldConfig<std::uint32_t>>
+std::size_t pop_front_string(Deserializer& deserializer, std::string& text) {
+    PacketBuffer body;
+    const std::size_t consumed = detail::pop_dynamic<Config>(deserializer, body);
+    return (consumed != 0U && detail::decode_utf8(body, text)) ? consumed : 0U;
+}
+
+template <typename Config = LengthFieldConfig<std::uint32_t>>
+std::size_t pop_front_string(Deserializer& deserializer, std::u16string& text, StringEncoding encoding) {
+    PacketBuffer body;
+    const std::size_t consumed = detail::pop_dynamic<Config>(deserializer, body);
+    return (consumed != 0U && detail::decode_utf16(body, encoding, text)) ? consumed : 0U;
+}
+
+// Read a fixed length string of size bytes. Returns size, or 0 on error.
+inline std::size_t pop_front_fixed_string(Deserializer& deserializer, std::size_t size, std::string& text) {
+    PacketBuffer body;
+    return (size != 0U && detail::pop_bytes(deserializer, size, body) && detail::decode_utf8(body, text)) ? size : 0U;
+}
+
+inline std::size_t pop_front_fixed_string(Deserializer& deserializer, std::size_t size, std::u16string& text,
+                                          StringEncoding encoding) {
+    PacketBuffer body;
+    return (size != 0U && detail::pop_bytes(deserializer, size, body) && detail::decode_utf16(body, encoding, text))
+               ? size
+               : 0U;
+}
 
 } // namespace serialization
 } // namespace lgsomeip
