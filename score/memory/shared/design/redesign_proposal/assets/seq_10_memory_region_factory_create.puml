@@ -20,16 +20,38 @@ deactivate memory_region_registry
 User -> memory_region_factory : CreateTypedNamed(memory_region_registry, path, size, perms)
 activate memory_region_factory
 
-memory_region_factory -> memory_region_factory : CreateId(path)
+memory_region_factory -> mapped_region : make_shared<IMappedRegion>(file_descriptor, size, perms)
+activate mapped_region
 
-memory_region_factory -> i_memory_region_registry : Find(id)
+mapped_region --> memory_region_factory : shared_ptr<MappedRegion>
+deactivate mapped_region
+
+memory_region_factory -> mapped_region : GetId()
+activate mapped_region
+
+mapped_region --> memory_region_factory : IMapIdType
+deactivate mapped_region
+
+memory_region_factory -> mapped_region : GetProperties()
+activate mapped_region
+
+mapped_region --> memory_region_factory : IMappedRegionProperties&
+deactivate mapped_region
+
+' memory_region_factory -> i_memory_region_registry : Find(id)
+' activate i_memory_region_registry
+
+' i_memory_region_registry --> memory_region_factory : shared_ptr<MappedRegion>
+
+' deactivate i_memory_region_registry
+
+' alt MappedRegion not found
+
+memory_region_factory -> i_memory_region_registry : Register(IMapIdType, CreateRegionCallback) 
 activate i_memory_region_registry
 
-i_memory_region_registry --> memory_region_factory : shared_ptr<MappedRegion>
+    i_memory_region_registry --> memory_region_factory : shared_ptr<IMappedRegion>
 
-deactivate i_memory_region_registry
-
-alt MappedRegion not found
     create mapped_region
 
     memory_region_factory -> mapped_region : make_shared<TypedNamedMappedRegion>(file_descriptor, size, perms)
@@ -50,10 +72,10 @@ alt MappedRegion not found
     end note
 
     memory_region_factory --> User : Result<shared_ptr<MappedRegion>>
-else MappedRegion found
-    memory_region_factory --> User : Error<shared_ptr<MappedRegion>>
-end
-deactivate memory_region_factory
+' else MappedRegion found
+'     memory_region_factory --> User : Error<shared_ptr<MappedRegion>>
+' end
+' deactivate memory_region_factory
 
 User -> memory_region_factory : OpenTypedNamed(memory_region_registry, path, size, perms)
 activate memory_region_factory

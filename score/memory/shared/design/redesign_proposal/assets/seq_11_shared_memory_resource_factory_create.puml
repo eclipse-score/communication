@@ -9,6 +9,8 @@ participant "SharedMemoryResource" as shared_memory_resource
 participant "MemoryResourceRegistry <<singleton>>" as memory_resource_registry
 participant "MappedRegionFactory: instance" as mapped_region_factory
 participant "MappedRegionRegistry: instance" as mapped_region_registry
+participant "MonotonicAllocationStrategy: instance" as monotonic_allocation_strategy
+participant "LockFile: instance" as lock_file
 ' participant "MappedRegionRegistry: memory_region_registry" as memory_region_registry
 ' participant "IMappedRegionRegistry" as i_memory_region_registry
 ' participant "TypedNamedMappedRegion" as mapped_region
@@ -37,7 +39,14 @@ activate shared_memory_factory
 shared_memory_factory --> User : Return shared_memory_factory
 deactivate shared_memory_factory
 
-User -> shared_memory_factory : CreateNamed<Ts..>(InitializeCallback, path, size, perms)
+Create monotonic_allocation_strategy
+User -> monotonic_allocation_strategy : Construct()
+activate monotonic_allocation_strategy
+
+monotonic_allocation_strategy --> User : Return unique_ptr<MonotonicAllocationStrategy>(monotonic_allocation_strategy)
+deactivate monotonic_allocation_strategy
+
+User -> shared_memory_factory : CreateNamed(InitializeCallback, move(monotonic_allocation_strategy), path, size, perms)
 activate shared_memory_factory
 
 shared_memory_factory -> mapped_region_factory : CreateNamed(path, size, perms)
@@ -46,19 +55,31 @@ activate mapped_region_factory
 mapped_region_factory --> shared_memory_factory : Return mapped_region: Result<shared_ptr<MappedRegion>>
 deactivate mapped_region_factory
 
-alt returned mapped region contains an error
-    shared_memory_factory --> User : propagate error from mapped_region_factory
-else
+' alt returned mapped region contains an error
+'     shared_memory_factory --> User : propagate error from mapped_region_factory
+' else
     Create shared_memory_resource
-    shared_memory_factory -> shared_memory_resource : Create(shared_ptr<MappedRegion>(mapped_region), InitializeCallback)
+    shared_memory_factory -> shared_memory_resource : Create(shared_ptr<MappedRegion>(mapped_region), InitializeCallback, move(monotonic_allocation_strategy))
     activate shared_memory_resource
+
+    shared_memory_resource -> shared_memory_resource : Construct ControlBlock in shared memory
+
+    shared_memory_resource -> monotonic_allocation_strategy : ConstructAllocationSpecificControlBlock(\naddress_after_control_block: span<std::byte>)
+    activate monotonic_allocation_strategy
+
+    monotonic_allocation_strategy -> monotonic_allocation_strategy : placement new AllocationSpecificControlBlock \n@ aligned address_after_control_block
+
+    monotonic_allocation_strategy --> shared_memory_resource
+    deactivate monotonic_allocation_strategy
+
+    shared_memory_resource -> shared_memory_resource : Call InitializeCallback
 
     shared_memory_resource --> shared_memory_factory : Return shared_memory_resource: Result<shared_ptr<ManagedMemoryResource>>
     deactivate shared_memory_resource
 
-    alt shared_memory_resource contains an error
-        shared_memory_factory --> User : propagate error from shared_memory_resource
-    end
+    ' alt shared_memory_resource contains an error
+    '     shared_memory_factory --> User : propagate error from shared_memory_resource
+    ' end
 
     shared_memory_factory -> memory_resource_registry : Register(shared_ptr<ManagedMemoryResource>(shared_memory_resource))
     activate memory_resource_registry
@@ -74,7 +95,7 @@ else
     end note
 
     shared_memory_factory --> User : Return shared_ptr<SharedMemoryResource>
-end
+' end
 
 deactivate shared_memory_factory
 deactivate User

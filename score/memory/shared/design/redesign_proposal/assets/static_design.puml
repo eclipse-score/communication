@@ -1,0 +1,24 @@
+@startuml memory_resource_hierarchy
+
+title Shared Memory Resource Architecture
+
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam roundCorner 5
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 40
+skinparam classFontStyle bold
+
+!include mapped_region_hierarchy.puml
+!include shared_memory_resource_hierarchy.puml
+
+SharedMemoryResource o--> IMappedRegion : holds shared_ptr
+
+@enduml
+
+
+' Clean up new stuff added (persistent memory region registry, adjust to properties etc)
+' Clean up lock file 
+' Clean up initialization callback in sharedmemoryresource / factory which needs to be passed down to MappedRegionFactory

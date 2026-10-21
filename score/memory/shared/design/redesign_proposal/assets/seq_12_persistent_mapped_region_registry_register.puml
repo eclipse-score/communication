@@ -1,0 +1,46 @@
+@startuml seq_12_mapped_region_registry_register
+title 12. MappedRegionRegistry: Register
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+
+actor "User" as User
+participant "MappedRegionFactory" as memory_region_factory
+participant "PersistentMappedRegionRegistry: memory_region_registry" as persistent_memory_region_registry
+participant "IMappedRegionRegistry" as i_memory_region_registry
+participant "TypedNamedMappedRegion" as mapped_region
+
+activate User
+
+memory_region_factory -> persistent_memory_region_registry : Register(IdType, IMappedRegionProperties&, CreateRegionCallback)
+activate persistent_memory_region_registry
+
+persistent_memory_region_registry -> persistent_memory_region_registry : Find(IdType)
+
+persistent_memory_region_registry -> persistent_memory_region_registry : shared_ptr<IMappedRegion>(mapped_region)
+
+alt Region already exists in map
+
+    alt Is registry sole owner of region
+        persistent_memory_region_registry -> memory_region_factory : AdjustToProperties(IMappedRegionProperties&)
+        activate memory_region_factory
+
+        memory_region_factory --> persistent_memory_region_registry : Result<void>
+        deactivate memory_region_factory
+        
+    else Ref count of region > 1 (i.e. has users)
+        persistent_memory_region_registry --> memory_region_factory : Error
+    end
+
+else Region does not exist in map
+    persistent_memory_region_registry -> persistent_memory_region_registry : Invoke CreateRegionCallback
+end
+
+persistent_memory_region_registry --> memory_region_factory : Result<shared_ptr<IMappedRegion>>
+deactivate persistent_memory_region_registry
+
+
+deactivate memory_region_factory
+deactivate User
+
+@enduml
+
