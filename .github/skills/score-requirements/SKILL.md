@@ -243,10 +243,14 @@ component-internal requirements with no feature-level parent.
 
 ### Assumptions of Use (AoU)
 
-`AoU` extends `RequirementSafety` (not `SafetyMeasure`) and captures conditions the integrating
-project must satisfy, via its own independent, optional `root_causes` field.
-The `assumptions_of_use` rule accepts raw `.trlc` **or** `.rst` files carrying `aou_req`
-directives (converted to TRLC automatically).
+`AoU` extends `SafetyMeasure` and captures conditions the integrating project must satisfy.
+`root_causes` is mandatory: every AoU references the fault-tree root causes it addresses
+(`<fta_package>.<RootCause>`), so the `assumptions_of_use` target lists the `fault_trees` target
+in `deps`. The `assumptions_of_use` rule accepts raw `.trlc` **or** `.rst` files carrying `aou_req`
+directives (converted to TRLC automatically; RST directives take `:root_causes: <fta_package>.<RootCause>, ...`).
+Pass the target as `safety_measures` to `safety_analysis`: that makes it an own AoU of the
+`dependable_element` (there is no AoU attribute on the element). Forwarding YAML
+entries name received AoUs with their version (`Package.Name@1`).
 
 ---
 

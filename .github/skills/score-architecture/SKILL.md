@@ -193,19 +193,19 @@ The validator identifies elements by their **stereotype**, not by the PlantUML k
 ```text
 @startuml static_design
 
-package "Safety Software SEooC Example" as safety_software_seooc_example <<SEooC>> {
-    component "ComponentExample" as component_example <<component>> {
-        component "Unit 1" as unit_1 <<unit>>
-        component "Unit 2" as unit_2 <<unit>>
-        component "Sub Component Example" as sub_component_example <<component>>
+package safety_software_seooc_example <<SEooC>> {
+    component component_example <<component>> {
+        component unit_1 <<unit>>
+        component unit_2 <<unit>>
+        component sub_component_example <<component>>
 
-        interface "InternalInterface" as InternalInterface
+        interface InternalInterface
         unit_1 -l-( InternalInterface
         unit_2 )-r- InternalInterface
     }
 }
 
-interface "SampleLibraryAPI" as SampleLibraryAPI
+interface SampleLibraryAPI
 
 safety_software_seooc_example )-d- SampleLibraryAPI
 
@@ -228,13 +228,13 @@ interfaces), declare a `portin` / `portout` inside the `<<SEooC>>` or `<<compone
 (from the `bazel_component` validator spec):
 
 ```text
-package "MySeooc" as MySeooc <<SEooC>> {
-    portin  " " as p_in   ' required interface port
-    portout " " as p_out  ' provided interface port
+package MySeooc <<SEooC>> {
+    portin  p_in   ' required interface port
+    portout p_out  ' provided interface port
 }
 
-interface "IRequired" as IRequired
-interface "IProvided"  as IProvided
+interface IRequired
+interface IProvided
 
 p_in  -( IRequired : requires
 p_out )- IProvided : provides
@@ -255,7 +255,7 @@ cross-checked against each other and against the implementation.
 | View | Attribute | Cross-checked against | Purpose |
 |------|-----------|-----------------------|---------|
 | **Static** | `static` | Bazel `dependable_element`/`component`/`unit` tree; internal API; public API; sequences | Structural component/unit tree — the anchor for all other checks |
-| **Dynamic** (sequence) | `dynamic` | Static component diagram; internal API | Unit interactions — participant aliases and cross-unit calls |
+| **Dynamic** (sequence) | `dynamic` | Static component diagram; internal API | Unit interactions — participant names and cross-unit calls |
 | **Public API** | `public_api` | Static diagram (top-level interfaces bound from the SEooC) | Interfaces the SEooC exposes; also feeds `FailureMode.interface` traceability |
 | **Internal API** | `internal_api` | Static component diagram; sequences | Interfaces between components/units inside the SEooC |
 
@@ -264,8 +264,8 @@ Real example diagrams (verbatim, from [`examples/seooc/design/`](../../../bazel/
 ```text
 ' dynamic_design.puml — sequence diagram
 @startuml
-participant "Unit 1" as unit_1 <<unit>>
-participant "Unit 2" as unit_2 <<unit>>
+participant unit_1 <<unit>>
+participant unit_2 <<unit>>
 
 unit_1 -> unit_2 : GetData()
 return Data*
@@ -276,7 +276,7 @@ return Data*
 ' public_api.puml — top-level interface exposed by the SEooC
 @startuml
 namespace safety_software_seooc_example {
-    interface "SampleLibraryAPI" as SampleLibraryAPI {
+    interface SampleLibraryAPI {
         + GetNumber(): int
     }
 }
@@ -288,7 +288,7 @@ namespace safety_software_seooc_example {
 @startuml
 namespace safety_software_seooc_example {
   namespace component_example {
-    interface "InternalInterface" as InternalInterface <<interface>>{
+    interface InternalInterface <<interface>>{
       {abstract} GetData(BindingType binding): Data*
     }
   }
@@ -310,50 +310,52 @@ Every element across the `static`, `unit_design` (class), and `dynamic` (sequenc
 resolved to a **canonical identifier**. Two elements are the same architecture element exactly
 when their identifiers match — that is how the validators link a `static` component to its
 `unit_design` class and to a `dynamic` sequence participant. You never write an identifier
-yourself; it is assembled from three inputs joined with `.`:
+yourself; it is assembled from two inputs joined with `.`:
 
 | # | Input | Comes from | Example |
 |---|-------|-----------|---------|
-| 1 | Root anchor | The Bazel package of the owning `architectural_design`/`unit_design` target (`/` → `.`) | `unit_1/docs` → `unit_1.docs` |
-| 2 | Internal scope | The `package`/`component`/`namespace` nesting the element is written in | `logging.Recorder` |
-| 3 | Leaf | The element's alias (`as X`), or its name if there is no alias | `Backend` |
+| 1 | Internal scope | The `package`/`component`/`namespace` nesting the element is written in | `logging.Recorder` |
+| 2 | Name | The name written in the declaration | `Backend` |
 
-joined: `unit_1.docs.logging.Recorder.Backend`. `::` and `.` are equivalent separators; a
-dotted/`::`-qualified reference (an interface binding, a class relationship, …) is always read
-**relative to the root anchor**, never as an absolute path.
+joined: `logging.Recorder.Backend`. `::` and `.` are equivalent separators; a
+dotted/`::`-qualified reference (an interface binding, a class relationship, …) is read relative
+to the enclosing scope.
 
-**Sequence diagrams are the exception**: a participant has no nesting to draw scope from, so its
-identifier is read out of the **quoted label**, not the alias — the alias is only a local shortcut
-for drawing arrows.
+**The name is the identity.** It must be an identifier path (segments of letters, digits and `_`
+separated by `.` or `::`). Prose such as `component "Unit 1" as unit_1` is an error; put prose
+into a note, a stereotype or a relation description. An `as` alias is only a local reference key:
+relations, messages, `activate`, `destroy`, `create` and `ref over` refer to an aliased element
+by its alias, never by its name.
 
 | What you write | Identifier comes from |
 |-----------------|-----------------------|
-| `participant "backend : logging::Recorder::Backend" as Backend` | text right of the `:` |
-| `participant "Unit 1" as unit_1` | falls back to the **alias** (`unit_1`) |
+| `participant "logging::Recorder::Backend" as Backend` | the name (`logging.Recorder.Backend`); `Backend` is the local key |
+| `participant Backend` | the name (`Backend`) |
+| `component unit_1 <<unit>>` | the name (`unit_1`) |
+| `participant "Unit 1" as unit_1` | error: free-text name |
 
-If a participant represents a nested unit, write the full qualified label —
-`"instance : Component::Unit"` — so the identifier matches the `static` diagram. A bare prose
-label still parses, but if it doesn't resolve to the same identifier as the component diagram
-there is no parse error, only a **cross-diagram validation mismatch** (see **Active validations**,
+If a participant represents a nested unit, write the full qualified name — `"Component::Unit"` —
+so the identifier matches the `static` diagram. A name that does not resolve to the same identifier
+as the component diagram is a **cross-diagram validation mismatch** (see **Active validations**,
 `component_sequence.md`).
 
 `ExternalEndpoint` is a reserved participant name for an actor outside the described architecture;
-it is emitted verbatim (no root anchor, no scope) so it always matches itself across diagrams.
+it is emitted verbatim (no scope) so it always matches itself across diagrams.
+Declare it as `participant ExternalEndpoint` (or `participant "ExternalEndpoint" as ext`), at most
+once per diagram.
 
 **Best practices**:
-- Give every architecture-relevant element an explicit `as` alias; never rely on a prose label.
-- Keep `architectural_design` and `unit_design` for one subsystem under the same root Bazel
-  package — different packages get different root anchors, and their identifiers can never match.
+- Name every architecture-relevant element with the Bazel target / C++ name; skip the alias unless
+  the name is long or qualified.
 - Mirror the nesting between the `static` and `unit_design` diagrams; scope segments must be
   identical on both sides.
-- In sequence diagrams, write the full qualified label (`"instance : Component::Unit"`) once
-  nesting is involved; use the bare alias only when the unit is top-level. Use the alias for arrows
-  either way.
+- In sequence diagrams, write the full qualified name (`"Component::Unit"`) once nesting is
+  involved; use the bare name only when the unit is top-level.
 - Use `ExternalEndpoint` verbatim for out-of-scope actors.
-- Treat identifiers as derived, not authored — to change one, change the nesting, alias, or owning
-  Bazel package, not the identifier itself.
+- Treat identifiers as derived, not authored — to change one, change the nesting or the name, not
+  the identifier itself.
 
-> Full rule set (root-anchor construction, qualified-reference resolution, uniqueness errors):
+> Full rule set (qualified-reference resolution, uniqueness errors):
 > `plantuml/parser/docs/element-identifiers.md` (this repo) — the resolver's authoring guide.
 
 ---
@@ -393,25 +395,51 @@ architectural_design(
 )
 ```
 
-`static` accepts more than one `.puml` file. They are merged by entity id (the full parent-alias
-dot-path) into a single architecture: re-declaring the same entity (same id) in more than one
-file is allowed and merges its relations, as long as `stereotype`/element type agree everywhere
-it's declared — this is how `overview_design.puml` above can bare-declare the SEooC and its
-top-level component while `static_design.puml` elaborates their internals, without duplicating
-every nested unit and relation in both files. A parent whose children are split across files with
-no single file containing all of them is an error. Re-nesting an entity under a different parent
-across files is *not* caught here (different parent ⇒ different id ⇒ a different entity) — that
-class of mistake instead surfaces as a Bazel ↔ diagram mismatch (extra/missing entity) in the
+`static` accepts more than one `.puml` file, all of them component/package diagrams; class
+diagrams belong in the elaborating unit's own `unit_design(static=[...])` instead. All files are
+resolved *together* in one pass (`ComponentResolver::resolve_group`), then merged by entity id (the
+full parent-name dot-path) into a single architecture: re-declaring the same entity (same id) in
+more than one file is allowed and merges its relations, as long as `stereotype`/element type agree
+everywhere it's declared. A top-level element *with a body* in one file that has the same name,
+element type and stereotype as a *nested* declaration in exactly one other file is implicitly
+reparented onto that declaration's parent chain instead of becoming a new top-level entity (matching
+is by name, so the files may use different aliases). This is how `static_design.puml` can declare
+only `component_example`'s children with **no SEooC wrapper**, while `overview_design.puml` nests
+`component_example` under the SEooC boundary. A bodyless re-declaration and a rooted name (`::X`)
+stay separate top-level entities. Reparenting is transitive (a cycle is an `ImplicitParentCycle`
+error); matching nested declarations under more than one distinct parent is an
+`AmbiguousImplicitParent` error rather than a guess. A parent whose children are split across files
+with no single file containing all of them is an error. Re-nesting an entity under a different
+parent across files is *not* caught here (different parent => different id => a different entity);
+that class of mistake surfaces as a Bazel <-> diagram mismatch (extra/missing entity) in the
 `bazel_component` check below.
 
-Each `.puml` file is parsed and resolved on its own, *before* the id-based merge above runs — a
-relation may only reference an alias declared in that same file. Referencing an alias that's only
-declared in another `static` file fails at PlantUML parse time (`Element Resolver:
-UnresolvedReference: <alias>`), not as a Design validation error. So keep each file
-self-contained: if a detail file wires up an entity's interfaces, (re-)declare those interfaces
-in that same file rather than assuming they're visible from the overview file.
+A relation's *source* must be declared (or reparented) in the file that writes it; only its
+*target* may resolve to another file in the same `static` group (falling back to the group only
+when unresolved locally, erroring `AmbiguousReference` if more than one other file resolves it).
+Referencing a source that isn't local is a `CrossFileRelationSource` error — *unless* the relation
+is undirected (no arrowhead, no dependency-style decoration), in which case the two sides are
+swapped instead of erroring (the locally-declared endpoint becomes the source).
 
-`static`/`dynamic` accept `.puml`, `.plantuml`, `.png`, `.svg`, `.rst`, `.md`. To combine a
+The same multi-file split applies to every other view, resolved as **one group per view** (ids are
+never shared across views; `unit_design` has one group for `static` and one for `dynamic`). Files
+are bucketed by diagram kind, detected per file in the order component, activity, class, sequence:
+
+- **Class** (`public_api`, `internal_api`, `unit_design` `static`): overview nests `class X`
+  without a body, the detail file declares `class X { ... }` with no wrapper (same reparenting as
+  components; a bodyless declaration is a reference). Two bodies for one id =
+  `class "<id>" is defined more than once`; different type/stereotype = conflict. Always write the
+  `class` keyword — `package p { interface I }` is detected as a *component* diagram.
+- **Sequence** (`dynamic`, `unit_design` `dynamic`): one cast file declares `participant
+  "pkg::Comp::Unit" as Alias`; scenario files use only the alias and need `activate` (a bare
+  message-only file is detected as a component diagram). Message endpoints and `create` resolve
+  against other files' explicit participants (local wins; distinct uids =
+  `AmbiguousParticipantReference`); lifecycle and `ref over` stay file-local.
+- **Activity**: no names, nothing to share.
+
+Full rules and examples: `plantuml/parser/docs/element-identifiers.md` (section 4).
+
+`static`/`dynamic` accept `.puml`, `.png`, `.svg`, `.rst`, `.md`. To combine a
 diagram with prose, add both the RST/Markdown wrapper *and* the referenced `.puml` to the same
 list (as `public_api.puml` + `public_api.rst` above, which overrides `public_api.puml`'s
 generated wrapper page); the wrapper embeds the diagram with `.. uml:: file.puml`. `index.md`
@@ -432,10 +460,10 @@ every `.puml` gets an auto-generated wrapper page, and every directory gets a ge
   body a section title** — it becomes the page title, and without one Sphinx warns that a
   toctree entry has no title.
 
-Build-time errors (each naming the offending files): a diagram named `index.puml`/
-`index.plantuml` (that stem is reserved for the navigation page); two files in one view
-resolving to the same staged path; a stem having both `.rst` and `.md`, or both `.puml` and
-`.plantuml`. For a page you want fully outside this scheme, leave the `.puml` out of the view
+Build-time errors (each naming the offending files): a diagram named `index.puml` (that stem
+is reserved for the navigation page); two files in one view resolving to the same staged path;
+a stem having both `.rst` and `.md`. For a page you want fully outside this scheme, leave the
+`.puml` out of the view
 attribute and reference it via your own `.. uml::` elsewhere in the docs tree.
 
 ### `unit_design`
@@ -529,7 +557,6 @@ dependable_element(
     name                   = "safety_software_seooc_example",
     architectural_design   = ["//design:sample_seooc_design"],
     requirements           = ["//docs/requirements:feature_requirements"],   # FeatReq targets
-    assumptions_of_use     = ["//docs:sample_aous"],
     dependability_analysis = [":sample_dependability_analysis"],
     components             = [":component_example"],
     tests                  = [],
@@ -562,7 +589,7 @@ the source of truth for what is checked and which notation is valid**.
 | **Bazel ↔ component** | `bazel_component.md` | `dependable_element`/`component`/`unit` targets ↔ `static` PlantUML | insensitive |
 | **Component ↔ public API** | `component_public_api.md` | top-level interfaces in `static` ↔ `public_api` class diagram; must be bound from the SEooC | sensitive |
 | **Component ↔ internal API** | `component_internal_api.md` | interfaces in `static` ↔ `internal_api` diagram | sensitive |
-| **Component ↔ sequence** | `component_sequence.md` | unit aliases + interface connections in `static` ↔ `dynamic` sequence diagrams | sensitive |
+| **Component ↔ sequence** | `component_sequence.md` | unit ids + interface connections in `static` ↔ `dynamic` sequence diagrams | sensitive |
 | **Sequence ↔ internal API** | `sequence_internal_api.md` | sequence method calls ↔ `internal_api` interfaces (method name, consumer/provider role, interface coverage) | sensitive |
 | **Class design ↔ implementation** | `class_design_implementation.md` | `unit_design` class diagram ↔ C++ implementation (entities, methods, variables, enums, relationships, templates) | sensitive + type normalization |
 
@@ -574,7 +601,7 @@ Additional element-level checks (see [`docs/user_guide/general.rst`](../../../ba
 | **Integrity level** | a `dependable_element` must not `deps` on one with a lower `integrity_level` (D > C > B > A) | violation fails the build |
 
 > **Only `bazel_component` is case-insensitive** — every other validator matches names
-> case-sensitively. Keep diagram aliases identical to the code/target names.
+> case-sensitively. Keep diagram names identical to the code/target names.
 >
 > `maturity = "development"` downgrades scope and coverage violations to warnings; switch back to
 > `"release"` before certification.
@@ -593,12 +620,12 @@ Traceability from a feature requirement down to implementing components runs thr
 
 ## Conventions
 
-- Diagram aliases must **match the Bazel target name** — `bazel_component` compares
+- Diagram names must **match the Bazel target name** — `bazel_component` compares
   case-insensitively, but every other validator is case-sensitive, so keep them identical.
 - Model down to the `unit` level in the static diagram; every implemented unit must appear (and no
   extra ones — missing *and* extra elements both fail).
-- Sequence diagrams are validated: participant aliases must equal the component-diagram unit
-  aliases, and every cross-unit call must correspond to an interface connection (and be declared in
+- Sequence diagrams are validated: participant names must equal the component-diagram unit
+  names, and every cross-unit call must correspond to an interface connection (and be declared in
   the internal API). Keep them at the unit-interaction level.
 - Unit-design class diagrams are validated against the C++ implementation — the design is the
   contract (implementation-only members are allowed, design-only members are not).
