@@ -579,3 +579,60 @@ TEST(ComplexTypeDeserializerTest, NoLengthFieldHasNoAnnouncedData) {
     ASSERT_FALSE(complex_deserializer->has_remaining_data());
     complex_deserializer->~ComplexTypeDeserializer();
 }
+
+TEST(ComplexTypeSerializerTest, LengthFieldOverflowIsReported) {
+    {
+        Serializer serializer;
+        ComplexTypeSerializer<LengthFieldConfig<std::uint8_t>> complex_serializer{&serializer};
+        for (int i = 0; i < 255; i++) {
+            complex_serializer.push_back(static_cast<std::uint8_t>(i));
+        }
+        ASSERT_TRUE(complex_serializer.finish());
+        ASSERT_EQ(255, serializer.get_buffer()[0]);
+    }
+    {
+        Serializer serializer;
+        ComplexTypeSerializer<LengthFieldConfig<std::uint8_t>> complex_serializer{&serializer};
+        for (int i = 0; i < 256; i++) {
+            complex_serializer.push_back(static_cast<std::uint8_t>(i));
+        }
+        // 256 bytes do not fit into an 8 bit length field; the field must not claim a wrong size.
+        ASSERT_FALSE(complex_serializer.finish());
+        ASSERT_EQ(0, serializer.get_buffer()[0]);
+    }
+    {
+        Serializer serializer;
+        ComplexTypeSerializer<LengthFieldConfig<std::uint16_t>> complex_serializer{&serializer};
+        for (std::uint32_t i = 0; i < 0x10000U; i++) {
+            complex_serializer.push_back(static_cast<std::uint8_t>(i));
+        }
+        ASSERT_FALSE(complex_serializer.finish());
+    }
+    {
+        Serializer serializer;
+        ComplexTypeSerializer<LengthFieldConfig<void>> complex_serializer{&serializer};
+        complex_serializer.push_back(static_cast<std::uint8_t>(1));
+        ASSERT_TRUE(complex_serializer.finish());
+    }
+}
+
+TEST(TlvSerializerTest, LengthFieldOverflowIsReported) {
+    Serializer serializer;
+    TlvSerializer<LengthFieldConfig<std::uint16_t>> tlv_serializer{&serializer,
+                                                                   WireTypeEnum::ComplexDataType8BitLengthField, 1};
+    for (int i = 0; i < 256; i++) {
+        tlv_serializer.push_back(static_cast<std::uint8_t>(i));
+    }
+    ASSERT_FALSE(tlv_serializer.finish());
+
+    Serializer fitting;
+    TlvSerializer<LengthFieldConfig<std::uint16_t>> fitting_serializer{&fitting,
+                                                                       WireTypeEnum::ComplexDataType8BitLengthField, 1};
+    fitting_serializer.push_back(static_cast<std::uint8_t>(7));
+    ASSERT_TRUE(fitting_serializer.finish());
+
+    Serializer base_type;
+    TlvSerializer<LengthFieldConfig<std::uint16_t>> base_serializer{&base_type, WireTypeEnum::BaseType8Bit, 1};
+    base_serializer.push_back(static_cast<std::uint8_t>(7));
+    ASSERT_TRUE(base_serializer.finish());
+}

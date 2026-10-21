@@ -24,6 +24,7 @@
 #include <endian.h>
 #endif // LINUX
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -199,6 +200,16 @@ private:
     }
 };
 
+// Write a length into a length field that was reserved at pos. Returns false and leaves the field
+// untouched when the value does not fit into T.
+template <typename T> bool push_length(Serializer& serializer, std::size_t value, std::size_t pos) {
+    if (static_cast<std::uint64_t>(value) > static_cast<std::uint64_t>(std::numeric_limits<T>::max())) {
+        return false;
+    }
+    serializer.push(static_cast<T>(value), pos);
+    return true;
+}
+
 // An optional length field of 8, 16 or 32 Bit may be inserted in front of the Struct
 template <typename T> struct LengthFieldConfig {
     using LengthFieldType = T;
@@ -245,16 +256,17 @@ public:
         }
     }
 
-    void finish() {
+    // Returns false when the content is too long for the length field. The field is left at 0 then.
+    bool finish() {
         if (Config::lengthFieldActive) {
             std::size_t len = parent_->get_length() - length_pos_;
             using T = typename std::conditional<std::is_same<typename Config::LengthFieldType, void>::value,
                                                 std::uint8_t, typename Config::LengthFieldType>::type;
             // The length field of the struct shall describe the number
             // of bytes this struct occupies for SOME/IP transport
-            T length = static_cast<T>(len - sizeof(T));
-            parent_->push(length, length_pos_);
+            return push_length<T>(*parent_, len - sizeof(T), length_pos_);
         }
+        return true;
     }
 };
 
@@ -336,7 +348,8 @@ public:
         }
     }
 
-    void finish() {
+    // Returns false when the content is too long for the length field. The field is left at 0 then.
+    bool finish() {
         std::size_t len = parent_->get_length() - length_pos_;
 
         switch (wire_type_) {
@@ -346,33 +359,24 @@ public:
             using T = typename std::conditional<std::is_same<typename Config::LengthFieldType, void>::value, uint8_t,
                                                 typename Config::LengthFieldType>::type;
             if (Config::lengthFieldActive) {
-                const T length = static_cast<T>(len - sizeof(T));
-                parent_->push(length, length_pos_);
+                return push_length<T>(*parent_, len - sizeof(T), length_pos_);
             }
             break;
         }
 
-        case WireTypeEnum::ComplexDataType8BitLengthField: {
-            std::uint8_t length = static_cast<std::uint8_t>(len - 1);
-            parent_->push(length, length_pos_);
-            break;
-        }
+        case WireTypeEnum::ComplexDataType8BitLengthField:
+            return push_length<std::uint8_t>(*parent_, len - 1, length_pos_);
 
-        case WireTypeEnum::ComplexDataType16BitLengthField: {
-            std::uint16_t length = static_cast<std::uint16_t>(len - 2);
-            parent_->push(length, length_pos_);
-            break;
-        }
+        case WireTypeEnum::ComplexDataType16BitLengthField:
+            return push_length<std::uint16_t>(*parent_, len - 2, length_pos_);
 
-        case WireTypeEnum::ComplexDataType32BitLengthField: {
-            std::uint32_t length = static_cast<std::uint32_t>(len - 4);
-            parent_->push(length, length_pos_);
-            break;
-        }
+        case WireTypeEnum::ComplexDataType32BitLengthField:
+            return push_length<std::uint32_t>(*parent_, len - 4, length_pos_);
 
         default:
             break;
         }
+        return true;
     }
 
     template <typename DataType> void push_back(DataType value) {
