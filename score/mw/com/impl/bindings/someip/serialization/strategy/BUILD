@@ -18,6 +18,7 @@ cc_library(
     name = "someip_strategy",
     hdrs = [
         "someip_layout.h",
+        "someip_scalar.h",
         "someip_wire_format.h",
     ],
     tags = ["FFI"],
@@ -34,6 +35,16 @@ cc_library(
 cc_unit_test(
     name = "someip_wire_format_test",
     srcs = ["someip_wire_format_test.cpp"],
+    deps = [
+        ":someip_strategy",
+        "@score_baselibs//score/serialization",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_unit_test(
+    name = "someip_scalar_test",
+    srcs = ["someip_scalar_test.cpp"],
     deps = [
         ":someip_strategy",
         "@score_baselibs//score/serialization",
