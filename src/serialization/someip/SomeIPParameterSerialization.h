@@ -429,6 +429,16 @@ public:
         return static_cast<std::size_t>(&(*buffer_->end()) - pos_);
     }
 
+    // Skip nbytes. Returns nbytes, or 0 without moving when fewer bytes are left.
+    std::size_t skip(const std::size_t nbytes) {
+        if (nbytes > length_ - bytes_read_) {
+            return 0;
+        }
+        pos_ += nbytes;
+        bytes_read_ += nbytes;
+        return nbytes;
+    }
+
 private:
     template <typename DataType> std::size_t deserialize(DataType& data) {
         std::size_t nbytes = 0;
@@ -503,6 +513,20 @@ public:
     bool has_remaining_data() const {
         return bytes_read_ < length_;
     }
+
+    // Skip the bytes of this struct that the caller does not know (feat_req_someip_601). Returns false
+    // when the announced bytes are missing. Without a length field there is nothing to skip.
+    bool skip_remaining() {
+        if (!Config::lengthFieldActive) {
+            return true;
+        }
+        const std::size_t nbytes = length_ - bytes_read_;
+        if (nbytes != 0U && parent_->skip(nbytes) == 0U) {
+            return false;
+        }
+        bytes_read_ += nbytes;
+        return true;
+    }
 };
 
 struct TlvTag {
@@ -552,6 +576,19 @@ public:
 
     bool has_remaining_data() const {
         return bytes_read_ < length_;
+    }
+
+    // Skip the rest of the current member, e.g. a member with an unknown data ID. Returns false when
+    // the announced bytes are missing.
+    bool skip_remaining() {
+        const std::size_t nbytes = length_ - bytes_read_;
+        if (nbytes != 0U && deserializer_->skip(nbytes) == 0U) {
+            return false;
+        }
+        bytes_read_ += nbytes;
+        if (watcher_ && nbytes != 0U)
+            watcher_->consumed(nbytes);
+        return true;
     }
 
     void consumed(const std::size_t bytes) override {

@@ -636,3 +636,118 @@ TEST(TlvSerializerTest, LengthFieldOverflowIsReported) {
     base_serializer.push_back(static_cast<std::uint8_t>(7));
     ASSERT_TRUE(base_serializer.finish());
 }
+
+TEST(DeserializerTest, SkipBytes) {
+    Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x01, 0x02, 0x03, 0x04})};
+
+    ASSERT_EQ(0, deserializer.skip(5));
+    ASSERT_EQ(4, deserializer.get_remaining_length());
+
+    ASSERT_EQ(3, deserializer.skip(3));
+    ASSERT_EQ(1, deserializer.get_remaining_length());
+
+    std::uint8_t value{};
+    ASSERT_EQ(1, deserializer.pop_front(value));
+    ASSERT_EQ(0x04, value);
+}
+
+TEST(ComplexTypeDeserializerTest, SkipsBytesOfAnExtendedStruct) {
+    // feat_req_someip_601: a struct longer than the known definition carries extra bytes that are skipped.
+    // The struct knows one uint8; the sender added three more bytes. 0xAA follows the struct.
+    Deserializer deserializer{
+        std::unique_ptr<PacketBuffer>(new PacketBuffer{0x00, 0x04, 0x01, 0x02, 0x03, 0x04, 0xAA})};
+    ComplexTypeDeserializer<LengthFieldConfig<std::uint16_t>> complex_deserializer{&deserializer};
+
+    std::uint8_t value{};
+    ASSERT_EQ(1, complex_deserializer.pop_front(value));
+    ASSERT_EQ(0x01, value);
+    ASSERT_TRUE(complex_deserializer.has_remaining_data());
+
+    ASSERT_TRUE(complex_deserializer.skip_remaining());
+    ASSERT_FALSE(complex_deserializer.has_remaining_data());
+
+    ASSERT_EQ(1, deserializer.pop_front(value));
+    ASSERT_EQ(0xAA, value);
+    ASSERT_EQ(0, deserializer.get_remaining_length());
+}
+
+TEST(ComplexTypeDeserializerTest, SkipFailsWhenTheAnnouncedBytesAreMissing) {
+    Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x00, 0x08, 0x01, 0x02})};
+    ComplexTypeDeserializer<LengthFieldConfig<std::uint16_t>> complex_deserializer{&deserializer};
+
+    std::uint8_t value{};
+    ASSERT_EQ(1, complex_deserializer.pop_front(value));
+    ASSERT_FALSE(complex_deserializer.skip_remaining());
+    ASSERT_EQ(1, deserializer.get_remaining_length());
+}
+
+TEST(ComplexTypeDeserializerTest, SkipWithoutLengthFieldDoesNothing) {
+    Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x01, 0x02})};
+    ComplexTypeDeserializer<LengthFieldConfig<void>> complex_deserializer{&deserializer};
+
+    ASSERT_TRUE(complex_deserializer.skip_remaining());
+    ASSERT_EQ(2, deserializer.get_remaining_length());
+}
+
+TEST(ComplexTypeDeserializerTest, SkipInsideANestedStruct) {
+    // Outer (8 bit length) { Inner (8 bit length) { u8 known, 2 unknown bytes }, u8 0x09 }
+    Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x05, 0x03, 0x01, 0xEE, 0xEF, 0x09})};
+    ComplexTypeDeserializer<LengthFieldConfig<std::uint8_t>> outer{&deserializer};
+    ComplexTypeDeserializer<LengthFieldConfig<std::uint8_t>> inner{&deserializer};
+
+    std::uint8_t value{};
+    ASSERT_EQ(1, inner.pop_front(value));
+    ASSERT_EQ(0x01, value);
+    ASSERT_TRUE(inner.skip_remaining());
+    outer.consumed(1 + 3);
+
+    ASSERT_EQ(1, outer.pop_front(value));
+    ASSERT_EQ(0x09, value);
+    ASSERT_FALSE(outer.has_remaining_data());
+    ASSERT_EQ(0, deserializer.get_remaining_length());
+}
+
+TEST(TlvDeserializerTest, SkipsUnknownMember) {
+    // An unknown member (data id 5, 8 bit length field, 3 bytes) in front of a known uint8 member (data id 1).
+    Deserializer deserializer{
+        std::unique_ptr<PacketBuffer>(new PacketBuffer{0x50, 0x05, 0x03, 0xA1, 0xA2, 0xA3, 0x00, 0x01, 0x07})};
+
+    TlvDeserializer<LengthFieldConfig<std::uint16_t>> unknown{&deserializer};
+    TlvTag tag = unknown.consume_tag();
+    ASSERT_EQ(5, tag.data_id_);
+    ASSERT_EQ(3, tag.len_);
+    ASSERT_TRUE(unknown.skip_remaining());
+    ASSERT_FALSE(unknown.has_remaining_data());
+
+    TlvDeserializer<LengthFieldConfig<std::uint16_t>> known{&deserializer};
+    tag = known.consume_tag();
+    ASSERT_EQ(1, tag.data_id_);
+    std::uint8_t value{};
+    ASSERT_EQ(1, known.pop_front(value));
+    ASSERT_EQ(7, value);
+    ASSERT_EQ(0, deserializer.get_remaining_length());
+}
+
+TEST(TlvDeserializerTest, SkipReportsBytesToTheContainingStruct) {
+    // Struct (8 bit length, 8 bytes) { unknown member (5 bytes), known uint8 member (3 bytes) }
+    Deserializer deserializer{
+        std::unique_ptr<PacketBuffer>(new PacketBuffer{0x08, 0x50, 0x05, 0x02, 0xA1, 0xA2, 0x00, 0x01, 0x07})};
+    ComplexTypeDeserializer<LengthFieldConfig<std::uint8_t>> complex_deserializer{&deserializer};
+
+    int members = 0;
+    std::uint8_t value{};
+    while (complex_deserializer.has_remaining_data()) {
+        ASSERT_LT(members, 2);
+        TlvDeserializer<LengthFieldConfig<std::uint16_t>> tlv{&deserializer, &complex_deserializer};
+        TlvTag tag = tlv.consume_tag();
+        if (tag.data_id_ == 1) {
+            ASSERT_EQ(1, tlv.pop_front(value));
+        } else {
+            ASSERT_TRUE(tlv.skip_remaining());
+        }
+        members++;
+    }
+    ASSERT_EQ(2, members);
+    ASSERT_EQ(7, value);
+    ASSERT_EQ(0, deserializer.get_remaining_length());
+}
