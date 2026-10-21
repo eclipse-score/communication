@@ -16,11 +16,15 @@ load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
     name = "someip_strategy",
+    srcs = [
+        "someip_strategy.cpp",
+    ],
     hdrs = [
         "someip_array.h",
         "someip_layout.h",
         "someip_max_size.h",
         "someip_scalar.h",
+        "someip_strategy.h",
         "someip_string.h",
         "someip_wire_format.h",
     ],
@@ -32,6 +36,33 @@ cc_library(
         "@score_baselibs//score/serialization:strategy_interface",
         "@score_baselibs//score/serialization/types:length_prefixed_vector",
         "@score_baselibs//score/static_reflection_with_serialization/visitor",
+    ],
+)
+
+cc_library(
+    name = "someip_strategy_test_fixtures",
+    testonly = True,
+    hdrs = ["someip_strategy_test_fixtures.h"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [
+        ":someip_strategy",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/serialization",
+        "@score_baselibs//score/static_reflection_with_serialization/visitor",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_unit_test(
+    name = "someip_strategy_test",
+    srcs = ["someip_strategy_test.cpp"],
+    deps = [
+        ":someip_strategy",
+        ":someip_strategy_test_fixtures",
+        "@score_baselibs//score/static_reflection_with_serialization/visitor",
+        "@score_baselibs//score/serialization",
+        "@score_baselibs//score/serialization/types:length_prefixed_vector",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
