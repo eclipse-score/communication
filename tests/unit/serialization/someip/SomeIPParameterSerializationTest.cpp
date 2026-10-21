@@ -543,3 +543,17 @@ TEST(TlvDeserializerTest, TruncatedMember) {
     ASSERT_EQ(0, tlv_deserializer.pop_front(value));
     ASSERT_EQ(2, deserializer.get_remaining_length());
 }
+
+TEST(DeserializerTest, BooleanUsesOnlyLowestBit) {
+    // feat_req_someip_817: the other bits are reserved and shall be ignored on receiving.
+    const PacketBuffer input{0x00, 0x01, 0x02, 0x03, 0x80, 0xFF};
+    const bool expected[] = {false, true, false, true, false, true};
+
+    Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer(input))};
+    for (const bool want : expected) {
+        bool value = !want;
+        ASSERT_EQ(1, deserializer.pop_front(value));
+        ASSERT_EQ(want, value);
+    }
+    ASSERT_EQ(0, deserializer.get_remaining_length());
+}

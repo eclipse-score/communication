@@ -403,6 +403,16 @@ public:
         return deserialize<DataType>(data);
     }
 
+    // Only the lowest bit of a boolean is used; the other bits are reserved and ignored on receiving.
+    std::size_t pop_front(bool& data) {
+        std::uint8_t raw{};
+        const std::size_t nbytes = deserialize<std::uint8_t>(raw);
+        if (nbytes != 0U) {
+            data = (raw & 0x01U) != 0U;
+        }
+        return nbytes;
+    }
+
     PacketBuffer& get_buffer() {
         return *buffer_;
     }
