@@ -19,7 +19,6 @@ interface "IServer" as IServer
 interface "IServerFactory" as IServerFactory
 interface "IServerConnection" as IServerConnection
 interface "IConnectionHandler" as IConnectionHandler
-interface "OS" as os
 
 component "Message Passing" as dependable_element_message_passing <<SEooC>> {
 
@@ -83,9 +82,6 @@ qnx_dispatch_server_factory )-d- IServerFactory
 unix_domain_server -d-( IConnectionHandler
 qnx_dispatch_server -d-( IConnectionHandler
 
-unix_domain_engine -l-( os : requires
-qnx_dispatch_engine -l-( os : requires
-
 ' SEooC boundary relations (not drawn; the interfaces above cross the boundary)
 dependable_element_message_passing -[hidden]- IClientConnection
 dependable_element_message_passing -[hidden]- IClientFactory
@@ -93,6 +89,5 @@ dependable_element_message_passing -[hidden]- IServer
 dependable_element_message_passing -[hidden]- IServerFactory
 dependable_element_message_passing -[hidden]- IServerConnection
 dependable_element_message_passing -[hidden]- IConnectionHandler
-dependable_element_message_passing -[hidden]- "os"
 
 @enduml
