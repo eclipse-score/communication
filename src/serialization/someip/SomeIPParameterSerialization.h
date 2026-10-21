@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <cstring>
 #include <algorithm>
 #include <array>
 #if defined(LINUX)
@@ -419,7 +420,10 @@ private:
         std::size_t nbytes = 0;
 
         if ((bytes_read_ + sizeof(DataType)) <= length_) {
-            data = from_network_byte_order(*reinterpret_cast<DataType*>(&*pos_));
+            // The data may start at any offset, so it must not be read through a typed pointer.
+            DataType value;
+            std::memcpy(&value, pos_, sizeof(DataType));
+            data = from_network_byte_order(value);
             pos_ += sizeof(DataType);
             bytes_read_ += sizeof(DataType);
             nbytes = sizeof(DataType);
