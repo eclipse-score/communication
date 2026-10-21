@@ -19,6 +19,8 @@
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
+#include "score/memory/data_type_size_info.h"
+
 #include <memory>
 #include <string_view>
 #include <utility>
@@ -35,9 +37,11 @@ class ProxyEventBindingFactory final
     static Result<std::unique_ptr<ProxyEventBinding>> Create(HandleType parent_handle,
                                                              ProxyBinding& parent_binding,
                                                              std::string_view event_name,
-                                                             const ServiceElementType service_element_type)
+                                                             const ServiceElementType service_element_type,
+                                                             memory::DataTypeSizeInfo data_type_size_info)
     {
-        return instance().Create(std::move(parent_handle), parent_binding, event_name, service_element_type);
+        return instance().Create(
+            std::move(parent_handle), parent_binding, event_name, service_element_type, data_type_size_info);
     }
 
     /// \brief Inject a mock IProxyEventBindingFactory. If a mock is injected, then all calls on

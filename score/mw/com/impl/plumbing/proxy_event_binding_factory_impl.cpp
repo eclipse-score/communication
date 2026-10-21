@@ -32,7 +32,8 @@ ReturnType CreateLolaProxyEvent(const HandleType& parent_handle,
                                 ProxyBinding& parent_binding,
                                 const LolaServiceTypeDeployment& lola_type_deployment,
                                 const std::string_view event_or_field_name,
-                                const ServiceElementType service_element_type)
+                                const ServiceElementType service_element_type,
+                                const std::optional<memory::DataTypeSizeInfo> data_type_size_info)
 {
     auto* const lola_proxy = dynamic_cast<lola::Proxy*>(&parent_binding);
     if (lola_proxy == nullptr)
@@ -44,7 +45,15 @@ ReturnType CreateLolaProxyEvent(const HandleType& parent_handle,
 
     const auto element_fq_id =
         GetElementFqId(parent_handle, lola_type_deployment, std::string{event_or_field_name}, service_element_type);
-    return std::make_unique<lola::ProxyEvent>(*lola_proxy, element_fq_id, event_or_field_name);
+
+    // In case of GenericProxyEvent the caller doesn't know the event's data type (this is the reason
+    // data_type_size_info is an optional). Then we are looking up the DataTypeSizeInfo from the EventMetaInfo that the
+    // providing skeleton placed into shared-memory.
+    const auto resolved_data_type_size_info = data_type_size_info.has_value()
+                                                  ? data_type_size_info.value()
+                                                  : lola_proxy->GetEventMetaInfo(element_fq_id).data_type_info_;
+    return std::make_unique<lola::ProxyEvent>(
+        *lola_proxy, element_fq_id, event_or_field_name, resolved_data_type_size_info);
 }
 
 }  // namespace score::mw::com::impl::detail
@@ -64,17 +73,22 @@ Result<std::unique_ptr<ProxyEventBinding>> ProxyEventBindingFactoryImpl::Create(
     HandleType parent_handle,
     ProxyBinding& parent_binding,
     const std::string_view event_or_field_name,
-    const ServiceElementType service_element_type) noexcept
+    const ServiceElementType service_element_type,
+    const memory::DataTypeSizeInfo data_type_size_info) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(service_element_type == ServiceElementType::EVENT ||
                                               service_element_type == ServiceElementType::FIELD);
 
     using ReturnType = Result<std::unique_ptr<ProxyEventBinding>>;
     auto deployment_info_visitor = score::cpp::overload(
-        [&parent_handle, &parent_binding, event_or_field_name, service_element_type](
+        [&parent_handle, &parent_binding, event_or_field_name, service_element_type, data_type_size_info](
             const LolaServiceTypeDeployment& lola_type_deployment) -> ReturnType {
-            return detail::CreateLolaProxyEvent<ReturnType>(
-                parent_handle, parent_binding, lola_type_deployment, event_or_field_name, service_element_type);
+            return detail::CreateLolaProxyEvent<ReturnType>(parent_handle,
+                                                            parent_binding,
+                                                            lola_type_deployment,
+                                                            event_or_field_name,
+                                                            service_element_type,
+                                                            data_type_size_info);
         },
         // The SOME/IP binding does not support proxy events (yet). It is listed explicitly (instead of being served
         // by the score::cpp::blank arm) because std::visit requires an arm for every variant alternative.
@@ -104,8 +118,10 @@ Result<std::unique_ptr<GenericProxyEventBinding>> GenericProxyEventBindingFactor
     auto deployment_info_visitor = score::cpp::overload(
         [&parent_handle, &parent_binding, event_name, service_element_type](
             const LolaServiceTypeDeployment& lola_type_deployment) -> ReturnType {
+            // A generic proxy event doesn't know its SampleType, so the DataTypeSizeInfo is looked up by
+            // CreateLolaProxyEvent() from the EventMetaInfo stored in shared-memory.
             return detail::CreateLolaProxyEvent<ReturnType>(
-                parent_handle, parent_binding, lola_type_deployment, event_name, service_element_type);
+                parent_handle, parent_binding, lola_type_deployment, event_name, service_element_type, std::nullopt);
         },
         // The SOME/IP binding does not support this service element (yet). It is listed explicitly (instead of
         // being served by the score::cpp::blank arm) because std::visit requires an arm for every variant
