@@ -1,6 +1,6 @@
 @startuml memory_resource_hierarchy
 
-title Shared Memory Resource Architecture
+title Mapped Memory Region Architecture
 
 skinparam classAttributeIconSize 0
 skinparam defaultFontSize 11
@@ -11,235 +11,16 @@ skinparam nodesep 50
 skinparam ranksep 40
 skinparam classFontStyle bold
 
-
-' together {
-'     interface ISharedMemoryFactory {
-'         + using InitializationCallback = score::callback<Result<void>(ISharedMemoryResource&)>
-'         __ named (posix) __
-'         + {virtual} CreateNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
-'         + {virtual} OpenNamed(path): Result<shared_ptr<IMappedRegion>>
-'         + {virtual} CreateOrOpenNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
-'         __ anonymous (platform-specific) __
-'         + {virtual} CreateQnxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
-'         + {virtual} CreateLinuxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
-'         __ safe typed __
-'         + {virtual} CreateSafeTypedNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
-'         + {virtual} CreateSafeTypedAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
-'         __ unsafe typed __
-'         + {virtual} CreateUnsafeTypedNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
-'         + {virtual} CreateUnsafeTypedAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
-'     }
-
-'     class SharedMemoryFactory implements ISharedMemoryFactory {
-'         - mapped_region_factory_: unique_ptr<IMappedRegionFactory>
-'         ..
-'         SharedMemoryFactory(unique_ptr<IMappedRegionFactory>)
-'         __ named (posix) __
-'         + {override} CreateNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
-'         + {override} OpenNamed(path): Result<shared_ptr<IMappedRegion>>
-'         + {override} CreateOrOpenNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
-'         __ anonymous (platform-specific) __
-'         + {override} CreateQnxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
-'         + {override} CreateLinuxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
-'         __ safe typed __
-'         + {override} CreateSafeTypedNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
-'         + {override} CreateSafeTypedAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
-'         __ unsafe typed __
-'         + {override} CreateUnsafeTypedNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
-'         + {override} CreateUnsafeTypedAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
-'     }
-
-'     note left of SharedMemoryFactory
-'         The lifetime of the MappedRegionFactory is tied to the lifetime of the SharedMemoryFactory. The 
-'         SharedMemoryFactory owns the MappedRegionFactory exclusively. If an application needs to use 
-'         a MappedRegionFactory directly elsewhere in the process, it should create another instance. See
-'         the note on the MappedRegionFactory for more details.
-'     end note
-
-'     interface ISharedMemoryResourceRegistry {
-'         - ISharedMemoryResourceRegistry()
-'         + {virtual} LookupById(id) : ISharedMemoryResource*
-'         + {virtual} GetBoundsFromAddress(addr) : Result<MemoryRegionBounds>
-'         + {virtual} GetBoundsFromAddressAsInteger(addr) : Result<MemoryRegionBounds>
-'         + {virtual} GetBoundsFromIdentifier(id: IdType) : Result<MemoryRegionBounds>
-'         + {virtual} Register(id: IdType, shared_ptr<ISharedMemoryResource>) : bool
-'         + {virtual} Unregister(id: IdType) : void
-'     }
-    
-'     class SharedMemoryResourceRegistry implements ISharedMemoryResourceRegistry {
-'         - resource_map_: unordered_map<IdType, weak_ptr<ISharedMemoryResource>>
-'         - bounds_map_ : MemoryRegionBoundsMap
-'         ..
-'         - SharedMemoryResourceRegistry()
-'         + {override} LookupById(id) : ISharedMemoryResource*
-'         + {override} GetBoundsFromAddress(addr) : Result<MemoryRegionBounds>
-'         + {override} GetBoundsFromAddressAsInteger(addr) : Result<MemoryRegionBounds>
-'         + {override} GetBoundsFromIdentifier(id: IdType) : Result<MemoryRegionBounds>
-'         + {override} Register(shared_ptr<ISharedMemoryResource>) : bool
-'         + {override} Unregister(id: IdType) : void
-'     }
-
-'     class SharedMemoryResourceRegistrySingleton <<singleton>> {
-'         - instance_: unique_ptr<ISharedMemoryResourceRegistry>
-'         + {static} InjectMock(unique_ptr<ISharedMemoryResourceRegistry>) : void
-'         - {static} GetInstance() : SharedMemoryResourceRegistrySingleton&
-'         + {static} LookupById(id) : ISharedMemoryResource*
-'         + {static} GetBoundsFromAddress(addr) : Result<MemoryRegionBounds>
-'         + {static} GetBoundsFromAddressAsInteger(addr) : Result<MemoryRegionBounds>
-'         + {static} GetBoundsFromIdentifier(id) : Result<MemoryRegionBounds>
-'         + {static} Register(resource: shared_ptr<ISharedMemoryResource>) : bool
-'         + {static} Unregister(id: IdType) : void
-'     }
-
-'     note top of SharedMemoryResourceRegistry
-'         SharedMemoryResourceRegistrySingleton is always the entry point for accessing 
-'         the memory resource registry. In production code, all functions in the 
-'         SharedMemoryResourceRegistrySingleton will dispatch to SharedMemoryResourceRegistry.
-'         For testing, InjectMock can be used to inject a mock ISharedMemoryResourceRegistry.
-'     end note
-' }
-
-' together {
-'     interface "amp::pmr::memory_resource" as PmrBase <<STL>> {
-'         + Allocate(bytes, align) : void*
-'         + Deallocate(ptr, bytes, align) : void
-'         # {abstract} DoAllocate(bytes, align) : void*
-'         # {abstract} DoDeallocate(ptr, bytes, align) : void
-'         # {abstract} DoIsEqual(other) : bool
-'     }
-
-'     interface ISharedMemoryResource {
-'         + {virtual} GetBaseAddress() : void*
-'         + {virtual} GetUsableBaseAddress() : void*
-'         + {virtual} GetMemoryResourceProxy() : MemoryResourceProxy
-'         + {virtual} GetMappedRegion() : IMappedRegion&
-'     }
-' }
-
-' note right of ISharedMemoryResource
-'     We no longer need what is in the current ISharedMemoryResource interface because every 
-'     shared memory specific functionality is now directly implemented in the IMappedRegion class
-'     and can be accessed by getting the IMappedRegion through GetMappedRegion()
-'     and dynamic casting it to the specific IMappedRegion subclass.
-
-'     We now use ISharedMemoryResource instead of ManagedMemoryResource because the interface 
-'     is specific to shared memory. e.g. it makes no sense to get a MemoryResourceProxy from a 
-'     non-shared memory resource.
-' end note
-
-' class SharedMemoryResource <<impl>> {
-'     - region_ : shared_ptr<IMappedRegion>
-'     - control_block_ : ControlBlock&
-'     - strategy_ : unique_ptr<IAllocationStrategy>
-'     ..
-
-'     + SharedMemoryResource(shared_ptr<IMappedRegion>, unique_ptr<IAllocationStrategy>, unique_ptr<InitializeCallback>)
-'     + SharedMemoryResource(shared_ptr<IMappedRegion>, unique_ptr<IAllocationStrategy>)
-
-'     ' + {static} Create(shared_ptr<IMappedRegion>, unique_ptr<IAllocationStrategy>, unique_ptr<InitializeCallback>)
-'     ' + {static} Open(shared_ptr<IMappedRegion>, unique_ptr<IAllocationStrategy>)
-
-
-'     + {override} GetBaseAddress() : void*
-'     + {override} GetUsableBaseAddress() : void*
-'     + {override} GetMemoryResourceProxy() : MemoryResourceProxy
-'     + {override} GetMappedRegion() : IMappedRegion&
-' }
-
-' together {
-'     class LockFile <<RAII>> {
-'             static std::optional<LockFile> Create(std::string path) noexcept;
-'     static std::optional<LockFile> CreateOrOpen(std::string path, bool take_ownership) noexcept;
-'     static std::optional<LockFile> Open(std::string path) noexcept;
-
-'     }
-
-'     class ControlBlock {
-'         + memory_resource_proxy: MemoryResourceProxy
-'         + AllocationSTrategyType : enum 
-'     }
-
-'     ' The control block depends on the allocation strategy (e.g. already_allocated_bytes, do we need atomic or mutex etc).
-'     ' We need a "dynamic" control block which is allocated by the allocation strategy. here we store things specific to the strategy.
-
-'     '  Do we need pmr shared ptrs? (can't be in shm)
-
-'     ' Be explicit in design that the libraray is intended for shared memory management. You shouldn't use it for non-shared memory scenarios.
-
-
-'     interface IAllocationStrategy <<interface>> {
-'         + {abstract} Allocate(free_start, free_end, bytes, align) : void*
-'         + {abstract} Deallocate(ptr, bytes, align) : void
-'         + {abstract} GetUsableBaseAddress() : void*
-
-
-'         + ConstructAllocationSpecificControlBlock(span<std::byte>: address_after_control_block) : Result<void>
-'     }
-
-'     class MonotonicAllocationStrategy implements IAllocationStrategy {
-'         - allocation_specific_control_block_ : AllocationSpecificControlBlock&
-'         - span<std::byte>: allocation_pool_
-'         ..
-'         ' + MonotonicAllocationStrategy(span<std::byte>: address_after_control_block)
-'         + Allocate(free_start, free_end, bytes, align) : void*
-'         + Deallocate(ptr, bytes, align) : void
-'         + GetUsableBaseAddress() : void*
-'     }
-
-'     class "MonotonicAllocationStrategy::AllocationSpecificControlBlock" as monotonic_allocation_specific_control_block {
-'         + atomic<size_t>: already_allocated_bytes_
-'     }
-
-' }
-
-' together {
-'     class MemoryResourceProxy {
-'         - memory_identifier_ : IdType
-'         --
-'         + Allocate(bytes, align) : void*
-'         + Deallocate(ptr, bytes, align) : void
-'     }
-
-'     class PolymorphicOffsetPtrAllocator <<utility>> {
-'         - memory_resource_proxy_ : OffsetPtr<MemoryResourceProxy>
-'         --
-'         + Allocate(n) : OffsetPtr<T>
-'         + Deallocate(p, n) : void
-'     }
-
-'     note right of PolymorphicOffsetPtrAllocator
-'         The PolymorphicOffsetPtrAllocator must store an OffsetPtr to the 
-'         MemoryResourceProxy because it does a bounds check to ensure that
-'         it's pointing to the correct memory resource (i.e. the one in which)
-'         it's currently residing. This must be done in the proxy because the 
-'         bounds checking algorithm relies on the MemoryResourceProxy residing
-'         in the same resource that it's pointing to. A PolymorphicOffsetPtrAllocator 
-'         can be allocated outside the memory region (e.g. on the stack) so can't 
-'         do the check itself.
-'     end note
-' }
-
-class IMappedRegionProperties <<interface>> {}
-
-class PosixNamedMappedRegion implements IMappedRegionProperties {
-    + size_t: size_
-    + PermissionsType: perms_
-}
+together {
 
 interface IMappedRegionRegistry {
-    + using CreateRegionCallback = score::callback<Result<shared_ptr<IMappedRegion>>(IMapIdType)>
+    + using CreateRegionCallback = score::callback<Result<shared_ptr<IMappedRegion>>(IdType)>
 
-   + {virtual} Register(IMappedRegionProperties&, CreateRegionCallback) : Result<shared_ptr<IMappedRegion>>
+   + {virtual} Register(IdType, const IMappedRegionProperties&, CreateRegionCallback) : Result<shared_ptr<IMappedRegion>>
    + {virtual} Unregister(IdType) : void
    + {virtual} Find(IdType) : shared_ptr<IMappedRegion>
    + {virtual} Clear(): void
    + {virtual} FreeUnusedResources(): void
-}
-
-class IMappedRegionRegistry::RegionIdentifier{
-    + id_ : IdType
-    + region_size_ : size_t
-    + region_permissions_ : PermissionsType
 }
 
 note right of IMappedRegionRegistry
@@ -249,7 +30,7 @@ end note
 
 class MappedRegionRegistry implements IMappedRegionRegistry {
     - region_registry_ : unordered_map<IdType, weak_ptr<IMappedRegion>>
-    + {override} Register(IMappedRegionProperties&, CreateRegionCallback) : Result<shared_ptr<IMappedRegion>>
+    + {override} Register(IdType, const IMappedRegionProperties&, CreateRegionCallback) : Result<shared_ptr<IMappedRegion>>
     + {override} Unregister(IdType) : void
     + {override} Find(IdType) : shared_ptr<IMappedRegion>
     + {override} Clear(): void
@@ -258,27 +39,32 @@ class MappedRegionRegistry implements IMappedRegionRegistry {
 
 class PersistentMappedRegionRegistry implements IMappedRegionRegistry {
     - region_registry_ : unordered_map<IdType, shared_ptr<IMappedRegion>>
-   + {override} Register(IMappedRegionProperties, CreateRegionCallback) : Result<shared_ptr<IMappedRegion>>
+   + {override} Register(IdType, const IMappedRegionProperties&, CreateRegionCallback) : Result<shared_ptr<IMappedRegion>>
    + {override} Unregister(IdType) : void
    + {override} Find(IdType) : shared_ptr<IMappedRegion>
    + {override} Clear(): void
    + {override} FreeUnusedResources(): void
 }
 
+}
+
+together {
+
 interface IMappedRegionFactory{
+    + using RegionInitializeCallback = score::callback<Result<void>>(IMappedRegion&)
     __ named (posix) __
-    + {virtual} CreateNamed(path, size, perms): Result<shared_ptr<IMappedRegion>>
+    + {virtual} CreateNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
     + {virtual} OpenNamed(path): Result<shared_ptr<IMappedRegion>>
-    + {virtual} CreateOrOpenNamed(path, size, perms): Result<shared_ptr<IMappedRegion>>
+    + {virtual} CreateOrOpenNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
     __ anonymous (platform-specific) __
-    + {virtual} CreateQnxAnonymous(id, size): Result<shared_ptr<IMappedRegion>>
-    + {virtual} CreateLinuxAnonymous(id, size): Result<shared_ptr<IMappedRegion>>
+    + {virtual} CreateQnxAnonymous(RegionInitializeCallback, id, size): Result<shared_ptr<IMappedRegion>>
+    + {virtual} CreateLinuxAnonymous(RegionInitializeCallback, id, size): Result<shared_ptr<IMappedRegion>>
     __ safe typed __
-    + {virtual} CreateSafeTypedNamed(path, size, perms): Result<shared_ptr<IMappedRegion>>
-    + {virtual} CreateSafeTypedAnonymous(id, size): Result<shared_ptr<IMappedRegion>>
+    + {virtual} CreateSafeTypedNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
+    + {virtual} CreateSafeTypedAnonymous(RegionInitializeCallback, id, size): Result<shared_ptr<IMappedRegion>>
     __ unsafe typed __
-    + {virtual} CreateUnsafeTypedNamed(path, size, perms): Result<shared_ptr<IMappedRegion>>
-    + {virtual} CreateUnsafeTypedAnonymous(id, size): Result<shared_ptr<IMappedRegion>>
+    + {virtual} CreateUnsafeTypedNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
+    + {virtual} CreateUnsafeTypedAnonymous(RegionInitializeCallback, id, size): Result<shared_ptr<IMappedRegion>>
 }
 
 class MappedRegionFactory implements IMappedRegionFactory {
@@ -286,18 +72,18 @@ class MappedRegionFactory implements IMappedRegionFactory {
     ..
     + MappedRegionFactory(unique_ptr<IMappedRegionRegistry>)
     __ named (posix) __
-    + {override} CreateNamed(path, size, perms): Result<shared_ptr<IMappedRegion>>
+    + {override} CreateNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
     + {override} OpenNamed(path): Result<shared_ptr<IMappedRegion>>
-    + {override} CreateOrOpenNamed(path, size, perms): Result<shared_ptr<IMappedRegion>>
+    + {override} CreateOrOpenNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
     __ anonymous (platform-specific) __
-    + {override} CreateQnxAnonymous(id, size): Result<shared_ptr<IMappedRegion>>
-    + {override} CreateLinuxAnonymous(id, size): Result<shared_ptr<IMappedRegion>>
+    + {override} CreateQnxAnonymous(RegionInitializeCallback, id, size): Result<shared_ptr<IMappedRegion>>
+    + {override} CreateLinuxAnonymous(RegionInitializeCallback, id, size): Result<shared_ptr<IMappedRegion>>
     __ safe typed __
-    + {override} CreateSafeTypedNamed(path, size, perms): Result<shared_ptr<IMappedRegion>>
-    + {override} CreateSafeTypedAnonymous(id, size): Result<shared_ptr<IMappedRegion>>
+    + {override} CreateSafeTypedNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
+    + {override} CreateSafeTypedAnonymous(RegionInitializeCallback, id, size): Result<shared_ptr<IMappedRegion>>
     __ unsafe typed __
-    + {override} CreateUnsafeTypedNamed(path, size, perms): Result<shared_ptr<IMappedRegion>>
-    + {override} CreateUnsafeTypedAnonymous(id, size): Result<shared_ptr<IMappedRegion>>
+    + {override} CreateUnsafeTypedNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
+    + {override} CreateUnsafeTypedAnonymous(RegionInitializeCallback, id, size): Result<shared_ptr<IMappedRegion>>
 }
 
 note right of MappedRegionFactory
@@ -326,22 +112,26 @@ note right of MappedRegionFactory
         - These different parts of the code path should also not be opening the same resources. So
         it makes sense that they do not see the resources of the other factory / registry.
 
-    If the InitializationCallback fails (i.e. return an error), then we should remove we created
+    If the RegionInitializeCallback fails (i.e. return an error), then we should remove we created
     region from the registry (even if it's the persistent registry). The registry should only hold
     valid and initialized regions. 
 end note
 
+}
+
+together {
+
 interface IMappedRegion <<interface>> {
     ' Constructor should have documentation explaining that the derived class need to 
-    ' take optional<InitializationCallback> as a constructor argument.
-    + IMappedRegion(optional<InitializationCallback>)
+    ' take optional<RegionInitializeCallback> as a constructor argument.
+    + IMappedRegion(optional<RegionInitializeCallback>)
 
     ' GetId() should not change after calling AdjustToProperties. 
-    + AdjustToProperties(IMappedRegionProperties&) : Result<void>
     + GetBaseAddress() : void*
     + GetSize() : size_t
-    + GetProperties() : IMappedRegionProperties&
-    + GetId() : IMapIdType
+    + GetId() : IdType
+    - AdjustToProperties(IMappedRegionProperties&) : Result<void>
+    - GetProperties() : IMappedRegionProperties&
 }
 
 note left of IMappedRegion
@@ -355,44 +145,62 @@ note left of IMappedRegion
     different processes / threads trying to create / open the same region.
 end note
 
+}
+
+together {
+
+class IMappedRegionProperties <<interface>> {}
+
+note right of IMappedRegionProperties
+    This is an interface which is not exposed to the users directly. It is used by the implementer
+    of a MappedRegion to provide properties to IMappedRegion::AdjustToProperties method. We don't pass
+    it to the IMappedRegionFactory functions because the Create / Open functions receive different 
+    parameters and IMappedRegion::AdjustToProperties is only used in the Create case which means that 
+    it may contain properties which are not relevant when opening a region. The MappedRegion may store 
+    a copy of the relevant properties internally or simply construct a new instance of the properties when 
+    calling IMappedRegion::AdjustToProperties.
+end note
+
+class PosixNamedMappedRegionProperties implements IMappedRegionProperties {
+    + size_t: size_
+    + PermissionsType: permissions_
+}
+
+class QnxAnonymousMappedRegionProperties implements IMappedRegionProperties {
+    + size_t: size_
+}
+
+}
+
+together {
+
 interface NamedMappedRegion <<interface>> implements IMappedRegion {
     + GetPath() : const string&
     + UnlinkOnDestruction(bool) : void
 }
 
-together {
-    class ILockFileFactory <<interface>> {
-        +{virtual} Create(std::string path) : Result<LockFile>
-    }
-
-    class LockFileFactory implements ILockFileFactory {
-        +{override} Create(std::string path) : Result<LockFile>
-    }
-
-    class LockFile {
-        - LockFile(std::string path)
-    }
-
     class PosixNamedMappedRegion <<impl>> implements NamedMappedRegion {
         - fd_ : FileDescriptor
+        - path_ : string
         - base_address_ : void*
         - size_ : size_t
-        - path_ : string
+        - permissions_ : PermissionsType
         --
-        -PosixNamedMappedRegion(optional<InitializationCallback>, path, size, perms, unique_ptr<ILockFileFactory>)
+        -PosixNamedMappedRegion(optional<RegionInitializeCallback>, path, size, perms, unique_ptr<ILockFileFactory>)
         + GetFileDescriptor() : FileDescriptor
+        + {static} GetId(path: const string&) : IdType
     }
 
-    class TypedNamedMappedRegion <<impl>> implements NamedMappedRegion {
-        - fd_ : FileDescriptor
-        - base_address_ : void*
-        - size_ : size_t
-        - typed_memory_ : TypedMemory*
-        - path_ : string
-        --
-        -TypedNamedMappedRegion(optional<InitializationCallback>, path, size, perms)
-        + GetFileDescriptor() : FileDescriptor
-    }
+    ' class TypedNamedMappedRegion <<impl>> implements NamedMappedRegion {
+    '     - fd_ : FileDescriptor
+    '     - base_address_ : void*
+    '     - size_ : size_t
+    '     - typed_memory_ : TypedMemory*
+    '     - path_ : string
+    '     --
+    '     -TypedNamedMappedRegion(optional<RegionInitializeCallback>, path, size, perms)
+    '     + GetFileDescriptor() : FileDescriptor
+    ' }
 }
 
 together {
@@ -404,27 +212,28 @@ together {
         -QnxAnonymousMappedRegion(optional<InitializationCallback>, id, size)
         + GetFileDescriptor() : FileDescriptor
         + CreateHandle(pid) : shm_handle_t
+        + {static} GetId(id) : IdType
     }
 
-    class LinuxAnonymousMappedRegion <<impl>> implements IMappedRegion {
-        - fd_ : FileDescriptor
-        - base_address_ : void*
-        - size_ : size_t
-        --
-        -LinuxAnonymousMappedRegion(optional<InitializationCallback>, id, size)
-        + GetFileDescriptor() : FileDescriptor
-    }
+    ' class LinuxAnonymousMappedRegion <<impl>> implements IMappedRegion {
+    '     - fd_ : FileDescriptor
+    '     - base_address_ : void*
+    '     - size_ : size_t
+    '     --
+    '     -LinuxAnonymousMappedRegion(optional<InitializationCallback>, id, size)
+    '     + GetFileDescriptor() : FileDescriptor
+    ' }
 
-    class QnxTypedAnonymousMappedRegion <<impl>> implements IMappedRegion {
-        - fd_ : FileDescriptor
-        - base_address_ : void*
-        - size_ : size_t
-        - typed_memory_ : TypedMemory*
-        -QnxTypedAnonymousMappedRegion(optional<InitializationCallback>, id, size)
-        --
-        + GetFileDescriptor() : FileDescriptor
-        + CreateHandle(pid) : shm_handle_t
-    }
+    ' class QnxTypedAnonymousMappedRegion <<impl>> implements IMappedRegion {
+    '     - fd_ : FileDescriptor
+    '     - base_address_ : void*
+    '     - size_ : size_t
+    '     - typed_memory_ : TypedMemory*
+    '     -QnxTypedAnonymousMappedRegion(optional<InitializationCallback>, id, size)
+    '     --
+    '     + GetFileDescriptor() : FileDescriptor
+    '     + CreateHandle(pid) : shm_handle_t
+    ' }
 }
 
 together {
@@ -432,6 +241,22 @@ together {
         + Apply(fd, permissions) : void
         + CompensateUmask(fd, mode) : void
     }
+}
+
+together {
+
+    class ILockFileFactory <<interface>> {
+        +{virtual} Create(std::string path) : Result<LockFile>
+    }
+
+    class LockFileFactory implements ILockFileFactory {
+        +{override} Create(path: string) : Result<LockFile>
+    }
+
+    class LockFile {
+        - LockFile(path: string)
+    }
+
 }
 
 enum SharedMemoryErrorCode <<enum>> {
@@ -444,18 +269,14 @@ enum SharedMemoryErrorCode <<enum>> {
     RegionAlreadyManaged
 }
 
+ILockFileFactory -> LockFile
 
-' IMappedRegion <|-- NamedMappedRegion
-' NamedMappedRegion <|.. PosixNamedMappedRegion
-' NamedMappedRegion <|.. TypedNamedMappedRegion
-' IMappedRegion <|.. QnxAnonymousMappedRegion
-' IMappedRegion <|.. LinuxAnonymousMappedRegion
-' IMappedRegion <|.. QnxTypedAnonymousMappedRegion
-LockFile -> lock_file_mode
-
-
-' PosixNamedMappedRegion ..> LockFile : uses
+PosixNamedMappedRegion ..> ILockFileFactory
 PosixNamedMappedRegion ..> AccessControlApplier : uses
+
+IMappedRegion -> IMappedRegionProperties
+' PosixNamedMappedRegion -> PosixNamedMappedRegionProperties
+' QnxAnonymousMappedRegion -> QnxAnonymousMappedRegionProperties
 
 MappedRegionFactory ..> IMappedRegion : creates implementations
 

@@ -56,6 +56,10 @@ together {
         the note on the MappedRegionFactory for more details.
     end note
 
+}
+
+together {
+
     interface ISharedMemoryResourceRegistry {
         - ISharedMemoryResourceRegistry()
         + {virtual} LookupById(id) : ISharedMemoryResource*
@@ -97,6 +101,7 @@ together {
         SharedMemoryResourceRegistrySingleton will dispatch to SharedMemoryResourceRegistry.
         For testing, InjectMock can be used to inject a mock ISharedMemoryResourceRegistry.
     end note
+    
 }
 
 together {
@@ -132,13 +137,7 @@ class SharedMemoryResource <<impl>> {
     - control_block_ : ControlBlock&
     - strategy_ : unique_ptr<IAllocationStrategy>
     ..
-
-    + SharedMemoryResource(shared_ptr<IMappedRegion>, unique_ptr<IAllocationStrategy>, unique_ptr<InitializeCallback>)
     + SharedMemoryResource(shared_ptr<IMappedRegion>, unique_ptr<IAllocationStrategy>)
-
-    ' + {static} Create(shared_ptr<IMappedRegion>, unique_ptr<IAllocationStrategy>, unique_ptr<InitializeCallback>)
-    ' + {static} Open(shared_ptr<IMappedRegion>, unique_ptr<IAllocationStrategy>)
-
 
     + {override} GetBaseAddress() : void*
     + {override} GetUsableBaseAddress() : void*
@@ -147,25 +146,11 @@ class SharedMemoryResource <<impl>> {
 }
 
 together {
-    class LockFile <<RAII>> {
-            static std::optional<LockFile> Create(std::string path) noexcept;
-    static std::optional<LockFile> CreateOrOpen(std::string path, bool take_ownership) noexcept;
-    static std::optional<LockFile> Open(std::string path) noexcept;
-
-    }
 
     class ControlBlock {
         + memory_resource_proxy: MemoryResourceProxy
         + AllocationSTrategyType : enum 
     }
-
-    ' The control block depends on the allocation strategy (e.g. already_allocated_bytes, do we need atomic or mutex etc).
-    ' We need a "dynamic" control block which is allocated by the allocation strategy. here we store things specific to the strategy.
-
-    '  Do we need pmr shared ptrs? (can't be in shm)
-
-    ' Be explicit in design that the libraray is intended for shared memory management. You shouldn't use it for non-shared memory scenarios.
-
 
     interface IAllocationStrategy <<interface>> {
         + {abstract} Allocate(free_start, free_end, bytes, align) : void*
@@ -222,21 +207,13 @@ together {
 PmrBase <|-- ISharedMemoryResource
 ISharedMemoryResource <|.. SharedMemoryResource
 
-' IMappedRegion <|-- NamedMappedRegion
-' NamedMappedRegion <|.. PosixNamedMappedRegion
-' NamedMappedRegion <|.. TypedNamedMappedRegion
-' IMappedRegion <|.. QnxAnonymousMappedRegion
-' IMappedRegion <|.. LinuxAnonymousMappedRegion
-' IMappedRegion <|.. QnxTypedAnonymousMappedRegion
-LockFile -> lock_file_mode
-
 SharedMemoryResource ..> ControlBlock : places at base
 SharedMemoryResource *--> IAllocationStrategy
 
 SharedMemoryResourceRegistrySingleton *.. ISharedMemoryResourceRegistry : owns
 
 SharedMemoryFactory ..> SharedMemoryResource : creates
-SharedMemoryFactory .right.> ISharedMemoryResourceRegistry
+SharedMemoryFactory ..> SharedMemoryResourceRegistrySingleton : Registers resources
 
 PolymorphicOffsetPtrAllocator -right-> MemoryResourceProxy : holds id
 MemoryResourceProxy -up-> SharedMemoryResourceRegistrySingleton : LookupById

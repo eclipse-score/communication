@@ -22,3 +22,10 @@ SharedMemoryResource o--> IMappedRegion : holds shared_ptr
 ' Clean up new stuff added (persistent memory region registry, adjust to properties etc)
 ' Clean up lock file 
 ' Clean up initialization callback in sharedmemoryresource / factory which needs to be passed down to MappedRegionFactory
+
+'     ' The control block depends on the allocation strategy (e.g. already_allocated_bytes, do we need atomic or mutex etc).
+'     ' We need a "dynamic" control block which is allocated by the allocation strategy. here we store things specific to the strategy.
+
+'     '  Do we need pmr shared ptrs? (can't be in shm)
+
+'     ' Be explicit in design that the libraray is intended for shared memory management. You shouldn't use it for non-shared memory scenarios.

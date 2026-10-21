@@ -1,5 +1,5 @@
 @startuml seq_11_shared_memory_resource_factory_create
-title 11. SharedMemoryFactory: Create
+title 11. SharedMemoryFactory: Create resource
 skinparam defaultFontSize 11
 skinparam sequenceMessageAlign center
 
@@ -18,26 +18,26 @@ participant "LockFile: instance" as lock_file
 
 activate User
 
-Create mapped_region_registry
-User -> mapped_region_registry : make_unique<MappedRegionRegistry>()
-activate mapped_region_registry
+' Create mapped_region_registry
+' User -> mapped_region_registry : make_unique<MappedRegionRegistry>()
+' activate mapped_region_registry
 
-mapped_region_registry --> User : Return mapped_region_registry
-deactivate mapped_region_registry
+' mapped_region_registry --> User : Return mapped_region_registry
+' deactivate mapped_region_registry
 
-Create mapped_region_factory
-User -> mapped_region_factory : Construct(move(mapped_region_registry))
-activate mapped_region_factory
+' Create mapped_region_factory
+' User -> mapped_region_factory : Construct(move(mapped_region_registry))
+' activate mapped_region_factory
 
-mapped_region_factory --> User : Return mapped_region_factory
-deactivate mapped_region_factory
+' mapped_region_factory --> User : Return mapped_region_factory
+' deactivate mapped_region_factory
 
-Create shared_memory_factory
-User -> shared_memory_factory : Construct(move(mapped_region_factory))
-activate shared_memory_factory
+' Create shared_memory_factory
+' User -> shared_memory_factory : Construct(move(mapped_region_factory))
+' activate shared_memory_factory
 
-shared_memory_factory --> User : Return shared_memory_factory
-deactivate shared_memory_factory
+' shared_memory_factory --> User : Return shared_memory_factory
+' deactivate shared_memory_factory
 
 Create monotonic_allocation_strategy
 User -> monotonic_allocation_strategy : Construct()
@@ -48,6 +48,15 @@ deactivate monotonic_allocation_strategy
 
 User -> shared_memory_factory : CreateNamed(InitializeCallback, move(monotonic_allocation_strategy), path, size, perms)
 activate shared_memory_factory
+
+shared_memory_factory -> shared_memory_factory : Create RegionInitializeCallback
+
+note right of shared_memory_factory
+RegionInitializeCallback:
+    -Construct ControlBlock in shared memory
+    -Call IAllocationStrategy::ConstructAllocationSpecificControlBlock
+    -Call InitializeCallback
+end note
 
 shared_memory_factory -> mapped_region_factory : CreateNamed(path, size, perms)
 activate mapped_region_factory
