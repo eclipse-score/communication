@@ -19,6 +19,7 @@ cc_library(
     hdrs = [
         "someip_array.h",
         "someip_layout.h",
+        "someip_max_size.h",
         "someip_scalar.h",
         "someip_string.h",
         "someip_wire_format.h",
@@ -70,6 +71,18 @@ cc_unit_test(
 cc_unit_test(
     name = "someip_string_test",
     srcs = ["someip_string_test.cpp"],
+    deps = [
+        ":someip_strategy",
+        ":someip_strategy_test_fixtures",
+        "@score_baselibs//score/static_reflection_with_serialization/visitor",
+        "@score_baselibs//score/serialization",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_unit_test(
+    name = "someip_max_size_test",
+    srcs = ["someip_max_size_test.cpp"],
     deps = [
         ":someip_strategy",
         ":someip_strategy_test_fixtures",
