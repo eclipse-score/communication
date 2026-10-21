@@ -11,6 +11,13 @@
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
 
-@startuml class_diagram
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("Proxy/skeleton code does not match mw::com configuration", "Communication.CodeDoesNotMatchConfiguration")
+$OrGate("Gate1", "Communication.CodeDoesNotMatchConfiguration")
+$RootCause("JSON configuration edited without syncing proxy/skeleton code (or vice versa)", "MissingSyncCodeAndConfiguration", "Gate1")
+$RootCause("Skeleton and Proxy built/deployed from inconsistent revisions of underlying datatypes", "DifferentRevisionsForProxyAndSkeletonBuilt", "Gate1")
 
 @enduml

@@ -28,7 +28,9 @@ SampleAllocateeTracker::~SampleAllocateeTracker() noexcept
     {
         score::mw::log::LogFatal("lola") << "SampleAllocateeTracker destroyed while still holding" << num_allocated
                                          << "outstanding SampleAllocateePtr instance(s), terminating.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        // Reachable in principle, but must not be reached in production: A SampleAllocateePtr can outlive its owner. In
+        // production all SampleAllocateePtr instances must be released before the tracker is destroyed.
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
 }
 

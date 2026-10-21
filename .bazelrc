@@ -29,7 +29,6 @@ build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 # Use the hermetic "script" bootstrap, which resolves the interpreter from a registered rules_python toolchain instead.
 build --@rules_python//python/config_settings:bootstrap_impl=script
 
-common --@score_baselibs//score/json:base_library=nlohmann
 common --//score/memory/shared/flags:use_typedshmd=False
 common --@score_baselibs//score/analysis/tracing/generic_trace_library:implementation=@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation
 
@@ -84,14 +83,14 @@ build --per_file_copt=external/.*googletest.*@-Wno-error=unused-macros
 build --host_per_file_copt=external/.*googletest.*@-Wno-error=unused-macros
 
 # google_benchmark
-build --per_file_copt=external/.*google_benchmark.*@-Wno-error=sign-conversion
-build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=sign-conversion
-build --per_file_copt=external/.*google_benchmark.*@-Wno-error=switch-enum
-build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=switch-enum
-build --per_file_copt=external/.*google_benchmark.*@-Wno-error=undef
-build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=undef
-build --per_file_copt=external/.*google_benchmark.*@-Wno-error=suggest-attribute=format
-build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=suggest-attribute=format
+# Ideally we would just do not treat as error individual warnings. However, some of the warnings
+# are specific to gcc or clang. This prevents to spell them here otherwise it will raise a warning about
+# unknown parameter on the other compiler.
+# If https://github.com/bazelbuild/rules_cc/issues/209#issuecomment-6211366257 would be available we could
+# disable them more prceisely
+# It could also be revisted if google_benchmark is updated and the new version fixes some warnings
+build --per_file_copt=external/.*google_benchmark.*@-w
+build --host_per_file_copt=external/.*google_benchmark.*@-w
 
 # json_schema_validator
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch
@@ -109,29 +108,11 @@ build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=float-e
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=shadow
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=shadow
 
-# score_baselibs
-# Issue reported in https://github.com/eclipse-score/baselibs/issues/631
-build --per_file_copt=external/.*score_baselibs.*string_manipulation.*arguments.*@-Wno-error=sign-conversion
-build --host_per_file_copt=external/.*score_baselibs.*string_manipulation.*arguments.*@-Wno-error=sign-conversion
-# Issue reported in https://github.com/eclipse-score/baselibs/issues/686
-build --per_file_copt=external/.*score_baselibs.*vajson.*@-Wno-error=sign-conversion
-build --host_per_file_copt=external/.*score_baselibs.*vajson.*@-Wno-error=sign-conversion
-build --per_file_copt=external/.*score_baselibs.*vajson.*@-Wno-error=shadow
-build --host_per_file_copt=external/.*score_baselibs.*vajson.*@-Wno-error=shadow
-
 # score_qnx_unit_tests
 # Issue reported in https://github.com/eclipse-score/qnx_unit_tests/issues/44
 build --per_file_copt=external/.*score_qnx_unit_tests.*virtio9p.*@-Wno-error=sign-conversion
 build --host_per_file_copt=external/.*score_qnx_unit_tests.*virtio9p.*@-Wno-error=sign-conversion
 
-# Places with warnings that we need to fix
-# Issue to track it https://github.com/eclipse-score/communication/issues/1180
-build --per_file_copt=score/message_passing/qnx_dispatch_mocked_server.*@-Wno-error=sign-conversion
-build --host_per_file_copt=score/message_passing/qnx_dispatch_mocked_server.*@-Wno-error=sign-conversion
-build --per_file_copt=score/message_passing/qnx_dispatch_engine_test.*@-Wno-error=sign-conversion
-build --host_per_file_copt=score/message_passing/qnx_dispatch_engine_test.*@-Wno-error=sign-conversion
-build --per_file_copt=score/message_passing/dispatch_thread_runner_test.*@-Wno-error=sign-conversion
-build --host_per_file_copt=score/message_passing/dispatch_thread_runner_test.*@-Wno-error=sign-conversion
 
 # Enable the experimental FlatBuffers configuration path.
 build:flatbuffers --//score/mw/com/flags:experimental_enable_flatbuffers_configuration=True

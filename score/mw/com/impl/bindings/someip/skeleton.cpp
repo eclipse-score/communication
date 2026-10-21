@@ -30,9 +30,9 @@ std::unique_ptr<Skeleton> Skeleton::Create(const InstanceIdentifier& identifier)
     return std::make_unique<Skeleton>(identifier);
 }
 
-Skeleton::Skeleton(const InstanceIdentifier& identifier) noexcept
+Skeleton::Skeleton(InstanceIdentifier identifier) noexcept
     : SkeletonBinding{},
-      identifier_{identifier},
+      identifier_{std::move(identifier)},
       quality_type_{InstanceIdentifierView{identifier_}.GetServiceInstanceDeployment().asilLevel_},
       event_data_storages_{}
 {

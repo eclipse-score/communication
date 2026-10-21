@@ -389,10 +389,10 @@ keeping the binary size unchanged for non-FlatBuffer deployments.
 
 See [structural_view_refactored.puml](structural_view_refactored.puml) for the complete class diagram.
 
-<img alt="STRUCTURAL_VIEW_REFACTORED" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/configuration/structural_view_refactored.puml">
+<img alt="STRUCTURAL_VIEW_REFACTORED" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/configuration/dependability/structural_view_refactored.puml">
 
 ## Sequence View: Parsing & Validation
 
 See [sequence_parsing_view.puml](sequence_parsing_view.puml) for the parsing and validation sequence.
 
-<img alt="SEQUENCE_PARSING_VIEW" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/configuration/sequence_parsing_view.puml">
+<img alt="SEQUENCE_PARSING_VIEW" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/impl/configuration/dependability/sequence_parsing_view.puml">

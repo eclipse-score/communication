@@ -67,7 +67,7 @@ git clone --depth=1 https://github.com/eclipse-score/cicd-actions
 after which you can run
 
 ```bash
-bash <path to cicd-actions repository>/unblock_user_namespace_for_linux_sandbox/action_callable.sh
+bash <path to cicd-actions repository>/unblock-user-namespace-for-linux-sandbox/action_callable.sh
 ```
 
 Note. To take this into effect force, a bazel restart by shutting it down 1st

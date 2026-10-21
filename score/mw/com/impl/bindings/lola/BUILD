@@ -1181,6 +1181,7 @@ cc_unit_test(
         ":provider_event_data_control_local_view",
         ":slot_decrementer",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "@score_baselibs//score/quality/compiler_warnings",
     ],
 )
 
