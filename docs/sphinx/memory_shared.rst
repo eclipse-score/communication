@@ -23,25 +23,10 @@ Overview
 --------
 
 The shared memory module provides an abstraction layer for allocating and
-accessing data in POSIX shared memory, used as the zero-copy transport
+accessing data in shared memory, used as the zero-copy transport
 foundation beneath LoLa (mw::com). It is an implementation detail of
-``ara::com`` and is not exposed as a customer-facing API; usage of shared
-memory and its allocators is fully transparent to an ``ara``-API user.
-
-Key Components
----------------
-
-* **OffsetPtr**: a process-relative pointer type that is safe to store in
-  shared memory, since raw pointers would be process-specific
-* **PolymorphicOffsetPtrAllocator**: a polymorphic allocator that can target
-  either shared memory or heap storage, decided at runtime depending on the
-  negotiated transport (zero-copy vs. network serialization)
-* **ManagedMemoryResource**: the abstract memory-resource interface used by
-  containers to allocate memory, implemented by ``SharedMemoryResource`` and
-  ``HeapMemoryResource``
-* **MemoryResourceProxy** / **MemoryResourceRegistry**: a process-specific
-  indirection mechanism that identifies a memory resource without storing
-  raw pointers (or v-tables) inside shared memory
+``mw::com`` and is not exposed as a customer-facing API; usage of shared
+memory and its allocators is fully transparent to a ``mw::com``-API user.
 
 .. toctree::
    :hidden:
