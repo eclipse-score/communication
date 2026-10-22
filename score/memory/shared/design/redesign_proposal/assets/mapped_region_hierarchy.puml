@@ -162,8 +162,10 @@ note right of IMappedRegionProperties
 end note
 
 class PosixNamedMappedRegionProperties implements IMappedRegionProperties {
-    + size_t: size_
-    + PermissionsType: permissions_
+    + size_ : size_t
+    + fd_ : int
+    + path_ : string
+    + permissions_ : PermissionsType
 }
 
 class QnxAnonymousMappedRegionProperties implements IMappedRegionProperties {
@@ -186,7 +188,7 @@ interface NamedMappedRegion <<interface>> implements IMappedRegion {
         - size_ : size_t
         - permissions_ : PermissionsType
         --
-        -PosixNamedMappedRegion(optional<RegionInitializeCallback>, path, size, perms, unique_ptr<ILockFileFactory>)
+        - PosixNamedMappedRegion(optional<RegionInitializeCallback>, PosixNamedMappedRegionProperties, unique_ptr<ILockFileFactory>)
         + GetFileDescriptor() : FileDescriptor
         + {static} GetId(path: const string&) : IdType
     }
