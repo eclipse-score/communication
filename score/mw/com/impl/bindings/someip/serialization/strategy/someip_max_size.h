@@ -42,6 +42,15 @@ namespace serialization
 // -----------------------------------------------------------------------------
 namespace someip_detail
 {
+template <typename>
+struct is_static_vector : std::false_type
+{
+};
+template <typename U, std::size_t M>
+struct is_static_vector<score::cpp::static_vector<U, M>> : std::true_type
+{
+};
+
 struct MaxSizeSink
 {
     std::size_t         bytes{0U};
@@ -72,7 +81,15 @@ void visit_as(MaxSizeSink& sink, score::cpp::static_vector<T, N>& /*unused*/)
 {
     sink.bytes += sink.length_field_bytes;  // length field
     MaxSizeSink element{};
-    element.layout = sink.layout;  // sink.layout is the array element's layout here; nested struct fields use it
+    if (sink.layout != nullptr)
+    {
+        const ElementLayout element_layout = sink.layout->default_;
+        // A nested array element takes its own length-field width and alignment from the array's nested layout; a
+        // struct element instead consults that nested layout's fields, and a scalar element ignores both.
+        element.length_field_bytes = element_layout.length_field_bytes;
+        element.alignment_bits = element_layout.alignment_bits;
+        element.layout = is_static_vector<T>::value ? element_layout.nested : sink.layout;
+    }
     T probe{};
     ::score::common::visitor::visit(element, probe);
     sink.bytes += N * element.bytes;
