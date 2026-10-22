@@ -207,14 +207,21 @@ Result<std::size_t> ProxyEvent<SampleType>::GetNewSamples(F&& receiver, std::siz
         return MakeUnexpected(ComErrc::kMaxSamplesReached);
     }
 
+    // The e2e_receiver wraps the user provided receiver and completes the E2E result the binding attached to the
+    // sample before forwarding it.
+    auto e2e_receiver = [this, receiver = std::forward<F>(receiver)](SamplePtr<SampleType> sample_ptr) {
+        AttachE2EResult(sample_ptr);
+        receiver(std::move(sample_ptr));
+    };
+
     // The tracing_receiver created here always dispatches to the user provided receiver. Opposed to the user provided
     // receiver, which gets a typed sample (SamplePtr<SampleType>), it expects to receive type-erased sample#+
     // (SamplePtr<void>). Because this is what the type-erased binding layer provides. Before the tracing_receiver
     // dispatches to the user provided receiver, it conditionally traces the received sample and then does a "rebind"
     // from the type-erased SamplePtr<void>, the binding provides to the typed SamplePtr<SampleType>, the user provided
     // receiver expects.
-    auto tracing_receiver =
-        tracing::CreateTracingGetNewSamplesCallback<SampleType, F>(tracing_data_, *binding_, std::forward<F>(receiver));
+    auto tracing_receiver = tracing::CreateTracingGetNewSamplesCallback<SampleType, decltype(e2e_receiver)>(
+        tracing_data_, *binding_, std::move(e2e_receiver));
 
     const auto get_new_samples_result = binding_->GetNewSamples(std::move(tracing_receiver), guard_factory);
     if (!get_new_samples_result.has_value())
