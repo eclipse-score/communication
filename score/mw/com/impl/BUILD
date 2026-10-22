@@ -453,6 +453,7 @@ cc_library(
         ":proxy_binding",
         ":proxy_event_binding",
         ":sample_reference_tracker",
+        "//score/mw/com/impl/e2e:e2e_summary",
         "//score/mw/com/impl/mocking:i_proxy_event",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing:proxy_event_tracing_data",

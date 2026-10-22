@@ -14,6 +14,7 @@
 #ifndef SCORE_MW_COM_IMPL_PROXY_EVENT_BASE_H
 #define SCORE_MW_COM_IMPL_PROXY_EVENT_BASE_H
 
+#include "score/mw/com/impl/e2e/e2e_summary.h"
 #include "score/mw/com/impl/enable_reference_to_moveable_from_this.h"
 #include "score/mw/com/impl/event_receive_handler.h"
 #include "score/mw/com/impl/flag_owner.h"
@@ -174,27 +175,18 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
 
     /**
      * \brief Completes the E2E result of a sample delivered by this event's binding.
-     * \details The binding only provides data_integrity/sequence on the sample. This adds the binding-independent
-     *          verdict and stores it on the sample. The summary below is a stub (historical health tracking and the
-     *          final summary builder are not implemented yet).
+     * \details The binding only provides data_integrity/sequence on the sample (RawCheckOutcome). This adds the
+     *          binding-independent historical health and summary via e2e::BuildE2EResult() and stores the complete
+     *          result on the sample.
      *          Only ProxyEventBase may set the result on a SamplePtr; see SamplePtr::SetE2EResult(). Derived,
      *          binding-independent event classes call this from their GetNewSamples() wrapper.
      */
     template <typename SampleType>
-    void AttachE2EResult(SamplePtr<SampleType>& sample) const
+    void AttachE2EResult(SamplePtr<SampleType>& sample)
     {
-        auto result = sample.GetE2EResult();
-        const bool checked = (result.data_integrity != e2e::DataIntegrityStatus::kDisabled) ||
-                             (result.sequence != e2e::SequenceStatus::kDisabled);
-        if (checked)
-        {
-            const bool sequence_ok = (result.sequence == e2e::SequenceStatus::kOk) ||
-                                     (result.sequence == e2e::SequenceStatus::kOkGapWithinThreshold);
-            result.summary = ((result.data_integrity == e2e::DataIntegrityStatus::kOk) && sequence_ok)
-                                 ? e2e::Summary::kOk
-                                 : e2e::Summary::kError;
-        }
-        sample.SetE2EResult(result);
+        const auto raw_result = sample.GetE2EResult();
+        sample.SetE2EResult(
+            e2e::BuildE2EResult(e2e::RawCheckOutcome{raw_result.data_integrity, raw_result.sequence}, health_tracker_));
     }
 
   protected:
@@ -224,6 +216,9 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     IProxyEventBase* proxy_event_base_mock_;
 
   private:
+    /// \brief Historical E2E health of this event. Disabled until a health tracker configuration is provided.
+    e2e::HealthTracker health_tracker_{e2e::HealthTrackerConfiguration{}};
+
     /// \brief Expires the #receive_handler_scope_ in case not being called in the context of an EventReceiveHandler
     ///        (because trying to expire the scope in which we are running, would lead to a deadlock)
     void ExpireReceiveHandlerScopeIfNotInHandler();

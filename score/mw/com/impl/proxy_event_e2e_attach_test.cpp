@@ -81,11 +81,12 @@ TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleSummaryIsOkForValidBindingResu
     // When receiving the sample
     const auto delivered_result = GetNewSampleResult();
 
-    // Then the delivered SamplePtr carries the binding's pair and a binding-independent summary of kOk
+    // Then the delivered SamplePtr carries the binding's pair and, as historical health is disabled, a summary of
+    // kOkWithDisabledChecks
     EXPECT_EQ(delivered_result.data_integrity, e2e::DataIntegrityStatus::kOk);
     EXPECT_EQ(delivered_result.sequence, e2e::SequenceStatus::kOk);
     EXPECT_EQ(delivered_result.historical_health, e2e::HistoricalHealthStatus::kDisabled);
-    EXPECT_EQ(delivered_result.summary, e2e::Summary::kOk);
+    EXPECT_EQ(delivered_result.summary, e2e::Summary::kOkWithDisabledChecks);
 }
 
 TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleSummaryIsOkForSequenceGapWithinThreshold)
@@ -97,9 +98,9 @@ TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleSummaryIsOkForSequenceGapWithi
     // When receiving the sample
     const auto delivered_result = GetNewSampleResult();
 
-    // Then the summary is still kOk
+    // Then the sequence status is kept and the summary reports the disabled historical health check
     EXPECT_EQ(delivered_result.sequence, e2e::SequenceStatus::kOkGapWithinThreshold);
-    EXPECT_EQ(delivered_result.summary, e2e::Summary::kOk);
+    EXPECT_EQ(delivered_result.summary, e2e::Summary::kOkWithDisabledChecks);
 }
 
 TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleSummaryIsErrorForBindingDataIntegrityError)

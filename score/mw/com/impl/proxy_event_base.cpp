@@ -91,6 +91,7 @@ Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count)
     if (current_state == SubscriptionState::kNotSubscribed)
     {
         tracker_->Reset(max_sample_count);
+        health_tracker_.Reset();
         const auto subscribe_result = binding_->Subscribe(max_sample_count);
         if (!subscribe_result.has_value())
         {
