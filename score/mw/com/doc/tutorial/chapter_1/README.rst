@@ -182,7 +182,7 @@ Provider application
 Now let's have a look at the implementation of the provider of the `HelloWorldService`. It is
 contained in main function of `provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/provider.cpp>`__.
 
-The 1st important step happens in the provider's `main` function:
+The 1st important step happens in the provider's application:
 
 .. literalinclude:: provider.cpp
    :language: cpp
@@ -357,8 +357,8 @@ in parallel at maximum. This call could fail, if the `max_sample_count` is too h
 that many samples in parallel, because he hasn't reserved enough resources in its configuration, which we will have a
 look at later.
 
-After the `Subscribe` call succeeded (returned `Result<void>` contains no error), our consumer app now enters a loop
-(in the consumer loop), where it cyclically checks for updates for the "message" event.
+After the `Subscribe` call succeeded (returned `Result<void>` contains no error), our consumer app now enters a loop,
+where it cyclically checks for updates for the "message" event.
 
 The API to do this, is the `ProxyEvent::GetNewSamples` API. You see the call here:
 
