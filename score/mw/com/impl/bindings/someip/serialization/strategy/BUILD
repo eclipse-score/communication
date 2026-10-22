@@ -122,3 +122,15 @@ cc_unit_test(
         "@score_baselibs//score/language/futurecpp",
     ],
 )
+
+cc_unit_test(
+    name = "someip_nested_test",
+    srcs = ["someip_nested_test.cpp"],
+    deps = [
+        ":someip_strategy",
+        ":someip_strategy_test_fixtures",
+        "@score_baselibs//score/static_reflection_with_serialization/visitor",
+        "@score_baselibs//score/serialization",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
