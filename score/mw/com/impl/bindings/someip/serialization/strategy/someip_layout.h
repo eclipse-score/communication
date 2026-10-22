@@ -83,11 +83,15 @@ using ByteOrder = memory::Endianness;
 
 /// @brief Per-element SOME/IP wire properties. Supplied out-of-band by the datatype's generated layout, so the user's
 /// data type is never decorated.
+struct SomeIpLayout;
+
 struct ElementLayout
 {
     ByteOrder     byte_order{ByteOrder::kBigEndian};
     std::uint16_t alignment_bits{kDefaultAlignmentBits};         // 8/16/32/64/128/256; 8 == packed (no padding)
     std::uint8_t  length_field_bytes{kDefaultLengthFieldBytes};  // width of the on-wire length prefix for dynamic members (string/vector)
+    // Layout for this element's own sub-structure (a nested struct's fields). Null means that subtree is uniform.
+    const SomeIpLayout* nested{nullptr};
 };
 
 /// @brief Layout of a whole datatype: a default applied to every element, plus optional per-field overrides indexed by
