@@ -138,6 +138,63 @@ TEST_F(SomeIpStrategyFixture, PadsVariableLengthMemberLastInNestedStructButNotIn
     EXPECT_EQ(GetMaxSize<OuterArray>(layout), 1U + (1U + 4U + 3U) + 4U);
 }
 
+struct Matrix
+{
+    // Array of arrays: outer uses a 2-byte length field, inner a 1-byte one, inner scalars little-endian.
+    score::cpp::static_vector<score::cpp::static_vector<std::uint16_t, 2U>, 2U> rows{};  // field 0
+};
+SCORE_STRUCT_VISITABLE(Matrix, rows)
+
+TEST_F(SomeIpStrategyFixture, ArrayOfArrayUsesPerLevelLengthFieldAndByteOrder)
+{
+    // Given an array-of-array layout: the outer array has a 2-byte length field, each inner array a 1-byte one, and the
+    // inner scalars are little-endian -- all supplied through the outer array's nested layout.
+    static constexpr SomeIpLayout kInnerLayout{{ByteOrder::kLittleEndian, kAlign8Bits, 1U}, nullptr, 0U};
+    static constexpr ElementLayout kRootFields[] = {
+        {ByteOrder::kBigEndian, kAlign8Bits, 2U, &kInnerLayout},  // rows: 2-byte outer length, inner via nested layout
+    };
+    const SomeIpLayout layout{{ByteOrder::kBigEndian, kAlign8Bits}, kRootFields, 1U};
+    const SomeIpStrategy strategy{layout};
+    const Serializer<SomeIpStrategy> unit{strategy};
+    std::vector<std::uint8_t> buffer{};
+
+    Matrix value{};
+    value.rows.push_back(score::cpp::static_vector<std::uint16_t, 2U>{0x0102, 0x0304});
+    value.rows.push_back(score::cpp::static_vector<std::uint16_t, 2U>{0x0506});
+
+    // ... when the matrix is serialized ...
+    auto result = unit.Serialize(value, buffer);
+    ASSERT_TRUE(result.has_value());
+
+    // ... then the outer length is 2 bytes, each inner length 1 byte, and the scalars little-endian.
+    ASSERT_EQ(buffer.size(), 2U + (1U + 4U) + (1U + 2U));
+    auto it = buffer.cbegin();
+    EXPECT_EQ(*it++, 0x00);  // outer length = 2 (2-byte big-endian)
+    EXPECT_EQ(*it++, 0x02);
+    EXPECT_EQ(*it++, 0x02);  // row 0: inner length = 2 (1 byte)
+    EXPECT_EQ(*it++, 0x02);  // 0x0102 little-endian
+    EXPECT_EQ(*it++, 0x01);
+    EXPECT_EQ(*it++, 0x04);  // 0x0304 little-endian
+    EXPECT_EQ(*it++, 0x03);
+    EXPECT_EQ(*it++, 0x01);  // row 1: inner length = 1 (1 byte)
+    EXPECT_EQ(*it++, 0x06);  // 0x0506 little-endian
+    EXPECT_EQ(*it++, 0x05);
+
+    // ... and it deserializes back to the original matrix.
+    Matrix decoded{};
+    result = unit.DeSerialize(buffer, decoded);
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(decoded.rows.size(), 2U);
+    ASSERT_EQ(decoded.rows[0].size(), 2U);
+    EXPECT_EQ(decoded.rows[0][0], 0x0102);
+    EXPECT_EQ(decoded.rows[0][1], 0x0304);
+    ASSERT_EQ(decoded.rows[1].size(), 1U);
+    EXPECT_EQ(decoded.rows[1][0], 0x0506);
+
+    // GetMaxSize mirrors the per-level layout: outer length(2) + 2 * [inner length(1) + capacity 2 * sizeof(uint16)].
+    EXPECT_EQ(GetMaxSize<Matrix>(layout), 2U + (2U * (1U + (2U * sizeof(std::uint16_t)))));
+}
+
 }  // namespace
 }  // namespace serialization
 }  // namespace score
