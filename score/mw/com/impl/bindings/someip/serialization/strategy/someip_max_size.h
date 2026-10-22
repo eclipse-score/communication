@@ -72,7 +72,7 @@ void visit_as(MaxSizeSink& sink, score::cpp::static_vector<T, N>& /*unused*/)
 {
     sink.bytes += sink.length_field_bytes;  // length field
     MaxSizeSink element{};
-    element.layout = sink.layout;  // propagate layout so nested element fields use the configured length-field/alignment
+    element.layout = sink.layout;  // sink.layout is the array element's layout here; nested struct fields use it
     T probe{};
     ::score::common::visitor::visit(element, probe);
     sink.bytes += N * element.bytes;
@@ -90,20 +90,19 @@ void visit_as_struct(MaxSizeSink& sink, S&& /*unused*/, Args&... fields)
 {
     std::size_t index{0U};
     const auto handle = [&sink, &index](auto& field) {
-        std::uint8_t  length_field_bytes{kDefaultLengthFieldBytes};
-        std::uint16_t alignment_bits{kDefaultAlignmentBits};
+        ElementLayout element_layout{};
         if (sink.layout != nullptr)
         {
-            const ElementLayout element_layout =
-                ((sink.layout->per_field != nullptr) && (index < sink.layout->per_field_count))
-                    ? sink.layout->per_field[index]
-                    : sink.layout->default_;
-            length_field_bytes = element_layout.length_field_bytes;
-            alignment_bits = element_layout.alignment_bits;
+            element_layout = ((sink.layout->per_field != nullptr) && (index < sink.layout->per_field_count))
+                                 ? sink.layout->per_field[index]
+                                 : sink.layout->default_;
         }
-        sink.length_field_bytes = length_field_bytes;
-        sink.alignment_bits = alignment_bits;
+        sink.length_field_bytes = element_layout.length_field_bytes;
+        sink.alignment_bits = element_layout.alignment_bits;
+        const SomeIpLayout* const outer = sink.layout;
+        sink.layout = element_layout.nested;  // descend so a nested struct / array element uses its own layout
         ::score::common::visitor::visit(sink, field);
+        sink.layout = outer;
         ++index;
     };
     const std::initializer_list<int> expand{(handle(fields), 0)...};
