@@ -76,7 +76,7 @@ class SomeIpStrategy final
               std::enable_if_t<someip_detail::is_fixed_width_scalar<T>::value, bool> = true>
     void Serialize(Visitor& visitor, SerializeIterator<Container> iterator, const T& value) const
     {
-        someip_detail::SerializeScalar(iterator, value, ElementLayoutFor(visitor.GetMetaInformation().field_index_));
+        someip_detail::SerializeScalar(iterator, value, LayoutFor(visitor));
     }
 
     template <typename Visitor,
@@ -85,7 +85,7 @@ class SomeIpStrategy final
               std::enable_if_t<someip_detail::is_fixed_width_scalar<T>::value, bool> = true>
     Result<void> DeSerialize(Visitor& visitor, DeSerializeIterator<Container>& iterator, T& value) const
     {
-        someip_detail::DeSerializeScalar(iterator, value, ElementLayoutFor(visitor.GetMetaInformation().field_index_));
+        someip_detail::DeSerializeScalar(iterator, value, LayoutFor(visitor));
         return {};
     }
 
@@ -111,7 +111,7 @@ class SomeIpStrategy final
     {
         const auto& meta = visitor.GetMetaInformation();
         someip_detail::SerializeLengthPrefixedVector(
-            visitor, iterator, value, ElementLayoutFor(meta.field_index_), !meta.is_last_element_in_struct_);
+            visitor, iterator, value, LayoutFor(visitor), !meta.is_last_element_in_struct_);
     }
 
     template <typename Visitor, typename Container, typename UnderlyingType, typename LengthType>
@@ -121,7 +121,7 @@ class SomeIpStrategy final
     {
         const auto& meta = visitor.GetMetaInformation();
         return someip_detail::DeSerializeLengthPrefixedVector(
-            visitor, iterator, value, ElementLayoutFor(meta.field_index_), !meta.is_last_element_in_struct_);
+            visitor, iterator, value, LayoutFor(visitor), !meta.is_last_element_in_struct_);
     }
 
     /// @brief SOME/IP UTF-8 string, with trailing alignment padding when not the last struct element.
@@ -130,7 +130,7 @@ class SomeIpStrategy final
     {
         const auto& meta = visitor.GetMetaInformation();
         someip_detail::SerializeString(
-            iterator, value, ElementLayoutFor(meta.field_index_), !meta.is_last_element_in_struct_);
+            iterator, value, LayoutFor(visitor), !meta.is_last_element_in_struct_);
     }
 
     template <typename Visitor, typename Container>
@@ -139,7 +139,7 @@ class SomeIpStrategy final
     {
         const auto& meta = visitor.GetMetaInformation();
         return someip_detail::DeSerializeString(
-            visitor, iterator, value, ElementLayoutFor(meta.field_index_), !meta.is_last_element_in_struct_);
+            visitor, iterator, value, LayoutFor(visitor), !meta.is_last_element_in_struct_);
     }
 
     /// @brief Bounded array: [length][elements], with trailing alignment padding when not the last struct element.
@@ -149,7 +149,7 @@ class SomeIpStrategy final
     {
         const auto& meta = visitor.GetMetaInformation();
         someip_detail::SerializeStaticVector(
-            visitor, iterator, value, ElementLayoutFor(meta.field_index_), !meta.is_last_element_in_struct_);
+            visitor, iterator, value, LayoutFor(visitor), !meta.is_last_element_in_struct_);
     }
 
     template <typename Visitor, typename Container, typename T, std::size_t N>
@@ -159,15 +159,38 @@ class SomeIpStrategy final
     {
         const auto& meta = visitor.GetMetaInformation();
         return someip_detail::DeSerializeStaticVector(
-            visitor, iterator, value, ElementLayoutFor(meta.field_index_), !meta.is_last_element_in_struct_);
+            visitor, iterator, value, LayoutFor(visitor), !meta.is_last_element_in_struct_);
     }
 
   private:
-    ElementLayout ElementLayoutFor(const std::size_t field_index) const
+    static ElementLayout ElementAt(const SomeIpLayout& layout, const std::size_t field_index)
     {
-        return ((layout_.per_field != nullptr) && (field_index < layout_.per_field_count))
-                   ? layout_.per_field[field_index]
-                   : layout_.default_;
+        return ((layout.per_field != nullptr) && (field_index < layout.per_field_count)) ? layout.per_field[field_index]
+                                                                                         : layout.default_;
+    }
+
+    // Resolves the layout of the element currently being visited by following the field-index path from the root
+    // through nested structs. A null nested layout means that subtree is uniform (SOME/IP default).
+    ElementLayout ResolveElementLayout(const std::size_t* const path, const std::size_t depth) const
+    {
+        const SomeIpLayout* current = &layout_;
+        for (std::size_t level{0U}; (level + 1U) < depth; ++level)
+        {
+            const ElementLayout ancestor = ElementAt(*current, path[level]);
+            if (ancestor.nested == nullptr)
+            {
+                return ElementLayout{};  // uniform subtree below an ancestor without an explicit nested layout
+            }
+            current = ancestor.nested;
+        }
+        const std::size_t leaf_index = (depth == 0U) ? 0U : path[depth - 1U];
+        return ElementAt(*current, leaf_index);
+    }
+
+    template <typename Visitor>
+    ElementLayout LayoutFor(const Visitor& visitor) const
+    {
+        return ResolveElementLayout(visitor.FieldPathData(), visitor.FieldDepth());
     }
 
     // Per-datatype wire layout (byte order + alignment). A default-constructed layout is uniform big-endian / packed,
