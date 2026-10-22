@@ -180,7 +180,7 @@ Provider application
 
 
 Now let's have a look at the implementation of the provider of the `HelloWorldService`. It is
-contained in main function of `provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/provider.cpp>`__.
+contained in `provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/provider.cpp>`__.
 
 The 1st important step happens in the provider's application:
 
@@ -281,7 +281,7 @@ Consumer Application
 ~~~~~~~~~~~~~~~~~~~~
 
 
-The implementation of the consumer of the `HelloWorldService` is contained in main function of
+The implementation of the consumer of the `HelloWorldService` is contained in
 `consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/consumer.cpp>`__.
 
 Symmetric to the provider side, the 1st important step on the consumer side is the creation of a proxy side type of
