@@ -640,7 +640,7 @@ section "com" {
 
             Otherwise it shall do an unsubscription of the event at the providing side.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SafeCommunication@1]
+            derived_from = [Communication.FEAT_SafeCommunication@1, mw_com_fta.ExplicitUnsubscribeByUserFailed]
             version = 1
         }
 
