@@ -80,7 +80,7 @@ SCORE_STRUCT_VISITABLE(InnerArray, tag, data)
 
 struct OuterArray
 {
-    InnerArray    inner{};    // field 0
+    InnerArray inner{};       // field 0
     std::uint32_t trailer{};  // field 1
 };
 SCORE_STRUCT_VISITABLE(OuterArray, inner, trailer)
