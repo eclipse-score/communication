@@ -53,6 +53,9 @@ mapped_region_factory -> mapped_region_factory : Create CreateRegionCallback()
 mapped_region_factory -> mapped_region_registry : Register(IdType, IMappedRegionProperties, CreateRegionCallback) 
 activate mapped_region_registry
 
+ref over mapped_region_factory, mapped_region_registry
+    [[./seq_13_regular_mapped_region_registry_register.puml Register Region]]
+end ref
     mapped_region_registry --> mapped_region_factory : shared_ptr<IMappedRegion>
     deactivate mapped_region_registry
 
