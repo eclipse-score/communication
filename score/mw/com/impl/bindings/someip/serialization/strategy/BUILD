@@ -46,10 +46,10 @@ cc_library(
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":someip_strategy",
+        "@googletest//:gtest",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/serialization",
         "@score_baselibs//score/static_reflection_with_serialization/visitor",
-        "@googletest//:gtest",
     ],
 )
 
@@ -59,10 +59,10 @@ cc_unit_test(
     deps = [
         ":someip_strategy",
         ":someip_strategy_test_fixtures",
-        "@score_baselibs//score/static_reflection_with_serialization/visitor",
+        "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/serialization",
         "@score_baselibs//score/serialization/types:length_prefixed_vector",
-        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/static_reflection_with_serialization/visitor",
     ],
 )
 
@@ -71,8 +71,8 @@ cc_unit_test(
     srcs = ["someip_wire_format_test.cpp"],
     deps = [
         ":someip_strategy",
-        "@score_baselibs//score/serialization",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/serialization",
     ],
 )
 
@@ -81,8 +81,8 @@ cc_unit_test(
     srcs = ["someip_scalar_test.cpp"],
     deps = [
         ":someip_strategy",
-        "@score_baselibs//score/serialization",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/serialization",
     ],
 )
 
@@ -92,10 +92,10 @@ cc_unit_test(
     deps = [
         ":someip_strategy",
         ":someip_strategy_test_fixtures",
-        "@score_baselibs//score/static_reflection_with_serialization/visitor",
+        "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/serialization",
         "@score_baselibs//score/serialization/types:length_prefixed_vector",
-        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/static_reflection_with_serialization/visitor",
     ],
 )
 
@@ -105,9 +105,9 @@ cc_unit_test(
     deps = [
         ":someip_strategy",
         ":someip_strategy_test_fixtures",
-        "@score_baselibs//score/static_reflection_with_serialization/visitor",
-        "@score_baselibs//score/serialization",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/serialization",
+        "@score_baselibs//score/static_reflection_with_serialization/visitor",
     ],
 )
 
@@ -117,9 +117,9 @@ cc_unit_test(
     deps = [
         ":someip_strategy",
         ":someip_strategy_test_fixtures",
-        "@score_baselibs//score/static_reflection_with_serialization/visitor",
-        "@score_baselibs//score/serialization",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/serialization",
+        "@score_baselibs//score/static_reflection_with_serialization/visitor",
     ],
 )
 
@@ -129,8 +129,8 @@ cc_unit_test(
     deps = [
         ":someip_strategy",
         ":someip_strategy_test_fixtures",
-        "@score_baselibs//score/static_reflection_with_serialization/visitor",
-        "@score_baselibs//score/serialization",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/serialization",
+        "@score_baselibs//score/static_reflection_with_serialization/visitor",
     ],
 )

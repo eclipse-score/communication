@@ -53,10 +53,11 @@ struct is_static_vector<score::cpp::static_vector<U, M>> : std::true_type
 
 struct MaxSizeSink
 {
-    std::size_t         bytes{0U};
-    const SomeIpLayout* layout{nullptr};        // optional: adds worst-case alignment padding behind variable-length fields
-    std::uint8_t        length_field_bytes{kDefaultLengthFieldBytes};  // width of the length prefix for the field currently being visited
-    std::uint16_t       alignment_bits{kDefaultAlignmentBits};  // alignment behind the field currently being visited
+    std::size_t bytes{0U};
+    const SomeIpLayout* layout{nullptr};  // optional: adds worst-case alignment padding behind variable-length fields
+    std::uint8_t length_field_bytes{
+        kDefaultLengthFieldBytes};  // width of the length prefix for the field currently being visited
+    std::uint16_t alignment_bits{kDefaultAlignmentBits};  // alignment behind the field currently being visited
 };
 
 /// @brief Fixed-width scalars, enums (and bool, size 1) contribute their fixed width. No padding behind fixed-length

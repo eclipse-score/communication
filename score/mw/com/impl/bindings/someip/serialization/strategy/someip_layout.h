@@ -44,10 +44,10 @@ constexpr std::uint16_t kAlign128Bits{128U};
 constexpr std::uint16_t kAlign256Bits{256U};
 /// @brief SOME/IP defaults: 8-bit alignment (packed) and a 4-byte on-wire length prefix.
 constexpr std::uint16_t kDefaultAlignmentBits{kAlign8Bits};
-constexpr std::uint8_t  kDefaultLengthFieldBytes{4U};
+constexpr std::uint8_t kDefaultLengthFieldBytes{4U};
 /// @brief Maximum on-wire length-prefix width. SOME/IP permits 0/1/2/4-byte length fields; 4 is the widest (and the
 /// default). ReadLengthField/WriteLengthField reject wider values.
-constexpr std::uint8_t  kMaxLengthFieldBytes{4U};
+constexpr std::uint8_t kMaxLengthFieldBytes{4U};
 
 namespace someip_detail
 {
@@ -82,25 +82,29 @@ struct is_fixed_width_scalar
 using ByteOrder = memory::Endianness;
 
 /// @brief Per-element SOME/IP wire properties. Supplied out-of-band by the datatype's generated layout, so the user's
-/// data type is never decorated.
+/// data type is never decorated. ElementLayout and SomeIpLayout form a tree: an element may point to a nested layout
+/// describing its own sub-structure (a nested struct's fields, or an array's element type), enabling per-level
+/// configuration for arbitrarily nested types. A null `nested` means that subtree is uniform and inherits.
 struct SomeIpLayout;
 
 struct ElementLayout
 {
-    ByteOrder     byte_order{ByteOrder::kBigEndian};
-    std::uint16_t alignment_bits{kDefaultAlignmentBits};         // 8/16/32/64/128/256; 8 == packed (no padding)
-    std::uint8_t  length_field_bytes{kDefaultLengthFieldBytes};  // width of the on-wire length prefix for dynamic members (string/vector)
-    // Layout for this element's own sub-structure (a nested struct's fields). Null means that subtree is uniform.
+    ByteOrder byte_order{ByteOrder::kBigEndian};
+    std::uint16_t alignment_bits{kDefaultAlignmentBits};  // 8/16/32/64/128/256; 8 == packed (no padding)
+    std::uint8_t length_field_bytes{
+        kDefaultLengthFieldBytes};  // width of the on-wire length prefix for dynamic members (string/vector)
+    // Layout for this element's own sub-structure: a nested struct's fields, or an array's element type. Null means
+    // that subtree is uniform (the element's own layout is inherited).
     const SomeIpLayout* nested{nullptr};
 };
 
-/// @brief Layout of a whole datatype: a default applied to every element, plus optional per-field overrides indexed by
-/// field order. An empty per_field (the default) means the datatype is uniform.
+/// @brief Layout of a struct (or an array's element type): a default applied to every element, plus optional per-field
+/// overrides indexed by field order. A null per_field (the default) means the datatype is uniform.
 struct SomeIpLayout
 {
-    ElementLayout        default_{};
+    ElementLayout default_{};
     const ElementLayout* per_field{nullptr};
-    std::size_t          per_field_count{0U};
+    std::size_t per_field_count{0U};
 };
 
 }  // namespace serialization

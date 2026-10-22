@@ -37,15 +37,15 @@ namespace someip_detail
 /// last element (align_following), padding is appended afterwards so the data that follows is aligned to the element's
 /// alignment_bits. The length is the actual element count (matching LengthPrefixedVector's own semantics).
 template <typename Visitor, typename Container, typename UnderlyingType, typename LengthType>
-void SerializeLengthPrefixedVector(Visitor&                                              visitor,
-                                   SerializeIterator<Container>                          iterator,
+void SerializeLengthPrefixedVector(Visitor& visitor,
+                                   SerializeIterator<Container> iterator,
                                    const LengthPrefixedVector<UnderlyingType, LengthType>& value,
-                                   const ElementLayout&                                  layout,
-                                   const bool                                            align_following)
+                                   const ElementLayout& layout,
+                                   const bool align_following)
 {
     SerializeScalar(iterator, value.size(), layout);  // actual element count
     const std::size_t count = value.size();
-    std::size_t       index{0U};
+    std::size_t index{0U};
     for (const auto& sub_value : value)
     {
         visitor.PushArrayElement((index + 1U) == count);
@@ -60,11 +60,11 @@ void SerializeLengthPrefixedVector(Visitor&                                     
 }
 
 template <typename Visitor, typename Container, typename UnderlyingType, typename LengthType>
-Result<void> DeSerializeLengthPrefixedVector(Visitor&                                          visitor,
-                                             DeSerializeIterator<Container>&                   iterator,
+Result<void> DeSerializeLengthPrefixedVector(Visitor& visitor,
+                                             DeSerializeIterator<Container>& iterator,
                                              LengthPrefixedVector<UnderlyingType, LengthType>& value,
-                                             const ElementLayout&                              layout,
-                                             const bool                                        align_following)
+                                             const ElementLayout& layout,
+                                             const bool align_following)
 {
     LengthType counter{};
     visitor.Next(counter);
@@ -90,15 +90,15 @@ Result<void> DeSerializeLengthPrefixedVector(Visitor&                           
 /// element's layout. score::cpp::static_vector has a compile-time capacity N, which is what makes a finite GetMaxSize
 /// possible.
 template <typename Visitor, typename Container, typename T, std::size_t N>
-void SerializeStaticVector(Visitor&                              visitor,
-                           SerializeIterator<Container>          iterator,
+void SerializeStaticVector(Visitor& visitor,
+                           SerializeIterator<Container> iterator,
                            const score::cpp::static_vector<T, N>& value,
-                           const ElementLayout&                  layout,
-                           const bool                            align_following)
+                           const ElementLayout& layout,
+                           const bool align_following)
 {
     WriteLengthField(iterator, static_cast<std::uint64_t>(value.size()), layout);  // actual element count
     const std::size_t count = value.size();
-    std::size_t       index{0U};
+    std::size_t index{0U};
     for (const auto& element : value)
     {
         visitor.PushArrayElement((index + 1U) == count);
@@ -113,11 +113,11 @@ void SerializeStaticVector(Visitor&                              visitor,
 }
 
 template <typename Visitor, typename Container, typename T, std::size_t N>
-Result<void> DeSerializeStaticVector(Visitor&                         visitor,
-                                     DeSerializeIterator<Container>&   iterator,
+Result<void> DeSerializeStaticVector(Visitor& visitor,
+                                     DeSerializeIterator<Container>& iterator,
                                      score::cpp::static_vector<T, N>& value,
-                                     const ElementLayout&             layout,
-                                     const bool                       align_following)
+                                     const ElementLayout& layout,
+                                     const bool align_following)
 {
     const std::uint64_t count = ReadLengthField(iterator, layout);
     // Guard against manipulated input declaring more elements than the fixed-capacity container can hold.

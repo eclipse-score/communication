@@ -30,8 +30,7 @@ namespace
 TEST_F(SomeIpStrategyFixture, GetMaxSizeBoundsTheSerializedSize)
 {
     // id (2) + [ length field (4) + capacity 4 * sizeof(uint32) (16) ] = 22
-    constexpr std::size_t expected_max{sizeof(std::uint16_t) + sizeof(std::uint32_t) +
-                                       (4U * sizeof(std::uint32_t))};
+    constexpr std::size_t expected_max{sizeof(std::uint16_t) + sizeof(std::uint32_t) + (4U * sizeof(std::uint32_t))};
     EXPECT_EQ(GetMaxSize<BoundedMessage>(), expected_max);
 
     // A full vector reaches exactly the worst case.

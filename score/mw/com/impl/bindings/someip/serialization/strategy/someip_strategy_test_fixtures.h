@@ -86,9 +86,9 @@ SCORE_STRUCT_VISITABLE(BoundedMessage, id, values)
 
 struct Measurement
 {
-    std::uint16_t a{};   // field 0
-    std::uint32_t b{};   // field 1
-    std::uint32_t c{};   // field 2
+    std::uint16_t a{};  // field 0
+    std::uint32_t b{};  // field 1
+    std::uint32_t c{};  // field 2
 };
 SCORE_STRUCT_VISITABLE(Measurement, a, b, c)
 

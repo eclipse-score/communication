@@ -46,10 +46,11 @@ constexpr std::uint8_t kStringTerminator{0x00U};
 template <typename Container>
 void SerializeString(SerializeIterator<Container> iterator,
                      const score::cpp::pmr::string& value,
-                     const ElementLayout&          layout,
-                     const bool                    align_following)
+                     const ElementLayout& layout,
+                     const bool align_following)
 {
-    const std::uint64_t byte_count = kUtf8Bom.size() + value.size() + sizeof(kStringTerminator);  // BOM + characters + terminator
+    const std::uint64_t byte_count =
+        kUtf8Bom.size() + value.size() + sizeof(kStringTerminator);  // BOM + characters + terminator
     WriteLengthField(iterator, byte_count, layout);
     for (const std::uint8_t bom_byte : kUtf8Bom)
     {
@@ -67,11 +68,11 @@ void SerializeString(SerializeIterator<Container> iterator,
 }
 
 template <typename Visitor, typename Container>
-Result<void> DeSerializeString(Visitor&                      visitor,
+Result<void> DeSerializeString(Visitor& visitor,
                                DeSerializeIterator<Container>& iterator,
-                               score::cpp::pmr::string&       value,
-                               const ElementLayout&          layout,
-                               const bool                    align_following)
+                               score::cpp::pmr::string& value,
+                               const ElementLayout& layout,
+                               const bool align_following)
 {
     const std::uint64_t length = ReadLengthField(iterator, layout);
     if (iterator.HasError())
@@ -97,8 +98,7 @@ Result<void> DeSerializeString(Visitor&                      visitor,
 
     // Strip the leading UTF-8 BOM (if present) and the trailing null terminator; the rest is the string content.
     std::size_t begin{0U};
-    if ((bytes.size() >= kUtf8Bom.size()) &&
-        std::equal(kUtf8Bom.cbegin(), kUtf8Bom.cend(), bytes.cbegin()))
+    if ((bytes.size() >= kUtf8Bom.size()) && std::equal(kUtf8Bom.cbegin(), kUtf8Bom.cend(), bytes.cbegin()))
     {
         begin = kUtf8Bom.size();
     }
