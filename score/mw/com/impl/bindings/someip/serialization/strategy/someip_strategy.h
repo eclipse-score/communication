@@ -37,9 +37,10 @@ namespace serialization
 /// @brief Example SOME/IP serialization strategy.
 ///
 /// @details Demonstrates how SOME/IP can be expressed as a SerializationStrategy on top of the existing infrastructure
-/// (visitor + SerializeIterator). Per-element byte order and alignment come from a per-datatype SomeIpLayout resolved by
-/// field index (SOME/IP default: big-endian / packed); a default-constructed strategy is uniform. It
-/// relies on two small framework hooks: SerializeIterator::Offset() and MetaInformation::field_index_.
+/// (visitor + SerializeIterator). Per-element byte order, alignment and length-field width come from a per-datatype
+/// SomeIpLayout (SOME/IP default: big-endian / packed); a default-constructed strategy is uniform. It relies on a few
+/// small framework hooks: SerializeIterator::Offset() for position-dependent padding, and the visitor's field path
+/// (CommonVisitorLogic::FieldPathData/FieldDepth/LastPathData) for depth-aware layout and alignment.
 ///
 /// The per-type encoding/decoding logic lives in dedicated headers (someip_scalar.h, someip_array.h, someip_string.h)
 /// built on the shared wire mechanics in someip_wire_format.h; the overloads below are thin dispatchers that resolve
@@ -53,15 +54,34 @@ namespace serialization
 ///   order, with its own per-field layout)
 /// * score::serialization::types::LengthPrefixedVector (on wire: configurable n-byte length field, then the actual
 ///   elements -- compact, no capacity padding)
+/// * score::cpp::static_vector (bounded array: configurable length field, then the actual elements)
 /// * score::cpp::pmr::string (UTF-8 on wire: configurable-width length field, then a UTF-8 BOM, the characters, and a
 ///   null terminator -- compact, no capacity padding)
 ///
 /// This is the key contrast to the UDS strategy: dynamic data is emitted at its *actual* size, not padded to a fixed
 /// capacity. Byte order defaults to big-endian (the SOME/IP default) but is a per-element layout choice.
 ///
+/// Nested layout resolution: the layout is a tree -- each ElementLayout may carry a `nested` SomeIpLayout -- and the
+/// element currently visited is resolved by replaying the visitor's field path from the root (see
+/// ResolveElementLayout). A null nested layout keeps a subtree uniform, reproducing the single-level default. The cases
+/// handled, and how:
+/// * Flat struct: each field uses layout.per_field[field_index] (or layout.default_). This is the original behaviour.
+/// * Nested struct (arbitrary depth): on descending into field i, the field's `nested` layout becomes the layout for
+///   that sub-struct's fields; with no `nested` the sub-struct inherits the field's own layout.
+/// * Array of scalars: the length field uses the array field's layout; elements inherit that same layout (so they share
+///   its byte order), because an array-element path step with a null `nested` inherits the array's layout.
+/// * Array of structs: the array field's `nested` layout describes the element struct's fields, resolved per field.
+/// * Array of arrays (any depth): each array element is marked in the field path (kArrayElementMarker), so an inner
+///   array descends into the outer array's `nested` layout and gets its own length-field width, alignment and byte
+///   order, independent of the outer array.
+/// * String elements/fields: length field, BOM, characters and terminator use the resolved element layout.
+///
 /// @note Trailing alignment padding behind a variable-length member is emitted whenever data follows it anywhere in the
-/// message, i.e. it is not the last element at every enclosing nesting level. This is derived from the visitor's field
-/// path, so a member that is last in a nested struct but followed by more data in an enclosing struct is padded.
+/// message, i.e. it is not the last element at every enclosing nesting level (FollowedByMoreData walks LastPathData).
+/// So a member that is last in a nested struct but followed by more data in an enclosing struct is still padded, and a
+/// non-last array element is padded ahead of the next element.
+///
+/// @note Maximum nesting depth is bounded by CommonVisitorLogic::kMaxNestingDepth.
 class SomeIpStrategy final
 {
   public:
@@ -129,8 +149,9 @@ class SomeIpStrategy final
     }
 
     template <typename Visitor, typename Container>
-    Result<void> DeSerialize(Visitor& visitor, DeSerializeIterator<Container>& iterator, score::cpp::pmr::string& value)
-        const
+    Result<void> DeSerialize(Visitor& visitor,
+                             DeSerializeIterator<Container>& iterator,
+                             score::cpp::pmr::string& value) const
     {
         return someip_detail::DeSerializeString(
             visitor, iterator, value, LayoutFor(visitor), FollowedByMoreData(visitor));
@@ -138,11 +159,11 @@ class SomeIpStrategy final
 
     /// @brief Bounded array: [length][elements], with trailing alignment padding when not the last struct element.
     template <typename Visitor, typename Container, typename T, std::size_t N>
-    void Serialize(Visitor& visitor, SerializeIterator<Container> iterator, const score::cpp::static_vector<T, N>& value)
-        const
+    void Serialize(Visitor& visitor,
+                   SerializeIterator<Container> iterator,
+                   const score::cpp::static_vector<T, N>& value) const
     {
-        someip_detail::SerializeStaticVector(
-            visitor, iterator, value, LayoutFor(visitor), FollowedByMoreData(visitor));
+        someip_detail::SerializeStaticVector(visitor, iterator, value, LayoutFor(visitor), FollowedByMoreData(visitor));
     }
 
     template <typename Visitor, typename Container, typename T, std::size_t N>

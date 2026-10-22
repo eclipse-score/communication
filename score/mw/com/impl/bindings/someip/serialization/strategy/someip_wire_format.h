@@ -133,7 +133,7 @@ std::uint64_t ReadLengthField(DeSerializeIterator<Container>& iterator, const El
         iterator = MakeUnexpected(SerializationError::kOutOfBoundsWrite);  // SOME/IP length field is at most 4 bytes
         return 0U;
     }
-    const bool    big_endian = (layout.byte_order == ByteOrder::kBigEndian);
+    const bool big_endian = (layout.byte_order == ByteOrder::kBigEndian);
     std::uint64_t length{0U};
     for (std::uint8_t index{0U}; index < layout.length_field_bytes; ++index)
     {
