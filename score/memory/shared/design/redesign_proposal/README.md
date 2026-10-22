@@ -1,21 +1,56 @@
 # Shared Memory Redesign
 
-This document describes the redesigned shared memory architecture for `lib-memory`. It complements the class diagram (`memory_resource_hierarchy.puml`) and the sequence diagrams (`memory_resource_sequences.puml`) with rationale and design decisions.
+This document describes the redesigned shared memory architecture for `lib-memory-shared`. It complements the class and
+the sequence diagrams with rationale and design decisions.
 
 ## Architecture Overview
 
-The redesign splits responsibilities into three singletons:
+The redesign splits the functionality of `lib-memory-shared` into two layers:
 
-**MemoryRegionFactory** creates and deduplicates memory regions. It has no PMR dependencies — it's a standalone factory that returns `shared_ptr<MappedRegion>`. Direct users (those who place data in SHM without an allocator) call this directly and use the region as-is. PMR users call this first, then pass the region to SharedMemoryFactory.
+- a lower layer: Creation and management of `mapped memory regions` (POSIX named shared memory, anonymous shared-memory,
+  typed memory, etc.) via `MappedRegionFactory` and `MappedRegionRegistry`.
+- an upper layer: Providing a PMR-compatible interface via `SharedMemoryResource`, shared-memory capable `OffsetPtr<T>`
+  and `PolymorphicOffsetPtrAllocator<T>`.
 
-**SharedMemoryFactory** wraps a region into a PMR-compatible resource. `Create()` takes a `shared_ptr<MappedRegion>`, placement-news a ControlBlock, creates a `SharedMemoryResource`, and registers it in the registry. `Open()` does the same but casts the existing ControlBlock instead of placement-new (the creator already initialized it). Both return `shared_ptr<SharedMemoryResource>`.
+The upper layer **relies** on the lower layer. The lower layer can be used directly/standalone by clients, who want to
+place and manage data in shared memory **without** using PMR. The upper layer is for clients who want to use PMR,
+allocators and the infrastructure with ASIL-B qualified (bounds-checking) `OffsetPtrs`.
 
-**MemoryResourceRegistry** is a pure lookup service. It maps resource ids to `ManagedMemoryResource*` pointers and provides bounds checking for address validation. Called on the hot path (every allocation via proxy), so it's kept separate from the factories for interface segregation.
+### Extensibility
 
-## Memory Region Hierarchy
+The architecture uses interface abstractions heavily for two reasons:
 
-![Memory Resource Hierarchy](assets/memory_resource_hierarchy.svg)
+- Testability/Mockability.
+- Extensibility in selected areas as shown below.
 
+#### Mapped Regions
+
+A `Mapped Region` is represented by the abstract base class `IMappedRegion` that represents a contiguous memory region
+mapped into the process's address space.
+`Mapped Region`s are created by `MappedRegionFactory`. Initially, we support _POSIX named shared memory_. Other types of
+mapped regions can be added by providing a new class implementing the `IMappedRegion` interface and adding a new
+`MappedRegionFactory::CreateXXX()` method, which creates the new type of mapped region.
+
+#### Allocation Strategies
+
+On the upper layer, `SharedMemoryResource` uses an `AllocationStrategy` to implement the actual allocation logic. The
+initial implementation uses a monotonic bump allocator. Other allocation strategies can be added by implementing the
+`AllocationStrategy` interface. The allocation strategy is passed to `SharedMemoryResourceFactory` CreateXXX methods,
+which create a `SharedMemoryResource` with the given allocation strategy.
+
+### Minimal usage of Singletons
+
+To avoid _static destruction order fiasco_, the redesign uses singletons only where necessary. Thus, the only singleton,
+we have is the `SharedMemoryResourceRegistrySingleton`. This decision makes the API we provide to the user slightly more
+complex, as we require the user to create certain infrastructure objects himself and then hand it over, when creating
+other `lib-memory-shared` objects. This is a trade-off we are willing to make, as it makes the code more robust and
+testable.
+
+## Mapped Region Layer
+
+As discussed above, the lower layer provides an abstraction for mapped memory regions. The following diagram shows the
+
+<img alt="Mapped Region Hierarchy" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/mf_add_lib_memory_redesign_proposal/score/memory/shared/design/redesign_proposal/assets/mapped_region_hierarchy.puml">
 ```text
 MappedRegion (GetBaseAddress, GetSize)
   +-- NamedMemoryRegion (+ GetPath, UnlinkOnDestruction)
@@ -26,14 +61,17 @@ MappedRegion (GetBaseAddress, GetSize)
   +-- QnxTypedAnonymousMemoryRegion (+ GetFileDescriptor, CreateHandle)
 ```
 
-Named regions have a common interface (`NamedMemoryRegion`) because POSIX defines `shm_open` with a path — this is portable.
+Named regions have a common interface (`NamedMemoryRegion`) because POSIX defines `shm_open` with a path — this is
+portable.
 
-Anonymous regions have **no common abstract class**. There is no POSIX standard for anonymous shared memory — each OS has its own mechanism:
+Anonymous regions have **no common abstract class**. There is no POSIX standard for anonymous shared memory — each OS
+has its own mechanism:
 
 - **QNX:** `shm_open(SHM_ANON)` → fd, shared via `shm_create_handle()` → `shm_handle_t`
 - **Linux:** `memfd_create()` → fd, shared via UDS
 
-Since the sharing mechanism differs (handle vs fd-over-socket), a common `GetHandle()` would be a leaky abstraction — the caller must know the platform to use the result. Each platform class exposes its own API directly.
+Since the sharing mechanism differs (handle vs fd-over-socket), a common `GetHandle()` would be a leaky abstraction —
+the caller must know the platform to use the result. Each platform class exposes its own API directly.
 
 ## PMR Hierarchy
 
@@ -43,7 +81,9 @@ amp::pmr::memory_resource (STL base)
         +-- SharedMemoryResource (+ GetMappedRegion)
 ```
 
-`ManagedMemoryResource` is the minimal contract that the registry needs: an id and Allocate/Deallocate. `GetMappedRegion()` lives on `SharedMemoryResource` because not every `ManagedMemoryResource` necessarily has a region (interface segregation). `SharedMemoryFactory::Create()` returns `SharedMemoryResource`, not the base class.
+`ManagedMemoryResource` is the minimal contract that the registry needs: an id and Allocate/Deallocate.
+`GetMappedRegion()` lives on `SharedMemoryResource` because not every `ManagedMemoryResource` necessarily has a region
+(interface segregation). `SharedMemoryFactory::Create()` returns `SharedMemoryResource`, not the base class.
 
 ## ControlBlock
 
@@ -54,11 +94,15 @@ ControlBlock {
 }
 ```
 
-`SharedMemoryResource` owns and manages the ControlBlock. During `SharedMemoryFactory::Create()`, it placement-news the ControlBlock at the region's base address. The usable memory for user allocations starts at `base + ControlBlock::TotalSize()`.
+`SharedMemoryResource` owns and manages the ControlBlock. During `SharedMemoryFactory::Create()`, it placement-news the
+ControlBlock at the region's base address. The usable memory for user allocations starts at
+`base + ControlBlock::TotalSize()`.
 
-The proxy id is not stored in the ControlBlock. It's stored by value in the `PolymorphicOffsetPtrAllocator` — same 8 bytes as an OffsetPtr, but avoids a pointer indirection on the hot path.
+The proxy id is not stored in the ControlBlock. It's stored by value in the `PolymorphicOffsetPtrAllocator` — same 8
+bytes as an OffsetPtr, but avoids a pointer indirection on the hot path.
 
-For named regions, the id is deterministic (`hash(path)`) so both creator and opener resolve to the same id in their local registries. For anonymous regions, the id is a process-local monotonic counter (no cross-process sharing by path).
+For named regions, the id is deterministic (`hash(path)`) so both creator and opener resolve to the same id in their
+local registries. For anonymous regions, the id is a process-local monotonic counter (no cross-process sharing by path).
 
 Direct users never see the ControlBlock — they use `MappedRegion` directly and get the full region.
 
@@ -66,19 +110,29 @@ Direct users never see the ControlBlock — they use `MappedRegion` directly and
 
 ### The problem
 
-The `InterprocessMutex` in the ControlBlock is `PTHREAD_PROCESS_SHARED` but not `PTHREAD_MUTEX_ROBUST`. If a QM process crashes while holding the mutex, the next caller gets an error from `pthread_mutex_lock()`, and our `InterprocessMutex::lock()` calls `std::terminate()`. If that next caller is ASIL-B, we just crashed a safety-critical process because some QM process died. That's a freedom-from-interference violation.
+The `InterprocessMutex` in the ControlBlock is `PTHREAD_PROCESS_SHARED` but not `PTHREAD_MUTEX_ROBUST`. If a QM process
+crashes while holding the mutex, the next caller gets an error from `pthread_mutex_lock()`, and our
+`InterprocessMutex::lock()` calls `std::terminate()`. If that next caller is ASIL-B, we just crashed a safety-critical
+process because some QM process died. That's a freedom-from-interference violation.
 
 ### The fix
 
-We set `PTHREAD_MUTEX_ROBUST` on the mutex. The kernel tracks who holds it. If that process dies, the next `pthread_mutex_lock()` returns `EOWNERDEAD` instead of deadlocking or failing.
+We set `PTHREAD_MUTEX_ROBUST` on the mutex. The kernel tracks who holds it. If that process dies, the next
+`pthread_mutex_lock()` returns `EOWNERDEAD` instead of deadlocking or failing.
 
-`InterprocessMutex::lock()` returns `LockResult { Acquired, AcquiredAfterOwnerDied }`. On `EOWNERDEAD`, it calls `pthread_mutex_consistent()` internally and returns `AcquiredAfterOwnerDied` so the caller knows what happened.
+`InterprocessMutex::lock()` returns `LockResult { Acquired, AcquiredAfterOwnerDied }`. On `EOWNERDEAD`, it calls
+`pthread_mutex_consistent()` internally and returns `AcquiredAfterOwnerDied` so the caller knows what happened.
 
 ### Monotonic allocator: no recovery needed
 
-For our monotonic bump allocator, the shared state after EOWNERDEAD is always valid. The only mutable field is `already_allocated_bytes` — a single `atomic<size_t>` that only ever increases. An atomic store either happened or it didn't; there's no half-written state. If the previous holder died before the store, the old value is valid. If it died after, the new value is valid (a few bytes are wasted for an allocation nobody will use, but the allocator state is consistent).
+For our monotonic bump allocator, the shared state after EOWNERDEAD is always valid. The only mutable field is
+`already_allocated_bytes` — a single `atomic<size_t>` that only ever increases. An atomic store either happened or it
+didn't; there's no half-written state. If the previous holder died before the store, the old value is valid. If it died
+after, the new value is valid (a few bytes are wasted for an allocation nobody will use, but the allocator state is
+consistent).
 
-So for monotonic, EOWNERDEAD handling is: get the lock, notice the previous owner died, continue as normal. No flags, no recovery callbacks, no strategy pattern.
+So for monotonic, EOWNERDEAD handling is: get the lock, notice the previous owner died, continue as normal. No flags, no
+recovery callbacks, no strategy pattern.
 
 ```cpp
 auto result = control_block_->mutex.lock_robust();
@@ -95,17 +149,25 @@ control_block_->mutex.unlock();
 return base + aligned;
 ```
 
-Note that `do_allocate()` only bumps the counter and returns a pointer. It does not write any data. The caller writes data after getting the pointer back, and notifies consumers via LoLa. If the producer dies while writing data (after `do_allocate()` returned), the mutex is not held, the ControlBlock is consistent, and the consumer was never notified — so nobody reads the partial data.
+Note that `do_allocate()` only bumps the counter and returns a pointer. It does not write any data. The caller writes
+data after getting the pointer back, and notifies consumers via LoLa. If the producer dies while writing data (after
+`do_allocate()` returned), the mutex is not held, the ControlBlock is consistent, and the consumer was never notified —
+so nobody reads the partial data.
 
 ### Future dynamic allocator
 
-A dynamic allocator with free lists would need additional machinery because mid-mutation crashes can corrupt multi-step pointer updates. Specifically:
+A dynamic allocator with free lists would need additional machinery because mid-mutation crashes can corrupt multi-step
+pointer updates. Specifically:
 
-- An `operation_in_progress` dirty flag in the ControlBlock, set before mutation, cleared after. If the process dies mid-mutation, the flag stays true.
-- An `OnOwnerDied()` recovery hook on AllocationStrategy. The dynamic strategy checks the dirty flag and returns `Corrupted` if set (free lists may be half-updated). If recovery fails, the flag is left set as a permanent corruption marker — the next normal lock sees it and returns an error.
+- An `operation_in_progress` dirty flag in the ControlBlock, set before mutation, cleared after. If the process dies
+  mid-mutation, the flag stays true.
+- An `OnOwnerDied()` recovery hook on AllocationStrategy. The dynamic strategy checks the dirty flag and returns
+  `Corrupted` if set (free lists may be half-updated). If recovery fails, the flag is left set as a permanent corruption
+  marker — the next normal lock sees it and returns an error.
 - Both `do_allocate()` and `do_deallocate()` would need this protocol, since freeing memory also modifies the list.
 
-Recovery logic is the strategy implementer's responsibility. The framework provides `lock_robust()` and the EOWNERDEAD signal. The strategy knows its own data structures and how to check whether they're consistent or not.
+Recovery logic is the strategy implementer's responsibility. The framework provides `lock_robust()` and the EOWNERDEAD
+signal. The strategy knows its own data structures and how to check whether they're consistent or not.
 
 Monotonic does not need any of this because its state is a single atomic integer that only goes up.
 
@@ -121,13 +183,20 @@ The hot path for allocating in SHM from a consumer process:
 
 ## Region Lifecycle
 
-**Creation**: `MemoryRegionFactory::CreateNamed(path, size, perms)` does `shm_open` + `ftruncate` + `mmap`. Returns `shared_ptr<MappedRegion>`. Dedup is handled internally — same path returns the existing region.
+**Creation**: `MemoryRegionFactory::CreateNamed(path, size, perms)` does `shm_open` + `ftruncate` + `mmap`. Returns
+`shared_ptr<MappedRegion>`. Dedup is handled internally — same path returns the existing region.
 
-**Wrapping**: `SharedMemoryFactory::Create(region)` placement-news a ControlBlock, creates `SharedMemoryResource`, registers in `MemoryResourceRegistry`.
+**Wrapping**: `SharedMemoryFactory::Create(region)` placement-news a ControlBlock, creates `SharedMemoryResource`,
+registers in `MemoryResourceRegistry`.
 
-**Opening**: Another process calls `MemoryRegionFactory::OpenNamed(path)` to get a `shared_ptr<MappedRegion>`, then `SharedMemoryFactory::Open(region)` to wrap it. `Open()` casts the existing ControlBlock (no placement-new), registers in `MemoryResourceRegistry`, and returns `SharedMemoryResource`. The opener uses `GetUsableBaseAddress()` to access data past the ControlBlock — the ControlBlock is hidden from the user.
+**Opening**: Another process calls `MemoryRegionFactory::OpenNamed(path)` to get a `shared_ptr<MappedRegion>`, then
+`SharedMemoryFactory::Open(region)` to wrap it. `Open()` casts the existing ControlBlock (no placement-new), registers
+in `MemoryResourceRegistry`, and returns `SharedMemoryResource`. The opener uses `GetUsableBaseAddress()` to access data
+past the ControlBlock — the ControlBlock is hidden from the user.
 
-**Cleanup**: `NamedMemoryRegion::UnlinkOnDestruction(bool)` controls whether the destructor calls `shm_unlink`. The creator sets this to true. When the last `shared_ptr` dies, the destructor unmaps, closes the fd, and unlinks the SHM file. LoLa skeletons set this to false so SHM survives `PrepareOffer`/`PrepareStopOffer` cycles.
+**Cleanup**: `NamedMemoryRegion::UnlinkOnDestruction(bool)` controls whether the destructor calls `shm_unlink`. The
+creator sets this to true. When the last `shared_ptr` dies, the destructor unmaps, closes the fd, and unlinks the SHM
+file. LoLa skeletons set this to false so SHM survives `PrepareOffer`/`PrepareStopOffer` cycles.
 
 ## Pool Selection
 
@@ -137,7 +206,8 @@ Each memory pool (Posix, Safe Typed, Unsafe Typed) has its own Create method on 
 - `CreateSafeTypedNamed()` / `CreateSafeTypedAnonymous()` — safe physical RAM via typed memory daemon
 - `CreateUnsafeTypedNamed()` / `CreateUnsafeTypedAnonymous()` — unsafe typed memory
 
-No TypedMemory pointer in the API. No string-based pool selection. The method name encodes the pool. Each method takes exactly the parameters that pool needs.
+No TypedMemory pointer in the API. No string-based pool selection. The method name encodes the pool. Each method takes
+exactly the parameters that pool needs.
 
 ## Error Handling
 
@@ -150,7 +220,8 @@ Recoverable errors are returned via `bmw::Result<T>`:
 - `ResourceBusy` — retry
 - `RegionAlreadyManaged` — region already wrapped by SharedMemoryFactory
 
-Fatal errors (mmap failure, ftruncate failure, OOM, lock timeout) call `std::terminate()`. These are not recoverable at runtime.
+Fatal errors (mmap failure, ftruncate failure, OOM, lock timeout) call `std::terminate()`. These are not recoverable at
+runtime.
 
 ## Sequence Diagrams
 
@@ -212,14 +283,14 @@ Resource and region cleanup, shm_unlink via UnlinkOnDestruction.
 
 ## Design Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| Three singletons (not one) | Interface segregation. Registry is hot-path, factory is cold-path. Direct users only need MemoryRegionFactory. |
-| Proxy id by value in allocator | No pointer indirection on hot path. |
-| No GetFileDescriptor on MappedRegion base | Only subclasses that have an fd expose it. |
-| No AnonymousMemoryRegion abstract class | No POSIX standard for anonymous SHM. QNX and Linux have different APIs — a common GetHandle() would be a leaky abstraction. |
-| Opener uses SharedMemoryFactory::Open | ControlBlock encapsulation — opener gets GetUsableBaseAddress() without knowing ControlBlock layout. |
-| Method name encodes pool | No TypedMemory* in API. No string parsing. Each method takes exactly what it needs. |
-| UnlinkOnDestruction instead of Remove API | RAII cleanup. No dangerous Remove() that can pull SHM from under other processes. |
-| Robust mutex for ASIL-B | PTHREAD_MUTEX_ROBUST. Monotonic: just continue after EOWNERDEAD. No extra flags needed. |
-| Dynamic recovery is strategy's job | Framework provides lock() and EOWNERDEAD. Strategy implementer handles recovery logic for their own data structures. |
+| Decision                                  | Rationale                                                                                                                   |
+|-------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| Three singletons (not one)                | Interface segregation. Registry is hot-path, factory is cold-path. Direct users only need MemoryRegionFactory.              |
+| Proxy id by value in allocator            | No pointer indirection on hot path.                                                                                         |
+| No GetFileDescriptor on MappedRegion base | Only subclasses that have an fd expose it.                                                                                  |
+| No AnonymousMemoryRegion abstract class   | No POSIX standard for anonymous SHM. QNX and Linux have different APIs — a common GetHandle() would be a leaky abstraction. |
+| Opener uses SharedMemoryFactory::Open     | ControlBlock encapsulation — opener gets GetUsableBaseAddress() without knowing ControlBlock layout.                        |
+| Method name encodes pool                  | No TypedMemory* in API. No string parsing. Each method takes exactly what it needs.                                         |
+| UnlinkOnDestruction instead of Remove API | RAII cleanup. No dangerous Remove() that can pull SHM from under other processes.                                           |
+| Robust mutex for ASIL-B                   | PTHREAD_MUTEX_ROBUST. Monotonic: just continue after EOWNERDEAD. No extra flags needed.                                     |
+| Dynamic recovery is strategy's job        | Framework provides lock() and EOWNERDEAD. Strategy implementer handles recovery logic for their own data structures.        |
