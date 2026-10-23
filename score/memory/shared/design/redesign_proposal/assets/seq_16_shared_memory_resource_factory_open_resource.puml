@@ -1,5 +1,5 @@
 @startuml seq_11_shared_memory_resource_factory_create
-title 11. SharedMemoryFactory: Create
+title SharedMemoryFactory: Create
 skinparam defaultFontSize 11
 skinparam sequenceMessageAlign center
 
