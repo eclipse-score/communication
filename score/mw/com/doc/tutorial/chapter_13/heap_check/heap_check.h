@@ -22,6 +22,7 @@
 #include <cstdlib>
 #include <new>
 
+// [heap-check-control-start]
 namespace heap_check
 {
 
@@ -44,7 +45,9 @@ inline void allow_heap() noexcept
 }
 
 }  // namespace heap_check
+// [heap-check-control-end]
 
+// [heap-check-operator-new-start]
 // NOLINTNEXTLINE(misc-new-delete-overloads): intentional process-global override for heap checking
 void* operator new(std::size_t sz)
 {
@@ -59,6 +62,7 @@ void* operator new(std::size_t sz)
     }
     return ptr;
 }
+// [heap-check-operator-new-end]
 
 // NOLINTNEXTLINE(misc-new-delete-overloads): matching override required by the C++ standard
 void* operator new[](std::size_t sz)

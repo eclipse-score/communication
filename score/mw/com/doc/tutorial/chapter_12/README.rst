@@ -19,7 +19,8 @@ For the consumer, this split is done via `ProxyComponent`, which takes an alread
 
 .. literalinclude:: consumer/proxy_component.h
    :language: cpp
-   :lines: 24-39
+   :start-after: [proxy-component-class-start]
+   :end-before: [proxy-component-class-end]
    :caption: consumer/proxy_component.h
 
 
@@ -27,7 +28,8 @@ For the provider, this split is done via `SkeletonComponent`, which takes an alr
 
 .. literalinclude:: provider/skeleton_component.h
    :language: cpp
-   :lines: 25-45
+   :start-after: [skeleton-component-class-start]
+   :end-before: [skeleton-component-class-end]
    :caption: provider/skeleton_component.h
 
 
@@ -52,7 +54,8 @@ You can see that cut in the consumer application:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 47-70
+   :start-after: [consumer-proxy-creation-start]
+   :end-before: [consumer-proxy-creation-end]
    :caption: consumer/consumer.cpp
 
 
@@ -60,7 +63,8 @@ You can see that cut in the consumer application:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 39-46
+   :start-after: [provider-skeleton-creation-start]
+   :end-before: [provider-skeleton-creation-end]
    :caption: provider/provider.cpp
 
 
@@ -83,7 +87,8 @@ aliases resolve to the corresponding ``score::mw::com::impl`` types, so the test
 
 .. literalinclude:: consumer/proxy_component_test.cpp
    :language: cpp
-   :lines: 13-22
+   :start-after: [test-includes-start]
+   :end-before: [test-includes-end]
    :caption: consumer/proxy_component_test.cpp (public includes)
 
 
@@ -91,7 +96,8 @@ The provider-side test uses the same approach:
 
 .. literalinclude:: provider/skeleton_component_test.cpp
    :language: cpp
-   :lines: 13-23
+   :start-after: [test-includes-start]
+   :end-before: [test-includes-end]
    :caption: provider/skeleton_component_test.cpp (public includes)
 
 
@@ -103,7 +109,8 @@ The `ProxyComponent` implementation encapsulates subscribe/get-samples behavior:
 
 .. literalinclude:: consumer/proxy_component.cpp
    :language: cpp
-   :lines: 17-48
+   :start-after: [proxy-component-implementation-start]
+   :end-before: [proxy-component-implementation-end]
    :caption: consumer/proxy_component.cpp
 
 
@@ -111,7 +118,8 @@ Its unit tests use `ProxyWrapperClassTestView` and injected event mocks:
 
 .. literalinclude:: consumer/proxy_component_test.cpp
    :language: cpp
-   :lines: 24-49
+   :start-after: [proxy-component-test-fixture-start]
+   :end-before: [proxy-component-test-fixture-end]
    :caption: consumer/proxy_component_test.cpp
 
 
@@ -119,7 +127,8 @@ Test cases then follow the **given/expect/when/then** style:
 
 .. literalinclude:: consumer/proxy_component_test.cpp
    :language: cpp
-   :lines: 51-110
+   :start-after: [proxy-component-test-cases-start]
+   :end-before: [proxy-component-test-cases-end]
    :caption: consumer/proxy_component_test.cpp
 
 
@@ -131,7 +140,8 @@ The `SkeletonComponent` implementation encapsulates offer/allocate/send behavior
 
 .. literalinclude:: provider/skeleton_component.cpp
    :language: cpp
-   :lines: 26-64
+   :start-after: [skeleton-component-implementation-start]
+   :end-before: [skeleton-component-implementation-end]
    :caption: provider/skeleton_component.cpp
 
 
@@ -140,7 +150,8 @@ Its unit tests use `SkeletonWrapperClassTestView`, `NamedSkeletonEventMock`, `Sk
 
 .. literalinclude:: provider/skeleton_component_test.cpp
    :language: cpp
-   :lines: 29-52
+   :start-after: [skeleton-component-test-fixture-start]
+   :end-before: [skeleton-component-test-fixture-end]
    :caption: provider/skeleton_component_test.cpp
 
 
@@ -148,7 +159,8 @@ Its unit tests use `SkeletonWrapperClassTestView`, `NamedSkeletonEventMock`, `Sk
 
 .. literalinclude:: provider/skeleton_component_test.cpp
    :language: cpp
-   :lines: 54-122
+   :start-after: [skeleton-component-test-cases-start]
+   :end-before: [skeleton-component-test-cases-end]
    :caption: provider/skeleton_component_test.cpp
 
 
@@ -160,7 +172,8 @@ Both unit tests are integrated as dedicated `cc_unit_test` targets:
 
 .. literalinclude:: BUILD
    :language: python
-   :lines: 136-153
+   :start-after: [unit-test-targets-start]
+   :end-before: [unit-test-targets-end]
    :caption: BUILD
 
 
