@@ -66,7 +66,6 @@ gcc_toolchains.toolchain(
     extra_cxxflags = [
         # Diagnostics
         "-fdiagnostics-color=always",
-        "-Wno-dangling-reference",  # disabled for the moment
     ],
     extra_enabled_features = [
         "//quality/compiler_warnings:treat_warnings_as_errors",
