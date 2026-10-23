@@ -244,7 +244,7 @@ void TracingRuntime::DisableTracing() noexcept
 
 bool TracingRuntime::IsTracingEnabled()
 {
-    return atomic_state_.is_tracing_enabled;
+    return atomic_state_.is_tracing_enabled.load();
 }
 
 ServiceElementTracingData TracingRuntime::RegisterServiceElement(const BindingType binding_type,
@@ -325,7 +325,7 @@ TracingRuntime::TracingRuntime(
 
 void TracingRuntime::SetDataLossFlag(const BindingType binding_type) noexcept
 {
-    if (!atomic_state_.is_tracing_enabled)
+    if (!atomic_state_.is_tracing_enabled.load())
     {
         return;
     }
@@ -343,7 +343,7 @@ void TracingRuntime::RegisterShmObject(
     const memory::shared::ISharedMemoryResource::FileDescriptor shm_object_fd,
     void* const shm_memory_start_address)
 {
-    if (!atomic_state_.is_tracing_enabled)
+    if (!atomic_state_.is_tracing_enabled.load())
     {
         return;
     }
@@ -400,7 +400,7 @@ void TracingRuntime::RegisterShmObject(
 void TracingRuntime::UnregisterShmObject(BindingType binding_type,
                                          ServiceElementInstanceIdentifierView service_element_instance_identifier_view)
 {
-    if (!atomic_state_.is_tracing_enabled)
+    if (!atomic_state_.is_tracing_enabled.load())
     {
         return;
     }
@@ -516,7 +516,7 @@ Result<void> TracingRuntime::Trace(const BindingType binding_type,
                                    const void* const shm_data_ptr,
                                    const std::size_t shm_data_size)
 {
-    if (!atomic_state_.is_tracing_enabled)
+    if (!atomic_state_.is_tracing_enabled.load())
     {
         return MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints);
     }
@@ -609,7 +609,7 @@ Result<void> TracingRuntime::Trace(const BindingType binding_type,
                                    const void* const local_data_ptr,
                                    const std::size_t local_data_size)
 {
-    if (!atomic_state_.is_tracing_enabled)
+    if (!atomic_state_.is_tracing_enabled.load())
     {
         return MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints);
     }
