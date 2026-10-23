@@ -224,6 +224,19 @@ ScoreReq.AoU NoGuaranteeInAvailabilityOfServices {
     ]
 }
 
+/* added for Wrong service found FTA */
+ScoreReq.AoU CorrectlyConfiguredInstanceIdentifierMapping {
+    // mitigates = "WrongServiceFound"
+    description = "It shall be ensured that the InstanceSpecifier-to-InstanceIdentifier mapping and the resulting deployment configuration (service_id/instance_id) are configured correctly and consistently across all processes that offer or consume the same service instance."
+    safety = ScoreReq.Asil.B
+    note = "LoLa derives the service discovery search path and the shared memory segment names deterministically from the service_id/instance_id read from the deployment configuration at startup. There is no independent reference available to LoLa at runtime against which such a mapping could be cross-checked, so a wrong but internally consistent configuration is resolved and used without LoLa being able to detect the error."
+    version = 1
+    root_causes = [
+        mw_com_fta.WrongPathResolvedFromInstanceidentifier,
+        mw_com_fta.InstancespecifierResolvedToWrongInstanceidentifier
+    ]
+}
+
 /* broken_link_c/issue/5835249 */
 ScoreReq.AoU NoNotificationOnTerminationOfProducer {
     // mitigates = "ServiceOfferingNotStopped, WrongStartfindserviceIsStopped"
