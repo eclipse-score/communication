@@ -86,13 +86,13 @@ int main(int argc, const char* argv[])
 
     score::mw::com::runtime::InitializeRuntime(argc, argv);
 
+    // [consumer-callback-service-start]
     // 1. Create and offer our own callback service instance (LongRunningServiceResult). The provider will later call
     //    SetJobResult() on exactly this instance.
     auto result_specifier = score::mw::com::InstanceSpecifier::Create(std::string{kResultInstanceSpecifierString});
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(result_specifier.has_value(),
                                                 "Failed to create callback InstanceSpecifier!");
 
-    // [consumer-callback-service-start]
     auto result_skeleton_result = LongRunningServiceResultSkeleton::Create(result_specifier.value());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(result_skeleton_result.has_value(),
                                                 "Failed to create LongRunningServiceResultSkeleton instance!");
