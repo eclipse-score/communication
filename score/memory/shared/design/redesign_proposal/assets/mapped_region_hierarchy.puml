@@ -15,8 +15,9 @@ together {
 
 interface IMappedRegionRegistry {
     + using CreateRegionCallback = score::callback<Result<shared_ptr<IMappedRegion>>(IdType)>
+    + using AdjustRegionCallback = score::callback<Result<void>(shared_ptr<IMappedRegion>)>
 
-   + {virtual} Register(IdType, const IMappedRegionProperties&, CreateRegionCallback) : Result<shared_ptr<IMappedRegion>>
+   + {virtual} Register(IdType, CreateRegionCallback, std::optional<AdjustRegionCallback>) : Result<shared_ptr<IMappedRegion>>
    + {virtual} Unregister(IdType) : void
    + {virtual} Find(IdType) : shared_ptr<IMappedRegion>
    + {virtual} Clear(): void
@@ -30,7 +31,7 @@ end note
 
 class MappedRegionRegistry implements IMappedRegionRegistry {
     - region_registry_ : unordered_map<IdType, weak_ptr<IMappedRegion>>
-    + {override} Register(IdType, const IMappedRegionProperties&, CreateRegionCallback) : Result<shared_ptr<IMappedRegion>>
+    + {override} Register(IdType, CreateRegionCallback, std::optional<AdjustRegionCallback>) : Result<shared_ptr<IMappedRegion>>
     + {override} Unregister(IdType) : void
     + {override} Find(IdType) : shared_ptr<IMappedRegion>
     + {override} Clear(): void
@@ -39,7 +40,7 @@ class MappedRegionRegistry implements IMappedRegionRegistry {
 
 class PersistentMappedRegionRegistry implements IMappedRegionRegistry {
     - region_registry_ : unordered_map<IdType, shared_ptr<IMappedRegion>>
-   + {override} Register(IdType, const IMappedRegionProperties&, CreateRegionCallback) : Result<shared_ptr<IMappedRegion>>
+   + {override} Register(IdType, CreateRegionCallback, std::optional<AdjustRegionCallback>) : Result<shared_ptr<IMappedRegion>>
    + {override} Unregister(IdType) : void
    + {override} Find(IdType) : shared_ptr<IMappedRegion>
    + {override} Clear(): void
@@ -72,18 +73,20 @@ class MappedRegionFactory implements IMappedRegionFactory {
     ..
     + MappedRegionFactory(unique_ptr<IMappedRegionRegistry>)
     __ named (posix) __
-    + {override} CreateNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
-    + {override} OpenNamed(path): Result<shared_ptr<IMappedRegion>>
-    + {override} CreateOrOpenNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
+    + {override} CreatePosixNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
+    + {override} OpenPosixNamed(path): Result<shared_ptr<IMappedRegion>>
+    + {override} CreateOrOpenPosixNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
     __ anonymous (platform-specific) __
-    + {override} CreateQnxAnonymous(RegionInitializeCallback, id, size): Result<shared_ptr<IMappedRegion>>
-    + {override} CreateLinuxAnonymous(RegionInitializeCallback, id, size): Result<shared_ptr<IMappedRegion>>
+    + {override} CreateQnxAnonymous(RegionInitializeCallback, size): Result<shared_ptr<IMappedRegion>>
+    + {override} OpenQnxAnonymous(shm_handle_t): Result<shared_ptr<IMappedRegion>>
+    + {override} CreateLinuxAnonymous(RegionInitializeCallback, size): Result<shared_ptr<IMappedRegion>>
+    + {override} OpenLinuxAnonymous(int): Result<shared_ptr<IMappedRegion>>
     __ safe typed __
     + {override} CreateSafeTypedNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
-    + {override} CreateSafeTypedAnonymous(RegionInitializeCallback, id, size): Result<shared_ptr<IMappedRegion>>
+    + {override} CreateSafeTypedAnonymous(RegionInitializeCallback, size): Result<shared_ptr<IMappedRegion>>
     __ unsafe typed __
     + {override} CreateUnsafeTypedNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
-    + {override} CreateUnsafeTypedAnonymous(RegionInitializeCallback, id, size): Result<shared_ptr<IMappedRegion>>
+    + {override} CreateUnsafeTypedAnonymous(RegionInitializeCallback, size): Result<shared_ptr<IMappedRegion>>
 }
 
 note right of MappedRegionFactory
@@ -126,12 +129,9 @@ interface IMappedRegion <<interface>> {
     ' take optional<RegionInitializeCallback> as a constructor argument.
     + IMappedRegion(optional<RegionInitializeCallback>)
 
-    ' GetId() should not change after calling AdjustToProperties. 
     + GetBaseAddress() : void*
     + GetSize() : size_t
     + GetId() : IdType
-    - AdjustToProperties(IMappedRegionProperties&) : Result<void>
-    - GetProperties() : IMappedRegionProperties&
 }
 
 note left of IMappedRegion
@@ -144,33 +144,6 @@ note left of IMappedRegion
     The specific implementation of IMappedRegion needs to handle synchronization between
     different processes / threads trying to create / open the same region.
 end note
-
-}
-
-together {
-
-class IMappedRegionProperties <<interface>> {}
-
-note right of IMappedRegionProperties
-    This is an interface which is not exposed to the users directly. It is used by the implementer
-    of a MappedRegion to provide properties to IMappedRegion::AdjustToProperties method. We don't pass
-    it to the IMappedRegionFactory functions because the Create / Open functions receive different 
-    parameters and IMappedRegion::AdjustToProperties is only used in the Create case which means that 
-    it may contain properties which are not relevant when opening a region. The MappedRegion may store 
-    a copy of the relevant properties internally or simply construct a new instance of the properties when 
-    calling IMappedRegion::AdjustToProperties.
-end note
-
-class PosixNamedMappedRegionProperties implements IMappedRegionProperties {
-    + size_ : size_t
-    + fd_ : int
-    + path_ : string
-    + permissions_ : PermissionsType
-}
-
-class QnxAnonymousMappedRegionProperties implements IMappedRegionProperties {
-    + size_t: size_
-}
 
 }
 
@@ -275,10 +248,6 @@ ILockFileFactory -> LockFile
 
 PosixNamedMappedRegion ..> ILockFileFactory
 PosixNamedMappedRegion ..> AccessControlApplier : uses
-
-IMappedRegion -> IMappedRegionProperties
-' PosixNamedMappedRegion -> PosixNamedMappedRegionProperties
-' QnxAnonymousMappedRegion -> QnxAnonymousMappedRegionProperties
 
 MappedRegionFactory ..> IMappedRegion : creates implementations
 

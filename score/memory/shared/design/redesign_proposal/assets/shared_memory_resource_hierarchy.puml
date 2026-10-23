@@ -16,9 +16,9 @@ together {
     interface ISharedMemoryFactory {
         + using InitializationCallback = score::callback<Result<void>(ISharedMemoryResource&)>
         __ named (posix) __
-        + {virtual} CreateNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
-        + {virtual} OpenNamed(path): Result<shared_ptr<IMappedRegion>>
-        + {virtual} CreateOrOpenNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        + {virtual} CreatePosixNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        + {virtual} OpenPosixNamed(path): Result<shared_ptr<IMappedRegion>>
+        + {virtual} CreateOrOpenPosixNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
         __ anonymous (platform-specific) __
         + {virtual} CreateQnxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
         + {virtual} CreateLinuxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
@@ -33,11 +33,12 @@ together {
     class SharedMemoryFactory implements ISharedMemoryFactory {
         - mapped_region_factory_: unique_ptr<IMappedRegionFactory>
         ..
-        SharedMemoryFactory(unique_ptr<IMappedRegionFactory>)
+        + SharedMemoryFactory(unique_ptr<IMappedRegionFactory>)
+        + InjectMockRegistry(ISharedMemoryResourceRegistry&) : void
         __ named (posix) __
-        + {override} CreateNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
-        + {override} OpenNamed(path): Result<shared_ptr<IMappedRegion>>
-        + {override} CreateOrOpenNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        + {override} CreatePosixNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        + {override} OpenPosixNamed(path): Result<shared_ptr<IMappedRegion>>
+        + {override} CreateOrOpenPosixNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
         __ anonymous (platform-specific) __
         + {override} CreateQnxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
         + {override} CreateLinuxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
@@ -66,7 +67,7 @@ together {
         + {virtual} GetBoundsFromAddress(addr) : Result<MemoryRegionBounds>
         + {virtual} GetBoundsFromAddressAsInteger(addr) : Result<MemoryRegionBounds>
         + {virtual} GetBoundsFromIdentifier(id: IdType) : Result<MemoryRegionBounds>
-        + {virtual} Register(id: IdType, shared_ptr<ISharedMemoryResource>) : bool
+        + {virtual} Register(shared_ptr<ISharedMemoryResource>) : bool
         + {virtual} Unregister(id: IdType) : void
     }
     
@@ -85,7 +86,7 @@ together {
 
     class SharedMemoryResourceRegistrySingleton <<singleton>> {
         - instance_: unique_ptr<ISharedMemoryResourceRegistry>
-        + {static} InjectMock(unique_ptr<ISharedMemoryResourceRegistry>) : void
+        + {static} InjectMock(ISharedMemoryResourceRegistry*) : void
         - {static} GetInstance() : SharedMemoryResourceRegistrySingleton&
         + {static} LookupById(id) : ISharedMemoryResource*
         + {static} GetBoundsFromAddress(addr) : Result<MemoryRegionBounds>
@@ -105,7 +106,7 @@ together {
 }
 
 together {
-    interface "amp::pmr::memory_resource" as PmrBase <<STL>> {
+    interface "score::cpp::pmr::memory_resource" as PmrBase <<STL>> {
         + Allocate(bytes, align) : void*
         + Deallocate(ptr, bytes, align) : void
         # {abstract} DoAllocate(bytes, align) : void*
@@ -118,6 +119,7 @@ together {
         + {virtual} GetUsableBaseAddress() : void*
         + {virtual} GetMemoryResourceProxy() : MemoryResourceProxy
         + {virtual} GetMappedRegion() : IMappedRegion&
+        + {virtual} GetId() : IdType
     }
 }
 
@@ -143,21 +145,26 @@ class SharedMemoryResource <<impl>> {
     + {override} GetUsableBaseAddress() : void*
     + {override} GetMemoryResourceProxy() : MemoryResourceProxy
     + {override} GetMappedRegion() : IMappedRegion&
+    + {override} GetId() : IdType // dispatches to region_->GetId()
 }
 
 together {
 
+    enum AllocationStrategyType {
+        Monotonic,
+        DynamicArena,
+    }
+
     class ControlBlock {
-        + memory_resource_proxy: MemoryResourceProxy
-        + AllocationSTrategyType : enum 
+        + memory_resource_proxy_ : MemoryResourceProxy
+        + allocation_strategy_ : AllocationStrategyType
     }
 
     interface IAllocationStrategy <<interface>> {
         + {abstract} Allocate(free_start, free_end, bytes, align) : void*
         + {abstract} Deallocate(ptr, bytes, align) : void
         + {abstract} GetUsableBaseAddress() : void*
-
-
+        + {abstract} GetStrategyType() : AllocationStrategyType
         + ConstructAllocationSpecificControlBlock(span<std::byte>: address_after_control_block) : Result<void>
     }
 
@@ -209,6 +216,7 @@ ISharedMemoryResource <|.. SharedMemoryResource
 
 SharedMemoryResource ..> ControlBlock : places at base
 SharedMemoryResource *--> IAllocationStrategy
+IAllocationStrategy ..> AllocationStrategyType : returns
 
 SharedMemoryResourceRegistrySingleton *.. ISharedMemoryResourceRegistry : owns
 

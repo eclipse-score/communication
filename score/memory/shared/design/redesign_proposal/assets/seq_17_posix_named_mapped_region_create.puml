@@ -1,5 +1,5 @@
 @startuml seq_17_posix_named_mapped_region_create_callback
-title 17. CreateRegionCallback: callback for Posix Named MappedRegion
+title CreateRegionCallback: callback for Posix Named MappedRegion
 skinparam defaultFontSize 11
 skinparam sequenceMessageAlign center
 

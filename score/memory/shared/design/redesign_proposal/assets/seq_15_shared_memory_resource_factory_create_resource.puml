@@ -1,43 +1,16 @@
-@startuml seq_11_shared_memory_resource_factory_create
-title 11. SharedMemoryFactory: Create resource
+@startuml seq_15_shared_memory_resource_factory_create_resource
+title SharedMemoryFactory: Create resource
 skinparam defaultFontSize 11
 skinparam sequenceMessageAlign center
 
 actor "User" as User
 participant "SharedMemoryFactory: instance" as shared_memory_factory
 participant "SharedMemoryResource" as shared_memory_resource
-participant "MemoryResourceRegistry <<singleton>>" as memory_resource_registry
+participant "SharedMemoryResourceRegistry <<singleton>>" as memory_resource_registry
 participant "MappedRegionFactory: instance" as mapped_region_factory
-participant "MappedRegionRegistry: instance" as mapped_region_registry
 participant "MonotonicAllocationStrategy: instance" as monotonic_allocation_strategy
-participant "LockFile: instance" as lock_file
-' participant "MappedRegionRegistry: memory_region_registry" as memory_region_registry
-' participant "IMappedRegionRegistry" as i_memory_region_registry
-' participant "TypedNamedMappedRegion" as mapped_region
-' participant "OS" as os
 
 activate User
-
-' Create mapped_region_registry
-' User -> mapped_region_registry : make_unique<MappedRegionRegistry>()
-' activate mapped_region_registry
-
-' mapped_region_registry --> User : Return mapped_region_registry
-' deactivate mapped_region_registry
-
-' Create mapped_region_factory
-' User -> mapped_region_factory : Construct(move(mapped_region_registry))
-' activate mapped_region_factory
-
-' mapped_region_factory --> User : Return mapped_region_factory
-' deactivate mapped_region_factory
-
-' Create shared_memory_factory
-' User -> shared_memory_factory : Construct(move(mapped_region_factory))
-' activate shared_memory_factory
-
-' shared_memory_factory --> User : Return shared_memory_factory
-' deactivate shared_memory_factory
 
 Create monotonic_allocation_strategy
 User -> monotonic_allocation_strategy : Construct()
@@ -58,8 +31,12 @@ RegionInitializeCallback:
     -Call InitializeCallback
 end note
 
-shared_memory_factory -> mapped_region_factory : CreateNamed(path, size, perms)
+shared_memory_factory -> mapped_region_factory : CreatePosixNamed(RegionInitializeCallback, path, size, perms)
 activate mapped_region_factory
+
+ref over shared_memory_factory, mapped_region_factory
+    [[./seq_10_mapped_region_factory_create.puml Create Posix Named Mapped Region]]
+end ref
 
 mapped_region_factory --> shared_memory_factory : Return mapped_region: Result<shared_ptr<MappedRegion>>
 deactivate mapped_region_factory
