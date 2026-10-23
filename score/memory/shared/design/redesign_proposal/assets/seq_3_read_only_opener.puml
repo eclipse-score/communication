@@ -1,0 +1,106 @@
+@startuml seq_3_opener
+title 3. Opener: OpenNamed (Consumer Process)
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+
+actor "Opener\n(Consumer Process)" as User
+participant "MemoryRegionFactory\n(singleton)" as MRF
+participant "PosixNamedMemoryRegion" as Region
+participant "LockFile" as LF
+participant "OS Kernel" as OS
+participant "SharedMemoryFactory\n(singleton)" as SMF
+participant "SharedMemoryResource" as SMR
+participant "ControlBlock\n(in SHM)" as CB
+participant "MemoryResourceRegistry\n(singleton)" as REG
+
+== Step 1: Open Region (MemoryRegionFactory) ==
+
+User -> MRF : OpenNamed(path)
+activate MRF
+
+MRF -> MRF : dedup check (weak_ptr lookup)
+alt cache miss
+
+MRF -> Region ** : construct (open mode)
+activate Region
+
+Region -> LF ** : Create(lock_path)
+activate LF
+LF -> OS : open(lock_path,\n  O_CREAT|O_EXCL|O_RDONLY)
+alt lock file does not exist
+  OS --> LF : lock_fd
+else EEXIST — creator holds lock
+  note right : Poll 10ms, retry up to 500ms.
+  LF -> OS : poll / retry open()
+  alt lock file disappears
+    OS --> LF : lock_fd
+  else timeout
+    OS --> LF : error
+    LF --> Region : Error
+    Region --> MRF : Error
+    MRF --> User : Error
+  end
+end
+
+Region -> OS : shm_open(path,\n  O_RDWR, mode)
+OS --> Region : fd
+
+Region -> OS : fstat(fd)
+OS --> Region : size
+
+Region -> OS : mmap(NULL, size,\n  PROT_RW, MAP_SHARED, fd, 0)
+OS --> Region : base_address
+
+destroy LF
+note right : RAII: destructor\nunlinks lock file.
+
+deactivate Region
+
+MRF -> MRF : store weak_ptr for dedup
+
+else cache hit (weak_ptr alive)
+  note right : Return existing shared_ptr.
+end
+
+MRF --> User : Result<shared_ptr<MappedRegion>>
+deactivate MRF
+
+== Step 2: Wrap in Resource (SharedMemoryFactory::Open) ==
+
+User -> SMF : Open(region)
+activate SMF
+
+SMF -> REG : Is region already managed?
+REG --> SMF : result
+
+alt not yet managed
+
+SMF -> SMR ** : construct(region, id_from_path)
+activate SMR
+
+SMR -> CB : cast base_address\n  to existing ControlBlock
+activate CB
+note right #LightYellow : No placement-new.\nControlBlock initialized\nby creator (Seq 2).
+
+SMR --> SMF : ready
+deactivate SMR
+
+SMF -> REG : RegisterResource(id, resource)
+REG --> SMF : registered
+
+else already managed
+  note right : Return cached shared_ptr.
+end
+
+SMF --> User : Result<shared_ptr<SharedMemoryResource>>
+deactivate SMF
+
+== Step 3: Read Data ==
+
+User -> SMR : GetUsableBaseAddress()
+SMR --> User : ptr past ControlBlock
+
+User -> User : read data via container API
+note right #LightGreen : ControlBlock hidden.\nUser sees only usable region.
+
+@enduml

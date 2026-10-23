@@ -1,0 +1,96 @@
+@startuml seq_15_shared_memory_resource_factory_create_resource
+title SharedMemoryFactory: Create resource
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+
+actor "User" as User
+participant "SharedMemoryFactory: instance" as shared_memory_factory
+participant "SharedMemoryResource" as shared_memory_resource
+participant "SharedMemoryResourceRegistry <<singleton>>" as memory_resource_registry
+participant "MappedRegionFactory: instance" as mapped_region_factory
+participant "MonotonicAllocationStrategy: instance" as monotonic_allocation_strategy
+
+activate User
+
+Create monotonic_allocation_strategy
+User -> monotonic_allocation_strategy : Construct()
+activate monotonic_allocation_strategy
+
+monotonic_allocation_strategy --> User : Return unique_ptr<MonotonicAllocationStrategy>(monotonic_allocation_strategy)
+deactivate monotonic_allocation_strategy
+
+User -> shared_memory_factory : CreateNamed(InitializeCallback, move(monotonic_allocation_strategy), path, size, perms)
+activate shared_memory_factory
+
+shared_memory_factory -> shared_memory_factory : Create RegionInitializeCallback
+
+note right of shared_memory_factory
+RegionInitializeCallback:
+    -Construct ControlBlock in shared memory
+    -Call IAllocationStrategy::ConstructAllocationSpecificControlBlock
+    -Call InitializeCallback
+end note
+
+shared_memory_factory -> mapped_region_factory : CreatePosixNamed(RegionInitializeCallback, path, size, perms)
+activate mapped_region_factory
+
+ref over shared_memory_factory, mapped_region_factory
+    [[./seq_10_mapped_region_factory_create.puml Create Posix Named Mapped Region]]
+end ref
+
+mapped_region_factory --> shared_memory_factory : Return mapped_region: Result<shared_ptr<MappedRegion>>
+deactivate mapped_region_factory
+
+' alt returned mapped region contains an error
+'     shared_memory_factory --> User : propagate error from mapped_region_factory
+' else
+    Create shared_memory_resource
+    shared_memory_factory -> shared_memory_resource : Create(shared_ptr<MappedRegion>(mapped_region), InitializeCallback, move(monotonic_allocation_strategy))
+    activate shared_memory_resource
+
+    shared_memory_resource -> shared_memory_resource : Construct ControlBlock in shared memory
+
+    shared_memory_resource -> monotonic_allocation_strategy : ConstructAllocationSpecificControlBlock(\naddress_after_control_block: span<std::byte>)
+    activate monotonic_allocation_strategy
+
+    monotonic_allocation_strategy -> monotonic_allocation_strategy : placement new AllocationSpecificControlBlock \n@ aligned address_after_control_block
+
+    monotonic_allocation_strategy --> shared_memory_resource
+    deactivate monotonic_allocation_strategy
+
+    shared_memory_resource -> shared_memory_resource : Call InitializeCallback
+
+    shared_memory_resource --> shared_memory_factory : Return shared_memory_resource: Result<shared_ptr<ManagedMemoryResource>>
+    deactivate shared_memory_resource
+
+    ' alt shared_memory_resource contains an error
+    '     shared_memory_factory --> User : propagate error from shared_memory_resource
+    ' end
+
+    shared_memory_factory -> memory_resource_registry : Register(shared_ptr<ManagedMemoryResource>(shared_memory_resource))
+    activate memory_resource_registry
+
+    memory_resource_registry --> shared_memory_factory
+    deactivate memory_resource_registry
+
+    note right of shared_memory_factory
+        MemoryResourceRegistry::Register has a precondition that the mapped region 
+        has not already been registered. We already do the duplicate check in the 
+        MappedRegionFactory, so this precondition should always be satisfied. Otherwise,
+        we terminate.
+    end note
+
+    shared_memory_factory --> User : Return shared_ptr<SharedMemoryResource>
+' end
+
+deactivate shared_memory_factory
+deactivate User
+
+@enduml
+
+' - finish off this seq diagram.
+' - figure out builder pattern to allow creating the SharedMemoryResource and MappedRegion at once.
+' - figure out if we can avoid having a shared_ptr to SharedMemoryResource.
+' - 2 classes implement MappedRegionRegistry: one stores map of shared_ptrs and other weak_ptrs.
+' - return shared_ptrs instead of unique_ptrs MappedRegionFactory
+' - figure out what map the MemoryResourceRegistry stores
