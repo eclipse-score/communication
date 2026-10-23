@@ -12,12 +12,14 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/config_parser.h"
 
+#include "score/mw/com/impl/configuration/configuration_flatbuffer_parsing_strategy.h"
 #include "score/mw/com/impl/configuration/configuration_json_parsing_strategy.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 
 #include "gmock/gmock.h"
 #include <gtest/gtest.h>
 
+#include <cstdlib>
 #include <fstream>
 #include <string>
 #include <utility>
@@ -32,13 +34,19 @@ namespace
 using score::json::operator""_json;
 
 // The detailed parsing behaviour is verified in configuration_json_parsing_strategy_test.cpp. The tests here only
-// verify that the free Parse() functions delegate to ConfigurationJsonParsingStrategy.
+// verify that the free Parse() functions delegate to ConfigurationJsonParsingStrategy and that
+// ParseWithStrategySelection() selects the strategy by file extension.
 class ConfigParserFixture : public ::testing::Test
 {
   public:
     const std::string get_path(const std::string& file_name)
     {
-        const std::string default_path = "score/mw/com/impl/configuration/example/" + file_name;
+        return get_configuration_path("example/" + file_name);
+    }
+
+    const std::string get_configuration_path(const std::string& relative_path)
+    {
+        const std::string default_path = "score/mw/com/impl/configuration/" + relative_path;
 
         std::ifstream file(default_path);
         if (file.is_open())
@@ -89,6 +97,47 @@ TEST_F(ConfigParserFixture, ParseFromJsonDelegatesToStrategy)
     EXPECT_TRUE(config.IsServiceInstancesEmpty());
     EXPECT_TRUE(config.IsServiceTypesEmpty());
 }
+
+TEST_F(ConfigParserFixture, ParseWithStrategySelectionParsesJsonFileWithJsonStrategy)
+{
+    RecordProperty(
+        "Description",
+        "Checks that ParseWithStrategySelection() parses a .json file with ConfigurationJsonParsingStrategy.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    const auto path = get_path("mw_com_config.json");
+
+    const auto config_from_selection = configuration::ParseWithStrategySelection(path);
+    const auto config_from_strategy = configuration::ConfigurationJsonParsingStrategy{}.Parse(path);
+
+    EXPECT_EQ(config_from_selection.GetNumberOfServiceInstances(), config_from_strategy.GetNumberOfServiceInstances());
+    EXPECT_EQ(config_from_selection.GetNumberOfServiceTypes(), config_from_strategy.GetNumberOfServiceTypes());
+}
+
+#if defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
+
+TEST_F(ConfigParserFixture, ParseWithStrategySelectionParsesBinFileWithFlatbufferStrategy)
+{
+    RecordProperty("Description",
+                   "Checks that ParseWithStrategySelection() parses a .bin file with "
+                   "ConfigurationFlatbufferParsingStrategy when the FlatBuffers configuration flag is enabled.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    const auto path = get_configuration_path("converter/mw_com_config.bin");
+
+    const auto config_from_selection = configuration::ParseWithStrategySelection(path);
+    const auto config_from_strategy = configuration::ConfigurationFlatbufferParsingStrategy{}.Parse(path);
+
+    EXPECT_FALSE(config_from_selection.IsServiceInstancesEmpty());
+    EXPECT_EQ(config_from_selection.GetNumberOfServiceInstances(), config_from_strategy.GetNumberOfServiceInstances());
+    EXPECT_EQ(config_from_selection.GetNumberOfServiceTypes(), config_from_strategy.GetNumberOfServiceTypes());
+}
+
+#endif
 
 }  // namespace
 
