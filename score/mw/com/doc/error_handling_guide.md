@@ -238,6 +238,7 @@ see [`ProxyEvent::GetNewSamples()`](#scoremwcomimplproxyeventgetnewsamples)
 |-------|------------------|----------------|
 | `kBindingFailure` | Cannot offer service to network. Binding layer failed to prepare service offering. | **Not Recoverable**: Infrastructure or configuration error. <br> **What happened**: <br> • Event/field binding preparation failed, OR <br> • Service registration failed, OR <br> • Shared memory setup failed <br> **Fix**: <br> • Check logs for specific error <br> • Verify deployment configuration <br> • Restart application |
 | `kFieldValueIsNotValid` | Cannot offer service because field has no value set. | **Recoverable**: Field not initialized. <br> **What happened**: Field value not set before offering service. <br> **Fix**: <br> • Set valid initial value for all fields before calling OfferService() <br> • Use field setter methods to initialize field values |
+| `kSetHandlerNotSet` | Cannot offer service because a field with a setter has no set handler registered. | **Recoverable**: Application usage error. <br> **What happened**: A field configured `WithSetter` was offered before `RegisterSetHandler()` was called. <br> **Fix**: <br> • Call `RegisterSetHandler()` on every field with a setter before calling `OfferService()` |
 
 </details>
 
