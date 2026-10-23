@@ -51,7 +51,10 @@ cc_library(
     implementation_deps = [
         "@score_baselibs//score/mw/log",
     ],
-    visibility = ["//score/mw/com/gateway:__subpackages__"],
+    visibility = [
+        "//score/mw/com/doc/tutorial/chapter_14:__pkg__",
+        "//score/mw/com/gateway:__subpackages__",
+    ],
     deps = [
         ":gateway_configuration",
         "@score_baselibs//score/json",
