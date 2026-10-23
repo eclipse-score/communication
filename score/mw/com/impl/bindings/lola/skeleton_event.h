@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
+#include "score/mw/com/impl/bindings/lola/event_data_storage_local_view.h"
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
@@ -144,7 +145,7 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     Skeleton& parent_;
     std::string_view event_name_;
     ElementFqId element_fq_id_;
-    EventDataStorage* event_data_storage_;
+    std::optional<EventDataStorageLocalView> event_data_storage_local_view_;
     memory::DataTypeSizeInfo event_sample_size_info_;
     SkeletonEventProperties event_properties_;
 
