@@ -261,8 +261,13 @@ cc_library(
     hdrs = ["config_parser.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
+        ":configuration_flatbuffer_parsing_strategy",
         ":configuration_json_parsing_strategy",
     ],
+    local_defines = select({
+        "//score/mw/com/flags:flatbuffers_enabled": ["SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED"],
+        "//conditions:default": [],
+    }),
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -745,13 +750,21 @@ cc_library(
 cc_unit_test(
     name = "config_parser_test",
     srcs = ["config_parser_test.cpp"],
-    data = ["example/mw_com_config.json"],
+    data = ["example/mw_com_config.json"] + select({
+        "//score/mw/com/flags:flatbuffers_enabled": ["//score/mw/com/impl/configuration/converter:mw_com_config"],
+        "//conditions:default": [],
+    }),
     features = COMPILER_WARNING_FEATURES + [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
+    local_defines = select({
+        "//score/mw/com/flags:flatbuffers_enabled": ["SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED"],
+        "//conditions:default": [],
+    }),
     deps = [
         ":config_parser",
+        ":configuration_flatbuffer_parsing_strategy",
         ":configuration_json_parsing_strategy",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],

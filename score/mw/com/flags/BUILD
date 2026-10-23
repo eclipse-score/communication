@@ -13,10 +13,11 @@
 
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 
-# Gates the (experimental) FlatBuffers configuration path. The FlatBuffers config
-# parsing strategy is not yet wired into the runtime, so the generated
-# flatbuffer_cc_library and related targets are compiled only when this flag is
-# set. Enable with --config=flatbuffers (see .bazelrc).
+# Gates the (experimental) FlatBuffers configuration path. When set, the runtime
+# parses configuration files ending in .bfbs/.bin with the FlatBuffers config
+# parsing strategy (all others as JSON), and the generated flatbuffer_cc_library
+# and related targets are compiled. When unset, configurations are always parsed
+# as JSON. Enable with --config=flatbuffers (see .bazelrc).
 bool_flag(
     name = "experimental_enable_flatbuffers_configuration",
     build_setting_default = False,

@@ -21,6 +21,10 @@
 namespace score::mw::com::impl::configuration
 {
 
+/// \brief Parses the configuration file at the given path with a parsing strategy selected by its file extension.
+/// \details Without the FlatBuffers configuration flag, the file is always parsed as JSON. With the flag
+///          enabled, files ending in ".bfbs" or ".bin" are parsed with ConfigurationFlatbufferParsingStrategy, all
+///          others (in particular ".json") with ConfigurationJsonParsingStrategy.
 Configuration Parse(const std::string_view path);
 Configuration Parse(score::json::Any json);
 
