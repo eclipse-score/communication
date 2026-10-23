@@ -40,7 +40,7 @@ constexpr std::uint8_t kMaxNumberOfCrawlAndWatchRetries{3U};
 
 auto ReadMaskSet(const os::InotifyEvent& event, const os::InotifyEvent::ReadMask mask) noexcept -> bool
 {
-    return static_cast<underlying_type_readmask>(event.GetMask() & mask) != 0U;
+    return (event.GetMask() & mask);
 }
 
 std::vector<HandleType> GetKnownHandles(const EnrichedInstanceIdentifier& enriched_instance_identifier,
