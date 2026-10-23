@@ -76,6 +76,7 @@ class SampleAllocateePtr
     /// the binding independent layer uses SampleAllocateePtr<SampleType> to provide type-safety. This constructor
     /// allows to move from a SampleAllocateePtr<void> to a SampleAllocateePtr<SampleType>.
     template <typename OtherSampleType>
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(owning-pointer-implicit-construction)
     SampleAllocateePtr(SampleAllocateePtr<OtherSampleType>&& other) noexcept;
 
     /// \brief Move assignment operator. Transfers ownership from other to *this
@@ -203,6 +204,7 @@ SampleAllocateePtr<SampleType>::SampleAllocateePtr(SampleAllocateePtr<SampleType
 
 template <typename SampleType>
 template <typename OtherSampleType>
+// Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(owning-pointer-implicit-construction)
 SampleAllocateePtr<SampleType>::SampleAllocateePtr(SampleAllocateePtr<OtherSampleType>&& other) noexcept
     : SampleAllocateePtr()
 {
