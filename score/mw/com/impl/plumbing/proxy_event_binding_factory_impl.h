@@ -15,11 +15,14 @@
 
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event.h"
+#include "score/mw/com/impl/bindings/someip/proxy.h"
+#include "score/mw/com/impl/bindings/someip/proxy_event.h"
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/plumbing/binding_factory_error.h"
 #include "score/mw/com/impl/plumbing/i_proxy_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/lola_proxy_element_building_blocks.h"
+#include "score/mw/com/impl/plumbing/someip_proxy_element_building_blocks.h"
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 #include "score/mw/com/impl/service_element_type.h"
@@ -63,6 +66,24 @@ ReturnType CreateLolaProxyEvent(const HandleType& parent_handle,
     const auto element_fq_id =
         GetElementFqId(parent_handle, lola_type_deployment, std::string{event_or_field_name}, service_element_type);
     return std::make_unique<lola::ProxyEvent>(*lola_proxy, element_fq_id, event_or_field_name);
+}
+
+/// \brief Creates a SOME/IP proxy event for the given deployment/handle/binding combination.
+template <typename ReturnType>
+ReturnType CreateSomeIpProxyEvent(const HandleType& parent_handle,
+                                  ProxyBinding& parent_binding,
+                                  const SomeIpServiceTypeDeployment& someip_type_deployment,
+                                  const std::string_view event_or_field_name,
+                                  const ServiceElementType service_element_type)
+{
+    if (dynamic_cast<someip::Proxy*>(&parent_binding) == nullptr)
+    {
+        return MakeUnexpected(BindingFactoryErrorCode::kParentBindingIsNotSomeIp);
+    }
+
+    const auto element_fq_id = GetSomeIpElementFqId(
+        parent_handle, someip_type_deployment, event_or_field_name, service_element_type);
+    return std::make_unique<someip::ProxyEvent>(element_fq_id, event_or_field_name);
 }
 }  // namespace detail
 
@@ -115,11 +136,10 @@ inline Result<std::unique_ptr<ProxyEventBinding>> ProxyEventBindingFactoryImpl<S
             return detail::CreateLolaProxyEvent<ReturnType>(
                 parent_handle, parent_binding, lola_type_deployment, event_or_field_name, service_element_type);
         },
-        // The SOME/IP binding does not support proxy events (yet). It is listed explicitly (instead of being served
-        // by the score::cpp::blank arm) because std::visit requires an arm for every variant alternative.
-        [](const SomeIpServiceTypeDeployment&) noexcept -> ReturnType {
-            // TODO(someip-proxy-event): Create the SOME/IP proxy event binding.
-            return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
+        [&parent_handle, &parent_binding, event_or_field_name, service_element_type](
+            const SomeIpServiceTypeDeployment& someip_type_deployment) noexcept -> ReturnType {
+            return detail::CreateSomeIpProxyEvent<ReturnType>(
+                parent_handle, parent_binding, someip_type_deployment, event_or_field_name, service_element_type);
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
