@@ -122,7 +122,7 @@ void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configurat
         warn_double_init();
     }
 
-    auto config = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
+    auto config = configuration::ParseWithStrategySelection(runtime_configuration.GetConfigurationPath().Native());
     const auto validation_result = config.Validate();
 
     if (!validation_result.has_value())
@@ -137,7 +137,7 @@ void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configurat
 
 Result<void> Runtime::AddConfiguration(const runtime::RuntimeConfiguration& runtime_configuration)
 {
-    auto config = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
+    auto config = configuration::ParseWithStrategySelection(runtime_configuration.GetConfigurationPath().Native());
 
     return HandleAddonConfiguration(config);
 }
@@ -197,7 +197,8 @@ Runtime& Runtime::getInstanceInternal()
         if (!initialization_config_.has_value())
         {
             runtime::RuntimeConfiguration runtime_configuration{};
-            auto configuration = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
+            auto configuration =
+                configuration::ParseWithStrategySelection(runtime_configuration.GetConfigurationPath().Native());
             auto tracing_config = ParseTraceConfig(configuration);
             return Runtime{std::make_pair(std::move(configuration), std::move(tracing_config))};
         }
