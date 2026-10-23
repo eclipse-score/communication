@@ -1,0 +1,48 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+namespace score::mw::com::impl {
+
+    class GenericProxy {
+        +using EventMapView = ServiceElementMapView<GenericProxyEvent>
+        --
+        +{static} Create(instance_handle : HandleType) : Result<GenericProxy>
+        +~GenericProxy() noexcept
+        +GenericProxy(GenericProxy&&) noexcept
+        +operator=(GenericProxy&&) noexcept : GenericProxy&
+        --
+        +GetEvents() const noexcept : EventMapView
+    }
+
+    class ProxyBase {
+        +using HandleType = ::score::mw::com::impl::HandleType
+        --
+        +ProxyBase(proxy_binding : unique_ptr<ProxyBinding>, handle : HandleType)
+        +~ProxyBase()
+        --
+        +{static} FindService(specifier : InstanceSpecifier) : Result<ServiceHandleContainer<HandleType>>
+        +{static} FindService(instance_identifier : InstanceIdentifier) : Result<ServiceHandleContainer<HandleType>>
+        +{static} StartFindService(handler : FindServiceHandler<HandleType>, instance_identifier : InstanceIdentifier) : Result<FindServiceHandle>
+        +{static} StartFindService(handler : FindServiceHandler<HandleType>, instance_specifier : InstanceSpecifier) : Result<FindServiceHandle>
+        +{static} StopFindService(handle : FindServiceHandle) : Result<void>
+        +GetHandle() const noexcept : const HandleType&
+    }
+
+
+    ' --- Relations ---
+    GenericProxy --|> ProxyBase
+}
+
+@enduml
