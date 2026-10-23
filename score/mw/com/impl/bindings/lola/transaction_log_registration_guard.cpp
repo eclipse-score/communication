@@ -35,6 +35,7 @@ using is_movable_or_copyable = std::disjunction<std::is_move_constructible<T>,
                                                 std::is_move_assignable<T>,
                                                 std::is_copy_assignable<T>>;
 
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(process-wide-runtime-state)
 bool TransactionLogRegistrationGuard::deactivate_destruction_operation_{false};
 
 TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(

@@ -38,6 +38,7 @@ bool IsMemoryResourceProxyWithinMemoryBounds(const MemoryResourceProxy* const pt
 }  // namespace
 
 // per default (safety) bounds-checking is enabled.
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(process-wide-runtime-state)
 bool MemoryResourceProxy::bounds_checking_enabled_{true};
 
 bool MemoryResourceProxy::EnableBoundsChecking(const bool enable) noexcept

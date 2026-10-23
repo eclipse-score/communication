@@ -319,9 +319,11 @@ class SkeletonWrapperClass : public Interface<SkeletonTrait>
 };
 template <template <class> class Interface>
 std::optional<std::unordered_map<InstanceSpecifier, std::queue<Result<SkeletonWrapperClass<Interface>>>>>
+    // Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
     SkeletonWrapperClass<Interface>::instance_specifier_creation_results_{};
 template <template <class> class Interface>
 std::optional<std::unordered_map<InstanceIdentifier, std::queue<Result<SkeletonWrapperClass<Interface>>>>>
+    // Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
     SkeletonWrapperClass<Interface>::instance_identifier_creation_results_{};
 
 template <template <class> class Interface>
@@ -454,6 +456,7 @@ class ProxyWrapperClass : public Interface<ProxyTrait>
 };
 template <template <class> class Interface>
 std::optional<std::unordered_map<HandleType, std::queue<Result<ProxyWrapperClass<Interface>>>>>
+    // Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
     ProxyWrapperClass<Interface>::creation_results_{};
 
 /// \api

@@ -122,7 +122,9 @@ class ProviderEventDataControlLocalView final
     LocalEventControlSlots state_slots_;
 
     // helper variables to calculated performance indicators
+    // Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(process-wide-runtime-state)
     static inline std::atomic_uint_fast64_t num_alloc_misses{0U};
+    // Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(process-wide-runtime-state)
     static inline std::atomic_uint_fast64_t num_alloc_retries{0U};
 };
 

@@ -40,6 +40,7 @@ const filesystem::Path TMP_PATH{"/tmp_discovery/mw_com_lola/service_discovery"};
 // coverity[autosar_cpp14_a16_0_1_violation]
 #else
 // coverity[autosar_cpp14_a3_3_2_violation]
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(immutable-non-constexpr-constant)
 const filesystem::Path TMP_PATH{"/tmp/mw_com_lola/service_discovery"};
 // coverity[autosar_cpp14_a16_0_1_violation]
 #endif
