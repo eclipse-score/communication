@@ -39,8 +39,8 @@ expand_template(
     name = "rustfmt_with_config_script",
     out = "rustfmt_wrapper.sh",
     expression_substitutions = {
-        "@@RUSTFMT_BIN@@": "$(rlocationpath @rules_rust//tools/upstream_wrapper:rustfmt)",
-        "@@RUSTFMT_TOML@@": "$(rlocationpath :rustfmt_toml)",
+        "%RUSTFMT_BIN%": "$(rlocationpath @rules_rust//tools/upstream_wrapper:rustfmt)",
+        "%RUSTFMT_TOML%": "$(rlocationpath :rustfmt_toml)",
     },
     is_executable = True,
     template = "rustfmt_wrapper.sh.tpl",

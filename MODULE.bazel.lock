@@ -1189,8 +1189,8 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/0.1.2/MODULE.bazel": "d1889bf36241521c5d5c401aaf1e98242a60f9cab9d223f8190e5d7087956e83",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/1.1.0/MODULE.bazel": "e5c656abcad121a89cbabad3550bb20167a6865de219ef6e1c68ca30567e1c32",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/1.1.0/source.json": "9797d56e9dd68e9d3e8b674402df2d6d5e2174f84184ca4cbee78fc07dc117d9",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_cpp_policies/0.1.1/MODULE.bazel": "62968745a2fe77c449d4e11447b50918c58f870eeac72f0f3198c63617a2f8a2",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_cpp_policies/0.1.1/source.json": "29d45fbd6f3fae0a21487f5d652dfa0796bd2095d2a19732a5456e5b232754a9",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_cpp_policies/0.1.2/MODULE.bazel": "a9945987cab517098513a15943cca2be2a9d3f1fd60740e1207d0b45dfd84480",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_cpp_policies/0.1.2/source.json": "73a8de0f893ed4152d9eaf8ed1b465a7d6accc944c921aa430086fc64d3112f1",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_cr_checker/0.2.2/MODULE.bazel": "dc36d9c35543db918c3fb5b93a8e684431f56c7c784cf2a1b90f35802a373c98",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_cr_checker/0.3.1/MODULE.bazel": "f49e037d7fbc0b2a8b2734fc6b47334e8cc8589ca7a5aa0f3ccca85cc5f79fac",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_crates/0.0.13/MODULE.bazel": "199eb0e80b9665032eec1d1f8d663621a7a1f695a3e5cbc47c54aa1adfbae870",
@@ -12102,7 +12102,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "9vykuWBXyexl10IT63VQquaIibqfgB0Z5qufh1D/vbQ=",
-        "usagesDigest": "yoojN55ynHAvrH9ED88rzAmanII8C38//i9tMfRVGsQ=",
+        "usagesDigest": "TSs4a7FtoFhqO9Tnj1cK0UIorb/I8B6zTdm21pqz5vY=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -12178,14 +12178,9 @@
           "score_gcc_x86_64_toolchain": {
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
-              "extra_compile_flags": [
-                "-Wswitch-bool",
-                "-Wunused-parameter"
-              ],
+              "extra_compile_flags": [],
               "extra_c_compile_flags": [],
-              "extra_cxx_compile_flags": [
-                "-Wno-noexcept-type"
-              ],
+              "extra_cxx_compile_flags": [],
               "extra_known_features": [],
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
@@ -12215,14 +12210,9 @@
           "score_gcc_aarch64_toolchain": {
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
-              "extra_compile_flags": [
-                "-Wswitch-bool",
-                "-Wunused-parameter"
-              ],
+              "extra_compile_flags": [],
               "extra_c_compile_flags": [],
-              "extra_cxx_compile_flags": [
-                "-Wno-noexcept-type"
-              ],
+              "extra_cxx_compile_flags": [],
               "extra_known_features": [],
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
@@ -12252,14 +12242,9 @@
           "score_qcc_x86_64_toolchain": {
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
-              "extra_compile_flags": [
-                "-Wswitch-bool",
-                "-Wunused-parameter"
-              ],
+              "extra_compile_flags": [],
               "extra_c_compile_flags": [],
-              "extra_cxx_compile_flags": [
-                "-Wno-noexcept-type"
-              ],
+              "extra_cxx_compile_flags": [],
               "extra_known_features": [],
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",
@@ -12289,14 +12274,9 @@
           "score_qcc_aarch64_toolchain": {
             "repoRuleId": "@@score_bazel_cpp_toolchains+//rules:gcc.bzl%gcc_toolchain",
             "attributes": {
-              "extra_compile_flags": [
-                "-Wswitch-bool",
-                "-Wunused-parameter"
-              ],
+              "extra_compile_flags": [],
               "extra_c_compile_flags": [],
-              "extra_cxx_compile_flags": [
-                "-Wno-noexcept-type"
-              ],
+              "extra_cxx_compile_flags": [],
               "extra_known_features": [],
               "extra_enabled_features": [
                 "@@//quality/compiler_warnings:fortify_source",

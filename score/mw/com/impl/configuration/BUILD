@@ -15,9 +15,11 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@score_baselibs//score/flatbuffers/bazel:codegen.bzl", "generate_cpp")
 load("@score_baselibs//score/flatbuffers/bazel:tools.bzl", "generate_json_schema")
+load("//bazel/rules:expand_template.bzl", "expand_template")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+load("//score/mw/com/impl/configuration/converter:json_to_flatbuffer_rule.bzl", "json_to_flatbuffer")
 
 exports_files(
     [
@@ -40,6 +42,26 @@ generate_cpp(
         "//score/mw/com/flags:flatbuffers_enabled": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
+    visibility = ["//score/mw/com/impl/configuration:__subpackages__"],
+)
+
+# flatc's C++ generator hard-codes the bool verifier flag of every generated Verify() method as the
+# template parameter `B` (see @flatbuffers//:flatc). AllowedConsumer/AllowedProvider each declare a
+# scalar field literally named `B` (the ASIL-B branch of the allow-/deny-list), so the unqualified
+# call `B()` inside their generated Verify() resolves to that template parameter instead of the
+# accessor and fails to compile ("expression cannot be used as a function"). Qualifying with `this->`
+# forces member lookup and fixes it without touching semantics. This hermetic expand_template action
+# patches only that exact, narrow pattern in the generated header; consumers include this
+# file's output instead of :mw_com_config_fbs's directly.
+expand_template(
+    name = "mw_com_config_generated_h",
+    out = "mw_com_config_generated_patched.h",
+    substitutions = {"VerifyVector(B())": "VerifyVector(this->B())"},
+    target_compatible_with = select({
+        "//score/mw/com/flags:flatbuffers_enabled": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    template = ":mw_com_config_fbs",
     visibility = ["//score/mw/com/impl/configuration:__subpackages__"],
 )
 
@@ -99,6 +121,16 @@ validate_json_schema_test(
     target_compatible_with = ["@platforms//os:linux"],
 )
 
+# FlatBuffer binary fixture for configuration_flatbuffer_parsing_strategy_test's optional-scalar
+# coverage: an instance without instanceId (must parse to std::nullopt) and one with instanceId: 0
+# (a legal value, must parse to a present LolaServiceInstanceId{0}) -- the exact "absent" vs
+# "defaulted" distinction mw_com_config.fbs's "= null" fields (see the .fbs authoring rules) exist
+# for.
+json_to_flatbuffer(
+    name = "mw_com_config_optional_scalars",
+    json = "example/mw_com_config_optional_scalars.json",
+)
+
 filegroup(
     name = "mw_com_config_schema",
     srcs = ["mw_com_config_schema.json"],
@@ -156,6 +188,50 @@ cc_library(
         ":configuration_local",
         ":i_configuration_parsing_strategy",
         "@score_baselibs//score/json",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+# ConfigurationFlatbufferParsingStrategy parses FlatBuffer-encoded (see mw_com_config.fbs) configuration files.
+# It is unconditionally buildable, but only functional when the (experimental) FlatBuffers configuration flag is
+# enabled: with the flag off, its Parse() overloads log a fatal error and terminate, and no FlatBuffers dependency
+# is linked in (see the two selects below).
+cc_library(
+    name = "configuration_flatbuffer_parsing_strategy",
+    srcs = ["configuration_flatbuffer_parsing_strategy.cpp"] + select({
+        "//score/mw/com/flags:flatbuffers_enabled": [":mw_com_config_generated_h"],
+        "//conditions:default": [],
+    }),
+    hdrs = ["configuration_flatbuffer_parsing_strategy.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        ":config_validate",
+        ":lola_service_instance_deployment",
+        ":quality_type",
+        ":service_type_deployment",
+        ":someip_service_instance_deployment",
+        ":someip_service_type_deployment",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/quality/compiler_warnings",
+    ] + select({
+        "//score/mw/com/flags:flatbuffers_enabled": [
+            "@score_baselibs//score/filesystem",
+            "@score_baselibs//score/flatbuffers:flatbufferscpp",
+            "@score_baselibs//score/flatbuffers:flatbufferutils",
+        ],
+        "//conditions:default": [],
+    }),
+    local_defines = select({
+        "//score/mw/com/flags:flatbuffers_enabled": ["SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED"],
+        "//conditions:default": [],
+    }),
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/configuration:__subpackages__",
+    ],
+    deps = [
+        ":configuration_local",
+        ":i_configuration_parsing_strategy",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -681,16 +757,59 @@ cc_unit_test(
     ],
 )
 
+# Runs the shared tests with ConfigurationJsonParsingStrategy and, if the FlatBuffers configuration flag is enabled,
+# additionally with ConfigurationFlatbufferParsingStrategy.
 cc_unit_test(
-    name = "configuration_json_parsing_strategy_test",
-    srcs = ["configuration_json_parsing_strategy_test.cpp"],
-    data = ["example/mw_com_config.json"],
+    name = "configuration_parsing_strategy_test",
+    srcs = ["configuration_parsing_strategy_test.cpp"],
+    data = [
+        "example/mw_com_config.json",
+        "//score/mw/com/impl/configuration/test/parsing_strategy_configs:test_configs_json",
+    ] + select({
+        "//score/mw/com/flags:flatbuffers_enabled": [
+            "//score/mw/com/impl/configuration/converter:mw_com_config",
+            "//score/mw/com/impl/configuration/test/parsing_strategy_configs:test_configs_bin",
+        ],
+        "//conditions:default": [],
+    }),
     features = COMPILER_WARNING_FEATURES + [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
+    local_defines = select({
+        "//score/mw/com/flags:flatbuffers_enabled": ["SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED"],
+        "//conditions:default": [],
+    }),
     deps = [
+        ":configuration_flatbuffer_parsing_strategy",
         ":configuration_json_parsing_strategy",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
+# Only buildable when the FlatBuffers configuration flag is enabled: ConfigurationFlatbufferParsingStrategy is
+# unimplemented (LogFatal-and-abort) otherwise, so there is nothing meaningful to test.
+cc_unit_test(
+    name = "configuration_flatbuffer_parsing_strategy_test",
+    srcs = [
+        "configuration_flatbuffer_parsing_strategy_test.cpp",
+        ":mw_com_config_generated_h",
+    ],
+    data = [
+        ":mw_com_config_optional_scalars",
+        "//score/mw/com/impl/configuration/converter:mw_com_config",
+    ],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    target_compatible_with = select({
+        "//score/mw/com/flags:flatbuffers_enabled": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    deps = [
+        ":configuration_flatbuffer_parsing_strategy",
+        "@score_baselibs//score/flatbuffers:flatbufferscpp",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )

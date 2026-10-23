@@ -85,13 +85,6 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
     args = [
-        # Suppress false positive from Clang's self-assignment overloaded check.
-        # See https://bugs.llvm.org/show_bug.cgi?id=43124
-        "-Wno-error=self-assign-overloaded",
-        "-Wno-return-type-c-linkage",
-        "-Wno-unused-command-line-argument",
-        # Clang-only: GCC has no -Wdeprecated-non-prototype (C2x non-prototype decls).
-        "-Wno-deprecated-non-prototype",
         "-Warray-bounds",
         "-Wimplicit-fallthrough",
     ],

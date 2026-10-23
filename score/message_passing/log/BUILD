@@ -44,6 +44,7 @@ cc_unit_test(
     visibility = ["//score:__subpackages__"],
     deps = [
         ":log",
+        "@score_baselibs//score/quality/compiler_warnings",
     ],
 )
 

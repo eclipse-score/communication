@@ -1,0 +1,9 @@
+{
+    "serviceTypes": [],
+    "serviceInstances": [],
+    "global": {
+        "queue-size": {
+            "B-receiver": 5
+        }
+    }
+}

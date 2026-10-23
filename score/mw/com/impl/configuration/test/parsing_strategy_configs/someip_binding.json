@@ -1,0 +1,55 @@
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SOMEIP",
+                    "serviceId": 1234,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "eventId": 20
+                        }
+                    ],
+                    "fields": [],
+                    "methods": [
+                        {
+                            "methodName": "SetPressure",
+                            "methodId": 40
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 1234,
+                    "asil-level": "QM",
+                    "binding": "SOMEIP",
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "numberOfSampleSlots": 50,
+                            "maxSubscribers": 5
+                        }
+                    ],
+                    "fields": []
+                }
+            ]
+        }
+    ]
+}

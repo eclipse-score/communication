@@ -66,8 +66,6 @@ gcc_toolchains.toolchain(
     extra_cxxflags = [
         # Diagnostics
         "-fdiagnostics-color=always",
-        "-Wswitch-enum",  # Warn on unhandled enum in switch (MISRA Rule 9.6.4)
-        "-Wno-maybe-uninitialized",  # GCC 8/9 false positives (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=80635)
         "-Wno-dangling-reference",  # disabled for the moment
     ],
     extra_enabled_features = [
@@ -89,15 +87,6 @@ bazel_dep(name = "score_bazel_cpp_toolchains", version = "1.0.4", dev_dependency
 
 score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
 
-SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
-    "-Wswitch-bool",  # Helps to achieve MISRA C++:2023 Rule 7-0-1
-    "-Wunused-parameter",
-]
-
-SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS = [
-    "-Wno-noexcept-type",
-]
-
 GCC_BASED_COMPILER_ENABLED_FEATURES = [
     "//quality/compiler_warnings:fortify_source",
     "//quality/compiler_warnings:optimize_code",
@@ -108,8 +97,6 @@ GCC_BASED_COMPILER_ENABLED_FEATURES = [
 
 score_gcc.toolchain(
     name = "score_gcc_x86_64_toolchain",
-    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
-    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     extra_enabled_features = GCC_BASED_COMPILER_ENABLED_FEATURES,
     target_cpu = "x86_64",
     target_os = "linux",
@@ -119,8 +106,6 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_gcc_aarch64_toolchain",
-    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
-    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     extra_enabled_features = GCC_BASED_COMPILER_ENABLED_FEATURES,
     target_cpu = "aarch64",
     target_os = "linux",
@@ -130,8 +115,6 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_x86_64_toolchain",
-    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
-    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     extra_enabled_features = GCC_BASED_COMPILER_ENABLED_FEATURES,
     sdp_version = "8.0.4",
     target_cpu = "x86_64",
@@ -141,8 +124,6 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_aarch64_toolchain",
-    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
-    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     extra_enabled_features = GCC_BASED_COMPILER_ENABLED_FEATURES,
     sdp_version = "8.0.4",
     target_cpu = "aarch64",
@@ -227,7 +208,7 @@ sysroot_from_lock(
     lock = "@ubuntu24_04_sysroot_resolve//:lock.json",
 )
 
-bazel_dep(name = "score_cpp_policies", version = "0.1.1", dev_dependency = True)
+bazel_dep(name = "score_cpp_policies", version = "0.1.2", dev_dependency = True)
 bazel_dep(name = "toolchains_llvm", version = "1.8.0", dev_dependency = True)
 
 llvm = use_extension(

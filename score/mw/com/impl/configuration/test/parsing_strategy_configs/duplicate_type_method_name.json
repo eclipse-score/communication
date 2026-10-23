@@ -1,0 +1,30 @@
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1234,
+                    "events": [],
+                    "fields": [],
+                    "methods": [
+                        {
+                            "methodName": "SetPressure",
+                            "methodId": 40
+                        },
+                        {
+                            "methodName": "SetPressure",
+                            "methodId": 41
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": []
+}
