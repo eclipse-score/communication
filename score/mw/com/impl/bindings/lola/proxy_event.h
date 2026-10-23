@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_H
 
+#include "score/mw/com/impl/bindings/lola/e2e_event_state.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/event_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
@@ -135,9 +136,8 @@ class ProxyEvent final : public GenericProxyEventBinding
     SlotCollector::SlotIndices GetNewSamplesSlotIndices(const std::size_t max_count);
 
     /// \brief Runs the POC E2E check for the given slot.
-    /// \details Only call when e2e_profile_config_ is set, which also guarantees a non-null e2e_header_storage_.
     /// \return data_integrity/sequence of the check; all kDisabled if the slot has no header.
-    e2e::RawCheckOutcome CheckE2E(const e2e::ProfileConfiguration& profile_config,
+    e2e::RawCheckOutcome CheckE2E(E2EEventState<e2e::CheckContext>& e2e_state,
                                   const SlotIndexType slot_index,
                                   const void* sample_data);
 
@@ -165,9 +165,8 @@ class ProxyEvent final : public GenericProxyEventBinding
     std::reference_wrapper<TransactionLogSet> transaction_log_set_;
     SubscriptionStateMachine subscription_event_state_machine_;
     std::optional<E2EEventTypeDeployment> e2e_event_deployment_;
-    std::shared_ptr<e2e::HeaderStorage> e2e_header_storage_;
-    std::optional<e2e::ProfileConfiguration> e2e_profile_config_;
-    e2e::CheckContext e2e_check_context_{};
+    /// \brief Empty when E2E is not active for this event (no deployment or no header storage).
+    std::optional<E2EEventState<e2e::CheckContext>> e2e_state_;
 };
 
 }  // namespace score::mw::com::impl::lola
