@@ -32,6 +32,7 @@ namespace score::mw::com::impl
 {
 
 // Initialization of static thread_local variables!
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(process-wide-runtime-state)
 thread_local bool ProxyEventBase::is_in_receive_handler_context = false;
 
 ProxyEventBase::ProxyEventBase(std::string_view event_name,
