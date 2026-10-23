@@ -21,6 +21,7 @@ cc_library(
     hdrs = ["test_helper_size_provider.h"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
+        "//score/mw/com/impl/methods:method_signature_element_ptr",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/plumbing:sample_ptr",
     ],
