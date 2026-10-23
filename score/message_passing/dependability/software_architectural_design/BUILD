@@ -19,6 +19,7 @@ load(
 architectural_design(
     name = "message_passing_architectural_design",
     dynamic = [
+        "client_server_async_integration.puml",
         "server_client_sequence_linux.puml",
         "server_client_sequence_qnx.puml",
         "server_client_os_fault_sequence_linux.puml",

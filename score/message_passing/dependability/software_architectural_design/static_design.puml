@@ -19,6 +19,12 @@ interface "IServer" as IServer
 interface "IServerFactory" as IServerFactory
 interface "IServerConnection" as IServerConnection
 interface "IConnectionHandler" as IConnectionHandler
+interface "IClientConnection::StateCallback" as StateCallback
+interface "IClientConnection::NotifyCallback" as NotifyCallback
+interface "IClientConnection::ReplyCallback" as ReplyCallback
+interface "ConnectCallback" as ConnectCallback
+interface "DisconnectCallback" as DisconnectCallback
+interface "MessageCallback" as MessageCallback
 
 component "Message Passing" as dependable_element_message_passing <<SEooC>> {
 
@@ -82,6 +88,16 @@ qnx_dispatch_server_factory )-d- IServerFactory
 unix_domain_server -d-( IConnectionHandler
 qnx_dispatch_server -d-( IConnectionHandler
 
+client_connection -u-( StateCallback
+client_connection -u-( NotifyCallback
+client_connection -u-( ReplyCallback
+unix_domain_server -d-( ConnectCallback
+unix_domain_server -d-( DisconnectCallback
+unix_domain_server -d-( MessageCallback
+qnx_dispatch_server -d-( ConnectCallback
+qnx_dispatch_server -d-( DisconnectCallback
+qnx_dispatch_server -d-( MessageCallback
+
 ' SEooC boundary relations (not drawn; the interfaces above cross the boundary)
 dependable_element_message_passing -[hidden]- IClientConnection
 dependable_element_message_passing -[hidden]- IClientFactory
@@ -89,5 +105,11 @@ dependable_element_message_passing -[hidden]- IServer
 dependable_element_message_passing -[hidden]- IServerFactory
 dependable_element_message_passing -[hidden]- IServerConnection
 dependable_element_message_passing -[hidden]- IConnectionHandler
+dependable_element_message_passing -[hidden]- StateCallback
+dependable_element_message_passing -[hidden]- NotifyCallback
+dependable_element_message_passing -[hidden]- ReplyCallback
+dependable_element_message_passing -[hidden]- ConnectCallback
+dependable_element_message_passing -[hidden]- DisconnectCallback
+dependable_element_message_passing -[hidden]- MessageCallback
 
 @enduml
