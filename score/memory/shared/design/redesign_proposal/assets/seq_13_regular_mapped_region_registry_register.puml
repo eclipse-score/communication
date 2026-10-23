@@ -9,12 +9,15 @@ participant "MappedRegionRegistry: memory_region_registry" as memory_region_regi
 
 activate memory_region_factory
 
-memory_region_factory -> memory_region_registry : Register(IdType, IMappedRegionProperties&, CreateRegionCallback)
+memory_region_factory -> memory_region_registry : Register(IdType, CreateRegionCallback, optional<AdjustRegionCallback>)
 activate memory_region_registry
 
 memory_region_registry -> memory_region_registry : Lookup region with IdType
 
 alt Region already exists in map
+    note right of memory_region_registry
+        AdjustRegionCallback is ignored in case of RegularMappedRegionRegistry
+    end note
     memory_region_registry --> memory_region_factory : Error
 else Region does not exist in map
     ref over memory_region_registry

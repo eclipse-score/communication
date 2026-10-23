@@ -1,14 +1,13 @@
 @startuml seq_10_mapped_region_factory_create
-title 10. MemoryRegionFactory: Create
+autonumber
+title MappedRegionFactory: Create
 skinparam defaultFontSize 11
 skinparam sequenceMessageAlign center
 
 actor "User" as User
 participant "MappedRegionFactory : instance" as mapped_region_factory
 participant "MappedRegionRegistry: instance" as mapped_region_registry
-' participant "IMappedRegionRegistry" as mapped_region_registry
 participant "{static} PosixNamedMappedRegion" as mapped_region
-participant "PosixNamedMappedRegionProperties: Instance" as posix_named_mapped_region_properties
 
 activate User
 
@@ -21,12 +20,8 @@ deactivate mapped_region_registry
 
 Create mapped_region_factory
 User -> mapped_region_factory : Construct(move(mapped_region_registry))
-activate mapped_region_factory
 
-mapped_region_factory -> User : mapped_region_factory
-deactivate mapped_region_factory
-
-User -> mapped_region_factory : CreateNamed(RegionInitializeCallback, path, size, perms)
+User -> mapped_region_factory : CreatePosixNamed(RegionInitializeCallback, path, size, perms)
 activate mapped_region_factory
 
 ' mapped_region_factory -> mapped_region : make_shared<IMappedRegion>(file_descriptor, size, perms)
@@ -35,22 +30,16 @@ activate mapped_region_factory
 ' mapped_region --> mapped_region_factory : shared_ptr<IMappedRegion>
 ' deactivate mapped_region
 
-mapped_region_factory -> mapped_region : PosixNamedMappedRegion::GetId(path)
+mapped_region_factory -> mapped_region : PosixNamedMappedRegion::CreateId(path)
 activate mapped_region
 
 mapped_region --> mapped_region_factory : IdType
 deactivate mapped_region
 
-Create posix_named_mapped_region_properties
-mapped_region_factory -> posix_named_mapped_region_properties : Construct(size, perms)
-activate posix_named_mapped_region_properties
-
-posix_named_mapped_region_properties --> mapped_region_factory
-deactivate posix_named_mapped_region_properties
-
 mapped_region_factory -> mapped_region_factory : Create CreateRegionCallback()
+mapped_region_factory -> mapped_region_factory : Create AdjustRegionCallback()
 
-mapped_region_factory -> mapped_region_registry : Register(IdType, IMappedRegionProperties, CreateRegionCallback) 
+mapped_region_factory -> mapped_region_registry : Register(IdType, CreateRegionCallback, AdjustRegionCallback)
 activate mapped_region_registry
 
 ref over mapped_region_factory, mapped_region_registry

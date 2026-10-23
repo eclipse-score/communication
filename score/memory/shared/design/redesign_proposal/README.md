@@ -49,10 +49,169 @@ testable.
 ## Mapped Region Layer
 
 As discussed above, the lower layer provides an abstraction for mapped memory regions. The following diagram shows the
+structural view of the Mapped Region Layer.
 
 <img alt="Mapped Region Hierarchy" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/mf_add_lib_memory_redesign_proposal/score/memory/shared/design/redesign_proposal/assets/mapped_region_hierarchy.puml">
+
+### Mapped Regions
+
+A `Mapped Region` is represented by the abstract base class `IMappedRegion`. It represents a contiguous memory region,
+being mapped into the process's address space. The interface common to all mapped regions provides methods:
+
+- GetBaseAddress: to get the base address, where it is mapped in process memory.
+- GetSize: to get the size of the mapped region.
+- GetId: to get the unique id of the region.
+
+Any subclass of `IMappedRegion` must implement these methods. The subclasses of `IMappedRegion` represent different
+types of mapped regions. Wherever it makes sense, the subclasses are grouped into abstract base classes to provide a
+common interface for similar types of mapped regions. For example, `NamedMappedRegion` is an abstract base class for all
+named mapped regions, which provides a common interface for named mapped regions.
+
+When implementing `GetId()` in a subclass, the id must be unique across all mapped regions in the system! This is
+important because the id is used to register the `IMappedRegion` into a registry, where it can be looked up by id later
+again. To ensure uniqueness, it might make sense to "encode" the type of the region into the id in some cases. E.g.
+while for named regions, the id could be simply a hash of the name/path, for other types of regions, the id could be a
+combination of the type and a unique number.
+
+Two **important things** regarding the id:
+
+1. The id must not contain properties of the region, which can change over time (e.g., permissions or size). Otherwise,
+   the id would change when the properties change, which would break the registry.
+2. The id must be **statically** computable, without having to query the region instance itself. This is needed, because
+   we do registry checks, whether a region is already registered, before we actually create the region itself. Since the
+   acquisition of the id will be done in a code path in the `MappedRegionFactory`, which is **specific** to the type of
+   the region, the signature of the static `GetId()` method in implementations of `IMappedRegion` can be also specific
+   to the type of the region and not prescribed by the interface.
+
+### MappedRegionFactory and MappedRegionRegistry
+
+An instance of a `Mapped Region`, inheriting from abstract base class `IMappedRegion`, gets created by an instance of
+`MappedRegionFactory`. The interface `IMappedRegionFactory`, which `MappedRegionFactory` implements has been introduced
+to allow testing/mocking.
+
+`IMappedRegionFactory`/`MappedRegionFactory` has a set of `CreateXXX`/`OpenXXX`/`CreateOrOpenXXX` triples. One such
+triple per concrete type of `IMappedRegion` the factory supports. Out of the box we implement/provide
+`PosixNamedMappedRegion` as an implementation of `IMappedRegion`. Thus, we also provide `IMappedRegionFactory`/
+`MappedRegionFactory` initially with these methods:
+
+- `CreatePosixNamed()`
+- `OpenPosixNamed()`
+- `CreateOrOpenPosixNamed()`
+
+If a new (non-abstract) type of `IMappedRegion` gets introduced, also a corresponding triple of create/open methods need
+to be added to `IMappedRegionFactory`/`MappedRegionFactory`. The signatures of these create/open methods are specific to
+the new (non-abstract) type of `IMappedRegion`, because the information to create/open a concrete type of
+`IMappedRegion`
+is specific to this type.
+
+A `MappedRegionFactory` can not exist without an instance of an `IMappedRegionRegistry`. The factory uses such an
+`IMappedRegionRegistry` instance to store instances of `IMappedRegion`, which it had created. This serves the following
+use case:
+
+- within an application/process an instance of an `IMappedRegion` has been created via `MappedRegionFactory`. E.g. via
+  `MappedRegionFactory::CreatePosixNamed("someName")`
+- If this create-call was successful, the underlying POSIX shared-memory object has been created and mapped into the
+  process virtual address space.
+- another part in the same application/process calls `MappedRegionFactory::OpenPosixNamed("someName")`. I.e. it wants to
+  open the very same `Mapped Region`.
+- We do not want, to have a 2nd mapping of the same underlying shared-memory object in the process address-space!
+- The factory shall detect that and instead of opening and mem-mapping the same `Mapped Region` twice, it shall return
+  the already created/mem-mapped `Mapped Region`.
+- Thus, it needs such a registry mechanism.
+
+The `IMappedRegionRegistry` is not really exposed to the user. It is only used internally by the `MappedRegionFactory`.
+So, it could have been created internally by `MappedRegionFactory` as an implementation detail. We decided to expose it
+as a required construction argument for `MappedRegionFactory` for two reasons:
+
+- allow easier testing of `MappedRegionFactory`. Providing a mock implementation of `IMappedRegionRegistry` helps in
+  testing
+- we foresee two different implementations of `IMappedRegionRegistry`:
+    - `MappedRegionRegistry`: This implementation internally only stores `weak_ptr`s to registered `IMappedRegion`s.
+      Thus, when the last `shared_ptr<IMappedRegion>` handed out by the `MappedRegionFactory` for a given
+      `IMappedRegion` has been destroyed, it will also be gone from the `MappedRegionRegistry`. This means a
+      new/explicit call to `MappedRegionFactory::Create()` is needed to re-create/re-map this concrete `IMappedRegion`
+      instance.
+    - `PersistentMappedRegionRegistry`: This implementation internally stores `shared_ptr`s and therefore **extends**
+      the life-time of registered `IMappedRegion`s. Even if all users have discarded their `shared_ptr`s to the given
+      `IMappedRegion`. If later a user calls `MappedRegionFactory::Create()` again, which would result in creating the
+      same instance of `IMappedRegion` re-creation/re-mapping is skipped and the stored `IMappedRegion` instance is
+      returned.
+
+The `PersistentMappedRegionRegistry` has the following pros and cons:
+
+- pro: In case the creation/mapping of a `Mapped Region` is "expensive", the life-time extension done by the
+  `PersistentMappedRegionRegistry` might be helpful. I.e. if the same `IMappedRegion` is used later in the application
+  life-cycle again, it might save time.
+- con: Keeping an `IMappedRegion` blocks/requires physical memory, which backs the `Mapped Region`! So keeping it in
+  times, where no one is using it, can be detrimental.
+
+So, there is a tradeoff in usage between `MappedRegionRegistry` and `PersistentMappedRegionRegistry`. And there is in
+both cases the possibility to control, how long a `IMappedRegion` instance is kept via these additional APIs:
+
+- Unregister (IdType): Explicitly remove a specific `IMappedRegion` instance from the registry. Has the same effect for
+  both implementations.
+- Clear (): Explicitly remove all `IMappedRegion` instances from the registry. Has the same effect for both
+  implementations.
+- FreeUnusedResources (): This is a no-op in case of `MappedRegionRegistry`! In case of
+  `PersistentMappedRegionRegistry`, it removes all `IMappedRegion` instances, which are only held by itself.
+
+### Creating a Mapped Region
+
+The following sequence shows the needed steps and involved actors, when the user creates an `IMappedRegion` instance. In
+this case an `IMappedRegion` instance of type `PosixNamedMappedRegion`.
+
+<img alt="Create Mapped Region" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/mf_add_lib_memory_redesign_proposal/score/memory/shared/design/redesign_proposal/assets/seq_10_mapped_region_factory_create.puml">
+
+Explanation:
+
+1. The user creates a `MappedRegionRegistry` to be used/owned by the `MappedRegionFactory`. The user in this case
+   decided for the non-persistent registry. He could have also created a `PersistentMappedRegionRegistry` instead.
+2. The user creates a `MappedRegionFactory` and hands over the registry instance to it.
+3. The user calls `MappedRegionFactory::CreatePosixNamed()` with the arguments necessary to create a
+   `PosixNamedMappedRegion` instance. Additionally, the user provides a `RegionInitializeCallback`, which is called by
+   the factory after the region has been created and mapped into the process address space. This callback allows the
+   user to initialize the memory in the region. Note, that this callback is only called, when the region has been
+   created for the first time. If the region already exists, the callback is not called. The `RegionInitializeCallback`
+   argument is part of all `CreateXXX`/`CreateOrOpenXXX` methods of `MappedRegionFactory`.
+4. For the later/upcoming call to `MappedRegionRegistry::Register(IdType, CreateRegionCallback, ...)` 1st the id for the
+   to be created `PosixNamedMappedRegion` has to be constructed. This is because the registry needs the id to check,
+   whether a region with this id already exists in the registry and the region gets created by the registry via the
+   `CreateRegionCallback` only if it does not exist yet. The id is constructed by the factory based on the arguments
+   provided by the user via a region type specific static method. Here in case of `PosixNamedMappedRegion` via
+   `PosixNamedMappedRegion::CreateId(path)`.
+5. Next `MappedRegionFactory` creates a `CreateRegionCallback` (a lambda) for the creation of the
+   `PosixNamedMappedRegion` instance based on the user provided arguments. This callback will later be called by the
+   registry, if the region does not exist yet.
+6. Next `MappedRegionFactory` creates an `AdjustRegionCallback` (a lambda) for the adjustment of the
+   `PosixNamedMappedRegion` instance based on the user provided arguments. This callback will later be called by the
+   registry, if a region for the given id already exists and needs to be adjusted to the user provided arguments. E.g.
+   if the user provided a size, which is larger than the existing region size. Note, that an `AdjustRegionCallback` is
+   optional. If a specific type of `IMappedRegion` does not support adjustment, the factory will provide a
+   `std::nullopt`
+   in this case,
+7. `MappedRegionFactory` calls `MappedRegionRegistry::Register(IdType, CreateRegionCallback, AdjustRegionCallback)`. We
+   assume the good case here, where the `MappedRegionRegistry::Register()` was successful and returned a `Result` with a
+   valid `shared_ptr<IMappedRegion>` to the factory.
+8. This `Result` with a valid `shared_ptr<IMappedRegion>` is returned to the user.
+
+#### Registering a Mapped Region
+
+The reason, why the `MappedRegionFactory` does not create the `IMappedRegion` instance **directly**, but hands over a
+`CreateRegionCallback` to the `MappedRegionRegistry` to let the registry execute the creation, is the following:
+The registration and the creation/adjustment of the `IMappedRegion` instance must be **atomic**. Thus, the registry will
+acquire a registry instance specific lock in the entrance of a `Register()` call. Then it checks, whether a region with
+the given id already exists in the registry. If not, it calls the `CreateRegionCallback` and does the insertion into its
+map all under lock.
+
+Here is the sequence diagram for the `MappedRegionRegistry::Register()` call (this sequence was contained as a `ref` in
+the previous sequence diagram):
+
+<img alt="Register Mapped Region" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/mf_add_lib_memory_redesign_proposal/score/memory/shared/design/redesign_proposal/assets/seq_13_regular_mapped_region_registry_register.puml">
+
+Explanation:
+
 ```text
-MappedRegion (GetBaseAddress, GetSize)
+IMappedRegion (GetBaseAddress, GetSize, GetId)
   +-- NamedMemoryRegion (+ GetPath, UnlinkOnDestruction)
   |     +-- PosixNamedMemoryRegion (+ GetFileDescriptor)
   |     +-- TypedNamedMemoryRegion (+ GetFileDescriptor)

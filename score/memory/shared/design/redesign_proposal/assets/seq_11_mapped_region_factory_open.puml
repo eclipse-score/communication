@@ -21,12 +21,9 @@ deactivate mapped_region_registry
 
 Create mapped_region_factory
 User -> mapped_region_factory : Construct(move(mapped_region_registry))
-activate mapped_region_factory
 
-mapped_region_factory -> User : mapped_region_factory
-deactivate mapped_region_factory
 
-User -> mapped_region_factory : OpenNamed(mapped_region_registry, path, size, perms)
+User -> mapped_region_factory : OpenPosixNamed(path)
 activate mapped_region_factory
 
 ' mapped_region_factory -> mapped_region_factory : CreateId(path)

@@ -16,9 +16,9 @@ together {
     interface ISharedMemoryFactory {
         + using InitializationCallback = score::callback<Result<void>(ISharedMemoryResource&)>
         __ named (posix) __
-        + {virtual} CreateNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
-        + {virtual} OpenNamed(path): Result<shared_ptr<IMappedRegion>>
-        + {virtual} CreateOrOpenNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        + {virtual} CreatePosixNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        + {virtual} OpenPosixNamed(path): Result<shared_ptr<IMappedRegion>>
+        + {virtual} CreateOrOpenPosixNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
         __ anonymous (platform-specific) __
         + {virtual} CreateQnxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
         + {virtual} CreateLinuxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
@@ -35,9 +35,9 @@ together {
         ..
         SharedMemoryFactory(unique_ptr<IMappedRegionFactory>)
         __ named (posix) __
-        + {override} CreateNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
-        + {override} OpenNamed(path): Result<shared_ptr<IMappedRegion>>
-        + {override} CreateOrOpenNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        + {override} CreatePosixNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        + {override} OpenPosixNamed(path): Result<shared_ptr<IMappedRegion>>
+        + {override} CreateOrOpenPosixNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
         __ anonymous (platform-specific) __
         + {override} CreateQnxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
         + {override} CreateLinuxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
