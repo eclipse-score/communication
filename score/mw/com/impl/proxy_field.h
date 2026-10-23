@@ -22,6 +22,7 @@
 #include "score/mw/com/impl/proxy_event.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 #include "score/mw/com/impl/proxy_field_base.h"
+#include "score/mw/com/impl/util/type_erased_storage.h"
 
 #include "score/mw/com/impl/methods/proxy_method_base.h"
 
@@ -365,8 +366,10 @@ class ProxyFieldImpl : public ProxyFieldBase
             return std::make_unique<ProxyEvent<FieldType>>(
                 proxy_base,
                 field_name,
-                ProxyFieldBindingFactory<FieldType>::CreateEventBinding(
-                    proxy_base.GetHandle(), ProxyBaseView{proxy_base}.GetBinding(), field_name),
+                ProxyFieldBindingFactory::CreateEventBinding(proxy_base.GetHandle(),
+                                                             ProxyBaseView{proxy_base}.GetBinding(),
+                                                             field_name,
+                                                             CreateDataTypeSizeInfoFromTypes<FieldType>()),
                 typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{});
         }
         else
@@ -385,10 +388,16 @@ class ProxyFieldImpl : public ProxyFieldBase
     {
         if constexpr (kHasSetter)
         {
+            using SignatureInfo = TypeErasedMethodSignatureInfo<SetMethodSignature<FieldType>>;
+            // A field's set-method always has exactly one in-arg (FieldType) and a non-void return type
+            // (Result<FieldType>), so both are guaranteed to be present.
             return std::make_unique<ProxyMethod<SetMethodSignature<FieldType>>>(
                 field_name,
-                ProxyFieldBindingFactory<FieldType>::CreateSetMethodBinding(
-                    proxy_base.GetHandle(), ProxyBaseView{proxy_base}.GetBinding(), field_name),
+                ProxyFieldBindingFactory::CreateSetMethodBinding(proxy_base.GetHandle(),
+                                                                 ProxyBaseView{proxy_base}.GetBinding(),
+                                                                 field_name,
+                                                                 SignatureInfo::InArgsTypeInfo().value(),
+                                                                 SignatureInfo::ReturnTypeInfo().value()),
                 typename ProxyMethod<SetMethodSignature<FieldType>>::FieldSetterConstructorEnabler{});
         }
         else
@@ -407,10 +416,15 @@ class ProxyFieldImpl : public ProxyFieldBase
     {
         if constexpr (kHasGetter)
         {
+            using SignatureInfo = TypeErasedMethodSignatureInfo<GetMethodSignature<FieldType>>;
+            // A field's get-method always has a non-void return type (Result<FieldType>), so it is guaranteed
+            // to be present.
             return std::make_unique<ProxyMethod<GetMethodSignature<FieldType>>>(
                 field_name,
-                ProxyFieldBindingFactory<FieldType>::CreateGetMethodBinding(
-                    proxy_base.GetHandle(), ProxyBaseView{proxy_base}.GetBinding(), field_name),
+                ProxyFieldBindingFactory::CreateGetMethodBinding(proxy_base.GetHandle(),
+                                                                 ProxyBaseView{proxy_base}.GetBinding(),
+                                                                 field_name,
+                                                                 SignatureInfo::ReturnTypeInfo().value()),
                 typename ProxyMethod<GetMethodSignature<FieldType>>::FieldGetterConstructorEnabler{});
         }
         else

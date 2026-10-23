@@ -20,9 +20,12 @@ std::unique_ptr<SkeletonMethodBinding> SkeletonMethodBindingFactory::Create(
     const InstanceIdentifier& instance_identifier,
     SkeletonBinding& parent_binding,
     const std::string_view method_name,
-    MethodType method_type)
+    MethodType method_type,
+    std::optional<memory::DataTypeSizeInfo> in_arg_type_info,
+    std::optional<memory::DataTypeSizeInfo> return_type_info)
 {
-    return instance().Create(instance_identifier, parent_binding, method_name, method_type);
+    return instance().Create(
+        instance_identifier, parent_binding, method_name, method_type, in_arg_type_info, return_type_info);
 }
 
 auto SkeletonMethodBindingFactory::instance() -> ISkeletonMethodBindingFactory&

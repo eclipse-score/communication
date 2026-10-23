@@ -132,21 +132,22 @@ class ProxyCreationFixture : public ::testing::Test
 
         // By default the Create call on the ProxyEventBindingFactory returns valid bindings.
         ON_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_,
-                Create(_, _, kEventName, ServiceElementType::EVENT))
+                Create(_, _, kEventName, ServiceElementType::EVENT, _))
             .WillByDefault(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
 
         // By default the Create call on the ProxyFieldBindingFactory returns valid bindings.
-        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName))
+        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName, _))
             .WillByDefault(Return(ByMove(std::move(proxy_field_binding_mock_ptr))));
 
         // By default the Create call on the ProxyFieldBindingFactory returns valid method bindings.
-        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateGetMethodBinding(_, _, kFieldName))
+        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateGetMethodBinding(_, _, kFieldName, _))
             .WillByDefault(Return(ByMove(std::move(proxy_field_get_binding_mock_ptr))));
-        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateSetMethodBinding(_, _, kFieldName))
+        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateSetMethodBinding(_, _, kFieldName, _, _))
             .WillByDefault(Return(ByMove(std::move(proxy_field_set_binding_mock_ptr))));
 
         // By default the Create call on the ProxyMethodBindingFactory returns valid bindings.
-        ON_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, kMethodName, MethodType::kMethod))
+        ON_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_,
+                Create(_, _, kMethodName, MethodType::kMethod, _, _))
             .WillByDefault(Return(ByMove(std::move(proxy_method_binding_mock_ptr))));
 
         // By default that the proxy_binding can successfully call SetupMethods
@@ -163,9 +164,9 @@ class ProxyCreationFixture : public ::testing::Test
     const HandleType handle_{make_HandleType(identifier_with_valid_binding_)};
     RuntimeMockGuard runtime_mock_guard_{};
     ProxyBindingFactoryMockGuard proxy_binding_factory_mock_guard_{};
-    ProxyEventBindingFactoryMockGuard<TestSampleType> proxy_event_binding_factory_mock_guard_{};
-    ProxyFieldBindingFactoryMockGuard<TestSampleType> proxy_field_binding_factory_mock_guard_{};
-    ProxyMethodBindingFactoryMockGuard<TestMethodType> proxy_method_binding_factory_mock_guard_{};
+    ProxyEventBindingFactoryMockGuard proxy_event_binding_factory_mock_guard_{};
+    ProxyFieldBindingFactoryMockGuard proxy_field_binding_factory_mock_guard_{};
+    ProxyMethodBindingFactoryMockGuard proxy_method_binding_factory_mock_guard_{};
     NiceMock<mock_binding::Proxy> proxy_binding_mock_{};
     NiceMock<mock_binding::ProxyEvent> proxy_event_binding_mock_{};
     NiceMock<mock_binding::ProxyEvent> proxy_field_binding_mock_{};
@@ -222,15 +223,15 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCr
     EXPECT_CALL(proxy_binding_factory_mock_guard_.factory_mock_, Create(handle_))
         .WillRepeatedly(Return(ByMove(std::move(proxy_binding_mock_ptr))));
     EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_,
-                Create(_, _, kEventName, ServiceElementType::EVENT))
+                Create(_, _, kEventName, ServiceElementType::EVENT, _))
         .WillRepeatedly(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
-    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName))
+    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName, _))
         .WillRepeatedly(Return(ByMove(std::move(proxy_field_binding_mock_ptr))));
-    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateGetMethodBinding(_, _, kFieldName))
+    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateGetMethodBinding(_, _, kFieldName, _))
         .WillRepeatedly(Return(ByMove(std::move(proxy_field_get_binding_mock_ptr))));
-    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateSetMethodBinding(_, _, kFieldName))
+    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateSetMethodBinding(_, _, kFieldName, _, _))
         .WillRepeatedly(Return(ByMove(std::move(proxy_field_set_binding_mock_ptr))));
-    EXPECT_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, kMethodName, _))
+    EXPECT_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, kMethodName, _, _, _))
         .WillRepeatedly(Return(ByMove(std::move(proxy_method_binding_mock_ptr))));
 
     // When creating a MyProxy
@@ -276,7 +277,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyEven
     // Expecting that the Create call on the ProxyEventBindingFactory returns an invalid binding for the event.
 
     EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_,
-                Create(_, _, kEventName, ServiceElementType::EVENT))
+                Create(_, _, kEventName, ServiceElementType::EVENT, _))
         .WillOnce(Return(Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}));
 
     // When creating a MyProxy
@@ -299,7 +300,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFiel
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Expecting that the Create call on the ProxyFieldBindingFactory returns an invalid binding for the field's event
-    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName))
+    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName, _))
         .WillOnce(Return(Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}));
 
     // When creating a MyProxy
@@ -321,7 +322,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFiel
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Expecting that the Create call on the ProxyFieldBindingFactory returns an invalid binding for the field's getter
-    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateGetMethodBinding(_, _, kFieldName))
+    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateGetMethodBinding(_, _, kFieldName, _))
         .WillOnce(Return(Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}));
 
     // When creating a MyProxy
@@ -343,7 +344,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFiel
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Expecting that the Create call on the ProxyFieldBindingFactory returns an invalid binding for the field's setter
-    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName))
+    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName, _))
         .WillOnce(Return(Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}));
 
     // When creating a MyProxy
@@ -357,7 +358,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFiel
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyMethodBindingCreationReturnsError)
 {
     // Expecting that the Create call on the ProxyMethodBindingFactory returns an invalid binding for the method.
-    EXPECT_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(handle_, _, kMethodName, _))
+    EXPECT_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(handle_, _, kMethodName, _, _, _))
         .WillOnce(Return(Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}));
 
     // When constructing a proxy with a handle
@@ -706,13 +707,13 @@ class SkeletonCreationFixture : public ::testing::Test
 
         // By default the Create call on the SkeletonMethodBindingFactory returns valid bindings.
         ON_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kMethodName, MethodType::kMethod))
+                Create(identifier_with_valid_binding_, _, kMethodName, MethodType::kMethod, _, _))
             .WillByDefault(Return(ByMove(std::move(skeleton_method_binding_mock_ptr))));
         ON_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet))
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet, _, _))
             .WillByDefault(Return(ByMove(std::move(skeleton_field_set_binding_mock_ptr))));
         ON_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet))
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet, _, _))
             .WillByDefault(Return(ByMove(std::move(skeleton_field_get_binding_mock_ptr))));
 
         // By default the runtime configuration resolves instance identifiers
@@ -789,13 +790,13 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
                 CreateEventBinding(identifier_with_valid_binding_, _, kFieldName, kTestSampleTypeSizeInfo, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet))
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet, _, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_set_binding_mock_ptr))));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet))
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet, _, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_get_binding_mock_ptr))));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kMethodName, MethodType::kMethod))
+                Create(identifier_with_valid_binding_, _, kMethodName, MethodType::kMethod, _, _))
         .WillOnce(Return(ByMove(std::move(skeleton_method_binding_mock_ptr))));
 
     // When constructing a skeleton with an InstanceSpecifier
@@ -883,12 +884,12 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
 
     // Expecting that the Create call on the SkeletonMethodBindingFactory returns an invalid binding for the method.
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(_, _, kMethodName, MethodType::kMethod))
+                Create(_, _, kMethodName, MethodType::kMethod, _, _))
         .WillOnce(Return(ByMove(nullptr)));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet));
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet, _, _));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet));
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet, _, _));
 
     // When constructing a skeleton with an InstanceSpecifier
     const auto unit = MySkeleton::Create(kInstanceSpecifier);
@@ -1018,12 +1019,12 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromI
 TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromInvalidSkeletonMethodReturnsError)
 {
     // Expecting that the Create call on the SkeletonMethodBindingFactory returns an invalid binding for the method.
-    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kMethod))
+    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kMethod, _, _))
         .WillOnce(Return(ByMove(nullptr)));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet));
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kSet, _, _));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet));
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet, _, _));
 
     // When constructing a skeleton with an InstanceIdentifier
     const auto unit = MySkeleton::Create(identifier_with_valid_binding_);
@@ -1204,13 +1205,14 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
         EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, _, _, _))
             .WillOnce(
                 Return(ByMove(std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_field_binding_mock_))));
-        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kSet))
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kSet, _, _))
             .WillOnce(
                 Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_field_set_binding_mock_))));
-        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kGet))
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kGet, _, _))
             .WillOnce(
                 Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_field_get_binding_mock_))));
-        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kMethod))
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
+                    Create(_, _, _, MethodType::kMethod, _, _))
             .WillOnce(
                 Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock_))));
 
@@ -1222,13 +1224,14 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
         EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, _, _, _))
             .WillOnce(
                 Return(ByMove(std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_field_binding_mock_2_))));
-        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kSet))
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kSet, _, _))
             .WillOnce(Return(
                 ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_field_set_binding_mock_2_))));
-        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kGet))
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kGet, _, _))
             .WillOnce(Return(
                 ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_field_get_binding_mock_2_))));
-        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kMethod))
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
+                    Create(_, _, _, MethodType::kMethod, _, _))
             .WillOnce(
                 Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock_2_))));
 

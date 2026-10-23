@@ -21,6 +21,7 @@
 #include "score/mw/com/impl/proxy_event_binding.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/tracing/proxy_event_tracing.h"
+#include "score/mw/com/impl/util/type_erased_storage.h"
 
 #include "score/mw/com/impl/mocking/i_proxy_event.h"
 
@@ -147,10 +148,11 @@ template <typename SampleType>
 ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base, const std::string_view event_name)
 
     : ProxyEventBase{event_name,
-                     ProxyEventBindingFactory<SampleType>::Create(base.GetHandle(),
-                                                                  ProxyBaseView{base}.GetBinding(),
-                                                                  event_name,
-                                                                  ServiceElementType::EVENT)
+                     ProxyEventBindingFactory::Create(base.GetHandle(),
+                                                      ProxyBaseView{base}.GetBinding(),
+                                                      event_name,
+                                                      ServiceElementType::EVENT,
+                                                      CreateDataTypeSizeInfoFromTypes<SampleType>())
                          .and_then([](std::unique_ptr<ProxyEventBinding> binding) {
                              return Result<std::unique_ptr<ProxyEventBinding>>{std::move(binding)};
                          })},

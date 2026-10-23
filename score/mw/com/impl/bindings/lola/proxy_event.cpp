@@ -22,9 +22,12 @@
 namespace score::mw::com::impl::lola
 {
 
-ProxyEvent::ProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name)
+ProxyEvent::ProxyEvent(Proxy& parent,
+                       const ElementFqId element_fq_id,
+                       const std::string_view event_name,
+                       const memory::DataTypeSizeInfo data_type_size_info)
     : GenericProxyEventBinding{},
-      meta_info_{parent.GetEventMetaInfo(element_fq_id)},
+      meta_info_{data_type_size_info},
       event_data_storage_{parent.GetEventDataStorage(element_fq_id)},
       test_slot_collector_{},
       parent_{parent},

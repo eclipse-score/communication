@@ -24,6 +24,7 @@
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/subscription_state.h"
+#include "score/mw/com/impl/util/type_erased_storage.h"
 
 #include "score/result/result.h"
 
@@ -434,7 +435,7 @@ TEST_F(ProxyAutoReconnectFixture, ProxyEventCreationWhenProviderNotExistsLeadsTo
     EXPECT_NE(proxy_, nullptr);
 
     // and a ProxyEvent registers itself with the Proxy
-    ProxyEvent proxy_event{*proxy_, kDummyElementFqId, kDummyEventName};
+    ProxyEvent proxy_event{*proxy_, kDummyElementFqId, kDummyEventName, CreateDataTypeSizeInfoFromTypes<SampleType>()};
     score::cpp::ignore = proxy_event.Subscribe(kMaxNumSlots);
 
     // Then the Proxy notified the event during registration that the provider service instance is not available,
@@ -465,7 +466,7 @@ TEST_F(ProxyAutoReconnectFixture, ProxyEventCreationWhenProviderExistsLeadsToSub
     EXPECT_NE(proxy_, nullptr);
 
     // and a ProxyEvent registers itself with the Proxy
-    ProxyEvent proxy_event{*proxy_, kDummyElementFqId, kDummyEventName};
+    ProxyEvent proxy_event{*proxy_, kDummyElementFqId, kDummyEventName, CreateDataTypeSizeInfoFromTypes<SampleType>()};
     score::cpp::ignore = proxy_event.Subscribe(kMaxNumSlots);
 
     // Then the Proxy notified the event during registration that the provider service instance is available, so the
@@ -503,7 +504,8 @@ TEST_F(ProxyAutoReconnectFixture, ProxyEventSubscriptionStateReflectsLatestState
     EXPECT_NE(proxy_, nullptr);
 
     // and the first ProxyEvent registers itself with the Proxy while the provider service instance is available
-    ProxyEvent proxy_event_0{*proxy_, kDummyElementFqId, kDummyEventName};
+    ProxyEvent proxy_event_0{
+        *proxy_, kDummyElementFqId, kDummyEventName, CreateDataTypeSizeInfoFromTypes<SampleType>()};
     score::cpp::ignore = proxy_event_0.Subscribe(kMaxNumSlots);
     ASSERT_EQ(proxy_event_0.GetSubscriptionState(), SubscriptionState::kSubscribed);
 
@@ -515,7 +517,7 @@ TEST_F(ProxyAutoReconnectFixture, ProxyEventSubscriptionStateReflectsLatestState
     EXPECT_EQ(proxy_event_0.GetSubscriptionState(), SubscriptionState::kSubscriptionPending);
 
     // and the second ProxyEvent registers itself with the Proxy while the provider service instance is unavailable
-    ProxyEvent proxy_event_1{*proxy_, element_fq_id_1, event_name_1};
+    ProxyEvent proxy_event_1{*proxy_, element_fq_id_1, event_name_1, CreateDataTypeSizeInfoFromTypes<SampleType>()};
     score::cpp::ignore = proxy_event_1.Subscribe(kMaxNumSlots);
 
     // Then the second ProxyEvent is notified during registration that the provider service instance is not available
