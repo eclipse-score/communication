@@ -221,7 +221,8 @@ ShmObjectStatInfo GetShmObjectStatInfo(const ISharedMemoryResource::FileDescript
             is_shm_in_typed_memory = true;
             score::mw::log::LogInfo("shm")
                 << "Named-shm is in TypedMemory. Querying typedmemd for shm object creator UID.";
-            stat_buffer.st_uid = GetCreatorUidFromTypedmemd(*path, *typed_memory_ptr);
+            stat_buffer.st_uid =
+                static_cast<decltype(stat_buffer.st_uid)>(GetCreatorUidFromTypedmemd(*path, *typed_memory_ptr));
         }
     }
     // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
