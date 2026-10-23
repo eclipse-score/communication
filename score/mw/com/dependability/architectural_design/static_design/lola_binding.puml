@@ -13,18 +13,18 @@
 @startuml safety_sentinel_lola_binding_design
 title "Lola Binding Static Architecture"
 
-package "Lola Binding" as lola_binding <<component>> {
-  component "Service Discovery" as service_discovery <<unit>> 
-  component "Runtime" as runtime <<unit>> 
-  component "Partial Restart" as partial_restart <<unit>>
-  component "Method Data and Control" as method_data_control <<unit>> 
-  component "Event Data and Control" as event_data_control <<unit>> 
-  component "Message Passing Service" as message_passing_service <<unit>> 
-  component "Sample Management Pointers" as slot_pointers <<unit>>
+component lola_binding <<component>> {
+  component service_discovery <<unit>> 
+  component runtime <<unit>> 
+  component partial_restart <<unit>>
+  component method_data_control <<unit>> 
+  component event_data_control <<unit>> 
+  component message_passing_service <<unit>> 
+  component slot_pointers <<unit>>
 
-  component "SkeletonAndServiceElements" as skeleton_and_service_elements <<unit>> 
+  component skeleton_and_service_elements <<unit>> 
   
-  component "ProxyAndServiceElements" as proxy_and_service_elements <<unit>> 
+  component proxy_and_service_elements <<unit>> 
 }
 
 @enduml
