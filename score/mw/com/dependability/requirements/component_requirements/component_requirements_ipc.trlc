@@ -762,7 +762,7 @@ section "com" {
 
             * Each destruction or {{nullptr\_t}} assignment of a SamplePtr instance created from this Event class instance shall lead to a increment of count of free samples.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2, mw_com_fta.RootCauseReturnsWrongFreeSampleCount]
             version = 1
         }
 
