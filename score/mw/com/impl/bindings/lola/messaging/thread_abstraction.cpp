@@ -17,6 +17,7 @@
 namespace score::mw::com::impl::lola
 {
 
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 const ThreadHWConcurrencyIfc* ThreadHWConcurrency::mock_ = nullptr;
 
 std::uint32_t ThreadHWConcurrency::hardware_concurrency() noexcept

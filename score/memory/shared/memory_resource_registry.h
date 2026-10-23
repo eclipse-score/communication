@@ -140,6 +140,7 @@ namespace detail
 ///          std::shared_ptr<ISharedMemoryResource> can end up stored in a static/long-lived context whose own
 ///          destruction order relative to a plain function-local static singleton is otherwise unspecified.
 // coverity[autosar_cpp14_a3_3_2_violation] non-trivial constructor is required to implement the nifty-counter idiom
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(nifty-counter-static-destruction-guard)
 static ::score::utils::StaticDestructionGuard<MemoryResourceRegistry> nifty_counter_memory_resource_registry;
 
 }  // namespace detail

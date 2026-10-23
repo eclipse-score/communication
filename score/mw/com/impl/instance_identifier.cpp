@@ -36,6 +36,7 @@ constexpr auto kServiceTypeDeploymentKey = "serviceTypeDeployment";
 
 }  // namespace
 
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(process-wide-runtime-state)
 Configuration* InstanceIdentifier::configuration_{nullptr};
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called

@@ -90,6 +90,7 @@ auto ProxyFieldBindingFactory<SampleType>::instance() noexcept -> IProxyFieldBin
 // to facilitate template instantiation across multiple translation units used in diff applications.
 template <typename SampleType>
 // coverity[autosar_cpp14_a3_1_1_violation]
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 IProxyFieldBindingFactory<SampleType>* ProxyFieldBindingFactory<SampleType>::mock_{nullptr};
 
 }  // namespace score::mw::com::impl

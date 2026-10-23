@@ -131,6 +131,7 @@ class ApplicationIdPidMapping
         typename std::allocator_traits<Allocator>::template rebind_alloc<ApplicationIdPidMappingEntry>;
 
     score::containers::DynamicArray<ApplicationIdPidMappingEntry, mapping_entry_alloc> mapping_entries_;
+    // Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
     static RegisterPidFake* register_pid_fake_;
 };
 
@@ -140,6 +141,7 @@ template <typename Allocator>
 // false-positive: it's the correct syntax for defining a static member variable of a template class
 // see https://en.cppreference.com/w/cpp/language/variable_template
 // coverity[autosar_cpp14_a3_1_1_violation]
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 RegisterPidFake* ApplicationIdPidMapping<Allocator>::register_pid_fake_{nullptr};
 
 }  // namespace score::mw::com::impl::lola
