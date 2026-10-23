@@ -22,7 +22,8 @@ SkeletonEvent::SkeletonEvent(Skeleton& parent,
                              const std::string_view event_name,
                              const memory::DataTypeSizeInfo size_info,
                              const SkeletonEventProperties properties,
-                             impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept
+                             impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data,
+                             std::shared_ptr<e2e::HeaderStorage> e2e_header_storage) noexcept
     : parent_{parent},
       event_name_{event_name},
       element_fq_id_(element_fq_id),
@@ -35,7 +36,9 @@ SkeletonEvent::SkeletonEvent(Skeleton& parent,
       field_getter_enabled_{event_properties_.GetNumberOfFieldGetterSlots() > 0U},
       getter_sample_tracker_{kMaxConcurrentFieldGetterSamplePtrs},
       qm_event_update_notifications_registered_{false},
-      asil_b_event_update_notifications_registered_{false}
+      asil_b_event_update_notifications_registered_{false},
+      e2e_state_{MakeE2EEventState<e2e::ProtectContext>(event_properties_.GetE2EEventDeployment(),
+                                                        std::move(e2e_header_storage))}
 {
 }
 
@@ -49,6 +52,17 @@ Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void> sample,
     // The "ptr" variable is checked before dereferencing.
     // coverity[autosar_cpp14_a5_3_2_violation]
     auto slot = ptr->GetReferencedSlot();
+
+    if (e2e_state_.has_value() && (slot < e2e_state_->header_storage->size()))
+    {
+        auto& header = (*e2e_state_->header_storage)[slot];
+        const score::cpp::span<std::byte> header_span{header.data(), header.size()};
+        const score::cpp::span<const std::byte> payload_span{static_cast<const std::byte*>(ptr->get()),
+                                                             event_sample_size_info_.Size()};
+        score::cpp::ignore =
+            e2e::ProtectMessage(header_span, payload_span, e2e_state_->profile_configuration, e2e_state_->context);
+    }
+
     // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
     // not lead to data loss.".
     // The current logic will not exceed the maximum value.

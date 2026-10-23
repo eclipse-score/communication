@@ -13,7 +13,10 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_PROPERTIES_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_PROPERTIES_H
 
+#include "score/mw/com/impl/configuration/e2e_event_type_deployment.h"
+
 #include <cstddef>
+#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -26,13 +29,15 @@ class SkeletonEventProperties
                             std::size_t number_of_field_getter_slots,
                             bool is_setter_enabled,
                             std::size_t max_subscribers_in,
-                            bool enforce_max_samples_in)
+                            bool enforce_max_samples_in,
+                            std::optional<E2EEventTypeDeployment> e2e_event_deployment = {})
         : max_subscribers(max_subscribers_in),
           enforce_max_samples(enforce_max_samples_in),
           number_of_slots_(number_of_slots),
           number_of_tracing_slots_(number_of_tracing_slots),
           number_of_field_getter_slots_(number_of_field_getter_slots),
-          is_setter_enabled_(is_setter_enabled)
+          is_setter_enabled_(is_setter_enabled),
+          e2e_event_deployment_{e2e_event_deployment}
     {
     }
 
@@ -65,6 +70,11 @@ class SkeletonEventProperties
     // individually.
     // coverity[autosar_cpp14_a9_6_1_violation : FALSE]
     bool enforce_max_samples;
+
+    const std::optional<E2EEventTypeDeployment>& GetE2EEventDeployment() const noexcept
+    {
+        return e2e_event_deployment_;
+    }
 
   private:
     /// \brief The number of slots configured by the user for the event (or field) via numberOfSampleSlots configuration
@@ -107,6 +117,8 @@ class SkeletonEventProperties
     /// concurrent setter calls. So we use a flag instead of a number of slots required to make this distinction
     /// clearer.
     bool is_setter_enabled_;
+
+    std::optional<E2EEventTypeDeployment> e2e_event_deployment_;
 };
 
 }  // namespace score::mw::com::impl::lola
