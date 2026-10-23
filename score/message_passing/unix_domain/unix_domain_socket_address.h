@@ -33,7 +33,7 @@ class UnixDomainSocketAddress
 
     bool IsAbstract() const noexcept
     {
-        return !addr_.sun_path[0];
+        return addr_.sun_path[0] == '\0';
     }
 
     const sockaddr* data() const& noexcept
