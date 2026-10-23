@@ -36,6 +36,18 @@ cc_library(
 )
 
 cc_library(
+    name = "e2e_event_state",
+    hdrs = ["e2e_event_state.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        "//score/mw/com/impl/configuration",
+        "//score/mw/com/impl/e2e:e2e_profile_stub",
+    ],
+)
+
+cc_library(
     name = "path_builder",
     srcs = ["path_builder.cpp"],
     hdrs = ["path_builder.h"],
@@ -312,6 +324,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
     ],
     deps = [
+        ":e2e_event_state",
         ":event",
         ":i_partial_restart_path_builder",
         ":i_shm_path_builder",
@@ -378,6 +391,7 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola/test:__pkg__"],
     deps = [
+        ":e2e_event_state",
         ":event",
         ":event_control",
         ":event_subscription_control",
@@ -1170,6 +1184,15 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/safecpp/scoped_function:scope",
+    ],
+)
+
+cc_unit_test(
+    name = "e2e_event_state_test",
+    srcs = ["e2e_event_state_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":e2e_event_state",
     ],
 )
 

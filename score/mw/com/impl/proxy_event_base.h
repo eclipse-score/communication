@@ -193,8 +193,8 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
             result.summary = ((result.data_integrity == e2e::DataIntegrityStatus::kOk) && sequence_ok)
                                  ? e2e::Summary::kOk
                                  : e2e::Summary::kError;
+            sample.SetE2EResult(result);
         }
-        sample.SetE2EResult(result);
     }
 
   protected:

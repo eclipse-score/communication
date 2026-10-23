@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_H
 
 #include "score/mw/com/impl/binding_type.h"
+#include "score/mw/com/impl/bindings/lola/e2e_event_state.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
@@ -185,11 +186,10 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     std::optional<tracing::TypeErasedSamplePtrsGuard> type_erased_sample_ptrs_guard_;
     std::optional<ReceiveHandlerRegistrationChangedCallback> receive_handler_registration_changed_callback_;
 
-    /// \brief Injected, scaffolding-only per-slot POC E2E header storage; shared with consuming proxy events by the
-    ///        harness that wires them together. Null when the event has no configured E2E profile.
-    std::shared_ptr<e2e::HeaderStorage> e2e_header_storage_;
-    std::optional<e2e::ProfileConfiguration> e2e_profile_config_;
-    e2e::ProtectContext e2e_protect_context_{};
+    /// \brief Empty when E2E is not active for this event (no deployment or no header storage). The header storage is
+    ///        the injected, scaffolding-only per-slot POC storage, shared with consuming proxy events by the harness
+    ///        that wires them together.
+    std::optional<E2EEventState<e2e::ProtectContext>> e2e_state_;
 };
 
 }  // namespace score::mw::com::impl::lola
