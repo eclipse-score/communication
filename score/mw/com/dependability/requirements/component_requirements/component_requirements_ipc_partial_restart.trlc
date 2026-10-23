@@ -13,6 +13,7 @@
 package Communication
 
 import ScoreReq
+import mw_com_fta
 
 section "com" {
 
@@ -84,7 +85,7 @@ section "com" {
             ScoreReq.CompReq ErrorOnUnsuccessfulRestart {
                 description = '''If a successful restart on the consumer side cannot be guaranteed, an {{bmw::result::Error}} containing the value {{ComErrc::kBindingFailure}} error shall be forwarded to the user in the call to {{Proxy::Create()}}.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2, mw_com_fta.ProxyCrashesWithoutUnsubscription]
                 version = 1
             }
 
