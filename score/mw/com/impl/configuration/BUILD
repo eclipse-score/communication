@@ -459,6 +459,9 @@ cc_library(
     hdrs = ["lola_service_type_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/gateway:__subpackages__",
+    ],
     deps = [
         ":binding_service_type_deployment",
         ":lola_event_id",

@@ -1,0 +1,8 @@
+{
+  "appId": "SNDR",
+  "appDesc": "provider_app",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole",
+  "dynamicDatarouterIdentifiers": true
+}
