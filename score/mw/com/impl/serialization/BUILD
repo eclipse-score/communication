@@ -19,6 +19,33 @@ package(
 )
 
 cc_library(
+    name = "serialization_request",
+    srcs = ["serialization_request.cpp"],
+    hdrs = ["serialization_request.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:instance_specifier",
+    ],
+)
+
+cc_test(
+    name = "serialization_request_test",
+    size = "small",
+    timeout = "short",
+    srcs = ["serialization_request_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":serialization_request",
+        "//score/mw/com/impl:instance_specifier",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
     name = "serialization_infrastructure",
     srcs = ["serialization_infrastructure.cpp"],
     hdrs = ["serialization_infrastructure.h"],
