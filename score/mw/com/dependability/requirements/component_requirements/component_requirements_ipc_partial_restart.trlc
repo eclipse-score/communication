@@ -85,7 +85,9 @@ section "com" {
             ScoreReq.CompReq ErrorOnUnsuccessfulRestart {
                 description = '''If a successful restart on the consumer side cannot be guaranteed, an {{bmw::result::Error}} containing the value {{ComErrc::kBindingFailure}} error shall be forwarded to the user in the call to {{Proxy::Create()}}.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2, mw_com_fta.ProxyCrashesWithoutUnsubscription]
+                // Closes mw_com_fta.ProxyRestartTransactionLogCorrupt: a corrupt transaction log means the restart
+                // cannot be guaranteed, which this requirement reports to the user as kBindingFailure from Proxy::Create().
+                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2, mw_com_fta.ProxyRestartTransactionLogCorrupt]
                 version = 1
             }
 
