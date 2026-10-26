@@ -18,10 +18,10 @@ load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 component(
     name = "mock_binding_component",
     components = [
-        ":proxy_and_service_elements",
-        ":generic_proxy_and_service_elements",
-        ":skeleton_and_service_elements",
-        ":generic_skeleton_and_service_elements",
+        ":mock_binding_proxy_and_service_elements",
+        ":mock_binding_generic_proxy_and_service_elements",
+        ":mock_binding_skeleton_and_service_elements",
+        ":mock_binding_generic_skeleton_and_service_elements",
     ],
     design_name = "mock_binding",
     requirements = [],
@@ -31,7 +31,7 @@ component(
 )
 
 unit(
-    name = "proxy_and_service_elements",
+    name = "mock_binding_proxy_and_service_elements",
     scope = [],
     tests = [],
     unit_design = [
@@ -41,7 +41,7 @@ unit(
 )
 
 unit(
-    name = "skeleton_and_service_elements",
+    name = "mock_binding_skeleton_and_service_elements",
     scope = [],
     tests = [],
     unit_design = [
@@ -51,7 +51,7 @@ unit(
 )
 
 unit(
-    name = "generic_proxy_and_service_elements",
+    name = "mock_binding_generic_proxy_and_service_elements",
     scope = [],
     tests = [],
     unit_design = [
@@ -61,7 +61,7 @@ unit(
 )
 
 unit(
-    name = "generic_skeleton_and_service_elements",
+    name = "mock_binding_generic_skeleton_and_service_elements",
     scope = [],
     tests = [],
     unit_design = [

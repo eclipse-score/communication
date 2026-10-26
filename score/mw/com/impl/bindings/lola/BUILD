@@ -19,15 +19,15 @@ load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 component(
     name = "lola_binding",
     components = [
-        ":proxy_and_service_elements",
-        ":skeleton_and_service_elements",
-        ":event_data_control_unit",
-        ":runtime_unit",
-        ":partial_restart",
-        ":sample_management_pointers",
-        "//score/mw/com/impl/bindings/lola/service_discovery:service_discovery_unit",
-        "//score/mw/com/impl/bindings/lola/messaging:message_passing_service_unit",
-        "//score/mw/com/impl/bindings/lola/methods:method_data_control_unit",
+        ":lola_proxy_and_service_elements",
+        ":lola_skeleton_and_service_elements",
+        ":lola_event_data_control",
+        ":lola_runtime",
+        ":lola_partial_restart",
+        ":lola_sample_management_pointers",
+        "//score/mw/com/impl/bindings/lola/service_discovery:lola_service_discovery",
+        "//score/mw/com/impl/bindings/lola/messaging:lola_message_passing_service",
+        "//score/mw/com/impl/bindings/lola/methods:lola_method_data_control",
     ],
     requirements = [],
     target_compatible_with = ["@platforms//os:linux"],
@@ -36,7 +36,7 @@ component(
 )
 
 unit(
-    name = "proxy_and_service_elements",
+    name = "lola_proxy_and_service_elements",
     scope = [],
     tests = [],
     unit_design = [
@@ -46,7 +46,7 @@ unit(
 )
 
 unit(
-    name = "skeleton_and_service_elements",
+    name = "lola_skeleton_and_service_elements",
     scope = [],
     tests = [],
     unit_design = [
@@ -56,8 +56,7 @@ unit(
 )
 
 unit(
-    name = "event_data_control_unit",
-    design_name = "event_data_control",
+    name = "lola_event_data_control",
     scope = [],
     tests = [],
     unit_design = [
@@ -67,8 +66,7 @@ unit(
 )
 
 unit(
-    name = "runtime_unit",
-    design_name = "runtime",
+    name = "lola_runtime",
     scope = [],
     tests = [],
     unit_design = [
@@ -78,7 +76,7 @@ unit(
 )
 
 unit(
-    name = "partial_restart",
+    name = "lola_partial_restart",
     scope = [],
     tests = [],
     unit_design = [
@@ -88,7 +86,7 @@ unit(
 )
 
 unit(
-    name = "sample_management_pointers",
+    name = "lola_sample_management_pointers",
     scope = [],
     tests = [],
     unit_design = [

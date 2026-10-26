@@ -14,13 +14,13 @@
 title "Mock Binding Static Architecture"
 
 component mock_binding <<component>> {
-  package skeleton_and_service_elements <<unit>>  
+  package mock_binding_skeleton_and_service_elements <<unit>>  
 
-  component proxy_and_service_elements <<unit>>  
+  component mock_binding_proxy_and_service_elements <<unit>>  
 
-  component generic_skeleton_and_service_elements <<unit>>  
+  component mock_binding_generic_skeleton_and_service_elements <<unit>>  
 
-  component generic_proxy_and_service_elements <<unit>>  
+  component mock_binding_generic_proxy_and_service_elements <<unit>>  
 }
 
 @enduml

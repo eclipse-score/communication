@@ -17,8 +17,7 @@ load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 unit(
-    name = "method_data_control_unit",
-    design_name = "method_data_control",
+    name = "lola_method_data_control",
     scope = [],
     tests = [],
     unit_design = [

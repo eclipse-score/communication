@@ -17,7 +17,7 @@ load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 unit(
-    name = "mocks",
+    name = "binding_independent_mocks",
     scope = [],
     tests = [],
     unit_design = [

@@ -14,12 +14,12 @@
 title "SomeIp Binding Static Architecture"
 
 component someip_binding <<component>> {
-  component service_discovery <<unit>> 
-  component runtime <<unit>> 
+  component someip_service_discovery <<unit>> 
+  component someip_runtime <<unit>> 
 
-  component skeleton_and_service_elements <<unit>> 
+  component someip_skeleton_and_service_elements <<unit>> 
   
-  component proxy_and_service_elements <<unit>> 
+  component someip_proxy_and_service_elements <<unit>> 
 }
 
 @enduml

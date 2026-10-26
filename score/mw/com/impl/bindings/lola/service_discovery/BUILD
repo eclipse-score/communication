@@ -17,8 +17,7 @@ load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 unit(
-    name = "service_discovery_unit",
-    design_name = "service_discovery",
+    name = "lola_service_discovery",
     scope = [],
     tests = [],
     unit_design = [

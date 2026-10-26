@@ -17,8 +17,7 @@ load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 unit(
-    name = "message_passing_service_unit",
-    design_name = "message_passing_service",
+    name = "lola_message_passing_service",
     scope = [],
     tests = [],
     unit_design = [

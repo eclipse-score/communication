@@ -41,14 +41,14 @@ unit(
 component(
     name = "binding_independent",
     components = [
-        ":skeleton_and_service_elements",
-        ":proxy_and_service_elements",
-        ":generic_skeleton_and_service_elements",
-        ":generic_proxy_and_service_elements",
-        ":service_discovery_unit",
-        ":runtime_unit",
-        ":sample_management_pointers",
-        "//score/mw/com/impl/mocking:mocks",
+        ":binding_independent_skeleton_and_service_elements",
+        ":binding_independent_proxy_and_service_elements",
+        ":binding_independent_generic_skeleton_and_service_elements",
+        ":binding_independent_generic_proxy_and_service_elements",
+        ":binding_independent_service_discovery",
+        ":binding_independent_runtime",
+        ":binding_independent_sample_management_pointers",
+        "//score/mw/com/impl/mocking:binding_independent_mocks",
     ],
     requirements = [],
     target_compatible_with = ["@platforms//os:linux"],
@@ -57,7 +57,7 @@ component(
 )
 
 unit(
-    name = "skeleton_and_service_elements",
+    name = "binding_independent_skeleton_and_service_elements",
     scope = [],
     tests = [],
     unit_design = [
@@ -67,7 +67,7 @@ unit(
 )
 
 unit(
-    name = "proxy_and_service_elements",
+    name = "binding_independent_proxy_and_service_elements",
     scope = [],
     tests = [],
     unit_design = [
@@ -77,7 +77,7 @@ unit(
 )
 
 unit(
-    name = "generic_skeleton_and_service_elements",
+    name = "binding_independent_generic_skeleton_and_service_elements",
     scope = [],
     tests = [],
     unit_design = [
@@ -87,7 +87,7 @@ unit(
 )
 
 unit(
-    name = "generic_proxy_and_service_elements",
+    name = "binding_independent_generic_proxy_and_service_elements",
     scope = [],
     tests = [],
     unit_design = [
@@ -97,8 +97,7 @@ unit(
 )
 
 unit(
-    name = "runtime_unit",
-    design_name = "runtime",
+    name = "binding_independent_runtime",
     scope = [],
     tests = [],
     unit_design = [
@@ -108,8 +107,7 @@ unit(
 )
 
 unit(
-    name = "service_discovery_unit",
-    design_name = "service_discovery",
+    name = "binding_independent_service_discovery",
     scope = [],
     tests = [],
     unit_design = [
@@ -119,7 +117,7 @@ unit(
 )
 
 unit(
-    name = "sample_management_pointers",
+    name = "binding_independent_sample_management_pointers",
     scope = [],
     tests = [],
     unit_design = [
