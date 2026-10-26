@@ -49,6 +49,12 @@ build --experimental_retain_test_configuration_across_testonly #https://github.c
 # Do not show warnings from external libraries
 build --output_filter=^(?!(external/.*(googletest|flatbuffers|score_baselibs|google_benchmark|json_schema_validator)|@@?[^/]*(googletest|flatbuffers|score_baselibs|google_benchmark|json_schema_validator)|[/]*quality/compiler_warnings)).*
 
+# Do not treat warnings as errors in the exec configuration (build scripts, host tools).
+# Cargo build scripts get the toolchain flags via CFLAGS; e.g. psm (pulled in by score_tooling's
+# unlocked crate hub) fails under -Werror -Wundef because CFG_TARGET_OS_darwin etc. are undefined.
+# Remove once score_tooling >= 3.0 (locked crate hub without psm) is adopted.
+build --host_features=-score_communication_treat_warnings_as_errors
+
 # Do not treat as errors the warnings from external libraries that are known
 # boost
 build --per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
