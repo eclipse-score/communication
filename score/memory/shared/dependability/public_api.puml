@@ -135,9 +135,10 @@ namespace score::memory::shared {
     +get(): pointer
     +get<ExplicitPointedType>(): ExplicitPointedType*
     +get(std::size_t): pointer
-    +operator pointer(): pointer
+    ' TODO: puml_cli cannot parse named conversion operators (operator pointer/operator bool) - re-enable once fixed
+    ' +operator pointer(): pointer
     +operator->(): pointer
-    +operator bool(): bool
+    ' +operator bool(): bool
     +operator!(): bool
   }
 
@@ -145,7 +146,8 @@ namespace score::memory::shared {
     +OffsetRef(T&)
     +operator=(const T&): OffsetRef&
     +get(): T&
-    +operator T&(): T&
+    ' TODO: puml_cli cannot parse named conversion operators (operator T&) - re-enable once fixed
+    ' +operator T&(): T&
   }
 
   class "PolymorphicOffsetPtrAllocator<T>" {
@@ -168,59 +170,61 @@ namespace score::memory::shared {
   class "permission::WorldReadable" <<struct>>
   class "permission::WorldWritable" <<struct>>
 
-  using UserPermissionsMap = std::unordered_map<score::os::Acl::Permission, std::vector<uid_t>>;
-  using UserPermissions = std::variant<UserPermissionsMap, WorldReadable, WorldWritable>;
+  ' TODO: puml_cli cannot parse bare 'using' statements at namespace scope - re-enable once fixed
+  ' using UserPermissionsMap = std::unordered_map<score::os::Acl::Permission, std::vector<uid_t>>;
+  ' using UserPermissions = std::variant<UserPermissionsMap, WorldReadable, WorldWritable>;
 
-  using Map = std::
-      map<K, V, Comp, std::scoped_allocator_adaptor<PolymorphicOffsetPtrAllocator<typename std::map<K, V>::value_type>>>
-  using Vector = std::vector<T, std::scoped_allocator_adaptor<score::memory::shared::PolymorphicOffsetPtrAllocator<T>>>
-  using BasicString = std::basic_string<CharT, Traits, score::memory::shared::PolymorphicOffsetPtrAllocator<CharT>>
+  ' using Map = std::
+  '     map<K, V, Comp, std::scoped_allocator_adaptor<PolymorphicOffsetPtrAllocator<typename std::map<K, V>::value_type>>>
+  ' using Vector = std::vector<T, std::scoped_allocator_adaptor<score::memory::shared::PolymorphicOffsetPtrAllocator<T>>>
+  ' using BasicString = std::basic_string<CharT, Traits, score::memory::shared::PolymorphicOffsetPtrAllocator<CharT>>
 
-  entity "Pointer Arithmetic Utils" <<function>> {
-    +AddOffsetToPointerAsInteger(std::uintptr_t, std::size_t): std::uintptr_t
-    +AddSignedOffsetToPointerAsInteger(std::uintptr_t, std::ptrdiff_t): std::uintptr_t
-    +SubtractOffsetFromPointerAsInteger(std::uintptr_t, std::size_t): std::uintptr_t
-    +CalculateAlignedSize(std::size_t, std::size_t): std::size_t
-    +CalculateAlignedSizeOfSequence(const std::vector<DataTypeSizeInfo>&): std::size_t
-    +CastPointerToInteger(const void*): std::uintptr_t
-    +CastIntegerToPointer<PointerType>(std::uintptr_t): PointerType
-    +AddOffsetToPointer<PointerType>(const PointerType*, std::size_t): PointerType*
-    +AddOffsetToPointer<PointerType>(const PointerType*, std::ptrdiff_t): PointerType*
-    +PointerToLogValue(const void*): score::mw::log::LogHex64
-    +SubtractPointersBytes(const void*, const void*): std::ptrdiff_t
-    +AbsoluteValue<SignedInteger>(SignedInteger): std::make_unsigned_t<SignedInteger>
-    +UndoSignedToUnsignedIntegerCast<UnsignedInteger>(UnsignedInteger): std::make_signed_t<UnsignedInteger>
-    +AddUnsignedToSigned<SignedInteger>(SignedInteger, std::make_unsigned_t<SignedInteger>): SignedInteger
-    +SubtractUnsignedFromSigned<SignedInteger>(SignedInteger, std::make_unsigned_t<SignedInteger>): SignedInteger
-  }
+  ' TODO: puml_cli does not support the 'entity' keyword at all - re-enable once fixed
+'   entity "Pointer Arithmetic Utils" <<function>> {
+'     +AddOffsetToPointerAsInteger(std::uintptr_t, std::size_t): std::uintptr_t
+'     +AddSignedOffsetToPointerAsInteger(std::uintptr_t, std::ptrdiff_t): std::uintptr_t
+'     +SubtractOffsetFromPointerAsInteger(std::uintptr_t, std::size_t): std::uintptr_t
+'     +CalculateAlignedSize(std::size_t, std::size_t): std::size_t
+'     +CalculateAlignedSizeOfSequence(const std::vector<DataTypeSizeInfo>&): std::size_t
+'     +CastPointerToInteger(const void*): std::uintptr_t
+'     +CastIntegerToPointer<PointerType>(std::uintptr_t): PointerType
+'     +AddOffsetToPointer<PointerType>(const PointerType*, std::size_t): PointerType*
+'     +AddOffsetToPointer<PointerType>(const PointerType*, std::ptrdiff_t): PointerType*
+'     +PointerToLogValue(const void*): score::mw::log::LogHex64
+'     +SubtractPointersBytes(const void*, const void*): std::ptrdiff_t
+'     +AbsoluteValue<SignedInteger>(SignedInteger): std::make_unsigned_t<SignedInteger>
+'     +UndoSignedToUnsignedIntegerCast<UnsignedInteger>(UnsignedInteger): std::make_signed_t<UnsignedInteger>
+'     +AddUnsignedToSigned<SignedInteger>(SignedInteger, std::make_unsigned_t<SignedInteger>): SignedInteger
+'     +SubtractUnsignedFromSigned<SignedInteger>(SignedInteger, std::make_unsigned_t<SignedInteger>): SignedInteger
+'   }
 
-  entity "Memory Shared Free Functions" <<function>> {
-    +EnableOffsetPtrBoundsChecking(bool): bool
-    +MakeError(SharedMemoryErrorCode, std::string_view): score::result::Error
-    +operator==(const MemoryResourceProxy&, const MemoryResourceProxy&): bool
-    +operator!=(const MemoryResourceProxy&, const MemoryResourceProxy&): bool
-    +operator==(const OffsetRef<T>&, const OffsetRef<T>&): bool
-    +operator!=(const OffsetRef<T>&, const OffsetRef<T>&): bool
-    +operator==(const PolymorphicOffsetPtrAllocator<U>&, const PolymorphicOffsetPtrAllocator<U>&): bool
-    +operator!=(const PolymorphicOffsetPtrAllocator<U>&, const PolymorphicOffsetPtrAllocator<U>&): bool
-    +operator==(const BasicString<CharT, Traits>&, const std::string&): bool
-    +operator!=(const BasicString<CharT, Traits>&, const std::string&): bool
-    +operator==(const std::string&, const BasicString<CharT, Traits>&): bool
-    +operator!=(const std::string&, const BasicString<CharT, Traits>&): bool
-    +operator==(const Vector<T>&, std::vector<T>): bool
-    +operator==(std::vector<T>, const Vector<T>&): bool
-    +operator==(OffsetPtr, OffsetPtr / T* / std::nullptr_t): bool
-    +operator!=(OffsetPtr, OffsetPtr / T* / std::nullptr_t): bool
-    +operator<(OffsetPtr, OffsetPtr / T*): bool
-    +operator<=(OffsetPtr, OffsetPtr / T*): bool
-    +operator>(OffsetPtr, OffsetPtr / T*): bool
-    +operator>=(OffsetPtr, OffsetPtr / T*): bool
-    +operator+(OffsetPtr<T>, difference_type): OffsetPtr<T>
-    +operator+(difference_type, OffsetPtr<T>): OffsetPtr<T>
-    +operator-(OffsetPtr<T>, difference_type): OffsetPtr<T>
-    +operator-(OffsetPtr, OffsetPtr / T*): difference_type
-    +swap(OffsetPtr<T>&, OffsetPtr<T>&): void
-  }
+'   entity "Memory Shared Free Functions" <<function>> {
+'     +EnableOffsetPtrBoundsChecking(bool): bool
+'     +MakeError(SharedMemoryErrorCode, std::string_view): score::result::Error
+'     +operator==(const MemoryResourceProxy&, const MemoryResourceProxy&): bool
+'     +operator!=(const MemoryResourceProxy&, const MemoryResourceProxy&): bool
+'     +operator==(const OffsetRef<T>&, const OffsetRef<T>&): bool
+'     +operator!=(const OffsetRef<T>&, const OffsetRef<T>&): bool
+'     +operator==(const PolymorphicOffsetPtrAllocator<U>&, const PolymorphicOffsetPtrAllocator<U>&): bool
+'     +operator!=(const PolymorphicOffsetPtrAllocator<U>&, const PolymorphicOffsetPtrAllocator<U>&): bool
+'     +operator==(const BasicString<CharT, Traits>&, const std::string&): bool
+'     +operator!=(const BasicString<CharT, Traits>&, const std::string&): bool
+'     +operator==(const std::string&, const BasicString<CharT, Traits>&): bool
+'     +operator!=(const std::string&, const BasicString<CharT, Traits>&): bool
+'     +operator==(const Vector<T>&, std::vector<T>): bool
+'     +operator==(std::vector<T>, const Vector<T>&): bool
+'     +operator==(OffsetPtr, OffsetPtr / T* / std::nullptr_t): bool
+'     +operator!=(OffsetPtr, OffsetPtr / T* / std::nullptr_t): bool
+'     +operator<(OffsetPtr, OffsetPtr / T*): bool
+'     +operator<=(OffsetPtr, OffsetPtr / T*): bool
+'     +operator>(OffsetPtr, OffsetPtr / T*): bool
+'     +operator>=(OffsetPtr, OffsetPtr / T*): bool
+'     +operator+(OffsetPtr<T>, difference_type): OffsetPtr<T>
+'     +operator+(difference_type, OffsetPtr<T>): OffsetPtr<T>
+'     +operator-(OffsetPtr<T>, difference_type): OffsetPtr<T>
+'     +operator-(OffsetPtr, OffsetPtr / T*): difference_type
+'     +swap(OffsetPtr<T>&, OffsetPtr<T>&): void
+'   }
 }
 
 @enduml

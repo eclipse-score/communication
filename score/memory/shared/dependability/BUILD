@@ -12,6 +12,7 @@
 # *******************************************************************************
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
+    "architectural_design",
     "dependable_element",
     "unit_design",
 )
@@ -24,14 +25,20 @@ unit_design(
     static = ["public_api.puml"],
 )
 
-# Step 0 (tutorial) setup: empty target: architectural_design, requirements,
-# assumptions_of_use, and dependability_analysis are filled in by later stories.
+architectural_design(
+    name = "memory_shared_architectural_design",
+    public_api = ["public_api.puml"],
+    visibility = ["//score/memory/shared/dependability:__subpackages__"],
+)
+
+# Step 0 (tutorial) setup: requirements and assumptions_of_use are filled in
+# by later stories.
 dependable_element(
     name = "dependable_element_memory_shared",
-    architectural_design = [],
+    architectural_design = [":memory_shared_architectural_design"],
     assumptions_of_use = [],
     components = [],
-    dependability_analysis = [],
+    dependability_analysis = ["//score/memory/shared/dependability/safety_analysis:memory_shared_dependability_analysis"],
     integrity_level = "B",
     maturity = "development",
     requirements = [],
