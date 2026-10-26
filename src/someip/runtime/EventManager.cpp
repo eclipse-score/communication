@@ -272,6 +272,8 @@ void OfferedEvent::set_payload(Payload& event_payload, std::uint16_t client, boo
             std::uint32_t sessionid = static_cast<std::uint32_t>(request_id_ & 0x0000ffff);
             std::uint32_t clientid = static_cast<std::uint32_t>(client) << 16;
             request_id_ = (clientid | sessionid);
+        } else { // for all subscribers, drop the client of a previous notify_one
+            request_id_ &= 0x0000FFFF;
         }
 
         auto payload = notification_->get_payload_type();
@@ -401,7 +403,9 @@ void OfferedEvent::send_initial_event() {
 
 void OfferedEvent::send_notification() {
     if (host_ != nullptr) {
-        request_id_ = (request_id_ % 0x0000FFFF) + 1;
+        // Increase only the session ID (lower 16 bits) from 1 to 0xFFFF and keep the client ID (upper 16 bits).
+        std::uint32_t sessionid = ((request_id_ & 0x0000FFFF) % 0x0000FFFF) + 1;
+        request_id_ = (request_id_ & 0xFFFF0000) | sessionid;
         notification_->set_request_id(request_id_);
         notification_->set_instance_id(instance_id_);
         host_->send(notification_);

@@ -134,6 +134,30 @@ TEST(EventManager, cyclic_event_is_sent_on_flush_even_with_unchanged_payload) {
     EXPECT_EQ(router->message_count, 2);
 }
 
+TEST(EventManager, notify_one_targets_the_client_and_session_id_keeps_counting) {
+    auto router = std::make_shared<EventFakeRouter>();
+    ApplicationManager application("event-test", "", router);
+    EventManager events(&application);
+
+    events.add_event(0x1001, 0x0001, 0x0002, 0x01, false, 0);
+    events.set_service_enabled(0x1001, 0x0001, 0x01, true);
+
+    auto payload = std::make_shared<Payload>();
+    payload->append(static_cast<std::uint8_t>(0x01));
+    events.notify(0x1001, 0x0001, 0x0002, payload);
+    EXPECT_EQ(router->last_message->get_request_id(), 0x00000001U);
+
+    // The target client goes into the upper 16 bits and the session ID still counts up by one.
+    auto changed = std::make_shared<Payload>();
+    changed->append(static_cast<std::uint8_t>(0x02));
+    events.notify(0x1001, 0x0001, 0x0002, changed, 0x1234);
+    EXPECT_EQ(router->last_message->get_request_id(), 0x12340002U);
+
+    // The target is not sticky: the next notification addresses every subscriber again.
+    events.notify(0x1001, 0x0001, 0x0002, payload);
+    EXPECT_EQ(router->last_message->get_request_id(), 0x00000003U);
+}
+
 TEST(EventManager, ignores_duplicate_event_registration) {
     auto router = std::make_shared<EventFakeRouter>();
     ApplicationManager application("event-test", "", router);
