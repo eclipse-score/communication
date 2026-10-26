@@ -12,6 +12,7 @@
 # *******************************************************************************
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
+    "component",
     "dependable_element",
     "unit_design",
 )
@@ -24,17 +25,31 @@ unit_design(
     static = ["public_api.puml"],
 )
 
+# Single component carrying the component requirements until the architecture phase defines the real split.
+component(
+    name = "component_memory_shared",
+    requirements = [
+        "//score/memory/shared/dependability/requirements:component_requirements",
+        "//score/memory/shared/dependability/requirements:feature_requirements",
+    ],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
 # Step 0 (tutorial) setup: empty target: architectural_design, requirements,
 # assumptions_of_use, and dependability_analysis are filled in by later stories.
 dependable_element(
     name = "dependable_element_memory_shared",
     architectural_design = [],
     assumptions_of_use = [],
-    components = [],
+    components = [":component_memory_shared"],
     dependability_analysis = [],
     integrity_level = "B",
     maturity = "development",
-    requirements = [],
+    requirements = [
+        "//score/memory/shared/dependability/requirements:feature_requirements",
+        "//score/memory/shared/dependability/assumed_system:assumed_system_requirements",
+    ],
     tags = ["manual"],
     target_compatible_with = ["@platforms//os:linux"],
     tests = [],
