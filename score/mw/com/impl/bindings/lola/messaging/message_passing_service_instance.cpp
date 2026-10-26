@@ -1532,21 +1532,6 @@ void MessagePassingServiceInstance::UnregisterEventNotificationExistenceChangedC
     }
 }
 
-QualityType MessagePassingServiceInstance::GetPartnerQualityType() const
-{
-    switch (asil_level_)
-    {
-        case ClientQualityType::kASIL_QM:
-            return QualityType::kASIL_QM;
-        case ClientQualityType::kASIL_B:
-            return QualityType::kASIL_B;
-        case ClientQualityType::kASIL_QMfromB:
-            return QualityType::kASIL_QM;
-        default:
-            std::terminate();
-    }
-}
-
 Result<void> MessagePassingServiceInstance::SubscribeServiceMethod(
     const SkeletonInstanceIdentifier& skeleton_instance_identifier,
     const ProxyInstanceIdentifier& proxy_instance_identifier,
