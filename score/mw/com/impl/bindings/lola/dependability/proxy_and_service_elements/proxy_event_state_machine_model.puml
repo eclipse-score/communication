@@ -1,137 +1,132 @@
 @startuml proxy_event_state_machine_model
 title "Structural View Proxy Event Subscription State Machine"
 
-namespace score::mw::com::impl::lola {
+namespace score::mw::com::impl {
 
-class SubscriptionStateMachine {
-  +{static} Create<Ts...>(Ts&&...) : std::shared_ptr<SubscriptionStateMachine>
-  +GetSharedPtr() : std::shared_ptr<SubscriptionStateMachine>
-  +GetCurrentState() : SubscriptionStateMachineState
-  +SubscribeEvent(max_sample_count : std::size_t) : void
-  +UnsubscribeEvent() : void
-  +SubscriptionStateChangeEvent(state_change_result : IMessagePassingService::SubscriptionStateChange ) : void
-  +SetReceiveHandler(handler : EventReceiveHandler) : void
-  +UnsetReceiveHandler() : void
-  +MarkProxyForDestruction() : void
-  -SubscriptionStateMachine(Proxy&, ElementFqId, pid_t, std::function<void(SlotCollector&&)> set_slot_collector, std::function<void()> remove_slot_collector)
-  -states_ : std::array<std::unique_ptr<SubscriptionStateBase>, SubscriptionStateMachineState::STATE_COUNT>
+namespace lola {
+
+class enable_shared_from_this<SubscriptionStateMachine> {}
+
+class SubscriptionStateMachine implements enable_shared_from_this{
+  -state_mutex_: mutex
+  -states_: array<unique_ptr<SubscriptionStateBase>, STATE_COUNT>
+  -current_state_idx_: atomic<SubscriptionStateMachineState>
+  -event_receive_handler_manager_: EventReceiveHandlerManager
+  -event_data_control_local_: ConsumerEventDataControlLocalView<>&
+  -subscription_control_: EventSubscriptionControl<>&
+  -transaction_log_set_: TransactionLogSet&
+  +SubscriptionStateMachine(QualityType, ElementFqId, pid_t, ConsumerEventDataControlLocalView<>&, EventSubscriptionControl<>&, TransactionLogSet&, const TransactionLogId&) noexcept
+  +SubscribeEvent(size_t): Result<void>
+  +UnsubscribeEvent(): void
+  +StopOfferEvent(): void
+  +ReOfferEvent(pid_t): void
+  +SetReceiveHandler(weak_ptr<ScopedEventReceiveHandler>): void
+  +UnsetReceiveHandler(): void
+  +SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler): void
+  +UnsetSubscriptionStateChangeHandler(): void
+  +GetCurrentState(): SubscriptionStateMachineState
+  +GetMaxSampleCount(): optional<uint16_t>
+  +GetSlotCollectorLockFree(): optional<SlotCollector>&
+  +GetElementFqId(): const ElementFqId&
 }
 
-class SubscriptionStateBase {
-  +SubscriptionStateBase(V : SubscriptionStateMachine&) noexcept
-  +{abstract} SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
-  +{abstract} UnsubscribeEvent() : TriggerResult
-  +{abstract} SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
-  +{abstract} SetReceiveHandler(handler : EventReceiveHandler) : void
-  +{abstract} UnsetReceiveHandler() : void
-  +OnEntry() : void
-  +OnExit(): void
-  -state_machine_ : SubscriptionStateMachine&
-}
+together {
 
-abstract class NotSubscribedState {
-  +NotSubscribedState(subscription_event_state_machine : SubscriptionStateMachine&)
-  +UnsubscribeEvent() : TriggerResult
-  +SetReceiveHandler(handler : EventReceiveHandler) : void
-  +UnsetReceiveHandler() : void
-}
-
-class NotSubscribedAwaitNoneState {
-  +NotSubscribedAwaitNoneState(subscription_event_state_machine : SubscriptionStateMachine&)
-  +SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
-  +SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
-  +OnEntry() : void
-}
-
-class NotSubscribedAwaitSubscribeResultState {
-  +NotSubscribedAwaitSubscribeResultState(subscription_event_state_machine : SubscriptionStateMachine&)
-  +SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
-  +SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
-}
-
-class NotSubscribedAwaitUnsubscribeAckState {
-  +NotSubscribedAwaitUnsubscribeAckState(subscription_event_state_machine : SubscriptionStateMachine&)
-  +SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
-  +SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
-  +OnEntry() : void
-}
-
-class SubscribedState {
-  +SubscribedState(subscription_event_state_machine : SubscriptionStateMachine&)
-  +SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
-  +UnsubscribeEvent() : TriggerResult
-  +SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
-  +SetReceiveHandler(handler : EventReceiveHandler) : void
-  +UnsetReceiveHandler() : void
-}
-
-abstract class SubscriptionPendingState {
-  +SubscriptionPendingState(subscription_event_state_machine : SubscriptionStateMachine&)
-  +SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
-  +SetReceiveHandler(handler : EventReceiveHandler) : void
-  +UnsetReceiveHandler() : void
-}
-
-class SubscriptionPendingAwaitSubscribeResultState {
-  +SubscriptionPendingAwaitSubscribeResultState(subscription_event_state_machine : SubscriptionStateMachine&)
-  +SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
-  +UnsubscribeEvent() : TriggerResult
-  +SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
-}
-
-class SubscriptionPendingAwaitUnsubscribeAckState {
-  +SubscriptionPendingAwaitUnsubscribeAckState(subscription_event_state_machine : SubscriptionStateMachine&)
-  +UnsubscribeEvent() : TriggerResult
-  +SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
+abstract class SubscriptionStateBase {
+  #state_machine_: SubscriptionStateMachine&
+  +SubscriptionStateBase(SubscriptionStateMachine&) noexcept
+  +SubscribeEvent(size_t): Result<void>
+  +UnsubscribeEvent(): void
+  +StopOfferEvent(): void
+  +ReOfferEvent(pid_t): void
+  +SetReceiveHandler(weak_ptr<ScopedEventReceiveHandler>): void
+  +UnsetReceiveHandler(): void
+  +GetMaxSampleCount(): optional<uint16_t>
+  +GetSlotCollector(): optional<SlotCollector>&
+  +GetSlotCollector() const: const optional<SlotCollector>&
+  +OnEntry(): void
   +OnExit(): void
 }
 
-class SubscriptionPendingAwaitSubscribeResultUpdatedMaxSamples {
-  +SubscriptionPendingAwaitSubscribeResultUpdatedMaxSamples(subscription_event_state_machine : SubscriptionStateMachine&)
-  +UnsubscribeEvent() : TriggerResult
-  +SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
+class NotSubscribedState <<final>> {
+  +SubscribeEvent(size_t): Result<void>
+  +UnsubscribeEvent(): void
+  +StopOfferEvent(): void
+  +ReOfferEvent(pid_t): void
+  +SetReceiveHandler(weak_ptr<ScopedEventReceiveHandler>): void
+  +UnsetReceiveHandler(): void
+  +GetMaxSampleCount(): optional<uint16_t>
+  +GetSlotCollector(): optional<SlotCollector>&
+  +GetSlotCollector() const: const optional<SlotCollector>&
+  +OnEntry(): void
 }
 
-abstract class BaseMessagePassingManager {
-  +BaseMessagePassingManager(QualityType, ElementFqId, pid_t)
+class SubscribedState <<final>> {
+  +SubscribeEvent(size_t): Result<void>
+  +UnsubscribeEvent(): void
+  +StopOfferEvent(): void
+  +ReOfferEvent(pid_t): void
+  +SetReceiveHandler(weak_ptr<ScopedEventReceiveHandler>): void
+  +UnsetReceiveHandler(): void
+  +GetMaxSampleCount(): optional<uint16_t>
+  +GetSlotCollector(): optional<SlotCollector>&
+  +GetSlotCollector() const: const optional<SlotCollector>&
+}
+
+class SubscriptionPendingState <<final>> {
+  +SubscribeEvent(size_t): Result<void>
+  +UnsubscribeEvent(): void
+  +StopOfferEvent(): void
+  +ReOfferEvent(pid_t): void
+  +SetReceiveHandler(weak_ptr<ScopedEventReceiveHandler>): void
+  +UnsetReceiveHandler(): void
+  +GetMaxSampleCount(): optional<uint16_t>
+  +GetSlotCollector(): optional<SlotCollector>&
+  +GetSlotCollector() const: const optional<SlotCollector>&
+}
+
+}
+
+class SubscriptionData {
+  +max_sample_count_: optional<uint16_t>
+  +slot_collector_: optional<SlotCollector>
+  +Clear(): void
 }
 
 class EventReceiveHandlerManager {
-  +EventReceiveHandlerManager(QualityType, ElementFqId, pid_t)
-  +Register(EventReceiveHandler handler) : void
-  +Unregister() : void
-  +Reregister(EventReceiveHandler handler) : void
+  -asil_level_: const QualityType
+  -element_fq_id_: const ElementFqId
+  -event_source_pid_: pid_t
+  -registration_number_: optional<IMessagePassingService::HandlerRegistrationNoType>
+  +EventReceiveHandlerManager(QualityType, ElementFqId, pid_t) noexcept
+  +Register(weak_ptr<ScopedEventReceiveHandler>): void
+  +Reregister(optional<weak_ptr<ScopedEventReceiveHandler>>): void
+  +Unregister(): void
+  +UpdatePid(pid_t): void
 }
 
-class "SubscriptionData" {
-  +max_sample_count_ : std::optional<std::uint16_t>
-  +slot_collector_ : std::optional<SlotCollector>
+enum SubscriptionStateMachineState {
+  NOT_SUBSCRIBED_STATE
+  SUBSCRIPTION_PENDING_STATE
+  SUBSCRIBED_STATE
+  STATE_COUNT
 }
 
 note right of EventReceiveHandlerManager
-  Registration Behavior:
-  Register(): Called when provider available (immediate registration)
-  Reregister(): Called on ReOfferEvent (deferred registration)
-  Unregister(): Called on transition to NOT_SUBSCRIBED
+  Manages registration of the proxy's receive handler with the messaging service.
+  Reregister() updates registration when the provider PID changes.
 end note
 
-SubscriptionStateMachine o-- SubscriptionStateBase : "1..n"
-SubscriptionStateMachine o-- SubscriptionData : "1"
-SubscriptionStateMachine o-- EventReceiveHandlerManager : "1"
-SubscriptionStateBase --> SubscriptionStateMachine
-BaseMessagePassingManager <|-- EventReceiveHandlerManager
-SubscriptionStateBase <|-- SubscribedState
-
-
+SubscriptionStateMachine *-- SubscriptionStateBase : states_
+SubscriptionStateMachine *-- SubscriptionData
+SubscriptionStateMachine *-- EventReceiveHandlerManager
+SubscriptionStateMachine *-- SubscriptionStateMachineState
+SubscriptionStateBase --> SubscriptionStateMachine : state_machine_
 SubscriptionStateBase <|-- NotSubscribedState
-NotSubscribedState <|-- NotSubscribedAwaitNoneState
-NotSubscribedState <|-- NotSubscribedAwaitSubscribeResultState
-NotSubscribedState <|-- NotSubscribedAwaitUnsubscribeAckState
-
+SubscriptionStateBase <|-- SubscribedState
 SubscriptionStateBase <|-- SubscriptionPendingState
-SubscriptionPendingState <|-- SubscriptionPendingAwaitSubscribeResultState
-SubscriptionPendingState <|-- SubscriptionPendingAwaitUnsubscribeAckState
-SubscriptionPendingState <|-- SubscriptionPendingAwaitSubscribeResultUpdatedMaxSamples
+
+}
 
 }
 
