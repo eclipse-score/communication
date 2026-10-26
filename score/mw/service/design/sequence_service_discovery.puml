@@ -41,7 +41,7 @@ App -> Needs : InitiateServiceDiscovery(stop_token?)
 
 loop each ProxySpec in ProxyNeeds
 Needs -> Builder : Build(stop_token?)
-Builder -> Strategy : Find(builder_callback)
+Builder -> Strategy : StartFind(builder_callback)
 Strategy -> Holder : StartFindService(find_callback)
 end
 

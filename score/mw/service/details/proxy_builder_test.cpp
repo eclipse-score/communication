@@ -52,12 +52,12 @@ std::future<void> gAsyncFindFuture{};
 
 const std::string kDummyPortIdentifier{"Port/Identifier"};
 
-class TestProxyFindStrategy : public FindServiceStrategy
+class TestProxyFindStrategy : public FindServiceStrategy<FakeProxyBase>
 {
   public:
     using BaseProxy = FakeProxyBase;
 
-    void Find(std::unique_ptr<typename ProxyBuilderBase<FakeProxyBase>::BuilderCallback> on_found)
+    void StartFind(std::unique_ptr<typename ProxyBuilderBase<FakeProxyBase>::BuilderCallback> on_found) override
     {
         gAsyncFindFuture = std::async(std::launch::async, [on_found = std::move(on_found)]() {
             gFindServiceIsRunningNotification.notify();
@@ -83,12 +83,12 @@ class TestProxyFindStrategy : public FindServiceStrategy
     }
 };
 
-class TestMandatoryImmediateProxyFindStrategy : public FindServiceStrategy
+class TestMandatoryImmediateProxyFindStrategy : public FindServiceStrategy<FakeProxyBase>
 {
   public:
     using BaseProxy = FakeProxyBase;
 
-    void Find(std::unique_ptr<typename ProxyBuilderBase<BaseProxy>::BuilderCallback> on_found)
+    void StartFind(std::unique_ptr<typename ProxyBuilderBase<BaseProxy>::BuilderCallback> on_found) override
     {
         auto proxy = std::make_unique<FakeProxy>(42);
         (*on_found)(std::move(proxy));
@@ -97,12 +97,12 @@ class TestMandatoryImmediateProxyFindStrategy : public FindServiceStrategy
     void StopFind() noexcept override {}
 };
 
-class TestOptionalImmediateProxyFindStrategy : public FindServiceStrategy
+class TestOptionalImmediateProxyFindStrategy : public FindServiceStrategy<Optional<FakeProxyBase>>
 {
   public:
     using BaseProxy = Optional<FakeProxyBase>;
 
-    void Find(std::unique_ptr<typename ProxyBuilderBase<BaseProxy>::BuilderCallback> on_found)
+    void StartFind(std::unique_ptr<typename ProxyBuilderBase<BaseProxy>::BuilderCallback> on_found) override
     {
         auto proxy = std::make_unique<FakeProxy>(42);
         (*on_found)(std::move(proxy));
@@ -111,12 +111,12 @@ class TestOptionalImmediateProxyFindStrategy : public FindServiceStrategy
     void StopFind() noexcept override {}
 };
 
-class TestMultipleImmediateProxyFindStrategy : public FindServiceStrategy
+class TestMultipleImmediateProxyFindStrategy : public FindServiceStrategy<Multiple<FakeProxyBase>>
 {
   public:
     using BaseProxy = Multiple<FakeProxyBase>;
 
-    void Find(std::unique_ptr<typename ProxyBuilderBase<BaseProxy>::BuilderCallback> on_found)
+    void StartFind(std::unique_ptr<typename ProxyBuilderBase<BaseProxy>::BuilderCallback> on_found) override
     {
         auto proxy = std::make_unique<FakeProxy>(42);
         auto proxy2 = std::make_unique<FakeProxy>(43);
@@ -128,7 +128,7 @@ class TestMultipleImmediateProxyFindStrategy : public FindServiceStrategy
     void StopFind() noexcept override {}
 };
 
-class TestVariantProxyImmediateFindStrategy : public FindServiceStrategy
+class TestVariantProxyImmediateFindStrategy : public FindServiceStrategy<Variant<FakeProxyBase, OtherFakeProxyBase>>
 {
   public:
     using BaseProxy = Variant<FakeProxyBase, OtherFakeProxyBase>;
@@ -138,7 +138,7 @@ class TestVariantProxyImmediateFindStrategy : public FindServiceStrategy
         EXPECT_FALSE(port_identifier.empty());
     }
 
-    void Find(std::unique_ptr<typename ProxyBuilderBase<BaseProxy>::BuilderCallback> on_found)
+    void StartFind(std::unique_ptr<typename ProxyBuilderBase<BaseProxy>::BuilderCallback> on_found) override
     {
         auto proxy = std::make_unique<FakeProxy>(42);
         std::variant<SingleInstanceHolder<FakeProxyBase>, SingleInstanceHolder<OtherFakeProxyBase>> found{
@@ -840,7 +840,7 @@ TEST_F(ProxyBuilderFixture, CallOnceProxyBuilderCallbackReleasesItsPromiseUponDe
     class DummyFindProxyStrategy
     {
       public:
-        void Find(ProxyBuilderCallback on_found) noexcept
+        void StartFind(ProxyBuilderCallback on_found) noexcept
         {
             on_found_ = std::move(on_found);
         }
@@ -866,7 +866,7 @@ TEST_F(ProxyBuilderFixture, CallOnceProxyBuilderCallbackReleasesItsPromiseUponDe
             ProxyFuture future{promise.GetInterruptibleFuture().value()};
 
             strategy_.emplace();
-            strategy_->Find(std::make_unique<typename ProxyBuilderBase<FakeProxyBase>::BuilderCallback>(
+            strategy_->StartFind(std::make_unique<typename ProxyBuilderBase<FakeProxyBase>::BuilderCallback>(
                 std::move(promise), Trait::UserCallback{}));
 
             return future;

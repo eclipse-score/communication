@@ -30,19 +30,19 @@ namespace score::mw::service::test
 /// @brief  Find Strategy for testing purposes that returns an instance of the ProxyBase interface created on the local
 ///         process. This is useful for unit testing classes using ProxyNeeds where a strategy needs to be utilized that
 ///         will return Mock objects.
-/// @tparam Proxy Interface that will be provided by the strategy
+/// @tparam ProxyBase Interface that will be provided by the strategy
 /// @tparam ProxyImplFactory A callable that will return an implementation of the interface wrapped in a unique_ptr.
 /// @tparam ShouldFindProxy Whether to call the on_found callback immediately with a proxy created by ProxyImplFactory.
-template <typename Proxy, typename ProxyImplFactory, bool should_find_proxy = true>
-class SingleImmediateInstantiationStrategy final : public FindServiceStrategy
+template <typename ProxyBase, typename ProxyImplFactory, bool should_find_proxy = true>
+class SingleImmediateInstantiationStrategy final : public FindServiceStrategy<ProxyBase>
 {
     static_assert(std::is_invocable_v<ProxyImplFactory>, "ProxyImplFactory must be invocable!");
-    static_assert(
-        std::is_same_v<std::invoke_result_t<ProxyImplFactory>, typename details::ProxySpecTraits<Proxy>::HolderType>,
-        "When invoked, ProxyImplFactory must return a ProxySpecTraits::HolderType!");
+    static_assert(std::is_same_v<std::invoke_result_t<ProxyImplFactory>,
+                                 typename details::ProxySpecTraits<ProxyBase>::HolderType>,
+                  "When invoked, ProxyImplFactory must return a ProxySpecTraits::HolderType!");
 
   public:
-    using BaseProxy = Proxy;
+    using BaseProxy = ProxyBase;
 
     constexpr SingleImmediateInstantiationStrategy() noexcept = default;
 
@@ -50,7 +50,7 @@ class SingleImmediateInstantiationStrategy final : public FindServiceStrategy
     explicit SingleImmediateInstantiationStrategy(ProxyImplFactory factory) : factory_{std::move(factory)} {}
 
     /// @brief Create proxy object via ProxyImplFactory
-    void Find(std::unique_ptr<typename ProxyBuilderBase<Proxy>::BuilderCallback> on_found)
+    void StartFind(std::unique_ptr<typename ProxyBuilderBase<ProxyBase>::BuilderCallback> on_found) override
     {
         if constexpr (should_find_proxy)
         {
@@ -75,7 +75,7 @@ class SingleImmediateInstantiationStrategy final : public FindServiceStrategy
 
   private:
     ProxyImplFactory factory_;
-    std::unique_ptr<typename ProxyBuilderBase<Proxy>::BuilderCallback> on_found_;
+    std::unique_ptr<typename ProxyBuilderBase<ProxyBase>::BuilderCallback> on_found_;
 };
 
 }  // namespace score::mw::service::test

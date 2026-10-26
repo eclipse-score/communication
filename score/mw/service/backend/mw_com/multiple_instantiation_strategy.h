@@ -36,18 +36,20 @@ namespace score::mw::service::backend::mw_com
 ///       empty `MultiInstanceHolder` will be the result of `WaitForMandatoryProxies()` and users in both
 ///       cases have to observe the returned `MultiInstanceHolder` object to check whether all expected
 ///       proxies got already found (cf. `MultiInstanceHolder`'s method `WaitUntilInstancesGotFound()`).
-template <typename Proxy, typename ProxyImpl, typename MwComProxy, typename PortIdentifier = void>
+template <typename ProxyBase, typename ProxyImpl, typename MwComProxy, typename PortIdentifier = void>
 class MultipleInstantiationStrategy final
-    : public common::InstantiationStrategyBase<MwComProxy, internal::ProxyHolderCreator<MwComProxy>>
+    : public common::
+          InstantiationStrategyBase<Multiple<ProxyBase>, MwComProxy, internal::ProxyHolderCreator<MwComProxy>>
 {
     static_assert(std::is_void_v<PortIdentifier> || common::IsValidPortIdentifierType<PortIdentifier>(),
                   "template parameter `PortIdentifier` lacks a static method "
                   "named `Get` which's result can be converted to std::string!");
 
-    using Base = common::InstantiationStrategyBase<MwComProxy, internal::ProxyHolderCreator<MwComProxy>>;
+    using Base =
+        common::InstantiationStrategyBase<Multiple<ProxyBase>, MwComProxy, internal::ProxyHolderCreator<MwComProxy>>;
 
   public:
-    using BaseProxy = Multiple<Proxy>;
+    using BaseProxy = Multiple<ProxyBase>;
 
     template <typename PortIdentifierType = PortIdentifier,
               std::enable_if_t<std::is_void_v<PortIdentifierType>, bool> = true>
@@ -62,21 +64,21 @@ class MultipleInstantiationStrategy final
     }
 
     /// @brief Start the service discovery for `MwComProxy`.
-    /// @note It must be ensured by the caller of Find() that StopFind() gets invoked *after* Find() returned!
-    void Find(std::unique_ptr<typename ProxyBuilderBase<Multiple<Proxy>>::BuilderCallback> on_found)
+    /// @note It must be ensured by the caller of StartFind() that StopFind() gets invoked *after* StartFind() returned!
+    void StartFind(std::unique_ptr<typename ProxyBuilderBase<Multiple<ProxyBase>>::BuilderCallback> on_found) override
     {
-        Base::StartFind([on_found{std::move(on_found)}](std::vector<std::unique_ptr<MwComProxy>> proxies,
-                                                        std::string_view /*port_identifier*/) ->
-                        typename Base::ShallStopFindService {
-                            for (auto& proxy : proxies)  // LCOV_EXCL_BR_LINE (tooling issue Ticket-188259)
-                            {
-                                std::invoke(*on_found, std::make_unique<ProxyImpl>(std::move(proxy)));
-                            }
+        Base::StartFindInternal([on_found{std::move(on_found)}](std::vector<std::unique_ptr<MwComProxy>> proxies,
+                                                                std::string_view /*port_identifier*/) ->
+                                typename Base::ShallStopFindService {
+                                    for (auto& proxy : proxies)  // LCOV_EXCL_BR_LINE (tooling issue Ticket-188259)
+                                    {
+                                        std::invoke(*on_found, std::make_unique<ProxyImpl>(std::move(proxy)));
+                                    }
 
-                            // We must continue looking for further proxies to get found
-                            // as long as StopFind() did not get invoked from outside.
-                            return Base::ShallStopFindService::kNo;
-                        });
+                                    // We must continue looking for further proxies to get found
+                                    // as long as StopFind() did not get invoked from outside.
+                                    return Base::ShallStopFindService::kNo;
+                                });
     }
 
     /// @brief Stop the service discovery for `MwComProxy`.

@@ -33,20 +33,20 @@ namespace score::mw::service::test
 /// times.
 ///         This is useful for unit testing classes using ProxyNeeds where a strategy needs to be utilized that will
 ///         return Mock objects.
-/// @tparam Proxy Interface that will be provided by the strategy.
+/// @tparam ProxyBase Interface that will be provided by the strategy.
 /// @tparam ProxyImplFactory A callable that will return an implementation of the interface wrapped in a unique_ptr.
 /// @tparam number_of_found_proxies The number of times the BuilderCallback callback will be immediately called with a
 ///         proxy created by ProxyImplFactory.
-template <typename Proxy, typename ProxyImplFactory, std::size_t number_of_found_proxies>
-class MultipleImmediateInstantiationStrategy final : public FindServiceStrategy
+template <typename ProxyBase, typename ProxyImplFactory, std::size_t number_of_found_proxies>
+class MultipleImmediateInstantiationStrategy final : public FindServiceStrategy<Multiple<ProxyBase>>
 {
     static_assert(std::is_invocable_v<ProxyImplFactory>, "ProxyImplFactory must be invocable!");
-    static_assert(
-        std::is_same_v<std::invoke_result_t<ProxyImplFactory>, typename details::ProxySpecTraits<Proxy>::HolderType>,
-        "When invoked, ProxyImplFactory must return a ProxySpecTraits::HolderType!");
+    static_assert(std::is_same_v<std::invoke_result_t<ProxyImplFactory>,
+                                 typename details::ProxySpecTraits<ProxyBase>::HolderType>,
+                  "When invoked, ProxyImplFactory must return a ProxySpecTraits::HolderType!");
 
   public:
-    using BaseProxy = Multiple<Proxy>;
+    using BaseProxy = Multiple<ProxyBase>;
 
     constexpr MultipleImmediateInstantiationStrategy() noexcept = default;
 
@@ -54,7 +54,7 @@ class MultipleImmediateInstantiationStrategy final : public FindServiceStrategy
     explicit MultipleImmediateInstantiationStrategy(ProxyImplFactory factory) : factory_{std::move(factory)} {}
 
     /// @brief Create proxy object via ProxyImplFactory
-    void Find(std::unique_ptr<typename ProxyBuilderBase<Multiple<Proxy>>::BuilderCallback> on_found)
+    void StartFind(std::unique_ptr<typename ProxyBuilderBase<Multiple<ProxyBase>>::BuilderCallback> on_found) override
     {
         for (std::size_t i = 0U; i < number_of_found_proxies; ++i)
         {

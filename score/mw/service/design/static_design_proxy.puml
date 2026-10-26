@@ -166,7 +166,7 @@ class ActiveServiceDiscovery {
 
 class "<Name>FindStrategy" as NameFindStrategy <<concept>> #A0FFA0 {
     + using BaseProxy = I<Name>Proxy
-    + Find(unique_ptr<BuilderCallback>)
+    + StartFind(unique_ptr<BuilderCallback>)
     + StopFind() noexcept
 }
 

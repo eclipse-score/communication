@@ -34,6 +34,10 @@ class TestBackendProxy final
 {
 };
 
+class TestProxyBase
+{
+};
+
 struct ProxyHolderState
 {
     std::atomic_uint32_t stop_find_calls{0U};
@@ -79,16 +83,19 @@ struct TestProxyCreator
     }
 };
 
-class TestInstantiationStrategy final : public InstantiationStrategyBase<TestBackendProxy, TestProxyCreator>
+class TestInstantiationStrategy final
+    : public InstantiationStrategyBase<TestProxyBase, TestBackendProxy, TestProxyCreator>
 {
-    using Base = InstantiationStrategyBase<TestBackendProxy, TestProxyCreator>;
+    using Base = InstantiationStrategyBase<TestProxyBase, TestBackendProxy, TestProxyCreator>;
 
   public:
     explicit TestInstantiationStrategy(std::string port_identifier) : Base(std::move(port_identifier)) {}
 
+    void StartFind(std::unique_ptr<typename ProxyBuilderBase<TestProxyBase>::BuilderCallback> /*on_found*/) override {}
+
     void StartFindForTest()
     {
-        Base::StartFind(
+        Base::StartFindInternal(
             [](std::vector<std::unique_ptr<TestBackendProxy>> /*found_proxies*/, std::string_view /*port_identifier*/) {
                 return Base::ShallStopFindService::kNo;
             });
