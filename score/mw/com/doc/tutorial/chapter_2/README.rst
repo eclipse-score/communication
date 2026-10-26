@@ -104,12 +104,13 @@ Consumer application
 
 
 The consumer application is also almost identical to the consumer application of chapter 1. The only difference is, that
-we now load a specific configuration! So, if you look at line 37 of `consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/consumer/consumer.cpp>`__ file,
+we now load a specific configuration! So, if you look at the `consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/consumer/consumer.cpp>`__ file,
 you will see that we added a specific call:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 40-40
+   :start-after: [consumer-initialize-runtime-start]
+   :end-before: [consumer-initialize-runtime-end]
    :caption: consumer/consumer.cpp
 
 
