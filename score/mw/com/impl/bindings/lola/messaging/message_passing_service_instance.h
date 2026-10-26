@@ -247,12 +247,6 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
                                            const std::size_t queue_position,
                                            const pid_t target_node_id);
 
-    /// \brief Function to convert ClientQualityType to a QualityType
-    ///
-    /// (which encodes the client's QualityType plus whether the current process is an ASIL-B process communicating with
-    /// a QM client)
-    QualityType GetPartnerQualityType() const;
-
     score::cpp::pmr::unique_ptr<score::message_passing::IServer> server_;
 
     /// \brief Copies node identifiers (pid) contained within (container) values of a map into a given buffer under
