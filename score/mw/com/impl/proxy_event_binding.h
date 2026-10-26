@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_PROXY_EVENT_BINDING_H
 #define SCORE_MW_COM_IMPL_PROXY_EVENT_BINDING_H
 
+#include "score/mw/com/impl/e2e/e2e_health_tracker.h"
 #include "score/mw/com/impl/e2e/e2e_result.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
@@ -24,6 +25,7 @@
 #include <score/callback.hpp>
 
 #include <cstddef>
+#include <cstdint>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -110,6 +112,30 @@ class ProxyEventBinding
     /// \return If GetSubscriptionState() is currently kSubscribed or kSubscriptionPending, returns the max_sample_count
     /// that was passed to the Subscribe call. Otherwise, returns empty.
     virtual std::optional<std::uint16_t> GetMaxSampleCount() const noexcept = 0;
+
+    /// \brief Returns the configuration of the historical E2E health tracking of this event.
+    ///
+    /// The binding knows the deployment configuration of the event, the binding-independent event owns the health
+    /// tracker and reads this once on construction.
+    ///
+    /// \return Configuration for the health tracker. Bindings/events without E2E health configuration return the
+    ///         default, which has tracking disabled.
+    virtual e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const noexcept
+    {
+        return e2e::HealthTrackerConfiguration{};
+    }
+
+    /// \brief Returns how often the provider of this event came back after it had been gone (re-offer).
+    ///
+    /// The binding-independent event compares this value between received samples. A changed value tells it that
+    /// the samples that follow originate from a restarted provider, so the history of the previous provider (e.g. the
+    /// historical E2E health) must be forgotten.
+    ///
+    /// \return Monotonically increasing counter. Bindings which do not detect a provider restart always return 0.
+    virtual std::uint64_t GetProviderRestartCount() const noexcept
+    {
+        return 0U;
+    }
 
     /// \brief Gets the binding type of the binding
     virtual BindingType GetBindingType() const noexcept = 0;

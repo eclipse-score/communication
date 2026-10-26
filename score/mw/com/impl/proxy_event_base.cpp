@@ -51,6 +51,10 @@ ProxyEventBase::ProxyEventBase(std::string_view event_name,
       is_subscribed_flag_{false},
       receive_handler_scope_{}
 {
+    if (binding_ != nullptr)
+    {
+        health_tracker_ = e2e::HealthTracker{binding_->GetHealthTrackerConfiguration()};
+    }
 }
 
 ProxyEventBase::~ProxyEventBase() noexcept
@@ -91,6 +95,8 @@ Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count)
     if (current_state == SubscriptionState::kNotSubscribed)
     {
         tracker_->Reset(max_sample_count);
+        health_tracker_.Reset();
+        last_provider_restart_count_ = binding_->GetProviderRestartCount();
         const auto subscribe_result = binding_->Subscribe(max_sample_count);
         if (!subscribe_result.has_value())
         {
@@ -260,6 +266,16 @@ Result<void> ProxyEventBase::UnsetReceiveHandler()
         return MakeUnexpected(ComErrc::kUnsetFailure);
     }
     return {};
+}
+
+void ProxyEventBase::ResetHealthTrackerOnProviderRestart() noexcept
+{
+    const auto provider_restart_count = binding_->GetProviderRestartCount();
+    if (provider_restart_count != last_provider_restart_count_)
+    {
+        health_tracker_.Reset();
+        last_provider_restart_count_ = provider_restart_count;
+    }
 }
 
 void ProxyEventBase::ExpireReceiveHandlerScopeIfNotInHandler()

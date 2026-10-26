@@ -61,6 +61,28 @@ class ProxyEvent : public ProxyEventBinding
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
 
+    /// \brief Provider restart count reported to the binding independent event. Not a gmock method, so that tests
+    /// using a StrictMock do not have to expect it.
+    std::uint64_t GetProviderRestartCount() const noexcept override
+    {
+        return provider_restart_count_;
+    }
+    void SetProviderRestartCount(const std::uint64_t provider_restart_count) noexcept
+    {
+        provider_restart_count_ = provider_restart_count;
+    }
+
+    /// \brief Health tracker configuration reported to the binding independent event. Not a gmock method, so that
+    /// tests using a StrictMock do not have to expect it.
+    e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const noexcept override
+    {
+        return health_tracker_configuration_;
+    }
+    void SetHealthTrackerConfiguration(const e2e::HealthTrackerConfiguration& configuration) noexcept
+    {
+        health_tracker_configuration_ = configuration;
+    }
+
     /// \brief Add a sample to the internal queue of fake events.
     ///
     /// On a call to GetNewSamples(), these samples will be forwarded to the provided callable in case there is no
@@ -81,6 +103,8 @@ class ProxyEvent : public ProxyEventBinding
   private:
     using FakeSamples = std::vector<SamplePtr>;
     FakeSamples fake_samples_;
+    std::uint64_t provider_restart_count_{0U};
+    e2e::HealthTrackerConfiguration health_tracker_configuration_{};
 
     Result<std::size_t> GetNewFakeSamples(ProxyEventBinding::Callback&& callable, TrackerGuardFactory& tracker);
 };
@@ -136,6 +160,14 @@ class ProxyEventFacade : public ProxyEventBinding
     BindingType GetBindingType() const noexcept override
     {
         return proxy_event_.GetBindingType();
+    }
+    std::uint64_t GetProviderRestartCount() const noexcept override
+    {
+        return proxy_event_.GetProviderRestartCount();
+    }
+    e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const noexcept override
+    {
+        return proxy_event_.GetHealthTrackerConfiguration();
     }
 
   private:

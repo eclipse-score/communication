@@ -168,6 +168,42 @@ TEST_F(LolaProxyEventFixture,
     EXPECT_EQ(new_subscription_state, SubscriptionState::kSubscribed);
 }
 
+TEST_F(LolaProxyEventFixture, ProviderRestartCountIsZeroInitially)
+{
+    // Given a mocked Proxy, Skeleton and proxy event
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
+
+    // When asking for the provider restart count
+    // Then it is zero
+    EXPECT_EQ(this->test_proxy_event_->GetProviderRestartCount(), 0U);
+}
+
+TEST_F(LolaProxyEventFixture, ProviderRestartCountIsNotIncreasedByAvailabilityNotificationWhileAvailable)
+{
+    // Given a mocked Proxy, Skeleton and proxy event whose provider was never gone
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
+
+    // When the provider is notified as available
+    this->test_proxy_event_->NotifyServiceInstanceChangedAvailability(true, ProxyMockedMemoryFixture::kDummyPid);
+
+    // Then the provider restart count stays zero
+    EXPECT_EQ(this->test_proxy_event_->GetProviderRestartCount(), 0U);
+}
+
+TEST_F(LolaProxyEventFixture, ProviderRestartCountIsIncreasedWhenProviderIsReofferedAfterStopOffer)
+{
+    // Given a mocked Proxy, Skeleton and proxy event which is subscribed and whose provider stopped offering
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_).ThatIsSubscribedWithMaxSamples(kMaxSampleCount);
+    this->test_proxy_event_->NotifyServiceInstanceChangedAvailability(false, ProxyMockedMemoryFixture::kDummyPid);
+    ASSERT_EQ(this->test_proxy_event_->GetProviderRestartCount(), 0U);
+
+    // When the provider is re-offered
+    this->test_proxy_event_->NotifyServiceInstanceChangedAvailability(true, ProxyMockedMemoryFixture::kDummyPid);
+
+    // Then the provider restart count is one
+    EXPECT_EQ(this->test_proxy_event_->GetProviderRestartCount(), 1U);
+}
+
 TEST_F(LolaProxyEventFixture, GetDataTypeSizeInfo)
 {
     RecordProperty("lobster-tracing", "GenericProxyEventGetDataTypeSizeInfo");

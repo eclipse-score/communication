@@ -166,6 +166,10 @@ class SamplePtr final
     }
 
     /// \brief Returns the E2E result associated with this received sample.
+    /// \details The result is complete when the sample is handed to the user via GetNewSamples(): data_integrity and
+    ///          sequence come from the binding, historical_health and summary are added by the event. If no E2E check
+    ///          is configured for the event, every field is kDisabled. The result moves together with the sample.
+    /// \return Copy of the E2E result of this sample.
     e2e::E2EResult GetE2EResult() const
     {
         return e2e_result_;
