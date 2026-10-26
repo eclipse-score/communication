@@ -26,6 +26,7 @@
 
 #include "score/result/result.h"
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -75,6 +76,7 @@ class ProxyEvent final : public GenericProxyEventBinding
     Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept override;
     Result<void> UnsetSubscriptionStateChangeHandler() noexcept override;
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;
+    std::uint64_t GetProviderRestartCount() const noexcept override;
     BindingType GetBindingType() const noexcept override
     {
         return BindingType::kLoLa;
@@ -142,6 +144,11 @@ class ProxyEvent final : public GenericProxyEventBinding
     std::reference_wrapper<EventSubscriptionControl<>> subscription_control_;
     std::reference_wrapper<TransactionLogSet> transaction_log_set_;
     SubscriptionStateMachine subscription_event_state_machine_;
+
+    /// \brief Whether the provider is currently available. Written by the service discovery thread.
+    std::atomic<bool> provider_is_available_{true};
+    /// \brief Number of times the provider came back after it had been gone. Read by GetProviderRestartCount().
+    std::atomic<std::uint64_t> provider_restart_count_{0U};
 };
 
 }  // namespace score::mw::com::impl::lola

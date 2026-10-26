@@ -169,9 +169,20 @@ std::optional<std::uint16_t> ProxyEvent::GetMaxSampleCount() const noexcept
     return subscription_event_state_machine_.GetMaxSampleCount();
 }
 
+std::uint64_t ProxyEvent::GetProviderRestartCount() const noexcept
+{
+    return provider_restart_count_.load();
+}
+
 void ProxyEvent::NotifyServiceInstanceChangedAvailability(const bool is_available,
                                                           const pid_t new_event_source_pid) noexcept
 {
+    const auto provider_was_available = provider_is_available_.exchange(is_available);
+    if (is_available && !provider_was_available)
+    {
+        ++provider_restart_count_;
+    }
+
     if (is_available)
     {
         subscription_event_state_machine_.ReOfferEvent(new_event_source_pid);

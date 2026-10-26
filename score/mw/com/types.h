@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_TYPES_H
 #define SCORE_MW_COM_TYPES_H
 
+#include "score/mw/com/impl/e2e/e2e_result.h"
 #include "score/mw/com/impl/methods/method_signature_element_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
@@ -86,6 +87,26 @@ using SubscriptionState = ::score::mw::com::impl::SubscriptionState;
 /// Carries the received data on proxy side
 template <typename SampleType>
 using SamplePtr = impl::SamplePtr<SampleType>;
+
+/// \api
+/// \brief Result of the E2E checks done for a received sample. Retrievable via SamplePtr::GetE2EResult().
+using E2EResult = impl::e2e::E2EResult;
+
+/// \api
+/// \brief Result of the E2E data integrity check of a received sample.
+using DataIntegrityStatus = impl::e2e::DataIntegrityStatus;
+
+/// \api
+/// \brief Result of the E2E sequence check of a received sample.
+using SequenceStatus = impl::e2e::SequenceStatus;
+
+/// \api
+/// \brief Result of the historical E2E health tracking.
+using HistoricalHealthStatus = impl::e2e::HistoricalHealthStatus;
+
+/// \api
+/// \brief Aggregated E2E result for applications that do not need E2E detail.
+using E2ESummary = impl::e2e::Summary;
 
 /// Carries a reference to the allocated memory that will hold the data that is to be sent to the receivers after having
 /// been filled by the sending application.

@@ -13,6 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_PROXY_EVENT_BINDING_H
 #define SCORE_MW_COM_IMPL_PROXY_EVENT_BINDING_H
 
+#include "score/mw/com/impl/e2e/e2e_health_tracker.h"
+#include "score/mw/com/impl/e2e/e2e_result.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
@@ -23,6 +25,7 @@
 #include <score/callback.hpp>
 
 #include <cstddef>
+#include <cstdint>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -39,9 +42,10 @@ class ProxyEventBinding
   public:
     /// Type-erased callback used for the GetNewSamples method.
     ///
-    /// The size of 80U is chosen to allow us to store another score::cpp::callback within this callback. This is needed
-    /// as we wrap the user provided callback in order to perform tracing functionality.
-    using Callback = score::cpp::callback<void(SamplePtr<void>, tracing::ITracingRuntime::TracePointDataId), 80U>;
+    /// The size of 112U is chosen to allow us to store another score::cpp::callback within this callback. This is
+    /// needed as we wrap the user provided callback in order to perform tracing functionality and to attach the E2E
+    /// result in ProxyEvent<SampleType>::GetNewSamples().
+    using Callback = score::cpp::callback<void(SamplePtr<void>, tracing::ITracingRuntime::TracePointDataId), 112U>;
 
     ProxyEventBinding() = default;
     // A ProxyEventBinding is always held via a pointer in the binding independent impl::ProxyEvent.
@@ -109,6 +113,30 @@ class ProxyEventBinding
     /// that was passed to the Subscribe call. Otherwise, returns empty.
     virtual std::optional<std::uint16_t> GetMaxSampleCount() const noexcept = 0;
 
+    /// \brief Returns the configuration of the historical E2E health tracking of this event.
+    ///
+    /// The binding knows the deployment configuration of the event, the binding-independent event owns the health
+    /// tracker and reads this once on construction.
+    ///
+    /// \return Configuration for the health tracker. Bindings/events without E2E health configuration return the
+    ///         default, which has tracking disabled.
+    virtual e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const noexcept
+    {
+        return e2e::HealthTrackerConfiguration{};
+    }
+
+    /// \brief Returns how often the provider of this event came back after it had been gone (re-offer).
+    ///
+    /// The binding-independent event compares this value between received samples. A changed value tells it that
+    /// the samples that follow originate from a restarted provider, so the history of the previous provider (e.g. the
+    /// historical E2E health) must be forgotten.
+    ///
+    /// \return Monotonically increasing counter. Bindings which do not detect a provider restart always return 0.
+    virtual std::uint64_t GetProviderRestartCount() const noexcept
+    {
+        return 0U;
+    }
+
     /// \brief Gets the binding type of the binding
     virtual BindingType GetBindingType() const noexcept = 0;
 
@@ -132,16 +160,21 @@ class ProxyEventBinding
     /// \tparam BindingSamplePtr The sample pointer from the binding.
     /// \param binding_ptr Type of the binding-specific sample pointer.
     /// \param reference_guard Reference counting guard managing the count of SamplePtrs that are alive.
+    /// \param raw_check_outcome Outcome of the binding's own E2E check for this sample. Leave at default for
+    ///                          bindings/events without E2E.
     /// \return Binding-independent SamplePtr instance.
     template <typename BindingSamplePtr>
-    static SamplePtr<void> MakeSamplePtr(BindingSamplePtr&& binding_ptr, SampleReferenceGuard reference_guard) noexcept;
+    static SamplePtr<void> MakeSamplePtr(BindingSamplePtr&& binding_ptr,
+                                         SampleReferenceGuard reference_guard,
+                                         const e2e::RawCheckOutcome raw_check_outcome = {}) noexcept;
 };
 
 template <typename BindingSamplePtr>
 inline SamplePtr<void> ProxyEventBinding::MakeSamplePtr(BindingSamplePtr&& binding_ptr,
-                                                        SampleReferenceGuard reference_guard) noexcept
+                                                        SampleReferenceGuard reference_guard,
+                                                        const e2e::RawCheckOutcome raw_check_outcome) noexcept
 {
-    return SamplePtr<void>{std::forward<BindingSamplePtr>(binding_ptr), std::move(reference_guard)};
+    return SamplePtr<void>{std::forward<BindingSamplePtr>(binding_ptr), std::move(reference_guard), raw_check_outcome};
 }
 
 }  // namespace score::mw::com::impl
