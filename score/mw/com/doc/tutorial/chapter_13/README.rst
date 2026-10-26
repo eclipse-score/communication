@@ -35,7 +35,7 @@ Files/artifacts used
 
 
 The ``bazel`` project for this chapter is located in
-`score/mw/com/doc/tutorial/chapter_13 <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_13/>`__
+`score/mw/com/doc/tutorial/chapter_13 <https://github.com/eclipse-score/communication/tree/main/score/mw/com/doc/tutorial/chapter_13>`__
 and contains the following files:
 
 ----------------------------------------
