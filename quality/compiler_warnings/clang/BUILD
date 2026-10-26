@@ -99,3 +99,26 @@ cc_feature(
     feature_name = "score_communication_minimal_warnings",
     visibility = ["//visibility:public"],
 )
+
+cc_args(
+    name = "misra_warnings_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
+    ],
+    # This contains the list of warnings that we decided to enable for C++ to help fulfilling
+    # MISRA C++:2023. This list contains only the warnings that are enabled in clang only.
+    # The warnings that are common can be found in the BUILD file one level up.
+    args = [
+        "-Wdeprecated",  # Helps to achieve MISRA C++:2023 Rule 4-1-2
+    ],
+)
+
+cc_feature(
+    name = "misra_warnings",
+    args = [
+        ":misra_warnings_args",
+        "//quality/compiler_warnings:minimal_warnings_args",
+    ],
+    feature_name = "score_communication_misra_warnings",
+    visibility = ["//visibility:public"],
+)
