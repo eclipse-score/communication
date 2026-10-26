@@ -268,6 +268,12 @@ void OfferedEvent::set_payload(Payload& event_payload, std::uint16_t client, boo
             return;
         }
 
+        if (client > 0) { // for notify_one
+            std::uint32_t sessionid = static_cast<std::uint32_t>(request_id_ & 0x0000ffff);
+            std::uint32_t clientid = static_cast<std::uint32_t>(client) << 16;
+            request_id_ = (clientid | sessionid);
+        }
+
         auto payload = notification_->get_payload_type();
 
         switch (strategy_) {
@@ -302,7 +308,7 @@ void OfferedEvent::set_payload(Payload& event_payload, std::uint16_t client, boo
                     initialized_ = true;
                 }
                 lock.unlock();
-                send(0, client);
+                send(0);
             } else {
                 LGSOMEIP_LOG_INFO << "OfferedEvent::set_payload "
                                   << format_service_instance_event_id(this->service_id_, this->instance_id_,
@@ -321,7 +327,7 @@ void OfferedEvent::set_payload(Payload& event_payload, std::uint16_t client, boo
                     initialized_ = true;
                 }
                 lock.unlock();
-                send(0, client);
+                send(0);
             }
             break;
         default:
@@ -331,7 +337,7 @@ void OfferedEvent::set_payload(Payload& event_payload, std::uint16_t client, boo
     }
 }
 
-void OfferedEvent::send(std::uint32_t interval, std::uint16_t client) {
+void OfferedEvent::send(std::uint32_t interval) {
     std::unique_lock<std::mutex> lock(mutex_);
 
     if (!service_enabled_) {
@@ -354,7 +360,7 @@ void OfferedEvent::send(std::uint32_t interval, std::uint16_t client) {
     if ((strategy_ == EventStrategy::UpdateOnChange || strategy_ == EventStrategy::EpsilonChange) && interval == 0) {
         LGSOMEIP_LOG_DEBUG << "OfferedEvent::send (UpdateOnChange or EpsilonChange) / "
                            << format_service_instance_event_id(this->service_id_, this->instance_id_, this->event_id_);
-        send_notification(client);
+        send_notification();
     }
 
     // Case 2 : Cyclic Update
@@ -393,12 +399,10 @@ void OfferedEvent::send_initial_event() {
     }
 }
 
-void OfferedEvent::send_notification(std::uint16_t client) {
+void OfferedEvent::send_notification() {
     if (host_ != nullptr) {
-        // The session ID runs from 1 to 0xFFFF and wraps to 1. The upper 16 bits carry the single target client
-        // of notify_one() for the packet router; 0 addresses every subscriber.
-        session_id_ = (session_id_ % 0x0000FFFF) + 1;
-        notification_->set_request_id((static_cast<std::uint32_t>(client) << 16) | session_id_);
+        request_id_ = (request_id_ % 0x0000FFFF) + 1;
+        notification_->set_request_id(request_id_);
         notification_->set_instance_id(instance_id_);
         host_->send(notification_);
     }
