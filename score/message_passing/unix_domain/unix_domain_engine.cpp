@@ -100,30 +100,30 @@ void UnixDomainEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noexc
         posix_receive_buffer_.resize(endpoint.max_receive_size);
     }
 
-    std::int16_t events = 0;
+    std::uint16_t events = 0U;
     if (!endpoint.input.empty())
     {
-        // NOLINTNEXTLINE(hicpp-signed-bitwise): POLL* are non-negative POSIX constants and pollfd::events is signed
-        events |= POLLIN;
+        events |= static_cast<std::uint16_t>(POLLIN);
     }
     if (!endpoint.output.empty())
     {
         // TODO: not used/not supported yet
-        // NOLINTNEXTLINE(hicpp-signed-bitwise): POLL* are non-negative POSIX constants and pollfd::events is signed
-        events |= POLLOUT;
+        events |= static_cast<std::uint16_t>(POLLOUT);
     }
+    // pollfd::events is signed, so the unsigned mask is converted only here
+    const auto poll_events = static_cast<std::int16_t>(events);
     const auto found = std::find_if(poll_fds_.begin(), poll_fds_.end(), [](pollfd& poll) noexcept {
         return poll.fd < 0;
     });
     if (found != poll_fds_.end())
     {
-        *found = {endpoint.fd, events, 0};
+        *found = {endpoint.fd, poll_events, 0};
         const auto i = static_cast<std::size_t>(std::distance(poll_fds_.begin(), found));
         poll_endpoints_[i] = &endpoint;
     }
     else
     {
-        std::ignore = poll_fds_.emplace_back(pollfd{endpoint.fd, events, 0});
+        std::ignore = poll_fds_.emplace_back(pollfd{endpoint.fd, poll_events, 0});
         std::ignore = poll_endpoints_.emplace_back(&endpoint);
     }
     posix_endpoint_list_.push_back(endpoint);
