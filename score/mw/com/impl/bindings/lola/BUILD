@@ -37,26 +37,25 @@ component(
 
 unit(
     name = "lola_proxy_and_service_elements",
-    scope = [],
     scope = [
-        # "//score/mw/com/impl/bindings/lola/methods:offered_state_machine",
-        # ":proxy",
-        # ":proxy_instance_identifier",
-        # ":subscription_state_machine",
-        # ":event_subscription_control",
-        # "//score/mw/com/impl/bindings/lola/methods:proxy_method_instance_identifier",
+        "//score/mw/com/impl/bindings/lola/methods:offered_state_machine",
+        ":proxy",
+        ":proxy_instance_identifier",
+        ":subscription_state_machine",
+        ":event_subscription_control",
+        "//score/mw/com/impl/bindings/lola/methods:proxy_method_instance_identifier",
     ],
     tests = [],
     unit_design = [
         "//score/mw/com/impl/bindings/lola/dependability/proxy_and_service_elements:unit_design",
     ],
     implementation = [
-        # "//score/mw/com/impl/bindings/lola/methods:offered_state_machine",
-        # ":proxy",
-        # ":proxy_instance_identifier",
-        # ":subscription_state_machine",
-        # ":event_subscription_control",
-        # "//score/mw/com/impl/bindings/lola/methods:proxy_method_instance_identifier",
+        "//score/mw/com/impl/bindings/lola/methods:offered_state_machine",
+        ":proxy",
+        ":proxy_instance_identifier",
+        ":subscription_state_machine",
+        ":event_subscription_control",
+        "//score/mw/com/impl/bindings/lola/methods:proxy_method_instance_identifier",
     ],
 )
 
@@ -68,9 +67,9 @@ unit(
         "//score/mw/com/impl/bindings/lola/dependability/skeleton_and_service_elements:unit_design",
     ],
     implementation = [
-        # ":skeleton",
-        # ":skeleton_instance_identifier",
-        # ":method_resource_map",
+        ":skeleton",
+        ":skeleton_instance_identifier",
+        "//score/mw/com/impl/bindings/lola/methods:method_resource_map",
     ],
 )
 
@@ -104,14 +103,17 @@ unit(
 
 unit(
     name = "lola_runtime",
-    scope = [],
+    scope = [
+        ":runtime",
+        ":i_runtime",
+    ],
     tests = [],
     unit_design = [
         "//score/mw/com/impl/bindings/lola/dependability/runtime:unit_design",
     ],
     implementation = [
-        # ":runtime",
-        # ":i_runtime",
+        ":runtime",
+        ":i_runtime",
     ],
 )
 
@@ -138,7 +140,6 @@ unit(
 
 unit(
     name = "lola_sample_management_pointers",
-    scope = [],
     maturity="development",
     scope = [
         # "//score:__subpackages__",

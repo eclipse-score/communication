@@ -1,6 +1,18 @@
 @startuml structural_view_ipc_tracing
 title "Structural View IPC Tracing"
 
+namespace std {
+
+class "hash<TracePointKey>" {
+  +operator()(const TracePointKey& k) const noexcept : std::size_t
+}
+
+}
+
+namespace score::mw::com::impl {
+
+namespace tracing {
+
 enum SkeletonEventTracePointType {
   INVALID = 0U
   SEND
@@ -76,10 +88,10 @@ class TracingFilterConfig {
   +AddTracePoint(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, ProxyEventTracePointType proxy_event_trace_point_type) noexcept : void
   +AddTracePoint(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, ProxyFieldTracePointType proxy_field_trace_point_type) noexcept : void
   -config_names : std::set<std::string>
-  -skeleton_event_trace_points : std::unordered_map<TracePointKey, std::vector<InstanceID>
-  -skeleton_field_trace_points : std::unordered_map<TracePointKey, std::vector<InstanceID>
-  -proxy_event_trace_points : std::unordered_map<TracePointKey, std::vector<InstanceID>
-  -proxy_field_trace_points : std::unordered_map<TracePointKey, std::vector<InstanceID>
+  -skeleton_event_trace_points : std::unordered_map<TracePointKey, std::vector<InstanceID>>
+  -skeleton_field_trace_points : std::unordered_map<TracePointKey, std::vector<InstanceID>>
+  -proxy_event_trace_points : std::unordered_map<TracePointKey, std::vector<InstanceID>>
+  -proxy_field_trace_points : std::unordered_map<TracePointKey, std::vector<InstanceID>>
 }
 
 class TracePointKey {
@@ -87,31 +99,32 @@ class TracePointKey {
   +trace_point_type : std::uint8_t
 }
 
-class "std::hash<TracePointKey>" {
-  +operator()(const TracePointKey& k) const noexcept : std::size_t
 }
 
-abstract class "mw::com::impl::IRuntime" {
+abstract class "IRuntime" {
   {abstract} +resolve(const InstanceSpecifier&) : std::vector<InstanceIdentifier>
   {abstract} +GetTracingFilterConfig() : const ITracingFilterConfig*
   {abstract} +getBindingRuntime(BindingType binding) : IBindingRuntime*
 }
 
-class "mw::com::impl::Runtime" {
-  -binding_runtimes_ : std:unordered_map<BindingType, std::unique_ptr<IBindingRuntime>>
+class "Runtime" {
+  -binding_runtimes_ : std::unordered_map<BindingType, std::unique_ptr<IBindingRuntime>>
   {static} +Initialize(runtime::RuntimeConfiguration&) : void
   {static} +getInstance() : Runtime&
   +Runtime(Configuration&& config)
   +resolve(const InstanceSpecifier&) : std::vector<InstanceIdentifier>
   +GetTracingFilterConfig() : const ITracingFilterConfig*
   +getBindingRuntime(BindingType binding) : IBindingRuntime*
-  ..
-  <u>Note:</u>
-  Runtime is not copyable.
 }
 
+note right of Runtime
+  Runtime is not copyable.
+end note
+
 ITracingFilterConfig <|-- TracingFilterConfig
-"mw::com::impl::IRuntime" <|-- "mw::com::impl::Runtime"
-"mw::com::impl::Runtime" ..> TracingFilterConfig : Creates in Initialize()
+IRuntime <|-- Runtime
+Runtime ..> TracingFilterConfig : Creates in Initialize()
+
+}
 
 @enduml

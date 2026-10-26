@@ -1,15 +1,17 @@
 @startuml structural_event_field_extensions
 title "Structural Event Field Extensions"
 
-class "score::mw::com::impl::tracing::SkeletonEventTracingData" {
-  +service_element_instance_identifier_view{} : ServiceElementInstanceIdentifierView
+namespace score::mw::com::impl::tracing {
+
+class "SkeletonEventTracingData" {
+  +service_element_instance_identifier_view : ServiceElementInstanceIdentifierView
   +trace_context_id : IBindingTracingRuntime::TraceContextId
   +enable_send : bool
   +enable_send_with_allocate : bool
 }
 
-class "score::mw::com::impl::tracing::ProxyEventTracingData" {
-  +service_element_instance_identifier_view{} : ServiceElementInstanceIdentifierView
+class "ProxyEventTracingData" {
+  +service_element_instance_identifier_view : ServiceElementInstanceIdentifierView
   +enable_subscribe : bool
   +enable_unsubscribe : bool
   +enable_subscription_state_changed : bool
@@ -23,16 +25,16 @@ class "score::mw::com::impl::tracing::ProxyEventTracingData" {
   +enable_new_samples_callback : bool
 }
 
-class "score::mw::com::impl::SkeletonEventBase" {
-  +SkeletonEventBase(std::unique_ptr<SkeletonEventBindingBase> binding)
+class "SkeletonEventBase" {
+  +SkeletonEventBase(binding: std::unique_ptr<SkeletonEventBindingBase>)
   +PrepareOffer(): score::Result<void>
   +PrepareStopOffer(): void
   -binding_: std::unique_ptr<SkeletonEventBindingBase>
   -tracing_data_: SkeletonEventTracing
 }
 
-class "score::mw::com::impl::ProxyEventBase" {
-  +ProxyEventBase(proxy_event_binding: std::unique_ptr<ProxyEventBindingBase> proxy_event_binding)
+class "ProxyEventBase" {
+  +ProxyEventBase(proxy_event_binding: std::unique_ptr<ProxyEventBindingBase>)
   +Subscribe(size_t max_sample_count): Result<void>
   +GetSubscriptionState() : SubscriptionState
   +Unsubscribe(): void
@@ -46,7 +48,9 @@ class "score::mw::com::impl::ProxyEventBase" {
   -tracing_data_: ProxyEventTracing
 }
 
-"score::mw::com::impl::SkeletonEventBase" o-- "score::mw::com::impl::tracing::SkeletonEventTracingData" : 0..1
-"score::mw::com::impl::ProxyEventBase" o-- "score::mw::com::impl::tracing::ProxyEventTracingData" : 0..1
+SkeletonEventBase o-- "0..1" SkeletonEventTracingData
+ProxyEventBase o-- "0..1" ProxyEventTracingData
+
+}
 
 @enduml

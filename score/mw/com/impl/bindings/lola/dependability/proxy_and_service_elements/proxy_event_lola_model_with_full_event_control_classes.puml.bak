@@ -1,0 +1,285 @@
+@startuml event_lola_model
+title "Event Lola Model"
+
+namespace mw_com::lola_binding::sample_management_pointers <<unit>> {
+
+namespace score::mw::com::impl::lola {
+
+class ShmPathBuilder {
+  +ShmPathBuilder(service_id: const uint16_t, inter_vm_support: const bool) noexcept
+  +GetDataChannelShmName(instance_id: const LolaServiceInstanceId::InstanceId) const noexcept override: string
+  +GetControlChannelShmName(instance_id: const LolaServiceInstanceId::InstanceId, channel_type: const QualityType) const noexcept override: string
+  +GetMethodChannelShmName(instance_id: const LolaServiceInstanceId::InstanceId, proxy_instance_identifier: const ProxyInstanceIdentifier&) const noexcept override: string
+}
+
+class EventDataStorage <<SharedMemory>> {
+  -type_erased_data_slots_: score::memory::shared::OffsetPtr<byte>
+  +GetTypeErasedDataSlot(index: SlotIndexType, data_size: size_t) const: void*
+  +GetNumberOfSlots() const: score::mw::com::impl::lola::SlotIndexType
+}
+
+note right of EventDataStorage
+  Stores type-erased event sample slots in shared memory. Exists once per Event\nOnly writable by Skeleton,\nreadable by all subscribed Proxies independent of ASIL level.
+end note
+
+class ServiceDataStorage <<SharedMemory>> {
+' gtodo: Reenable once  is fixed
+  '-events_: score::mw::com::impl::lola::LinearSearchMap<score::mw::com::impl::lola::ElementFqId, score::memory::shared::OffsetPtr<score::mw::com::impl::lola::EventDataStorage>>
+  '-events_metainfo_: score::mw::com::impl::lola::LinearSearchMap<score::mw::com::impl::lola::ElementFqId, score::mw::com::impl::lola::EventMetaInfo>
+  +AddEvent(element_fq_id: const ElementFqId,
+        number_of_slots: const SlotIndexType ,
+         sample_size_info: const memory::DataTypeSizeInfo,
+        initialize_sample_callback: const std::optional<InitializeSampleCallback>&  ): score::mw::com::impl::lola::EventDataStorage&
+  +GetEventDataStorage(element_fq_id: const ElementFqId): score::mw::com::impl::lola::EventDataStorage&
+  ' gtodo: Reenable once is fixed.
+  '+GetEventDataStorage(element_fq_id: const ElementFqId) const: const score::mw::com::impl::lola::EventDataStorage&
+  +GetEventMetaInfo(element_fq_id: const ElementFqId) const: const score::mw::com::impl::lola::EventMetaInfo&
+  +GetSkeletonPid() const: pid_t
+  +GetSkeletonUid() const: uid_t
+  +UpdateSkeletonPid(pid: const pid_t): void
+  +UpdateSkeletonUid(uid: const uid_t): void
+}
+
+class EventMetaInfo <<SharedMemory>> {
+  +data_type_info_: memory::DataTypeSizeInfo
+}
+
+class ServiceDataControl <<SharedMemory>> {
+' gtodo: Reenable once  is fixed
+  '+event_controls_: score::mw::com::impl::lola::LinearSearchMap<score::mw::com::impl::lola::ElementFqId, score::mw::com::impl::lola::EventControl>
+  +application_id_pid_mapping_: score::mw::com::impl::lola::ApplicationIdPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<score::mw::com::impl::lola::ApplicationIdPidMappingEntry>>
+}
+
+class EventControl <<SharedMemory>> {
+  +data_control: score::mw::com::impl::lola::EventDataControl
+  +subscription_control: score::mw::com::impl::lola::EventSubscriptionControl
+  +transaction_log_set_: score::mw::com::impl::lola::TransactionLogSet
+}
+
+class EventDataControl <<SharedMemory>> {
+  'gtodo: Create ticket aliases
+  '+state_slots_: score::containers::DynamicArray<score::mw::com::impl::lola::ControlSlotType, score::memory::shared::PolymorphicOffsetPtrAllocator<score::mw::com::impl::lola::ControlSlotType>>
+}
+
+note right of EventDataControl
+  Pure data class stored in shared memory. Holds the atomic slot-state array.\nAll behaviour (AllocateNextSlot, EventReady, ReferenceNextEvent, etc.) has been\nmoved to ProviderEventDataControlLocalView / ConsumerEventDataControlLocalView\nto avoid OffsetPtr overhead in the hot path.\nExists at least once per provided Event. For ASIL-B providers with both ASIL-B\nand QM consumers it exists twice (one per quality level in separate shm objects).
+end note
+
+' gtodo: Create ticket (nested templates)
+'class EventSubscriptionControl<AtomicIndirectorType> <<SharedMemory>> {
+'  -current_subscription_state_: atomic_uint32_t
+'  -max_subscribable_slots_: const score::mw::com::impl::lola::EventSubscriptionControl::SlotNumberType
+'  -max_subscribers_: const score::mw::com::impl::lola::EventSubscriptionControl::SubscriberCountType
+'  -enforce_max_samples_: const bool
+'  +Subscribe(slot_count: SlotNumberType) noexcept: score::mw::com::impl::lola::SubscribeResult
+'  +Unsubscribe(slot_count: SlotNumberType) noexcept: void
+'}
+
+' class TransactionLogSet <<SharedMemory>> {}
+
+' Local view classes (non-shared-memory, live in process heap)
+'gtodo: Create ticket (nested templates)
+'class ProviderEventDataControlLocalView<AtomicIndirectorType> {
+'  ' gtodo: Create ticket to allow using aliases in design
+'  '-state_slots_: score::cpp::span<score::mw::com::impl::lola::ControlSlotType>
+'  +ProviderEventDataControlLocalView(event_data_control: score::mw::com::impl::lola::EventDataControl&)
+'  +AllocateNextSlot() noexcept: std::optional<score::mw::com::impl::lola::SlotIndexType>
+'  +EventReady(slot_index: const SlotIndexType, time_stamp: const EventSlotStatus::EventTimeStamp) noexcept: void
+'  +Discard(slot_index: const SlotIndexType): void
+'  +operator[](slot_index: const SlotIndexType) const noexcept: score::mw::com::impl::lola::EventSlotStatus
+'  +TryAllocateSlot(slot_info: const SlotInfo) noexcept: optional<score::mw::com::impl::lola::EventSlotStatus::value_type>
+'  +RemoveAllocationsForWriting() noexcept: void
+'}
+
+' note right of ProviderEventDataControlLocalView
+'   Provider (skeleton) side local view of EventDataControl.\nHolds a raw span into shared-memory state_slots_ (no OffsetPtr on hot path).
+' end note
+
+'gtodo: Create ticket (nested templates)
+'class ConsumerEventDataControlLocalView<AtomicIndirectorType> {
+'  -state_slots_: score::cpp::span<score::mw::com::impl::lola::ControlSlotType>
+'  -transaction_log_local_view_: optional<score::mw::com::impl::lola::TransactionLogLocalView>
+'  +ConsumerEventDataControlLocalView<AtomicIndirectorType>(event_data_control_shared: EventDataControl&)
+'  +ReferenceNextEvent(last_search_time: const EventSlotStatus::EventTimeStamp, upper_limit: const EventSlotStatus::EventTimeStamp): optional<score::mw::com::impl::lola::SlotIndexType>
+'  +ReferenceSpecificEvent(slot_index: const SlotIndexType): void
+'  +GetNumNewEvents(reference_time: const EventSlotStatus::EventTimeStamp) const noexcept: size_t
+'  +DereferenceEvent(event_slot_index: const SlotIndexType) noexcept: void
+'  +DereferenceEventWithoutTransactionLogging(event_slot_index: const SlotIndexType) noexcept: void
+'  +GetMaxSampleSlots() const noexcept: size_t
+'  +operator[](slot_index: const SlotIndexType) const noexcept: score::mw::com::impl::lola::EventSlotStatus
+'}
+
+' note right of ConsumerEventDataControlLocalView
+'   Consumer (proxy/tracing) side local view of EventDataControl.\nHolds a raw span into shared-memory state_slots_ (no OffsetPtr on hot path).
+' end note
+
+
+class EventSlotStatus <<SharedMemory>> {
+  +EventSlotStatus(init_val: const value_type) noexcept
+  +IsInvalid() const noexcept: bool
+  +IsInWriting() const noexcept: bool
+  +MarkInWriting() noexcept: void
+  +MarkInvalid() noexcept: void
+  +GetReferenceCount() const noexcept: score::mw::com::impl::lola::EventSlotStatus::SubscriberCount
+  +GetTimeStamp() const noexcept: score::mw::com::impl::lola::EventSlotStatus::EventTimeStamp
+  +SetTimeStamp(time_stamp: const EventTimeStamp) noexcept: void
+  +SetReferenceCount(ref_count: const SubscriberCount) noexcept: void
+  +IsUsed() const noexcept: bool
+  +IsTimeStampBetween(min_timestamp: const EventTimeStamp, max_timestamp: const EventTimeStamp) const noexcept: bool
+}
+
+}
+
+}
+
+namespace mw_com::binding_independent::proxy_and_service_elements <<unit>> {
+
+namespace score::mw::com::impl {
+
+abstract class ProxyEventBinding {
+  {abstract} +Subscribe(max_sample_count: const size_t) noexcept: score::details::expected<void, score::result::Error>
+  {abstract} +Unsubscribe() noexcept: void
+  {abstract} +GetSubscriptionState() const noexcept: score::mw::com::impl::SubscriptionState
+  {abstract} +SetReceiveHandler(handler: weak_ptr<ScopedEventReceiveHandler>) noexcept: score::details::expected<void, score::result::Error>
+  {abstract} +UnsetReceiveHandler() noexcept: score::details::expected<void, score::result::Error>
+  {abstract} +SetSubscriptionStateChangeHandler(handler: SubscriptionStateChangeHandler) noexcept: score::details::expected<void, score::result::Error>
+  {abstract} +UnsetSubscriptionStateChangeHandler() noexcept: score::details::expected<void, score::result::Error>
+  {abstract} +GetNumNewSamplesAvailable() const: score::details::expected<size_t>
+  {abstract} +GetMaxSampleCount() const noexcept: optional<uint16_t>
+  {abstract} +GetNewSamples(receiver: Callback&&, tracker: TrackerGuardFactory&): score::details::expected<size_t>
+}
+
+interface GenericProxyEventBinding {
+  {abstract} +GetDataTypeSizeInfo() const: memory::DataTypeSizeInfo
+  {abstract} +HasSerializedFormat() const noexcept: bool
+}
+
+class SamplePtr<SampleType> {}
+
+enum SubscriptionState {
+  kSubscribed
+  kNotSubscribed
+  kSubscriptionPending
+}
+
+}
+
+' gtodo: Enable when the parser supports specifying the "unit namespace"
+namespace mw_com::lola_binding::proxy_and_service_elements <<unit>> {
+  
+namespace lola {
+
+' TODO(): Remove redundant explicit namespace qualifiers once namespace resolution is supported.
+
+class ProxyEvent {
+  -event_data_storage_: const score::mw::com::impl::lola::EventDataStorage&
+  -event_data_control_local_: score::mw::com::impl::lola::ConsumerEventDataControlLocalView
+  -subscription_control_: std::reference_wrapper<score::mw::com::impl::lola::EventSubscriptionControl>
+  -transaction_log_set_: reference_wrapper<score::mw::com::impl::lola::TransactionLogSet>
+  -subscription_event_state_machine_: score::mw::com::impl::lola::SubscriptionStateMachine
+  --
+  +ProxyEvent(parent: Proxy&, element_fq_id: const ElementFqId, event_name: const std::string_view)
+  +Subscribe(max_sample_count: const size_t) noexcept override: score::details::expected<void, score::result::Error>
+  +Unsubscribe() noexcept override: void
+  +GetSubscriptionState() const noexcept override: score::mw::com::impl::SubscriptionState
+  +GetNumNewSamplesAvailable() const override: score::details::expected<size_t>
+  +GetNewSamples(receiver: Callback&&, tracker: TrackerGuardFactory&) override: score::details::expected<size_t>
+  +SetReceiveHandler(handler: weak_ptr<ScopedEventReceiveHandler>) noexcept override: score::details::expected<void, score::result::Error>
+  +UnsetReceiveHandler() noexcept override: score::details::expected<void, score::result::Error>
+  +SetSubscriptionStateChangeHandler(handler: SubscriptionStateChangeHandler) noexcept override: score::details::expected<void, score::result::Error>
+  +UnsetSubscriptionStateChangeHandler() noexcept override: score::details::expected<void, score::result::Error>
+  +GetMaxSampleCount() const noexcept override: optional<uint16_t>
+  +GetBindingType() const noexcept override: score::mw::com::impl::BindingType
+  +NotifyServiceInstanceChangedAvailability(is_available: bool, new_event_source_pid: pid_t) noexcept: void
+  +GetDataTypeSizeInfo() const override: memory::DataTypeSizeInfo
+  +HasSerializedFormat() const noexcept override: bool
+  +GetElementFQId() const noexcept: score::mw::com::impl::lola::ElementFqId
+}
+
+class SubscriptionStateMachine {
+  -subscription_data_: score::mw::com::impl::lola::SubscriptionData
+  -event_data_control_local_: score::mw::com::impl::lola::ConsumerEventDataControlLocalView&
+  -subscription_control_: score::mw::com::impl::lola::EventSubscriptionControl&
+  -transaction_log_set_: score::mw::com::impl::lola::TransactionLogSet&
+  -transaction_log_id_: const score::mw::com::impl::lola::TransactionLogId&
+  +SubscribeEvent(max_sample_count: const size_t) noexcept: score::details::expected<void, score::result::Error>
+  +UnsubscribeEvent() noexcept: void
+  +StopOfferEvent() noexcept: void
+  +ReOfferEvent(new_event_source_pid: const pid_t) noexcept: void
+  +GetCurrentState() const noexcept: score::mw::com::impl::lola::SubscriptionStateMachineState
+  +GetSlotCollectorLockFree() noexcept: optional<score::mw::com::impl::lola::SlotCollector>&
+}
+
+note right of SubscriptionStateMachine
+  State machine that manages subscriptions to a ProxyEvent.\nDetails about the state machine can be found in\nproxy_event_state_machine.puml and proxy_event_state_machine_model.puml
+end note
+
+class SlotCollector {
+  -event_data_control_local_: std::reference_wrapper<score::mw::com::impl::lola::ConsumerEventDataControlLocalView>
+  +SlotCollector(event_data_control_local: ConsumerEventDataControlLocalView<>&, max_slots: const size_t) noexcept
+  +GetNumNewSamplesAvailable() const noexcept: size_t
+  +GetNewSamplesSlotIndices(max_count: const size_t) noexcept: score::mw::com::impl::lola::SlotCollector::SlotIndices
+}
+
+note right of SlotCollector
+  SlotCollector is not copyable.
+  Uses ConsumerEventDataControlLocalView to avoid OffsetPtr overhead
+  when scanning shared-memory slot state during GetNewSamples().
+end note
+
+
+class Proxy {
+  -control_: shared_ptr<score::memory::shared::ManagedMemoryResource>
+  -data_: shared_ptr<score::memory::shared::ManagedMemoryResource>
+  -proxy_events_: unordered_map<string_view, reference_wrapper<score::mw::com::impl::lola::ProxyEvent>>
+  +RegisterEvent(service_element_name: const string_view, proxy_event: ProxyEvent&) noexcept: void
+  +GetConsumerEventDataControlLocalView(element_fq_id: const ElementFqId): score::mw::com::impl::lola::ConsumerEventDataControlLocalView
+  +GetEventSubscriptionControl(element_fq_id: const ElementFqId): score::mw::com::impl::lola::EventSubscriptionControl&
+  +GetTransactionLogSet(element_fq_id: const ElementFqId): score::mw::com::impl::lola::TransactionLogSet&
+  +GetEventDataStorage(element_fq_id: const ElementFqId) const: const score::mw::com::impl::lola::EventDataStorage&
+  +GetEventMetaInfo(element_fq_id: const ElementFqId) const: const score::mw::com::impl::lola::EventMetaInfo&
+}
+
+enum SubscriptionStateMachineState {
+  NOT_SUBSCRIBED_STATE
+  SUBSCRIPTION_PENDING_STATE
+  SUBSCRIBED_STATE
+  STATE_COUNT
+}
+
+}
+
+}
+
+ProxyEventBinding <|-- GenericProxyEventBinding
+GenericProxyEventBinding <|-- ProxyEvent
+
+' Ownership and access relationships
+Proxy "1" --> "0..n" ProxyEvent
+Proxy ..> ServiceDataControl : control shared memory
+Proxy ..> ServiceDataStorage : data shared memory
+ProxyEvent *-- SubscriptionStateMachine
+ProxyEvent ..> EventMetaInfo
+ProxyEvent ..> EventDataStorage
+ProxyEvent *-- ConsumerEventDataControlLocalView
+ProxyEvent o-- EventSubscriptionControl
+ProxyEvent ..> SamplePtr
+SubscriptionStateMachine o-- ConsumerEventDataControlLocalView
+SubscriptionStateMachine o-- EventSubscriptionControl
+SubscriptionStateMachine *-- SlotCollector : subscription data
+EventDataControlComposite o-- "1..2" ProviderEventDataControlLocalView
+ProviderEventDataControlLocalView ..> EventDataControl
+ConsumerEventDataControlLocalView ..> EventDataControl
+SlotCollector o-- ConsumerEventDataControlLocalView
+ServiceDataControl *-- "0..n" EventControl
+EventControl *-- EventDataControl
+EventControl *-- EventSubscriptionControl
+EventDataControl *-- "1..n" EventSlotStatus
+ServiceDataStorage o-- "0..n" EventDataStorage
+ServiceDataStorage *-- "0..n" EventMetaInfo
+
+SubscriptionStateMachine --> SubscriptionStateMachineState
+
+}
+
+@enduml

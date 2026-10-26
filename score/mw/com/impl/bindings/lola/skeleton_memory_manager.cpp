@@ -835,3 +835,16 @@ EventControl& SkeletonMemoryManager::EmplaceEventControl(const QualityType asil_
 }
 
 }  // namespace score::mw::com::impl::lola
+
+/**
+
+Skeleton stop offer - no proxies / Reoffer
+- New proxies should not get old samples.
+
+
+Skeleton stop offer - with proxies / Reoffer
+- New proxies should not get old samples.
+- Old proxies still can be accessing old samples.
+- reference counting will take into account new and old proxies.
+
+**/
