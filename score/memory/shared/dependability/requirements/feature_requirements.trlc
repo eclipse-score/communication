@@ -1,0 +1,29 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package MemoryShared
+
+import ScoreReq
+
+ScoreReq.FeatReq FEAT_SharedMemoryObjectLifecycle {
+    description = "The shared memory library shall provide an API to create, open and remove shared memory objects that multiple processes can map to access the same data."
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.ASR_InterProcessDataSharing@1]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_AccessRightsOnCreation {
+    description = "The shared memory library shall allow the creator of a shared memory object to define which users get read access and which users get write access to it."
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.ASR_FreedomFromInterference@1]
+    version = 1
+}
