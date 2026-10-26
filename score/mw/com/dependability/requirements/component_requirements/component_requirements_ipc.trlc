@@ -369,6 +369,18 @@ section "com" {
                     derived_from = [Communication.FEAT_MultiBindingSupport@1]
                     version = 1
                 }
+
+                /* broken_link_c/issue/6221480 */
+                ScoreReq.CompReq InstanceSpecifierResolutionCannotRetrieveWrongInstanceIdentifier {
+                    description = "It shall be ensured that the InstanceSpecifier resolution can not retrieve a wrong InstanceIdentifier."
+                    safety = ScoreReq.Asil.B
+                    derived_from = [
+                        Communication.FEAT_SupportForTimeBasedArchitecture@2,
+                        // Ensuring that from a given InstanceSpecifier always the same InstanceIdentifier will be generated, prevents the proxy ..." to point out how this correct resolution will be done.
+                        mw_com_fta.InstancespecifierResolvedToWrongInstanceidentifier
+                    ]
+                    version = 1
+                }
             }
 
             section "InstanceIdentifier" {
