@@ -522,7 +522,10 @@ TEST(GenericProxyHandleTest, GenericProxyUsesProxyBaseGetHandle)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    static_assert(&ProxyBase::GetHandle == &GenericProxy::GetHandle, "GenericProxy not using ProxyBase::GetHandle");
+    using GetHandleType = const HandleType& (ProxyBase::*)() const& noexcept;
+    const GetHandleType base_get_handle = &ProxyBase::GetHandle;
+    const GetHandleType derived_get_handle = &GenericProxy::GetHandle;
+    EXPECT_EQ(base_get_handle, derived_get_handle) << "GenericProxy not using ProxyBase::GetHandle";
 }
 
 TEST(GenericProxyHandleTest, GenericProxyContainsPublicHandleTypeAlias)

@@ -36,6 +36,7 @@ class UnixDomainServer final : public IServer
 
         // User methods
         const ClientIdentity& GetClientIdentity() const& noexcept override;
+        const ClientIdentity&& GetClientIdentity() const&& noexcept = delete;
         UserData& GetUserData() noexcept override;
 
         score::cpp::expected_blank<score::os::Error> Reply(
