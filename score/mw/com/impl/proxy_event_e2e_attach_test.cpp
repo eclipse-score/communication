@@ -73,7 +73,7 @@ class ProxyEventE2EAttachFixture : public ::testing::Test
     }
 };
 
-TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleSummaryIsOkForValidBindingResult)
+TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleSummaryIsOkWithDisabledChecksForValidBindingResult)
 {
     // Given a binding that reports a valid data-integrity and sequence result for the delivered sample
     DeliverSampleWithBindingResult(e2e::RawCheckOutcome{e2e::DataIntegrityStatus::kOk, e2e::SequenceStatus::kOk});
@@ -81,14 +81,14 @@ TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleSummaryIsOkForValidBindingResu
     // When receiving the sample
     const auto delivered_result = GetNewSampleResult();
 
-    // Then the delivered SamplePtr carries the binding's pair and a binding-independent summary of kOk
+    // Then the binding's pair is carried and the summary is kOkWithDisabledChecks (historical health disabled)
     EXPECT_EQ(delivered_result.data_integrity, e2e::DataIntegrityStatus::kOk);
     EXPECT_EQ(delivered_result.sequence, e2e::SequenceStatus::kOk);
     EXPECT_EQ(delivered_result.historical_health, e2e::HistoricalHealthStatus::kDisabled);
-    EXPECT_EQ(delivered_result.summary, e2e::Summary::kOk);
+    EXPECT_EQ(delivered_result.summary, e2e::Summary::kOkWithDisabledChecks);
 }
 
-TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleSummaryIsOkForSequenceGapWithinThreshold)
+TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleSummaryIsOkWithDisabledChecksForSequenceGapWithinThreshold)
 {
     // Given a binding that reports a tolerated sequence gap
     DeliverSampleWithBindingResult(
@@ -97,9 +97,9 @@ TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleSummaryIsOkForSequenceGapWithi
     // When receiving the sample
     const auto delivered_result = GetNewSampleResult();
 
-    // Then the summary is still kOk
+    // Then the gap is not a failure, so the summary is still kOkWithDisabledChecks
     EXPECT_EQ(delivered_result.sequence, e2e::SequenceStatus::kOkGapWithinThreshold);
-    EXPECT_EQ(delivered_result.summary, e2e::Summary::kOk);
+    EXPECT_EQ(delivered_result.summary, e2e::Summary::kOkWithDisabledChecks);
 }
 
 TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleSummaryIsErrorForBindingDataIntegrityError)

@@ -14,6 +14,7 @@
 #ifndef SCORE_MW_COM_IMPL_PROXY_EVENT_BASE_H
 #define SCORE_MW_COM_IMPL_PROXY_EVENT_BASE_H
 
+#include "score/mw/com/impl/e2e/e2e_summary.h"
 #include "score/mw/com/impl/enable_reference_to_moveable_from_this.h"
 #include "score/mw/com/impl/event_receive_handler.h"
 #include "score/mw/com/impl/flag_owner.h"
@@ -175,8 +176,8 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     /**
      * \brief Completes the E2E result of a sample delivered by this event's binding.
      * \details The binding only provides data_integrity/sequence on the sample. This adds the binding-independent
-     *          verdict and stores it on the sample. The summary below is a stub (historical health tracking and the
-     *          final summary builder are not implemented yet).
+     *          verdict and stores it on the sample. Historical health tracking is not wired in yet, so it stays
+     *          kDisabled and a checked sample reports kOkWithDisabledChecks at best.
      *          Only ProxyEventBase may set the result on a SamplePtr; see SamplePtr::SetE2EResult(). Derived,
      *          binding-independent event classes call this from their GetNewSamples() wrapper.
      */
@@ -184,17 +185,8 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     void AttachE2EResult(SamplePtr<SampleType>& sample) const
     {
         auto result = sample.GetE2EResult();
-        const bool checked = (result.data_integrity != e2e::DataIntegrityStatus::kDisabled) ||
-                             (result.sequence != e2e::SequenceStatus::kDisabled);
-        if (checked)
-        {
-            const bool sequence_ok = (result.sequence == e2e::SequenceStatus::kOk) ||
-                                     (result.sequence == e2e::SequenceStatus::kOkGapWithinThreshold);
-            result.summary = ((result.data_integrity == e2e::DataIntegrityStatus::kOk) && sequence_ok)
-                                 ? e2e::Summary::kOk
-                                 : e2e::Summary::kError;
-            sample.SetE2EResult(result);
-        }
+        result.summary = e2e::ComputeSummary(result.data_integrity, result.sequence, result.historical_health);
+        sample.SetE2EResult(result);
     }
 
   protected:

@@ -155,9 +155,7 @@ e2e::RawCheckOutcome ProxyEvent::CheckE2E(E2EEventState<e2e::CheckContext>& e2e_
                                                          meta_info_.data_type_info_.Size()};
     const auto outcome =
         e2e::CheckMessage(header_span, payload_span, e2e_state.profile_configuration, e2e_state.context);
-    const bool sequence_ok = (outcome.sequence == e2e::SequenceStatus::kOk) ||
-                             (outcome.sequence == e2e::SequenceStatus::kOkGapWithinThreshold);
-    if ((outcome.data_integrity != e2e::DataIntegrityStatus::kOk) || !sequence_ok)
+    if (e2e::IsFailure(outcome.data_integrity) || e2e::IsFailure(outcome.sequence))
     {
         score::mw::log::LogWarn("lola") << "E2E check failed: slot" << slot_index << "data_integrity"
                                         << static_cast<std::uint8_t>(outcome.data_integrity) << "sequence"
