@@ -46,7 +46,7 @@ class UnixDomainSocketAddress
     }
 
   private:
-    struct sockaddr_un addr_;
+    struct sockaddr_un addr_{};
 };
 
 inline UnixDomainSocketAddress::UnixDomainSocketAddress(const std::string_view path, const bool isAbstract) noexcept

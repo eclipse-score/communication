@@ -39,8 +39,8 @@ UnixDomainEngine::UnixDomainEngine(score::cpp::pmr::memory_resource* memory_reso
     // inherited without SIGTERM being blocked yet.
     // Thus, we need to mask SIGTERM for this thread specifically, to let the LifeCycleManager desicated SIGTERM
     // thread do its job.
-    sigset_t new_set;
-    sigset_t old_set;
+    sigset_t new_set{};
+    sigset_t old_set{};
     // the signal functions below, used with the parameters below, can only return EOK
     score::cpp::ignore = os_resources_.signal->SigEmptySet(new_set);
     score::cpp::ignore = os_resources_.signal->AddTerminationSignal(new_set);
