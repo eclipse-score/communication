@@ -54,7 +54,7 @@ class ConsumerEventDataControlLocalView final
   public:
     using LocalEventControlSlots = score::cpp::span<ControlSlotType>;
 
-    ConsumerEventDataControlLocalView(EventDataControl& event_data_control_shared);
+    explicit ConsumerEventDataControlLocalView(EventDataControl& event_data_control_shared);
 
     /// Test-only constructor which allows to directly set the TransactionLogLocalView. This avoids having to
     /// inject the TransactionLogLocalView via the production code path which would require creating a

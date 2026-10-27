@@ -191,7 +191,7 @@ Note: `StopOfferService()` does **not** invalidate the consumer's proxy or its s
 "armed"; only its state changes to `kSubscriptionPending`. When the provider offers the service again, the state
 automatically goes back to `kSubscribed`. This functionality/behavior is called "proxy auto reconnect" and there is a
 specific chapter in the design documentation that explains it in detail
-(see `here <https://github.com/eclipse-score/communication/blob/main/score/mw/com/design/skeleton_proxy/README.md#proxy-auto-reconnect-functionality>`__).
+(see `here <https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/bindings/lola/dependability/proxy_and_service_elements/lola_proxy_and_service_elements_unit_design.md#proxy-auto-reconnect-functionality>`__).
 
 Consumer application
 ~~~~~~~~~~~~~~~~~~~~

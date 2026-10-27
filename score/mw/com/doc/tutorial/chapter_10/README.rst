@@ -33,7 +33,7 @@ The LoLa binding uses two kinds of "communication channels" for which it has to 
 - **shared-memory objects**, to which both provider and consumer applications have access.
 
 These basic building blocks can also be seen in the high-level architecture documentation, located
-`here <https://eclipse-score.github.io/score/main/features/communication/ipc/docs/architecture/index.html>`__.
+`here <https://eclipse-score.github.io/score/main/features/communication/ipc/architecture/index.html>`__.
 
 .. note::
 
@@ -63,7 +63,7 @@ A few important rules:
 - If a property ``allowedConsumer`` or ``allowedProvider`` is an **empty list**, the meaning depends on the
   ``permission-checks`` property of the service instance (``file-permissions-on-empty`` – the default – falls back to
   basic ``ugo`` file-system rights; ``strict`` means really no-one is allowed). See the
-  `configuration documentation <https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/configuration/README.md#serviceinstances>`__ for the details.
+  `configuration documentation <https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/configuration/README.md#service-instances>`__ for the details.
 
 Files/artifacts used
 ~~~~~~~~~~~~~~~~~~~~~

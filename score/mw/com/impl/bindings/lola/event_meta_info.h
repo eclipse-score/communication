@@ -27,7 +27,7 @@ namespace score::mw::com::impl::lola
 class EventMetaInfo
 {
   public:
-    EventMetaInfo(const memory::DataTypeSizeInfo data_type_info) : data_type_info_(data_type_info) {}
+    explicit EventMetaInfo(const memory::DataTypeSizeInfo data_type_info) : data_type_info_(data_type_info) {}
 
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private". There are no class invariants to maintain which could be violated by directly accessing member
