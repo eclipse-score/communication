@@ -25,10 +25,7 @@ validate_json_schema_test(
 
 cc_binary(
     name = "consumer_restart_application",
-    srcs = [
-        "consumer_restart_application.cpp",
-        "consumer_restart_application.h",
-    ],
+    srcs = ["consumer_restart_application.cpp"],
     data = ["mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES,
     deps = [

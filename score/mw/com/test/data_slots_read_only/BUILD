@@ -17,10 +17,7 @@ load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_binary(
     name = "data_slots_read_only",
-    srcs = [
-        "data_slots_read_only_application.cpp",
-        "data_slots_read_only_application.h",
-    ],
+    srcs = ["data_slots_read_only_application.cpp"],
     data = ["mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",

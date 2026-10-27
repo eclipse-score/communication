@@ -17,10 +17,7 @@ load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_binary(
     name = "generic_proxy",
-    srcs = [
-        "generic_proxy_application.cpp",
-        "generic_proxy_application.h",
-    ],
+    srcs = ["generic_proxy_application.cpp"],
     data = ["mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",

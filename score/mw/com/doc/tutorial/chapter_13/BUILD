@@ -57,10 +57,7 @@ _COM_DEP_WITH_DISCOVERY = _COM_DEP + [
 
 cc_binary(
     name = "event_send_receive_provider",
-    srcs = [
-        "event_send_receive/provider.cpp",
-        "event_send_receive/provider.h",
-    ],
+    srcs = ["event_send_receive/provider.cpp"],
     data = ["event_send_receive/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
@@ -70,10 +67,7 @@ cc_binary(
 
 cc_binary(
     name = "event_send_receive_consumer",
-    srcs = [
-        "event_send_receive/consumer.cpp",
-        "event_send_receive/consumer.h",
-    ],
+    srcs = ["event_send_receive/consumer.cpp"],
     data = ["event_send_receive/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
@@ -166,10 +160,7 @@ pkg_tar(
 
 cc_binary(
     name = "event_field_update_provider",
-    srcs = [
-        "event_field_update/provider.cpp",
-        "event_field_update/provider.h",
-    ],
+    srcs = ["event_field_update/provider.cpp"],
     data = ["event_field_update/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
@@ -179,10 +170,7 @@ cc_binary(
 
 cc_binary(
     name = "event_field_update_consumer",
-    srcs = [
-        "event_field_update/consumer.cpp",
-        "event_field_update/consumer.h",
-    ],
+    srcs = ["event_field_update/consumer.cpp"],
     data = ["event_field_update/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
@@ -238,10 +226,7 @@ pkg_tar(
 
 cc_binary(
     name = "start_find_service_provider",
-    srcs = [
-        "start_find_service/provider.cpp",
-        "start_find_service/provider.h",
-    ],
+    srcs = ["start_find_service/provider.cpp"],
     data = ["start_find_service/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
@@ -251,10 +236,7 @@ cc_binary(
 
 cc_binary(
     name = "start_find_service_consumer",
-    srcs = [
-        "start_find_service/consumer.cpp",
-        "start_find_service/consumer.h",
-    ],
+    srcs = ["start_find_service/consumer.cpp"],
     data = ["start_find_service/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
