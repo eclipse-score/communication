@@ -36,10 +36,7 @@ cc_library(
 
 cc_binary(
     name = "service_discovery_during_provider_crash_application",
-    srcs = [
-        "service_discovery_during_provider_crash_application.cpp",
-        "service_discovery_during_provider_crash_application.h",
-    ],
+    srcs = ["service_discovery_during_provider_crash_application.cpp"],
     data = ["mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES,
     deps = [

@@ -17,10 +17,7 @@ load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_binary(
     name = "shared_memory_storage",
-    srcs = [
-        "shared_memory_storage_application.cpp",
-        "shared_memory_storage_application.h",
-    ],
+    srcs = ["shared_memory_storage_application.cpp"],
     data = ["mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
