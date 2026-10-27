@@ -102,10 +102,12 @@ namespace score::memory::shared {
     +unlock(): void
   }
 
-  class "FlockMutexAndLock<T>" {
-    +FlockMutexAndLock(const LockFile&)
-    +TryLock(): bool
-  }
+  ' TODO: LOBSTER RST report does not escape '<'/'>' in item names, which breaks
+  ' Sphinx's :ref: role syntax for templated class names - re-enable once fixed
+  ' class "FlockMutexAndLock<T>" {
+  '   +FlockMutexAndLock(const LockFile&)
+  '   +TryLock(): bool
+  ' }
 
   class "MemoryResourceProxy" {
     +MemoryResourceProxy(std::uint64_t)
@@ -114,50 +116,56 @@ namespace score::memory::shared {
     +{static}EnableBoundsChecking(bool): bool
   }
 
-  class "OffsetPtr<PointedType>" {
-    +OffsetPtr(pointer)
-    +OffsetPtr(const OffsetPtr<PointedType>&)
-    +OffsetPtr(const OffsetPtr<OtherPointedType>&)
-    +operator=(pointer): OffsetPtr&
-    +operator=(const OffsetPtr&): OffsetPtr&
-    +operator=(const OffsetPtr<OtherPointedType>&): OffsetPtr&
-    +{static}pointer_to(T&): OffsetPtr
-    +{static}pointer_to(void*): OffsetPtr
-    +{static}pointer_to(const void*): OffsetPtr
-    +operator*(): reference
-    +operator[](difference_type): reference
-    +operator+=(difference_type): OffsetPtr&
-    +operator-=(difference_type): OffsetPtr&
-    +operator++(): OffsetPtr&
-    +operator++(std::int32_t): OffsetPtr
-    +operator--(): OffsetPtr&
-    +operator--(std::int32_t): OffsetPtr
-    +get(): pointer
-    +get<ExplicitPointedType>(): ExplicitPointedType*
-    +get(std::size_t): pointer
-    ' TODO: puml_cli cannot parse named conversion operators (operator pointer/operator bool) - re-enable once fixed
-    ' +operator pointer(): pointer
-    +operator->(): pointer
-    ' +operator bool(): bool
-    +operator!(): bool
-  }
+  ' TODO: LOBSTER RST report does not escape '<'/'>' in item names, which breaks
+  ' Sphinx's :ref: role syntax for templated class names - re-enable once fixed
+  ' class "OffsetPtr<PointedType>" {
+  '   +OffsetPtr(pointer)
+  '   +OffsetPtr(const OffsetPtr<PointedType>&)
+  '   +OffsetPtr(const OffsetPtr<OtherPointedType>&)
+  '   +operator=(pointer): OffsetPtr&
+  '   +operator=(const OffsetPtr&): OffsetPtr&
+  '   +operator=(const OffsetPtr<OtherPointedType>&): OffsetPtr&
+  '   +{static}pointer_to(T&): OffsetPtr
+  '   +{static}pointer_to(void*): OffsetPtr
+  '   +{static}pointer_to(const void*): OffsetPtr
+  '   +operator*(): reference
+  '   +operator[](difference_type): reference
+  '   +operator+=(difference_type): OffsetPtr&
+  '   +operator-=(difference_type): OffsetPtr&
+  '   +operator++(): OffsetPtr&
+  '   +operator++(std::int32_t): OffsetPtr
+  '   +operator--(): OffsetPtr&
+  '   +operator--(std::int32_t): OffsetPtr
+  '   +get(): pointer
+  '   +get<ExplicitPointedType>(): ExplicitPointedType*
+  '   +get(std::size_t): pointer
+  '   ' TODO: puml_cli cannot parse named conversion operators (operator pointer/operator bool) - re-enable once fixed
+  '   ' +operator pointer(): pointer
+  '   +operator->(): pointer
+  '   ' +operator bool(): bool
+  '   +operator!(): bool
+  ' }
 
-  class "OffsetRef<T>" {
-    +OffsetRef(T&)
-    +operator=(const T&): OffsetRef&
-    +get(): T&
-    ' TODO: puml_cli cannot parse named conversion operators (operator T&) - re-enable once fixed
-    ' +operator T&(): T&
-  }
+  ' TODO: LOBSTER RST report does not escape '<'/'>' in item names, which breaks
+  ' Sphinx's :ref: role syntax for templated class names - re-enable once fixed
+  ' class "OffsetRef<T>" {
+  '   +OffsetRef(T&)
+  '   +operator=(const T&): OffsetRef&
+  '   +get(): T&
+  '   ' TODO: puml_cli cannot parse named conversion operators (operator T&) - re-enable once fixed
+  '   ' +operator T&(): T&
+  ' }
 
-  class "PolymorphicOffsetPtrAllocator<T>" {
-    +PolymorphicOffsetPtrAllocator()
-    +PolymorphicOffsetPtrAllocator(ManagedMemoryResource&)
-    +PolymorphicOffsetPtrAllocator(const PolymorphicOffsetPtrAllocator<U>&)
-    +allocate(size_type): pointer
-    +deallocate(pointer, size_type): void
-    +getMemoryResourceProxy(): OffsetPtr<const MemoryResourceProxy>
-  }
+  ' TODO: LOBSTER RST report does not escape '<'/'>' in item names, which breaks
+  ' Sphinx's :ref: role syntax for templated class names - re-enable once fixed
+  ' class "PolymorphicOffsetPtrAllocator<T>" {
+  '   +PolymorphicOffsetPtrAllocator()
+  '   +PolymorphicOffsetPtrAllocator(ManagedMemoryResource&)
+  '   +PolymorphicOffsetPtrAllocator(const PolymorphicOffsetPtrAllocator<U>&)
+  '   +allocate(size_type): pointer
+  '   +deallocate(pointer, size_type): void
+  '   +getMemoryResourceProxy(): OffsetPtr<const MemoryResourceProxy>
+  ' }
 
   class "SharedMemoryErrorDomain" {
     +MessageFor(const score::result::ErrorCode&): std::string_view
