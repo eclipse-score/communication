@@ -1,0 +1,35 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package MemoryShared
+
+import ScoreReq
+
+ScoreReq.AssumedSystemReq ASR_InterProcessDataSharing {
+    description = "The platform shall provide a mechanism that allows different processes to exchange data without copying it between them."
+    safety = ScoreReq.Asil.B
+    rationale = """Processes may exchange large amounts of data under real-time constraints, where copying is neither feasible nor desired.
+    ASIL-B because safety-related applications exchange their data through this mechanism."""
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_FreedomFromInterference {
+    description = """The platform shall ensure that exchanging data via the inter-process data sharing mechanism does not enable a software element
+    to access memory allocated to another software element, unless access to that memory has been explicitly granted."""
+    safety = ScoreReq.Asil.B
+    rationale = """Software elements of different ASIL, including QM, may exchange data via the same mechanism.
+    Read/write access to memory allocated to another software element is a form of interference that has to be prevented.
+    This includes indirect access, e.g. an ASIL-B element being led outside the exchanged data by corrupted content written by a QM element.
+    This addresses faulty software elements; protection against malicious access is a security topic and out of scope.
+    ASIL-B because a QM software element must not be able to corrupt data of an ASIL-B software element."""
+    version = 1
+}
