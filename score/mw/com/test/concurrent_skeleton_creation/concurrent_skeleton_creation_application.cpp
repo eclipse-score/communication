@@ -11,8 +11,6 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#include "score/mw/com/test/concurrent_skeleton_creation/concurrent_skeleton_creation_application.h"
-
 #include "score/language/safecpp/string_view/zstring_view.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/big_datatype.h"

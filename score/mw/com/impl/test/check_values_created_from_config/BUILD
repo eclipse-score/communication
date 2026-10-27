@@ -17,10 +17,7 @@ load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_binary(
     name = "check_values_created_from_config",
-    srcs = [
-        "check_values_created_from_config_application.cpp",
-        "check_values_created_from_config_application.h",
-    ],
+    srcs = ["check_values_created_from_config_application.cpp"],
     data = ["mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
