@@ -25,6 +25,8 @@ unit_design(
     static = ["public_api.puml"],
 )
 
+# TODO: remove this separate architectural_design target once unit_design
+# supports public_api directly.
 architectural_design(
     name = "memory_shared_architectural_design",
     public_api = ["public_api.puml"],
