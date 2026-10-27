@@ -55,12 +55,14 @@ int main()
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         // Allocate a slot, where to publish the next event
+        // [provider-allocate-start]
         auto sample_allocatee_ptr = hello_world_service_instance.message.Allocate();
         if (!sample_allocatee_ptr)
         {
             std::cerr << "Failed to allocate sample_allocatee_ptr: " << sample_allocatee_ptr.error() << std::endl;
             continue;
         }
+        // [provider-allocate-end]
 
         // Write new event data to slot
         const std::string message = std::string{kHelloWorld} + std::to_string(send_counter);
