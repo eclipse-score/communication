@@ -16,21 +16,12 @@
 namespace score::mw::com::impl {
 
     class GenericProxyEvent {
-        +GenericProxyEvent(event_name : string_view, proxy_binding : unique_ptr<GenericProxyEventBinding>)
-        +GenericProxyEvent(parent : ProxyBase&, event_name : string_view)
-        +~GenericProxyEvent() noexcept
-        --
         +GetNewSamples<F>(receiver : F&&, max_num_samples : size_t) noexcept : Result<size_t>
         +GetDataTypeSizeInfo() const : memory::DataTypeSizeInfo
         +HasSerializedFormat() const noexcept : bool
     }
 
     class ProxyEventBase {
-        +ProxyEventBase(event_name : string_view, proxy_event_binding : Result<unique_ptr<ProxyEventBinding>>)
-        +ProxyEventBase(ProxyEventBase&&) noexcept
-        +operator=(ProxyEventBase&&) noexcept : ProxyEventBase&
-        +~ProxyEventBase() noexcept
-        --
         +Subscribe(max_sample_count : size_t) : Result<void>
         +Unsubscribe() : void
         +GetSubscriptionState() const noexcept : SubscriptionState
@@ -40,7 +31,6 @@ namespace score::mw::com::impl {
         +UnsetReceiveHandler() : Result<void>
         +GetFreeSampleCount() const noexcept : size_t
         +GetNumNewSamplesAvailable() const : Result<size_t>
-        +IsBindingValid() const noexcept : bool
     }
 
     ' --- Collaborating types (members not expanded) ---
