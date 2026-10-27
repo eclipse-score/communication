@@ -26,7 +26,8 @@ signature. The member is constructed with a reference to the enclosing interface
 
 .. literalinclude:: calculator_service.h
    :language: cpp
-   :lines: 79-94
+   :start-after: [calculator-interface-start]
+   :end-before: [calculator-interface-end]
    :caption: calculator_service.h
 
 
@@ -34,7 +35,8 @@ The second method takes a custom type `IntegerArray` as its argument:
 
 .. literalinclude:: calculator_service.h
    :language: cpp
-   :lines: 36-67
+   :start-after: [integer-array-start]
+   :end-before: [integer-array-end]
    :caption: calculator_service.h
 
 
@@ -72,16 +74,12 @@ as the previous chapters, with the service interface renamed to `calculator_serv
      - This file contains bazel targets for this example.
    * - `consumer/consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_8/consumer/consumer.cpp>`__
      - Implementation of the service consumer app. The `main()` for the consumer
-   * - `consumer/consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_8/consumer/consumer.h>`__
-     - Header (empty - we just always want to have cpp/h pairs) of the service consumer.
    * - `consumer/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_8/consumer/mw_com_config.json>`__
      - This file contains the configuration for `score::mw::com` for the consumer app.
    * - `consumer/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_8/consumer/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
    * - `provider/provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_8/provider/provider.cpp>`__
      - Implementation of the service provider.
-   * - `provider/provider.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_8/provider/provider.h>`__
-     - Header (empty) of the service provider.
    * - `provider/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_8/provider/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
    * - `provider/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_8/provider/mw_com_config.json>`__
@@ -155,7 +153,8 @@ by const-reference. The handler writes the result into that out-parameter and re
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 64-95
+   :start-after: [provider-register-handlers-start]
+   :end-before: [provider-register-handlers-end]
    :caption: provider/provider.cpp
 
 
@@ -183,7 +182,8 @@ const-reference**. The middleware allocates the argument slot, copies the argume
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 98-107
+   :start-after: [consumer-call-add-start]
+   :end-before: [consumer-call-add-end]
    :caption: consumer/consumer.cpp
 
 
@@ -202,7 +202,8 @@ unnecessary copies matters. For this we use the second call-operator overload, w
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 118-125
+   :start-after: [consumer-call-arithmetic-mean-start]
+   :end-before: [consumer-call-arithmetic-mean-end]
    :caption: consumer/consumer.cpp
 
 
