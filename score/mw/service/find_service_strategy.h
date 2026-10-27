@@ -20,6 +20,11 @@ namespace score::mw::service
 class FindServiceStrategy
 {
   public:
+    FindServiceStrategy() = default;
+    FindServiceStrategy(const FindServiceStrategy&) = default;
+    FindServiceStrategy(FindServiceStrategy&&) = default;
+    FindServiceStrategy& operator=(const FindServiceStrategy&) = delete;
+    FindServiceStrategy& operator=(FindServiceStrategy&&) = delete;
     virtual ~FindServiceStrategy() = default;
 
     virtual void StopFind() noexcept = 0;

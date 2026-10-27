@@ -55,6 +55,8 @@ build --per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
 build --host_per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
 build --per_file_copt=external/.*boost.*@-Wno-error=shadow
 build --host_per_file_copt=external/.*boost.*@-Wno-error=shadow
+build --per_file_copt=external/.*boost.*@-Wno-error=deprecated
+build --host_per_file_copt=external/.*boost.*@-Wno-error=deprecated
 
 # flatbuffers
 build --per_file_copt=external/.*flatbuffers.*@-Wno-error=sign-conversion
@@ -73,6 +75,8 @@ build --per_file_copt=external/.*flatbuffers.*@-Wno-error=unused-macros
 build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=unused-macros
 build --per_file_copt=external/.*flatbuffers.*@-Wno-error=overloaded-virtual
 build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=overloaded-virtual
+build --per_file_copt=external/.*flatbuffers.*@-Wno-error=deprecated
+build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=deprecated
 
 # googletest
 build --per_file_copt=external/.*googletest.*@-Wno-error=switch-enum
@@ -112,7 +116,6 @@ build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=shadow
 # Issue reported in https://github.com/eclipse-score/qnx_unit_tests/issues/44
 build --per_file_copt=external/.*score_qnx_unit_tests.*virtio9p.*@-Wno-error=sign-conversion
 build --host_per_file_copt=external/.*score_qnx_unit_tests.*virtio9p.*@-Wno-error=sign-conversion
-
 
 # Enable the experimental FlatBuffers configuration path.
 build:flatbuffers --//score/mw/com/flags:experimental_enable_flatbuffers_configuration=True
