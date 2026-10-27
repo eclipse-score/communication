@@ -29,12 +29,10 @@ namespace
 class TestStrategyWithPortIdentifier : public FindServiceStrategy<FakeProxyBase>
 {
   public:
-    using BaseProxy = FakeProxyBase;
-
     TestStrategyWithPortIdentifier() = default;
     TestStrategyWithPortIdentifier(const std::string_view) {}
 
-    void StartFind(std::unique_ptr<typename ProxyBuilderBase<FakeProxyBase>::BuilderCallback> on_found) override
+    void StartFind(std::unique_ptr<OnServiceFoundCallback> on_found) override
     {
         score::cpp::ignore = on_found;
     }

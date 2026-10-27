@@ -42,7 +42,7 @@ class SingleImmediateInstantiationStrategy final : public FindServiceStrategy<Pr
                   "When invoked, ProxyImplFactory must return a ProxySpecTraits::HolderType!");
 
   public:
-    using BaseProxy = ProxyBase;
+    using typename FindServiceStrategy<ProxyBase>::OnServiceFoundCallback;
 
     constexpr SingleImmediateInstantiationStrategy() noexcept = default;
 
@@ -50,7 +50,7 @@ class SingleImmediateInstantiationStrategy final : public FindServiceStrategy<Pr
     explicit SingleImmediateInstantiationStrategy(ProxyImplFactory factory) : factory_{std::move(factory)} {}
 
     /// @brief Create proxy object via ProxyImplFactory
-    void StartFind(std::unique_ptr<typename ProxyBuilderBase<ProxyBase>::BuilderCallback> on_found) override
+    void StartFind(std::unique_ptr<OnServiceFoundCallback> on_found) override
     {
         if constexpr (should_find_proxy)
         {
@@ -75,7 +75,7 @@ class SingleImmediateInstantiationStrategy final : public FindServiceStrategy<Pr
 
   private:
     ProxyImplFactory factory_;
-    std::unique_ptr<typename ProxyBuilderBase<ProxyBase>::BuilderCallback> on_found_;
+    std::unique_ptr<OnServiceFoundCallback> on_found_;
 };
 
 }  // namespace score::mw::service::test

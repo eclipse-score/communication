@@ -46,7 +46,7 @@ class MultipleImmediateInstantiationStrategy final : public FindServiceStrategy<
                   "When invoked, ProxyImplFactory must return a ProxySpecTraits::HolderType!");
 
   public:
-    using BaseProxy = Multiple<ProxyBase>;
+    using typename FindServiceStrategy<Multiple<ProxyBase>>::OnServiceFoundCallback;
 
     constexpr MultipleImmediateInstantiationStrategy() noexcept = default;
 
@@ -54,7 +54,7 @@ class MultipleImmediateInstantiationStrategy final : public FindServiceStrategy<
     explicit MultipleImmediateInstantiationStrategy(ProxyImplFactory factory) : factory_{std::move(factory)} {}
 
     /// @brief Create proxy object via ProxyImplFactory
-    void StartFind(std::unique_ptr<typename ProxyBuilderBase<Multiple<ProxyBase>>::BuilderCallback> on_found) override
+    void StartFind(std::unique_ptr<OnServiceFoundCallback> on_found) override
     {
         for (std::size_t i = 0U; i < number_of_found_proxies; ++i)
         {

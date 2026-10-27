@@ -37,17 +37,23 @@ namespace score::mw::service
 ///    with the future's owner) or once a stop got requested via the provided `stop_token`.
 ///
 /// Additional requirements which are enforced by `ProxyBuilder` at compile time:
-/// - A concrete strategy shall provide the type alias `BaseProxy` which equals `ProxySpec`.
 /// - `StartFind()` and `StopFind()` shall be declared by the concrete strategy class itself, i.e. a mere inheritance
 ///   from a base class which declares them is not sufficient. `StopFind()` shall be declared `noexcept`.
 ///
 /// @tparam ProxySpec Specification of the proxy (or proxies) the strategy finds. This is either a single proxy
-///         interface or one of the tags `Variant<>` or `Multiple<>` wrapping proxy interface(s). It determines
+///         interface or one of the tags `Multiple<>` or `Variant<>` wrapping proxy interface(s). It determines
 ///         the type of the `BuilderCallback` (cf. `ProxyBuilderBase<ProxySpec>::BuilderCallback`).
 template <typename ProxySpec>
 class FindServiceStrategy
 {
   public:
+    /// @brief The proxy specification this strategy finds, as required by `ProxyBuilder`.
+    /// @details This is either a single proxy interface or one of the wrapper tags `Multiple<>` or `Variant<>`.
+    using ProxyType = ProxySpec;
+
+    /// @brief Type of the callback which must get invoked when a service instance is found.
+    using OnServiceFoundCallback = typename ProxyBuilderBase<ProxySpec>::BuilderCallback;
+
     /// @brief Starts the service discovery.
     ///
     /// The strategy is free to either invoke `on_found` synchronously from within this method (e.g. immediate
@@ -65,7 +71,7 @@ class FindServiceStrategy
     ///        has to keep it alive (at the latest until `StopFind()` gets invoked).
     ///
     /// @note `ProxyBuilder` invokes `StopFind()` only after this method returned.
-    virtual void StartFind(std::unique_ptr<typename ProxyBuilderBase<ProxySpec>::BuilderCallback> on_found) = 0;
+    virtual void StartFind(std::unique_ptr<OnServiceFoundCallback> on_found) = 0;
 
     /// @brief Stops the service discovery and releases the resources associated with it (e.g. a `BuilderCallback`
     ///        which is still held because no service got found).

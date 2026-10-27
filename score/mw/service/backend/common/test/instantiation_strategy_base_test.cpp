@@ -91,7 +91,7 @@ class TestInstantiationStrategy final
   public:
     explicit TestInstantiationStrategy(std::string port_identifier) : Base(std::move(port_identifier)) {}
 
-    void StartFind(std::unique_ptr<typename ProxyBuilderBase<TestProxyBase>::BuilderCallback> /*on_found*/) override {}
+    void StartFind(std::unique_ptr<OnServiceFoundCallback> /*on_found*/) override {}
 
     void StartFindForTest()
     {

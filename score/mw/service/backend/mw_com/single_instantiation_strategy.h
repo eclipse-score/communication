@@ -40,8 +40,6 @@ class SingleInstantiationStrategy final
     using Base = common::InstantiationStrategyBase<ProxyBase, MwComProxy, internal::ProxyHolderCreator<MwComProxy>>;
 
   public:
-    using BaseProxy = ProxyBase;
-
     template <typename PortIdentifierProvider = PortIdentifier,
               std::enable_if_t<std::is_void_v<PortIdentifierProvider>, bool> = true>
     explicit SingleInstantiationStrategy(std::string port_identifier) noexcept : Base(std::move(port_identifier))
@@ -56,7 +54,7 @@ class SingleInstantiationStrategy final
 
     /// @brief Start the service discovery for `MwComProxy`.
     /// @note It must be ensured by the caller of StartFind() that StopFind() gets invoked *after* StartFind() returned!
-    void StartFind(std::unique_ptr<typename ProxyBuilderBase<ProxyBase>::BuilderCallback> on_found) override
+    void StartFind(std::unique_ptr<typename Base::OnServiceFoundCallback> on_found) override
     {
         Base::StartFindInternal(
             [on_found{std::move(on_found)}](std::vector<std::unique_ptr<MwComProxy>> mw_com_proxies,

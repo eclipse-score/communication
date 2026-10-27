@@ -47,11 +47,11 @@ template <typename T>
 using HasMemberStartFind =
     typename std::is_same<decltype(&T::StartFind),
                           void (T::*)(
-                              std::unique_ptr<typename ProxyBuilderBase<typename T::BaseProxy>::BuilderCallback>)>;
+                              std::unique_ptr<typename ProxyBuilderBase<typename T::ProxyType>::BuilderCallback>)>;
 template <typename T>
 using HasMemberStartFindNoexcept = typename std::is_same<
     decltype(&T::StartFind),
-    void (T::*)(std::unique_ptr<typename ProxyBuilderBase<typename T::BaseProxy>::BuilderCallback>) noexcept>;
+    void (T::*)(std::unique_ptr<typename ProxyBuilderBase<typename T::ProxyType>::BuilderCallback>) noexcept>;
 
 template <typename T>
 constexpr bool kHasMemberStartFind = HasMemberStartFind<T>::value || HasMemberStartFindNoexcept<T>::value;
@@ -59,18 +59,19 @@ constexpr bool kHasMemberStartFind = HasMemberStartFind<T>::value || HasMemberSt
 /// \brief Starts service discovery for a proxy and provides a future for its instantiation
 ///
 /// Named requirements towards `Strategy`:
-/// - Must have type-def defining which Interface will be constructed (BaseProxy)
-/// - Must have method StartFind(std::unique_ptr<BuilderCallback>)
-/// - Must have method StopFind() noexcept
-/// \tparam Strategy
+/// - Must have type-def defining which Interface(s) will be constructed (`ProxyType`)
+/// - Must have method `StartFind(std::unique_ptr<BuilderCallback>)`
+/// - Must have method `StopFind() noexcept`
+/// \tparam Strategy The strategy type used for service discovery and proxy instantiation.
 template <typename Strategy>
-class ProxyBuilder final : public ProxyBuilderBase<typename Strategy::BaseProxy>
+class ProxyBuilder final : public ProxyBuilderBase<typename Strategy::ProxyType>
 {
-  public:
-    using Trait = details::ProxySpecTraits<typename Strategy::BaseProxy>;
+    using Base = ProxyBuilderBase<typename Strategy::ProxyType>;
 
-    explicit ProxyBuilder(std::unique_ptr<Strategy> strategy) noexcept
-        : ProxyBuilderBase<typename Strategy::BaseProxy>(), strategy_{std::move(strategy)}
+  public:
+    using Trait = details::ProxySpecTraits<typename Strategy::ProxyType>;
+
+    explicit ProxyBuilder(std::unique_ptr<Strategy> strategy) noexcept : Base(), strategy_{std::move(strategy)}
     {
         // Check whether template type `Strategy` implements all our requirements
         static_assert(kHasMemberStartFind<Strategy>,
@@ -100,9 +101,8 @@ class ProxyBuilder final : public ProxyBuilderBase<typename Strategy::BaseProxy>
         mw::service::ProxyFuture<typename Trait::ContainerType> future{promise.GetInterruptibleFuture().value()};
 
         auto on_service_found_user_callback = ExtractUserCallbackFrom(std::move(this->callback_));
-        auto on_service_found_builder_callback =
-            std::make_unique<typename ProxyBuilderBase<typename Strategy::BaseProxy>::BuilderCallback>(
-                std::move(promise), std::move(on_service_found_user_callback));
+        auto on_service_found_builder_callback = std::make_unique<typename Base::BuilderCallback>(
+            std::move(promise), std::move(on_service_found_user_callback));
 
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(strategy_ != nullptr);
         std::unique_ptr<Strategy> strategy;
@@ -112,7 +112,7 @@ class ProxyBuilder final : public ProxyBuilderBase<typename Strategy::BaseProxy>
 
         // NOTE: The stop_callback must only be set up *after* the Strategy's `StartFind()` call returned since
         // otherwise `ActiveServiceDiscovery::Stop()` could get invoked before `StartFind()` finished and the
-        // service discovery would run indefinitely then.
+        // service discovery would potentially run indefinitely then.
         class ActiveServiceDiscovery final : public StopServiceDiscoveryAction
         {
           public:
