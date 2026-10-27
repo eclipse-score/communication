@@ -81,6 +81,83 @@ TEST(EventManager, notifies_enabled_update_on_change_event) {
     EXPECT_EQ(router->last_message->get_payload_type()->get_payload_vector(), (std::vector<std::uint8_t>{0x01, 0x02}));
 }
 
+// SOME/IP spec 6.4.1 "update on change": an unchanged value is not sent again, for an event and a field alike.
+static void expect_update_on_change(bool is_field) {
+    auto router = std::make_shared<EventFakeRouter>();
+    ApplicationManager application("event-test", "", router);
+    EventManager events(&application);
+
+    events.add_event(0x1001, 0x0001, 0x0002, 0x01, is_field, 0);
+    events.set_service_enabled(0x1001, 0x0001, 0x01, true);
+
+    auto payload = std::make_shared<Payload>();
+    payload->append(static_cast<std::uint8_t>(0x01));
+    events.notify(0x1001, 0x0001, 0x0002, payload);
+    events.notify(0x1001, 0x0001, 0x0002, payload);
+    EXPECT_EQ(router->message_count, 1);
+
+    events.notify(0x1001, 0x0001, 0x0002, payload, 0, true);
+    EXPECT_EQ(router->message_count, 2);
+
+    auto changed = std::make_shared<Payload>();
+    changed->append(static_cast<std::uint8_t>(0x02));
+    events.notify(0x1001, 0x0001, 0x0002, changed);
+    EXPECT_EQ(router->message_count, 3);
+}
+
+TEST(EventManager, update_on_change_event_is_sent_only_when_payload_changes_or_forced) {
+    expect_update_on_change(false);
+}
+
+TEST(EventManager, update_on_change_field_is_sent_only_when_payload_changes_or_forced) {
+    expect_update_on_change(true);
+}
+
+TEST(EventManager, cyclic_event_is_sent_on_flush_even_with_unchanged_payload) {
+    auto router = std::make_shared<EventFakeRouter>();
+    ApplicationManager application("event-test", "", router);
+    EventManager events(&application);
+
+    events.add_event(0x1001, 0x0001, 0x0002, 0x01, false, 100);
+    events.set_service_enabled(0x1001, 0x0001, 0x01, true);
+
+    auto payload = std::make_shared<Payload>();
+    payload->append(static_cast<std::uint8_t>(0x01));
+    events.notify(0x1001, 0x0001, 0x0002, payload);
+    EXPECT_EQ(router->message_count, 0);
+
+    events.notify(0x1001, 0x0001, 0x0002, payload, 0, false, true);
+    EXPECT_EQ(router->message_count, 1);
+
+    // Same payload again: must neither deadlock nor be skipped when flushed.
+    events.notify(0x1001, 0x0001, 0x0002, payload, 0, false, true);
+    EXPECT_EQ(router->message_count, 2);
+}
+
+TEST(EventManager, notify_one_targets_the_client_and_session_id_keeps_counting) {
+    auto router = std::make_shared<EventFakeRouter>();
+    ApplicationManager application("event-test", "", router);
+    EventManager events(&application);
+
+    events.add_event(0x1001, 0x0001, 0x0002, 0x01, false, 0);
+    events.set_service_enabled(0x1001, 0x0001, 0x01, true);
+
+    auto payload = std::make_shared<Payload>();
+    payload->append(static_cast<std::uint8_t>(0x01));
+    events.notify(0x1001, 0x0001, 0x0002, payload);
+    EXPECT_EQ(router->last_message->get_request_id(), 0x00000001U);
+
+    // The target client goes into the upper 16 bits and the session ID still counts up by one.
+    auto changed = std::make_shared<Payload>();
+    changed->append(static_cast<std::uint8_t>(0x02));
+    events.notify(0x1001, 0x0001, 0x0002, changed, 0x1234);
+    EXPECT_EQ(router->last_message->get_request_id(), 0x12340002U);
+
+    // The target is not sticky: the next notification addresses every subscriber again.
+    events.notify(0x1001, 0x0001, 0x0002, payload);
+    EXPECT_EQ(router->last_message->get_request_id(), 0x00000003U);
+}
+
 TEST(EventManager, ignores_duplicate_event_registration) {
     auto router = std::make_shared<EventFakeRouter>();
     ApplicationManager application("event-test", "", router);

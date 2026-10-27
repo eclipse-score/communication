@@ -229,9 +229,10 @@ TEST(EndpointTCPClient, waits_for_instance_id_that_arrives_late) {
 
 TEST(EndpointTCPClient, disconnects_when_length_field_is_invalid) {
     const std::vector<std::uint8_t> zero_length = {0x12, 0x34, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
+    const std::vector<std::uint8_t> short_length = {0x12, 0x34, 0x80, 0x01, 0x00, 0x00, 0x00, 0x07, 0x00, 0x01};
     const std::vector<std::uint8_t> huge_length = {0x12, 0x34, 0x80, 0x01, 0xfd, 0x00, 0x00, 0xff, 0x00, 0x01};
 
-    for (const auto& stream : {zero_length, huge_length}) {
+    for (const auto& stream : {zero_length, short_length, huge_length}) {
         EndpointTCPTestHost host;
         auto endpoint = std::make_shared<EndpointTCPClient<EndpointTCPTestHost>>(&host);
         auto socket = std::make_shared<FeedSocket>();

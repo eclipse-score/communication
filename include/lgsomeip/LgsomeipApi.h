@@ -344,7 +344,7 @@ public:
      * @param instance Instance identifier.
      * @param event Event or field identifier.
      * @param payload Serialized payload bytes.
-     * @param force Send unchanged field values when true.
+     * @param force Send even if the payload is unchanged (update-on-change otherwise skips it) when true.
      * @param flush true to flush queued data immediately; false to allow batching.
      */
     virtual void notify(service_t service, instance_t instance, event_t event,
