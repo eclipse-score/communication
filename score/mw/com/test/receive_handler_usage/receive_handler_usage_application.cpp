@@ -11,8 +11,6 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#include "score/mw/com/test/receive_handler_usage/receive_handler_usage_application.h"
-
 #include "score/concurrency/notification.h"
 #include "score/mw/com/com_error_domain.h"
 #include "score/mw/com/runtime.h"

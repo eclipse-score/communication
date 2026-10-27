@@ -11,8 +11,6 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#include "score/mw/com/test/partial_restart/consumer_restart/consumer_restart_application.h"
-
 #include "score/mw/com/test/common_test_resources/check_point_control.h"
 #include "score/mw/com/test/common_test_resources/general_resources.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"

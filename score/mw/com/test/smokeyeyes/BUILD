@@ -18,10 +18,7 @@ load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_binary(
     name = "smokeyeyes",
-    srcs = [
-        "smokeyeyes.cpp",
-        "smokeyeyes.h",
-    ],
+    srcs = ["smokeyeyes.cpp"],
     data = ["logging.json"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
