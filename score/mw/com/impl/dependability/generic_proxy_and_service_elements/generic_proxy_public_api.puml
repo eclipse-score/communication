@@ -29,9 +29,6 @@ namespace score::mw::com::impl {
     class ProxyBase {
         +using HandleType = ::score::mw::com::impl::HandleType
         --
-        +ProxyBase(proxy_binding : unique_ptr<ProxyBinding>, handle : HandleType)
-        +~ProxyBase()
-        --
         +{static} FindService(specifier : InstanceSpecifier) : Result<ServiceHandleContainer<HandleType>>
         +{static} FindService(instance_identifier : InstanceIdentifier) : Result<ServiceHandleContainer<HandleType>>
         +{static} StartFindService(handler : FindServiceHandler<HandleType>, instance_identifier : InstanceIdentifier) : Result<FindServiceHandle>
