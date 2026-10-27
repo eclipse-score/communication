@@ -25,10 +25,7 @@ validate_json_schema_test(
 
 cc_binary(
     name = "provider_restart_max_subscribers_application",
-    srcs = [
-        "provider_restart_max_subscribers_application.cpp",
-        "provider_restart_max_subscribers_application.h",
-    ],
+    srcs = ["provider_restart_max_subscribers_application.cpp"],
     data = ["mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
