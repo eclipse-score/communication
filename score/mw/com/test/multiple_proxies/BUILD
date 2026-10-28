@@ -17,10 +17,7 @@ load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_binary(
     name = "multiple_proxies",
-    srcs = [
-        "multiple_proxies_application.cpp",
-        "multiple_proxies_application.h",
-    ],
+    srcs = ["multiple_proxies_application.cpp"],
     data = ["mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",

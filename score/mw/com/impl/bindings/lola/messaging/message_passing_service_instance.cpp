@@ -342,6 +342,7 @@ message_passing::MessageCallback MessagePassingServiceInstance::CreateSendMessag
                                                     "expiring. Disconnecting from client.";
                 return score::cpp::make_unexpected(os::Error::createUnspecifiedError());
             }
+            return {};
         }
 
         const auto& message_handling_result = function_invocation_result.value();
@@ -1529,21 +1530,6 @@ void MessagePassingServiceInstance::UnregisterEventNotificationExistenceChangedC
         score::mw::log::LogWarn("lola")
             << "MessagePassingService: UnregisterEventNotificationExistenceChangedCallback called for event "
             << event_id.ToString() << " but no callback was registered";
-    }
-}
-
-QualityType MessagePassingServiceInstance::GetPartnerQualityType() const
-{
-    switch (asil_level_)
-    {
-        case ClientQualityType::kASIL_QM:
-            return QualityType::kASIL_QM;
-        case ClientQualityType::kASIL_B:
-            return QualityType::kASIL_B;
-        case ClientQualityType::kASIL_QMfromB:
-            return QualityType::kASIL_QM;
-        default:
-            std::terminate();
     }
 }
 

@@ -50,7 +50,7 @@ ProxyMethod::ProxyMethod(Proxy& proxy,
 
 score::Result<score::cpp::span<std::byte>> ProxyMethod::GetInArgsBuffer(std::size_t queue_position)
 {
-    if (!is_subscribed_)
+    if (!is_subscribed_.load())
     {
         score::mw::log::LogError("lola") << "Trying to allocate in args for a method that was not successfully "
                                             "subscribed. Ensure method enabled in Proxy::Create().";
@@ -67,7 +67,7 @@ score::Result<score::cpp::span<std::byte>> ProxyMethod::GetInArgsBuffer(std::siz
 
 score::Result<score::cpp::span<std::byte>> ProxyMethod::GetReturnValueBuffer(std::size_t queue_position)
 {
-    if (!is_subscribed_)
+    if (!is_subscribed_.load())
     {
         score::mw::log::LogError("lola") << "Trying to allocate in args for a method that was not successfully "
                                             "subscribed. Ensure method enabled in Proxy::Create().";
@@ -85,7 +85,7 @@ score::Result<score::cpp::span<std::byte>> ProxyMethod::GetReturnValueBuffer(std
 
 score::Result<void> ProxyMethod::DoCall(std::size_t queue_position)
 {
-    if (!is_subscribed_)
+    if (!is_subscribed_.load())
     {
         score::mw::log::LogError("lola")
             << "Trying to call a method that was not successfully subscribed. Ensure method "
@@ -121,7 +121,7 @@ void ProxyMethod::MarkUnsubscribed()
 
 bool ProxyMethod::IsSubscribed() const
 {
-    return is_subscribed_;
+    return is_subscribed_.load();
 }
 
 }  // namespace score::mw::com::impl::lola

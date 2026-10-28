@@ -11,6 +11,10 @@
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
 
+' TODO: This FTA was written before mw::com had a service discovery and is not
+' up to date. It needs to be reworked in phase 2 to reflect the current
+' architecture.
+
 @startuml
 
 !include fta_metamodel.puml
@@ -18,8 +22,7 @@
 $FailureMode("Service is found, but does not exist", "Communication.ServiceIsFoundButDoesNotExist")
 
 $OrGate("Gate1", "Communication.ServiceIsFoundButDoesNotExist")
-$RootCause("Service was offered, but not unliked on stop offer", "ServiceWasOfferedButNotUnlikedOnStopOffer", "Gate1")
-$RootCause("Shared Memory is opened eventhough file does not exist", "SharedMemoryIsOpenedEventhoughFileDoesNotExist", "Gate1")
+$RootCause("Service was offered, but not unlinked on stop offer", "ServiceWasOfferedButNotUnlinkedOnStopOffer", "Gate1")
 $IntermediateEvent("Shared Memory Object exists but not accessable", "Event3", "Gate1")
 $OrGate("Gate2", "Event3")
 $RootCause("Wrong Provider", "WrongProvider", "Gate2")

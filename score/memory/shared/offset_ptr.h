@@ -403,7 +403,7 @@ class OffsetPtr
     friend void swap(OffsetPtr<T>& left, OffsetPtr<T>& right) noexcept;
 };
 
-// maybe-unitialized is triggered here by some compilers, because they thing that `this` in the initalizer-list
+// maybe-unitialized is triggered here by some compilers, because they think that `this` in the initalizer-list
 // is maybe unitialized. Fact is, that `this`, in this case, is not derefenced and thus its fine to use it.
 // This is also described in the C++ Standard: https://eel.is/c++draft/class.init#class.base.init-15
 // NOLINTBEGIN(score-banned-preprocessor-directives) : required due to false positive compiler warning

@@ -1,5 +1,6 @@
 //quality/compiler_warnings/clang:default_flags
 //quality/compiler_warnings/clang:minimal_warnings
+//quality/compiler_warnings/clang:misra_warnings
 //quality/compiler_warnings/gcc:default_flags
 //quality/compiler_warnings/gcc:minimal_warnings
 //quality/compiler_warnings/gcc:misra_warnings

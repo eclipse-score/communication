@@ -1,4 +1,4 @@
-/*******************************************************************************
+/********************************************************************************
  * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -9,9 +9,10 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  *
  * SPDX-License-Identifier: Apache-2.0
- *******************************************************************************/
+ ********************************************************************************/
+package MemoryShared
 
-#ifndef SCORE_MW_COM_TEST_SMOKEYEYES_SMOKEYEYES_H
-#define SCORE_MW_COM_TEST_SMOKEYEYES_SMOKEYEYES_H
+import ScoreReq
 
-#endif  // SCORE_MW_COM_TEST_SMOKEYEYES_SMOKEYEYES_H
+// Intentionally empty: no FailureMode records yet. Wiring this
+// empty source is sufficient to activate the Public API coverage check.

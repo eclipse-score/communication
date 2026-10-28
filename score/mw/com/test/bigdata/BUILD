@@ -22,10 +22,7 @@ exports_files(
 
 cc_binary(
     name = "bigdata",
-    srcs = [
-        "big_datatype_application.cpp",
-        "big_datatype_application.h",
-    ],
+    srcs = ["big_datatype_application.cpp"],
     data = ["mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",

@@ -29,10 +29,7 @@ cc_library(
 
 cc_binary(
     name = "provider_app",
-    srcs = [
-        "provider/provider.cpp",
-        "provider/provider.h",
-    ],
+    srcs = ["provider/provider.cpp"],
     data = ["provider/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
@@ -78,7 +75,6 @@ cc_binary(
     name = "consumer_app",
     srcs = [
         "consumer/consumer.cpp",
-        "consumer/consumer.h",
     ],
     data = ["consumer/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [

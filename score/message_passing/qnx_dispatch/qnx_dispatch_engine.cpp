@@ -314,7 +314,7 @@ void QnxDispatchEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noex
 
     std::size_t index = poll_endpoints_.size();
     const auto found = std::find_if(poll_endpoints_.begin(), poll_endpoints_.end(), [](PollEndpoint& poll) noexcept {
-        return poll.endpoint == 0;
+        return poll.endpoint == nullptr;
     });
     if (found != poll_endpoints_.end())
     {

@@ -17,10 +17,7 @@ load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_binary(
     name = "receive_handler_unsubscribe",
-    srcs = [
-        "receive_handler_unsubscribe_application.cpp",
-        "receive_handler_unsubscribe_application.h",
-    ],
+    srcs = ["receive_handler_unsubscribe_application.cpp"],
     data = ["mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",

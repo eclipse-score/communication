@@ -36,7 +36,9 @@ safety_analysis(
     failuremodes = ["failure_modes.trlc"],
     fta_package = "mw_com_fta",
     root_causes = [":root_causes"],
-    safetymeasures = ["aou.trlc"],
+    safetymeasures = [
+        "aou.trlc",
+    ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 

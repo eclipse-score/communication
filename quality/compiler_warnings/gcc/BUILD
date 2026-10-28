@@ -32,8 +32,6 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
     args = [
-        # Reduce known GCC false positives.
-        "-Wno-maybe-uninitialized",
         "-Warray-bounds=2",  # A5-2-5
         "-Wdisabled-optimization",
         "-Wimplicit-fallthrough=4",

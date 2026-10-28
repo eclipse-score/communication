@@ -17,10 +17,7 @@ load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_binary(
     name = "subscribe_handler",
-    srcs = [
-        "subscribe_handler_application.cpp",
-        "subscribe_handler_application.h",
-    ],
+    srcs = ["subscribe_handler_application.cpp"],
     data = ["mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
