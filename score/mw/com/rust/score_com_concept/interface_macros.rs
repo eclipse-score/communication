@@ -731,7 +731,9 @@ mod tests {
     fn interface_producer_macro_with_Field() {}
 }
 
-#[cfg(test)]
+// Only built by `score_com_concept-macros-unit-tests` (cfg set in BUILD). These tests need `score_com`,
+// which depends on `score_com_concept`, so they must not be part of the library's own test crate.
+#[cfg(all(test, standalone_macro_tests))]
 #[allow(dead_code)]
 #[allow(unused_imports)]
 mod validation_tests {
