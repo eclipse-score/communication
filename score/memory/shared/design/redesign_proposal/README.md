@@ -97,12 +97,14 @@ triple per concrete type of `IMappedRegion` the factory supports. Out of the box
 - `CreatePosixNamed()`
 - `OpenPosixNamed()`
 - `CreateOrOpenPosixNamed()`
+- `RemovePosixNamed()`
 
-If a new (non-abstract) type of `IMappedRegion` gets introduced, also a corresponding triple of create/open methods need
-to be added to `IMappedRegionFactory`/`MappedRegionFactory`. The signatures of these create/open methods are specific to
-the new (non-abstract) type of `IMappedRegion`, because the information to create/open a concrete type of
-`IMappedRegion`
-is specific to this type.
+If a new (non-abstract) type of `IMappedRegion` gets introduced, also a corresponding set of create/open/remove methods
+need to be added to `IMappedRegionFactory`/`MappedRegionFactory`. The signatures of these create/open/remove methods are
+specific to the new (non-abstract) type of `IMappedRegion`, because the information needed to create/open/remove a
+concrete type of `IMappedRegion` is specific to this type.
+
+#### Registration of Mapped Regions
 
 A `MappedRegionFactory` can not exist without an instance of an `IMappedRegionRegistry`. The factory uses such an
 `IMappedRegionRegistry` instance to store instances of `IMappedRegion`, which it had created. This serves the following
@@ -154,6 +156,37 @@ both cases the possibility to control, how long a `IMappedRegion` instance is ke
   implementations.
 - `FreeUnusedResources()`: This is a no-op in case of `MappedRegionRegistry`! In case of
   `PersistentMappedRegionRegistry`, it removes all `IMappedRegion` instances, which are only held by itself.
+
+#### Semantics of Create, Open, Remove
+
+The properties of different types of `IMappedRegion` will be so different, that we need to come up with a general
+definition, what Create, Open and Remove shall mean:
+
+##### Create
+
+Create means, that a concrete instance of `IMappedRegion` has been created and its underlying memory has been
+contiguously mapped into the virtual address space of the caller. Additionally, it means, that this `Mapped Region` then
+is "visible", so it can be successfully opened by the corresponding call to `MappedRegionFactory::OpenXXX` in the same
+or a different process. A 2nd Create call with the same identification (in POSIX named shared-memory this would be the
+path) will fail in the same or a different process. Unless, Remove had been called before with the same identification
+in the same or a different process.
+
+##### Open
+
+Open shall always open the latest version of a given `Mapped Region`. I.e. if a sequence of Create/Remove operations
+have happened for a `Mapped Region` with the same identification, Open will return a `IMappedRegion` instance, which
+always represents the latest created `Mapped Region` with this identification. If the last operation for this
+identification was a Remove or no Create operation has happened before in the same or a different process, Open shall
+return a nullptr.
+
+##### Remove
+
+Remove shall remove the `Mapped Region` in a way, that any subsequent call to Open with the same identification will
+fail in the same or a different process, unless a new Create operation has been done with the same identification in the
+same or a different process.
+
+To fulfill these semantics for any `IMappedRegion` both &ndash; `MappedRegionFactory` and `MappedRegionRegistry` &ndash;
+have to act accordingly.
 
 ### Creating a Mapped Region
 
