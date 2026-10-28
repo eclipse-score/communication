@@ -45,6 +45,27 @@ struct DiscoveredInstance
     std::string instance_id_description;
 };
 
+// The json writer pretty-prints with newlines and indentation. Collapse any run of whitespace into a single space
+// so that the instance id can be logged as a compact single-line description.
+std::string Minify(const std::string& pretty_printed)
+{
+    std::string compact{};
+    compact.reserve(pretty_printed.size());
+    const auto is_whitespace = [](char character) {
+        return character == ' ';
+    };
+    const auto is_space = [&is_whitespace](char character) {
+        return is_whitespace(character) || (character == '\n') || (character == '\r') || (character == '\t');
+    };
+    std::copy_if(pretty_printed.begin(),
+                 pretty_printed.end(),
+                 std::back_inserter(compact),
+                 [&compact, &is_space, &is_whitespace](char x) {
+                     return !is_space(x) || (is_whitespace(x) && !is_whitespace(compact.back()));
+                 });
+    return compact;
+}
+
 // Returns a binding-independent, human-readable description of the service instance a handle refers to.
 //
 // The only portable (public API) way to obtain a representation of the instance id from a handle is:
@@ -60,29 +81,7 @@ std::string DescribeInstanceId(const HelloWorldProxy::HandleType& handle)
         return std::string{"<unknown>"};
     }
 
-    // The json writer pretty-prints with newlines and indentation. Collapse any run of whitespace into a single space
-    // so that the instance id can be logged as a compact single-line description.
-    const std::string pretty_printed = std::move(serialized_instance_id).value();
-    std::string compact{};
-    compact.reserve(pretty_printed.size());
-    bool previous_was_space{false};
-    for (const char character : pretty_printed)
-    {
-        const bool is_space = (character == ' ') || (character == '\n') || (character == '\r') || (character == '\t');
-        if (is_space)
-        {
-            if (!previous_was_space)
-            {
-                compact.push_back(' ');
-            }
-        }
-        else
-        {
-            compact.push_back(character);
-        }
-        previous_was_space = is_space;
-    }
-    return compact;
+    return std::move(serialized_instance_id).value();
 }
 // [consumer-describe-instance-id-end]
 
@@ -126,7 +125,7 @@ int main()
             }
 
             const auto instance_id_description = DescribeInstanceId(handle);
-            std::cout << "Found new HelloWorld service instance (instance id: " << instance_id_description
+            std::cout << "Found new HelloWorld service instance (instance id: " << Minify(instance_id_description)
                       << "). Creating proxy." << std::endl;
 
             auto proxy_result = HelloWorldProxy::Create(handle);
