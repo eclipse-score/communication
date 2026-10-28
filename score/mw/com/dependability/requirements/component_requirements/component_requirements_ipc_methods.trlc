@@ -13,6 +13,7 @@
 package Communication
 
 import ScoreReq
+import mw_com_fta
 
 section "com" {
     section "Public_API_Requirements" {
@@ -23,7 +24,14 @@ section "com" {
             return value, of the service-method. In case of shm-binding this pre-allocated memory would be in shared
             memory, allowing a zero copy implementation."""
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_ZeroCopy@1, Communication.FEAT_MethodStructure@1]
+            derived_from = [
+                Communication.FEAT_ZeroCopy@1,
+                Communication.FEAT_MethodStructure@1,
+                // Using this API, memory will be allocated in the correct location and the user can directly provide the arguments in this location.
+                mw_com_fta.CallerProvidedInArgsInWrongLocation,
+                // Using this API, memory for input arguments will be allocated in the correct layout and the user has direct pointer access.
+                mw_com_fta.InArgsWrongLayout
+            ]
             version = 1
         }
 

@@ -285,12 +285,18 @@ ScoreReq.AoU NoCopySendWhileHoldingAllocateePtr {
 }
 
 /* broken_link_c/issue/5835328 */
-ScoreReq.AoU NoneReentrantMethodsPerEventInstance {
+ScoreReq.AoU NoneReentrantMethodsPerServiceElementInstance {
     // mitigates = "FunctionCalledFromMultipleThreads"
-    description = "It shall be ensured that any LoLa API that is bound to a specific event instance is not called in a reentrant manner."
+    description = "It shall be ensured that any LoLa API that is bound to a specific service element instance is not called in a reentrant manner."
     safety = ScoreReq.Asil.B
     note = "Thread-Safety is ensured for static methods and over instances."
     version = 1
+    root_causes = [
+        // Input arguments for synchronous method calls can not be updated from a single thread after method was called.
+        mw_com_fta.InArgsUpdateAfterCall,
+        // When working with a single thread, the input arguments for a synchronous method will have been provided, before the method will be called.
+        mw_com_fta.CallSignalledBeforeInArgsCompletelyProvided
+    ]
 }
 
 /* broken_link_c/issue/5835337 */
