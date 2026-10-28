@@ -21,7 +21,7 @@ $OrGate("Gate1", "Communication.StopOfferInconsistent")
 $IntermediateEvent("Stop Offer not succeeded on dependent elements", "Communication.StopOfferNotSucceededOnDependentElements", "Gate1")
 $RootCause("Offer State inconsistent", "OfferStateInconsistent", "Gate1")
 $OrGate("Gate2", "Communication.StopOfferNotSucceededOnDependentElements")
-$RootCause("PrepareOffer on dependent elements not called", "DependentPrepareOfferNotCalled", "Gate2")
-$RootCause("PrepareOffer on dependent elements failed", "DependentPrepareOfferFailed", "Gate2")
+$RootCause("PrepareStopOffer on dependent elements not called", "DependentPrepareStopOfferNotCalled", "Gate2")
+$RootCause("PrepareStopOffer on dependent elements failed", "DependentPrepareStopOfferFailed", "Gate2")
 
 @enduml
