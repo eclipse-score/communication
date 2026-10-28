@@ -75,8 +75,6 @@ The `bazel` project for this chapter is located in `score/mw/com/doc/tutorial/ch
      - This file contains bazel targets for this example.
    * - `consumer/consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/consumer/consumer.cpp>`__
      - Implementation of the service consumer app (polling, keeps `SamplePtr`\s).
-   * - `consumer/consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/consumer/consumer.h>`__
-     - Header (empty - we just always want to have cpp/h pairs) of the service consumer.
    * - `consumer/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/consumer/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
    * - `consumer/client_1/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/consumer/client_1/mw_com_config.json>`__
@@ -85,8 +83,6 @@ The `bazel` project for this chapter is located in `score/mw/com/doc/tutorial/ch
      - `score::mw::com` configuration for consumer **instance 2** (`applicationID` 18).
    * - `provider/provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/provider/provider.cpp>`__
      - Implementation of the service provider (taken over from chapter 2).
-   * - `provider/provider.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/provider/provider.h>`__
-     - Header (empty) of the service provider.
    * - `provider/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/provider/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
    * - `provider/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/provider/mw_com_config.json>`__
