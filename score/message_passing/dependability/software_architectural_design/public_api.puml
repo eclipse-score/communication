@@ -17,7 +17,6 @@ namespace score::message_passing {
 
     class Engine {
         +Engine(memory_resource, logger)
-        +{static} GetDefaultOsResources()
     }
 
     interface IClientFactory {
@@ -30,15 +29,29 @@ namespace score::message_passing {
         +GetEngine()
     }
 
+    interface "IClientConnection::StateCallback" as StateCallback <<callback>> {
+        +operator()(state: State): void
+    }
+
+    interface "IClientConnection::NotifyCallback" as NotifyCallback <<callback>> {
+        +operator()(message: span<const uint8_t>): void
+    }
+
+    interface "IClientConnection::ReplyCallback" as ReplyCallback <<callback>> {
+        +operator()(message_expected: expected<span<const uint8_t>, Error>): void
+    }
+
+    note bottom of StateCallback : <<callback>> models a user-provided callable type alias,\nnot an additional C++ virtual interface.\noperator() describes the invocation contract.
+
     interface IClientConnection {
-        +Start()
+        +Start(state_callback: StateCallback, notify_callback: NotifyCallback)
         +Restart()
         +Stop()
         +GetState()
         +GetStopReason()
         +Send()
         +SendWaitReply()
-        +SendWithCallback()
+        +SendWithCallback(message: span<const uint8_t>, callback: ReplyCallback): expected_blank<Error>
     }
 
     interface IServerFactory {
@@ -51,28 +64,48 @@ namespace score::message_passing {
         +GetEngine()
     }
 
+    interface ConnectCallback <<callback>> {
+        +operator()(connection: IServerConnection&): expected<UserData, Error>
+    }
+
+    interface DisconnectCallback <<callback>> {
+        +operator()(connection: IServerConnection&): void
+    }
+
+    interface MessageCallback <<callback>> {
+        +operator()(connection: IServerConnection&, message: span<const uint8_t>): expected_blank<Error>
+    }
+
     interface IServer {
-        +StartListening()
+        +StartListening(connect_callback: ConnectCallback, disconnect_callback: DisconnectCallback, sent_callback: MessageCallback, sent_with_reply_callback: MessageCallback): expected_blank<Error>
         +StopListening()
     }
+
+    note bottom of IServer : StartListening's last three callbacks default to empty.\nFor each connection, non-connect callbacks are replaced by\nIConnectionHandler methods when ConnectCallback returns a handler in UserData.
 
     interface IServerConnection {
         +GetClientIdentity()
         +GetUserData()
-        +Reply()
+        +Reply(message: span<const uint8_t>): expected_blank<Error>
         +Notify()
         +RequestDisconnect()
     }
 
     interface IConnectionHandler <<user_provided>> {
-        +OnMessageSent()
-        +OnMessageSentWithReply()
-        +OnDisconnect()
+        +OnMessageSent(connection: IServerConnection&, message: span<const uint8_t>): expected_blank<Error>
+        +OnMessageSentWithReply(connection: IServerConnection&, message: span<const uint8_t>): expected_blank<Error>
+        +OnDisconnect(connection: IServerConnection&): void
     }
 
     IClientFactory ..> IClientConnection : creates
+    IClientConnection ..> StateCallback : invokes
+    IClientConnection ..> NotifyCallback : invokes
+    IClientConnection ..> ReplyCallback : invokes
     IServerFactory ..> IServer : creates
     IServer ..> IServerConnection : uses
+    IServer ..> ConnectCallback : invokes
+    IServer ..> DisconnectCallback : invokes
+    IServer ..> MessageCallback : invokes as sent_callback or sent_with_reply_callback
     IServerConnection ..> IConnectionHandler : uses
     ClientFactory ..|> IClientFactory
     ServerFactory ..|> IServerFactory
