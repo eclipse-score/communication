@@ -648,7 +648,8 @@ void PacketRouterHost::on_message(std::shared_ptr<Endpoint> endpoint, std::uint8
     bool is_sd_message = MessageBuilder::is_sd_message(message, message_length);
 
     std::unique_lock<std::recursive_mutex> lock_manage_route(route_management_mutex_);
-    bool from_internal = connected_endpoints_[endpoint->get_socket()->get_socket_fd()].is_internal;
+    auto conn_info_it = connected_endpoints_.find(endpoint->get_socket()->get_socket_fd());
+    bool from_internal = (conn_info_it != connected_endpoints_.end()) && conn_info_it->second.is_internal;
     lock_manage_route.unlock();
 
     if (is_sd_message) {
@@ -829,7 +830,13 @@ std::uint16_t PacketRouterHost::find_instance_id(std::uint16_t service_id, std::
             if (endpoint->get_instance_id() != 0) {
                 return endpoint->get_instance_id();
             }
-            std::uint16_t app_id = connected_endpoints_[endpoint->get_socket()->get_socket_fd()].app_id;
+            // Look up without operator[]: an application's sender endpoint is not registered in
+            // connected_endpoints_, and inserting an empty entry for it leaves a null endpoint behind.
+            std::uint16_t app_id = 0;
+            auto conn_info_it = connected_endpoints_.find(endpoint->get_socket()->get_socket_fd());
+            if (conn_info_it != connected_endpoints_.end()) {
+                app_id = conn_info_it->second.app_id;
+            }
             addrid = PORT_LOCTAG | (static_cast<std::uint32_t>(app_id) & 0xffff);
         } else {
             if (addr->get_reliable() == true) {
@@ -2332,6 +2339,8 @@ std::int32_t PacketRouterHost::find_connection(std::uint16_t service_id, std::ui
             retfd = 0;
         } else {
             for (auto& connection : connected_endpoints_) {
+                if (connection.second.endpoint == nullptr || connection.second.endpoint->get_socket() == nullptr)
+                    continue;
                 auto addr = connection.second.endpoint->get_socket()->get_src_address();
                 if (addr == nullptr)
                     continue;
@@ -2350,7 +2359,14 @@ std::int32_t PacketRouterHost::find_connection(std::uint16_t service_id, std::ui
         auto tcpendpoint = std::dynamic_pointer_cast<EndpointTCPServer<PacketRouterHost>>(serviceinfo->tcpendpoint);
         auto& clientfdlist = tcpendpoint->get_client_list();
         for (std::int32_t fd : clientfdlist) {
-            auto clientaddr = connected_endpoints_[fd].endpoint->get_socket()->get_dst_address();
+            // Look up without operator[] so that a missing FD does not insert an empty entry.
+            auto conn_info_it = connected_endpoints_.find(fd);
+            if (conn_info_it == connected_endpoints_.end() || conn_info_it->second.endpoint == nullptr ||
+                conn_info_it->second.endpoint->get_socket() == nullptr)
+                continue;
+            auto clientaddr = conn_info_it->second.endpoint->get_socket()->get_dst_address();
+            if (clientaddr == nullptr)
+                continue;
             if (clientaddr->get_ip_address() == address->get_ip_address() &&
                 clientaddr->get_port_address() == address->get_port_address()) {
                 retfd = fd;
