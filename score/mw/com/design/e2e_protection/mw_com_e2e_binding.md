@@ -74,7 +74,7 @@ ProxyMethodBase  ─┘
 
 and symmetrically on the provider side (`SkeletonEventBase` / `SkeletonFieldBase` / `SkeletonMethodBase`), whose bindings own the transmit-side counterpart — for events and fields, that is the whole picture, since the provider only ever protects and the consumer only ever checks; methods are the one exception (see below). The Protect/Check functions (`ProtectMessage`/`CheckMessage`) and their contexts generalize cleanly to all three element types — they operate per transmitted/received frame regardless of whether that frame carries a cyclic event, a field update, or a method request/response, and in every case live in the binding (`SkeletonEventBinding`/`ProxyEventBinding` and their Field/Method counterparts), not in the `*Base` classes.
 
-> **Historical health tracking applicability — resolved.** The health counter is a pure function of the sequence of per-message check results fed into it (see [Binding Independence Assessment](#binding-independence-assessment-review-feedback), point 1) — it requires a *sequence of Check() results*, not a wall-clock cycle. For methods, that sequence is naturally "one result per completed call" (response received, client side; request received, server side) instead of "one result per reception cycle," so health tracking is meaningful for `ProxyMethodBase`/`SkeletonMethodBase` too. The one real difference from the event path: methods have no "no new data" branch, since a call is either pending or completed — there is no "missed cycle" concept the way there is for `GetNewSamples()` on events.
+> **Historical health tracking applicability.** The health tracker is a pure function of the sequence of per-message check results fed into it (see [Binding Independence Assessment](#binding-independence-assessment-review-feedback), point 1) — it requires a *sequence of Check() results*, not a wall-clock cycle. For methods, that sequence is naturally "one result per completed call" (response received, client side; request received, server side) instead of "one result per reception cycle," so health tracking is meaningful for `ProxyMethodBase`/`SkeletonMethodBase` too. The one real difference from the event path: methods have no "no new data" branch, since a call is either pending or completed — there is no "missed cycle" concept the way there is for `GetNewSamples()` on events.
 >
 > **Method-specific profile variants.** Request/Response calls use method-specific profile variants that key Protect/Check off the request's session/client-server-transaction handle instead of a free-running cyclic counter. Historical health tracking runs on top of that per-call result exactly as it does for events, tracking degradation across a sequence of calls rather than across a sequence of reception cycles.
 
@@ -92,7 +92,7 @@ The binding layer is responsible for **protocol-specific placement and extractio
 
 The binding layer shall:
 
-- Resolve, from binding-independent deployment configuration, whether the message/event is E2E-protected — this is a configuration decision, not one the binding makes on its own; the binding merely acts on it
+- Resolve, from the service instance's binding-specific deployment configuration (`serviceInstances[].instances[].events[].e2e`, see [Example Deployment Mapping](#example-deployment-mapping-illustrative)), whether the event is E2E-protected — this is a configuration decision, not one the binding makes on its own; the binding merely acts on it
 - Locate the E2E header location in the transport representation
 - Invoke the E2E protection algorithm
 - Write/update E2E header fields in the outgoing sample/message
@@ -216,7 +216,7 @@ The protect and check/state-machine contexts are not symmetric in cardinality �
 |---|---|---|
 | Protect state (`E2EProtectContext`, sender counter) | One per transmitted event (`SkeletonEvent`) | Binding, `SkeletonEventBinding` |
 | Check state (`E2ECheckContext`, last-accepted counter, CRC context) | One per consuming `ProxyEvent` instance that enables E2E | Binding, `ProxyEventBinding` |
-| Historical health state (`E2EHealthContext`, hysteresis error/recovery counter) | One per consuming `ProxyEvent` instance that enables E2E | Binding-independent, `ProxyEventBase` |
+| Historical health state (`E2EHealthContext`, sliding window of recent per-message results) | One per consuming `ProxyEvent` instance that enables E2E | Binding-independent, `ProxyEventBase` |
 
 This follows the sender/receiver split: `ProtectMessage()` is sender-local and produces one wire frame per cycle; `CheckMessage()`/the binding-independent health tracker are receiver-local, and each consumer evaluates the same received frame sequence independently. Consequences:
 
@@ -243,7 +243,7 @@ Example — one provider, three consumers at different ASIL levels, all of the s
 | Consumer B (proxy) | ASIL_B | yes (default) | yes | Own check/historical-health state |
 | Consumer C (proxy) | QM | no — explicitly disabled via `DataIntegrityCheckEnabled`/`SequenceCheckEnabled`/`HistoricalHealthTrackingEnabled: false` | n/a — `E2EResult` reads `kDisabled` | No check/historical-health state instantiated |
 
-If Consumer A misses a frame that Consumer B receives, only Consumer A's historical health tracking reacts (e.g. its error counter increments on a sequence error); Consumer B remains `HistoricalHealthStatus::kOk`. Consumer C has disabled E2E verification entirely in its own configuration, so no Check()/health-tracking runs for it and its `E2EResult` reads `kDisabled` across all fields — the expected, common shape for a QM consumer with no use for the result, not a special-case optimization.
+If Consumer A misses a frame that Consumer B receives, only Consumer A's historical health tracking reacts (e.g. its window records the sequence error and may reach `ErrorThreshold`); Consumer B remains `HistoricalHealthStatus::kOk`. Consumer C has disabled E2E verification entirely in its own configuration, so no Check()/health-tracking runs for it and its `E2EResult` reads `kDisabled` across all fields — the expected, common shape for a QM consumer with no use for the result, not a special-case optimization.
 
 ---
 
@@ -314,7 +314,7 @@ The binding-independent layer owns **E2E interpretation and supervision**.
 This includes:
 
 - Interpreting the sequence of per-message results the binding produces, over time
-- Tracking a hysteresis-based error/recovery counter across received messages
+- Tracking a sliding window of recent per-message results across received messages, with hysteresis thresholds
 - Combining the current per-message result with historical health into a single application-facing summary
 - Producing the final user-visible `E2EResult`
 
@@ -322,18 +322,18 @@ This includes:
 
 > **Note — relationship to a companion error-handling specification.** The `HistoricalHealthStatus`/`Summary`/`E2EResult` model below mirrors a separate, in-progress companion specification containing the detailed, authoritative specification of E2E error handling. It is reproduced here for this document's own architectural completeness, not as a competing definition; the two are expected to be merged into one once both settle.
 
-`mw::com` events are consumed reactively: an application calls `GetNewSamples()` when it has reason to believe new data is available, not on a fixed periodic schedule independent of activity. If a provider stops offering the service, the proxy resubscribes and the binding-independent layer resets its own tracking state on that signal (see [E2E Context Lifecycle](#e2e-context-lifecycle)) — there is no need to keep feeding a "no new data" result into a health tracker on a cycle where nothing was received, and therefore no need for the dedicated warm-up/no-data states a classical periodic state machine uses to represent them. The binding-independent E2E Supervisor instead tracks a single hysteresis-based error counter, updated only when a message is actually received and checked:
+`mw::com` events are consumed reactively: an application calls `GetNewSamples()` when it has reason to believe new data is available, not on a fixed periodic schedule independent of activity. If a provider stops offering the service, the proxy resubscribes and the binding-independent layer resets its own tracking state on that signal (see [E2E Context Lifecycle](#e2e-context-lifecycle)) — there is no need to keep feeding a "no new data" result into a health tracker on a cycle where nothing was received, and therefore no need for the dedicated warm-up/no-data states a classical periodic state machine uses to represent them. The binding-independent E2E Supervisor instead tracks a sliding window of the last `WindowSize` per-message results with hysteresis thresholds, updated only when a message is actually received and checked:
 
 ```cpp
 enum class HistoricalHealthStatus {
     kDisabled, // Check was disabled
-    kOk,       // Error counter is at or below the configured recovery threshold
-    kError,    // Error counter has reached the configured error threshold; stays kError until
-               // the counter drops back to/below the recovery threshold (hysteresis)
+    kOk,       // Initial state; re-entered once RecoveryThreshold passes are in the window
+    kError,    // ErrorThreshold failures are in the window; stays kError until RecoveryThreshold
+               // passes are in the window (hysteresis)
 };
 ```
 
-The counter increments on a failed per-message check (`DataIntegrityStatus::kError` or a `SequenceStatus` error value) and decrements on a passed one, clamped so it never drops below zero. `HistoricalHealthStatus` transitions to `kError` once the counter reaches the configured error threshold, and back to `kOk` only once the counter drops to/below the (lower) recovery threshold — the gap between the two thresholds is the hysteresis band, preventing the status from flapping on a single isolated failure or recovery. See [Configuration](#configuration) for the threshold parameters.
+A per-message result is a failure if `DataIntegrityStatus` is `kError` or `SequenceStatus` is an error value, and a pass otherwise (`kOkGapWithinThreshold` is a pass). Thresholds are relative counts within the window, not absolute counter values: in `kOk`, `HistoricalHealthStatus` flips to `kError` once `ErrorThreshold` failures are in the window; in `kError`, it flips back to `kOk` once `RecoveryThreshold` passes are in the window. The two thresholds are independent and may differ — e.g. `ErrorThreshold` 5 and `RecoveryThreshold` 10 means five failures to enter `kError` and ten passes to leave it. That asymmetry is the hysteresis, preventing the status from flapping on a single isolated failure or recovery. `WindowSize` must be at least both thresholds but may be larger. The window is cleared on every flip and on a context reset (see [E2E Context Lifecycle](#e2e-context-lifecycle)), so the samples that caused a flip cannot immediately re-trigger the opposite transition. See [Configuration](#configuration) for the parameters.
 
 An application typically does not need `HistoricalHealthStatus` on its own — it is combined with the current message's own check outcome into a single summary value:
 
@@ -366,7 +366,7 @@ Context ownership splits along the same line as [Context Ownership Cardinality](
 - **Transmit.** The binding resets `E2EProtectContext` on its own `OfferService()`/`StopOfferService()` (or equivalent) — a direct consequence of the binding owning both the protect state and the service-offer lifecycle hooks that bound it, so destroying and recreating the protect state alongside the offer/re-offer cycle requires no signal from any other layer.
 - **Receive.** LoLa's binding already implements the equivalent detection today: partial-restart/reconnection is handled by `lola::SubscriptionStateMachine` (`StopOfferEvent()`/`ReOfferEvent()`), driven by `ServiceDiscovery` notifications forwarded through `lola::Proxy`'s `FindServiceGuard` — entirely inside the binding. The binding resets its own `E2ECheckContext` on the same transition it already tracks for subscription-state purposes.
 
-**Historical health context — reset by the binding-independent layer, on a subscription-state-change signal from the binding.** The health counter has no wire-format dependency, so it stays binding-independent — but it still needs to know when communication continuity was broken, since a reset here is what prevents valid post-restart frames from being misread as a sequence error and driving `historical_health` toward `kError` even though the channel was correctly re-established (a safety-relevant failure mode, not merely cosmetic). This is already surfaced today via `ProxyEventBindingBase::GetSubscriptionState()` and `SetSubscriptionStateChangeHandler()`, which fire synchronously as the subscription transitions `SUBSCRIBED → SUBSCRIPTION_PENDING` (on `StopOfferEvent()`) and back to `SUBSCRIBED` (on `ReOfferEvent()`) (see `score/mw/com/design/skeleton_proxy/README.md` §"Proxy auto-reconnect functionality" and `score/mw/com/design/events_fields/README.md` §"Event subscription"). The binding-independent E2E Supervisor resets `E2EHealthContext` on this existing callback without any new binding interface. Future bindings (SOME/IP, DDS) must provide the equivalent subscription-state signal purely for this purpose — reset of their own `E2EProtectContext`/`E2ECheckContext` is their own internal concern.
+**Historical health context — reset by the binding-independent layer, on a subscription-state-change signal from the binding.** The health tracker has no wire-format dependency, so it stays binding-independent — but it still needs to know when communication continuity was broken, since a reset here is what prevents valid post-restart frames from being misread as a sequence error and driving `historical_health` toward `kError` even though the channel was correctly re-established (a safety-relevant failure mode, not merely cosmetic). This is already surfaced today via `ProxyEventBindingBase::GetSubscriptionState()` and `SetSubscriptionStateChangeHandler()`, which fire synchronously as the subscription transitions `SUBSCRIBED → SUBSCRIPTION_PENDING` (on `StopOfferEvent()`) and back to `SUBSCRIBED` (on `ReOfferEvent()`) (see `score/mw/com/design/skeleton_proxy/README.md` §"Proxy auto-reconnect functionality" and `score/mw/com/design/events_fields/README.md` §"Event subscription"). The binding-independent E2E Supervisor resets `E2EHealthContext` on this existing callback without any new binding interface. Future bindings (SOME/IP, DDS) must provide the equivalent subscription-state signal purely for this purpose — reset of their own `E2EProtectContext`/`E2ECheckContext` is their own internal concern.
 
 These contexts (all three) shall be reinitialized whenever communication continuity is broken, from either side:
 
@@ -378,26 +378,27 @@ The reset is deliberately not reported through `E2EResult`: the first sample aft
 
 #### Binding Independence Assessment (Review Feedback)
 
-This was checked against the classical windowed state-machine algorithm that a fixed-cycle periodic supervision model would use, which this design deliberately replaces with a simpler hysteresis-based counter (see [Historical Health Tracking](#historical-health-tracking) for the event-driven consumption rationale). Findings:
+This was checked against the classical windowed state-machine algorithm that a fixed-cycle periodic supervision model would use, which this design deliberately replaces with a sliding window over the results of received samples (see [Historical Health Tracking](#historical-health-tracking) for the event-driven consumption rationale). Findings:
 
-1. **The historical health counter has no invocation-cadence dependency.** A classical windowed state machine counts window sizes/thresholds in "message cycles" and assumes it is invoked exactly once per configured reception cycle — including cycles where nothing new arrived, which a periodic, polling-style consumer model would require feeding in explicitly. The hysteresis-based counter used here instead only ever updates on a cycle where `GetNewSamples()` actually delivered and checked a real message — there is nothing for it to update on an empty cycle, so no periodic/idle-cycle feeding is required, and no separate timer or scheduler component is needed to drive it. This is a narrower invocation contract than a periodic-polling model would require, adopted deliberately for `mw::com`'s reactive, event-driven consumption model (`GetNewSamples()` called when the application has reason to believe new data is available, not on a fixed schedule).
+1. **The historical health tracker has no invocation-cadence dependency.** A classical windowed state machine counts window sizes/thresholds in "message cycles" and assumes it is invoked exactly once per configured reception cycle — including cycles where nothing new arrived, which a periodic, polling-style consumer model would require feeding in explicitly. The sliding window used here instead only advances when `GetNewSamples()` actually delivered and checked a real message — nothing is added on an empty cycle, so no periodic/idle-cycle feeding is required, and no separate timer or scheduler component is needed to drive it. This is a narrower invocation contract than a periodic-polling model would require, adopted deliberately for `mw::com`'s reactive, event-driven consumption model (`GetNewSamples()` called when the application has reason to believe new data is available, not on a fixed schedule).
 2. **This does not lose stall/dead-sender detection, because the classical windowed SM never provided it either.** Real SOME/IP deployment data confirms per-event cyclic E2E usage is common in practice (e.g. ASIL-relevant P04/P07-protected events sent on fixed timers at rates from 10ms to several seconds) — but even the classical windowed state machine does not degrade `kValid` on repeated "no new data" cycles alone, so a stalled/dead sender was never caught by windowed counting to begin with. Stall/dead-sender detection is, and remains, the job of subscription/service-availability lifecycle monitoring (`SetSubscriptionStateChangeHandler()`, see [E2E Context Lifecycle](#e2e-context-lifecycle)), not the health tracker.
-3. **Recommendation.** The historical health counter runs synchronously inside the binding-independent layer's wrapping of the binding's own `GetNewSamples()`/`Send()` call (the same wrapping point already proposed for E2E result attachment in [Interface Contract Between Layers](#interface-contract-between-layers)) — updated only when a real message was checked. No separate timer or scheduler sub-component needs to be built.
+3. **Recommendation.** The historical health tracker runs synchronously inside the binding-independent layer's wrapping of the binding's own `GetNewSamples()`/`Send()` call (the same wrapping point already proposed for E2E result attachment in [Interface Contract Between Layers](#interface-contract-between-layers)) — updated only when a real message was checked. No separate timer or scheduler sub-component needs to be built.
 
 ---
 
 ## Configuration
 
-The E2E Supervisor's historical health tracking requires per-event configuration supplied from the deployment model: profile-specific parameters for the per-message check, plus a small binding-independent set of hysteresis parameters for the health tracker.
+The E2E Supervisor's historical health tracking requires per-service-instance event configuration supplied from the deployment model: profile-specific parameters for the per-message check, plus a small binding-independent set of hysteresis parameters for the health tracker.
 
 ### Historical Health Configuration
 
 | Parameter | Description |
 |---|---|
-| `ErrorIncrement` | Amount added to the error counter on a failed per-message check |
-| `OkDecrement` | Amount subtracted from the error counter (floored at zero) on a passed per-message check |
-| `ErrorThreshold` | Error counter value at or above which `HistoricalHealthStatus` becomes `kError` |
-| `RecoveryThreshold` | Error counter value at or below which `HistoricalHealthStatus` returns to `kOk` (must be ≤ `ErrorThreshold`; the gap between the two is the hysteresis band) |
+| `WindowSize` | Number of most recent per-message results kept; must be at least `ErrorThreshold` and `RecoveryThreshold`, may be larger |
+| `ErrorThreshold` | Number of failed results in the window at which `HistoricalHealthStatus` flips from `kOk` to `kError` |
+| `RecoveryThreshold` | Number of passed results in the window at which it flips from `kError` back to `kOk`; independent of `ErrorThreshold` |
+
+Configuration parsing rejects a `WindowSize` smaller than either threshold, consistent with the fail-fast validation described in [Per-Consumer Check Enablement](#per-consumer-check-enablement).
 
 ### Profile Configuration (profile-specific)
 
@@ -436,7 +437,7 @@ Three independent flags control whether E2E checking executes for a given consum
 |---|---|---|
 | `DataIntegrityCheckEnabled` (bool, default `true`) | When `false`, `data_integrity` reads `DataIntegrityStatus::kDisabled`; `sequence`/`historical_health` are unaffected (subject to their own flags below) | No — `CheckMessage()` computes CRC and counter validity together in one call (see [Binding Output](#binding-output)); this flag only discards the CRC half of the already-computed result before it reaches the consumer |
 | `SequenceCheckEnabled` (bool, default `true`) | When `false`, `sequence` reads `SequenceStatus::kDisabled`; `data_integrity`/`historical_health` are unaffected (subject to their own flags) | No — same reason as above |
-| `HistoricalHealthTrackingEnabled` (bool, default `true`) | When `false`, `historical_health` reads `HistoricalHealthStatus::kDisabled` and no hysteresis counter is maintained for this consumer | Only when both check flags above are also `false` — see below |
+| `HistoricalHealthTrackingEnabled` (bool, default `true`) | When `false`, `historical_health` reads `HistoricalHealthStatus::kDisabled` and no health window is maintained for this consumer | Only when both check flags above are also `false` — see below |
 
 These flags are kept separate rather than folded into one combined knob: `CheckMessage()` always computes CRC and counter validity together in one call regardless of these flags (see [Binding Output](#binding-output)), so enabling them independently costs nothing extra at the check layer, and the resulting `Summary::kOkWithDisabledChecks` case (see [Historical Health Tracking](#historical-health-tracking)) is exactly what a consumer enabling only one of the two per-message checks produces.
 
@@ -570,7 +571,7 @@ Consumer application (`mw_com_config.json`):
           "events": [
             {
               "eventName": "VehicleSpeed",
-              "e2e": { "profile": "P04", "offset_bytes": 8, "data_id": 4097, "max_delta_counter": 5, "error_threshold": 5 }
+              "e2e": { "profile": "P04", "offset_bytes": 8, "data_id": 4097, "max_delta_counter": 5, "window_size": 16, "error_threshold": 5, "recovery_threshold": 10 }
             }
           ]
         }
@@ -602,7 +603,7 @@ Consumer application (`mw_com_config.json`):
 }
 ```
 
-The provider's `"e2e"` object carries only what Protect() needs (`profile`/`offset_bytes`/`data_id`); `max_delta_counter` and the health-tracker keys are check-side and appear only in consumer entries. `BrakeControllerProxy` (ASIL_B) enables checking with its own `max_delta_counter` and `error_threshold`, see [Per-Consumer Configuration Overrides](#per-consumer-configuration-overrides). `DiagnosticLoggerProxy` (QM) keeps only `profile` and `offset_bytes`, which SOME/IP needs to locate the payload (see [Profile Resolution Is Mandatory, Even When Checking Is Not](#profile-resolution-is-mandatory-even-when-checking-is-not)), and disables all three check-enablement flags, so it receives `Summary::kDisabled`. The provider and both consumers repeat the same `profile`/`offset_bytes`, illustrating the accepted duplication tradeoff noted above. Both consumer entries use the provider's `instanceId` and are separate `instanceSpecifier`s, since settings are resolved per specifier.
+The provider's `"e2e"` object carries only what Protect() needs (`profile`/`offset_bytes`/`data_id`); `max_delta_counter` and the health-tracker keys are check-side and appear only in consumer entries. `BrakeControllerProxy` (ASIL_B) enables checking with its own `max_delta_counter` and health-window tuning (`window_size`, `error_threshold`, `recovery_threshold`), see [Per-Consumer Configuration Overrides](#per-consumer-configuration-overrides). `DiagnosticLoggerProxy` (QM) keeps only `profile` and `offset_bytes`, which SOME/IP needs to locate the payload (see [Profile Resolution Is Mandatory, Even When Checking Is Not](#profile-resolution-is-mandatory-even-when-checking-is-not)), and disables all three check-enablement flags, so it receives `Summary::kDisabled`. The provider and both consumers repeat the same `profile`/`offset_bytes`, illustrating the accepted duplication tradeoff noted above. Both consumer entries use the provider's `instanceId` and are separate `instanceSpecifier`s, since settings are resolved per specifier.
 
 > `DiagnosticLoggerProxy` shares the consumer file only to show two consumers with different E2E settings; as a separate QM application it would have its own `mw_com_config.json` with `global.asil-level` `QM`.
 
@@ -770,7 +771,7 @@ These tests are independent of historical health tracking, and can be written ag
 
 Verify:
 
-- Error-counter increment/decrement and hysteresis threshold crossings
+- Window fill/eviction, threshold crossings in both directions (including `ErrorThreshold` ≠ `RecoveryThreshold`), and window clearing on a flip
 - History handling
 - Lost-frame detection
 - Repeated-frame detection
@@ -781,8 +782,8 @@ These tests can be executed without any transport or binding implementation at a
 
 Given the [Binding Independence Assessment](#binding-independence-assessment-review-feedback), tests must also cover:
 
-- A stalled sender produces no calls at all, so the health counter is unaffected — stall detection is exercised via the subscription-state-change path instead (see [E2E Context Lifecycle](#e2e-context-lifecycle))
-- Hysteresis behavior at the threshold boundary (error counter oscillating around `ErrorThreshold`/`RecoveryThreshold` does not flap `HistoricalHealthStatus`)
+- A stalled sender produces no calls at all, so the health window is unaffected — stall detection is exercised via the subscription-state-change path instead (see [E2E Context Lifecycle](#e2e-context-lifecycle))
+- Hysteresis behavior at the threshold boundary (failures and passes alternating around `ErrorThreshold`/`RecoveryThreshold` do not flap `HistoricalHealthStatus`)
 - Per-consumer `MaxDeltaCounter` override: applied only to the overriding consumer's own context, leaving the provider's default and every other consumer's context unaffected (see [Per-Consumer Configuration Overrides](#per-consumer-configuration-overrides) and [Distinguishing Intentional Under-Sampling from Genuine Loss](#distinguishing-intentional-under-sampling-from-genuine-loss))
 - Per-consumer check-enablement flags (`DataIntegrityCheckEnabled`, `SequenceCheckEnabled`, `HistoricalHealthTrackingEnabled`, see [Per-Consumer Check Enablement](#per-consumer-check-enablement)): each, set to `false` independently, produces `kDisabled` on its own corresponding `E2EResult` field without affecting the others or other consumers of the same event; setting all three to `false` produces `Summary::kDisabled`
 - Configuration parsing rejects `HistoricalHealthTrackingEnabled: true` combined with `DataIntegrityCheckEnabled: false` and `SequenceCheckEnabled: false` at startup, before the consumer processes any message (see [Per-Consumer Check Enablement](#per-consumer-check-enablement))
@@ -840,10 +841,10 @@ The chosen allocation follows the `mw::com` layering principles:
 | CRC / counter verification (`CheckMessage`) | ✔ (owns `E2ECheckContext`) |         |
 | Raw per-message result (`DataIntegrityStatus`/`SequenceStatus`) | ✔ (produced by `CheckMessage`) | consumed by historical health tracking |
 | Payload hand-off (`raw_sample`, header-stripped) | ✔ (strips transport/E2E headers, optionally hands up payload bytes; empty on `DataIntegrityStatus::kError`) | ✔ frontend decides whether to use it, deserialize it, or pass it through raw |
-| Health-tracker config (error/recovery thresholds) |               | ✔                         |
-| Historical health tracking (hysteresis counter) |          | ✔ (updated only on an actually-checked message) |
-| Invocation trigger | ✔ (runs `CheckMessage()`/`ProtectMessage()` inside its own `GetNewSamples()`/`Send()`, only when a real message is present) | ✔ (updates the health counter on the resulting `DataIntegrityStatus`/`SequenceStatus` inside the same wrapping call — no separate timer) |
-| Hysteresis-based error/recovery counting |               | ✔                         |
+| Health-tracker config (window size, error/recovery thresholds) |               | ✔                         |
+| Historical health tracking (sliding-window hysteresis) |          | ✔ (updated only on an actually-checked message) |
+| Invocation trigger | ✔ (runs `CheckMessage()`/`ProtectMessage()` inside its own `GetNewSamples()`/`Send()`, only when a real message is present) | ✔ (updates the health window on the resulting `DataIntegrityStatus`/`SequenceStatus` inside the same wrapping call — no separate timer) |
+| Windowed error/recovery evaluation |               | ✔                         |
 | User-visible result (`E2EResult`) |       | ✔                         |
 
 The binding owns *orchestration and state* for Protect/Check; what remains genuinely reusable across bindings is the *profile algorithm itself* (CRC/counter computation) as a shared, binding-independent library every binding links against — a reusable library shared across bindings, and the same separation vsomeip keeps between its profile-check algorithm and its transport-specific protector code (see [Receiver-Side Check State](#receiver-side-check-state)).
