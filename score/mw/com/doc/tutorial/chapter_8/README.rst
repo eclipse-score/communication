@@ -197,14 +197,28 @@ unnecessary copies matters. For this we use the second call-operator overload, w
 
 1. Call `Allocate()` on the method. On success it returns a tuple of `MethodInArgPtr`, one per argument, each pointing
    right into the shared-memory slot the argument will be transported in.
+
+.. literalinclude:: consumer/consumer.cpp
+   :language: cpp
+   :start-after: [consumer-call-arithmetic-mean-step1-start]
+   :end-before: [consumer-call-arithmetic-mean-step1-end]
+   :caption: consumer/consumer.cpp (step 1)
+
 2. Fill the argument **in place** through that pointer – no copy of the large array is made.
+
+.. literalinclude:: consumer/consumer.cpp
+   :language: cpp
+   :start-after: [consumer-call-arithmetic-mean-step2-start]
+   :end-before: [consumer-call-arithmetic-mean-step2-end]
+   :caption: consumer/consumer.cpp (step 2)
+
 3. Invoke the method with the (moved-out) argument pointer(s).
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :start-after: [consumer-call-arithmetic-mean-start]
-   :end-before: [consumer-call-arithmetic-mean-end]
-   :caption: consumer/consumer.cpp
+   :start-after: [consumer-call-arithmetic-mean-step3-start]
+   :end-before: [consumer-call-arithmetic-mean-step3-end]
+   :caption: consumer/consumer.cpp (step 3)
 
 
 The copy call operator (variant 1) is, under the hood, just a convenience wrapper: it internally calls `Allocate()`,

@@ -55,11 +55,11 @@ int main()
                                                 "Failed to create CalculatorSkeleton instance!");
     auto service_instance = std::move(service_instance_result).value();
 
-    // [provider-register-handlers-start]
     // Register the implementation of the "add" method. With the rebased method API a handler no longer *returns* the
     // result; instead the return value is passed to the handler as its first argument by (mutable) reference - i.e. as
     // an out-parameter - followed by the (deserialized) input arguments by const-reference. The handler writes the
     // result into that out-parameter and returns void. Handlers MUST be registered before the service is offered.
+    // [provider-register-handlers-start]
     const auto add_handler_result = service_instance.add_.RegisterHandler(
         [](std::uint64_t& result, const std::uint32_t& lhs, const std::uint32_t& rhs) -> void {
             result = static_cast<std::uint64_t>(lhs) + static_cast<std::uint64_t>(rhs);

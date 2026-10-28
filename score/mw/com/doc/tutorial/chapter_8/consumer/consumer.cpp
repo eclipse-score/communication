@@ -115,9 +115,9 @@ void CallArithmeticMean(CalculatorProxy& proxy, std::mt19937& random_engine)
 {
     std::cout << "Calling arithmetic_mean(...) using the zero-copy call operator ..." << std::endl;
 
-    // [consumer-call-arithmetic-mean-start]
     // Step 1: Allocate the argument storage. On success we get a tuple with one MethodInArgPtr<IntegerArray> pointing
     // right into the shared-memory slot the argument will be transported in.
+    // [consumer-call-arithmetic-mean-step1-start]
     auto allocate_result = proxy.arithmetic_mean_.Allocate();
     if (!allocate_result.has_value())
     {
@@ -126,16 +126,20 @@ void CallArithmeticMean(CalculatorProxy& proxy, std::mt19937& random_engine)
         std::exit(EXIT_FAILURE);
     }
     auto& [array_ptr] = allocate_result.value();
+    // [consumer-call-arithmetic-mean-step1-end]
 
     // Step 2: Fill the array *in place* (through the pointer into the shared-memory slot - no copy of the array).
+    // [consumer-call-arithmetic-mean-step2-start]
     std::uniform_int_distribution<std::uint32_t> value_distribution{0U, 100U};
     for (std::size_t index = 0U; index < kNumberOfMeanElements; ++index)
     {
         array_ptr->internal_array_.at(index) = value_distribution(random_engine);
     }
     array_ptr->SetNumberOfElements(kNumberOfMeanElements);
+    // [consumer-call-arithmetic-mean-step2-end]
 
     // Step 3: Invoke the method with the filled-in argument pointer.
+    // [consumer-call-arithmetic-mean-step3-start]
     auto call_result = proxy.arithmetic_mean_(std::move(array_ptr));
     if (!call_result.has_value())
     {
@@ -144,7 +148,7 @@ void CallArithmeticMean(CalculatorProxy& proxy, std::mt19937& random_engine)
     }
     std::cout << "arithmetic_mean over " << kNumberOfMeanElements << " elements returned: " << *(call_result.value())
               << std::endl;
-    // [consumer-call-arithmetic-mean-end]
+    // [consumer-call-arithmetic-mean-step3-end]
 }
 
 }  // namespace
