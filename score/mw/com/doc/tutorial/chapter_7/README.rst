@@ -31,7 +31,8 @@ Each field is declared with the `WithNotifier` tag only:
 
 .. literalinclude:: tire_pressure_service.h
    :language: cpp
-   :lines: 30-48
+   :start-after: [tire-pressure-interface-start]
+   :end-before: [tire-pressure-interface-end]
    :caption: tire_pressure_service.h
 
 
@@ -164,7 +165,8 @@ the previous chapters (which offered an event) is that **before** the provider m
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 98-98
+   :start-after: [provider-initial-field-values-start]
+   :end-before: [provider-initial-field-values-end]
    :caption: provider/provider.cpp
 
 
@@ -179,7 +181,8 @@ random pressure between `2.0` and `2.5` bar) are randomized:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 108-113
+   :start-after: [provider-random-field-updates-start]
+   :end-before: [provider-random-field-updates-end]
    :caption: provider/provider.cpp
 
 
@@ -195,13 +198,15 @@ handler. It then, for **each** of the four fields, registers an `EventReceiveHan
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 99-128
+   :start-after: [consumer-setup-field-start]
+   :end-before: [consumer-setup-field-end]
    :caption: consumer/consumer.cpp
 
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 182-186
+   :start-after: [consumer-setup-all-fields-start]
+   :end-before: [consumer-setup-all-fields-end]
    :caption: consumer/consumer.cpp
 
 

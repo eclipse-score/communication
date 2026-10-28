@@ -96,6 +96,7 @@ std::string DescribeInstanceId(const TirePressureProxy::HandleType& handle)
 // The receive handler references the field via a pointer (8 bytes) and the field name via a string literal / const
 // char* (8 bytes). This keeps the callback small enough to fit into the score::cpp::callback storage. On any
 // unrecoverable set-up error the whole application terminates immediately.
+// [consumer-setup-field-start]
 void SetupField(TirePressureField& field, const char* const field_name)
 {
     // Register the field-receive handler *before* subscribing. It is invoked (on an internal middleware thread)
@@ -134,6 +135,7 @@ void SetupField(TirePressureField& field, const char* const field_name)
     }
     std::cout << "Subscribed to field '" << field_name << "'." << std::endl;
 }
+// [consumer-setup-field-end]
 
 }  // namespace
 
@@ -179,10 +181,12 @@ int main()
         auto& tire_pressure_service = proxy.value();
 
         // Register a receive handler for and subscribe to each of the four fields.
+        // [consumer-setup-all-fields-start]
         SetupField(tire_pressure_service.tire_pressure_front_left, "tire_pressure_front_left");
         SetupField(tire_pressure_service.tire_pressure_front_right, "tire_pressure_front_right");
         SetupField(tire_pressure_service.tire_pressure_rear_left, "tire_pressure_rear_left");
         SetupField(tire_pressure_service.tire_pressure_rear_right, "tire_pressure_rear_right");
+        // [consumer-setup-all-fields-end]
 
         std::cout << "Waiting for event-driven field updates ..." << std::endl;
     };
