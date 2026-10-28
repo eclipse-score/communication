@@ -10,6 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+// [test-includes-start]
 #include "score/mw/com/doc/tutorial/chapter_12/consumer/proxy_component.h"
 
 #include "score/mw/com/com_error_domain.h"
@@ -20,7 +21,9 @@
 using testing::_;
 using testing::Invoke;
 using testing::Return;
+// [test-includes-end]
 
+// [proxy-component-test-fixture-start]
 class ProxyComponentTestFixture : public ::testing::Test
 {
   protected:
@@ -47,7 +50,9 @@ class ProxyComponentTestFixture : public ::testing::Test
         events_tuple_{"message"};
     std::optional<ProxyComponent> proxy_component_{};
 };
+// [proxy-component-test-fixture-end]
 
+// [proxy-component-test-cases-start]
 TEST_F(ProxyComponentTestFixture, SubscribeReturnsTrueWhenEventSubscribeSucceeds)
 {
     // Given a mock for our message event
@@ -108,3 +113,4 @@ TEST_F(ProxyComponentTestFixture, ReceiveCounterIncrementedWhenGetNewSamplesSucc
     // and the receive counter is incremented to 1
     EXPECT_EQ(proxy_component_->GetReceiveCounter(), 1U);
 }
+// [proxy-component-test-cases-end]

@@ -33,6 +33,7 @@ namespace score::mw::com::tutorial
 // The array has a fixed maximum capacity (max_elements). How many of the leading elements actually carry a meaningful
 // value is tracked separately in number_of_elements_. This lets a caller transport "up to max_elements" integers while
 // the receiver only processes the first number_of_elements_ of them.
+// [integer-array-start]
 class IntegerArray
 {
   public:
@@ -65,6 +66,7 @@ class IntegerArray
   private:
     std::size_t number_of_elements_{0U};
 };
+// [integer-array-end]
 
 static_assert(std::is_trivially_copyable_v<IntegerArray>,
               "IntegerArray must be trivially copyable to be usable as a method argument.");
@@ -76,6 +78,7 @@ static_assert(std::is_trivially_copyable_v<IntegerArray>,
 // A method is declared as `Trait::template Method<ReturnType(ArgTypes...)>`. On the skeleton (provider) side the
 // application registers a handler that implements the method; on the proxy (consumer) side the method member becomes
 // callable via operator().
+// [calculator-interface-start]
 template <typename Trait>
 class CalculatorInterface : public Trait::Base
 {
@@ -92,6 +95,7 @@ class CalculatorInterface : public Trait::Base
     // any extra copy of the large array.
     typename Trait::template Method<std::uint32_t(IntegerArray)> arithmetic_mean_{*this, "arithmetic_mean"};
 };
+// [calculator-interface-end]
 
 using CalculatorProxy = score::mw::com::AsProxy<CalculatorInterface>;
 using CalculatorSkeleton = score::mw::com::AsSkeleton<CalculatorInterface>;

@@ -128,6 +128,7 @@ int main()
                                                 "Failed to create TirePressureExtendedSkeleton instance!");
     auto service_instance = std::move(service_instance_result).value();
 
+    // [provider-set-handler-start]
     // Register the set-handler for the "tire_pressure_thresholds" field. Because Get()/Set() on a field are just
     // methods, the handler has to be registered *before* the service is offered (otherwise OfferService() fails). The
     // handler receives the consumer-requested value by reference, validates/clamps it in place and thereby determines
@@ -150,7 +151,9 @@ int main()
         });
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(set_handler_result.has_value(),
                                                 "Failed to register set handler for 'tire_pressure_thresholds'!");
+    // [provider-set-handler-end]
 
+    // [provider-initial-field-values-start]
     // A field always has a current value. Therefore, BEFORE the provider may offer the service, it has to supply an
     // initial value for *each* field via Field::Update(). Omitting this for any field would make the OfferService()
     // call fail.
@@ -166,6 +169,7 @@ int main()
                                                 "Failed to set initial 'tire_pressure_thresholds' value!");
     std::cout << "  tire_pressure_thresholds = [lower: " << initial_thresholds.lower_threshold
               << " bar, upper: " << initial_thresholds.upper_threshold << " bar]" << std::endl;
+    // [provider-initial-field-values-end]
 
     auto offer_result = service_instance.OfferService();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(offer_result.has_value(),
@@ -202,6 +206,7 @@ int main()
             break;
         }
 
+        // [provider-update-and-warn-start]
         std::cout << "Updating tire pressures:" << std::endl;
         std::array<float, 4U> new_pressures{};
         for (std::size_t index = 0U; index < tires.size(); ++index)
@@ -236,6 +241,7 @@ int main()
                 }
             }
         }
+        // [provider-update-and-warn-end]
     }
     std::cout << "TirePressureExtended service provider going down." << std::endl;
 }

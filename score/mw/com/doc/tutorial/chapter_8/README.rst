@@ -26,7 +26,8 @@ signature. The member is constructed with a reference to the enclosing interface
 
 .. literalinclude:: calculator_service.h
    :language: cpp
-   :lines: 79-94
+   :start-after: [calculator-interface-start]
+   :end-before: [calculator-interface-end]
    :caption: calculator_service.h
 
 
@@ -34,7 +35,8 @@ The second method takes a custom type `IntegerArray` as its argument:
 
 .. literalinclude:: calculator_service.h
    :language: cpp
-   :lines: 36-67
+   :start-after: [integer-array-start]
+   :end-before: [integer-array-end]
    :caption: calculator_service.h
 
 
@@ -155,7 +157,8 @@ by const-reference. The handler writes the result into that out-parameter and re
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 64-95
+   :start-after: [provider-register-handlers-start]
+   :end-before: [provider-register-handlers-end]
    :caption: provider/provider.cpp
 
 
@@ -183,7 +186,8 @@ const-reference**. The middleware allocates the argument slot, copies the argume
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 98-107
+   :start-after: [consumer-call-add-start]
+   :end-before: [consumer-call-add-end]
    :caption: consumer/consumer.cpp
 
 
@@ -202,7 +206,8 @@ unnecessary copies matters. For this we use the second call-operator overload, w
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 118-125
+   :start-after: [consumer-call-arithmetic-mean-start]
+   :end-before: [consumer-call-arithmetic-mean-end]
    :caption: consumer/consumer.cpp
 
 

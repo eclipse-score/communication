@@ -57,6 +57,7 @@ int main()
 {
     score::mw::log::LogInfo("BiA") << "Starting bidirectional_discovery/application_a";
 
+    // [application-a-init-phase-start]
     // ---- INIT PHASE ----
 
     score::Result<score::mw::com::InstanceSpecifier> own_spec_result =
@@ -139,7 +140,9 @@ int main()
     // ---- OPERATIONAL PHASE (see README.rst for heap behavior of each API) ----
     score::mw::log::LogInfo("BiA") << "Entering operational phase (heap forbidden)";
     heap_check::forbid_heap();
+    // [application-a-init-phase-end]
 
+    // [application-a-operational-phase-start]
     for (std::uint32_t i = 0U; i < kNumIterations; ++i)
     {
         score::Result<score::mw::com::SampleAllocateePtr<float>> sample_result =
@@ -186,3 +189,4 @@ int main()
     score::mw::log::LogInfo("BiA") << "Completed successfully";
     return 0;
 }
+// [application-a-operational-phase-end]
