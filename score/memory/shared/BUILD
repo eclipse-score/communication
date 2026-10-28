@@ -435,32 +435,6 @@ cc_library(
 )
 
 cc_library(
-    name = "types",
-    srcs = [
-    ],
-    hdrs = [
-    ],
-    deprecation = "This aggregation target is deprecated and pulls in the unmaintained/broken ':map' target on some platforms. Depend directly on the specific score/memory/shared sub-targets you need (e.g. ':offset_ptr', ':vector', ':string', ...) instead.",
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public",
-    ],
-    deps = [
-        ":managed_memory_resource",
-        ":map",
-        ":memory_region_map",
-        ":memory_resource_proxy",
-        ":memory_resource_registry",
-        ":offset_ptr",
-        ":polymorphic_offset_ptr_allocator",
-        ":shared_memory_error",
-        ":string",
-        ":vector",
-    ],
-)
-
-cc_library(
     name = "shared_memory_test_resources",
     testonly = True,
     srcs = [
