@@ -77,6 +77,7 @@ runs:
     - name: Install Bazelisk
       uses: bazel-contrib/setup-bazel@104e3eea9447cdaa4b00d0fb46191a3985d26ab3 # v0.19.1
       with:
+        bazelisk-version: 1.30.0
         bazelisk-cache: true
         disk-cache: false
         repository-cache: ${{ fromJSON(inputs.repository-cache) }}
