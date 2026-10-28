@@ -724,6 +724,7 @@ cc_library(
         ":event_slot_status",
         ":provider_event_data_control_local_view",
         "@score_baselibs//score/concurrency:atomic_indirector",
+        "@score_baselibs//score/language/safecpp/safe_math",
     ],
 )
 
