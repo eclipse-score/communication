@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017-2026 LG Electronics Inc.
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
