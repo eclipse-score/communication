@@ -57,8 +57,11 @@ interface IMappedRegionFactory{
     + {virtual} CreateNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
     + {virtual} OpenNamed(path): Result<shared_ptr<IMappedRegion>>
     + {virtual} CreateOrOpenNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
+    + {virtual} Remove(path) Result<void>
     __ anonymous (platform-specific) __
     + {virtual} CreateQnxAnonymous(RegionInitializeCallback, id, size): Result<shared_ptr<IMappedRegion>>
+    + {virtual} OpenQnxAnonymous(shm_handle_t): Result<shared_ptr<IMappedRegion>>
+    + {virtual} RemoveQnxAnonymous(shm_handle_t): Result<shared_ptr<IMappedRegion>>
     + {virtual} CreateLinuxAnonymous(RegionInitializeCallback, id, size): Result<shared_ptr<IMappedRegion>>
     __ safe typed __
     + {virtual} CreateSafeTypedNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
@@ -76,6 +79,7 @@ class MappedRegionFactory implements IMappedRegionFactory {
     + {override} CreatePosixNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
     + {override} OpenPosixNamed(path): Result<shared_ptr<IMappedRegion>>
     + {override} CreateOrOpenPosixNamed(RegionInitializeCallback, path, size, perms): Result<shared_ptr<IMappedRegion>>
+    + {override} Remove(path) Result<void>
     __ anonymous (platform-specific) __
     + {override} CreateQnxAnonymous(RegionInitializeCallback, size): Result<shared_ptr<IMappedRegion>>
     + {override} OpenQnxAnonymous(shm_handle_t): Result<shared_ptr<IMappedRegion>>
