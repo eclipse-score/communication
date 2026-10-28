@@ -1,0 +1,37 @@
+@PACKAGE_INIT@
+
+if("@ENABLE_TLS@")
+    include(CMakeFindDependencyMacro)
+    find_dependency(OpenSSL REQUIRED)
+endif()
+
+if("@ENABLE_DLT@")
+    include(CMakeFindDependencyMacro)
+    if("@LGSOMEIP_DLT_USE_CMAKE_PACKAGE@")
+        find_dependency(automotive-dlt REQUIRED)
+    else()
+        find_dependency(PkgConfig REQUIRED)
+        pkg_check_modules(DLT REQUIRED IMPORTED_TARGET automotive-dlt)
+    endif()
+endif()
+
+# Shares the same export set as the vsomeip package; internal targets such as
+# lgsomeip::osabstraction remain importable but are not part of the API contract.
+include("${CMAKE_CURRENT_LIST_DIR}/lgsomeip-targets.cmake")
+
+set(_lgsomeip_include_dir "@CMAKE_INSTALL_INCLUDEDIR@")
+if(NOT IS_ABSOLUTE "${_lgsomeip_include_dir}")
+    set(_lgsomeip_include_dir "${PACKAGE_PREFIX_DIR}/${_lgsomeip_include_dir}")
+endif()
+
+if(NOT TARGET lgsomeip::api)
+    add_library(lgsomeip::api INTERFACE IMPORTED)
+    set_target_properties(lgsomeip::api PROPERTIES
+        INTERFACE_LINK_LIBRARIES lgsomeip::lgsomeip-shared
+        INTERFACE_INCLUDE_DIRECTORIES "${_lgsomeip_include_dir}"
+    )
+endif()
+
+unset(_lgsomeip_include_dir)
+
+check_required_components(lgsomeip)
