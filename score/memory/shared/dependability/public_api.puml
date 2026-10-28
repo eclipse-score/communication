@@ -13,214 +13,136 @@
 @startuml
 
 namespace score::memory::shared {
-  interface "ISharedMemoryFactory" <<interface>> {
-    +{abstract}Open(const std::string&, bool, const std::optional<score::cpp::span<const uid_t>>&): std::shared_ptr<ISharedMemoryResource>
-    +{abstract}Create(std::string, InitializeCallback, std::size_t, const UserPermissions&, bool): std::shared_ptr<ISharedMemoryResource>
-    +{abstract}CreateAnonymous(std::uint64_t, InitializeCallback, std::size_t, const UserPermissions&, bool): std::shared_ptr<ISharedMemoryResource>
-    +{abstract}CreateOrOpen(std::string, InitializeCallback, std::size_t, AccessControl, bool): std::shared_ptr<ISharedMemoryResource>
-    +{abstract}Remove(const std::string&): void
-    +{abstract}RemoveStaleArtefacts(const std::string&): void
-    +{abstract}SetTypedMemoryProvider(std::shared_ptr<score::memory::shared::TypedMemory>): void
-    +{abstract}SetInterVMMemoryProvider(std::shared_ptr<score::memory::shared::TypedMemory>): void
-    +{abstract}GetControlBlockSize(): std::size_t
-    +{abstract}Clear(): void
-  }
 
-  interface "SharedMemoryFactory" <<interface>> {
-    +{static}Open(): std::shared_ptr<ISharedMemoryResource>
-    +{static}Create(): std::shared_ptr<ISharedMemoryResource>
-    +{static}CreateAnonymous(): std::shared_ptr<ISharedMemoryResource>
-    +{static}CreateOrOpen(): std::shared_ptr<ISharedMemoryResource>
-    +{static}Remove(): void
-    +{static}RemoveStaleArtefacts(): void
-    +{static}SetTypedMemoryProvider(std::shared_ptr<score::memory::shared::TypedMemory>): void
-    +{static}SetInterVMMemoryProvider(std::shared_ptr<score::memory::shared::TypedMemory>): void
-    +{static}GetControlBlockSize(): std::size_t
-    +{static}Clear(): void
-    +{static}InjectMock(ISharedMemoryFactory*): void
-  }
+    interface SharedMemoryFactory {
+        +{static}Create(in path : Path[1], in initialize_callback : InitializeCallback[1], in user_space_size : Size[1], in user_permissions : UserPermissions[1], in prefer_typed_memory : Boolean[1]) : Shared<ISharedMemoryResource>[0..1]
+        +{static}CreateAnonymous(in identifier : Identifier[1], in initialize_callback : InitializeCallback[1], in user_space_size : Size[1], in user_permissions : UserPermissions[1], in prefer_typed_memory : Boolean[1]) : Shared<ISharedMemoryResource>[0..1]
+        +{static}CreateOrOpen(in path : Path[1], in initialize_callback : InitializeCallback[1], in user_space_size : Size[1], in user_permissions : UserPermissions[1], in allowed_providers : List<UserId>[0..1], in prefer_typed_memory : Boolean[1]) : Shared<ISharedMemoryResource>[0..1]
+        +{static}Open(in path : Path[1], in read_write_access : Boolean[1], in allowed_providers : List<UserId>[0..1]) : Shared<ISharedMemoryResource>[0..1]
+        +{static}Remove(in path : Path[1])
+        +{static}RemoveStaleArtefacts(in path : Path[1])
+        +{static}SetTypedMemoryProvider(in typed_memory_provider : Shared<TypedMemory>[1])
+        +{static}SetInterVMMemoryProvider(in intervm_memory_provider : Shared<TypedMemory>[1])
+    }
 
-  interface "ManagedMemoryResource" <<interface>> {
-    +construct<T, Args...>(Args&&...): T*
-    +destruct<T>(T&): void
-    +{abstract}getBaseAddress(): void*
-    +{abstract}getUsableBaseAddress(): void*
-    +{abstract}GetUserAllocatedBytes(): std::size_t
-    +IsOffsetPtrBoundsCheckBypassingEnabled(): bool
-  }
+    interface InitializeCallback <<user_provided>> {
+        +Initialize(in shared_memory_resource : Shared<ISharedMemoryResource>[1])
+    }
 
-  interface "ISharedMemoryResource" <<interface>> {
-    +{abstract}getPath(): const std::string*
-    +{abstract}UnlinkFilesystemEntry(): void
-    +{abstract}GetFileDescriptor(): FileDescriptor
-    +{abstract}IsShmInTypedMemory(): bool
-    +{abstract}GetIdentifier(): std::string_view
-  }
+    interface TypedMemory <<user_provided>> {
+        +AllocateNamedTypedMemory(in size : Size[1], in name : Path[1], in user_permissions : UserPermissions[1]) : Result[1]
+        +AllocateAndOpenAnonymousTypedMemory(in size : Size[1]) : Result<FileDescriptor>[1]
+        +Unlink(in name : Path[1]) : Result[1]
+        +GetCreatorUid(in name : Path[1]) : Result<UserId>[1]
+    }
 
-  class "ISharedMemoryResource::AccessControl" {
-    +permissions_: const UserPermissions&
-    +allowedProviders_: const std::optional<score::cpp::span<const uid_t>>
-  }
+    interface ManagedMemoryResource {
+        +allocate(in size : Size[1], in alignment : Size[1]) : Address[1]
+        +deallocate(in memory : Address[1], in size : Size[1])
+        +construct(in type : Type[1], in arguments : Argument[*]) : T[1]
+        +getBaseAddress() : Address[1]
+        +getUsableBaseAddress() : Address[1]
+        +GetUserAllocatedBytes() : Size[1]
+        +getMemoryResourceProxy() : MemoryResourceProxy[0..1]
+    }
 
-  class "SharedMemoryResource" {
-    +getMemoryResourceProxy(): const MemoryResourceProxy*
-    +getBaseAddress(): void*
-    +getUsableBaseAddress(): void*
-    +GetUserAllocatedBytes(): std::size_t
-    +IsOffsetPtrBoundsCheckBypassingEnabled(): bool
-    +getPath(): const std::string*
-    +GetIdentifier(): std::string_view
-    +GetFileDescriptor(): FileDescriptor
-    +IsShmInTypedMemory(): bool
-  }
+    interface ISharedMemoryResource {
+        +GetFileDescriptor() : FileDescriptor[1]
+        +IsShmInTypedMemory() : Boolean[1]
+    }
 
-  class "LockFile" {
-    +{static}Create(std::string): std::optional<LockFile>
-    +{static}CreateOrOpen(std::string, bool): std::optional<LockFile>
-    +{static}Open(std::string): std::optional<LockFile>
-    +TakeOwnership(): void
-  }
+    interface NewDeleteDelegateMemoryResource {
+        +NewDeleteDelegateMemoryResource(in memory_resource_id : Identifier[1], inout upstream_resource : MemoryResource[1])
+    }
 
-  class "FlockMutex" {
-    +FlockMutex(const LockFile&, score::os::Fcntl::Operation, score::os::Fcntl::Operation)
-    +lock(): void
-    +try_lock(): bool
-    +unlock(): void
-  }
+    interface MemoryResourceRegistry {
+        +{static}getInstance() : MemoryResourceRegistry[1]
+    }
 
-  class "ExclusiveFlockMutex" {
-    +ExclusiveFlockMutex(const LockFile&)
-    +lock(): void
-    +try_lock(): bool
-    +unlock(): void
-  }
+    interface MemoryResourceProxy {
+        +allocate(in size : Size[1], in alignment : Size[1]) : Address[1]
+        +deallocate(in memory : Address[1], in size : Size[1])
+    }
 
-  class "SharedFlockMutex" {
-    +SharedFlockMutex(const LockFile&)
-    +lock(): void
-    +try_lock(): bool
-    +unlock(): void
-  }
+    class UserPermissions {
+        +UserPermissionsMap : Map<Permission, List<UserId>>[0..1]
+        +WorldReadable[0..1]
+        +WorldWritable[0..1]
+    }
+    note right of UserPermissions : {xor} exactly one of the three is set
 
-  class "FlockMutexAndLock<T>" {
-    +FlockMutexAndLock(const LockFile&)
-    +TryLock(): bool
-  }
+    interface OffsetPtr {
+        +OffsetPtr(in target : T[0..1])
+        +get() : T[0..1]
+        +Dereference() : T[1]
+        +Assign(in target : T[0..1])
+        +Add(in offset : Offset[1]) : OffsetPtr<T>[1]
+        +{static}EnableOffsetPtrBoundsChecking(in enable : Boolean[1]) : Boolean[1]
+    }
 
-  class "MemoryResourceProxy" {
-    +MemoryResourceProxy(std::uint64_t)
-    +allocate(std::size_t, std::size_t): void*
-    +deallocate(void*, std::size_t): void
-    +{static}EnableBoundsChecking(bool): bool
-  }
+    interface PointerArithmeticUtil {
+        +{static}AddOffsetToPointer(in pointer : T[1], in offset : Offset[1]) : T[1]
+        +{static}AddOffsetToPointerAsInteger(in pointer_as_integer : Integer[1], in offset : Size[1]) : Integer[1]
+        +{static}SubtractPointersBytes(in first : Address[1], in second : Address[1]) : Offset[1]
+        +{static}CastPointerToInteger(in pointer : Address[1]) : Integer[1]
+        +{static}CalculateAlignedSizeOfSequence(in data_type_infos : DataTypeSizeInfo[*]) : Size[1]
+    }
 
-  class "OffsetPtr<PointedType>" {
-    +OffsetPtr(pointer)
-    +OffsetPtr(const OffsetPtr<PointedType>&)
-    +OffsetPtr(const OffsetPtr<OtherPointedType>&)
-    +operator=(pointer): OffsetPtr&
-    +operator=(const OffsetPtr&): OffsetPtr&
-    +operator=(const OffsetPtr<OtherPointedType>&): OffsetPtr&
-    +{static}pointer_to(T&): OffsetPtr
-    +{static}pointer_to(void*): OffsetPtr
-    +{static}pointer_to(const void*): OffsetPtr
-    +operator*(): reference
-    +operator[](difference_type): reference
-    +operator+=(difference_type): OffsetPtr&
-    +operator-=(difference_type): OffsetPtr&
-    +operator++(): OffsetPtr&
-    +operator++(std::int32_t): OffsetPtr
-    +operator--(): OffsetPtr&
-    +operator--(std::int32_t): OffsetPtr
-    +get(): pointer
-    +get<ExplicitPointedType>(): ExplicitPointedType*
-    +get(std::size_t): pointer
-    +operator pointer(): pointer
-    +operator->(): pointer
-    +operator bool(): bool
-    +operator!(): bool
-  }
+    interface PolymorphicOffsetPtrAllocator {
+        +PolymorphicOffsetPtrAllocator(inout managed_memory_resource : ManagedMemoryResource[0..1])
+        +allocate(in count : Size[1]) : OffsetPtr<T>[1]
+        +deallocate(in memory : OffsetPtr<T>[1], in count : Size[1])
+    }
 
-  class "OffsetRef<T>" {
-    +OffsetRef(T&)
-    +operator=(const T&): OffsetRef&
-    +get(): T&
-    +operator T&(): T&
-  }
+    interface LockFile {
+        +{static}CreateOrOpen(in path : Path[1], in take_ownership : Boolean[1]) : LockFile[0..1]
+        +{static}Open(in path : Path[1]) : LockFile[0..1]
+        +TakeOwnership()
+    }
 
-  class "PolymorphicOffsetPtrAllocator<T>" {
-    +PolymorphicOffsetPtrAllocator()
-    +PolymorphicOffsetPtrAllocator(ManagedMemoryResource&)
-    +PolymorphicOffsetPtrAllocator(const PolymorphicOffsetPtrAllocator<U>&)
-    +allocate(size_type): pointer
-    +deallocate(pointer, size_type): void
-    +getMemoryResourceProxy(): OffsetPtr<const MemoryResourceProxy>
-  }
+    interface ExclusiveFlockMutex {
+        +ExclusiveFlockMutex(in lock_file : LockFile[1])
+        +try_lock() : Boolean[1]
+        +unlock()
+    }
 
-  class "SharedMemoryErrorDomain" {
-    +MessageFor(const score::result::ErrorCode&): std::string_view
-  }
+    interface SharedFlockMutex {
+        +SharedFlockMutex(in lock_file : LockFile[1])
+        +try_lock() : Boolean[1]
+        +unlock()
+    }
 
-  enum "SharedMemoryErrorCode" {
-    UnknownSharedMemoryIdentifier
-  }
+    interface FlockMutexAndLock {
+        +FlockMutexAndLock(in lock_file : LockFile[1])
+        +TryLock() : Boolean[1]
+    }
 
-  class "permission::WorldReadable" <<struct>>
-  class "permission::WorldWritable" <<struct>>
-
-  using UserPermissionsMap = std::unordered_map<score::os::Acl::Permission, std::vector<uid_t>>;
-  using UserPermissions = std::variant<UserPermissionsMap, WorldReadable, WorldWritable>;
-
-  using Map = std::
-      map<K, V, Comp, std::scoped_allocator_adaptor<PolymorphicOffsetPtrAllocator<typename std::map<K, V>::value_type>>>
-  using Vector = std::vector<T, std::scoped_allocator_adaptor<score::memory::shared::PolymorphicOffsetPtrAllocator<T>>>
-  using BasicString = std::basic_string<CharT, Traits, score::memory::shared::PolymorphicOffsetPtrAllocator<CharT>>
-
-  entity "Pointer Arithmetic Utils" <<function>> {
-    +AddOffsetToPointerAsInteger(std::uintptr_t, std::size_t): std::uintptr_t
-    +AddSignedOffsetToPointerAsInteger(std::uintptr_t, std::ptrdiff_t): std::uintptr_t
-    +SubtractOffsetFromPointerAsInteger(std::uintptr_t, std::size_t): std::uintptr_t
-    +CalculateAlignedSize(std::size_t, std::size_t): std::size_t
-    +CalculateAlignedSizeOfSequence(const std::vector<DataTypeSizeInfo>&): std::size_t
-    +CastPointerToInteger(const void*): std::uintptr_t
-    +CastIntegerToPointer<PointerType>(std::uintptr_t): PointerType
-    +AddOffsetToPointer<PointerType>(const PointerType*, std::size_t): PointerType*
-    +AddOffsetToPointer<PointerType>(const PointerType*, std::ptrdiff_t): PointerType*
-    +PointerToLogValue(const void*): score::mw::log::LogHex64
-    +SubtractPointersBytes(const void*, const void*): std::ptrdiff_t
-    +AbsoluteValue<SignedInteger>(SignedInteger): std::make_unsigned_t<SignedInteger>
-    +UndoSignedToUnsignedIntegerCast<UnsignedInteger>(UnsignedInteger): std::make_signed_t<UnsignedInteger>
-    +AddUnsignedToSigned<SignedInteger>(SignedInteger, std::make_unsigned_t<SignedInteger>): SignedInteger
-    +SubtractUnsignedFromSigned<SignedInteger>(SignedInteger, std::make_unsigned_t<SignedInteger>): SignedInteger
-  }
-
-  entity "Memory Shared Free Functions" <<function>> {
-    +EnableOffsetPtrBoundsChecking(bool): bool
-    +MakeError(SharedMemoryErrorCode, std::string_view): score::result::Error
-    +operator==(const MemoryResourceProxy&, const MemoryResourceProxy&): bool
-    +operator!=(const MemoryResourceProxy&, const MemoryResourceProxy&): bool
-    +operator==(const OffsetRef<T>&, const OffsetRef<T>&): bool
-    +operator!=(const OffsetRef<T>&, const OffsetRef<T>&): bool
-    +operator==(const PolymorphicOffsetPtrAllocator<U>&, const PolymorphicOffsetPtrAllocator<U>&): bool
-    +operator!=(const PolymorphicOffsetPtrAllocator<U>&, const PolymorphicOffsetPtrAllocator<U>&): bool
-    +operator==(const BasicString<CharT, Traits>&, const std::string&): bool
-    +operator!=(const BasicString<CharT, Traits>&, const std::string&): bool
-    +operator==(const std::string&, const BasicString<CharT, Traits>&): bool
-    +operator!=(const std::string&, const BasicString<CharT, Traits>&): bool
-    +operator==(const Vector<T>&, std::vector<T>): bool
-    +operator==(std::vector<T>, const Vector<T>&): bool
-    +operator==(OffsetPtr, OffsetPtr / T* / std::nullptr_t): bool
-    +operator!=(OffsetPtr, OffsetPtr / T* / std::nullptr_t): bool
-    +operator<(OffsetPtr, OffsetPtr / T*): bool
-    +operator<=(OffsetPtr, OffsetPtr / T*): bool
-    +operator>(OffsetPtr, OffsetPtr / T*): bool
-    +operator>=(OffsetPtr, OffsetPtr / T*): bool
-    +operator+(OffsetPtr<T>, difference_type): OffsetPtr<T>
-    +operator+(difference_type, OffsetPtr<T>): OffsetPtr<T>
-    +operator-(OffsetPtr<T>, difference_type): OffsetPtr<T>
-    +operator-(OffsetPtr, OffsetPtr / T*): difference_type
-    +swap(OffsetPtr<T>&, OffsetPtr<T>&): void
-  }
+    SharedMemoryFactory ..> ISharedMemoryResource : returns
+    SharedMemoryFactory ..> InitializeCallback : uses
+    SharedMemoryFactory ..> UserPermissions : uses
+    SharedMemoryFactory ..> TypedMemory : uses
+    TypedMemory ..> UserPermissions : uses
+    InitializeCallback ..> ISharedMemoryResource : uses
+    ISharedMemoryResource --|> ManagedMemoryResource
+    NewDeleteDelegateMemoryResource --|> ManagedMemoryResource
+    ManagedMemoryResource ..> MemoryResourceProxy : returns
+    PolymorphicOffsetPtrAllocator ..> ManagedMemoryResource : uses
+    PolymorphicOffsetPtrAllocator ..> OffsetPtr : returns
+    ExclusiveFlockMutex ..> LockFile : uses
+    SharedFlockMutex ..> LockFile : uses
+    FlockMutexAndLock ..> LockFile : uses
+    FlockMutexAndLock ..> ExclusiveFlockMutex : uses
+    FlockMutexAndLock ..> SharedFlockMutex : uses
 }
+
+legend top left
+    Notation: UML 2.5.1 operation syntax "direction name : Type[multiplicity]"; const and & omitted.
+    interface : SEooC boundary element; a constructor is listed where the user creates the instance
+    in : passed into the operation; inout : passed in and may be modified by the callee
+    [1] : exactly one; [0..1] : optional / may be empty; [*] : any number
+    Shared<T> : shared ownership of T
+    Result<T> / Result : T / success, or a reported error
+    Address : untyped memory address; T : type chosen by the caller
+endlegend
 
 @enduml

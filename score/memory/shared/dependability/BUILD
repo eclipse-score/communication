@@ -12,8 +12,16 @@
 # *******************************************************************************
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
+    "architectural_design",
     "dependable_element",
     "unit_design",
+)
+
+# TEMPORARY: only to reproduce the score_tooling parser error on public_api.puml.
+architectural_design(
+    name = "memory_shared_architectural_design",
+    maturity = "development",
+    public_api = ["public_api.puml"],
 )
 
 # Class diagrams are passed through directly to Sphinx (sphinxcontrib-plantuml
