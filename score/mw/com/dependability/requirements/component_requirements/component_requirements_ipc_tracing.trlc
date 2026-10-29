@@ -25,7 +25,7 @@ section "com" {
                 /* broken_link_c/issue/18145269 */
                 ScoreReq.CompReq EventLevelConfigSwitchDocumentation {
                     description = '''The documentation of the Event Level Config Switch in the schema definition, shall inform, that setting the {{numberOfIpcTracingSlots}} parameter to a value greater than 0, will enable {{IPC tracing}}. This involves internal allocation of additional slots on top of the user configured {{numberOfSampleSlots}}. In total leading to {{numberOfIpcTracingSlots + numberOfSampleSlots }}allocations.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1, Communication.FEAT_EventTypeStructure@1]
                     version = 1
                 }
@@ -33,7 +33,7 @@ section "com" {
                 /* broken_link_c/issue/18159418 */
                 ScoreReq.CompReq FieldLevelConfigSwitchDocumentation {
                     description = '''The documentation of the Field Level Config Switch {{numberOfIpcTracingSlots}}{{IPC tracing}}additional{{numberOfSampleSlots}}{{numberOfIpcTracingSlots + numberOfSampleSlots }}in the schema definition, shall inform, that setting the  parameter to a value greater than 0, will enable  This involves internal allocation of  slots on top of the user configured  In total leading to allocations.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -41,7 +41,7 @@ section "com" {
                 /* broken_link_c/issue/18159242 */
                 ScoreReq.CompReq DocumentationOfSupportedTracePointTypes {
                     description = '''The currently supported trace-point types by {{mw::com}}/{{LoLa}} shall be documented within the git repository location, where {{mw::com}}/{{LoLa}} user documentation is located.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -51,7 +51,7 @@ section "com" {
                     description = '''The configuration file of a {{mw::com}}/{{LoLa }}application shall provide an optional configuration property to enable/disable {{IPC Tacing}} for the {{mw::com}}/{{LoLa}} subsystem within this application
 
                     Note: The default name of this configuration file is {{mw\_com\_config.json}}'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -59,7 +59,7 @@ section "com" {
                 /* broken_link_c/issue/18143480 */
                 ScoreReq.CompReq BehaviourInAbsenceOfConfigSwitch {
                     description = '''If no such configuration property (see Application Level Config Switch) exists within the configuration file, {{IPC Tracing}} for {{mw::com}}/{{LoLa }}shall be turned off for this application.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -67,7 +67,7 @@ section "com" {
                 /* broken_link_c/issue/19177359 */
                 ScoreReq.CompReq ApplicationLevelPropertyInstanceIdentifier {
                     description = '''The configuration file of a {{mw::com}}/{{LoLa}} application shall provide a mandatory configuration property {{application instance identifier}} for {{IPC Tracing}}. It is mandatory only if {{IPC Tracing}} property (as per Application Level Config Switch) is present in the configuration file.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -75,7 +75,7 @@ section "com" {
                 /* broken_link_c/issue/18144291 */
                 ScoreReq.CompReq TraceFilterConfigPath {
                     description = '''The configuration file of a {{mw::com}}/{{LoLa }}application shall provide a configuration property to define the path/location of the trace-point filter configuration to be used.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -83,7 +83,7 @@ section "com" {
                 /* broken_link_c/issue/18144411 */
                 ScoreReq.CompReq DefaultTraceFilterConfigPath {
                     description = '''If {{IPC Tracing}} is turned on (Application Level Config Switch) and no path/location of the trace-point filter configuration is defined, a default location {{./etc/mw\_com\_trace\_filter.json}} is assumed, where this path is relative to the application-process current working directory.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -95,7 +95,7 @@ section "com" {
                     `<broken_link_g/swh/ddad\_platform/tree/master/.github/json-schemas/comtrace\_config.json>`\_
 
                     Note: The schema is located in the same GIT repo as the {{mw::com}}/{{LoLa}} implementation. An {{mw::com}}/{{LoLa}} implementation in a specific branch, shall support always the schema from the same branch.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -105,7 +105,7 @@ section "com" {
                     description = '''The configuration file of a {{mw::com}}/{{LoLa}} application shall provide an optional configuration property of type unsigned integer for an event instance, which defines, how many tracing slots should be reserved for it.
 
                     A value of {{0}} implicitly means, that {{IPC Tracing }}shall be disabled for the given event instance.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -113,7 +113,7 @@ section "com" {
                 /* broken_link_c/issue/18144767 */
                 ScoreReq.CompReq DefaultEventLevelConfigSwitch {
                     description = '''If the configuration property Event Level Config Switch is not configured for an event instance, its default value shall be {{0}}.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -125,7 +125,7 @@ section "com" {
                     application shall provide an optional configuration property of type unsigned integer for a field instance, which defines, how many tracing slots should be reserved for it.
 
                     A value of {{0}} implicitly means, that {{IPC Tracing}} shall be disabled for the given field instance.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -133,7 +133,7 @@ section "com" {
                 /* broken_link_c/issue/18159385 */
                 ScoreReq.CompReq DefaultFieldLevelConfigSwitch {
                     description = '''If the configuration property Field Level Config Switch is not configured for a field instance, its default value shall be {{0}}.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -141,7 +141,7 @@ section "com" {
                 /* broken_link_c/issue/18159104 */
                 ScoreReq.CompReq ProcessingTraceFilterConfig {
                     description = '''If the trace filter configuration file (see Trace Filter Config Path) could not be successfully opened or parsed (according to the underlying schema specified in Format of Trace Filter Config), then a corresponding error log message shall be created and {{IPC Tracing}} shall be turned off.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -149,7 +149,7 @@ section "com" {
                 /* broken_link_c/issue/18159173 */
                 ScoreReq.CompReq SchemaValidationFailure {
                     description = '''If a schema-violation of the schema for the trace filter confifg (see Format of Trace Filter Config) is detected during processing/parsing of the trace filter config, an error log message shall be created and {{IPC Tracing}} shall be turned off.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -157,7 +157,7 @@ section "com" {
                 /* broken_link_c/issue/18159207 */
                 ScoreReq.CompReq IgnoreUnsupportedTracePointTypes {
                     description = '''Trace-points within the trace filter configuration, which are enabled, but are of a type, which isn't supported by {{mw::com}}/{{LoLa}}, shall be ignored.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -165,7 +165,7 @@ section "com" {
                 /* broken_link_c/issue/18159328 */
                 ScoreReq.CompReq TraceFilterConfigReferenceToNonExistingTracePoint {
                     description = '''If the Trace Filter Config contains a trace-point, which references an {{ara::com}}/{{mw::com}} artefact (event, field, service-method), which doesn't exist within the application, this trace-point shall be silently ignored.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -175,7 +175,7 @@ section "com" {
                     description = '''In case the trace filter config contains an enabled trace-point for a specific event or field, but the application config has disabled {{IPC Tracing}} for some of the instances of the specific event or field (via config switches Event Level Config Switch or Field Level Config Switch), a log message with severity {{warning}} shall be done.
 
                     Note: The current Trace Filter Config only allows to define trace-points on a service-type level and not on a service-instance level! If within an application multiple instances of service S are deployed, it can be a perfectly valid setup, that the Trace Filter Config has an enabled trace-point for event E of service S, but the application config only enables S.E for instance 1 and 2, but disables it for instance 3!'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -186,7 +186,7 @@ section "com" {
                 /* broken_link_c/issue/18159713 */
                 ScoreReq.CompReq GenericTraceApiReference {
                     description = '''{{mw::com}}/{{LoLa}} shall use the library/library API under {{/platform/aas/analysis/tracing/library/generic\_trace\_api}} to trace trace-point related information.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -198,7 +198,7 @@ section "com" {
                     * Error Codes of Recoverable Errors end with {{Recoverable}}
 
                     * Error Codes of Non-Recoverable Errors end with {{Fatal}}'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -210,7 +210,7 @@ section "com" {
                     - {{IPC Tracing}} is activated at application level (Application Level Config Switch)
 
                     - and a valid Trace Filter Config has been successfully processed (Processing Trace Filter Config)'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -218,7 +218,7 @@ section "com" {
                 /* broken_link_c/issue/18398054 */
                 ScoreReq.CompReq GlobalNonRecoverableErrorLeadsToDeactivationOfIpcTracing {
                     description = '''When any call to an API provided by {{IPC Tracing}} (i.e. any function of {{GenericTraceAPI}}) returns the global non recoverable error: {{kTerminalFatal}}, {{mw::com}}/{{LoLa}} shall deactivate {{IPC Tracing}} (i.e. {{IPC Tracing}} shall be disabled)'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1, Communication.FEAT_ErrorHandling@1]
                     version = 1
                 }
@@ -234,7 +234,7 @@ section "com" {
                     As parameter {{app\_instance\_identifier}} the configuration parameter Application Level property instance identifier shall be used.
 
                     If the returned {{RegisterClientResult}} contains an error, an log message with severity {{error}} shall be logged and {{IPC Tracing}} shall be disabled.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -250,7 +250,7 @@ section "com" {
                     If the returned {{RegisterTraceDoneCallBackResult}} contains an error, an log message with severity error shall be logged and {{IPC Tracing}} shall be disabled.
 
                     Note: We estimate an error on {{RegisterTraceDoneCB}} as a non-recoverable, unexpected error.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -260,7 +260,7 @@ section "com" {
                     description = '''If the registration as a client (Register at IPC Tracing as a client) was successful, the returned {{RegisterClientResult}} contains a value of type {{TraceClientId}}.
 
                     It shall be stored and used for any later calls to {{GenericTraceAPI}}, which require a {{TraceClientId}} parameter.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -268,7 +268,7 @@ section "com" {
                 /* broken_link_c/issue/18216878 */
                 ScoreReq.CompReq TracePointTypeToMwComApiMapping {
                     description = '''The trace point types defined in {{bmw::analysis::tracing::TracePointType}} shall be mapped to {{mw::com}} APIs according to the detailed definitions of these trace points in `GenericTrace API design <broken_link_g/swh/ddad\_platform/tree/master/aas/analysis/tracing/library/design#providerskeleton-side-trace-points>`\_ '''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -284,7 +284,7 @@ section "com" {
                     * This trace point is {{enabled}} as per the Trace Filter Config
 
                     Note: Currently the Trace Filter Config (Format of Trace Filter Config) does not support the definition of service instance specific trace points! It defines trace points in the context of a service type only, which means that an {{enabled}} trace point will be hit by all service instances of a certain service type within an application using the given Trace Filter Config.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -300,7 +300,7 @@ section "com" {
                     * {{SKEL\_FIELD\_UPD}}
 
                     * {{SKEL\_FIELD\_UPD\_A}}'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -310,7 +310,7 @@ section "com" {
                     description = '''{{mw::com}}/{{LoLa}} shall try to create shared memory objects for DATA within {{Typed Memory}}, in case the shared memory object contains data, which shall be traced according to the current {{Trace Filter Config}}.
 
                     Note: This means calls to {{SharedMemoryFactory::Create()}} shall be done with parameter {{prefer\_typed\_memory}} set to {{true}}.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -328,7 +328,7 @@ section "com" {
                     with a call to:
 
                     {{static RegisterSharedMemoryObjectResult GenericTraceAPI::RegisterShmObject(const TraceClientId client, std::int32\_t shm\_object\_fd)}}'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -336,7 +336,7 @@ section "com" {
                 /* broken_link_c/issue/18172406 */
                 ScoreReq.CompReq IgnoringSharedMemoryObjectOnNonRecoverableError {
                     description = '''In case the registration of a shared memory object (Register a shared-memory object) failed with a non-recoverable error (see Distinction between Recoverable and Non-Recoverable Errors) a log message with severity {{warning}} shall be done and this shared-memory object shall be permanently ignored. This means, that any call to {{GenericTraceAPI::Trace}}, which would need to reference this shared-memory object shall be suppressed.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1, Communication.FEAT_ErrorHandling@1]
                     version = 1
                 }
@@ -346,7 +346,7 @@ section "com" {
                     description = '''In case the registration of a shared memory object (Register a shared-memory object) failed with a recoverable error (see Distinction between Recoverable and Non-Recoverable Errors) the registration shall be retried once directly before the next {{GenericTraceAPI::Trace}} call, which needs to reference this shared-memory object.
 
                     If this retry still fails, the shared-memory object shall be permanently ignored. This means, that any call to {{GenericTraceAPI::Trace}}, which would need to reference this shared-memory object shall be suppressed.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1, Communication.FEAT_ErrorHandling@1]
                     version = 1
                 }
@@ -358,7 +358,7 @@ section "com" {
                     {{static TraceResult GenericTraceAPI::Trace(const TraceClientId client, const MetaInfoVariants::type& meta\_info, ShmDataChunkList& data, TraceContextId context\_id)}}
 
                     shall be called by {{mw::com}}/{{LoLa}} in case the trace point hit belongs to a data emitting trace point (see Definition of trace point types emitting data residing in shared-memory) AND this trace point is enabled as per Trace Filter Config.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -368,7 +368,7 @@ section "com" {
                     description = '''Note: Calls to the {{GenericTraceAPI::Trace()}} API for data residing in shared-memory (see Call Trace API with data residing in shared-memory) are asynchronous. After {{mw::com}}/{{LoLa}} has called this API, the {{IPC Tracing}} reports back via the registered "trace done" callback (see Register a callback for "trace done" notification), that tracing of the data given via a {{ShmDataChunkList}} is finished.
 
                     Before the call to {{GenericTraceAPI::Trace()}} with a {{ShmDataChunkList}}, {{mw::com}}/{{LoLa}} shall mark the data referenced by the {{ShmDataChunkList}} as being "in use", so that this data doesn't get overriden before {{IPC Tracing}} has reported via "trace done" callback, that the tracing has been finished.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
                     version = 1
                 }
@@ -378,7 +378,7 @@ section "com" {
                     description = '''Only so many data samples in shared-memory (residing in typed memory) of an event or field instance shall be marked "in use" at a time as have been configured in Event Level Config Switch or Field Level Config Switch.
 
                     In case a further call to {{GenericTraceAPI::Trace()}} would happen according to Call Trace API with data residing in shared-memory, but there are already all configured data samples "in use" for the very same event or field instance, which the {{ShmChunkList}} argument in the call to {{GenericTraceAPI::Trace()}} would refer to, {{mw::com}} shall skip this call to {{GenericTraceAPI::Trace()}} and set a "trace-data-loss flag" (see Global Trace-Data-Loss Flag).'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -386,7 +386,7 @@ section "com" {
                 /* broken_link_c/issue/18385218 */
                 ScoreReq.CompReq GeneratingTraceContextId {
                     description = '''{{mw::com}}/{{LoLa}} shall generate a {{TraceContextId}} for calls to the {{GenericTraceAPI::Trace()}} API for data residing in shared-memory (see Call Trace API with data residing in shared-memory) in a way, that this {{TraceContextId}} allows to identify the marked shared memory data (see Mark shared-memory data as "in use" during Trace() call).'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -396,7 +396,7 @@ section "com" {
                     description = '''If {{mw::com}}/{{LoLa}} receives a call to its registered "trace done" callback (see Register a callback for "trace done" notification) with a {{TraceContextId}}, which it has previously generated (see Generating TraceContextId), it shall identify based on this {{TraceContextId}} the data in shared memory, which it has previously marked as being "in use" and unmark it again.
 
                     If the {{TraceContextId}} in the callback is unknown to {{mw::com}}/{{LoLa}} or has already been received and the unmarking was already done, {{mw::com}}/{{LoLa}} shall log a message with severity {{warning}}, that it has received an invalid {{TraceContextId}}.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
                     version = 1
                 }
@@ -408,7 +408,7 @@ section "com" {
                     {{static TraceResult GenericTraceAPI::Trace(const TraceClientId client, const MetaInfoVariants::type& meta\_info, LocalDataChunkList& data)}}
 
                     shall be called by {{mw::com}}/{{LoLa}} in case the general conditions to call {{GenericTraceAPI::Trace()}} are met (see When to call Trace()) for the trace point being hit AND the trace point belongs NOT to a data emitting trace point (see Definition of trace point types emitting data residing in shared-memory).'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -416,7 +416,7 @@ section "com" {
                 /* broken_link_c/issue/18200119 */
                 ScoreReq.CompReq ParameterMetaInfoVariantUsedInTraceCalls {
                     description = '''The parameter {{meta\_info}} of type {{MetaInfoVariants::type}} in calls to {{GenericTraceAPI::Trace()}} shall be set to variant {{AraComMetaInfo}}'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -436,7 +436,7 @@ section "com" {
                     * {{PROXY\_EVENT\_SAMPLE\_CB}}
 
                     * {{PROXY\_FIELD\_SAMPLE\_CB}}'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -444,7 +444,7 @@ section "com" {
                 /* broken_link_c/issue/18200533 */
                 ScoreReq.CompReq DetermineTracePointDataId {
                     description = '''The value used for the {{TracePointDataId}}here, shall be the timestamp of the event/field accessed in the related trace points, which is stored in the corresponding {{mw::com}}/{{LoLa}} control slot of the data.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -456,7 +456,7 @@ section "com" {
                     * TracePointType: This shall be deduced from {{mw::com}} API context in which a trace point has been hit according to the mapping defined in Trace Point Type to mw::com API mapping
 
                     * ServiceInstanceElement:'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -474,7 +474,7 @@ section "com" {
                       * {{offset\_}}: The offset within this shared-memory object, where the event/field related data - to be traced - starts.
 
                     * member {{size\_}} of type {{std::size\_t}}: Shall be set to the size of the data slot. I.e. the size of the related event or field data type.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
                     version = 1
                 }
@@ -506,7 +506,7 @@ section "com" {
                     member {{size\_}} of type {{std::size\_t}} shall be set to {{sizeof()}} value of the variable to be traced in the {{GenericTraceAPI::Trace()}} call.
 
                     The expected data types to be traced within a {{LocalDataChunk}} in these case of Trace Point Types shall be determined from the {{content}} column of the `Trace Point Type definition list <broken_link_g/swh/ddad\_platform/tree/master/aas/analysis/tracing/library/design#logtrace-points>`\_ .'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
                     version = 1
                 }
@@ -564,7 +564,7 @@ section "com" {
                     * {{PROXY\_METHOD\_CALL\_RESULT\_OK }}
 
                     * {{PROXY\_METHOD\_CALL\_RESULT\_ERROR}}'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
                     version = 1
                 }
@@ -574,7 +574,7 @@ section "com" {
                     description = '''{{mw::com}}/{{LoLa}} shall maintain a global boolean variable, which indicates, whether an asynchronous call to {{GenericTraceAPI::Trace()}} according to Call Trace API with data residing in shared-memory had to be skipped, in order not to violate the requirement Threshold for "in use" marking of data in shared-memory.
 
                     Note: Reference to the underlying concept in the design of the {{Generic Trace API}} is `here <broken_link_g/swh/ddad\_platform/blob/master/aas/analysis/tracing/library/design/README.md#loss-of-trace-data>`\_ .'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -582,7 +582,7 @@ section "com" {
                 /* broken_link_c/issue/18398046 */
                 ScoreReq.CompReq InitValueOfTraceDataLossFlag {
                     description = '''The initial value of this flag (Global Trace-Data-Loss Flag) shall be {{FALSE}}.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -592,7 +592,7 @@ section "com" {
                     description = '''{{mw::com}}/{{LoLa}} shall set the current value of its global trace-data-loss flag (Global Trace-Data-Loss Flag) in the {{trace\_status\_}} member of the {{meta\_info}} argument in each call to {{GenericTraceAPI::Trace()}}.
 
                     The flag shall be set via method {{MetaInfoBase::SetDataLossBit()}}.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -600,7 +600,7 @@ section "com" {
                 /* broken_link_c/issue/18398053 */
                 ScoreReq.CompReq ResetCurrentValueOfTraceDataLossFlagAfterEachTraceCall {
                     description = '''{{mw::com}}/{{LoLa}} shall reset the current value of its global trace-data-loss flag (Global Trace-Data-Loss Flag) to {{false}} after each successful call to {{GenericTraceAPI::Trace()}}'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }
@@ -614,7 +614,7 @@ section "com" {
                     * deactivate the trace-point instance, which lead to the non-recoverable error and log a message with severity {{warning}} about this deactivation.
 
                     * increment the counter of consecutive errors (see Disable Tracing after number of consecutive Trace() errors) in {{Trace()}} calls.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1, Communication.FEAT_ErrorHandling@1]
                     version = 1
                 }
@@ -626,7 +626,7 @@ section "com" {
                     * set the global trace-data-loss flag to {{true}} (Global Trace-Data-Loss Flag)
 
                     * increment the counter of consecutive errors (see Disable Tracing after number of consecutive Trace() errors) in {{Trace()}} calls.'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1, Communication.FEAT_ErrorHandling@1]
                     version = 1
                 }
@@ -656,7 +656,7 @@ section "com" {
                     Recoverable errors from GenericTraceAPI::Trace() do not necessarily indicate an issue, but might occur just due to the fact that  IPC tracking backend  has not been started (yet).
 
                     Hence, until it is configurable via the config file, number of consequetive errors is set to UINT32\_MAX as requested by IPC tracing feature owners'''
-                    safety = ScoreReq.Asil.QM
+                    safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_SupportForTracing@1]
                     version = 1
                 }

@@ -21,7 +21,7 @@ $OrGate("Gate1", "Communication.WrongMethodCalled")
 $IntermediateEvent("MethodId mismatch provider/consumer", "Event2", "Gate1")
 $IntermediateEvent("Wrong user handler called", "Event4", "Gate1")
 $IntermediateEvent("Wrongly configured", "Event3", "Event2")
-$TransferInGate("Transfer2", "Event3")
+$TransferInGate("Communication.InMemoryConfigurationWrong", "Event3")
 $RootCause("User Handler assignment wrong", "UserMethodCallHandlerAssignmentWrong", "Event4")
 $RootCause("MethodId corrupted", "MethodIdCorrupted", "Event2")
 

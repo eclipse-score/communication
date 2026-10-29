@@ -22,7 +22,7 @@ $IntermediateEvent("Instance Identifier refers to wrong binding", "Event1", "Gat
 $OrGate("Gate2", "Event1")
 $RootCause("Instance Specifier resolution broken", "InstanceSpecifierResolutionBrokenWrongBinding", "Gate2")
 $IntermediateEvent("Configuration broken", "Event3", "Gate2")
-$TransferInGate("Transfer1", "Event3")
+$TransferInGate("Communication.InMemoryConfigurationWrong", "Event3")
 $RootCause("Binding selection faulty", "BindingSelectionFaulty", "Gate1")
 
 @enduml
