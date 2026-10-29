@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "element_fq_id",

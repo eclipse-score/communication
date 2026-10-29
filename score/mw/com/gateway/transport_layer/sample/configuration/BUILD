@@ -14,7 +14,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(
     default_visibility = ["//score/mw/com/gateway:__subpackages__"],

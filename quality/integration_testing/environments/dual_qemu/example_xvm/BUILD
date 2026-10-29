@@ -11,7 +11,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//quality/integration_testing:integration_testing.bzl", "dual_qemu_integration_test")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
@@ -25,7 +24,7 @@ cc_library(
         "bar_discovery.h",
         "bar_typed_memory.h",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     # The provider reaches the ivshmem shared memory through pci-server (libpci).
@@ -46,7 +45,7 @@ cc_library(
 cc_binary(
     name = "lib_memory_ivshmem_xvm",
     srcs = ["lib_memory_ivshmem_xvm.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     target_compatible_with = ["@platforms//os:qnx"],

@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_unit_test(
     name = "e2e_health_tracker_test",

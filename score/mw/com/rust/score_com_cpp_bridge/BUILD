@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 # Public C++ header library for code generation macros.
 # This provides registration macros for generated C++ code that bridges Rust and C++ types.
