@@ -37,9 +37,7 @@ public:
     friend bool operator==(const IP4Address& left, const IP4Address& right);
 
 protected:
-    struct sockaddr_in socket_address_ {
-        0
-    };
+    struct sockaddr_in socket_address_{0};
 };
 
 } // namespace osabstraction

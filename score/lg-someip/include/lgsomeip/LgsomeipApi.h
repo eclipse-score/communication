@@ -210,8 +210,7 @@ public:
      * @param minor Minor service-interface version.
      * @note Call after the application-state handler reports daemon registration.
      */
-    virtual void offer_service(service_t service, instance_t instance,
-                               major_version_t major = kDefaultMajorVersion,
+    virtual void offer_service(service_t service, instance_t instance, major_version_t major = kDefaultMajorVersion,
                                minor_version_t minor = kDefaultMinorVersion) = 0;
 
     /**
@@ -221,8 +220,7 @@ public:
      * @param major Major version, or kAnyMajorVersion for all major versions.
      * @param minor Minor version, or kAnyMinorVersion for all minor versions.
      */
-    virtual void stop_offer_service(service_t service, instance_t instance,
-                                    major_version_t major = kAnyMajorVersion,
+    virtual void stop_offer_service(service_t service, instance_t instance, major_version_t major = kAnyMajorVersion,
                                     minor_version_t minor = kAnyMinorVersion) = 0;
 
     /**
@@ -232,8 +230,7 @@ public:
      * @param major Major version to find, or kAnyMajorVersion.
      * @param minor Minor version to find, or kAnyMinorVersion.
      */
-    virtual void find_service(service_t service, instance_t instance,
-                              major_version_t major = kAnyMajorVersion,
+    virtual void find_service(service_t service, instance_t instance, major_version_t major = kAnyMajorVersion,
                               minor_version_t minor = kAnyMinorVersion) = 0;
 
     /**
@@ -244,8 +241,7 @@ public:
      * @param minor Required minor version, or kAnyMinorVersion.
      * @note The request is retried after a routing-daemon reconnect.
      */
-    virtual void request_service(service_t service, instance_t instance,
-                                 major_version_t major = kAnyMajorVersion,
+    virtual void request_service(service_t service, instance_t instance, major_version_t major = kAnyMajorVersion,
                                  minor_version_t minor = kAnyMinorVersion) = 0;
 
     /**
@@ -263,10 +259,8 @@ public:
      * @param minor Minor version to match, or kAnyMinorVersion.
      * @return true if a matching service instance is available.
      */
-    virtual bool is_service_available(service_t service, instance_t instance,
-                                      major_version_t major = kAnyMajorVersion,
+    virtual bool is_service_available(service_t service, instance_t instance, major_version_t major = kAnyMajorVersion,
                                       minor_version_t minor = kAnyMinorVersion) const = 0;
-
 
     /**
      * @brief Offer an event or field in one or more event groups.
@@ -318,8 +312,7 @@ public:
      * @param event_filter One requested event, or kAnyEvent for all requested events.
      */
     virtual void subscribe(service_t service, instance_t instance, eventgroup_t eventgroup,
-                           major_version_t major = kDefaultMajorVersion,
-                           event_t event_filter = kAnyEvent) = 0;
+                           major_version_t major = kDefaultMajorVersion, event_t event_filter = kAnyEvent) = 0;
 
     /**
      * @brief Unsubscribe from an event group.
@@ -347,9 +340,8 @@ public:
      * @param force Send even if the payload is unchanged (update-on-change otherwise skips it) when true.
      * @param flush true to flush queued data immediately; false to allow batching.
      */
-    virtual void notify(service_t service, instance_t instance, event_t event,
-                        const Payload& payload, bool force = false, bool flush = false) = 0;
-
+    virtual void notify(service_t service, instance_t instance, event_t event, const Payload& payload,
+                        bool force = false, bool flush = false) = 0;
 
     /**
      * @brief Register a callback for routing-daemon connection changes.
@@ -389,9 +381,9 @@ public:
      * @param major Major version to match, or kAnyMajorVersion.
      * @param minor Minor version to match, or kAnyMinorVersion.
      */
-    virtual void register_availability_handler(
-        service_t service, instance_t instance, AvailabilityHandler handler,
-        major_version_t major = kAnyMajorVersion, minor_version_t minor = kAnyMinorVersion) = 0;
+    virtual void register_availability_handler(service_t service, instance_t instance, AvailabilityHandler handler,
+                                               major_version_t major = kAnyMajorVersion,
+                                               minor_version_t minor = kAnyMinorVersion) = 0;
 
     /**
      * @brief Remove a service availability callback.
@@ -400,9 +392,9 @@ public:
      * @param major Major version to match, or kAnyMajorVersion.
      * @param minor Minor version to match, or kAnyMinorVersion.
      */
-    virtual void unregister_availability_handler(
-        service_t service, instance_t instance, major_version_t major = kAnyMajorVersion,
-        minor_version_t minor = kAnyMinorVersion) = 0;
+    virtual void unregister_availability_handler(service_t service, instance_t instance,
+                                                 major_version_t major = kAnyMajorVersion,
+                                                 minor_version_t minor = kAnyMinorVersion) = 0;
 
     /**
      * @brief Register a provider-side subscription decision callback.
@@ -412,8 +404,8 @@ public:
      * @param handler Callback receiving client ID and subscribe/unsubscribe state;
      *        return true to accept a subscription.
      */
-    virtual void register_subscription_handler(service_t service, instance_t instance,
-                                               eventgroup_t eventgroup, SubscriptionHandler handler) = 0;
+    virtual void register_subscription_handler(service_t service, instance_t instance, eventgroup_t eventgroup,
+                                               SubscriptionHandler handler) = 0;
 
     /**
      * @brief Remove a provider-side subscription decision callback.
@@ -421,8 +413,7 @@ public:
      * @param instance Instance identifier.
      * @param eventgroup Event-group identifier.
      */
-    virtual void unregister_subscription_handler(service_t service, instance_t instance,
-                                                 eventgroup_t eventgroup) = 0;
+    virtual void unregister_subscription_handler(service_t service, instance_t instance, eventgroup_t eventgroup) = 0;
 };
 
 /**
@@ -447,8 +438,8 @@ public:
      * @param config_path Configuration file path; an empty path uses the library default.
      * @return A new application handle.
      */
-    virtual std::shared_ptr<Application> create_application(
-        const std::string& name, const std::string& config_path = "") = 0;
+    virtual std::shared_ptr<Application> create_application(const std::string& name,
+                                                            const std::string& config_path = "") = 0;
 
 protected:
     Runtime() = default;

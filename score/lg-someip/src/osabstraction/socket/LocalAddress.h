@@ -42,9 +42,7 @@ public:
 
 protected:
     int lock_fd_{-1};
-    struct sockaddr_un socket_address_ {
-        0
-    };
+    struct sockaddr_un socket_address_{0};
 };
 
 } // namespace osabstraction

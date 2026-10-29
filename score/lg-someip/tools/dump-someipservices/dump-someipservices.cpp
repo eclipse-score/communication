@@ -100,8 +100,7 @@ int main(int argc, char* argv[]) {
               << SOMEIP_DAEMON_UDS_NAME << std::endl;
 
     int socket_fd;
-    struct sockaddr_un someip_daemon_addr {
-    }, dump_someipservices_addr{};
+    struct sockaddr_un someip_daemon_addr{}, dump_someipservices_addr{};
 
     socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
     if (socket_fd == -1) {

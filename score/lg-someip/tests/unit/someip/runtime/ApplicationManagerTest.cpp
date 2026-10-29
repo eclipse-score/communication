@@ -476,7 +476,7 @@ TEST(ApplicationManager, replays_availability_to_late_specific_and_wildcard_hand
         int wildcard_count = 0;
     };
     auto callback_state = std::make_shared<CallbackState>();
-    auto record_callback = [callback_state](int CallbackState::*count, bool available) {
+    auto record_callback = [callback_state](int CallbackState::* count, bool available) {
         if (available) {
             std::lock_guard<std::mutex> lock(callback_state->mutex);
             ++(callback_state.get()->*count);

@@ -37,9 +37,7 @@ public:
     friend bool operator==(const IP6Address& lhs, const IP6Address& rhs);
 
 protected:
-    struct sockaddr_in6 socket_address_ {
-        0
-    };
+    struct sockaddr_in6 socket_address_{0};
 };
 
 } // namespace osabstraction
