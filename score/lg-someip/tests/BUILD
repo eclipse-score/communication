@@ -83,6 +83,10 @@ lgsomeip_cc_test(
         "unit/someip/runtime/ServiceManagerPrivateTest.cpp",
         "unit/someip/runtime/ServiceManagerTest.cpp",
     ],
+    # TODO: Disabled for ThreadSanitizer because of data races and lock-order inversions in
+    # ThreadPool, TimerMux, Socket, EventManager, ServiceManager and PacketRouterHost.
+    # Re-enable once they are fixed.
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
     deps = [
         "//score/lg-someip/daemon:lgsomeip-daemon-core",
         _SOMEIP + ":internal_headers",
@@ -108,6 +112,8 @@ lgsomeip_cc_test(
     srcs = glob(["integration/someip/runtime/*.cpp"]),
     data = glob(["integration/someip/runtime/someip_config.json*"]),
     local_defines = ["LGSOMEIP_TEST_CONFIG_DIR=\\\"" + _INTEGRATION_CONFIG_DIR + "\\\""],
+    # TODO: Disabled for ThreadSanitizer for the same reason as unittest_someip_unit.
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
     deps = [
         "//score/lg-someip/daemon:lgsomeip-daemon-core",
         _SOMEIP + ":internal_headers",
