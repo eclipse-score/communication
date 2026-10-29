@@ -19,9 +19,7 @@ cc_library(
     srcs = ["pointer_arithmetic_util.cpp"],
     hdrs = ["pointer_arithmetic_util.h"],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/memory:data_type_size_info",
@@ -34,9 +32,7 @@ cc_library(
     srcs = ["i_shared_memory_resource.cpp"],
     hdrs = ["i_shared_memory_resource.h"],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":managed_memory_resource",
         ":memory_resource_registry",
@@ -52,9 +48,7 @@ cc_library(
     srcs = ["shared_memory_resource_heap_allocator_mock.cpp"],
     hdrs = ["shared_memory_resource_heap_allocator_mock.h"],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":i_shared_memory_resource",
         ":new_delete_delegate_resource",
@@ -68,9 +62,7 @@ cc_library(
     testonly = True,
     srcs = ["shared_memory_resource_mock.cpp"],
     hdrs = ["shared_memory_resource_mock.h"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":i_shared_memory_resource",
         "@googletest//:gtest",
@@ -128,9 +120,7 @@ cc_library(
     testonly = True,
     srcs = ["shared_memory_factory_mock.cpp"],
     hdrs = ["shared_memory_factory_mock.h"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":i_shared_memory_factory",
         "//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
@@ -198,9 +188,7 @@ cc_library(
         "@score_baselibs//score/os:unistd",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -211,9 +199,7 @@ cc_library(
     srcs = ["managed_memory_resource.cpp"],
     hdrs = ["managed_memory_resource.h"],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = ["@score_baselibs//score/language/futurecpp"],
 )
 
@@ -225,9 +211,7 @@ cc_library(
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":memory_region_bounds",
         "@score_baselibs//score/concurrency:atomic_indirector",
@@ -255,9 +239,7 @@ cc_library(
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":managed_memory_resource",
         ":memory_region_bounds",
@@ -280,9 +262,7 @@ cc_library(
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -294,9 +274,7 @@ cc_library(
         "offset_ptr.h",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":memory_region_bounds",
         ":memory_resource_registry",
@@ -337,9 +315,7 @@ cc_library(
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":memory_region_map",
         ":memory_resource_registry",
@@ -352,9 +328,7 @@ cc_library(
     srcs = ["polymorphic_offset_ptr_allocator.cpp"],
     hdrs = ["polymorphic_offset_ptr_allocator.h"],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":memory_resource_proxy",
         ":offset_ptr",
@@ -367,9 +341,7 @@ cc_library(
     srcs = ["map.cpp"],
     hdrs = ["map.h"],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":polymorphic_offset_ptr_allocator",
     ] + select({
@@ -386,9 +358,7 @@ cc_library(
     srcs = ["string.cpp"],
     hdrs = ["string.h"],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":polymorphic_offset_ptr_allocator",
         "@score_baselibs//score/language/safecpp/string_view:char_traits_wrapper",
@@ -400,9 +370,7 @@ cc_library(
     srcs = ["vector.cpp"],
     hdrs = ["vector.h"],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":polymorphic_offset_ptr_allocator",
     ],

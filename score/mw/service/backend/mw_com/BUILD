@@ -20,9 +20,7 @@ cc_library(
     srcs = ["single_instantiation_strategy.cpp"],
     hdrs = ["single_instantiation_strategy.h"],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":proxy_holder",
         "//score/mw/service:proxy_builder_base",
@@ -37,9 +35,7 @@ cc_library(
     srcs = ["multiple_instantiation_strategy.cpp"],
     hdrs = ["multiple_instantiation_strategy.h"],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":proxy_holder",
         "//score/mw/service:proxy_builder_base",

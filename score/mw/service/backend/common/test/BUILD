@@ -20,7 +20,7 @@ cc_library(
     testonly = True,
     srcs = ["single_immediate_instantiation_strategy.cpp"],
     hdrs = ["single_immediate_instantiation_strategy.h"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         "//score/mw/service:proxy_builder_base",
         "@score_baselibs//score/language/futurecpp",
@@ -32,7 +32,7 @@ cc_library(
     testonly = True,
     srcs = ["multiple_immediate_instantiation_strategy.cpp"],
     hdrs = ["multiple_immediate_instantiation_strategy.h"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         "//score/mw/service:proxy_builder_base",
         "//score/mw/service/details:proxy_spec_traits",
