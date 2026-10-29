@@ -1699,7 +1699,8 @@ void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
     if (max_payload_size > msg->get_length() && session_id == previous_session_id_ &&
         (tp_header / offset_value) == order) {
         std::uint8_t more = (*(recv_payload->get_payload() + 3)) & 0x01;
-        msg->get_payload_type()->append(recv_payload->get_payload() + 4, recv_payload->get_length() - 4);
+        msg->get_payload_type()->append(static_cast<const std::uint8_t*>(recv_payload->get_payload() + 4),
+                                        recv_payload->get_length() - 4);
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_message_tp / " << format_named_id("More", more, 2)
                            << " / Len=" << recv_payload->get_length();
         order++;
@@ -1772,7 +1773,8 @@ void ApplicationManager::send_tp_message(MessageSOMEIP& message) {
         std::uint32_t tp_header = (offset << 4) | more;
 
         payload->append(tp_header);
-        payload->append(original_payload + offset * 16, (more ? max_segment : remains));
+        payload->append(static_cast<const std::uint8_t*>(original_payload + offset * 16),
+                        (more ? max_segment : remains));
 
         offset += max_segment / 16;
         remains = (remains > max_segment) ? remains - max_segment : 0;
