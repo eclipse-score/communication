@@ -18,7 +18,7 @@ cc_library(
     name = "shared_optional_proxy_holder",
     srcs = ["shared_optional_proxy_holder.cpp"],
     hdrs = ["shared_optional_proxy_holder.h"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         "//score/mw/service:proxy_data",
         "//score/mw/service:proxy_future",

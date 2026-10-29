@@ -30,7 +30,7 @@ cc_library(
         "proxy_needs.h",
     ],
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":multi_instance_holder",
         ":proxy_future",
@@ -46,7 +46,7 @@ cc_library(
     srcs = ["proxy_needs_factory.cpp"],
     hdrs = ["proxy_needs_factory.h"],
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":service",
         "//score/mw/service/details",
@@ -59,7 +59,7 @@ cc_library(
     srcs = ["managed_service.cpp"],
     hdrs = ["managed_service.h"],
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         "@score_baselibs//score/result",
     ],
@@ -70,7 +70,7 @@ cc_library(
     srcs = ["provided_services_container.cpp"],
     hdrs = ["provided_services_container.h"],
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":managed_service",
         "@score_baselibs//score/result",
@@ -82,7 +82,7 @@ cc_library(
     srcs = ["single_instance_holder.cpp"],
     hdrs = ["single_instance_holder.h"],
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -93,7 +93,7 @@ cc_library(
     srcs = ["multi_instance_holder.cpp"],
     hdrs = ["multi_instance_holder.h"],
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":single_instance_holder",
         "@score_baselibs//score/concurrency",
@@ -107,7 +107,7 @@ cc_library(
     srcs = ["proxy_builder_base.cpp"],
     hdrs = ["proxy_builder_base.h"],
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":find_service_strategy",
         ":proxy_future",
@@ -121,7 +121,7 @@ cc_library(
     srcs = ["find_service_strategy.cpp"],
     hdrs = ["find_service_strategy.h"],
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [],
 )
 
@@ -130,7 +130,7 @@ cc_library(
     srcs = ["proxy_future.cpp"],
     hdrs = ["proxy_future.h"],
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         "@score_baselibs//score/concurrency/future",
         "@score_baselibs//score/language/futurecpp",
@@ -142,7 +142,7 @@ cc_library(
     name = "proxy_data",
     hdrs = ["proxy_data.h"],
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":multi_instance_holder",
         ":proxy_future",
@@ -155,7 +155,7 @@ cc_library(
     testonly = True,
     srcs = ["find_service_strategy_mock.cpp"],
     hdrs = ["find_service_strategy_mock.h"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":find_service_strategy",
         "@googletest//:gtest",

@@ -37,9 +37,7 @@ cc_library(
         "@score_baselibs//score/os:fcntl",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":flock_mutex",
         "//score/memory/shared:lock_file",
@@ -54,9 +52,7 @@ cc_library(
         "@score_baselibs//score/os:fcntl",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":flock_mutex",
         "//score/memory/shared:lock_file",
@@ -68,9 +64,7 @@ cc_library(
     srcs = ["flock_mutex_and_lock.cpp"],
     hdrs = ["flock_mutex_and_lock.h"],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         "//score/memory/shared:lock_file",
     ],
