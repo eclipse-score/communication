@@ -135,7 +135,7 @@ use_repo(
     "score_qcc_x86_64_toolchain_pkg",
 )
 
-bazel_dep(name = "score_coverage", version = "0.3.1", dev_dependency = True)
+bazel_dep(name = "score_coverage", version = "0.4.2", dev_dependency = True)
 bazel_dep(name = "score_itf", version = "0.6.0", dev_dependency = True)
 bazel_dep(name = "score_rules_imagefs", version = "0.1.0", dev_dependency = True)
 
