@@ -24,6 +24,14 @@ on:
         description: "When true, runs --nobuild to fetch dependencies only."
         type: string
         default: "false"
+      upload-code-scanning:
+        description: >-
+          Upload the merged SARIF to GitHub Code Scanning (category
+          codeql-nightly). Code Scanning keeps only the latest upload per
+          category/ref, so only the authoritative nightly (Linux ∪ QNX) may
+          publish; it has to opt in by passing "true".
+        type: string
+        default: "false"
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL:
         required: false
@@ -192,6 +200,14 @@ jobs:
           name: codeql-sarif-qnx
           path: /tmp/codeql-results/qnx
 
+      # A missing QNX result would silently publish a Linux-only SARIF
+      # (~500 fewer findings) and shift the Code Scanning/dashboard numbers.
+      - name: Fail if QNX analysis was expected but did not succeed
+        if: needs.determine-qnx.outputs.available == 'true' && needs.codeql-qnx.result != 'success'
+        run: |
+          echo "::error::QNX analysis failed or outputs not available. Result is '${{ needs.codeql-qnx.result }}'; refusing to publish a Linux-only SARIF."
+          exit 1
+
       - name: Merge & deduplicate findings (Linux ∪ QNX union)
         id: merge-codeql
         run: |
@@ -211,7 +227,7 @@ jobs:
       # and QNX findings (or just the deduplicated Linux findings when QNX was
       # not run).
       - name: Upload SARIF to GitHub Code Scanning
-        if: ${{ !cancelled() && steps.merge-codeql.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.merge-codeql.outcome == 'success' && inputs.upload-code-scanning == 'true' }}
         continue-on-error: true
         uses: github/codeql-action/upload-sarif@v4
         with:

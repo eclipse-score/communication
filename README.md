@@ -75,6 +75,7 @@ Flow Steps:
 ## Communication Patterns
 
 ### Pattern 1: Simple Event Publishing
+
 ```
 For example:
 Sensor App ──► [Temperature Data] ──► Dashboard App
@@ -82,6 +83,7 @@ Sensor App ──► [Temperature Data] ──► Dashboard App
 ```
 
 ### Pattern 2: Multi-Subscriber Broadcasting
+
 ```
 For example:
 Camera App ──► [Video Frame] ──┬──► Display App
@@ -94,7 +96,7 @@ Camera App ──► [Video Frame] ──┬──► Display App
 ### Prerequisites
 
 - **C++ Compiler**: GCC 12+ with C++17 support
-- **Build System**: 8.6 <= Bazel < 9.x
+- **Build System**: 8.6 <= Bazel < 9.x (only with Bzlmod)
 - **Operating System**: Linux (Ubuntu 24.04+) or QNX
 - **Dependencies**: GoogleTest, Google Benchmark
 - **Virtualization**: Docker with user permissions or rootless mode
@@ -131,6 +133,7 @@ communication/
 - [Tutorial](https://eclipse-score.github.io/communication/latest/score/mw/com/doc/tutorial/README.html) - Guided user-facing API walkthrough
 
 ### For Developers
+
 - [Architecture Guide](score/mw/com/design/README.md) - System architecture overview
 - [Service Discovery Design](score/mw/com/design/service_discovery/README.md) - Service discovery implementation
 - [Message Passing Design](score/mw/com/message_passing/design/README.md) - Low-level messaging details
@@ -143,6 +146,7 @@ We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for deta
 ## Support
 
 ### Community
+
 - **Issues**: Report bugs and request features via [GitHub Issues](https://github.com/eclipse-score/communication/issues)
 - **Discussions**: Join community [discussions](https://github.com/eclipse-score/communication/discussions) on the Eclipse forums
 - **Documentation**: Comprehensive docs in the [`design/`](score/mw/com/design/) and [`doc/`](score/mw/com/doc/) directories

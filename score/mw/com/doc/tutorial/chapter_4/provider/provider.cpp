@@ -29,8 +29,10 @@ constexpr std::string_view kInstanceSpecifierString{"MyHelloWorldServiceInstance
 // (StopOfferService) and pauses sending for kStopOfferDuration. Then it offers the service again and resumes sending.
 // This offer/stop-offer cycle drives the subscription state of subscribed consumers between kSubscribed and
 // kSubscriptionPending.
+// [provider-offer-durations-start]
 constexpr std::chrono::seconds kOfferDuration{8};
 constexpr std::chrono::seconds kStopOfferDuration{5};
+// [provider-offer-durations-end]
 
 namespace
 {
@@ -100,6 +102,7 @@ int main()
     while (g_running.load(std::memory_order_relaxed))
     {
         const auto now = std::chrono::steady_clock::now();
+        // [provider-phase-change-start]
         if (now >= next_phase_change)
         {
             if (offered)
@@ -126,15 +129,18 @@ int main()
                           << std::endl;
             }
         }
+        // [provider-phase-change-end]
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
         // Only send event updates while the service is currently offered.
+        // [provider-send-while-offered-start]
         if (offered)
         {
             SendSample(service_instance, send_counter);
             ++send_counter;
         }
+        // [provider-send-while-offered-end]
     }
     std::cout << "HelloWorld service provider going down." << std::endl;
 }

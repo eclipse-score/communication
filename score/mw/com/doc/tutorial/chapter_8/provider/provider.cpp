@@ -59,6 +59,7 @@ int main()
     // result; instead the return value is passed to the handler as its first argument by (mutable) reference - i.e. as
     // an out-parameter - followed by the (deserialized) input arguments by const-reference. The handler writes the
     // result into that out-parameter and returns void. Handlers MUST be registered before the service is offered.
+    // [provider-register-handlers-start]
     const auto add_handler_result = service_instance.add_.RegisterHandler(
         [](std::uint64_t& result, const std::uint32_t& lhs, const std::uint32_t& rhs) -> void {
             result = static_cast<std::uint64_t>(lhs) + static_cast<std::uint64_t>(rhs);
@@ -94,6 +95,7 @@ int main()
     auto offer_result = service_instance.OfferService();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(offer_result.has_value(),
                                                 "Failed to offer CalculatorSkeleton instance!");
+    // [provider-register-handlers-end]
     std::cout << "OfferService: Calculator service instance is now offered. Waiting for method calls ..." << std::endl;
 
     // A method provider is purely reactive: the registered handlers are invoked by the middleware (on an internal

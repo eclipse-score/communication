@@ -23,8 +23,8 @@ dependencies:
         skip: "https://github.com/eclipse-score/communication/issues/694"
   rules_cc:
     versions:
-      - version: "0.2.17"
-      - version: "0.2.22"
+      - version: "0.2.25"
+      - version: "0.2.27"
   rules_python:
     versions:
       - version: "1.8.5"

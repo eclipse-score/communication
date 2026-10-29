@@ -31,7 +31,8 @@ Each field is declared with the `WithNotifier` tag only:
 
 .. literalinclude:: tire_pressure_service.h
    :language: cpp
-   :lines: 30-48
+   :start-after: [tire-pressure-interface-start]
+   :end-before: [tire-pressure-interface-end]
    :caption: tire_pressure_service.h
 
 
@@ -58,16 +59,12 @@ files as chapter 5, with the service interface renamed to `tire_pressure_service
      - This file contains bazel targets for this example.
    * - `consumer/consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_7/consumer/consumer.cpp>`__
      - Implementation of the service consumer app. The `main()` for the consumer
-   * - `consumer/consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_7/consumer/consumer.h>`__
-     - Header (empty - we just always want to have cpp/h pairs) of the service consumer.
    * - `consumer/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_7/consumer/mw_com_config.json>`__
      - This file contains the configuration for `score::mw::com` for the consumer app.
    * - `consumer/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_7/consumer/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
    * - `provider/provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_7/provider/provider.cpp>`__
      - Implementation of the service provider.
-   * - `provider/provider.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_7/provider/provider.h>`__
-     - Header (empty) of the service provider.
    * - `provider/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_7/provider/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
    * - `provider/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_7/provider/mw_com_config.json>`__
@@ -168,7 +165,8 @@ the previous chapters (which offered an event) is that **before** the provider m
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 98-98
+   :start-after: [provider-initial-field-values-start]
+   :end-before: [provider-initial-field-values-end]
    :caption: provider/provider.cpp
 
 
@@ -183,7 +181,8 @@ random pressure between `2.0` and `2.5` bar) are randomized:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 108-113
+   :start-after: [provider-random-field-updates-start]
+   :end-before: [provider-random-field-updates-end]
    :caption: provider/provider.cpp
 
 
@@ -199,13 +198,15 @@ handler. It then, for **each** of the four fields, registers an `EventReceiveHan
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 99-128
+   :start-after: [consumer-setup-field-start]
+   :end-before: [consumer-setup-field-end]
    :caption: consumer/consumer.cpp
 
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 182-186
+   :start-after: [consumer-setup-all-fields-start]
+   :end-before: [consumer-setup-all-fields-end]
    :caption: consumer/consumer.cpp
 
 

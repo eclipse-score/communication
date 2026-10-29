@@ -83,6 +83,8 @@ jobs:
   # --------------------------------------------------------------------
   run-codeql:
     uses: ./.github/workflows/_codeql.yml
+    with:
+      upload-code-scanning: "true"
     permissions:
       contents: read
       actions: write
