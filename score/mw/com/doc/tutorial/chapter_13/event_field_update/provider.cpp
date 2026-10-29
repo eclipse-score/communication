@@ -66,6 +66,7 @@ int main()
     score::mw::log::LogInfo("SkEf") << "Entering operational phase (heap forbidden)";
     heap_check::forbid_heap();
 
+    // [provider-operational-phase-start]
     for (std::uint32_t i = 0U; i < kNumIterations; ++i)
     {
         score::Result<score::mw::com::SampleAllocateePtr<float>> sample_result =
@@ -107,3 +108,4 @@ int main()
     score::mw::log::LogInfo("SkEf") << "Completed successfully";
     return 0;
 }
+// [provider-operational-phase-end]

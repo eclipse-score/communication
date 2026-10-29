@@ -127,6 +127,7 @@ pkg_tar(
     ],
 )
 
+# [unit-test-targets-start]
 cc_unit_test(
     name = "proxy_component_test",
     srcs = ["consumer/proxy_component_test.cpp"],
@@ -144,6 +145,7 @@ cc_unit_test(
         "//score/mw/com:test_types",
     ],
 )
+# [unit-test-targets-end]
 
 filegroup(
     name = "chapter_12",
