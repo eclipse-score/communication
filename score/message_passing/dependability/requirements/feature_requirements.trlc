@@ -49,7 +49,7 @@ ScoreReq.FeatReq PointToPointConnections {
 
 ScoreReq.FeatReq SmallDataLowLatencyCommunication {
     description = "The message passing component shall provide low-latency communication for small data between dedicated endpoints. "
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [MessagePassing.SystemMessagingProtocol@1]
     version = 1
 }

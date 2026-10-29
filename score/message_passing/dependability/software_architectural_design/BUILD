@@ -22,6 +22,7 @@ architectural_design(
         "private_api.puml",
     ],
     maturity = "development",
+    package = "message_passing_api",
     public_api = [
         "public_api.puml",
     ],

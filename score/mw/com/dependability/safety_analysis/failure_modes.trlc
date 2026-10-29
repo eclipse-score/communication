@@ -35,7 +35,7 @@ section "LoLa" {
         version = 1
         safety = ScoreReq.Asil.B
         rationale = "The wrong user-configuration which could cause an abnormal behavior of the mw-implementation is covered via four AoUs. The broken file is ensured via a safety-certified file system. The broken JSON is covered via a safety-certified JSON-Parser implementation. The read-in-logic to our in-memory is covered via a specific preventive measure."
-        interface = "mw.com.Runtime.Initialize"
+        // interface = "mw.com.Runtime.Initialize"
     }
 
     // ID: 6370893
@@ -57,7 +57,7 @@ section "LoLa" {
         version = 1
         safety = ScoreReq.Asil.B
         rationale = "Add an AoU that all code artifacts and configurations should be reviewed before use in a safety context."
-        interface = "score.mw.com.runtime.InitializeRuntime"
+        // interface = "score.mw.com.runtime.InitializeRuntime"
     }
 
     // ID: 6370915
@@ -83,7 +83,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "We added an AoU that no Safety-goal shall be harmed, if a service is not offered. Thus, this failure cannot have any safety-related bad effect."
-                interface = "mw.com.Skeleton.Create"
+                // interface = "mw.com.Skeleton.Create"
             }
         }
 
@@ -97,7 +97,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "By explicitly requesting this case in our requirements and testing the requirement we make sure that the error case is tackled. The not working update functionality is covered already by other FMEA elements in Section SendAnEventOrField"
-                interface = "mw.com.Skeleton.OfferService"
+                // interface = "mw.com.Skeleton.OfferService"
             }
 
             // ID: 6156955
@@ -108,7 +108,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "We added an AoU that no Safety-goal shall be harmed, if a service is not offered. Thus, this failure cannot have any safety-related bad effect."
-                interface = "mw.com.Skeleton.OfferService"
+                // interface = "mw.com.Skeleton.OfferService"
             }
 
             // ID: 6164063
@@ -119,7 +119,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "If a service is offered on the wrong binding, then it will not be visible on the expected binding. Thus, we can handle this part as if the service would not be offered at all. For the wrong binding, where the service is offered, no consumer expects the service, thus, no bad influence can happen."
-                interface = "mw.com.Skeleton.OfferService"
+                // interface = "mw.com.Skeleton.OfferService"
             }
 
             // ID: 6164070
@@ -130,7 +130,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "If a service is offered on a wrong binding, then the initial service is not offered. Covered by our AoU (\"No guarantee in availability of services\"). It looks different if we overwrite this way another service. This is prevented with explicit preventive measures for each root cause. The Service Discovery Marker files are already handled in the failure mode \"ServiceNotOffered\""
-                interface = "mw.com.Skeleton.OfferService"
+                // interface = "mw.com.Skeleton.OfferService"
             }
 
             // ID: 6164082
@@ -141,7 +141,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "We avoid to overwrite shared memory segments of different processes by having ownership by a single UID which is assigned to a process. (This was in place before the FMEA) In addition we support partial restart, which is implemented and traced according to ASIL-B which enables to re-offer a previously offered service in a sane manner. To identify already offered services, control measures via marker files have been introduced."
-                interface = "mw.com.Skeleton.OfferService"
+                // interface = "mw.com.Skeleton.OfferService"
             }
 
             // ID: 6164086
@@ -152,7 +152,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "Since both sub-trees (config is wrong, no ASIL level) are captured via different fault trees, we only need to ensure that all events are actually always registered. This is ensured via an preventive measure."
-                interface = "mw.com.Skeleton.OfferService"
+                // interface = "mw.com.Skeleton.OfferService"
             }
         }
 
@@ -214,7 +214,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "1. \"Literally wrong number of slots reserved\": Covered by preventive measure \"reserve configured number of slots\" 2. \"More than one SampleAllocateePtr in parallel\": Covered by AoUs (\"one producer, one allocatee ptr\", \"no-copy on send, while holding allocatee ptr\", since copy-send calls allocate implicitly) 3. \"Holds more sample ptr than announced\": Covered by \"a proxy instance shall not retrieve more sample ptr...\" 4. \"Holds more sample ptr than configured\": Covered by AoUs (\"configured maximum number of subscriber\", \" configured maximum number of elements\") 5. \"slot allocation logic broken\": Covered by \"Slot allocation synchronisation\" 6. \"Mapping of wrong EventId\": Covered by \"EventFqId shall be constructed from the associated configuration values\" 7. \"Shared memory truncation fails\": Is controlled by \" A process shall terminate, if the truncation of a shared memory segment fails.\" by transitioning into a safe state. 8. The necessary size calculation cannot fail, since it is just a sizeof() 9. \"Allocate claims to few memory\": Is covered by \"SharedMemoryResource shall allocate the requested memory on an allocate call\" Note: A Proxy can either be a \"regular\" proxy, or an \"ipc tracing\" proxy."
-                interface = "mw.com.Event.Allocate"
+                // interface = "mw.com.Event.Allocate"
             }
 
             // ID: 6164809
@@ -225,7 +225,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "We ensure with our preventive measure that wrong alignment could happen."
-                interface = "score.mw.com.SkeletonEvent.Allocate"
+                // interface = "score.mw.com.SkeletonEvent.Allocate"
             }
 
             // ID: 6164821
@@ -261,7 +261,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "Most of the possible errors have been discussed with [ISSUE:Failuremode TooFewMemoryAllocated]. The issue with the generic trace API is covered by its custom preventive measure. Only the direct manipulation is a net yet covered possible fault cause. Which is addressed with our preventive measure."
-                interface = "mw.com.Event.Send"
+                // interface = "mw.com.Event.Send"
             }
 
             // ID: 6164982
@@ -272,7 +272,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "issue not possible with current design. no additional measures required."
-                interface = "mw.com.Event.Send"
+                // interface = "mw.com.Event.Send"
             }
 
             // ID: 6164996
@@ -283,7 +283,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "Our AoU states that the fault shall not cause safety goal violations. Thus, no additional measures are required."
-                interface = "mw.com.Event.Send"
+                // interface = "mw.com.Event.Send"
             }
 
             // ID: 6165326
@@ -294,7 +294,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "All possible fault causes are already addressed with [ISSUE:Failuremode TooFewMemoryAllocated]"
-                interface = "mw.com.Event.Send"
+                // interface = "mw.com.Event.Send"
             }
 
             // ID: 6165344
@@ -305,7 +305,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "The only possible fault cause is eliminated with our preventive measure."
-                interface = "mw.com.Event.Send"
+                // interface = "mw.com.Event.Send"
             }
 
             // ID: 6165624
@@ -316,7 +316,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "All three steps that could fail during freeing the resources are prevented by their respective requirements."
-                interface = "mw.com.Event.Send"
+                // interface = "mw.com.Event.Send"
             }
         }
 
@@ -330,7 +330,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "A wrong freeing of resources would only be possible by a wrong holding of resources, which is avoided by our two preventive measures."
-                interface = "mw.com.Skeleton.Destroy"
+                // interface = "mw.com.Skeleton.Destroy"
             }
 
             // ID: 6165782
@@ -341,7 +341,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "Another safety argument is added that shall avoid that no resources are freed."
-                interface = "mw.com.Skeleton.Destroy"
+                // interface = "mw.com.Skeleton.Destroy"
             }
 
             // ID: 6165797
@@ -352,7 +352,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "By only freeing resources on destruction, we can avoid early resource clean ups."
-                interface = "mw.com.Skeleton.Destroy"
+                // interface = "mw.com.Skeleton.Destroy"
             }
         }
         section "Handle Method Calls" {
@@ -422,7 +422,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "Called even though StopFindService has been called, is tackled by the preventive measure: Proxy StopFindService. Called redundantly, is tackled by the preventive measure: \"Invoke FindServiceHandler...\" Wrong inotify events, are impossible, since these come from the OS, which is safety certified (no restriction found in the safety manual). Watches are set wrongly, is tackled by our preventive measure: Correct watches per Instance Identifier"
-                interface = "mw.com.Proxy.StartFindService"
+                // interface = "mw.com.Proxy.StartFindService"
             }
         }
 
@@ -436,7 +436,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = ""
-                interface = "mw.com.Proxy.FindService"
+                // interface = "mw.com.Proxy.FindService"
             }
 
             // ID: 6166047
@@ -447,7 +447,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "Both faults of wrongly configured and offered under wrong service IDs are covered by other analysis (Failuremode ServiceOfferedUnderWrongIds). For the InstanceSpecifier to Identifier we have the preventive measure \"InstanceSpecifier resolution can not retrieve wrong InstanceIdentifier resolution can not retrieve wrong InstanceIdentifier The last fault is covered by the ensured correct mapping of InstanceIdentifier to path."
-                interface = "mw.com.Proxy.FindService"
+                // interface = "mw.com.Proxy.FindService"
             }
         }
 
@@ -461,7 +461,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "The first root cause cannot happen, since otherwise the Operating System would make stupid stuff. mmap will not map any memory if a file does not exist. \"Service was offered, but not unlinked on stop offer\", is covered by our AoU that we do not notify on termination of the provider side. The other three faults are covered by the two preventive measures."
-                interface = "mw.com.Proxy.FindService"
+                // interface = "mw.com.Proxy.FindService"
             }
 
         }
@@ -535,7 +535,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "N/A because root-cause covered by AoU."
-                interface = "score.mw.com.GenericProxyEvent.SetReceiveHandler"
+                // interface = "score.mw.com.GenericProxyEvent.SetReceiveHandler"
                 // potentialcause = "N/A because root-cause covered by AoU."
             }
 
@@ -547,7 +547,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = ""
-                interface = "score.mw.com.GenericProxyEvent.SetReceiveHandler"
+                // interface = "score.mw.com.GenericProxyEvent.SetReceiveHandler"
             }
 
             // ID: 6166306
@@ -558,7 +558,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "N/A because root-cause covered by AoU."
-                interface = "score.mw.com.GenericProxyEvent.SetReceiveHandler"
+                // interface = "score.mw.com.GenericProxyEvent.SetReceiveHandler"
                 // potentialcause = "N/A because root-cause covered by AoU."
             }
 
@@ -570,7 +570,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "N/A because root-cause covered by AoU."
-                interface = "score.mw.com.GenericProxyEvent.SetReceiveHandler"
+                // interface = "score.mw.com.GenericProxyEvent.SetReceiveHandler"
                 // potentialcause = "N/A because root-cause covered by AoU."
             }
         }
@@ -628,7 +628,7 @@ section "LoLa" {
                 safety = ScoreReq.Asil.B
                 rationale = "Same as [ISSUE:FailureMode ReturnsWrongSampleCount]"
                 // potentialcause = "Same as [ISSUE:FailureMode ReturnsWrongSampleCount]"
-                interface = "mw.com.Event.GetNewSamples"
+                // interface = "mw.com.Event.GetNewSamples"
             }
         }
 
@@ -717,7 +717,7 @@ section "LoLa" {
                     version = 1
                     safety = ScoreReq.Asil.B
                     rationale = "A manipulated size is tackled, by \"Size information in read-only memory\". The right location is ensured via \"Location of type-meta-information information for Generic Proxy\" The wrong set size, is covered by \"The type-meta-information shall be calculated based on the provided event/field type"
-                    interface = "mw.com.GenericProxyEvent.GetDataTypeSizeInfo"
+                    // interface = "mw.com.GenericProxyEvent.GetDataTypeSizeInfo"
                 }
 
                 // ID: 31545538
@@ -729,7 +729,7 @@ section "LoLa" {
                     safety = ScoreReq.Asil.B
                     rationale = "Potential faults and measures are the same as [ISSUE:Failuremode TheSizeReturnedIsBiggerThenTheActualValue]"
                     // potentialcause = "Same as [ISSUE:Failuremode TheSizeReturnedIsBiggerThenTheActualValue]"
-                    interface = "mw.com.GenericProxyEvent.GetDataTypeSizeInfo"
+                    // interface = "mw.com.GenericProxyEvent.GetDataTypeSizeInfo"
                 }
 
                 // ID: 31545581
@@ -741,7 +741,7 @@ section "LoLa" {
                     safety = ScoreReq.Asil.B
                     rationale = "Hard-coded value, not faults possible."
                     // potentialcause = "Hard-coded value, no faults possible."
-                    interface = "mw.com.GenericProxyEvent.HasSerializedFormat"
+                    // interface = "mw.com.GenericProxyEvent.HasSerializedFormat"
                 }
             }
         }
@@ -831,7 +831,7 @@ section "LoLa" {
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "Same as [ISSUE:FailureMode DoesNotFreeResourcesOnDestruction] since a decrease of the ref-count has the same issues as an increase."
-                interface = "score.mw.com.SampleAllocateePtr<SampleType>"
+                // interface = "score.mw.com.SampleAllocateePtr<SampleType>"
             }
 
             // ID: 6166382

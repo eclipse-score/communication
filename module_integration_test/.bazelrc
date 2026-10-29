@@ -10,3 +10,5 @@ common --@score_baselibs//score/analysis/tracing/generic_trace_library:implement
 
 # Use `bazel mod deps --lockfile_mode=update` to update the lock file
 common --lockfile_mode=error
+
+try-import %workspace%/user.bazelrc

@@ -1,6 +1,6 @@
 ---
 name: score-safety-analysis
-description: "Step-by-step workflow for creating or extending a FMEA-based safety analysis in TRLC format for S-CORE software components. Use when asked to: add failure modes, create FTA diagrams, add mitigations, or validate the safety analysis traceability chain. Covers clustering, FailureMode records, FTA PlantUML files, Mitigation records, BUILD wiring, and trlc validation."
+description: "Step-by-step workflow for creating or extending a FMEA-based safety analysis in TRLC format for S-CORE software components. Use when asked to: add failure modes, create FTA diagrams, assess root causes, or validate the safety analysis traceability chain. Covers clustering, FailureMode records, FTA PlantUML files, RootCauseAssessment records, BUILD wiring, and trlc validation."
 argument-hint: "interface or component name to analyse"
 ---
 
@@ -23,7 +23,7 @@ argument-hint: "interface or component name to analyse"
 
 - Adding new failure modes to an existing safety analysis
 - Creating FTA diagrams for root-cause decomposition
-- Defining Mitigation / CompReq / AoU records for identified root causes
+- Assessing identified root causes with RootCauseAssessment records that list CompReq / AoU measures
 - Validating the full traceability chain before a review of a safety analysis
 
 ## Key Files and Locations
@@ -32,11 +32,11 @@ argument-hint: "interface or component name to analyse"
 score/<component>/dependability/
 ├── safety_analysis/
 │   ├── failure_modes.trlc      # FailureMode records (one per unique root-cause cluster)
-│   ├── safetymeasures.trlc     # Mitigation records
+│   ├── assessments.trlc        # RootCauseAssessment records (one per root-cause argument)
 │   ├── fta_<failure_mode>.puml # One FTA diagram per FailureMode
 │   └── BUILD                   # failure_modes() + fault_trees() + safety_analysis() rules — must list all .puml in fta_files filegroup
 ├── assumed_system/
-│   └── aous.trlc               # AoU records (caller obligations, each with root_causes)
+│   └── aous.trlc               # AoU records (caller obligations)
 └── requirements/
     └── component_requirements.trlc
 ```
@@ -64,7 +64,8 @@ than inventing it.
 
 Only once the failure modes, causes, and measures are decided, transcribe them into the files
 below (Steps 1–5). This is mechanical: one `FailureMode` per decided effect, one FTA per failure
-mode, one measure record per `$RootCause`, matching aliases, BUILD wired, `trlc` clean.
+mode, one `RootCauseAssessment` per `$RootCause` (or per group sharing one argument), matching
+aliases, BUILD wired, `trlc` clean.
 
 ## Authoring guidance: performing the FMEA
 
@@ -72,14 +73,14 @@ mode, one measure record per `$RootCause`, matching aliases, BUILD wired, `trlc`
 for each, apply the applicable fault models and ask *"can this occur, and would it violate a
 safety goal?"* Dismiss low-relevance models with a short rationale.
 
-| Fault-model category | Example models | `GuideWord` labels |
+| Fault-model category | Example models | `Guideword` labels |
 |----------------------|----------------|--------------------|
 | Message (send/receive) | not sent/received, corrupted, lost, unintended (`MF_01_*`) | `LossOfFunction`, `PartialFunction`, `Corrupted`, `UnintendedFunction`, `Wrong` |
 | Timing / duration | too late/early, boundary violated (`CO_01_*`) | `TooEarly`, `TooLate`, `DelayedFunction` |
 | Execution | wrong result, loss, arbitrary/incomplete (`EX_01_*`) | `Wrong`, `LossOfFunction`, `ExceedingFunction`, `ArbitraryExecution` |
 
 > **Clustering:** one `FailureMode` per *(interface, guide word)* effect — group methods sharing a
-> root cause in the `interface` field; one root cause under two guide words → two records.
+> root cause in the `interface` list; one root cause under two guide words → two records.
 
 **Step 2 — effect, then causes.** Write `failureeffect` from the **caller/system perspective** in
 worst-case terms relative to the safety goal. Then build the FTA top-down to **actionable root
@@ -87,17 +88,18 @@ causes**: `$OrGate` (default) when any single cause suffices; `$AndGate` only wh
 co-occur (a fault *and* a failed safety mechanism — this justifies lower residual risk). Decompose
 until each `$RootCause` is something you can place a measure on.
 
-**Step 3 — one measure per root cause**, chosen by *who* closes it:
+**Step 3 — one assessment per root cause**, listing the measures that close it, chosen by *who* closes it:
 
-| Type | Use when it… | Closed via |
-|------|--------------|------------|
-| `Mitigation` | the SEooC itself provides a dedicated safety measure (with a mandatory `justification`) | `root_causes` |
-| `CompReq` | a normal, implemented-and-tested component requirement already closes it | `derived_from` |
-| `AoU` | can only be guaranteed by the **integrator/caller** | `root_causes` (mandatory) |
+| Measure in `measures` | Use when it… |
+|-----------------------|--------------|
+| `CompReq` | the SEooC itself closes it with an implemented-and-tested component requirement |
+| `AoU` | can only be guaranteed by the **integrator/caller** |
+| none (`measures = []`) | the root cause does not apply; the `rationale` says why |
 
-Use an `AoU` to **push an obligation outward** when the SEooC cannot close a cause itself; it must
-be forwarded to the integrating project. Record *why* a measure is sufficient (AND-gate argument,
-diagnostic coverage), and give a `FailureMode` the ASIL of the safety goal it can violate.
+The measures never reference the root cause; only the `RootCauseAssessment` does. Use an `AoU` to
+**push an obligation outward** when the SEooC cannot close a cause itself; it must be forwarded to
+the integrating project. Record *why* the measures are sufficient in the `rationale` (AND-gate
+argument, diagnostic coverage), and give a `FailureMode` the ASIL of the safety goal it can violate.
 
 ## Step 1 — Write FailureMode Records (`failure_modes.trlc`)
 
@@ -106,24 +108,30 @@ Package: match the existing package declaration in the folder structure
 ```trlc
 package <Pkg>
 import ScoreReq
+import <ArchApiPkg>
 
 ScoreReq.FailureMode <RecordName> {
-    guideword      = ScoreReq.GuideWord.<Word>
+    guidewords     = [ScoreReq.Guideword.<Word>]
     description    = "statement describing the expected behaviour"
     failureeffect  = "What goes wrong for the caller / system"
-    potentialcause = "Root cause(s) from the FMEA"
-    interface      = "<Interface>.<Method>[, <Interface>.<Method>]"
+    interface      = [<ArchApiPkg>.<Entity>_<method>]
     version        = 1
     safety         = ScoreReq.Asil.B
 }
 ```
 
-**GuideWord enum values:** `LossOfFunction`, `PartialFunction`, `Corrupted`, `UnintendedFunction`, `TooEarly`, `TooLate`, `Wrong`, `DelayedFunction`, `ExceedingFunction`, `ArbitraryExecution`
+`<ArchApiPkg>` is the `package` of the `architectural_design` target. The build generates one
+`ScoreReq.ApiMethod` record per public method (all overloads) and per free function of its
+`public_api` class diagrams, named `<Entity>_<method>` (`<Entity>` = namespace-qualified
+entity id, `.` → `_`, e.g. `ns_Interface_Send`); the
+`failure_modes` target lists the `architectural_design` in `deps`.
+
+**Guideword enum values:** `LossOfFunction`, `PartialFunction`, `Corrupted`, `UnintendedFunction`, `TooEarly`, `TooLate`, `Wrong`, `DelayedFunction`, `ExceedingFunction`, `ArbitraryExecution`
 
 **Rules:**
 - One record per FailureMode, not per interface method.
-- Same root cause spanning multiple guide words → separate records (trlc only allows one `guideword` per record).
-- `interface` may list multiple methods as a comma-separated string when root cause is shared.
+- Same root cause spanning multiple guide words → separate records.
+- `interface` may list several `ApiMethod` records when the root cause is shared.
 
 ## Step 2 — Create FTA Diagrams (`fta_<snake_name>.puml`)
 
@@ -156,42 +164,50 @@ $RootCause("<Root cause label 2>", "<RootCauseAlias2>", "OG1")
 | `$AndGate(alias, connection)` | All children required | parent alias |
 | `$RootCause(name, alias, connection)` | Root cause / leaf — `alias` must be a **plain TRLC identifier** (no dotted `Package.Name`) | enclosing gate alias |
 | `$IntermediateEvent(name, alias, connection)` | Intermediate cause | parent gate alias |
-| `$TransferInGate(name, alias, connection)` | Link to sub-tree | parent alias |
+| `$TransferInGate(alias, connection)` | Transfer in the root causes of another tree; `alias` is a `FailureMode` FQN covered by that tree's `$FailureMode` (any of `fm1`..`fm8`) | parent alias |
 
 **Rules:**
-- `$RootCause` alias is a plain identifier; the `puml_cli` FTA parser auto-generates a `fta_events.trlc` stub (imported as `<fta_package>`, default derived from the target label) containing a `RootCause` record named after that alias (its `failure_modes` lists the `FailureMode`s of the tree's `$FailureMode` root) — `Mitigation`/`CompReq`/`AoU` records reference it explicitly (e.g. `root_causes = [sample_safety_analysis_fta.JustBadLuck]`); there is no implicit name-matching.
+- `$RootCause` alias is a plain identifier; the `puml_cli` FTA parser auto-generates a `fta_events.trlc` stub (imported as `<fta_package>`, default derived from the target label) containing a `RootCause` record named after that alias (its `failure_modes` lists the `FailureMode`s of the tree's `$FailureMode` root) — a `RootCauseAssessment` references it explicitly (e.g. `root_causes = [sample_safety_analysis_fta.JustBadLuck]`); there is no implicit name-matching.
 - Build top-down in the file: `$FailureMode` first, then gates, then `$RootCause` leaves.
 - The same `$RootCause` alias may appear in multiple FTAs (shared root cause).
+- `$TransferInGate` target must be covered by exactly one `$FailureMode` in the `srcs` of the same `fault_trees` target (other diagrams or the same one); unknown, ambiguous or cyclic targets fail the build. The transferring tree also inherits the root causes of the target tree (transitively).
+- `$TransferInGate` limits: the alias must be a failure-mode FQN (free labels such as `Transfer1` fail); no transfer into another `fault_trees` target; the alias is also the PlantUML shape name, so gates of one diagram with the same target share one triangle, and a gate cannot name `fm1` of a `$FailureMode` in its own diagram (name `fm2`..`fm8` or use a separate diagram). An inherited root cause is assessed once, and its assessment ASIL must be at least that of every failure mode of every tree it is part of.
 - `$OrGate` is the default for independent root causes; use `$AndGate` only when all causes must co-occur.
 
-## Step 3 — Write Mitigation Records (`safetymeasures.trlc`)
+## Step 3 — Write Root Cause Assessments (`assessments.trlc`)
 
-For every `$RootCause` alias in every FTA that isn't already closed by a `CompReq` or `AoU`,
-define a matching `Mitigation` record. `root_causes` and `justification` are both
-**mandatory**, and `root_causes` must reference the generated `RootCause` stub(s):
+Every `$RootCause` alias in every FTA is covered by exactly one `RootCauseAssessment`. Root causes
+that share the same argument may be grouped in one assessment. `root_causes`, `measures`,
+`safety`, `rationale` and `version` are all **mandatory**; `root_causes` references the generated
+`RootCause` stub(s), `measures` the versioned `AoU` / `CompReq` records closing them (`[]` states
+that the root causes do not apply):
 
 ```trlc
-ScoreReq.Mitigation <RecordName> {
-    safety        = ScoreReq.Asil.B
-    description   = "Normative measure text"
-    justification = "Why this measure is sufficient to close the root cause"
-    version       = 1
-    root_causes   = [<fta_package>.<RootCauseAlias>]
+ScoreReq.RootCauseAssessment <RecordName> {
+    root_causes = [<fta_package>.<RootCauseAlias>]
+    measures    = [<Pkg>.<MeasureRecord>@1]
+    safety      = ScoreReq.Asil.B
+    rationale   = "Why the measures suffice, or why the root causes do not apply"
+    version     = 1
 }
 ```
 
-Other ways to close a root cause:
-- `ScoreReq.CompReq` — closes it via `derived_from`, referencing the `RootCause` stub alongside any `FeatReq`/`AssumedSystemReq` it also derives from. An `AoU` in `derived_from` is only for an AoU **received** from another dependable element; the element's own AoUs are never a `derived_from` source
-- `ScoreReq.AoU` — own assumption the caller must satisfy; extends `SafetyMeasure`, so `root_causes` is **mandatory** (no `justification` required)
+The measures:
+- `ScoreReq.CompReq` — a normal component requirement; it derives from `FeatReq`/`AssumedSystemReq` as usual and does not reference the root cause. An `AoU` in `derived_from` is only for an AoU **received** from another dependable element; the element's own AoUs are never a `derived_from` source
+- `ScoreReq.AoU` — own assumption the caller must satisfy; a plain condition with no root-cause field
 
-**Rule:** every `$RootCause` alias must be referenced by at least one `Mitigation.root_causes`, `CompReq.derived_from`, or `AoU.root_causes`. This is checked by lobster in the traceability report of the enclosing `dependable_element` (Root Causes are covered via the Safety Measures level **or** the Component Requirements level; uncovered ones are reported as `missing reference to Component Requirements or Safety Measures`, and fail `bazel test <dependable_element>` with `maturity = "release"`). The safety analysis is three rules: `failure_modes` (the `FailureMode` records), `fault_trees` (`srcs` = FTA diagrams, `deps` = the `failure_modes` targets; generates the `<fta_package>` root causes) and `safety_analysis` (`failure_modes`, `fault_trees` and `safety_measures`: `Mitigation` `.trlc` files plus `assumptions_of_use` / `component_requirements` targets; only their own records are rendered, targets in their `deps` just resolve references; raw `.trlc` files may only hold `Mitigation` records, and every failure mode a root cause references must be in `failure_modes`). Any target whose records reference `<fta_package>.<RootCause>` (`assumptions_of_use`, `component_requirements`) must list the `fault_trees` target in `deps`. Every `assumptions_of_use` target passed as `safety_measures` is an own AoU of the enclosing `dependable_element` (derived, deduplicated by label, forwarded to dependees); one no `safety_analysis` lists is neither rendered nor forwarded:
+The `@<version>` of a measure pins the reviewed version; a version change of the measure breaks the reference and forces a new review.
+
+`safety` is the ASIL of the argument: at least the ASIL of the failure modes of the covered root causes, at most the ASIL of every listed measure (`[]` measures skip the upper bound). The assembler fails the build otherwise.
+
+**Rule:** every `$RootCause` alias must be listed in the `root_causes` of exactly one `RootCauseAssessment`, and every own `AoU` must be listed in the `measures` of at least one. This is checked by lobster in the traceability report of the enclosing `dependable_element` (the Root Cause Assessments level traces to Root Causes and Assumptions of Use; uncovered items are reported as `missing reference to Root Cause Assessments`, and fail `bazel test <dependable_element>` with `maturity = "release"`). The safety analysis is three rules: `failure_modes` (the `FailureMode` records), `fault_trees` (`srcs` = FTA diagrams, `deps` = the `failure_modes` targets; generates the `<fta_package>` root causes) and `safety_analysis` (`failure_modes`, `fault_trees`, `assessments` and `safety_measures`: `assumptions_of_use` / `component_requirements` targets the assessments list; only their own records are rendered, targets in their `deps` just resolve references; raw `.trlc` files in `assessments` may only hold `RootCauseAssessment` records, every failure mode a root cause references must be in `failure_modes`, and an assessment may only list measures of `safety_measures`). Every `assumptions_of_use` target passed as `safety_measures` is an own AoU of the enclosing `dependable_element` (derived, deduplicated by label, forwarded to dependees); one no `safety_analysis` lists is neither rendered nor forwarded:
 
 ```python
-failure_modes(name = "fm", srcs = ["failure_modes.trlc"])
+failure_modes(name = "fm", srcs = ["failure_modes.trlc"], deps = [":arch"])
 fault_trees(name = "ft", srcs = [":fta_files"], deps = [":fm"])
-assumptions_of_use(name = "aous", srcs = ["aous.trlc"], deps = [":ft"])
-safety_analysis(name = "sa", arch_design = ":arch", failure_modes = [":fm"], fault_trees = ":ft",
-                safety_measures = [":aous", "mitigations.trlc"])
+assumptions_of_use(name = "aous", srcs = ["aous.trlc"])
+safety_analysis(name = "sa", failure_modes = [":fm"], fault_trees = ":ft",
+                assessments = ["assessments.trlc"], safety_measures = [":aous"])
 ```
 
 ## Step 4 — Update BUILD
@@ -212,15 +228,16 @@ filegroup(
 
 ## Step 5 — Validate
 
-**Pass criteria:** zero errors in `failure_modes.trlc`, `safetymeasures.trlc`, `aous.trlc`.
+**Pass criteria:** zero errors in `failure_modes.trlc`, `assessments.trlc`, `aous.trlc`.
 Pre-existing RSL union-type errors (`expected identifier, encountered '['`) are a known trlc v2 / RSL version mismatch — ignore if they appear only in the tooling RSL, not in component files.
 
 **Traceability chain that must be complete:**
 
 ```
-FailureMode.interface  →  public_api interface name
+FailureMode.interface  →  ApiMethod record (generated from the public_api class diagram)
 FailureMode record     →  $FailureMode fm1..fm8 arguments
-$RootCause alias      →  Mitigation.root_causes / CompReq.derived_from / AoU.root_causes
+$RootCause alias      →  RootCauseAssessment.root_causes
+RootCauseAssessment   →  measures (AoU / CompReq, versioned)
 ```
 
 ## Common Mistakes
@@ -229,10 +246,12 @@ $RootCause alias      →  Mitigation.root_causes / CompReq.derived_from / AoU.r
 |---------|-----|
 | `$RootCause` alias is dotted (`Pkg.Name`) | Use a plain identifier — dotted aliases are rejected for root causes |
 | `$FailureMode` fm1..fm8 argument does not match any TRLC record | Ensure `<Pkg>.<RecordName>` is spelled identically in both places |
-| A root cause (`$RootCause`) is not referenced by any `Mitigation`/`CompReq`/`AoU` | Add an explicit reference to the generated `<fta_package>.<Alias>` `RootCause` stub |
+| A root cause (`$RootCause`) is not listed by any `RootCauseAssessment` | Add it to the `root_causes` of an assessment as the generated `<fta_package>.<Alias>` `RootCause` stub (use `measures = []` plus a `rationale` if it does not apply) |
 | New `.puml` not in BUILD `fta_files` | Add the file path to the `srcs` list |
-| AoU added to `safetymeasures.trlc` | AoUs belong in `aous.trlc` and are passed to `safety_analysis` via `safety_measures` (the `assumptions_of_use` target), not inside the `Mitigation` `.trlc` file (the assembler rejects non-`Mitigation` records there). Each AoU needs `root_causes`. |
-| `CompReq.derived_from` references an own `AoU` | Only AoUs received from another dependable element belong there; own AoUs close root causes via `AoU.root_causes` |
-| Unknown symbol `<fta_package>` when parsing `aous.trlc` or component requirements | Add the `fault_trees` target to the `deps` of the `assumptions_of_use` / `component_requirements` |
+| AoU or CompReq added to `assessments.trlc` | `assessments` holds only `RootCauseAssessment` records (the assembler rejects other types). AoUs belong in `aous.trlc` and are passed to `safety_analysis` via `safety_measures` (the `assumptions_of_use` target). |
+| `CompReq.derived_from` references an own `AoU` | Only AoUs received from another dependable element belong there; own AoUs close root causes by being listed in an assessment's `measures` |
+| Own `AoU` flagged as missing a reference to Root Cause Assessments | List it, with its version, in the `measures` of an assessment |
+| Root cause listed by two assessments | Merge them or split the root causes; each root cause belongs to exactly one assessment |
+| Assessment fails: measure is not in `safety_measures` | Add the `assumptions_of_use` / `component_requirements` target holding the measure to `safety_analysis.safety_measures` |
 | `safety_analysis` fails: root cause references a failure mode not in `failure_modes` | Add the `failure_modes` target holding it to `safety_analysis.failure_modes` |
 | Wrong RSL used for trlc validation   | Always pass the tooling RSL as the first directory argument |
