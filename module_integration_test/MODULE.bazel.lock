@@ -1231,8 +1231,8 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/1.0.2/MODULE.bazel": "e70f396375b9d612b4f41ebceff7f18f68ab423b14625c138a354cc01bc62a10",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/1.1.2/MODULE.bazel": "56d08309931cfad67c2b6691207bb5f761a3946830d620c630d2436630e6b499",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/1.3.1/MODULE.bazel": "4ce18de0fdfb447ba750b98febb24e12471862cbbd5d08f5f683f27886767367",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/3.0.0/MODULE.bazel": "2c46801f9e890f4f9e94e96bcf42d440d2b39b8fcf4cd065b9c19af1c1b81257",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/3.0.0/source.json": "885c6782158e6c95af506e162ea1733eb4336feb48feb943f3c9d6986252d637",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/3.0.1/MODULE.bazel": "3d37a2257aff6729ce033a91a4db6885b4b2e2322075d8a6d6b2af1a26e78f91",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/3.0.1/source.json": "a513f4cc6f43ce3c8b53486d491f00790184619afc1878799e2c6c9e6d387fb8",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tools/0.0.3/MODULE.bazel": "69f441bf28d938de2b6aef61ec91e65633f8ea908d2527e6f5a424895c9ac388",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tools/0.0.3/source.json": "84fda1c7e1e73811b67c239ce4d10800132c87dbc0af549ab425e66e679dc37f",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/sphinxdocs/2.2.0/MODULE.bazel": "not found",
@@ -2021,7 +2021,7 @@
     "@@rules_distroless+//apt:extensions.bzl%apt": {
       "general": {
         "bzlTransitiveDigest": "2cLKK+xpBDto7SfJ0DzyQ5ShTyGETWCxRuT0AB4mJ+A=",
-        "usagesDigest": "eFPACbVFaYO2fop3Lial+ceoJLXe9XsMryFN4/4FWdY=",
+        "usagesDigest": "Hrg5PJP+0wbCelJ+f8oQyZ9iKJ5YLUyfBZF0VT71cuc=",
         "recordedFileInputs": {
           "@@score_tooling+//third_party/docs_runtime/manifest.yaml": "f8bd762e0dcaf3150504eca8dfd60819fc3be428d3a8b58d1d9cc52d68e16a45",
           "@@score_tooling+//third_party/tooling_sysroot/manifest.yaml": "ef1e4af34dbf67a9e332c69ccad0b12b2e295849c33e98658c6ccd69e363c4cd"
