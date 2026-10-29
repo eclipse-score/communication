@@ -29,12 +29,12 @@ The implementation is organized into the following namespaces:
 |`lgsomeip::osabstraction`|Internal OS abstraction: sockets, addresses, `NetworkDevice`, multiplexer, and QNX message passing.|
 |`lgsomeip::serialization`|Internal parameter serialization helpers (`src/serialization/someip`).|
 |`vsomeip`|Supported public compatibility interface for applications and adaptation middleware.|
-|`vsomeip::e2e`, `vsomeip::e2exf`|Bundled E2E implementation namespaces (the CRC and buffer helpers `e2e_crc` and `e2e_buffer` are directly in `vsomeip`); their headers remain internal and are not installed as public APIs.|
+|`vsomeip::e2e`, `vsomeip::e2exf`|Bundled E2E implementation namespaces (the CRC and buffer helpers `e2e_crc` and `e2e_buffer` are directly in `vsomeip`); their headers remain internal and are not exposed as public APIs.|
 
 There are two public header boundaries:
 
-* `include/lgsomeip` (`LgsomeipApi.h`), consumed through the `lgsomeip::api` CMake target (the `lgsomeip` package). It is implemented in `src/someip/runtime/LgsomeipApi.cpp` as a thin layer over `ApplicationManager`.
-* `third_party/vsomeip_interface/include/vsomeip`, installed as `include/vsomeip` and consumed through the `vsomeip` CMake package.
+* `include/lgsomeip` (`LgsomeipApi.h`), consumed through the `//score/lg-someip:lgsomeip` Bazel target. It is implemented in `src/someip/runtime/LgsomeipApi.cpp` as a thin layer over `ApplicationManager`.
+* `third_party/vsomeip_interface/include/vsomeip`, included as `<vsomeip/...>` and consumed through the `//score/lg-someip:vsomeip-if` Bazel target.
 
 Consumers must not depend directly on the internal `lgsomeip::*` core, serializer, or E2E headers.
 
@@ -270,7 +270,7 @@ flowchart LR
     |Component|Package|Description|
     |:---|:---|:---|
     |OSAbstraction|socket|Contains the `NetworkDevice` singleton (device name / address / id) and the `Socket`/`Address` hierarchy used for TCP, UDP, and Unix-domain communication.|
-    |OSAbstraction|multiplex|The `Multiplexer` delivers I/O and connection events for event-driven I/O. It has two back-ends selected by target platform in CMake: `epoll` on Linux and `select` on other targets (QNX).|
+    |OSAbstraction|multiplex|The `Multiplexer` delivers I/O and connection events for event-driven I/O. It has two back-ends selected by target platform in `src/osabstraction/BUILD`: `epoll` on Linux and `select` on other targets (QNX).|
     |OSAbstraction|messagepassing|QNX-only IPC transport (`MessagePassingServer`/`MessagePassingSender` and listener interfaces) used instead of Unix-domain sockets.|
     |OSAbstraction|utils|Logging (`logger`, `formatLog`; console or COVESA DLT) and `TimerManager`. These headers are compiled into the core library and declared in namespace `lgsomeip`.|
     |SOME/IP Core|serialization|Header-only parameter serialization helpers (`SomeIPParameterSerialization.h`, namespace `lgsomeip::serialization`).|
@@ -282,7 +282,7 @@ flowchart LR
     |SOME/IP Core|exception|`SOMEIPException` base class and the derived error types.|
     |SOME/IP Core|daemon|`someip-daemon` entry point (`daemon/someipd.cpp`) that hosts the `ServiceManager`; the optional first argument is the configuration path and `-v` prints the version.|
     |SOME/IP Core|utils|`ThreadPool`, `TimerMux`, `TimeCheck`, byte-order helpers, and `SomeipPacketStatistics`.|
-    |Tools|dump-someipservices|Diagnostic tool that triggers the daemon to dump its current SOME/IP service state (built with `ENABLE_TOOLS`).|
+    |Tools|dump-someipservices|Diagnostic tool that triggers the daemon to dump its current SOME/IP service state.|
     |LGSOMEIP API|runtime/application/message|Public `lgsomeip::api::Runtime` singleton (`instance()`, `create_application()`), the abstract `Application`, and the plain `Message` struct. `ApplicationImpl`/`RuntimeImpl` in `LgsomeipApi.cpp` delegate to `ApplicationManager`.|
     |VSOMEIP interface|runtime|Static factory (`runtime`/`runtime_impl`) used by the vSomeip binding to create application, message, and payload instances.|
     |VSOMEIP interface|application/message/payload|`application_impl`, `message_base_impl`/`message_impl`, and `payload_impl` wrap the core `ApplicationManager` and `Message` (`MessageSOMEIP`) / `Payload` (`MessagePayload`) types behind the vSomeip API.|
@@ -819,21 +819,17 @@ The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, 
     | `SomeipPacketStatistics` | Singleton counters for sent/received/dropped/SD packets, split by `Direction` (`kOutgoing`/`kIncoming`). |
 
     #### Optional / Build-time Features
-    Several capabilities are compiled in only when the corresponding macro is enabled (all `OFF` by default except where noted):
+    Several capabilities are compiled in only when the corresponding macro is defined (all `OFF` by default except where noted). The `ENABLE_SOMEIP_*` macros are defined by the `--//score/lg-someip:enable_someip_*` Bazel flags (see the [README](../README.md#build-options)):
 
     | Macro | Feature |
     |:---|:---|
-    | `ENABLE_TLS` | TLS/DTLS secure connections via the OpenSSL-backed `SecureConnector` (enable with the `ENABLE_TLS` CMake option). |
-    | `ENABLE_DLT` | COVESA DLT logging backend instead of console logging. |
+    | `ENABLE_TLS` | TLS/DTLS secure connections via the OpenSSL-backed `SecureConnector`. Not supported by the Bazel build yet. |
+    | `ENABLE_DLT` | COVESA DLT logging backend instead of console logging. Not supported by the Bazel build yet. |
     | `ENABLE_SOMEIP_TP` | SOME/IP-TP segmentation and reassembly for oversized payloads. |
     | `ENABLE_SOMEIP_PACKET_FILTERING` | Per-message-ID packet filtering in `PacketRouterHost`. |
     | `ENABLE_SOMEIP_DELIVERY_STATISTICS` | Sent, received, delivered, dropped, and Service Discovery packet counters. |
-    | `ENABLE_EXAMPLES` | Linux example applications are included in the build (enabled by default). |
-    | `ENABLE_TOOLS` | Diagnostic tools are included in the build (enabled by default). |
-    | `ENABLE_TEST_BUILD` | Unit, component, and integration test targets plus coverage instrumentation are included when CTest's `BUILD_TESTING` is also enabled. |
-    | `BUILD_TESTING` | Standard CTest switch required with `ENABLE_TEST_BUILD` to add test targets. |
     | `ENABLE_SOMEIP_IPC` | Direct application-to-application IPC route in `PacketRouterProxy` (bypasses the daemon for SOME/IP traffic between local applications; SOME/IP-SD still goes through the daemon). |
-    | `ENABLE_QNX_MESSAGE_PASSING` | QNX message-passing transport (`messagepassing/*`, `EndpointMessagePassing*`) used for the application-daemon channel, direct IPC, and the daemon SD timer. Defaults to `ON` only on QNX; configuring it on another OS is a fatal CMake error. |
+    | `ENABLE_QNX_MESSAGE_PASSING` | QNX message-passing transport (`messagepassing/*`, `EndpointMessagePassing*`) used for the application-daemon channel, direct IPC, and the daemon SD timer. Defined automatically when building for QNX and never on other platforms. |
 
 ##### Dynamic View
 The sequence diagrams below show the Linux application-daemon channel (`EndpointTCPServer`/`EndpointTCPClient` over Unix domain sockets); on QNX the `EndpointMessagePassing*` endpoints take their place. The Request/Response, Event, and InternalMessage diagrams show the daemon-routed path. With `ENABLE_SOMEIP_IPC`, SOME/IP request, response, and event messages for a service without a SOME/IP configuration entry skip the daemon: `PacketRouterProxy` sends them to the peer application through `ipc_senders_` (see [Direct IPC](#direct-ipc)). SOME/IP-SD sequences still go through the daemon.
