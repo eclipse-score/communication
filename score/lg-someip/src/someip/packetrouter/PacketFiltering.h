@@ -27,6 +27,7 @@
 #include <mutex>
 #include <cassert>
 #include <endpoint/EndpointBase.h>
+#include <utils/byteorder/bytestream.h>
 #include <utils/time/TimerManager.h>
 #include <utils/log/formatLog.h>
 #include <utils/log/logger.h>

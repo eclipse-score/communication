@@ -120,9 +120,7 @@ For example:
 bazel build //score/lg-someip/... --//score/lg-someip:enable_someip_ipc=True
 ```
 
-Known limitations: with `enable_someip_tp` the library does not compile, and
-with `enable_someip_delivery_statistics` the `unittest_someip_unit` test does
-not compile.
+Known limitation: with `enable_someip_tp` the library does not compile.
 
 QNX message passing for local IPC is used automatically when building for QNX.
 The SOME/IP application management entry ID (`APPLICATION_MGMT_ENTRY`, `0xF0`)
