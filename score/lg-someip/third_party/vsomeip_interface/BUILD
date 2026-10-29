@@ -61,9 +61,10 @@ lgsomeip_cc_library(
         deps = [":vsomeip-if"],
     )
     for sample in [
+        "notify-sample",
+        "request-sample",
         "response-sample",
         "subscribe-sample",
-        "notify-sample",
     ]
 ]
 
