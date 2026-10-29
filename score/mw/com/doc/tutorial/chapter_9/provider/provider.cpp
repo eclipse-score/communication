@@ -128,13 +128,13 @@ int main()
                                                 "Failed to create TirePressureExtendedSkeleton instance!");
     auto service_instance = std::move(service_instance_result).value();
 
-    // [provider-set-handler-start]
     // Register the set-handler for the "tire_pressure_thresholds" field. Because Get()/Set() on a field are just
     // methods, the handler has to be registered *before* the service is offered (otherwise OfferService() fails). The
     // handler receives the consumer-requested value by reference, validates/clamps it in place and thereby determines
     // the value that actually becomes the new field value (the middleware updates the field with the value the handler
     // leaves behind). We additionally mirror the accepted value into g_current_thresholds so the update loop can use
     // it.
+    // [provider-set-handler-start]
     const auto set_handler_result =
         service_instance.tire_pressure_thresholds.RegisterSetHandler([](TirePressureThreshold& value) noexcept {
             value.lower_threshold =
@@ -153,11 +153,11 @@ int main()
                                                 "Failed to register set handler for 'tire_pressure_thresholds'!");
     // [provider-set-handler-end]
 
-    // [provider-initial-field-values-start]
     // A field always has a current value. Therefore, BEFORE the provider may offer the service, it has to supply an
     // initial value for *each* field via Field::Update(). Omitting this for any field would make the OfferService()
     // call fail.
     std::cout << "Setting initial field values (before offering the service):" << std::endl;
+    // [provider-initial-field-values-start]
     UpdateField(service_instance.tire_pressure_front_left, "tire_pressure_front_left", kInitialTirePressure);
     UpdateField(service_instance.tire_pressure_front_right, "tire_pressure_front_right", kInitialTirePressure);
     UpdateField(service_instance.tire_pressure_rear_left, "tire_pressure_rear_left", kInitialTirePressure);
@@ -169,12 +169,12 @@ int main()
                                                 "Failed to set initial 'tire_pressure_thresholds' value!");
     std::cout << "  tire_pressure_thresholds = [lower: " << initial_thresholds.lower_threshold
               << " bar, upper: " << initial_thresholds.upper_threshold << " bar]" << std::endl;
-    // [provider-initial-field-values-end]
 
     auto offer_result = service_instance.OfferService();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(offer_result.has_value(),
                                                 "Failed to offer TirePressureExtendedSkeleton instance!");
     std::cout << "OfferService: TirePressureExtended service instance is now offered." << std::endl;
+    // [provider-initial-field-values-end]
 
     // Give a consumer time to discover the service before we start updating the tire pressures.
     std::cout << "Waiting " << kInitialUpdateDelay.count() << " s before updating the fields ..." << std::endl;

@@ -168,12 +168,12 @@ int main()
                                                 "Failed to create LongRunningServiceSkeleton instance!");
     auto service_instance = std::move(service_instance_result).value();
 
-    // [provider-post-job-handler-start]
     // Register the implementation of PostLongRunningJob(). The handler receives the bool return value as its first
     // out-parameter (by reference), followed by the three input arguments by const-reference. It does NOT run the job
     // synchronously: it just deserializes/caches the consumer's callback InstanceIdentifier and arms a timer. The
     // actual FindService/proxy creation and the callback call happen later, on the timer thread (outside this
     // middleware handler thread). Handlers MUST be registered before OfferService.
+    // [provider-post-job-handler-start]
     const auto handler_result = service_instance.post_long_running_job_.RegisterHandler(
         [](bool& queued,
            const std::uint32_t& job_argument,

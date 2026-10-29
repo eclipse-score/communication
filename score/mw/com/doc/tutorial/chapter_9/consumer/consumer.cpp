@@ -240,10 +240,10 @@ int main()
             proxy.emplace(std::move(proxy_result).value());
             auto* const proxy_ptr = &proxy.value();
 
-            // [consumer-subscribe-warnings-start]
             // Register the receive handler for the tire_pressure_warning event *before* subscribing. The capture is
             // kept small (a single pointer) so that it fits into the score::cpp::callback storage of an
             // EventReceiveHandler.
+            // [consumer-subscribe-warnings-start]
             const auto set_receive_handler_result =
                 proxy_ptr->tire_pressure_warning.SetReceiveHandler([proxy_ptr]() noexcept {
                     HandleWarnings(*proxy_ptr);
