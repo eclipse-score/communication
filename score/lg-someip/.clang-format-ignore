@@ -1,5 +1,1 @@
-^build/
-^cmake-build-.*/
-^test_report/
-^tests/test_report/
 ^third_party/
