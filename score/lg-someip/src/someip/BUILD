@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//score/lg-someip:lgsomeip.bzl", "LGSOMEIP_VERSION", "lgsomeip_cc_binary", "lgsomeip_cc_library")
+load("//score/lg-someip:lgsomeip.bzl", "LGSOMEIP_VERSION", "lgsomeip_cc_library")
 
 # Sources compiled into the someip-daemon core instead of the client library.
 exports_files([
@@ -43,8 +43,11 @@ cc_library(
     ],
 )
 
+# lg-someip client library. The private headers (and the OS abstraction, E2E
+# and RapidJSON libraries behind them) are implementation details, so only the
+# public API headers are propagated to the consumers.
 lgsomeip_cc_library(
-    name = "lgsomeip_objects",
+    name = "lgsomeip",
     srcs = glob(
         [
             "endpoint/*.cpp",
@@ -62,26 +65,7 @@ lgsomeip_cc_library(
         "@platforms//os:qnx": ["endpoint/EndpointMessagePassing.cpp"],
         "//conditions:default": [],
     }),
+    implementation_deps = [":internal_headers"],
     local_defines = ["SOMEIP_VERSION=\\\"" + LGSOMEIP_VERSION + "\\\""],
-    deps = [":internal_headers"],
-    # Every object file goes into the shared library, like the CMake OBJECT library.
-    alwayslink = True,
-)
-
-lgsomeip_cc_binary(
-    name = "liblgsomeip.so",
-    linkshared = True,
-    deps = [":lgsomeip_objects"],
-)
-
-# Public lg-someip shared library. Like in the CMake build, the OS abstraction
-# and the E2E protection libraries are linked statically into the consumers as well.
-lgsomeip_cc_library(
-    name = "lgsomeip",
-    srcs = [":liblgsomeip.so"],
-    deps = [
-        "//score/lg-someip:api_headers",
-        "//score/lg-someip/src/osabstraction",
-        "//score/lg-someip/third_party/e2e_protection:vsomeip-e2e",
-    ],
+    deps = ["//score/lg-someip:api_headers"],
 )

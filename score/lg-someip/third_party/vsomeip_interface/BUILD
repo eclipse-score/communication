@@ -21,29 +21,14 @@ lgsomeip_cc_library(
     includes = ["include"],
 )
 
-lgsomeip_cc_library(
-    name = "vsomeip_objects",
-    srcs = glob(["source/*.cpp"]),
-    hdrs = glob(["source/*.hpp"]),
-    includes = ["source"],
-    deps = [
-        ":vsomeip_headers",
-        "//score/lg-someip/src/someip:internal_headers",
-        "//score/lg-someip/src/someip:lgsomeip",
-    ],
-    alwayslink = True,
-)
-
-lgsomeip_cc_binary(
-    name = "libvsomeip-if.so",
-    linkshared = True,
-    deps = [":vsomeip_objects"],
-)
-
 # vsomeip compatible API implemented on top of lg-someip.
 lgsomeip_cc_library(
     name = "vsomeip-if",
-    srcs = [":libvsomeip-if.so"],
+    srcs = glob([
+        "source/*.cpp",
+        "source/*.hpp",
+    ]),
+    implementation_deps = ["//score/lg-someip/src/someip:internal_headers"],
     deps = [
         ":vsomeip_headers",
         "//score/lg-someip/src/someip:lgsomeip",

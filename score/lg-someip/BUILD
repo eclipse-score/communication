@@ -77,7 +77,7 @@ cc_library(
     visibility = ["//score/lg-someip:__subpackages__"],
 )
 
-# Shared library with the lg-someip client API.
+# lg-someip client API library.
 alias(
     name = "lgsomeip",
     actual = "//score/lg-someip/src/someip:lgsomeip",
