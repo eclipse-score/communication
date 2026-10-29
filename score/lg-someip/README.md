@@ -94,6 +94,22 @@ cmake .. && make
 sudo make install
 ```
 
+### Bazel
+
+Inside the `score_communication` workspace, lg-someip is also built with Bazel:
+
+```
+bazel build //score/lg-someip/...
+bazel test //score/lg-someip/...
+```
+
+The entry-point targets (visible within `//score/...`) are `//score/lg-someip:lgsomeip`, `//score/lg-someip:someip-daemon`
+and `//score/lg-someip:vsomeip-if`. The `ENABLE_SOMEIP_TP`, `ENABLE_SOMEIP_PACKET_FILTERING`,
+`ENABLE_SOMEIP_DELIVERY_STATISTICS` and `ENABLE_SOMEIP_IPC` options map to the
+`--//score/lg-someip:enable_someip_tp=True` style flags (also `..._packet_filtering`,
+`..._delivery_statistics` and `..._ipc`). `ENABLE_TLS` and `ENABLE_DLT` are not supported
+by the Bazel build yet.
+
 ### QNX
 
 QNX is built by cross-compiling with the QNX SDP toolchain. See
