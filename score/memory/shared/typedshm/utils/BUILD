@@ -13,7 +13,6 @@
 
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 selects.config_setting_group(
     name = "QNX_AND_USE_TYPED_SHMD",

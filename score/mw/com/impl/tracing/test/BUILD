@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(default_visibility = [
     "//score/mw/com/impl/tracing/test:__subpackages__",

@@ -13,7 +13,6 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "method_signature_element_ptr",

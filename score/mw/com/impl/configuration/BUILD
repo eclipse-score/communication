@@ -18,7 +18,6 @@ load("@score_baselibs//score/flatbuffers/bazel:tools.bzl", "generate_json_schema
 load("//bazel/rules:expand_template.bzl", "expand_template")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//score/mw/com/impl/configuration/converter:json_to_flatbuffer_rule.bzl", "json_to_flatbuffer")
 
 exports_files(

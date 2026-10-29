@@ -15,7 +15,6 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("//quality/api_surface:api_surface.bzl", "api_surface_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 # Capture README.md for Sphinx documentation.
 sphinx_docs_library(
