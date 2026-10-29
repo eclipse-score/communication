@@ -138,28 +138,32 @@ consumer asserts at runtime that the serialized form actually fits:
 
 .. literalinclude:: long_running_service.h
    :language: cpp
-   :lines: 31-34
+   :start-after: [serialized-instance-identifier-start]
+   :end-before: [serialized-instance-identifier-end]
    :caption: long_running_service.h
 
 The ``LongRunningServiceInterface``:
 
 .. literalinclude:: long_running_service.h
    :language: cpp
-   :lines: 45-59
+   :start-after: [long-running-service-interface-start]
+   :end-before: [long-running-service-interface-end]
    :caption: long_running_service.h
 
 The ``LongRunningServiceResultInterface``:
 
 .. literalinclude:: long_running_service.h
    :language: cpp
-   :lines: 63-73
+   :start-after: [result-service-interface-start]
+   :end-before: [result-service-interface-end]
    :caption: long_running_service.h
 
 And the proxy/skeleton aliases for both interfaces:
 
 .. literalinclude:: long_running_service.h
    :language: cpp
-   :lines: 75-78
+   :start-after: [proxy-skeleton-aliases-start]
+   :end-before: [proxy-skeleton-aliases-end]
    :caption: long_running_service.h
 
 Files/artifacts used
@@ -236,7 +240,8 @@ then arms a timer. The ``FindService``/proxy-creation and the actual callback ca
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 170-219
+   :start-after: [provider-post-job-handler-start]
+   :end-before: [provider-post-job-handler-end]
    :caption: provider/provider.cpp
 
 .. note::
@@ -261,7 +266,8 @@ deployment in the runtime configuration):
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 76-93
+   :start-after: [provider-ensure-callback-identifier-start]
+   :end-before: [provider-ensure-callback-identifier-end]
    :caption: provider/provider.cpp
 
 ``GetOrCreateCallbackProxy`` then uses the (already deserialized and cached) ``InstanceIdentifier`` to do a **targeted**
@@ -271,7 +277,8 @@ for all subsequent jobs of the same consumer:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 100-141
+   :start-after: [provider-get-or-create-callback-proxy-start]
+   :end-before: [provider-get-or-create-callback-proxy-end]
    :caption: provider/provider.cpp
 
 Like in the earlier provider examples, ``main()`` has no while-loop: after offering the service it simply blocks on a
@@ -287,7 +294,8 @@ receives the two input arguments and just logs them) *before* offering the servi
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 98-114
+   :start-after: [consumer-callback-service-start]
+   :end-before: [consumer-callback-service-end]
    :caption: consumer/consumer.cpp
 
 It then resolves the ``InstanceIdentifier`` of that callback instance via ``ResolveInstanceIDs``, expects exactly one
@@ -296,7 +304,8 @@ call:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 116-129
+   :start-after: [consumer-serialize-instance-identifier-start]
+   :end-before: [consumer-serialize-instance-identifier-end]
    :caption: consumer/consumer.cpp
 
 Next it does a ``StartFindService``-based search for the ``LongRunningService`` instance provided by our provider and,
@@ -304,7 +313,8 @@ once found, creates a proxy for it:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 131-160
+   :start-after: [consumer-start-find-service-start]
+   :end-before: [consumer-start-find-service-end]
    :caption: consumer/consumer.cpp
 
 Finally it **cyclically** (every 500 ms) calls ``PostLongRunningJob`` on the proxy – setting the dummy argument to a
@@ -314,7 +324,8 @@ above:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 170-200
+   :start-after: [consumer-post-jobs-loop-start]
+   :end-before: [consumer-post-jobs-loop-end]
    :caption: consumer/consumer.cpp
 
 How to run the example
