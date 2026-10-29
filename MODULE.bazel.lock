@@ -664,8 +664,8 @@
     "https://bcr.bazel.build/modules/toolchains_protoc/0.2.1/MODULE.bazel": "2f08433ff5e659069b3a1abfee2377d68f510f2de1da50678ed992c455b4ff91",
     "https://bcr.bazel.build/modules/trlc/2.0.5/MODULE.bazel": "0e65fc48ef40d16ee449e4913b487228428a12f97e50cc97c496400cf28038a8",
     "https://bcr.bazel.build/modules/trlc/3.0.0/MODULE.bazel": "45444f9112300e7a716bf842beb17ed8f84d7d1f84c3d1ed126f57bec9bdf2a9",
-    "https://bcr.bazel.build/modules/trlc/3.0.1/MODULE.bazel": "9ece74d6ae5a718850a6f39d94ac52a84c002e0a5c6dadf676433e330c2e2f6c",
-    "https://bcr.bazel.build/modules/trlc/3.0.1/source.json": "3bd9ec62c5a44d759377acee89b7ed966e2ce227292b2b175424bf4343ed0b66",
+    "https://bcr.bazel.build/modules/trlc/3.1.1/MODULE.bazel": "bff475897689a95008409d36d3ed8ebff836f0b1fbcb42e2bd4f523a5e6149fa",
+    "https://bcr.bazel.build/modules/trlc/3.1.1/source.json": "da5e912450701797d9379582fa6ec3d07b6375ff925820afd26228402d051dc6",
     "https://bcr.bazel.build/modules/upb/0.0.0-20211020-160625a/MODULE.bazel": "6cced416be2dc5b9c05efd5b997049ba795e5e4e6fafbe1624f4587767638928",
     "https://bcr.bazel.build/modules/upb/0.0.0-20220923-a547704/MODULE.bazel": "7298990c00040a0e2f121f6c32544bab27d4452f80d9ce51349b1a28f3005c43",
     "https://bcr.bazel.build/modules/upb/0.0.0-20230516-61a97ef/MODULE.bazel": "c0df5e35ad55e264160417fd0875932ee3c9dda63d9fccace35ac62f45e1b6f9",
@@ -1273,8 +1273,8 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/1.0.2/MODULE.bazel": "e70f396375b9d612b4f41ebceff7f18f68ab423b14625c138a354cc01bc62a10",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/1.1.2/MODULE.bazel": "56d08309931cfad67c2b6691207bb5f761a3946830d620c630d2436630e6b499",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/1.3.1/MODULE.bazel": "4ce18de0fdfb447ba750b98febb24e12471862cbbd5d08f5f683f27886767367",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/3.0.1/MODULE.bazel": "3d37a2257aff6729ce033a91a4db6885b4b2e2322075d8a6d6b2af1a26e78f91",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/3.0.1/source.json": "a513f4cc6f43ce3c8b53486d491f00790184619afc1878799e2c6c9e6d387fb8",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/3.0.2/MODULE.bazel": "698cf807d940e44b3e936ad1b1dfae0c851e2a4f1445033727cee7bc9617110b",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/3.0.2/source.json": "30864526d62f3be4fa85bf0d8e0438156312a4414bdb4ca9d1d8bd762947c116",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tools/0.0.3/MODULE.bazel": "69f441bf28d938de2b6aef61ec91e65633f8ea908d2527e6f5a424895c9ac388",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tools/0.0.3/source.json": "84fda1c7e1e73811b67c239ce4d10800132c87dbc0af549ab425e66e679dc37f",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/sphinxdocs/2.2.0/MODULE.bazel": "not found",
@@ -1298,7 +1298,7 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/toolchains_protoc/0.2.1/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/trlc/2.0.5/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/trlc/3.0.0/MODULE.bazel": "not found",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/trlc/3.0.1/MODULE.bazel": "not found",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/trlc/3.1.1/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/upb/0.0.0-20211020-160625a/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/upb/0.0.0-20220923-a547704/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/upb/0.0.0-20230516-61a97ef/MODULE.bazel": "not found",
@@ -1874,7 +1874,7 @@
     "@@rules_distroless+//apt:extensions.bzl%apt": {
       "general": {
         "bzlTransitiveDigest": "tpMdhRsrVVl56cpZirFKhgdOvYc/pG89fOC2YYogv2A=",
-        "usagesDigest": "xXPHhYRBBjARjU99jHpWBWxiQ0sq1fw2XmNqOZfJvxY=",
+        "usagesDigest": "trH6TSukap0IsEfcsYKbLfr5jY+zPGMBV/LotLW2zq8=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",
@@ -5486,6 +5486,21 @@
               "miri_sysroot_sha256": "3077170b7384d6bcf2cf8f53db8b670d48fc7e2237285b4fd799c64e7412bdff",
               "miri_sysroot_strip_prefix": "aarch64-unknown-nto-qnx800"
             }
+          }
+        }
+      }
+    },
+    "@@score_tooling+//bazel/rules/rules_score/private:lobster_capabilities.bzl%lobster_capabilities": {
+      "general": {
+        "bzlTransitiveDigest": "wyEBxCg5jli01vkqV+H6J7B2wzZ1RFF1sSdM5ZmGYWU=",
+        "usagesDigest": "yjcDPNK0IjkkPf3x4zNBF84IlbBKLZ3Y8Gy9ZetW74c=",
+        "recordedInputs": [
+          "REPO_MAPPING:score_tooling+,lobster lobster+"
+        ],
+        "generatedRepoSpecs": {
+          "lobster_capabilities": {
+            "repoRuleId": "@@score_tooling+//bazel/rules/rules_score/private:lobster_capabilities.bzl%_lobster_capabilities_repo",
+            "attributes": {}
           }
         }
       }

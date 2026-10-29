@@ -37,10 +37,10 @@ component dependable_element_message_passing <<SEooC>> {
     dispatch -u[hidden]- client_connection
 }
 
-message_passing_public_api_port )-r- IClientFactory
-message_passing_public_api_port )-r- IClientConnection
-message_passing_public_api_port )-r- IServerFactory
-message_passing_public_api_port )-r- IServer
-message_passing_public_api_port )-r- IServerConnection
+message_passing_public_api_port -r- IClientFactory
+message_passing_public_api_port -r- IClientConnection
+message_passing_public_api_port -r- IServerFactory
+message_passing_public_api_port -r- IServer
+message_passing_public_api_port -r- IServerConnection
 
 @enduml

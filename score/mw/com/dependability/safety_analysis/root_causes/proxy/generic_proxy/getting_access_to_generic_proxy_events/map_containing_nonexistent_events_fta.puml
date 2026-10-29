@@ -18,6 +18,6 @@
 $FailureMode("Map containing non-existent events", "Communication.MapContainingNonexistentEvents", "Communication.IncompleteMapOfEvents")
 
 $IntermediateEvent("Configuration is wrong", "Event1", "Communication.MapContainingNonexistentEvents")
-$TransferInGate("Transfer1", "Event1")
+$TransferInGate("Communication.InMemoryConfigurationWrong", "Event1")
 
 @enduml

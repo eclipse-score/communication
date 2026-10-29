@@ -53,12 +53,12 @@ component_requirements(
     name = "message_passing_safety_measures",
     srcs = ["safetymeasures.trlc"],
     target_compatible_with = ["@platforms//os:linux"],
-    deps = [":message_passing_fault_trees"],
+    deps = ["//score/message_passing/dependability/requirements:feature_requirements"],
 )
 
 safety_analysis(
     name = "message_passing_safety_analysis",
-    arch_design = "//score/message_passing/dependability/software_architectural_design:message_passing_architectural_design",
+    assessments = ["assessments.trlc"],
     failure_modes = [":message_passing_failure_modes"],
     fault_trees = ":message_passing_fault_trees",
     safety_measures = [":message_passing_safety_measures"],

@@ -23,14 +23,14 @@ ScoreReq.FeatReq FEAT_SupportForTimeBasedArchitecture {
 
 ScoreReq.FeatReq FEAT_SupportForDataDrivenArchitecture {
     description = "The communication framework shall provide API to support a data-driven architecture."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForDataDrivenArchitecture@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_SupportForRequestDrivenArchitecture {
     description = "The communication framework shall provide API to support a request-driven architecture."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForRequestDrivenArchitecture@1 ]
     version = 1
 }
@@ -86,14 +86,14 @@ ScoreReq.FeatReq FEAT_FieldAccess {
 
 ScoreReq.FeatReq FEAT_SignalStructure {
     description = "A signal shall be a named element of a communication interface that does not transport data."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForRequestDrivenArchitecture@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_SignalAccess {
     description = "A signal is sent by a service-provider, and it shall be supported, that a service-consumer can wait for its reception and also check/poll if the signal was received or subscribe to update notifications."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForRequestDrivenArchitecture@1 ]
     version = 1
 }
@@ -184,21 +184,21 @@ ScoreReq.FeatReq FEAT_DataLoss {
 
 ScoreReq.FeatReq FEAT_ZeroCopy {
     description = "The communication framework shall enable Zero-Copy communication without copying to-be-transferred data."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForDataDrivenArchitecture@1, Communication.ASR_SupportForRequestDrivenArchitecture@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_SupportForMultipleProgrammingLanguages {
     description = "The communication framework shall provide a public API for each supported programming language of S-CORE."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_ProgrammingLanguagesForApplicationDevelopment@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_SupportForProgrammingLanguageIdioms {
     description = "Each public API shall support the idioms of the programming language it is written in."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_ProgrammingLanguagesForApplicationDevelopment@1 ]
     version = 1
 }
@@ -206,35 +206,35 @@ ScoreReq.FeatReq FEAT_SupportForProgrammingLanguageIdioms {
 ScoreReq.FeatReq FEAT_UseProgrammingLanguageInfrastructure {
     description = "Each public API shall use core infrastructure of its programming language and its accompanying standard libraries."
     note = "Deviations are permitted where required and shall be commented and justified at component level."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_ProgrammingLanguagesForApplicationDevelopment@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_FullyMockablePublicAPI {
     description = "The public API shall be fully mockable."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_InterProcessCommunication@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_FakeBinding {
     description = "The communication framework shall provide a fake binding."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_InterProcessCommunication@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_MultiBindingSupport {
     description = "The communication framework shall support multiple bindings."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_InterProcessCommunication@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_BindingAgnosticPublicAPI {
     description = "The public API of the communication framework shall be binding-agnostic."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_InterProcessCommunication@1 ]
     version = 1
 }
@@ -262,21 +262,21 @@ ScoreReq.FeatReq FEAT_SupportForTracing {
 
 ScoreReq.FeatReq FEAT_AccessControlListPerServiceInstance {
     description = "The communication framework shall support an Access Control List per service instance."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SecureCommunication@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_AccessControlListForProducer {
     description = "The communication framework shall support an Access Control List for the communication partner offering a service instance (producer)."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SecureCommunication@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_AccessControlListForConsumer {
     description = "The communication framework shall support an Access Control List for the communication partner consuming a service instance."
-    safety = ScoreReq.Asil.QM
+    safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SecureCommunication@1 ]
     version = 1
 }

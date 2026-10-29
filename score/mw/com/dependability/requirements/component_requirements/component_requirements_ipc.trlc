@@ -13,7 +13,6 @@
 package Communication
 
 import ScoreReq
-import mw_com_fta
 
 section "com" {
 
@@ -963,11 +962,7 @@ section "com" {
         ScoreReq.CompReq CheckTheUidOfTheProducer {
             description = '''A consumer consuming a provided service instance in the role of a proxy shall verify, whether the UID of the service instance provider matches its configured expectation. If the UID of the provider does not match the expectation, the consumer shall reject the communication with this provided service instance.'''
             safety = ScoreReq.Asil.B
-            derived_from = [
-                Communication.FEAT_SafeCommunication@1,
-                // Verifying the producer's UID against the configured expectation detects a producer other than the intended one, rejecting the connection instead of silently treating its shared memory as the expected service instance.
-                mw_com_fta.WrongProvider
-            ]
+            derived_from = [Communication.FEAT_SafeCommunication@1]
             version = 1
         }
 
@@ -1080,11 +1075,7 @@ section "com" {
 
             Underlying files shall only be finally removed from the file-system once no consumer access them anymore.'''
             safety = ScoreReq.Asil.B
-            derived_from = [
-                Communication.FEAT_SupportForTimeBasedArchitecture@1,
-                // Requiring producers to remove their shared memory segments on destruction prevents a stale segment from a previous offer surviving and being mistaken for a currently offered service instance.
-                mw_com_fta.ServiceWasOfferedButNotUnlinkedOnStopOffer
-            ]
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -1096,11 +1087,7 @@ section "com" {
 
             This name might be subject to calculation by deployment variables. e.g. a service id or instance id'''
             safety = ScoreReq.Asil.B
-            derived_from = [
-                Communication.FEAT_SupportForTimeBasedArchitecture@1,
-                // Deriving the shared memory segment name deterministically from deployment identifiers (e.g. service id, instance id) ensures producer and consumer always agree on the same name, preventing a consumer from opening a segment belonging to a different service instance.
-                mw_com_fta.WrongName
-            ]
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -1116,7 +1103,7 @@ section "com" {
         ScoreReq.CompReq SharedMemoryShallBeAllocatedAccordingToCpuArchitectureAlignment {
             description = '''SharedMemoryResource shall allocate memory in accordance to the alignment of that CPU architecture.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, mw_com_fta.RootCauseWronglyAlignedMemoryAllocated@1]
+            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -1147,22 +1134,14 @@ section "com" {
         ScoreReq.CompReq ProxyRejectsConstructionWhenSharedMemoryAccessIsDeniedByAcl {
             description = '''{{Proxy}} construction shall fail, returning an {{score::result::Error}} containing {{ComErrc::kBindingFailure}} to the user via {{Proxy::Create()}} or {{GenericProxy::Create()}}, if the configured ACL (access control list) of a control or data shared memory segment does not grant the consumer's user id access, instead of proceeding with an inaccessible memory region.'''
             safety = ScoreReq.Asil.B
-            derived_from = [
-                Communication.FEAT_AccessControlListForProducer@1,
-                // If a misconfigured ACL denies the consumer access to a shared memory segment, failing proxy construction converts the misconfiguration into a safe, detectable error instead of proceeding with an inaccessible memory region.
-                mw_com_fta.WrongAcl
-            ]
+            derived_from = [Communication.FEAT_AccessControlListForProducer@1]
             version = 1
         }
 
         ScoreReq.CompReq ProxyRejectsConstructionWhenSharedMemoryObjectIsMissing {
             description = '''{{Proxy}} construction shall fail, returning an {{score::result::Error}} containing {{ComErrc::kBindingFailure}} to the user via {{Proxy::Create()}} or {{GenericProxy::Create()}}, if either the control or the data shared memory object of the corresponding service instance does not exist, instead of proceeding with a missing or inconsistent memory region.'''
             safety = ScoreReq.Asil.B
-            derived_from = [
-                Communication.FEAT_SafeCommunication@1,
-                // If the control or data shared memory object does not actually exist despite the service having been found, failing proxy construction converts the missing object into a safe, detectable error instead of proceeding with a missing or inconsistent memory region.
-                mw_com_fta.SharedMemoryObjectDoesNotExist
-            ]
+            derived_from = [Communication.FEAT_SafeCommunication@1]
             version = 1
         }
 
