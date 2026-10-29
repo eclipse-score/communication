@@ -19,7 +19,6 @@ cc_library(
     name = "message_error",
     srcs = ["message_error.cpp"],
     hdrs = ["message_error.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
     ],
@@ -32,7 +31,6 @@ cc_library(
     name = "serialization",
     srcs = ["serialization.cpp"],
     hdrs = ["serialization.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
     ],
@@ -46,7 +44,6 @@ cc_library(
     name = "gateway_messages",
     srcs = ["gateway_messages.cpp"],
     hdrs = ["gateway_messages.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
     ],
@@ -62,7 +59,6 @@ cc_library(
     name = "transport_message",
     srcs = ["transport_message.cpp"],
     hdrs = ["transport_message.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
     ],
@@ -74,7 +70,6 @@ cc_library(
 cc_unit_test(
     name = "serialization_test",
     srcs = ["serialization_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/gateway/transport_layer:transport",
         "//score/mw/com/gateway/transport_layer/sample/messages:serialization",
@@ -84,7 +79,6 @@ cc_unit_test(
 cc_unit_test(
     name = "gateway_messages_test",
     srcs = ["gateway_messages_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/gateway/transport_layer/sample/messages:gateway_messages",
         "//score/mw/com/gateway/transport_layer/sample/messages:message_error",
@@ -95,7 +89,6 @@ cc_unit_test(
 cc_unit_test(
     name = "message_error_test",
     srcs = ["message_error_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/gateway/transport_layer/sample/messages:message_error",
     ],

@@ -12,13 +12,11 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "field_datatypes",
     srcs = ["mixed_criticality_fields.cpp"],
     hdrs = ["mixed_criticality_fields.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test/fields/mixed_criticality:__pkg__"],
     deps = ["//score/mw/com"],
 )

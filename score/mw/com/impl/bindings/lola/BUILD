@@ -17,7 +17,6 @@ load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "lola",
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/bindings/lola/test:__pkg__",
@@ -39,7 +38,6 @@ cc_library(
     name = "path_builder",
     srcs = ["path_builder.cpp"],
     hdrs = ["path_builder.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -51,7 +49,6 @@ cc_library(
     name = "shm_path_builder",
     srcs = ["shm_path_builder.cpp"],
     hdrs = ["shm_path_builder.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [":path_builder"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/plumbing:__pkg__"],
@@ -65,7 +62,6 @@ cc_library(
     name = "partial_restart_path_builder",
     srcs = ["partial_restart_path_builder.cpp"],
     hdrs = ["partial_restart_path_builder.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [":path_builder"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/plumbing:__pkg__"],
@@ -76,7 +72,6 @@ cc_library(
     name = "i_runtime",
     srcs = ["i_runtime.cpp"],
     hdrs = ["i_runtime.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/plumbing:__pkg__"],
     deps = [
@@ -91,7 +86,6 @@ cc_library(
     name = "i_shm_path_builder",
     srcs = ["i_shm_path_builder.cpp"],
     hdrs = ["i_shm_path_builder.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -107,7 +101,6 @@ cc_library(
     name = "i_partial_restart_path_builder",
     srcs = ["i_partial_restart_path_builder.cpp"],
     hdrs = ["i_partial_restart_path_builder.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -122,7 +115,6 @@ cc_library(
     name = "runtime",
     srcs = ["runtime.cpp"],
     hdrs = ["runtime.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/memory/shared:offset_ptr",
         "@score_baselibs//score/mw/log",
@@ -144,7 +136,6 @@ cc_library(
     name = "rollback_synchronization",
     srcs = ["rollback_synchronization.cpp"],
     hdrs = ["rollback_synchronization.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -158,7 +149,6 @@ cc_library(
     testonly = True,
     srcs = ["runtime_mock.cpp"],
     hdrs = ["runtime_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":i_runtime",
@@ -171,7 +161,6 @@ cc_library(
     testonly = True,
     srcs = ["shm_path_builder_mock.cpp"],
     hdrs = ["shm_path_builder_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":i_shm_path_builder",
@@ -184,7 +173,6 @@ cc_library(
     testonly = True,
     srcs = ["partial_restart_path_builder_mock.cpp"],
     hdrs = ["partial_restart_path_builder_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":i_partial_restart_path_builder",
@@ -196,7 +184,6 @@ cc_library(
     name = "event_meta_info",
     srcs = ["event_meta_info.cpp"],
     hdrs = ["event_meta_info.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -210,7 +197,6 @@ cc_library(
     name = "linear_search_map",
     srcs = ["linear_search_map.cpp"],
     hdrs = ["linear_search_map.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
@@ -229,7 +215,6 @@ cc_library(
     hdrs = [
         "service_data_storage.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/memory/shared:pointer_arithmetic_util",
     ],
@@ -263,7 +248,6 @@ cc_library(
     name = "service_data_control",
     srcs = ["service_data_control.cpp"],
     hdrs = ["service_data_control.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/bindings/lola/test:__pkg__",
@@ -301,7 +285,6 @@ cc_library(
         "skeleton_memory_manager.h",
         "skeleton_method.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":sample_ptr",
         "//score/mw/com/impl/bindings/lola/tracing:tracing_runtime",
@@ -363,7 +346,6 @@ cc_library(
         "proxy_event.h",
         "proxy_method.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":service_data_control",
         ":shm_path_builder",
@@ -421,7 +403,6 @@ cc_library(
     name = "element_fq_id",
     srcs = ["element_fq_id.cpp"],
     hdrs = ["element_fq_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
@@ -439,7 +420,6 @@ cc_library(
     name = "sample_ptr",
     srcs = ["sample_ptr.cpp"],
     hdrs = ["sample_ptr.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -454,7 +434,6 @@ cc_library(
     name = "slot_decrementer",
     srcs = ["slot_decrementer.cpp"],
     hdrs = ["slot_decrementer.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -485,7 +464,6 @@ cc_library(
         "subscription_subscribed_states.h",
         "subscription_subscription_pending_states.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":consumer_event_data_control_local_view",
@@ -508,7 +486,6 @@ cc_library(
     name = "slot_collector",
     srcs = ["slot_collector.cpp"],
     hdrs = ["slot_collector.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":consumer_event_data_control_local_view",
@@ -520,7 +497,6 @@ cc_library(
     name = "application_id_pid_mapping",
     srcs = ["application_id_pid_mapping.cpp"],
     hdrs = ["application_id_pid_mapping.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
@@ -536,7 +512,6 @@ cc_library(
     name = "application_id_pid_mapping_entry",
     srcs = ["application_id_pid_mapping_entry.cpp"],
     hdrs = ["application_id_pid_mapping_entry.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
@@ -547,7 +522,6 @@ cc_library(
     name = "register_pid_fake",
     srcs = ["register_pid_fake.cpp"],
     hdrs = ["register_pid_fake.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -560,7 +534,6 @@ cc_library(
     name = "event_data_control",
     srcs = ["event_data_control.cpp"],
     hdrs = ["event_data_control.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
@@ -574,7 +547,6 @@ cc_library(
     name = "provider_event_data_control_local_view",
     srcs = ["provider_event_data_control_local_view.cpp"],
     hdrs = ["provider_event_data_control_local_view.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
@@ -590,7 +562,6 @@ cc_library(
     name = "consumer_event_data_control_local_view",
     srcs = ["consumer_event_data_control_local_view.cpp"],
     hdrs = ["consumer_event_data_control_local_view.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
@@ -606,7 +577,6 @@ cc_library(
     name = "control_slot_types",
     srcs = ["control_slot_types.cpp"],
     hdrs = ["control_slot_types.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -620,7 +590,6 @@ cc_library(
     name = "event_control",
     srcs = ["event_control.cpp"],
     hdrs = ["event_control.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
@@ -635,7 +604,6 @@ cc_library(
     name = "event_subscription_control",
     srcs = ["event_subscription_control.cpp"],
     hdrs = ["event_subscription_control.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/mw/log",
@@ -652,7 +620,6 @@ cc_library(
     name = "event_slot_status",
     srcs = ["event_slot_status.cpp"],
     hdrs = ["event_slot_status.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -663,7 +630,6 @@ cc_library(
     name = "event_data_control_composite",
     srcs = ["event_data_control_composite.cpp"],
     hdrs = ["event_data_control_composite.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -682,7 +648,6 @@ cc_library(
     name = "event_data_storage",
     srcs = ["event_data_storage.cpp"],
     hdrs = ["event_data_storage.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/memory/shared:memory_resource_proxy",
         "@score_baselibs//score/language/safecpp/safe_math",
@@ -705,7 +670,6 @@ cc_library(
     name = "sample_allocatee_ptr",
     srcs = ["sample_allocatee_ptr.cpp"],
     hdrs = ["sample_allocatee_ptr.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -719,7 +683,6 @@ cc_library(
 
 cc_library(
     name = "event",
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/bindings/lola/messaging:__pkg__",
@@ -743,7 +706,6 @@ cc_library(
     name = "transaction_log",
     srcs = ["transaction_log.cpp"],
     hdrs = ["transaction_log.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
@@ -757,7 +719,6 @@ cc_library(
     name = "transaction_log_local_view",
     srcs = ["transaction_log_local_view.cpp"],
     hdrs = ["transaction_log_local_view.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com/impl:error",
         "@score_baselibs//score/mw/log",
@@ -775,7 +736,6 @@ cc_library(
     name = "transaction_log_id",
     srcs = ["transaction_log_id.cpp"],
     hdrs = ["transaction_log_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = ["//score/mw/com/impl/configuration:global_configuration"],
@@ -786,7 +746,6 @@ cc_library(
     name = "transaction_log_index",
     srcs = ["transaction_log_index.cpp"],
     hdrs = ["transaction_log_index.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
@@ -804,7 +763,6 @@ cc_library(
         "transaction_log_registration_guard.h",
         "transaction_log_set.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
@@ -831,7 +789,6 @@ cc_library(
     name = "transaction_log_rollback_executor",
     srcs = ["transaction_log_rollback_executor.cpp"],
     hdrs = ["transaction_log_rollback_executor.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
@@ -850,7 +807,6 @@ cc_library(
     name = "transaction_log_slot",
     srcs = ["transaction_log_slot.cpp"],
     hdrs = ["transaction_log_slot.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
 )
@@ -859,7 +815,6 @@ cc_library(
     name = "type_erased_sample_ptrs_guard",
     srcs = ["type_erased_sample_ptrs_guard.cpp"],
     hdrs = ["type_erased_sample_ptrs_guard.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com/impl/tracing:service_element_tracing_data",
     ],
@@ -876,7 +831,6 @@ cc_library(
     name = "proxy_instance_identifier",
     srcs = ["proxy_instance_identifier.cpp"],
     hdrs = ["proxy_instance_identifier.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
@@ -892,7 +846,6 @@ cc_library(
     name = "skeleton_instance_identifier",
     srcs = ["skeleton_instance_identifier.cpp"],
     hdrs = ["skeleton_instance_identifier.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
@@ -907,7 +860,6 @@ cc_library(
 cc_unit_test(
     name = "partial_restart_path_builder_test",
     srcs = ["partial_restart_path_builder_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -917,14 +869,12 @@ cc_unit_test(
 cc_unit_test(
     name = "shm_path_builder_test",
     srcs = ["shm_path_builder_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [":shm_path_builder"],
 )
 
 cc_unit_test(
     name = "application_id_pid_mapping_test",
     srcs = ["application_id_pid_mapping_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":application_id_pid_mapping",
         "@score_baselibs//score/concurrency:atomic_indirector",
@@ -935,7 +885,7 @@ cc_unit_test(
 cc_unit_test(
     name = "skeleton_method_test",
     srcs = ["skeleton_method_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -951,7 +901,6 @@ cc_unit_test(
 cc_unit_test(
     name = "type_erased_sample_ptrs_guard_test",
     srcs = ["type_erased_sample_ptrs_guard_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":type_erased_sample_ptrs_guard",
         "//score/mw/com/impl:runtime",
@@ -967,7 +916,7 @@ cc_unit_test(
     srcs = [
         "dynamic_array_bounds_checking_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -989,7 +938,6 @@ cc_unit_test(
 cc_unit_test(
     name = "event_data_control_test",
     srcs = ["event_data_control_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":event_data_control",
         ":event_slot_status",
@@ -1003,7 +951,7 @@ cc_unit_test(
     srcs = [
         "provider_event_data_control_local_view_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -1021,7 +969,7 @@ cc_unit_test(
     srcs = [
         "consumer_event_data_control_local_view_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -1040,7 +988,6 @@ cc_unit_test(
 cc_unit_test(
     name = "event_data_control_composite_test",
     srcs = ["event_data_control_composite_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":consumer_event_data_control_local_view",
         ":provider_event_data_control_local_view",
@@ -1058,7 +1005,7 @@ cc_unit_test(
 cc_unit_test(
     name = "skeleton_test",
     srcs = ["skeleton_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -1075,7 +1022,7 @@ cc_unit_test(
     srcs = [
         "skeleton_method_handling_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -1096,7 +1043,7 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_test",
     srcs = ["proxy_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED catches an exception, so disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -1115,7 +1062,7 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_method_handling_test",
     srcs = ["proxy_method_handling_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -1134,7 +1081,6 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_event_test",
     srcs = ["proxy_event_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":proxy",
         "//score/mw/com/impl:service_element_type",
@@ -1147,7 +1093,6 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_event_get_new_samples_test",
     srcs = ["proxy_event_get_new_samples_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":proxy",
         "//score/mw/com/impl:sample_reference_tracker",
@@ -1160,7 +1105,6 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_event_subscription_test",
     srcs = ["proxy_event_subscription_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":proxy",
         "//score/mw/com/impl:subscription_state",
@@ -1174,7 +1118,6 @@ cc_unit_test(
 cc_unit_test(
     name = "slot_decrementer_test",
     srcs = ["slot_decrementer_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":consumer_event_data_control_local_view",
         ":event_data_control",
@@ -1188,7 +1131,6 @@ cc_unit_test(
 cc_unit_test(
     name = "transaction_log_rollback_executor_test",
     srcs = ["transaction_log_rollback_executor_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":rollback_synchronization",
         ":runtime_mock",
@@ -1208,7 +1150,6 @@ cc_unit_test(
     srcs = [
         "element_fq_id_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":element_fq_id",
         "@score_baselibs//score/mw/log",
@@ -1220,7 +1161,7 @@ cc_unit_test(
     srcs = [
         "event_data_storage_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED catches an exception, so disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -1238,7 +1179,6 @@ cc_unit_test(
     srcs = [
         "event_slot_status_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":event_slot_status",
     ],
@@ -1249,7 +1189,6 @@ cc_unit_test(
     srcs = [
         "event_subscription_control_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":event_subscription_control",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
@@ -1262,7 +1201,6 @@ cc_unit_test(
     srcs = [
         "runtime_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":runtime",
         # TODO: Change for mock once it provides all symbols (see https://github.com/eclipse-score/baselibs/issues/198)
@@ -1277,7 +1215,6 @@ cc_unit_test(
     srcs = [
         "sample_allocatee_ptr_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl/bindings/lola/test_doubles",
     ],
@@ -1288,7 +1225,6 @@ cc_unit_test(
     srcs = [
         "sample_ptr_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl/bindings/lola/test_doubles",
     ],
@@ -1299,7 +1235,6 @@ cc_unit_test(
     srcs = [
         "service_data_storage_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":element_fq_id",
         ":event_meta_info",
@@ -1320,7 +1255,6 @@ cc_unit_test(
     srcs = [
         "service_data_control_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":element_fq_id",
         ":event_control",
@@ -1335,7 +1269,6 @@ cc_unit_test(
     srcs = [
         "linear_search_map_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":linear_search_map",
         "//score/memory/shared:new_delete_delegate_resource",
@@ -1348,7 +1281,7 @@ cc_unit_test(
     srcs = [
         "skeleton_event_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -1363,7 +1296,6 @@ cc_unit_test(
     srcs = [
         "skeleton_event_tracing_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
@@ -1376,7 +1308,6 @@ cc_unit_test(
     srcs = [
         "slot_collector_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":consumer_event_data_control_local_view",
         ":provider_event_data_control_local_view",
@@ -1390,7 +1321,6 @@ cc_unit_test(
     srcs = [
         "subscription_helpers_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":subscription_state_machine",
     ],
@@ -1401,7 +1331,6 @@ cc_unit_test(
     srcs = [
         "subscription_state_machine_events_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":subscription_state_machine",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
@@ -1414,7 +1343,6 @@ cc_unit_test(
     srcs = [
         "subscription_state_machine_methods_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":subscription_state_machine",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
@@ -1426,7 +1354,6 @@ cc_unit_test(
     srcs = [
         "subscription_state_machine_stress_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":subscription_state_machine",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
@@ -1438,7 +1365,6 @@ cc_unit_test(
     srcs = [
         "subscription_state_machine_states_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":subscription_state_machine",
     ],
@@ -1449,7 +1375,6 @@ cc_unit_test(
     srcs = [
         "transaction_log_registration_guard_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":transaction_log_set",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
@@ -1461,7 +1386,7 @@ cc_unit_test(
     srcs = [
         "transaction_log_set_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -1478,7 +1403,6 @@ cc_unit_test(
     srcs = [
         "transaction_log_slot_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":transaction_log_slot",
     ],
@@ -1489,7 +1413,6 @@ cc_unit_test(
     srcs = [
         "transaction_log_local_view_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":transaction_log",
         "//score/memory/shared:shared_memory_resource_heap_allocator_mock",
@@ -1502,7 +1425,6 @@ cc_unit_test(
     srcs = [
         "runtime_application_id_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":runtime",
         # TODO: Change for mock once it provides all symbols (see https://github.com/eclipse-score/baselibs/issues/198)
@@ -1535,7 +1457,7 @@ cc_unit_test(
     srcs = [
         "proxy_method_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],

@@ -17,7 +17,6 @@ load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 cc_unit_test(
     name = "event_data_storage_test",
     srcs = ["event_data_storage_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl/bindings/someip:event_data_storage",
         "@score_baselibs//score/memory:data_type_size_info",
@@ -27,14 +26,12 @@ cc_unit_test(
 cc_unit_test(
     name = "slot_allocation_control_test",
     srcs = ["slot_allocation_control_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = ["//score/mw/com/impl/bindings/someip:slot_allocation_control"],
 )
 
 cc_unit_test(
     name = "skeleton_event_test",
     srcs = ["skeleton_event_stub_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl/bindings/someip:sample_allocatee_ptr",

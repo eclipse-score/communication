@@ -19,7 +19,6 @@ cc_library(
     testonly = True,
     srcs = ["fake_memory_resource.cpp"],
     hdrs = ["fake_memory_resource.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/plumbing:__pkg__",
@@ -38,7 +37,6 @@ cc_library(
         "fake_mocked_service_data.h",
         "fake_service_data.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":fake_memory_resource",

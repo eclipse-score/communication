@@ -27,7 +27,6 @@ cc_library(
         "log_on_timeout.h",
         "logging_callback.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score:__subpackages__"],
     deps = [

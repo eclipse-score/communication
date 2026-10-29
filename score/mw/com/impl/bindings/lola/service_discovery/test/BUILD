@@ -19,7 +19,6 @@ cc_library(
     testonly = True,
     srcs = ["service_discovery_client_test_resources.cpp"],
     hdrs = ["service_discovery_client_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         "//score/mw/com/impl:find_service_handle",
@@ -36,7 +35,6 @@ cc_library(
     testonly = True,
     srcs = ["service_discovery_client_test_fixtures.cpp"],
     hdrs = ["service_discovery_client_test_fixtures.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         ":file_system_guard",
@@ -60,7 +58,6 @@ cc_library(
     testonly = True,
     srcs = ["file_system_guard.cpp"],
     hdrs = ["file_system_guard.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         "@score_baselibs//score/filesystem",
@@ -72,7 +69,6 @@ cc_library(
     testonly = True,
     srcs = ["destructor_notifier.cpp"],
     hdrs = ["destructor_notifier.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         "@score_baselibs//score/filesystem",

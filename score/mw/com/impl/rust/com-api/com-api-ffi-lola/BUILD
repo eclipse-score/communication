@@ -19,7 +19,6 @@ cc_library(
     name = "registry_bridge_macro_cpp",
     srcs = ["registry_bridge_macro.cpp"],
     hdrs = ["registry_bridge_macro.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
         "//score/mw/com:runtime",

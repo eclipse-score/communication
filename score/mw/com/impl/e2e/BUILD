@@ -17,7 +17,6 @@ load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 cc_library(
     name = "e2e_result",
     hdrs = ["e2e_result.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
 )
@@ -28,7 +27,6 @@ cc_library(
     hdrs = [
         "e2e_health_tracker.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
@@ -43,7 +41,6 @@ cc_library(
     hdrs = [
         "e2e_summary.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [

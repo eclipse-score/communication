@@ -19,7 +19,6 @@ cc_library(
     testonly = True,
     srcs = ["tracing_runtime.cpp"],
     hdrs = ["tracing_runtime.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__pkg__",
         "//score/mw/com/impl/bindings/lola:__subpackages__",

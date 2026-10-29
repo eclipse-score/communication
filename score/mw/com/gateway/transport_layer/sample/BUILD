@@ -20,7 +20,6 @@ cc_library(
     name = "i_bidirectional_transport",
     srcs = ["i_bidirectional_transport.cpp"],
     hdrs = ["i_bidirectional_transport.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
     ],
@@ -37,7 +36,6 @@ cc_library(
         "i_message_framer.h",
         "message_framer.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/os:socket",
@@ -59,7 +57,6 @@ cc_library(
         "i_pending_request_tracker.h",
         "pending_request_tracker.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
     ],
@@ -78,7 +75,6 @@ cc_library(
     hdrs = [
         "bidirectional_transport.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/os:socket",
@@ -105,7 +101,6 @@ cc_library(
     hdrs = [
         "sample_hypervisor_transport.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com/gateway/transport_layer/sample/messages:gateway_messages",
         "//score/mw/com/impl:runtime",
@@ -127,7 +122,6 @@ cc_library(
     hdrs = [
         "unique_socket.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/os:socket",
@@ -143,7 +137,6 @@ cc_library(
 cc_unit_test(
     name = "pending_request_tracker_test",
     srcs = ["pending_request_tracker_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
     ],
@@ -155,7 +148,6 @@ cc_unit_test(
 cc_unit_test(
     name = "message_framer_test",
     srcs = ["message_framer_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
     ],
@@ -168,7 +160,6 @@ cc_unit_test(
 cc_unit_test(
     name = "unique_socket_test",
     srcs = ["unique_socket_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
     ],
@@ -187,7 +178,6 @@ cc_test(
         "mock_pending_request_tracker.h",
         "sample_transport_test_resources.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = [
         "unit",
     ],
@@ -208,7 +198,6 @@ cc_test(
 cc_unit_test(
     name = "sample_hypervisor_transport_test",
     srcs = ["sample_hypervisor_transport_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
     ],
@@ -228,7 +217,6 @@ cc_library(
     name = "bidirectional_transport_mock",
     srcs = ["bidirectional_transport_mock.cpp"],
     hdrs = ["bidirectional_transport_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
     ],

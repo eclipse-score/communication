@@ -13,7 +13,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "test_resources",
@@ -21,7 +20,6 @@ cc_library(
         "test_resources.cpp",
         "test_resources.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl/test:__subpackages__"],
     deps = [
         "//score/mw/com",

@@ -25,7 +25,6 @@ cc_library(
     name = "i_binding_tracing_runtime",
     srcs = ["i_binding_tracing_runtime.cpp"],
     hdrs = ["i_binding_tracing_runtime.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -42,7 +41,6 @@ cc_library(
     name = "skeleton_event_tracing_data",
     srcs = ["skeleton_event_tracing_data.cpp"],
     hdrs = ["skeleton_event_tracing_data.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -55,7 +53,6 @@ cc_library(
     name = "service_element_tracing_data",
     srcs = ["service_element_tracing_data.cpp"],
     hdrs = ["service_element_tracing_data.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -68,7 +65,6 @@ cc_library(
     name = "proxy_event_tracing_data",
     srcs = ["proxy_event_tracing_data.cpp"],
     hdrs = ["proxy_event_tracing_data.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -82,7 +78,6 @@ cc_library(
     name = "common_event_tracing",
     srcs = ["common_event_tracing.cpp"],
     hdrs = ["common_event_tracing.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -101,7 +96,6 @@ cc_library(
     name = "skeleton_tracing",
     srcs = ["skeleton_tracing.cpp"],
     hdrs = ["skeleton_tracing.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -121,7 +115,6 @@ cc_library(
     name = "skeleton_event_tracing",
     srcs = ["skeleton_event_tracing.cpp"],
     hdrs = ["skeleton_event_tracing.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -146,7 +139,6 @@ cc_library(
     name = "proxy_event_tracing",
     srcs = ["proxy_event_tracing.cpp"],
     hdrs = ["proxy_event_tracing.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
     ],
@@ -169,7 +161,6 @@ cc_library(
     name = "trace_error",
     srcs = ["trace_error.cpp"],
     hdrs = ["trace_error.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = ["@score_baselibs//score/result"],
@@ -179,7 +170,6 @@ cc_library(
     name = "i_tracing_runtime",
     srcs = ["i_tracing_runtime.cpp"],
     hdrs = ["i_tracing_runtime.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
@@ -204,7 +194,6 @@ cc_library(
     testonly = True,
     srcs = ["tracing_runtime_mock.cpp"],
     hdrs = ["tracing_runtime_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -217,7 +206,6 @@ cc_library(
     name = "tracing_runtime",
     srcs = ["tracing_runtime.cpp"],
     hdrs = ["tracing_runtime.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/memory/shared:pointer_arithmetic_util",
         "@score_baselibs//score/analysis/tracing/generic_trace_library:implementation",
@@ -237,7 +225,6 @@ cc_library(
     testonly = True,
     srcs = ["tracing_test_resources.cpp"],
     hdrs = ["tracing_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -249,7 +236,6 @@ cc_library(
 cc_unit_test(
     name = "trace_error_test",
     srcs = ["trace_error_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -264,7 +250,6 @@ cc_unit_test(
         "tracing_runtime_test.cpp",
         "tracing_runtime_trace_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -281,7 +266,6 @@ cc_unit_test(
 cc_unit_test(
     name = "service_element_tracing_data_test",
     srcs = ["service_element_tracing_data_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":service_element_tracing_data",
     ],
@@ -290,7 +274,6 @@ cc_unit_test(
 cc_unit_test(
     name = "skeleton_tracing_test",
     srcs = ["skeleton_tracing_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":skeleton_tracing",
         ":tracing_runtime_mock",
@@ -304,7 +287,6 @@ cc_unit_test(
 cc_unit_test(
     name = "skeleton_event_tracing_data_test",
     srcs = ["skeleton_event_tracing_data_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":skeleton_event_tracing_data",
     ],
@@ -313,7 +295,6 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_event_tracing_data_test",
     srcs = ["proxy_event_tracing_data_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":proxy_event_tracing_data",
     ],
@@ -322,7 +303,6 @@ cc_unit_test(
 cc_unit_test(
     name = "common_event_tracing_test",
     srcs = ["common_event_tracing_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":common_event_tracing",
         ":tracing_runtime_mock",
@@ -334,7 +314,6 @@ cc_unit_test(
 cc_unit_test(
     name = "skeleton_event_tracing_test",
     srcs = ["skeleton_event_tracing_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":skeleton_event_tracing",
         ":tracing_runtime_mock",
@@ -349,7 +328,6 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_event_tracing_test",
     srcs = ["proxy_event_tracing_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":proxy_event_tracing",
         ":tracing_runtime_mock",

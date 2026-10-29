@@ -19,7 +19,6 @@ cc_library(
     name = "asil_specific_cfg",
     srcs = ["asil_specific_cfg.cpp"],
     hdrs = ["asil_specific_cfg.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
 )
 
@@ -27,7 +26,6 @@ cc_library(
     name = "client_quality_type",
     srcs = ["client_quality_type.cpp"],
     hdrs = ["client_quality_type.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
 )
 
@@ -45,7 +43,6 @@ cc_library(
         "method_subscription_registration_guard.h",
         "method_unsubscription_registration_guard.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
     ],
@@ -69,7 +66,6 @@ cc_library(
     name = "message_passing_service",
     srcs = ["message_passing_service.cpp"],
     hdrs = ["message_passing_service.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":i_message_passing_service",
@@ -82,7 +78,6 @@ cc_library(
     name = "i_message_passing_service_instance",
     srcs = ["i_message_passing_service_instance.cpp"],
     hdrs = ["i_message_passing_service_instance.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":asil_specific_cfg",
@@ -95,7 +90,6 @@ cc_library(
     name = "message_passing_service_instance",
     srcs = ["message_passing_service_instance.cpp"],
     hdrs = ["message_passing_service_instance.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/language/safecpp/safe_math"],
     tags = ["FFI"],
     deps = [
@@ -118,7 +112,6 @@ cc_library(
     testonly = True,
     srcs = ["message_passing_service_instance_mock.cpp"],
     hdrs = ["message_passing_service_instance_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":i_message_passing_service_instance",
         "@googletest//:gtest",
@@ -129,7 +122,6 @@ cc_library(
     name = "i_message_passing_service_instance_factory",
     srcs = ["i_message_passing_service_instance_factory.cpp"],
     hdrs = ["i_message_passing_service_instance_factory.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":asil_specific_cfg",
@@ -144,7 +136,6 @@ cc_library(
     name = "message_passing_service_instance_factory",
     srcs = ["message_passing_service_instance_factory.cpp"],
     hdrs = ["message_passing_service_instance_factory.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":asil_specific_cfg",
@@ -159,7 +150,6 @@ cc_library(
     testonly = True,
     srcs = ["message_passing_service_instance_factory_mock.cpp"],
     hdrs = ["message_passing_service_instance_factory_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":i_message_passing_service_instance_factory",
         "@googletest//:gtest",
@@ -170,7 +160,6 @@ cc_library(
     name = "message_passing_client_cache",
     srcs = ["message_passing_client_cache.cpp"],
     hdrs = ["message_passing_client_cache.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":asil_specific_cfg",
@@ -188,7 +177,6 @@ cc_library(
     hdrs = [
         "node_identifier_copier.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         "//score/mw/com/impl/bindings/lola:element_fq_id",
@@ -204,7 +192,6 @@ cc_library(
     hdrs = [
         "thread_abstraction.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
 )
 
@@ -216,7 +203,6 @@ cc_library(
     hdrs = [
         "mw_log_logger.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/memory/shared:pointer_arithmetic_util",
         "@score_baselibs//score/mw/log",
@@ -234,7 +220,6 @@ cc_library(
     hdrs = [
         "thread_abstraction.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
@@ -252,7 +237,6 @@ cc_library(
     testonly = True,
     srcs = ["message_passing_service_mock.cpp"],
     hdrs = ["message_passing_service_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":i_message_passing_service",
@@ -267,7 +251,6 @@ cc_library(
     testonly = True,
     srcs = ["thread_abstraction_mock.cpp"],
     hdrs = ["thread_abstraction_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":thread_abstraction",
@@ -280,7 +263,6 @@ cc_unit_test(
     srcs = [
         "thread_abstraction_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/bindings/lola/messaging:__pkg__",
     ],
@@ -293,7 +275,6 @@ cc_unit_test(
 cc_unit_test(
     name = "message_passing_service_test",
     srcs = ["message_passing_service_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -307,7 +288,6 @@ cc_unit_test(
 cc_unit_test(
     name = "node_identifier_copier_test",
     srcs = ["node_identifier_copier_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -317,7 +297,6 @@ cc_unit_test(
 cc_unit_test(
     name = "message_passing_client_cache_test",
     srcs = ["message_passing_client_cache_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/bindings/lola/messaging:__pkg__",
     ],
@@ -331,7 +310,6 @@ cc_unit_test(
 cc_unit_test(
     name = "message_passing_service_instance_test",
     srcs = ["message_passing_service_instance_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -347,7 +325,6 @@ cc_unit_test(
 cc_unit_test(
     name = "mw_log_logger_test",
     srcs = ["mw_log_logger_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -361,7 +338,6 @@ cc_unit_test(
 cc_unit_test(
     name = "method_subscription_registration_guard_test",
     srcs = ["method_subscription_registration_guard_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -376,7 +352,6 @@ cc_unit_test(
 cc_unit_test(
     name = "method_call_registration_guard_test",
     srcs = ["method_call_registration_guard_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -390,7 +365,7 @@ cc_unit_test(
 cc_unit_test(
     name = "message_passing_service_instance_methods_test",
     srcs = ["message_passing_service_instance_methods_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],

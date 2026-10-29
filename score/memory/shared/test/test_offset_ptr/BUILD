@@ -24,7 +24,6 @@ cc_unit_test(
         "index_dereference_test.cpp",
         "misc_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/memory/shared:offset_ptr",
         "//score/memory/shared/test:offset_ptr_test_resources",
@@ -38,7 +37,7 @@ cc_unit_test(
         "bounds_check_test.cpp",
         "copying_offset_ptr_bounds_check_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],

@@ -20,7 +20,6 @@ cc_library(
     name = "register_interface",
     srcs = ["register_interface.cpp"],
     hdrs = ["register_interface.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//visibility:public",  # For generated code and code generation infrastructure
     ],

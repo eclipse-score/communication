@@ -34,7 +34,6 @@ cc_library(
         ],
         "//conditions:default": ["ALLOW_QM"],
     }),
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/memory/shared:__subpackages__",

@@ -10,7 +10,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 package(default_visibility = ["//score/mw/com/test/generic_skeleton:__subpackages__"])
@@ -19,7 +18,6 @@ cc_binary(
     name = "generic_typed_interaction_64_byte_app",
     srcs = ["generic_typed_interaction_app.cpp"],
     defines = ["PAYLOAD_SIZE=64"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:sample_sender_receiver",
@@ -32,7 +30,6 @@ cc_binary(
     name = "generic_typed_interaction_16_byte_app",
     srcs = ["generic_typed_interaction_app.cpp"],
     defines = ["PAYLOAD_SIZE=16"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:sample_sender_receiver",
@@ -45,7 +42,6 @@ cc_binary(
     name = "generic_typed_interaction_8_byte_app",
     srcs = ["generic_typed_interaction_app.cpp"],
     defines = ["PAYLOAD_SIZE=8"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:sample_sender_receiver",
@@ -58,7 +54,6 @@ cc_binary(
     name = "generic_typed_interaction_32_byte_app",
     srcs = ["generic_typed_interaction_app.cpp"],
     defines = ["PAYLOAD_SIZE=32"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:sample_sender_receiver",
@@ -87,7 +82,6 @@ cc_binary(
     name = "generic_generic_interaction_64_byte_app",
     srcs = ["generic_generic_interaction_app.cpp"],
     defines = ["PAYLOAD_SIZE=64"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:sample_sender_receiver",
@@ -100,7 +94,6 @@ cc_binary(
     name = "generic_generic_interaction_32_byte_app",
     srcs = ["generic_generic_interaction_app.cpp"],
     defines = ["PAYLOAD_SIZE=32"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:sample_sender_receiver",
@@ -113,7 +106,6 @@ cc_binary(
     name = "generic_generic_interaction_16_byte_app",
     srcs = ["generic_generic_interaction_app.cpp"],
     defines = ["PAYLOAD_SIZE=16"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:sample_sender_receiver",
@@ -126,7 +118,6 @@ cc_binary(
     name = "generic_generic_interaction_8_byte_app",
     srcs = ["generic_generic_interaction_app.cpp"],
     defines = ["PAYLOAD_SIZE=8"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:sample_sender_receiver",

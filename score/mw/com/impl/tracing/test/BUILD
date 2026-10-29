@@ -21,7 +21,6 @@ package(default_visibility = [
 cc_unit_test(
     name = "proxy_event_tracing_test",
     srcs = ["proxy_event_tracing_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl:runtime_mock",
@@ -37,7 +36,6 @@ cc_unit_test(
 cc_unit_test(
     name = "skeleton_event_tracing_test",
     srcs = ["proxy_event_tracing_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl:runtime_mock",
@@ -53,7 +51,6 @@ cc_unit_test(
 cc_unit_test(
     name = "skeleton_field_tracing_test",
     srcs = ["proxy_event_tracing_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl:runtime_mock",
@@ -69,7 +66,6 @@ cc_unit_test(
 cc_unit_test(
     name = "skeleton_tracing_test",
     srcs = ["proxy_event_tracing_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl:runtime_mock",
