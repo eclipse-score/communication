@@ -44,8 +44,6 @@ _COMMON_DEFINES = [
 
 _COPTS = [
     "-Wall",
-    # RapidJSON assigns to a const member inside a template, which GCC 14+ rejects by default.
-    "-Wno-template-body",
 ] + select({
     "@platforms//os:qnx": [],
     "//conditions:default": ["-pthread"],

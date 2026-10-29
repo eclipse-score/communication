@@ -39,7 +39,7 @@ cc_library(
         "//score/lg-someip:api_headers",
         "//score/lg-someip/src/osabstraction",
         "//score/lg-someip/third_party/e2e_protection:vsomeip-e2e",
-        "//score/lg-someip/third_party/rapidjson",
+        "@rapidjson",
     ],
 )
 
