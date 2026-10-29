@@ -131,11 +131,11 @@ int main(int argc, const char** argv)
         return EXIT_FAILURE;
     }
 
-    // [consumer-keep-sample-ptrs-start]
     // The container of currently held samples. In contrast to the previous chapters - where the consumer released a
     // received SamplePtr immediately at the end of the GetNewSamples() callback - this consumer keeps the SamplePtrs
     // by moving them out of the callback into this deque. It therefore holds up to 'max_sample_count' samples in
     // parallel, which is exactly what it announced in its Subscribe() call. The oldest sample is at the front.
+    // [consumer-keep-sample-ptrs-start]
     std::deque<MessageSamplePtr> held_samples{};
 
     while (g_running.load(std::memory_order_relaxed))
