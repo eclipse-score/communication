@@ -41,8 +41,8 @@ Consumers must not depend directly on the internal `lgsomeip::*` core, serialize
 #### Process Model
 The stack is split into two cooperating roles that share the same endpoint, socket, and message primitives:
 
-* The **daemon process** (`someip-daemon`) runs a single `ServiceManager`, which owns a `PacketRouterHost`. It performs Service Discovery and routes SOME/IP traffic between local applications and remote ECUs.
-* Each **application process** links the library and drives an `ApplicationManager`, which owns a `PacketRouterProxy`. The proxy connects to the daemon over local IPC (Unix domain sockets on Linux, message passing on QNX). Applications reach `ApplicationManager` through either the native `lgsomeip::api` layer or the vSomeip-compatible `vsomeip` layer.
+* The **daemon process** (`someip-daemon`) runs a single `ServiceManager`, which owns a `PacketRouterHost`. It performs Service Discovery and routes SOME/IP traffic between local applications and remote ECUs, and between local applications unless direct IPC is used (see [Direct IPC](#direct-ipc)).
+* Each **application process** links the library and drives an `ApplicationManager`, which owns a `PacketRouterProxy`. The proxy connects to the daemon over the application-daemon channel (Unix domain sockets on Linux, message passing on QNX). Applications reach `ApplicationManager` through either the native `lgsomeip::api` layer or the vSomeip-compatible `vsomeip` layer.
 
 ```mermaid
 flowchart LR
@@ -51,15 +51,145 @@ flowchart LR
         VS["vsomeip::application_impl"] --> AM
         AM --> EM["EventManager / OfferedEvent"]
         AM --> PRP["PacketRouterProxy"]
-        PRP --> EPc["Endpoints (local IPC)"]
+        PRP --> EPc["Endpoints (daemon channel)"]
     end
     subgraph Daemon["someip-daemon process"]
         SM["ServiceManager (SD)"] --> PRH["PacketRouterHost"]
-        PRH --> EPh["Endpoints: local receiver, external TCP/UDP, SD multicast/unicast"]
+        PRH --> EPh["Endpoints: daemon channel receiver, external TCP/UDP, SD multicast/unicast"]
     end
-    EPc <-->|local IPC| EPh
+    EPc <-->|daemon channel| EPh
     EPh <-->|SOME/IP + SOME/IP-SD over TCP/UDP| Net["Remote ECUs"]
 ```
+
+#### System Architecture
+LG SOME/IP consists of one **daemon** per ECU and a **SOME/IP library** linked into every application.
+
+* The daemon handles Service Discovery (SOME/IP-SD) and delivers SOME/IP packets between applications and outside peers (remote ECUs). Unless direct IPC is used, it also delivers SOME/IP packets between local applications.
+* The library lets an application send and receive SOME/IP and SOME/IP-SD packets. Applications never talk to the network directly.
+* The daemon and the applications communicate over the **application-daemon channel**: **Unix Domain Socket** on Linux and **Message Passing** on QNX.
+* **Direct IPC** (optional, `ENABLE_SOMEIP_IPC`): SOME/IP-SD packets are still delivered through the daemon, but SOME/IP packets between applications in the same ECU are delivered directly from application to application, without passing through the daemon. This applies only to services that have no entry in the SOME/IP configuration; services configured for the network keep using the daemon path. Direct IPC uses the same transport as the application-daemon channel (Unix Domain Socket on Linux, Message Passing on QNX).
+
+##### System Context
+The following diagram shows the system as deployed on one ECU and its connections to outside peers.
+
+```mermaid
+flowchart LR
+    subgraph ECU["ECU running LG SOME/IP"]
+        direction LR
+        subgraph APP1["Application A"]
+            A1["Application code"] --> L1["SOME/IP library"]
+        end
+        subgraph APP2["Application B"]
+            A2["Application code"] --> L2["SOME/IP library"]
+        end
+        subgraph APPN["Application N"]
+            AN["Application code"] --> LN["SOME/IP library"]
+        end
+        D["someip-daemon<br/>(Service Discovery + packet routing)"]
+        CFG[("JSON configuration")]
+        L1 <-->|"Daemon channel<br/>(SOME/IP-SD, control, SOME/IP to remote ECUs,<br/>local SOME/IP unless direct IPC)"| D
+        L2 <-->|Daemon channel| D
+        LN <-->|Daemon channel| D
+        L1 <-.->|"Direct IPC<br/>(SOME/IP, same ECU)"| L2
+        L2 <-.->|Direct IPC| LN
+        CFG -.-> D
+        CFG -.-> L1
+        CFG -.-> L2
+        CFG -.-> LN
+    end
+    D <-->|"SOME/IP-SD<br/>(UDP multicast / unicast)"| P1["Remote ECU 1"]
+    D <-->|"SOME/IP<br/>(UDP / TCP)"| P2["Remote ECU 2"]
+```
+
+##### Daemon and Library Responsibilities
+```mermaid
+flowchart LR
+    subgraph LIB["SOME/IP library"]
+        direction TB
+        L_API["Public API<br/>(lgsomeip::api / vsomeip)"]
+        L_AM["ApplicationManager<br/>(request, offer, subscribe, events)"]
+        L_PR["PacketRouterProxy"]
+        L_IPC["Daemon channel endpoint<br/>(UDS / Message Passing)"]
+        L_API --> L_AM --> L_PR --> L_IPC
+    end
+    subgraph DMN["someip-daemon"]
+        direction TB
+        D_IPC["Daemon channel endpoint<br/>(UDS / Message Passing)"]
+        D_PR["PacketRouterHost<br/>(routing and filtering)"]
+        D_SM["ServiceManager<br/>(Service Discovery: find, offer, subscribe)"]
+        D_NET["External endpoints<br/>(UDP / TCP, SD multicast / unicast)"]
+        D_IPC --> D_PR
+        D_PR <--> D_SM
+        D_PR --> D_NET
+        D_SM --> D_NET
+    end
+    L_IPC <==>|"Daemon channel"| D_IPC
+    D_NET <==>|"SOME/IP / SOME/IP-SD"| EXT["Outside peers<br/>(remote ECUs)"]
+```
+
+|Role|Responsibility|
+|:---|:---|
+|SOME/IP library|Offers an API to applications. Sends and receives SOME/IP messages and SOME/IP-SD requests (offer, find, subscribe) through the daemon. With direct IPC enabled, it also sends and receives SOME/IP messages directly to and from other applications in the same ECU (for services without a SOME/IP configuration entry).|
+|`someip-daemon`|Performs Service Discovery with remote ECUs and relays SOME/IP-SD information to local applications. Routes SOME/IP packets between applications and outside peers, and between local applications. With direct IPC enabled, it does not carry SOME/IP packets exchanged between local applications for services without a SOME/IP configuration entry.|
+
+##### Application-Daemon Channel by Platform
+The transport of the application-daemon channel is selected at build time (`ENABLE_QNX_MESSAGE_PASSING` for QNX). The SOME/IP library and the daemon use the same endpoint abstraction, so the layers above the transport are identical on both platforms.
+
+Both sides own a receiver endpoint and a sender endpoint, so the channel consists of two one-way connections: the application sends to the daemon's receiver (`someip-0000`), and the daemon sends to the application's receiver (`someip-<app_id>`).
+
+```mermaid
+flowchart LR
+    APP["Application process<br/>(SOME/IP library)"]
+    subgraph CH["Application-daemon channel"]
+        direction TB
+        CH_UP{{"Application to daemon<br/>Linux: Unix Domain Socket /tmp/someip/someip-0000<br/>QNX: Message Passing someip/someip-0000"}}
+        CH_DN{{"Daemon to application<br/>Linux: Unix Domain Socket /tmp/someip/someip-app_id<br/>QNX: Message Passing someip/someip-app_id"}}
+    end
+    DMN["someip-daemon process"]
+
+    APP ==>|send| CH_UP ==>|receive| DMN
+    DMN ==>|send| CH_DN ==>|receive| APP
+```
+
+|Item|Linux|QNX|
+|:---|:---|:---|
+|Transport|Unix Domain Socket (`AF_UNIX`, stream)|QNX Message Passing|
+|Receiver (daemon and application)|Server socket under `/tmp/someip/` (`SOMEIP_SOCKET_PREFIX`), served by the epoll-based `Multiplexer`|`MessagePassingServer` attaches a name with `name_attach()` (`SOMEIP_MESSAGEPASSING_CHANNEL_NAME_PREFIX`) and receives with `MsgReceive()`|
+|Sender (daemon and application)|Client socket (`TCPClientSocket`) connected to the peer's socket path|`MessagePassingSender` connects with `name_open()` and sends with `MsgSendv()`|
+|Transported data|SOME/IP and SOME/IP-SD packets plus the internal control messages and the instance ID that follows each message|Same|
+
+##### Direct IPC
+With `ENABLE_SOMEIP_IPC`, the path of a packet depends on its type:
+
+|Packet|Path|
+|:---|:---|
+|SOME/IP-SD (offer, find, subscribe, subscribe ack)|Application ⇄ daemon ⇄ application / remote ECU|
+|SOME/IP (request, response, event) between applications in the same ECU, for a service/instance without a SOME/IP configuration entry|Application ⇄ application (direct IPC)|
+|SOME/IP between applications in the same ECU, for a service/instance with a SOME/IP configuration entry|Application ⇄ daemon ⇄ application|
+|SOME/IP to or from a remote ECU|Application ⇄ daemon ⇄ remote ECU|
+
+```mermaid
+flowchart LR
+    subgraph ECU["ECU"]
+        direction LR
+        subgraph PROV["Application A (provider)"]
+            PA["Application code"] --> PL["SOME/IP library<br/>PacketRouterProxy"]
+        end
+        subgraph CONS["Application B (consumer)"]
+            CA["Application code"] --> CL["SOME/IP library<br/>PacketRouterProxy"]
+        end
+        D["someip-daemon<br/>ServiceManager / PacketRouterHost"]
+        PL <-->|"SOME/IP-SD<br/>(offer, find, subscribe)"| D
+        CL <-->|"SOME/IP-SD<br/>(offer, find, subscribe)"| D
+        PL <==>|"Direct IPC: SOME/IP<br/>(request, response, event)"| CL
+    end
+    D <-->|"SOME/IP-SD / SOME/IP"| EXT["Remote ECUs"]
+```
+
+* Each application owns a local receiver endpoint named after its application ID as a 4-digit hex value (`/tmp/someip/someip-<app_id>` on Linux, channel `someip/someip-<app_id>` on QNX; the daemon uses ID `0000`).
+* `PacketRouterProxy::add_ipc_route()` creates a sender endpoint to the peer application the first time a route to it is needed and keeps it in `ipc_senders_`. The route is recorded per service, instance, and event group, together with the provider/consumer role.
+* A request goes from the consumer to the provider's endpoint, a response is returned to the requesting application (identified by the application ID in the request ID), and an event is sent to each subscribed consumer.
+* `ApplicationManager` selects direct IPC when the service/instance has no entry in the SOME/IP configuration (`is_internal_message_for_ipc()`); services that are configured for the network keep using the daemon path.
 
 #### Architecture
 ##### Static View
@@ -702,10 +832,12 @@ The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, 
     | `ENABLE_TOOLS` | Diagnostic tools are included in the build (enabled by default). |
     | `ENABLE_TEST_BUILD` | Unit, component, and integration test targets plus coverage instrumentation are included when CTest's `BUILD_TESTING` is also enabled. |
     | `BUILD_TESTING` | Standard CTest switch required with `ENABLE_TEST_BUILD` to add test targets. |
-    | `ENABLE_SOMEIP_IPC` | Direct application-to-application IPC route in `PacketRouterProxy` (bypasses the daemon for local traffic). |
-    | `ENABLE_QNX_MESSAGE_PASSING` | QNX message-passing transport (`messagepassing/*`, `EndpointMessagePassing*`) used for local IPC and the daemon SD timer. Defaults to `ON` only on QNX; configuring it on another OS is a fatal CMake error. |
+    | `ENABLE_SOMEIP_IPC` | Direct application-to-application IPC route in `PacketRouterProxy` (bypasses the daemon for SOME/IP traffic between local applications; SOME/IP-SD still goes through the daemon). |
+    | `ENABLE_QNX_MESSAGE_PASSING` | QNX message-passing transport (`messagepassing/*`, `EndpointMessagePassing*`) used for the application-daemon channel, direct IPC, and the daemon SD timer. Defaults to `ON` only on QNX; configuring it on another OS is a fatal CMake error. |
 
 ##### Dynamic View
+The sequence diagrams below show the Linux application-daemon channel (`EndpointTCPServer`/`EndpointTCPClient` over Unix domain sockets); on QNX the `EndpointMessagePassing*` endpoints take their place. The Request/Response, Event, and InternalMessage diagrams show the daemon-routed path. With `ENABLE_SOMEIP_IPC`, SOME/IP request, response, and event messages for a service without a SOME/IP configuration entry skip the daemon: `PacketRouterProxy` sends them to the peer application through `ipc_senders_` (see [Direct IPC](#direct-ipc)). SOME/IP-SD sequences still go through the daemon.
+
 ###### Initialize
 
 **Daemon**
