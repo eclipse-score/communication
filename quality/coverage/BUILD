@@ -44,7 +44,8 @@ score_coverage_scope(
 )
 
 # Linux: LLVM source-based coverage (C++ and Rust). Selected by the default
-# coverage config in coverage.bazelrc.
+# coverage config in coverage.bazelrc. Manual: only needed by `bazel coverage`,
+# which names it explicitly through --coverage_report_generator.
 score_coverage_reporter(
     name = "reporter_wrapper",
     testonly = True,
@@ -52,12 +53,13 @@ score_coverage_reporter(
     llvm_cov = "@llvm_toolchain//:llvm-cov",
     llvm_cxxfilt = "@llvm_toolchain_llvm//:bin/llvm-cxxfilt",
     llvm_profdata = "@llvm_toolchain//:llvm-profdata",
+    tags = ["manual"],
 )
 
 # QNX on target: QCC is GCC-based, so the counters are gcov's. Selected by
-# --config=qnx under bazel coverage. C++ only. Manual: the target depends on
-# the QNX SDP package, which a wildcard build on a Linux host without QNX
-# credentials must not try to fetch.
+# --config=qnx under bazel coverage. C++ only. Manual: like the Linux reporter,
+# and in addition the target depends on the QNX SDP package, which a wildcard
+# build on a Linux host without QNX credentials must not try to fetch.
 score_coverage_reporter(
     name = "gcov_reporter_wrapper",
     testonly = True,
