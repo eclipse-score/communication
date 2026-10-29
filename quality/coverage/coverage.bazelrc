@@ -84,6 +84,10 @@ coverage:qnx_x86_64 --@rules_rust//rust/settings:extra_rustc_flags=-Cinstrument-
 coverage:qnx_x86_64 --coverage_output_generator=@bazel_tools//tools/test:lcov_merger
 coverage:qnx_x86_64 --coverage_report_generator=//quality/coverage:gcov_reporter_wrapper
 coverage:qnx_x86_64 --instrument_test_targets
+# The .gcno notes of untested files are built in the exec configuration, which
+# takes the host options; without -O0 there GCC optimises those units and their
+# line tables differ from the -O0 test builds (score_coverage >= 0.4.2).
+coverage:qnx_x86_64 --host_cxxopt=-O0
 # Bazel guesses --instrumentation_filter from the packages of the test targets
 # and only strips a trailing "/tests" (plural) to reach the code under test.
 # Libraries whose tests live in a "test" subpackage would fall outside the
