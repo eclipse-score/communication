@@ -79,7 +79,7 @@ void EventDataStorage::InitializeSlots(const InitializeSampleCallback& initializ
     score::cpp::ignore =
         (type_erased_data_slots_ + decltype(type_erased_data_slots_)::difference_type(last_slot_offset)).get();
 
-    for (SlotIndexType slot_index = 0U; slot_index < number_of_slots_; ++slot_index)
+    for (SlotIndexType slot_index = 0U; safe_math::CmpLess(slot_index, number_of_slots_); ++slot_index)
     {
         // This is our low-level data storage, where we work on type-erased data. The bounds check above guarantees
         // that every slot address lies within type_erased_data_slots_.
@@ -92,7 +92,7 @@ void EventDataStorage::InitializeSlots(const InitializeSampleCallback& initializ
 
 void* EventDataStorage::GetTypeErasedDataSlot(SlotIndexType index, size_t data_size) const
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(index < number_of_slots_);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(safe_math::CmpLess(index, number_of_slots_));
 
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(data_size == sample_size_info_.Size());
     const auto element_offset = data_size * index;

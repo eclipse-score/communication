@@ -14,6 +14,8 @@
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
+
 #include <algorithm>
 #include <optional>
 
@@ -58,11 +60,7 @@ auto EventDataControlComposite<AtomicIndirectorType>::GetNextFreeMultiSlot() con
     EventSlotStatus::EventTimeStamp oldest_time_stamp{EventSlotStatus::TIMESTAMP_MAX};
     std::optional<typename ProviderEventDataControlLocalView<AtomicIndirectorType>::SlotInfo> slot_info{};
 
-    for (SlotIndexType slot_index = 0U;
-         // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
-         // loss.". As the maximum number of slots is std::uint16_t, so there is no case for a data loss here.
-         // coverity[autosar_cpp14_a4_7_1_violation]
-         slot_index < static_cast<SlotIndexType>(asil_b_control_local_->state_slots_.size());
+    for (SlotIndexType slot_index = 0U; safe_math::CmpLess(slot_index, asil_b_control_local_->state_slots_.size());
          ++slot_index)
     {
         const EventSlotStatus slot_qm{
@@ -239,12 +237,7 @@ EventSlotStatus::EventTimeStamp EventDataControlComposite<AtomicIndirectorType>:
 {
     EventSlotStatus::EventTimeStamp latest_time_stamp{EventSlotStatus::INVALID_TIMESTAMP};
     auto& control = (asil_b_control_local_ != nullptr) ? *asil_b_control_local_ : asil_qm_control_local_.get();
-    for (SlotIndexType slot_index = 0U;
-         // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
-         // loss.". As the maximum number of slots is std::uint16_t, so there is no case for a data loss here.
-         // coverity[autosar_cpp14_a4_7_1_violation]
-         slot_index < static_cast<SlotIndexType>(control.state_slots_.size());
-         ++slot_index)
+    for (SlotIndexType slot_index = 0U; safe_math::CmpLess(slot_index, control.state_slots_.size()); ++slot_index)
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < control.state_slots_.size());
         const EventSlotStatus slot{control.state_slots_[slot_index].load(std::memory_order_acquire)};

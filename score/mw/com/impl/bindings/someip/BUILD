@@ -27,6 +27,9 @@ cc_library(
         "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl/configuration",
     ],
+    implementation_deps = [
+        "@score_baselibs//score/language/safecpp/safe_math",
+    ],
 )
 
 cc_library(
@@ -42,6 +45,9 @@ cc_library(
         "//score/mw/com/impl:initialize_sample_callback",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory:data_type_size_info",
+    ],
+    implementation_deps = [
+        "@score_baselibs//score/language/safecpp/safe_math",
     ],
 )
 
@@ -80,6 +86,9 @@ cc_library(
         ":event_data_storage",
         ":slot_allocation_control",
         "@score_baselibs//score/language/futurecpp",
+    ],
+    implementation_deps = [
+        "@score_baselibs//score/language/safecpp/safe_math",
     ],
 )
 

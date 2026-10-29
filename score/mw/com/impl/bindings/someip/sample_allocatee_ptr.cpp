@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/someip/sample_allocatee_ptr.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
+
 #include <score/assert.hpp>
 
 #include <utility>
@@ -71,7 +73,7 @@ SampleAllocateePtr& SampleAllocateePtr::operator=(SampleAllocateePtr&& other) & 
 void SampleAllocateePtr::internal_delete() noexcept
 {
     managed_object_ = nullptr;
-    if (event_slot_index_ < kUninitialisedEventSlotIndex)
+    if (safe_math::CmpLess(event_slot_index_, kUninitialisedEventSlotIndex))
     {
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
             slot_allocation_control_ != nullptr,

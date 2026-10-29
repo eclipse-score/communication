@@ -531,7 +531,10 @@ cc_library(
     srcs = ["someip_service_instance_id.cpp"],
     hdrs = ["someip_service_instance_id.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [":configuration_common_resources"],
+    implementation_deps = [
+        ":configuration_common_resources",
+        "@score_baselibs//score/language/safecpp/safe_math",
+    ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/someip:__pkg__"],
     deps = ["@score_baselibs//score/json"],

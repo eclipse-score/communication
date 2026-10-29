@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/someip/element_fq_id.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
+
 #include <limits>
 
 namespace score::mw::com::impl::someip
@@ -49,21 +51,22 @@ bool operator==(const ElementFqId& lhs, const ElementFqId& rhs) noexcept
     // parenthesized if the operands contain binary operators". This is a false positive, all operands are
     // parenthesized.
     // coverity[autosar_cpp14_a5_2_6_violation : FALSE]
-    return ((lhs.service_id_ == rhs.service_id_) && (lhs.element_id_ == rhs.element_id_) &&
-            (lhs.instance_id_ == rhs.instance_id_) && (lhs.element_type_ == rhs.element_type_));
+    return ((safe_math::CmpEqual(lhs.service_id_, rhs.service_id_)) &&
+            (safe_math::CmpEqual(lhs.element_id_, rhs.element_id_)) &&
+            (safe_math::CmpEqual(lhs.instance_id_, rhs.instance_id_)) && (lhs.element_type_ == rhs.element_type_));
 }
 
 bool operator<(const ElementFqId& lhs, const ElementFqId& rhs) noexcept
 {
-    if (lhs.service_id_ == rhs.service_id_)
+    if (safe_math::CmpEqual(lhs.service_id_, rhs.service_id_))
     {
-        if (lhs.instance_id_ == rhs.instance_id_)
+        if (safe_math::CmpEqual(lhs.instance_id_, rhs.instance_id_))
         {
-            return lhs.element_id_ < rhs.element_id_;
+            return safe_math::CmpLess(lhs.element_id_, rhs.element_id_);
         }
-        return lhs.instance_id_ < rhs.instance_id_;
+        return safe_math::CmpLess(lhs.instance_id_, rhs.instance_id_);
     }
-    return lhs.service_id_ < rhs.service_id_;
+    return safe_math::CmpLess(lhs.service_id_, rhs.service_id_);
 }
 
 }  // namespace score::mw::com::impl::someip
