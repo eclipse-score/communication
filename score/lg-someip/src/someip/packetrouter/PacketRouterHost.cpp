@@ -1272,7 +1272,7 @@ void PacketRouterHost::send_error(std::shared_ptr<Endpoint> endpoint, std::uint8
                                   std::uint8_t return_code) {
     std::uint8_t type;
     std::uint32_t length = 8;
-    std::uint8_t msg[16];
+    std::uint8_t msg[SOMEIP_HEADER::SIZE + 2]; // header + optional 2 bytes of instance ID
 
     if (message == nullptr)
         return;

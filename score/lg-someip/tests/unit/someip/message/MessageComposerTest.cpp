@@ -91,14 +91,14 @@ TEST(MessageComposer, AddsAndReusesTwoOptions) {
     auto second_address = std::make_shared<IP4Address>();
     second_address->set_ip_address("192.0.2.2");
     second_address->set_port_address(30491);
-    SDOption first;
-    first.set_address_option(first_address);
-    SDOption second;
-    second.set_address_option(second_address);
+    // add_entry() reads the two options as first_option[0] and first_option[1].
+    SDOption options[2];
+    options[0].set_address_option(first_address);
+    options[1].set_address_option(second_address);
     SDEntry first_entry(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
     first_entry.set_option1st_count(2);
 
-    MessageComposer::add_entry(message, &first_entry, &first, &second);
+    MessageComposer::add_entry(message, &first_entry, options);
 
     ASSERT_EQ(message->options().size(), 2U);
     EXPECT_EQ(message->entry(0).get_option1st_index(), 0);
@@ -106,7 +106,7 @@ TEST(MessageComposer, AddsAndReusesTwoOptions) {
 
     SDEntry second_entry(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
     second_entry.set_option1st_count(2);
-    MessageComposer::add_entry(message, &second_entry, &first, &second);
+    MessageComposer::add_entry(message, &second_entry, options);
 
     EXPECT_EQ(message->options().size(), 2U);
     EXPECT_EQ(message->entry(1).get_option1st_index(), 0);
