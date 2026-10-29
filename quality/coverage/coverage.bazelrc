@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+
 # Coverage configuration for the score_coverage pipeline
 # (https://eclipse-score.github.io/coverage_tool/main/).
 #
@@ -28,11 +29,14 @@ coverage --nocache_test_results
 coverage --cxxopt=-O0
 coverage --combined_report=lcov
 coverage --experimental_fetch_all_coverage_outputs
+
 # Shared objects with mixed instrumentation make llvm-cov pick the wrong
 # object for a header; static linking avoids that (score_coverage CSTR-05).
 coverage --dynamic_mode=off
+
 # Coverage builds must not fail on instrumentation-related warnings.
 coverage --features=-score_communication_treat_warnings_as_errors
+
 # FORTIFY_SOURCE conflicts with the LLVM coverage runtime at link time.
 coverage --features=-score_communication_fortify_source
 coverage --host_features=-score_communication_fortify_source
@@ -42,16 +46,21 @@ coverage --host_features=-score_communication_fortify_source
 # ============================================================================
 coverage --experimental_generate_llvm_lcov
 coverage --experimental_use_llvm_covmap
+
 coverage --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 coverage --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+
 coverage --coverage_output_generator=@score_coverage//:merger
 coverage --coverage_report_generator=//quality/coverage:reporter_wrapper
+
 coverage --test_env=GENERATE_LLVM_LCOV=0
 coverage --test_env=COVERAGE_GCOV_PATH=/usr/bin/true
+
 # Continuous-mode profiling so coverage survives abnormal termination
 # (death tests); needs runtime counter relocation, see the cc_feature.
 coverage --test_env=LLVM_PROFILE_CONTINUOUS_MODE=1
 coverage --features=enable_llvm_coverage_for_death_tests
+
 # Rust: rules_rust adds -Cinstrument-coverage once the toolchain declares
 # llvm_cov (score_toolchains_rust >= 0.9.2 with coverage tools).
 #   -runtime-counter-relocation: continuous mode, as above
@@ -67,27 +76,32 @@ coverage --@rules_rust//rust/settings:extra_rustc_flags=-Cllvm-args=-runtime-cou
 coverage:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx-sdp_8.0.0-posix
 coverage:qnx_x86_64 --extra_toolchains=@score_qcc_x86_64_toolchain//:x86_64-qnx-sdp_8.0.0
 coverage:qnx_x86_64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_pc_nto_qnx800
+
 # Reset the LLVM settings above
 coverage:qnx_x86_64 --noexperimental_generate_llvm_lcov
 coverage:qnx_x86_64 --noexperimental_use_llvm_covmap
 coverage:qnx_x86_64 --test_env=GENERATE_LLVM_LCOV
 coverage:qnx_x86_64 --test_env=COVERAGE_GCOV_PATH
 coverage:qnx_x86_64 --test_env=LLVM_PROFILE_CONTINUOUS_MODE
+
 # rules_rust adds --codegen=instrument-coverage whenever the Rust toolchain
 # declares llvm_cov, which makes rustc pass `-u __llvm_profile_runtime` to the
 # linker; q++ rejects it ("cc: unknown option: '-u'"). Extra rustc flags come
 # after that flag and the last -C instrument-coverage wins, so switch it off.
 coverage:qnx_x86_64 --@rules_rust//rust/settings:extra_rustc_flags=-Cinstrument-coverage=no
+
 # Bazel's own per-test gcov collector; score_coverage's gcov reporter for the
 # final report. Tests are instrumented too so header-only code that only a
 # test translation unit instantiates is measured (the scope drops the tests).
 coverage:qnx_x86_64 --coverage_output_generator=@bazel_tools//tools/test:lcov_merger
 coverage:qnx_x86_64 --coverage_report_generator=//quality/coverage:gcov_reporter_wrapper
 coverage:qnx_x86_64 --instrument_test_targets
+
 # The .gcno notes of untested files are built in the exec configuration, which
 # takes the host options; without -O0 there GCC optimises those units and their
 # line tables differ from the -O0 test builds (score_coverage >= 0.4.2).
 coverage:qnx_x86_64 --host_cxxopt=-O0
+
 # Bazel guesses --instrumentation_filter from the packages of the test targets
 # and only strips a trailing "/tests" (plural) to reach the code under test.
 # Libraries whose tests live in a "test" subpackage would fall outside the
@@ -95,9 +109,11 @@ coverage:qnx_x86_64 --host_cxxopt=-O0
 # (seen as 0 % for score/os in baselibs). The LLVM backend on Linux is
 # unaffected (its merger does not consult the filter).
 coverage:qnx_x86_64 --instrumentation_filter=^//score[/:]
+
 # NOTE: no --test_lang_filters=cc here. QNX unit tests are wrapped by
 # cc_unit_test/score_qnx_unit_tests as a Starlark _forwarding_test rule (which
 # dispatches to a sh_test running the binary under QEMU), not a native
 # cc_test. --test_lang_filters matches on the rule class' language prefix, so
 # any non-empty value (including "cc") silently excludes every QNX test.
+
 coverage:qnx --config=qnx_x86_64
