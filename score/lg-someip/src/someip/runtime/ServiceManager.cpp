@@ -2453,7 +2453,6 @@ void ServiceManager::remove_service_info(std::shared_ptr<lgsomeip::osabstraction
                 (service_info.udp_address != nullptr &&
                  service_info.udp_address->get_ip_address().compare(address->get_ip_address()) == 0)) {
                 service_id = service_it->first;
-                instance_id = instance.first;
 
                 packet_router_->remove_route(service_id, instance_id);
                 // Send a StopOfferService message to the requesting application.

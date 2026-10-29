@@ -1991,7 +1991,6 @@ ApplicationManager::get_message_handler(std::uint16_t service_id, std::uint16_t 
                 error = SOMEIP_RETURN_CODE::E_WRONG_INTERFACE_VERSION;
                 throw LSAR_APPLICATION_ERROR(error);
             }
-            major = SOMEIP_DEFAULT_ANY_MAJOR;
         }
 
         if (service.begin()->second != SOMEIP_SERVICE_OFFER) {
