@@ -99,8 +99,16 @@ The library and daemon targets are visible within `//score/...`.
 
 ### QNX
 
-QNX is not supported by the Bazel build yet. See
-[docs/qnx-build-and-run-guide.md](docs/qnx-build-and-run-guide.md).
+Build for QNX with the QNX configurations of the workspace, which require a QNX
+license:
+
+```sh
+bazel build --config=qnx_x86_64 //score/lg-someip/...
+bazel build --config=qnx_arm64 //score/lg-someip/...
+```
+
+See [docs/qnx-build-and-run-guide.md](docs/qnx-build-and-run-guide.md) for the
+requirements and for running on the target.
 
 ## Build Options
 

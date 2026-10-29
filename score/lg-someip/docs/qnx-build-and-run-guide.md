@@ -1,60 +1,45 @@
 # Building and Running on QNX
 
-LG SOME/IP is cross-compiled for QNX with the QNX SDP toolchain. The steps
-below were validated with QNX SDP 8.0 (`aarch64le`). QNX builds are not part of
-the GitHub CI.
+LG SOME/IP is cross-compiled for QNX 8 with the QNX SDP 8.0 toolchains that the
+`score_communication` workspace provides. The QNX build is part of the QNX
+GitHub workflow of the repository.
 
 ## Requirements
 
-- QNX SDP with a valid license, installed on a Linux host
-- CMake >= 3.18
-- [RapidJSON](https://github.com/Tencent/rapidjson) headers (set
-  `RAPIDJSON_INCLUDE_DIR` for an offline build)
+Building for QNX requires:
 
-## Toolchain File
+- An account on qnx.com with an assigned QNX 8 license.
+- The credentials of this account, either in `~/.netrc` (`machine qnx.com`) or
+  in the `SCORE_QNX_USER` and `SCORE_QNX_PASSWORD` environment variables. Bazel
+  uses them to download the QNX SDP.
+- The QNX license under `/opt/score_qnx/license/licenses`. Copy the
+  `~/.qnx/license/licenses` directory that the QNX Software Center creates when
+  installing the QNX SDP 8.
 
-Create a CMake toolchain file, for example `qnx-aarch64le.cmake`:
-
-```cmake
-set(CMAKE_SYSTEM_NAME QNX)
-set(CMAKE_SYSTEM_PROCESSOR aarch64)
-
-set(CMAKE_C_COMPILER   "$ENV{QNX_HOST}/usr/bin/qcc")
-set(CMAKE_CXX_COMPILER "$ENV{QNX_HOST}/usr/bin/qcc")
-set(CMAKE_C_COMPILER_TARGET   gcc_ntoaarch64le)
-set(CMAKE_CXX_COMPILER_TARGET gcc_ntoaarch64le)
-
-set(CMAKE_AR     "$ENV{QNX_HOST}/usr/bin/ntoaarch64-ar"     CACHE FILEPATH "")
-set(CMAKE_RANLIB "$ENV{QNX_HOST}/usr/bin/ntoaarch64-ranlib" CACHE FILEPATH "")
-set(CMAKE_STRIP  "$ENV{QNX_HOST}/usr/bin/ntoaarch64-strip"  CACHE FILEPATH "")
-```
+See the QNX section of the repository [.bazelrc](../../../.bazelrc) for details.
 
 ## Build
 
+Run the Bazel commands from the root of the `score_communication` workspace:
+
 ```sh
-source <qnx800>/qnxsdp-env.sh      # sets QNX_HOST and QNX_TARGET
-cmake -S . -B build-qnx -G "Unix Makefiles" \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_TOOLCHAIN_FILE=/path/to/qnx-aarch64le.cmake \
-  -DCMAKE_INSTALL_PREFIX=$PWD/install-qnx \
-  -DENABLE_TLS=OFF -DENABLE_DLT=OFF -DENABLE_TEST_BUILD=OFF
-cmake --build build-qnx --parallel
-cmake --install build-qnx
+# x86_64 (also available as --config=qnx)
+bazel build --config=qnx_x86_64 //score/lg-someip/...
+
+# aarch64
+bazel build --config=qnx_arm64 //score/lg-someip/...
 ```
 
-On QNX, `ENABLE_QNX_MESSAGE_PASSING` is enabled by default, so local IPC
-between applications and the daemon uses QNX message passing instead of Unix
-domain sockets.
-
-If `qcc` cannot find its license, point `QNX_CONFIGURATION_EXCLUSIVE` at the
-QNX license directory before running CMake.
+On QNX, QNX message passing is used for local IPC between applications and the
+daemon instead of Unix domain sockets. The binaries are statically linked
+against lg-someip and are written below `bazel-bin/score/lg-someip/`.
 
 ## Deploy and Run
 
-Copy the install tree to the target, for example to `/var/lg-someip`, then:
+Copy the binaries and a configuration file to the target, for example to
+`/var/lg-someip`, then:
 
 ```sh
-export LD_LIBRARY_PATH=/var/lg-someip/lib
 export LGSOMEIP_CONFIGURATION=/var/lg-someip/etc/lgsomeip_config.json
 /var/lg-someip/bin/someip-daemon &
 /var/lg-someip/bin/someip-request-1
