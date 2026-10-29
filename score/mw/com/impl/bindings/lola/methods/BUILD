@@ -19,7 +19,6 @@ cc_library(
     name = "proxy_method_instance_identifier",
     srcs = ["proxy_method_instance_identifier.cpp"],
     hdrs = ["proxy_method_instance_identifier.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
@@ -40,7 +39,6 @@ cc_library(
     hdrs = [
         "method_data.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
@@ -62,7 +60,6 @@ cc_library(
     hdrs = [
         "method_resource_map.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
@@ -84,7 +81,6 @@ cc_library(
     hdrs = [
         "type_erased_call_queue.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/memory/shared:pointer_arithmetic_util",
     ],
@@ -102,7 +98,6 @@ cc_library(
     name = "method_error",
     srcs = ["method_error.cpp"],
     hdrs = ["method_error.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -117,7 +112,6 @@ cc_library(
     name = "offered_state_machine",
     srcs = ["offered_state_machine.cpp"],
     hdrs = ["offered_state_machine.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/language/futurecpp"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
@@ -127,7 +121,6 @@ cc_library(
     name = "unique_method_identifier",
     srcs = ["unique_method_identifier.cpp"],
     hdrs = ["unique_method_identifier.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
@@ -155,7 +148,7 @@ cc_unit_test(
     srcs = [
         "type_erased_call_queue_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -197,7 +190,7 @@ cc_unit_test(
     srcs = [
         "method_error_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -212,7 +205,7 @@ cc_unit_test(
     srcs = [
         "method_resource_map_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -226,7 +219,7 @@ cc_unit_test(
 cc_unit_test(
     name = "offered_state_machine_test",
     srcs = ["offered_state_machine_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],

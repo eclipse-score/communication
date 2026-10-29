@@ -19,7 +19,6 @@ cc_library(
     name = "tracing_runtime",
     srcs = ["tracing_runtime.cpp"],
     hdrs = ["tracing_runtime.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
@@ -43,7 +42,6 @@ cc_library(
 cc_unit_test(
     name = "tracing_runtime_test",
     srcs = ["tracing_runtime_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],

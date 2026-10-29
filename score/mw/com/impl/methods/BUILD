@@ -19,7 +19,6 @@ cc_library(
     name = "method_signature_element_ptr",
     srcs = ["method_signature_element_ptr.cpp"],
     hdrs = ["method_signature_element_ptr.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
@@ -32,7 +31,6 @@ cc_library(
     name = "method_traits_checker",
     srcs = ["method_traits_checker.cpp"],
     hdrs = ["method_traits_checker.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
@@ -51,7 +49,6 @@ cc_library(
         "callable_traits.h",
         "callable_traits_impl.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
@@ -74,7 +71,6 @@ cc_library(
     name = "proxy_method_base",
     srcs = ["proxy_method_base.cpp"],
     hdrs = ["proxy_method_base.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
@@ -105,7 +101,6 @@ cc_library(
         "proxy_method_with_return_type.h",
         "proxy_method_without_in_args_or_return.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
@@ -132,7 +127,6 @@ cc_library(
     hdrs = [
         "proxy_method_binding.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
@@ -157,7 +151,7 @@ cc_unit_test(
 cc_unit_test(
     name = "method_traits_checker_test",
     srcs = ["method_traits_checker_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -171,7 +165,7 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_method_test",
     srcs = ["proxy_method_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -190,7 +184,6 @@ cc_library(
     name = "skeleton_method_base",
     srcs = ["skeleton_method_base.cpp"],
     hdrs = ["skeleton_method_base.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
@@ -207,7 +200,6 @@ cc_library(
     name = "skeleton_method",
     srcs = ["skeleton_method.cpp"],
     hdrs = ["skeleton_method.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -226,7 +218,6 @@ cc_library(
     name = "skeleton_method_binding",
     srcs = ["skeleton_method_binding.cpp"],
     hdrs = ["skeleton_method_binding.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -243,7 +234,6 @@ cc_unit_test(
     srcs = [
         "skeleton_method_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":skeleton_method",
         "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
@@ -259,7 +249,6 @@ cc_unit_test(
     srcs = [
         "skeleton_method_base_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":skeleton_method",
         ":skeleton_method_base",

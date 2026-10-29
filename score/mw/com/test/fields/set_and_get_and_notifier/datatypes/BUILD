@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "field_datatypes",
@@ -32,7 +31,6 @@ cc_library(
         "set_and_get_enabled_field.h",
         "set_and_notifier_enabled_field.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test/fields/set_and_get_and_notifier:__pkg__"],
     deps = [
         "//score/mw/com",

@@ -19,7 +19,6 @@ cc_library(
     testonly = True,
     srcs = ["bounds_check_memory_pool.cpp"],
     hdrs = ["bounds_check_memory_pool.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory/shared/test:__subpackages__",
     ],
@@ -36,7 +35,6 @@ cc_library(
     testonly = True,
     srcs = ["offset_ptr_test_resources.cpp"],
     hdrs = ["offset_ptr_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/memory/shared/test:__subpackages__"],
     deps = [
         "//score/memory/shared:managed_memory_resource",

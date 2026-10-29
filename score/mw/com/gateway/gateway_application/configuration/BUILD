@@ -36,7 +36,6 @@ cc_library(
     name = "gateway_configuration",
     srcs = ["gateway_configuration.cpp"],
     hdrs = ["gateway_configuration.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/gateway:__subpackages__"],
     deps = [
         "@score_baselibs//score/language/futurecpp",
@@ -47,7 +46,6 @@ cc_library(
     name = "gateway_config_parser",
     srcs = ["gateway_config_parser.cpp"],
     hdrs = ["gateway_config_parser.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
     ],
@@ -62,7 +60,6 @@ cc_unit_test(
     name = "gateway_config_parser_test",
     srcs = ["gateway_config_parser_test.cpp"],
     data = ["example/mw_com_gateway_config.json"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":gateway_config_parser",
         "@score_baselibs//score/json",

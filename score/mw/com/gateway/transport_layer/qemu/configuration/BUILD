@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 package(
@@ -28,7 +27,6 @@ cc_library(
         "qemu_transport_config_parser.h",
         "qemu_transport_configuration.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
     ],

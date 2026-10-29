@@ -12,13 +12,12 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "lola_interface",
     srcs = ["lola_interface.cpp"],
     hdrs = ["lola_interface.h"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//score/mw/com/performance_benchmarks/api_microbenchmarks:__pkg__"],
@@ -35,7 +34,6 @@ cc_binary(
     data = [
         "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:basic_config",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["benchmark"],
     deps = [
         "//score/mw/com",
@@ -53,7 +51,6 @@ cc_binary(
     data = [
         "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:basic_config",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["benchmark"],
     deps = [
         ":lola_interface",
@@ -74,7 +71,6 @@ cc_binary(
         "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json",
     ],
     env = {"MW_LOG_CONFIG_FILE": "$(location //score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json)"},
-    features = COMPILER_WARNING_FEATURES,
     tags = ["benchmark"],
     deps = [
         ":lola_interface",
@@ -95,7 +91,6 @@ cc_binary(
         "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json",
     ],
     env = {"MW_LOG_CONFIG_FILE": "$(location //score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json)"},
-    features = COMPILER_WARNING_FEATURES,
     tags = ["benchmark"],
     deps = [
         ":lola_interface",

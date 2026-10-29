@@ -12,14 +12,12 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_binary(
     name = "dynamic_array_sct",
     srcs = ["dynamic_array_sct.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/memory/shared",
         "//score/memory/shared:managed_memory_resource",

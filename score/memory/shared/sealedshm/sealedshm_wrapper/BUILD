@@ -24,7 +24,6 @@ cc_library(
         "i_sealed_shm.h",
         "sealed_shm.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/memory/shared:__subpackages__",

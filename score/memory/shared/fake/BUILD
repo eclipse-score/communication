@@ -25,7 +25,6 @@ cc_library(
         "my_bounded_memory_resource.h",
         "my_memory_resource.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["//score/memory/shared:shared_memory_resource"],
     visibility = ["//visibility:public"],
     deps = [
@@ -46,7 +45,6 @@ cc_library(
     hdrs = [
         "my_bounded_shared_memory_resource.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         ":fake_memory_resources",

@@ -12,13 +12,11 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "test_datatype",
     srcs = ["test_datatype.cpp"],
     hdrs = ["test_datatype.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test/partial_restart:__subpackages__"],
     deps = [
         "//score/mw/com",
@@ -29,7 +27,6 @@ cc_library(
     name = "consumer_handle_notification_data",
     srcs = ["consumer_handle_notification_data.cpp"],
     hdrs = ["consumer_handle_notification_data.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test/partial_restart:__subpackages__"],
     deps = [
         ":test_datatype",

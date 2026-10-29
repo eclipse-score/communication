@@ -39,7 +39,6 @@ cc_library(
         ],
         "//conditions:default": ["ALLOW_QM"],
     }),
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//visibility:public",
@@ -63,7 +62,6 @@ cc_library(
 cc_unit_test(
     name = "typed_memory_test",
     srcs = ["typed_memory_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     target_compatible_with = select({
         "//score/memory/shared/flags:config_use_typedshmd": ["@platforms//os:qnx"],
         "//conditions:default": ["@platforms//:incompatible"],

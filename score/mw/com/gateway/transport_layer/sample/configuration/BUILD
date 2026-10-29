@@ -36,7 +36,6 @@ cc_library(
     name = "hypervisor_socket_configuration",
     srcs = ["hypervisor_socket_configuration.cpp"],
     hdrs = ["hypervisor_socket_configuration.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = ["@score_baselibs//score/network:ipv4_address"],
 )
 
@@ -44,7 +43,6 @@ cc_library(
     name = "sample_transport_config_parser",
     srcs = ["sample_transport_config_parser.cpp"],
     hdrs = ["sample_transport_config_parser.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
     ],
@@ -60,7 +58,6 @@ cc_unit_test(
     name = "sample_transport_config_parser_test",
     srcs = ["sample_transport_config_parser_test.cpp"],
     data = ["example/mw_com_gateway_sample_transport_config.json"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":sample_transport_config_parser",
         "@score_baselibs//score/json",

@@ -20,7 +20,6 @@ cc_library(
     testonly = True,
     srcs = ["configuration_test_resources.cpp"],
     hdrs = ["configuration_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         "//score/mw/com/impl/configuration",
@@ -34,7 +33,6 @@ cc_library(
     testonly = True,
     srcs = ["configuration_store.cpp"],
     hdrs = ["configuration_store.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         "//score/mw/com/impl:enriched_instance_identifier",

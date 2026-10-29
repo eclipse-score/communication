@@ -11,13 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "all_signatures_datatype",
     srcs = ["all_signatures_datatype.cpp"],
     hdrs = ["all_signatures_datatype.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test/methods:__subpackages__"],
     deps = [
         "//score/mw/com",
@@ -28,7 +26,6 @@ cc_library(
     name = "all_signatures_method_provider",
     srcs = ["all_signatures_method_provider.cpp"],
     hdrs = ["all_signatures_method_provider.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test/methods:__subpackages__"],
     deps = [
         ":all_signatures_datatype",
@@ -45,7 +42,6 @@ cc_library(
     name = "all_signatures_method_consumer",
     srcs = ["all_signatures_method_consumer.cpp"],
     hdrs = ["all_signatures_method_consumer.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test/methods:__subpackages__"],
     deps = [
         ":all_signatures_datatype",

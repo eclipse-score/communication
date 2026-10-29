@@ -13,7 +13,6 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_rust//rust:defs.bzl", "rust_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 rust_library(
     name = "com-api-gen",
@@ -34,7 +33,6 @@ cc_library(
     name = "vehicle_gen_cpp",
     srcs = ["vehicle_gen.cpp"],
     hdrs = ["vehicle_gen.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com/rust/score_com_cpp_bridge:register_interface",
     ],

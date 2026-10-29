@@ -23,7 +23,6 @@ cc_library(
     hdrs = [
         "non_allocating_future.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/message_passing:__subpackages__"],
 )

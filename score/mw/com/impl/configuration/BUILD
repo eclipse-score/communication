@@ -144,7 +144,6 @@ cc_library(
     name = "quality_type",
     srcs = ["quality_type.cpp"],
     hdrs = ["quality_type.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -156,7 +155,6 @@ cc_library(
     name = "i_configuration_parsing_strategy",
     srcs = ["i_configuration_parsing_strategy.cpp"],
     hdrs = ["i_configuration_parsing_strategy.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -170,7 +168,6 @@ cc_library(
     name = "configuration_json_parsing_strategy",
     srcs = ["configuration_json_parsing_strategy.cpp"],
     hdrs = ["configuration_json_parsing_strategy.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":config_validate",
         ":lola_service_instance_deployment",
@@ -203,7 +200,6 @@ cc_library(
         "//conditions:default": [],
     }),
     hdrs = ["configuration_flatbuffer_parsing_strategy.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":config_validate",
         ":lola_service_instance_deployment",
@@ -240,7 +236,6 @@ cc_library(
     name = "config_validate",
     srcs = ["config_validate.cpp"],
     hdrs = ["config_validate.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -259,7 +254,6 @@ cc_library(
     name = "config_parser",
     srcs = ["config_parser.cpp"],
     hdrs = ["config_parser.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":configuration_json_parsing_strategy",
     ],
@@ -278,7 +272,6 @@ cc_library(
     name = "configuration_local",
     srcs = ["configuration.cpp"],
     hdrs = ["configuration.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -301,7 +294,6 @@ cc_library(
     name = "global_configuration",
     srcs = ["global_configuration.cpp"],
     hdrs = ["global_configuration.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = [
@@ -317,7 +309,6 @@ cc_library(
     name = "tracing_configuration",
     srcs = ["tracing_configuration.cpp"],
     hdrs = ["tracing_configuration.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = [
@@ -336,7 +327,6 @@ cc_library(
     name = "configuration_error",
     srcs = ["configuration_error.cpp"],
     hdrs = ["configuration_error.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -348,7 +338,6 @@ cc_library(
     name = "lola_event_instance_deployment",
     srcs = ["lola_event_instance_deployment.cpp"],
     hdrs = ["lola_event_instance_deployment.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":configuration_common_resources",
         "@score_baselibs//score/language/safecpp/safe_math",
@@ -366,7 +355,6 @@ cc_library(
     name = "lola_event_id",
     srcs = ["lola_event_id.cpp"],
     hdrs = ["lola_event_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [":lola_service_element_id"],
 )
@@ -375,7 +363,6 @@ cc_library(
     name = "lola_field_id",
     srcs = ["lola_field_id.cpp"],
     hdrs = ["lola_field_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola/methods:__pkg__"],
     deps = [":lola_service_element_id"],
@@ -385,7 +372,6 @@ cc_library(
     name = "lola_method_id",
     srcs = ["lola_method_id.cpp"],
     hdrs = ["lola_method_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola/methods:__pkg__"],
     deps = [":lola_service_element_id"],
@@ -395,7 +381,6 @@ cc_library(
     name = "lola_service_element_id",
     srcs = ["lola_service_element_id.cpp"],
     hdrs = ["lola_service_element_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola/methods:__pkg__"],
 )
@@ -404,7 +389,6 @@ cc_library(
     name = "lola_service_id",
     srcs = ["lola_service_id.cpp"],
     hdrs = ["lola_service_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
 )
 
@@ -412,7 +396,6 @@ cc_library(
     name = "lola_field_instance_deployment",
     srcs = ["lola_field_instance_deployment.cpp"],
     hdrs = ["lola_field_instance_deployment.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
@@ -424,7 +407,6 @@ cc_library(
     name = "lola_method_instance_deployment",
     srcs = ["lola_method_instance_deployment.cpp"],
     hdrs = ["lola_method_instance_deployment.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [":configuration_common_resources"],
     tags = ["FFI"],
     deps = ["@score_baselibs//score/json"],
@@ -434,7 +416,6 @@ cc_library(
     name = "lola_service_instance_deployment",
     srcs = ["lola_service_instance_deployment.cpp"],
     hdrs = ["lola_service_instance_deployment.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
@@ -457,7 +438,6 @@ cc_library(
     name = "lola_service_type_deployment",
     srcs = ["lola_service_type_deployment.cpp"],
     hdrs = ["lola_service_type_deployment.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":binding_service_type_deployment",
@@ -472,7 +452,6 @@ cc_library(
     name = "someip_service_element_id",
     srcs = ["someip_service_element_id.cpp"],
     hdrs = ["someip_service_element_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
 )
 
@@ -480,7 +459,6 @@ cc_library(
     name = "someip_service_id",
     srcs = ["someip_service_id.cpp"],
     hdrs = ["someip_service_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
 )
 
@@ -488,7 +466,6 @@ cc_library(
     name = "someip_event_id",
     srcs = ["someip_event_id.cpp"],
     hdrs = ["someip_event_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [":someip_service_element_id"],
 )
@@ -497,7 +474,6 @@ cc_library(
     name = "someip_field_id",
     srcs = ["someip_field_id.cpp"],
     hdrs = ["someip_field_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [":someip_service_element_id"],
 )
@@ -506,7 +482,6 @@ cc_library(
     name = "someip_method_id",
     srcs = ["someip_method_id.cpp"],
     hdrs = ["someip_method_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [":someip_service_element_id"],
 )
@@ -515,7 +490,6 @@ cc_library(
     name = "someip_service_type_deployment",
     srcs = ["someip_service_type_deployment.cpp"],
     hdrs = ["someip_service_type_deployment.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":binding_service_type_deployment",
@@ -530,7 +504,6 @@ cc_library(
     name = "someip_service_instance_id",
     srcs = ["someip_service_instance_id.cpp"],
     hdrs = ["someip_service_instance_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [":configuration_common_resources"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/someip:__pkg__"],
@@ -541,7 +514,6 @@ cc_library(
     name = "someip_event_instance_deployment",
     srcs = ["someip_event_instance_deployment.cpp"],
     hdrs = ["someip_event_instance_deployment.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":configuration_common_resources",
         "@score_baselibs//score/mw/log",
@@ -558,7 +530,6 @@ cc_library(
     name = "someip_field_instance_deployment",
     srcs = ["someip_field_instance_deployment.cpp"],
     hdrs = ["someip_field_instance_deployment.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
@@ -570,7 +541,6 @@ cc_library(
     name = "someip_service_instance_deployment",
     srcs = ["someip_service_instance_deployment.cpp"],
     hdrs = ["someip_service_instance_deployment.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
@@ -588,7 +558,6 @@ cc_library(
     name = "lola_service_instance_id",
     srcs = ["lola_service_instance_id.cpp"],
     hdrs = ["lola_service_instance_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":configuration_common_resources",
         "@score_baselibs//score/language/safecpp/safe_math",
@@ -602,7 +571,6 @@ cc_library(
     name = "service_identifier_type",
     srcs = ["service_identifier_type.cpp"],
     hdrs = ["service_identifier_type.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
@@ -616,7 +584,6 @@ cc_library(
     name = "service_instance_deployment",
     srcs = ["service_instance_deployment.cpp"],
     hdrs = ["service_instance_deployment.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
@@ -635,7 +602,6 @@ cc_library(
     name = "service_instance_id",
     srcs = ["service_instance_id.cpp"],
     hdrs = ["service_instance_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -651,7 +617,6 @@ cc_library(
     name = "service_type_deployment",
     srcs = ["service_type_deployment.cpp"],
     hdrs = ["service_type_deployment.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -668,7 +633,6 @@ cc_library(
     name = "service_version_type",
     srcs = ["service_version_type.cpp"],
     hdrs = ["service_version_type.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -686,7 +650,6 @@ cc_library(
         "binding_service_type_deployment.h",
         "binding_service_type_deployment_impl.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
@@ -701,7 +664,6 @@ cc_library(
     name = "shm_size_calc_mode",
     srcs = ["shm_size_calc_mode.cpp"],
     hdrs = ["shm_size_calc_mode.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
 )
 
@@ -709,7 +671,6 @@ cc_library(
     name = "configuration_common_resources",
     srcs = ["configuration_common_resources.cpp"],
     hdrs = ["configuration_common_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         "@score_baselibs//score/json",
@@ -720,7 +681,6 @@ cc_library(
 
 cc_library(
     name = "configuration",
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -746,7 +706,7 @@ cc_unit_test(
     name = "config_parser_test",
     srcs = ["config_parser_test.cpp"],
     data = ["example/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -772,7 +732,7 @@ cc_unit_test(
         ],
         "//conditions:default": [],
     }),
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -799,7 +759,7 @@ cc_unit_test(
         ":mw_com_config_optional_scalars",
         "//score/mw/com/impl/configuration/converter:mw_com_config",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -817,7 +777,7 @@ cc_unit_test(
 cc_unit_test(
     name = "config_validate_test",
     srcs = ["config_validate_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -831,7 +791,7 @@ cc_unit_test(
     name = "config_parser_methods_test",
     srcs = ["config_parser_methods_test.cpp"],
     data = ["example/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -857,7 +817,6 @@ cc_unit_test(
 cc_unit_test(
     name = "configuration_error_test",
     srcs = ["configuration_error_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [":configuration_error"],
 )
 
@@ -865,7 +824,6 @@ cc_unit_test(
     name = "configuration_test",
     srcs = ["configuration_test.cpp"],
     data = ["example/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":config_parser",
         ":configuration_local",
@@ -877,7 +835,6 @@ cc_unit_test(
 cc_unit_test(
     name = "lola_service_instance_deployment_test",
     srcs = ["lola_service_instance_deployment_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":lola_service_instance_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -888,7 +845,6 @@ cc_unit_test(
 cc_unit_test(
     name = "lola_event_instance_deployment_test",
     srcs = ["lola_event_instance_deployment_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":lola_event_instance_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -898,7 +854,6 @@ cc_unit_test(
 cc_unit_test(
     name = "lola_field_instance_deployment_test",
     srcs = ["lola_field_instance_deployment_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":lola_field_instance_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -908,7 +863,7 @@ cc_unit_test(
 cc_unit_test(
     name = "lola_method_instance_deployment_test",
     srcs = ["lola_method_instance_deployment_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -921,14 +876,12 @@ cc_unit_test(
 cc_unit_test(
     name = "quality_type_test",
     srcs = ["quality_type_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [":quality_type"],
 )
 
 cc_unit_test(
     name = "service_identifier_type_test",
     srcs = ["service_identifier_type_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":service_identifier_type",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -938,7 +891,6 @@ cc_unit_test(
 cc_unit_test(
     name = "service_instance_deployment_test",
     srcs = ["service_instance_deployment_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":service_instance_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -948,7 +900,6 @@ cc_unit_test(
 cc_unit_test(
     name = "service_version_type_test",
     srcs = ["service_version_type_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":service_version_type",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -958,7 +909,6 @@ cc_unit_test(
 cc_unit_test(
     name = "service_type_deployment_test",
     srcs = ["service_type_deployment_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":service_type_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -968,7 +918,6 @@ cc_unit_test(
 cc_unit_test(
     name = "lola_service_type_deployment_test",
     srcs = ["lola_service_type_deployment_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":lola_service_type_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -978,7 +927,6 @@ cc_unit_test(
 cc_unit_test(
     name = "service_instance_id_test",
     srcs = ["service_instance_id_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":service_instance_id",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -988,7 +936,6 @@ cc_unit_test(
 cc_unit_test(
     name = "someip_service_instance_deployment_test",
     srcs = ["someip_service_instance_deployment_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":someip_service_instance_deployment",
     ],
@@ -997,7 +944,6 @@ cc_unit_test(
 cc_unit_test(
     name = "lola_service_instance_id_test",
     srcs = ["lola_service_instance_id_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":lola_service_instance_id",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -1007,7 +953,6 @@ cc_unit_test(
 cc_unit_test(
     name = "global_configuration_test",
     srcs = ["global_configuration_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":global_configuration",
     ],
@@ -1016,7 +961,6 @@ cc_unit_test(
 cc_unit_test(
     name = "tracing_configuration_test",
     srcs = ["tracing_configuration_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":tracing_configuration",
     ],
@@ -1025,7 +969,6 @@ cc_unit_test(
 cc_unit_test(
     name = "shm_size_calc_mode_test",
     srcs = ["shm_size_calc_mode_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [":shm_size_calc_mode"],
 )
 

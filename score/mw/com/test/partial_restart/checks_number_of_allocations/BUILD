@@ -12,14 +12,12 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_binary(
     name = "check_number_of_allocations",
     srcs = ["application.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:shared_memory_object_guard",

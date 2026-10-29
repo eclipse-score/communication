@@ -12,14 +12,13 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_binary(
     name = "concurrent_skeleton_creation",
     srcs = ["concurrent_skeleton_creation_application.cpp"],
     data = ["mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [

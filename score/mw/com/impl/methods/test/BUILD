@@ -18,7 +18,6 @@ cc_library(
     name = "callable_traits_resources",
     srcs = ["callable_traits_resources.cpp"],
     hdrs = ["callable_traits_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/methods:__pkg__",
     ],

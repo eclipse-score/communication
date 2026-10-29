@@ -38,7 +38,6 @@ cc_library(
     name = "hash_helper_utility",
     srcs = ["hash_helper_utility.cpp"],
     hdrs = ["hash_helper_utility.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/tracing/configuration:__subpackages__"],
 )
@@ -47,7 +46,6 @@ cc_library(
     name = "i_tracing_filter_config",
     srcs = ["i_tracing_filter_config.cpp"],
     hdrs = ["i_tracing_filter_config.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -64,7 +62,6 @@ cc_library(
     name = "tracing_filter_config",
     srcs = ["tracing_filter_config.cpp"],
     hdrs = ["tracing_filter_config.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
@@ -83,7 +80,6 @@ cc_library(
     testonly = True,
     srcs = ["tracing_filter_config_mock.cpp"],
     hdrs = ["tracing_filter_config_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/mw/log"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -96,7 +92,6 @@ cc_library(
     name = "tracing_config",
     srcs = ["tracing_config.cpp"],
     hdrs = ["tracing_config.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = [
@@ -108,7 +103,6 @@ cc_library(
     name = "hash_helper_for_service_element_and_se_view",
     srcs = ["hash_helper_for_service_element_and_se_view.cpp"],
     hdrs = ["hash_helper_for_service_element_and_se_view.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -122,7 +116,6 @@ cc_library(
     name = "service_element_identifier",
     srcs = ["service_element_identifier.cpp"],
     hdrs = ["service_element_identifier.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -137,7 +130,6 @@ cc_library(
     name = "service_element_identifier_view",
     srcs = ["service_element_identifier_view.cpp"],
     hdrs = ["service_element_identifier_view.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -152,7 +144,6 @@ cc_library(
     name = "service_element_instance_identifier_view",
     srcs = ["service_element_instance_identifier_view.cpp"],
     hdrs = ["service_element_instance_identifier_view.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
     ],
@@ -169,7 +160,6 @@ cc_library(
     name = "trace_point_key",
     srcs = ["trace_point_key.cpp"],
     hdrs = ["trace_point_key.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
@@ -186,7 +176,6 @@ cc_library(
     name = "skeleton_event_trace_point_type",
     srcs = ["skeleton_event_trace_point_type.cpp"],
     hdrs = ["skeleton_event_trace_point_type.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
 )
@@ -195,7 +184,6 @@ cc_library(
     name = "skeleton_field_trace_point_type",
     srcs = ["skeleton_field_trace_point_type.cpp"],
     hdrs = ["skeleton_field_trace_point_type.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
 )
@@ -204,7 +192,6 @@ cc_library(
     name = "proxy_event_trace_point_type",
     srcs = ["proxy_event_trace_point_type.cpp"],
     hdrs = ["proxy_event_trace_point_type.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
 )
@@ -213,7 +200,6 @@ cc_library(
     name = "proxy_field_trace_point_type",
     srcs = ["proxy_field_trace_point_type.cpp"],
     hdrs = ["proxy_field_trace_point_type.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
 )
@@ -222,7 +208,6 @@ cc_library(
     name = "tracing_filter_config_parser",
     srcs = ["tracing_filter_config_parser.cpp"],
     hdrs = ["tracing_filter_config_parser.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
@@ -241,7 +226,6 @@ cc_library(
 cc_unit_test(
     name = "service_element_identifier_test",
     srcs = ["service_element_identifier_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -255,7 +239,6 @@ cc_unit_test(
 cc_unit_test(
     name = "service_element_identifier_view_test",
     srcs = ["service_element_identifier_view_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -268,7 +251,6 @@ cc_unit_test(
 cc_unit_test(
     name = "service_element_instance_identifier_view_test",
     srcs = ["service_element_instance_identifier_view_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -280,7 +262,6 @@ cc_unit_test(
 cc_unit_test(
     name = "trace_point_key_test",
     srcs = ["trace_point_key_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -294,7 +275,6 @@ cc_unit_test(
 cc_unit_test(
     name = "tracing_filter_config_test",
     srcs = ["tracing_filter_config_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -307,7 +287,6 @@ cc_unit_test(
 cc_unit_test(
     name = "skeleton_event_trace_point_type_test",
     srcs = ["skeleton_event_trace_point_type_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -319,7 +298,6 @@ cc_unit_test(
 cc_unit_test(
     name = "skeleton_field_trace_point_type_test",
     srcs = ["skeleton_field_trace_point_type_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -331,7 +309,6 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_event_trace_point_type_test",
     srcs = ["proxy_event_trace_point_type_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -343,7 +320,6 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_field_trace_point_type_test",
     srcs = ["proxy_field_trace_point_type_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -356,7 +332,6 @@ cc_unit_test(
     name = "tracing_filter_config_parser_test",
     srcs = ["tracing_filter_config_parser_test.cpp"],
     data = ["example/comtrace_filter_config_small.json"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
@@ -372,7 +347,6 @@ cc_unit_test(
 cc_unit_test(
     name = "hash_helper_utility_test",
     srcs = ["hash_helper_utility_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
     ],

@@ -37,7 +37,6 @@ cc_library(
         "skeleton_event.h",
         "skeleton_method.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
@@ -61,7 +60,6 @@ cc_library(
     name = "sample_ptr",
     srcs = ["sample_ptr.cpp"],
     hdrs = ["sample_ptr.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/plumbing:__pkg__"],
     deps = [
@@ -73,7 +71,6 @@ cc_library(
     name = "sample_allocatee_ptr",
     srcs = ["sample_allocatee_ptr.cpp"],
     hdrs = ["sample_allocatee_ptr.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/plumbing:__pkg__"],
     deps = [
