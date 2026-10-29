@@ -18,14 +18,18 @@ as well.
 ### Source Organization
 
 - `src/osabstraction/` and `src/someip/` are the two core library source roots;
-  their child directories are intentionally owned by the parent CMake files.
+  their child directories are intentionally owned by the `BUILD` file of the
+  parent directory.
 - `src/serialization/` and `src/someip/exception/` contain private header-only
-  utilities. They are consumed by the parent core targets and therefore do not
-  define independent CMake targets.
+  utilities. They are exposed by header-only targets in the root `BUILD` file and
+  in `src/someip/BUILD` and do not have `BUILD` files of their own.
 - Platform-specific sources, such as QNX message-passing code and Linux epoll
-  code, are selected or excluded by the parent `src/osabstraction/CMakeLists.txt`.
-- `daemon/`, `tools/`, `examples/`, and `tests/` are separate executable or
-  validation surfaces and are added directly by the root `CMakeLists.txt`.
+  code, are selected or excluded by `src/osabstraction/BUILD`.
+- `daemon/`, `tools/`, `examples/`, `third_party/`, and `tests/` define their
+  own targets in their `BUILD` files.
+- Compile definitions, options, and features common to all targets are set by
+  the `lgsomeip_cc_library`, `lgsomeip_cc_binary`, and `lgsomeip_cc_test`
+  macros in `lgsomeip.bzl`. Use them instead of the plain `cc_*` rules.
 
 ### Naming
 
@@ -70,11 +74,11 @@ find src daemon examples/someip tests tools -type f \
 
 The repository `.clang-tidy` file enables a small set of bug-prone and
 performance checks. Generate a compile database and run the checks on
-project-owned files only:
+project-owned files only. From the root of the `score_communication` workspace:
 
 ```sh
-cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-clang-tidy -p build src/someip/config/Configuration.cpp
+bazel run @hedron_compile_commands//:refresh_all
+clang-tidy -p . score/lg-someip/src/someip/config/Configuration.cpp
 ```
 
 Static-analysis findings should be reviewed individually. Do not apply broad
@@ -90,15 +94,14 @@ aliases, and external API spellings are documented exceptions.
 
 Create focused branches and open pull requests against `main`. Pull requests
 must include the relevant tests and explain configuration or protocol changes.
-Do not commit build directories, coverage output, generated CMake files, or
-local IDE metadata. GitHub Actions checks formatting and static analysis,
-builds and tests the default configuration, builds the optional IPC and TLS
-configurations, and builds and tests packet filtering. QNX builds are not part
-of CI; maintainers validate them separately.
+Do not commit build output, coverage output, or local IDE metadata. lg-someip is
+built and tested by the GitHub Actions workflows of the `score_communication`
+repository, see the repository [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
-Releases use `MAJOR.MINOR.PATCH` versions from the root `CMakeLists.txt`. A
-release should update [CHANGELOG.md](CHANGELOG.md), create a matching Git tag,
-and attach the source archive and relevant build notes to the GitHub release.
+Releases use `MAJOR.MINOR.PATCH` versions from `LGSOMEIP_VERSION` in
+[lgsomeip.bzl](lgsomeip.bzl). A release should update
+[CHANGELOG.md](CHANGELOG.md), create a matching Git tag, and attach the source
+archive and relevant build notes to the GitHub release.
 
 ## Validation
 
@@ -106,19 +109,6 @@ Keep formatting-only changes separate from behavior changes. At minimum, run:
 
 ```sh
 git diff --check
-cmake --build build
+bazel build //score/lg-someip/...
+bazel test //score/lg-someip/...
 ```
-
-When test dependencies are available, enable both the project test option and
-CTest's standard `BUILD_TESTING` option:
-
-```sh
-cmake -S . -B build-tests \
-  -DENABLE_TEST_BUILD=ON \
-  -DBUILD_TESTING=ON
-cmake --build build-tests --parallel
-ctest --test-dir build-tests --output-on-failure
-```
-
-On Linux, `tests/run_unit_tests_linux.sh` performs this configuration and also
-generates coverage artifacts when `lcov` and `genhtml` are installed.

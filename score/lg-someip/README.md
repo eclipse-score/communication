@@ -1,7 +1,5 @@
 # LG SOME/IP
 
-[![CI](https://github.com/LGE-OSS/lg-someip/actions/workflows/ci.yml/badge.svg)](https://github.com/LGE-OSS/lg-someip/actions/workflows/ci.yml)
-
 LG SOME/IP is a C++ implementation of the [SOME/IP](https://some-ip.com/)
 service-oriented communication protocol and its Service Discovery (SOME/IP-SD),
 together with a routing daemon. It can be used directly by an application or
@@ -24,12 +22,15 @@ project.
 ## Public API
 
 LG SOME/IP provides its own `lgsomeip` API and a `vsomeip` compatibility API.
-New applications should use the `lgsomeip` API, installed under
-`include/lgsomeip`:
+New applications should use the `lgsomeip` API, provided by the
+`//score/lg-someip:lgsomeip` target:
 
 ```
-find_package(lgsomeip CONFIG REQUIRED)
-target_link_libraries(your_application PRIVATE lgsomeip::api)
+cc_binary(
+    name = "your_application",
+    srcs = ["your_application.cpp"],
+    deps = ["//score/lg-someip:lgsomeip"],
+)
 ```
 
 The API is declared in `<lgsomeip/LgsomeipApi.h>` and provides application lifecycle,
@@ -44,12 +45,8 @@ that handler once the application reports it is registered. Call `join()`
 afterwards (or otherwise keep the process alive) to process messages for the
 application's lifetime.
 
-Existing applications can continue to use the installed `vsomeip` interface:
-
-```
-find_package(vsomeip CONFIG REQUIRED)
-target_link_libraries(your_application PRIVATE vsomeip)
-```
+Existing applications can continue to use the `vsomeip` interface, provided by
+the `//score/lg-someip:vsomeip-if` target.
 
 `ApplicationManager`, the `lgsomeip` message implementation, OS abstraction,
 serializer, and bundled E2E headers remain internal implementation details.
@@ -71,132 +68,118 @@ See [docs/lgsomeip-software-design.md](docs/lgsomeip-software-design.md) for the
 
 ## Requirements
 
-- A C++14-capable compiler
-- CMake >= 3.18
-- [RapidJSON](https://github.com/Tencent/rapidjson) (configuration parsing)
-- [GoogleTest](https://github.com/google/googletest) (to build the unit tests)
-- [OpenSSL](https://www.openssl.org/) (optional; required only for the `ENABLE_TLS` secure-connection build)
-- [COVESA DLT](https://github.com/COVESA/dlt-daemon) development files and `pkg-config` (optional; required for `ENABLE_DLT` when no DLT CMake package is available)
+LG SOME/IP is built with [Bazel](https://bazel.build/) as part of the
+`score_communication` workspace and uses the toolchains configured there. See
+the repository [CONTRIBUTING.md](../../CONTRIBUTING.md) for the Bazel setup.
+RapidJSON and GoogleTest are fetched by Bazel from the Bazel Central Registry.
 
-If RapidJSON is not available, CMake fetches a pinned revision during
-configuration. When `ENABLE_TLS=ON`, OpenSSL must be provided by the build
-environment; use `OPENSSL_ROOT_DIR` or install the system development package.
-The project does not download an obsolete OpenSSL fallback. Provide
-`RAPIDJSON_INCLUDE_DIR` and `OPENSSL_ROOT_DIR`, or preinstall the dependencies,
-for an offline or controlled build.
+TLS/DTLS secure connections (OpenSSL) and the COVESA DLT logging backend are
+not supported by the Bazel build yet.
 
 ## Build
 
-```
-mkdir build
-cd build
-cmake .. && make
-sudo make install
-```
+Run the Bazel commands from the root of the `score_communication` workspace:
 
-### Bazel
-
-Inside the `score_communication` workspace, lg-someip is also built with Bazel:
-
-```
+```sh
 bazel build //score/lg-someip/...
-bazel test //score/lg-someip/...
 ```
 
-The entry-point targets (visible within `//score/...`) are `//score/lg-someip:lgsomeip`, `//score/lg-someip:someip-daemon`
-and `//score/lg-someip:vsomeip-if`. The `ENABLE_SOMEIP_TP`, `ENABLE_SOMEIP_PACKET_FILTERING`,
-`ENABLE_SOMEIP_DELIVERY_STATISTICS` and `ENABLE_SOMEIP_IPC` options map to the
-`--//score/lg-someip:enable_someip_tp=True` style flags (also `..._packet_filtering`,
-`..._delivery_statistics` and `..._ipc`). `ENABLE_TLS` and `ENABLE_DLT` are not supported
-by the Bazel build yet.
+The binaries are written below `bazel-bin/score/lg-someip/`. The main targets are:
+
+| Target | Description |
+|---|---|
+| `//score/lg-someip:lgsomeip` | Library with the `lgsomeip` API. |
+| `//score/lg-someip:vsomeip-if` | Library with the `vsomeip` compatibility API. |
+| `//score/lg-someip:someip-daemon` | Routing daemon. |
+| `//score/lg-someip/tools/dump-someipservices` | Diagnostic tool. |
+| `//score/lg-someip/examples/someip:all` | Examples using the `lgsomeip` API. |
+| `//score/lg-someip/third_party/vsomeip_interface:all` | Examples using the `vsomeip` API. |
+
+The library and daemon targets are visible within `//score/...`.
 
 ### QNX
 
-QNX is built by cross-compiling with the QNX SDP toolchain. See
-[docs/qnx-build-and-run-guide.md](docs/qnx-build-and-run-guide.md) for the build and run guide.
+QNX is not supported by the Bazel build yet. See
+[docs/qnx-build-and-run-guide.md](docs/qnx-build-and-run-guide.md).
 
 ## Build Options
 
-Boolean options use the same `-D<OPTION>=ON|OFF` form. They are declared in
-the root `CMakeLists.txt` and are applied consistently to all project targets.
+The following options are Bazel flags. They are all disabled by default and
+apply to all lg-someip targets:
 
-| Option | Default | Description |
-|---|---:|---|
-| `ENABLE_TLS` | `OFF` | Build TLS/DTLS support using OpenSSL. |
-| `ENABLE_DLT` | `OFF` | Use COVESA DLT instead of console logging. |
-| `ENABLE_SOMEIP_TP` | `OFF` | Enable SOME/IP Transport Protocol support. |
-| `ENABLE_SOMEIP_PACKET_FILTERING` | `OFF` | Enable SOME/IP packet filtering. |
-| `ENABLE_SOMEIP_DELIVERY_STATISTICS` | `OFF` | Enable packet delivery statistics. |
-| `ENABLE_QNX_MESSAGE_PASSING` | QNX only | Use QNX message passing for local IPC. |
-| `ENABLE_SOMEIP_IPC` | `OFF` | Enable extended SOME/IP IPC routing support. |
-| `ENABLE_TEST_BUILD` | `OFF` | Build unit, component, and integration tests plus coverage instrumentation. Requires the standard CTest option `BUILD_TESTING=ON`. |
-| `ENABLE_EXAMPLES` | `ON` | Build example applications. |
-| `ENABLE_TOOLS` | `ON` | Build diagnostic tools. |
-
-The numeric settings use the same root CMake cache with
-`-D<SETTING>=<VALUE>`:
-
-| Setting | Default | Description |
-|---|---:|---|
-| `APPLICATION_MGMT_ENTRY` | `0xF0` | SOME/IP application management entry ID. |
-| `SOMEIP_UDP_MAX_PAYLOAD_SIZE` | `1400` | Maximum SOME/IP UDP payload size in bytes. |
+| Flag | Description |
+|---|---|
+| `--//score/lg-someip:enable_someip_tp` | Enable SOME/IP Transport Protocol support. |
+| `--//score/lg-someip:enable_someip_packet_filtering` | Enable SOME/IP packet filtering. |
+| `--//score/lg-someip:enable_someip_delivery_statistics` | Enable packet delivery statistics. |
+| `--//score/lg-someip:enable_someip_ipc` | Enable extended SOME/IP IPC routing support. |
 
 For example:
 
+```sh
+bazel build //score/lg-someip/... --//score/lg-someip:enable_someip_ipc=True
 ```
-cmake .. -DENABLE_TLS=ON -DENABLE_SOMEIP_TP=ON \
-  -DSOMEIP_UDP_MAX_PAYLOAD_SIZE=1400
-```
+
+Known limitations: with `enable_someip_tp` the library does not compile, and
+with `enable_someip_delivery_statistics` the `unittest_someip_unit` test does
+not compile.
+
+QNX message passing for local IPC is used automatically when building for QNX.
+The SOME/IP application management entry ID (`APPLICATION_MGMT_ENTRY`, `0xF0`)
+and the maximum SOME/IP UDP payload size (`SOMEIP_UDP_MAX_PAYLOAD_SIZE`, `1400`)
+are defined in [lgsomeip.bzl](lgsomeip.bzl).
 
 ## Run
 
-The commands below use the sample configuration. See
+The commands below use the sample configuration and are run from the root of
+the `score_communication` workspace after building. See
 [`examples/config/README.md`](examples/config/README.md) for the configuration
 format, field meanings, source-code references, and a copyable template.
 
 Start the daemon in one terminal:
 
 ```sh
-cd build
-daemon/someip-daemon ../examples/config/lgsomeip_config.json
+bazel-bin/score/lg-someip/daemon/someip-daemon score/lg-someip/examples/config/lgsomeip_config.json
 ```
 
 Then start each sample application in its own terminal, because each one runs
 until it is stopped with Ctrl+C:
 
 ```sh
-cd build
-VSOMEIP_CONFIGURATION=../examples/config/lgsomeip_config.json \
-  VSOMEIP_APPLICATION_NAME=notify third_party/vsomeip_interface/examples/notify-sample
+VSOMEIP_CONFIGURATION=score/lg-someip/examples/config/lgsomeip_config.json \
+  VSOMEIP_APPLICATION_NAME=notify \
+  bazel-bin/score/lg-someip/third_party/vsomeip_interface/notify-sample
 ```
 
 ```sh
-cd build
-VSOMEIP_CONFIGURATION=../examples/config/lgsomeip_config.json \
-  VSOMEIP_APPLICATION_NAME=subscribe-1 third_party/vsomeip_interface/examples/subscribe-sample
+VSOMEIP_CONFIGURATION=score/lg-someip/examples/config/lgsomeip_config.json \
+  VSOMEIP_APPLICATION_NAME=subscribe-1 \
+  bazel-bin/score/lg-someip/third_party/vsomeip_interface/subscribe-sample
 ```
 
 ## Tests
 
-The Linux test script configures a separate `build-tests` directory by default,
-enables both `ENABLE_TEST_BUILD` and CTest's `BUILD_TESTING`, builds the unit,
-component, and integration targets, and runs them through CTest:
-
-```
-./tests/run_unit_tests_linux.sh
-```
-
-Pass a different build directory as the first argument when needed. Coverage
-artifacts are written to `tests/test_report` only when `lcov` and `genhtml` are
-available.
-
-CTest labels can be used to run one test level from the test-enabled `build-tests` directory:
+Build and run all unit, component, and integration tests:
 
 ```sh
-ctest --test-dir build-tests --label-regex '^unit$'
-ctest --test-dir build-tests --label-regex '^component$'
-ctest --test-dir build-tests --label-regex '^integration$'
+bazel test //score/lg-someip/...
 ```
+
+| Level | Targets in `//score/lg-someip/tests` |
+|---|---|
+| Unit | `unittest_osabstraction_unit`, `unittest_someip_unit`, `unittest_serialization` |
+| Component | `unittest_osabstraction_component`, `unittest_someip_component` |
+| Integration | `unittest_osabstraction_integration`, `unittest_someip_integration` |
+
+Run a single test and show its output with:
+
+```sh
+bazel test //score/lg-someip/tests:unittest_someip_unit --test_output=all
+```
+
+The test logs are written to `bazel-testlogs/score/lg-someip/tests/`. Bazel
+runs each test in a sandbox with a private `/tmp` and `/dev/shm` and without
+network access.
 
 Unit tests isolate value, message, serialization, and utility behavior.
 Component tests exercise host or filesystem-backed components such as

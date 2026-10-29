@@ -17,11 +17,13 @@ The main examples are:
 ## Quick Start
 
 Copy the template and replace the example identifiers, addresses, ports, and
-application names:
+application names. The commands are run from the root of the
+`score_communication` workspace after `bazel build //score/lg-someip/...`:
 
 ```sh
-cp examples/config/lgsomeip_config.template.json examples/config/my_lgsomeip_config.json
-build/daemon/someip-daemon examples/config/my_lgsomeip_config.json
+cp score/lg-someip/examples/config/lgsomeip_config.template.json \
+  score/lg-someip/examples/config/my_lgsomeip_config.json
+bazel-bin/score/lg-someip/daemon/someip-daemon score/lg-someip/examples/config/my_lgsomeip_config.json
 ```
 
 An empty configuration path uses `LGSOMEIP_CONFIGURATION` when it is set, then
@@ -30,8 +32,8 @@ development. Native LG SOME/IP applications can use the environment override
 without requiring a system-wide file:
 
 ```sh
-LGSOMEIP_CONFIGURATION=examples/config/lgsomeip_config.json \
-  build/examples/someip/simple-method/someip-response
+LGSOMEIP_CONFIGURATION=score/lg-someip/examples/config/lgsomeip_config.json \
+  bazel-bin/score/lg-someip/examples/someip/someip-response
 ```
 
 This behavior is defined in [`Configuration.cpp`](../../src/someip/config/Configuration.cpp).

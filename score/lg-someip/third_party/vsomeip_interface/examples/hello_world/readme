@@ -6,10 +6,10 @@
 Build instructions for Hello World example
 ------------------------------------------
 
-mkdir build
-cd build
-cmake ..
-make
+From the root of the score_communication workspace:
+
+bazel build //score/lg-someip/third_party/vsomeip_interface:hello_world_service \
+    //score/lg-someip/third_party/vsomeip_interface:hello_world_client
 
 Running Hello World Example
 ---------------------------
@@ -18,17 +18,18 @@ The Hello World Example should be run on the same host.
 The network addresses within the configuration files need to be adapted to match
 the devices addresses.
 
-To start the hello world client and service from their build-directory do:
+To start the hello world client and service from the root of the
+score_communication workspace do:
 
 HOST1:
-VSOMEIP_CONFIGURATION=../helloworld-local.json \
+VSOMEIP_CONFIGURATION=score/lg-someip/third_party/vsomeip_interface/examples/hello_world/helloworld-local.json \
 VSOMEIP_APPLICATION_NAME=hello_world_service \
-./hello_world_service
+bazel-bin/score/lg-someip/third_party/vsomeip_interface/hello_world_service
 
 HOST1:
-VSOMEIP_CONFIGURATION=../helloworld-local.json \
+VSOMEIP_CONFIGURATION=score/lg-someip/third_party/vsomeip_interface/examples/hello_world/helloworld-local.json \
 VSOMEIP_APPLICATION_NAME=hello_world_client \
-./hello_world_client
+bazel-bin/score/lg-someip/third_party/vsomeip_interface/hello_world_client
 
 Expected output service
 -----------------------
