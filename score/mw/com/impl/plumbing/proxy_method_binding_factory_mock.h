@@ -30,7 +30,9 @@ class ProxyMethodBindingFactoryMock : public IProxyMethodBindingFactory
                 (HandleType parent_handle,
                  ProxyBinding& parent_binding,
                  const std::string_view method_name,
-                 MethodType method_type),
+                 MethodType method_type,
+                 std::optional<memory::DataTypeSizeInfo> in_arg_type_info,
+                 std::optional<memory::DataTypeSizeInfo> return_type_info),
                 (override));
 };
 

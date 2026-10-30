@@ -89,7 +89,9 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
               SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
                                                    SkeletonBaseView{skeleton_base}.GetBinding(),
                                                    method_name,
-                                                   ::score::mw::com::impl::MethodType::kMethod),
+                                                   ::score::mw::com::impl::MethodType::kMethod,
+                                                   TypeErasedMethodSignatureInfo<MethodType>::InArgsTypeInfo(),
+                                                   TypeErasedMethodSignatureInfo<MethodType>::ReturnTypeInfo()),
               ::score::mw::com::impl::MethodType::kMethod)
     {
     }
@@ -103,7 +105,9 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
               SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
                                                    SkeletonBaseView{skeleton_base}.GetBinding(),
                                                    method_name,
-                                                   method_type),
+                                                   method_type,
+                                                   TypeErasedMethodSignatureInfo<MethodType>::InArgsTypeInfo(),
+                                                   TypeErasedMethodSignatureInfo<MethodType>::ReturnTypeInfo()),
               method_type)
     {
         AssertMethodSignatureDoesNotContainPointersOrReferences<FailureMode::kCompileTime, ReturnType, ArgTypes...>();

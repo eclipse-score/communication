@@ -78,14 +78,14 @@ class MyDummyProxyWithField : public ProxyBase
 struct ProxyEventStruct
 {
     using ProxyType = MyDummyProxyWithEvent;
-    using ProxyServiceElementBindingFactoryMockGuard = ProxyEventBindingFactoryMockGuard<TestSampleType>;
+    using ProxyServiceElementBindingFactoryMockGuard = ProxyEventBindingFactoryMockGuard;
     using TracePointType = tracing::ProxyEventTracePointType;
 };
 
 struct ProxyFieldStruct
 {
     using ProxyType = MyDummyProxyWithField;
-    using ProxyServiceElementBindingFactoryMockGuard = ProxyFieldBindingFactoryMockGuard<TestSampleType>;
+    using ProxyServiceElementBindingFactoryMockGuard = ProxyFieldBindingFactoryMockGuard;
     using TracePointType = tracing::ProxyFieldTracePointType;
 };
 
@@ -115,19 +115,25 @@ class ProxyEventTracingFixture : public ::testing::Test
         proxy_ = std::make_unique<ProxyType>(std::make_unique<mock_binding::Proxy>(), kHandle);
     }
 
-    void ExpectProxyServiceElementBindingCreation(ProxyEventBindingFactoryMockGuard<TestSampleType>& factory_mock_guard)
+    void ExpectProxyServiceElementBindingCreation(ProxyEventBindingFactoryMockGuard& factory_mock_guard)
     {
         auto proxy_event_binding_mock_ptr = std::make_unique<mock_binding::ProxyEvent>();
         mock_proxy_event_binding_ = proxy_event_binding_mock_ptr.get();
-        EXPECT_CALL(factory_mock_guard.factory_mock_, Create(_, _, kServiceElementName, ServiceElementType::EVENT))
+        EXPECT_CALL(factory_mock_guard.factory_mock_,
+                    Create(_,
+                           _,
+                           kServiceElementName,
+                           ServiceElementType::EVENT,
+                           CreateDataTypeSizeInfoFromTypes<TestSampleType>()))
             .WillOnce(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
     }
 
-    void ExpectProxyServiceElementBindingCreation(ProxyFieldBindingFactoryMockGuard<TestSampleType>& factory_mock_guard)
+    void ExpectProxyServiceElementBindingCreation(ProxyFieldBindingFactoryMockGuard& factory_mock_guard)
     {
         auto proxy_event_binding_mock_ptr = std::make_unique<mock_binding::ProxyEvent>();
         mock_proxy_event_binding_ = proxy_event_binding_mock_ptr.get();
-        EXPECT_CALL(factory_mock_guard.factory_mock_, CreateEventBinding(_, _, kServiceElementName))
+        EXPECT_CALL(factory_mock_guard.factory_mock_,
+                    CreateEventBinding(_, _, kServiceElementName, CreateDataTypeSizeInfoFromTypes<TestSampleType>()))
             .WillOnce(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
     }
 

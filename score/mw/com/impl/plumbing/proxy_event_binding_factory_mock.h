@@ -20,15 +20,17 @@
 namespace score::mw::com::impl
 {
 
-template <typename SampleType>
-class ProxyEventBindingFactoryMock : public IProxyEventBindingFactory<SampleType>
+class ProxyEventBindingFactoryMock : public IProxyEventBindingFactory
 {
   public:
-    MOCK_METHOD(
-        Result<std::unique_ptr<ProxyEventBinding>>,
-        Create,
-        (HandleType, ProxyBinding&, const std::string_view event_name, const ServiceElementType service_element_type),
-        (noexcept, override));
+    MOCK_METHOD(Result<std::unique_ptr<ProxyEventBinding>>,
+                Create,
+                (HandleType,
+                 ProxyBinding&,
+                 const std::string_view event_name,
+                 const ServiceElementType service_element_type,
+                 memory::DataTypeSizeInfo data_type_size_info),
+                (noexcept, override));
 };
 
 class GenericProxyEventBindingFactoryMock : public IGenericProxyEventBindingFactory

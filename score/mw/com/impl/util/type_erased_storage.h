@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <optional>
 #include <tuple>
 #include <type_traits>
 
@@ -205,6 +206,48 @@ constexpr memory::DataTypeSizeInfo CreateDataTypeSizeInfoFromValues(Args...)
 {
     return CreateDataTypeSizeInfoFromTypes<Args...>();
 }
+
+/// \brief Helper to extract the type-erased size/alignment info (in-args and return type) of a method/function
+/// signature, e.g. `ReturnType(ArgTypes...)`.
+/// \details This is the only information about the argument/return types of a method, which is needed at runtime by
+/// the (type-erased) binding layer to size and align its storage. Callers which know the concrete signature at
+/// compile-time (e.g. a code-generated ProxyMethod<Signature>) can use this helper to compute that information once
+/// and hand it down to the (non-templated) binding factory.
+/// \tparam Signature function signature, e.g. `ReturnType(ArgTypes...)`.
+template <typename Signature>
+struct TypeErasedMethodSignatureInfo;
+
+template <typename ReturnType, typename... ArgTypes>
+struct TypeErasedMethodSignatureInfo<ReturnType(ArgTypes...)>
+{
+    /// \brief Returns the DataTypeSizeInfo for the in-args of the method signature, or std::nullopt if the method
+    /// signature has no in-args.
+    static constexpr std::optional<memory::DataTypeSizeInfo> InArgsTypeInfo() noexcept
+    {
+        if constexpr (sizeof...(ArgTypes) == 0U)
+        {
+            return std::nullopt;
+        }
+        else
+        {
+            return CreateDataTypeSizeInfoFromTypes<ArgTypes...>();
+        }
+    }
+
+    /// \brief Returns the DataTypeSizeInfo for the return type of the method signature, or std::nullopt if the method
+    /// signature has a void return type.
+    static constexpr std::optional<memory::DataTypeSizeInfo> ReturnTypeInfo() noexcept
+    {
+        if constexpr (std::is_same_v<ReturnType, void>)
+        {
+            return std::nullopt;
+        }
+        else
+        {
+            return CreateDataTypeSizeInfoFromTypes<ReturnType>();
+        }
+    }
+};
 
 /// \brief Variadic template to serialize argument values into given buffer.
 /// \details Typical usage of this func template is to serialize strongly typed arguments into a type erased storage

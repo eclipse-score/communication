@@ -17,6 +17,22 @@
 namespace score::mw::com::impl
 {
 
+IProxyEventBindingFactory* ProxyEventBindingFactory::mock_{nullptr};
+
+IProxyEventBindingFactory& ProxyEventBindingFactory::instance() noexcept
+{
+    if (mock_ != nullptr)
+    {
+        return *mock_;
+    }
+
+    // Suppress "AUTOSAR C++14 A3-2-2", The rule states: "Static and thread-local objects shall be constant-initialized"
+    // It cannot be made const since we will need to call non-const methods from a static instance.
+    // coverity[autosar_cpp14_a3_3_2_violation]
+    static ProxyEventBindingFactoryImpl instance{};
+    return instance;
+}
+
 IGenericProxyEventBindingFactory* GenericProxyEventBindingFactory::mock_{nullptr};
 
 IGenericProxyEventBindingFactory& GenericProxyEventBindingFactory::instance() noexcept
