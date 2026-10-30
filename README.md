@@ -13,38 +13,31 @@ SPDX-License-Identifier: Apache-2.0
 *******************************************************************************
 -->
 
-# Communication Module (LoLa)
+# Communication Module: mw::com (with multiple bindings including LoLa), memory::shared, and message_passing
 
 [![Eclipse Score](https://img.shields.io/badge/Eclipse-Score-orange.svg)](https://eclipse-score.github.io/score/main/modules/communication/index.html)
 
-- A high-performance, safety-critical communication middleware implementation based on the Adaptive AUTOSAR Communication Management specification.
-- This module provides zero-copy, shared-memory based inter-process communication (IPC) in embedded systems.
+High-performance, safety-critical communication middleware for automotive safety standards up to ASIL-B with:
+
+- **Multi-Threading Support**: Thread-safe operations with atomic data structures
+- **Multi-Platform**: Supports Linux and QNX operating systems
 
 ## Overview
 
-The Communication Module (also known as **LoLa** - Low Latency) is an open-source implementation that provides:
-
-- **High-Performance Intra-ECU IPC**: Zero-copy shared-memory communication for minimal latency within ECUs
-- **AUTOSAR Compliance**: Partial implementation of Adaptive AUTOSAR Communication Management (ara::com)
-- **Event-Driven Architecture**: Publisher/subscriber pattern with skeleton/proxy framework
-- **Service Discovery**: Flag file-based service registration and lookup mechanism
-- **Safety-Critical**: Designed for automotive safety standards (ASIL-B qualified)
-- **Multi-Threading Support**: Thread-safe operations with atomic data structures
-- **Memory Management**: Custom allocators optimized for shared memory usage
-- **Tracing Infrastructure**: Zero-copy, binding-agnostic communication tracing support
-- **Multi-Platform**: Supports Linux and QNX operating systems
-
-## Architecture
-
-The module consists of three main components:
+The module consists of three components (also known as safety elements out of context (SEooC)).
 
 ### 1. LoLa/mw::com (High-Level Middleware)
+
+The mw::com (also known as **LoLa** - Low Latency) is an open-source implementation that provides:
+
+This provides zero-copy, shared-memory based inter-process communication (IPC) in embedded systems.
 
 - **Service Discovery**: Automatic service registration and discovery
 - **Event/Field Communication**: Publish-subscribe messaging patterns
 - **Method Invocation**: Remote procedure call (RPC) support
 - **Quality of Service**: ASIL-B and QM (Quality Management) support
-- **Zero-Copy**: Shared-memory based data exchange
+- **Zero-Copy**: Shared-memory based data exchange for minimal latency within ECUs
+- **Tracing Infrastructure**: Zero-copy, binding-agnostic communication tracing support
 
 ### 2. Message Passing (Low-Level Foundation)
 
