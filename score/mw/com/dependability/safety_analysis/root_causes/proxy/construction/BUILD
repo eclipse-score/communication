@@ -12,9 +12,9 @@
 # *******************************************************************************
 
 filegroup(
-    name = "construction_fta",
+    name = "proxy_cannot_be_created_with_handle_fta",
     srcs = [
-        "service_is_found_but_does_not_exist_fta.puml",
+        "proxy_cannot_be_created_with_handle.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
