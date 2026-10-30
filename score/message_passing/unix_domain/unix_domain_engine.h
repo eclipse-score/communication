@@ -80,6 +80,7 @@ class UnixDomainEngine final : public ISharedResourceEngine
     {
         return logger_;
     }
+    const LoggingCallback&& GetLogger() && noexcept = delete;
 
     using FinalizeOwnerCallback = score::cpp::callback<void() /* noexcept */>;
 

@@ -92,6 +92,7 @@ class EnrichedInstanceIdentifier final
     {
         return instance_identifier_;
     }
+    const InstanceIdentifier&& GetInstanceIdentifier() const&& noexcept = delete;
 
     template <typename ServiceTypeDeployment>
 
@@ -115,6 +116,7 @@ class EnrichedInstanceIdentifier final
     {
         return instance_id_;
     }
+    const std::optional<ServiceInstanceId>&& GetInstanceId() const&& noexcept = delete;
 
     template <typename ServiceInstanceId>
     // Suppress "AUTOSAR C++14 M3-2-2", The rule states: "The One Definition Rule shall not be violated."

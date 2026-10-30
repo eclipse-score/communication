@@ -123,6 +123,7 @@ class EventSlotStatus final
     {
         return data_;
     }
+    explicit operator const value_type&() const&& noexcept = delete;
 
     bool IsUsed() const noexcept
     {

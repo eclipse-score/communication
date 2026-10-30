@@ -121,6 +121,7 @@ class ProxyBase
      * \return Handle identifying the service that this proxy is connected to.
      */
     const HandleType& GetHandle() const& noexcept;
+    const HandleType&& GetHandle() const&& noexcept = delete;
 
   protected:
     using ProxyEvents =

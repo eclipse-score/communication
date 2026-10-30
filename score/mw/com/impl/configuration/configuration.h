@@ -90,10 +90,12 @@ class Configuration final
     {
         return global_configuration_;
     }
+    const GlobalConfiguration&& GetGlobalConfiguration() const&& noexcept = delete;
     const TracingConfiguration& GetTracingConfiguration() const& noexcept
     {
         return tracing_configuration_;
     }
+    const TracingConfiguration&& GetTracingConfiguration() const&& noexcept = delete;
 
     std::optional<std::reference_wrapper<const ServiceTypeDeployment>> GetServiceTypeDeployment(
         const ServiceIdentifierType& service_identifier_type) const noexcept;

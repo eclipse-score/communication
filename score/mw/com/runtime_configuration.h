@@ -77,6 +77,7 @@ class RuntimeConfiguration
      * \return The stored configuration path.
      */
     const filesystem::Path& GetConfigurationPath() const&;
+    const filesystem::Path&& GetConfigurationPath() const&& = delete;
 
   private:
     static std::optional<filesystem::Path> ParseConfigurationPath(

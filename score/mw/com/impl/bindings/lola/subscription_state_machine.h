@@ -139,6 +139,7 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     std::optional<SlotCollector>& GetSlotCollectorLockFree() noexcept;
     const std::optional<SlotCollector>& GetSlotCollectorLockFree() const noexcept;
     [[nodiscard]] const ElementFqId& GetElementFqId() const& noexcept;
+    const ElementFqId&& GetElementFqId() const&& noexcept = delete;
 
   private:
     // Private member methods should be called under lock

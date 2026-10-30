@@ -123,6 +123,7 @@ class SkeletonEventBaseView
     {
         return skeleton_event_base_.tracing_data_;
     }
+    const tracing::SkeletonEventTracingData&& GetSkeletonEventTracing() && = delete;
 
     void SetSkeletonEventTracing(const tracing::SkeletonEventTracingData& skeleton_event_tracing_data)
     {
