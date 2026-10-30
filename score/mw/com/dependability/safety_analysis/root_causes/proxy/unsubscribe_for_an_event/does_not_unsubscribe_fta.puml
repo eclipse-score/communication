@@ -18,6 +18,8 @@ $FailureMode("Does not unsubscribe", "Communication.DoesNotUnsubscribe")
 
 $OrGate("Gate1", "Communication.DoesNotUnsubscribe")
 $RootCause("Explicit unsubscribe by user failed", "ExplicitUnsubscribeByUserFailed", "Gate1")
-$RootCause("Proxy crashes without unsubscription", "ProxyCrashesWithoutUnsubscription", "Gate1")
+
+$IntermediateEvent("Proxy crashes without unsubscription", "ProxyCrashesWithoutUnsubscription", "Gate1")
+$RootCause("Transaction log corrupt on proxy restart", "ProxyRestartTransactionLogCorrupt", "ProxyCrashesWithoutUnsubscription")
 
 @enduml

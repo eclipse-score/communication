@@ -640,7 +640,9 @@ section "com" {
 
             Otherwise it shall do an unsubscription of the event at the providing side.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SafeCommunication@1]
+            // Closes mw_com_fta.ExplicitUnsubscribeByUserFailed: this requirement's "Otherwise" clause mandates the
+            // providing-side unsubscription whose failure is the root cause.
+            derived_from = [Communication.FEAT_SafeCommunication@1, mw_com_fta.ExplicitUnsubscribeByUserFailed]
             version = 1
         }
 
