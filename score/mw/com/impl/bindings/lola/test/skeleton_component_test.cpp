@@ -24,6 +24,9 @@
 #include "score/mw/com/impl/runtime.h"
 
 #include "score/filesystem/factory/filesystem_factory_fake.h"
+#include "score/memory/shared/flock/flock_mutex_and_lock.h"
+#include "score/memory/shared/flock/shared_flock_mutex.h"
+#include "score/memory/shared/lock_file.h"
 #include "score/os/mman.h"
 #include "score/os/mocklib/acl_mock.h"
 
@@ -72,6 +75,16 @@ std::size_t GetSize(const std::string& file_path)
         return static_cast<std::size_t>(data.st_size);
     }
 
+    return 0;
+}
+
+ino_t GetInode(const std::string& file_path)
+{
+    struct stat data{};
+    if (stat(file_path.c_str(), &data) == 0)
+    {
+        return data.st_ino;
+    }
     return 0;
 }
 
@@ -640,6 +653,70 @@ TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Analysis_Control_QM)
 
     // and the created control-shm is at least as large as the pure payload it must hold
     EXPECT_GE(GetSize(control_shm), CalculateLowerBoundControlShmSize({{sizeof(TestSampleType), kNumberOfSlots}}));
+}
+
+/// \brief The proxy is gone by the next offer. That's the bug: without the fix it aborts, with the fix the memory gets
+/// recreated, and the test checks that with new inodes. This is the test that proves the fix.
+TEST_F(SkeletonComponentTestFixture, ReOfferAfterStopOfferWithAttachedProxyThatHasGoneRecreatesShm)
+{
+    RecordProperty("Verifies", "SCR-29682823");
+    RecordProperty("Description",
+                   "StopOffer while a proxy holds the usage marker file keeps the shm. After the proxy has gone, the "
+                   "same skeleton offers again: it creates new shm objects.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a skeleton with one event and one field
+    WithAServiceInstanceDeploymentContainingSingleEventAndField(QualityType::kASIL_QM)
+        .WithAServiceTypeDeploymentContainingSingleEventAndField();
+    auto unit = CreateSkeleton(CreateInstanceIdentifier());
+    ASSERT_NE(unit, nullptr);
+    RegisterEventAndFieldOnPrepareOffer(*unit);
+
+    // and that the shm sizes are calculated each time the shm is created, which happens twice
+    EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode())
+        .Times(2)
+        .WillRepeatedly(Return(ShmSizeCalculationMode::kAnalysis));
+
+    // and that the skeleton is offered
+    ASSERT_TRUE(unit->PrepareOffer(events_, fields_, {}).has_value());
+    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
+    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
+    const auto data_shm_inode = GetInode(data_shm);
+    const auto control_shm_inode = GetInode(control_shm);
+    ASSERT_NE(data_shm_inode, 0U);
+    ASSERT_NE(control_shm_inode, 0U);
+
+    // and a proxy that holds a shared lock on the usage marker file (as lola::Proxy does)
+    const PartialRestartPathBuilder partial_restart_path_builder{test::kLolaServiceId};
+    auto usage_marker_file = memory::shared::LockFile::Open(
+        partial_restart_path_builder.GetServiceInstanceUsageMarkerFilePath(test::kDefaultLolaInstanceId));
+    ASSERT_TRUE(usage_marker_file.has_value());
+    std::optional<memory::shared::FlockMutexAndLock<memory::shared::SharedFlockMutex>> proxy_usage_lock{};
+    proxy_usage_lock.emplace(usage_marker_file.value());
+    ASSERT_TRUE(proxy_usage_lock->TryLock());
+
+    // When the skeleton stops offering, which keeps the shm for the proxy
+    unit->PrepareStopOffer({});
+    EXPECT_EQ(GetInode(data_shm), data_shm_inode);
+    EXPECT_EQ(GetInode(control_shm), control_shm_inode);
+
+    // and the proxy goes away
+    proxy_usage_lock.reset();
+
+    // and the same skeleton offers again
+    ASSERT_TRUE(unit->PrepareOffer(events_, fields_, {}).has_value());
+    std::ignore = mock_event_binding_.PrepareOffer(std::nullopt);
+    std::ignore = mock_field_binding_.PrepareOffer(std::nullopt);
+
+    // Then the skeleton created new shm objects instead of reopening the old ones
+    EXPECT_TRUE(fileExists(data_shm));
+    EXPECT_TRUE(fileExists(control_shm));
+    EXPECT_NE(GetInode(data_shm), data_shm_inode);
+    EXPECT_NE(GetInode(control_shm), control_shm_inode);
+
+    unit->PrepareStopOffer({});
 }
 
 using SkeletonComponentTestDeathTest = SkeletonComponentTestFixture;

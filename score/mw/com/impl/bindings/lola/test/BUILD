@@ -157,6 +157,9 @@ cc_test(
     ],
     deps = [
         ":skeleton_test_resources",
+        "//score/memory/shared:lock_file",
+        "//score/memory/shared/flock:flock_mutex_and_lock",
+        "//score/memory/shared/flock:shared_flock_mutex",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl/bindings/lola:service_data_control",
         "//score/mw/com/impl/bindings/lola:service_data_storage",

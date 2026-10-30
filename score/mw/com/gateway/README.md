@@ -147,8 +147,7 @@ Triggered when a locally provided service is discovered by the Source Gateway.
    `expected-received-services`. If not, it returns `GatewayErrorc::kNonWhitelistedService` immediately.
 9. On the destination side, if a skeleton for this `InstanceSpecifier` **already exists** (service bounced and
    reappeared), `GatewayApplication` reuses the existing `GenericSkeleton` — it calls `OfferService()` on it and
-   re-registers active event subscriptions, then returns. No new skeleton is created. This avoids zeroing the
-   shared-memory `EventSubscriptionControl` while local consumers hold active subscriptions.
+   re-registers active event subscriptions, then returns. No new skeleton is created.
 10. On the destination side, otherwise `GatewayApplication` calls `GenericSkeleton::Create(InstanceSpecifier,
     GenericSkeletonServiceElementInfo)`. The skeleton reads deployment info from `mw_com_config.json`. It either
     reuses source-domain shared-memory objects (MemorySharing) or creates its own (Copying).
