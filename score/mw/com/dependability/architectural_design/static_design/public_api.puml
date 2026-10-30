@@ -1,0 +1,1295 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+@startuml
+
+' Names: every element carries a unit aware alias (see the conventions below), which
+' is unique across the whole diagram. "set namespaceSeparator none" switches the
+' namespace notation from hierarchical to purely visual grouping, so that an alias
+' resolves to the same element everywhere instead of being scoped to the namespace it
+' is declared in. Without it, an alias referenced from outside its namespace does not
+' resolve and PlantUML silently creates a phantom element of that name.
+set namespaceSeparator none
+
+' Layout: the unit clustering makes the default top down layout grow into one very
+' wide row of unit boxes with long inter unit edges. Ranking left to right stacks the
+' units instead, the tightened separations compensate the height this costs.
+left to right direction
+skinparam nodesep 15
+skinparam ranksep 50
+
+' ---------------------------------------------------------------------------
+' Modelling conventions for this diagram
+' ---------------------------------------------------------------------------
+' * This diagram describes the user facing public API of mw::com. It is the
+'   reference for the FMEA (see dependability/safety_analysis/failure_modes.trlc).
+' * The declaration keyword states what the modelled element is:
+'   class     -> instantiation is possible
+'   interface -> all operations are pure virtual
+'   abstract  -> only partly implemented
+'   Every element of this diagram is a concrete, instantiable C++ class (or class
+'   template) and is therefore declared as a class. mw::com exposes no pure
+'   virtual or partly implemented type to its users: the abstract parts of the
+'   implementation (the *Base and *Binding classes) are not user facing and are
+'   therefore not modelled here. The only exception is the <<free_functions>>
+'   stereotype, which marks a mere grouping of free functions and not a type;
+'   it is modelled as a class because UML has no notation for a free function,
+'   but it cannot be instantiated.
+' * The public API of base classes (ProxyBase, ProxyEventBase, SkeletonBase,
+'   SkeletonEventBase, ProxyFieldBase, SkeletonFieldBase) is flattened into the
+'   derived user facing class instead of being modelled separately.
+' * A class template carries its template parameters in angle brackets after the
+'   class name. UML knows no parameter pack, so a C++ pack is modelled as a
+'   single parameter name: ArgTypes for the in args of a method. The field tags
+'   (WithGetter / WithSetter / WithNotifier) are not modelled as a parameter at
+'   all, since a field is modelled once per tag, see below.
+'   Parameter names follow the role the type plays in the public API, which is
+'   also the name the trait aliases use (SampleType, FieldType); the
+'   implementation partly spells them differently (SampleDataType).
+'   Proxy and Skeleton are parameterised with the service interface class
+'   template written by the user, which in C++ is a template template parameter.
+'   The user binds it via "using TheProxy = AsProxy<TheInterface>" resp.
+'   AsSkeleton<TheInterface>. AsProxy / AsSkeleton are alias names of the
+'   classes modelled here as Proxy / Skeleton and not types of their own.
+'   Proxy derives from Interface<ProxyTrait> and Skeleton from
+'   Interface<SkeletonTrait>, i.e. from the interface class of the user, which
+'   declares the service elements. This is why the service elements are modelled
+'   as composed parts of Proxy / Skeleton, following the convention above that
+'   the API of a base class is flattened into the user facing class.
+' * Overloads are disambiguated by a name suffix (e.g. FindServiceBySpecifier /
+'   FindServiceByIdentifier) since UML does not allow duplicate signatures.
+'   Invoke / InvokeWithAllocatedArgs denote the two C++ operator() overloads of
+'   ProxyMethod.
+' * ProxyMethod is modelled once per partial specialization, because the public
+'   API differs between them: only the specializations which declare in args
+'   offer Allocate(), and the call returns Result<Void> when the method
+'   signature has no return type. The primary template is a static_assert and is
+'   therefore not modelled. SkeletonMethod needs no such split, since a single
+'   specialization covers all method signatures (its primary template is a
+'   static_assert as well). It is therefore modelled as a single class, but
+'   with one RegisterHandler overload per method signature category, because the
+'   callable signature a handler has to provide differs between them. Following
+'   the overload convention above, the overloads carry a name suffix:
+'   RegisterHandlerWithInArgsAndReturn   -> void(ReturnType&, const ArgTypes&...)
+'   RegisterHandlerWithInArgs            -> void(const ArgTypes&...)
+'   RegisterHandlerWithReturnType        -> void(ReturnType&)
+'   RegisterHandlerWithoutInArgsOrReturn -> void()
+' * A field is modelled once per field tag, for the same reason: the public API
+'   a field offers depends on the tags it declares. The variant classes carry
+'   the name suffix of their tag: ProxyFieldWithNotifier / ProxyFieldWithGetter
+'   / ProxyFieldWithSetter and SkeletonFieldWithSetter. A declared field offers
+'   the union of the operations of the variants its tags select, hence no
+'   generic ProxyField resp. SkeletonField class is modelled.
+'   Tags whose public API is identical are merged into a single element whose
+'   name names the alternative, because identical operations over an identical
+'   implementation have identical failure modes. That is the case for
+'   SkeletonFieldWithNotifierOrGetter: on the provider side neither tag gates an
+'   operation and publishing is tag independent, the tags only select which
+'   dispatch the consumer uses. On the proxy side the same two tags do enable
+'   disjoint operations and therefore stay separate.
+'   Tag combinations are deliberately not modelled as separate elements, since
+'   every combination reuses the same implementation and therefore has the same
+'   failure modes as the variants it is composed of. The tags themselves are
+'   modelled as <<tag>> classes, because they are public types the user has to
+'   name.
+' * MethodReturnTypePtr and MethodInArgTypePtr are modelled as two separate
+'   classes although both are aliases of the same class template, because
+'   the public API exposes two distinct user facing names with distinct roles:
+'   the return type pointer is read by the user after a method call, the in arg
+'   pointer is written by the user before invoking the method.
+' * The group of in arg pointers returned by Allocate() is modelled as its own
+'   ordered datatype MethodInArgTypePtrs instead of being expressed inline on
+'   the return type, because UML allows a multiplicity only after the return
+'   type of an operation and a template binding substitutes a type, never a
+'   multiplicity. Nesting the multiplicity inside the Result binding (e.g.
+'   Result<MethodInArgTypePtr[1..*]>) is therefore not valid UML. Modelling it
+'   as a separate datatype keeps the statement exact: Allocate() returns exactly
+'   one Result, which carries exactly one ordered group holding one pointer per
+'   method argument. The zero-copy call operator in contrast takes the pointers
+'   as separate parameters and is modelled with a parameter multiplicity, which
+'   is valid UML.
+' * Special members are modelled, since UML has no constructor / destructor /
+'   assignment syntax, under a descriptive name, listed first in the class in
+'   this order:
+'   default constructor           -> ConstructDefault()
+'   user declared constructor     -> Construct(...)
+'   destructor                    -> Destroy()
+'   copy constructor              -> CopyConstruct(other : const T&)
+'   copy assignment               -> CopyAssign(other : const T&) : T&
+'   move constructor              -> MoveConstruct(other : T&&)
+'   move assignment               -> MoveAssign(other : T&&) : T&
+'   converting move constructor   -> MoveConstructOther<Name>(...)
+'   operator=(std::nullptr_t)     -> AssignNull()
+'   The visibility states whether the user may call the member:
+'   +  callable: user provided, = default or implicitly generated
+'   -  NOT callable: = delete, suppressed (not declared and not generated,
+'      e.g. no default constructor because another constructor is declared)
+'      or implicitly defined as deleted
+'   -  NOT to be called by the user although C++ makes it public: the default
+'      constructors of SamplePtr and SampleAllocateePtr. An instance is only
+'      obtained from the middleware (GetNewSamples() / Allocate()).
+'   "-" therefore does NOT claim the C++ access specifier private. It is used
+'   because the tooling accepts no {deleted} property or "= delete" suffix on an
+'   operation, and because a "-" constructor next to a {static} +Create() is
+'   the UML idiom for "only the factory produces an instance".
+'   The base class special members are flattened like all other base class
+'   members, so a special member is shown once on the user facing class.
+'   Construct() of a service element takes the owning Proxy / Skeleton, which
+'   in C++ is a ProxyBase& / SkeletonBase&; the parameter names are the C++
+'   ones. Destroy() matters wherever object lifetime has an observable effect
+'   (e.g. implicit StopOfferService / Unsubscribe).
+' * Class scoped operations carry the {static} modifier, which UML renders
+'   underlined. They are invoked on the type, not on an instance: the static
+'   member functions of Proxy / Skeleton / GenericProxy / GenericSkeleton
+'   (the named constructors and the whole service discovery entry point) and
+'   the named constructors of InstanceSpecifier / InstanceIdentifier, plus the
+'   free functions of the runtime <<free_functions>> grouping.
+'   Not marked, although they are no member functions in C++ either:
+'   - CreateFromCommandLine() / CreateFromPath() of RuntimeConfiguration and the
+'     Construct*() special members, which are constructors and therefore
+'     operate on the instance being created
+'   - IsEqual() / LessThan() / Hash(), which are free or friend functions but
+'     are modelled, per the operator convention below, as operations of the
+'     instance forming the left hand side of the comparison.
+' * Every operation is preceded by a commented out line holding the strict UML
+'   operation signature, i.e. parameter direction (in / out / inout) and
+'   multiplicity for every parameter and for the return value. Operations
+'   returning Void have no return parameter in UML and therefore carry no
+'   return type. Multiplicity is [1] unless the element is optional ([0..1],
+'   e.g. a possibly null pointer) or a variadic argument pack ([0..*]).
+'   These lines are commented out because the tooling does not support this
+'   syntax yet; once it does, uncomment them and drop the line below each.
+' * {query} marks an operation whose execution leaves the state of the system
+'   unchanged. UML has no const qualifier, so {query} is the UML notation for a
+'   const qualified member function in C++. Because {query} is only valid at the
+'   end of the operation signature, which the tooling does not accept, it is
+'   written on the commented out strict UML line only, while the line below it
+'   carries the C++ const qualifier instead. An operation is marked if and only
+'   if it is a const qualified member function. Free and static functions are
+'   never marked, even when they are free of side effects. That is why the
+'   comparison and hash operations (free resp. friend functions, see above), the
+'   runtime operations and the FindService* operations carry no {query}.
+'   ProxyEvent::GetSubscriptionState(), ::GetFreeSampleCount() and
+'   ::GetNumNewSamplesAvailable() are queries while the identically named
+'   operations of ProxyFieldWithNotifier are not, because the latter are not
+'   const qualified in the implementation. This is intentionally modelled as is
+'   instead of being harmonised.
+' * {readOnly} is a property of an attribute or of an association end, not of an
+'   operation and not of a return value. It is therefore only used where the
+'   referenced data cannot be modified through the element carrying it,
+'   currently only the events end of the association between
+'   GenericSkeletonServiceElementInfo and EventInfo. Unlike {query} it does not
+'   need a commented out strict UML line, because an association end accepts a
+'   property string and a multiplicity in the notation the tooling supports.
+' * User supplied callables (handlers) are modelled as a class with the
+'   <<callback>> stereotype and a single Invoke() operation carrying the
+'   signature of the callable, because UML has no function type. Invoke()
+'   follows the operator naming convention above, where operator() is modelled
+'   as Invoke() too (see ProxyMethod*). Only EventReceiveHandler,
+'   SubscriptionStateChangeHandler, FindServiceHandler and
+'   ReceiveHandlerRegistrationChangedCallback are types of the public C++ API.
+'   SetHandler, SampleReceiver and MethodHandler are not: the implementation
+'   accepts any callable there, so the name only denotes the expected signature.
+' * Types which are defined outside mw::com (Path, Json, DataTypeSizeInfo) and
+'   types whose content is not part of the user facing contract are
+'   declared as <<datatype>> without members, so that every operation signature
+'   refers to a modelled element, with a note naming their origin.
+' * Relationships are modelled because the FMEA needs them to follow how a
+'   failure on one interface propagates to another. Notation used:
+'   A *-- B                 composition: B is owned by A (service elements of a
+'                           Proxy / Skeleton, members held by value). Its
+'                           lifetime ends with A.
+'   A o-- "n" B             aggregation: A holds n B without owning them, e.g. a
+'                           container or a non owning view. Their lifetime is
+'                           independent of A.
+'   A ..> B <<use>>         B is consumed by A as an operation parameter or is a
+'                           precondition for using A. The field tags are drawn
+'                           this way, since a variant can only be used when its
+'                           tag is declared.
+'   {one of}                attached to several dependencies of the same client:
+'                           the client requires at least one of the constrained
+'                           suppliers and may use several of them. Used for the
+'                           two tags of SkeletonFieldWithNotifierOrGetter. UML
+'                           dependencies are conjunctive, so the unconstrained
+'                           pair would read as requiring both. {xor} is not used,
+'                           because it would additionally exclude declaring both
+'                           tags together, which is legal.
+'   Composition and aggregation carry the role name of the member they stand for
+'   and its multiplicity. Attributes whose type is a modelled element are drawn
+'   that way instead of being kept as attributes (EventInfo and
+'   GenericSkeletonServiceElementInfo), because the edge records whether the
+'   owner holds the element by value or only references it, which the attribute
+'   notation cannot express, and because it keeps the element reachable for the
+'   FMEA instead of leaving it dangling. An attribute whose type is not modelled
+'   (e.g. String) stays an attribute.
+'   Only relationships between elements modelled in this diagram are drawn. Edges
+'   are grouped per section instead of in one block at the end of the file.
+'   One kind of reference is deliberately left without an edge: Result, which
+'   wraps the return value of every fallible operation. Drawing it would add one
+'   element with more than twenty incoming dependencies without telling the FMEA
+'   anything, since the dependency is on the outcome of the operation, not on a
+'   separate interface. ComErrc / ComErrorDomain are not modelled at all for the
+'   same reason: they are abstracted by Result.
+' * Conversion, comparison and hash operators are modelled, since UML has no
+'   operator syntax, under a descriptive name following the convention used for
+'   operator* / operator-> (Dereference / MemberAccess):
+'   explicit operator bool()  -> IsValid()
+'   operator==                -> IsEqual()
+'   operator!=                -> IsNotEqual()
+'   operator=(std::nullptr_t) -> AssignNull()
+'   operator<                 -> LessThan()
+'   operator>                 -> GreaterThan()
+'   std::hash specialization  -> Hash()
+'   Comparison and hash operators which are free or friend functions in C++ are
+'   modelled as an operation of the type they compare / hash, with the left hand
+'   side being the instance the operation is invoked on.
+'   operator!= is modelled as its own operation, even though it is verified to
+'   delegate to operator== (instance_specifier.cpp: every overload is
+'   "return !(lhs == rhs);"), so that the modelled interface matches the set of
+'   callable C++ entry points one to one and the safety analysis can be walked
+'   against it without consulting the implementation. Note that the delegation
+'   is a property of the implementation, not of the language: the code base is
+'   pre C++20, so operator!= is a separately compiled function rather than a
+'   rewritten operator== candidate.
+'   operator!= exists only on InstanceSpecifier (three overloads), SamplePtr and
+'   SampleAllocateePtr, which is why IsNotEqual appears only there.
+'   InstanceIdentifier, HandleType and FindServiceHandle declare only
+'   operator== and operator<.
+'   The free operator== / operator!= of SamplePtr compare against nullptr, with
+'   the nullptr on either side (four overloads); they are modelled as
+'   IsEqual(other : std::nullptr_t) / IsNotEqual(other : std::nullptr_t). The
+'   free operator== / operator!= of SampleAllocateePtr compare two pointers of
+'   possibly different sample types and are modelled with the other sample type
+'   as OtherSampleType.
+' * An operation may carry an UNTYPED PARAMETER, e.g. IsEqual(other) and
+'   IsNotEqual(other), when several C++ overloads are the same semantic
+'   operation applied to different input types and the input type is not
+'   distinguished at this level of sub
+'   division. UML 2.5.1 has no union type (verified: the only normative "union"
+'   is the {union} derived union keyword for Property subsetting), and the
+'   alternatives do not fit: a template operation (9.6.4) would assert that the
+'   C++ functions are templates, which they are not, and a common supertype
+'   does not exist for e.g. InstanceSpecifier and String. The untyped parameter
+'   is well formed against the metamodel, where TypedElement::type has
+'   multiplicity [0..1] (UML 2.5.1, 7.8.22.5). Note that the printed parameter
+'   notation grammar in 9.4.4 does not bracket "':' <type-expression>" as
+'   optional, unlike the Property notation (9.5.4) and the operation return
+'   type (9.6.4); the specification does not reconcile the two, and the
+'   metamodel is followed here.
+'   {abstract} is deliberately NOT used for this purpose: per UML 2.5.1 9.9.2.5
+'   isAbstract means the feature "does not have an implementation, and one must
+'   be supplied by a more specific Classifier", with the constraint
+'   abstract_no_method "isAbstract implies method->isEmpty()" (9.9.2.8). It says
+'   nothing about parameter types, and asserting it would state that the
+'   operation is unimplemented, which is false.
+'   The note on the class records which C++ overloads the operation covers, so
+'   that the enumeration stays complete. If the variants are later found to
+'   have different failure modes, the operation is split at that point.
+' * SAFETY ANALYSIS SCOPE. The comparison and hash operations of the service
+'   instance identifiers, i.e. IsEqual(), IsNotEqual(), LessThan() and Hash()
+'   of InstanceSpecifier, InstanceIdentifier, HandleType and FindServiceHandle,
+'   are side effect free and confined to immutable, process local state: no
+'   error return channel, no shared memory access, no binding interaction, no
+'   OS resource and no cross process effect. Walking the FMEA fault models
+'   against them yields no plausible failure mode able to propagate to a
+'   safety goal, so they are DISMISSED FROM THE SAFETY ANALYSIS as a class,
+'   with this one rationale instead of one record per operation. They are
+'   addressed by systematic fault avoidance (unit test, static analysis, code
+'   review) rather than by a FailureMode.
+'   The dismissal is written down so that it is auditable rather than implied
+'   by absence: every other operation is in scope and has to be walked method
+'   by method, which is what the safety analysis process requires. The note on
+'   each of the four classes repeats which of its operations are covered, so
+'   that the statement is visible in the rendered diagram and not only here.
+'   ToString() is deliberately NOT covered, although it is const and free of
+'   side effects, because its result is the serialised form consumed by
+'   InstanceIdentifier::Create() and therefore crosses a process or
+'   configuration boundary.
+'   Reference: IEC 60812:2018, 3.1.7, which defines the element as the "level
+'   of sub-division ... at which failure modes are to be identified", i.e. the
+'   granularity is a recorded choice.
+' * Intentionally NOT shown, because they are not user facing:
+'   - mocking / test hooks (InjectMock, IRuntime, RuntimeMockHolder)
+'   - internal lifecycle hooks (PrepareOffer, PrepareStopOffer, Deinitialize,
+'     SetupMethods, InitializeInArgsAndReturnValues)
+'   - MethodReturnTypePtr / MethodInArgTypePtr GetQueuePosition(), which only
+'     serves the internal argument consistency check of ProxyMethod
+'   - "*View" / "*Attorney" helper classes
+'   - the stream operators (operator<<) which only enable logging of a type via
+'     mw::log::LogStream / std::ostream
+'   - compile time only trait classes (ProxyTrait, SkeletonTrait), which only
+'     map the service element types of a Proxy resp. Skeleton
+' * The diagram is clustered per architectural unit: every element sits in the
+'   namespace of the unit which owns it. The grouping names are the unit names of
+'   the static architecture (overall.puml, binding_independent.puml), which are also
+'   the unit design folders under score/mw/com/impl/dependability/, written as the
+'   grouping path and prefixed with the name of the SEooC which owns the unit. A unit
+'   nested in a component carries that component in the path as well, a unit owned
+'   directly by the SEooC does not:
+'     mw_com::binding_independent::sample_management_pointers  (unit of a component)
+'     mw_com::service_instance_identifiers                     (unit of the SEooC)
+'   These namespaces denote ARCHITECTURAL UNITS, not C++ namespaces: there is no
+'   score::mw::com::mw_com::binding_independent::... in the code. PlantUML offers no
+'   other grouping that nests inside a namespace (a package inside a namespace is a
+'   parse error), which is why the unit grouping reuses the namespace notation.
+'   Elements which no single unit owns are left directly in score::mw::com:
+'   - Path / Json / DataTypeSizeInfo, which are defined outside mw::com altogether
+' * Every element is declared as <keyword> "<Name>" as <alias>, i.e. the rendered
+'   name is the quoted label while the alias is what every relationship, note and
+'   cross reference names. The alias spells out which unit owns the element and is
+'   therefore unique across the whole diagram. It is the grouping path of the unit
+'   with :: replaced by _, followed by the element name:
+'     mw_com_binding_independent_<unit>_<Name>  for a unit nested in a component
+'     mw_com_<unit>_<Name>                      for a unit owned by the SEooC
+'     mw_com_<Name>                             for an element without owning unit
+'   The one exception are the elements which model a type that is defined outside
+'   mw::com: they are aliased by their real fully qualified type name with :: replaced
+'   by _ (score_filesystem_Path, score_json_Any, score_memory_DataTypeSizeInfo), so
+'   that a reference names the actual type instead of claiming mw_com owns it. Do not
+'   "normalize" these to the mw_com_ prefix.
+'   A class template carries its template parameters in the quoted label, not in the
+'   alias (e.g. "ProxyEvent<SampleType>"), so that the alias stays a plain
+'   identifier. The alias is deliberately redundant with the enclosing namespace: it
+'   makes every reference self describing and lets a reference be read without
+'   tracking which namespace it is written in.
+'   The aliases are only unambiguous because "set namespaceSeparator none" (see the
+'   top of the file) turns the namespaces into a purely visual grouping. Without it an
+'   alias is scoped to its namespace, and a reference from outside does not resolve
+'   but silently creates a phantom element of that name instead of failing. The same
+'   silent failure mode applies to a misspelled alias, so a rendered element whose
+'   name looks like an alias (mw_com_...) is always a typo, never an element.
+' * The diagram is larger than PlantUML renders into a bitmap by default: the
+'   PLANTUML_LIMIT_SIZE of 4096 pixels silently CROPS a PNG rendering, which makes the
+'   relationships leaving the cropped area look broken. Read the diagram as SVG, which
+'   is also what the documentation build generates, or raise PLANTUML_LIMIT_SIZE.
+' ---------------------------------------------------------------------------
+
+namespace score::mw::com {
+
+    ' =======================================================================
+    ' Runtime
+    ' =======================================================================
+    namespace mw_com::binding_independent::runtime <<unit>> {
+
+        class "runtime" as mw_com_binding_independent_runtime_runtime <<free_functions>> {
+            '{static} +InitializeRuntimeFromCommandLine(in command_line_arguments : CommandLineArguments)
+            {static} +InitializeRuntimeFromCommandLine(command_line_arguments : const CommandLineArguments&)
+            '{static} +InitializeRuntimeFromConfiguration(in runtime_configuration : RuntimeConfiguration)
+            {static} +InitializeRuntimeFromConfiguration(runtime_configuration : const RuntimeConfiguration&)
+            '{static} +AddConfiguration(in runtime_configuration : RuntimeConfiguration) : Result
+            {static} +AddConfiguration(runtime_configuration : const RuntimeConfiguration&) : Result
+            '{static} +AddConfigurationFromJson(in json : Json) : Result
+            {static} +AddConfigurationFromJson(json : Json) : Result
+            '{static} +ResolveInstanceIDs(in model_name : InstanceSpecifier) : Result<InstanceIdentifierContainer>
+            {static} +ResolveInstanceIDs(model_name : const InstanceSpecifier&) : Result<InstanceIdentifierContainer>
+        }
+
+        class "RuntimeConfiguration" as mw_com_binding_independent_runtime_RuntimeConfiguration {
+            +ConstructDefault()
+            '+CreateFromCommandLine(in command_line_arguments : CommandLineArguments) : RuntimeConfiguration
+            +CreateFromCommandLine(command_line_arguments : CommandLineArguments) : RuntimeConfiguration
+            '+CreateFromPath(in configuration_path : Path) : RuntimeConfiguration
+            +CreateFromPath(configuration_path : Path) : RuntimeConfiguration
+            '+GetConfigurationPath() : Path {query}
+            +GetConfigurationPath() const : const Path&
+        }
+
+        class "CommandLineArguments" as mw_com_binding_independent_runtime_CommandLineArguments <<datatype>>
+
+        note bottom of mw_com_binding_independent_runtime_CommandLineArguments
+          No type of the public C++ API, but the abstraction of the command line
+          arguments a process was started with, passed either as (argc, argv) or as
+          a span of null terminated strings.
+        end note
+
+        ' --- relationships inside runtime ---
+        mw_com_binding_independent_runtime_runtime ..> mw_com_binding_independent_runtime_RuntimeConfiguration : <<use>>
+        mw_com_binding_independent_runtime_runtime ..> mw_com_binding_independent_runtime_CommandLineArguments : <<use>>
+        mw_com_binding_independent_runtime_RuntimeConfiguration ..> mw_com_binding_independent_runtime_CommandLineArguments : <<use>>
+    }
+
+    ' =======================================================================
+    ' Service Discovery
+    ' =======================================================================
+    namespace mw_com::binding_independent::service_discovery <<unit>> {
+
+        class "FindServiceHandle" as mw_com_binding_independent_service_discovery_FindServiceHandle {
+            -ConstructDefault()
+            '+IsEqual(in other : FindServiceHandle) : Boolean
+            +IsEqual(other : const FindServiceHandle&) : Boolean
+            '+LessThan(in other : FindServiceHandle) : Boolean
+            +LessThan(other : const FindServiceHandle&) : Boolean
+            +Hash() : Integer
+        }
+
+        class "FindServiceHandler<ServiceHandleType>" as mw_com_binding_independent_service_discovery_FindServiceHandler <<callback>> {
+            '+Invoke(in handles : ServiceHandleContainer, in handle : FindServiceHandle)
+            +Invoke(handles : ServiceHandleContainer, handle : FindServiceHandle)
+        }
+
+        class "ServiceHandleContainer<ServiceHandleType>" as mw_com_binding_independent_service_discovery_ServiceHandleContainer <<datatype>>
+
+        note bottom of mw_com_binding_independent_service_discovery_ServiceHandleContainer
+          Ordered sequence (std::vector) of the service handles returned by
+          FindService* and handed to a FindServiceHandler.
+        end note
+
+        ' --- relationships inside service_discovery ---
+        mw_com_binding_independent_service_discovery_FindServiceHandler ..> mw_com_binding_independent_service_discovery_FindServiceHandle : <<use>>
+        mw_com_binding_independent_service_discovery_FindServiceHandler ..> mw_com_binding_independent_service_discovery_ServiceHandleContainer : <<use>>
+    }
+
+    ' =======================================================================
+    ' Sample Management Pointers
+    ' =======================================================================
+    namespace mw_com::binding_independent::sample_management_pointers <<unit>> {
+
+        class "SamplePtr<SampleType>" as mw_com_binding_independent_sample_management_pointers_SamplePtr {
+            -ConstructDefault()
+            +Destroy()
+            '-CopyConstruct(in other : SamplePtr)
+            -CopyConstruct(other : const SamplePtr&)
+            '-CopyAssign(in other : SamplePtr) : SamplePtr
+            -CopyAssign(other : const SamplePtr&) : SamplePtr&
+            '+MoveConstruct(inout other : SamplePtr)
+            +MoveConstruct(other : SamplePtr&&)
+            '+MoveAssign(inout other : SamplePtr) : SamplePtr
+            +MoveAssign(other : SamplePtr&&) : SamplePtr&
+            '+AssignNull() : SamplePtr
+            +AssignNull() : SamplePtr&
+            '+Get() : SampleType[0..1] {query}
+            +Get() const : const SampleType*
+            '+Dereference() : SampleType {query}
+            +Dereference() const : const SampleType&
+            '+MemberAccess() : SampleType[0..1] {query}
+            +MemberAccess() const : const SampleType*
+            '+IsValid() : Boolean {query}
+            +IsValid() const : Boolean
+            '+LessThan(in other : SamplePtr) : Boolean {query}
+            +LessThan(other : const SamplePtr&) const : Boolean
+            '+GreaterThan(in other : SamplePtr) : Boolean {query}
+            +GreaterThan(other : const SamplePtr&) const : Boolean
+            '+IsEqual(in other : nullptr_t) : Boolean
+            +IsEqual(other : std::nullptr_t) : Boolean
+            '+IsNotEqual(in other : nullptr_t) : Boolean
+            +IsNotEqual(other : std::nullptr_t) : Boolean
+            '+Reset(in other : SamplePtr[0..1])
+            +Reset(other : SamplePtr)
+            '+Swap(inout other : SamplePtr)
+            +Swap(other : SamplePtr)
+            '+SwapOtherType(inout other : SamplePtr)
+            +SwapOtherType(other : SamplePtr)
+        }
+
+        class "SampleAllocateePtr<SampleType>" as mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr {
+            -ConstructDefault()
+            +Destroy()
+            '-CopyConstruct(in other : SampleAllocateePtr)
+            -CopyConstruct(other : const SampleAllocateePtr&)
+            '-CopyAssign(in other : SampleAllocateePtr) : SampleAllocateePtr
+            -CopyAssign(other : const SampleAllocateePtr&) : SampleAllocateePtr&
+            '+MoveConstruct(inout other : SampleAllocateePtr)
+            +MoveConstruct(other : SampleAllocateePtr&&)
+            '+MoveAssign(inout other : SampleAllocateePtr) : SampleAllocateePtr
+            +MoveAssign(other : SampleAllocateePtr&&) : SampleAllocateePtr&
+            '+MoveConstructOtherSampleType(inout other : SampleAllocateePtr<OtherSampleType>)
+            +MoveConstructOtherSampleType(other : SampleAllocateePtr<OtherSampleType>&&)
+            '+AssignNull() : SampleAllocateePtr
+            +AssignNull() : SampleAllocateePtr&
+            '+Get() : SampleType[0..1] {query}
+            +Get() const : SampleType*
+            '+Dereference() : SampleType {query}
+            +Dereference() const : SampleType&
+            '+MemberAccess() : SampleType[0..1] {query}
+            +MemberAccess() const : SampleType*
+            '+IsValid() : Boolean {query}
+            +IsValid() const : Boolean
+            '+IsEqual(in other : SampleAllocateePtr<OtherSampleType>) : Boolean
+            +IsEqual(other : const SampleAllocateePtr<OtherSampleType>&) : Boolean
+            '+IsNotEqual(in other : SampleAllocateePtr<OtherSampleType>) : Boolean
+            +IsNotEqual(other : const SampleAllocateePtr<OtherSampleType>&) : Boolean
+            +reset()
+            '+Swap(inout other : SampleAllocateePtr)
+            +Swap(other : SampleAllocateePtr)
+            '+SwapOtherSampleType(inout other : SampleAllocateePtr)
+            +SwapOtherSampleType(other : SampleAllocateePtr)
+        }
+
+        class "MethodReturnTypePtr<SignatureElement>" as mw_com_binding_independent_sample_management_pointers_MethodReturnTypePtr {
+            -ConstructDefault()
+            +Destroy()
+            '-CopyConstruct(in other : MethodReturnTypePtr)
+            -CopyConstruct(other : const MethodReturnTypePtr&)
+            '-CopyAssign(in other : MethodReturnTypePtr) : MethodReturnTypePtr
+            -CopyAssign(other : const MethodReturnTypePtr&) : MethodReturnTypePtr&
+            '+MoveConstruct(inout other : MethodReturnTypePtr)
+            +MoveConstruct(other : MethodReturnTypePtr&&)
+            '-MoveAssign(inout other : MethodReturnTypePtr) : MethodReturnTypePtr
+            -MoveAssign(other : MethodReturnTypePtr&&) : MethodReturnTypePtr&
+            '+MoveConstructOtherType(inout element : SignatureElement, inout other : MethodReturnTypePtr<OtherSignatureElement>)
+            +MoveConstructOtherType(element : SignatureElement&, other : MethodReturnTypePtr<OtherSignatureElement>&&)
+            '+get() : SignatureElement[0..1] {query}
+            +get() const : SignatureElement*
+            '+Dereference() : SignatureElement {query}
+            +Dereference() const : SignatureElement&
+            '+MemberAccess() : SignatureElement[0..1] {query}
+            +MemberAccess() const : SignatureElement*
+        }
+
+        class "MethodInArgTypePtr<SignatureElement>" as mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtr {
+            -ConstructDefault()
+            +Destroy()
+            '-CopyConstruct(in other : MethodInArgTypePtr)
+            -CopyConstruct(other : const MethodInArgTypePtr&)
+            '-CopyAssign(in other : MethodInArgTypePtr) : MethodInArgTypePtr
+            -CopyAssign(other : const MethodInArgTypePtr&) : MethodInArgTypePtr&
+            '+MoveConstruct(inout other : MethodInArgTypePtr)
+            +MoveConstruct(other : MethodInArgTypePtr&&)
+            '-MoveAssign(inout other : MethodInArgTypePtr) : MethodInArgTypePtr
+            -MoveAssign(other : MethodInArgTypePtr&&) : MethodInArgTypePtr&
+            '+MoveConstructOtherType(inout element : SignatureElement, inout other : MethodInArgTypePtr<OtherSignatureElement>)
+            +MoveConstructOtherType(element : SignatureElement&, other : MethodInArgTypePtr<OtherSignatureElement>&&)
+            '+get() : SignatureElement[0..1] {query}
+            +get() const : SignatureElement*
+            '+Dereference() : SignatureElement {query}
+            +Dereference() const : SignatureElement&
+            '+MemberAccess() : SignatureElement[0..1] {query}
+            +MemberAccess() const : SignatureElement*
+        }
+
+        class "MethodInArgTypePtrs" as mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtrs <<datatype>>
+
+        note bottom of mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtrs
+          The group of in arg pointers returned by ProxyMethod::Allocate(): exactly one
+          MethodInArgTypePtr per argument of the method signature, in the order of the
+          argument list. The group is heterogeneous, as every pointer refers to the type
+          of its corresponding argument, and its size is fixed by the method signature.
+        end note
+
+        ' --- relationships inside sample_management_pointers ---
+        mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtrs o-- "1..* {ordered}" mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtr
+    }
+
+    ' =======================================================================
+    ' Proxy And Service Elements
+    ' =======================================================================
+    namespace mw_com::binding_independent::proxy_and_service_elements <<unit>> {
+
+        class "Proxy<Interface>" as mw_com_binding_independent_proxy_and_service_elements_Proxy {
+            -ConstructDefault()
+            +Destroy()
+            '-CopyConstruct(in other : Proxy)
+            -CopyConstruct(other : const Proxy&)
+            '-CopyAssign(in other : Proxy) : Proxy
+            -CopyAssign(other : const Proxy&) : Proxy&
+            '+MoveConstruct(inout other : Proxy)
+            +MoveConstruct(other : Proxy&&)
+            '+MoveAssign(inout other : Proxy) : Proxy
+            +MoveAssign(other : Proxy&&) : Proxy&
+            '{static} +Create(in handle : HandleType) : Result<Proxy>
+            +{static} Create(handle : const HandleType&) : Result<Proxy>
+            '{static} +FindServiceBySpecifier(in specifier : InstanceSpecifier) : Result<ServiceHandleContainer<HandleType>>
+            {static} +FindServiceBySpecifier(specifier: InstanceSpecifier) : Result<ServiceHandleContainer<HandleType>>
+            '{static} +FindServiceByIdentifier(in identifier : InstanceIdentifier) : Result<ServiceHandleContainer<HandleType>>
+            {static} +FindServiceByIdentifier(identifier: InstanceIdentifier) : Result<ServiceHandleContainer<HandleType>>
+            '{static} +StartFindServiceBySpecifier(in handler : FindServiceHandler, in specifier : InstanceSpecifier) : Result<FindServiceHandle>
+            {static} +StartFindServiceBySpecifier(handler: FindServiceHandler, specifier: InstanceSpecifier) : Result<FindServiceHandle>
+            '{static} +StartFindServiceByIdentifier(in handler : FindServiceHandler, in identifier : InstanceIdentifier) : Result<FindServiceHandle>
+            {static} +StartFindServiceByIdentifier(handler: FindServiceHandler, identifier: InstanceIdentifier) : Result<FindServiceHandle>
+            '{static} +StopFindService(in handle : FindServiceHandle) : Result
+            {static} +StopFindService(handle: FindServiceHandle) : Result
+            '+GetHandle() : HandleType {query}
+            +GetHandle() const : const HandleType&
+        }
+
+        note bottom of mw_com_binding_independent_proxy_and_service_elements_Proxy
+          Bound by the user as AsProxy<TheInterface>, where TheInterface is the
+          service interface class template written by the user. Proxy derives from
+          TheInterface<ProxyTrait>, which declares the service elements shown below.
+        end note
+
+        class "ProxyEvent<SampleType>" as mw_com_binding_independent_proxy_and_service_elements_ProxyEvent {
+            '+Construct(inout base : Proxy, in event_name : String)
+            +Construct(base : Proxy&, event_name : String)
+            +Destroy()
+            '-CopyConstruct(in other : ProxyEvent)
+            -CopyConstruct(other : const ProxyEvent&)
+            '-CopyAssign(in other : ProxyEvent) : ProxyEvent
+            -CopyAssign(other : const ProxyEvent&) : ProxyEvent&
+            '+MoveConstruct(inout other : ProxyEvent)
+            +MoveConstruct(other : ProxyEvent&&)
+            '+MoveAssign(inout other : ProxyEvent) : ProxyEvent
+            +MoveAssign(other : ProxyEvent&&) : ProxyEvent&
+            '+Subscribe(in max_sample_count : Integer) : Result
+            +Subscribe(max_sample_count : Integer) : Result
+            +Unsubscribe()
+            '+GetSubscriptionState() : SubscriptionState {query}
+            +GetSubscriptionState() const : SubscriptionState
+            '+SetSubscriptionStateChangeHandler(in handler : SubscriptionStateChangeHandler) : Result
+            +SetSubscriptionStateChangeHandler(handler : SubscriptionStateChangeHandler) : Result
+            +UnsetSubscriptionStateChangeHandler() : Result
+            '+SetReceiveHandler(in handler : EventReceiveHandler[1]) : Result
+            +SetReceiveHandler(handler : EventReceiveHandler) : Result
+            +UnsetReceiveHandler() : Result
+            '+GetFreeSampleCount() : Integer {query}
+            +GetFreeSampleCount() const : Integer
+            '+GetNumNewSamplesAvailable() : Result<Integer> {query}
+            +GetNumNewSamplesAvailable() const : Result<Integer>
+            '+GetNewSamples(in receiver : SampleReceiver, in max_num_samples : Integer) : Result<Integer>
+            +GetNewSamples(receiver : SampleReceiver, max_num_samples : Integer) : Result<Integer>
+        }
+
+        class "ProxyFieldWithNotifier<FieldType>" as mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier {
+            '+Construct(inout proxy_base : Proxy, in field_name : String)
+            +Construct(proxy_base : Proxy&, field_name : String)
+            +Destroy()
+            '-CopyConstruct(in other : ProxyFieldWithNotifier)
+            -CopyConstruct(other : const ProxyFieldWithNotifier&)
+            '-CopyAssign(in other : ProxyFieldWithNotifier) : ProxyFieldWithNotifier
+            -CopyAssign(other : const ProxyFieldWithNotifier&) : ProxyFieldWithNotifier&
+            '+MoveConstruct(inout other : ProxyFieldWithNotifier)
+            +MoveConstruct(other : ProxyFieldWithNotifier&&)
+            '+MoveAssign(inout other : ProxyFieldWithNotifier) : ProxyFieldWithNotifier
+            +MoveAssign(other : ProxyFieldWithNotifier&&) : ProxyFieldWithNotifier&
+            '+Subscribe(in max_sample_count : Integer) : Result
+            +Subscribe(max_sample_count : Integer) : Result
+            +Unsubscribe()
+            +GetSubscriptionState() : SubscriptionState
+            '+SetSubscriptionStateChangeHandler(in handler : SubscriptionStateChangeHandler) : Result
+            +SetSubscriptionStateChangeHandler(handler : SubscriptionStateChangeHandler) : Result
+            +UnsetSubscriptionStateChangeHandler() : Result
+            '+SetReceiveHandler(in handler : EventReceiveHandler) : Result
+            +SetReceiveHandler(handler : EventReceiveHandler) : Result
+            +UnsetReceiveHandler() : Result
+            +GetFreeSampleCount() : Integer
+            +GetNumNewSamplesAvailable() : Result<Integer>
+            '+GetNewSamples(in receiver : SampleReceiver, in max_num_samples : Integer) : Result<Integer>
+            +GetNewSamples(receiver : SampleReceiver, max_num_samples : Integer) : Result<Integer>
+        }
+
+        class "ProxyFieldWithGetter<FieldType>" as mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithGetter {
+            '+Construct(inout proxy_base : Proxy, in field_name : String)
+            +Construct(proxy_base : Proxy&, field_name : String)
+            +Destroy()
+            '-CopyConstruct(in other : ProxyFieldWithGetter)
+            -CopyConstruct(other : const ProxyFieldWithGetter&)
+            '-CopyAssign(in other : ProxyFieldWithGetter) : ProxyFieldWithGetter
+            -CopyAssign(other : const ProxyFieldWithGetter&) : ProxyFieldWithGetter&
+            '+MoveConstruct(inout other : ProxyFieldWithGetter)
+            +MoveConstruct(other : ProxyFieldWithGetter&&)
+            '+MoveAssign(inout other : ProxyFieldWithGetter) : ProxyFieldWithGetter
+            +MoveAssign(other : ProxyFieldWithGetter&&) : ProxyFieldWithGetter&
+            +Get() : Result<MethodReturnTypePtr>
+        }
+
+        class "ProxyFieldWithSetter<FieldType>" as mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithSetter {
+            '+Construct(inout proxy_base : Proxy, in field_name : String)
+            +Construct(proxy_base : Proxy&, field_name : String)
+            +Destroy()
+            '-CopyConstruct(in other : ProxyFieldWithSetter)
+            -CopyConstruct(other : const ProxyFieldWithSetter&)
+            '-CopyAssign(in other : ProxyFieldWithSetter) : ProxyFieldWithSetter
+            -CopyAssign(other : const ProxyFieldWithSetter&) : ProxyFieldWithSetter&
+            '+MoveConstruct(inout other : ProxyFieldWithSetter)
+            +MoveConstruct(other : ProxyFieldWithSetter&&)
+            '+MoveAssign(inout other : ProxyFieldWithSetter) : ProxyFieldWithSetter
+            +MoveAssign(other : ProxyFieldWithSetter&&) : ProxyFieldWithSetter&
+            '+Set(in new_field_value : FieldType) : Result<MethodReturnTypePtr>
+            +Set(new_field_value : const FieldType&) : Result<MethodReturnTypePtr>
+        }
+
+        class "ProxyMethodWithInArgs<ArgTypes>" as mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgs {
+            '+Construct(inout proxy_base : Proxy, in method_name : String)
+            +Construct(proxy_base : Proxy&, method_name : String)
+            +Destroy()
+            '-CopyConstruct(in other : ProxyMethodWithInArgs)
+            -CopyConstruct(other : const ProxyMethodWithInArgs&)
+            '-CopyAssign(in other : ProxyMethodWithInArgs) : ProxyMethodWithInArgs
+            -CopyAssign(other : const ProxyMethodWithInArgs&) : ProxyMethodWithInArgs&
+            '+MoveConstruct(inout other : ProxyMethodWithInArgs)
+            +MoveConstruct(other : ProxyMethodWithInArgs&&)
+            '+MoveAssign(inout other : ProxyMethodWithInArgs) : ProxyMethodWithInArgs
+            +MoveAssign(other : ProxyMethodWithInArgs&&) : ProxyMethodWithInArgs&
+            +Allocate() : Result<MethodInArgTypePtrs>
+            '+InvokeWithArgs(in args : ArgTypes[1..*]) : Result
+            +InvokeWithArgs(args : const ArgTypes&...) : Result
+            '+InvokeWithAllocatedArgs(in args : MethodInArgTypePtr[1..*]) : Result
+            +InvokeWithAllocatedArgs(args : MethodInArgTypePtr...) : Result
+        }
+
+        class "ProxyMethodWithInArgsAndReturn<ReturnType, ArgTypes>" as mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgsAndReturn {
+            '+Construct(inout proxy_base : Proxy, in method_name : String)
+            +Construct(proxy_base : Proxy&, method_name : String)
+            +Destroy()
+            '-CopyConstruct(in other : ProxyMethodWithInArgsAndReturn)
+            -CopyConstruct(other : const ProxyMethodWithInArgsAndReturn&)
+            '-CopyAssign(in other : ProxyMethodWithInArgsAndReturn) : ProxyMethodWithInArgsAndReturn
+            -CopyAssign(other : const ProxyMethodWithInArgsAndReturn&) : ProxyMethodWithInArgsAndReturn&
+            '+MoveConstruct(inout other : ProxyMethodWithInArgsAndReturn)
+            +MoveConstruct(other : ProxyMethodWithInArgsAndReturn&&)
+            '+MoveAssign(inout other : ProxyMethodWithInArgsAndReturn) : ProxyMethodWithInArgsAndReturn
+            +MoveAssign(other : ProxyMethodWithInArgsAndReturn&&) : ProxyMethodWithInArgsAndReturn&
+            'TBC how to model Result<std::tuple<MethodInArgTypePtr...>>? Result<MethodInArgTypePtr[1..*]> is not valid UML
+            +Allocate() : Result<MethodInArgTypePtrs>
+            '+InvokeWithArgs(in args : ArgTypes[1..*]) : Result<MethodReturnTypePtr>
+            +InvokeWithArgs(args : const ArgTypes&...) : Result<MethodReturnTypePtr>
+            '+InvokeWithAllocatedArgs(in args : MethodInArgTypePtr[1..*]) : Result<MethodReturnTypePtr>
+            +InvokeWithAllocatedArgs(args : MethodInArgTypePtr...) : Result<MethodReturnTypePtr>
+        }
+
+        class "ProxyMethodWithReturnType<ReturnType>" as mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithReturnType {
+            '+Construct(inout proxy_base : Proxy, in method_name : String)
+            +Construct(proxy_base : Proxy&, method_name : String)
+            +Destroy()
+            '-CopyConstruct(in other : ProxyMethodWithReturnType)
+            -CopyConstruct(other : const ProxyMethodWithReturnType&)
+            '-CopyAssign(in other : ProxyMethodWithReturnType) : ProxyMethodWithReturnType
+            -CopyAssign(other : const ProxyMethodWithReturnType&) : ProxyMethodWithReturnType&
+            '+MoveConstruct(inout other : ProxyMethodWithReturnType)
+            +MoveConstruct(other : ProxyMethodWithReturnType&&)
+            '+MoveAssign(inout other : ProxyMethodWithReturnType) : ProxyMethodWithReturnType
+            +MoveAssign(other : ProxyMethodWithReturnType&&) : ProxyMethodWithReturnType&
+            +Invoke() : Result<MethodReturnTypePtr>
+        }
+
+        class "ProxyMethodWithoutInArgsOrReturn" as mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithoutInArgsOrReturn {
+            '+Construct(inout proxy_base : Proxy, in method_name : String)
+            +Construct(proxy_base : Proxy&, method_name : String)
+            +Destroy()
+            '-CopyConstruct(in other : ProxyMethodWithoutInArgsOrReturn)
+            -CopyConstruct(other : const ProxyMethodWithoutInArgsOrReturn&)
+            '-CopyAssign(in other : ProxyMethodWithoutInArgsOrReturn) : ProxyMethodWithoutInArgsOrReturn
+            -CopyAssign(other : const ProxyMethodWithoutInArgsOrReturn&) : ProxyMethodWithoutInArgsOrReturn&
+            '+MoveConstruct(inout other : ProxyMethodWithoutInArgsOrReturn)
+            +MoveConstruct(other : ProxyMethodWithoutInArgsOrReturn&&)
+            '+MoveAssign(inout other : ProxyMethodWithoutInArgsOrReturn) : ProxyMethodWithoutInArgsOrReturn
+            +MoveAssign(other : ProxyMethodWithoutInArgsOrReturn&&) : ProxyMethodWithoutInArgsOrReturn&
+            +Invoke() : Result
+        }
+
+        enum "SubscriptionState" as mw_com_binding_independent_proxy_and_service_elements_SubscriptionState {
+            kSubscribed
+            kNotSubscribed
+            kSubscriptionPending
+        }
+
+        class "EventReceiveHandler" as mw_com_binding_independent_proxy_and_service_elements_EventReceiveHandler <<callback>> {
+            +Invoke()
+        }
+
+        ' TODO not exported by `types.h
+        class "SubscriptionStateChangeHandler" as mw_com_binding_independent_proxy_and_service_elements_SubscriptionStateChangeHandler <<callback>> {
+            '+Invoke(in subscription_state : SubscriptionState) : Boolean
+            +Invoke(subscription_state : SubscriptionState) : Boolean
+        }
+
+        class "SampleReceiver<SampleType>" as mw_com_binding_independent_proxy_and_service_elements_SampleReceiver <<callback>> {
+            '+Invoke(in sample : SamplePtr)
+            +Invoke(sample : SamplePtr)
+        }
+
+        class "WithGetter" as mw_com_binding_independent_proxy_and_service_elements_WithGetter <<tag>>
+
+        class "WithSetter" as mw_com_binding_independent_proxy_and_service_elements_WithSetter <<tag>>
+
+        class "WithNotifier" as mw_com_binding_independent_proxy_and_service_elements_WithNotifier <<tag>>
+
+        ' --- relationships inside proxy_and_service_elements ---
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyEvent
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithGetter
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithSetter
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgs
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgsAndReturn
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithReturnType
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithoutInArgsOrReturn
+
+        mw_com_binding_independent_proxy_and_service_elements_ProxyEvent ..> mw_com_binding_independent_proxy_and_service_elements_SubscriptionState : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_ProxyEvent ..> mw_com_binding_independent_proxy_and_service_elements_SubscriptionStateChangeHandler : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_ProxyEvent ..> mw_com_binding_independent_proxy_and_service_elements_EventReceiveHandler : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_ProxyEvent ..> mw_com_binding_independent_proxy_and_service_elements_SampleReceiver : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier ..> mw_com_binding_independent_proxy_and_service_elements_SubscriptionState : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier ..> mw_com_binding_independent_proxy_and_service_elements_SubscriptionStateChangeHandler : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier ..> mw_com_binding_independent_proxy_and_service_elements_EventReceiveHandler : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier ..> mw_com_binding_independent_proxy_and_service_elements_SampleReceiver : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_SubscriptionStateChangeHandler ..> mw_com_binding_independent_proxy_and_service_elements_SubscriptionState : <<use>>
+
+        mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier ..> mw_com_binding_independent_proxy_and_service_elements_WithNotifier : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithGetter ..> mw_com_binding_independent_proxy_and_service_elements_WithGetter : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithSetter ..> mw_com_binding_independent_proxy_and_service_elements_WithSetter : <<use>>
+    }
+
+    ' =======================================================================
+    ' Skeleton And Service Elements
+    ' =======================================================================
+    namespace mw_com::binding_independent::skeleton_and_service_elements <<unit>> {
+
+        class "Skeleton<Interface>" as mw_com_binding_independent_skeleton_and_service_elements_Skeleton {
+            -ConstructDefault()
+            +Destroy()
+            '-CopyConstruct(in other : Skeleton)
+            -CopyConstruct(other : const Skeleton&)
+            '-CopyAssign(in other : Skeleton) : Skeleton
+            -CopyAssign(other : const Skeleton&) : Skeleton&
+            '+MoveConstruct(inout other : Skeleton)
+            +MoveConstruct(other : Skeleton&&)
+            '+MoveAssign(inout other : Skeleton) : Skeleton
+            +MoveAssign(other : Skeleton&&) : Skeleton&
+            '{static} +CreateBySpecifier(in specifier : InstanceSpecifier) : Result<Skeleton>
+            {static} +CreateBySpecifier(specifier : const InstanceSpecifier&) : Result<Skeleton>
+            '{static} +CreateByIdentifier(in identifier : InstanceIdentifier) : Result<Skeleton>
+            {static} +CreateByIdentifier(identifier : const InstanceIdentifier&) : Result<Skeleton>
+            +OfferService() : Result
+            +StopOfferService()
+        }
+
+        note bottom of mw_com_binding_independent_skeleton_and_service_elements_Skeleton
+          Bound by the user as AsSkeleton<TheInterface>, where TheInterface is the
+          service interface class template written by the user. Skeleton derives from
+          TheInterface<SkeletonTrait>, which declares the service elements shown below.
+        end note
+
+        class "SkeletonEvent<SampleType>" as mw_com_binding_independent_skeleton_and_service_elements_SkeletonEvent {
+            '+Construct(inout skeleton_base : Skeleton, in event_name : String)
+            +Construct(skeleton_base : Skeleton&, event_name : String)
+            +Destroy()
+            '-CopyConstruct(in other : SkeletonEvent)
+            -CopyConstruct(other : const SkeletonEvent&)
+            '-CopyAssign(in other : SkeletonEvent) : SkeletonEvent
+            -CopyAssign(other : const SkeletonEvent&) : SkeletonEvent&
+            '+MoveConstruct(inout other : SkeletonEvent)
+            +MoveConstruct(other : SkeletonEvent&&)
+            '+MoveAssign(inout other : SkeletonEvent) : SkeletonEvent
+            +MoveAssign(other : SkeletonEvent&&) : SkeletonEvent&
+            +Allocate() : Result<SampleAllocateePtr>
+            '+Send(in sample_value : SampleType) : Result
+            +Send(sample_value : const SampleType&) : Result
+            '+SendAllocated(in sample : SampleAllocateePtr[1]) : Result
+            +SendAllocated(sample : SampleAllocateePtr) : Result
+        }
+
+        class "SkeletonFieldWithNotifierOrGetter<FieldType>" as mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter {
+            '+Construct(inout parent : Skeleton, in field_name : String)
+            +Construct(parent : Skeleton&, field_name : String)
+            +Destroy()
+            '-CopyConstruct(in other : SkeletonFieldWithNotifierOrGetter)
+            -CopyConstruct(other : const SkeletonFieldWithNotifierOrGetter&)
+            '-CopyAssign(in other : SkeletonFieldWithNotifierOrGetter) : SkeletonFieldWithNotifierOrGetter
+            -CopyAssign(other : const SkeletonFieldWithNotifierOrGetter&) : SkeletonFieldWithNotifierOrGetter&
+            '+MoveConstruct(inout other : SkeletonFieldWithNotifierOrGetter)
+            +MoveConstruct(other : SkeletonFieldWithNotifierOrGetter&&)
+            '+MoveAssign(inout other : SkeletonFieldWithNotifierOrGetter) : SkeletonFieldWithNotifierOrGetter
+            +MoveAssign(other : SkeletonFieldWithNotifierOrGetter&&) : SkeletonFieldWithNotifierOrGetter&
+            +Allocate() : Result<SampleAllocateePtr>
+            '+Update(in sample_value : FieldType) : Result
+            +Update(sample_value : const FieldType&) : Result
+            '+UpdateAllocated(in sample : SampleAllocateePtr) : Result
+            +UpdateAllocated(sample : SampleAllocateePtr) : Result
+        }
+
+        note bottom of mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter
+          A field declares WithNotifier or WithGetter, optionally combined with each
+          other and with WithSetter.
+        end note
+
+        class "SkeletonFieldWithSetter<FieldType>" as mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithSetter {
+            '+Construct(inout parent : Skeleton, in field_name : String)
+            +Construct(parent : Skeleton&, field_name : String)
+            +Destroy()
+            '-CopyConstruct(in other : SkeletonFieldWithSetter)
+            -CopyConstruct(other : const SkeletonFieldWithSetter&)
+            '-CopyAssign(in other : SkeletonFieldWithSetter) : SkeletonFieldWithSetter
+            -CopyAssign(other : const SkeletonFieldWithSetter&) : SkeletonFieldWithSetter&
+            '+MoveConstruct(inout other : SkeletonFieldWithSetter)
+            +MoveConstruct(other : SkeletonFieldWithSetter&&)
+            '+MoveAssign(inout other : SkeletonFieldWithSetter) : SkeletonFieldWithSetter
+            +MoveAssign(other : SkeletonFieldWithSetter&&) : SkeletonFieldWithSetter&
+            +Allocate() : Result<SampleAllocateePtr>
+            '+Update(in sample_value : FieldType) : Result
+            +Update(sample_value : const FieldType&) : Result
+            '+UpdateAllocated(in sample : SampleAllocateePtr) : Result
+            +UpdateAllocated(sample : SampleAllocateePtr) : Result
+            '+RegisterSetHandler(in handler : SetHandler) : Result
+            +RegisterSetHandler(handler : SetHandler) : Result
+        }
+
+        class "SkeletonMethod<ReturnType, ArgTypes>" as mw_com_binding_independent_skeleton_and_service_elements_SkeletonMethod {
+            '+Construct(inout skeleton_base : Skeleton, in method_name : String)
+            +Construct(skeleton_base : Skeleton&, method_name : String)
+            +Destroy()
+            '-CopyConstruct(in other : SkeletonMethod)
+            -CopyConstruct(other : const SkeletonMethod&)
+            '-CopyAssign(in other : SkeletonMethod) : SkeletonMethod
+            -CopyAssign(other : const SkeletonMethod&) : SkeletonMethod&
+            '+MoveConstruct(inout other : SkeletonMethod)
+            +MoveConstruct(other : SkeletonMethod&&)
+            '+MoveAssign(inout other : SkeletonMethod) : SkeletonMethod
+            +MoveAssign(other : SkeletonMethod&&) : SkeletonMethod&
+            '+RegisterHandler(in handler : MethodHandler) : Result
+            +RegisterHandler(handler : MethodHandler) : Result
+        }
+
+        class "SetHandler<FieldType>" as mw_com_binding_independent_skeleton_and_service_elements_SetHandler <<callback>> {
+            '+Invoke(inout new_value : FieldType)
+            +Invoke(new_value : FieldType&)
+        }
+
+        class "MethodHandler<ReturnType, ArgTypes>" as mw_com_binding_independent_skeleton_and_service_elements_MethodHandler <<callback>> {
+            '+Invoke(out return_value : ReturnType, in args : ArgTypes[1..*])
+            +Invoke(return_value : ReturnType&, args : const ArgTypes&...)
+        }
+
+        note bottom of mw_com_binding_independent_skeleton_and_service_elements_MethodHandler
+          MethodHandler callable passed to SkeletonMethod::RegisterHandler().
+          Its signature follows the method
+          signature category, mirroring the ProxyMethod* classes below:
+            ReturnType(ArgTypes...)  ->  Invoke(out return_value, in args)
+            ReturnType()             ->  Invoke(out return_value)
+            void(ArgTypes...)        ->  Invoke(in args)
+            void()                   ->  Invoke()
+        end note
+
+        class "ReceiveHandlerRegistrationChangedCallback" as mw_com_binding_independent_skeleton_and_service_elements_ReceiveHandlerRegistrationChangedCallback <<callback>> {
+            '+Invoke(in has_receive_handler : Boolean)
+            +Invoke(has_receive_handler : Boolean)
+        }
+
+        ' --- relationships inside skeleton_and_service_elements ---
+        mw_com_binding_independent_skeleton_and_service_elements_Skeleton *-- mw_com_binding_independent_skeleton_and_service_elements_SkeletonEvent
+        mw_com_binding_independent_skeleton_and_service_elements_Skeleton *-- mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter
+        mw_com_binding_independent_skeleton_and_service_elements_Skeleton *-- mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithSetter
+        mw_com_binding_independent_skeleton_and_service_elements_Skeleton *-- mw_com_binding_independent_skeleton_and_service_elements_SkeletonMethod
+
+        mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithSetter ..> mw_com_binding_independent_skeleton_and_service_elements_SetHandler : <<use>>
+        mw_com_binding_independent_skeleton_and_service_elements_SkeletonMethod ..> mw_com_binding_independent_skeleton_and_service_elements_MethodHandler : <<use>>
+    }
+
+    ' =======================================================================
+    ' Generic Proxy And Service Elements
+    ' =======================================================================
+    namespace mw_com::binding_independent::generic_proxy_and_service_elements <<unit>> {
+
+        class "GenericProxy" as mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy {
+            -ConstructDefault()
+            +Destroy()
+            '-CopyConstruct(in other : GenericProxy)
+            -CopyConstruct(other : const GenericProxy&)
+            '-CopyAssign(in other : GenericProxy) : GenericProxy
+            -CopyAssign(other : const GenericProxy&) : GenericProxy&
+            '+MoveConstruct(inout other : GenericProxy)
+            +MoveConstruct(other : GenericProxy&&)
+            '+MoveAssign(inout other : GenericProxy) : GenericProxy
+            +MoveAssign(other : GenericProxy&&) : GenericProxy&
+            '{static} +Create(in handle : HandleType) : Result<GenericProxy>
+            {static} +Create(handle : HandleType) : Result<GenericProxy>
+            '{static} +FindServiceBySpecifier(in specifier : InstanceSpecifier) : Result<ServiceHandleContainer<HandleType>>
+            {static} +FindServiceBySpecifier(specifier: InstanceSpecifier) : Result<ServiceHandleContainer<HandleType>>
+            '{static} +FindServiceByIdentifier(in identifier : InstanceIdentifier) : Result<ServiceHandleContainer<HandleType>>
+            {static} +FindServiceByIdentifier(identifier: InstanceIdentifier) : Result<ServiceHandleContainer<HandleType>>
+            '{static} +StartFindServiceBySpecifier(in handler : FindServiceHandler, in specifier : InstanceSpecifier) : Result<FindServiceHandle>
+            {static} +StartFindServiceBySpecifier(handler: FindServiceHandler, specifier: InstanceSpecifier) : Result<FindServiceHandle>
+            '{static} +StartFindServiceByIdentifier(in handler : FindServiceHandler, in identifier : InstanceIdentifier) : Result<FindServiceHandle>
+            {static} +StartFindServiceByIdentifier(handler: FindServiceHandler, identifier: InstanceIdentifier) : Result<FindServiceHandle>
+            '{static} +StopFindService(in handle : FindServiceHandle) : Result
+            {static} +StopFindService(handle: FindServiceHandle) : Result
+            '+GetHandle() : HandleType {query}
+            +GetHandle() const : const HandleType&
+            '+GetEvents() : EventMapView {query}
+            +GetEvents() const : EventMapView
+        }
+
+        class "GenericProxyEvent" as mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent {
+            -ConstructDefault()
+            '+Construct(inout parent : GenericProxy, in event_name : String)
+            +Construct(parent : GenericProxy&, event_name : String)
+            +Destroy()
+            '-CopyConstruct(in other : GenericProxyEvent)
+            -CopyConstruct(other : const GenericProxyEvent&)
+            '-CopyAssign(in other : GenericProxyEvent) : GenericProxyEvent
+            -CopyAssign(other : const GenericProxyEvent&) : GenericProxyEvent&
+            '-MoveConstruct(inout other : GenericProxyEvent)
+            -MoveConstruct(other : GenericProxyEvent&&)
+            '-MoveAssign(inout other : GenericProxyEvent) : GenericProxyEvent
+            -MoveAssign(other : GenericProxyEvent&&) : GenericProxyEvent&
+            '+Subscribe(in max_sample_count : Integer) : Result
+            +Subscribe(max_sample_count : Integer) : Result
+            +Unsubscribe()
+            '+GetSubscriptionState() : SubscriptionState {query}
+            +GetSubscriptionState() const : SubscriptionState
+            '+SetSubscriptionStateChangeHandler(in handler : SubscriptionStateChangeHandler) : Result
+            +SetSubscriptionStateChangeHandler(handler : SubscriptionStateChangeHandler) : Result
+            +UnsetSubscriptionStateChangeHandler() : Result
+            '+SetReceiveHandler(in handler : EventReceiveHandler) : Result
+            +SetReceiveHandler(handler : EventReceiveHandler) : Result
+            +UnsetReceiveHandler() : Result
+            '+GetFreeSampleCount() : Integer {query}
+            +GetFreeSampleCount() const : Integer
+            '+GetNumNewSamplesAvailable() : Result<Integer> {query}
+            +GetNumNewSamplesAvailable() const : Result<Integer>
+            '+GetNewSamples(in receiver : SampleReceiver, in max_num_samples : Integer) : Result<Integer>
+            +GetNewSamples(receiver : SampleReceiver, max_num_samples : Integer) : Result<Integer>
+            '+GetDataTypeSizeInfo() : DataTypeSizeInfo {query}
+            +GetDataTypeSizeInfo() const : DataTypeSizeInfo
+            '+HasSerializedFormat() : Boolean {query}
+            +HasSerializedFormat() const : Boolean
+        }
+
+        class "EventMapView" as mw_com_binding_independent_generic_proxy_and_service_elements_EventMapView <<datatype>> {
+            -ConstructDefault()
+            '+Find(in name : String) : GenericProxyEvent[0..1] {query}
+            +Find(name : String) const : GenericProxyEvent*
+            '+Size() : Integer {query}
+            +Size() const : Integer
+            '+IsEmpty() : Boolean {query}
+            +IsEmpty() const : Boolean
+            '+Begin() : GenericProxyEvent[0..1] {query}
+            +Begin() const : GenericProxyEvent*
+            '+End() : GenericProxyEvent[0..1] {query}
+            +End() const : GenericProxyEvent*
+        }
+
+        ' --- relationships inside generic_proxy_and_service_elements ---
+        mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy *-- mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent
+        mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy ..> mw_com_binding_independent_generic_proxy_and_service_elements_EventMapView : <<use>>
+        mw_com_binding_independent_generic_proxy_and_service_elements_EventMapView o-- "0..*" mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent
+    }
+
+    ' =======================================================================
+    ' Generic Skeleton And Service Elements
+    ' =======================================================================
+    namespace mw_com::binding_independent::generic_skeleton_and_service_elements <<unit>> {
+
+        class "GenericSkeleton" as mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeleton {
+            -ConstructDefault()
+            +Destroy()
+            '-CopyConstruct(in other : GenericSkeleton)
+            -CopyConstruct(other : const GenericSkeleton&)
+            '-CopyAssign(in other : GenericSkeleton) : GenericSkeleton
+            -CopyAssign(other : const GenericSkeleton&) : GenericSkeleton&
+            '+MoveConstruct(inout other : GenericSkeleton)
+            +MoveConstruct(other : GenericSkeleton&&)
+            '+MoveAssign(inout other : GenericSkeleton) : GenericSkeleton
+            +MoveAssign(other : GenericSkeleton&&) : GenericSkeleton&
+            '{static} +CreateByIdentifier(in identifier : InstanceIdentifier, in service_elements : GenericSkeletonServiceElementInfo) : Result<GenericSkeleton>
+            {static} +CreateByIdentifier(identifier : const InstanceIdentifier&, service_elements : const GenericSkeletonServiceElementInfo&) : Result<GenericSkeleton>
+            '{static} +CreateBySpecifier(in specifier : InstanceSpecifier, in service_elements : GenericSkeletonServiceElementInfo) : Result<GenericSkeleton>
+            {static} +CreateBySpecifier(specifier : const InstanceSpecifier&, service_elements : const GenericSkeletonServiceElementInfo&) : Result<GenericSkeleton>
+            '+GetEvents() : EventMapView {query}
+            +GetEvents() const : EventMapView
+            +OfferService() : Result
+            +StopOfferService()
+        }
+
+        class "GenericSkeletonEvent" as mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonEvent {
+            -ConstructDefault()
+            +Destroy()
+            '-CopyConstruct(in other : GenericSkeletonEvent)
+            -CopyConstruct(other : const GenericSkeletonEvent&)
+            '-CopyAssign(in other : GenericSkeletonEvent) : GenericSkeletonEvent
+            -CopyAssign(other : const GenericSkeletonEvent&) : GenericSkeletonEvent&
+            '+MoveConstruct(inout other : GenericSkeletonEvent)
+            +MoveConstruct(other : GenericSkeletonEvent&&)
+            '+MoveAssign(inout other : GenericSkeletonEvent) : GenericSkeletonEvent
+            +MoveAssign(other : GenericSkeletonEvent&&) : GenericSkeletonEvent&
+            +Allocate() : Result<SampleAllocateePtr>
+            '+Send(in sample : SampleAllocateePtr) : Result
+            +Send(sample : SampleAllocateePtr) : Result
+            +Notify() : Result
+            '+GetSizeInfo() : DataTypeMetaInfo {query}
+            +GetSizeInfo() const : DataTypeMetaInfo
+            '+SetReceiveHandlerRegistrationChangedHandler(in handler : ReceiveHandlerRegistrationChangedCallback) : Result
+            +SetReceiveHandlerRegistrationChangedHandler(handler : ReceiveHandlerRegistrationChangedCallback) : Result
+            +UnsetReceiveHandlerRegistrationChangedHandler() : Result
+        }
+
+        class "GenericSkeletonServiceElementInfo" as mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonServiceElementInfo <<struct>>
+
+        class "EventInfo" as mw_com_binding_independent_generic_skeleton_and_service_elements_EventInfo <<struct>> {
+            +name : String
+        }
+
+        class "DataTypeMetaInfo" as mw_com_binding_independent_generic_skeleton_and_service_elements_DataTypeMetaInfo <<struct>> {
+            +size : Integer
+            +alignment : Integer
+        }
+
+        ' --- relationships inside generic_skeleton_and_service_elements ---
+        mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeleton *-- mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonEvent
+        mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeleton ..> mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonServiceElementInfo : <<use>>
+        mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonEvent ..> mw_com_binding_independent_generic_skeleton_and_service_elements_DataTypeMetaInfo : <<use>>
+        mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonServiceElementInfo o-- "0..*" mw_com_binding_independent_generic_skeleton_and_service_elements_EventInfo : events {readOnly}
+        mw_com_binding_independent_generic_skeleton_and_service_elements_EventInfo *-- "1" mw_com_binding_independent_generic_skeleton_and_service_elements_DataTypeMetaInfo : data_type_meta_info
+    }
+
+    ' =======================================================================
+    ' Service Instance Identifiers
+    ' =======================================================================
+    namespace mw_com::service_instance_identifiers <<unit>> {
+
+        class "InstanceSpecifier" as mw_com_service_instance_identifiers_InstanceSpecifier {
+            -ConstructDefault()
+            '{static} +Create(in specifier : String) : Result<InstanceSpecifier>
+            {static} +Create(specifier : String) : Result<InstanceSpecifier>
+            '+ToString() : String {query}
+            +ToString() const : String
+            '+IsEqual(in other) : Boolean
+            +IsEqual(other) : Boolean
+            '+IsNotEqual(in other) : Boolean
+            +IsNotEqual(other) : Boolean
+            '+LessThan(in other : InstanceSpecifier) : Boolean
+            +LessThan(other : const InstanceSpecifier&) : Boolean
+            '+Hash() : Integer
+            +Hash() : Integer
+        }
+
+        class "InstanceIdentifier" as mw_com_service_instance_identifiers_InstanceIdentifier {
+            -ConstructDefault()
+            '{static} +Create(in serialized_format : String) : Result<InstanceIdentifier>
+            {static} +Create(serialized_format : String) : Result<InstanceIdentifier>
+            '+ToString() : String {query}
+            +ToString() const : String
+            '+IsEqual(in other : InstanceIdentifier) : Boolean
+            +IsEqual(other : const InstanceIdentifier&) : Boolean
+            '+LessThan(in other : InstanceIdentifier) : Boolean
+            +LessThan(other : const InstanceIdentifier&) : Boolean
+            +Hash() : Integer
+        }
+
+        class "HandleType" as mw_com_service_instance_identifiers_HandleType {
+            -ConstructDefault()
+            '+IsEqual(in other : HandleType) : Boolean
+            +IsEqual(other : const HandleType&) : Boolean
+            '+LessThan(in other : HandleType) : Boolean
+            +LessThan(other : const HandleType&) : Boolean
+            +Hash() : Integer
+        }
+
+        class "InstanceIdentifierContainer" as mw_com_service_instance_identifiers_InstanceIdentifierContainer <<datatype>>
+
+        note bottom of mw_com_service_instance_identifiers_InstanceIdentifierContainer
+          Ordered sequence (std::vector) of the InstanceIdentifiers an
+          InstanceSpecifier resolves to.
+        end note
+
+        ' --- relationships inside service_instance_identifiers ---
+        mw_com_service_instance_identifiers_InstanceIdentifierContainer o-- "0..*" mw_com_service_instance_identifiers_InstanceIdentifier
+    }
+
+    ' =======================================================================
+    ' Errors
+    ' =======================================================================
+    namespace mw_com::errors <<unit>> {
+
+        class "Result<T>" as mw_com_errors_Result <<datatype>>
+
+        note bottom of mw_com_errors_Result
+          Abstracts score::cpp::expected<T, score::os::Error> (success value of type T)
+          resp. score::cpp::expected_blank<score::os::Error>.
+          Marks an operation as fallible: it may report an score::os::Error to the caller
+          instead of / in addition to its nominal result.
+        end note
+    }
+
+    ' =======================================================================
+    ' Elements without a single owning unit
+    ' =======================================================================
+
+    ' TODO external type, reference to the corresponding SEooC
+    class "Path" as score_filesystem_Path <<datatype>>
+    ' TODO external type, reference to the corresponding SEooC
+    class "Json" as score_json_Any <<datatype>>
+    ' TODO external type, reference to the corresponding SEooC
+    class "DataTypeSizeInfo" as score_memory_DataTypeSizeInfo <<datatype>>
+
+    note bottom of score_filesystem_Path
+      Types defined outside mw::com, modelled without content so that the
+      operations referencing them are complete:
+        Path             -> score::filesystem::Path
+        Json             -> score::json::Any
+        DataTypeSizeInfo -> score::memory::DataTypeSizeInfo
+    end note
+}
+
+' ===========================================================================
+' Relationships between units
+' ===========================================================================
+
+' Runtime
+mw_com_binding_independent_runtime_runtime ..> mw_com_service_instance_identifiers_InstanceSpecifier : <<use>>
+mw_com_binding_independent_runtime_runtime ..> mw_com_service_instance_identifiers_InstanceIdentifierContainer : <<use>>
+mw_com_binding_independent_runtime_runtime ..> score_json_Any : <<use>>
+mw_com_binding_independent_runtime_RuntimeConfiguration ..> score_filesystem_Path : <<use>>
+
+' Service discovery and service instance identification
+mw_com_binding_independent_service_discovery_ServiceHandleContainer o-- "0..*" mw_com_service_instance_identifiers_HandleType
+
+' Typed API -> service instance identification and service discovery
+mw_com_binding_independent_proxy_and_service_elements_Proxy ..> mw_com_service_instance_identifiers_InstanceSpecifier : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_Proxy ..> mw_com_service_instance_identifiers_InstanceIdentifier : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_Proxy ..> mw_com_service_instance_identifiers_HandleType : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_Proxy ..> mw_com_binding_independent_service_discovery_FindServiceHandle : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_Proxy ..> mw_com_binding_independent_service_discovery_FindServiceHandler : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_Proxy ..> mw_com_binding_independent_service_discovery_ServiceHandleContainer : <<use>>
+mw_com_binding_independent_skeleton_and_service_elements_Skeleton ..> mw_com_service_instance_identifiers_InstanceSpecifier : <<use>>
+mw_com_binding_independent_skeleton_and_service_elements_Skeleton ..> mw_com_service_instance_identifiers_InstanceIdentifier : <<use>>
+
+' Typed API -> sample and method signature element pointers handed out to /
+' taken from the user by the service elements
+mw_com_binding_independent_proxy_and_service_elements_ProxyEvent ..> mw_com_binding_independent_sample_management_pointers_SamplePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier ..> mw_com_binding_independent_sample_management_pointers_SamplePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithGetter ..> mw_com_binding_independent_sample_management_pointers_MethodReturnTypePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithSetter ..> mw_com_binding_independent_sample_management_pointers_MethodReturnTypePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgs ..> mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgs ..> mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtrs : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgsAndReturn ..> mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgsAndReturn ..> mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtrs : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgsAndReturn ..> mw_com_binding_independent_sample_management_pointers_MethodReturnTypePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithReturnType ..> mw_com_binding_independent_sample_management_pointers_MethodReturnTypePtr : <<use>>
+mw_com_binding_independent_skeleton_and_service_elements_SkeletonEvent ..> mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr : <<use>>
+mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter ..> mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_SampleReceiver ..> mw_com_binding_independent_sample_management_pointers_SamplePtr : <<use>>
+
+' Typed API -> field tags: a variant can only be used when its tag is declared.
+' The proxy side tags live in the proxy unit, so only the skeleton side crosses
+' a unit boundary.
+mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter ..> mw_com_binding_independent_proxy_and_service_elements_WithNotifier : <<use>> {one of}
+mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter ..> mw_com_binding_independent_proxy_and_service_elements_WithGetter : <<use>> {one of}
+mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithSetter ..> mw_com_binding_independent_proxy_and_service_elements_WithSetter : <<use>>
+
+' Generic API -> service instance identification and service discovery
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy ..> mw_com_service_instance_identifiers_InstanceSpecifier : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy ..> mw_com_service_instance_identifiers_InstanceIdentifier : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy ..> mw_com_service_instance_identifiers_HandleType : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy ..> mw_com_binding_independent_service_discovery_FindServiceHandle : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy ..> mw_com_binding_independent_service_discovery_FindServiceHandler : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy ..> mw_com_binding_independent_service_discovery_ServiceHandleContainer : <<use>>
+mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeleton ..> mw_com_service_instance_identifiers_InstanceSpecifier : <<use>>
+mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeleton ..> mw_com_service_instance_identifiers_InstanceIdentifier : <<use>>
+
+' Generic API -> sample pointers, handlers and type erased data types
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent ..> mw_com_binding_independent_sample_management_pointers_SamplePtr : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent ..> mw_com_binding_independent_proxy_and_service_elements_SubscriptionState : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent ..> mw_com_binding_independent_proxy_and_service_elements_SubscriptionStateChangeHandler : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent ..> mw_com_binding_independent_proxy_and_service_elements_EventReceiveHandler : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent ..> mw_com_binding_independent_proxy_and_service_elements_SampleReceiver : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent ..> score_memory_DataTypeSizeInfo : <<use>>
+mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonEvent ..> mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr : <<use>>
+mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonEvent ..> mw_com_binding_independent_skeleton_and_service_elements_ReceiveHandlerRegistrationChangedCallback : <<use>>
+
+' Generic API -> EventMapView: GetEvents() exposes the events owned by the
+' instance via an EventMapView
+mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeleton ..> mw_com_binding_independent_generic_proxy_and_service_elements_EventMapView : <<use>>
+
+' Service instance identification -> configuration datatypes exposed by the getters
+' of HandleType
+
+@enduml
