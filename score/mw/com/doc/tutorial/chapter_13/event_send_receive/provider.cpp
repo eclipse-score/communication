@@ -36,6 +36,7 @@ int main()
 {
     score::mw::log::LogInfo("SkEs") << "Starting event_send_receive/provider";
 
+    // [provider-init-phase-start]
     // ---- INIT PHASE ----
 
     score::Result<score::mw::com::InstanceSpecifier> specifier_result =
@@ -61,11 +62,13 @@ int main()
 
     score::Result<void> offer_result = skeleton.OfferService();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(offer_result.has_value(), "Failed to offer TirePressureSkeleton!");
+    // [provider-init-phase-end]
 
     // ---- OPERATIONAL PHASE (see README.rst for heap behavior of each API) ----
     score::mw::log::LogInfo("SkEs") << "Entering operational phase (heap forbidden)";
     heap_check::forbid_heap();
 
+    // [provider-operational-phase-start]
     for (std::uint32_t i = 0U; i < kNumIterations; ++i)
     {
         score::Result<score::mw::com::SampleAllocateePtr<float>> sample_result =
@@ -99,3 +102,4 @@ int main()
     score::mw::log::LogInfo("SkEs") << "Completed successfully";
     return 0;
 }
+// [provider-operational-phase-end]

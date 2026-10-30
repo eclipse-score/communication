@@ -22,6 +22,7 @@
 
 namespace score::mw::com::tutorial
 {
+// [skeleton-component-class-start]
 class SkeletonComponent
 {
   public:
@@ -44,6 +45,7 @@ class SkeletonComponent
   private:
     std::optional<HelloWorldSkeleton> hello_world_skeleton_;
 };
+// [skeleton-component-class-end]
 
 }  // namespace score::mw::com::tutorial
 

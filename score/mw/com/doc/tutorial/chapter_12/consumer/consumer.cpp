@@ -60,6 +60,7 @@ int main()
         }
     }
 
+    // [consumer-proxy-creation-start]
     auto proxy_result = score::mw::com::tutorial::HelloWorldProxy::Create(service_handle.value());
     if (!proxy_result)
     {
@@ -68,6 +69,7 @@ int main()
     }
 
     score::mw::com::tutorial::ProxyComponent proxy_component(std::move(proxy_result).value());
+    // [consumer-proxy-creation-end]
 
     const auto subscribe_result = proxy_component.Subscribe();
     if (!subscribe_result)

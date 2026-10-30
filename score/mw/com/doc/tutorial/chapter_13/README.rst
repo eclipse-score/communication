@@ -120,7 +120,8 @@ affected.
 
 .. literalinclude:: heap_check/heap_check.h
    :language: cpp
-   :lines: 25-46
+   :start-after: [heap-check-control-start]
+   :end-before: [heap-check-control-end]
    :caption: heap_check/heap_check.h — phase flag and control functions
 
 The replacement ``operator new`` itself reads the thread-local flag and calls ``std::abort()``
@@ -128,7 +129,8 @@ on any allocation after ``forbid_heap()`` has been called on that thread:
 
 .. literalinclude:: heap_check/heap_check.h
    :language: cpp
-   :lines: 48-61
+   :start-after: [heap-check-operator-new-start]
+   :end-before: [heap-check-operator-new-end]
    :caption: heap_check/heap_check.h — operator new replacement
 
 .. note::
@@ -159,7 +161,8 @@ in a production system:
 
 .. literalinclude:: common/tire_pressure_service.h
    :language: cpp
-   :lines: 25-59
+   :start-after: [tire-pressure-interface-start]
+   :end-before: [tire-pressure-interface-end]
    :caption: common/tire_pressure_service.h
 
 Which API calls allocate
@@ -247,7 +250,8 @@ the **init phase**, the skeleton is created, the field is given an initial value
 
 .. literalinclude:: event_send_receive/provider.cpp
    :language: cpp
-   :lines: 39-63
+   :start-after: [provider-init-phase-start]
+   :end-before: [provider-init-phase-end]
    :caption: event_send_receive/provider.cpp — init phase
 
 Once ``heap_check::forbid_heap()`` is called, the application enters the **operational phase**.
@@ -259,7 +263,8 @@ SHM ring buffer; no ``operator new`` is involved:
 
 .. literalinclude:: event_send_receive/provider.cpp
    :language: cpp
-   :lines: 69-101
+   :start-after: [provider-operational-phase-start]
+   :end-before: [provider-operational-phase-end]
    :caption: event_send_receive/provider.cpp — operational phase and cleanup
 
 Note the ``heap_check::allow_heap()`` call on each early-return error path inside the
@@ -277,7 +282,8 @@ subscribes to the event. All of these calls allocate and finish before ``forbid_
 
 .. literalinclude:: event_send_receive/consumer.cpp
    :language: cpp
-   :lines: 49-84
+   :start-after: [consumer-init-phase-start]
+   :end-before: [consumer-init-phase-end]
    :caption: event_send_receive/consumer.cpp — init phase (discovery, create, subscribe)
 
 After ``forbid_heap()``, the operational loop calls
@@ -287,7 +293,8 @@ zero-copy access to the data the provider placed there:
 
 .. literalinclude:: event_send_receive/consumer.cpp
    :language: cpp
-   :lines: 82-109
+   :start-after: [consumer-operational-phase-start]
+   :end-before: [consumer-operational-phase-end]
    :caption: event_send_receive/consumer.cpp — operational phase and cleanup
 
 Async receive handler (not heap-free)
@@ -308,7 +315,8 @@ For a heap-free consumer, use ``GetNewSamples()`` polling as shown in
 
 .. literalinclude:: event_send_receive/consumer_receive_handler.cpp
    :language: cpp
-   :lines: 82-117
+   :start-after: [consumer-receive-handler-start]
+   :end-before: [consumer-receive-handler-end]
    :caption: event_send_receive/consumer_receive_handler.cpp — handler registration and receive loop
 
 Fields in the operational phase
@@ -328,7 +336,8 @@ an event send and a field update in the same heap-free loop:
 
 .. literalinclude:: event_field_update/provider.cpp
    :language: cpp
-   :lines: 69-109
+   :start-after: [provider-operational-phase-start]
+   :end-before: [provider-operational-phase-end]
    :caption: event_field_update/provider.cpp — operational phase with event and field update
 
 Async service discovery with StartFindService
@@ -354,7 +363,8 @@ The ``start_find_service/consumer.cpp`` example shows this:
 
 .. literalinclude:: start_find_service/consumer.cpp
    :language: cpp
-   :lines: 52-99
+   :start-after: [consumer-start-find-service-start]
+   :end-before: [consumer-start-find-service-end]
    :caption: start_find_service/consumer.cpp — StartFindService with bounded wait before forbid_heap()
 
 The key rule is: **wait for the discovery callback to complete before calling**
@@ -393,7 +403,8 @@ The ``bidirectional_discovery/application_a.cpp`` example shows this sequence:
 
 .. literalinclude:: bidirectional_discovery/application_a.cpp
    :language: cpp
-   :lines: 60-142
+   :start-after: [application-a-init-phase-start]
+   :end-before: [application-a-init-phase-end]
    :caption: bidirectional_discovery/application_a.cpp — OfferService before StartFindService, then wait
 
 In the operational phase, application A simultaneously sends on its own skeleton event and
@@ -401,7 +412,8 @@ polls the remote proxy's event in the same loop, both heap-free:
 
 .. literalinclude:: bidirectional_discovery/application_a.cpp
    :language: cpp
-   :lines: 144-188
+   :start-after: [application-a-operational-phase-start]
+   :end-before: [application-a-operational-phase-end]
    :caption: bidirectional_discovery/application_a.cpp — operational loop: send and receive without heap
 
 .. _chapter_13_asil_guidance:
