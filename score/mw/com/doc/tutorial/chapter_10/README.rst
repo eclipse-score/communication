@@ -46,9 +46,6 @@ The LoLa binding uses two kinds of "communication channels" for which it has to 
 - a **message-passing** layer, over which ``score::mw::com`` applications using the LoLa binding exchange messages, and
 - **shared-memory objects**, to which both provider and consumer applications have access.
 
-These basic building blocks can also be seen in the high-level architecture documentation, located
-`here <https://eclipse-score.github.io/score/main/features/communication/ipc/architecture/index.html>`__.
-
 .. note::
 
    Currently we are **not** doing any access control on the message-passing level. The reason is that this is sometimes
