@@ -67,6 +67,13 @@ class SharedMemoryObjectCreator
     void CleanUp() noexcept;
 
   private:
+    static os::Result<memory::shared::LockFile> AcquireLockFile(const std::string& lock_file_path) noexcept;
+    template <typename... Args>
+    static os::Result<SharedMemoryObjectCreator> CreateObjectWithLockHeld(const std::string& shared_memory_file_name,
+                                                                          Args&&... args) noexcept;
+    static os::Result<SharedMemoryObjectCreator> OpenObjectWithLockHeld(
+        const std::string& shared_memory_file_name) noexcept;
+
     SharedMemoryObjectCreator(std::string path,
                               std::int32_t file_descriptor,
                               T* object_address,
@@ -100,7 +107,15 @@ os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::CreateObj
         std::cout << ss.str() << std::endl;
         return score::cpp::make_unexpected(os::Error::createFromErrno(EAGAIN));
     }
+    return CreateObjectWithLockHeld(shared_memory_file_name, std::forward<Args>(args)...);
+}
 
+template <typename T>
+template <typename... Args>
+os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::CreateObjectWithLockHeld(
+    const std::string& shared_memory_file_name,
+    Args&&... args) noexcept
+{
     const auto open_result = ::score::os::Mman::instance().shm_open(
         shared_memory_file_name.data(),
         ::score::os::Fcntl::Open::kCreate | ::score::os::Fcntl::Open::kReadWrite | ::score::os::Fcntl::Open::kExclusive,
@@ -144,11 +159,9 @@ os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::CreateObj
 }
 
 template <typename T>
-os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::OpenObject(
-    const std::string& shared_memory_file_name) noexcept
+os::Result<memory::shared::LockFile> SharedMemoryObjectCreator<T>::AcquireLockFile(
+    const std::string& lock_file_path) noexcept
 {
-    const auto lock_file_path = detail_shared_memory_object_creator::CreateLockFilePath(shared_memory_file_name);
-    // Hold the lock file during open to prevent racing with CreateObject.
     auto lock_file = memory::shared::LockFile::Create(lock_file_path);
     while (!lock_file.has_value())
     {
@@ -162,7 +175,27 @@ os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::OpenObjec
         }
         lock_file = memory::shared::LockFile::Create(lock_file_path);
     }
+    return std::move(lock_file).value();
+}
 
+template <typename T>
+os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::OpenObject(
+    const std::string& shared_memory_file_name) noexcept
+{
+    const auto lock_file_path = detail_shared_memory_object_creator::CreateLockFilePath(shared_memory_file_name);
+    // Hold the lock file during open to prevent racing with CreateObject.
+    const auto lock_file = AcquireLockFile(lock_file_path);
+    if (!lock_file.has_value())
+    {
+        return score::cpp::make_unexpected(lock_file.error());
+    }
+    return OpenObjectWithLockHeld(shared_memory_file_name);
+}
+
+template <typename T>
+os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::OpenObjectWithLockHeld(
+    const std::string& shared_memory_file_name) noexcept
+{
     const auto open_result = ::score::os::Mman::instance().shm_open(shared_memory_file_name.data(),
                                                                     ::score::os::Fcntl::Open::kReadWrite,
                                                                     score::os::Stat::Mode::kReadWriteExecUser);
@@ -199,7 +232,16 @@ os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::CreateOrO
     const std::string& shared_memory_file_name,
     Args&&... args) noexcept
 {
-    auto open_object_result = OpenObject(shared_memory_file_name);
+    // The lock is held for the whole open-or-create sequence. Otherwise, two participants can interleave such that
+    // one finds no object, the other holds the lock but has not created the object yet, and the first fails.
+    const auto lock_file_path = detail_shared_memory_object_creator::CreateLockFilePath(shared_memory_file_name);
+    const auto lock_file = AcquireLockFile(lock_file_path);
+    if (!lock_file.has_value())
+    {
+        return score::cpp::make_unexpected(lock_file.error());
+    }
+
+    auto open_object_result = OpenObjectWithLockHeld(shared_memory_file_name);
     if (open_object_result.has_value())
     {
         return open_object_result;
@@ -207,24 +249,14 @@ os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::CreateOrO
 
     if (open_object_result.error() == os::Error::Code::kNoSuchFileOrDirectory)
     {
-        auto create_object_result = CreateObject(shared_memory_file_name, std::forward<Args>(args)...);
-        if (create_object_result.has_value())
-        {
-            return create_object_result;
-        }
+        return CreateObjectWithLockHeld(shared_memory_file_name, std::forward<Args>(args)...);
+    }
 
-        // In case the object was created by another SharedMemoryObjectCreator during the CreateObject call, we try
-        // to open it again here.
-        return OpenObject(shared_memory_file_name);
-    }
-    else
-    {
-        std::stringstream ss{};
-        ss << "SharedMemoryObjectCreator: Unexpected error while opening object with SharedMemoryObjectCreator at path"
-           << shared_memory_file_name << "with errno" << open_object_result.error();
-        std::cerr << ss.str() << std::endl;
-        std::terminate();
-    }
+    std::stringstream ss{};
+    ss << "SharedMemoryObjectCreator: Unexpected error while opening object with SharedMemoryObjectCreator at path"
+       << shared_memory_file_name << "with errno" << open_object_result.error();
+    std::cerr << ss.str() << std::endl;
+    std::terminate();
 }
 
 template <typename T>
