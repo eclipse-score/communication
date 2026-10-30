@@ -38,8 +38,8 @@ TEST(SharedMemoryObjectCreatorTest, ConcurrentCreateOrOpenAlwaysSucceedsAndShare
 
     for (std::size_t iteration = 0U; iteration < kNumIterations; ++iteration)
     {
-        const std::string shm_name = "shared_memory_object_creator_test_" + std::to_string(::getpid()) + "_" +
-                                     std::to_string(iteration);
+        const std::string shm_name =
+            "shared_memory_object_creator_test_" + std::to_string(::getpid()) + "_" + std::to_string(iteration);
         std::atomic<bool> start{false};
         std::atomic<std::size_t> failures{0U};
         std::vector<std::unique_ptr<SharedMemoryObjectCreator<SharedCounter>>> creators(kNumParticipants);
