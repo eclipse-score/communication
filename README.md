@@ -13,38 +13,31 @@ SPDX-License-Identifier: Apache-2.0
 *******************************************************************************
 -->
 
-# Communication Module (LoLa)
+# Communication Module: mw::com (with multiple bindings including LoLa), memory::shared, and message_passing
 
 [![Eclipse Score](https://img.shields.io/badge/Eclipse-Score-orange.svg)](https://eclipse-score.github.io/score/main/modules/communication/index.html)
 
-- A high-performance, safety-critical communication middleware implementation based on the Adaptive AUTOSAR Communication Management specification.
-- This module provides zero-copy, shared-memory based inter-process communication (IPC) in embedded systems.
+High-performance, safety-critical communication middleware for automotive safety standards up to ASIL-B with:
+
+- **Multi-Threading Support**: Thread-safe operations with atomic data structures
+- **Multi-Platform**: Supports Linux and QNX operating systems
 
 ## Overview
 
-The Communication Module (also known as **LoLa** - Low Latency) is an open-source implementation that provides:
-
-- **High-Performance Intra-ECU IPC**: Zero-copy shared-memory communication for minimal latency within ECUs
-- **AUTOSAR Compliance**: Partial implementation of Adaptive AUTOSAR Communication Management (ara::com)
-- **Event-Driven Architecture**: Publisher/subscriber pattern with skeleton/proxy framework
-- **Service Discovery**: Flag file-based service registration and lookup mechanism
-- **Safety-Critical**: Designed for automotive safety standards (ASIL-B qualified)
-- **Multi-Threading Support**: Thread-safe operations with atomic data structures
-- **Memory Management**: Custom allocators optimized for shared memory usage
-- **Tracing Infrastructure**: Zero-copy, binding-agnostic communication tracing support
-- **Multi-Platform**: Supports Linux and QNX operating systems
-
-## Architecture
-
-The module consists of three main components:
+The module consists of three components (also known as safety elements out of context (SEooC)).
 
 ### 1. LoLa/mw::com (High-Level Middleware)
+
+The mw::com (also known as **LoLa** - Low Latency) is an open-source implementation that provides:
+
+This provides zero-copy, shared-memory based inter-process communication (IPC) in embedded systems.
 
 - **Service Discovery**: Automatic service registration and discovery
 - **Event/Field Communication**: Publish-subscribe messaging patterns
 - **Method Invocation**: Remote procedure call (RPC) support
 - **Quality of Service**: ASIL-B and QM (Quality Management) support
-- **Zero-Copy**: Shared-memory based data exchange
+- **Zero-Copy**: Shared-memory based data exchange for minimal latency within ECUs
+- **Tracing Infrastructure**: Zero-copy, binding-agnostic communication tracing support
 
 ### 2. Message Passing (Low-Level Foundation)
 
@@ -54,51 +47,13 @@ The module consists of three main components:
 
 ### 3. Shared memory abstraction (Low-Level Foundation)
 
-## System Flow Diagram
-
-### Intra-ECU communication
-
-<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/main/lola_flowdiagram.puml">
-
-```
-Flow Steps:
-1. Publisher registers service with unique identifier
-2. Subscriber searches for services by identifier
-3. Service discovery matches publisher and subscriber
-4. Publisher sends data to shared memory (zero-copy)
-5. Subscriber receives notification of new data
-6. Data transferred via direct shared memory access
-7. OS provides underlying memory management and synchronization
-```
-> **Note**: Inter-ECU communication via [SOME/IP](https://github.com/eclipse-score/score/issues/914) is under architectural planning. The block diagram will be updated post-implementation.
-
-## Communication Patterns
-
-### Pattern 1: Simple Event Publishing
-
-```
-For example:
-Sensor App ──► [Temperature Data] ──► Dashboard App
-                (30ms intervals)      (Real-time display)
-```
-
-### Pattern 2: Multi-Subscriber Broadcasting
-
-```
-For example:
-Camera App ──► [Video Frame] ──┬──► Display App
-                               ├──► Recording App
-                               └──► AI Processing App
-```
-
 ## Getting Started
 
 ### Prerequisites
 
-- **C++ Compiler**: GCC 12+ with C++17 support
+- **C++ Compiler**: GCC 12+ or Clang with C++17 support
 - **Build System**: 8.6 <= Bazel < 9.x (only with Bzlmod)
 - **Operating System**: Linux (Ubuntu 24.04+) or QNX
-- **Dependencies**: GoogleTest, Google Benchmark
 - **Virtualization**: Docker with user permissions or rootless mode
 
 ### DevContainer Setup(Recommended)
@@ -143,6 +98,33 @@ communication/
 
 We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for details.
 
+## Release model
+
+### Versioning
+
+This repository follows [Semantic Versioning](https://semver.org/).
+
+### Cadence
+
+As of today, there is no fixed cadance on how often we publish a new release. If you need a new release, or a bug fix of a previously published release without new changes, please create an issue.
+
+### Distribution
+
+Releases are available in the [GitHub releases page of this repository](https://github.com/eclipse-score/communication/releases) and published [as a Bazel module in the Eclipse S-CORE Bazel registry](https://eclipse-score.github.io/bazel_registry_ui/modules/score_communication).
+
+## Safety qualification
+
+The safety qualification of the different SEooCs is not provided but we strive to provide the necesary safety artifacts required for a safety qualification.
+We do that by making use of [S-CORE tooling](https://eclipse-score.github.io/tooling/latest/).
+
+The artifacts can be found in:
+
+- [Quality reports](https://eclipse-score.github.io/communication/latest/quality_reports.html)
+- Individual components documentation
+  - [mw::com](https://eclipse-score.github.io/communication/latest/docs/sphinx/mw_com_index/index.html)
+  - [message passing](https://eclipse-score.github.io/communication/latest/docs/sphinx/dependable_element_message_passing_index/index.html)
+  - [shared memory](https://eclipse-score.github.io/communication/latest/docs/sphinx/dependable_element_memory_shared_index/index.html)
+
 ## Support
 
 ### Community
@@ -150,6 +132,14 @@ We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for deta
 - **Issues**: Report bugs and request features via [GitHub Issues](https://github.com/eclipse-score/communication/issues)
 - **Discussions**: Join community [discussions](https://github.com/eclipse-score/communication/discussions) on the Eclipse forums
 - **Documentation**: Comprehensive docs in the [`design/`](score/mw/com/design/) and [`doc/`](score/mw/com/doc/) directories
+
+### Flaky tests
+
+Non-deterministic behavior is not desired in safety critical systems. The first step to prevent and fix such behavior, is to be able to detect it.
+
+Because of that, the tests of this project are run every night multiple times to detect such behavior. Any thest that sometimes passes and sometimes failes is considered a flaky tests and [an issue is created automatically](https://github.com/eclipse-score/communication/issues?q=is%3Aissue+state%3Aopen+label%3Aflaky-test).
+
+A test migh be flaky for different reasons. The non-deterministic behavior could come from the software but also from the test itself or the infrastructure. For this reason, if you suspect non-deterministic behavior in the software comming from this project, please create a separate issue even if it might be already reported by one of the automatically created tickets. The analysis of user created issues about non-deterministic behavior will be prioritzed over the automatically created issues.
 
 ---
 
