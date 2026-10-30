@@ -98,7 +98,6 @@ class "score::mw::com::impl::ProxyEventBase" as ScoreMwComImplProxyEventBase {
   +GetNumNewSamplesAvailable(): Result<std::size_t>
   +SetReceiveHandler(EventReceiveHandler handler) : Result<void>
   +UnsetReceiveHandler() : Result<void>
-  +IsBindingValid() : bool
 }
 
 class "score::mw::com::impl::ProxyEvent<SampleType>" as ScoreMwComImplProxyEventTemplate {

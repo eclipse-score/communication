@@ -45,17 +45,16 @@ This document contains examples of each mw::com user facing API.
 | [`ProxyEvent::GetFreeSampleCount()`](#example-10-getfreesamplecount---check-available-sample-buffer-space) |
 | [`ProxyEvent::GetNumNewSamplesAvailable()`](#example-11-getnumnewsamplesavailable---check-pending-sample-count) |
 | [`ProxyEvent::UnsetReceiveHandler()`](#example-12-unsetreceivehandler---remove-event-handler) |
-| [`ProxyEvent::IsBindingValid()`](#example-13-isbindingvalid---check-event-binding-health) |
-| [`ProxyEvent::Unsubscribe()`](#example-14-unsubscribe---cancel-event-subscription) |
+| [`ProxyEvent::Unsubscribe()`](#example-13-unsubscribe---cancel-event-subscription) |
 | **Proxy Field** |
-| [`ProxyField::Subscribe()`](#example-15-subscribe---subscribe-to-field-changes) |
-| [`ProxyField::GetSubscriptionState()`](#example-16-getsubscriptionstate---check-field-subscription-status) |
-| [`ProxyField::GetFreeSampleCount()`](#example-17-getfreesamplecount---check-available-field-buffer-space) |
-| [`ProxyField::GetNumNewSamplesAvailable()`](#example-18-getnumnewsamplesavailable---check-pending-field-changes) |
-| [`ProxyField::GetNewSamples()`](#example-19-getnewsamples---retrieve-field-change-samples) |
-| [`ProxyField::SetReceiveHandler()`](#example-20-setreceivehandler---register-field-change-handler) |
-| [`ProxyField::UnsetReceiveHandler()`](#example-21-unsetreceivehandler---remove-field-change-handler) |
-| [`ProxyField::Unsubscribe()`](#example-22-unsubscribe---cancel-field-change-subscription) |
+| [`ProxyField::Subscribe()`](#example-14-subscribe---subscribe-to-field-changes) |
+| [`ProxyField::GetSubscriptionState()`](#example-15-getsubscriptionstate---check-field-subscription-status) |
+| [`ProxyField::GetFreeSampleCount()`](#example-16-getfreesamplecount---check-available-field-buffer-space) |
+| [`ProxyField::GetNumNewSamplesAvailable()`](#example-17-getnumnewsamplesavailable---check-pending-field-changes) |
+| [`ProxyField::GetNewSamples()`](#example-18-getnewsamples---retrieve-field-change-samples) |
+| [`ProxyField::SetReceiveHandler()`](#example-19-setreceivehandler---register-field-change-handler) |
+| [`ProxyField::UnsetReceiveHandler()`](#example-20-unsetreceivehandler---remove-field-change-handler) |
+| [`ProxyField::Unsubscribe()`](#example-21-unsubscribe---cancel-field-change-subscription) |
 | **Skeleton** |
 | [`SkeletonWrapper::Create()`](#example-1-create---creating-skeleton-instance) |
 | [`SkeletonWrapper::OfferService()`](#example-2-offerservice---make-service-available-to-clients) |
@@ -1327,36 +1326,7 @@ if (result.has_value()) {
 
 ---
 
-#### Example 13: `IsBindingValid()` - Check Event Binding Health
-
-`IsBindingValid()` checks if the event has a valid connection to the underlying communication binding.
-
-<details>
-<summary> Examples: </summary>
-
-```cpp
-// Check if event binding is valid before use
-if (proxy->my_event.IsBindingValid()) {
-    // Binding is valid - safe to use event operations
-    auto result = proxy->my_event.Subscribe(10);
-} else {
-    // Binding is invalid - likely construction or move error
-    LOG_ERROR("Event binding is invalid - cannot use event operations");
-}
-```
-
-**Key Points**:
-- Returns `true` if internal binding pointer is valid (not nullptr)
-- Returns `false` indicates critical internal error
-- Typically caused by failed move operation or incorrect construction
-- Low-level diagnostic API - rarely needed in normal application code
-- Check before using event operations if construction is uncertain
-
-</details>
-
----
-
-#### Example 14: `Unsubscribe()` - Cancel Event Subscription
+#### Example 13: `Unsubscribe()` - Cancel Event Subscription
 
 `Unsubscribe()` cancels active event subscription and stops receiving new samples.
 
@@ -1381,51 +1351,51 @@ proxy->my_event.Unsubscribe();
 
 ---
 
-#### Example 15: `Subscribe()` - Subscribe to Field Changes
+#### Example 14: `Subscribe()` - Subscribe to Field Changes
 
 see [#example-6-subscribe---subscribe-to-service-event](#example-6-subscribe---subscribe-to-service-event)
 
 ---
 
-#### Example 16: `GetSubscriptionState()` - Check Field Subscription Status
+#### Example 15: `GetSubscriptionState()` - Check Field Subscription Status
 
 see [#example-9-getsubscriptionstate---check-subscription-status](#example-9-getsubscriptionstate---check-subscription-status)
 
 ---
 
-#### Example 17: `GetFreeSampleCount()` - Check Available Field Buffer Space
+#### Example 16: `GetFreeSampleCount()` - Check Available Field Buffer Space
 
 see [#example-10-getfreesamplecount---check-available-sample-buffer-space](#example-10-getfreesamplecount---check-available-sample-buffer-space)
 
 ---
 
-#### Example 18: `GetNumNewSamplesAvailable()` - Check Pending Field Changes
+#### Example 17: `GetNumNewSamplesAvailable()` - Check Pending Field Changes
 
 see [#example-11-getnumnewsamplesavailable---check-pending-sample-count](#example-11-getnumnewsamplesavailable---check-pending-sample-count)
 
 ---
 
-#### Example 19: `GetNewSamples()` - Retrieve Field Change Samples
+#### Example 18: `GetNewSamples()` - Retrieve Field Change Samples
 
 see [#example-7-getnewsamples---retrieve-event-samples](#example-7-getnewsamples---retrieve-event-samples)
 
 ---
 
-#### Example 20: `SetReceiveHandler()` - Register Field Change Handler
+#### Example 19: `SetReceiveHandler()` - Register Field Change Handler
 
 see [#example-8-setreceivehandler---register-event-notification-handler](#example-8-setreceivehandler---register-event-notification-handler)
 
 ---
 
-#### Example 21: `UnsetReceiveHandler()` - Remove Field Change Handler
+#### Example 20: `UnsetReceiveHandler()` - Remove Field Change Handler
 
 see [#example-12-unsetreceivehandler---remove-event-handler](#example-12-unsetreceivehandler---remove-event-handler)
 
 ---
 
-#### Example 22: `Unsubscribe()` - Cancel Field Change Subscription
+#### Example 21: `Unsubscribe()` - Cancel Field Change Subscription
 
-see [#example-14-unsubscribe---cancel-event-subscription](#example-14-unsubscribe---cancel-event-subscription)
+see [#example-13-unsubscribe---cancel-event-subscription](#example-13-unsubscribe---cancel-event-subscription)
 
 > [!NOTE]
 > **ProxyField `Get()` and `Set()` methods** are currently under development and will be added in a future update.

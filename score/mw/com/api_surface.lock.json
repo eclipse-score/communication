@@ -320,12 +320,6 @@
       "signature": "GetSubscriptionState : SubscriptionState () const noexcept"
     },
     {
-      "name": "IsBindingValid",
-      "qualified_name": "score::mw::com::GenericProxyEvent::IsBindingValid",
-      "kind": "method",
-      "signature": "IsBindingValid : bool () const noexcept"
-    },
-    {
       "name": "SetReceiveHandler",
       "qualified_name": "score::mw::com::GenericProxyEvent::SetReceiveHandler",
       "kind": "method",
