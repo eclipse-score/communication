@@ -47,25 +47,6 @@ This provides zero-copy, shared-memory based inter-process communication (IPC) i
 
 ### 3. Shared memory abstraction (Low-Level Foundation)
 
-## Communication Patterns
-
-### Pattern 1: Simple Event Publishing
-
-```
-For example:
-Sensor App ──► [Temperature Data] ──► Dashboard App
-                (30ms intervals)      (Real-time display)
-```
-
-### Pattern 2: Multi-Subscriber Broadcasting
-
-```
-For example:
-Camera App ──► [Video Frame] ──┬──► Display App
-                               ├──► Recording App
-                               └──► AI Processing App
-```
-
 ## Getting Started
 
 ### Prerequisites
