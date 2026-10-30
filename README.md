@@ -51,10 +51,9 @@ This provides zero-copy, shared-memory based inter-process communication (IPC) i
 
 ### Prerequisites
 
-- **C++ Compiler**: GCC 12+ with C++17 support
+- **C++ Compiler**: GCC 12+ or Clang with C++17 support
 - **Build System**: 8.6 <= Bazel < 9.x (only with Bzlmod)
 - **Operating System**: Linux (Ubuntu 24.04+) or QNX
-- **Dependencies**: GoogleTest, Google Benchmark
 - **Virtualization**: Docker with user permissions or rootless mode
 
 ### DevContainer Setup(Recommended)
