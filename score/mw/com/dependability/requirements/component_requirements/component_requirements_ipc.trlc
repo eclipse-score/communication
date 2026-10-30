@@ -743,6 +743,13 @@ section "com" {
             version = 1
         }
 
+        ScoreReq.CompReq GetNewSamplesReturnsErrorInsteadOfSampleCount {
+            description = '''If {{GetNewSamples}} cannot be processed successfully, it shall return an error code and shall not return a sample count.'''
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.FEAT_ProducerConsumerPattern@1, mw_com_fta.RootCauseGetNewSamplesSucceedsDespiteAnError]
+            version = 1
+        }
+
         /* broken_link_c/issue/14086929 */
         ScoreReq.CompReq GetNewSamplesReceiverSignature {
             description = '''The user provided Callable {{receiver}} in calls to {{GetNewSamples}} has to comply with the following signature:
