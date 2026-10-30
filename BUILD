@@ -12,12 +12,13 @@
 # *******************************************************************************
 
 load("@aspect_rules_lint//format:defs.bzl", "format_multirun", "format_test")
+load("@buildifier_prebuilt//:rules.bzl", "buildifier_test")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@score_tooling//cr_checker:cr_checker.bzl", "copyright_checker")
 load("@score_tooling//skills_sync:sync_skills.bzl", "sync_skills")
-load("//tools/lint:linters.bzl", "use_clang_tidy_targets", "use_ruff_targets")
+load("//tools/lint:linters.bzl", "BUILDIFIER_EXCLUDE_PATTERNS", "use_buildifier_targets", "use_clang_tidy_targets", "use_ruff_targets")
 
 exports_files(["MODULE.bazel"])
 
@@ -97,6 +98,8 @@ use_clang_tidy_targets()
 
 use_ruff_targets()
 
+use_buildifier_targets()
+
 sh_binary(
     name = "clang-tidy.fix",
     srcs = [":clang-tidy.fix_script"],
@@ -119,4 +122,16 @@ sh_binary(
     name = "ruff.check",
     srcs = [":ruff.check_script"],
     target_compatible_with = ["@platforms//os:linux"],
+)
+
+# Gating test: fails if buildifier reports any lint warning or formatting
+# difference (runs as part of `bazel test //...`). Mirrors format_test (no_sandbox + workspace) to see all files.
+buildifier_test(
+    name = "buildifier_test",
+    exclude_patterns = BUILDIFIER_EXCLUDE_PATTERNS,
+    lint_mode = "warn",
+    mode = "check",
+    no_sandbox = True,
+    tags = ["no-flaky-test-detection"],
+    workspace = "//:LICENSE",
 )
