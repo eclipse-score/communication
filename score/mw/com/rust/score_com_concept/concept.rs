@@ -662,6 +662,11 @@ impl<S> SampleContainer<S> {
         }
     }
 
+    /// Maximum number of sample handles this container can hold.
+    pub fn capacity(&self) -> usize {
+        self.inner.capacity()
+    }
+
     /// Returns an iterator over references to the samples in the container.
     ///
     /// # Type Parameters
