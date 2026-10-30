@@ -112,6 +112,19 @@ As of today, there is no fixed cadance on how often we publish a new release. If
 
 Releases are available in the [GitHub releases page of this repository](https://github.com/eclipse-score/communication/releases) and published [as a Bazel module in the Eclipse S-CORE Bazel registry](https://eclipse-score.github.io/bazel_registry_ui/modules/score_communication).
 
+## Safety qualification
+
+The safety qualification of the different SEooCs is not provided but we strive to provide the necesary safety artifacts required for a safety qualification.
+We do that by making use of [S-CORE tooling](https://eclipse-score.github.io/tooling/latest/).
+
+The artifacts can be found in:
+
+- [Quality reports](https://eclipse-score.github.io/communication/latest/quality_reports.html)
+- Individual components documentation
+  - [mw::com](https://eclipse-score.github.io/communication/latest/docs/sphinx/mw_com_index/index.html)
+  - [message passing](https://eclipse-score.github.io/communication/latest/docs/sphinx/dependable_element_message_passing_index/index.html)
+  - [shared memory](https://eclipse-score.github.io/communication/latest/docs/sphinx/dependable_element_memory_shared_index/index.html)
+
 ## Support
 
 ### Community
