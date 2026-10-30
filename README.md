@@ -98,6 +98,20 @@ communication/
 
 We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for details.
 
+## Release model
+
+### Versioning
+
+This repository follows [Semantic Versioning](https://semver.org/).
+
+### Cadence
+
+As of today, there is no fixed cadance on how often we publish a new release. If you need a new release, or a bug fix of a previously published release without new changes, please create an issue.
+
+### Distribution
+
+Releases are available in the [GitHub releases page of this repository](https://github.com/eclipse-score/communication/releases) and published [as a Bazel module in the Eclipse S-CORE Bazel registry](https://eclipse-score.github.io/bazel_registry_ui/modules/score_communication).
+
 ## Support
 
 ### Community
