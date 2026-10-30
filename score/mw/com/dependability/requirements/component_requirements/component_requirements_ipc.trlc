@@ -369,6 +369,18 @@ section "com" {
                     derived_from = [Communication.FEAT_MultiBindingSupport@1]
                     version = 1
                 }
+
+                /* broken_link_c/issue/6221480 */
+                ScoreReq.CompReq InstanceSpecifierResolutionCannotRetrieveWrongInstanceIdentifier {
+                    description = "It shall be ensured that the InstanceSpecifier resolution can not retrieve a wrong InstanceIdentifier."
+                    safety = ScoreReq.Asil.B
+                    derived_from = [
+                        Communication.FEAT_SupportForTimeBasedArchitecture@2,
+                        // Ensuring that from a given InstanceSpecifier always the same InstanceIdentifier will be generated, prevents the proxy ..." to point out how this correct resolution will be done.
+                        mw_com_fta.InstancespecifierResolvedToWrongInstanceidentifier
+                    ]
+                    version = 1
+                }
             }
 
             section "InstanceIdentifier" {
@@ -471,6 +483,18 @@ section "com" {
                     description = '''A valid {{InstanceIdentifier}} can correspond to 1..n service instances. Each of the instances shall be of the same binding.'''
                     safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_ServiceInstance@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/32157630 */
+                ScoreReq.CompReq InstanceIdentifierMapsToTheRightPath {
+                    description = "LoLa shall ensure that the right path in the service discovery is mapped from an instance identifier."
+                    safety = ScoreReq.Asil.B
+                    derived_from = [
+                        Communication.FEAT_ServiceDiscovery@1,
+                        // Ensuring that from a given InstanceSpecifier always the same service-discovery path will be generated (in a common logic), prevents the proxy ..." to point out how this correct resolution will be done.
+                        mw_com_fta.WrongPathResolvedFromInstanceidentifier
+                    ]
                     version = 1
                 }
 
