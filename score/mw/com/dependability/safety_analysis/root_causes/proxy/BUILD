@@ -15,7 +15,7 @@ filegroup(
     name = "root_causes_proxy",
     srcs = [
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/call_method:call_method_fta",
-        "//score/mw/com/dependability/safety_analysis/root_causes/proxy/construction:construction_fta",
+        "//score/mw/com/dependability/safety_analysis/root_causes/proxy/find_service:service_is_found_but_does_not_exist_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/find_service:service_not_found_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/find_service:wrong_service_found_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/generic_proxy/generic_proxy_event/getdatatypedizeinfo_from_generic_proxy_event:the_size_returned_is_bigger_then_the_actual_value_fta",
