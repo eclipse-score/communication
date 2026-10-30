@@ -121,6 +121,16 @@ lgsomeip_cc_test(
     deps = ["//score/lg-someip:serialization"] + _TEST_DEPS,
 )
 
+# Tests of the public API. They depend on the public library only.
+lgsomeip_cc_test(
+    name = "unittest_api",
+    size = "small",
+    srcs = ["unit/api/LgsomeipApiTest.cpp"],
+    data = ["integration/someip/runtime/someip_config.json"],
+    local_defines = ["LGSOMEIP_TEST_CONFIG_DIR=\\\"" + _INTEGRATION_CONFIG_DIR + "\\\""],
+    deps = ["//score/lg-someip:lgsomeip"] + _TEST_DEPS,
+)
+
 [
     lgsomeip_cc_binary(
         name = app,
@@ -139,6 +149,7 @@ lgsomeip_cc_test(
 test_suite(
     name = "all_tests",
     tests = [
+        ":unittest_api",
         ":unittest_osabstraction_component",
         ":unittest_osabstraction_integration",
         ":unittest_osabstraction_unit",
