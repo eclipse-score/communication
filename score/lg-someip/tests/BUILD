@@ -109,6 +109,7 @@ lgsomeip_cc_test(
     data = glob(["integration/someip/runtime/someip_config.json*"]),
     local_defines = ["LGSOMEIP_TEST_CONFIG_DIR=\\\"" + _INTEGRATION_CONFIG_DIR + "\\\""],
     deps = [
+        "//score/lg-someip:lgsomeip",
         "//score/lg-someip/daemon:lgsomeip-daemon-core",
         _SOMEIP + ":internal_headers",
     ] + _TEST_DEPS,
