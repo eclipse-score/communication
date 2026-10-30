@@ -46,7 +46,7 @@ class SkeletonEventBase : public EnableReferenceToMoveableFromThis<SkeletonEvent
           binding_{std::move(binding)},
           event_name_{event_name},
           initialize_sample_callback_{std::move(initialize_sample_callback)},
-          tracing_data_{},
+          tracing_data_{std::make_unique<tracing::SkeletonEventTracingData>()},
           service_offered_flag_{},
           sample_allocatee_tracker_{std::make_unique<SampleAllocateeTracker>()}
     {
@@ -94,8 +94,12 @@ class SkeletonEventBase : public EnableReferenceToMoveableFromThis<SkeletonEvent
     std::string_view event_name_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::optional<InitializeSampleCallback> initialize_sample_callback_;
+
+    /// \brief Tracing data for this SkeletonEvent.
+    /// \details We store this via unique_ptr on heap, so that it stays stable (also when SkeletonEvent is moved) as
+    /// we hand over a reference to it to the tracing callbacks.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    tracing::SkeletonEventTracingData tracing_data_;
+    std::unique_ptr<tracing::SkeletonEventTracingData> tracing_data_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     FlagOwner service_offered_flag_;
     /// \brief Tracker for outstanding SampleAllocateePtr instances.
@@ -119,15 +123,15 @@ class SkeletonEventBaseView
         return skeleton_event_base_.binding_.get();
     }
 
-    const tracing::SkeletonEventTracingData& GetSkeletonEventTracing() &
+    tracing::SkeletonEventTracingData& GetSkeletonEventTracing() &
     {
-        return skeleton_event_base_.tracing_data_;
+        return *skeleton_event_base_.tracing_data_;
     }
     const tracing::SkeletonEventTracingData&& GetSkeletonEventTracing() && = delete;
 
     void SetSkeletonEventTracing(const tracing::SkeletonEventTracingData& skeleton_event_tracing_data)
     {
-        skeleton_event_base_.tracing_data_ = skeleton_event_tracing_data;
+        *skeleton_event_base_.tracing_data_ = skeleton_event_tracing_data;
     }
 
   private:
