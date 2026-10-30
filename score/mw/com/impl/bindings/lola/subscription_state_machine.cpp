@@ -54,13 +54,13 @@ SubscriptionStateMachine::~SubscriptionStateMachine() noexcept = default;
 SubscriptionStateBase& SubscriptionStateMachine::GetCurrentEventState() noexcept
 {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index): current_state_idx_ can't be const expression
-    return *states_[static_cast<std::uint8_t>(current_state_idx_.load())];
+    return *states_[static_cast<std::size_t>(current_state_idx_.load())];
 }
 
 const SubscriptionStateBase& SubscriptionStateMachine::GetCurrentEventState() const noexcept
 {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index): current_state_idx_ can't be const expression
-    return *states_[static_cast<std::uint8_t>(current_state_idx_.load())];
+    return *states_[static_cast<std::size_t>(current_state_idx_.load())];
 }
 
 Result<void> SubscriptionStateMachine::SubscribeEvent(const std::size_t max_sample_count) noexcept

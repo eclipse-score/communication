@@ -97,7 +97,7 @@ void UnixDomainEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noexc
 
     if (posix_receive_buffer_.size() < endpoint.max_receive_size)
     {
-        posix_receive_buffer_.resize(endpoint.max_receive_size);
+        posix_receive_buffer_.resize(static_cast<std::size_t>(endpoint.max_receive_size));
     }
 
     std::int16_t events = 0;
@@ -280,7 +280,7 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Uni
     {
         return score::cpp::make_unexpected(score::os::Error::createFromErrno(EIO));
     }
-    return score::cpp::span<const std::uint8_t>{posix_receive_buffer_.data(), size};
+    return score::cpp::span<const std::uint8_t>{posix_receive_buffer_.data(), message_size};
 }
 
 void UnixDomainEngine::SendPipeEvent(PipeEvent pipe_event) noexcept
