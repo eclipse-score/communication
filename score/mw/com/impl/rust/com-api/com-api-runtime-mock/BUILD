@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "com-api-runtime-mock",
@@ -21,4 +21,12 @@ rust_library(
         "//score/mw/com/rust/score_com_concept",
         "@score_communication_crate_index//:futures",
     ],
+)
+
+rust_test(
+    name = "com-api-runtime-mock-tests",
+    crate = ":com-api-runtime-mock",
+    # Linux only until QNX build is enabled for Rust tests: https://github.com/eclipse-score/communication/issues/1278
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [":com-api-runtime-mock"],
 )

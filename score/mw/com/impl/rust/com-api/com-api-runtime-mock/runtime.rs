@@ -15,6 +15,32 @@
 //! It is meant to be used in conjunction with the `com-api` crate.
 //! The mock implementation does not perform any real IPC and is not meant to be used in production.
 //! It is only meant to be used for testing and development.
+//!
+//! # Event routing
+//!
+//! Events are routed through a process-local registry keyed by
+//! `(instance specifier, event name)`:
+//!
+//! - A producer-side [`MockPublisher`] pushes sent samples into the per-event queue
+//!   (both via `Publisher::send()` and via the zero-copy
+//!   `allocate()` / `write()` / `SampleMut::send()` path). No real IPC takes place.
+//! - A consumer-side [`MockSubscriberImpl`] for the same instance and event name drains
+//!   that queue via `try_receive` / `receive` / `cancellable_receive`.
+//! - [`MockSubscriberImpl::add_data`] remains available for tests that want to inject
+//!   samples directly without creating a publisher.
+//!
+//! # Mock limitations (by design, documented for test authors)
+//!
+//! - `CommData` does not provide `Clone`, so one value cannot be fanned out to several
+//!   receivers. Events are therefore delivered through a single shared per-event queue:
+//!   concurrent subscriptions of the same event steal from each other.
+//! - Delivery is FIFO. The real LoLa binding delivers the newest samples first and may
+//!   skip older ones (see the `Subscription` docs); tests relying on that ordering should
+//!   not use the mock's ordering as a reference.
+//! - Once the subscription capacity is reached, the oldest queued sample is dropped
+//!   (ring semantics).
+//! - `offer_service` / `stop_offer_service` are no-ops: the mock has no service
+//!   discovery, consistent with `find_service` returning an empty instance list.
 
 #![allow(dead_code)]
 //lifetime warning for all the Sample struct impl block . it is required for the Sample struct
@@ -31,14 +57,18 @@ use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::AtomicUsize;
+use core::task::Poll;
 use futures::stream::{self, Stream};
-use std::collections::VecDeque;
+use std::any::Any;
+use std::collections::{HashMap, VecDeque};
 use std::path::Path;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use score_com_concept::{
-    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, FindServiceSpecifier, InstanceSpecifier,
-    Interface, Producer, ProducerBuilder, ProviderInfo, Publisher, Result, Runtime, RuntimeBuilder, Sample,
-    SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
+    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, Error, EventFailedReason, FindServiceSpecifier,
+    InstanceSpecifier, Interface, Producer, ProducerBuilder, ProviderInfo, Publisher, ReceiveFailedReason, Result,
+    Runtime, RuntimeBuilder, Sample, SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber,
+    Subscription,
 };
 
 pub struct MockRuntimeImpl {}
@@ -49,12 +79,15 @@ pub struct MockProviderInfo {
 }
 
 impl ProviderInfo for MockProviderInfo {
+    /// No-op in the mock: there is no service discovery to announce to
+    /// (`find_service` always returns an empty instance list).
     fn offer_service(&self) -> Result<()> {
-        todo!()
+        Ok(())
     }
 
+    /// No-op in the mock, see [`MockProviderInfo::offer_service`].
     fn stop_offer_service(&self) -> Result<()> {
-        todo!()
+        Ok(())
     }
 }
 
@@ -84,6 +117,77 @@ impl Runtime for MockRuntimeImpl {
         MockProducerBuilder::new(self, instance_specifier)
     }
 }
+
+// ---------------------------------------------------------------------------
+// Process-local registry connecting mock publishers and subscriptions.
+// ---------------------------------------------------------------------------
+
+/// Registry key: `(instance specifier, event name)`.
+type RegistryKey = (String, String);
+
+/// Per-event mock state: pending samples and the subscription capacity.
+struct EventState<T> {
+    queue: VecDeque<T>,
+    capacity: usize,
+}
+
+impl<T> EventState<T> {
+    fn new() -> Self {
+        Self {
+            queue: VecDeque::new(),
+            capacity: usize::MAX,
+        }
+    }
+}
+
+#[derive(Default)]
+struct MockRegistry {
+    events: Mutex<HashMap<RegistryKey, Arc<dyn Any + Send + Sync>>>,
+}
+
+fn registry() -> &'static MockRegistry {
+    static REGISTRY: OnceLock<MockRegistry> = OnceLock::new();
+    REGISTRY.get_or_init(MockRegistry::default)
+}
+
+fn make_key(instance: &InstanceSpecifier, endpoint: &str) -> RegistryKey {
+    (instance.as_ref().to_string(), endpoint.to_string())
+}
+
+/// Run `f` with exclusive access to the event state stored under `key`,
+/// creating the state on first use.
+fn with_event_state<T, Rt>(key: &RegistryKey, f: impl FnOnce(&mut EventState<T>) -> Rt) -> Result<Rt>
+where
+    T: CommData + Debug,
+{
+    let mut map = registry().events.lock().expect("mock event registry poisoned");
+    let entry = map
+        .entry(key.clone())
+        .or_insert_with(|| Arc::new(Mutex::new(EventState::<T>::new())));
+    let state = entry
+        .downcast_ref::<Mutex<EventState<T>>>()
+        .ok_or(Error::EventError(EventFailedReason::EventCreationFailed))?;
+    let mut guard = state.lock().expect("mock event state poisoned");
+    Ok(f(&mut guard))
+}
+
+/// Push an event sample into the per-event queue (ring semantics: the oldest sample is
+/// dropped once the subscription capacity is reached).
+fn push_event_value<T>(key: &RegistryKey, value: T) -> Result<()>
+where
+    T: CommData + Debug,
+{
+    with_event_state::<T, _>(key, |state| {
+        if state.queue.len() >= state.capacity {
+            state.queue.pop_front();
+        }
+        state.queue.push_back(value);
+    })
+}
+
+// ---------------------------------------------------------------------------
+// Sample types.
+// ---------------------------------------------------------------------------
 
 #[derive(Debug)]
 struct MockEvent<T> {
@@ -184,6 +288,7 @@ where
     T: CommData + Debug,
 {
     data: T,
+    key: RegistryKey,
     lifetime: PhantomData<&'a T>,
 }
 
@@ -191,8 +296,10 @@ impl<'a, T> SampleMut<T> for MockSampleMut<'a, T>
 where
     T: CommData + Debug,
 {
+    /// Delivers the written sample to the per-event queue of this publisher's event,
+    /// where subscriptions of the same instance and event name can receive it.
     fn send(self) -> Result<()> {
-        todo!()
+        push_event_value(&self.key, self.data)
     }
 }
 
@@ -222,6 +329,7 @@ where
     T: CommData + Debug,
 {
     data: MaybeUninit<T>,
+    key: RegistryKey,
     lifetime: PhantomData<&'a T>,
 }
 
@@ -234,6 +342,7 @@ where
     fn write(self, val: T) -> MockSampleMut<'a, T> {
         MockSampleMut {
             data: val,
+            key: self.key,
             lifetime: PhantomData,
         }
     }
@@ -241,6 +350,7 @@ where
     unsafe fn assume_init(self) -> MockSampleMut<'a, T> {
         MockSampleMut {
             data: unsafe { self.data.assume_init() },
+            key: self.key,
             lifetime: PhantomData,
         }
     }
@@ -254,6 +364,10 @@ where
         &mut self.data
     }
 }
+
+// ---------------------------------------------------------------------------
+// Subscriber / Subscription.
+// ---------------------------------------------------------------------------
 
 #[derive(Debug)]
 pub struct MockSubscribableImpl<T> {
@@ -271,12 +385,17 @@ impl<T: CommData + Debug> Subscriber<T, MockRuntimeImpl> for MockSubscribableImp
             data: PhantomData,
         })
     }
-    fn subscribe(self, _max_num_samples: usize) -> Result<Self::Subscription> {
-        Ok(MockSubscriberImpl {
+    fn subscribe(self, max_num_samples: usize) -> Result<Self::Subscription> {
+        if max_num_samples == 0 {
+            return Err(Error::EventError(EventFailedReason::InvalidMaxSamples));
+        }
+        let subscription = MockSubscriberImpl {
             identifier: self.identifier,
             instance_info: self.instance_info.clone(),
-            data: VecDeque::new(),
-        })
+            data: PhantomData,
+        };
+        subscription.with_state(|state| state.capacity = max_num_samples)?;
+        Ok(subscription)
     }
 }
 
@@ -287,15 +406,43 @@ where
 {
     identifier: &'static str,
     instance_info: MockConsumerInfo,
-    data: VecDeque<T>,
+    data: PhantomData<T>,
 }
 
 impl<T> MockSubscriberImpl<T>
 where
     T: CommData + Debug,
 {
+    /// Test hook: inject a sample directly into this subscription's event queue, without
+    /// going through a publisher.
     pub fn add_data(&mut self, data: T) {
-        self.data.push_front(data);
+        // The queue exists as soon as the subscription touched it in subscribe().
+        let _ = push_event_value(&self.key(), data);
+    }
+
+    fn key(&self) -> RegistryKey {
+        make_key(&self.instance_info.instance_specifier, self.identifier)
+    }
+
+    fn with_state<Rt>(&self, f: impl FnOnce(&mut EventState<T>) -> Rt) -> Result<Rt> {
+        with_event_state::<T, Rt>(&self.key(), f)
+    }
+
+    /// Move up to `max_samples` pending event samples from the per-event queue into `scratch`.
+    ///
+    /// Note: if `scratch` runs out of capacity mid-drain, the sample that did not fit is
+    /// dropped and the error is returned - size the container for `max_samples` in tests.
+    fn drain_into<'x>(&self, scratch: &mut SampleContainer<MockSample<'x, T>>, max_samples: usize) -> Result<usize> {
+        let mut delivered = 0;
+        while delivered < max_samples {
+            let value = match self.with_state(|state| state.queue.pop_front())? {
+                Some(value) => value,
+                None => break,
+            };
+            scratch.push_back(MockSample::from(value))?;
+            delivered += 1;
+        }
+        Ok(delivered)
     }
 }
 
@@ -314,23 +461,49 @@ where
         }
     }
 
+    /// Drains up to `max_samples` pending samples in FIFO order (the mock has no
+    /// timestamp-based newest-first selection, unlike the LoLa binding).
     fn try_receive<'a>(
         &'a self,
-        _scratch: &'_ mut SampleContainer<Self::Sample<'a>>,
-        _max_samples: usize,
+        scratch: &'_ mut SampleContainer<Self::Sample<'a>>,
+        max_samples: usize,
     ) -> Result<usize> {
-        todo!()
+        self.drain_into(scratch, max_samples)
     }
 
+    /// Waits (by re-polling; the mock has no wakeup infrastructure) until at least
+    /// `max(new_samples, 1)` samples are pending, then drains up to `max_samples` of them.
+    /// Resolves with `ReceiveFailedReason::Cancelled` once `cancellation` completes.
     #[allow(clippy::manual_async_fn)]
     fn cancellable_receive<'a>(
         &'a self,
-        _scratch: SampleContainer<Self::Sample<'a>>,
-        _new_samples: usize,
-        _max_samples: usize,
-        _cancellation: impl Future<Output = ()> + Send + 'static,
+        scratch: SampleContainer<Self::Sample<'a>>,
+        new_samples: usize,
+        max_samples: usize,
+        cancellation: impl Future<Output = ()> + Send + 'static,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a {
-        async { todo!() }
+        async move {
+            let mut scratch = scratch;
+            let mut cancellation = Box::pin(cancellation);
+            let required = new_samples.max(1);
+            let result = futures::future::poll_fn(|cx| {
+                if cancellation.as_mut().poll(cx).is_ready() {
+                    return Poll::Ready(Err(Error::ReceiveError(ReceiveFailedReason::Cancelled)));
+                }
+                let available = match self.with_state(|state| state.queue.len()) {
+                    Ok(available) => available,
+                    Err(e) => return Poll::Ready(Err(e)),
+                };
+                if available >= required {
+                    return Poll::Ready(self.drain_into(&mut scratch, max_samples));
+                }
+                // No wakeup infrastructure in the mock: request an immediate re-poll.
+                cx.waker().wake_by_ref();
+                Poll::Pending
+            })
+            .await;
+            (scratch, result)
+        }
     }
 
     #[allow(clippy::manual_async_fn)]
@@ -339,28 +512,13 @@ where
     }
 }
 
+// ---------------------------------------------------------------------------
+// Publisher.
+// ---------------------------------------------------------------------------
+
 pub struct MockPublisher<T> {
+    key: RegistryKey,
     _data: PhantomData<T>,
-}
-
-impl<T> Default for MockPublisher<T>
-where
-    T: CommData + Debug,
-{
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<T> MockPublisher<T>
-where
-    T: CommData + Debug,
-{
-    #[must_use = "creating a Publisher without using it is likely a mistake; the publisher must be \
-                  assigned or used in some way"]
-    pub fn new() -> Self {
-        Self { _data: PhantomData }
-    }
 }
 
 impl<T> Publisher<T, MockRuntimeImpl> for MockPublisher<T>
@@ -375,12 +533,19 @@ where
     fn allocate(&self) -> Result<Self::SampleMaybeUninit<'_>> {
         Ok(MockSampleMaybeUninit {
             data: MaybeUninit::uninit(),
+            key: self.key.clone(),
             lifetime: PhantomData,
         })
     }
 
-    fn new(_identifier: &str, _instance_info: MockProviderInfo) -> Result<Self> {
-        Ok(Self { _data: PhantomData })
+    fn new(identifier: &str, instance_info: MockProviderInfo) -> Result<Self> {
+        let key = make_key(&instance_info.instance_specifier, identifier);
+        // Create the event state eagerly so samples published before any subscription are kept.
+        with_event_state::<T, _>(&key, |_| ())?;
+        Ok(Self {
+            key,
+            _data: PhantomData,
+        })
     }
 }
 
@@ -504,43 +669,165 @@ impl RuntimeBuilderImpl {
 
 #[cfg(test)]
 mod test {
-    use score_com_concept::{Publisher, SampleContainer, SampleMaybeUninit, SampleMut, Subscription};
+    use super::*;
+    use futures::executor::block_on;
 
-    #[test]
-    fn receive_stuff() {
-        let test_subscriber = super::MockSubscriberImpl::<u32>::new();
-        for _ in 0..10 {
-            let mut sample_buf = SampleContainer::new();
-            let receive_result = test_subscriber.try_receive(&mut sample_buf, 1);
-            match receive_result {
-                Ok(0) => panic!("No sample received"),
-                Ok(x) => {
-                    println!("{} samples received: sample[0] = {}", x, *sample_buf.front().unwrap())
-                },
-                Err(e) => panic!("{:?}", e),
-            }
+    /// Simple relocatable test payload.
+    ///
+    /// `CommData` is implemented manually here (instead of via the derive macros) to keep
+    /// this crate's test dependencies limited to `score_com_concept` + `futures`.
+    #[derive(Debug, PartialEq)]
+    struct Pressure {
+        kpa: u32,
+    }
+
+    unsafe impl score_com_concept::Reloc for Pressure {}
+
+    impl CommData for Pressure {
+        const ID: &'static str = "com_api_runtime_mock::test::Pressure";
+    }
+
+    fn provider_info(path: &str) -> MockProviderInfo {
+        MockProviderInfo {
+            instance_specifier: InstanceSpecifier::new(path).expect("valid instance specifier"),
         }
     }
 
-    #[test]
-    fn receive_async_stuff() {
-        let test_subscriber = super::MockSubscriberImpl::<u32>::new();
-        // block on an asynchronous reception of data from test_subscriber
-        futures::executor::block_on(async {
-            let sample_buf = SampleContainer::new(1);
-            let (_returned_buf, result) = test_subscriber.receive(sample_buf, 1, 1).await;
-            match result {
-                Ok(()) => {},
-                Err(e) => panic!("{:?}", e),
-            }
-        })
+    fn consumer_info(path: &str) -> MockConsumerInfo {
+        MockConsumerInfo {
+            instance_specifier: InstanceSpecifier::new(path).expect("valid instance specifier"),
+        }
+    }
+
+    fn make_publisher(identifier: &str, path: &str) -> MockPublisher<Pressure> {
+        <MockPublisher<Pressure> as Publisher<Pressure, MockRuntimeImpl>>::new(identifier, provider_info(path))
+            .expect("publisher creation")
+    }
+
+    fn make_subscription(identifier: &'static str, path: &str, max_samples: usize) -> MockSubscriberImpl<Pressure> {
+        <MockSubscribableImpl<Pressure> as Subscriber<Pressure, MockRuntimeImpl>>::new(identifier, consumer_info(path))
+            .expect("subscriber creation")
+            .subscribe(max_samples)
+            .expect("subscribe")
     }
 
     #[test]
-    fn send_stuff() {
-        let test_publisher = super::MockPublisher::<u32>::new();
-        let sample = test_publisher.allocate().expect("Couldn't allocate sample");
-        let sample = sample.write(42);
-        sample.send().expect("Send failed for sample");
+    fn offer_service_is_accepted() {
+        let info = provider_info("/mock_test/event_offer");
+        assert!(info.offer_service().is_ok());
+        assert!(info.stop_offer_service().is_ok());
+    }
+
+    #[test]
+    fn published_sample_reaches_subscription() {
+        const PATH: &str = "/mock_test/event_send";
+
+        let publisher = make_publisher("tire_pressure", PATH);
+        let subscription = make_subscription("tire_pressure", PATH, 4);
+
+        // `Publisher::send` is the trait-provided allocate + write + send sequence.
+        publisher.send(Pressure { kpa: 220 }).expect("send");
+
+        let mut scratch = SampleContainer::new(4);
+        let received = subscription.try_receive(&mut scratch, 4).expect("receive");
+        assert_eq!(received, 1);
+        assert_eq!(scratch.front::<Pressure>().expect("sample").kpa, 220);
+    }
+
+    #[test]
+    fn zero_copy_allocate_write_send_reaches_subscription() {
+        const PATH: &str = "/mock_test/event_zero_copy";
+
+        let publisher = make_publisher("oil_pressure", PATH);
+        let subscription = make_subscription("oil_pressure", PATH, 2);
+
+        let sample = publisher.allocate().expect("allocate").write(Pressure { kpa: 300 });
+        sample.send().expect("send");
+
+        let mut scratch = SampleContainer::new(2);
+        let received = subscription.try_receive(&mut scratch, 2).expect("receive");
+        assert_eq!(received, 1);
+        assert_eq!(scratch.front::<Pressure>().expect("sample").kpa, 300);
+    }
+
+    #[test]
+    fn subscribe_with_zero_max_samples_fails() {
+        const PATH: &str = "/mock_test/event_zero_max";
+
+        let subscriber = <MockSubscribableImpl<Pressure> as Subscriber<Pressure, MockRuntimeImpl>>::new(
+            "fuel_pressure",
+            consumer_info(PATH),
+        )
+        .expect("subscriber creation");
+        let result = subscriber.subscribe(0);
+        assert!(matches!(
+            result,
+            Err(Error::EventError(EventFailedReason::InvalidMaxSamples))
+        ));
+    }
+
+    #[test]
+    fn queue_capacity_drops_oldest_sample() {
+        const PATH: &str = "/mock_test/event_capacity";
+
+        let publisher = make_publisher("brake_pressure", PATH);
+        let subscription = make_subscription("brake_pressure", PATH, 2);
+
+        for kpa in [1, 2, 3] {
+            publisher.send(Pressure { kpa }).expect("send");
+        }
+
+        let mut scratch = SampleContainer::new(2);
+        let received = subscription.try_receive(&mut scratch, 2).expect("receive");
+        assert_eq!(received, 2);
+        // Capacity 2 with ring semantics: the oldest sample (kpa=1) was dropped.
+        assert_eq!(scratch.front::<Pressure>().expect("sample").kpa, 2);
+    }
+
+    #[test]
+    fn add_data_test_hook_injects_samples() {
+        const PATH: &str = "/mock_test/event_add_data";
+
+        let mut subscription = make_subscription("coolant_pressure", PATH, 4);
+        subscription.add_data(Pressure { kpa: 42 });
+
+        let mut scratch = SampleContainer::new(4);
+        let received = subscription.try_receive(&mut scratch, 4).expect("receive");
+        assert_eq!(received, 1);
+        assert_eq!(scratch.front::<Pressure>().expect("sample").kpa, 42);
+    }
+
+    #[test]
+    fn receive_resolves_once_samples_arrive() {
+        const PATH: &str = "/mock_test/event_receive";
+
+        let publisher = make_publisher("intake_pressure", PATH);
+        let subscription = make_subscription("intake_pressure", PATH, 2);
+
+        publisher.send(Pressure { kpa: 150 }).expect("send");
+
+        // `Subscription::receive` is the trait-provided wrapper around cancellable_receive
+        // with a never-completing cancellation future.
+        let (scratch, result) = block_on(subscription.receive(SampleContainer::new(2), 1, 2));
+        assert_eq!(result.expect("receive"), 1);
+        assert_eq!(scratch.front::<Pressure>().expect("sample").kpa, 150);
+    }
+
+    #[test]
+    fn cancellable_receive_resolves_as_cancelled_without_data() {
+        const PATH: &str = "/mock_test/event_cancel";
+
+        let subscription = make_subscription("exhaust_pressure", PATH, 2);
+
+        let (_scratch, result) = block_on(subscription.cancellable_receive(
+            SampleContainer::new(2),
+            1,
+            2,
+            futures::future::ready(()),
+        ));
+        assert!(matches!(
+            result,
+            Err(Error::ReceiveError(ReceiveFailedReason::Cancelled))
+        ));
     }
 }
