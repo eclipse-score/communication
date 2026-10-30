@@ -12,13 +12,11 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "element_fq_id",
     srcs = ["element_fq_id.cpp"],
     hdrs = ["element_fq_id.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -33,7 +31,6 @@ cc_library(
     name = "event_data_storage",
     srcs = ["event_data_storage.cpp"],
     hdrs = ["event_data_storage.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -49,7 +46,6 @@ cc_library(
     name = "slot_allocation_control",
     srcs = ["slot_allocation_control.cpp"],
     hdrs = ["slot_allocation_control.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -60,7 +56,6 @@ cc_library(
 cc_library(
     name = "skeleton_event_properties",
     hdrs = ["skeleton_event_properties.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -71,7 +66,6 @@ cc_library(
     name = "sample_allocatee_ptr",
     srcs = ["sample_allocatee_ptr.cpp"],
     hdrs = ["sample_allocatee_ptr.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -87,7 +81,6 @@ cc_library(
     name = "skeleton",
     srcs = ["skeleton.cpp"],
     hdrs = ["skeleton.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -113,7 +106,6 @@ cc_library(
     name = "skeleton_event",
     srcs = ["skeleton_event.cpp"],
     hdrs = ["skeleton_event.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -147,7 +139,6 @@ cc_library(
         "runtime.h",
         "service_discovery_client.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -164,7 +155,6 @@ cc_library(
 
 cc_library(
     name = "someip",
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",

@@ -3,7 +3,6 @@
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
-# information regarding copyright ownership.
 #
 # This program and the accompanying materials are made available under the
 # terms of the Apache License Version 2.0 which is available at
@@ -13,7 +12,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "test_resources",
@@ -21,7 +19,6 @@ cc_library(
         "test_resources.cpp",
         "test_resources.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl/test:__subpackages__"],
     deps = [
         "//score/mw/com",

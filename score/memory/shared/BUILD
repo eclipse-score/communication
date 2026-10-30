@@ -14,18 +14,12 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
-# TODO move to //score
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
-
 cc_library(
     name = "pointer_arithmetic_util",
     srcs = ["pointer_arithmetic_util.cpp"],
     hdrs = ["pointer_arithmetic_util.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/memory:data_type_size_info",
@@ -37,11 +31,8 @@ cc_library(
     name = "i_shared_memory_resource",
     srcs = ["i_shared_memory_resource.cpp"],
     hdrs = ["i_shared_memory_resource.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":managed_memory_resource",
         ":memory_resource_registry",
@@ -56,11 +47,8 @@ cc_library(
     testonly = True,
     srcs = ["shared_memory_resource_heap_allocator_mock.cpp"],
     hdrs = ["shared_memory_resource_heap_allocator_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":i_shared_memory_resource",
         ":new_delete_delegate_resource",
@@ -74,10 +62,7 @@ cc_library(
     testonly = True,
     srcs = ["shared_memory_resource_mock.cpp"],
     hdrs = ["shared_memory_resource_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":i_shared_memory_resource",
         "@googletest//:gtest",
@@ -89,7 +74,6 @@ cc_library(
     name = "shared_memory_resource",
     srcs = ["shared_memory_resource.cpp"],
     hdrs = ["shared_memory_resource.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":memory_resource_registry",
         "@score_baselibs//score/language/safecpp/string_view:zstring_view",
@@ -123,7 +107,6 @@ cc_library(
     name = "i_shared_memory_factory",
     srcs = ["i_shared_memory_factory.cpp"],
     hdrs = ["i_shared_memory_factory.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":i_shared_memory_resource",
@@ -137,10 +120,7 @@ cc_library(
     testonly = True,
     srcs = ["shared_memory_factory_mock.cpp"],
     hdrs = ["shared_memory_factory_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":i_shared_memory_factory",
         "//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
@@ -152,7 +132,6 @@ cc_library(
     name = "shared_memory_factory_impl",
     srcs = ["shared_memory_factory_impl.cpp"],
     hdrs = ["shared_memory_factory_impl.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
     ],
@@ -174,7 +153,6 @@ cc_library(
     name = "shared_memory_factory",
     srcs = ["shared_memory_factory.cpp"],
     hdrs = ["shared_memory_factory.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "shared_memory_factory_impl",
         "@score_baselibs//score/language/futurecpp",
@@ -189,7 +167,6 @@ cc_library(
 
 cc_library(
     name = "shared",
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//visibility:public",
@@ -204,7 +181,6 @@ cc_library(
     name = "lock_file",
     srcs = ["lock_file.cpp"],
     hdrs = ["lock_file.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/os:fcntl",
@@ -212,9 +188,7 @@ cc_library(
         "@score_baselibs//score/os:unistd",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -224,11 +198,8 @@ cc_library(
     name = "managed_memory_resource",
     srcs = ["managed_memory_resource.cpp"],
     hdrs = ["managed_memory_resource.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = ["@score_baselibs//score/language/futurecpp"],
 )
 
@@ -236,14 +207,11 @@ cc_library(
     name = "memory_region_map",
     srcs = ["memory_region_map.cpp"],
     hdrs = ["memory_region_map.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":memory_region_bounds",
         "@score_baselibs//score/concurrency:atomic_indirector",
@@ -255,7 +223,6 @@ cc_library(
     name = "memory_region_bounds",
     srcs = ["memory_region_bounds.cpp"],
     hdrs = ["memory_region_bounds.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -266,16 +233,13 @@ cc_library(
     name = "memory_resource_registry",
     srcs = ["memory_resource_registry.cpp"],
     hdrs = ["memory_resource_registry.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":pointer_arithmetic_util",
         ":shared_memory_error",
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":managed_memory_resource",
         ":memory_region_bounds",
@@ -290,7 +254,6 @@ cc_library(
     name = "memory_resource_proxy",
     srcs = ["memory_resource_proxy.cpp"],
     hdrs = ["memory_resource_proxy.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":memory_region_bounds",
         ":memory_resource_registry",
@@ -299,9 +262,7 @@ cc_library(
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -312,11 +273,8 @@ cc_library(
     hdrs = [
         "offset_ptr.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":memory_region_bounds",
         ":memory_resource_registry",
@@ -332,7 +290,6 @@ cc_library(
     name = "offset_ref",
     srcs = ["offset_ref.cpp"],
     hdrs = ["offset_ref.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//visibility:public",
@@ -353,15 +310,12 @@ cc_library(
     hdrs = [
         "offset_ptr_bounds_check.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":pointer_arithmetic_util",
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":memory_region_map",
         ":memory_resource_registry",
@@ -373,11 +327,8 @@ cc_library(
     name = "polymorphic_offset_ptr_allocator",
     srcs = ["polymorphic_offset_ptr_allocator.cpp"],
     hdrs = ["polymorphic_offset_ptr_allocator.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":memory_resource_proxy",
         ":offset_ptr",
@@ -389,11 +340,8 @@ cc_library(
     name = "map",
     srcs = ["map.cpp"],
     hdrs = ["map.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":polymorphic_offset_ptr_allocator",
     ] + select({
@@ -409,11 +357,8 @@ cc_library(
     name = "string",
     srcs = ["string.cpp"],
     hdrs = ["string.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":polymorphic_offset_ptr_allocator",
         "@score_baselibs//score/language/safecpp/string_view:char_traits_wrapper",
@@ -424,11 +369,8 @@ cc_library(
     name = "vector",
     srcs = ["vector.cpp"],
     hdrs = ["vector.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":polymorphic_offset_ptr_allocator",
     ],
@@ -443,7 +385,6 @@ cc_library(
     hdrs = [
         "shared_memory_test_resources.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/memory/shared:__subpackages__"],
     deps = [
@@ -465,7 +406,6 @@ cc_library(
     name = "user_permission",
     srcs = ["user_permission.cpp"],
     hdrs = ["user_permission.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/memory/shared:__subpackages__"],
     deps = ["@score_baselibs//score/os/utils/acl"],
@@ -475,7 +415,6 @@ cc_library(
     name = "new_delete_delegate_resource",
     srcs = ["new_delete_delegate_resource.cpp"],
     hdrs = ["new_delete_delegate_resource.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":memory_resource_registry",
         ":pointer_arithmetic_util",
@@ -498,7 +437,6 @@ cc_library(
     name = "shared_memory_error",
     srcs = ["shared_memory_error.cpp"],
     hdrs = ["shared_memory_error.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/memory/shared:__pkg__"],
     deps = [
@@ -509,7 +447,7 @@ cc_library(
 cc_unit_test(
     name = "pointer_arithmetic_util_precondition_violation_test",
     srcs = ["pointer_arithmetic_util_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -527,7 +465,7 @@ cc_unit_test(
     srcs = [
         "pointer_arithmetic_util_calculate_aligned_size_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
@@ -545,7 +483,6 @@ cc_unit_test(
     srcs = [
         "shared_memory_factory_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     target_compatible_with = ["@platforms//os:linux"],
     visibility = [
         "//score/memory:__pkg__",
@@ -562,7 +499,6 @@ cc_unit_test(
     srcs = [
         "memory_region_bounds_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -576,7 +512,6 @@ cc_unit_test(
     srcs = [
         "lock_file_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -590,7 +525,6 @@ cc_unit_test(
 cc_unit_test(
     name = "managed_memory_resource_test",
     srcs = ["managed_memory_resource_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -606,7 +540,6 @@ cc_unit_test(
     srcs = [
         "map_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -622,7 +555,6 @@ cc_unit_test(
     srcs = [
         "memory_region_map_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -638,7 +570,6 @@ cc_unit_test(
     srcs = [
         "memory_resource_proxy_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -654,7 +585,6 @@ cc_unit_test(
     srcs = [
         "memory_resource_registry_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -670,7 +600,6 @@ cc_unit_test(
     srcs = [
         "new_delete_delegate_resource_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -685,7 +614,6 @@ cc_unit_test(
     srcs = [
         "polymorphic_offset_ptr_allocator_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -700,7 +628,6 @@ cc_unit_test(
     srcs = [
         "containers_compatibility_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -718,7 +645,6 @@ cc_unit_test(
     srcs = [
         "shared_memory_error_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -732,7 +658,6 @@ cc_unit_test(
     srcs = [
         "shared_memory_resource_allocate_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -749,7 +674,6 @@ cc_unit_test(
     srcs = [
         "shared_memory_resource_create_anonymous_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -765,7 +689,6 @@ cc_unit_test(
     srcs = [
         "shared_memory_resource_create_or_open_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -779,7 +702,6 @@ cc_unit_test(
     srcs = [
         "shared_memory_resource_create_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -796,7 +718,6 @@ cc_unit_test(
     srcs = [
         "shared_memory_resource_misc_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -813,7 +734,6 @@ cc_unit_test(
     srcs = [
         "shared_memory_resource_open_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     target_compatible_with = ["@platforms//os:linux"],
     visibility = [
         "//score/memory:__pkg__",
@@ -830,7 +750,6 @@ cc_unit_test(
     srcs = [
         "vector_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
     ],
@@ -845,7 +764,6 @@ cc_unit_test(
     srcs = [
         "string_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     target_compatible_with = [
         "@platforms//os:linux",
     ],

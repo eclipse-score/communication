@@ -1,3 +1,17 @@
+..
+   # *******************************************************************************
+   # Copyright (c) 2026 Contributors to the Eclipse Foundation
+   #
+   # See the NOTICE file(s) distributed with this work for additional
+   # information regarding copyright ownership.
+   #
+   # This program and the accompanying materials are made available under the
+   # terms of the Apache License Version 2.0 which is available at
+   # https://www.apache.org/licenses/LICENSE-2.0
+   #
+   # SPDX-License-Identifier: Apache-2.0
+   # *******************************************************************************
+
 Chapter 5: Sample reception - polling vs. callback
 ==================================================
 
@@ -130,11 +144,22 @@ Provider application
 
 
 The provider offers a single service instance, exactly as in chapter 4. The only relevant change is that it no longer
-sends strictly cyclically. Instead, it draws a random delay between `kMinSendDelay` and `kMaxSendDelay` before each send:
+sends strictly cyclically. Instead, it draws a random delay between `kMinSendDelay` and `kMaxSendDelay` before each send.
+These are the two limits:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 33-114
+   :start-after: [provider-send-delay-limits-start]
+   :end-before: [provider-send-delay-limits-end]
+   :caption: provider/provider.cpp
+
+
+And this is how the delay is drawn and used in the send loop:
+
+.. literalinclude:: provider/provider.cpp
+   :language: cpp
+   :start-after: [provider-random-send-delay-start]
+   :end-before: [provider-random-send-delay-end]
    :caption: provider/provider.cpp
 
 
@@ -151,7 +176,8 @@ subscribes, the consumer registers an `EventReceiveHandler` via `SetReceiveHandl
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 129-143
+   :start-after: [consumer-set-receive-handler-start]
+   :end-before: [consumer-set-receive-handler-end]
    :caption: consumer/consumer.cpp
 
 
@@ -161,7 +187,8 @@ sample has actually been sent by the provider.
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 159-159
+   :start-after: [consumer-subscribe-start]
+   :end-before: [consumer-subscribe-end]
    :caption: consumer/consumer.cpp
 
 
@@ -172,25 +199,37 @@ signal requests the shut down. The signal handler sets a flag and notifies the c
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 37-45
+   :start-after: [consumer-shutdown-signal-handler-start]
+   :end-before: [consumer-shutdown-signal-handler-end]
    :caption: consumer/consumer.cpp
 
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 180-180
+   :start-after: [consumer-wait-for-shutdown-start]
+   :end-before: [consumer-wait-for-shutdown-end]
    :caption: consumer/consumer.cpp
 
 
 Since there is no main loop anymore, there is also no need to route an "unrecoverable set-up error" back to the main
 thread via a shared flag: if creating the proxy, setting the receive handler or subscribing unexpectedly fails, the
 find-service handler simply **terminates the application immediately** via `std::exit(EXIT_FAILURE)`. Consequently, the
-consumer no longer needs a shared-state struct at all – the only piece of state shared between the find-service
-handler and the receive handler is the `std::optional<HelloWorldProxy> proxy`, captured by reference:
+consumer no longer needs a shared-state struct at all. Here you see the proxy creation with the immediate exit on error:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 121-124
+   :start-after: [consumer-exit-on-proxy-error-start]
+   :end-before: [consumer-exit-on-proxy-error-end]
+   :caption: consumer/consumer.cpp
+
+
+The only piece of state shared between the find-service handler and the receive handler is the
+`std::optional<HelloWorldProxy> proxy`, captured by reference:
+
+.. literalinclude:: consumer/consumer.cpp
+   :language: cpp
+   :start-after: [consumer-proxy-storage-start]
+   :end-before: [consumer-proxy-storage-end]
    :caption: consumer/consumer.cpp
 
 

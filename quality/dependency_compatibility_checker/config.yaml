@@ -18,7 +18,7 @@ dependencies:
   bazel:                       # special: drives USE_BAZEL_VERSION, not a MODULE dep
     versions:
       - version: "8.6.0"
-      - version: "8.7.0"
+      - version: "8.8.2"
       - version: "9.0.2"
         skip: "https://github.com/eclipse-score/communication/issues/694"
   rules_cc:

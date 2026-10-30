@@ -14,7 +14,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 test_suite(
     name = "unit_tests",
@@ -42,7 +41,6 @@ cc_library(
         "engine.h",
         "server_factory.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//visibility:public"],
     deps = select({
@@ -68,7 +66,6 @@ cc_library(
         "service_protocol_config.h",
         "timed_command_queue_entry.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -92,7 +89,6 @@ cc_library(
         "client_server_communication.h",
         "timed_command_queue.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -146,7 +142,6 @@ cc_library(
         "unix_domain/unix_domain_server_factory.h",
         "unix_domain/unix_domain_socket_address.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     target_compatible_with = ["@platforms//os:linux"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -183,7 +178,6 @@ cc_library(
     hdrs = [
         "qnx_dispatch/qnx_resource_path.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -209,7 +203,6 @@ cc_library(
         "qnx_dispatch/qnx_dispatch_server.h",
         "qnx_dispatch/qnx_dispatch_server_factory.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -251,7 +244,6 @@ cc_library(
         "mock/server_mock.h",
         "mock/shared_resource_engine_mock.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         ":common_headers",
@@ -264,7 +256,6 @@ cc_unit_test(
     srcs = [
         "client_connection_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":message_passing_common",
         ":mock",
@@ -277,7 +268,6 @@ cc_unit_test(
         "unix_domain_server_test.cpp",
         "unix_domain_server_to_client_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":message_passing_unix_domain",
     ],
@@ -324,7 +314,6 @@ cc_unit_test(
     srcs = [
         "timed_command_queue_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":message_passing_common",
     ],

@@ -14,12 +14,10 @@
 load("@rules_build_error//lang/cc:defs.bzl", "cc_build_error_test")
 load("@rules_build_error//matcher:defs.bzl", "matcher")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_unit_test(
     name = "copyable_atomic_test",
     srcs = ["copyable_atomic_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl/util:copyable_atomic",
         "@score_baselibs//score/quality/compiler_warnings",
@@ -29,7 +27,6 @@ cc_unit_test(
 cc_unit_test(
     name = "arithmetic_utils_test",
     srcs = ["arithmetic_utils_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl/util:arithmetic_utils",
         "@score_baselibs//score/language/futurecpp",
@@ -39,7 +36,6 @@ cc_unit_test(
 cc_unit_test(
     name = "type_erased_storage_test",
     srcs = ["type_erased_storage_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl/util:type_erased_storage",
         "@score_baselibs//score/mw/log",

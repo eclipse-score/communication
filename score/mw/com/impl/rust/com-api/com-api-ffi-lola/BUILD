@@ -13,13 +13,11 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_rust//rust:defs.bzl", "rust_library")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "registry_bridge_macro_cpp",
     srcs = ["registry_bridge_macro.cpp"],
     hdrs = ["registry_bridge_macro.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
         "//score/mw/com:runtime",

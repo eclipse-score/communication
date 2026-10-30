@@ -13,13 +13,11 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_rust//rust:defs.bzl", "rust_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "test_helper_size_provider",
     srcs = ["test_helper_size_provider.cpp"],
     hdrs = ["test_helper_size_provider.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/plumbing:sample_ptr",

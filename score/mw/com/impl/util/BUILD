@@ -12,13 +12,11 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "copyable_atomic",
     srcs = ["copyable_atomic.cpp"],
     hdrs = ["copyable_atomic.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -29,7 +27,6 @@ cc_library(
     name = "arithmetic_utils",
     srcs = ["arithmetic_utils.cpp"],
     hdrs = ["arithmetic_utils.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -40,7 +37,6 @@ cc_library(
     name = "type_erased_storage",
     srcs = ["type_erased_storage.cpp"],
     hdrs = ["type_erased_storage.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [

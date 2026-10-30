@@ -12,14 +12,12 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "proxy_event_test_resources",
     testonly = True,
     srcs = ["proxy_event_test_resources.cpp"],
     hdrs = ["proxy_event_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         "//score/memory/shared:shared_memory_factory_mock",
@@ -45,7 +43,6 @@ cc_library(
     name = "proxy_event_fixture",
     testonly = True,
     hdrs = ["proxy_event_fixture.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
         ":proxy_event_test_resources",
@@ -63,7 +60,6 @@ cc_library(
     testonly = True,
     srcs = ["skeleton_test_resources.cpp"],
     hdrs = ["skeleton_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -93,7 +89,6 @@ cc_library(
     testonly = True,
     srcs = ["skeleton_event_test_resources.cpp"],
     hdrs = ["skeleton_event_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
@@ -114,7 +109,6 @@ cc_library(
     testonly = True,
     srcs = ["service_discovery_test_resources.cpp"],
     hdrs = ["service_discovery_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":skeleton_test_resources",
@@ -132,7 +126,6 @@ cc_library(
     testonly = True,
     srcs = ["transaction_log_test_resources.cpp"],
     hdrs = ["transaction_log_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
@@ -151,7 +144,7 @@ cc_test(
     size = "small",
     timeout = "long",
     srcs = ["skeleton_component_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     tags = [
@@ -180,7 +173,7 @@ cc_test(
     size = "small",
     timeout = "long",
     srcs = ["skeleton_event_component_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     tags = [
@@ -213,7 +206,7 @@ cc_test(
     size = "small",
     timeout = "moderate",
     srcs = ["proxy_component_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + ["aborts_upon_exception"],
+    features = ["aborts_upon_exception"],
     tags = [
         "exclusive",  # Sandboxing is not properly working with LoLa message passing 2.0 (Ticket-217341)
         "unit",

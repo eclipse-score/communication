@@ -13,7 +13,6 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "sealedshm",
@@ -24,7 +23,6 @@ cc_library(
         "i_sealed_shm.h",
         "sealed_shm.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/memory/shared:__subpackages__",

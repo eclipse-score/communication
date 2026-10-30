@@ -13,7 +13,6 @@
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 exports_files(
@@ -25,7 +24,6 @@ cc_library(
     name = "common_resources",
     srcs = ["common_resources.cpp"],
     hdrs = ["common_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/test/common_test_resources:command_line_parser",
         "//score/mw/com/test/common_test_resources:fail_test",
@@ -36,7 +34,6 @@ cc_library(
     name = "test_constants",
     srcs = ["test_constants.cpp"],
     hdrs = ["test_constants.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
         "//score/mw/com/test/loading_add_on_configuration/types:addon_interface",
@@ -47,7 +44,6 @@ cc_library(
     name = "consumer_impl",
     srcs = ["consumer.cpp"],
     hdrs = ["consumer.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":common_resources",
         ":test_constants",
@@ -66,7 +62,6 @@ cc_library(
     name = "provider_impl",
     srcs = ["provider.cpp"],
     hdrs = ["provider.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":common_resources",
         ":test_constants",
@@ -87,7 +82,7 @@ cc_binary(
         "config/mw_com_config.json",
         "config/mw_com_invalid_add_on_config.json",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//score/mw/com/test/loading_add_on_configuration:__pkg__"],
@@ -110,7 +105,7 @@ cc_binary(
         "config/mw_com_config.json",
         "config/mw_com_invalid_add_on_config.json",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//score/mw/com/test/loading_add_on_configuration:__pkg__"],

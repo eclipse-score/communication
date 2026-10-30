@@ -12,14 +12,12 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "binding_factory_resources",
     testonly = True,
     srcs = ["binding_factory_resources.cpp"],
     hdrs = ["binding_factory_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
@@ -44,7 +42,6 @@ cc_library(
     testonly = True,
     srcs = ["proxy_resources.cpp"],
     hdrs = ["proxy_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         "//score/mw/com/impl",
@@ -58,7 +55,6 @@ cc_library(
     testonly = True,
     srcs = ["dummy_instance_identifier_builder.cpp"],
     hdrs = ["dummy_instance_identifier_builder.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/language/futurecpp"],
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
@@ -72,7 +68,6 @@ cc_library(
     testonly = True,
     srcs = ["runtime_mock_guard.cpp"],
     hdrs = ["runtime_mock_guard.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [],
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [

@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
@@ -27,7 +26,6 @@ cc_library(
     name = "test_datatype",
     srcs = ["test_datatype.cpp"],
     hdrs = ["test_datatype.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test/service_discovery_during_consumer_crash:__subpackages__"],
     deps = [
         "//score/mw/com",
@@ -38,7 +36,6 @@ cc_binary(
     name = "service_discovery_during_consumer_crash_application",
     srcs = ["service_discovery_during_consumer_crash_application.cpp"],
     data = ["mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":consumer",
         ":provider",
@@ -56,7 +53,6 @@ cc_library(
     name = "consumer",
     srcs = ["consumer.cpp"],
     hdrs = ["consumer.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":test_datatype",
         "//score/mw/com/test/common_test_resources:general_resources",
@@ -69,7 +65,6 @@ cc_library(
     name = "provider",
     srcs = ["provider.cpp"],
     hdrs = ["provider.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":test_datatype",
         "//score/mw/com",

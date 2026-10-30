@@ -112,11 +112,6 @@ build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=float-e
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=shadow
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=shadow
 
-# score_qnx_unit_tests
-# Issue reported in https://github.com/eclipse-score/qnx_unit_tests/issues/44
-build --per_file_copt=external/.*score_qnx_unit_tests.*virtio9p.*@-Wno-error=sign-conversion
-build --host_per_file_copt=external/.*score_qnx_unit_tests.*virtio9p.*@-Wno-error=sign-conversion
-
 # Enable the experimental FlatBuffers configuration path.
 build:flatbuffers --//score/mw/com/flags:experimental_enable_flatbuffers_configuration=True
 

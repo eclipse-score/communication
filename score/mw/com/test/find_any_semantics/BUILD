@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
@@ -34,7 +33,6 @@ cc_library(
     name = "test_datatype",
     srcs = ["test_datatype.cpp"],
     hdrs = ["test_datatype.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = ["//score/mw/com"],
 )
 
@@ -42,7 +40,7 @@ cc_binary(
     name = "service",
     srcs = ["service.cpp"],
     data = ["config/service/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//score/mw/com/test/find_all_semantics:__pkg__"],
@@ -59,7 +57,7 @@ cc_binary(
     name = "client",
     srcs = ["client.cpp"],
     data = ["config/client/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//score/mw/com/test/find_all_semantics:__pkg__"],

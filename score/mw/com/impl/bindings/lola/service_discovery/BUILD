@@ -13,7 +13,6 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(default_visibility = [
     "//score/mw/com/impl/bindings/lola/service_discovery:__subpackages__",
@@ -23,7 +22,6 @@ cc_library(
     name = "flag_file",
     srcs = ["flag_file.cpp"],
     hdrs = ["flag_file.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/language/futurecpp"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
@@ -37,7 +35,6 @@ cc_library(
 cc_unit_test(
     name = "flag_file_test",
     srcs = ["flag_file_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":flag_file",
         "//score/mw/com/impl/bindings/lola/service_discovery/test:service_discovery_client_test_resources",
@@ -51,7 +48,6 @@ cc_library(
     name = "flag_file_crawler",
     srcs = ["flag_file_crawler.cpp"],
     hdrs = ["flag_file_crawler.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/language/futurecpp"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
@@ -69,7 +65,6 @@ cc_library(
 cc_unit_test(
     name = "flag_file_crawler_test",
     srcs = ["flag_file_crawler_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":flag_file_crawler",
         "//score/mw/com/impl/bindings/lola/service_discovery/test:service_discovery_client_test_resources",
@@ -85,7 +80,6 @@ cc_library(
     name = "known_instances_container",
     srcs = ["known_instances_container.cpp"],
     hdrs = ["known_instances_container.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/language/futurecpp"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
@@ -98,7 +92,6 @@ cc_library(
 cc_unit_test(
     name = "known_instances_container_test",
     srcs = ["known_instances_container_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [":known_instances_container"],
 )
 
@@ -106,7 +99,6 @@ cc_library(
     name = "lola_service_instance_identifier",
     srcs = ["lola_service_instance_identifier.cpp"],
     hdrs = ["lola_service_instance_identifier.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
@@ -119,7 +111,6 @@ cc_library(
 cc_unit_test(
     name = "lola_service_instance_identifier_test",
     srcs = ["lola_service_instance_identifier_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [":lola_service_instance_identifier"],
 )
 
@@ -127,7 +118,6 @@ cc_library(
     name = "quality_aware_container",
     srcs = ["quality_aware_container.cpp"],
     hdrs = ["quality_aware_container.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
 )

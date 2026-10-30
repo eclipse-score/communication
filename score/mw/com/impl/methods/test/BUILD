@@ -12,13 +12,11 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "callable_traits_resources",
     srcs = ["callable_traits_resources.cpp"],
     hdrs = ["callable_traits_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/methods:__pkg__",
     ],

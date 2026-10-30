@@ -12,14 +12,12 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
     name = "proxy_container",
     srcs = ["proxy_container.cpp"],
     hdrs = ["proxy_container.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test:__subpackages__"],
     deps = [
         "//score/mw/com",
@@ -31,7 +29,6 @@ cc_library(
     name = "skeleton_container",
     srcs = ["skeleton_container.cpp"],
     hdrs = ["skeleton_container.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/test:__subpackages__",
@@ -50,7 +47,6 @@ cc_library(
     hdrs = [
         "big_datatype.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/test:__subpackages__",
@@ -69,7 +65,6 @@ cc_library(
     hdrs = [
         "sample_sender_receiver.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/test:__subpackages__",
@@ -91,7 +86,6 @@ cc_library(
     hdrs = [
         "fail_test.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -112,7 +106,6 @@ cc_library(
     hdrs = [
         "shared_memory_object_guard.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/performance_benchmarks:__subpackages__",
@@ -131,7 +124,6 @@ cc_library(
     hdrs = [
         "shared_memory_object_creator.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/performance_benchmarks:__subpackages__",
@@ -151,7 +143,6 @@ cc_library(
     name = "process_synchronizer",
     srcs = ["process_synchronizer.cpp"],
     hdrs = ["process_synchronizer.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/test:__subpackages__",
@@ -174,7 +165,6 @@ cc_library(
     hdrs = [
         "stop_token_sig_term_handler.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/performance_benchmarks:__subpackages__",
@@ -194,7 +184,6 @@ cc_library(
     hdrs = [
         "assert_handler.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/test:__subpackages__",
@@ -213,7 +202,6 @@ cc_library(
     hdrs = [
         "command_line_parser.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/test:__subpackages__",
@@ -244,7 +232,6 @@ cc_library(
     hdrs = [
         "service_instance_manifest_parser.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/test:__subpackages__",
     ],
@@ -261,7 +248,6 @@ cc_library(
     hdrs = [
         "sctf_test_runner.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/test:__subpackages__",
@@ -282,7 +268,6 @@ cc_library(
     hdrs = [
         "sync_utils.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/test:__subpackages__",
     ],
@@ -296,7 +281,6 @@ cc_library(
     name = "test_interface",
     srcs = ["test_interface.cpp"],
     hdrs = ["test_interface.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test:__subpackages__"],
     deps = [
         "//score/mw/com",
@@ -307,7 +291,6 @@ cc_library(
     name = "test_error_domain",
     srcs = ["test_error_domain.cpp"],
     hdrs = ["test_error_domain.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test:__subpackages__"],
     deps = [
         "//score/mw/com",
@@ -319,7 +302,6 @@ cc_library(
     name = "common_service",
     srcs = ["common_service.cpp"],
     hdrs = ["common_service.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test:__subpackages__"],
     deps = [
         ":test_error_domain",
@@ -331,7 +313,6 @@ cc_library(
     name = "proxy_observer",
     srcs = ["proxy_observer.cpp"],
     hdrs = ["proxy_observer.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test:__subpackages__"],
     deps = [
         "//score/mw/com",
@@ -342,7 +323,6 @@ cc_library(
     name = "proxy_event_state_change_notifier",
     srcs = ["proxy_event_state_change_notifier.cpp"],
     hdrs = ["proxy_event_state_change_notifier.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test:__subpackages__"],
     deps = [
         ":fail_test",
@@ -355,7 +335,6 @@ cc_library(
     name = "proxy_event_receiver",
     srcs = ["proxy_event_receiver.cpp"],
     hdrs = ["proxy_event_receiver.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test:__subpackages__"],
     deps = [
         ":fail_test",
@@ -369,7 +348,6 @@ cc_library(
     name = "generic_trace_api_test_resources",
     srcs = ["generic_trace_api_test_resources.cpp"],
     hdrs = ["generic_trace_api_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/memory/shared",
         "@score_baselibs//score/os:fcntl",
@@ -387,7 +365,6 @@ cc_library(
 
 cc_library(
     name = "test_resources",
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test:__subpackages__"],
     deps = [
         ":check_point_control",
@@ -403,7 +380,6 @@ cc_library(
     name = "check_point_control",
     srcs = ["check_point_control.cpp"],
     hdrs = ["check_point_control.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test:__subpackages__"],
     deps = [
         ":timeout_supervisor",
@@ -416,7 +392,6 @@ cc_library(
     name = "child_process_guard",
     srcs = ["child_process_guard.cpp"],
     hdrs = ["child_process_guard.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -426,7 +401,6 @@ cc_library(
     name = "timeout_supervisor",
     srcs = ["timeout_supervisor.cpp"],
     hdrs = ["timeout_supervisor.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "@score_baselibs//score/concurrency:thread_pool",
         "@score_baselibs//score/concurrency/timed_executor:concurrent_timed_executor",
@@ -439,7 +413,6 @@ cc_library(
     name = "general_resources",
     srcs = ["general_resources.cpp"],
     hdrs = ["general_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/test:__subpackages__",
@@ -458,7 +431,6 @@ cc_library(
     name = "consumer_resources",
     srcs = ["consumer_resources.cpp"],
     hdrs = ["consumer_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":check_point_control",
         "//score/mw/com:types",
@@ -471,7 +443,6 @@ cc_library(
     name = "provider_resources",
     srcs = ["provider_resources.cpp"],
     hdrs = ["provider_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":check_point_control",
         "//score/mw/com:com_error_domain",

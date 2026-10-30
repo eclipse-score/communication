@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
@@ -28,7 +27,6 @@ cc_library(
     name = "runtime_sized_array",
     srcs = ["runtime_sized_array.cpp"],
     hdrs = ["runtime_sized_array.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -38,7 +36,6 @@ cc_library(
     name = "semi_dynamic_method_datatype",
     srcs = ["semi_dynamic_method_datatype.cpp"],
     hdrs = ["semi_dynamic_method_datatype.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":runtime_sized_array",
         "//score/mw/com",
@@ -50,7 +47,6 @@ cc_library(
     srcs = ["consumer.cpp"],
     hdrs = ["consumer.h"],
     data = ["config/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":semi_dynamic_method_datatype",
         "//score/mw/com",
@@ -64,7 +60,6 @@ cc_library(
     srcs = ["provider.cpp"],
     hdrs = ["provider.h"],
     data = ["config/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":semi_dynamic_method_datatype",
         "//score/mw/com",
@@ -94,7 +89,7 @@ cc_binary(
     name = "main_provider",
     srcs = ["main_provider.cpp"],
     data = ["config/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -110,7 +105,7 @@ cc_binary(
     name = "main_consumer",
     srcs = ["main_consumer.cpp"],
     data = ["config/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -125,7 +120,7 @@ cc_binary(
     name = "main_consumer_and_provider",
     srcs = ["main_consumer_and_provider.cpp"],
     data = ["config/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -167,7 +162,7 @@ pkg_application(
 cc_unit_test(
     name = "runtime_sized_array_test",
     srcs = ["runtime_sized_array_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],

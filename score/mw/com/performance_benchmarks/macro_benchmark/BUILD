@@ -13,7 +13,6 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw/com/performance_benchmarks/macro_benchmark/config_generator:config_generator_rule.bzl", "make_configs")
 
@@ -38,7 +37,7 @@ cc_library(
     name = "lola_interface",
     srcs = ["lola_interface.cpp"],
     hdrs = ["lola_interface.h"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//score/mw/com/performance_benchmarks/macro_benchmark:__pkg__"],
@@ -51,7 +50,7 @@ cc_library(
     name = "common_resources",
     srcs = ["common_resources.cpp"],
     hdrs = ["common_resources.h"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//score/mw/com/performance_benchmarks/macro_benchmark:__pkg__"],
@@ -69,7 +68,7 @@ cc_library(
     name = "json_parsing_convenience_wrappers",
     srcs = ["json_parsing_convenience_wrappers.cpp"],
     hdrs = ["json_parsing_convenience_wrappers.h"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//score/mw/com/performance_benchmarks/macro_benchmark:__pkg__"],
@@ -84,7 +83,7 @@ cc_library(
     name = "config_parser",
     srcs = ["config_parser.cpp"],
     hdrs = ["config_parser.h"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//score/mw/com/performance_benchmarks/macro_benchmark:__pkg__"],
@@ -120,7 +119,7 @@ cc_binary(
         ":make_configs",
     ],
     env = {"MW_LOG_CONFIG_FILE": "$(location logging.json)"},
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//visibility:public"],
@@ -149,7 +148,7 @@ cc_binary(
         ":make_configs",
     ],
     env = {"MW_LOG_CONFIG_FILE": "$(location logging.json)"},
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//visibility:public"],
@@ -187,7 +186,7 @@ cc_unit_test(
     data = [
         ":logging.json",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//score/mw/com/performance_benchmarks/macro_benchmark:__pkg__"],

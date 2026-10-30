@@ -14,7 +14,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 # ---------------------------------------------------------------------------
@@ -59,7 +58,7 @@ cc_binary(
     name = "event_send_receive_provider",
     srcs = ["event_send_receive/provider.cpp"],
     data = ["event_send_receive/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = _COM_DEP,
@@ -69,7 +68,7 @@ cc_binary(
     name = "event_send_receive_consumer",
     srcs = ["event_send_receive/consumer.cpp"],
     data = ["event_send_receive/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = _COM_DEP,
@@ -79,7 +78,7 @@ cc_binary(
     name = "event_send_receive_consumer_receive_handler",
     srcs = ["event_send_receive/consumer_receive_handler.cpp"],
     data = ["event_send_receive/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -162,7 +161,7 @@ cc_binary(
     name = "event_field_update_provider",
     srcs = ["event_field_update/provider.cpp"],
     data = ["event_field_update/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = _COM_DEP,
@@ -172,7 +171,7 @@ cc_binary(
     name = "event_field_update_consumer",
     srcs = ["event_field_update/consumer.cpp"],
     data = ["event_field_update/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = _COM_DEP,
@@ -228,7 +227,7 @@ cc_binary(
     name = "start_find_service_provider",
     srcs = ["start_find_service/provider.cpp"],
     data = ["start_find_service/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = _COM_DEP_WITH_DISCOVERY,
@@ -238,7 +237,7 @@ cc_binary(
     name = "start_find_service_consumer",
     srcs = ["start_find_service/consumer.cpp"],
     data = ["start_find_service/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = _COM_DEP_WITH_DISCOVERY,
@@ -294,7 +293,7 @@ cc_binary(
     name = "bidirectional_discovery_application_a",
     srcs = ["bidirectional_discovery/application_a.cpp"],
     data = ["bidirectional_discovery/application_a_mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = _COM_DEP_WITH_DISCOVERY,
@@ -304,7 +303,7 @@ cc_binary(
     name = "bidirectional_discovery_application_b",
     srcs = ["bidirectional_discovery/application_b.cpp"],
     data = ["bidirectional_discovery/application_b_mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = _COM_DEP_WITH_DISCOVERY,
