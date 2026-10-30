@@ -50,6 +50,7 @@ constexpr api::major_version_t kMajor = 0x01;
 constexpr api::minor_version_t kMinor = 0x00000000;
 constexpr api::eventgroup_t kEventGroup = 0x4455;
 constexpr api::event_t kEvent = 0x8777;
+constexpr api::event_t kField = 0x8778;
 
 constexpr api::client_t kClientClientId = 0x0121;
 
@@ -668,6 +669,136 @@ TEST_F(LgsomeipApiRuntimeTest, provider_subscription_handler_can_reject_a_subscr
     }
 
     EXPECT_FALSE(events.wait_for_count(1, kQuietPeriod));
+}
+
+TEST_F(LgsomeipApiRuntimeTest, request_without_return_gets_no_response)
+{
+    Inbox requests;
+    Inbox responses;
+    Availability availability;
+
+    ApiApp server("response", config_path_);
+    ASSERT_TRUE(server.init());
+    server->register_message_handler(kService, kInstance, kMethod, echo_handler(server.get(), requests));
+    server.start();
+    ASSERT_TRUE(server.wait_connected(kTimeout));
+    server->offer_service(kService, kInstance, kMajor, kMinor);
+
+    ApiApp client("request-1", config_path_);
+    ASSERT_TRUE(client.init());
+    client->register_availability_handler(kService, kInstance, availability.handler());
+    client->register_message_handler(kService, kInstance, kMethod, responses.handler());
+    client.start();
+    ASSERT_TRUE(client.wait_connected(kTimeout));
+    client->request_service(kService, kInstance, kMajor, kMinor);
+    ASSERT_TRUE(availability.wait(true, kTimeout));
+
+    auto request = make_request({0x0A, 0x0B});
+    request.type = api::MessageType::RequestNoReturn;
+    client->send(request);
+
+    ASSERT_TRUE(requests.wait_for_count(1, kTimeout));
+    const auto& received = *requests.messages().front();
+    EXPECT_EQ(received.type, api::MessageType::RequestNoReturn);
+    EXPECT_EQ(received.payload, request.payload);
+    EXPECT_FALSE(responses.wait_for_count(1, kQuietPeriod));
+}
+
+TEST_F(LgsomeipApiRuntimeTest, find_service_reports_an_offered_service)
+{
+    Inbox requests;
+    Availability availability;
+
+    ApiApp server("response", config_path_);
+    ASSERT_TRUE(server.init());
+    server->register_message_handler(kService, kInstance, kMethod, echo_handler(server.get(), requests));
+    server.start();
+    ASSERT_TRUE(server.wait_connected(kTimeout));
+    server->offer_service(kService, kInstance, kMajor, kMinor);
+
+    ApiApp client("request-1", config_path_);
+    ASSERT_TRUE(client.init());
+    client->register_availability_handler(kService, kInstance, availability.handler());
+    client.start();
+    ASSERT_TRUE(client.wait_connected(kTimeout));
+    client->find_service(kService, kInstance);
+
+    EXPECT_TRUE(availability.wait(true, kTimeout));
+}
+
+TEST_F(LgsomeipApiRuntimeTest, event_is_not_delivered_after_the_provider_stops_offering_it)
+{
+    Inbox events;
+    Availability availability;
+    SubscriptionLog subscriptions;
+
+    ApiApp client("request-1", config_path_);
+    ASSERT_TRUE(client.init());
+    client->register_availability_handler(kService, kInstance, availability.handler());
+    client->register_message_handler(kService, kInstance, kEvent, events.handler());
+    client.start();
+    ASSERT_TRUE(client.wait_connected(kTimeout));
+    client->request_event(kService, kInstance, kEvent, {kEventGroup});
+    client->request_service(kService, kInstance, kMajor, kMinor);
+
+    ApiApp server("response", config_path_);
+    ASSERT_TRUE(server.init());
+    server->register_subscription_handler(kService, kInstance, kEventGroup, subscriptions.handler(true));
+    server.start();
+    ASSERT_TRUE(server.wait_connected(kTimeout));
+    server->offer_event(kService, kInstance, kEvent, {kEventGroup});
+    server->offer_service(kService, kInstance, kMajor, kMinor);
+
+    ASSERT_TRUE(availability.wait(true, kTimeout));
+    client->subscribe(kService, kInstance, kEventGroup, kMajor);
+    ASSERT_TRUE(subscriptions.wait_for(kClientClientId, true, kTimeout));
+
+    server->notify(kService, kInstance, kEvent, {0x01});
+    ASSERT_TRUE(events.wait_for_count(1, kTimeout));
+
+    server->stop_offer_event(kService, kInstance, kEvent);
+    events.clear();
+    EXPECT_NO_THROW(server->notify(kService, kInstance, kEvent, {0x02}));
+
+    EXPECT_FALSE(events.wait_for_count(1, kQuietPeriod));
+}
+
+TEST_F(LgsomeipApiRuntimeTest, unchanged_field_value_is_published_again_only_when_forced)
+{
+    Inbox events;
+    Availability availability;
+    SubscriptionLog subscriptions;
+
+    ApiApp client("request-1", config_path_);
+    ASSERT_TRUE(client.init());
+    client->register_availability_handler(kService, kInstance, availability.handler());
+    client->register_message_handler(kService, kInstance, kField, events.handler());
+    client.start();
+    ASSERT_TRUE(client.wait_connected(kTimeout));
+    client->request_event(kService, kInstance, kField, {kEventGroup});
+    client->request_service(kService, kInstance, kMajor, kMinor);
+
+    ApiApp server("response", config_path_);
+    ASSERT_TRUE(server.init());
+    server->register_subscription_handler(kService, kInstance, kEventGroup, subscriptions.handler(true));
+    server.start();
+    ASSERT_TRUE(server.wait_connected(kTimeout));
+    server->offer_event(kService, kInstance, kField, {kEventGroup}, true);
+    server->offer_service(kService, kInstance, kMajor, kMinor);
+    // The field has a value before the consumer subscribes, so that its initial value is sent.
+    server->notify(kService, kInstance, kField, {0x01});
+
+    ASSERT_TRUE(availability.wait(true, kTimeout));
+    client->subscribe(kService, kInstance, kEventGroup, kMajor);
+    ASSERT_TRUE(subscriptions.wait_for(kClientClientId, true, kTimeout));
+    ASSERT_TRUE(events.wait_for_count(1, kTimeout));
+    EXPECT_EQ(events.messages().front()->payload, api::Payload{0x01});
+
+    server->notify(kService, kInstance, kField, {0x01});
+    EXPECT_FALSE(events.wait_for_count(2, kQuietPeriod));
+
+    server->notify(kService, kInstance, kField, {0x01}, true);
+    EXPECT_TRUE(events.wait_for_count(2, kTimeout));
 }
 
 }  // namespace
