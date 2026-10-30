@@ -464,6 +464,15 @@ section "LoLa" {
 
         section "Construction" {
 
+            ScoreReq.FailureMode ProxyCannotBeCreatedWithValidHandleWhenServiceIsOffered {
+                guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+                description = "After finding a service and getting a valid handle (and the service has not been since or is currently being stop offered), creating a proxy with that handle fails."
+                failureeffect = "No communication between process will happen, thus no information can be exchanged, thus any overall system functionality can stop."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = ""
+                interface = "mw.com.Proxy.Create"
+            }
 
         }
 
