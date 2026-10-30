@@ -24,8 +24,6 @@ bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.25")
 bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "rules_rust", version = "0.68.2-score")
-
-# Cannot be dev-dependency due to being required in "load" statements
 bazel_dep(name = "score_qnx_unit_tests", version = "0.3.0")
 bazel_dep(name = "score_baselibs", version = "0.2.16")
 single_version_override(
@@ -38,6 +36,7 @@ single_version_override(
 )
 
 bazel_dep(name = "score_bazel_platforms", version = "1.1.0")
+bazel_dep(name = "score_cpp_policies", version = "0.1.2")
 bazel_dep(name = "score_crates", version = "0.0.13", repo_name = "score_communication_crate_index")
 
 download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
@@ -205,7 +204,6 @@ sysroot_from_lock(
     lock = "@ubuntu24_04_sysroot_resolve//:lock.json",
 )
 
-bazel_dep(name = "score_cpp_policies", version = "0.1.2", dev_dependency = True)
 bazel_dep(name = "toolchains_llvm", version = "1.8.0", dev_dependency = True)
 
 llvm = use_extension(
