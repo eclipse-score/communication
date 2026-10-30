@@ -1,0 +1,68 @@
+@startuml seq_10_mapped_region_factory_create
+autonumber
+title MappedRegionFactory: Create POSIX Named
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+
+actor "User" as User
+participant "MappedRegionFactory : instance" as mapped_region_factory
+participant "MappedRegionRegistry: instance" as mapped_region_registry
+participant "PosixNamedMappedRegion" as mapped_region
+participant "{static} PosixNamedMappedRegion" as static_mapped_region
+
+activate User
+
+Create mapped_region_registry
+User -> mapped_region_registry : make_unique<MappedRegionRegistry>()
+activate mapped_region_registry
+
+mapped_region_registry --> User : unique_ptr<MappedRegionRegistry>(mapped_region_registry)
+deactivate mapped_region_registry
+
+Create mapped_region_factory
+User -> mapped_region_factory : Construct(move(mapped_region_registry))
+
+User -> mapped_region_factory : CreatePosixNamed(RegionInitializeCallback, path, size, perms)
+activate mapped_region_factory
+
+mapped_region_factory --> mapped_region_factory : timestamp = GetTimestampOfShmFile(path)
+
+mapped_region_factory -> static_mapped_region : PosixNamedMappedRegion::CreateId(path)
+activate static_mapped_region
+
+static_mapped_region --> mapped_region_factory : IdType
+deactivate static_mapped_region
+
+alt timestamp has value
+    mapped_region_factory --> mapped_region_registry : Find(IdType)
+    activate mapped_region_registry
+    mapped_region_registry --> mapped_region_factory : shared_ptr<PosixNamedMappedRegion>
+    deactivate mapped_region_registry
+    opt shared_ptr != nullptr AND shared_ptr->GetTimestamp != timestamp
+        mapped_region_factory --> mapped_region_registry : Unregister(IdType)
+        activate mapped_region_registry
+        mapped_region_registry --> mapped_region_factory
+        deactivate mapped_region_registry
+    end
+    mapped_region_factory --> User : Error // mapped region already exists
+else mapped region with path does not exist
+    Create mapped_region
+    mapped_region_factory --> mapped_region : Create
+    activate mapped_region
+    mapped_region --> mapped_region : shm_open(O_CREATE)
+    mapped_region --> mapped_region : mmap()
+    mapped_region --> mapped_region_factory
+    deactivate mapped_region
+    mapped_region_factory --> mapped_region_factory : Apply RegionInitializeCallback
+    mapped_region_factory --> mapped_region_registry : Register(IdType)
+    activate mapped_region_registry
+    mapped_region_registry --> mapped_region_factory
+    deactivate mapped_region_registry
+    mapped_region_factory --> User : Result<shared_ptr<PosixNamedMappedRegion>>
+end
+
+
+deactivate mapped_region_factory
+deactivate User
+
+@enduml

@@ -1,0 +1,40 @@
+@startuml seq_17_posix_named_mapped_region_create_callback
+title CreateRegionCallback: callback for Posix Named MappedRegion
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+
+participant "Caller" as caller
+participant "CreateRegionCallback:instance" as create_region_callback
+participant "POSIX SharedMem interfaces" as posix_shared_memory
+participant "PosixNamedMappedRegion:instance" as posix_named_mapped_region
+
+activate caller
+caller --> create_region_callback : Invoke
+create_region_callback -> i_lock_file_factory : Create(path)
+    activate i_lock_file_factory
+
+    Create lock_file
+    i_lock_file_factory -> lock_file : Construct(path)
+    activate lock_file
+
+    i_lock_file_factory --> create_region_callback : Result<LockFile>
+    deactivate i_lock_file_factory
+
+    create_region_callback -> posix_shared_memory : CreateAndMmapSharedMemoryRegion(path, size, permissions)
+    activate posix_shared_memory
+
+    posix_shared_memory --> create_region_callback : FileDescriptor, void*
+    deactivate posix_shared_memory
+
+    Create posix_named_mapped_region
+    create_region_callback -> posix_named_mapped_region : Construct(std::optional<RegionInitializeCallback>, base_address, PosixNamedMappedRegionProperties)
+
+    create_region_callback --> create_region_callback : Call RegionInitializeCallback(PosixNamedMappedRegion:instance)
+
+    create_region_callback -> lock_file : Destroy
+    destroy lock_file
+
+    create_region_callback --> caller : Result<shared_ptr<IMappedRegion>>
+    deactivate create_region_callback
+
+@enduml

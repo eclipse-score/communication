@@ -1,0 +1,237 @@
+@startuml memory_resource_hierarchy
+
+title Shared Memory Resource Architecture
+
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam roundCorner 5
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 40
+skinparam classFontStyle bold
+
+
+together {
+    interface ISharedMemoryFactory {
+        + using InitializationCallback = score::callback<Result<void>(ISharedMemoryResource&)>
+        __ named (posix) __
+        + {virtual} CreatePosixNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        + {virtual} OpenPosixNamed(path): Result<shared_ptr<IMappedRegion>>
+        + {virtual} CreateOrOpenPosixNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        __ anonymous (platform-specific) __
+        + {virtual} CreateQnxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
+        + {virtual} CreateLinuxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
+        __ safe typed __
+        + {virtual} CreateSafeTypedNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        + {virtual} CreateSafeTypedAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
+        __ unsafe typed __
+        + {virtual} CreateUnsafeTypedNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        + {virtual} CreateUnsafeTypedAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
+    }
+
+    class SharedMemoryFactory implements ISharedMemoryFactory {
+        - mapped_region_factory_: unique_ptr<IMappedRegionFactory>
+        ..
+        + SharedMemoryFactory(unique_ptr<IMappedRegionFactory>)
+        + InjectMockRegistry(ISharedMemoryResourceRegistry&) : void
+        __ named (posix) __
+        + {override} CreatePosixNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        + {override} OpenPosixNamed(path): Result<shared_ptr<IMappedRegion>>
+        + {override} CreateOrOpenPosixNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        __ anonymous (platform-specific) __
+        + {override} CreateQnxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
+        + {override} CreateLinuxAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
+        __ safe typed __
+        + {override} CreateSafeTypedNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        + {override} CreateSafeTypedAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
+        __ unsafe typed __
+        + {override} CreateUnsafeTypedNamed(InitializeCallback, unique_ptr<IAllocationStrategy>, path, size, perms): Result<shared_ptr<IMappedRegion>>
+        + {override} CreateUnsafeTypedAnonymous(InitializeCallback, unique_ptr<IAllocationStrategy>, id, size): Result<shared_ptr<IMappedRegion>>
+    }
+
+    note left of SharedMemoryFactory
+        The lifetime of the MappedRegionFactory is tied to the lifetime of the SharedMemoryFactory. The 
+        SharedMemoryFactory owns the MappedRegionFactory exclusively. If an application needs to use 
+        a MappedRegionFactory directly elsewhere in the process, it should create another instance. See
+        the note on the MappedRegionFactory for more details.
+    end note
+
+}
+
+together {
+
+    interface ISharedMemoryResourceRegistry {
+        - ISharedMemoryResourceRegistry()
+        + {virtual} LookupById(id) : ISharedMemoryResource*
+        + {virtual} GetBoundsFromAddress(addr) : Result<MemoryRegionBounds>
+        + {virtual} GetBoundsFromAddressAsInteger(addr) : Result<MemoryRegionBounds>
+        + {virtual} GetBoundsFromIdentifier(id: IdType) : Result<MemoryRegionBounds>
+        + {virtual} Register(shared_ptr<ISharedMemoryResource>) : bool
+        + {virtual} Unregister(id: IdType) : void
+    }
+    
+    class SharedMemoryResourceRegistry implements ISharedMemoryResourceRegistry {
+        - resource_map_: unordered_map<IdType, weak_ptr<ISharedMemoryResource>>
+        - bounds_map_ : MemoryRegionBoundsMap
+        ..
+        - SharedMemoryResourceRegistry()
+        + {override} LookupById(id) : ISharedMemoryResource*
+        + {override} GetBoundsFromAddress(addr) : Result<MemoryRegionBounds>
+        + {override} GetBoundsFromAddressAsInteger(addr) : Result<MemoryRegionBounds>
+        + {override} GetBoundsFromIdentifier(id: IdType) : Result<MemoryRegionBounds>
+        + {override} Register(shared_ptr<ISharedMemoryResource>) : bool
+        + {override} Unregister(id: IdType) : void
+    }
+
+    class SharedMemoryResourceRegistrySingleton <<singleton>> {
+        - instance_: unique_ptr<ISharedMemoryResourceRegistry>
+        + {static} InjectMock(ISharedMemoryResourceRegistry*) : void
+        - {static} GetInstance() : SharedMemoryResourceRegistrySingleton&
+        + {static} LookupById(id) : ISharedMemoryResource*
+        + {static} GetBoundsFromAddress(addr) : Result<MemoryRegionBounds>
+        + {static} GetBoundsFromAddressAsInteger(addr) : Result<MemoryRegionBounds>
+        + {static} GetBoundsFromIdentifier(id) : Result<MemoryRegionBounds>
+        + {static} Register(resource: shared_ptr<ISharedMemoryResource>) : bool
+        + {static} Unregister(id: IdType) : void
+    }
+
+    note top of SharedMemoryResourceRegistry
+        SharedMemoryResourceRegistrySingleton is always the entry point for accessing 
+        the memory resource registry. In production code, all functions in the 
+        SharedMemoryResourceRegistrySingleton will dispatch to SharedMemoryResourceRegistry.
+        For testing, InjectMock can be used to inject a mock ISharedMemoryResourceRegistry.
+    end note
+    
+}
+
+together {
+    interface "score::cpp::pmr::memory_resource" as PmrBase <<STL>> {
+        + Allocate(bytes, align) : void*
+        + Deallocate(ptr, bytes, align) : void
+        # {abstract} DoAllocate(bytes, align) : void*
+        # {abstract} DoDeallocate(ptr, bytes, align) : void
+        # {abstract} DoIsEqual(other) : bool
+    }
+
+    interface ISharedMemoryResource {
+        + {virtual} GetBaseAddress() : void*
+        + {virtual} GetUsableBaseAddress() : void*
+        + {virtual} GetMemoryResourceProxy() : MemoryResourceProxy
+        + {virtual} GetMappedRegion() : IMappedRegion&
+        + {virtual} GetId() : IdType
+    }
+}
+
+note right of ISharedMemoryResource
+    We no longer need what is in the current ISharedMemoryResource interface because every 
+    shared memory specific functionality is now directly implemented in the IMappedRegion class
+    and can be accessed by getting the IMappedRegion through GetMappedRegion()
+    and dynamic casting it to the specific IMappedRegion subclass.
+
+    We now use ISharedMemoryResource instead of ManagedMemoryResource because the interface 
+    is specific to shared memory. e.g. it makes no sense to get a MemoryResourceProxy from a 
+    non-shared memory resource.
+end note
+
+class SharedMemoryResource <<impl>> {
+    - region_ : shared_ptr<IMappedRegion>
+    - control_block_ : ControlBlock&
+    - strategy_ : unique_ptr<IAllocationStrategy>
+    ..
+    + SharedMemoryResource(shared_ptr<IMappedRegion>, unique_ptr<IAllocationStrategy>)
+
+    + {override} GetBaseAddress() : void*
+    + {override} GetUsableBaseAddress() : void*
+    + {override} GetMemoryResourceProxy() : MemoryResourceProxy
+    + {override} GetMappedRegion() : IMappedRegion&
+    + {override} GetId() : IdType // dispatches to region_->GetId()
+}
+
+together {
+
+    enum AllocationStrategyType {
+        Monotonic,
+        DynamicArena,
+    }
+
+    class ControlBlock {
+        + memory_resource_proxy_ : MemoryResourceProxy
+        + allocation_strategy_ : AllocationStrategyType
+    }
+
+    interface IAllocationStrategy <<interface>> {
+        + {abstract} Allocate(free_start, free_end, bytes, align) : void*
+        + {abstract} Deallocate(ptr, bytes, align) : void
+        + {abstract} GetUsableBaseAddress() : void*
+        + {abstract} GetStrategyType() : AllocationStrategyType
+        + ConstructAllocationSpecificControlBlock(span<std::byte>: address_after_control_block) : Result<void>
+    }
+
+    class MonotonicAllocationStrategy implements IAllocationStrategy {
+        - allocation_specific_control_block_ : AllocationSpecificControlBlock&
+        - span<std::byte>: allocation_pool_
+        ..
+        ' + MonotonicAllocationStrategy(span<std::byte>: address_after_control_block)
+        + Allocate(free_start, free_end, bytes, align) : void*
+        + Deallocate(ptr, bytes, align) : void
+        + GetUsableBaseAddress() : void*
+    }
+
+    class "MonotonicAllocationStrategy::AllocationSpecificControlBlock" as monotonic_allocation_specific_control_block {
+        + atomic<size_t>: already_allocated_bytes_
+    }
+
+}
+
+together {
+    class MemoryResourceProxy {
+        - memory_identifier_ : IdType
+        --
+        + Allocate(bytes, align) : void*
+        + Deallocate(ptr, bytes, align) : void
+    }
+
+    class PolymorphicOffsetPtrAllocator <<utility>> {
+        - memory_resource_proxy_ : OffsetPtr<MemoryResourceProxy>
+        --
+        + Allocate(n) : OffsetPtr<T>
+        + Deallocate(p, n) : void
+    }
+
+    note right of PolymorphicOffsetPtrAllocator
+        The PolymorphicOffsetPtrAllocator must store an OffsetPtr to the 
+        MemoryResourceProxy because it does a bounds check to ensure that
+        it's pointing to the correct memory resource (i.e. the one in which)
+        it's currently residing. This must be done in the proxy because the 
+        bounds checking algorithm relies on the MemoryResourceProxy residing
+        in the same resource that it's pointing to. A PolymorphicOffsetPtrAllocator 
+        can be allocated outside the memory region (e.g. on the stack) so can't 
+        do the check itself.
+    end note
+}
+
+PmrBase <|-- ISharedMemoryResource
+ISharedMemoryResource <|.. SharedMemoryResource
+
+SharedMemoryResource ..> ControlBlock : places at base
+SharedMemoryResource *--> IAllocationStrategy
+IAllocationStrategy ..> AllocationStrategyType : returns
+
+SharedMemoryResourceRegistrySingleton *.. ISharedMemoryResourceRegistry : owns
+
+SharedMemoryFactory ..> SharedMemoryResource : creates
+SharedMemoryFactory ..> SharedMemoryResourceRegistrySingleton : Registers resources
+
+PolymorphicOffsetPtrAllocator -right-> MemoryResourceProxy : holds id
+MemoryResourceProxy -up-> SharedMemoryResourceRegistrySingleton : LookupById
+SharedMemoryResourceRegistry --> ISharedMemoryResource : holds non-owning ISharedMemoryResource*
+
+MonotonicAllocationStrategy --> monotonic_allocation_specific_control_block : constructs in SharedMemoryResource
+
+@enduml
+
+
+' Clean up new stuff added (persistent memory region registry, adjust to properties etc)
+' Clean up lock file 
+' Clean up initialization callback in sharedmemoryresource / factory which needs to be passed down to MappedRegionFactory
