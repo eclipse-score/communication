@@ -131,6 +131,32 @@ TEST_F(ProxyBindingFactoryCreateFixture, CanCreateLoLaProxy)
     EXPECT_NE(created_binding_, nullptr);
 }
 
+TEST_F(ProxyBindingFactoryCreateFixture, CanCreateSomeipProxy)
+{
+    //TODO: verify ids
+    RecordProperty("Verifies", "SCR-21803701, SCR-21803702, SCR-5898925");
+    RecordProperty("Description", "Checks whether a proxy event someip binding can be created and set at runtime");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a valid SomeIP instance with an offered skeleton
+    SomeIpDummyInstanceIdentifierBuilder instance_identifier_builder{};
+    auto identifier = instance_identifier_builder.CreateValidSomeipInstanceIdentifier();
+    auto handle = make_HandleType(identifier, ServiceInstanceId{SomeIpServiceInstanceId{0x42}});
+
+    ON_CALL(service_discovery_mock_, StartFindService(_, EnrichedInstanceIdentifier{handle}))
+        .WillByDefault(Return(make_FindServiceHandle(10U)));
+
+    // When creating a proxy with that
+    auto create_result = ProxyBindingFactory::Create(handle);
+
+    // Then a binding is returned
+    ASSERT_TRUE(create_result.has_value());
+    created_binding_ = std::move(create_result).value();
+    EXPECT_NE(created_binding_, nullptr);
+}
+
 TEST_F(ProxyBindingFactoryCreateFixture, CannotCreateBlank)
 {
     RecordProperty("Verifies", "SCR-21803701, SCR-21803702, SCR-5898925");
