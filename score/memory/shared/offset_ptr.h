@@ -195,6 +195,7 @@ class OffsetPtr
     // Rationale : Non-explicit converting constructor is needed for implicit conversion
     // NOLINTBEGIN(google-explicit-constructor): needed implicit conversion
     // coverity[autosar_cpp14_a12_1_4_violation]
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(offset-ptr-implicit-conversions)
     template <typename OtherPointedType>
     OffsetPtr(const OffsetPtr<OtherPointedType>& other);
     // NOLINTEND(google-explicit-constructor): see above
@@ -266,6 +267,7 @@ class OffsetPtr
     // Rationale: Using an offset pointer in a basic_string requires this conversion operator to be implicit.
     // NOLINTBEGIN(google-explicit-constructor): requires conversion operator to be implicit
     // coverity[autosar_cpp14_a13_5_2_violation]
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(offset-ptr-implicit-conversions)
     operator pointer() const
     {
         // NOLINTNEXTLINE(score-banned-function) See justification above class.
@@ -418,6 +420,7 @@ template <typename PointedType>
 // identical between in-class declaration and definition.
 // coverity[autosar_cpp14_m8_4_2_violation : FALSE]
 // coverity[autosar_cpp14_m3_9_1_violation : FALSE]
+// Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(offset-ptr-implicit-conversions)
 OffsetPtr<PointedType>::OffsetPtr(pointer ptr) noexcept
     : offset_{CalculateOffsetFromPointer(this, ptr)}, memory_bounds_{}
 {
@@ -439,6 +442,7 @@ OffsetPtr<PointedType>::OffsetPtr(const OffsetPtr<PointedType>& other) : offset_
 
 template <typename PointedType>
 template <typename OtherPointedType>
+// Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(offset-ptr-implicit-conversions)
 OffsetPtr<PointedType>::OffsetPtr(const OffsetPtr<OtherPointedType>& other) : offset_{}, memory_bounds_{}
 {
     std::tie(offset_, memory_bounds_) = CopyFrom<OtherPointedType>(other, *this);

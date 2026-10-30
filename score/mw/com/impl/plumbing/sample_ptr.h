@@ -67,6 +67,7 @@ class SamplePtr final
     // nullptr: void TestFunc(SamplePtr<T> ptr = nullptr)
     // coverity[autosar_cpp14_a12_1_4_violation] see above rationale for clang-tidy
     // coverity[autosar_cpp14_a13_3_1_violation]
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(owning-pointer-implicit-construction)
     constexpr SamplePtr(std::nullptr_t /* ptr */) noexcept : SamplePtr() {}
     // NOLINTEND(google-explicit-constructor): see above for detailed explanation
 
@@ -91,6 +92,7 @@ class SamplePtr final
     ///                         (non-void) binding independent layer.
     /// \param other SamplePtr to rebind from. Left in an invalid (blank) state afterwards.
     template <typename OtherSampleType>
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(owning-pointer-implicit-construction)
     SamplePtr(SamplePtr<OtherSampleType>&& other) noexcept : SamplePtr()
     {
         static_assert(std::is_void<SampleType>::value || std::is_void<OtherSampleType>::value,
