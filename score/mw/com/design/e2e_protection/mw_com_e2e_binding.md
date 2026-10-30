@@ -322,7 +322,7 @@ This includes:
 
 > **Note — relationship to a companion error-handling specification.** The `HistoricalHealthStatus`/`Summary`/`E2EResult` model below mirrors a separate, in-progress companion specification containing the detailed, authoritative specification of E2E error handling. It is reproduced here for this document's own architectural completeness, not as a competing definition; the two are expected to be merged into one once both settle.
 
-`mw::com` events are consumed reactively: an application calls `GetNewSamples()` when it has reason to believe new data is available, not on a fixed periodic schedule independent of activity. If a provider stops offering the service, the proxy resubscribes and the binding-independent layer resets its own tracking state on that signal (see [E2E Context Lifecycle](#e2e-context-lifecycle)) — there is no need to keep feeding a "no new data" result into a health tracker on a cycle where nothing was received, and therefore no need for the dedicated warm-up/no-data states a classical periodic state machine uses to represent them. The binding-independent E2E Supervisor instead tracks a sliding window of the last `WindowSize` per-message results with hysteresis thresholds, updated only when a message is actually received and checked:
+`mw::com` events are consumed reactively: an application calls `GetNewSamples()` when it has reason to believe new data is available, not on a fixed periodic schedule independent of activity. If a provider stops offering the service, the proxy reconnects automatically and the tracked history is kept (see [E2E Context Lifecycle](#e2e-context-lifecycle)) — there is no need to keep feeding a "no new data" result into a health tracker on a cycle where nothing was received, and therefore no need for the dedicated warm-up/no-data states a classical periodic state machine uses to represent them. The binding-independent E2E Supervisor instead tracks a sliding window of the last `WindowSize` per-message results with hysteresis thresholds, updated only when a message is actually received and checked:
 
 ```cpp
 enum class HistoricalHealthStatus {
@@ -333,7 +333,7 @@ enum class HistoricalHealthStatus {
 };
 ```
 
-A per-message result is a failure if `DataIntegrityStatus` is `kError` or `SequenceStatus` is an error value, and a pass otherwise (`kOkGapWithinThreshold` is a pass). Thresholds are relative counts within the window, not absolute counter values: in `kOk`, `HistoricalHealthStatus` flips to `kError` once `ErrorThreshold` failures are in the window; in `kError`, it flips back to `kOk` once `RecoveryThreshold` passes are in the window. The two thresholds are independent and may differ — e.g. `ErrorThreshold` 5 and `RecoveryThreshold` 10 means five failures to enter `kError` and ten passes to leave it. That asymmetry is the hysteresis, preventing the status from flapping on a single isolated failure or recovery. `WindowSize` must be at least both thresholds but may be larger. The window is cleared on every flip and on a context reset (see [E2E Context Lifecycle](#e2e-context-lifecycle)), so the samples that caused a flip cannot immediately re-trigger the opposite transition. See [Configuration](#configuration) for the parameters.
+A per-message result is a failure if `DataIntegrityStatus` is `kError` or `SequenceStatus` is an error value, and a pass otherwise (`kOkGapWithinThreshold` is a pass). Thresholds are relative counts within the window, not absolute counter values: in `kOk`, `HistoricalHealthStatus` flips to `kError` once `ErrorThreshold` failures are in the window; in `kError`, it flips back to `kOk` once `RecoveryThreshold` passes are in the window. The two thresholds are independent and may differ — e.g. `ErrorThreshold` 5 and `RecoveryThreshold` 10 means five failures to enter `kError` and ten passes to leave it. That asymmetry is the hysteresis, preventing the status from flapping on a single isolated failure or recovery. `WindowSize` must be at least both thresholds but may be larger. The window is a moving window; avoiding flapping is the user's responsibility, by choosing `WindowSize` and the thresholds so that the opposite threshold is not already met at the moment of a flip (e.g. `ErrorThreshold + RecoveryThreshold > WindowSize`, as in the 5/10/12 example in [Example Deployment Mapping](#example-deployment-mapping-illustrative)). See [Configuration](#configuration) for the parameters.
 
 An application typically does not need `HistoricalHealthStatus` on its own — it is combined with the current message's own check outcome into a single summary value:
 
@@ -361,20 +361,13 @@ This is the status exposed to applications.
 
 Context ownership splits along the same line as [Context Ownership Cardinality](#context-ownership-cardinality): `E2EProtectContext` (sender) and `E2ECheckContext` (receiver) live in the binding, while `E2EHealthContext` (receiver) lives in the binding-independent layer. Each is reset by whichever layer already has direct visibility into the lifecycle event that invalidates it — no context is reset by a layer that has to be told about the event secondhand.
 
-**Protect/Check context — reset directly by the binding, on its own lifecycle hooks.** The binding already observes its own service-offer and subscription lifecycle natively, so no cross-layer signal is required:
+**Protect context — reset directly by the binding, on its own offer lifecycle.** The binding resets `E2EProtectContext` on its own `OfferService()`/`StopOfferService()` (or equivalent) — a direct consequence of the binding owning both the protect state and the service-offer lifecycle hooks that bound it, so destroying and recreating the protect state alongside the offer/re-offer cycle requires no signal from any other layer.
 
-- **Transmit.** The binding resets `E2EProtectContext` on its own `OfferService()`/`StopOfferService()` (or equivalent) — a direct consequence of the binding owning both the protect state and the service-offer lifecycle hooks that bound it, so destroying and recreating the protect state alongside the offer/re-offer cycle requires no signal from any other layer.
-- **Receive.** LoLa's binding already implements the equivalent detection today: partial-restart/reconnection is handled by `lola::SubscriptionStateMachine` (`StopOfferEvent()`/`ReOfferEvent()`), driven by `ServiceDiscovery` notifications forwarded through `lola::Proxy`'s `FindServiceGuard` — entirely inside the binding. The binding resets its own `E2ECheckContext` on the same transition it already tracks for subscription-state purposes.
+**Check and health contexts — reset only on user-initiated (re)subscription.** `E2ECheckContext` and `E2EHealthContext` start over only when the application itself starts a new subscription: `Unsubscribe()` followed by `Subscribe()`, or construction of a new proxy event. Both layers see that call directly, so no cross-layer signal is required: the binding resets its own `E2ECheckContext` in its `Subscribe()`/`Unsubscribe()`, and the binding-independent `ProxyEventBase` resets `E2EHealthContext` in the same user-called `Subscribe()`/`Unsubscribe()` (`impl/proxy_event_base.h`).
 
-**Historical health context — reset by the binding-independent layer, on a subscription-state-change signal from the binding.** The health tracker has no wire-format dependency, so it stays binding-independent — but it still needs to know when communication continuity was broken, since a reset here is what prevents valid post-restart frames from being misread as a sequence error and driving `historical_health` toward `kError` even though the channel was correctly re-established (a safety-relevant failure mode, not merely cosmetic). This is already surfaced today via `ProxyEventBindingBase::GetSubscriptionState()` and `SetSubscriptionStateChangeHandler()`, which fire synchronously as the subscription transitions `SUBSCRIBED → SUBSCRIPTION_PENDING` (on `StopOfferEvent()`) and back to `SUBSCRIBED` (on `ReOfferEvent()`) (see `score/mw/com/design/skeleton_proxy/README.md` §"Proxy auto-reconnect functionality" and `score/mw/com/design/events_fields/README.md` §"Event subscription"). The binding-independent E2E Supervisor resets `E2EHealthContext` on this existing callback without any new binding interface. Future bindings (SOME/IP, DDS) must provide the equivalent subscription-state signal purely for this purpose — reset of their own `E2EProtectContext`/`E2ECheckContext` is their own internal concern.
+**Provider-side events reset neither.** A provider (skeleton) restart, service re-offer or service instance change reaches the proxy as `StopOfferEvent()` → `ReOfferEvent()`, and LoLa's `lola::SubscriptionStateMachine` resubscribes automatically, driven by `ServiceDiscovery` notifications forwarded through `lola::Proxy`'s `FindServiceGuard` (see `score/mw/com/design/skeleton_proxy/README.md` §"Proxy auto-reconnect functionality") — without any user action. `E2ECheckContext` and `E2EHealthContext` are kept across it. The restarted provider's `E2EProtectContext` starts a new counter sequence, and the first sample afterwards is compared with the proxy's last accepted counter only, so the discontinuity is reported by the check like any other counter jump: a jump beyond `MaxDeltaCounter` is a `SequenceStatus` error and counts as a failure in the health window, while a jump within it is a pass (`kOkGapWithinThreshold`). Example: the last accepted counter is 100 and the restarted provider sends 1 — the check reports a sequence error; the next sample carries 2, which follows the last accepted counter 1, so the check reports `kOk`, and the health tracker simply consumes both results in order. A channel with constant breakage, e.g. a crash-looping provider, therefore accumulates failures and drives `historical_health` toward `kError` instead of being hidden by a reset on every reconnect.
 
-These contexts (all three) shall be reinitialized whenever communication continuity is broken, from either side:
-
-- **Receiver-initiated:** subscription re-establishment.
-- **Provider-side:** provider (skeleton) restart, service re-offer, service instance change. The proxy sees `StopOfferEvent()` → `ReOfferEvent()`, resubscribes automatically and resets its contexts on that transition.
-- Any event that creates a new logical communication session.
-
-The reset is deliberately not reported through `E2EResult`: the first sample afterwards reads `SequenceStatus::kOk`, as for any first sample (see [Historical Health Tracking](#historical-health-tracking)). An application that needs to know the sender's sequence may have been interrupted uses the proxy event's `GetSubscriptionState()`/`SetSubscriptionStateChangeHandler()` and correlates it with the received samples.
+The reset on user-initiated (re)subscription is deliberately not reported through `E2EResult`: the first sample afterwards reads `SequenceStatus::kOk`, as for any first sample (see [Historical Health Tracking](#historical-health-tracking)). An application that needs to know about every provider restart, independent of counter values, uses the proxy event's `GetSubscriptionState()`/`SetSubscriptionStateChangeHandler()` and correlates it with the received samples.
 
 #### Binding Independence Assessment (Review Feedback)
 
@@ -571,7 +564,7 @@ Consumer application (`mw_com_config.json`):
           "events": [
             {
               "eventName": "VehicleSpeed",
-              "e2e": { "profile": "P04", "offset_bytes": 8, "data_id": 4097, "max_delta_counter": 5, "window_size": 16, "error_threshold": 5, "recovery_threshold": 10 }
+              "e2e": { "profile": "P04", "offset_bytes": 8, "data_id": 4097, "max_delta_counter": 5, "window_size": 12, "error_threshold": 5, "recovery_threshold": 10 }
             }
           ]
         }
@@ -761,7 +754,7 @@ Verify:
 - CRC verification
 - Header parsing
 - Transport-specific offsets
-- `E2EProtectContext`/`E2ECheckContext` reset on the binding's own lifecycle hooks (service (re-)offer, subscription re-establishment — see [E2E Context Lifecycle](#e2e-context-lifecycle))
+- `E2EProtectContext` reset on service (re-)offer; `E2ECheckContext` reset on user-initiated (re)subscription and kept across provider-side restart/re-offer (see [E2E Context Lifecycle](#e2e-context-lifecycle))
 - `CheckMessage()` invoked only when `GetNewSamples()` actually delivers a new sample — no synthesized empty-cycle result is produced (see [Historical Health Tracking](#historical-health-tracking))
 - For a SOME/IP event configured with the "no deserialization" marker, `raw_sample` carries the header-stripped payload bytes directly, `ISerializer::Deserialize()` is never invoked, and `data_integrity`/`sequence` are populated identically to the auto-decoding case (see [Proposed Contract](#proposed-contract))
 
@@ -771,12 +764,12 @@ These tests are independent of historical health tracking, and can be written ag
 
 Verify:
 
-- Window fill/eviction, threshold crossings in both directions (including `ErrorThreshold` ≠ `RecoveryThreshold`), and window clearing on a flip
+- Window fill/eviction, threshold crossings in both directions (including `ErrorThreshold` ≠ `RecoveryThreshold`)
 - History handling
 - Lost-frame detection
 - Repeated-frame detection
 - Wrong-sequence behavior
-- Health context reset on resubscription (see [E2E Context Lifecycle](#e2e-context-lifecycle))
+- Health context reset on user-initiated (re)subscription only; kept across provider-side restart/re-offer, so repeated restarts drive `historical_health` toward `kError` (see [E2E Context Lifecycle](#e2e-context-lifecycle))
 
 These tests can be executed without any transport or binding implementation at all — `DataIntegrityStatus`/`SequenceStatus` are plain enums, and injecting them directly is now the *only* way any test reaches the health tracker, since the tracker consumes only the enums and never the payload or check material.
 
@@ -796,8 +789,7 @@ Verify:
 - Interaction between binding and historical health tracking
 - Correct user-visible result generation
 - Cross-binding consistency (LoLa vs. SOME/IP)
-- On QNX, subscription-state-change detection latency (LoLa's `ServiceDiscovery` relies on `inotify`, cyclically polled on QNX by `fsevmgr` via the `fse-period=msecs` `io-blk` parameter, unlike Linux) stays bounded well below the minimum provider restart-to-first-frame time, so `E2ECheckContext`/`E2EHealthContext` reset always completes before post-restart frames arrive — do not assume this margin, measure it
-- **Deferred:** an equivalent QNX-vs-Linux latency check for the future SOME/IP binding's subscription-state-change/queue-fill notification path (see [E2E Context Lifecycle](#e2e-context-lifecycle) and [Assumption for the Upcoming SOME/IP Binding](#assumption-for-the-upcoming-someip-binding)). The queued/drop-oldest receive model decided there fixes eviction semantics only, not the underlying notification mechanism's latency — that mechanism isn't chosen yet, so this test case cannot be made concrete until the binding's design settles
+- Repeated provider restart/re-offer with automatic proxy reconnect: `E2ECheckContext`/`E2EHealthContext` are kept, the counter discontinuity is reported through `SequenceStatus`, and `historical_health` reaches `kError` once `ErrorThreshold` failures are in the window
 
 ---
 
