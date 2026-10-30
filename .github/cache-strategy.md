@@ -287,7 +287,7 @@ All workflows that save or delete caches already declare this permission.
 | `_thread_sanitizer.yml` | `build_and_test_tsan` |
 | `_address_sanitizer.yml` | `build_and_test_asan_ubsan_lsan` |
 | `_linter.yml` | (one per linter bazel-config) |
-| `_coverage_report.yml` | `coverage_report` |
+| `_coverage_report.yml` | `coverage_report` (Linux); QNX variant runs without disk cache (`disk-cache: ""`), gated on QNX secret availability like `_codeql.yml` |
 | `_codeql.yml` | _(none — empty)_ |
 | `build_and_test_qnx.yml` | `build_and_test_qnx` |
 | `deploy_docs.yml` | `build_docs` |
