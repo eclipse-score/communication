@@ -141,6 +141,14 @@ class ApiApp
         });
     }
 
+    bool wait_disconnected(std::chrono::milliseconds timeout)
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        return condition_.wait_for(lock, timeout, [this] {
+            return !connected_;
+        });
+    }
+
   private:
     std::shared_ptr<api::Application> app_;
     bool started_{false};
@@ -804,6 +812,33 @@ TEST_F(LgsomeipApiRuntimeTest, unchanged_field_value_is_published_again_only_whe
 
     server->notify(kService, kInstance, kField, {0x01}, true);
     EXPECT_TRUE(events.wait_for_count(2, kTimeout));
+}
+
+TEST_F(LgsomeipApiRuntimeTest, applications_are_notified_when_the_daemon_stops)
+{
+    Inbox requests;
+    Availability availability;
+
+    ApiApp server("response", config_path_);
+    ASSERT_TRUE(server.init());
+    server->register_message_handler(kService, kInstance, kMethod, echo_handler(server.get(), requests));
+    server.start();
+    ASSERT_TRUE(server.wait_connected(kTimeout));
+    server->offer_service(kService, kInstance, kMajor, kMinor);
+
+    ApiApp client("request-1", config_path_);
+    ASSERT_TRUE(client.init());
+    client->register_availability_handler(kService, kInstance, availability.handler());
+    client.start();
+    ASSERT_TRUE(client.wait_connected(kTimeout));
+    client->request_service(kService, kInstance, kMajor, kMinor);
+    ASSERT_TRUE(availability.wait(true, kTimeout));
+
+    daemon_.reset();
+
+    EXPECT_TRUE(client.wait_disconnected(kTimeout));
+    EXPECT_TRUE(server.wait_disconnected(kTimeout));
+    EXPECT_TRUE(availability.wait(false, kTimeout));
 }
 
 // The service 0x1001 is configured for TCP only in someip_config_tcp.json.
