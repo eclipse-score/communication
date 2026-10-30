@@ -97,6 +97,7 @@ const filesystem::Path kShmPathPrefix{"/dev/shmem"};
 // coverity[autosar_cpp14_a16_0_1_violation]
 #else
 // coverity[autosar_cpp14_a3_3_2_violation]
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(immutable-non-constexpr-constant)
 const filesystem::Path kShmPathPrefix{"/dev/shm"};
 // coverity[autosar_cpp14_a16_0_1_violation]
 #endif
@@ -333,6 +334,7 @@ ServiceDataStorage& GetServiceDataStorage(const memory::shared::ManagedMemoryRes
 
 }  // namespace detail_proxy
 
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(process-wide-runtime-state)
 std::atomic<ProxyInstanceIdentifier::ProxyInstanceCounter> Proxy::current_proxy_instance_counter_{0U};
 
 ElementFqId Proxy::EventNameToElementFqIdConverter::Convert(const std::string_view event_name) const noexcept

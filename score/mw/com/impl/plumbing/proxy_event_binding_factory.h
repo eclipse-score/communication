@@ -101,6 +101,7 @@ auto ProxyEventBindingFactory<SampleType>::instance() noexcept -> IProxyEventBin
 // in multiple translation units without violating the One Definition Rule".
 template <typename SampleType>
 // coverity[autosar_cpp14_a3_1_1_violation] This is false-positive, "mock_" is defined once
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 IProxyEventBindingFactory<SampleType>* ProxyEventBindingFactory<SampleType>::mock_{nullptr};
 
 }  // namespace score::mw::com::impl

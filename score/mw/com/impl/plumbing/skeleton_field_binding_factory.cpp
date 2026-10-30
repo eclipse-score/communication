@@ -33,5 +33,6 @@ auto SkeletonFieldBindingFactory::instance() noexcept -> ISkeletonFieldBindingFa
 // translation units without violating the One Definition Rule."
 // The static member mock_ in the SkeletonFieldBindingFactory is intentionally defined in the header file
 // to facilitate template instantiation across multiple translation units used in diff applications.
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 ISkeletonFieldBindingFactory* SkeletonFieldBindingFactory::mock_{nullptr};
 }  // namespace score::mw::com::impl

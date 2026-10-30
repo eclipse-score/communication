@@ -32,5 +32,6 @@ auto SkeletonEventBindingFactory::instance() noexcept -> ISkeletonEventBindingFa
 
 // Suppress "AUTOSAR_C++14_A3-1-1" rule finding. This rule states:" It shall be possible to include any header file
 // in multiple translation units without violating the One Definition Rule".
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 ISkeletonEventBindingFactory* SkeletonEventBindingFactory::mock_ = nullptr;
 }  // namespace score::mw::com::impl

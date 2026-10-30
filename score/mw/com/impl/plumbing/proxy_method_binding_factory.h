@@ -78,6 +78,7 @@ auto ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::instance() noexcept -> 
 }
 
 template <typename ReturnType, typename... ArgTypes>
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 IProxyMethodBindingFactory* ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::mock_{nullptr};
 
 }  // namespace score::mw::com::impl

@@ -27,9 +27,10 @@ namespace score::mw::com::runtime
 namespace detail
 {
 
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 IRuntime* RuntimeMockHolder::runtime_mock_{nullptr};
 
-}
+}  // namespace detail
 
 score::Result<InstanceIdentifierContainer> ResolveInstanceIDs(const impl::InstanceSpecifier& model_name)
 {

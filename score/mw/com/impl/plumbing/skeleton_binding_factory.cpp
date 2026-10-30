@@ -17,6 +17,7 @@
 namespace score::mw::com::impl
 {
 
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 ISkeletonBindingFactory* SkeletonBindingFactory::mock_{nullptr};
 
 ISkeletonBindingFactory& SkeletonBindingFactory::instance() noexcept
