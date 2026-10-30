@@ -304,9 +304,14 @@ api::Message make_request(const api::Payload& payload, api::major_version_t majo
 class LgsomeipApiRuntimeTest : public ::testing::Test
 {
   protected:
+    virtual const char* config_file_name() const
+    {
+        return "someip_config.json";
+    }
+
     void SetUp() override
     {
-        config_path_ = std::string(LGSOMEIP_TEST_CONFIG_DIR) + "/someip_config.json";
+        config_path_ = std::string(LGSOMEIP_TEST_CONFIG_DIR) + "/" + config_file_name();
         daemon_ = std::make_unique<ApiTestDaemon>(config_path_);
     }
 
@@ -799,6 +804,89 @@ TEST_F(LgsomeipApiRuntimeTest, unchanged_field_value_is_published_again_only_whe
 
     server->notify(kService, kInstance, kField, {0x01}, true);
     EXPECT_TRUE(events.wait_for_count(2, kTimeout));
+}
+
+// The service 0x1001 is configured for TCP only in someip_config_tcp.json.
+class LgsomeipApiRuntimeTcpTest : public LgsomeipApiRuntimeTest
+{
+  protected:
+    const char* config_file_name() const override
+    {
+        return "someip_config_tcp.json";
+    }
+};
+
+TEST_F(LgsomeipApiRuntimeTcpTest, request_and_response_with_a_large_payload_are_exchanged_over_tcp)
+{
+    Inbox requests;
+    Inbox responses;
+    Availability availability;
+    api::Payload payload(4000);
+    for (std::size_t i = 0; i < payload.size(); ++i)
+    {
+        payload[i] = static_cast<std::uint8_t>(i % 251);
+    }
+
+    ApiApp server("response", config_path_);
+    ASSERT_TRUE(server.init());
+    server->register_message_handler(kService, kInstance, kMethod, echo_handler(server.get(), requests));
+    server.start();
+    ASSERT_TRUE(server.wait_connected(kTimeout));
+    server->offer_service(kService, kInstance, kMajor, kMinor);
+
+    ApiApp client("request-1", config_path_);
+    ASSERT_TRUE(client.init());
+    client->register_availability_handler(kService, kInstance, availability.handler());
+    client->register_message_handler(kService, kInstance, kMethod, responses.handler());
+    client.start();
+    ASSERT_TRUE(client.wait_connected(kTimeout));
+    client->request_service(kService, kInstance, kMajor, kMinor);
+    ASSERT_TRUE(availability.wait(true, kTimeout));
+
+    client->send(make_request(payload));
+
+    ASSERT_TRUE(responses.wait_for_count(1, kTimeout));
+    ASSERT_EQ(requests.messages().size(), 1U);
+    EXPECT_EQ(requests.messages().front()->payload, payload);
+    EXPECT_EQ(responses.messages().front()->type, api::MessageType::Response);
+    EXPECT_EQ(responses.messages().front()->payload, payload);
+}
+
+TEST_F(LgsomeipApiRuntimeTcpTest, event_is_delivered_over_tcp)
+{
+    Inbox events;
+    Availability availability;
+    SubscriptionLog subscriptions;
+
+    ApiApp client("request-1", config_path_);
+    ASSERT_TRUE(client.init());
+    client->register_availability_handler(kService, kInstance, availability.handler());
+    client->register_message_handler(kService, kInstance, kEvent, events.handler());
+    client.start();
+    ASSERT_TRUE(client.wait_connected(kTimeout));
+    client->request_event(kService, kInstance, kEvent, {kEventGroup});
+    client->request_service(kService, kInstance, kMajor, kMinor);
+
+    ApiApp server("response", config_path_);
+    ASSERT_TRUE(server.init());
+    server->register_subscription_handler(kService, kInstance, kEventGroup, subscriptions.handler(true));
+    server.start();
+    ASSERT_TRUE(server.wait_connected(kTimeout));
+    server->offer_event(kService, kInstance, kEvent, {kEventGroup});
+    server->offer_service(kService, kInstance, kMajor, kMinor);
+
+    ASSERT_TRUE(availability.wait(true, kTimeout));
+    client->subscribe(kService, kInstance, kEventGroup, kMajor);
+    ASSERT_TRUE(subscriptions.wait_for(kClientClientId, true, kTimeout));
+
+    const api::Payload payload{0xDE, 0xAD, 0xBE, 0xEF};
+    server->notify(kService, kInstance, kEvent, payload);
+
+    ASSERT_TRUE(events.wait_for_count(1, kTimeout));
+    const auto& event = *events.messages().front();
+    EXPECT_EQ(event.type, api::MessageType::Notification);
+    EXPECT_EQ(event.method, kEvent);
+    EXPECT_EQ(event.payload, payload);
 }
 
 }  // namespace

@@ -106,7 +106,7 @@ lgsomeip_cc_test(
     size = "large",
     timeout = "moderate",
     srcs = glob(["integration/someip/runtime/*.cpp"]),
-    data = glob(["integration/someip/runtime/someip_config.json*"]),
+    data = glob(["integration/someip/runtime/someip_config*.json*"]),
     local_defines = ["LGSOMEIP_TEST_CONFIG_DIR=\\\"" + _INTEGRATION_CONFIG_DIR + "\\\""],
     deps = [
         "//score/lg-someip:lgsomeip",
