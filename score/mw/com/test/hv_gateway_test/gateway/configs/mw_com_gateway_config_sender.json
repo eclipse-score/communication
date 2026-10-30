@@ -1,0 +1,10 @@
+{
+  "forwarded-services": [
+    "hypervisor/poc/TestEventServiceInstance"
+  ],
+  "expected-received-services": [],
+  "transport-layer": {
+    "id": "qemu_hypervisor",
+    "config-path": "etc/mw_com_gateway_transport_config_sender.json"
+  }
+}

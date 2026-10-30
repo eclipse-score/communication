@@ -48,7 +48,10 @@ cc_library(
     implementation_deps = [
         "@score_baselibs//score/mw/log",
     ],
-    visibility = ["//score/mw/com/gateway:__subpackages__"],
+    visibility = [
+        "//score/mw/com/gateway:__subpackages__",
+        "//score/mw/com/test/hv_gateway_test:__subpackages__",
+    ],
     deps = [
         ":gateway_configuration",
         "@score_baselibs//score/json",
