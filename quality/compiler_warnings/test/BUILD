@@ -15,7 +15,6 @@ load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_build_error//lang/cc:defs.bzl", "cc_build_error_test")
 load("@rules_build_error//matcher:defs.bzl", "matcher")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 # Compiler warning feature tests.
 WARNING_FLAGS_BY_CASE = {
@@ -45,11 +44,10 @@ build_test(
     targets = [":tp_{}".format(case) for case, _ in WARNING_FLAGS_BY_CASE.items()],
 )
 
-# Case 2: clean code should compile with warning features enabled.
+# Case 2: clean code should compile with warning features enabled by default.
 cc_library(
     name = "fp_all",
     srcs = ["no_warnings/clean.cpp"],
-    features = COMPILER_WARNING_FEATURES,
 )
 
 build_test(
