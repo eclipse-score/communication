@@ -1,0 +1,14 @@
+* text=auto
+
+*.c text eol=lf
+*.cc text eol=lf
+*.cpp text eol=lf
+*.h text eol=lf
+*.hpp text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+# Vendored third-party sources keep their upstream formatting (skipped by format_test).
+third_party/** rules-lint-ignored=true
