@@ -47,24 +47,6 @@ This provides zero-copy, shared-memory based inter-process communication (IPC) i
 
 ### 3. Shared memory abstraction (Low-Level Foundation)
 
-## System Flow Diagram
-
-### Intra-ECU communication
-
-<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/main/lola_flowdiagram.puml">
-
-```
-Flow Steps:
-1. Publisher registers service with unique identifier
-2. Subscriber searches for services by identifier
-3. Service discovery matches publisher and subscriber
-4. Publisher sends data to shared memory (zero-copy)
-5. Subscriber receives notification of new data
-6. Data transferred via direct shared memory access
-7. OS provides underlying memory management and synchronization
-```
-> **Note**: Inter-ECU communication via [SOME/IP](https://github.com/eclipse-score/score/issues/914) is under architectural planning. The block diagram will be updated post-implementation.
-
 ## Communication Patterns
 
 ### Pattern 1: Simple Event Publishing
