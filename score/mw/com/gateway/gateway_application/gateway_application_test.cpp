@@ -172,7 +172,8 @@ TEST(GatewayApplicationNotifyUpdateTest, NoSkeletonReturnsUnknownServiceInstance
     GatewayApplication app{MakeConfig({}, {"svc/b"})};
 
     // When NotifyUpdate is called for that specifier
-    const auto result = app.NotifyUpdate(MakeSpecifier("svc/b"), impl::ServiceElementType::EVENT, "EventA");
+    const auto result = app.NotifyUpdate(
+        MakeSpecifier("svc/b"), impl::ServiceElementType::EVENT, "EventA", std::vector<std::uint8_t>{});
 
     // Then the call must fail with kUnknownServiceInstance
     ASSERT_FALSE(result.has_value());
@@ -1013,7 +1014,8 @@ TEST_F(GatewayApplicationFlowTest, ReceiveHandlerFiringForwardsNotifyUpdateOverT
 
     // When RegisterUpdateNotification is requested (which sets and thus fires the handler)
     // Then the gateway forwards a NotifyUpdate for that event over the transport.
-    EXPECT_CALL(*transport_mock_, NotifyUpdate(::testing::_, impl::ServiceElementType::EVENT, std::string{"EventA"}))
+    EXPECT_CALL(*transport_mock_,
+                NotifyUpdate(::testing::_, impl::ServiceElementType::EVENT, std::string{"EventA"}, ::testing::_))
         .WillOnce(::testing::Return(score::Result<void>{}));
 
     const auto result =
@@ -1147,7 +1149,8 @@ TEST_F(GatewayApplicationFlowTest, NotifyUpdateWithExistingSkeletonNotifiesEvent
     // Then the skeleton event is notified.
     EXPECT_CALL(*skeleton_event_mocks_["EventA"], Notify()).WillOnce(::testing::Return(score::Result<void>{}));
 
-    const auto result = app_->NotifyUpdate(MakeSpecifier("svc/a"), impl::ServiceElementType::EVENT, "EventA");
+    const auto result = app_->NotifyUpdate(
+        MakeSpecifier("svc/a"), impl::ServiceElementType::EVENT, "EventA", std::vector<std::uint8_t>{});
     EXPECT_TRUE(result.has_value());
 }
 
@@ -1158,7 +1161,8 @@ TEST_F(GatewayApplicationFlowTest, NotifyUpdateUnknownEventReturnsError)
 
     // When NotifyUpdate targets an unknown event
     // Then it fails with kUnknownServiceElement.
-    const auto result = app_->NotifyUpdate(MakeSpecifier("svc/a"), impl::ServiceElementType::EVENT, "EventX");
+    const auto result = app_->NotifyUpdate(
+        MakeSpecifier("svc/a"), impl::ServiceElementType::EVENT, "EventX", std::vector<std::uint8_t>{});
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), GatewayErrorc::kUnknownServiceElement);
 }

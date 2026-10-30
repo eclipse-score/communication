@@ -63,7 +63,8 @@ class SampleHyperVisorTransport : public Transport
 
     Result<void> NotifyUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
                               impl::ServiceElementType updated_element_type,
-                              std::string updated_element_name) override;
+                              std::string updated_element_name,
+                              std::vector<std::uint8_t> updated_element_data) override;
     Result<void> RegisterUpdateNotification(score::mw::com::InstanceSpecifier service_instance_specifier,
                                             impl::ServiceElementType element_type,
                                             std::string element_name) override;
