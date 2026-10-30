@@ -133,6 +133,14 @@ The artifacts can be found in:
 - **Discussions**: Join community [discussions](https://github.com/eclipse-score/communication/discussions) on the Eclipse forums
 - **Documentation**: Comprehensive docs in the [`design/`](score/mw/com/design/) and [`doc/`](score/mw/com/doc/) directories
 
+### Flaky tests
+
+Non-deterministic behavior is not desired in safety critical systems. The first step to prevent and fix such behavior, is to be able to detect it.
+
+Because of that, the tests of this project are run every night multiple times to detect such behavior. Any thest that sometimes passes and sometimes failes is considered a flaky tests and [an issue is created automatically](https://github.com/eclipse-score/communication/issues?q=is%3Aissue+state%3Aopen+label%3Aflaky-test).
+
+A test migh be flaky for different reasons. The non-deterministic behavior could come from the software but also from the test itself or the infrastructure. For this reason, if you suspect non-deterministic behavior in the software comming from this project, please create a separate issue even if it might be already reported by one of the automatically created tickets. The analysis of user created issues about non-deterministic behavior will be prioritzed over the automatically created issues.
+
 ---
 
 **Note**: This is an open-source project under the Eclipse Foundation. It implements automotive-grade communication middleware suitable for safety-critical applications.
