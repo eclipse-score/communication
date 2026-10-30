@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_H
 
 #include "score/mw/com/impl/binding_type.h"
+#include "score/mw/com/impl/bindings/lola/e2e_event_state.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
@@ -23,6 +24,7 @@
 #include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
+#include "score/mw/com/impl/e2e/e2e_profile_stub.h"
 #include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
@@ -37,6 +39,7 @@
 #include <score/utility.hpp>
 
 #include <atomic>
+#include <memory>
 #include <optional>
 #include <string_view>
 #include <utility>
@@ -75,7 +78,8 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
                   const std::string_view event_name,
                   const memory::DataTypeSizeInfo size_info,
                   const SkeletonEventProperties properties,
-                  impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept;
+                  impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data,
+                  std::shared_ptr<e2e::HeaderStorage> e2e_header_storage = nullptr) noexcept;
 
     SkeletonEvent(const SkeletonEvent&) = delete;
     SkeletonEvent(SkeletonEvent&&) noexcept = delete;
@@ -181,6 +185,11 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_asil_b_;
     std::optional<tracing::TypeErasedSamplePtrsGuard> type_erased_sample_ptrs_guard_;
     std::optional<ReceiveHandlerRegistrationChangedCallback> receive_handler_registration_changed_callback_;
+
+    /// \brief Empty when E2E is not active for this event (no deployment or no header storage). The header storage is
+    ///        the injected, scaffolding-only per-slot POC storage, shared with consuming proxy events by the harness
+    ///        that wires them together.
+    std::optional<E2EEventState<e2e::ProtectContext>> e2e_state_;
 };
 
 }  // namespace score::mw::com::impl::lola

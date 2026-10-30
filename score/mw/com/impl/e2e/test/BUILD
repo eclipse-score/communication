@@ -24,3 +24,10 @@ cc_unit_test(
     srcs = ["e2e_summary_test.cpp"],
     deps = ["//score/mw/com/impl/e2e:e2e_summary"],
 )
+
+cc_unit_test(
+    name = "e2e_profile_stub_test",
+    srcs = ["e2e_profile_stub_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = ["//score/mw/com/impl/e2e:e2e_profile_stub"],
+)

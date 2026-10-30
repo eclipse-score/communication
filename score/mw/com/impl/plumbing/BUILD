@@ -718,6 +718,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola:event",
         "//score/mw/com/impl/bindings/mock_binding:sample_allocatee_ptr",
         "//score/mw/com/impl/bindings/mock_binding:sample_ptr",
+        "//score/mw/com/impl/e2e:e2e_result",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -761,6 +762,8 @@ cc_unit_test(
     ],
     deps = [
         ":proxy_event_binding_factory",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "//score/mw/com/impl/configuration/test:configuration_store",
     ],
 )
 

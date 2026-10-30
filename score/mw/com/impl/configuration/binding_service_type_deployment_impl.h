@@ -44,6 +44,10 @@ constexpr auto kServiceIdKey = "serviceId";
 constexpr auto kEventsKey = "events";
 constexpr auto kFieldsKey = "fields";
 constexpr auto kMethodsKey = "methods";
+constexpr auto kE2EEventsKey = "e2eEvents";
+constexpr auto kProfileKey = "profile";
+constexpr auto kDataIdKey = "dataId";
+constexpr auto kMaxDeltaCounterKey = "maxDeltaCounter";
 
 template <typename ServiceElementMappingType>
 json::Object ConvertServiceElementIdMapToJson(const ServiceElementMappingType& input_map) noexcept
@@ -85,6 +89,51 @@ auto ConvertJsonToServiceElementIdMap(const json::Object& json_object, const std
     return service_element_map;
 }
 
+inline json::Object ConvertE2EEventMapToJson(
+    const std::unordered_map<std::string, E2EEventTypeDeployment>& e2e_events) noexcept
+{
+    json::Object e2e_events_json{};
+    for (const auto& e2e_event : e2e_events)
+    {
+        json::Object event_json{};
+        event_json[kProfileKey] = json::Any{static_cast<std::uint8_t>(e2e_event.second.profile_)};
+        event_json[kDataIdKey] = json::Any{e2e_event.second.data_id_};
+        event_json[kMaxDeltaCounterKey] = json::Any{e2e_event.second.max_delta_counter_};
+        const auto insert_result = e2e_events_json.insert(std::make_pair(e2e_event.first, std::move(event_json)));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(insert_result.second, "Could not insert E2E event deployment");
+    }
+    return e2e_events_json;
+}
+
+inline auto ConvertJsonToE2EEventMap(const json::Object& json_object)
+    -> std::unordered_map<std::string, E2EEventTypeDeployment>
+{
+    const auto e2e_events_it = json_object.find(kE2EEventsKey);
+    if (e2e_events_it == json_object.cend())
+    {
+        return {};
+    }
+
+    const auto e2e_events_result = e2e_events_it->second.As<json::Object>();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(e2e_events_result.has_value(), "Invalid serialized E2E events");
+    std::unordered_map<std::string, E2EEventTypeDeployment> e2e_events{};
+    for (const auto& e2e_event : e2e_events_result.value().get())
+    {
+        const auto event_result = e2e_event.second.As<json::Object>();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_result.has_value(), "Invalid serialized E2E event");
+        const auto& event_json = event_result.value().get();
+        const auto profile = GetValueFromJson<std::uint8_t>(event_json, kProfileKey);
+        const auto data_id = GetValueFromJson<std::uint8_t>(event_json, kDataIdKey);
+        const auto max_delta_counter = GetValueFromJson<std::uint8_t>(event_json, kMaxDeltaCounterKey);
+        const auto event_name_view = e2e_event.first.GetAsStringView();
+        const std::string event_name{event_name_view.data(), event_name_view.size()};
+        const auto insert_result = e2e_events.insert(std::make_pair(
+            event_name, E2EEventTypeDeployment{static_cast<E2EProfile>(profile), data_id, max_delta_counter}));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(insert_result.second, "Could not insert E2E event deployment");
+    }
+    return e2e_events;
+}
+
 template <typename ServiceIdType>
 std::string ToHashStringImpl(const ServiceIdType service_id, const std::size_t hash_string_size) noexcept
 {
@@ -110,11 +159,13 @@ BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdTy
     BindingServiceTypeDeployment(const ServiceIdType service_id,
                                  EventIdMapping events,
                                  FieldIdMapping fields,
-                                 MethodIdMapping methods) noexcept
+                                 MethodIdMapping methods,
+                                 E2EEventMapping e2e_events) noexcept
     : service_id_{service_id},
       events_{std::move(events)},
       fields_{std::move(fields)},
       methods_{std::move(methods)},
+      e2e_events_{std::move(e2e_events)},
       hash_string_{detail::ToHashStringImpl(service_id_, hashStringSize)}
 {
 }
@@ -131,7 +182,8 @@ BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdTy
               GetValueFromJson<ServiceIdType>(json_object, detail::kServiceIdKey),
               detail::ConvertJsonToServiceElementIdMap<EventIdType>(json_object, detail::kEventsKey),
               detail::ConvertJsonToServiceElementIdMap<FieldIdType>(json_object, detail::kFieldsKey),
-              detail::ConvertJsonToServiceElementIdMap<MethodIdType>(json_object, detail::kMethodsKey))
+              detail::ConvertJsonToServiceElementIdMap<MethodIdType>(json_object, detail::kMethodsKey),
+              detail::ConvertJsonToE2EEventMap(json_object))
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, detail::kSerializationVersionKey);
     if (serialization_version != serializationVersion)
@@ -156,6 +208,7 @@ BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdTy
     json_object[detail::kEventsKey] = detail::ConvertServiceElementIdMapToJson(events_);
     json_object[detail::kFieldsKey] = detail::ConvertServiceElementIdMapToJson(fields_);
     json_object[detail::kMethodsKey] = detail::ConvertServiceElementIdMapToJson(methods_);
+    json_object[detail::kE2EEventsKey] = detail::ConvertE2EEventMapToJson(e2e_events_);
 
     return json_object;
 }
@@ -183,7 +236,7 @@ bool operator==(
         rhs) noexcept
 {
     return (safe_math::CmpEqual(lhs.service_id_, rhs.service_id_) && (lhs.events_ == rhs.events_) &&
-            (lhs.fields_ == rhs.fields_) && (lhs.methods_ == rhs.methods_));
+            (lhs.fields_ == rhs.fields_) && (lhs.methods_ == rhs.methods_) && (lhs.e2e_events_ == rhs.e2e_events_));
 }
 
 template <ServiceElementType service_element_type,

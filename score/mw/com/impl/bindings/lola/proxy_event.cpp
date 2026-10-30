@@ -22,7 +22,11 @@
 namespace score::mw::com::impl::lola
 {
 
-ProxyEvent::ProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name)
+ProxyEvent::ProxyEvent(Proxy& parent,
+                       const ElementFqId element_fq_id,
+                       const std::string_view event_name,
+                       std::optional<E2EEventTypeDeployment> e2e_event_deployment,
+                       std::shared_ptr<e2e::HeaderStorage> e2e_header_storage)
     : GenericProxyEventBinding{},
       meta_info_{parent.GetEventMetaInfo(element_fq_id)},
       event_data_storage_{parent.GetEventDataStorage(element_fq_id)},
@@ -41,7 +45,9 @@ ProxyEvent::ProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std
                                         event_data_control_local_,
                                         subscription_control_.get(),
                                         transaction_log_set_.get(),
-                                        transaction_log_id_}
+                                        transaction_log_id_},
+      e2e_event_deployment_{e2e_event_deployment},
+      e2e_state_{MakeE2EEventState<e2e::CheckContext>(e2e_event_deployment_, std::move(e2e_header_storage))}
 {
     parent.RegisterEvent(event_name, *this);
 }
@@ -109,10 +115,16 @@ inline Result<std::size_t> ProxyEvent::GetNewSamples(Callback&& receiver, Tracke
         const EventSlotStatus event_slot_status{event_data_control_local_[*slot_index_it]};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
 
+        e2e::RawCheckOutcome raw_check_outcome{};
+        if (e2e_state_.has_value())
+        {
+            raw_check_outcome = CheckE2E(e2e_state_.value(), *slot_index_it, type_erased_sample_ptr);
+        }
+
         SamplePtr sample{type_erased_sample_ptr, event_data_control_local_, *slot_index_it};
 
         auto guard = std::move(*tracker.TakeGuard());
-        auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard));
+        auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard), raw_check_outcome);
 
         static_assert(
             sizeof(EventSlotStatus::EventTimeStamp) == sizeof(impl::tracing::ITracingRuntime::TracePointDataId),
@@ -127,6 +139,29 @@ inline Result<std::size_t> ProxyEvent::GetNewSamples(Callback&& receiver, Tracke
 
     const auto num_collected_slots = static_cast<std::size_t>(std::distance(slot_indices.begin, slot_indices.end));
     return num_collected_slots;
+}
+
+e2e::RawCheckOutcome ProxyEvent::CheckE2E(E2EEventState<e2e::CheckContext>& e2e_state,
+                                          const SlotIndexType slot_index,
+                                          const void* sample_data)
+{
+    if (slot_index >= e2e_state.header_storage->size())
+    {
+        return {};
+    }
+    const auto& header = (*e2e_state.header_storage)[slot_index];
+    const score::cpp::span<const std::byte> header_span{header.data(), header.size()};
+    const score::cpp::span<const std::byte> payload_span{static_cast<const std::byte*>(sample_data),
+                                                         meta_info_.data_type_info_.Size()};
+    const auto outcome =
+        e2e::CheckMessage(header_span, payload_span, e2e_state.profile_configuration, e2e_state.context);
+    if (e2e::IsFailure(outcome.data_integrity) || e2e::IsFailure(outcome.sequence))
+    {
+        score::mw::log::LogWarn("lola") << "E2E check failed: slot" << slot_index << "data_integrity"
+                                        << static_cast<std::uint8_t>(outcome.data_integrity) << "sequence"
+                                        << static_cast<std::uint8_t>(outcome.sequence);
+    }
+    return outcome;
 }
 
 SlotCollector::SlotIndices ProxyEvent::GetNewSamplesSlotIndices(const std::size_t max_count)
