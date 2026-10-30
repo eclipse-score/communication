@@ -10,3 +10,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+
+filegroup(
+    name = "proxy_cannot_be_created_with_handle_fta",
+    srcs = [
+        "proxy_cannot_be_created_with_handle.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
