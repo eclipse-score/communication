@@ -161,6 +161,16 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "coherency_type",
+    srcs = ["coherency_type.cpp"],
+    hdrs = ["coherency_type.h"],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+)
+
 # A common library for configuration validation and parsing. It shall be used by both strategies (JSON & Flatbuffers) parsers.
 cc_library(
     name = "i_configuration_parsing_strategy",
@@ -180,6 +190,7 @@ cc_library(
     srcs = ["configuration_json_parsing_strategy.cpp"],
     hdrs = ["configuration_json_parsing_strategy.h"],
     implementation_deps = [
+        ":coherency_type",
         ":config_validate",
         ":lola_service_instance_deployment",
         ":quality_type",
@@ -212,6 +223,7 @@ cc_library(
     }),
     hdrs = ["configuration_flatbuffer_parsing_strategy.h"],
     implementation_deps = [
+        ":coherency_type",
         ":config_validate",
         ":lola_service_instance_deployment",
         ":quality_type",
@@ -357,6 +369,7 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
+        ":coherency_type",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -981,6 +994,12 @@ cc_unit_test(
     name = "shm_size_calc_mode_test",
     srcs = ["shm_size_calc_mode_test.cpp"],
     deps = [":shm_size_calc_mode"],
+)
+
+cc_unit_test(
+    name = "coherency_type_test",
+    srcs = ["coherency_type_test.cpp"],
+    deps = [":coherency_type"],
 )
 
 filegroup(

@@ -342,6 +342,17 @@
                                                 "default": 0,
                                                 "minimum": 0,
                                                 "maximum": 255
+                                            },
+                                            "coherency": {
+                                                "type": "string",
+                                                "title": "Coherency",
+                                                "description": "Optional LoLa specific setting describing which CONTROL segment data structure / synchronization strategy is used for this event. `MIXED` is only allowed on the provider/skeleton side; a proxy/consumer side deployment must use either `COHERENT` or `NON_COHERENT`, otherwise the configuration is invalid and proxy creation fails. A consumer configured with `COHERENT` is compatible with a provider configured with `COHERENT` or `MIXED`. Default is `NON_COHERENT`, which is the classic LoLa behavior.",
+                                                "enum": [
+                                                    "NON-COHERENT",
+                                                    "COHERENT",
+                                                    "MIXED"
+                                                ],
+                                                "default": "NON-COHERENT"
                                             }
                                         }
                                     }
@@ -388,6 +399,17 @@
                                                 "default": 0,
                                                 "minimum": 0,
                                                 "maximum": 255
+                                            },
+                                            "coherency": {
+                                                "type": "string",
+                                                "title": "Coherency",
+                                                "description": "Optional LoLa specific setting describing which CONTROL segment data structure / synchronization strategy is used for this field. `MIXED` is only allowed on the provider/skeleton side; a proxy/consumer side deployment must use either `COHERENT` or `NON_COHERENT`, otherwise the configuration is invalid and proxy creation fails. A consumer configured with `COHERENT` is compatible with a provider configured with `COHERENT` or `MIXED`. Default is `NON_COHERENT`, which is the classic LoLa behavior.",
+                                                "enum": [
+                                                    "NON-COHERENT",
+                                                    "COHERENT",
+                                                    "MIXED"
+                                                ],
+                                                "default": "NON-COHERENT"
                                             },
                                             "useGetIfAvailable": {
                                                 "type": "boolean",

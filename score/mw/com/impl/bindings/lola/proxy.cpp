@@ -27,6 +27,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_rollback_executor.h"
 #include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/configuration/coherency_type.h"
 #include "score/mw/com/impl/configuration/lola_field_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
@@ -143,6 +144,37 @@ const LolaServiceTypeDeployment& GetLoLaServiceTypeDeployment(const score::mw::c
     const auto& instance_identifier = InstanceIdentifierView{handle.GetInstanceIdentifier()};
     const auto& service_type_deployment = instance_identifier.GetServiceTypeDeployment();
     return GetServiceTypeDeploymentBinding<LolaServiceTypeDeployment>(service_type_deployment);
+}
+
+/// \brief Checks that no event/field of the given (proxy-side) deployment is configured with CoherencyType::kMixed.
+///
+/// \details CoherencyType::kMixed is only a valid configuration on the provider/skeleton side. A proxy-side
+/// deployment with CoherencyType::kMixed is invalid, as a proxy/consumer always needs to decide between the
+/// CoherencyType::kCoherent and CoherencyType::kNonCoherent CONTROL segment layouts.
+/// \return true if the deployment is valid for proxy-side usage, false otherwise.
+bool IsCoherencyConfigurationValidForProxy(const LolaServiceInstanceDeployment& instance_deployment) noexcept
+{
+    for (const auto& event_entry : instance_deployment.events_)
+    {
+        if (event_entry.second.GetCoherency() == CoherencyType::kMixed)
+        {
+            score::mw::log::LogError("lola")
+                << "Proxy::Create: event" << event_entry.first
+                << "is configured with coherency MIXED, which is only valid on the provider/skeleton side.";
+            return false;
+        }
+    }
+    for (const auto& field_entry : instance_deployment.fields_)
+    {
+        if (field_entry.second.lola_event_instance_deployment_.GetCoherency() == CoherencyType::kMixed)
+        {
+            score::mw::log::LogError("lola")
+                << "Proxy::Create: field" << field_entry.first
+                << "is configured with coherency MIXED, which is only valid on the provider/skeleton side.";
+            return false;
+        }
+    }
+    return true;
 }
 
 std::pair<std::shared_ptr<memory::shared::ManagedMemoryResource>,
@@ -337,6 +369,11 @@ std::unique_ptr<Proxy> Proxy::Create(const HandleType& handle)
 {
     const auto& instance_deployment = GetLoLaInstanceDeployment(handle);
     const auto& lola_service_deployment = GetLoLaServiceTypeDeployment(handle);
+
+    if (!IsCoherencyConfigurationValidForProxy(instance_deployment))
+    {
+        return nullptr;
+    }
 
     auto service_instance_id = handle.GetInstanceId();
     const auto& lola_service_instance_id = GetServiceInstanceIdBinding<LolaServiceInstanceId>(service_instance_id);

@@ -81,6 +81,14 @@ enum ShmSizeCalcMode : ubyte {
     SIMULATION
 }
 
+// Describes which CONTROL segment data structure / synchronization strategy is used for an event or field. `MIXED`
+// is only valid on the provider/skeleton side; a proxy-side deployment must use either `COHERENT` or `NON_COHERENT`.
+enum Coherency : ubyte {
+    NON_COHERENT,
+    COHERENT,
+    MIXED
+}
+
 // ---------------------------------------------------------------------------
 // Shared service version ($defs/serviceVersion in the JSON schema)
 // ---------------------------------------------------------------------------
@@ -215,6 +223,10 @@ table InstanceEvent {
     /// @max: 255
     /// std::uint8_t optional parameter, which describes, how many slots are assigned to IPC Tracing. A value of 0 disables tracing. Default is 0. If it is set to 0 and a trace-filter-config demands this field being traced, a WARN message will be logged. A value greater than zeroe for a proxy will just indicate the intent for the service element to be traced. A value greater than zero on the sceleton side will set the number of tracing slots.
     numberOfIpcTracingSlots: ubyte = 0;
+    /// @title: Coherency
+    /// @default: NON_COHERENT
+    /// Optional LoLa specific setting describing which CONTROL segment data structure / synchronization strategy is used for this event. `MIXED` is only allowed on the provider/skeleton side; a proxy/consumer side deployment must use either `COHERENT` or `NON_COHERENT`, otherwise the configuration is invalid and proxy creation fails. A consumer configured with `COHERENT` is compatible with a provider configured with `COHERENT` or `MIXED`. Default is `NON_COHERENT`, which is the classic LoLa behavior.
+    coherency: Coherency = NON_COHERENT;
 }
 
 /// @title: Field Binding
@@ -241,6 +253,10 @@ table InstanceField {
     /// @max: 255
     /// std::uint8_t optional parameter, which describes, how many slots are assigned to IPC Tracing. A value of 0 disables tracing. Default is 0. If it is set to 0 and a trace-filter-config demands this field being traced, a WARN message will be logged. A value greater than zero for a proxy will just indicate the intent for the service element to be traced. A value greater than zero on the skeleton side will set the number of tracing slots.
     numberOfIpcTracingSlots: ubyte = 0;
+    /// @title: Coherency
+    /// @default: NON_COHERENT
+    /// Optional LoLa specific setting describing which CONTROL segment data structure / synchronization strategy is used for this field. `MIXED` is only allowed on the provider/skeleton side; a proxy/consumer side deployment must use either `COHERENT` or `NON_COHERENT`, otherwise the configuration is invalid and proxy creation fails. A consumer configured with `COHERENT` is compatible with a provider configured with `COHERENT` or `MIXED`. Default is `NON_COHERENT`, which is the classic LoLa behavior.
+    coherency: Coherency = NON_COHERENT;
     /// @title: Use Field Getter If Available
     /// @default: true
     /// When true, the getter for this field will be used if the service type declares one in the C++ service interface. Applicable for proxy/consumer side.

@@ -17,6 +17,9 @@
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
+#include "score/mw/com/impl/configuration/coherency_type.h"
+#include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_field_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
@@ -321,6 +324,45 @@ TEST_F(ProxyCreationDeathTest, GettingEventDataControlWithoutInitialisedEventDat
     // Will terminate
     const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
     EXPECT_DEATH(proxy_->GetConsumerEventDataControlLocalView(uninitialised_element_fq_id), ".*");
+}
+
+TEST_F(ProxyCreationFixture, ProxyCreationFailsWhenEventIsConfiguredWithMixedCoherencyOnProxySide)
+{
+    // Given a deployment which contains an event configured with CoherencyType::kMixed
+    LolaServiceInstanceDeployment lola_service_instance_deployment{LolaServiceInstanceId{kLolaServiceInstanceId}};
+    lola_service_instance_deployment.events_.emplace(
+        kDummyEventName,
+        LolaEventInstanceDeployment{kMaxNumSlots, kMaxSubscribers, {}, false, 0U, CoherencyType::kMixed});
+    const ServiceInstanceDeployment service_instance_deployment{
+        service, lola_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
+    const auto identifier = make_InstanceIdentifier(service_instance_deployment, kServiceTypeDeployment);
+
+    // When creating a proxy
+    const auto proxy = Proxy::Create(make_HandleType(identifier, ServiceInstanceId{kLolaServiceInstanceId}));
+
+    // Then the proxy creation fails
+    EXPECT_EQ(proxy, nullptr);
+}
+
+TEST_F(ProxyCreationFixture, ProxyCreationFailsWhenFieldIsConfiguredWithMixedCoherencyOnProxySide)
+{
+    // Given a deployment which contains a field configured with CoherencyType::kMixed
+    LolaServiceInstanceDeployment lola_service_instance_deployment{LolaServiceInstanceId{kLolaServiceInstanceId}};
+    lola_service_instance_deployment.fields_.emplace(
+        kDummyEventName,
+        LolaFieldInstanceDeployment{
+            LolaEventInstanceDeployment{kMaxNumSlots, kMaxSubscribers, {}, false, 0U, CoherencyType::kMixed},
+            true,
+            true});
+    const ServiceInstanceDeployment service_instance_deployment{
+        service, lola_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
+    const auto identifier = make_InstanceIdentifier(service_instance_deployment, kServiceTypeDeployment);
+
+    // When creating a proxy
+    const auto proxy = Proxy::Create(make_HandleType(identifier, ServiceInstanceId{kLolaServiceInstanceId}));
+
+    // Then the proxy creation fails
+    EXPECT_EQ(proxy, nullptr);
 }
 
 TEST_F(ProxyCreationFixture, ProxyCreationOpensSharedMemoryWithEmptyProvidersWhenStrictAndNoAllowedProviderConfigured)

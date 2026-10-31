@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/configuration/configuration_json_parsing_strategy.h"
 #include "score/mw/com/impl/configuration/config_validate.h"
 
+#include "score/mw/com/impl/configuration/coherency_type.h"
 #include "score/mw/com/impl/configuration/configuration_common_resources.h"
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
@@ -88,6 +89,11 @@ constexpr auto kFieldEnforceMaxSamplesKey = "enforceMaxSamples"sv;
 constexpr auto kFieldMaxConcurrentAllocationsKey = "maxConcurrentAllocations"sv;
 constexpr auto kFieldUseGetIfAvailableKey = "useGetIfAvailable"sv;
 constexpr auto kFieldUseSetIfAvailableKey = "useSetIfAvailable"sv;
+constexpr auto kCoherencyKey = "coherency"sv;
+constexpr auto kCoherencyCoherent = "COHERENT"sv;
+constexpr auto kCoherencyNonCoherent = "NON-COHERENT"sv;
+constexpr auto kCoherencyMixed = "MIXED"sv;
+constexpr auto kCoherencyDefault = CoherencyType::kNonCoherent;
 constexpr auto kLolaShmSizeKey = "shm-size"sv;
 constexpr auto kLolaControlAsilBShmSizeKey = "control-asil-b-shm-size"sv;
 constexpr auto kLolaControlQmShmSizeKey = "control-qm-shm-size"sv;
@@ -248,7 +254,42 @@ auto ParseShmSizeCalcMode(const score::json::Object& json_map) -> std::optional<
     return std::nullopt;
 }
 
-// Note 1:
+/// \brief Parses the optional "coherency" key for an event/field deployment object.
+/// \return the configured CoherencyType, or CoherencyType::kNonCoherent if the key is absent.
+auto ParseCoherency(const score::json::Object& deployment_map) -> CoherencyType
+{
+    const auto& coherency = deployment_map.find(kCoherencyKey);
+    if (coherency == deployment_map.cend())
+    {
+        return kCoherencyDefault;
+    }
+
+    auto coherency_result = coherency->second.As<std::string>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(coherency_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
+    const auto& coherency_value = coherency_result.value().get();
+
+    if (coherency_value == kCoherencyCoherent)
+    {
+        return CoherencyType::kCoherent;
+    }
+    else if (coherency_value == kCoherencyNonCoherent)
+    {
+        return CoherencyType::kNonCoherent;
+    }
+    else if (coherency_value == kCoherencyMixed)
+    {
+        return CoherencyType::kMixed;
+    }
+    else
+    {
+        score::mw::log::LogError("lola") << "Unknown value " << coherency_value << " in key " << kCoherencyKey;
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        return kCoherencyDefault;  // LCOV_EXCL_LINE defensive programming: SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD never
+                                   // returns
+    }
+}
+
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall not be called
 //                                                                   implicitly"
 // coverity reports that json.As<T>().value might throw due to std::bad_variant_access. Which will cause an implicit
@@ -419,11 +460,14 @@ auto ParseLolaEventInstanceDeployment(const score::json::Object& json_map, LolaS
             deployment_parser.RetrieveJsonElement<NumberOfIpcTracingSlots_t>(kNumberOfIpcTracingSlotsKey)
                 .value_or(kNumberOfIpcTracingSlotsDefault);
 
+        const auto coherency = ParseCoherency(event_object);
+
         auto event_deployment = LolaEventInstanceDeployment(number_of_sample_slots,
                                                             max_subscribers,
                                                             kMaxConcurrentAllocationsDefault,
                                                             enforce_max_samples,
-                                                            number_of_tracing_slots);
+                                                            number_of_tracing_slots,
+                                                            coherency);
 
         EmplaceOrFatal(service.events_, std::move(event_name_value), event_deployment, "An event instance");
     }
@@ -473,13 +517,15 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Object& json_map, LolaS
                                               .value_or(kUseGetIfAvailableDefaultValue);
         const auto use_set_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseSetIfAvailableKey)
                                               .value_or(kUseSetIfAvailableDefaultValue);
+        const auto coherency = ParseCoherency(field_object);
 
         auto field_deployment =
             LolaFieldInstanceDeployment(LolaEventInstanceDeployment(number_of_sample_slots,
                                                                     max_subscribers,
                                                                     kMaxConcurrentAllocationsDefault,
                                                                     enforce_max_samples,
-                                                                    number_of_tracing_slots),
+                                                                    number_of_tracing_slots,
+                                                                    coherency),
                                         use_get_if_available,
                                         use_set_if_available);
         EmplaceOrFatal(service.fields_, std::move(field_name_value), field_deployment, "A field instance");

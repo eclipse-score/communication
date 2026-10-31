@@ -31,7 +31,44 @@ constexpr auto kSubscribersKey = "maxSubscribers";
 constexpr auto kMaxConcurrentAllocationsKey = "maxConcurrentAllocations";
 constexpr auto kEnforceMaxSamplesKey = "enforceMaxSamples";
 constexpr auto kNumberOfIpcTracingSlotsKey = "numberOfIpcTracingSlots";
+constexpr auto kCoherencyKey = "coherency";
 constexpr LolaEventInstanceDeployment::TracingSlotSizeType kNumberOfIpcTracingSlotsDefault{0U};
+
+constexpr auto kCoherencyNonCoherent = "NON_COHERENT";
+constexpr auto kCoherencyCoherent = "COHERENT";
+constexpr auto kCoherencyMixed = "MIXED";
+
+CoherencyType CoherencyFromString(const std::string& coherency) noexcept
+{
+    if (coherency == kCoherencyCoherent)
+    {
+        return CoherencyType::kCoherent;
+    }
+    if (coherency == kCoherencyMixed)
+    {
+        return CoherencyType::kMixed;
+    }
+    if (coherency != kCoherencyNonCoherent)
+    {
+        score::mw::log::LogFatal("lola") << "Unknown coherency value" << coherency << ". Terminating.";
+        std::terminate();
+    }
+    return CoherencyType::kNonCoherent;
+}
+
+std::string CoherencyToString(const CoherencyType coherency) noexcept
+{
+    switch (coherency)
+    {
+        case CoherencyType::kCoherent:
+            return kCoherencyCoherent;
+        case CoherencyType::kMixed:
+            return kCoherencyMixed;
+        case CoherencyType::kNonCoherent:
+        default:
+            return kCoherencyNonCoherent;
+    }
+}
 
 }  // namespace
 
@@ -39,12 +76,14 @@ LolaEventInstanceDeployment::LolaEventInstanceDeployment(std::optional<SampleSlo
                                                          std::optional<SubscriberCountType> max_subscribers,
                                                          std::optional<std::uint8_t> max_concurrent_allocations,
                                                          const bool enforce_max_samples,
-                                                         const TracingSlotSizeType number_of_tracing_slots) noexcept
+                                                         const TracingSlotSizeType number_of_tracing_slots,
+                                                         const CoherencyType coherency) noexcept
     : max_subscribers_{max_subscribers},
       max_concurrent_allocations_{max_concurrent_allocations},
       enforce_max_samples_{enforce_max_samples},
       number_of_sample_slots_{number_of_sample_slots},
-      number_of_tracing_slots_{number_of_tracing_slots}
+      number_of_tracing_slots_{number_of_tracing_slots},
+      coherency_{coherency}
 {
 }
 
@@ -73,11 +112,16 @@ LolaEventInstanceDeployment LolaEventInstanceDeployment::CreateFromJson(const sc
 
     auto number_of_tracing_slots = number_of_tracing_slots_opt.value_or(kNumberOfIpcTracingSlotsDefault);
 
+    const auto coherency_opt = GetOptionalValueFromJson<std::string>(json_object, kCoherencyKey);
+    const auto coherency =
+        coherency_opt.has_value() ? CoherencyFromString(coherency_opt.value()) : CoherencyType::kNonCoherent;
+
     return LolaEventInstanceDeployment(number_of_sample_slots,
                                        max_subscribers,
                                        max_concurrent_allocations,
                                        enforce_max_samples,
-                                       number_of_tracing_slots);
+                                       number_of_tracing_slots,
+                                       coherency);
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall not be called
@@ -106,6 +150,8 @@ score::json::Object LolaEventInstanceDeployment::Serialize() const
 
     // We always turn of ipc tracing. I.e., serialize  kNumberOfIpcTracingSlotsKey as false
     json_object[kNumberOfIpcTracingSlotsKey] = static_cast<std::uint8_t>(0U);
+
+    json_object[kCoherencyKey] = score::json::Any{CoherencyToString(coherency_)};
 
     return json_object;
 }
@@ -146,6 +192,11 @@ auto LolaEventInstanceDeployment::GetNumberOfTracingSlots() const noexcept -> Tr
     return number_of_tracing_slots_;
 }
 
+auto LolaEventInstanceDeployment::GetCoherency() const noexcept -> CoherencyType
+{
+    return coherency_;
+}
+
 void LolaEventInstanceDeployment::SetNumberOfSampleSlots(SampleSlotCountType number_of_sample_slots) noexcept
 {
 
@@ -160,11 +211,12 @@ bool operator==(const LolaEventInstanceDeployment& lhs, const LolaEventInstanceD
     const bool max_subscribers_equal = (lhs.max_subscribers_ == rhs.max_subscribers_);
     const bool max_concurrent_allocations_equal = (lhs.max_concurrent_allocations_ == rhs.max_concurrent_allocations_);
     const bool enforce_max_samples_equal = (lhs.enforce_max_samples_ == rhs.enforce_max_samples_);
+    const bool coherency_equal = (lhs.coherency_ == rhs.coherency_);
     // Adding Brackets to the expression does not give additional value since only one logical operator is used which
     // is independent of the execution order
     // coverity[autosar_cpp14_a5_2_6_violation]
     return (number_of_sample_slots_equal && number_of_tracing_slots_equal && max_subscribers_equal &&
-            max_concurrent_allocations_equal && enforce_max_samples_equal);
+            max_concurrent_allocations_equal && enforce_max_samples_equal && coherency_equal);
 }
 
 }  // namespace score::mw::com::impl

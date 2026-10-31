@@ -104,7 +104,8 @@ inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
                                          number_of_field_getter_slots,
                                          is_setter_enabled,
                                          max_subscribers,
-                                         lola_event_instance_deployment.enforce_max_samples_};
+                                         lola_event_instance_deployment.enforce_max_samples_,
+                                         lola_event_instance_deployment.GetCoherency()};
 }
 
 inline lola::SkeletonEventProperties CreateSkeletonEventProperties(

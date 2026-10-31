@@ -460,6 +460,20 @@ The properties of a field or an event object on the instance level are:
 - `useSetIfAvailable`: (optional, field only, default `false`) - When `true`, the setter for this field will be
   used if the service type declares a setter. This is a consumer/proxy side configuration hint. On the provider
   (skeleton) side this setting has no effect.
+- `coherency`: (optional, default `NON-COHERENT`) - selects the synchronization strategy used for the internal CONTROL
+  segment data structures of this event or field. Allowed values are `NON-COHERENT`, `COHERENT` and `MIXED`.
+  - `NON-COHERENT` is the classic LoLa behaviour: every sample slot carries its own reference-counted, per-subscriber
+    timestamp/state, allowing fully independent consumers at the cost of a larger CONTROL segment and transaction-log
+    based crash-recovery.
+  - `COHERENT` is a leaner layout for setups where the scheduling of provider and consumers guarantees that the
+    provider and all its consumers of this event/field never execute concurrently. It drops the per-slot,
+    per-subscriber state and the transaction logs. `COHERENT` can be configured on both the provider (skeleton) and
+    the consumer (proxy) side.
+  - `MIXED` behaves like `COHERENT` towards coherent consumers, but additionally keeps the classic `NON_COHERENT`
+    CONTROL-segment information so that non-coherent consumers can still subscribe concurrently. `MIXED` is **only**
+    valid on the provider (skeleton) side of a service-instance-deployment. Configuring a proxy-side event or field
+    with `MIXED` is invalid and will make proxy creation fail. A proxy-side event or field configured with `COHERENT`
+    is compatible with a skeleton-side event or field configured with either `COHERENT` or `MIXED`.
 
 ###### methods within an instance
 
@@ -627,3 +641,4 @@ is being used, whether a property is mandatory or optional or irrelevant, the fo
 | _serviceInstances.instances.events.numberOfIpcTracingSlots_ <br> _serviceInstances.instances.fields.numberOfIpcTracingSlots_ | optional      | -          | if not given on skeleton side, defaults to 0, which means tracing for this event is disabled.                                                                                         |
 | _serviceInstances.instances.fields.useGetIfAvailable_                                                                        | -             | optional   | if not given, defaults to false. Signals that the field getter should be used when the service type declares one.                                                                      |
 | _serviceInstances.instances.fields.useSetIfAvailable_                                                                        | -             | optional   | if not given, defaults to false. Signals that the field setter should be used when the service type declares one.                                                                      |
+| _serviceInstances.instances.events.coherency_ <br> _serviceInstances.instances.fields.coherency_                            | optional      | optional   | if not given, defaults to `NON-COHERENT`. `MIXED` is only valid on skeleton side; proxy creation fails if `MIXED` is used on proxy side.                                                |
