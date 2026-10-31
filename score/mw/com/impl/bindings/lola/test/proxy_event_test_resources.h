@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TEST_PROXY_EVENT_TEST_RESOURCES_H
 
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
+#include "score/mw/com/impl/bindings/lola/event_data_storage_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
@@ -192,6 +193,7 @@ class ProxyMockedMemoryFixture : public ::testing::Test
     std::optional<ProviderEventDataControlLocalView<>> provider_event_data_control_local_{};
     std::optional<ConsumerEventDataControlLocalView<>> consumer_event_data_control_local_{};
     EventDataStorage* event_data_storage_{nullptr};
+    std::optional<EventDataStorageLocalView> event_data_storage_local_view_{};
     RollbackSynchronization rollback_synchronization_{};
 
     std::shared_ptr<MessagePassingServiceMock> mock_service_{std::make_shared<MessagePassingServiceMock>()};

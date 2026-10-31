@@ -26,7 +26,7 @@ SkeletonEvent::SkeletonEvent(Skeleton& parent,
     : parent_{parent},
       event_name_{event_name},
       element_fq_id_(element_fq_id),
-      event_data_storage_{nullptr},
+      event_data_storage_local_view_{std::nullopt},
       event_sample_size_info_(size_info),
       event_properties_{properties},
       current_timestamp_{EventSlotStatus::INVALID_TIMESTAMP},
@@ -112,12 +112,11 @@ Result<impl::SampleAllocateePtr<void>> SkeletonEvent::Allocate(SampleAllocateeGu
     // Tracing is a diagnostic/monitoring feature with no safety requirement, so QM is sufficient.
     // GetConsumerEventDataControlLocalView(kASIL_B) is a separate code path introduced specifically for
     // GetLatestSample().
-    return MakeSampleAllocateePtr(
-        SampleAllocateePtr(event_data_storage_->GetTypeErasedDataSlot(slot_index, event_sample_size_info_.Size()),
-                           GetEventDataControlComposite(),
-                           GetConsumerEventDataControlLocalView(QualityType::kASIL_QM),
-                           slot_index),
-        std::move(guard));
+    return MakeSampleAllocateePtr(SampleAllocateePtr(event_data_storage_local_view_->GetTypeErasedDataSlot(slot_index),
+                                                     GetEventDataControlComposite(),
+                                                     GetConsumerEventDataControlLocalView(QualityType::kASIL_QM),
+                                                     slot_index),
+                                  std::move(guard));
 }
 
 Result<impl::SamplePtr<void>> SkeletonEvent::GetLatestSample(QualityType quality_type)
@@ -147,22 +146,19 @@ Result<impl::SamplePtr<void>> SkeletonEvent::GetLatestSample(QualityType quality
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
-    return impl::SamplePtr<void>{
-        lola::SamplePtr{event_data_storage_->GetTypeErasedDataSlot(*slot_result, event_sample_size_info_.Size()),
-                        consumer_event_data_control_local,
-                        slot_result.value()},
-        std::move(*guard)};
+    return impl::SamplePtr<void>{lola::SamplePtr{event_data_storage_local_view_->GetTypeErasedDataSlot(*slot_result),
+                                                 consumer_event_data_control_local,
+                                                 slot_result.value()},
+                                 std::move(*guard)};
 }
 
 Result<void> SkeletonEvent::PrepareOffer(const std::optional<InitializeSampleCallback>& initialize_sample_callback)
 {
-    // Invariant: after a successful PrepareOffer(), event_data_storage_ is guaranteed to be non-null.
-    // All methods that require event_data_storage_ (e.g. GetLatestSample) rely on this invariant.
+    // Invariant: after a successful PrepareOffer(), event_data_storage_local_view_ is guaranteed to be non-null.
+    // All methods that require event_data_storage_local_view_ (e.g. GetLatestSample) rely on this invariant.
     const auto registration_result =
         parent_.Register(element_fq_id_, event_properties_, event_sample_size_info_, initialize_sample_callback);
-    event_data_storage_ = &registration_result.event_data_storage;
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_storage_ != nullptr,
-                                                "event_data_storage_ must be non-null after PrepareOffer");
+    event_data_storage_local_view_.emplace(registration_result.event_data_storage, event_sample_size_info_);
 
     auto& provider_control_local_view_qm =
         provider_control_local_view_qm_.emplace(registration_result.event_control_qm.data_control);
