@@ -28,11 +28,13 @@ namespace score::mw::com::impl::lola
 {
 
 std::size_t CalculateServiceDataControlShmSize(
-    const score::cpp::span<const ServiceElementControlSizeInfo> events_and_fields_size_info)
+    const score::cpp::span<const ServiceElementControlSizeInfo> events_and_fields_size_info,
+    const score::cpp::span<const ServiceElementControlSizeInfo> coherent_events_and_fields_size_info)
 {
     // The number of events + fields determines the (fixed) capacity of the event_controls_ LinearSearchMap within the
     // ServiceDataControl. It equals the number of sizing entries handed over.
     const auto number_of_events_and_fields = events_and_fields_size_info.size();
+    const auto number_of_coherent_events_and_fields = coherent_events_and_fields_size_info.size();
 
     // The real construction of a ServiceDataControl and its contained EventControls performs a fixed, deterministic
     // sequence of allocations from the (strictly monotonic) shared-memory resource, which itself always starts
@@ -42,8 +44,8 @@ std::size_t CalculateServiceDataControlShmSize(
     // into account the exact alignment-padding between consecutive allocations.
     std::vector<score::memory::DataTypeSizeInfo> allocation_sequence{};
 
-    // (1) The ServiceDataControl object itself (including the inline bookkeeping of its event_controls_ LinearSearchMap
-    // and of its application_id_pid_mapping_).
+    // (1) The ServiceDataControl object itself (including the inline bookkeeping of its event_controls_ and
+    // event_controls_coherent_ LinearSearchMaps and of its application_id_pid_mapping_).
     std::ignore = allocation_sequence.emplace_back(sizeof(ServiceDataControl), alignof(ServiceDataControl));
 
     // (2) The allocated array of the event_controls_ LinearSearchMap (allocated once, with capacity ==
@@ -52,7 +54,14 @@ std::size_t CalculateServiceDataControlShmSize(
         number_of_events_and_fields * sizeof(decltype(ServiceDataControl::event_controls_)::value_type),
         alignof(decltype(ServiceDataControl::event_controls_)::value_type));
 
-    // (3) The backing array of the application_id_pid_mapping_ (a fixed-capacity DynamicArray with a capacity of
+    // (3) The allocated array of the event_controls_coherent_ LinearSearchMap (allocated once, with capacity ==
+    // number_of_coherent_events_and_fields), constructed right after event_controls_.
+    std::ignore =
+        allocation_sequence.emplace_back(number_of_coherent_events_and_fields *
+                                             sizeof(decltype(ServiceDataControl::event_controls_coherent_)::value_type),
+                                         alignof(decltype(ServiceDataControl::event_controls_coherent_)::value_type));
+
+    // (4) The backing array of the application_id_pid_mapping_ (a fixed-capacity DynamicArray with a capacity of
     // kMaxApplicationIdPidMappings). It is allocated once during ServiceDataControl construction, independent of the
     // number of events + fields.
     std::ignore =
@@ -60,21 +69,22 @@ std::size_t CalculateServiceDataControlShmSize(
                                              sizeof(ApplicationIdPidMappingEntry),
                                          alignof(ApplicationIdPidMappingEntry));
 
-    // (4) For each event/field: the (deeply) nested fixed-capacity DynamicArrays contained within its EventControl.
-    // The EventControl object itself is stored inline within the event_controls_ backing array (accounted for in (2));
-    // only the allocated arrays of its nested DynamicArrays allocate separately and are accounted for here.
+    // (5) For each CoherencyType::kNonCoherent event/field: the (deeply) nested fixed-capacity DynamicArrays
+    // contained within its EventControl. The EventControl object itself is stored inline within the event_controls_
+    // backing array (accounted for in (2)); only the allocated arrays of its nested DynamicArrays allocate separately
+    // and are accounted for here.
     for (const auto& service_element : events_and_fields_size_info)
     {
         const std::size_t number_of_slots = service_element.number_of_slots;
         const std::size_t max_subscribers = service_element.max_subscribers;
 
-        // (4a) EventControl::data_control (EventDataControl): its state_slots_ is a DynamicArray<ControlSlotType>
+        // (5a) EventControl::data_control (EventDataControl): its state_slots_ is a DynamicArray<ControlSlotType>
         // with a capacity of number_of_slots.
         std::ignore =
             allocation_sequence.emplace_back(number_of_slots * sizeof(EventDataControl::EventControlSlots::value_type),
                                              alignof(EventDataControl::EventControlSlots::value_type));
 
-        // (4b) EventControl::transaction_log_set_ (TransactionLogSet):
+        // (5b) EventControl::transaction_log_set_ (TransactionLogSet):
         //   proxy_transaction_logs_(max_subscribers, TransactionLogNode{number_of_slots, resource}, resource) is
         //   constructed via the DynamicArray fill-constructor. The exact allocation order is:
         //     * one reference_count_slots_ array for the temporary prototype TransactionLogNode, which is
@@ -106,6 +116,44 @@ std::size_t CalculateServiceDataControlShmSize(
         //     reference_count_slots_ array.
         std::ignore = allocation_sequence.emplace_back(transaction_log_slots_array_raw_size,
                                                        transaction_log_slots_array_alignment);
+    }
+
+    // (6) For each CoherencyType::kCoherent event/field: the nested fixed-capacity DynamicArrays contained within its
+    // EventControlCoherent. The EventControlCoherent object itself is stored inline within the
+    // event_controls_coherent_ backing array (accounted for in (3)); only the allocated arrays of its nested
+    // DynamicArrays allocate separately and are accounted for here.
+    for (const auto& service_element : coherent_events_and_fields_size_info)
+    {
+        const std::size_t number_of_slots = service_element.number_of_slots;
+        const std::size_t max_subscribers = service_element.max_subscribers;
+
+        // EventControlCoherent::data_control (EventDataControlCoherent): its state_slots_ is a
+        // DynamicArray<CoherentControlSlotType> with a capacity of number_of_slots.
+        std::ignore = allocation_sequence.emplace_back(
+            number_of_slots * sizeof(EventDataControlCoherent::EventControlSlots::value_type),
+            alignof(EventDataControlCoherent::EventControlSlots::value_type));
+
+        // EventControlCoherent::transaction_log_set_ (TransactionLogSet): constructed the same way as described in
+        // (5b) above, but with 0 slots (CoherencyType::kCoherent events need no per-slot transaction-log based
+        // crash-recovery, see EventControlCoherent); only Subscribe/Unsubscribe transaction logging (sized by
+        // max_subscribers) is required, hence max_subscribers is still relevant for sizing here.
+        constexpr std::size_t coherent_transaction_log_slots_array_raw_size = 0U;
+        const std::size_t coherent_transaction_log_slots_array_alignment =
+            alignof(TransactionLog::TransactionLogSlots::value_type);
+        std::ignore = allocation_sequence.emplace_back(coherent_transaction_log_slots_array_raw_size,
+                                                       coherent_transaction_log_slots_array_alignment);
+
+        std::ignore = allocation_sequence.emplace_back(max_subscribers * sizeof(TransactionLogSet::TransactionLogNode),
+                                                       alignof(TransactionLogSet::TransactionLogNode));
+
+        for (std::size_t i = 0U; i < max_subscribers; ++i)
+        {
+            std::ignore = allocation_sequence.emplace_back(coherent_transaction_log_slots_array_raw_size,
+                                                           coherent_transaction_log_slots_array_alignment);
+        }
+
+        std::ignore = allocation_sequence.emplace_back(coherent_transaction_log_slots_array_raw_size,
+                                                       coherent_transaction_log_slots_array_alignment);
     }
 
     return score::memory::shared::CalculateAlignedSizeOfSequence(allocation_sequence);

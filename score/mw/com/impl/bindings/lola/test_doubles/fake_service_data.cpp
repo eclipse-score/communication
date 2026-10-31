@@ -81,7 +81,7 @@ FakeServiceData::FakeServiceData(const std::string& control_file_name,
             if (initialise_skeleton_data)
             {
                 data_control =
-                    memory_resource->construct<ServiceDataControl>(kMaxNumberOfServiceElements, *memory_resource);
+                    memory_resource->construct<ServiceDataControl>(kMaxNumberOfServiceElements, 0U, *memory_resource);
             }
         },
         65535U);

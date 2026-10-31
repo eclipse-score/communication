@@ -339,7 +339,9 @@ cc_library(
         ":application_id_pid_mapping_entry",
         ":element_fq_id",
         ":event_control",
+        ":event_control_coherent",
         ":event_data_control",
+        ":event_data_control_coherent",
         ":linear_search_map",
         ":transaction_log",
         ":transaction_log_set",
@@ -614,9 +616,32 @@ cc_library(
 )
 
 cc_library(
+    name = "coherent_event_slot_status",
+    srcs = ["coherent_event_slot_status.cpp"],
+    hdrs = ["coherent_event_slot_status.h"],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+)
+
+cc_library(
     name = "event_data_control",
     srcs = ["event_data_control.cpp"],
     hdrs = ["event_data_control.h"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        ":control_slot_types",
+        "//score/memory/shared:polymorphic_offset_ptr_allocator",
+        "@score_baselibs//score/containers:dynamic_array",
+    ],
+)
+
+cc_library(
+    name = "event_data_control_coherent",
+    srcs = ["event_data_control_coherent.cpp"],
+    hdrs = ["event_data_control_coherent.h"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
@@ -642,6 +667,20 @@ cc_library(
 )
 
 cc_library(
+    name = "provider_event_data_control_coherent_local_view",
+    srcs = ["provider_event_data_control_coherent_local_view.cpp"],
+    hdrs = ["provider_event_data_control_coherent_local_view.h"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        ":coherent_event_slot_status",
+        ":control_slot_types",
+        ":event_data_control_coherent",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
     name = "consumer_event_data_control_local_view",
     srcs = ["consumer_event_data_control_local_view.cpp"],
     hdrs = ["consumer_event_data_control_local_view.h"],
@@ -657,6 +696,20 @@ cc_library(
 )
 
 cc_library(
+    name = "consumer_event_data_control_coherent_local_view",
+    srcs = ["consumer_event_data_control_coherent_local_view.cpp"],
+    hdrs = ["consumer_event_data_control_coherent_local_view.h"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        ":coherent_event_slot_status",
+        ":control_slot_types",
+        ":event_data_control_coherent",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
     name = "control_slot_types",
     srcs = ["control_slot_types.cpp"],
     hdrs = ["control_slot_types.h"],
@@ -665,6 +718,7 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":coherent_event_slot_status",
         ":event_slot_status",
     ],
 )
@@ -678,6 +732,20 @@ cc_library(
     deps = [
         ":control_slot_types",
         ":event_data_control",
+        ":event_subscription_control",
+        ":transaction_log_set",
+    ],
+)
+
+cc_library(
+    name = "event_control_coherent",
+    srcs = ["event_control_coherent.cpp"],
+    hdrs = ["event_control_coherent.h"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        ":control_slot_types",
+        ":event_data_control_coherent",
         ":event_subscription_control",
         ":transaction_log_set",
     ],
@@ -1047,6 +1115,37 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "coherent_event_slot_status_test",
+    srcs = ["coherent_event_slot_status_test.cpp"],
+    deps = [
+        ":coherent_event_slot_status",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "event_data_control_coherent_test",
+    srcs = ["event_data_control_coherent_test.cpp"],
+    deps = [
+        ":coherent_event_slot_status",
+        ":event_data_control_coherent",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "@score_baselibs//score/containers:dynamic_array",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "event_control_coherent_test",
+    srcs = ["event_control_coherent_test.cpp"],
+    deps = [
+        ":event_control_coherent",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
     name = "provider_event_data_control_local_view_test",
     srcs = [
         "provider_event_data_control_local_view_test.cpp",
@@ -1060,6 +1159,19 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/lola:event_slot_status",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@score_baselibs//score/concurrency:atomic_indirector_mock_binding",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "provider_event_data_control_coherent_local_view_test",
+    srcs = [
+        "provider_event_data_control_coherent_local_view_test.cpp",
+    ],
+    deps = [
+        ":event_data_control_coherent",
+        ":provider_event_data_control_coherent_local_view",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -1081,6 +1193,20 @@ cc_unit_test(
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/concurrency:atomic_indirector_mock_binding",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "consumer_event_data_control_coherent_local_view_test",
+    srcs = [
+        "consumer_event_data_control_coherent_local_view_test.cpp",
+    ],
+    deps = [
+        ":consumer_event_data_control_coherent_local_view",
+        ":event_data_control_coherent",
+        ":provider_event_data_control_coherent_local_view",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -1379,6 +1505,7 @@ cc_unit_test(
     deps = [
         ":element_fq_id",
         ":event_control",
+        ":event_control_coherent",
         ":service_data_control",
         "//score/memory/shared:new_delete_delegate_resource",
         "//score/mw/com/impl:service_element_type",

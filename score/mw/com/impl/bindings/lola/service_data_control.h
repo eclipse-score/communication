@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/application_id_pid_mapping.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_control.h"
+#include "score/mw/com/impl/bindings/lola/event_control_coherent.h"
 #include "score/mw/com/impl/bindings/lola/linear_search_map.h"
 
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
@@ -37,14 +38,20 @@ class ServiceDataControl
     /// \brief Ctor for the ServiceDataControl with a given memory resource to be used.
     /// \details ServiceDataControl is designed to be located in shared memory, therefore the explicit
     ///          ManagedMemoryResource argument!
-    /// \param number_of_events_and_fields the (fixed) number of events + fields this service-instance provides. It is
-    ///        used as the fixed capacity of the event_controls_ container. Since event_controls_ uses a
-    ///        fixed-capacity container (LinearSearchMap), its capacity must be known at construction time.
+    /// \param number_of_non_coherent_events_and_fields the (fixed) number of CoherencyType::kNonCoherent events +
+    ///        fields this service-instance provides. It is used as the fixed capacity of the event_controls_
+    ///        container. Since event_controls_ uses a fixed-capacity container (LinearSearchMap), its capacity must
+    ///        be known at construction time.
+    /// \param number_of_coherent_events_and_fields the (fixed) number of CoherencyType::kCoherent events + fields
+    ///        this service-instance provides. Analogous to number_of_non_coherent_events_and_fields, but for the
+    ///        event_controls_coherent_ container.
     /// \param resource ManagedMemoryResource used for allocating underlying storage
 
-    explicit ServiceDataControl(const std::size_t number_of_events_and_fields,
+    explicit ServiceDataControl(const std::size_t number_of_non_coherent_events_and_fields,
+                                const std::size_t number_of_coherent_events_and_fields,
                                 score::memory::shared::ManagedMemoryResource& resource)
-        : event_controls_(number_of_events_and_fields, resource),
+        : event_controls_(number_of_non_coherent_events_and_fields, resource),
+          event_controls_coherent_(number_of_coherent_events_and_fields, resource),
           application_id_pid_mapping_(kMaxApplicationIdPidMappings, resource)
     {
     }
@@ -61,6 +68,11 @@ class ServiceDataControl
     // variables.
     // coverity[autosar_cpp14_m11_0_1_violation]
     LinearSearchMap<ElementFqId, EventControl> event_controls_;
+
+    /// \brief control information for all events/fields configured with CoherencyType::kCoherent.
+    /// \details See EventControlCoherent for the differences to event_controls_' EventControl.
+    // coverity[autosar_cpp14_m11_0_1_violation]
+    LinearSearchMap<ElementFqId, EventControlCoherent> event_controls_coherent_;
 
     /// \brief mapping of a proxy's application identifier to its process ID (pid).
     /// \details Every proxy instance for this service shall register itself in this mapping. The identifier used is
@@ -100,12 +112,18 @@ struct ServiceElementControlSizeInfo
 ///          aligned location) and we know the size/alignment/order of every individual allocation performed by the
 ///          real construction, we can reconstruct the exact same sequence of allocations here and compute the exact
 ///          alignment-padding between them (see score::memory::shared::CalculateAlignedSizeOfSequence()).
-/// \param events_and_fields_size_info per service-element sizing information. Its size equals the number of
-///        service-elements (events + fields), which is the fixed capacity the event_controls_ container is constructed
-///        with.
+/// \param events_and_fields_size_info per CoherencyType::kNonCoherent service-element sizing information. Its size
+///        equals the number of kNonCoherent service-elements (events + fields), which is the fixed capacity the
+///        event_controls_ container is constructed with.
+/// \param coherent_events_and_fields_size_info per CoherencyType::kCoherent service-element sizing information. Its
+///        size equals the number of kCoherent service-elements (events + fields), which is the fixed capacity the
+///        event_controls_coherent_ container is constructed with. Defaults to an empty span for callers which don't
+///        (yet) provide any CoherencyType::kCoherent events/fields. Only the number_of_slots member of each entry is
+///        used (CoherencyType::kCoherent events have no transaction-log, so max_subscribers is not needed for sizing).
 /// \return the exact number of bytes needed for a single control shm-object.
 std::size_t CalculateServiceDataControlShmSize(
-    score::cpp::span<const ServiceElementControlSizeInfo> events_and_fields_size_info);
+    score::cpp::span<const ServiceElementControlSizeInfo> events_and_fields_size_info,
+    score::cpp::span<const ServiceElementControlSizeInfo> coherent_events_and_fields_size_info = {});
 
 }  // namespace score::mw::com::impl::lola
 

@@ -44,7 +44,7 @@ FakeMockedServiceData::FakeMockedServiceData(const pid_t skeleton_process_pid_in
     data_memory_resource =
         std::make_shared<::testing::NiceMock<SharedMemoryResourceHeapAllocatorMock>>(kDataMemoryResourceId);
 
-    data_control = control_memory->construct<ServiceDataControl>(kMaxNumberOfServiceElements, *control_memory);
+    data_control = control_memory->construct<ServiceDataControl>(kMaxNumberOfServiceElements, 0U, *control_memory);
     data_storage =
         data_memory_resource->construct<ServiceDataStorage>(kMaxNumberOfServiceElements, *data_memory_resource);
 

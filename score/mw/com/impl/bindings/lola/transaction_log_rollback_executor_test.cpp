@@ -74,7 +74,8 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
 
     TransactionLogRollbackExecutorFixture& WithTransactionLogRollbackExecutor()
     {
-        service_data_control_ = std::make_unique<ServiceDataControl>(kNumberOfServiceElements, memory_resource_mock_);
+        service_data_control_ =
+            std::make_unique<ServiceDataControl>(kNumberOfServiceElements, 0U, memory_resource_mock_);
         AddEvent(kDummyElementFqId, kDummySkeletonEventProperties);
 
         unit_ = std::make_unique<TransactionLogRollbackExecutor>(*service_data_control_,

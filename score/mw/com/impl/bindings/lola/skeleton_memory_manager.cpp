@@ -804,9 +804,11 @@ void SkeletonMemoryManager::InitializeSharedMemoryForControl(
     auto& control = (asil_level == QualityType::kASIL_QM) ? control_qm_ : control_asil_b_;
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        number_of_events_and_fields_.has_value(),
-        "number_of_events_and_fields_ must be set before constructing the ServiceDataControl.");
-    control = memory->construct<ServiceDataControl>(number_of_events_and_fields_.value(), *memory);
+        number_of_non_coherent_events_and_fields_.has_value() && number_of_coherent_events_and_fields_.has_value(),
+        "number_of_non_coherent_events_and_fields_ / number_of_coherent_events_and_fields_ must be set before "
+        "constructing the ServiceDataControl.");
+    control = memory->construct<ServiceDataControl>(
+        number_of_non_coherent_events_and_fields_.value(), number_of_coherent_events_and_fields_.value(), *memory);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control != nullptr);
 }
 
