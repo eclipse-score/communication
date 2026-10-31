@@ -582,8 +582,8 @@ auto Skeleton::Register(const ElementFqId element_fq_id,
 {
     if (use_gateway_forwarded_shm_ || was_old_shm_region_reopened_)
     {
-        auto [event_data_control_qm, event_data_control_asil_b] =
-            memory_manager_.RetrieveEventControlsFromOpenedSharedMemory(element_fq_id);
+        auto event_controls =
+            memory_manager_.RetrieveEventControlsFromOpenedSharedMemory(element_fq_id, element_properties);
 
         if (was_old_shm_region_reopened_)
         {
@@ -594,23 +594,29 @@ auto Skeleton::Register(const ElementFqId element_fq_id,
             // process but the crashed process had tracing enabled and therefore may have transactions that need to be
             // rolled back. If tracing was also disabled in the previous process or if there are no transactions to
             // rollback, RollbackSkeletonTracingTransactions will simply do nothing.
-            memory_manager_.RollbackSkeletonTracingTransactions(event_data_control_qm);
-            if (event_data_control_asil_b != nullptr)
+            // CoherencyType::kCoherent events have no transaction log / tracing support, so there is nothing to roll
+            // back in that case (the SkeletonMemoryManager::EventControlNonCoherentPair alternative is then simply
+            // not active).
+            if (auto* const non_coherent_pair =
+                    std::get_if<SkeletonMemoryManager::EventControlNonCoherentPair>(&event_controls))
             {
-                memory_manager_.RollbackSkeletonTracingTransactions(*event_data_control_asil_b);
+                memory_manager_.RollbackSkeletonTracingTransactions(non_coherent_pair->qm.get());
+                if (non_coherent_pair->asil_b != nullptr)
+                {
+                    memory_manager_.RollbackSkeletonTracingTransactions(*non_coherent_pair->asil_b);
+                }
             }
         }
 
         auto& event_data_storage = memory_manager_.RetrieveEventDataFromOpenedSharedMemory(element_fq_id);
-        return {event_data_storage, event_data_control_qm, event_data_control_asil_b};
+        return {event_data_storage, std::move(event_controls)};
     }
 
     auto& event_data_storage = memory_manager_.CreateEventDataInCreatedSharedMemory(
         element_fq_id, element_properties, data_type_size_info, initialize_sample_callback);
-    auto [event_data_control_qm, event_data_control_asil_b] =
-        memory_manager_.CreateEventControlsInCreatedSharedMemory(element_fq_id, element_properties);
+    auto event_controls = memory_manager_.CreateEventControlsInCreatedSharedMemory(element_fq_id, element_properties);
 
-    return {event_data_storage, event_data_control_qm, event_data_control_asil_b};
+    return {event_data_storage, std::move(event_controls)};
 }
 
 auto Skeleton::RegisterMethodHandlers(const QualityType asil_level,

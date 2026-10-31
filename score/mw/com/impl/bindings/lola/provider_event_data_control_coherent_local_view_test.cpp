@@ -70,5 +70,21 @@ TEST_F(ProviderEventDataControlCoherentLocalViewFixture, DiscardIsANoOp)
     EXPECT_FALSE(event_data_control_.newest_index_.has_value());
 }
 
+TEST_F(ProviderEventDataControlCoherentLocalViewFixture, GetNewestIndexReturnsEmptyOptionalWhenNothingPublishedYet)
+{
+    EXPECT_FALSE(unit_.GetNewestIndex().has_value());
+}
+
+TEST_F(ProviderEventDataControlCoherentLocalViewFixture, GetNewestIndexReturnsIndexOfMostRecentlyPublishedSlot)
+{
+    const auto first_slot_index = unit_.AllocateNextSlot();
+    unit_.EventReady(first_slot_index, 1U);
+    EXPECT_EQ(unit_.GetNewestIndex(), first_slot_index);
+
+    const auto second_slot_index = unit_.AllocateNextSlot();
+    unit_.EventReady(second_slot_index, 2U);
+    EXPECT_EQ(unit_.GetNewestIndex(), second_slot_index);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola

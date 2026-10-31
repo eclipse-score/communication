@@ -20,6 +20,7 @@
 #include <score/span.hpp>
 
 #include <cstddef>
+#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -71,6 +72,14 @@ class ProviderEventDataControlCoherentLocalView final
 
     /// \brief Directly access CoherentEventSlotStatus for one specific slot
     CoherentEventSlotStatus operator[](const SlotIndexType slot_index) const noexcept;
+
+    /// \brief Returns the index of the slot holding the most recently published sample, or an empty optional, if no
+    /// sample has been published yet.
+    ///
+    /// \details Used e.g. to resynchronize the skeleton-side current-timestamp counter with an already-existing
+    /// (re-opened) CONTROL segment, mirroring EventDataControlComposite::GetLatestTimestamp() for
+    /// CoherencyType::kNonCoherent.
+    std::optional<SlotIndexType> GetNewestIndex() const noexcept;
 
   private:
     LocalEventControlSlots state_slots_;

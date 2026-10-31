@@ -54,7 +54,15 @@ Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void> sample,
     // The current logic will not exceed the maximum value.
     // coverity[autosar_cpp14_a4_7_1_violation]
     ++current_timestamp_;
-    event_data_control_composite_->EventReady(slot, current_timestamp_);
+    if (event_properties_.coherency == CoherencyType::kCoherent)
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_coherent_composite_.has_value());
+        event_data_control_coherent_composite_.value().EventReady(slot, current_timestamp_);
+    }
+    else
+    {
+        event_data_control_composite_->EventReady(slot, current_timestamp_);
+    }
     std::ignore = NotifyConsumersIfHandlersRegistered();
     if (send_trace_callback.has_value())
     {
@@ -70,6 +78,39 @@ Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void> sample,
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 Result<impl::SampleAllocateePtr<void>> SkeletonEvent::Allocate(SampleAllocateeGuard guard)
 {
+    if (event_properties_.coherency == CoherencyType::kCoherent)
+    {
+        if (!event_data_control_coherent_composite_.has_value())
+        {
+            ::score::mw::log::LogError("lola") << "Tried to allocate event, but the EventDataControlCoherent does "
+                                                  "not exist!";
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+        // Unlike the kNonCoherent path below, slot allocation always succeeds (no "too few slots configured" case
+        // exists for a kCoherent event, see ProviderEventDataControlCoherentLocalView). The only possible reaction
+        // to a misbehaving QM consumer is detecting a QM/ASIL-B control section divergence and disconnecting QM
+        // consumers from that point onwards (see EventDataControlCoherentComposite::IsQmControlDisconnected()).
+        auto& event_data_control_coherent_composite = event_data_control_coherent_composite_.value();
+        const auto slot_index = event_data_control_coherent_composite.AllocateNextSlot();
+
+        if (!qm_disconnect_ && event_data_control_coherent_composite.IsQmControlDisconnected())
+        {
+            qm_disconnect_ = true;
+            score::mw::log::LogWarn("lola")
+                << __func__ << __LINE__
+                << "Disconnecting unsafe QM consumers as QM/ASIL-B control sections diverged on a kCoherent "
+                   "ASIL-B enabled event: "
+                << element_fq_id_;
+            parent_.DisconnectQmConsumers();
+        }
+
+        return MakeSampleAllocateePtr(
+            SampleAllocateePtr(event_data_storage_local_view_->GetTypeErasedDataSlot(slot_index),
+                               event_data_control_coherent_composite,
+                               slot_index),
+            std::move(guard));
+    }
+
     if (!event_data_control_composite_.has_value())
     {
         ::score::mw::log::LogError("lola") << "Tried to allocate event, but the EventDataControl does not exist!";
@@ -121,6 +162,13 @@ Result<impl::SampleAllocateePtr<void>> SkeletonEvent::Allocate(SampleAllocateeGu
 
 Result<impl::SamplePtr<void>> SkeletonEvent::GetLatestSample(QualityType quality_type)
 {
+    // CoherencyType::kCoherent is restricted (at configuration-validation time, see
+    // CreateSkeletonEventProperties()) to events/fields with no Getter enabled, so this should never be invoked for
+    // a kCoherent event.
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        event_properties_.coherency != CoherencyType::kCoherent,
+        "GetLatestSample() is not supported for a CoherencyType::kCoherent event.");
+
     const QualityType event_quality_type = parent_.GetInstanceQualityType();
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         (event_quality_type != QualityType::kASIL_QM) || (quality_type != QualityType::kASIL_B),
@@ -160,57 +208,92 @@ Result<void> SkeletonEvent::PrepareOffer(const std::optional<InitializeSampleCal
         parent_.Register(element_fq_id_, event_properties_, event_sample_size_info_, initialize_sample_callback);
     event_data_storage_local_view_.emplace(registration_result.event_data_storage, event_sample_size_info_);
 
-    auto& provider_control_local_view_qm =
-        provider_control_local_view_qm_.emplace(registration_result.event_control_qm.data_control);
-    score::cpp::ignore = consumer_control_local_view_qm_.emplace(registration_result.event_control_qm.data_control);
-
-    const bool is_skeleton_event_asil_b = registration_result.event_control_asil_b != nullptr;
-    ProviderEventDataControlLocalView<>* provider_control_local_view_asil_b_ptr{nullptr};
-    if (is_skeleton_event_asil_b)
+    if (event_properties_.coherency == CoherencyType::kCoherent)
     {
-        auto& provider_control_local_view_asil_b =
-            provider_control_local_view_asil_b_.emplace(registration_result.event_control_asil_b->data_control);
-        score::cpp::ignore =
-            consumer_control_local_view_asil_b_.emplace(registration_result.event_control_asil_b->data_control);
-        provider_control_local_view_asil_b_ptr = &provider_control_local_view_asil_b;
+        auto* const event_control_coherent_pair =
+            std::get_if<SkeletonMemoryManager::EventControlCoherentPair>(&registration_result.event_controls);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            event_control_coherent_pair != nullptr,
+            "EventControlCoherent must be available for a CoherencyType::kCoherent event.");
+        auto& event_control_coherent_qm = event_control_coherent_pair->qm.get();
+
+        auto& provider_control_local_view_coherent_qm =
+            provider_control_local_view_coherent_qm_.emplace(event_control_coherent_qm.data_control);
+
+        ProviderEventDataControlCoherentLocalView* provider_control_local_view_coherent_asil_b_ptr{nullptr};
+        if (event_control_coherent_pair->asil_b != nullptr)
+        {
+            provider_control_local_view_coherent_asil_b_ptr = &provider_control_local_view_coherent_asil_b_.emplace(
+                event_control_coherent_pair->asil_b->data_control);
+        }
+        score::cpp::ignore = event_data_control_coherent_composite_.emplace(
+            provider_control_local_view_coherent_qm, provider_control_local_view_coherent_asil_b_ptr);
+
+        // CoherencyType::kCoherent events do not support IPC-Tracing or field Getter/Setter semantics (enforced at
+        // configuration-validation time, see CreateSkeletonEventProperties()), so unlike the kNonCoherent path
+        // below, there is no transaction-log registration / type-erased-sample-ptrs-guard setup needed here. No
+        // consumer-side local view is needed either, see the provider_control_local_view_coherent_qm_/_asil_b_
+        // member doc.
     }
-    score::cpp::ignore =
-        event_data_control_composite_.emplace(provider_control_local_view_qm, provider_control_local_view_asil_b_ptr);
-
-    const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
-                                           (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
-    if (!tracing_globally_enabled)
+    else
     {
-        DisableAllTracePoints(tracing_data_);
-    }
+        auto* const non_coherent_pair =
+            std::get_if<SkeletonMemoryManager::EventControlNonCoherentPair>(&registration_result.event_controls);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            non_coherent_pair != nullptr, "EventControl must be available for a CoherencyType::kNonCoherent event.");
+        auto& event_control_qm = non_coherent_pair->qm.get();
 
-    const bool tracing_for_skeleton_event_enabled =
-        tracing_data_.enable_send || tracing_data_.enable_send_with_allocate;
+        auto& provider_control_local_view_qm = provider_control_local_view_qm_.emplace(event_control_qm.data_control);
+        score::cpp::ignore = consumer_control_local_view_qm_.emplace(event_control_qm.data_control);
 
-    // QM TransactionLog: register if tracing is enabled OR getter is enabled
-    if (tracing_for_skeleton_event_enabled || field_getter_enabled_)
-    {
-        score::cpp::ignore = transaction_log_registration_guard_qm_.emplace(
-            registration_result.event_control_qm.transaction_log_set_.RegisterSkeletonTransactionLog(
-                consumer_control_local_view_qm_.value()));
-    }
+        const bool is_skeleton_event_asil_b = non_coherent_pair->asil_b != nullptr;
+        ProviderEventDataControlLocalView<>* provider_control_local_view_asil_b_ptr{nullptr};
+        if (is_skeleton_event_asil_b)
+        {
+            auto& provider_control_local_view_asil_b =
+                provider_control_local_view_asil_b_.emplace(non_coherent_pair->asil_b->data_control);
+            score::cpp::ignore = consumer_control_local_view_asil_b_.emplace(non_coherent_pair->asil_b->data_control);
+            provider_control_local_view_asil_b_ptr = &provider_control_local_view_asil_b;
+        }
+        score::cpp::ignore = event_data_control_composite_.emplace(provider_control_local_view_qm,
+                                                                   provider_control_local_view_asil_b_ptr);
 
-    // ASIL-B TransactionLog: register ASIL-B TransactionLog if getter is enabled AND SkeletonEvent is ASIL-B.
-    if (field_getter_enabled_ && is_skeleton_event_asil_b)
-    {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(consumer_control_local_view_asil_b_.has_value());
-        score::cpp::ignore = transaction_log_registration_guard_asil_b_.emplace(
-            registration_result.event_control_asil_b->transaction_log_set_.RegisterSkeletonTransactionLog(
-                consumer_control_local_view_asil_b_.value()));
-    }
+        const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
+                                               (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
+        if (!tracing_globally_enabled)
+        {
+            DisableAllTracePoints(tracing_data_);
+        }
 
-    // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all lines in
-    // both branches (true / false) being covered. "Decision couldn't be analyzed" only appeared after changing the code
-    // within the if statement (without changing the condition / tests). Suppression can be removed when bug is fixed in
-    // Ticket-188259).
-    if (tracing_for_skeleton_event_enabled)
-    {
-        score::cpp::ignore = type_erased_sample_ptrs_guard_.emplace(tracing_data_.service_element_tracing_data);
+        const bool tracing_for_skeleton_event_enabled =
+            tracing_data_.enable_send || tracing_data_.enable_send_with_allocate;
+
+        // QM TransactionLog: register if tracing is enabled OR getter is enabled
+        if (tracing_for_skeleton_event_enabled || field_getter_enabled_)
+        {
+            score::cpp::ignore = transaction_log_registration_guard_qm_.emplace(
+                event_control_qm.transaction_log_set_.RegisterSkeletonTransactionLog(
+                    consumer_control_local_view_qm_.value()));
+        }
+
+        // ASIL-B TransactionLog: register ASIL-B TransactionLog if getter is enabled AND SkeletonEvent is ASIL-B.
+        if (field_getter_enabled_ && is_skeleton_event_asil_b)
+        {
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(consumer_control_local_view_asil_b_.has_value());
+            score::cpp::ignore = transaction_log_registration_guard_asil_b_.emplace(
+                non_coherent_pair->asil_b->transaction_log_set_.RegisterSkeletonTransactionLog(
+                    consumer_control_local_view_asil_b_.value()));
+        }
+
+        // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all
+        // lines in both branches (true / false) being covered. "Decision couldn't be analyzed" only appeared after
+        // changing the code within the if statement (without changing the condition / tests). Suppression can be
+        // removed when bug is fixed in Ticket-188259).
+        if (tracing_for_skeleton_event_enabled)
+        {
+            score::cpp::ignore = type_erased_sample_ptrs_guard_.emplace(tracing_data_.service_element_tracing_data);
+        }
+        // LCOV_EXCL_BR_STOP
     }
 
     UpdateCurrentTimestamp();
@@ -275,6 +358,9 @@ void SkeletonEvent::PrepareStopOffer()
     provider_control_local_view_asil_b_.reset();
     consumer_control_local_view_qm_.reset();
     consumer_control_local_view_asil_b_.reset();
+    event_data_control_coherent_composite_.reset();
+    provider_control_local_view_coherent_qm_.reset();
+    provider_control_local_view_coherent_asil_b_.reset();
 }
 
 void SkeletonEvent::SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept
@@ -284,6 +370,14 @@ void SkeletonEvent::SetSkeletonEventTracingData(impl::tracing::SkeletonEventTrac
 
 void SkeletonEvent::UpdateCurrentTimestamp()
 {
+    if (event_properties_.coherency == CoherencyType::kCoherent)
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_coherent_composite_.has_value(),
+                                                    "EventDataControlCoherentComposite must be initialized.");
+        current_timestamp_ = event_data_control_coherent_composite_.value().GetLatestTimestamp();
+        return;
+    }
+
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_.has_value(),
                                                 "EventDataControlComposite must be initialized.");
     current_timestamp_ = event_data_control_composite_.value().GetLatestTimestamp();

@@ -73,14 +73,13 @@ class Skeleton final : public SkeletonBinding
 
   public:
     /// \brief Result of a dynamic registration of an event at the Skeleton.
-    /// \details event_data_storage determines, where to store the data and is always contained.
-    /// event_control_qm determines, how to control the access to the data and is always contained.
-    /// event_control_asil_b is only contained, if the Skeleton is of ASIL B (otherwise a nullptr)
+    /// \details event_data_storage determines, where to store the data and is always contained. event_controls holds
+    /// the event's control-section data, in the variant alternative matching its configured CoherencyType - see
+    /// SkeletonMemoryManager::EventControlsResult for details.
     struct RegistrationResult
     {
         EventDataStorage& event_data_storage;
-        EventControl& event_control_qm;
-        EventControl* event_control_asil_b;
+        SkeletonMemoryManager::EventControlsResult event_controls;
     };
 
     static std::unique_ptr<Skeleton> Create(const InstanceIdentifier& identifier,

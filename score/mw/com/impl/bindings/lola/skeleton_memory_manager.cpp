@@ -129,6 +129,8 @@ SkeletonMemoryManager::SkeletonMemoryManager(QualityType quality_type,
       control_qm_{nullptr},
       control_asil_b_{nullptr},
       number_of_events_and_fields_{},
+      number_of_non_coherent_events_and_fields_{},
+      number_of_coherent_events_and_fields_{},
       storage_resource_{},
       control_qm_resource_{},
       control_asil_resource_{}
@@ -145,6 +147,30 @@ auto SkeletonMemoryManager::CreateSharedMemory(
     // CreateSharedMemoryForControl below), independent of how the shm-object sizes are determined (simulation,
     // analytic estimation, or manually specified sizes).
     number_of_events_and_fields_ = events.size() + fields.size();
+
+    std::size_t number_of_coherent{0U};
+    const auto count_coherent_service_elements = [this, &number_of_coherent](auto& bindings, const bool are_fields) {
+        for (const auto& binding : bindings)
+        {
+            const std::string name{binding.first};
+            // Only query the configured coherency for service-elements which are actually present in the deployment
+            // configuration. Service-elements missing from the configuration (e.g. a test double that registers a
+            // binding under a name not present in the deployment) are treated as CoherencyType::kNonCoherent (the
+            // default), consistent with GetCoherencyFromConfig()'s fallback value. Any actual mismatch between an
+            // offered service-element and its configuration is still detected later on, e.g. in
+            // CalculateControlShmResourceStorageSize(), which terminates on a missing deployment entry.
+            const bool is_configured = are_fields ? lola_service_instance_deployment_.ContainsField(name)
+                                                  : lola_service_instance_deployment_.ContainsEvent(name);
+            if (is_configured && (GetCoherencyFromConfig(binding.first, are_fields) == CoherencyType::kCoherent))
+            {
+                ++number_of_coherent;
+            }
+        }
+    };
+    count_coherent_service_elements(events, false);
+    count_coherent_service_elements(fields, true);
+    number_of_coherent_events_and_fields_ = number_of_coherent;
+    number_of_non_coherent_events_and_fields_ = number_of_events_and_fields_.value() - number_of_coherent;
 
     const auto storage_size_calc_result = CalculateShmResourceStorageSizes(events, fields);
 
@@ -194,18 +220,33 @@ auto SkeletonMemoryManager::OpenExistingSharedMemory(
 
 auto SkeletonMemoryManager::CreateEventControlsInCreatedSharedMemory(const ElementFqId element_fq_id,
                                                                      const SkeletonEventProperties& element_properties)
-    -> std::pair<std::reference_wrapper<EventControl>, EventControl*>
+    -> EventControlsResult
 {
+    if (element_properties.coherency == CoherencyType::kCoherent)
+    {
+        auto& provider_event_control_coherent_qm =
+            EmplaceEventControlCoherent(QualityType::kASIL_QM, element_fq_id, element_properties);
+        if (control_asil_resource_ == nullptr)
+        {
+            return EventControlCoherentPair{provider_event_control_coherent_qm, nullptr};
+        }
+
+        auto& provider_event_control_coherent_asil_b =
+            EmplaceEventControlCoherent(QualityType::kASIL_B, element_fq_id, element_properties);
+
+        return EventControlCoherentPair{provider_event_control_coherent_qm, &provider_event_control_coherent_asil_b};
+    }
+
     auto& provider_event_control_qm = EmplaceEventControl(QualityType::kASIL_QM, element_fq_id, element_properties);
     if (control_asil_resource_ == nullptr)
 
     {
-        return {provider_event_control_qm, nullptr};
+        return EventControlNonCoherentPair{provider_event_control_qm, nullptr};
     }
 
     auto& provider_event_control_asil_b = EmplaceEventControl(QualityType::kASIL_B, element_fq_id, element_properties);
 
-    return {provider_event_control_qm, &provider_event_control_asil_b};
+    return EventControlNonCoherentPair{provider_event_control_qm, &provider_event_control_asil_b};
 }
 
 EventDataStorage& SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory(
@@ -228,16 +269,38 @@ auto SkeletonMemoryManager::RetrieveEventDataFromOpenedSharedMemory(const Elemen
     return storage_->GetEventDataStorage(element_fq_id);
 }
 
-auto SkeletonMemoryManager::RetrieveEventControlsFromOpenedSharedMemory(const ElementFqId element_fq_id)
-    -> std::pair<std::reference_wrapper<EventControl>, EventControl*>
+auto SkeletonMemoryManager::RetrieveEventControlsFromOpenedSharedMemory(
+    const ElementFqId element_fq_id,
+    const SkeletonEventProperties& element_properties) -> EventControlsResult
 {
+    if (element_properties.coherency == CoherencyType::kCoherent)
+    {
+        auto* const event_control_coherent_qm_it = control_qm_->event_controls_coherent_.find(element_fq_id);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            event_control_coherent_qm_it != control_qm_->event_controls_coherent_.cend(),
+            "Could not find coherent element fq id in map");
+        EventControlCoherent& event_control_coherent_qm = event_control_coherent_qm_it->second;
+        if (quality_type_ == QualityType::kASIL_QM)
+        {
+            return EventControlCoherentPair{event_control_coherent_qm, nullptr};
+        }
+
+        auto* const event_control_coherent_asil_b_it = control_asil_b_->event_controls_coherent_.find(element_fq_id);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            event_control_coherent_asil_b_it != control_asil_b_->event_controls_coherent_.cend(),
+            "Could not find asil b coherent element fq id in map");
+        EventControlCoherent& event_control_coherent_asil_b = event_control_coherent_asil_b_it->second;
+
+        return EventControlCoherentPair{event_control_coherent_qm, &event_control_coherent_asil_b};
+    }
+
     auto* const event_control_qm_it = control_qm_->event_controls_.find(element_fq_id);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_control_qm_it != control_qm_->event_controls_.cend(),
                                                 "Could not find element fq id in map");
     EventControl& event_control_qm = event_control_qm_it->second;
     if (quality_type_ == QualityType::kASIL_QM)
     {
-        return {event_control_qm, nullptr};
+        return EventControlNonCoherentPair{event_control_qm, nullptr};
     }
 
     auto* const event_control_asil_b_it = control_asil_b_->event_controls_.find(element_fq_id);
@@ -249,12 +312,13 @@ auto SkeletonMemoryManager::RetrieveEventControlsFromOpenedSharedMemory(const El
     // Justification: The "event_data_control_asil_b" and "typed_event_data_storage_ptr" are still valid lifetime even
     // returned pointer to internal state until Skeleton object is alive.
     // coverity[autosar_cpp14_a3_8_1_violation]
-    return {// The lifetime of the "event_data_control_asil_b" object lasts as long as the Skeleton is alive.
-            // coverity[autosar_cpp14_m7_5_1_violation]
-            // coverity[autosar_cpp14_m7_5_2_violation]
-            // coverity[autosar_cpp14_a3_8_1_violation]
-            event_control_qm,
-            &event_control_asil_b};
+    return EventControlNonCoherentPair{
+        // The lifetime of the "event_data_control_asil_b" object lasts as long as the Skeleton is alive.
+        // coverity[autosar_cpp14_m7_5_1_violation]
+        // coverity[autosar_cpp14_m7_5_2_violation]
+        // coverity[autosar_cpp14_a3_8_1_violation]
+        event_control_qm,
+        &event_control_asil_b};
 }
 
 void SkeletonMemoryManager::RollbackSkeletonTracingTransactions(EventControl& event_control)
@@ -322,6 +386,9 @@ void SkeletonMemoryManager::CleanupSharedMemoryAfterCrash()
             provider_event_data_control_local.RemoveAllocationsForWriting();
         }
     }
+
+    // CoherencyType::kCoherent events in event_controls_coherent_ need no crash-recovery: No "in writing" marker
+    // exists that could be left dangling.
 }
 
 void SkeletonMemoryManager::Reset()
@@ -529,23 +596,36 @@ std::size_t SkeletonMemoryManager::CalculateControlShmResourceStorageSize(
     // Collect the per service-element sizing information from the deployment configuration. The layout-dependent size
     // algorithm itself lives next to ServiceDataControl (CalculateServiceDataControlShmSize), so that the
     // data-structure and the algorithm reasoning about its memory footprint stay closely coupled.
-
-    const auto collect_service_elements = [this](
-                                              std::vector<ServiceElementControlSizeInfo>& events_and_fields_size_infos,
-                                              auto& bindings,
-                                              const bool are_fields) {
-        for (const auto& binding : bindings)
-        {
-            const std::size_t number_of_slots = GetNumberOfSampleSlotsFromConfig(binding.first, are_fields);
-            const std::size_t max_subscribers = GetMaxSubscribersFromConfig(binding.first, are_fields);
-            events_and_fields_size_infos.push_back(ServiceElementControlSizeInfo{number_of_slots, max_subscribers});
-        }
-    };
+    // Service-elements are split by configured coherency, since CoherencyType::kNonCoherent and
+    // CoherencyType::kCoherent service-elements are stored in separate containers (event_controls_ /
+    // event_controls_coherent_) within ServiceDataControl.
+    const auto collect_service_elements =
+        [this](std::vector<ServiceElementControlSizeInfo>& events_and_fields_size_infos,
+               std::vector<ServiceElementControlSizeInfo>& coherent_events_and_fields_size_infos,
+               auto& bindings,
+               const bool are_fields) {
+            for (const auto& binding : bindings)
+            {
+                const std::size_t number_of_slots = GetNumberOfSampleSlotsFromConfig(binding.first, are_fields);
+                const std::size_t max_subscribers = GetMaxSubscribersFromConfig(binding.first, are_fields);
+                if (GetCoherencyFromConfig(binding.first, are_fields) == CoherencyType::kCoherent)
+                {
+                    coherent_events_and_fields_size_infos.push_back(
+                        ServiceElementControlSizeInfo{number_of_slots, max_subscribers});
+                }
+                else
+                {
+                    events_and_fields_size_infos.push_back(
+                        ServiceElementControlSizeInfo{number_of_slots, max_subscribers});
+                }
+            }
+        };
     std::vector<ServiceElementControlSizeInfo> events_and_fields_size_infos{};
-    collect_service_elements(events_and_fields_size_infos, events, false);
-    collect_service_elements(events_and_fields_size_infos, fields, true);
+    std::vector<ServiceElementControlSizeInfo> coherent_events_and_fields_size_infos{};
+    collect_service_elements(events_and_fields_size_infos, coherent_events_and_fields_size_infos, events, false);
+    collect_service_elements(events_and_fields_size_infos, coherent_events_and_fields_size_infos, fields, true);
 
-    return CalculateServiceDataControlShmSize(events_and_fields_size_infos);
+    return CalculateServiceDataControlShmSize(events_and_fields_size_infos, coherent_events_and_fields_size_infos);
 }
 
 std::size_t SkeletonMemoryManager::GetNumberOfSampleSlotsFromConfig(const std::string_view service_element_name,
@@ -588,6 +668,22 @@ std::size_t SkeletonMemoryManager::GetMaxSubscribersFromConfig(const std::string
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(deployment.max_subscribers_.has_value(),
                                                 "Max subscribers need to be specified for event on provider side!");
     return deployment.max_subscribers_.value();
+}
+
+CoherencyType SkeletonMemoryManager::GetCoherencyFromConfig(const std::string_view service_element_name,
+                                                            const bool is_field) const
+{
+    const std::string name{service_element_name};
+    if (is_field)
+    {
+        const auto deployment =
+            GetServiceElementInstanceDeployment<ServiceElementType::FIELD>(lola_service_instance_deployment_, name);
+        return deployment.lola_event_instance_deployment_.GetCoherency();
+    }
+
+    const auto deployment =
+        GetServiceElementInstanceDeployment<ServiceElementType::EVENT>(lola_service_instance_deployment_, name);
+    return deployment.GetCoherency();
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3":
@@ -834,6 +930,34 @@ EventControl& SkeletonMemoryManager::EmplaceEventControl(const QualityType asil_
                                                 "Couldn't register/emplace EventControl in control-section.");
 
     return control_qm.first->second;
+}
+
+EventControlCoherent& SkeletonMemoryManager::EmplaceEventControlCoherent(
+    const QualityType asil_level,
+    ElementFqId element_fq_id,
+    const SkeletonEventProperties& element_properties)
+{
+    // Just like EmplaceEventControl, a CoherencyType::kCoherent event's EventControlCoherent is placed in both
+    // control sections (QM and, if the Skeleton is ASIL-B, also ASIL-B) - never just in one of them, to keep the
+    // two control sections strictly isolated (see EventControlCoherentPair).
+    auto* const service_data_control = (asil_level == QualityType::kASIL_QM) ? control_qm_ : control_asil_b_;
+    auto* const memory_resource =
+        (asil_level == QualityType::kASIL_QM) ? control_qm_resource_.get() : control_asil_resource_.get();
+
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(service_data_control != nullptr);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(memory_resource != nullptr);
+
+    auto event_control_coherent = service_data_control->event_controls_coherent_.emplace(
+        std::piecewise_construct,
+        std::forward_as_tuple(element_fq_id),
+        std::forward_as_tuple(element_properties.GetTotalNumberOfSlots(),
+                              element_properties.max_subscribers,
+                              element_properties.enforce_max_samples,
+                              *memory_resource));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_control_coherent.second,
+                                                "Couldn't register/emplace EventControlCoherent in control-section.");
+
+    return event_control_coherent.first->second;
 }
 
 }  // namespace score::mw::com::impl::lola

@@ -15,9 +15,11 @@
 
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control_coherent_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage_local_view.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
@@ -127,6 +129,12 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
         return event_data_control_composite_.value();
     }
 
+    EventDataControlCoherentComposite& GetEventDataControlCoherentComposite()
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_coherent_composite_.has_value());
+        return event_data_control_coherent_composite_.value();
+    }
+
     ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView(QualityType quality_type)
     {
         if (quality_type == QualityType::kASIL_B)
@@ -149,11 +157,25 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     memory::DataTypeSizeInfo event_sample_size_info_;
     SkeletonEventProperties event_properties_;
 
+    // All of the local views below are populated by PrepareOffer() / cleared by PrepareStopOffer(), depending on
+    // event_properties_.coherency.
+
+    /// \brief Local views for a CoherencyType::kNonCoherent event's QM and (if the Skeleton is of ASIL-B quality
+    /// type) ASIL-B control data.
     std::optional<ProviderEventDataControlLocalView<>> provider_control_local_view_qm_;
     std::optional<ProviderEventDataControlLocalView<>> provider_control_local_view_asil_b_;
     std::optional<ConsumerEventDataControlLocalView<>> consumer_control_local_view_qm_;
     std::optional<ConsumerEventDataControlLocalView<>> consumer_control_local_view_asil_b_;
     std::optional<EventDataControlComposite<>> event_data_control_composite_;
+
+    /// \brief Local views for a CoherencyType::kCoherent event's QM and (if the Skeleton is of ASIL-B quality type)
+    /// ASIL-B control data, and the composite used to write to both at once (see EventDataControlCoherentComposite
+    /// for the rationale: just like for kNonCoherent, QM and ASIL-B control sections must remain strictly isolated).
+    /// No consumer-side local view is needed here since CoherencyType::kCoherent supports neither IPC-Tracing nor
+    /// field Getter/Setter semantics.
+    std::optional<ProviderEventDataControlCoherentLocalView> provider_control_local_view_coherent_qm_;
+    std::optional<ProviderEventDataControlCoherentLocalView> provider_control_local_view_coherent_asil_b_;
+    std::optional<EventDataControlCoherentComposite> event_data_control_coherent_composite_;
 
     EventSlotStatus::EventTimeStamp current_timestamp_;
     impl::tracing::SkeletonEventTracingData tracing_data_;

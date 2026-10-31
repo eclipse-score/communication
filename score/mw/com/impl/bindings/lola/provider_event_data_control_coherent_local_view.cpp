@@ -57,4 +57,9 @@ CoherentEventSlotStatus ProviderEventDataControlCoherentLocalView::operator[](
     return state_slots_[slot_index];
 }
 
+std::optional<SlotIndexType> ProviderEventDataControlCoherentLocalView::GetNewestIndex() const noexcept
+{
+    return event_data_control_->newest_index_;
+}
+
 }  // namespace score::mw::com::impl::lola

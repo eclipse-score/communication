@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
 
+#include "score/mw/com/impl/bindings/lola/event_data_control_coherent.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 
@@ -238,6 +239,51 @@ TEST_F(SampleAllocateePtrFixture, SwapOp)
     // ... and the referenced slots are swapped as well
     EXPECT_EQ(unit1.GetReferencedSlot(), slot2.value());
     EXPECT_EQ(unit2.GetReferencedSlot(), slot1.value());
+}
+
+/// \brief Test fixture for the CoherencyType::kCoherent SampleAllocateePtr ctor overload.
+class SampleAllocateePtrCoherentFixture : public ::testing::Test
+{
+  public:
+    FakeMemoryResource memory_{};
+    EventDataControlCoherent event_data_control_qm_{kMaxSlots, memory_};
+    EventDataControlCoherent event_data_control_asil_b_{kMaxSlots, memory_};
+    ProviderEventDataControlCoherentLocalView provider_view_qm_{event_data_control_qm_};
+    ProviderEventDataControlCoherentLocalView provider_view_asil_b_{event_data_control_asil_b_};
+    EventDataControlCoherentComposite control_composite_coherent_{provider_view_qm_, &provider_view_asil_b_};
+};
+
+TEST_F(SampleAllocateePtrCoherentFixture, DiscardsSlotOnBothQmAndAsilBOnDestruction)
+{
+    // Given a SampleAllocateePtr on an allocated slot, for a kCoherent event with QM and ASIL-B control
+    const auto slot = control_composite_coherent_.AllocateNextSlot();
+    std::uint8_t data{};
+    {
+        auto unit = SampleAllocateePtr(&data, control_composite_coherent_, slot);
+    }
+    // When it goes out of scope (without a preceding EventReady())
+
+    // Then Discard() was called on both the QM and ASIL-B control (no-op for kCoherent, but exercised nonetheless)
+    EXPECT_TRUE(provider_view_qm_[slot].IsInvalid());
+    EXPECT_TRUE(provider_view_asil_b_[slot].IsInvalid());
+}
+
+TEST_F(SampleAllocateePtrCoherentFixture, ReadySlotIsNotMarkedInvalidOnDestruction)
+{
+    // Given a SampleAllocateePtr on an allocated slot that is already marked as ready on both QM and ASIL-B
+    const auto slot = control_composite_coherent_.AllocateNextSlot();
+    control_composite_coherent_.EventReady(slot, 0x42);
+    std::uint8_t data{};
+    {
+        auto unit = SampleAllocateePtr(&data, control_composite_coherent_, slot);
+    }
+    // When it goes out of scope
+
+    // Then the underlying slot is _not_ marked invalid, on QM or ASIL-B
+    EXPECT_FALSE(provider_view_qm_[slot].IsInvalid());
+    EXPECT_FALSE(provider_view_asil_b_[slot].IsInvalid());
+    EXPECT_EQ(provider_view_qm_[slot].GetTimeStamp(), 0x42);
+    EXPECT_EQ(provider_view_asil_b_[slot].GetTimeStamp(), 0x42);
 }
 
 }  // namespace

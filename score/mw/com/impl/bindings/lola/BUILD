@@ -681,6 +681,21 @@ cc_library(
 )
 
 cc_library(
+    name = "event_data_control_coherent_composite",
+    srcs = ["event_data_control_coherent_composite.cpp"],
+    hdrs = ["event_data_control_coherent_composite.h"],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":coherent_event_slot_status",
+        ":control_slot_types",
+        ":provider_event_data_control_coherent_local_view",
+    ],
+)
+
+cc_library(
     name = "consumer_event_data_control_local_view",
     srcs = ["consumer_event_data_control_local_view.cpp"],
     hdrs = ["consumer_event_data_control_local_view.h"],
@@ -843,7 +858,9 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":consumer_event_data_control_local_view",
         ":control_slot_types",
+        ":event_data_control_coherent_composite",
         ":event_data_control_composite",
         "@score_baselibs//score/language/safecpp/safe_math",
     ],
@@ -860,11 +877,15 @@ cc_library(
     ],
     deps = [
         ":event_control",
+        ":event_control_coherent",
         ":event_data_control",
+        ":event_data_control_coherent",
+        ":event_data_control_coherent_composite",
         ":event_data_control_composite",
         ":event_data_storage",
         ":event_slot_status",
         ":event_subscription_control",
+        ":provider_event_data_control_coherent_local_view",
         ":sample_allocatee_ptr",
         ":sample_ptr",
     ],
@@ -1170,6 +1191,20 @@ cc_unit_test(
     ],
     deps = [
         ":event_data_control_coherent",
+        ":provider_event_data_control_coherent_local_view",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "event_data_control_coherent_composite_test",
+    srcs = [
+        "event_data_control_coherent_composite_test.cpp",
+    ],
+    deps = [
+        ":event_data_control_coherent",
+        ":event_data_control_coherent_composite",
         ":provider_event_data_control_coherent_local_view",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@score_baselibs//score/mw/log",

@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control_coherent_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 
 #include <functional>
@@ -60,6 +61,18 @@ class SampleAllocateePtr
     SampleAllocateePtr(pointer ptr,
                        EventDataControlComposite<>& event_data_ctrl,
                        ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view,
+                       const SlotIndexType slot_index) noexcept;
+
+    /// \brief ctor creates valid SampleAllocateePtr for a CoherencyType::kCoherent event from its members.
+    /// \details Unlike the kNonCoherent ctor above, there is no consumer_event_data_control_local_view: kCoherent
+    /// events do not support IPC-Tracing (the only feature consuming it), see
+    /// ProviderEventDataControlCoherentLocalView for details.
+    /// \param ptr pointer to managed object
+    /// \param event_data_control_coherent event data control structure(s) (QM and, if the Skeleton is ASIL-B, also
+    ///        ASIL-B), which manage the underlying event/sample in shmem.
+    /// \param slot_index index of event slot
+    SampleAllocateePtr(pointer ptr,
+                       EventDataControlCoherentComposite& event_data_control_coherent,
                        const SlotIndexType slot_index) noexcept;
 
     /// \brief SampleAllocateePtr is not copyable.
@@ -120,8 +133,15 @@ class SampleAllocateePtr
     /// if SampleAllocateePtr instances outlive the SkeletonEvent. Can only be a nullptr if SampleAllocateePtr is
     /// default constructed. This should be a pointer since the SampleAllocateePtr needs to update the ignore_qm_control
     /// flag in certain situations
+    /// \details Only one of event_data_control_ptr_ / event_data_control_coherent_ptr_ is non-null at a
+    /// time: a CoherencyType::kCoherent event uses event_data_control_coherent_ptr_ (and leaves
+    /// event_data_control_ptr_ / consumer_event_data_control_local_view_ both nullptr, as kCoherent events do not
+    /// support IPC-Tracing, the only feature consuming consumer_event_data_control_local_view_).
     EventDataControlComposite<>* event_data_control_ptr_;
     ConsumerEventDataControlLocalView<>* consumer_event_data_control_local_view_;
+    /// \brief Pointer to EventDataControlCoherentComposite owned by the SkeletonEvent, for a
+    /// CoherencyType::kCoherent event. See event_data_control_ptr_ for lifetime considerations (identical).
+    EventDataControlCoherentComposite* event_data_control_coherent_ptr_;
 };
 
 /// \brief Specializes the std::swap algorithm for SampleAllocateePtr. Swaps the contents of lhs and rhs. Calls

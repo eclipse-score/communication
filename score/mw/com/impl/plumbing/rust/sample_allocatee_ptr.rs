@@ -56,6 +56,10 @@ struct LolaSampleAllocateePtrBinding<T> {
     _event_slot_index: SlotIndexType,
     _event_data_control_ptr: *mut EventDataControlComposite,
     _consumer_data_control_local_: *mut ConsumerEventDataControlLocalView,
+    /// Opaque pointer mirror of `lola::EventDataControlCoherentComposite*`. Only the pointer size/alignment
+    /// matters here (the pointee is never dereferenced through this mirror), so an opaque `c_void` target
+    /// is sufficient; no dedicated layout mirror struct is needed as for `EventDataControlComposite` above.
+    _event_data_control_coherent_ptr_: *mut core::ffi::c_void,
 }
 
 /// Mirror of `someip::SampleAllocateePtr`. Unlike the LoLa counterpart it is not templated on the sample type on
