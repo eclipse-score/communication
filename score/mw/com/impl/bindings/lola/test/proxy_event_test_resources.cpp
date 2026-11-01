@@ -166,6 +166,17 @@ void ProxyMockedMemoryFixture::InitialiseDummySkeletonEvent(const ElementFqId el
     provider_event_data_control_local_.emplace(event_control_->data_control);
 }
 
+void ProxyMockedMemoryFixture::InitialiseDummySkeletonEventCoherent(
+    const ElementFqId element_fq_id,
+    const SkeletonEventProperties& skeleton_event_properties)
+{
+    std::tie(event_control_coherent_, event_data_storage_) =
+        fake_data_->AddEventCoherent<SampleType>(element_fq_id, skeleton_event_properties);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(event_control_coherent_ != nullptr);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(event_data_storage_ != nullptr);
+    consumer_event_data_control_coherent_local_.emplace(event_control_coherent_->data_control);
+}
+
 LolaProxyEventResources::LolaProxyEventResources() : ProxyMockedMemoryFixture{}
 {
     InitialiseDummySkeletonEvent(element_fq_id_,

@@ -326,6 +326,37 @@ TEST_F(ProxyCreationDeathTest, GettingEventDataControlWithoutInitialisedEventDat
     EXPECT_DEATH(proxy_->GetConsumerEventDataControlLocalView(uninitialised_element_fq_id), ".*");
 }
 
+TEST_F(ProxyCreationDeathTest, GettingCoherentEventDataControlWithoutInitialisedEventDataControlTerminates)
+{
+    // Given a fake Skeleton which creates an empty ServiceDataControl
+
+    // When creating a proxy
+    InitialiseProxyWithConstructor(identifier_);
+    EXPECT_NE(proxy_, nullptr);
+
+    // Then trying to get the coherent event data control / subscription control for an event that was not registered
+    // in event_controls_coherent_ will terminate
+    const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
+    EXPECT_DEATH(proxy_->GetConsumerEventDataControlCoherentLocalView(uninitialised_element_fq_id), ".*");
+    EXPECT_DEATH(proxy_->GetEventSubscriptionControlCoherent(uninitialised_element_fq_id), ".*");
+}
+
+TEST_F(ProxyCreationFixture, GetConsumerEventDataControlCoherentLocalViewReturnsViewForRegisteredCoherentEvent)
+{
+    // Given a fake Skeleton which registers a CoherencyType::kCoherent event
+    InitialiseDummySkeletonEventCoherent(kDummyElementFqId,
+                                         SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
+
+    // When creating a proxy
+    InitialiseProxyWithConstructor(identifier_);
+    EXPECT_NE(proxy_, nullptr);
+
+    // Then the coherent event data control view / subscription control can be looked up without terminating
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore =
+                                proxy_->GetConsumerEventDataControlCoherentLocalView(kDummyElementFqId));
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventSubscriptionControlCoherent(kDummyElementFqId));
+}
+
 TEST_F(ProxyCreationFixture, ProxyCreationFailsWhenEventIsConfiguredWithMixedCoherencyOnProxySide)
 {
     // Given a deployment which contains an event configured with CoherencyType::kMixed

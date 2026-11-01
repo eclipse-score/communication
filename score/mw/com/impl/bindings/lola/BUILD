@@ -443,8 +443,10 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola/test:__pkg__"],
     deps = [
+        ":consumer_event_data_control_coherent_local_view",
         ":event",
         ":event_control",
+        ":event_control_coherent",
         ":event_data_storage_local_view",
         ":event_subscription_control",
         ":proxy_instance_identifier",

@@ -606,6 +606,37 @@ ConsumerEventDataControlLocalView<> Proxy::GetConsumerEventDataControlLocalView(
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
+// value is not comparable and in our case the key is comparable. so no way for 'event_controls_coherent_.find()' to
+// throw an exception.
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+ConsumerEventDataControlCoherentLocalView Proxy::GetConsumerEventDataControlCoherentLocalView(
+    const ElementFqId element_fq_id)
+{
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
+                                                      "Proxy::GetEventControl: Managed memory control pointer is Null");
+    auto& service_data_control = GetServiceDataControl(*control_);
+    auto* const event_entry = service_data_control.event_controls_coherent_.find(element_fq_id);
+    if (event_entry == service_data_control.event_controls_coherent_.end())
+    {
+        score::mw::log::LogFatal("lola") << __func__ << __LINE__
+                                         << "Unable to find control channel for given event instance. Terminating.";
+        std::terminate();
+    }
+    // Suppress "AUTOSAR C++14 M7-5-1" rule: "A function shall not return a reference or a pointer to an automatic
+    // variable (including parameters), defined within the function".
+    // Suppress "AUTOSAR C++14 M7-5-2" rule: "The address of an object with automatic storage shall not be assigned
+    // to another object that may persist after the first object has ceased to exist.".
+    // The result pointer is still valid outside this method until "control" parameter is alive.
+    // Suppress AUTOSAR C++14 A3-8-1 rule: "An object shall not be accessed outside of its lifetime.".
+    // Despite the returned object reference, the object's lifetime is still handled externally by the caller.
+    // coverity[autosar_cpp14_m7_5_1_violation]
+    // coverity[autosar_cpp14_m7_5_2_violation]
+    // coverity[autosar_cpp14_a3_8_1_violation]
+    return ConsumerEventDataControlCoherentLocalView{event_entry->second.data_control};
+}
+
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
+// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
 // value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
 // exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
@@ -616,6 +647,26 @@ EventSubscriptionControl<>& Proxy::GetEventSubscriptionControl(const ElementFqId
     auto& service_data_control = GetServiceDataControl(*control_);
     auto* const event_entry = service_data_control.event_controls_.find(element_fq_id);
     if (event_entry == service_data_control.event_controls_.end())
+    {
+        score::mw::log::LogFatal("lola") << __func__ << __LINE__
+                                         << "Unable to find control channel for given event instance. Terminating.";
+        std::terminate();
+    }
+    return event_entry->second.subscription_control;
+}
+
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
+// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
+// value is not comparable and in our case the key is comparable. so no way for 'event_controls_coherent_.find()' to
+// throw an exception.
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+EventSubscriptionControl<>& Proxy::GetEventSubscriptionControlCoherent(const ElementFqId element_fq_id)
+{
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
+                                                      "Proxy::GetEventControl: Managed memory control pointer is Null");
+    auto& service_data_control = GetServiceDataControl(*control_);
+    auto* const event_entry = service_data_control.event_controls_coherent_.find(element_fq_id);
+    if (event_entry == service_data_control.event_controls_coherent_.end())
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__
                                          << "Unable to find control channel for given event instance. Terminating.";

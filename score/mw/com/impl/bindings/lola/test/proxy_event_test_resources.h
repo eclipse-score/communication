@@ -13,6 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_TEST_PROXY_EVENT_TEST_RESOURCES_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TEST_PROXY_EVENT_TEST_RESOURCES_H
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_coherent_local_view.h"
+#include "score/mw/com/impl/bindings/lola/event_control_coherent.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
@@ -163,6 +165,11 @@ class ProxyMockedMemoryFixture : public ::testing::Test
     void InitialiseDummySkeletonEvent(const ElementFqId element_fq_id,
                                       const SkeletonEventProperties& skeleton_event_properties);
 
+    /// \brief Analogous to InitialiseDummySkeletonEvent, but adds a CoherencyType::kCoherent event (i.e. to
+    /// event_controls_coherent_ instead of event_controls_).
+    void InitialiseDummySkeletonEventCoherent(const ElementFqId element_fq_id,
+                                              const SkeletonEventProperties& skeleton_event_properties);
+
     LolaServiceInstanceId lola_service_instance_id_{0x10};
     LolaServiceId lola_service_id_{0xcdef};
     LolaServiceInstanceDeployment lola_service_instance_deployment_{lola_service_instance_id_};
@@ -190,8 +197,10 @@ class ProxyMockedMemoryFixture : public ::testing::Test
 
     std::unique_ptr<FakeMockedServiceData> fake_data_{nullptr};
     EventControl* event_control_{nullptr};
+    EventControlCoherent* event_control_coherent_{nullptr};
     std::optional<ProviderEventDataControlLocalView<>> provider_event_data_control_local_{};
     std::optional<ConsumerEventDataControlLocalView<>> consumer_event_data_control_local_{};
+    std::optional<ConsumerEventDataControlCoherentLocalView> consumer_event_data_control_coherent_local_{};
     EventDataStorage* event_data_storage_{nullptr};
     std::optional<EventDataStorageLocalView> event_data_storage_local_view_{};
     RollbackSynchronization rollback_synchronization_{};
