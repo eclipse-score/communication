@@ -13,8 +13,11 @@
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
 
 #include <score/assert.hpp>
+#include <score/span.hpp>
 
+#include <algorithm>
 #include <iterator>
+#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -26,16 +29,30 @@ SlotCollector::SlotCollector(ConsumerEventDataControlLocalView<>& event_data_con
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(max_slots > 0U, "Pre-allocated slot vector must not be empty!");
 }
 
+SlotCollector::SlotCollector(ConsumerEventDataControlCoherentLocalView& event_data_control_local,
+                             const std::size_t max_slots) noexcept
+    : event_data_control_local_{event_data_control_local}, last_ts_{0U}, collected_slots_(max_slots)
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(max_slots > 0U, "Pre-allocated slot vector must not be empty!");
+}
+
 std::size_t SlotCollector::GetNumNewSamplesAvailable() const noexcept
 {
-    return event_data_control_local_.get().GetNumNewEvents(last_ts_);
+    return std::visit(
+        [this](const auto& event_data_control_local) noexcept -> std::size_t {
+            return event_data_control_local.get().GetNumNewEvents(last_ts_);
+        },
+        event_data_control_local_);
 }
 
 SlotCollector::SlotIndices SlotCollector::GetNewSamplesSlotIndices(const std::size_t max_count) noexcept
 {
-    // CollectSlots() returns an iterator pointing to one past the end (end being the oldest collected slot, begin being
-    // the newest/youngest collected slot)
-    const auto collected_slots_end_const_iterator = CollectSlots(max_count);
+    const auto* const coherent_view =
+        std::get_if<std::reference_wrapper<ConsumerEventDataControlCoherentLocalView>>(&event_data_control_local_);
+    // CollectSlots()/CollectSlotsCoherent() return an iterator pointing to one past the end (end being the oldest
+    // collected slot, begin being the newest/youngest collected slot)
+    const auto collected_slots_end_const_iterator =
+        (coherent_view != nullptr) ? CollectSlotsCoherent(max_count) : CollectSlots(max_count);
 
     EventSlotStatus::EventTimeStamp newest_delivered{last_ts_};
     // we are iterating the collected slots from the oldest event (smallest timestamp) to the newest event
@@ -43,8 +60,12 @@ SlotCollector::SlotIndices SlotCollector::GetNewSamplesSlotIndices(const std::si
     for (auto slot = std::make_reverse_iterator(collected_slots_end_const_iterator); slot != collected_slots_.crend();
          ++slot)
     {
-        const EventSlotStatus slot_status{event_data_control_local_.get()[*slot]};
-        newest_delivered = std::max(newest_delivered, slot_status.GetTimeStamp());
+        const auto timestamp = std::visit(
+            [slot](const auto& event_data_control_local) noexcept -> EventSlotStatus::EventTimeStamp {
+                return event_data_control_local.get()[*slot].GetTimeStamp();
+            },
+            event_data_control_local_);
+        newest_delivered = std::max(newest_delivered, timestamp);
     }
 
     last_ts_ = newest_delivered;
@@ -54,6 +75,9 @@ SlotCollector::SlotIndices SlotCollector::GetNewSamplesSlotIndices(const std::si
 
 SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlots(const std::size_t max_count) noexcept
 {
+    auto& event_data_control_local =
+        std::get<std::reference_wrapper<ConsumerEventDataControlLocalView<>>>(event_data_control_local_).get();
+
     EventSlotStatus::EventTimeStamp current_highest = EventSlotStatus::TIMESTAMP_MAX;
     auto collected_slot = collected_slots_.begin();
 
@@ -62,12 +86,12 @@ SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlots(const
     for (std::size_t count = 0U; count < max_count; ++count)
     {
         const std::optional<SlotIndexType> slot =
-            event_data_control_local_.get().ReferenceNextEvent(last_ts_, current_highest);
+            event_data_control_local.ReferenceNextEvent(last_ts_, current_highest);
         if (!(slot.has_value()))
         {
             break;
         }
-        const EventSlotStatus event_status{event_data_control_local_.get()[*slot]};
+        const EventSlotStatus event_status{event_data_control_local[*slot]};
         current_highest = event_status.GetTimeStamp();
         *collected_slot = *slot;
         ++collected_slot;
@@ -79,6 +103,25 @@ SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlots(const
     }
 
     return collected_slot;
+}
+
+SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlotsCoherent(const std::size_t max_count) noexcept
+{
+    auto& event_data_control_local =
+        std::get<std::reference_wrapper<ConsumerEventDataControlCoherentLocalView>>(event_data_control_local_).get();
+
+    // Defensive programming: We check in the constructor that collected_slots_ must not be empty
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(!collected_slots_.empty());
+    const auto num_slots = std::min(max_count, collected_slots_.size());
+    const score::cpp::span<SlotIndexType> output_indices{collected_slots_.data(), num_slots};
+    // GetNewSamplesSlotIndices() fills output_indices in ascending (oldest-to-newest) order, whereas collected_slots_
+    // is expected (by the shared code in GetNewSamplesSlotIndices() above) to hold the newest slot first (descending
+    // order), so we reverse the written range below to match CollectSlots()'s convention.
+    const auto num_collected = event_data_control_local.GetNewSamplesSlotIndices(last_ts_, output_indices);
+    const auto collected_slots_end = std::next(collected_slots_.begin(), static_cast<std::ptrdiff_t>(num_collected));
+    std::reverse(collected_slots_.begin(), collected_slots_end);
+
+    return collected_slots_end;
 }
 
 }  // namespace score::mw::com::impl::lola

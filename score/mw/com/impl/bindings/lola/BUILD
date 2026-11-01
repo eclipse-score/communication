@@ -510,6 +510,7 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":consumer_event_data_control_coherent_local_view",
         ":consumer_event_data_control_local_view",
         ":slot_decrementer",
     ],
@@ -573,6 +574,7 @@ cc_library(
     hdrs = ["slot_collector.h"],
     tags = ["FFI"],
     deps = [
+        ":consumer_event_data_control_coherent_local_view",
         ":consumer_event_data_control_local_view",
         ":event_slot_status",
     ],
@@ -1593,6 +1595,8 @@ cc_unit_test(
     ],
     deps = [
         ":consumer_event_data_control_local_view",
+        ":event_data_control_coherent",
+        ":provider_event_data_control_coherent_local_view",
         ":provider_event_data_control_local_view",
         ":slot_collector",
         "//score/mw/com/impl/bindings/lola/test_doubles",
