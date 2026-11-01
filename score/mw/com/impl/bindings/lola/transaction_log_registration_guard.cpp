@@ -102,4 +102,23 @@ TransactionLogIndex TransactionLogRegistrationGuard::GetTransactionLogIndex() co
     return transaction_log_index_;
 }
 
+TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set,
+                                                                 const TransactionLogIndex transaction_log_index)
+    : transaction_log_index_{transaction_log_index},
+      // See the justification for capturing references without using a ScopedFunction on the other constructor.
+      // The same lifetime reasoning applies here: the TransactionLogSet resides in shared memory opened by the Proxy
+      // and outlives any TransactionLogRegistrationGuard created from it.
+      unregister_on_destruction_operation_{[&transaction_log_set, transaction_log_index]() {
+          if (!deactivate_destruction_operation_)
+          {
+              transaction_log_set.Unregister(transaction_log_index);
+          }
+      }}
+{
+    constexpr bool is_transaction_log_set_movable_or_copyable = is_movable_or_copyable<TransactionLogSet>::value;
+    static_assert(!is_transaction_log_set_movable_or_copyable,
+                  "unregister_on_destruction_operation_ takes a reference to the TransactionLogSet, so we need to make "
+                  "sure that TransactionLogSet is not movable or copyable to avoid dangling references.");
+}
+
 }  // namespace score::mw::com::impl::lola

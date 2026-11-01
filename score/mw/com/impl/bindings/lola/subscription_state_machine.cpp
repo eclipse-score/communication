@@ -49,6 +49,32 @@ SubscriptionStateMachine::SubscriptionStateMachine(const QualityType quality_typ
 {
 }
 
+SubscriptionStateMachine::SubscriptionStateMachine(const QualityType quality_type,
+                                                   const ElementFqId element_fq_id,
+                                                   const pid_t event_source_pid,
+                                                   ConsumerEventDataControlCoherentLocalView& event_data_control_local,
+                                                   EventSubscriptionControl<>& subscription_control,
+                                                   TransactionLogSet& transaction_log_set,
+                                                   const TransactionLogId& transaction_log_id) noexcept
+    : std::enable_shared_from_this<SubscriptionStateMachine>{},
+      state_mutex_{},
+      states_{std::make_unique<NotSubscribedState>(*this),
+              std::make_unique<SubscriptionPendingState>(*this),
+              std::make_unique<SubscribedState>(*this)},
+      current_state_idx_{SubscriptionStateMachineState::NOT_SUBSCRIBED_STATE},
+      subscription_data_{},
+      event_receiver_handler_{},
+      event_receive_handler_manager_{quality_type, element_fq_id, event_source_pid},
+      event_data_control_local_{event_data_control_local},
+      subscription_control_{subscription_control},
+      transaction_log_set_{transaction_log_set},
+      provider_service_instance_is_available_{true},
+      transaction_log_id_{transaction_log_id},
+      transaction_log_registration_guard_{},
+      element_fq_id_{element_fq_id}
+{
+}
+
 SubscriptionStateMachine::~SubscriptionStateMachine() noexcept = default;
 
 SubscriptionStateBase& SubscriptionStateMachine::GetCurrentEventState() noexcept

@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SUBSCRIPTION_STATE_MACHINE_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SUBSCRIPTION_STATE_MACHINE_H
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
@@ -36,6 +37,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <variant>
 
 namespace score::mw::com::impl::lola
 {
@@ -47,6 +49,19 @@ class SlotCollector;
 class NotSubscribedState;
 class SubscriptionPendingState;
 class SubscribedState;
+
+/// \brief Variant holding a reference to the CoherencyType::kNonCoherent or CoherencyType::kCoherent flavour of the
+/// local view used to access an event/field's CONTROL segment from the consumer side.
+///
+/// \details The two flavours (ConsumerEventDataControlLocalView<> / ConsumerEventDataControlCoherentLocalView) only
+/// differ in which local view type they reference: both share the same SubscriptionStateMachine-level transaction-
+/// log related state for crash-recovery of an in-flight subscribe/unsubscribe transaction (see NotSubscribedState),
+/// since Subscribe/Unsubscribe transaction logging (crash-recovery of the subscriber count) is required regardless
+/// of coherency. Only the per-slot reference-counting that the ConsumerEventDataControlLocalView<> alternative
+/// alone needs (see TransactionLogSet::RegisterProxyElement()'s two overloads) depends on which alternative is
+/// held.
+using EventDataControlLocalView = std::variant<std::reference_wrapper<ConsumerEventDataControlLocalView<>>,
+                                               std::reference_wrapper<ConsumerEventDataControlCoherentLocalView>>;
 
 /// \brief State machine that manages subscriptions to a ProxyEvent.
 ///
@@ -72,10 +87,20 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     friend SubscribedState;
 
   public:
+    /// \brief Constructs a SubscriptionStateMachine for a CoherencyType::kNonCoherent event/field.
     SubscriptionStateMachine(const QualityType quality_type,
                              const ElementFqId element_fq_id,
                              const pid_t event_source_pid,
                              ConsumerEventDataControlLocalView<>& event_data_control_local,
+                             EventSubscriptionControl<>& subscription_control,
+                             TransactionLogSet& transaction_log_set,
+                             const TransactionLogId& transaction_log_id) noexcept;
+
+    /// \brief Constructs a SubscriptionStateMachine for a CoherencyType::kCoherent event/field.
+    SubscriptionStateMachine(const QualityType quality_type,
+                             const ElementFqId element_fq_id,
+                             const pid_t event_source_pid,
+                             ConsumerEventDataControlCoherentLocalView& event_data_control_local,
                              EventSubscriptionControl<>& subscription_control,
                              TransactionLogSet& transaction_log_set,
                              const TransactionLogId& transaction_log_id) noexcept;
@@ -159,7 +184,7 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     std::optional<std::weak_ptr<ScopedEventReceiveHandler>> event_receiver_handler_;
     std::optional<SubscriptionStateChangeHandler> subscription_state_change_handler_;
     EventReceiveHandlerManager event_receive_handler_manager_;
-    ConsumerEventDataControlLocalView<>& event_data_control_local_;
+    EventDataControlLocalView event_data_control_local_;
     EventSubscriptionControl<>& subscription_control_;
     TransactionLogSet& transaction_log_set_;
     bool provider_service_instance_is_available_;

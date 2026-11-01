@@ -552,6 +552,7 @@ cc_library(
     ],
     tags = ["FFI"],
     deps = [
+        ":consumer_event_data_control_coherent_local_view",
         ":consumer_event_data_control_local_view",
         ":event_subscription_control",
         ":i_runtime",
@@ -1163,6 +1164,7 @@ cc_unit_test(
     srcs = ["event_control_coherent_test.cpp"],
     deps = [
         ":event_control_coherent",
+        ":transaction_log_id",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@score_baselibs//score/mw/log",
     ],
@@ -1622,6 +1624,22 @@ cc_unit_test(
         ":subscription_state_machine",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
+    ],
+)
+
+cc_unit_test(
+    name = "subscription_state_machine_coherent_test",
+    srcs = [
+        "subscription_state_machine_coherent_test.cpp",
+    ],
+    deps = [
+        ":event_data_control_coherent",
+        ":event_subscription_control",
+        ":subscription_state_machine",
+        ":transaction_log_id",
+        ":transaction_log_set",
+        "//score/mw/com/impl/bindings/lola/test_doubles",
+        "//score/mw/com/impl/configuration:quality_type",
     ],
 )
 

@@ -37,8 +37,19 @@ namespace score::mw::com::impl::lola
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 Result<void> NotSubscribedState::SubscribeEvent(const std::size_t max_sample_count)
 {
-    auto transaction_log_registration_guard_result = state_machine_.transaction_log_set_.RegisterProxyElement(
-        state_machine_.transaction_log_id_, state_machine_.event_data_control_local_);
+    // Only the CoherencyType::kNonCoherent alternative needs the 2-arg TransactionLogSet::RegisterProxyElement()
+    // overload (injecting a cached TransactionLogLocalView into event_data_control_local for per-slot reference-
+    // counting transaction logging). The CoherencyType::kCoherent flavour (ConsumerEventDataControlCoherentLocalView)
+    // uses the 1-arg overload, since a kCoherent consumer never alters any per-slot state in the CONTROL segment, so
+    // it doesn't need to be distinguished here from kNonCoherent via its view argument.
+    auto* const non_coherent_event_data_control_local =
+        std::get_if<std::reference_wrapper<ConsumerEventDataControlLocalView<>>>(
+            &state_machine_.event_data_control_local_);
+    auto transaction_log_registration_guard_result =
+        non_coherent_event_data_control_local != nullptr
+            ? state_machine_.transaction_log_set_.RegisterProxyElement(state_machine_.transaction_log_id_,
+                                                                       non_coherent_event_data_control_local->get())
+            : state_machine_.transaction_log_set_.RegisterProxyElement(state_machine_.transaction_log_id_);
     if (!(transaction_log_registration_guard_result.has_value()))
     {
         std::stringstream ss{};
@@ -51,13 +62,14 @@ Result<void> NotSubscribedState::SubscribeEvent(const std::size_t max_sample_cou
     score::cpp::ignore = state_machine_.transaction_log_registration_guard_.emplace(
         std::move(transaction_log_registration_guard_result).value());
 
-    // Currently, we do the subscription via EventSubscriptionControl in shared memory. This currently does not work and
-    // we need to do the subscription via message passing (Bug ticket: SWP-174759). Since EventSubscriptionControl will
-    // be removed in the future, we don't create a EventSubscriptionControlLocalView which could cache the
-    // TransactionLogView and do the transaction log operations via EventSubscriptionControlLocalView. Instead, we
-    // directly create a TransactionLogLocalView and do the transaction log operations via TransactionLogLocalView.
-    // Since the subscription process is not called frequently, we are not concerned with the performance issue of
-    // creating a TransactionLogLocalView  from the TransactionLog in shared memory.
+    // Currently, we do the subscription via EventSubscriptionControl in shared memory. This currently does not work
+    // and we need to do the subscription via message passing (Bug ticket: SWP-174759). Since
+    // EventSubscriptionControl will be removed in the future, we don't create a EventSubscriptionControlLocalView
+    // which could cache the TransactionLogView and do the transaction log operations via
+    // EventSubscriptionControlLocalView. Instead, we directly create a TransactionLogLocalView and do the
+    // transaction log operations via TransactionLogLocalView. Since the subscription process is not called
+    // frequently, we are not concerned with the performance issue of creating a TransactionLogLocalView from the
+    // TransactionLog in shared memory.
     const auto transaction_log_index = state_machine_.transaction_log_registration_guard_->GetTransactionLogIndex();
     auto& transaction_log = state_machine_.transaction_log_set_.GetTransactionLog(transaction_log_index);
     TransactionLogLocalView transaction_log_local_view{transaction_log};
@@ -85,7 +97,11 @@ Result<void> NotSubscribedState::SubscribeEvent(const std::size_t max_sample_cou
     }
     transaction_log_local_view.SubscribeTransactionCommit();
 
-    SlotCollector slot_collector{state_machine_.event_data_control_local_, static_cast<std::size_t>(max_sample_count)};
+    SlotCollector slot_collector = std::visit(
+        [max_sample_count](auto& event_data_control_local) noexcept {
+            return SlotCollector{event_data_control_local.get(), static_cast<std::size_t>(max_sample_count)};
+        },
+        state_machine_.event_data_control_local_);
     if (state_machine_.event_receiver_handler_.has_value())
     {
         // Defer handler registration until provider is available to avoid failed registration attempts.
