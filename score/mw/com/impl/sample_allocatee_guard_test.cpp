@@ -147,6 +147,23 @@ TEST_F(SampleAllocateeGuardTest, SelfMoveAssignmentDoesNotDoubleDecrement)
     EXPECT_EQ(tracker_.GetNumAllocated(), 1U);
 }
 
+TEST_F(SampleAllocateeGuardTest, MoveAssignIntoMovedFromGuardDoesNotDeallocate)
+{
+    // Given a guard that has been moved from, so its internal tracker pointer is now null
+    std::optional<SampleAllocateeGuard> moved_to{std::move(guard_)};
+    EXPECT_EQ(tracker_.GetNumAllocated(), 1U);
+
+    // And a second, independently allocated guard
+    SampleAllocateeGuard guard2 = tracker_.Allocate();
+    EXPECT_EQ(tracker_.GetNumAllocated(), 2U);
+
+    // When move assigning the second guard into the moved-from guard (whose tracker_ is nullptr)
+    guard_ = std::move(guard2);
+
+    // Then no deallocation happens, because the moved-from target had nothing to release
+    EXPECT_EQ(tracker_.GetNumAllocated(), 2U);
+}
+
 }  // namespace
 
 }  // namespace score::mw::com::impl
