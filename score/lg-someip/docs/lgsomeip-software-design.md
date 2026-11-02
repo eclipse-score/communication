@@ -831,6 +831,110 @@ The package labels used in the diagrams (`runtime`, `packetrouter`, `endpoint`, 
     | `ENABLE_SOMEIP_IPC` | Direct application-to-application IPC route in `PacketRouterProxy` (bypasses the daemon for SOME/IP traffic between local applications; SOME/IP-SD still goes through the daemon). |
     | `ENABLE_QNX_MESSAGE_PASSING` | QNX message-passing transport (`messagepassing/*`, `EndpointMessagePassing*`) used for the application-daemon channel, direct IPC, and the daemon SD timer. Defined automatically when building for QNX and never on other platforms. |
 
+##### Thread View
+This section describes the threads created by the library and the daemon, the context in which each callback runs, and how shared state is protected. Thread names are the `pthread_setname_np()` names visible in `top -H` or a debugger.
+
+###### Threading Model
+* I/O is event driven. A single `Multiplexer` thread per `Multiplexer` instance waits for socket events and runs the endpoint callbacks (`on_message`, `on_connect`, `on_disconnect`). There is no thread per connection or per packet.
+* Work that can block or that calls into user code is moved off the I/O thread: application message handlers run on a `ThreadPool`, and availability handlers run on short-lived detached threads.
+* Time-based work is driven by dedicated timer threads: `TimerMux` in the daemon (SD cycle) and `EventManager` in the application (cyclic events).
+* The thread counts below are per object instance. A process that creates several `ApplicationManager` instances (for example, several `lgsomeip::api::Application` objects) has a separate `ThreadPool`, `EventManager` thread, and `Multiplexer` thread for each of them.
+
+###### Thread Inventory
+|Thread name|Process|Created by|Count|Lifetime|Role|
+|:---|:---|:---|:---|:---|:---|
+|`SomeipEpollMux` (`SomeipSelectMux` where the `select` back-end is used)|Daemon, Application|`Multiplexer::start()`, called from `PacketRouterHost::start()` and `PacketRouterProxy::start()`|1 per `Multiplexer`|Until `stop()`/`join()`|Runs `epoll_wait()` (1 s timeout) and dispatches read, error, and disconnect callbacks of all registered endpoints. After each wake-up it also runs `TimerManager::iterate_loop()` (`epoll` back-end), and on an idle timeout it calls the registered timeout callback (`PacketRouterProxy::do_connect` for reconnecting to the daemon).|
+|`SomeipEpollMux` (secure)|Daemon (`ENABLE_TLS`)|`PacketRouterHost::start()`|1|Until `PacketRouterHost::stop()`|Second `Multiplexer` (`secure_multiplexer_`) that serves the endpoints whose socket is a secure (TLS/DTLS) connection; plain endpoints stay on the first one.|
+|`SomeipTimer`|Daemon (non-QNX-message-passing)|`TimerMux` constructor, from `ServiceManager::init()`|1|Until `~TimerMux()`|Waits for the interval set by `set_timer()` (`SOMEIP_DEFAULT_TIMER_CYCLE` = 100 ms, periodic) and sends a datagram to its own local UDP socket. The daemon `Multiplexer` thread receives it and runs `ServiceManager::on_timer()`, so SD timing logic itself does not run on the timer thread.|
+|`SomeipSockBind`|Daemon|`PacketRouterHost::init()` (`sd_unicast_binding_thread_`)|1|Until the bind finishes or `stop()`|Creates and binds the SOME/IP-SD unicast UDP socket. Binding can take a while after repeated socket failures, so it does not block initialization.|
+|`SomeipSockBind`|Daemon|`PacketRouterHost::start()` (`sd_unicast_start_listen_thread_`)|1|Until the bind finishes or `stop()`|Waits on `sd_unicast_binding_condition_` for the bind result and then registers the unicast SD endpoint with the `Multiplexer`.|
+|`SomeipSvcConn`|Daemon|`ServiceManager::handle_new_offer_service()`|1 per new offered service, kept in `add_connection_threads_`|Joined in `ServiceManager::stop()` or the destructor|Calls `PacketRouterHost::add_route()`. When it fails for a configured service with a TCP address, it retries up to `RETRY_CONNECTION_MAX_NUM` (3) times, `RETRY_CONNECTION_PERIOD` (100 ms) apart. On success it sends the internal OfferService to the applications.|
+|`SomeipRetranNoti`|Daemon|`PacketRouterHost::on_external_notification()`|1 per retry, at most 2 retries per notification|Detached, ends after one run|Waits 50 ms for the SubscribeEventgroupAck to be processed and then re-dispatches an external notification that arrived before the subscription was confirmed, so that the initial event value is delivered.|
+|`SomeipDTLSConn`|Daemon, Application (`ENABLE_TLS`)|`UDPSocket::receive_dtls_packet()`|1 per new DTLS peer address|Detached, ends when the handshake ends|Runs `SecureConnector::start_dtls()` for one peer.|
+|`SomeipMsgCB`|Application|`ThreadPool` constructor in `ApplicationManager`|`LGSOMEIP_NUM_OF_THREADS` (5) per `ApplicationManager`|Until `~ThreadPool()`|Executes the registered message handlers (request, response, event, error).|
+|`SomeipEventHdl`|Application|`EventManager::start()`, from `ApplicationManager::start()`|1 per `ApplicationManager`|Until `EventManager::stop()`/`join()`|Every `base_interval_` (50 ms) calls `OfferedEvent::send()` for each offered event; this sends the cyclic (`CyclicUpdate`) events.|
+|`SomeipOnOffer`|Application|`ApplicationManager::on_offer_service()`|1 per availability notification|Detached, ends after the handler returns|Calls the user availability handler when a requested service becomes available or unavailable (the handler is only called on a state change).|
+|`SomeipAvailCB`|Application|`ApplicationManager::register_availability_handler()`|1 per already-available matching instance|Detached, ends after the handler returns|Calls a newly registered availability handler immediately when the service was already offered.|
+|`SomeipMsgPsRcv`|Daemon, Application (QNX message passing)|`MessagePassingServer::run()`|1 per `MessagePassingServer`|Until `MessagePassingServer::stop()`|Blocks in `MsgReceive()` and handles connect/disconnect pulses, data messages, and timer pulses. It replaces the `Multiplexer` thread for the application-daemon channel and, with `ENABLE_QNX_MESSAGE_PASSING`, also runs `ServiceManager::on_timer()` through `message_passing_set_timer()`.|
+|`SomeipMsgPsSnd`|Daemon, Application (QNX message passing)|`MessagePassingSender::connect()`|1 per connected `MessagePassingSender`|Until `MessagePassingSender::disconnect()`|Sends the connect message and then drains the send queue (`messages_`) with `MsgSendv()`, so callers of `send()` do not block on the receiver.|
+
+In addition, the following threads belong to the user process and are not created by the library:
+
+|Thread|Behavior|
+|:---|:---|
+|Daemon main thread|`someipd.cpp` runs `ServiceManager::init()` and `start()`, then blocks on a condition variable until `SIGINT` or `SIGTERM`, and finally calls `ServiceManager::stop()`.|
+|Application main (or caller) thread|Calls `init()` and `start()`. `lgsomeip::api::Application::start()` returns without blocking; `join()` blocks until the application is stopped. The vSomeip-compatible `application_impl::start()` calls `ApplicationManager::join()` internally, so it blocks until `stop()` is called from another thread.|
+
+###### Threads per Process
+```mermaid
+flowchart LR
+    subgraph Daemon["someip-daemon process (Linux)"]
+        DMAIN["Main thread<br/>init / start / wait for signal / stop"]
+        DMUX["SomeipEpollMux<br/>local receiver, external TCP/UDP, SD multicast/unicast"]
+        DTMR["SomeipTimer<br/>SD cycle tick (100 ms)"]
+        DBIND["SomeipSockBind x2<br/>SD unicast bind (init / start)"]
+        DCONN["SomeipSvcConn<br/>add_route + retry (per new offer)"]
+        DRETX["SomeipRetranNoti<br/>re-dispatch notification (detached)"]
+        DTMR -->|"UDP tick"| DMUX
+        DMUX -->|"on_timer(), on_message()"| DSM["ServiceManager / PacketRouterHost"]
+        DCONN --> DSM
+        DBIND --> DSM
+        DRETX --> DSM
+    end
+    subgraph App["Application process (Linux)"]
+        AMAIN["Caller thread<br/>init / start / join / stop"]
+        AMUX["SomeipEpollMux<br/>application receiver (daemon channel and direct IPC)"]
+        AEVT["SomeipEventHdl<br/>cyclic events (50 ms)"]
+        APOOL["SomeipMsgCB x5<br/>message handlers"]
+        AAVAIL["SomeipOnOffer / SomeipAvailCB<br/>availability handlers (detached)"]
+        AMUX -->|"on_message()"| AM["ApplicationManager"]
+        AM -->|"enqueue_job()"| APOOL
+        AM -->|"std::thread"| AAVAIL
+        AEVT -->|"OfferedEvent::send()"| AM
+        AMAIN --> AM
+    end
+```
+
+On QNX with message passing, the `Multiplexer` thread of the application and the `SomeipTimer` thread of the daemon are replaced by `SomeipMsgPsRcv`/`SomeipMsgPsSnd` threads. The daemon still has a `Multiplexer` thread for its external TCP/UDP and SD sockets.
+
+###### Callback Execution Context
+|Callback|Executed on|Notes|
+|:---|:---|:---|
+|Message handler (`register_message_handler`)|`SomeipMsgCB` pool thread|Queued by `ApplicationManager::on_message()` through `ThreadPool::enqueue_job()`. Several handlers can run in parallel, so the order of two messages is not guaranteed once they are queued. The I/O thread is not blocked by a slow handler until all 5 workers are busy; further jobs wait in the queue.|
+|Availability handler|Detached `SomeipOnOffer` or `SomeipAvailCB` thread|A new thread per notification. Two notifications for the same service can overlap.|
+|Application state handler|The thread that runs the state change. `REGISTERED` is reported from `PacketRouterProxy::do_register_application()`: on the caller thread of `start()`, or on the `Multiplexer` thread when the reconnect timeout callback (`do_connect`) re-registers. `DEREGISTERED` is reported from `on_disconnect()` (`Multiplexer` thread; `SomeipMsgPsRcv` on QNX) or from `do_un_register_application()` on the caller thread of `stop()`|Called inline, so it must not block. Offered services are re-offered right after the state becomes `REGISTERED`.|
+|Subscription handler (provider side)|The thread that processes the SubscribeEventgroup message (`Multiplexer` thread, or `SomeipMsgPsRcv` on QNX)|Copied out of the handler table and called after `subscription_handler_mutex_` is released.|
+|Subscription-status handler|The thread that processes the OfferService/StopOffer or SubscribeAck message (same thread as above)|Called inline while `subscription_status_handler_mutex_` is held in `on_offer_service()`, so the handler must not register or unregister status handlers.|
+|`ServiceManager::on_timer()`|`Multiplexer` thread (`SomeipMsgPsRcv` on QNX)|Triggered by the `SomeipTimer` tick (Linux) or a message-passing timer pulse (QNX).|
+|`EventManager` / `OfferedEvent::send()`|`SomeipEventHdl` thread|Cyclic events. For `UpdateOnChange` events `send(0)` runs on the caller thread of `notify()` (and of the initial-event send).|
+|`TimerManager` callbacks (`PacketFiltering`, `SomeipPacketStatistics`)|`Multiplexer` thread|`TimerManager::iterate_loop()` runs on the `epoll` back-end after each wake-up.|
+
+###### Synchronization
+|Owner|Primitive|Protected resource|
+|:---|:---|:---|
+|`Multiplexer`|`callbacks_mutex_`, `std::atomic_bool running_`; `eventfd` (epoll) or condition variable (select) for wake-up|Callback table and the stop request. `stop()` wakes the thread, and callbacks are looked up under the lock but invoked without it.|
+|`ThreadPool`|`job_mutex_`, `job_condition_`|Job queue. `enqueue_job()` throws `std::runtime_error` after the pool is stopped.|
+|`TimerMux`|`thread_mutex_`, `condition_`|Timer interval and the stop request of the timer thread.|
+|`EventManager` / `OfferedEvent`|`thread_mutex_`, `mutex_`|`offered_events_` and the per-event payload and state. Shared by `SomeipEventHdl` and the application threads that call `notify()`.|
+|`ApplicationManager`|`offer_service_list_mutex_` (recursive), `service_management_mutex_`, `offer_event_list_mutex_`, `event_manager_mutex_`, `subscribe_event_list_mutex_`, `requested_event_list_mutex_`, and one mutex per handler table (`application_handler_mutex_`, `message_handler_mutex_`, `subscription_status_handler_mutex_`, `subscription_handler_mutex_`, `error_handler_mutex_`)|Offer, request, event, and handler tables that are touched by user threads, the I/O thread, and the detached callback threads.|
+|`PacketRouterProxy`|`send_message_mutex_`, `mutex_processing_` (`ENABLE_SOMEIP_IPC`)|The shared send buffer, so concurrent senders do not overwrite each other, and the IPC route tables.|
+|`PacketRouterHost`|`route_management_mutex_` (recursive), `add_route_mutex_`, `sd_unicast_binding_mutex_` with `sd_unicast_binding_condition_`, `mutex_processing_` (QNX message passing or `ENABLE_TLS`)|Routing tables and `connected_endpoints_`; the set of in-progress `add_route()` calls (a second caller for the same local port polls every 20 ms until the first one finishes); the SD unicast bind hand-shake; packet processing that can be entered from several threads.|
+|`ServiceManager`|`available_list_mutex_` (recursive), `repetition_offer_list_mutex_`, `request_list_mutex_`, `session_mutex_`, `add_connection_threads_mutex_`|Available and requested service lists, the cyclic offer list, SD session IDs, and the list of `SomeipSvcConn` threads.|
+
+###### Startup and Shutdown
+|Step|Daemon|Application|
+|:---|:---|:---|
+|Start|`ServiceManager::start()` starts the `Multiplexer` thread (`PacketRouterHost::start()`), then the SD unicast threads, and finally starts `SomeipTimer` ticking with a periodic 100 ms timer.|`ApplicationManager` constructor creates the `PacketRouterProxy` (unless one is injected) and the `ThreadPool`. `init()` initializes the proxy and creates the `EventManager`. `start()` starts the `Multiplexer` thread and then `SomeipEventHdl`.|
+|Stop|`ServiceManager::stop()` cancels the timer, joins the `SomeipSvcConn` threads, then `PacketRouterHost::stop()` signals and joins the two `SomeipSockBind` threads, detaches the endpoints from the `Multiplexer`, and stops and joins the `Multiplexer` thread(s). The `TimerMux` destructor joins `SomeipTimer`.|`ApplicationManager::stop()` clears all handlers, clears the `running_` flag of `EventManager`, and stops the `PacketRouterProxy` (sends the unregistration message, then stops the `Multiplexer`). `join()` waits for `SomeipEventHdl` and the `Multiplexer` thread to end. The destructor stops and joins, then destroys the `ThreadPool`, which finishes the queued jobs and joins the 5 workers.|
+|Not joined|The detached `SomeipRetranNoti` and `SomeipDTLSConn` threads are not joined.|The detached `SomeipOnOffer` and `SomeipAvailCB` threads are not joined.|
+
+###### Design Notes
+* Message handlers run in parallel on the pool, so two messages that are queued one after the other can be handled out of order. Handlers that need ordering must serialize it in the application.
+* A handler that blocks for a long time can occupy all `SomeipMsgCB` workers (5 per `ApplicationManager`) and delay all later message handlers of the same application.
+* State, subscription, and subscription-status handlers run on the I/O thread, so a slow handler delays all packet processing of that process. They should return quickly.
+* The detached availability threads are not joined. `stop()` removes the registered handlers, but a handler that is already running continues until it returns, so it must not use the application object after `stop()`.
+* The thread names are fixed strings, so several `SomeipSockBind` or `SomeipMsgCB` threads of one process cannot be told apart by name alone; use the thread ID in the log (`logger.h`) when debugging.
+
 ##### Dynamic View
 The sequence diagrams below show the Linux application-daemon channel (`EndpointTCPServer`/`EndpointTCPClient` over Unix domain sockets); on QNX the `EndpointMessagePassing*` endpoints take their place. The Request/Response, Event, and InternalMessage diagrams show the daemon-routed path. With `ENABLE_SOMEIP_IPC`, SOME/IP request, response, and event messages for a service without a SOME/IP configuration entry skip the daemon: `PacketRouterProxy` sends them to the peer application through `ipc_senders_` (see [Direct IPC](#direct-ipc)). SOME/IP-SD sequences still go through the daemon.
 
