@@ -59,10 +59,9 @@ namespace serialization
 /// This is the key contrast to the UDS strategy: dynamic data is emitted at its *actual* size, not padded to a fixed
 /// capacity. Byte order defaults to big-endian (the SOME/IP default) but is a per-element layout choice.
 ///
-/// @note Alignment padding behind a variable-length member uses MetaInformation::is_last_element_in_struct_, which is
-/// scoped to the immediate struct. A variable-length member that is last in a nested struct but followed by more data
-/// in an enclosing struct is treated as "last" here (no trailing padding), whereas strict SOME/IP would still pad.
-/// Fully covering that case needs "last in the whole message" tracking; left as a known limitation for now.
+/// @note Trailing alignment padding behind a variable-length member is emitted whenever data follows it anywhere in the
+/// message, i.e. it is not the last element at every enclosing nesting level. This is derived from the visitor's field
+/// path, so a member that is last in a nested struct but followed by more data in an enclosing struct is padded.
 class SomeIpStrategy final
 {
   public:
@@ -109,9 +108,8 @@ class SomeIpStrategy final
                    SerializeIterator<Container> iterator,
                    const LengthPrefixedVector<UnderlyingType, LengthType>& value) const
     {
-        const auto& meta = visitor.GetMetaInformation();
         someip_detail::SerializeLengthPrefixedVector(
-            visitor, iterator, value, LayoutFor(visitor), !meta.is_last_element_in_struct_);
+            visitor, iterator, value, LayoutFor(visitor), FollowedByMoreData(visitor));
     }
 
     template <typename Visitor, typename Container, typename UnderlyingType, typename LengthType>
@@ -119,27 +117,23 @@ class SomeIpStrategy final
                              DeSerializeIterator<Container>& iterator,
                              LengthPrefixedVector<UnderlyingType, LengthType>& value) const
     {
-        const auto& meta = visitor.GetMetaInformation();
         return someip_detail::DeSerializeLengthPrefixedVector(
-            visitor, iterator, value, LayoutFor(visitor), !meta.is_last_element_in_struct_);
+            visitor, iterator, value, LayoutFor(visitor), FollowedByMoreData(visitor));
     }
 
     /// @brief SOME/IP UTF-8 string, with trailing alignment padding when not the last struct element.
     template <typename Visitor, typename Container>
     void Serialize(Visitor& visitor, SerializeIterator<Container> iterator, const score::cpp::pmr::string& value) const
     {
-        const auto& meta = visitor.GetMetaInformation();
-        someip_detail::SerializeString(
-            iterator, value, LayoutFor(visitor), !meta.is_last_element_in_struct_);
+        someip_detail::SerializeString(iterator, value, LayoutFor(visitor), FollowedByMoreData(visitor));
     }
 
     template <typename Visitor, typename Container>
     Result<void> DeSerialize(Visitor& visitor, DeSerializeIterator<Container>& iterator, score::cpp::pmr::string& value)
         const
     {
-        const auto& meta = visitor.GetMetaInformation();
         return someip_detail::DeSerializeString(
-            visitor, iterator, value, LayoutFor(visitor), !meta.is_last_element_in_struct_);
+            visitor, iterator, value, LayoutFor(visitor), FollowedByMoreData(visitor));
     }
 
     /// @brief Bounded array: [length][elements], with trailing alignment padding when not the last struct element.
@@ -147,9 +141,8 @@ class SomeIpStrategy final
     void Serialize(Visitor& visitor, SerializeIterator<Container> iterator, const score::cpp::static_vector<T, N>& value)
         const
     {
-        const auto& meta = visitor.GetMetaInformation();
         someip_detail::SerializeStaticVector(
-            visitor, iterator, value, LayoutFor(visitor), !meta.is_last_element_in_struct_);
+            visitor, iterator, value, LayoutFor(visitor), FollowedByMoreData(visitor));
     }
 
     template <typename Visitor, typename Container, typename T, std::size_t N>
@@ -157,9 +150,8 @@ class SomeIpStrategy final
                              DeSerializeIterator<Container>& iterator,
                              score::cpp::static_vector<T, N>& value) const
     {
-        const auto& meta = visitor.GetMetaInformation();
         return someip_detail::DeSerializeStaticVector(
-            visitor, iterator, value, LayoutFor(visitor), !meta.is_last_element_in_struct_);
+            visitor, iterator, value, LayoutFor(visitor), FollowedByMoreData(visitor));
     }
 
   private:
@@ -201,6 +193,21 @@ class SomeIpStrategy final
     ElementLayout LayoutFor(const Visitor& visitor) const
     {
         return ResolveElementLayout(visitor.FieldPath().data(), visitor.FieldDepth());
+    }
+
+    // True when data follows the element currently being visited anywhere in the message, i.e. it is not the last
+    // element at every enclosing nesting level. SOME/IP appends trailing alignment padding only in that case.
+    template <typename Visitor>
+    static bool FollowedByMoreData(const Visitor& visitor)
+    {
+        for (const bool is_last : visitor.LastPath())
+        {
+            if (!is_last)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Per-datatype wire layout (byte order + alignment). A default-constructed layout is uniform big-endian / packed,
