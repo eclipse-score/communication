@@ -12,9 +12,9 @@
 # *******************************************************************************
 
 filegroup(
-    name = "wrong_startfindservice_is_stopped_fta",
+    name = "wrong_start_find_service_is_stopped_fta",
     srcs = [
-        "wrong_startfindservice_is_stopped_fta.puml",
+        "wrong_start_find_service_is_stopped_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

@@ -513,7 +513,7 @@ section "LoLa" {
             }
 
             // ID: 31546514
-            ScoreReq.FailureMode WrongStartfindserviceIsStopped {
+            ScoreReq.FailureMode WrongStartFindServiceIsStopped {
                 guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
                 description = "The handle provided to StopFindService, is identified as another one and thus stops the wrong service discovery query."
                 failureeffect = "That services are not found, even though they are offered and that services are no longer offered."

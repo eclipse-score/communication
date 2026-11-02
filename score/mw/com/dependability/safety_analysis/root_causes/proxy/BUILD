@@ -32,7 +32,7 @@ filegroup(
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/start_find_service:start_find_service_callback_called_when_service_is_not_currently_offered_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/start_find_service:start_find_service_callback_called_with_handle_to_wrong_service_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/start_find_service:start_find_service_callback_not_called_but_service_is_currently_offered_fta",
-        "//score/mw/com/dependability/safety_analysis/root_causes/proxy/stop_find_service:wrong_startfindservice_is_stopped_fta",
+        "//score/mw/com/dependability/safety_analysis/root_causes/proxy/stop_find_service:wrong_start_find_service_is_stopped_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/subscribe_for_an_event:subscribe_for_an_event_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/unsubscribe_for_an_event:unsubscribe_for_an_event_fta",
     ],

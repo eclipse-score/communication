@@ -213,7 +213,7 @@ ScoreReq.AoU NoStaticContextSupport {
 
 /* broken_link_c/issue/5835213 */
 ScoreReq.AoU NoGuaranteeInAvailabilityOfServices {
-    // mitigates = "CreationOfSkeletonNotPossible, WrongStartfindserviceIsStopped"
+    // mitigates = "CreationOfSkeletonNotPossible, WrongStartFindServiceIsStopped"
     description = "It shall be ensured that no safety goal is harmed, because a service instance is not found."
     safety = ScoreReq.Asil.B
     note = "LoLa is a Service-Discovery based middleware. In such cases it is possible that a service is not offered. Thus, LoLa cannot give any guarantee that a service will be found."
@@ -226,7 +226,7 @@ ScoreReq.AoU NoGuaranteeInAvailabilityOfServices {
 
 /* broken_link_c/issue/5835249 */
 ScoreReq.AoU NoNotificationOnTerminationOfProducer {
-    // mitigates = "ServiceOfferingNotStopped, WrongStartfindserviceIsStopped"
+    // mitigates = "ServiceOfferingNotStopped, WrongStartFindServiceIsStopped"
     description = "It shall be ensured that termination (either gracefully or due to a malfunction) of a producer will not lead to a violation of a safety goal."
     safety = ScoreReq.Asil.B
     note = "LoLa provides no mechanism to communicate the termination of an event data producer. It is also possible that a producer suddenly crashes and no events are any longer produced. A supervision can be implemented on application side, if events are polled in a certain interval. If no new events are present within a certain set of intervals, it can be assumed that the producer is malfunctioning."

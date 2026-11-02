@@ -15,9 +15,9 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("Wrong StartFindService is stopped", "Communication.WrongStartfindserviceIsStopped")
+$FailureMode("Wrong StartFindService is stopped", "Communication.WrongStartFindServiceIsStopped")
 
-$OrGate("Gate1", "Communication.WrongStartfindserviceIsStopped")
+$OrGate("Gate1", "Communication.WrongStartFindServiceIsStopped")
 $RootCause("Wrong StartFindService is stopped", "RootCauseWrongStartFindServiceIsStopped", "Gate1")
 
 @enduml
