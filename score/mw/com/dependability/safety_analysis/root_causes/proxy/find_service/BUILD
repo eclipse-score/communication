@@ -28,9 +28,9 @@ filegroup(
 )
 
 filegroup(
-    name = "service_is_found_but_does_not_exist_fta",
+    name = "service_is_found_but_is_not_currently_offered_fta",
     srcs = [
-        "service_is_found_but_does_not_exist_fta.puml",
+        "service_is_found_but_is_not_currently_offered_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

@@ -451,7 +451,7 @@ section "LoLa" {
             }
 
             // ID: 6166060
-            ScoreReq.FailureMode ServiceIsFoundButDoesNotExist {
+            ScoreReq.FailureMode ServiceIsFoundButIsNotCurrentlyOffered {
                 guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
                 description = "Finding a service, returns a service, even though no service instance was offered."
                 failureeffect = "No communication between process will happen, thus no information can be exchanged, thus any overall system functionality can stop."

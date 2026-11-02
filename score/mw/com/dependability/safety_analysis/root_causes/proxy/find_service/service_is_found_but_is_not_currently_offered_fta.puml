@@ -19,9 +19,9 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("Service is found, but does not exist", "Communication.ServiceIsFoundButDoesNotExist")
+$FailureMode("Service is found, but does not exist", "Communication.ServiceIsFoundButIsNotCurrentlyOffered")
 
-$OrGate("Gate1", "Communication.ServiceIsFoundButDoesNotExist")
+$OrGate("Gate1", "Communication.ServiceIsFoundButIsNotCurrentlyOffered")
 $RootCause("Service was offered, but not unlinked on stop offer", "ServiceWasOfferedButNotUnlinkedOnStopOffer", "Gate1")
 $IntermediateEvent("Shared Memory Object exists but not accessable", "Event3", "Gate1")
 $OrGate("Gate2", "Event3")
