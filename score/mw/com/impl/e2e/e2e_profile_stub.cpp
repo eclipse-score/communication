@@ -25,9 +25,29 @@ constexpr std::size_t kCounterOffset{1U};
 constexpr std::size_t kChecksumLowOffset{2U};
 constexpr std::size_t kChecksumHighOffset{3U};
 
+// The header counter is 8 bit wide.
+constexpr int kCounterRange{256};
+constexpr int kCounterHalfRange{kCounterRange / 2};
+
 std::uint8_t ToUint8(const std::byte value) noexcept
 {
     return std::to_integer<std::uint8_t>(value);
+}
+
+// The counter wraps from 255 to 0, so the difference is folded into [-128, 127]. A negative delta means the counter
+// went backwards.
+int CounterDelta(const std::uint8_t current, const std::uint8_t last) noexcept
+{
+    int delta{static_cast<int>(current) - static_cast<int>(last)};
+    if (delta >= kCounterHalfRange)
+    {
+        delta -= kCounterRange;
+    }
+    else if (delta < -kCounterHalfRange)
+    {
+        delta += kCounterRange;
+    }
+    return delta;
 }
 
 std::uint16_t CalculateChecksum(const std::uint8_t data_id,
@@ -100,21 +120,27 @@ RawCheckOutcome CheckMessage(const score::cpp::span<const std::byte> header,
         return {DataIntegrityStatus::kOk, SequenceStatus::kOk};
     }
 
-    const auto delta = static_cast<std::uint8_t>(counter - check_context.last_counter);
+    const int delta{CounterDelta(counter, check_context.last_counter)};
     check_context.last_counter = counter;
-    if (delta == 0U)
+
+    SequenceStatus sequence{SequenceStatus::kDisabled};
+    if (delta == 0)
     {
-        return {DataIntegrityStatus::kOk, SequenceStatus::kErrorRepeated};
+        sequence = SequenceStatus::kErrorRepeated;
     }
-    if (delta == 1U)
+    else if (delta == 1)
     {
-        return {DataIntegrityStatus::kOk, SequenceStatus::kOk};
+        sequence = SequenceStatus::kOk;
     }
-    if (delta <= configuration.max_delta_counter)
+    else if ((delta > 1) && (delta <= configuration.max_delta_counter))
     {
-        return {DataIntegrityStatus::kOk, SequenceStatus::kOkGapWithinThreshold};
+        sequence = SequenceStatus::kOkGapWithinThreshold;
     }
-    return {DataIntegrityStatus::kOk, SequenceStatus::kErrorGapExceedsThreshold};
+    else
+    {
+        sequence = SequenceStatus::kErrorGapExceedsThreshold;
+    }
+    return {DataIntegrityStatus::kOk, sequence};
 }
 
 }  // namespace score::mw::com::impl::e2e

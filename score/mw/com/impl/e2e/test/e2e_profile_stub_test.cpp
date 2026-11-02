@@ -158,6 +158,48 @@ TEST(E2eProfileStubTest, CheckSkippedCounterBeyondConfiguredThresholdReportsGapE
     EXPECT_EQ(outcome.sequence, SequenceStatus::kErrorGapExceedsThreshold);
 }
 
+TEST(E2eProfileStubTest, CheckCounterWrappingFromMaximumToZeroReportsOk)
+{
+    // Given two consecutive protected frames where the counter wraps from 255 to 0
+    Header header_before_wrap{};
+    Header header_after_wrap{};
+    ProtectContext protect_context{255U};
+    CheckContext check_context{};
+    ASSERT_TRUE(ProtectMessage(AsWritableSpan(header_before_wrap), PayloadSpan(), kConfiguration, protect_context));
+    ASSERT_TRUE(ProtectMessage(AsWritableSpan(header_after_wrap), PayloadSpan(), kConfiguration, protect_context));
+    ASSERT_EQ(CheckMessage(AsReadOnlySpan(header_before_wrap), PayloadSpan(), kConfiguration, check_context).sequence,
+              SequenceStatus::kOk);
+
+    // When checking the frame after the wrap
+    const auto outcome = CheckMessage(AsReadOnlySpan(header_after_wrap), PayloadSpan(), kConfiguration, check_context);
+
+    // Then the wrap is not reported as a sequence error
+    EXPECT_EQ(outcome.data_integrity, DataIntegrityStatus::kOk);
+    EXPECT_EQ(outcome.sequence, SequenceStatus::kOk);
+}
+
+TEST(E2eProfileStubTest, CheckCounterGoingBackwardsReportsGapErrorEvenWithMaximumConfiguredThreshold)
+{
+    // Given two consecutive protected frames under the largest max delta counter, checked in reverse order
+    constexpr ProfileConfiguration kLenientConfiguration{0x3AU, 255U};
+    Header older_header{};
+    Header newer_header{};
+    ProtectContext protect_context{};
+    CheckContext check_context{};
+    ASSERT_TRUE(ProtectMessage(AsWritableSpan(older_header), PayloadSpan(), kLenientConfiguration, protect_context));
+    ASSERT_TRUE(ProtectMessage(AsWritableSpan(newer_header), PayloadSpan(), kLenientConfiguration, protect_context));
+    ASSERT_EQ(CheckMessage(AsReadOnlySpan(newer_header), PayloadSpan(), kLenientConfiguration, check_context).sequence,
+              SequenceStatus::kOk);
+
+    // When checking the older frame after the newer one
+    const auto outcome =
+        CheckMessage(AsReadOnlySpan(older_header), PayloadSpan(), kLenientConfiguration, check_context);
+
+    // Then the negative counter delta exceeds the threshold
+    EXPECT_EQ(outcome.data_integrity, DataIntegrityStatus::kOk);
+    EXPECT_EQ(outcome.sequence, SequenceStatus::kErrorGapExceedsThreshold);
+}
+
 TEST(E2eProfileStubTest, ProtectRejectsHeaderWithIncorrectSize)
 {
     // Given a header buffer smaller than the required POC header size

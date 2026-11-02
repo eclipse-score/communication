@@ -66,7 +66,8 @@ bool ProtectMessage(score::cpp::span<std::byte> header,
 
 /// \brief Verifies one POC header and updates the receiver-local sequence state for valid headers.
 /// \details An invalid header or checksum produces kError, reports the sequence check as kSkipped and does not update
-///          check_context.
+///          check_context. The counter delta is signed, so a counter that goes backwards exceeds the threshold.
+///          The first valid header only seeds the sequence state and reports kOk, as there is no previous counter.
 RawCheckOutcome CheckMessage(score::cpp::span<const std::byte> header,
                              score::cpp::span<const std::byte> payload,
                              ProfileConfiguration configuration,
