@@ -44,9 +44,14 @@ void SerializeLengthPrefixedVector(Visitor&                                     
                                    const bool                                            align_following)
 {
     SerializeScalar(iterator, value.size(), layout);  // actual element count
+    const std::size_t count = value.size();
+    std::size_t       index{0U};
     for (const auto& sub_value : value)
     {
+        visitor.PushArrayElement((index + 1U) == count);
         visitor.Next(sub_value);  // route each element back through the visitor (handles nested types)
+        visitor.PopField();
+        ++index;
     }
     if (align_following)
     {
@@ -67,7 +72,9 @@ Result<void> DeSerializeLengthPrefixedVector(Visitor&                           
     for (; counter > static_cast<LengthType>(0); counter--)
     {
         UnderlyingType underlying_type{};
+        visitor.PushArrayElement(counter == static_cast<LengthType>(1));
         visitor.Next(underlying_type);
+        visitor.PopField();
         value.push_back(underlying_type);
     }
 
@@ -90,9 +97,14 @@ void SerializeStaticVector(Visitor&                              visitor,
                            const bool                            align_following)
 {
     WriteLengthField(iterator, static_cast<std::uint64_t>(value.size()), layout);  // actual element count
+    const std::size_t count = value.size();
+    std::size_t       index{0U};
     for (const auto& element : value)
     {
+        visitor.PushArrayElement((index + 1U) == count);
         visitor.Next(element);  // route each element back through the visitor (handles nested types)
+        visitor.PopField();
+        ++index;
     }
     if (align_following)
     {
@@ -116,7 +128,9 @@ Result<void> DeSerializeStaticVector(Visitor&                         visitor,
     for (std::uint64_t index{0U}; index < count; ++index)
     {
         T element{};
+        visitor.PushArrayElement((index + 1U) == count);
         visitor.Next(element);
+        visitor.PopField();
         value.push_back(std::move(element));
     }
     if (align_following)
