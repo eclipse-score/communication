@@ -1,0 +1,87 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml class_diagram_allocator_pointer
+allowmixing
+skinparam usecaseBorderType dashed
+skinparam linetype ortho
+
+namespace score::memory::shared {
+
+    class "OffsetPtr<PointedType>" as OffsetPtr {
+      + OffsetPtr(ptr: pointer)
+      + OffsetPtr(other: const OffsetPtr<PointedType>&)
+      + operator=(ptr: pointer): OffsetPtr&
+      + operator=(other: const OffsetPtr&): OffsetPtr&
+      + {static} pointer_to(ref: std::add_lvalue_reference_t<T>): OffsetPtr
+      + {static} pointer_to(r: void* const): OffsetPtr
+      + operator*(): reference
+      + operator[](idx: difference_type): reference
+      + operator+=(offset: difference_type): OffsetPtr&
+      + operator-=(offset: difference_type): OffsetPtr&
+      + operator++(): OffsetPtr&
+      + operator++(T: std::int32_t): OffsetPtr
+      + operator--(): OffsetPtr&
+      + operator--(T: std::int32_t): OffsetPtr
+      + get(): pointer
+      + get(explicit_pointed_type_size: const std::size_t): pointer
+      + operator pointer(): pointer
+      + operator->(): pointer
+      + operator bool(): bool
+      + operator!(): bool
+      - {static} CopyFrom(source_offset_ptr: const OffsetPtr<OtherPointedType>&, target_offset_ptr: OffsetPtr<PointedType>&): std::pair<difference_type, MemoryRegionBounds>
+      - {static} GetPointerWithBoundsCheck(offset_ptr_address: const void* const, offset: const difference_type, offset_ptr_memory_bounds_when_not_in_shm: const MemoryRegionBounds&, pointed_type_size: const std::size_t): pointer
+      - {static} GetPointerWithoutBoundsCheck(offset_ptr_address: const void* const, offset: const difference_type): pointer
+      - IncrementOffset(multiple_of_pointed_type_to_increment: const std::size_t): void
+      - DecrementOffset(multiple_of_pointed_type_to_decrement: const std::size_t): void
+      - {static} CalculateOffsetFromPointer(offset_ptr_address: const void* const, pointed_to_address: pointer): difference_type
+      - {static} CalculatePointerFromOffset(offset: const difference_type, offset_ptr: const void* const): pointer
+      - offset_: detail_offset_ptr::difference_type
+      - memory_bounds_: MemoryRegionBounds
+    }
+
+    class OffsetPtrBoundsCheck <<utility>> {
+      + {static} DoesOffsetPtrInSharedMemoryPassBoundsChecks(offset_ptr_address: const void* const, offset: const std::ptrdiff_t, offset_ptr_memory_bounds: const MemoryRegionBounds&, pointed_type_size: const std::size_t, offset_ptr_size: const std::size_t): bool
+      + {static} DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(offset_ptr_address: const void* const, offset: const std::ptrdiff_t, offset_ptr_memory_bounds: const MemoryRegionBounds&, pointed_type_size: const std::size_t, offset_ptr_size: const std::size_t): bool
+    }
+
+    class "PolymorphicOffsetPtrAllocator<T>" as PolymorphicOffsetPtrAllocator {
+      + using value_type = T
+      + using pointer = OffsetPtr<T>
+      + using size_type = std::size_t
+      + PolymorphicOffsetPtrAllocator()
+      + PolymorphicOffsetPtrAllocator(resource: ManagedMemoryResource&)
+      + PolymorphicOffsetPtrAllocator(rhs: const PolymorphicOffsetPtrAllocator<U>&)
+      + allocate(size: size_type): pointer
+      + deallocate(p: pointer, size: size_type): void
+      + getMemoryResourceProxy(): OffsetPtr<const MemoryResourceProxy>
+      - proxy_: OffsetPtr<const MemoryResourceProxy>
+    }
+
+    OffsetPtr ..> OffsetPtrBoundsCheck : uses
+    PolymorphicOffsetPtrAllocator *-- "1" OffsetPtr : proxy_
+    PolymorphicOffsetPtrAllocator ..> OffsetPtr : creates
+
+}
+
+package "class diagram for factory and resources" {
+    class MemoryRegionBounds
+    class MemoryResourceProxy
+    class ManagedMemoryResource
+}
+
+OffsetPtr *-- "1" MemoryRegionBounds : memory_bounds_
+PolymorphicOffsetPtrAllocator ..> MemoryResourceProxy : references
+PolymorphicOffsetPtrAllocator ..> ManagedMemoryResource : constructed from
+
+@enduml
