@@ -841,6 +841,52 @@ TEST_F(LgsomeipApiRuntimeTest, applications_are_notified_when_the_daemon_stops)
     EXPECT_TRUE(availability.wait(false, kTimeout));
 }
 
+TEST_F(LgsomeipApiRuntimeTest, applications_reconnect_when_the_daemon_is_restarted)
+{
+    Inbox requests;
+    Inbox responses;
+    Availability availability;
+
+    ApiApp server("response", config_path_);
+    ASSERT_TRUE(server.init());
+    server->register_message_handler(kService, kInstance, kMethod, echo_handler(server.get(), requests));
+    server.start();
+    ASSERT_TRUE(server.wait_connected(kTimeout));
+    server->offer_service(kService, kInstance, kMajor, kMinor);
+
+    ApiApp client("request-1", config_path_);
+    ASSERT_TRUE(client.init());
+    client->register_availability_handler(kService, kInstance, availability.handler());
+    client->register_message_handler(kService, kInstance, kMethod, responses.handler());
+    client.start();
+    ASSERT_TRUE(client.wait_connected(kTimeout));
+    client->request_service(kService, kInstance, kMajor, kMinor);
+    ASSERT_TRUE(availability.wait(true, kTimeout));
+
+    daemon_.reset();
+    ASSERT_TRUE(client.wait_disconnected(kTimeout));
+    ASSERT_TRUE(server.wait_disconnected(kTimeout));
+    ASSERT_TRUE(availability.wait(false, kTimeout));
+
+    // Only the daemon is restarted. The applications keep running.
+    daemon_ = std::make_unique<ApiTestDaemon>(config_path_);
+
+    // The applications register with the new daemon again.
+    EXPECT_TRUE(client.wait_connected(kTimeout));
+    EXPECT_TRUE(server.wait_connected(kTimeout));
+
+    // The offer has to be repeated because the new daemon does not know it. The
+    // request_service() of the consumer is retried by the library.
+    server->offer_service(kService, kInstance, kMajor, kMinor);
+    EXPECT_TRUE(availability.wait(true, kTimeout));
+
+    const auto request = make_request({0x01, 0x02, 0x03});
+    client->send(request);
+    ASSERT_TRUE(requests.wait_for_count(1, kTimeout));
+    ASSERT_TRUE(responses.wait_for_count(1, kTimeout));
+    EXPECT_EQ(responses.messages().front()->payload, request.payload);
+}
+
 // The service 0x1001 is configured for TCP only in someip_config_tcp.json.
 class LgsomeipApiRuntimeTcpTest : public LgsomeipApiRuntimeTest
 {

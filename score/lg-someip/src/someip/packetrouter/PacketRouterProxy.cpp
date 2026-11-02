@@ -537,6 +537,11 @@ void PacketRouterProxy::on_disconnect(std::shared_ptr<Endpoint> endpoint)
     {
         listener_->stop_listen();
         listener_ = nullptr;
+        {
+            // Drop the connection to the lost daemon so that do_connect() reconnects.
+            std::lock_guard<std::mutex> lock(send_message_mutex_);
+            sender_ = nullptr;
+        }
         host_->on_application_state(false);
 
         LGSOMEIP_LOG_INFO << "PacketRouterProxy::on_disconnect / Listener Stop!";
