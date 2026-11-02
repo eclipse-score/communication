@@ -11,8 +11,11 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/config_parser.h"
-#include "score/mw/com/impl/configuration/configuration_flatbuffer_parsing_strategy.h"
 #include "score/mw/com/impl/configuration/configuration_json_parsing_strategy.h"
+
+#if defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
+#include "score/mw/com/impl/configuration/configuration_flatbuffer_parsing_strategy.h"
+#endif
 
 namespace score::mw::com::impl::configuration
 {

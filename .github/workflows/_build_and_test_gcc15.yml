@@ -59,6 +59,23 @@ jobs:
         with:
           artifact-name: bazel-testlogs-gcc15
 
+      # Same commands with all experimental features activated, see CI.md#feature-flags.
+      # Runs in the same job to reuse the Bazel disk cache.
+      - name: Build all targets (all experimental features)
+        if: inputs.fetch-only != 'true'
+        run: bazel build --config=ci --config=activate_all_experimental_features //...
+
+      - name: Run all tests (all experimental features)
+        if: inputs.fetch-only != 'true'
+        id: run-tests-experimental
+        run: bazel test --config=ci --config=activate_all_experimental_features //... --build_tests_only
+
+      - name: Upload failed Bazel test logs (all experimental features)
+        if: inputs.fetch-only != 'true' && failure() && steps.run-tests-experimental.outcome == 'failure'
+        uses: ./.github/actions/00_infrastructure/upload_bazel_testlogs_on_failure
+        with:
+          artifact-name: bazel-testlogs-gcc15-experimental
+
       - name: Build module_integration_test
         if: inputs.fetch-only != 'true'
         run: cd module_integration_test && bazel build //... && bazel mod deps --lockfile_mode=update
@@ -67,4 +84,5 @@ jobs:
         if: inputs.fetch-only == 'true'
         run: |-
           bazel build --nobuild --config=ci //...
+          bazel build --nobuild --config=ci --config=activate_all_experimental_features //...
           cd module_integration_test && bazel build --nobuild //...
