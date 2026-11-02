@@ -22,7 +22,7 @@ def generic_proxy(target, mode, cycle_time=None, num_cycles=None, **kwargs):
         args += ["--cycle-time", str(cycle_time)]
 
     wait_on_exit = False
-    if mode == "recv":
+    if mode in ("recv", "recv-active"):
         wait_on_exit = True
 
     return target.wrap_exec(
@@ -40,5 +40,14 @@ def test_generic_proxy(target):
     with (
         generic_proxy(target, "send", cycle_time=40, num_cycles=0),
         generic_proxy(target, "recv", num_cycles=25, wait_timeout=15),
+    ):
+        pass
+
+
+def test_generic_proxy_destruction_with_active_subscription(target):
+    """Destroy a subscribed generic proxy after receiving samples."""
+    with (
+        generic_proxy(target, "send", cycle_time=40, num_cycles=0),
+        generic_proxy(target, "recv-active", num_cycles=25, wait_timeout=15),
     ):
         pass
