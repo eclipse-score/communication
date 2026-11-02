@@ -1,0 +1,11 @@
+diff --git a/score/memory/BUILD b/score/memory/BUILD
+--- a/score/memory/BUILD
++++ b/score/memory/BUILD
+@@ -27,6 +27,7 @@ cc_library(
+         "//tools/coverage:__pkg__",
+         "@score_baselibs//score/memory:__subpackages__",
+         "@score_baselibs//score/serialization:__subpackages__",
++        "//visibility:public",
+     ],
+     deps = ["@score_baselibs//score/language/futurecpp"],
+ )
