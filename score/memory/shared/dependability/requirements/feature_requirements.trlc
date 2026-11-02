@@ -67,23 +67,24 @@ ScoreReq.FeatReq FEAT_AllocationWithinSharedMemoryObject {
 }
 
 ScoreReq.FeatReq FEAT_AccessRightsOnCreation {
-    description = "The shared memory library shall allow the creator of a shared memory object to define which users get read access and which users get write access to it."
+    description = """The shared memory library shall allow the creator of a named shared memory object or of an anonymous shared memory object in system memory
+    to define which users get read access and which users get write access to it."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.ASR_AccessControl@1]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_AccessModeOnOpening {
-    description = """The shared memory library shall allow a software element opening a shared memory object to request read-only or read-write access
-    and shall provide the object with only the requested access."""
+    description = """The shared memory library shall allow a software element opening a shared memory object that is not yet opened in its process
+    to request read-only or read-write access and shall provide the object with only the requested access."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.ASR_AccessControl@1]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_CreatorVerification {
-    description = """The shared memory library shall allow a software element opening a shared memory object to specify the users expected to have created it
-    and shall refuse to provide the object if it was created by another user."""
+    description = """The shared memory library shall allow a software element opening a shared memory object to specify the users expected to have created it,
+    in addition to the calling user, and shall refuse to provide the object if it was created by any other user."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.ASR_CreatorVerification@1]
     version = 1
@@ -102,5 +103,59 @@ ScoreReq.FeatReq FEAT_BoundsSafeManagementData {
     such as allocation state, does not lead it to access or provide memory outside that object."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.ASR_NoOutOfBoundsAccess@1]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_SafeSilentOnUnrecoverableError {
+    description = """When the shared memory library detects an error from which it cannot recover, it shall terminate the calling process
+    instead of continuing."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.ASR_SafeState@1]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_NoResultOnFailure {
+    description = """When an operation of the shared memory library cannot be completed as requested because of an error from which the library can recover,
+    the library shall not provide a result, so that the caller does not continue with a partially valid or different result."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.ASR_SafeState@1]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_InitializationOnCreation {
+    description = "The shared memory library shall allow the creator of a shared memory object to initialize its content as part of creating it."
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.ASR_NoAccessBeforeInitialization@1]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_OpenOnlyAfterInitialization {
+    description = """The shared memory library shall provide a named shared memory object to a software element opening it only after
+    the initialization of the object by its creator has completed."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.ASR_NoAccessBeforeInitialization@1]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_BoundedWaitingForOtherProcesses {
+    description = """The shared memory library shall limit the time any of its operations waits for another process to a fixed bound,
+    except for the blocking lock operation of the inter-process mutex."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.ASR_BoundedBlocking@1]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_FixedObjectSize {
+    description = "The shared memory library shall not change the size of a shared memory object after creating it."
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.ASR_FixedMemoryBudget@1]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_MemoryNeedMeasurement {
+    description = """The shared memory library shall allow measuring the memory needed by a set of allocations before the shared memory object
+    for them is created."""
+    safety = ScoreReq.Asil.QM
+    derived_from = [MemoryShared.ASR_MemoryNeedDeterminable@1]
     version = 1
 }

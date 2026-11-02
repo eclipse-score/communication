@@ -16,17 +16,17 @@ import ScoreReq
 
 ScoreReq.CompReq CreateFailsIfObjectAlreadyExists {
     description = """When creating a named shared memory object, the shared memory library shall not provide an object and leave the existing object untouched
-    if an object with the same path already exists."""
+    if an object with the same name already exists or its creation lock is held by another process."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_CreateSharedMemoryObject@1]
+    derived_from = [MemoryShared.FEAT_CreateSharedMemoryObject@1, MemoryShared.FEAT_NoResultOnFailure@1, MemoryShared.FEAT_BoundedWaitingForOtherProcesses@1]
     version = 1
 }
 
 ScoreReq.CompReq OpenFailsIfObjectCannotBeOpened {
-    description = """When the operating system refuses to open a named shared memory object, for example because it does not exist
+    description = """When opening a named shared memory object with Open and the operating system refuses to open it, for example because it does not exist
     or the caller lacks the required access rights, the shared memory library shall not provide an object."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_OpenSharedMemoryObject@1]
+    derived_from = [MemoryShared.FEAT_OpenSharedMemoryObject@1, MemoryShared.FEAT_NoResultOnFailure@1]
     version = 1
 }
 
@@ -48,7 +48,7 @@ ScoreReq.CompReq RemoveDeletesNameOnly {
 
 ScoreReq.CompReq CreateOrOpenFallsBackToOpen {
     description = """When CreateOrOpen does not find the named shared memory object, the shared memory library shall try to create it,
-    and if creation fails because another process is creating or has already created it, it shall open the object created by that process."""
+    and if creation fails because the object already exists or its creation lock is held by another process, it shall open the object."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.FEAT_ConcurrentCreateOrOpen@1]
     version = 1
@@ -56,7 +56,7 @@ ScoreReq.CompReq CreateOrOpenFallsBackToOpen {
 
 ScoreReq.CompReq ReuseAlreadyOpenedObject {
     description = """When Open or CreateOrOpen is called for a named shared memory object that is already opened in the calling process,
-    the shared memory library shall provide the already opened object without mapping it again."""
+    the shared memory library shall provide the already opened object, with the access it was first opened with, without mapping it again."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.FEAT_SingleMappingPerProcess@1]
     version = 1
@@ -70,8 +70,8 @@ ScoreReq.CompReq NoFixedMappingAddress {
 }
 
 ScoreReq.CompReq OffsetPtrIsRelative {
-    description = """An OffsetPtr shall store the distance between its own address and its target, so that it refers to the same target
-    at any address at which the shared memory object is mapped."""
+    description = """The shared memory library shall provide an OffsetPtr that stores the distance between its own address and its target, so that it refers
+    to the same target at any address at which the shared memory object is mapped."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.FEAT_ProcessIndependentAddressing@1]
     version = 1
@@ -80,7 +80,7 @@ ScoreReq.CompReq OffsetPtrIsRelative {
 ScoreReq.CompReq AllocateWithinObject {
     description = "The shared memory library shall return memory allocated from a shared memory object only from within the usable region of that object."
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_AllocationWithinSharedMemoryObject@1]
+    derived_from = [MemoryShared.FEAT_AllocationWithinSharedMemoryObject@1, MemoryShared.FEAT_FixedObjectSize@1]
     version = 1
 }
 
@@ -100,15 +100,15 @@ ScoreReq.CompReq AllocatorReturnsOffsetPtr {
 }
 
 ScoreReq.CompReq ApplyRequestedPermissionsOnCreation {
-    description = """When creating a shared memory object with a list of user permissions, the shared memory library shall grant read and write access to the creator
-    and grant every listed user only the read or write access listed for that user."""
+    description = """When creating a shared memory object in system memory with a list of user permissions, the shared memory library shall grant read and write access
+    to the creator and grant every listed user only the read or write access listed for that user."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.FEAT_AccessRightsOnCreation@1]
     version = 1
 }
 
 ScoreReq.CompReq ApplyWorldReadablePermissionsOnCreation {
-    description = """When creating a shared memory object with world-readable permissions, the shared memory library shall grant read and write access
+    description = """When creating a shared memory object in system memory with world-readable permissions, the shared memory library shall grant read and write access
     to the creator and read-only access to all other users."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.FEAT_AccessRightsOnCreation@1]
@@ -116,7 +116,7 @@ ScoreReq.CompReq ApplyWorldReadablePermissionsOnCreation {
 }
 
 ScoreReq.CompReq ApplyWorldWritablePermissionsOnCreation {
-    description = """When creating a shared memory object with world-writable permissions, the shared memory library shall grant read and write access
+    description = """When creating a shared memory object in system memory with world-writable permissions, the shared memory library shall grant read and write access
     to the creator and to all other users."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.FEAT_AccessRightsOnCreation@1]
@@ -132,22 +132,24 @@ ScoreReq.CompReq PassPermissionsToTypedMemoryProvider {
 }
 
 ScoreReq.CompReq OpenReadOnly {
-    description = "When opening a shared memory object with Open for read-only access, the shared memory library shall open and map the object with read access only."
+    description = """When opening a shared memory object that is not yet opened in the calling process with Open for read-only access,
+    the shared memory library shall open and map the object with read access only."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.FEAT_AccessModeOnOpening@1]
     version = 1
 }
 
 ScoreReq.CompReq OpenReadWrite {
-    description = "When opening a shared memory object with Open for read-write access, the shared memory library shall open and map the object with read and write access."
+    description = """When opening a shared memory object that is not yet opened in the calling process with Open for read-write access,
+    the shared memory library shall open and map the object with read and write access."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.FEAT_AccessModeOnOpening@1]
     version = 1
 }
 
 ScoreReq.CompReq CreatorMapsReadWrite {
-    description = """When creating a shared memory object with Create, CreateAnonymous or CreateOrOpen, the shared memory library shall open and map the object
-    with read and write access, also if CreateOrOpen opens an existing object."""
+    description = """When Create, CreateAnonymous or CreateOrOpen is called for a shared memory object that is not yet opened in the calling process,
+    the shared memory library shall open and map the object with read and write access."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.FEAT_CreateSharedMemoryObject@1, MemoryShared.FEAT_ConcurrentCreateOrOpen@1]
     version = 1
@@ -157,7 +159,7 @@ ScoreReq.CompReq RejectObjectOfUnexpectedCreator {
     description = """When a list of expected creators is given on opening a shared memory object (Open, or CreateOrOpen of an existing object),
     the shared memory library shall not provide the object if its creator is neither the calling user nor contained in that list."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_CreatorVerification@1]
+    derived_from = [MemoryShared.FEAT_CreatorVerification@1, MemoryShared.FEAT_NoResultOnFailure@1]
     version = 1
 }
 
@@ -175,10 +177,11 @@ ScoreReq.CompReq DetermineCreatorOfTypedMemoryObjectViaProvider {
     version = 1
 }
 
-ScoreReq.CompReq TerminateIfCreatorCannotBeDetermined {
-    description = "The shared memory library shall terminate the process if the creator of a shared memory object being opened cannot be determined."
+ScoreReq.CompReq TerminateIfSizeOrCreatorCannotBeDetermined {
+    description = """The shared memory library shall terminate the process if the size or the creator of a shared memory object being opened
+    cannot be determined."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_CreatorVerification@1]
+    derived_from = [MemoryShared.FEAT_CreatorVerification@1, MemoryShared.FEAT_OpenSharedMemoryObject@1, MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1]
     version = 1
 }
 
@@ -217,7 +220,7 @@ ScoreReq.CompReq OverflowSafeTargetCalculation {
 
 ScoreReq.CompReq MemoryResourceProxyWithinItsResource {
     description = """When allocating via a MemoryResourceProxy, the shared memory library shall check that the proxy refers to a known memory resource
-    and lies within the memory of that memory resource."""
+    and that the start address of the proxy lies within the memory of that memory resource."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.FEAT_BoundsSafeManagementData@1]
     version = 1
@@ -242,6 +245,130 @@ ScoreReq.CompReq ObjectBoundsFromLocalMapping {
 ScoreReq.CompReq TerminateOnBoundsViolation {
     description = "The shared memory library shall terminate the process if a bounds check fails."
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_BoundsCheckedPointers@1, MemoryShared.FEAT_BoundsSafeManagementData@1]
+    derived_from = [MemoryShared.FEAT_BoundsCheckedPointers@1, MemoryShared.FEAT_BoundsSafeManagementData@1, MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1]
+    version = 1
+}
+
+ScoreReq.CompReq TerminateOnUnexpectedCreationError {
+    description = """The shared memory library shall terminate the process if creating a shared memory object fails for a reason other than
+    an object with the same name already existing or its creation lock being held by another process."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1]
+    version = 1
+}
+
+ScoreReq.CompReq TerminateOnUnexpectedCreateOrOpenError {
+    description = """The shared memory library shall terminate the process if CreateOrOpen fails to open a named shared memory object
+    for a reason other than the object not existing."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1]
+    version = 1
+}
+
+ScoreReq.CompReq TerminateIfObjectSizeCannotBeSet {
+    description = "The shared memory library shall terminate the process if setting the size of a shared memory object being created fails."
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1]
+    version = 1
+}
+
+ScoreReq.CompReq TerminateIfObjectCannotBeMapped {
+    description = "The shared memory library shall terminate the process if mapping a shared memory object into the calling process fails."
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1]
+    version = 1
+}
+
+ScoreReq.CompReq TerminateIfObjectBoundsCannotBeRegistered {
+    description = "The shared memory library shall terminate the process if the bounds of a mapped shared memory object cannot be registered."
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1]
+    version = 1
+}
+
+ScoreReq.CompReq TerminateIfAllocationDoesNotFit {
+    description = """The shared memory library shall terminate the process if a requested allocation does not fit into the remaining usable region
+    of the shared memory object."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1, MemoryShared.FEAT_FixedObjectSize@1]
+    version = 1
+}
+
+ScoreReq.CompReq InitializeBeforeCreateReturns {
+    description = """When creating a shared memory object, the shared memory library shall initialize its own management data in the object
+    and then call the initialization callback given by the creator, before the creating call returns."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_InitializationOnCreation@1]
+    version = 1
+}
+
+ScoreReq.CompReq CreatorHoldsCreationLock {
+    description = """When creating a named shared memory object, the shared memory library shall first acquire the creation lock of that name,
+    which only one process can hold at a time, and shall release it only after the initialization callback has returned."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_OpenOnlyAfterInitialization@1]
+    version = 1
+}
+
+ScoreReq.CompReq OpenHoldsCreationLock {
+    description = """When opening a named shared memory object with Open or CreateOrOpen, the shared memory library shall first acquire the creation lock
+    of that name, waiting while another process holds it, and shall release the lock only after the object has been opened and mapped."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_OpenOnlyAfterInitialization@1]
+    version = 1
+}
+
+ScoreReq.CompReq TerminateIfCreationLockIsNotReleased {
+    description = """The shared memory library shall terminate the process if the creation lock of a named shared memory object being opened
+    is not released within a fixed timeout."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_OpenOnlyAfterInitialization@1, MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1, MemoryShared.FEAT_BoundedWaitingForOtherProcesses@1]
+    version = 1
+}
+
+ScoreReq.CompReq TerminateAfterBoundedAllocationRetries {
+    description = """The shared memory library shall terminate the process if an allocation from a shared memory object does not succeed
+    within a fixed number of attempts to update the allocation position stored in the object."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_BoundedWaitingForOtherProcesses@1, MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1]
+    version = 1
+}
+
+ScoreReq.CompReq AllocationCoordinatedByAtomicUpdate {
+    description = """The shared memory library shall coordinate concurrent allocations from a shared memory object only through an atomic update
+    of the allocation position stored in the object."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_BoundedWaitingForOtherProcesses@1]
+    version = 1
+}
+
+ScoreReq.CompReq SizeSetOnlyOnCreation {
+    description = "The shared memory library shall set the size of a shared memory object only while creating it."
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_FixedObjectSize@1]
+    version = 1
+}
+
+ScoreReq.CompReq UsableRegionOfRequestedSize {
+    description = """When creating a shared memory object, the shared memory library shall provide a usable region of exactly the requested size,
+    in addition to the space it needs for its own management data."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_CreateSharedMemoryObject@1]
+    version = 1
+}
+
+ScoreReq.CompReq DryRunReportsMemoryNeed {
+    description = """The shared memory library shall provide a memory resource that serves allocations from the process heap and reports the number of bytes
+    that the same sequence of allocations would occupy in the usable region of a shared memory object."""
+    safety = ScoreReq.Asil.QM
+    derived_from = [MemoryShared.FEAT_MemoryNeedMeasurement@1]
+    version = 1
+}
+
+ScoreReq.CompReq UsableRegionWorstCaseAligned {
+    description = """The shared memory library shall start the usable region of every shared memory object at an address aligned to the largest
+    fundamental alignment, so that the memory needed by a sequence of allocations does not depend on the address at which the object is mapped."""
+    safety = ScoreReq.Asil.QM
+    derived_from = [MemoryShared.FEAT_MemoryNeedMeasurement@1]
     version = 1
 }
