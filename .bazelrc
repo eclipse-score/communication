@@ -120,6 +120,12 @@ build --host_per_file_copt=external/.*score_qnx_unit_tests.*virtio9p.*@-Wno-erro
 # Enable the experimental FlatBuffers configuration path.
 build:flatbuffers --//score/mw/com/flags:experimental_enable_flatbuffers_configuration=True
 
+# Flag groups for group based testing of feature flags, see CI.md#feature-flags-and-flag-groups.
+# Every feature flag must have exactly two values (A and B, where A is the build_setting_default) and must be listed in
+# both groups: flag_group_a sets all feature flags to value A, flag_group_b sets all feature flags to value B.
+build:flag_group_a --//score/mw/com/flags:experimental_enable_flatbuffers_configuration=False
+build:flag_group_b --//score/mw/com/flags:experimental_enable_flatbuffers_configuration=True
+
 common:linux_x86_64_score_gcc_12_2_0_posix --platforms=@score_bazel_platforms//:x86_64-linux-gcc_12.2.0-posix
 common:linux_x86_64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_x86_64_toolchain//:x86_64-linux
 # Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations

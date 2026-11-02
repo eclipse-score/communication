@@ -65,6 +65,39 @@ And this is the list of bazel `--config=` for the supported configurations:
 
 Note: Not all configs exist right now, that will be fixed in https://github.com/eclipse-score/communication/issues/792.
 
+## Feature flags and flag groups
+
+Some features are guarded by Bazel build setting flags (feature flags), e.g. `//score/mw/com/flags:experimental_enable_flatbuffers_configuration`.
+Code behind such a flag must be tested in the CI with every value of the flag, otherwise it would be merged untested.
+Testing every combination of flags in every job would lead to a combinatorial explosion, so we use group based testing instead.
+
+Rules for feature flags:
+
+- A feature flag must have exactly two values, called value A and value B (e.g. a `bool_flag`).
+- Value A is the `build_setting_default` of the flag, value B is the other value.
+- Every feature flag must be added to both flag groups in [`.bazelrc`](./.bazelrc):
+  - `--config=flag_group_a` sets all feature flags to value A.
+  - `--config=flag_group_b` sets all feature flags to value B.
+
+Rules for the CI:
+
+- The jobs [Build everything and run unit tests (x86-64 linux)](#build-everything-and-run-unit-tests-x86-64-linux) and
+  [Run C++ unit tests under address, UB, and leak sanitizers (x86-64 linux)](#run-c-unit-tests-under-address-ub-and-leak-sanitizers-x86-64-linux)
+  run once with `flag_group_a` and once with `flag_group_b`.
+- All other jobs run with the defaults, which are expected to be equal to `flag_group_a`.
+
+This equality is a contract, not something Bazel enforces. It is only kept if the following procedure is followed
+whenever a feature flag is added or changed:
+
+- When adding a flag, add it to both `flag_group_a` and `flag_group_b` in [`.bazelrc`](./.bazelrc), with value A being the `build_setting_default`.
+- When changing the `build_setting_default` of a flag, swap its values in `flag_group_a` and `flag_group_b` in the same change.
+  Otherwise the jobs running with the defaults would silently test value B and value A would be left untested.
+- When removing a flag, remove it from both groups.
+
+Note: This is currently only checked in code review. An automated check that the groups match the flag defaults is not yet implemented.
+
+A failing job can be reproduced locally by adding the respective group, e.g. `bazel test --config=flag_group_b //...`.
+
 ## Pipelines
 
 ### Check and merge queue
@@ -136,9 +169,12 @@ To ensure that the job is fast, the targets should be built with the right combi
 compilation but still keeping a fast enough execution. To ensure that the job is robust, a failing test
 will be retried up to 3 times.
 
+This job runs once per [flag group](#feature-flags-and-flag-groups).
+
 #### Run C++ unit tests under address, UB, and leak sanitizers (x86-64 linux)
 
 Runs all C++ unit tests under address, undefined behavior (UB), and leak sanitizers.
+This job runs once per [flag group](#feature-flags-and-flag-groups).
 
 Each unit test target also has a maximum run time [as the job for unit tests without sanitizers](./CI.md#build-everything-and-run-unit-tests-host)
 and the same stability design where a test is rerun 3 times in case of failure.
