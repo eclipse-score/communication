@@ -1,0 +1,50 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml class_diagram_pointer_arithmetic
+allowmixing
+skinparam usecaseBorderType dashed
+skinparam linetype ortho
+
+namespace score::memory::shared {
+
+    class PointerArithmeticUtil <<utility>> {
+      + {static} AddOffsetToPointerAsInteger(pointer_as_integer: const std::uintptr_t, offset: const std::size_t): std::uintptr_t
+      + {static} AddSignedOffsetToPointerAsInteger(ptr_as_integer: const std::uintptr_t, offset: const std::ptrdiff_t): std::uintptr_t
+      + {static} SubtractOffsetFromPointerAsInteger(pointer_as_integer: const std::uintptr_t, offset: const std::size_t): std::uintptr_t
+      + {static} CalculateAlignedSize(size: const std::size_t, alignment: const std::size_t): std::size_t
+      + {static} CalculateAlignedSizeOfSequence(data_type_infos: const std::vector<DataTypeSizeInfo>&): std::size_t
+      + {static} CastPointerToInteger(pointer: const void* const): std::uintptr_t
+      + {static} CastIntegerToPointer<PointerType>(integer: std::uintptr_t): PointerType
+      + {static} AddOffsetToPointer<PointerType>(pointer: const PointerType*, offset: const std::size_t): PointerType*
+      + {static} AddOffsetToPointer<PointerType>(pointer: const PointerType*, offset: const std::ptrdiff_t): PointerType*
+      + {static} PointerToLogValue(pointer: const void* const): score::mw::log::LogHex64
+      + {static} SubtractPointersBytes(first: const void* const, second: const void* const): std::ptrdiff_t
+      + {static} AbsoluteValue<SignedInteger>(signed_value: SignedInteger): std::make_unsigned_t<SignedInteger>
+      + {static} UndoSignedToUnsignedIntegerCast<UnsignedInteger>(unsigned_value: UnsignedInteger): std::make_signed_t<UnsignedInteger>
+      + {static} AddUnsignedToSigned<SignedInteger>(signed_value: SignedInteger, unsigned_value: std::make_unsigned_t<SignedInteger>): SignedInteger
+      + {static} SubtractUnsignedFromSigned<SignedInteger>(signed_value: SignedInteger, unsigned_value: std::make_unsigned_t<SignedInteger>): SignedInteger
+    }
+
+    namespace detail {
+        class PointerArithmeticTraits <<utility>> {
+          + {static} is_signed_integer_v<T>: constexpr bool
+          + {static} is_unsigned_integer_v<T>: constexpr bool
+        }
+    }
+
+    PointerArithmeticUtil ..> detail.PointerArithmeticTraits : uses
+
+}
+
+@enduml

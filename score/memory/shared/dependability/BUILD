@@ -26,15 +26,6 @@ unit_design(
     static = ["public_api.puml"],
 )
 
-# TODO: remove this separate architectural_design target once unit_design
-# supports public_api directly.
-architectural_design(
-    name = "memory_shared_architectural_design",
-    package = "memory_shared_api",
-    public_api = ["public_api.puml"],
-    visibility = ["//score/memory/shared/dependability:__subpackages__"],
-)
-
 # Single component carrying the component requirements until the architecture phase defines the real split.
 component(
     name = "component_memory_shared",
@@ -49,7 +40,7 @@ component(
 # Step 0 (tutorial) setup: assumptions_of_use are filled in by later stories.
 dependable_element(
     name = "dependable_element_memory_shared",
-    architectural_design = [":memory_shared_architectural_design"],
+    architectural_design = ["//score/memory/shared/dependability/architectural_design:software_architectural_design"],
     components = [":component_memory_shared"],
     dependability_analysis = ["//score/memory/shared/dependability/safety_analysis:memory_shared_dependability_analysis"],
     integrity_level = "B",

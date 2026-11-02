@@ -76,8 +76,15 @@ cc_library(
     hdrs = ["shared_memory_resource.h"],
     implementation_deps = [
         ":memory_resource_registry",
+        "//score/memory/shared/sealedshm/sealedshm_wrapper:sealedshm",
+        "//score/memory/shared/typedshm/utils:typed_memory_utils",
+        "@score_baselibs//score/concurrency:atomic_indirector",
+        "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/language/safecpp/string_view:zstring_view",
         "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/os:errno_logging",
+        "@score_baselibs//score/os:unistd",
+        "@score_baselibs//score/os/utils/acl",
     ],
     tags = ["FFI"],
     visibility = [
@@ -88,18 +95,11 @@ cc_library(
         ":lock_file",
         ":memory_resource_proxy",
         ":pointer_arithmetic_util",
-        "//score/memory/shared/sealedshm/sealedshm_wrapper:sealedshm",
         "//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
-        "//score/memory/shared/typedshm/utils:typed_memory_utils",
-        "@score_baselibs//score/concurrency:atomic_indirector",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/language/safecpp/safe_math",
-        "@score_baselibs//score/os:errno_logging",
         "@score_baselibs//score/os:fcntl",
         "@score_baselibs//score/os:mman",
         "@score_baselibs//score/os:stat",
-        "@score_baselibs//score/os:unistd",
-        "@score_baselibs//score/os/utils/acl",
     ],
 )
 
@@ -725,6 +725,7 @@ cc_unit_test(
         ":pointer_arithmetic_util",
         ":shared_memory_test_resources",
         "//score/memory/shared/fake:fake_memory_resources",
+        "//score/memory/shared/sealedshm/sealedshm_wrapper:sealedshm",
         "//score/memory/shared/sealedshm/sealedshm_wrapper:sealedshm_mock",
     ],
 )
