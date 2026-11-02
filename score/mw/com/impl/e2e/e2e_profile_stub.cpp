@@ -82,7 +82,7 @@ RawCheckOutcome CheckMessage(const score::cpp::span<const std::byte> header,
 {
     if (header.size() != kProfileStubHeaderSize)
     {
-        return {DataIntegrityStatus::kError, SequenceStatus::kOk};
+        return {DataIntegrityStatus::kError, SequenceStatus::kSkipped};
     }
 
     const auto counter = ToUint8(header[kCounterOffset]);
@@ -90,7 +90,7 @@ RawCheckOutcome CheckMessage(const score::cpp::span<const std::byte> header,
     const auto expected_checksum = CalculateChecksum(configuration.data_id, counter, payload);
     if ((ToUint8(header[kDataIdOffset]) != configuration.data_id) || (received_checksum != expected_checksum))
     {
-        return {DataIntegrityStatus::kError, SequenceStatus::kOk};
+        return {DataIntegrityStatus::kError, SequenceStatus::kSkipped};
     }
 
     if (!check_context.has_last_counter)

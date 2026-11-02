@@ -72,9 +72,25 @@ TEST(E2eProfileStubTest, CheckTamperedHeaderReportsDataIntegrityErrorAndRetainsS
     // When checking the tampered header
     const auto outcome = CheckMessage(AsReadOnlySpan(header), PayloadSpan(), kConfiguration, check_context);
 
-    // Then the data integrity check reports an error and no sequence state is recorded
+    // Then the data integrity check reports an error, the sequence check is skipped and no sequence state is recorded
     EXPECT_EQ(outcome.data_integrity, DataIntegrityStatus::kError);
-    EXPECT_EQ(outcome.sequence, SequenceStatus::kOk);
+    EXPECT_EQ(outcome.sequence, SequenceStatus::kSkipped);
+    EXPECT_FALSE(check_context.has_last_counter);
+}
+
+TEST(E2eProfileStubTest, CheckHeaderWithIncorrectSizeReportsDataIntegrityErrorAndSkippedSequence)
+{
+    // Given a header buffer smaller than the required POC header size
+    std::array<std::byte, kProfileStubHeaderSize - 1U> too_small_header{};
+    CheckContext check_context{};
+
+    // When checking that header
+    const auto outcome =
+        CheckMessage({too_small_header.data(), too_small_header.size()}, PayloadSpan(), kConfiguration, check_context);
+
+    // Then the data integrity check reports an error and the sequence check is skipped
+    EXPECT_EQ(outcome.data_integrity, DataIntegrityStatus::kError);
+    EXPECT_EQ(outcome.sequence, SequenceStatus::kSkipped);
     EXPECT_FALSE(check_context.has_last_counter);
 }
 

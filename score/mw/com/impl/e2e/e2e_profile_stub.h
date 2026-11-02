@@ -65,7 +65,8 @@ bool ProtectMessage(score::cpp::span<std::byte> header,
                     ProtectContext& protect_context) noexcept;
 
 /// \brief Verifies one POC header and updates the receiver-local sequence state for valid headers.
-/// \details An invalid header or checksum produces kError and does not update check_context.
+/// \details An invalid header or checksum produces kError, reports the sequence check as kSkipped and does not update
+///          check_context.
 RawCheckOutcome CheckMessage(score::cpp::span<const std::byte> header,
                              score::cpp::span<const std::byte> payload,
                              ProfileConfiguration configuration,
