@@ -161,28 +161,46 @@ class SomeIpStrategy final
                                                                                          : layout.default_;
     }
 
-    // Resolves the layout of the element currently being visited by following the field-index path from the root
-    // through nested structs. A null nested layout means that subtree is uniform (SOME/IP default).
-    ElementLayout ResolveElementLayout(const std::size_t* const path, const std::size_t depth) const
+    // Resolves the layout of the element currently being visited by following the field path from the root. Struct
+    // field markers index into the current struct layout; an array-element marker descends into the array's nested
+    // layout (or, when that is uniform/null, lets the element inherit the array's own layout).
+    ElementLayout ResolveElementLayout(const std::size_t* const path,
+                                       const std::size_t depth,
+                                       const std::size_t array_marker) const
     {
-        const SomeIpLayout* current = &layout_;
-        for (std::size_t level{0U}; (level + 1U) < depth; ++level)
+        const SomeIpLayout* struct_layout = &layout_;
+        ElementLayout leaf = layout_.default_;
+        for (std::size_t level{0U}; level < depth; ++level)
         {
-            const ElementLayout ancestor = ElementAt(*current, path[level]);
-            if (ancestor.nested == nullptr)
+            if (path[level] == array_marker)
             {
-                return ElementLayout{};  // uniform subtree below an ancestor without an explicit nested layout
+                if (leaf.nested != nullptr)
+                {
+                    struct_layout = leaf.nested;
+                    leaf = leaf.nested->default_;
+                }
+                else
+                {
+                    struct_layout = nullptr;  // uniform array: the element inherits the array's own layout
+                }
             }
-            current = ancestor.nested;
+            else if (struct_layout != nullptr)
+            {
+                leaf = ElementAt(*struct_layout, path[level]);
+                struct_layout = leaf.nested;  // null => uniform subtree below, keep inheriting leaf
+            }
+            else
+            {
+                // Uniform subtree below a null nested layout: keep inheriting the current leaf.
+            }
         }
-        const std::size_t leaf_index = (depth == 0U) ? 0U : path[depth - 1U];
-        return ElementAt(*current, leaf_index);
+        return leaf;
     }
 
     template <typename Visitor>
     ElementLayout LayoutFor(const Visitor& visitor) const
     {
-        return ResolveElementLayout(visitor.FieldPathData(), visitor.FieldDepth());
+        return ResolveElementLayout(visitor.FieldPathData(), visitor.FieldDepth(), Visitor::kArrayElementMarker);
     }
 
     // True when data follows the element currently being visited anywhere in the message, i.e. it is not the last
