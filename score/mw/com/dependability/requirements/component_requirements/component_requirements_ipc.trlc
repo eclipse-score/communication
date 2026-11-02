@@ -997,7 +997,7 @@ section "com" {
             derived_from = [
                 Communication.FEAT_SafeCommunication@1,
                 // Verifying the producer's UID against the configured expectation detects a producer other than the intended one, rejecting the connection instead of silently treating its shared memory as the expected service instance.
-                mw_com_fta.WrongProvider
+                mw_com_fta.WrongShmProvider
             ]
             version = 1
         }
@@ -1130,7 +1130,7 @@ section "com" {
             derived_from = [
                 Communication.FEAT_SupportForTimeBasedArchitecture@1,
                 // Deriving the shared memory segment name deterministically from deployment identifiers (e.g. service id, instance id) ensures producer and consumer always agree on the same name, preventing a consumer from opening a segment belonging to a different service instance.
-                mw_com_fta.WrongName
+                mw_com_fta.WrongShmPathName
             ]
             version = 1
         }
@@ -1181,7 +1181,7 @@ section "com" {
             derived_from = [
                 Communication.FEAT_AccessControlListForProducer@1,
                 // If a misconfigured ACL denies the consumer access to a shared memory segment, failing proxy construction converts the misconfiguration into a safe, detectable error instead of proceeding with an inaccessible memory region.
-                mw_com_fta.WrongAcl
+                mw_com_fta.WrongShmAcl
             ]
             version = 1
         }
