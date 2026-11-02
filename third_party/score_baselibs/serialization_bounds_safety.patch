@@ -1,0 +1,792 @@
+From f796d30d2f178d24de87264faf2c784ef9c1145e Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Wed, 28 Oct 2026 11:03:52 +0100
+Subject: [PATCH 1/9] fix(serialization): prevent static_vector overflow when
+ serializing
+
+static_vector previously used the generic emplace_back path and could abort when full.
+Add a has_bounded_capacity trait and a bounded StoreIn overload that checks capacity
+and returns kOutOfBoundsWrite when full.
+---
+ score/serialization/details/type_traits.h     | 14 ++++++
+ score/serialization/serialize_iterator.h      | 46 +++++++++++++++----
+ .../serialization/serialize_iterator_test.cpp | 16 +++++++
+ 3 files changed, 67 insertions(+), 9 deletions(-)
+
+diff --git a/score/serialization/details/type_traits.h b/score/serialization/details/type_traits.h
+index a07d2ce2b..d2def71dd 100644
+--- a/score/serialization/details/type_traits.h
++++ b/score/serialization/details/type_traits.h
+@@ -116,6 +116,20 @@ struct supports_emplace_back<score::cpp::static_vector<T, Size>>
+     static const bool value = true;
+ };
+ 
++/// @brief Base case, containers are assumed to grow unbounded via emplace_back
++template <class T>
++struct has_bounded_capacity
++{
++    static const bool value = false;
++};
++
++/// @brief score::cpp::static_vector has a fixed capacity and emplace_back requires size() < capacity()
++template <class T, std::size_t Size>
++struct has_bounded_capacity<score::cpp::static_vector<T, Size>>
++{
++    static const bool value = true;
++};
++
+ }  // namespace details
+ 
+ }  // namespace serialization
+diff --git a/score/serialization/serialize_iterator.h b/score/serialization/serialize_iterator.h
+index 2897bb8bd..8d6cc04a4 100644
+--- a/score/serialization/serialize_iterator.h
++++ b/score/serialization/serialize_iterator.h
+@@ -33,22 +33,50 @@ namespace serialization
+ namespace helper
+ {
+ 
+-/// @brief We use free function overloads, in order to change the store routine based on the container. If we would want
+-/// to-do this inside the iterator (as one normally would expect) we would need to specialize the iterator which could
+-/// cause some more code duplication. Thus, extracting this functionality for overloading is the more elegant solution
+-template <typename Container, std::enable_if_t<details::supports_emplace_back<Container>::value, bool> = true>
+-bool StoreIn(Container& container, typename Container::iterator& iterator, const typename Container::value_type& value)
++/// @brief Appends value via emplace_back and moves the iterator to end(). Caller must ensure capacity is available.
++template <typename Container>
++bool EmplaceBackInto(Container& container,
++                     typename Container::iterator& iterator,
++                     const typename Container::value_type& value)
+ {
+     // Suppress "AUTOSAR C++14 A0-1-2", The rule states: "The value returned by a function having a non-void return type
+     // that is not an overloaded operator shall be used." This is false positive. API returns void.
+     // coverity[autosar_cpp14_a0_1_2_violation : FALSE]
+     container.emplace_back(value);
+     iterator = container.end();  // we cannot be sure that the iterator stays valid (most certainly it did not)
+-    return true;  // if emplace back does not work, we will get an exception and thus terminate. maybe we can come up
+-                  // with a more robust solution once we switched to PMR.
++    return true;
++}
++
++/// @brief We use free function overloads, in order to change the store routine based on the container. If we would want
++/// to-do this inside the iterator (as one normally would expect) we would need to specialize the iterator which could
++/// cause some more code duplication. Thus, extracting this functionality for overloading is the more elegant solution
++template <typename Container,
++          std::enable_if_t<details::supports_emplace_back<Container>::value &&
++                               (!details::has_bounded_capacity<Container>::value),
++                           bool> = true>
++bool StoreIn(Container& container, typename Container::iterator& iterator, const typename Container::value_type& value)
++{
++    // if emplace back does not work, we will get an exception and thus terminate. maybe we can come up with a more
++    // robust solution once we switched to PMR.
++    return EmplaceBackInto(container, iterator, value);
++}
++
++/// @brief Overload for bounded containers (e.g. score::cpp::static_vector) whose emplace_back has a size() < capacity()
++/// precondition. We check capacity ourselves and report an out-of-bounds write instead of terminating.
++template <typename Container,
++          std::enable_if_t<details::supports_emplace_back<Container>::value &&
++                               details::has_bounded_capacity<Container>::value,
++                           bool> = true>
++bool StoreIn(Container& container, typename Container::iterator& iterator, const typename Container::value_type& value)
++{
++    if (container.size() >= container.capacity())
++    {
++        return false;
++    }
++    return EmplaceBackInto(container, iterator, value);
+ }
+ 
+-template <typename Container, std::enable_if_t<details::supports_emplace_back<Container>::value == false, bool> = true>
++template <typename Container, std::enable_if_t<!details::supports_emplace_back<Container>::value, bool> = true>
+ bool StoreIn(Container& container, typename Container::iterator& iterator, const typename Container::value_type& value)
+ {
+     // ensure no out of bounds access
+@@ -96,7 +124,7 @@ class SerializeIterator
+     SerializeIterator<Container>& operator=(const typename Container::value_type& value) &
+     {
+         const auto result = helper::StoreIn(container_, *iterator_, value);
+-        if (result == false)
++        if (!result)
+         {
+             *result_ = MakeUnexpected(SerializationError::kOutOfBoundsWrite);
+         }
+diff --git a/score/serialization/serialize_iterator_test.cpp b/score/serialization/serialize_iterator_test.cpp
+index 761f436b0..41b8439ec 100644
+--- a/score/serialization/serialize_iterator_test.cpp
++++ b/score/serialization/serialize_iterator_test.cpp
+@@ -259,6 +259,22 @@ TEST(SerializeIteratorTest, OverflowsOnStaticTypes)
+     ASSERT_FALSE(result.has_value());
+ }
+ 
++TEST(SerializeIteratorTest, OverflowsOnBoundedContainer)
++{
++    // Given a static_vector whose capacity is smaller than the data we want to write
++    score::cpp::static_vector<std::uint8_t, 1> buffer{};
++    auto iterator = SerializeInto(buffer);
++
++    // When writing more data than the capacity allows
++    iterator = 0x01;
++    iterator = 0x02;
++
++    // Then our serialization was not successful instead of aborting
++    const auto result = iterator.GetResult();
++    ASSERT_FALSE(result.has_value());
++    EXPECT_EQ(result.error(), SerializationError::kOutOfBoundsWrite);
++}
++
+ TEST(SerializeIteratorTest, ProvideSerializationWindows)
+ {
+     // Given a buffer where we want to serialize into an offset
+-- 
+2.43.0
+
+
+From 57190c59fda41be7cf82d0d98ed5366f091c108b Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Wed, 28 Oct 2026 11:04:01 +0100
+Subject: [PATCH 2/9] fix(serialization): bound LengthPrefixedVector
+ deserialization length
+
+Reject truncated or corrupted input by validating prefix and element reads
+during deserialization. This avoids out-of-bounds access.
+---
+ score/serialization/strategies/uds_strategy.h     |  8 ++++++++
+ .../strategies/uds_strategy_test.cpp              | 15 +++++++++++++++
+ 2 files changed, 23 insertions(+)
+
+diff --git a/score/serialization/strategies/uds_strategy.h b/score/serialization/strategies/uds_strategy.h
+index a91860f4e..e472017f1 100644
+--- a/score/serialization/strategies/uds_strategy.h
++++ b/score/serialization/strategies/uds_strategy.h
+@@ -80,11 +80,19 @@ class UDSStrategy final : public UnsignedIntegralOnlyStrategy
+     {
+         LengthType counter{};
+         visitor.Next(counter);
++        if (!visitor.GetResult().has_value())
++        {
++            return MakeUnexpected(SerializationError::kOutOfBoundsWrite);
++        }
+ 
+         for (; counter > static_cast<decltype(counter)>(0); counter--)
+         {
+             UnderlyingType underlying_type{};
+             visitor.Next(underlying_type);
++            if (!visitor.GetResult().has_value())
++            {
++                return MakeUnexpected(SerializationError::kOutOfBoundsWrite);
++            }
+             value.push_back(underlying_type);
+         }
+ 
+diff --git a/score/serialization/strategies/uds_strategy_test.cpp b/score/serialization/strategies/uds_strategy_test.cpp
+index 19a7b16fa..fe29f64c6 100644
+--- a/score/serialization/strategies/uds_strategy_test.cpp
++++ b/score/serialization/strategies/uds_strategy_test.cpp
+@@ -416,6 +416,21 @@ TEST_F(UDSStrategyFixture, CanDeserializeEmptyLengthPrefixedVector)
+     EXPECT_EQ(buffer_.at(1), 0x00);
+ }
+ 
++TEST_F(UDSStrategyFixture, DeserializeLengthPrefixedVectorFailsWhenPrefixExceedsBuffer)
++{
++    // Given a length prefix claiming more elements than the buffer actually contains
++    score::serialization::LengthPrefixedVector<std::uint16_t, std::uint16_t> value{};
++    buffer_.clear();
++    buffer_.push_back(0xFF);  // length prefix high byte
++    buffer_.push_back(0xFF);  // length prefix low byte -> claims 0xFFFF elements, none present
++
++    // When deserializing
++    const auto result = unit_.DeSerialize(buffer_, value);
++
++    // Then an out-of-bounds error is returned instead of iterating over absent data
++    EXPECT_FALSE(result.has_value());
++}
++
+ TEST(UnsignedIntegralOnlyStrategyTest, SerializeNormalByteOrder)
+ {
+     score::serialization::UnsignedIntegralOnlyStrategy strategy(/*reverse_byte_order=*/false);
+-- 
+2.43.0
+
+
+From ff8291d181a4f9f19e84a207277d675d394cae53 Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Wed, 28 Oct 2026 11:07:59 +0100
+Subject: [PATCH 3/9] fix(serialization): stop non-progressing pmr::vector
+ deserialization
+
+The pmr::vector deserialize loop ran until the iterator reached End(), but
+never terminated when Next() failed to advance: a latched inner failure
+(e.g. pmr::vector<pmr::string> with an oversized string prefix) turns Next()
+into a no-op, and a zero-length element consumes no input, both leaving
+iterator != end forever while appending default values.
+
+Capture the iterator position before each element and return
+kOutOfBoundsWrite before appending when the visitor latched a failure or the
+iterator made no progress.
+---
+ score/serialization/details/serialization_visitor.h |  8 +++++++-
+ score/serialization/serialize_iterator.h            | 10 +++++++++-
+ score/serialization/strategies/uds_strategy.h       | 12 ++++++++++--
+ 3 files changed, 26 insertions(+), 4 deletions(-)
+
+diff --git a/score/serialization/details/serialization_visitor.h b/score/serialization/details/serialization_visitor.h
+index cd54927a8..3b1e6cb9d 100644
+--- a/score/serialization/details/serialization_visitor.h
++++ b/score/serialization/details/serialization_visitor.h
+@@ -155,7 +155,13 @@ class DeSerializationVisitor : public CommonVisitorLogic
+         return iterator_.GetResult();
+     }
+ 
+-    bool IsSerializedDataRemaining() const
++    [[nodiscard]] bool HasError() const noexcept
++    {
++        // The iterator latches errors (e.g. too few bytes left) that are not mirrored in result_.
++        return (not result_.has_value()) || iterator_.HasError();
++    }
++
++    [[nodiscard]] bool IsSerializedDataRemaining() const
+     {
+         const auto end = iterator_.End();
+         return iterator_ != end;
+diff --git a/score/serialization/serialize_iterator.h b/score/serialization/serialize_iterator.h
+index 8d6cc04a4..76eafea76 100644
+--- a/score/serialization/serialize_iterator.h
++++ b/score/serialization/serialize_iterator.h
+@@ -260,6 +260,11 @@ class DeSerializeIterator
+         return GetNumberOfBytesWritten();
+     }
+ 
++    bool HasError() const noexcept
++    {
++        return not result_->has_value();
++    }
++
+     // Suppress "AUTOSAR C++14 A3-3-1" rule finding. This rule states:"Objects or functions with external linkage
+     // (including members of named namespaces) shall be declared in a header file."
+     // Rationale: This function is declared in a header file
+@@ -290,7 +295,7 @@ class DeSerializeIterator
+ 
+   private:
+     // coverity[autosar_cpp14_a0_1_3_violation : FALSE]
+-    std::size_t GetNumberOfBytesWritten() const
++    [[nodiscard]] std::size_t GetNumberOfBytesWritten() const
+     {
+         const auto distance = std::distance(container_.cbegin(), iterator_);
+         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(distance >=
+@@ -300,6 +305,9 @@ class DeSerializeIterator
+ 
+     const Container& container_;
+     typename Container::const_iterator iterator_;
++    // Sticky, copy-shared flag that latches an out-of-bounds read so GetResult()/HasError() can report it later.
++    // Needed because operator++ must return an iterator (and this repo forbids exceptions), so it cannot return the
++    // error directly.
+     std::shared_ptr<Result<std::size_t>> result_;
+ };
+ 
+diff --git a/score/serialization/strategies/uds_strategy.h b/score/serialization/strategies/uds_strategy.h
+index e472017f1..3d988ea2d 100644
+--- a/score/serialization/strategies/uds_strategy.h
++++ b/score/serialization/strategies/uds_strategy.h
+@@ -80,7 +80,7 @@ class UDSStrategy final : public UnsignedIntegralOnlyStrategy
+     {
+         LengthType counter{};
+         visitor.Next(counter);
+-        if (!visitor.GetResult().has_value())
++        if (visitor.HasError())
+         {
+             return MakeUnexpected(SerializationError::kOutOfBoundsWrite);
+         }
+@@ -89,7 +89,7 @@ class UDSStrategy final : public UnsignedIntegralOnlyStrategy
+         {
+             UnderlyingType underlying_type{};
+             visitor.Next(underlying_type);
+-            if (!visitor.GetResult().has_value())
++            if (visitor.HasError())
+             {
+                 return MakeUnexpected(SerializationError::kOutOfBoundsWrite);
+             }
+@@ -234,8 +234,16 @@ class UDSStrategy final : public UnsignedIntegralOnlyStrategy
+         const auto end = iterator.End();
+         while (iterator != end)
+         {
++            const auto position_before = iterator;
+             UnderlyingType underlying_type{};
+             visitor.Next(underlying_type);
++
++            // A latched failure turns Next into a no-op and an element consuming no input never advances;
++            // either case would loop forever, so bail out before appending when the decode failed or made no progress.
++            if (visitor.HasError() || (iterator == position_before))
++            {
++                return MakeUnexpected(SerializationError::kOutOfBoundsWrite);
++            }
+             value.push_back(underlying_type);
+         }
+ 
+-- 
+2.43.0
+
+
+From 2c9886d8c9d791fb79d325ae03279a7b73c1ad82 Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Wed, 28 Oct 2026 11:09:23 +0100
+Subject: [PATCH 4/9] fix(serialization): route struct fields through visitor
+ Next() on deserialize
+
+Route each field through visitor.Next() so traversal actually stops
+processing fields after the first error, as documented in
+serialization_visitor.h.
+---
+ score/serialization/details/visit.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/score/serialization/details/visit.h b/score/serialization/details/visit.h
+index ba4bf5497..c4cc6119b 100644
+--- a/score/serialization/details/visit.h
++++ b/score/serialization/details/visit.h
+@@ -145,8 +145,9 @@ inline void visit_as_struct(DeSerializationVisitor<Container, Strategy>& visitor
+     std::size_t counter{};
+     // coverity[autosar_cpp14_a6_2_2_violation]
+     // coverity[autosar_cpp14_m5_2_10_violation]
++    // Route each field through Next() so the visitor's latched-error guard stops traversal after the first failure.
+     score::cpp::ignore = (expander{(helper::MarkMetaInformationAboutElement<Structure>(visitor, counter),
+-                                    ::score::common::visitor::visit(visitor, std::forward<Args>(fields)),
++                                    visitor.Next(std::forward<Args>(fields)),
+                                     // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
+                                     ++counter)...});
+ 
+-- 
+2.43.0
+
+
+From d8dbe108f24efef52ac23b9d2ba3d11345d581c7 Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Wed, 28 Oct 2026 11:13:19 +0100
+Subject: [PATCH 5/9] build(serialization): make error target publicly visible
+
+The serialization error library was restricted to serialization
+subpackages, preventing other components that implement a custom strategy
+from depending on it directly. Make it public, alongside the serializer and
+strategy interface, to support the reusable error-handling API
+---
+ score/serialization/error/BUILD | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/score/serialization/error/BUILD b/score/serialization/error/BUILD
+index 65127e5ed..f61e39cf4 100644
+--- a/score/serialization/error/BUILD
++++ b/score/serialization/error/BUILD
+@@ -23,7 +23,7 @@ cc_library(
+         "additional_warnings",
+     ],
+     tags = ["FFI"],
+-    visibility = ["//score/serialization:__subpackages__"],
++    visibility = ["//visibility:public"],  # platform_only
+     deps = [
+         "//score/language/futurecpp",
+         "//score/result",
+-- 
+2.43.0
+
+
+From 6fe336035e24d4c1fcd298ea75a3299d71cafac8 Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Wed, 28 Oct 2026 11:16:00 +0100
+Subject: [PATCH 6/9] fix(serialization): count only bytes written by
+ SerializeIterator
+
+GetNumberOfBytesWritten measured std::distance(begin, end) after appending,
+so for a growable container that already held data it returned the total
+size instead of the bytes written through this iterator (e.g. writing one
+byte into a vector with two existing bytes reported 3).
+
+Track a shared per-iterator write count incremented on each successful
+store, and report that instead. Add a regression test serializing into a
+non-empty vector.
+---
+ score/serialization/serialize_iterator.h      | 30 ++++++-------------
+ .../serialization/serialize_iterator_test.cpp | 21 +++++++++++++
+ 2 files changed, 30 insertions(+), 21 deletions(-)
+
+diff --git a/score/serialization/serialize_iterator.h b/score/serialization/serialize_iterator.h
+index 76eafea76..5c93e1e72 100644
+--- a/score/serialization/serialize_iterator.h
++++ b/score/serialization/serialize_iterator.h
+@@ -112,7 +112,7 @@ class SerializeIterator
+     explicit SerializeIterator(Container& container)
+         : container_(container),
+           iterator_{std::make_shared<typename Container::iterator>(container_.begin())},
+-          result_{std::make_shared<Result<std::size_t>>()}
++          result_{std::make_shared<Result<std::size_t>>(0U)}
+     {
+         static_assert(details::is_supported_sequence_container<Container>::value,
+                       "Provided Container is not supported.");
+@@ -128,6 +128,11 @@ class SerializeIterator
+         {
+             *result_ = MakeUnexpected(SerializationError::kOutOfBoundsWrite);
+         }
++        else if (result_->has_value())
++        {
++            // result_'s success value counts bytes stored through this iterator; skip once an error is latched.
++            ++result_->value();
++        }
+         return *this;
+     }
+ 
+@@ -157,29 +162,12 @@ class SerializeIterator
+         return *this;
+     }
+ 
+-    Result<std::size_t> GetResult() const
++    [[nodiscard]] Result<std::size_t> GetResult() const
+     {
+-        if (not result_->has_value())
+-        {
+-            return *result_;
+-        }
+-
+-        return GetNumberOfBytesWritten();
++        return *result_;
+     }
+ 
+   private:
+-    // Suppress "AUTOSAR C++14 A0-1-3" rule findings. This rule states: "Every function defined in an anonymous
+-    // namespace, or static function with internal linkage, or private member function shall be used." False-positive,
+-    // method is used in GetResult().
+-    // coverity[autosar_cpp14_a0_1_3_violation : FALSE]
+-    std::size_t GetNumberOfBytesWritten() const
+-    {
+-        const auto distance = std::distance(container_.begin(), *iterator_);
+-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(distance >=
+-                                            0);  // we start at begin and go on from there, it can not be negative.
+-        return static_cast<std::size_t>(distance);
+-    }
+-
+     Container& container_;
+     std::shared_ptr<typename Container::iterator> iterator_;
+     std::shared_ptr<Result<std::size_t>> result_;
+@@ -250,7 +238,7 @@ class DeSerializeIterator
+     }
+ 
+     /// @brief Indicate how much the iterator was moved and if an out-of-bound access happend
+-    Result<std::size_t> GetResult() const
++    [[nodiscard]] Result<std::size_t> GetResult() const
+     {
+         if (not result_->has_value())
+         {
+diff --git a/score/serialization/serialize_iterator_test.cpp b/score/serialization/serialize_iterator_test.cpp
+index 41b8439ec..8d7f49208 100644
+--- a/score/serialization/serialize_iterator_test.cpp
++++ b/score/serialization/serialize_iterator_test.cpp
+@@ -305,6 +305,27 @@ TEST(SerializeIteratorTest, ProvideSerializationWindows)
+     EXPECT_EQ(*data++, 0x00);
+ }
+ 
++TEST(SerializeIteratorTest, CountsOnlyBytesWrittenIntoNonEmptyGrowableContainer)
++{
++    // Given a growable container that already holds two bytes
++    std::vector<std::uint8_t> buffer{0xAA, 0xBB};
++    auto iterator = SerializeInto(buffer);
++
++    // When serializing one more byte
++    iterator = 0x01;
++
++    // Then only the byte written through this iterator is counted, not the preexisting content
++    const auto result = iterator.GetResult();
++    ASSERT_TRUE(result.has_value());
++    EXPECT_EQ(result.value(), 1);
++
++    // And the preexisting content is preserved, the new byte appended
++    ASSERT_EQ(buffer.size(), 3U);
++    EXPECT_EQ(buffer[0], 0xAA);
++    EXPECT_EQ(buffer[1], 0xBB);
++    EXPECT_EQ(buffer[2], 0x01);
++}
++
+ }  // namespace
+ }  // namespace serialization
+ }  // namespace score
+-- 
+2.43.0
+
+
+From 420d7346f73906f9d75ef831570805bc783817e8 Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Wed, 28 Oct 2026 11:21:52 +0100
+Subject: [PATCH 7/9] fix(serialization): return previous position from
+ DeSerializeIterator postfix ++
+
+Postfix operator++ returned the already-incremented iterator, so the
+standard forward-iterator idiom *iterator++ read the second element first
+and could eventually dereference end() and trip the assertion.
+
+Save the pre-increment iterator and return it, keeping the existing
+do-not-advance-past-end bounds behavior. Add a typed regression test for the
+*iterator++ idiom.
+---
+ score/serialization/serialize_iterator.h        |  3 ++-
+ score/serialization/serialize_iterator_test.cpp | 14 ++++++++++++++
+ 2 files changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/score/serialization/serialize_iterator.h b/score/serialization/serialize_iterator.h
+index 5c93e1e72..c8b7fd9f6 100644
+--- a/score/serialization/serialize_iterator.h
++++ b/score/serialization/serialize_iterator.h
+@@ -230,11 +230,12 @@ class DeSerializeIterator
+     /// @brief Move iterator to next position (but not past end())
+     DeSerializeIterator<Container> operator++(int)
+     {
++        DeSerializeIterator<Container> previous{*this};
+         if (iterator_ != container_.cend())
+         {
+             ++iterator_;
+         }
+-        return *this;
++        return previous;
+     }
+ 
+     /// @brief Indicate how much the iterator was moved and if an out-of-bound access happend
+diff --git a/score/serialization/serialize_iterator_test.cpp b/score/serialization/serialize_iterator_test.cpp
+index 8d7f49208..c2a54d43f 100644
+--- a/score/serialization/serialize_iterator_test.cpp
++++ b/score/serialization/serialize_iterator_test.cpp
+@@ -172,6 +172,19 @@ TYPED_TEST_P(DeSerializeIteratorFixture, DoesNotAdvanceOverEndPostfix)
+     ASSERT_EQ(result.value(), this->buffer.size());
+ }
+ 
++TYPED_TEST_P(DeSerializeIteratorFixture, PostfixIncrementReturnsPreviousPosition)
++{
++    // Given a deserialization iterator for a buffer that starts at the first element {1, 2, 3}
++    auto iterator = DeSerializeIterator<TypeParam>(this->buffer);
++
++    // When using the forward-iterator idiom *iterator++
++    const auto first = *iterator++;
++
++    // Then the returned iterator referred to the old position and the live iterator advanced
++    EXPECT_EQ(first, 1);
++    EXPECT_EQ(*iterator, 2);
++}
++
+ TYPED_TEST_P(DeSerializeIteratorFixture, CanGetEndFromIterator)
+ {
+     // Given a deserialization iterator for a buffer that contains three data elements and its respective end iterator
+@@ -212,6 +225,7 @@ REGISTER_TYPED_TEST_SUITE_P(DeSerializeIteratorFixture,
+                             CanIncrement,
+                             DoesNotAdvanceOverEnd,
+                             DoesNotAdvanceOverEndPostfix,
++                            PostfixIncrementReturnsPreviousPosition,
+                             CanGetEndFromIterator,
+                             CheckBufferNotEmpty);
+ 
+-- 
+2.43.0
+
+
+From ba8e1fede652565e2db7f0d6ddea5980e2da4759 Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Wed, 28 Oct 2026 11:32:39 +0100
+Subject: [PATCH 8/9] fix(serialization): make DeSerializeIterator::End()
+ constant-time
+
+Set the end iterator to cend() directly instead of advancing from begin,
+avoiding quadratic deserialization when End() is called per element.
+Drop the now-unused <limits> include.
+---
+ score/serialization/serialize_iterator.h | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/score/serialization/serialize_iterator.h b/score/serialization/serialize_iterator.h
+index c8b7fd9f6..2b5badae8 100644
+--- a/score/serialization/serialize_iterator.h
++++ b/score/serialization/serialize_iterator.h
+@@ -22,7 +22,6 @@
+ #include <score/assert.hpp>
+ 
+ #include <iterator>
+-#include <limits>
+ #include <type_traits>
+ 
+ namespace score
+@@ -276,9 +275,7 @@ class DeSerializeIterator
+     DeSerializeIterator End() const
+     {
+         DeSerializeIterator end{container_};
+-        constexpr difference_type max_difference_type = std::numeric_limits<difference_type>::max();
+-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<difference_type>(container_.size()) < max_difference_type);
+-        std::advance(end, static_cast<difference_type>(container_.size()));
++        end.iterator_ = container_.cend();
+         return end;
+     }
+ 
+-- 
+2.43.0
+
+
+From 4c87dd5d57f489558a47f5a37cc28504d5b8228e Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Wed, 28 Oct 2026 12:50:06 +0100
+Subject: [PATCH 9/9] fix(serialization): clear destinations before UDS
+ deserialization
+
+Clear destination containers before deserializing so reused objects don't retain
+or append stale data.
+Add regression tests for reuse and empty-input cases.
+---
+ score/serialization/strategies/uds_strategy.h | 12 ++-
+ .../strategies/uds_strategy_test.cpp          | 86 ++++++++++++++++++-
+ 2 files changed, 95 insertions(+), 3 deletions(-)
+
+diff --git a/score/serialization/strategies/uds_strategy.h b/score/serialization/strategies/uds_strategy.h
+index 3d988ea2d..208cec47d 100644
+--- a/score/serialization/strategies/uds_strategy.h
++++ b/score/serialization/strategies/uds_strategy.h
+@@ -75,9 +75,10 @@ class UDSStrategy final : public UnsignedIntegralOnlyStrategy
+ 
+     template <typename Visitor, typename Container, typename UnderlyingType, typename LengthType>
+     Result<void> DeSerialize(Visitor& visitor,
+-                             DeSerializeIterator<Container>&,
++                             DeSerializeIterator<Container>& iterator,
+                              LengthPrefixedVector<UnderlyingType, LengthType>& value) const
+     {
++        value.clear();  // a reused destination must hold only the decoded value, not previous contents
+         LengthType counter{};
+         visitor.Next(counter);
+         if (visitor.HasError())
+@@ -87,9 +88,13 @@ class UDSStrategy final : public UnsignedIntegralOnlyStrategy
+ 
+         for (; counter > static_cast<decltype(counter)>(0); counter--)
+         {
++            const auto position_before = iterator;
+             UnderlyingType underlying_type{};
+             visitor.Next(underlying_type);
+-            if (visitor.HasError())
++
++            // A latched failure turns Next into a no-op and an element consuming no input never advances;
++            // either case would loop forever, so bail out before appending when the decode failed or made no progress.
++            if (visitor.HasError() || (iterator == position_before))
+             {
+                 return MakeUnexpected(SerializationError::kOutOfBoundsWrite);
+             }
+@@ -126,6 +131,7 @@ class UDSStrategy final : public UnsignedIntegralOnlyStrategy
+     template <typename Visitor, typename Container>
+     Result<void> DeSerialize(Visitor&, DeSerializeIterator<Container>& iterator, score::cpp::pmr::string& value) const
+     {
++        value.clear();  // a reused destination must hold only the decoded value, not previous contents
+         if (iterator == iterator.End())
+         {
+             return {};
+@@ -183,6 +189,7 @@ class UDSStrategy final : public UnsignedIntegralOnlyStrategy
+                              DeSerializeIterator<Container>& iterator,
+                              score::cpp::static_vector<UnderlyingType, MaxSize>& value) const
+     {
++        value.clear();  // a reused destination must hold only the decoded value, not previous contents
+         if (iterator == iterator.End())
+         {
+             return {};
+@@ -231,6 +238,7 @@ class UDSStrategy final : public UnsignedIntegralOnlyStrategy
+                              DeSerializeIterator<Container>& iterator,
+                              score::cpp::pmr::vector<UnderlyingType>& value) const
+     {
++        value.clear();  // a reused destination must hold only the decoded value, not previous contents
+         const auto end = iterator.End();
+         while (iterator != end)
+         {
+diff --git a/score/serialization/strategies/uds_strategy_test.cpp b/score/serialization/strategies/uds_strategy_test.cpp
+index fe29f64c6..3eaeb54f4 100644
+--- a/score/serialization/strategies/uds_strategy_test.cpp
++++ b/score/serialization/strategies/uds_strategy_test.cpp
+@@ -428,7 +428,91 @@ TEST_F(UDSStrategyFixture, DeserializeLengthPrefixedVectorFailsWhenPrefixExceeds
+     const auto result = unit_.DeSerialize(buffer_, value);
+ 
+     // Then an out-of-bounds error is returned instead of iterating over absent data
+-    EXPECT_FALSE(result.has_value());
++    ASSERT_FALSE(result.has_value());
++    EXPECT_EQ(result.error(), SerializationError::kOutOfBoundsWrite);
++    EXPECT_EQ(value.size(), 0U);
++}
++
++TEST_F(UDSStrategyFixture, DeserializeClearsReusedDestinations_LengthPrefixedVector)
++{
++    // Given
++    const score::serialization::LengthPrefixedVector<std::uint16_t, std::uint16_t> length_prefixed{0x0A0B, 0x0C0D};
++    score::serialization::LengthPrefixedVector<std::uint16_t, std::uint16_t> out{0xDEAD, 0xBEEF, 0xFEED};
++
++    // When
++    buffer_.clear();
++    auto serialize_result = unit_.Serialize(length_prefixed, buffer_);
++    auto deserialize_result = unit_.DeSerialize(buffer_, out);
++
++    // Then
++    ASSERT_TRUE(serialize_result.has_value());
++    ASSERT_TRUE(deserialize_result.has_value());
++    EXPECT_EQ(out, length_prefixed);
++}
++
++TEST_F(UDSStrategyFixture, DeserializeClearsReusedDestinations_String)
++{
++    // Given
++    const score::cpp::pmr::string string_value{"Hi"};
++    score::cpp::pmr::string out{"stale"};
++
++    // When
++    buffer_.clear();
++    auto serialize_result = unit_.Serialize(string_value, buffer_);
++    auto deserialize_result = unit_.DeSerialize(buffer_, out);
++
++    // Then
++    ASSERT_TRUE(serialize_result.has_value());
++    ASSERT_TRUE(deserialize_result.has_value());
++    EXPECT_EQ(out, string_value);
++}
++
++TEST_F(UDSStrategyFixture, DeserializeClearsReusedDestinations_PmrVector)
++{
++    // Given
++    const score::cpp::pmr::vector<std::uint16_t> pmr_vector{0x0A0B};
++    score::cpp::pmr::vector<std::uint16_t> out{0xDEAD, 0xBEEF, 0xFEED};
++
++    // When
++    buffer_.clear();
++    auto serialize_result = unit_.Serialize(pmr_vector, buffer_);
++    auto deserialize_result = unit_.DeSerialize(buffer_, out);
++
++    // Then
++    ASSERT_TRUE(serialize_result.has_value());
++    ASSERT_TRUE(deserialize_result.has_value());
++    EXPECT_EQ(out, pmr_vector);
++}
++
++TEST_F(UDSStrategyFixture, DeserializeClearsReusedDestinations_StaticVector)
++{
++    // Given
++    const score::cpp::static_vector<std::uint16_t, 4> static_vector_value{0x0A0B, 0x0C0D};
++    score::cpp::static_vector<std::uint16_t, 4> out{0xDEAD, 0xBEEF, 0xFEED};
++
++    // When
++    buffer_.clear();
++    auto serialize_result = unit_.Serialize(static_vector_value, buffer_);
++    auto deserialize_result = unit_.DeSerialize(buffer_, out);
++
++    // Then
++    ASSERT_TRUE(serialize_result.has_value());
++    ASSERT_TRUE(deserialize_result.has_value());
++    EXPECT_EQ(out, static_vector_value);
++}
++
++TEST_F(UDSStrategyFixture, DeserializeEmptyInputClearsReusedStaticVector)
++{
++    // Given a static_vector destination with stale data and an empty input buffer
++    score::cpp::static_vector<std::uint16_t, 4> value{0xDEAD, 0xBEEF};
++    buffer_.clear();
++
++    // When deserializing
++    const auto result = unit_.DeSerialize(buffer_, value);
++
++    // Then the accepted empty input yields an empty destination rather than retaining stale data
++    ASSERT_TRUE(result.has_value());
++    EXPECT_TRUE(value.empty());
+ }
+ 
+ TEST(UnsignedIntegralOnlyStrategyTest, SerializeNormalByteOrder)
+-- 
+2.43.0
+
