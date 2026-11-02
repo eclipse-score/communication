@@ -12,9 +12,9 @@
 # *******************************************************************************
 
 filegroup(
-    name = "service_not_found_fta",
+    name = "service_not_found_but_is_currently_offered_fta",
     srcs = [
-        "service_not_found_fta.puml",
+        "service_not_found_but_is_currently_offered_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
