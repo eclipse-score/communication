@@ -120,12 +120,6 @@ class ProxyEvent final : public GenericProxyEventBinding
         return event_fq_id_;
     }
 
-    /// \brief Returns this consumer's resolved POC E2E deployment.
-    const std::optional<E2EEventTypeDeployment>& GetE2EEventDeployment() const noexcept
-    {
-        return e2e_event_deployment_;
-    }
-
   private:
     /// \brief Get the indicators of the slots containing samples that are pending for reception in ascending order.
     ///        I.e. returned SlotIndices begin with the oldest slots/events (lowest timestamp) first and end at the
@@ -164,7 +158,6 @@ class ProxyEvent final : public GenericProxyEventBinding
     std::reference_wrapper<EventSubscriptionControl<>> subscription_control_;
     std::reference_wrapper<TransactionLogSet> transaction_log_set_;
     SubscriptionStateMachine subscription_event_state_machine_;
-    std::optional<E2EEventTypeDeployment> e2e_event_deployment_;
     /// \brief Empty when E2E is not active for this event (no deployment or no header storage).
     std::optional<E2EEventState<e2e::CheckContext>> e2e_state_;
 };

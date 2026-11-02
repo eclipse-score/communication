@@ -46,8 +46,7 @@ ProxyEvent::ProxyEvent(Proxy& parent,
                                         subscription_control_.get(),
                                         transaction_log_set_.get(),
                                         transaction_log_id_},
-      e2e_event_deployment_{e2e_event_deployment},
-      e2e_state_{MakeE2EEventState<e2e::CheckContext>(e2e_event_deployment_, std::move(e2e_header_storage))}
+      e2e_state_{MakeE2EEventState<e2e::CheckContext>(e2e_event_deployment, std::move(e2e_header_storage))}
 {
     parent.RegisterEvent(event_name, *this);
 }
@@ -153,15 +152,7 @@ e2e::RawCheckOutcome ProxyEvent::CheckE2E(E2EEventState<e2e::CheckContext>& e2e_
     const score::cpp::span<const std::byte> header_span{header.data(), header.size()};
     const score::cpp::span<const std::byte> payload_span{static_cast<const std::byte*>(sample_data),
                                                          meta_info_.data_type_info_.Size()};
-    const auto outcome =
-        e2e::CheckMessage(header_span, payload_span, e2e_state.profile_configuration, e2e_state.context);
-    if (e2e::IsFailure(outcome.data_integrity) || e2e::IsFailure(outcome.sequence))
-    {
-        score::mw::log::LogWarn("lola") << "E2E check failed: slot" << slot_index << "data_integrity"
-                                        << static_cast<std::uint8_t>(outcome.data_integrity) << "sequence"
-                                        << static_cast<std::uint8_t>(outcome.sequence);
-    }
-    return outcome;
+    return e2e::CheckMessage(header_span, payload_span, e2e_state.profile_configuration, e2e_state.context);
 }
 
 SlotCollector::SlotIndices ProxyEvent::GetNewSamplesSlotIndices(const std::size_t max_count)
