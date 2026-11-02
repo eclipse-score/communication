@@ -99,13 +99,10 @@ os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::CreateObj
     Args&&... args) noexcept
 {
     const auto lock_file_path = detail_shared_memory_object_creator::CreateLockFilePath(shared_memory_file_name);
-    const auto lock_file_result = memory::shared::LockFile::Create(lock_file_path);
-    if (!lock_file_result.has_value())
+    const auto lock_file = AcquireLockFile(lock_file_path);
+    if (!lock_file.has_value())
     {
-        std::stringstream ss;
-        ss << "SharedMemoryObjectCreator: Could not create lock file (" << lock_file_path << ")";
-        std::cout << ss.str() << std::endl;
-        return score::cpp::make_unexpected(os::Error::createFromErrno(EAGAIN));
+        return score::cpp::make_unexpected(lock_file.error());
     }
     return CreateObjectWithLockHeld(shared_memory_file_name, std::forward<Args>(args)...);
 }
