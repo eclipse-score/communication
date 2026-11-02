@@ -12,9 +12,25 @@
 # *******************************************************************************
 
 filegroup(
-    name = "start_find_service_callback_is_redundantly_called_fta",
+    name = "start_find_service_callback_called_when_service_is_not_currently_offered_fta",
     srcs = [
-        "start_find_service_callback_is_redundantly_called_fta.puml",
+        "start_find_service_callback_called_when_service_is_not_currently_offered_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
+    name = "start_find_service_callback_called_with_handle_to_wrong_service_fta",
+    srcs = [
+        "start_find_service_callback_called_with_handle_to_wrong_service_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
+    name = "start_find_service_callback_not_called_but_service_is_currently_offered_fta",
+    srcs = [
+        "start_find_service_callback_not_called_but_service_is_currently_offered_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
