@@ -18,6 +18,8 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 # parsing strategy (all others as JSON), and the generated flatbuffer_cc_library
 # and related targets are compiled. When unset, configurations are always parsed
 # as JSON. Enable with --config=flatbuffers (see .bazelrc).
+# Experimental feature flag: must be part of --config=activate_all_experimental_features
+# in .bazelrc (see CI.md#feature-flags).
 bool_flag(
     name = "experimental_enable_flatbuffers_configuration",
     build_setting_default = False,

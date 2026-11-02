@@ -65,6 +65,30 @@ And this is the list of bazel `--config=` for the supported configurations:
 
 Note: Not all configs exist right now, that will be fixed in https://github.com/eclipse-score/communication/issues/792.
 
+## Feature flags
+
+Some experimental features are guarded by Bazel build setting flags (feature flags), e.g. `//score/mw/com/flags:experimental_enable_flatbuffers_configuration`.
+Code behind such a flag must be tested in the CI, otherwise it would be merged untested.
+Testing every combination of flags would lead to a combinatorial explosion, so the CI only tests two configurations:
+
+- the defaults (no flag set), i.e. all experimental features deactivated
+- `--config=activate_all_experimental_features`, which activates all experimental features at once
+
+Rules for feature flags:
+
+- The `build_setting_default` of a feature flag must deactivate the experimental feature.
+- Every feature flag must be added to `activate_all_experimental_features` in [`.bazelrc`](./.bazelrc) with the value that activates the feature.
+- When removing a flag, remove it from `activate_all_experimental_features` as well.
+
+Note: This is only checked in code review.
+
+The jobs [Build everything and run unit tests (x86-64 linux)](#build-everything-and-run-unit-tests-x86-64-linux) and
+[Run C++ unit tests under address, UB, and leak sanitizers (x86-64 linux)](#run-c-unit-tests-under-address-ub-and-leak-sanitizers-x86-64-linux)
+run their commands a second time with `--config=activate_all_experimental_features`. The second run is done in the same job,
+so that it reuses the same Bazel cache. All other jobs only run with the defaults.
+
+A failure can be reproduced locally with e.g. `bazel test --config=activate_all_experimental_features //...`.
+
 ## Pipelines
 
 ### Check and merge queue
@@ -136,9 +160,12 @@ To ensure that the job is fast, the targets should be built with the right combi
 compilation but still keeping a fast enough execution. To ensure that the job is robust, a failing test
 will be retried up to 3 times.
 
+This job additionally runs its commands with [all experimental features activated](#feature-flags).
+
 #### Run C++ unit tests under address, UB, and leak sanitizers (x86-64 linux)
 
 Runs all C++ unit tests under address, undefined behavior (UB), and leak sanitizers.
+This job additionally runs its commands with [all experimental features activated](#feature-flags).
 
 Each unit test target also has a maximum run time [as the job for unit tests without sanitizers](./CI.md#build-everything-and-run-unit-tests-host)
 and the same stability design where a test is rerun 3 times in case of failure.
