@@ -18,6 +18,8 @@ ScoreReq.AssumedSystemReq ASR_InterProcessDataSharing {
     description = "The platform shall provide a mechanism that allows different processes to exchange data without copying it between them."
     safety = ScoreReq.Asil.B
     rationale = """Processes may exchange large amounts of data under real-time constraints, where copying is neither feasible nor desired.
+    The mechanism provides shared access to the data; protection of the data content against corruption and communication faults
+    such as loss, repetition or delay is not part of it.
     ASIL-B because safety-related applications exchange their data through this mechanism."""
     version = 1
 }
@@ -45,10 +47,56 @@ ScoreReq.AssumedSystemReq ASR_NoOutOfBoundsAccess {
 }
 
 ScoreReq.AssumedSystemReq ASR_CreatorVerification {
-    description = """The platform shall allow a software element accessing data via the inter-process data sharing mechanism to verify
+    description = """The platform shall allow a software element accessing data exchanged via the inter-process data sharing mechanism to verify
     that the data was created by an expected software element."""
     safety = ScoreReq.Asil.B
     rationale = """Shared data is located by name; without verification, data created by a faulty software element using the same name could be taken for valid data.
     ASIL-B because an ASIL-B software element must not process data of an unexpected creator as valid data."""
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_SafeState {
+    description = "The Safe State of the system shall be *safe-silent*."
+    safety = ScoreReq.Asil.B
+    rationale = """Only fail-safe systems are in scope; a software element that detects an unrecoverable error of the inter-process data sharing mechanism
+    stops instead of continuing with possibly corrupted data, as continuing is more critical than losing the function.
+    ASIL-B because ASIL-B software elements rely on this reaction."""
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_NoAccessBeforeInitialization {
+    description = """The platform shall ensure that a software element cannot access data exchanged via the inter-process data sharing mechanism
+    before the creator of that data has completed its initialization."""
+    safety = ScoreReq.Asil.B
+    rationale = """Software elements start independently; accessing partially initialized data would lead to processing inconsistent data.
+    ASIL-B because inconsistent data must not be processed by an ASIL-B software element."""
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_BoundedBlocking {
+    description = """The platform shall ensure that operations of the inter-process data sharing mechanism do not block a software element
+    longer than a known, fixed bound."""
+    safety = ScoreReq.Asil.B
+    rationale = """Software elements have real-time constraints; unbounded waiting, e.g. on another software element, would delay or prevent their function.
+    A blocked software element can neither detect the fault nor transition to the safe state in time.
+    ASIL-B because blocking caused by a QM software element must not delay an ASIL-B software element indefinitely."""
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_FixedMemoryBudget {
+    description = """The platform shall ensure that the memory used for data exchanged via the inter-process data sharing mechanism
+    does not grow beyond a size fixed when the exchange is set up."""
+    safety = ScoreReq.Asil.B
+    rationale = """Memory growing during operation could exhaust system memory and cause loss of function of other software elements.
+    ASIL-B because exhaustion would affect ASIL-B software elements."""
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_MemoryNeedDeterminable {
+    description = """The platform shall allow the memory needed for data exchanged via the inter-process data sharing mechanism
+    to be determined before the exchange is set up."""
+    safety = ScoreReq.Asil.QM
+    rationale = """The fixed memory budget of a data exchange (see ASR_FixedMemoryBudget) can only be set correctly if the need is known in advance.
+    A too small budget leads to termination, i.e. loss of availability, not a safety violation (see ASR_SafeState); therefore QM."""
     version = 1
 }
