@@ -215,6 +215,16 @@ cc_library(
 )
 
 cc_unit_test(
+    name = "shared_memory_object_creator_test",
+    srcs = [
+        "shared_memory_object_creator_test.cpp",
+    ],
+    deps = [
+        ":shared_memory_object_creator",
+    ],
+)
+
+cc_unit_test(
     name = "command_line_parser_test",
     srcs = [
         "command_line_parser_test.cpp",
