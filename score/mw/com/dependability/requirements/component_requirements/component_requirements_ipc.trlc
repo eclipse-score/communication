@@ -377,7 +377,8 @@ section "com" {
                     derived_from = [
                         Communication.FEAT_SupportForTimeBasedArchitecture@2,
                         // Ensuring that from a given InstanceSpecifier always the same InstanceIdentifier will be generated, prevents the proxy ..." to point out how this correct resolution will be done.
-                        mw_com_fta.InstancespecifierResolvedToWrongInstanceidentifier
+                        mw_com_fta.SkeletonInstanceSpecifierResolvedToWrongInstanceIdentifier,
+                        mw_com_fta.ProxyInstanceSpecifierResolvedToWrongInstanceIdentifier
                     ]
                     version = 1
                 }
@@ -493,7 +494,8 @@ section "com" {
                     derived_from = [
                         Communication.FEAT_ServiceDiscovery@1,
                         // Ensuring that from a given InstanceSpecifier always the same service-discovery path will be generated (in a common logic), prevents the proxy ..." to point out how this correct resolution will be done.
-                        mw_com_fta.WrongPathResolvedFromInstanceidentifier
+                        mw_com_fta.ProxyNotSearchingForFlagFileInPathDerivedFromInstanceIdentifier,
+                        mw_com_fta.SkeletonDidNotCreateFlagFileInPathDerivedFromInstanceIdentifier
                     ]
                     version = 1
                 }
