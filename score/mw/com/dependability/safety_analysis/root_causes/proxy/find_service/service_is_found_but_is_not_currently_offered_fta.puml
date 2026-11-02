@@ -11,23 +11,17 @@
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
 
-' TODO: This FTA was written before mw::com had a service discovery and is not
-' up to date. It needs to be reworked in phase 2 to reflect the current
-' architecture.
-
 @startuml
 
 !include fta_metamodel.puml
 
 $FailureMode("Service is found, but does not exist", "Communication.ServiceIsFoundButIsNotCurrentlyOffered")
 
-$OrGate("Gate1", "Communication.ServiceIsFoundButIsNotCurrentlyOffered")
-$RootCause("Service was offered, but not unlinked on stop offer", "ServiceWasOfferedButNotUnlinkedOnStopOffer", "Gate1")
-$IntermediateEvent("Shared Memory Object exists but not accessable", "Event3", "Gate1")
-$OrGate("Gate2", "Event3")
-$RootCause("Wrong Provider", "WrongProvider", "Gate2")
-$RootCause("Wrong Name", "WrongName", "Gate2")
-$RootCause("Wrong ACL", "WrongAcl", "Gate2")
-$RootCause("Shared Memory Object does not exist", "SharedMemoryObjectDoesNotExist", "Gate1")
+$OrGate("OrGate1", "Communication.ServiceIsFoundButIsNotCurrentlyOffered")
+$RootCause("Service was offered, but not unlinked on stop offer", "ServiceWasOfferedButNotUnlinkedOnStopOffer", "OrGate1")
+$IntermediateEvent("Flag file was created when service was never offered", "FlagFileWasCreatedWhenServiceWasNeverOffered", "OrGate1")
+$OrGate("OrGate2", "FlagFileWasCreatedWhenServiceWasNeverOffered")
+$RootCause("Skeleton created flag file even though service offering failed", "SkeletonCreatedFlagEvenThoughServiceOfferingFailed", "OrGate2")
+$RootCause("An unrelated actor created the flag file", "UnrelatedActorCreatedFlagFile", "OrGate2")
 
 @enduml
