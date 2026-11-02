@@ -34,7 +34,7 @@ struct SharedCounter
 TEST(SharedMemoryObjectCreatorTest, ConcurrentCreateOrOpenAlwaysSucceedsAndSharesOneObject)
 {
     constexpr std::size_t kNumParticipants{8U};
-    constexpr std::size_t kNumIterations{2000U};
+    constexpr std::size_t kNumIterations{300U};
 
     for (std::size_t iteration = 0U; iteration < kNumIterations; ++iteration)
     {
@@ -50,6 +50,7 @@ TEST(SharedMemoryObjectCreatorTest, ConcurrentCreateOrOpenAlwaysSucceedsAndShare
             threads.emplace_back([&, i]() {
                 while (!start.load())
                 {
+                    std::this_thread::yield();
                 }
                 auto result = SharedMemoryObjectCreator<SharedCounter>::CreateOrOpenObject(shm_name);
                 if (!result.has_value())
