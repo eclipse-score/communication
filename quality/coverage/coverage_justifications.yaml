@@ -166,4 +166,14 @@ justifications:
         line_start: 51
         line_end: 53
 
-  
+  - id: sample-reference-tracker-available-samples-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      Available_samples_ starts at max_num_samples_ and every deallocation only gives back
+      samples that were previously taken out, so it can never grow above max_num_samples_.
+      The assert-failure path is therefore unreachable.
+    locations:
+      - file: score/mw/com/impl/sample_reference_tracker.cpp
+        line_start: 184
+        line_end: 184
