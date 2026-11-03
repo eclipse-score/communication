@@ -42,23 +42,6 @@ class RuntimeConfiguration
      * \brief Constructor which initializes the stored configuration path from command line arguments.
      * \details The constructor parses the command line arguments for a specific key to extract the configuration
      *          path. If the key is not found, a default path is used.
-     * \param argc The number of command line arguments.
-     * \param argv The array of command line arguments.
-     *
-     * \deprecated Please use RuntimeConfiguration(cpp::span<const safecpp::zstring_view> command_line_arguments) for
-     * guaranteed NULL terminated arguments
-     */
-    [[deprecated(
-        "Please use RuntimeConfiguration(cpp::span<const safecpp::zstring_view> command_line_arguments) for guaranteed "
-        "NULL terminated arguments")]]
-    // NOLINTNEXTLINE(modernize-avoid-c-arrays):C-style array tolerated for command line arguments
-    RuntimeConfiguration(const std::int32_t argc, const char* argv[]);
-
-    /**
-     * \api
-     * \brief Constructor which initializes the stored configuration path from command line arguments.
-     * \details The constructor parses the command line arguments for a specific key to extract the configuration
-     *          path. If the key is not found, a default path is used.
      * \param command_line_arguments The command line arguments.
      */
     explicit RuntimeConfiguration(cpp::span<const safecpp::zstring_view> command_line_arguments);
