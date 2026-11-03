@@ -514,12 +514,6 @@
       "signature": "~InstanceIdentifier : void () noexcept"
     },
     {
-      "name": "Create",
-      "qualified_name": "score::mw::com::InstanceSpecifier::Create",
-      "kind": "template_function",
-      "signature": "static Create : score::Result<InstanceSpecifier> (T &&) noexcept [[deprecated]]"
-    },
-    {
       "name": "~FindServiceHandle",
       "qualified_name": "score::mw::com::FindServiceHandle::~FindServiceHandle",
       "kind": "destructor",

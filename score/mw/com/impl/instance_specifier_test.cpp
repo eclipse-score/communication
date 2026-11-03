@@ -333,40 +333,6 @@ INSTANTIATE_TEST_SUITE_P(InstanceSpecifierCannotConstructFromInvalidStringTest,
                                            "//bad/instance_specifier//123",
                                            "bad/instance_specifier//123"));
 
-// The use of a deprecated API is intended because this test is testing it.
-DISABLE_WARNING_PUSH
-DISABLE_WARNING_DEPRECATED
-TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringLiteral)
-{
-    // Given an expected shortname path
-    const auto expected_shortname = "/bla/blub/service1";
-
-    // When creating InstanceSpecifier with string literal that matches the expected shortname
-    const auto result = InstanceSpecifier::Create(expected_shortname);
-
-    // Then should succeed and contain the correct value
-    ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result.value().ToString(), expected_shortname);
-}
-DISABLE_WARNING_POP
-
-// The use of a deprecated API is intended because this test is testing it.
-DISABLE_WARNING_PUSH
-DISABLE_WARNING_DEPRECATED
-TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStdStringLvalue)
-{
-    // Given a valid shortname path as std::string lvalue
-    const std::string shortname_string = "/bla/blub/service1";
-
-    // When creating InstanceSpecifier with std::string lvalue
-    const auto result = InstanceSpecifier::Create(shortname_string);
-
-    // Then should succeed and contain the correct value
-    ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result.value().ToString(), shortname_string);
-}
-DISABLE_WARNING_POP
-
 TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStdStringRvalue)
 {
     // Given a valid shortname path as std::string for moving
@@ -379,57 +345,6 @@ TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStdStringRvalue)
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().ToString(), "/bla/blub/service1");
 }
-
-// The use of a deprecated API is intended because this test is testing it.
-DISABLE_WARNING_PUSH
-DISABLE_WARNING_DEPRECATED
-TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringViewLvalue)
-{
-    // Given a valid shortname path as std::string_view lvalue
-    const std::string_view shortname_view = "/bla/blub/service1";
-
-    // When creating InstanceSpecifier with std::string_view lvalue
-    const auto result = InstanceSpecifier::Create(shortname_view);
-
-    // Then should succeed and contain the correct value
-    ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result.value().ToString(), shortname_view);
-}
-DISABLE_WARNING_POP
-
-// The use of a deprecated API is intended because this test is testing it.
-DISABLE_WARNING_PUSH
-DISABLE_WARNING_DEPRECATED
-TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringViewRvalue)
-{
-    // Given a valid shortname path for temporary string_view creation
-    const auto valid_shortname = "/bla/blub/service1";
-
-    // When creating InstanceSpecifier with std::string_view rvalue (temporary)
-    const auto result = InstanceSpecifier::Create(std::string_view{valid_shortname});
-
-    // Then should succeed and contain the correct value
-    ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result.value().ToString(), valid_shortname);
-}
-DISABLE_WARNING_POP
-
-// The use of a deprecated API is intended because this test is testing it.
-DISABLE_WARNING_PUSH
-DISABLE_WARNING_DEPRECATED
-TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromConstCharPointer)
-{
-    // Given a valid shortname path as const char* variable
-    const char* shortname_cstr = "/bla/blub/service1";
-
-    // When creating InstanceSpecifier with const char* variable
-    const auto result = InstanceSpecifier::Create(shortname_cstr);
-
-    // Then should succeed and contain the correct value
-    ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result.value().ToString(), shortname_cstr);
-}
-DISABLE_WARNING_POP
 
 }  // namespace
 }  // namespace score::mw::com::impl
