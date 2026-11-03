@@ -38,7 +38,7 @@ Performed Verification
 - Build and test on QNX8 x86_64
 - Thread sanitized unit test execution
 - Address, undefined-behavior, and leak sanitized unit test execution
-- Static analysis / linting (clang-tidy, clippy, ruff) via the Aspect CLI, with findings uploaded to GitHub Code Scanning
+- Static analysis / linting (clang-tidy, clippy, ruff, buildifier) via the Aspect CLI, with findings uploaded to GitHub Code Scanning
 - CodeQL MISRA C++ compliance analysis on both Linux and QNX (`--config=qnx`), merged into a single compliance report
 - Code coverage report generation (llvm-cov) across the C++ test suite
 - Documentation build and packaging (Sphinx) for the release version
