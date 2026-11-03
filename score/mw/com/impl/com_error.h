@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_COMERROR_H
 #define SCORE_MW_COM_IMPL_COMERROR_H
 
+#include "score/quality/compiler_warnings/warnings.h"
 #include "score/result/result.h"
 
 #include <score/assert.hpp>
@@ -154,14 +155,12 @@ class ComErrorDomain final : public score::result::ErrorDomain
                 return "Invalid configuration.";
             case static_cast<score::result::ErrorCode>(ComErrc::kInvalidMetaModelShortname):
                 return "Meta model short name does not adhere to naming requirements.";
-// The use of a deprecated API is intended because we need to keep supporting the string conversion
-// score_baselibs does not provide yet a mechanism to suppress deprecated warnings
-// see: https://github.com/eclipse-score/baselibs/issues/627
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+                // The use of a deprecated API is intended because we need to keep supporting the string conversion
+                DISABLE_WARNING_PUSH
+                DISABLE_WARNING_DEPRECATED
             case static_cast<score::result::ErrorCode>(ComErrc::kServiceInstanceAlreadyOffered):
                 return "Service instance is already offered";
-#pragma GCC diagnostic pop
+                DISABLE_WARNING_POP
             case static_cast<score::result::ErrorCode>(ComErrc::kCouldNotRestartProxy):
                 return "Could not recreate proxy after previous crash.";
             case static_cast<score::result::ErrorCode>(ComErrc::kNotOffered):

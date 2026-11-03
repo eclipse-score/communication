@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/instance_specifier.h"
 
 #include "score/mw/com/impl/com_error.h"
+#include "score/quality/compiler_warnings/warnings.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -333,10 +334,8 @@ INSTANTIATE_TEST_SUITE_P(InstanceSpecifierCannotConstructFromInvalidStringTest,
                                            "bad/instance_specifier//123"));
 
 // The use of a deprecated API is intended because this test is testing it.
-// score_baselibs does not provide yet a mechanism to suppress deprecated warnings
-// see: https://github.com/eclipse-score/baselibs/issues/627
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_DEPRECATED
 TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringLiteral)
 {
     // Given an expected shortname path
@@ -349,13 +348,11 @@ TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringLiteral)
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().ToString(), expected_shortname);
 }
-#pragma GCC diagnostic pop
+DISABLE_WARNING_POP
 
 // The use of a deprecated API is intended because this test is testing it.
-// score_baselibs does not provide yet a mechanism to suppress deprecated warnings
-// see: https://github.com/eclipse-score/baselibs/issues/627
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_DEPRECATED
 TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStdStringLvalue)
 {
     // Given a valid shortname path as std::string lvalue
@@ -368,7 +365,7 @@ TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStdStringLvalue)
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().ToString(), shortname_string);
 }
-#pragma GCC diagnostic pop
+DISABLE_WARNING_POP
 
 TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStdStringRvalue)
 {
@@ -384,10 +381,8 @@ TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStdStringRvalue)
 }
 
 // The use of a deprecated API is intended because this test is testing it.
-// score_baselibs does not provide yet a mechanism to suppress deprecated warnings
-// see: https://github.com/eclipse-score/baselibs/issues/627
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_DEPRECATED
 TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringViewLvalue)
 {
     // Given a valid shortname path as std::string_view lvalue
@@ -400,13 +395,11 @@ TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringViewLvalue
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().ToString(), shortname_view);
 }
-#pragma GCC diagnostic pop
+DISABLE_WARNING_POP
 
 // The use of a deprecated API is intended because this test is testing it.
-// score_baselibs does not provide yet a mechanism to suppress deprecated warnings
-// see: https://github.com/eclipse-score/baselibs/issues/627
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_DEPRECATED
 TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringViewRvalue)
 {
     // Given a valid shortname path for temporary string_view creation
@@ -419,13 +412,11 @@ TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromStringViewRvalue
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().ToString(), valid_shortname);
 }
-#pragma GCC diagnostic pop
+DISABLE_WARNING_POP
 
 // The use of a deprecated API is intended because this test is testing it.
-// score_baselibs does not provide yet a mechanism to suppress deprecated warnings
-// see: https://github.com/eclipse-score/baselibs/issues/627
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_DEPRECATED
 TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromConstCharPointer)
 {
     // Given a valid shortname path as const char* variable
@@ -438,7 +429,7 @@ TEST(InstanceSpecifierCreateAPI, CreateReturnsValidSpecifierFromConstCharPointer
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().ToString(), shortname_cstr);
 }
-#pragma GCC diagnostic pop
+DISABLE_WARNING_POP
 
 }  // namespace
 }  // namespace score::mw::com::impl

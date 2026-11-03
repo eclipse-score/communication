@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/com_error.h"
 
+#include "score/quality/compiler_warnings/warnings.h"
+
 #include <score/utility.hpp>
 
 #include <gtest/gtest.h>
@@ -160,15 +162,13 @@ TEST_F(ComErrorMessageForFixture, MessageForInvalidMetaModelShortname)
 }
 
 // The use of a deprecated API is intended because this test is testing it.
-// score_baselibs does not provide yet a mechanism to suppress deprecated warnings
-// see: https://github.com/eclipse-score/baselibs/issues/627
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_DEPRECATED
 TEST_F(ComErrorMessageForFixture, MessageForServiceInstanceAlreadyOffered)
 {
     testErrorMessage(ComErrc::kServiceInstanceAlreadyOffered, "Service instance is already offered");
 }
-#pragma GCC diagnostic pop
+DISABLE_WARNING_POP
 
 TEST_F(ComErrorMessageForFixture, MessageForCouldNotRestartProxy)
 {
