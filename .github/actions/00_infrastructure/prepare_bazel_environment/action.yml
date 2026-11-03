@@ -87,7 +87,8 @@ runs:
       with:
         cache-mode: ${{ env.CACHE_MODE }}
         disk-cache-name: ${{ inputs.disk-cache }}
-        github-token: ${{ github.token }}
+        # Cache cleanup needs actions: write; never hand it to fork-triggered runs.
+        github-token: ${{ github.event_name != 'pull_request_target' && github.token || '' }}
 
     - name: Configure optional Ubuntu snapshot mirror for Bazel downloader
       shell: bash
