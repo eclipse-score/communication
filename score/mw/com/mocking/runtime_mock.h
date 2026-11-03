@@ -25,7 +25,10 @@ class RuntimeMock : public IRuntime
   public:
     MOCK_METHOD(score::Result<InstanceIdentifierContainer>, ResolveInstanceIDs, (const InstanceSpecifier), (override));
     MOCK_METHOD(void, InitializeRuntime, (const std::int32_t, score::cpp::span<const char*>), (override));
-    MOCK_METHOD(void, InitializeRuntime, (const cpp::span<safecpp::zstring_view> command_line_arguments), (override));
+    MOCK_METHOD(void,
+                InitializeRuntime,
+                (const cpp::span<const safecpp::zstring_view> command_line_arguments),
+                (override));
     MOCK_METHOD(void, InitializeRuntime, (const runtime::RuntimeConfiguration&), (override));
 };
 

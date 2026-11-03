@@ -113,9 +113,9 @@ TEST_F(RuntimeMockFixture, InitializeRuntimeWithZStringViewsDispatchesToMockAfte
     using safecpp::literals::operator""_zsv;
     constexpr auto kDummyApplicationNameZsv = "dummyname"_zsv;
     safecpp::zstring_view argv[] = {kDummyApplicationNameZsv};
-    score::cpp::span<safecpp::zstring_view> argv_span(argv, std::size(argv));
+    score::cpp::span<const safecpp::zstring_view> argv_span(argv, std::size(argv));
 
-    EXPECT_CALL(runtime_mock_, InitializeRuntime(An<cpp::span<safecpp::zstring_view>>()))
+    EXPECT_CALL(runtime_mock_, InitializeRuntime(An<cpp::span<const safecpp::zstring_view>>()))
         .WillOnce(Invoke([argv_span](auto arguments_span) {
             ASSERT_EQ(argv_span.size(), arguments_span.size());
             for (std::size_t i = 0; i < argv_span.size(); ++i)

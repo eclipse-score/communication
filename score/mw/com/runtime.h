@@ -84,11 +84,11 @@ score::Result<score::mw::com::InstanceIdentifierContainer> ResolveInstanceIDs(co
  * \param argc number of arguments in the upcoming argv array
  * \param argv array of NULL-terminated c-style strings as handed over to applications main() entry-point.
  *
- * \deprecated Use InitializeRuntime(cpp::span<safecpp::zstring_view> command_line_arguments) for guaranteed NULL
+ * \deprecated Use InitializeRuntime(cpp::span<const safecpp::zstring_view> command_line_arguments) for guaranteed NULL
  * terminated arguments
  */
 [[deprecated(
-    "Please use InitializeRuntime(cpp::span<safecpp::zstring_view> command_line_arguments) for guaranteed NULL "
+    "Please use InitializeRuntime(cpp::span<const safecpp::zstring_view> command_line_arguments) for guaranteed NULL "
     "terminated arguments")]]
 // NOLINTNEXTLINE(modernize-avoid-c-arrays):C-style array tolerated for command line arguments
 void InitializeRuntime(const std::int32_t argc, const char* argv[]);
@@ -106,7 +106,7 @@ void InitializeRuntime(const std::int32_t argc, const char* argv[]);
  *            safecpp::zstring_view in command_line_arguments by creating it from std::string_view(argv[i])
  * @param command_line_arguments
  */
-void InitializeRuntime(const cpp::span<safecpp::zstring_view> command_line_arguments);
+void InitializeRuntime(const cpp::span<const safecpp::zstring_view> command_line_arguments);
 
 /**
  * \api
