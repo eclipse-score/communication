@@ -152,4 +152,18 @@ justifications:
         line_start: 152
         line_end: 155
 
+  - id: sample-allocatee-tracker-deallocate-underflow-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      Defensive underflow check in SampleAllocateeTracker::Deallocate(). Deallocate() is only
+      called via a SampleAllocateeGuard, which is handed out by Allocate() (which first does
+      fetch_add) and deallocates at most once. Thus the pre-decrement value 'previous' is always
+      greater than 0, making the assert-failure path unreachable without violating the guard's
+      allocate/deallocate pairing.
+    locations:
+      - file: score/mw/com/impl/sample_allocatee_tracker.cpp
+        line_start: 51
+        line_end: 53
+
   
