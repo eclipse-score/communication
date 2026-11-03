@@ -167,6 +167,8 @@ class SamplePtr final
     }
 
     /// \brief Returns the E2E result associated with this received sample.
+    /// \details Complete once the sample reaches the user: data_integrity and sequence come from the binding,
+    ///          historical_health and summary from the event. All kDisabled if no E2E check is configured.
     e2e::E2EResult GetE2EResult() const
     {
         return e2e_result_;
