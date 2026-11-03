@@ -15,7 +15,7 @@
 # Each version entry may carry its own patches/flags, applied whenever it is selected.
 # Disable a version by adding `skip: "<reason with ticket>"` (keep it for traceability).
 dependencies:
-  bazel:                       # special: drives USE_BAZEL_VERSION, not a MODULE dep
+  bazel: # special: drives USE_BAZEL_VERSION, not a MODULE dep
     versions:
       - version: "8.6.0"
       - version: "8.8.2"

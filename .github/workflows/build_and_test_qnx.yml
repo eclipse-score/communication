@@ -49,120 +49,120 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request_target' }}
 
 jobs:
-    precheck:
-      runs-on: ubuntu-24.04
-      outputs:
-        should-run: ${{ steps.gate.outputs.should-run }}
-        require-approval: ${{ steps.gate.outputs.require-approval }}
-      permissions:
-        contents: read
-        pull-requests: read
-      steps:
-        - name: Evaluate QNX workflow gate
-          id: gate
-          env:
-            EVENT_NAME: ${{ github.event_name }}
-          run: |
-            python3 - <<'SCRIPT_END'
-            import json
-            import os
+  precheck:
+    runs-on: ubuntu-24.04
+    outputs:
+      should-run: ${{ steps.gate.outputs.should-run }}
+      require-approval: ${{ steps.gate.outputs.require-approval }}
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Evaluate QNX workflow gate
+        id: gate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 - <<'SCRIPT_END'
+          import json
+          import os
 
-            should_run = True
-            require_approval = False
+          should_run = True
+          require_approval = False
 
-            with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as event_file:
-                event = json.load(event_file)
+          with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as event_file:
+              event = json.load(event_file)
 
-            pr = event.get("pull_request") or {}
-            head_repo = (((pr.get("head") or {}).get("repo") or {}).get("full_name") or "")
-            base_repo = (((pr.get("base") or {}).get("repo") or {}).get("full_name") or "")
-            labels = {label.get("name", "") for label in (pr.get("labels") or [])}
+          pr = event.get("pull_request") or {}
+          head_repo = (((pr.get("head") or {}).get("repo") or {}).get("full_name") or "")
+          base_repo = (((pr.get("base") or {}).get("repo") or {}).get("full_name") or "")
+          labels = {label.get("name", "") for label in (pr.get("labels") or [])}
 
-            if os.environ["EVENT_NAME"] == "pull_request_target" and head_repo != base_repo:
-                if "test-qnx" in labels:
-                    require_approval = True
-                else:
-                    should_run = False
-            
-            should_run_string = 'true' if should_run else 'false'
-            require_approval_string = 'true' if require_approval else 'false'
+          if os.environ["EVENT_NAME"] == "pull_request_target" and head_repo != base_repo:
+              if "test-qnx" in labels:
+                  require_approval = True
+              else:
+                  should_run = False
 
-            labels_display = ", ".join(sorted(label for label in labels if label)) or "(none)"
-            print(
-                "QNX gate evaluation: "
-                f"event_name='{os.environ['EVENT_NAME']}', "
-                f"head_repo='{head_repo}', "
-                f"base_repo='{base_repo}', "
-                f"labels=[{labels_display}], "
-                f"outputs: should-run={should_run_string}, "
-                f"require-approval={require_approval_string}"
-            )
+          should_run_string = 'true' if should_run else 'false'
+          require_approval_string = 'true' if require_approval else 'false'
 
-            with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as github_output:
-                print(f"should-run={should_run_string}", file=github_output)
-                print(f"require-approval={require_approval_string}", file=github_output)
-            SCRIPT_END
+          labels_display = ", ".join(sorted(label for label in labels if label)) or "(none)"
+          print(
+              "QNX gate evaluation: "
+              f"event_name='{os.environ['EVENT_NAME']}', "
+              f"head_repo='{head_repo}', "
+              f"base_repo='{base_repo}', "
+              f"labels=[{labels_display}], "
+              f"outputs: should-run={should_run_string}, "
+              f"require-approval={require_approval_string}"
+          )
 
-    approval:
-      needs: precheck
-      if: ${{ needs.precheck.outputs.require-approval == 'true' }}
-      environment: 'workflow-approval'
-      runs-on: ubuntu-24.04
-      permissions:
-        contents: read
-        pull-requests: read
-      steps:
-        - name: Blocking on approval
-          run: ''
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as github_output:
+              print(f"should-run={should_run_string}", file=github_output)
+              print(f"require-approval={require_approval_string}", file=github_output)
+          SCRIPT_END
 
-    build_and_test_qnx:
-      name: QCC - Build & Test
-      needs:
-        - precheck
-        - approval
-      if: ${{ !cancelled() && needs.precheck.outputs.should-run == 'true' && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
-      runs-on: ubuntu-24.04
-      permissions:
-        contents: read
-        pull-requests: read
-        actions: write
-      steps:
-        - name: Checkout repository
-          uses: actions/checkout@v6.0.2
-          with:
-            ref: ${{ github.head_ref || github.event.pull_request.head.ref || github.ref }}
-            repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
-        - name: Setup QNX and QEMU environment
-          uses: ./.github/actions/00_infrastructure/setup_qnx_environment
-          with:
-            qnx-license: ${{ secrets.SCORE_QNX_LICENSE }}
-        - name: Setup Bazel environment
-          uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
-          with:
-            disk-cache: ${{ inputs.fetch_only != 'true' && 'build_and_test_qnx' || '' }}
-            cache-mode: ${{ inputs.cache_mode }}
-            ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
-        - name: Build QNX
-          if: inputs.fetch_only != 'true'
-          env:
-            SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
-            SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
-          run: bazel build --config=ci --config=qnx -- //score/...
-        - name: Test QNX
-          if: inputs.fetch_only != 'true'
-          id: run-tests
-          env:
-            SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
-            SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
-          run: bazel test --config=ci --config=qnx -- //score/...
-        - name: Upload failed Bazel test logs
-          if: inputs.fetch_only != 'true' && failure() && steps.run-tests.outcome == 'failure'
-          uses: ./.github/actions/00_infrastructure/upload_bazel_testlogs_on_failure
-          with:
-            artifact-name: bazel-testlogs-qnx
-        - name: Fetch dependencies (--nobuild)
-          if: inputs.fetch_only == 'true'
-          env:
-            SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
-            SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
-          run: bazel build --nobuild --config=ci --config=qnx -- //score/...
+  approval:
+    needs: precheck
+    if: ${{ needs.precheck.outputs.require-approval == 'true' }}
+    environment: 'workflow-approval'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Blocking on approval
+        run: ''
+
+  build_and_test_qnx:
+    name: QCC - Build & Test
+    needs:
+      - precheck
+      - approval
+    if: ${{ !cancelled() && needs.precheck.outputs.should-run == 'true' && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ github.head_ref || github.event.pull_request.head.ref || github.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+      - name: Setup QNX and QEMU environment
+        uses: ./.github/actions/00_infrastructure/setup_qnx_environment
+        with:
+          qnx-license: ${{ secrets.SCORE_QNX_LICENSE }}
+      - name: Setup Bazel environment
+        uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
+        with:
+          disk-cache: ${{ inputs.fetch_only != 'true' && 'build_and_test_qnx' || '' }}
+          cache-mode: ${{ inputs.cache_mode }}
+          ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+      - name: Build QNX
+        if: inputs.fetch_only != 'true'
+        env:
+          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+        run: bazel build --config=ci --config=qnx -- //score/...
+      - name: Test QNX
+        if: inputs.fetch_only != 'true'
+        id: run-tests
+        env:
+          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+        run: bazel test --config=ci --config=qnx -- //score/...
+      - name: Upload failed Bazel test logs
+        if: inputs.fetch_only != 'true' && failure() && steps.run-tests.outcome == 'failure'
+        uses: ./.github/actions/00_infrastructure/upload_bazel_testlogs_on_failure
+        with:
+          artifact-name: bazel-testlogs-qnx
+      - name: Fetch dependencies (--nobuild)
+        if: inputs.fetch_only == 'true'
+        env:
+          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+        run: bazel build --nobuild --config=ci --config=qnx -- //score/...

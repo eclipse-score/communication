@@ -11,7 +11,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
----
 # Clang-tidy configuration for SCORE Communication project
 #
 # NOTE: Do not put comment lines inside the `Checks` block below. It is a folded scalar (`>`), so a `#` line is not

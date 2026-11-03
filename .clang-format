@@ -1,4 +1,3 @@
----
 BasedOnStyle: Google
 AccessModifierOffset: -2
 AllowAllParametersOfDeclarationOnNextLine: false
@@ -46,4 +45,3 @@ QualifierAlignment: Left
 # Make sure language specific settings are below the generic settings to be compatible to all languages.
 Language: Cpp
 Standard: c++17
-...

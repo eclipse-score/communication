@@ -65,6 +65,6 @@ jobs:
 
       - name: Fetch dependencies (--nobuild)
         if: inputs.fetch-only == 'true'
-        run: |
+        run: |-
           bazel build --nobuild --config=ci //...
           cd module_integration_test && bazel build --nobuild //...

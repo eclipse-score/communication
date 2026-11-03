@@ -21,7 +21,7 @@ on:
       - ".github/workflows/test_dependency_version_combinations.yml"
       - "quality/dependency_compatibility_checker/**"
   schedule:
-    - cron: "0 0 * * *"   # nightly
+    - cron: "0 0 * * *" # nightly
   workflow_dispatch:
 
 permissions:
@@ -181,7 +181,7 @@ jobs:
           if-no-files-found: error
 
       - name: Enforce status (gate after upload)
-        run: |
+        run: |-
           python3 - <<'PY'
           import glob, json, sys
           summary = json.load(open("matrix-results/summary.json"))
