@@ -132,6 +132,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          persist-credentials: false
       - name: Setup QNX and QEMU environment
         uses: ./.github/actions/00_infrastructure/setup_qnx_environment
         with:
