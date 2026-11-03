@@ -70,7 +70,7 @@ runs:
         echo "Cache mode: ${MODE}"
 
     - name: Free Disk Space (Ubuntu)
-      uses: eclipse-score/more-disk-space@v1
+      uses: eclipse-score/more-disk-space@beee38c3b4426a7c43fdfeb2495d1af812179c3e # v1.3.0
       with:
         level: 4
 
