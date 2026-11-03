@@ -194,6 +194,36 @@
       "signature": "using SubscriptionState = ::score::mw::com::impl::SubscriptionState"
     },
     {
+      "name": "E2EResult",
+      "qualified_name": "score::mw::com::E2EResult",
+      "kind": "type_alias",
+      "signature": "using E2EResult = impl::e2e::E2EResult"
+    },
+    {
+      "name": "DataIntegrityStatus",
+      "qualified_name": "score::mw::com::DataIntegrityStatus",
+      "kind": "type_alias",
+      "signature": "using DataIntegrityStatus = impl::e2e::DataIntegrityStatus"
+    },
+    {
+      "name": "SequenceStatus",
+      "qualified_name": "score::mw::com::SequenceStatus",
+      "kind": "type_alias",
+      "signature": "using SequenceStatus = impl::e2e::SequenceStatus"
+    },
+    {
+      "name": "HistoricalHealthStatus",
+      "qualified_name": "score::mw::com::HistoricalHealthStatus",
+      "kind": "type_alias",
+      "signature": "using HistoricalHealthStatus = impl::e2e::HistoricalHealthStatus"
+    },
+    {
+      "name": "E2ESummary",
+      "qualified_name": "score::mw::com::E2ESummary",
+      "kind": "type_alias",
+      "signature": "using E2ESummary = impl::e2e::Summary"
+    },
+    {
       "name": "MethodReturnTypePtr",
       "qualified_name": "score::mw::com::MethodReturnTypePtr",
       "kind": "template_type_alias",
