@@ -137,3 +137,19 @@ justifications:
       - file: score/mw/com/gateway/transport_layer/qemu/qemu_hypervisor_transport.cpp
         line_start: 356
         line_end: 357
+
+  - id: handle-type-hash-buffer-size-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      Defensive bounds check in std::hash<HandleType>. The local buffer is sized to
+      ServiceTypeDeployment::hashStringSize + ServiceInstanceId::hashStringSize, and both
+      ToHashString() results are bounded by those same constexpr sizes, so total_string_size
+      can never exceed hash_string_size. The assert-failure path is therefore unreachable and
+      cannot be triggered by a test without violating the type invariants.
+    locations:
+      - file: score/mw/com/impl/handle_type.h
+        line_start: 152
+        line_end: 155
+
+  
