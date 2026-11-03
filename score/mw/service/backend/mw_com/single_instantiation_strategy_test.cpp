@@ -15,10 +15,10 @@
 
 #include "score/mw/service/backend/mw_com/proxy_stub.h"
 
-#include "score/result/result.h"
 #include "score/concurrency/future/interruptible_promise.h"
 #include "score/mw/com/com_error_domain.h"
 #include "score/mw/com/types.h"
+#include "score/result/result.h"
 
 #include <score/assert.hpp>
 #include <score/utility.hpp>

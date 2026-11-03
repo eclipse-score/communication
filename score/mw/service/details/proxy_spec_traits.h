@@ -127,7 +127,8 @@ class MandatoryBuild
 
         // False positive, the assertion is reachable in error cases not covered by the preceding returns.
         // coverity[autosar_cpp14_m0_1_1_violation : FALSE] see above justification
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Unexpected `concurrency::Error` got received from `builder`'s future!");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            false, "Unexpected `concurrency::Error` got received from `builder`'s future!");
     }
 
     template <typename BuilderResult>

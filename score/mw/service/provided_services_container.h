@@ -82,9 +82,10 @@ class ProvidedServicesContainer
     ///          move-assigning into it.
     ProvidedServicesContainer& operator=(ProvidedServicesContainer&& other) &
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(services_.empty(),
-                                     "Cannot move-assign into a ProvidedServicesContainer that still holds services, "
-                                     "call StopAll() (or extract every service) first!");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            services_.empty(),
+            "Cannot move-assign into a ProvidedServicesContainer that still holds services, "
+            "call StopAll() (or extract every service) first!");
         services_ = std::move(other.services_);
         return *this;
     }
@@ -189,8 +190,8 @@ class ProvidedServicesContainer
     template <typename ServiceType>
     std::unique_ptr<ServiceType> Extract(ServiceIdentifierView service_identifier)
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(!service_identifier.empty(),
-                                     "service_identifier must not be empty, use Extract() for type-based lookup");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            !service_identifier.empty(), "service_identifier must not be empty, use Extract() for type-based lookup");
         const auto it = FindService<ServiceType>(service_identifier);
         if (it == services_.end())
         {
@@ -240,8 +241,8 @@ class ProvidedServicesContainer
     template <typename ServiceType>
     ServiceType* Get(ServiceIdentifierView service_identifier)
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(!service_identifier.empty(),
-                                     "service_identifier must not be empty, use Get() for type-based lookup");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            !service_identifier.empty(), "service_identifier must not be empty, use Get() for type-based lookup");
         const auto it = FindService<ServiceType>(service_identifier);
         return it != services_.end() ? static_cast<ServiceType*>(std::get<ManagedServiceHolder>(*it).get()) : nullptr;
     }
@@ -251,8 +252,8 @@ class ProvidedServicesContainer
     template <typename ServiceType>
     const ServiceType* Get(ServiceIdentifierView service_identifier) const
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(!service_identifier.empty(),
-                                     "service_identifier must not be empty, use Get() for type-based lookup");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            !service_identifier.empty(), "service_identifier must not be empty, use Get() for type-based lookup");
         const auto it = FindService<ServiceType>(service_identifier);
         return it != services_.end() ? static_cast<const ServiceType*>(std::get<ManagedServiceHolder>(*it).get())
                                      : nullptr;
@@ -276,8 +277,8 @@ class ProvidedServicesContainer
     template <typename ServiceType>
     bool Has(ServiceIdentifierView service_identifier) const
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(!service_identifier.empty(),
-                                     "service_identifier must not be empty, use Has() for type-based lookup");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            !service_identifier.empty(), "service_identifier must not be empty, use Has() for type-based lookup");
         return FindService<ServiceType>(service_identifier) != services_.end();
     }
 
