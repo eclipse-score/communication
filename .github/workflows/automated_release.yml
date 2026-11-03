@@ -75,7 +75,7 @@ jobs:
       actions: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Bazel
         uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
@@ -118,7 +118,7 @@ jobs:
       release-tag: ${{ steps.release-tag.outputs.release-tag }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set release tag from workflow dispatch input
         id: release-tag
@@ -146,7 +146,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # ------------------------------------------------------------------
       # nightly_quality.yml's deploy-quality-reports job already downloads,
@@ -179,7 +179,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Download docs archive artifact
         uses: actions/download-artifact@v4
@@ -222,7 +222,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Delete draft release due to failure
         run: |

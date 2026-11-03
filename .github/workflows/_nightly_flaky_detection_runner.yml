@@ -91,7 +91,7 @@ jobs:
       failed_count: ${{ steps.summary.outputs.failed_count }}
       test_exit_code: ${{ steps.run-tests.outputs.test_exit_code }}
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Redirect Bazel root to large /mnt disk
         run: |
