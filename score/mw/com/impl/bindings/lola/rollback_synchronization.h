@@ -32,14 +32,21 @@ namespace score::mw::com::impl::lola
 class RollbackSynchronization
 {
   public:
-    /// \brief Returns a mutex for the given skeleton_instance_identifier. Either an existing one or creates one, if not
-    ///        yet existent.
-    /// \return a pair, consisting of a ref to the mutex for the given proxy_element_control and a bool, indicating,
-    ///         whether the mutex already existed (true) or had been created within the call (false)
-    std::pair<std::mutex&, bool> GetMutex(const SkeletonInstanceIdentifier skeleton_instance_identifier);
+    struct Entry
+    {
+        std::mutex mutex{};
+        /// \brief Whether the rollback preparation has already been done for the skeleton instance. Must only be
+        ///        accessed while holding `mutex`. It cannot be derived from the entry's creation, since a thread that
+        ///        did not create the entry may acquire `mutex` before the creating thread does.
+        bool rollback_prepared{false};
+    };
+
+    /// \brief Returns the synchronization entry for the given skeleton_instance_identifier. Either an existing one or
+    ///        creates one, if not yet existent. The returned reference stays valid for the lifetime of this object.
+    Entry& GetEntry(const SkeletonInstanceIdentifier skeleton_instance_identifier);
 
   private:
-    std::unordered_map<SkeletonInstanceIdentifier, std::mutex> synchronisation_data_map_{};
+    std::unordered_map<SkeletonInstanceIdentifier, Entry> synchronisation_data_map_{};
     /// \brief mutex to synchronize access to synchronisation_data_map_
     std::mutex map_mutex_{};
 };
