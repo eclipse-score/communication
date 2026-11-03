@@ -231,11 +231,7 @@ Runtime::Runtime(std::pair<Configuration&&, std::optional<TracingFilterConfig>&&
     {
         if (tracing_filter_configuration_.has_value())
         {
-            // LCOV_EXCL_START (Tool incorrectly marks this line as not covered. However, the lines before and after
-            // are covered so this is clearly an error by the tool. Suppression can be removed when bug is fixed in
-            // Ticket-Ticket-184255).
             std::unordered_map<BindingType, tracing::IBindingTracingRuntime*> binding_tracing_runtimes{};
-            // LCOV_EXCL_STOP
             for (auto& binding_runtime : binding_runtimes_)
             {
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
@@ -266,21 +262,16 @@ std::vector<InstanceIdentifier> Runtime::resolve(const InstanceSpecifier& specif
         // @todo: Right now we don't support multi-binding, if we do, we need to have some kind of loop
         const auto type_deployment =
             configuration_.GetServiceTypeDeployment(instance_deployment.value().get().service_);
-        // LCOV_EXCL_BR_START defensive programming: The configuration parser ensures that if a matching service
-        // instance is available, there is also a matching service type available. Because parsing of the configuration
-        // is automatically done before instantiating the runtime, this condition is always positive. To increase the
-        // robustness of the code, we still check for this condition.
+        // COV_JUSTIFIED_START runtime-config-parser-guarantees-service-type
         if (type_deployment.has_value())
         {
             result.push_back(make_InstanceIdentifier(instance_deployment.value().get(), type_deployment.value().get()));
         }
         else
         {
-            // LCOV_EXCL_START see comment before if-statement
             mw::log::LogError("lola") << "Did not find a matching service type for the specifier" << specifier;
-            // LCOV_EXCL_STOP
         }
-        // LCOV_EXCL_BR_STOP
+        // COV_JUSTIFIED_STOP
     }
 
     return result;
