@@ -65,7 +65,7 @@ class ProxyNeedsFactory
     [[nodiscard]] static ProxyNeeds Create(std::unique_ptr<Strategies>... strategies)
     {
         details::ProxyNeedsFactoryChecker<typename ProxyNeeds::HolderTypes>::template AreCompatible<Strategies...>();
-        return ProxyNeeds{std::make_tuple(std::unique_ptr<ProxyBuilderBase<typename Strategies::BaseProxy>>{
+        return ProxyNeeds{std::make_tuple(std::unique_ptr<ProxyBuilderBase<typename Strategies::ProxyType>>{
             std::make_unique<details::ProxyBuilder<Strategies>>(std::move(strategies))}...)};
     }
 };

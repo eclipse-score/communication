@@ -12,16 +12,18 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
-load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "single_immediate_instantiation_strategy",
     testonly = True,
     srcs = ["single_immediate_instantiation_strategy.cpp"],
     hdrs = ["single_immediate_instantiation_strategy.h"],
-    visibility = ["//visibility:public"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//visibility:public"],  # platform_only
     deps = [
+        "//score/mw/service:find_service_strategy",
         "//score/mw/service:proxy_builder_base",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -32,34 +34,38 @@ cc_library(
     testonly = True,
     srcs = ["multiple_immediate_instantiation_strategy.cpp"],
     hdrs = ["multiple_immediate_instantiation_strategy.h"],
-    visibility = ["//visibility:public"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//visibility:public"],  # platform_only
     deps = [
+        "//score/mw/service:find_service_strategy",
         "//score/mw/service:proxy_builder_base",
         "//score/mw/service/details:proxy_spec_traits",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
 
-cc_unit_test(
+cc_gtest_unit_test(
     name = "single_immediate_instantiation_strategy_test",
     srcs = ["single_immediate_instantiation_strategy_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":single_immediate_instantiation_strategy",
     ],
 )
 
-cc_unit_test(
+cc_gtest_unit_test(
     name = "multiple_immediate_instantiation_strategy_test",
     srcs = ["multiple_immediate_instantiation_strategy_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":multiple_immediate_instantiation_strategy",
     ],
 )
 
-cc_unit_test(
+cc_gtest_unit_test(
     name = "instantiation_strategy_base_test",
     srcs = ["instantiation_strategy_base_test.cpp"],
-    features = [
+    features = COMPILER_WARNING_FEATURES + [
         "throws_upon_exception",
     ],
     deps = [

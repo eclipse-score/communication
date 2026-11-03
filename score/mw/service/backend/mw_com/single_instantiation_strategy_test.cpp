@@ -15,10 +15,10 @@
 
 #include "score/mw/service/backend/mw_com/proxy_stub.h"
 
+#include "score/result/result.h"
 #include "score/concurrency/future/interruptible_promise.h"
 #include "score/mw/com/com_error_domain.h"
 #include "score/mw/com/types.h"
-#include "score/result/result.h"
 
 #include <score/assert.hpp>
 #include <score/utility.hpp>
@@ -40,7 +40,7 @@ using namespace ::testing;
 using MwComProxy = mw::service::backend::mw_com::FakeProxy;
 
 constexpr auto kPortIdentifierString = "Some/Instance/Specifier";
-const auto kInstanceSpecifier = score::mw::com::InstanceSpecifier::Create(std::string{kPortIdentifierString}).value();
+const auto kInstanceSpecifier = score::mw::com::InstanceSpecifier::Create(kPortIdentifierString).value();
 const auto kDummyFindServiceHandle = MwComProxy::CreateFindServiceHandle(10U);
 constexpr typename MwComProxy::HandleType kDummyProxyHandle1{1};
 constexpr typename MwComProxy::HandleType kDummyProxyHandle2{2};
@@ -90,7 +90,7 @@ class MwComSingleInstantiationStrategyFixture : public ::testing::Test
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(strategy.has_value());
         auto on_found_builder_callback = CreateBuilderCallbackWithMockedUserCallback();
-        strategy.value().Find(std::move(on_found_builder_callback));
+        strategy.value().StartFind(std::move(on_found_builder_callback));
         return *this;
     }
 

@@ -61,10 +61,9 @@ class RequestedProxies
     ///         proxies if the waiting got aborted via the provided stop_token.
     [[nodiscard]] Container WaitForMandatoryProxies(score::cpp::stop_token stop_token)
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-            builder_results_.has_value(),
-            "Current internal state of `RequestedProxies` instance does not or "
-            "no longer allow method `WaitForMandatoryProxies()` to be called!");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(builder_results_.has_value(),
+                                     "Current internal state of `RequestedProxies` instance does not or "
+                                     "no longer allow method `WaitForMandatoryProxies()` to be called!");
 
         Container container{details::ProxyCreator<ProxySpec...>::GetProxies(std::move(stop_token),
                                                                             std::move(builder_results_).value())};
@@ -91,10 +90,9 @@ class RequestedProxies
         }
         else
         {
-            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-                builder_results_.has_value(),
-                "Current internal state of `RequestedProxies` instance does not or "
-                "no longer allow method `GetProxyContainer()` to be called!");
+            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(builder_results_.has_value(),
+                                         "Current internal state of `RequestedProxies` instance does not or "
+                                         "no longer allow method `GetProxyContainer()` to be called!");
 
             Container container{details::ProxyCreator<ProxySpec...>::GetProxies(std::move(builder_results_).value())};
             builder_results_ = {};
@@ -153,10 +151,9 @@ class ProxyNeeds
         static_assert(std::tuple_size_v<decltype(callbacks)> == sizeof...(ProxySpec),
                       "number of provided callbacks does not match number of specified proxies");
 
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-            builder_instances_.has_value(),
-            "Current internal state of `ProxyNeeds` instance does not or "
-            "no longer allow method `WithOnServiceFound()` to be called!");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(builder_instances_.has_value(),
+                                     "Current internal state of `ProxyNeeds` instance does not or "
+                                     "no longer allow method `WithOnServiceFound()` to be called!");
 
         RegisterOnServiceFoundCallbacks(builder_instances_.value(),
                                         std::move(callbacks),
@@ -178,10 +175,9 @@ class ProxyNeeds
         static_assert(std::tuple_size_v<decltype(callbacks)> == sizeof...(ProxySpec),
                       "number of provided callbacks does not match number of specified proxies");
 
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-            builder_instances_.has_value(),
-            "Current internal state of `ProxyNeeds` instance does not or "
-            "no longer allow method `WithOnServiceFound()` to be called!");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(builder_instances_.has_value(),
+                                     "Current internal state of `ProxyNeeds` instance does not or "
+                                     "no longer allow method `WithOnServiceFound()` to be called!");
 
         RegisterOnServiceFoundCallbacks(builder_instances_.value(),
                                         std::move(callbacks),
@@ -203,10 +199,9 @@ class ProxyNeeds
     /// @details This method can only be called once since our internal state gets reset while doing so.
     [[nodiscard]] RequestedProxies<ProxySpec...> InitiateServiceDiscovery()
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-            builder_instances_.has_value(),
-            "Current internal state of `ProxyNeeds` instance does not or "
-            "no longer allow method `InitiateServiceDiscovery()` to be called!");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(builder_instances_.has_value(),
+                                     "Current internal state of `ProxyNeeds` instance does not or "
+                                     "no longer allow method `InitiateServiceDiscovery()` to be called!");
 
         auto builder_results =
             details::ProxyCreator<ProxySpec...>::RequestProxies(std::nullopt, std::move(builder_instances_).value());
@@ -221,10 +216,9 @@ class ProxyNeeds
     /// @param stop_token to be used by the service discovery functionality to check whether stop got requested
     [[nodiscard]] RequestedProxies<ProxySpec...> InitiateServiceDiscovery(score::cpp::stop_token stop_token)
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-            builder_instances_.has_value(),
-            "Current internal state of `ProxyNeeds` instance does not or "
-            "no longer allow method `InitiateServiceDiscovery()` to be called!");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(builder_instances_.has_value(),
+                                     "Current internal state of `ProxyNeeds` instance does not or "
+                                     "no longer allow method `InitiateServiceDiscovery()` to be called!");
 
         auto builder_results = details::ProxyCreator<ProxySpec...>::RequestProxies(
             std::move(stop_token), std::move(builder_instances_).value());

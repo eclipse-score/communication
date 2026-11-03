@@ -46,7 +46,7 @@ class ProxyNeedsFactoryChecker<std::tuple<ProxySpec...>>
         // not be default constructible (or copyable)
         IterateOverTupleAndParameterPack(
             std::pair<TypeHolder<ProxySpec>,
-                      TypeHolder<typename details::ProxySpecTraits<typename Strategies::BaseProxy>::HolderType>>{}...);
+                      TypeHolder<typename details::ProxySpecTraits<typename Strategies::ProxyType>::HolderType>>{}...);
     }
 
   private:
@@ -74,7 +74,7 @@ class ProxyNeedsFactoryChecker<std::tuple<ProxySpec...>>
     {
         static_assert(
             std::is_convertible<TypeProvidedByStrategy, TypeRequestedByProxyNeeds>::value,
-            "Strategy does not provide a result type (-> `BaseProxy`) which is convertible to the one required by "
+            "Strategy does not provide a result type (-> `ProxyType`) which is convertible to the one required by "
             "the `ProxyNeeds`. If you don't know how to debug this, go to this line and check the comment above.");
     }
 };

@@ -18,24 +18,39 @@
 
 #include <gmock/gmock.h>
 
+#include <memory>
+#include <utility>
+
 namespace score::mw::service
 {
 
-class FindServiceStrategyMock : public FindServiceStrategy
+template <typename ProxyType>
+class FindServiceStrategyMock : public FindServiceStrategy<ProxyType>
 {
   public:
+    using typename FindServiceStrategy<ProxyType>::OnServiceFoundCallback;
+
+    MOCK_METHOD(void, StartFind, (std::unique_ptr<OnServiceFoundCallback>), (override));
     MOCK_METHOD(void, StopFind, (), (noexcept, override));
 };
 
-class FindServiceStrategyMockFacade : public FindServiceStrategy
+template <typename ProxyType>
+class FindServiceStrategyMockFacade : public FindServiceStrategy<ProxyType>
 {
   public:
-    FindServiceStrategyMockFacade(FindServiceStrategy& find_service_strategy)
+    using typename FindServiceStrategy<ProxyType>::OnServiceFoundCallback;
+
+    FindServiceStrategyMockFacade(FindServiceStrategy<ProxyType>& find_service_strategy)
         : find_service_strategy_{find_service_strategy}
     {
     }
 
     ~FindServiceStrategyMockFacade() override = default;
+
+    void StartFind(std::unique_ptr<OnServiceFoundCallback> on_found) override
+    {
+        find_service_strategy_.StartFind(std::move(on_found));
+    }
 
     void StopFind() noexcept override
     {
@@ -43,7 +58,7 @@ class FindServiceStrategyMockFacade : public FindServiceStrategy
     }
 
   private:
-    FindServiceStrategy& find_service_strategy_;
+    FindServiceStrategy<ProxyType>& find_service_strategy_;
 };
 
 }  // namespace score::mw::service

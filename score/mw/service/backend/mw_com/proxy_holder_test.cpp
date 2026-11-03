@@ -13,10 +13,10 @@
 
 #include "score/concurrency/notification.h"
 
-#include "score/mw/com/com_error_domain.h"
-#include "score/mw/com/types.h"
 #include "score/mw/service/backend/mw_com/proxy_holder.h"
 #include "score/mw/service/backend/mw_com/proxy_stub.h"
+#include "score/mw/com/com_error_domain.h"
+#include "score/mw/com/types.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -41,7 +41,7 @@ using ::testing::Return;
 
 using MwComProxy = mw::service::backend::mw_com::FakeProxy;
 
-const auto kInstanceSpecifier = score::mw::com::InstanceSpecifier::Create(std::string{"SOME/IDENTIFIER"}).value();
+const auto kInstanceSpecifier = score::mw::com::InstanceSpecifier::Create("SOME/IDENTIFIER").value();
 const auto kDummyFindServiceHandle = MwComProxy::CreateFindServiceHandle(10U);
 const auto kDummyFindServiceHandle2 = MwComProxy::CreateFindServiceHandle(20U);
 const auto kDummyFindServiceHandle3 = MwComProxy::CreateFindServiceHandle(30U);
