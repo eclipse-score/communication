@@ -490,22 +490,10 @@
       "signature": "operator= : IRuntime &(const IRuntime &) &"
     },
     {
-      "name": "InitializeRuntime",
-      "qualified_name": "score::mw::com::runtime::InitializeRuntime",
-      "kind": "function",
-      "signature": "InitializeRuntime : void (const std::int32_t, const char **) [[deprecated]]"
-    },
-    {
       "name": "RuntimeConfiguration",
       "qualified_name": "score::mw::com::runtime::RuntimeConfiguration::RuntimeConfiguration",
       "kind": "constructor",
       "signature": "RuntimeConfiguration : void ()"
-    },
-    {
-      "name": "RuntimeConfiguration",
-      "qualified_name": "score::mw::com::runtime::RuntimeConfiguration::RuntimeConfiguration",
-      "kind": "constructor",
-      "signature": "RuntimeConfiguration : void (const std::int32_t, const char **) [[deprecated]]"
     },
     {
       "name": "~InstanceIdentifier",

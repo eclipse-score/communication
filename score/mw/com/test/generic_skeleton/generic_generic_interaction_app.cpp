@@ -248,8 +248,7 @@ int main(int argc, const char* argv[])
             mode = arguments[++i];
         }
     }
-    score::mw::com::runtime::InitializeRuntime(
-        score::mw::com::runtime::RuntimeConfiguration(score::string_manipulation::GetArguments(argc, argv)));
+    score::mw::com::runtime::InitializeRuntime(score::mw::com::runtime::RuntimeConfiguration(arguments));
 
     score::cpp::stop_source stop_source{};
     score::mw::com::SetupStopTokenSigTermHandler(stop_source);
