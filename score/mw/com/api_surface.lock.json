@@ -802,6 +802,12 @@
       "signature": "Get : pointer () const noexcept"
     },
     {
+      "name": "GetE2EResult",
+      "qualified_name": "score::mw::com::SamplePtr::GetE2EResult",
+      "kind": "method",
+      "signature": "GetE2EResult : e2e::E2EResult () const"
+    },
+    {
       "name": "Reset",
       "qualified_name": "score::mw::com::SamplePtr::Reset",
       "kind": "method",
@@ -1010,6 +1016,12 @@
       "qualified_name": "score::mw::com::GenericProxy::~ProxyBase",
       "kind": "destructor",
       "signature": "~ProxyBase : void () noexcept"
+    },
+    {
+      "name": "AttachE2EResult",
+      "qualified_name": "score::mw::com::GenericProxyEvent::AttachE2EResult",
+      "kind": "template_function",
+      "signature": "AttachE2EResult : void (SamplePtr<SampleType> &) const"
     },
     {
       "name": "EnableReferenceToMoveableFromThis<T>",
