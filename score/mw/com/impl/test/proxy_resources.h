@@ -70,6 +70,11 @@ class ProxyEventBaseAttorney
         return proxy_event_base_.tracing_data_;
     }
 
+    void SetHealthTrackerConfiguration(const e2e::HealthTrackerConfiguration& configuration) noexcept
+    {
+        proxy_event_base_.SetHealthTrackerConfiguration(configuration);
+    }
+
   private:
     ProxyEventBase& proxy_event_base_;
 };
