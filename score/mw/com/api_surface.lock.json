@@ -29,7 +29,7 @@
       "name": "InitializeRuntime",
       "qualified_name": "score::mw::com::runtime::InitializeRuntime",
       "kind": "function",
-      "signature": "InitializeRuntime : void (const cpp::span<safecpp::zstring_view>)"
+      "signature": "InitializeRuntime : void (const cpp::span<const safecpp::zstring_view>)"
     },
     {
       "name": "InitializeRuntime",
@@ -59,7 +59,7 @@
       "name": "RuntimeConfiguration",
       "qualified_name": "score::mw::com::runtime::RuntimeConfiguration::RuntimeConfiguration",
       "kind": "constructor",
-      "signature": "RuntimeConfiguration : void (cpp::span<safecpp::zstring_view>)"
+      "signature": "RuntimeConfiguration : void (cpp::span<const safecpp::zstring_view>)"
     },
     {
       "name": "RuntimeConfiguration",
@@ -457,7 +457,7 @@
       "name": "InitializeRuntime",
       "qualified_name": "score::mw::com::runtime::IRuntime::InitializeRuntime",
       "kind": "method",
-      "signature": "InitializeRuntime : void (const cpp::span<safecpp::zstring_view>)"
+      "signature": "InitializeRuntime : void (const cpp::span<const safecpp::zstring_view>)"
     },
     {
       "name": "InitializeRuntime",

@@ -45,13 +45,12 @@ class RuntimeConfiguration
      * \param argc The number of command line arguments.
      * \param argv The array of command line arguments.
      *
-     * \deprecated Please use RuntimeConfiguration(cpp::span<safecpp::zstring_view> command_line_arguments) for
+     * \deprecated Please use RuntimeConfiguration(cpp::span<const safecpp::zstring_view> command_line_arguments) for
      * guaranteed NULL terminated arguments
      */
     [[deprecated(
-        "Please use RuntimeConfiguration(cpp::span<safecpp::zstring_view> command_line_arguments) for guaranteed "
-        "NULL "
-        "terminated arguments")]]
+        "Please use RuntimeConfiguration(cpp::span<const safecpp::zstring_view> command_line_arguments) for guaranteed "
+        "NULL terminated arguments")]]
     // NOLINTNEXTLINE(modernize-avoid-c-arrays):C-style array tolerated for command line arguments
     RuntimeConfiguration(const std::int32_t argc, const char* argv[]);
 
@@ -62,7 +61,7 @@ class RuntimeConfiguration
      *          path. If the key is not found, a default path is used.
      * \param command_line_arguments The command line arguments.
      */
-    explicit RuntimeConfiguration(cpp::span<safecpp::zstring_view> command_line_arguments);
+    explicit RuntimeConfiguration(cpp::span<const safecpp::zstring_view> command_line_arguments);
 
     /**
      * \api
@@ -81,7 +80,7 @@ class RuntimeConfiguration
 
   private:
     static std::optional<filesystem::Path> ParseConfigurationPath(
-        const score::cpp::span<safecpp::zstring_view> command_line_args);
+        const score::cpp::span<const safecpp::zstring_view> command_line_args);
 
     filesystem::Path configuration_path_;
 };

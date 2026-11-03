@@ -55,7 +55,7 @@ RuntimeConfiguration::RuntimeConfiguration(const std::int32_t argc, const char* 
         configuration_path.has_value() ? std::move(configuration_path).value() : kDefaultConfigurationPath;
 }
 
-RuntimeConfiguration::RuntimeConfiguration(cpp::span<safecpp::zstring_view> command_line_arguments)
+RuntimeConfiguration::RuntimeConfiguration(cpp::span<const safecpp::zstring_view> command_line_arguments)
 {
     auto configuration_path = ParseConfigurationPath(command_line_arguments);
     configuration_path_ =
@@ -68,7 +68,7 @@ const filesystem::Path& RuntimeConfiguration::GetConfigurationPath() const&
 }
 
 std::optional<filesystem::Path> RuntimeConfiguration::ParseConfigurationPath(
-    const score::cpp::span<safecpp::zstring_view> command_line_args)
+    const score::cpp::span<const safecpp::zstring_view> command_line_args)
 {
     const auto num_args = command_line_args.size();
 

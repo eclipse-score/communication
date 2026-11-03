@@ -63,7 +63,7 @@ void InitializeRuntime(const std::int32_t argc, const char* argv[])
     InitializeRuntime(runtime_configuration);
 }
 
-void InitializeRuntime(const cpp::span<safecpp::zstring_view> command_line_arguments)
+void InitializeRuntime(const cpp::span<const safecpp::zstring_view> command_line_arguments)
 {
     if (auto* const runtime_mock_holder = detail::RuntimeMockHolder::GetRuntimeMock())
     {
