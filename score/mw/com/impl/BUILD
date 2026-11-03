@@ -662,6 +662,7 @@ cc_library(
     ],
     deps = [
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/quality/compiler_warnings",
         "@score_baselibs//score/result",
     ],
 )
@@ -1366,6 +1367,7 @@ cc_unit_test(
         ":error",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+        "@score_baselibs//score/quality/compiler_warnings",
     ],
 )
 
@@ -1451,6 +1453,7 @@ cc_unit_test(
     deps = [
         ":error",
         ":instance_specifier",
+        "@score_baselibs//score/quality/compiler_warnings",
     ],
 )
 
