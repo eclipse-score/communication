@@ -91,7 +91,7 @@ runs:
     - name: Archive documentation output
       if: ${{ inputs.archive-name != '' }}
       shell: bash
-      run: |
+      run: |-
         ARCHIVE_PATH="${{ inputs.archive-name }}"
         mkdir -p "$(dirname "${ARCHIVE_PATH}")"
         tar czf "${ARCHIVE_PATH}" -C "${{ inputs.output-dir }}" .

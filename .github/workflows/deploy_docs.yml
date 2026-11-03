@@ -35,10 +35,10 @@ on:
     types: [completed]
 
 permissions:
-  contents: write  # needed for uploading release assets
+  contents: write # needed for uploading release assets
   pages: write
   id-token: write
-  actions: write    # needed to download artifacts from the nightly workflow_run and delete old bazel caches
+  actions: write # needed to download artifacts from the nightly workflow_run and delete old bazel caches
 
 concurrency:
   group: "pages"

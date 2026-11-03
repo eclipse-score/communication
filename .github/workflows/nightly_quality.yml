@@ -253,7 +253,7 @@ jobs:
 
       - name: Print dashboard URL
         if: ${{ !cancelled() }}
-        run: |
+        run: |-
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.event.repository.name }}"
           echo "::notice::Quality reports will be published at https://${OWNER}.github.io/${REPO}/latest/quality/index.html once deploy_docs.yml completes."

@@ -1885,8 +1885,8 @@
           "REPO_MAPPING:rules_distroless+,bazel_skylib bazel_skylib+",
           "REPO_MAPPING:rules_distroless+,bazel_tools bazel_tools",
           "REPO_MAPPING:rules_distroless+,yq_linux_amd64 yq.bzl++yq+yq_linux_amd64",
-          "FILE:@@//third_party/ubuntu24_04_sysroot/manifest.yaml df66aa381402ec6439e922ce8f5cbcd6b1afad59b616d151117aa6a36815374d",
-          "FILE:@@//third_party/ubuntu24_04_integration_testing/manifest.yaml 27054d72aa4ac932f76da876cd2f49a6ebd1f661bf78eba908df4f36a2db3afb",
+          "FILE:@@//third_party/ubuntu24_04_sysroot/manifest.yaml 5c98cb78be7b9ab962fa9a51edff83216a6114fbc58c5a950ffad030566e3747",
+          "FILE:@@//third_party/ubuntu24_04_integration_testing/manifest.yaml f5af4aaa12376117640ba0046a5aa299a8b90ffda3d9d2f9165fc51b213fa087",
           "FILE:@@score_tooling+//third_party/docs_runtime/manifest.yaml f8bd762e0dcaf3150504eca8dfd60819fc3be428d3a8b58d1d9cc52d68e16a45",
           "FILE:@@score_tooling+//third_party/tooling_sysroot/manifest.yaml ef1e4af34dbf67a9e332c69ccad0b12b2e295849c33e98658c6ccd69e363c4cd"
         ],

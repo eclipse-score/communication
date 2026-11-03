@@ -64,7 +64,7 @@ justifications:
   #
   - id: flag-file-crawler-defensive
     category: defensive_programming
-    platforms: [linux, qnx]  # applies to both platforms
+    platforms: [linux, qnx] # applies to both platforms
     reason: >
       Defensive guard for flag file parsing. Only entered if a flag file exists,
       so the file must be parseable. Guard protects against filesystem race conditions.
@@ -77,22 +77,22 @@ justifications:
     platforms: [linux, qnx]
     category: defensive_programming
     reason: >
-       Defensive programming: Posix system call can only go wrong if the socket file descriptor is invalid,
-       but socket has just been accepted in an earlier step.
+      Defensive programming: Posix system call can only go wrong if the socket file descriptor is invalid,
+      but socket has just been accepted in an earlier step.
 
   - id: gateway-handle-response-only-ack-response
     platforms: [linux, qnx]
     category: defensive_programming
     reason: >
-       Defensive programming: Type has already been checked before this function has been called.
+      Defensive programming: Type has already been checked before this function has been called.
 
   - id: gateway-dispatch-loop-calls-handler
     platforms: [linux, qnx]
     category: tool_false_positive
     reason: >
-       Coverage tool incorrectly marks this line as not covered. Lines immediately before and after are covered.
-       Covered by the test BidirectionalTransportSocketFixture.DispatchThreadDeliversQueuedMessageToHandler
-       inside score/mw/com/gateway/transport_layer/sample/bidirectional_transport_test.cpp
+      Coverage tool incorrectly marks this line as not covered. Lines immediately before and after are covered.
+      Covered by the test BidirectionalTransportSocketFixture.DispatchThreadDeliversQueuedMessageToHandler
+      inside score/mw/com/gateway/transport_layer/sample/bidirectional_transport_test.cpp
 
   - id: ivshmem-bind-shm-to-bar-shm-ctl-special-success
     category: defensive_programming
@@ -109,7 +109,7 @@ justifications:
     category: defensive_programming
     platforms: [qnx]
     reason: >
-      Idempotent guard in WriteDirectoryEntry() requires multi-VM concurrent write race; 
+      Idempotent guard in WriteDirectoryEntry() requires multi-VM concurrent write race;
       single-process tests cache allocations on first write, preventing re-entry.
     locations:
       - file: score/mw/com/gateway/transport_layer/qemu/ivshmem/ivshmem_typed_memory_provider.cpp
@@ -120,7 +120,7 @@ justifications:
     category: defensive_programming
     platforms: [qnx]
     reason: >
-      QNX PCI API calls require real ivshmem device. Tests with no hardware hit pci_device_find→PCI_BDF_NONE 
+      QNX PCI API calls require real ivshmem device. Tests with no hardware hit pci_device_find→PCI_BDF_NONE
       and cannot mock PCI subsystem APIs.
     locations:
       - file: score/mw/com/gateway/transport_layer/qemu/ivshmem/ivshmem_bar_discovery.cpp

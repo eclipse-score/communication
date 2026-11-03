@@ -38,6 +38,6 @@ jobs:
             has not had recent activity. It will be closed in 7 days if no
             further activity occurs. If this PR is still relevant, please leave
             a comment or push new changes to keep it open.
-          close-pr-message: >
+          close-pr-message: >-
             This pull request has been automatically closed due to inactivity.
             Feel free to reopen it if you would like to continue working on it.

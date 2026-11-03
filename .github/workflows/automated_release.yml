@@ -231,6 +231,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Report failure
-        run: |
+        run: |-
           echo "Uploading artifacts to the draft release failed. Draft release has been deleted."
           exit 1

@@ -79,6 +79,7 @@ format_multirun(
     rust = "//tools/lint:rustfmt_with_config",
     starlark = "@buildifier_prebuilt//:buildifier",
     target_compatible_with = ["@platforms//os:linux"],
+    yaml = "@multitool//tools/yamlfmt",
 )
 
 format_test(
@@ -91,6 +92,7 @@ format_test(
     tags = ["no-flaky-test-detection"],
     target_compatible_with = ["@platforms//os:linux"],
     workspace = "//:LICENSE",
+    yaml = "@multitool//tools/yamlfmt",
 )
 
 use_clang_tidy_targets()

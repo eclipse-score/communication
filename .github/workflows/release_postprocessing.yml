@@ -47,6 +47,18 @@ jobs:
           dropdown: _version
           dry_run: no-commit
 
+      - name: Prepare Bazel environment
+        uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
+        with:
+          ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+      # The form rewrite drops the copyright header; restore it with the repo's copyright tooling
+      - name: Restore copyright header
+        run: bazel run //third_party/cr_checker:issue_template_copyright.fix
+
+      - name: Reformat YAML files
+        run: bazel run //:format_YAML_with_yamlfmt
+
       - name: Create pull request
         uses: peter-evans/create-pull-request@v7
         with:
