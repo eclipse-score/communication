@@ -64,6 +64,12 @@ class GenericProxyEvent : public GenericProxyEventBinding
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
 
+    /// \brief Not a gmock method, so StrictMock tests need no expectation. Historical health tracking is disabled.
+    e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const noexcept override
+    {
+        return e2e::HealthTrackerConfiguration{};
+    }
+
     /// \brief Add a sample to the internal queue of fake events.
     ///
     /// On a call to GetNewSamples(), these samples will be forwarded to the provided callable in case there is no

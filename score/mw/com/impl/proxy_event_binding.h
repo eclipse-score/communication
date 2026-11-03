@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_PROXY_EVENT_BINDING_H
 #define SCORE_MW_COM_IMPL_PROXY_EVENT_BINDING_H
 
+#include "score/mw/com/impl/e2e/e2e_health_tracker.h"
 #include "score/mw/com/impl/e2e/e2e_result.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
@@ -24,6 +25,7 @@
 #include <score/callback.hpp>
 
 #include <cstddef>
+#include <cstdint>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -110,6 +112,12 @@ class ProxyEventBinding
     /// \return If GetSubscriptionState() is currently kSubscribed or kSubscriptionPending, returns the max_sample_count
     /// that was passed to the Subscribe call. Otherwise, returns empty.
     virtual std::optional<std::uint16_t> GetMaxSampleCount() const noexcept = 0;
+
+    /// \brief Returns the historical E2E health tracking configuration, read by the event on construction.
+    /// \details Pure virtual on purpose: every binding has to decide explicitly whether it supports historical E2E
+    /// health tracking, so that a binding with E2E support cannot silently lose it by forgetting to override this.
+    /// \return Default constructed configuration (tracking disabled) for bindings without E2E health configuration.
+    virtual e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const noexcept = 0;
 
     /// \brief Gets the binding type of the binding
     virtual BindingType GetBindingType() const noexcept = 0;
