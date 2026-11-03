@@ -136,6 +136,7 @@ jobs:
           # and `workflow-approval` environment gate (see `precheck`/`approval`).
           # Reviewers must inspect the fork diff before approving.
           allow-unsafe-pr-checkout: true
+          persist-credentials: false
       - name: Setup QNX and QEMU environment
         uses: ./.github/actions/00_infrastructure/setup_qnx_environment
         with:
