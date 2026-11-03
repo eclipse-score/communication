@@ -54,6 +54,13 @@ class FindServiceStrategy
     /// @brief Type of the callback which must get invoked when a service instance is found.
     using OnServiceFoundCallback = typename ProxyBuilderBase<ProxySpec>::BuilderCallback;
 
+    FindServiceStrategy() = default;
+    FindServiceStrategy(const FindServiceStrategy&) = default;
+    FindServiceStrategy(FindServiceStrategy&&) = default;
+    FindServiceStrategy& operator=(const FindServiceStrategy&) = delete;
+    FindServiceStrategy& operator=(FindServiceStrategy&&) = delete;
+    virtual ~FindServiceStrategy() = default;
+
     /// @brief Starts the service discovery.
     ///
     /// The strategy is free to either invoke `on_found` synchronously from within this method (e.g. immediate
@@ -80,8 +87,6 @@ class FindServiceStrategy
     /// to a stop request and again upon destruction of the service discovery), from a different thread while `on_found`
     /// is still executing, or without `StartFind()` having been invoked before (e.g. upon destruction of the strategy).
     virtual void StopFind() noexcept = 0;
-
-    virtual ~FindServiceStrategy() = default;
 };
 
 }  // namespace score::mw::service
