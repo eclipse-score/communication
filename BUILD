@@ -92,6 +92,7 @@ format_test(
     tags = ["no-flaky-test-detection"],
     target_compatible_with = ["@platforms//os:linux"],
     workspace = "//:LICENSE",
+    yaml = "@multitool//tools/yamlfmt",
 )
 
 use_clang_tidy_targets()
