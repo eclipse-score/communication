@@ -144,7 +144,7 @@ jobs:
 
       - name: Upload SARIF reports to GitHub Code Scanning
         if: ${{ !cancelled() && inputs.fetch-only != 'true' }}
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@1fc58d04a4d4374f921bdac573c3811c240f9c26 # v4.39.2
         with:
           sarif_file: ${{ matrix.id }}.sarif
           category: ${{ matrix.id }}
