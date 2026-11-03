@@ -18,6 +18,7 @@
 $FailureMode("Service is found, but does not exist", "Communication.ServiceIsFoundButIsNotCurrentlyOffered")
 
 $OrGate("OrGate1", "Communication.ServiceIsFoundButIsNotCurrentlyOffered")
+TODO Reference the stop offer fta
 $RootCause("Service was offered, but not unlinked on stop offer", "ServiceWasOfferedButNotUnlinkedOnStopOffer", "OrGate1")
 $IntermediateEvent("Flag file was created when service was never offered", "FlagFileWasCreatedWhenServiceWasNeverOffered", "OrGate1")
 $OrGate("OrGate2", "FlagFileWasCreatedWhenServiceWasNeverOffered")

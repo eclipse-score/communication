@@ -17,6 +17,8 @@
 
 $FailureMode("Wrong StartFindService is stopped", "Communication.WrongStartFindServiceIsStopped")
 
+' FindServiceHandle is linked to the wrong handler
+
 $OrGate("Gate1", "Communication.WrongStartFindServiceIsStopped")
 $RootCause("Wrong StartFindService is stopped", "RootCauseWrongStartFindServiceIsStopped", "Gate1")
 
