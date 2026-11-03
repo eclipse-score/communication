@@ -56,6 +56,9 @@ jobs:
       - name: Restore copyright header
         run: bazel run //third_party/cr_checker:issue_template_copyright.fix
 
+      - name: Reformat YAML files
+        run: bazel run //:format_YAML_with_yamlfmt
+
       - name: Create pull request
         uses: peter-evans/create-pull-request@v7
         with:
