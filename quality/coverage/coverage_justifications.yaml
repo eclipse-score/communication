@@ -73,6 +73,15 @@ justifications:
         line_start: 29
         line_end: 29
 
+  - id: generic-skeleton-event-emplace-failure-unreachable
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      Defensive programming: emplace() into the events map can only fail if the key already exists.
+      Duplicate event names are rejected earlier in GenericSkeleton::Create() (kServiceElementAlreadyExists),
+      and stable_name is the configuration key found for exactly that (already unique) event name.
+      Therefore the emplace can never fail at this point.
+
   - id: gateway-clear-nonblock-on-accepted-socket
     platforms: [linux, qnx]
     category: defensive_programming
