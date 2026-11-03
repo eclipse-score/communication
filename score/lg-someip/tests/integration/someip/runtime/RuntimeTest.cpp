@@ -118,8 +118,8 @@ public:
 
     void register_message_handler(std::uint16_t sid = SOMEIP_SERVICE_ID, std::uint16_t iid = SOMEIP_INSTANCE_ID,
                                   std::uint16_t mid = SOMEIP_METHOD_ID) {
-        application_manager_->register_message_handler(sid, iid, mid, std::bind(&ServerAppSample::on_message, this, _1),
-                                                       true);
+        application_manager_->register_message_handler(sid, iid, mid,
+                                                       std::bind(&ServerAppSample::on_message, this, _1));
     }
 
     void offer_event(std::uint16_t sid = SOMEIP_SERVICE_ID, std::uint16_t iid = SOMEIP_INSTANCE_ID) {

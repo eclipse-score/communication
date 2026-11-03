@@ -302,21 +302,18 @@ void application_impl::unregister_subscription_error_handler(service_t _service,
 }
 
 void application_impl::register_message_handler(service_t _service, instance_t _instance, method_t _method,
-                                                message_handler_t _handler, bool _is_provider) {
+                                                message_handler_t _handler) {
     if (application_manager_ != nullptr) {
         application_manager_->register_message_handler(
-            _service, _instance, _method,
-            [_handler](std::shared_ptr<lgsomeip::Message> _lgsomeipMsg) {
+            _service, _instance, _method, [_handler](std::shared_ptr<lgsomeip::Message> _lgsomeipMsg) {
                 std::shared_ptr<message> vsomeipMsg = std::make_shared<message_impl>(_lgsomeipMsg);
                 _handler(vsomeipMsg);
-            },
-            _is_provider);
+            });
     }
 }
 
-void application_impl::unregister_message_handler(service_t _service, instance_t _instance, method_t _method,
-                                                  bool _is_provider) {
-    application_manager_->unregister_message_handler(_service, _instance, _method, _is_provider);
+void application_impl::unregister_message_handler(service_t _service, instance_t _instance, method_t _method) {
+    application_manager_->unregister_message_handler(_service, _instance, _method);
 }
 
 void application_impl::offer_event(service_t _service, instance_t _instance, event_t _event,

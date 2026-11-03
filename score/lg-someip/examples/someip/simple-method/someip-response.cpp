@@ -67,7 +67,7 @@ int main() {
     }
 
     // Register callbacks before start(); they remain installed across reconnects.
-    application->register_message_handler(kServiceId, kInstanceId, kMethodId, on_message, true);
+    application->register_message_handler(kServiceId, kInstanceId, kMethodId, on_message);
     application->register_application_state_handler(on_state);
     application->start();
     // start() begins processing and returns; join() keeps this provider alive

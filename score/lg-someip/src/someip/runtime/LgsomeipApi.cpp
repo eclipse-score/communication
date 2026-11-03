@@ -161,22 +161,19 @@ public:
         manager_->register_application_state_handler(
             [handler = std::move(handler)](std::uint16_t state) { handler(state != 0); });
     }
-    void register_message_handler(service_t service, instance_t instance, method_t method, MessageHandler handler,
-                                  bool is_provider) override {
+    void register_message_handler(service_t service, instance_t instance, method_t method,
+                                  MessageHandler handler) override {
         if (!handler) {
-            manager_->unregister_message_handler(service, instance, method, is_provider);
+            manager_->unregister_message_handler(service, instance, method);
             return;
         }
         manager_->register_message_handler(
-            service, instance, method,
-            [handler = std::move(handler)](std::shared_ptr<MessageSOMEIP> message) {
+            service, instance, method, [handler = std::move(handler)](std::shared_ptr<MessageSOMEIP> message) {
                 handler(from_internal_message(message));
-            },
-            is_provider);
+            });
     }
-    void unregister_message_handler(service_t service, instance_t instance, method_t method,
-                                    bool is_provider) override {
-        manager_->unregister_message_handler(service, instance, method, is_provider);
+    void unregister_message_handler(service_t service, instance_t instance, method_t method) override {
+        manager_->unregister_message_handler(service, instance, method);
     }
     void register_availability_handler(service_t service, instance_t instance, AvailabilityHandler handler,
                                        major_version_t major, minor_version_t minor) override {

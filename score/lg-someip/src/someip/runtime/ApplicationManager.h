@@ -166,9 +166,8 @@ public:
     void unregister_application_state_handler();
 
     void register_message_handler(std::uint16_t service, std::uint16_t instance, std::uint16_t method_id,
-                                  message_handler_t handler, bool is_provider = false);
-    void unregister_message_handler(std::uint16_t service, std::uint16_t instance, std::uint16_t method_id,
-                                    bool is_provider = false);
+                                  message_handler_t handler);
+    void unregister_message_handler(std::uint16_t service, std::uint16_t instance, std::uint16_t method_id);
 
     void register_async_subscription_handler(std::uint16_t service, std::uint16_t instance, std::uint16_t event_group,
                                              async_subscription_handler_t handler);
@@ -213,7 +212,7 @@ private:
 
     template <typename HANDLER> // message_handler_t
     using HandlerSetType3 =
-        std::map<std::uint16_t, std::map<std::uint16_t, std::map<std::uint16_t, std::map<bool, std::vector<HANDLER>>>>>;
+        std::map<std::uint16_t, std::map<std::uint16_t, std::map<std::uint16_t, std::vector<HANDLER>>>>;
 
     using serviceAvailabilityHandler = std::map<
         std::uint16_t,

@@ -46,14 +46,14 @@ public:
                 SAMPLE_INSTANCE_ID,
                 SAMPLE_GET_METHOD_ID,
                 std::bind(&service_sample::on_get, this,
-                          std::placeholders::_1), true);
+                          std::placeholders::_1));
 
         app_->register_message_handler(
                 SAMPLE_SERVICE_ID,
                 SAMPLE_INSTANCE_ID,
                 SAMPLE_SET_METHOD_ID,
                 std::bind(&service_sample::on_set, this,
-                          std::placeholders::_1), true);
+                          std::placeholders::_1));
 
         app_->register_async_subscription_handler(SAMPLE_SERVICE_ID,
                 SAMPLE_INSTANCE_ID, SAMPLE_EVENTGROUP_ID,

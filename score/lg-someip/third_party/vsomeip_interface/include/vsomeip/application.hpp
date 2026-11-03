@@ -462,12 +462,11 @@ public:
      * \param _handler Callback that will be called if a message arrives
      * that matches the specified service, instance and method/event
      * parameters.
-     * \param _is_provider Denotes if this handler is for provider or not.
      *
      */
     virtual void register_message_handler(service_t _service,
             instance_t _instance, method_t _method,
-            message_handler_t _handler, bool _is_provider = false) = 0;
+            message_handler_t _handler) = 0;
     /**
      *
      * \brief Unregisters the message handler for the specified service
@@ -482,11 +481,9 @@ public:
      * \param _method Method/Event identifier of the method/event that is
      * to be handled. Can be set to ANY_METHOD to unregister a handler for
      * all methods and events.
-     * \param _is_provider Denotes if this handler is for provider or not.
      */
     virtual void unregister_message_handler(service_t _service,
-            instance_t _instance, method_t _method,
-            bool _is_provider = false) = 0;
+            instance_t _instance, method_t _method) = 0;
 
     /**
      *

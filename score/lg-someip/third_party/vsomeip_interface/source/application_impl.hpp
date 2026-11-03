@@ -88,9 +88,8 @@ public:
     VSOMEIP_EXPORT void unregister_state_handler();
 
     VSOMEIP_EXPORT void register_message_handler(service_t _service, instance_t _instance, method_t _method,
-                                                 message_handler_t _handler, bool _is_provider = false);
-    VSOMEIP_EXPORT void unregister_message_handler(service_t _service, instance_t _instance, method_t _method,
-                                                   bool _is_provider = false);
+                                                 message_handler_t _handler);
+    VSOMEIP_EXPORT void unregister_message_handler(service_t _service, instance_t _instance, method_t _method);
 
     VSOMEIP_EXPORT void register_availability_handler(service_t _service, instance_t _instance,
                                                       availability_handler_t _handler,

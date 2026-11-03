@@ -42,7 +42,7 @@ public:
         app_->register_message_handler(
                 SAMPLE_SERVICE_ID, SAMPLE_INSTANCE_ID, SAMPLE_METHOD_ID,
                 std::bind(&service_sample::on_message, this,
-                        std::placeholders::_1), true);
+                        std::placeholders::_1));
 
         std::cout << "Static routing " << (use_static_routing_ ? "ON" : "OFF")
                   << std::endl;

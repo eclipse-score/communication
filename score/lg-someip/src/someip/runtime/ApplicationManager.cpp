@@ -1166,29 +1166,27 @@ void ApplicationManager::unregister_application_state_handler() {
 }
 
 void ApplicationManager::register_message_handler(std::uint16_t service, std::uint16_t instance,
-                                                  std::uint16_t method_id, message_handler_t handler,
-                                                  bool is_provider) {
+                                                  std::uint16_t method_id, message_handler_t handler) {
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::register_message_handler "
                        << format_service_instance_id(service, instance) << " "
-                       << format_named_id("MethodID", method_id, 4) << " for "
-                       << (is_provider ? "provider" : "consumer") << " is registered.";
+                       << format_named_id("MethodID", method_id, 4) << " is registered.";
 
     std::lock_guard<std::mutex> guard(message_handler_mutex_);
 
-    auto& msg_handler_vector = message_handler_set_[service][instance][method_id][is_provider];
+    auto& msg_handler_vector = message_handler_set_[service][instance][method_id];
 
     msg_handler_vector.push_back(handler);
 }
 
 void ApplicationManager::unregister_message_handler(std::uint16_t service, std::uint16_t instance,
-                                                    std::uint16_t method_id, bool is_provider) {
+                                                    std::uint16_t method_id) {
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::unregister_message_handler "
                        << format_service_instance_id(service, instance) << " "
                        << format_named_id("MethodID", method_id, 4) << " is unregistered.";
 
     std::lock_guard<std::mutex> guard(message_handler_mutex_);
 
-    auto& msg_handler_vector = message_handler_set_[service][instance][method_id][is_provider];
+    auto& msg_handler_vector = message_handler_set_[service][instance][method_id];
 
     msg_handler_vector.clear();
 }
@@ -2019,7 +2017,7 @@ ApplicationManager::get_message_handler(std::uint16_t service_id, std::uint16_t 
                 continue;
             for (auto& mth : ins.second) {
                 if (mth.first == methodid || mth.first == SOMEIP_DEFAULT_ANY_METHOD) {
-                    handler_vector = message_handler_set_[svc.first][ins.first][mth.first][is_provider];
+                    handler_vector = message_handler_set_[svc.first][ins.first][mth.first];
                     if (!handler_vector.empty()) {
                         serviceid = svc.first;
                         instanceid = ins.first;
@@ -2111,10 +2109,8 @@ void ApplicationManager::on_message(std::shared_ptr<MessageSOMEIP> message) {
 
         for (auto it = instance_list->second.begin(); it != instance_list->second.end(); it++) {
             instanceid = it->first;
-            if (!message_handler_set_[serviceid][instanceid][methodid][true].empty() ||
-                !message_handler_set_[serviceid][instanceid][SOMEIP_DEFAULT_ANY_METHOD][true].empty() ||
-                !message_handler_set_[serviceid][instanceid][methodid][false].empty() ||
-                !message_handler_set_[serviceid][instanceid][SOMEIP_DEFAULT_ANY_METHOD][false].empty()) {
+            if (!message_handler_set_[serviceid][instanceid][methodid].empty() ||
+                !message_handler_set_[serviceid][instanceid][SOMEIP_DEFAULT_ANY_METHOD].empty()) {
                 message->set_instance_id(instanceid);
                 can_handle = true;
                 break;

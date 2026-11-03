@@ -358,20 +358,17 @@ public:
      * @param instance Instance identifier to match.
      * @param method Method or event identifier to match.
      * @param handler Callback invoked on a matching message.
-     * @param is_provider true for provider-side requests; false for consumer-side responses and events.
      * @note Register handlers before start(); callbacks may run on worker threads.
      */
     virtual void register_message_handler(service_t service, instance_t instance, method_t method,
-                                          MessageHandler handler, bool is_provider = false) = 0;
+                                          MessageHandler handler) = 0;
     /**
      * @brief Remove a message callback.
      * @param service Service identifier to match.
      * @param instance Instance identifier to match.
      * @param method Method or event identifier to match.
-     * @param is_provider Provider-side or consumer-side handler direction.
      */
-    virtual void unregister_message_handler(service_t service, instance_t instance, method_t method,
-                                            bool is_provider = false) = 0;
+    virtual void unregister_message_handler(service_t service, instance_t instance, method_t method) = 0;
 
     /**
      * @brief Register a callback for service availability transitions.

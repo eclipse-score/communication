@@ -363,8 +363,7 @@ TEST(ApplicationManager, dispatches_request_to_registered_provider_handler) {
                 ++callback_count;
             }
             callback_condition.notify_all();
-        },
-        true);
+        });
 
     auto request = MessageBuilder::create_request_message(0x1001, 0x0003, 0x01);
     request->set_instance_id(0x0002);
