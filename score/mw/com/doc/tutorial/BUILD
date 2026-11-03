@@ -83,4 +83,5 @@ py_test(
         "//score/mw/com/doc/tutorial/chapter_9:doc_files",
     ],
     main = "check_literalinclude_markers.py",
+    target_compatible_with = ["@platforms//os:linux"],
 )
