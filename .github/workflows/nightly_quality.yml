@@ -127,7 +127,7 @@ jobs:
       - name: Download coverage artifact
         id: download-coverage
         if: needs.run-coverage.result == 'success'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}
           path: /tmp/coverage_zip
@@ -148,7 +148,7 @@ jobs:
       - name: Download clang-tidy findings
         if: ${{ !cancelled() }}
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: clang-tidy-findings
           path: /tmp/clang_tidy
@@ -170,7 +170,7 @@ jobs:
       - name: Download clippy findings
         if: ${{ !cancelled() }}
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: clippy-findings
           path: /tmp/clippy
@@ -192,7 +192,7 @@ jobs:
       - name: Download CodeQL SARIF artifact
         if: ${{ !cancelled() }}
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: codeql-sarif-results
           path: /tmp/codeql
@@ -212,7 +212,7 @@ jobs:
       - name: Download CodeQL MISRA reports artifact
         if: ${{ !cancelled() }}
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: codeql-misra-reports
           path: /tmp/codeql_reports
