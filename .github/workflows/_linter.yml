@@ -62,7 +62,7 @@ jobs:
       - name: Install Aspect CLI
         if: inputs.fetch-only != 'true'
         # v2026.26.9 (https://github.com/aspect-build/setup-aspect/releases/tag/v2026.26.9)
-        uses: aspect-build/setup-aspect@2306377a61c45954ab2df7c7311698b109364352
+        uses: aspect-build/setup-aspect@ebca96eb49ef58c00d4226de8bd3a0813507dd87 # v2026.38.3
         with:
           # Bazel/Bazelisk and disk/repository caching are already handled by
           # the prepare_bazel_environment step above; avoid duplicating them
