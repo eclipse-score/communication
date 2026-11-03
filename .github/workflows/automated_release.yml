@@ -95,7 +95,7 @@ jobs:
           archive-name: docs-${{ github.event.inputs.release_tag }}.tar.gz
 
       - name: Upload docs archive artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.event.repository.name }}_docs_release_${{ github.event.inputs.release_tag }}
           path: docs-${{ github.event.inputs.release_tag }}.tar.gz
