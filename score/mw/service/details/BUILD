@@ -12,8 +12,8 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
     name = "details",
@@ -31,7 +31,6 @@ cc_library(
         "tuple_index_for_type.h",
         "type_holder.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],  # private library
     visibility = ["//score/mw/service:__subpackages__"],
     deps = [
@@ -46,7 +45,6 @@ cc_library(
     name = "proxy_spec_traits",
     srcs = ["proxy_spec_traits.cpp"],
     hdrs = ["proxy_spec_traits.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],  # private library
     visibility = ["//score/mw/service:__subpackages__"],
     deps = [
@@ -58,10 +56,9 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_builder_test",
     srcs = ["proxy_builder_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":details",
         "//score/mw/service:find_service_strategy",
@@ -75,10 +72,11 @@ cc_gtest_unit_test(
 cc_test(
     name = "proxy_spec_traits_test",
     srcs = ["proxy_spec_traits_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "throws_upon_exception",
     ],
     tags = ["unit"],
+    target_compatible_with = ["@platforms//os:linux"],
     deps = [
         ":details",
         ":proxy_spec_traits",

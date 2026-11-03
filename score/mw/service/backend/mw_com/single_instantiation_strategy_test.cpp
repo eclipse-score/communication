@@ -40,7 +40,7 @@ using namespace ::testing;
 using MwComProxy = mw::service::backend::mw_com::FakeProxy;
 
 constexpr auto kPortIdentifierString = "Some/Instance/Specifier";
-const auto kInstanceSpecifier = score::mw::com::InstanceSpecifier::Create(kPortIdentifierString).value();
+const auto kInstanceSpecifier = score::mw::com::InstanceSpecifier::Create(std::string{kPortIdentifierString}).value();
 const auto kDummyFindServiceHandle = MwComProxy::CreateFindServiceHandle(10U);
 constexpr typename MwComProxy::HandleType kDummyProxyHandle1{1};
 constexpr typename MwComProxy::HandleType kDummyProxyHandle2{2};

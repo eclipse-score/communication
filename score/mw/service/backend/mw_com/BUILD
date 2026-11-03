@@ -12,18 +12,15 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
     name = "single_instantiation_strategy",
     srcs = ["single_instantiation_strategy.cpp"],
     hdrs = ["single_instantiation_strategy.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":proxy_holder",
         "//score/mw/service:proxy_builder_base",
@@ -37,11 +34,8 @@ cc_library(
     name = "multiple_instantiation_strategy",
     srcs = ["multiple_instantiation_strategy.cpp"],
     hdrs = ["multiple_instantiation_strategy.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":proxy_holder",
         "//score/mw/service:proxy_builder_base",
@@ -54,7 +48,6 @@ cc_library(
     name = "proxy_holder",
     srcs = ["proxy_holder.cpp"],
     hdrs = ["proxy_holder.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         "@score_baselibs//score/language/futurecpp",
@@ -80,8 +73,8 @@ cc_test(
     name = "proxy_holder_test",
     timeout = "long",  # due to long execution time when run in conj. with `memcheck`
     srcs = ["proxy_holder_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["unit"],
+    target_compatible_with = ["@platforms//os:linux"],
     deps = [
         ":proxy_holder",
         ":proxy_stub",
@@ -91,7 +84,7 @@ cc_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_holder_robustness_test",
     srcs = ["proxy_holder_robustness_test.cpp"],
     deps = [
@@ -105,10 +98,9 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "single_instantiation_strategy_test",
     srcs = ["single_instantiation_strategy_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":proxy_stub",
         ":single_instantiation_strategy",
@@ -120,10 +112,9 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "multiple_instantiation_strategy_test",
     srcs = ["multiple_instantiation_strategy_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":multiple_instantiation_strategy",
         ":proxy_stub",
