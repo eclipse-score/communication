@@ -14,6 +14,11 @@
 
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/configuration/service_identifier_type.h"
+#include "score/mw/com/impl/configuration/service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/service_type_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/mw/com/impl/i_binding_runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/service_discovery_client_mock.h"
@@ -276,6 +281,110 @@ TEST_F(GenericSkeletonTest, CreateWithDuplicateEventNamesFails)
     // Then creation fails with kServiceElementAlreadyExists
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), ComErrc::kServiceElementAlreadyExists);
+}
+
+TEST_F(GenericSkeletonTest, CreateWithMissingEventInConfigurationFails)
+{
+    // Given a valid instance identifier whose service type deployment does not include the configured event name
+    auto identifier = dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifier();
+    const std::string event_name = "missing_event";
+
+    std::vector<EventInfo> event_storage;
+    event_storage.push_back({event_name, {16, 8}});
+
+    GenericSkeletonServiceElementInfo params;
+    params.events = event_storage;
+
+    // When creating the skeleton
+    auto result = GenericSkeleton::Create(identifier, params);
+
+    // Then creation fails because the event is not present in configuration
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(GenericSkeletonTest, CreateWithBlankBindingTypeMissingEventInConfigurationFails)
+{
+    // Given a valid instance identifier whose type deployment is blank, so no event names can be resolved
+    auto identifier = dummy_instance_identifier_builder_.CreateLolaInstanceIdentifierWithoutTypeDeployment();
+    const std::string event_name = "missing_event";
+
+    std::vector<EventInfo> event_storage;
+    event_storage.push_back({event_name, {16, 8}});
+
+    GenericSkeletonServiceElementInfo params;
+    params.events = event_storage;
+
+    // When creating the skeleton
+    auto result = GenericSkeleton::Create(identifier, params);
+
+    // Then creation fails because the event name is missing from the blank binding configuration
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(GenericSkeletonTest, CreateWithSomeIpBindingResolvesEventNameFromConfiguration)
+{
+    // Given an instance identifier whose service type deployment is a SOME/IP deployment containing the event
+    const std::string event_name = "test_event";
+    const auto instance_specifier = InstanceSpecifier::Create(std::string{"/someip_generic_skeleton_test"}).value();
+    const auto service_identifier = make_ServiceIdentifierType("SomeIpGenericSkeletonTestService", 1U, 0U);
+    const ServiceTypeDeployment service_type_deployment{
+        SomeIpServiceTypeDeployment{SomeIpServiceId{1U}, {{event_name, SomeIpEventId{2U}}}}};
+    const ServiceInstanceDeployment service_instance_deployment{
+        service_identifier,
+        SomeIpServiceInstanceDeployment{SomeIpServiceInstanceId{3U}},
+        QualityType::kASIL_QM,
+        instance_specifier};
+    const auto identifier = make_InstanceIdentifier(service_instance_deployment, service_type_deployment);
+
+    std::vector<EventInfo> event_storage;
+    event_storage.push_back({event_name, {16, 8}});
+
+    GenericSkeletonServiceElementInfo params;
+    params.events = event_storage;
+
+    // Expect the Event Factory to be called for the event found in the SOME/IP configuration
+    EXPECT_CALL(skeleton_event_binding_factory_mock_, Create(_, _, event_name, _))
+        .WillOnce(Return(ByMove(std::make_unique<NiceMock<mock_binding::SkeletonEvent>>())));
+
+    // When creating the skeleton
+    auto result = GenericSkeleton::Create(identifier, params);
+
+    // Then the skeleton contains the event
+    ASSERT_TRUE(result.has_value());
+    const auto& events = result.value().GetEvents();
+    ASSERT_EQ(events.size(), 1);
+    EXPECT_NE(events.find(event_name), events.cend());
+}
+
+TEST_F(GenericSkeletonTest, CreateWithSomeIpBindingMissingEventInConfigurationFails)
+{
+    // Given an instance identifier whose SOME/IP service type deployment does not contain the requested event
+    const std::string event_name = "missing_event";
+    const auto instance_specifier = InstanceSpecifier::Create(std::string{"/someip_generic_skeleton_test"}).value();
+    const auto service_identifier = make_ServiceIdentifierType("SomeIpGenericSkeletonTestService", 1U, 0U);
+    const ServiceTypeDeployment service_type_deployment{
+        SomeIpServiceTypeDeployment{SomeIpServiceId{1U}, {{"other_event", SomeIpEventId{2U}}}}};
+    const ServiceInstanceDeployment service_instance_deployment{
+        service_identifier,
+        SomeIpServiceInstanceDeployment{SomeIpServiceInstanceId{3U}},
+        QualityType::kASIL_QM,
+        instance_specifier};
+    const auto identifier = make_InstanceIdentifier(service_instance_deployment, service_type_deployment);
+
+    std::vector<EventInfo> event_storage;
+    event_storage.push_back({event_name, {16, 8}});
+
+    GenericSkeletonServiceElementInfo params;
+    params.events = event_storage;
+
+    // When creating the skeleton
+    auto result = GenericSkeleton::Create(identifier, params);
+
+    // Then creation fails because the event name is not part of the SOME/IP configuration
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
 }
 
 TEST_F(GenericSkeletonTest, CreateFailsIfMainBindingCannotBeCreated)
