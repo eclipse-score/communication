@@ -14,6 +14,9 @@ conditional compilation.
 4. If the API has changed, the test fails with a clear diff
 5. An implicit `<name>.update` target allows intentional API changes to be committed
 
+Both documented and undocumented public symbols are compared for API changes.
+Documentation enforcement is a separate, optional check enabled with `check_docs = True`.
+
 ## Quick Start
 
 ### Run the API surface test
