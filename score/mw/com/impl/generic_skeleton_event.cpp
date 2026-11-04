@@ -50,9 +50,9 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
         const SkeletonBaseView skeleton_base_view{skeleton_base};
         const auto& instance_identifier = skeleton_base_view.GetAssociatedInstanceIdentifier();
         const auto binding_type = binding_->GetBindingType();
-        tracing_data_ =
+        *tracing_data_ =
             tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
-        binding_->SetSkeletonEventTracingData(tracing_data_);
+        binding_->SetSkeletonEventTracingData(*tracing_data_);
     }
 }
 

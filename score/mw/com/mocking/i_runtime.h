@@ -33,10 +33,10 @@ class IRuntime
 
     virtual score::Result<InstanceIdentifierContainer> ResolveInstanceIDs(const InstanceSpecifier model_name) = 0;
     [[deprecated(
-        "Please use InitializeRuntime(cpp::span<safecpp::zstring_view> command_line_arguments) for guaranteed NULL "
-        "terminated arguments")]]
+        "Please use InitializeRuntime(cpp::span<const safecpp::zstring_view> command_line_arguments) for guaranteed "
+        "NULL terminated arguments")]]
     virtual void InitializeRuntime(const std::int32_t argc, score::cpp::span<const char*> argv) = 0;
-    virtual void InitializeRuntime(const cpp::span<safecpp::zstring_view> command_line_arguments) = 0;
+    virtual void InitializeRuntime(const cpp::span<const safecpp::zstring_view> command_line_arguments) = 0;
     virtual void InitializeRuntime(const runtime::RuntimeConfiguration& runtime_configuration) = 0;
 
   protected:

@@ -35,12 +35,7 @@ namespace detail
 ///        testing purpose.
 /// \tparam AtomicIndirectorType allows mocking of atomic operations done by this method.
 /// \see ApplicationIdPidMapping::RegisterPid
-
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding. This rule states: "A type, object or function that is used in multiple
-// translation units shall be declared in one and only one file.".
-// coverity[autosar_cpp14_m3_2_3_violation] This is false positive. Function is declared only once.
 template <template <class> class AtomicIndirectorType = concurrency::AtomicIndirectorReal>
-// coverity[autosar_cpp14_m3_2_3_violation] This is false positive. Function is declared only once.
 std::optional<pid_t> RegisterPid(score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
                                  score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,
                                  const std::uint32_t application_id,

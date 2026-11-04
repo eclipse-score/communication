@@ -26,10 +26,6 @@ namespace score::memory::shared
 {
 
 template <typename T = std::uint8_t>
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding: "A type, object or function that is used in multiple translation units
-// shall be declared in one and only one file.".
-// this is false positive. PolymorphicOffsetPtrAllocator is declared only once.
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE]
 class PolymorphicOffsetPtrAllocator
 {
   public:

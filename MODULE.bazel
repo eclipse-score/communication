@@ -22,10 +22,15 @@ bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.25")
+bazel_dep(name = "rules_multitool", version = "1.11.1")
+
+multitool = use_extension("@rules_multitool//multitool:extension.bzl", "multitool")
+use_repo(multitool, "actionlint_hub", "multitool")
+
 bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "rules_rust", version = "0.68.2-score")
 bazel_dep(name = "score_qnx_unit_tests", version = "0.3.0")
-bazel_dep(name = "score_baselibs", version = "0.2.16")
+bazel_dep(name = "score_baselibs", version = "0.2.17")
 single_version_override(
     module_name = "score_baselibs",
     patch_strip = 1,
@@ -48,10 +53,10 @@ download_archive(
     urls = ["https://github.com/python-jsonschema/jsonschema/archive/refs/tags/v4.23.0.tar.gz"],
 )
 
-bazel_dep(name = "score_tooling", version = "3.0.1")
+bazel_dep(name = "score_tooling", version = "3.0.2")
 
 # TRLC dependency for requirements traceability
-bazel_dep(name = "trlc", version = "3.0.1")
+bazel_dep(name = "trlc", version = "3.1.1")
 
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
 bazel_dep(name = "gcc_toolchain", version = "0.13.0", dev_dependency = True)
@@ -137,7 +142,7 @@ use_repo(
     "score_qcc_x86_64_toolchain_pkg",
 )
 
-bazel_dep(name = "score_itf", version = "0.6.0", dev_dependency = True)
+bazel_dep(name = "score_itf", version = "0.7.0", dev_dependency = True)
 bazel_dep(name = "score_rules_imagefs", version = "0.1.0", dev_dependency = True)
 
 imagefs = use_extension("@score_rules_imagefs//extensions:imagefs.bzl", "imagefs", dev_dependency = True)

@@ -32,14 +32,24 @@ def _load_json(path: str) -> dict:
 
 
 def _normalized_symbols(data: dict) -> str:
+    symbols = {
+        (
+            symbol["kind"],
+            symbol["name"],
+            symbol["qualified_name"],
+            symbol["signature"],
+        )
+        for group in ("symbols", "undocumented_symbols")
+        for symbol in data.get(group, [])
+    }
     symbols = [
         {
-            "kind": symbol["kind"],
-            "name": symbol["name"],
-            "qualified_name": symbol["qualified_name"],
-            "signature": symbol["signature"],
+            "kind": kind,
+            "name": name,
+            "qualified_name": qualified_name,
+            "signature": signature,
         }
-        for symbol in data.get("symbols", [])
+        for kind, name, qualified_name, signature in sorted(symbols)
     ]
     return json.dumps(symbols, indent=2, sort_keys=True)
 

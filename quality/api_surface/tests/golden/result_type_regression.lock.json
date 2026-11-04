@@ -13,7 +13,7 @@
       "name": "CreateWidget",
       "qualified_name": "test::ResultFactory::CreateWidget",
       "kind": "method",
-      "signature": "CreateWidget : support::Result<support::Widget> ()"
+      "signature": "static CreateWidget : support::Result<support::Widget> ()"
     },
     {
       "name": "Result",

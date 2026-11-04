@@ -19,16 +19,41 @@ unit_design(
 )
 
 unit_design(
-    name = "unix_domain_unit_design",
+    name = "unix_domain_client_factory_unit_design",
     visibility = ["//score/message_passing:__pkg__"],
 )
 
 unit_design(
-    name = "qnx_dispatch_unit_design",
+    name = "qnx_dispatch_client_factory_unit_design",
     visibility = ["//score/message_passing:__pkg__"],
 )
 
 unit_design(
-    name = "server_connection_unit_design",
+    name = "unix_domain_server_unit_design",
+    visibility = ["//score/message_passing:__pkg__"],
+)
+
+unit_design(
+    name = "qnx_dispatch_server_unit_design",
+    visibility = ["//score/message_passing:__pkg__"],
+)
+
+unit_design(
+    name = "unix_domain_server_factory_unit_design",
+    visibility = ["//score/message_passing:__pkg__"],
+)
+
+unit_design(
+    name = "qnx_dispatch_server_factory_unit_design",
+    visibility = ["//score/message_passing:__pkg__"],
+)
+
+unit_design(
+    name = "unix_domain_engine_unit_design",
+    visibility = ["//score/message_passing:__pkg__"],
+)
+
+unit_design(
+    name = "qnx_dispatch_engine_unit_design",
     visibility = ["//score/message_passing:__pkg__"],
 )

@@ -25,41 +25,6 @@ Additional flags applied only when the GCC toolchain is active.
 
 Additional flags applied only when the LLVM/Clang toolchain is active.
 
-## Using Warning Features in BUILD Files
-
-```python
-cc_library(
-    name = "my_lib",
-    srcs = ["my_lib.cpp"],
-    hdrs = ["my_lib.h"],
-    features = [
-        "score_communication_misra_warnings",
-        "score_communication_treat_warnings_as_errors",
-    ],
-)
-```
-
-The full recommended set for production targets is available via the `COMPILER_WARNING_FEATURES`
-constant defined in [`score/mw/common_features.bzl`](../../../score/mw/common_features.bzl):
-
-```python
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
-
-cc_library(
-    name = "my_lib",
-    srcs = ["my_lib.cpp"],
-    features = COMPILER_WARNING_FEATURES,
-)
-```
-
-> **Note:** `cc_feature` targets only work with the **LLVM toolchain**. The default GCC toolchain
-> does not support them. To test features with LLVM explicitly:
-
-```bash
-bazel build //... \
-  --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-```
-
 ---
 
 ## Tests (`test/`)
@@ -72,7 +37,7 @@ trigger do trigger, and clean code compiles without false positives.
 | Case | Bazel target | Setup | Expected outcome |
 |------|-------------|-------|-----------------|
 | **True-positive build** | `tp_build_test` | Per-flag `has_warnings/<flag>.cpp` with `treat_warnings_as_errors` disabled | Compiles successfully — warnings are visible but not fatal |
-| **False-positive build** | `fp_build_test` | `no_warnings/clean.cpp` with all `COMPILER_WARNING_FEATURES` enabled | Compiles successfully — no spurious warnings |
+| **False-positive build** | `fp_build_test` | `no_warnings/clean.cpp` with all warnings enabled | Compiles successfully — no spurious warnings |
 | **Negative (must-fail)** | `warnings_negative_test` | Per-flag `has_warnings/<flag>.cpp` compiled with `-Werror` + the specific flag | Build fails with the expected `-Werror=<flag>` diagnostic |
 
 Each warning flag has its own source file and its own Bazel target so that every flag

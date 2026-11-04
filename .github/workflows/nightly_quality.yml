@@ -109,7 +109,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Bazel
         uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
@@ -127,7 +127,7 @@ jobs:
       - name: Download coverage artifact
         id: download-coverage
         if: needs.run-coverage.result == 'success'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}
           path: /tmp/coverage_zip
@@ -148,7 +148,7 @@ jobs:
       - name: Download clang-tidy findings
         if: ${{ !cancelled() }}
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: clang-tidy-findings
           path: /tmp/clang_tidy
@@ -170,7 +170,7 @@ jobs:
       - name: Download clippy findings
         if: ${{ !cancelled() }}
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: clippy-findings
           path: /tmp/clippy
@@ -192,7 +192,7 @@ jobs:
       - name: Download CodeQL SARIF artifact
         if: ${{ !cancelled() }}
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: codeql-sarif-results
           path: /tmp/codeql
@@ -212,7 +212,7 @@ jobs:
       - name: Download CodeQL MISRA reports artifact
         if: ${{ !cancelled() }}
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: codeql-misra-reports
           path: /tmp/codeql_reports
@@ -245,7 +245,7 @@ jobs:
       # ------------------------------------------------------------------
       - name: Upload quality reports artifact
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: nightly-quality-reports
           path: _quality/
@@ -253,7 +253,7 @@ jobs:
 
       - name: Print dashboard URL
         if: ${{ !cancelled() }}
-        run: |
+        run: |-
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.event.repository.name }}"
           echo "::notice::Quality reports will be published at https://${OWNER}.github.io/${REPO}/latest/quality/index.html once deploy_docs.yml completes."

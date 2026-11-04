@@ -52,6 +52,7 @@ int main()
     score::concurrency::Notification proxy_ready{};
     score::cpp::stop_source stop_source{};
 
+    // [consumer-start-find-service-start]
     score::Result<score::mw::com::FindServiceHandle> find_service_handle_result = TirePressureProxy::StartFindService(
         [&proxy_opt, &proxy_ready](score::mw::com::ServiceHandleContainer<TirePressureProxy::HandleType> handles,
                                    score::mw::com::FindServiceHandle /*fsh*/) {
@@ -97,6 +98,7 @@ int main()
     // ---- OPERATIONAL PHASE (see README.rst for heap behavior of each API) ----
     score::mw::log::LogInfo("PxSF") << "Entering operational phase (heap forbidden)";
     heap_check::forbid_heap();
+    // [consumer-start-find-service-end]
 
     for (std::uint32_t i = 0U; i < kNumIterations; ++i)
     {

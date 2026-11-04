@@ -74,7 +74,7 @@ jobs:
       contents: read
       actions: write
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
         with:
@@ -99,7 +99,7 @@ jobs:
 
       - name: Upload Linux SARIF (intermediate)
         if: inputs.fetch-only != 'true' && steps.run-codeql.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: codeql-sarif-linux
           path: /tmp/codeql-results/linux/codeql-nightly.sarif
@@ -107,7 +107,7 @@ jobs:
 
       - name: Upload MISRA compliance reports (Linux)
         if: ${{ !cancelled() && inputs.fetch-only != 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: codeql-misra-reports
           path: /tmp/codeql-results/linux/analysis_reports/
@@ -125,7 +125,7 @@ jobs:
       contents: read
       actions: write
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup QNX and QEMU environment
         uses: ./.github/actions/00_infrastructure/setup_qnx_environment
@@ -154,7 +154,7 @@ jobs:
 
       - name: Upload QNX SARIF (intermediate)
         if: steps.run-codeql-qnx.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: codeql-sarif-qnx
           path: /tmp/codeql-results/qnx/codeql-nightly-qnx.sarif
@@ -179,7 +179,7 @@ jobs:
       actions: write
       security-events: write
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
         with:
@@ -188,14 +188,14 @@ jobs:
           ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
       - name: Download Linux SARIF
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: codeql-sarif-linux
           path: /tmp/codeql-results/linux
 
       - name: Download QNX SARIF
         if: needs.codeql-qnx.result == 'success'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: codeql-sarif-qnx
           path: /tmp/codeql-results/qnx
@@ -229,14 +229,14 @@ jobs:
       - name: Upload SARIF to GitHub Code Scanning
         if: ${{ !cancelled() && steps.merge-codeql.outcome == 'success' && inputs.upload-code-scanning == 'true' }}
         continue-on-error: true
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@1fc58d04a4d4374f921bdac573c3811c240f9c26 # v4.39.2
         with:
           sarif_file: /tmp/codeql-results/publish/codeql-nightly.sarif
           category: codeql-nightly
 
       - name: Upload SARIF results
         if: ${{ !cancelled() && steps.merge-codeql.outcome == 'success' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: codeql-sarif-results
           path: /tmp/codeql-results/publish/codeql-nightly.sarif

@@ -23,10 +23,6 @@
 
 namespace score::mw::com::impl::lola
 {
-// Suppress "AUTOSAR C++14 M3-2-3", The rule states: "A type, object or function that is used in multiple translation
-// units shall be declared in one and only one file."
-// This is a forward class declaration.
-// coverity[autosar_cpp14_m3_2_3_violation]
 class SubscriptionStateMachine;
 
 class SubscriptionStateBase

@@ -79,34 +79,12 @@ score::Result<score::mw::com::InstanceIdentifierContainer> ResolveInstanceIDs(co
  *         "--service_instance_manifest" pointing to the json config file to be used.
  * \attention This function shall only be called ONCE per application/process lifetime! A second call may have no
  *            effect after an internal runtime singleton has been already created/is in use!
- *            The arguments contained in argv are expected to be NULL-terminated.
- *
- * \param argc number of arguments in the upcoming argv array
- * \param argv array of NULL-terminated c-style strings as handed over to applications main() entry-point.
- *
- * \deprecated Use InitializeRuntime(cpp::span<safecpp::zstring_view> command_line_arguments) for guaranteed NULL
- * terminated arguments
- */
-[[deprecated(
-    "Please use InitializeRuntime(cpp::span<safecpp::zstring_view> command_line_arguments) for guaranteed NULL "
-    "terminated arguments")]]
-// NOLINTNEXTLINE(modernize-avoid-c-arrays):C-style array tolerated for command line arguments
-void InitializeRuntime(const std::int32_t argc, const char* argv[]);
-
-/**
- * \api
- * \brief Initializes mw::com subsystem with the given configuration referenced in the command-line options.
- * \details This call is optional for a mw::com user. Only if the mw::com configuration (json) is not located in the
- *         default manifest path, this function shall be called with the commandline option
- *         "--service_instance_manifest" pointing to the json config file to be used.
- * \attention This function shall only be called ONCE per application/process lifetime! A second call may have no
- *            effect after an internal runtime singleton has been already created/is in use!
  *            Users should hand over the arguments received from const char* argv[] argument of main(). Since there the
  *            OS assures, that each element in argv is a NULL-terminated string, user can build up each
  *            safecpp::zstring_view in command_line_arguments by creating it from std::string_view(argv[i])
  * @param command_line_arguments
  */
-void InitializeRuntime(const cpp::span<safecpp::zstring_view> command_line_arguments);
+void InitializeRuntime(const cpp::span<const safecpp::zstring_view> command_line_arguments);
 
 /**
  * \api

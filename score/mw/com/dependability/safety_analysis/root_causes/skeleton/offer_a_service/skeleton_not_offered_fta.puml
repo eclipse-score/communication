@@ -34,6 +34,6 @@ $RootCause("Instance Specifier resolution broken", "InstanceSpecifierResolutionB
 $RootCause("Differently configured between skleton and proxy side", "DifferentlyConfiguredBetweenSkletonAndProxySide", "Gate2")
 $IntermediateEvent("Wrongly configured on Skeleton / Proxy side", "Event8", "Gate2")
 $IntermediateEvent("Defect configuration", "Event13", "Event8")
-$TransferInGate("Transfer1", "Event13")
+$TransferInGate("Communication.InMemoryConfigurationWrong", "Event13")
 
 @enduml
