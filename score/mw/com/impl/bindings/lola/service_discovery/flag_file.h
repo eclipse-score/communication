@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2025, 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -63,6 +63,10 @@ class FlagFile
 
     /// \brief Creates each directory in the search path (found using GetSearchPathForIdentifier()) for an
     /// InstanceIdentifier in the filesystem.
+    ///
+    /// Completes permission setup on an existing search directory if a previous creator was interrupted.
+    /// The search directory must be read/write/searchable by everyone. If its permissions cannot be set, returns an
+    /// error; no process-wide umask changes are made.
     static auto CreateSearchPath(
         const EnrichedInstanceIdentifier& enriched_instance_identifier,
         const filesystem::Filesystem& filesystem = filesystem::FilesystemFactory{}.CreateInstance())
