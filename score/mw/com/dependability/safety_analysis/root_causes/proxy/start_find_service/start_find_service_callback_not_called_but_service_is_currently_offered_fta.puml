@@ -1,0 +1,8 @@
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("StartFindService callback not called, but service is currently offered", "Communication.StartFindServiceCallbackNotCalledButServiceIsCurrentlyOffered")
+$TransferInGate("Communication.ServiceNotFoundButIsCurrentlyOffered", "Communication.StartFindServiceCallbackNotCalledButServiceIsCurrentlyOffered")
+
+@enduml

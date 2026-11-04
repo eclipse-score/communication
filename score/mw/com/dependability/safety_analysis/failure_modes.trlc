@@ -414,16 +414,39 @@ section "LoLa" {
 
         section "Start Find Service" {
 
-            // ID: 31546222
-            ScoreReq.FailureMode StartFindServiceCallbackCalledUnexpectedly {
-                guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
-                description = "The user-provided callback is invoked, even though it should not be invoked."
-                failureeffect = "In the worst case, the callback is invoked all the time, which could lead to: The user thinks that a new proxy is found and creates a proxy with an already used handle; A DDoS is performed, where one thread is constantly blocked. Both can lead to violations of safety goals."
+            ScoreReq.FailureMode StartFindServiceCallbackNotCalledButServiceIsCurrentlyOffered {
+                guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+                description = "A proxy does not find a service instance, even though it was offered by a skeleton."
+                failureeffect = "No communication between process will happen, thus no information can be exchanged, thus any overall system functionality can stop."
                 version = 1
                 safety = ScoreReq.Asil.B
+                // Note. This rationale is not up to date (since the failure mode has changed since it was written) but we leave it here as a hint for when we add the root cause assessments
                 rationale = "Called even though StopFindService has been called, is tackled by the preventive measure: Proxy StopFindService. Called redundantly, is tackled by the preventive measure: \"Invoke FindServiceHandler...\" Wrong inotify events, are impossible, since these come from the OS, which is safety certified (no restriction found in the safety manual). Watches are set wrongly, is tackled by our preventive measure: Correct watches per Instance Identifier"
-                interface = "mw.com.Proxy.StartFindService"
+                interface = "mw.com.Proxy.FindService"
             }
+
+            ScoreReq.FailureMode StartFindServiceCallbackCalledWithHandleToWrongService {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "A proxy instance finds a wrong service. This could be either a wrong service instance or a completely wrong service."
+                failureeffect = "The actual intended communication will not happen, thus potential causing a complete loss of system functionality. In the worst case, the wrong identifiers are used by another service. In that case a wrong consumer could think that he found the right service, leading to a case where garbage data is transmitted, causing any potential issues in the whole system functionality (e.g. violating the top level safety goal)."
+                version = 1
+                safety = ScoreReq.Asil.B
+                // Note. This rationale is not up to date (since the failure mode has changed since it was written) but we leave it here as a hint for when we add the root cause assessments
+                rationale = "Called even though StopFindService has been called, is tackled by the preventive measure: Proxy StopFindService. Called redundantly, is tackled by the preventive measure: \"Invoke FindServiceHandler...\" Wrong inotify events, are impossible, since these come from the OS, which is safety certified (no restriction found in the safety manual). Watches are set wrongly, is tackled by our preventive measure: Correct watches per Instance Identifier"
+                interface = "mw.com.Proxy.FindService"
+            }
+
+            ScoreReq.FailureMode StartFindServiceCallbackCalledWhenServiceIsNotCurrentlyOffered {
+                guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
+                description = "Finding a service, returns a service, even though no service instance was offered."
+                failureeffect = "No communication between process will happen, thus no information can be exchanged, thus any overall system functionality can stop."
+                version = 1
+                safety = ScoreReq.Asil.B
+                // Note. This rationale is not up to date (since the failure mode has changed since it was written) but we leave it here as a hint for when we add the root cause assessments
+                rationale = "Called even though StopFindService has been called, is tackled by the preventive measure: Proxy StopFindService. Called redundantly, is tackled by the preventive measure: \"Invoke FindServiceHandler...\" Wrong inotify events, are impossible, since these come from the OS, which is safety certified (no restriction found in the safety manual). Watches are set wrongly, is tackled by our preventive measure: Correct watches per Instance Identifier"
+                interface = "mw.com.Proxy.FindService"
+            }
+
         }
 
         section "Find Service" {
