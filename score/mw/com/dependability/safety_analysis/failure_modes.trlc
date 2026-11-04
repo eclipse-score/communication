@@ -27,17 +27,6 @@ section "LoLa" {
         // potentialcause = "e.g. - Blocked mutex (e.g. dead-lock) - Wrong synchronization algorithm - endless loop - crashed services"
     }
 
-    // ID: 6366726
-    ScoreReq.FailureMode InMemoryConfigurationWrong {
-        guidewords = [ ScoreReq.Guideword.LossOfFunction ]
-        description = "The in-memory (cpp representation) does not match the on file-system JSON configuration."
-        failureeffect = "Other functionality relies on a correct configuration. Without that, multiple functions can not operate normally which could lead to the violation of a safety goal."
-        version = 1
-        safety = ScoreReq.Asil.B
-        rationale = "The wrong user-configuration which could cause an abnormal behavior of the mw-implementation is covered via four AoUs. The broken file is ensured via a safety-certified file system. The broken JSON is covered via a safety-certified JSON-Parser implementation. The read-in-logic to our in-memory is covered via a specific preventive measure."
-        // interface = "mw.com.Runtime.Initialize"
-    }
-
     // ID: 6370893
     ScoreReq.FailureMode FunctionCalledFromMultipleThreads {
         guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
@@ -49,17 +38,6 @@ section "LoLa" {
         // potentialcause = "- static methods are thread-safe - API calls on different instances are thread-safe - API calls on one instance are not thread-safe."
     }
 
-    // ID: 6370898
-    ScoreReq.FailureMode CodeDoesNotMatchConfiguration {
-        guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-        description = "Definitions of service-interfaces may not match the given mw::com configuration."
-        failureeffect = "A faulty configuration which does not lead to compile issues could lead to safety issues according to analysis."
-        version = 1
-        safety = ScoreReq.Asil.B
-        rationale = "Add an AoU that all code artifacts and configurations should be reviewed before use in a safety context."
-        // interface = "score.mw.com.runtime.InitializeRuntime"
-    }
-
     // ID: 6370915
     ScoreReq.FailureMode MisusedApis {
         guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
@@ -69,6 +47,32 @@ section "LoLa" {
         safety = ScoreReq.Asil.B
         rationale = "Each potential cause is covered with a custom AoU."
         // potentialcause = "Potential causes are: - calling APIs of implementation namespace (aka implementation details, thus avoiding public contracts) - Invoking APIs from static context (aka static lifetime) -> can cause issues with static initialization - Using a different operating system as design for (different underlying AoUs and safety measures) - Throwing callbacks could lead to untested code-paths."
+    }
+
+    section "Runtime" {
+
+        // ID: 6366726
+        ScoreReq.FailureMode InMemoryConfigurationWrong {
+            guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+            description = "The in-memory (cpp representation) does not match the on file-system JSON configuration."
+            failureeffect = "Other functionality relies on a correct configuration. Without that, multiple functions can not operate normally which could lead to the violation of a safety goal."
+            version = 1
+            safety = ScoreReq.Asil.B
+            rationale = "The wrong user-configuration which could cause an abnormal behavior of the mw-implementation is covered via four AoUs. The broken file is ensured via a safety-certified file system. The broken JSON is covered via a safety-certified JSON-Parser implementation. The read-in-logic to our in-memory is covered via a specific preventive measure."
+            // interface = "mw.com.Runtime.Initialize"
+        }
+        
+        // ID: 6370898
+        ScoreReq.FailureMode CodeDoesNotMatchConfiguration {
+            guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+            description = "Definitions of service-interfaces may not match the given mw::com configuration."
+            failureeffect = "A faulty configuration which does not lead to compile issues could lead to safety issues according to analysis."
+            version = 1
+            safety = ScoreReq.Asil.B
+            rationale = "Add an AoU that all code artifacts and configurations should be reviewed before use in a safety context."
+            // interface = "score.mw.com.runtime.InitializeRuntime"
+        }
+
     }
 
     section "Skeleton" {
