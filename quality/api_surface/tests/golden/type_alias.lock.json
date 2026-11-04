@@ -1,11 +1,17 @@
 {
-  "target": "//quality/api_surface/tests:type_alias_lib",
+  "target": ":type_alias_lib",
   "symbols": [
     {
       "name": "Point",
       "qualified_name": "test::Point",
       "kind": "type_alias",
       "signature": "using Point = impl::PointImpl"
+    },
+    {
+      "name": "Color",
+      "qualified_name": "test::Color",
+      "kind": "type_alias",
+      "signature": "using Color = impl::ColorImpl"
     }
   ],
   "undocumented_symbols": [
@@ -26,6 +32,18 @@
       "qualified_name": "test::Point::y",
       "kind": "method",
       "signature": "y : double () const"
+    },
+    {
+      "name": "kGreen",
+      "qualified_name": "test::Color::kGreen",
+      "kind": "enum_value",
+      "signature": "kGreen"
+    },
+    {
+      "name": "kRed",
+      "qualified_name": "test::Color::kRed",
+      "kind": "enum_value",
+      "signature": "kRed"
     }
   ],
   "version": "1"

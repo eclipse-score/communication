@@ -160,6 +160,14 @@ class TestTypeAlias(unittest.TestCase):
         self.assertNotIn("x_", names)
         self.assertNotIn("y_", names)
 
+    def test_enum_alias_exposes_enumerators(self):
+        """Enumerators of 'using Color = impl::ColorImpl' appear under the alias name."""
+        qnames = qualified_names(self.symbols)
+        self.assertIn("test::Color", qnames)
+        for val in ("test::Color::kRed", "test::Color::kGreen"):
+            self.assertIn(val, qnames)
+            self.assertEqual(find_symbol(self.symbols, val)["kind"], "enum_value")
+
 
 class TestInheritance(unittest.TestCase):
     """Inheritance: inherited public members from base class are in the API."""
