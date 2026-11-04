@@ -64,8 +64,7 @@ namespace score::mw::com::impl::lola
 template <typename Key,
           typename MappedType,
           typename KeyEqual = std::equal_to<Key>,
-          typename Allocator =
-              std::scoped_allocator_adaptor<memory::shared::PolymorphicOffsetPtrAllocator<std::pair<Key, MappedType>>>>
+          typename Allocator = memory::shared::PolymorphicOffsetPtrAllocator<std::pair<Key, MappedType>>>
 class LinearSearchMap
 {
   public:
