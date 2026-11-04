@@ -118,10 +118,6 @@ void AssertOffsetBoundsCheck(const void* const address,
 ///          it can be deactivated.
 /// \param enable true - enables bounds-checking, false - disables it
 /// \return previous value of bounds-check-enabled
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding: "A type, object or function that is used in multiple translation units
-// shall be declared in one and only one file.".
-// this is false positive. EnableOffsetPtrBoundsChecking is declared only once.
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE]
 bool EnableOffsetPtrBoundsChecking(const bool enable);
 
 /// \brief Custom implementation of an offset pointer (aka fancy pointer or relative pointer). When in a
@@ -146,11 +142,7 @@ template <typename PointedType>
 // Rationale: A move constructor and move assignment operator are not implemented so that the copy constructor /
 // assignment operators are used when moving an OffsetPtr. There would be no performance benefit of a move constructor /
 // assignment operator since whether we move or copy, we still need to re-calculate the memory offset.
-// Suppress "AUTOSAR C++14 M3-2-3", The rule states: "A type, object or function that is used in multiple translation
-// units shall be declared in one and only one file."
-// Rationale: this is false positive. OffsetPtr is declared only once.
 // NOLINTBEGIN(cppcoreguidelines-special-member-functions): Discard movement operations.
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE]
 // coverity[autosar_cpp14_a12_0_1_violation]
 class OffsetPtr
 // NOLINTEND(cppcoreguidelines-special-member-functions): see above

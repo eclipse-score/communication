@@ -46,10 +46,6 @@ namespace detail
 ///          score/memory/design/shared_memory/Readme.md - chapter Bounds_Checking_Performance
 
 template <template <class> class AtomicIndirectorType = concurrency::AtomicIndirectorReal>
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding: "A type, object or function that is used in multiple translation units
-// shall be declared in one and only one file.".
-// this is false positive. MemoryRegionMapImpl is declared only once.
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE]
 class MemoryRegionMapImpl final
 {
     // Suppress "AUTOSAR C++14 A11-3-1" rule finding: "Friend declarations shall not be used.".

@@ -41,10 +41,6 @@ class MemoryResourceRegistryAttorney;
  *        It will be used by a MemoryResourceProxy to query its associated
  *        MemoryResource based on a common identifier.
  */
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding: "A type, object or function that is used in multiple translation units
-// shall be declared in one and only one file.".
-// this is false positive. MemoryResourceRegistry is declared only once.
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE]
 class MemoryResourceRegistry final
 {
     // Suppress "AUTOSAR C++14 A11-3-1"
