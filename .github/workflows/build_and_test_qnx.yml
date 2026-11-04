@@ -124,14 +124,14 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-      pull-requests: read
       actions: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6.0.2
         with:
-          ref: ${{ github.head_ref || github.event.pull_request.head.ref || github.ref }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          persist-credentials: false
       - name: Setup QNX and QEMU environment
         uses: ./.github/actions/00_infrastructure/setup_qnx_environment
         with:
