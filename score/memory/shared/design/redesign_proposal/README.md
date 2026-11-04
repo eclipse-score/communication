@@ -127,63 +127,42 @@ as a required construction argument for `MappedRegionFactory` for two reasons:
 
 - allow easier testing of `MappedRegionFactory`. Providing a mock implementation of `IMappedRegionRegistry` helps in
   testing
-- we foresee two different implementations of `IMappedRegionRegistry`:
-    - `MappedRegionRegistry`: This implementation internally only stores `weak_ptr`s to registered `IMappedRegion`s.
-      Thus, when the last `shared_ptr<IMappedRegion>` handed out by the `MappedRegionFactory` for a given
-      `IMappedRegion` has been destroyed, it will also be gone from the `MappedRegionRegistry`. This means a
-      new/explicit call to `MappedRegionFactory::Create()` is needed to re-create/re-map this concrete `IMappedRegion`
-      instance.
-    - `PersistentMappedRegionRegistry`: This implementation internally stores `shared_ptr`s and therefore **extends**
-      the life-time of registered `IMappedRegion`s. Even if all users have discarded their `shared_ptr`s to the given
-      `IMappedRegion`. If later a user calls `MappedRegionFactory::Create()` again, which would result in creating the
-      same instance of `IMappedRegion` re-creation/re-mapping is skipped and the stored `IMappedRegion` instance is
-      returned.
-
-The `PersistentMappedRegionRegistry` has the following pros and cons:
-
-- pro: In case the creation/mapping of a `Mapped Region` is "expensive", the life-time extension done by the
-  `PersistentMappedRegionRegistry` might be helpful. I.e. if the same `IMappedRegion` is used later in the application
-  life-cycle again, it might save time.
-- con: Keeping an `IMappedRegion` blocks/requires physical memory, which backs the `Mapped Region`! So keeping it in
-  times, where no one is using it, can be detrimental.
-
-So, there is a tradeoff in usage between `MappedRegionRegistry` and `PersistentMappedRegionRegistry`. And there is in
-both cases the possibility to control, how long a `IMappedRegion` instance is kept via these additional APIs:
-
-- `Unregister(IdType)`: Explicitly remove a specific `IMappedRegion` instance from the registry. Has the same effect for
-  both implementations.
-- `Clear()`: Explicitly remove all `IMappedRegion` instances from the registry. Has the same effect for both
-  implementations.
-- `FreeUnusedResources()`: This is a no-op in case of `MappedRegionRegistry`! In case of
-  `PersistentMappedRegionRegistry`, it removes all `IMappedRegion` instances, which are only held by itself.
+- we currently foresee one implementation of `IMappedRegionRegistry`. It is an **implementation decision**, whether it
+  internally stores `weak_ptr`s or `shared_ptr`s to registered `IMappedRegion`s. This decision must not change
+  the [semantics of Create/open/remove](#semantics-of-create-open-remove). It might have an impact on performance and/or
+  memory usage, however. In case of internal storage of `weak_ptr`s, when the last handed out `shared_ptr` to a
+  registered `IMappedRegion` gets destroyed, the memory-mapping of this `IMappedRegion` will get destroyed also. Thus, a
+  later call to `Open` again for the same `IMappedRegion` (with the same identification) needs to recreate at least the
+  mapping again. even though the underlying `IMappedRegion` hasn't be removed/re-created again. In case of internal
+  storage of `shared_ptr`s, the mapping will stay alive as long as the registry is alive.
 
 #### Semantics of Create, Open, Remove
 
 The properties of different types of `IMappedRegion` will be so different, that we need to come up with a general
-definition, what Create, Open and Remove shall mean:
+definition, what `Create`, `Open` and `Remove` shall mean:
 
 ##### Create
 
 Create means, that a concrete instance of `IMappedRegion` has been created and its underlying memory has been
 contiguously mapped into the virtual address space of the caller. Additionally, it means, that this `Mapped Region` then
 is "visible", so it can be successfully opened by the corresponding call to `MappedRegionFactory::OpenXXX` in the same
-or a different process. A 2nd Create call with the same identification (in POSIX named shared-memory this would be the
-path) will fail in the same or a different process. Unless, Remove had been called before with the same identification
+or a different process. A 2nd `Create` call with the same identification (in POSIX named shared-memory this would be the
+path) will fail in the same or a different process. Unless, `Remove` had been called before with the same identification
 in the same or a different process.
 
 ##### Open
 
-Open shall always open the latest version of a given `Mapped Region`. I.e. if a sequence of Create/Remove operations
-have happened for a `Mapped Region` with the same identification, Open will return a `IMappedRegion` instance, which
-always represents the latest created `Mapped Region` with this identification. If the last operation for this
-identification was a Remove or no Create operation has happened before in the same or a different process, Open shall
-return a nullptr.
+`Open` shall always open the latest version of a given `Mapped Region`. I.e. if a sequence of `Create`/`Remove`
+operations have happened for a `Mapped Region` with the same identification, Open will return a `IMappedRegion`
+instance, which always represents the latest created `Mapped Region` with this identification. If the last operation for
+this identification was a `Remove` or no `Create` operation has happened before in the same or a different process,
+`Open` shall return a `nullptr`.
 
 ##### Remove
 
-Remove shall remove the `Mapped Region` in a way, that any subsequent call to Open with the same identification will
-fail in the same or a different process, unless a new Create operation has been done with the same identification in the
-same or a different process.
+`Remove` shall remove the `Mapped Region` in a way, that any subsequent call to `Open` with the same identification will
+fail in the same or a different process, unless a new `Create` operation has been done with the same identification in
+the same or a different process.
 
 To fulfill these semantics for any `IMappedRegion` both &ndash; `MappedRegionFactory` and `MappedRegionRegistry` &ndash;
 have to act accordingly.
@@ -197,8 +176,7 @@ this case an `IMappedRegion` instance of type `PosixNamedMappedRegion`.
 
 **Explanation:**
 
-1. The user creates a `MappedRegionRegistry` to be used/owned by the `MappedRegionFactory`. The user in this case
-   decided for the non-persistent registry. He could have also created a `PersistentMappedRegionRegistry` instead.
+1. The user creates a `MappedRegionRegistry` to be used/owned by the `MappedRegionFactory`.
 2. The user creates a `MappedRegionFactory` and hands over the registry instance to it.
 3. The user calls `MappedRegionFactory::CreatePosixNamed()` with the arguments necessary to create a
    `PosixNamedMappedRegion` instance. Additionally, the user provides a `RegionInitializeCallback`, which is called by
@@ -240,37 +218,16 @@ acquire a registry instance specific lock in the entrance of a `Register()` call
 the given id already exists in the registry. If not, it calls the `CreateRegionCallback` and does the insertion into its
 map all under lock.
 
-Depending on the implementation of `IMappedRegionRegistry`, the sequence within the `Register()` call looks different.
-I.e. the referenced sequences (via `ref Register Region`) can be either the sequence for the "regular"
-`MappedRegionRegistry::Register()`:
-
 <img alt="Register Mapped Region" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/mf_add_lib_memory_redesign_proposal/score/memory/shared/design/redesign_proposal/assets/seq_13_regular_mapped_region_registry_register.puml">
-
-or the sequence for the `PersistentMappedRegionRegistry::Register()`:
-
-<img alt="Register Mapped Region persistently" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/mf_add_lib_memory_redesign_proposal/score/memory/shared/design/redesign_proposal/assets/seq_12_persistent_mapped_region_registry_register.puml">
-
 
 **Explanation:**
 
-1. Initially both `Register()` implementations are equal: They take a registry instance wide lock and check, whether the
-   region with the `IdType` already exists.
-2. In the case, that no region identified by `IdType` exists, both implementations behave identically: They call the
-   provided `CreateRegionCallback` and (if successful) insert the region into their map. Here the
-   `PersistentMappedRegionRegistry` will store a `shared_ptr<IMappedRegion>`, while `MappedRegionRegistry` will store a
-   `weak_ptr<IMappedRegion>`. Then they release the lock before returning a `shared_ptr` to the created `IMappedRegion`
-   instance to the caller.
-3. In case there already exists a region identified by `IdType`, both implementation diverge.
-    1. In case of non-persistent `MappedRegionRegistry` lock gets released and an Error is returned.
-    2. In case of `PersistentMappedRegionRegistry` lock gets released and an Error is returned only if a user is
-       currently using this `IMappedRegion` instance.
-    3. In case of `PersistentMappedRegionRegistry` if no user is currently using this `IMappedRegion` instance,
-        - either the instance gets adjusted by calling `AdjustRegionCallback(IMappedRegion&)`
-        - or &ndash; if there is no `AdjustRegionCallback` &ndash; then this `IMappedRegion` instance gets destroyed and
-          a new instance gets created by calling the provided `CreateRegionCallback` and (if successful) inserted into
-          the map.
-        - then the lock is released before returning a `shared_ptr` to the adjusted/created `IMappedRegion` instance to
-          the caller.
+1. Initially a registry instance wide lock is taken and checked, whether the region with the `IdType` already exists.
+2. In the case, that no region identified by `IdType` exists, the provided `CreateRegionCallback` is called and (if
+   successful) the region is inserted into the map. Then the lock is released, before returning a `shared_ptr` to the
+   created `IMappedRegion` instance to the caller.
+3. In case there already exists a region identified by `IdType`, `MappedRegionRegistry` lock gets released and an Error
+   is returned.
 
 ## The Polymorphic Memory Resource (PMR) Layer
 

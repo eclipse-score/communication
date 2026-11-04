@@ -10,7 +10,7 @@ participant "LockGuard:instance" as lock_guard
 
 activate memory_region_factory
 
-memory_region_factory -> memory_region_registry : Register(IdType, CreateRegionCallback, optional<AdjustRegionCallback>)
+memory_region_factory -> memory_region_registry : Register(IdType, CreateRegionCallback)
 activate memory_region_registry
 
 create lock_guard
@@ -20,9 +20,6 @@ activate lock_guard
 memory_region_registry -> memory_region_registry : Lookup region with IdType
 
 alt Region already exists in map
-    note right of memory_region_registry
-        AdjustRegionCallback is ignored in case of RegularMappedRegionRegistry
-    end note
 
     memory_region_registry --> lock_guard : Unlock
 
