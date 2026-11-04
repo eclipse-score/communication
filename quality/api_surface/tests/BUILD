@@ -371,6 +371,7 @@ py_test(
         "CLANG_PATH": "$(rootpath @llvm_toolchain//:bin/clang-cpp)",
     },
     main = "test_extract_api.py",
+    deps = ["//quality/api_surface:diff_api_lib"],
 )
 
 py_test(

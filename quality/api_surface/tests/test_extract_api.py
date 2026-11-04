@@ -49,6 +49,8 @@ import sys
 import tempfile
 import unittest
 
+from quality.api_surface import diff_api
+
 
 def get_clang_binary():
     """Find clang++ binary for testing.
@@ -401,6 +403,68 @@ class TestEnumAndFreeFunctions(unittest.TestCase):
         self.assertIn("test::Status::kError", qnames)
         self.assertIn("test::Status::kTimeout", qnames)
         self.assertIn("test::Status::kCancelled", qnames)
+
+    def test_implicit_enum_values(self):
+        for value, name in enumerate(("kOk", "kError", "kTimeout", "kCancelled")):
+            with self.subTest(name=name):
+                symbol = find_symbol(self.symbols, f"test::Status::{name}")
+                self.assertEqual(symbol["signature"], f"{name} = {value}")
+
+    def test_explicit_and_evaluated_enum_values(self):
+        result = _extract_source(
+            """
+            namespace test {
+            enum Code {
+                negative = -3, next, reset = 16, shifted = 1 << 5,
+                reference = shifted + 2, following
+            };
+            enum class Wide : unsigned long long {
+                large = 0xffffffffffffffffULL
+            };
+            }
+            """
+        )
+        symbols = get_symbols(result)
+        expected = {"negative": -3, "next": -2, "reset": 16, "shifted": 32, "reference": 34, "following": 35}
+        for name, value in expected.items():
+            with self.subTest(name=name):
+                symbol = find_symbol(symbols, f"test::Code::{name}")
+                self.assertEqual(symbol["signature"], f"{name} = {value}")
+        self.assertEqual(
+            find_symbol(symbols, "test::Wide::large")["signature"],
+            "large = 18446744073709551615",
+        )
+
+    def test_numeric_enum_change_changes_surface(self):
+        before = _public_surface(_extract_source("enum class Code { first = 4, second };"))
+        after = _public_surface(_extract_source("enum class Code { first = 8, second };"))
+        self.assertNotEqual(before["Code::first"], after["Code::first"])
+        self.assertNotEqual(before["Code::second"], after["Code::second"])
+
+    def test_boolean_underlying_enum_values(self):
+        surface = _public_surface(_extract_source("enum class Flag : bool { off = false, on = true };"))
+        self.assertEqual(surface["Flag::off"], "off = 0")
+        self.assertEqual(surface["Flag::on"], "on = 1")
+
+    def test_equivalent_enum_expressions_keep_surface_identical(self):
+        before = _public_surface(_extract_source("enum class Code { first = 1 << 3, second };"))
+        after = _public_surface(_extract_source("enum class Code { first = 8, second = 9 };"))
+        self.assertEqual(before, after)
+
+    def test_numeric_enum_change_fails_comparison(self):
+        for marker in ("", "/// \\api\n"):
+            with self.subTest(documented=bool(marker)):
+                source = f"enum class Code {{\n{marker}first = VALUE, second }};"
+                before = _extract_source(source.replace("VALUE", "4"))
+                after = _extract_source(source.replace("VALUE", "8"))
+                with tempfile.TemporaryDirectory() as directory:
+                    lock_path = os.path.join(directory, "lock.json")
+                    current_path = os.path.join(directory, "current.json")
+                    with open(lock_path, "w") as lock_file:
+                        json.dump(before, lock_file)
+                    with open(current_path, "w") as current_file:
+                        json.dump(after, current_file)
+                    self.assertEqual(diff_api.compare(lock_path, current_path), 1)
 
     def test_free_functions_extracted(self):
         """Free (namespace-level) functions are extracted."""

@@ -85,6 +85,10 @@ The tool tracks:
 - `class` / `struct` declarations (non-forward)
 - Forward-declared / incomplete types (pimpl), as `forward_class`
 - `enum` / `enum class` declarations
+- Enumerator signatures include their evaluated integer values (for example
+  `kTimeout = 2`), including implicit increments and constant-expression initializers.
+  Changing an enumerator's numeric value is an API change; rewriting its initializer
+  to an equivalent expression is not.
 - Free functions and global variables at namespace scope
 - Public **and protected** methods in class bodies (protected members use a
   `protected_` kind prefix so public vs protected is distinguishable)

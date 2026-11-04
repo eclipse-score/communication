@@ -31,25 +31,25 @@
       "name": "kOk",
       "qualified_name": "test::Status::kOk",
       "kind": "enum_value",
-      "signature": "kOk"
+      "signature": "kOk = 0"
     },
     {
       "name": "kError",
       "qualified_name": "test::Status::kError",
       "kind": "enum_value",
-      "signature": "kError"
+      "signature": "kError = 1"
     },
     {
       "name": "kTimeout",
       "qualified_name": "test::Status::kTimeout",
       "kind": "enum_value",
-      "signature": "kTimeout"
+      "signature": "kTimeout = 2"
     },
     {
       "name": "kCancelled",
       "qualified_name": "test::Status::kCancelled",
       "kind": "enum_value",
-      "signature": "kCancelled"
+      "signature": "kCancelled = 3"
     }
   ],
   "version": "1"

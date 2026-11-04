@@ -118,7 +118,7 @@ def build_qualified_name(name: str, namespace_stack: list[str]) -> str:
     return f"{prefix}::{name}" if prefix else name
 
 
-def extract_signature(node: dict) -> str:
+def extract_signature(node: dict, enum_value: Optional[int] = None) -> str:
     """Extract a human-readable signature from an AST node."""
     kind = node.get("kind", "")
     name = node.get("name", "")
@@ -141,7 +141,7 @@ def extract_signature(node: dict) -> str:
         scoped = node.get("scopedEnumTag", "")
         return f"enum {scoped} {name}" if scoped else f"enum {name}"
     elif kind == "EnumConstantDecl":
-        return name
+        return f"{name} = {enum_value}"
     elif kind == "VarDecl":
         return f"{name} : {type_info}" if type_info else name
     return name
@@ -253,6 +253,27 @@ def find_comment(node: dict) -> Optional[dict]:
         if child.get("kind") == "FullComment":
             return child
     return None
+
+
+def get_enum_value(node: dict, implicit_value: int) -> int:
+    """Read clang's evaluated initializer, or increment the previous enumerator."""
+    initializers = [
+        child
+        for child in node.get("inner", [])
+        if child.get("kind") != "FullComment" and not child.get("kind", "").endswith("Attr")
+    ]
+    pending = list(initializers)
+    while pending:
+        child = pending.pop()
+        if child.get("kind") == "ConstantExpr" and "value" in child:
+            value = child["value"]
+            if value in ("true", "false"):
+                return int(value == "true")
+            return int(value)
+        pending.extend(child.get("inner", []))
+    if initializers:
+        raise ValueError(f"Cannot determine enum value for {node.get('name', '')}")
+    return implicit_value
 
 
 def _get_underlying_type_for_alias(ast_root: dict, name: str, qualified_name: str) -> Optional[str]:
@@ -404,6 +425,7 @@ def extract_from_ast(
         namespace_stack: list[str],
         access: str = "public",
         extern_c: bool = False,
+        enum_value: Optional[int] = None,
     ):
         kind = node.get("kind", "")
         name = node.get("name", "")
@@ -639,7 +661,7 @@ def extract_from_ast(
                     name=name,
                     qualified_name=qualified,
                     kind=decl_kind,
-                    signature=enrich_signature(extract_signature(node), node, extern_c),
+                    signature=enrich_signature(extract_signature(node, enum_value), node, extern_c),
                     file=make_relative(effective_file),
                     line=line,
                     has_api_marker=has_api,
@@ -647,9 +669,12 @@ def extract_from_ast(
                 )
             )
             if kind == "EnumDecl":
+                next_value = 0
                 for child in node.get("inner", []):
                     if child.get("kind") == "EnumConstantDecl":
-                        walk(child, namespace_stack + [name], access)
+                        value = get_enum_value(child, next_value)
+                        walk(child, namespace_stack + [name], access, extern_c, enum_value=value)
+                        next_value = value + 1
             return
 
         # Recurse into other nodes
