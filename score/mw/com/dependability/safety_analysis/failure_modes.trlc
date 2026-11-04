@@ -73,6 +73,78 @@ section "LoLa" {
             interface = "score.mw.com.runtime.InitializeRuntime"
         }
 
+        ScoreReq.FailureMode InstanceSpecifierResolvesToWrongInstanceIdentifier {
+            guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+            description = "An InstanceSpecifier resolves to an InstanceIdentifier for a different service instance or binding than specified by the configuration."
+            failureeffect = "Skeletons and proxies created from the InstanceIdentifier will correspond to the incorrect service / binding. This will result in incorrect data being transferred or being transferred in the wrong way."
+            version = 1
+            safety = ScoreReq.Asil.B
+            rationale = ""
+            interface = "score.mw.com.runtime.ResolveInstanceIDs"
+        }
+
+        ScoreReq.FailureMode InstanceSpecifierResolvesToSubsetOfInstanceIdentifier {
+            guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+            description = "An InstanceSpecifier resolves to a subset of InstanceIdentifiers although it should resolve to one InstanceIdentifier per supported binding."
+            failureeffect = "If an InstanceSpecifier resolves to a subset of InstanceIdentifiers then not communication will not be possible across all bindings."
+            version = 1
+            safety = ScoreReq.Asil.B
+            rationale = ""
+            interface = "score.mw.com.runtime.ResolveInstanceIDs"
+        }
+
+        ScoreReq.FailureMode ResolvedInstanceIdentifierContainsWrongData {
+            guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+            description = "An InstanceIdentifier returned by ResolveInstanceIDs contains data that does not correctly represent the configured service instance or binding."
+            failureeffect = "The corrupted data will prevent correct functioning of skeletons and proxies which will prevent finding the correct service. This will mean no communication is possible for these skeletons / proxies or they will communicate with the wrong partner."
+            version = 1
+            safety = ScoreReq.Asil.B
+            rationale = ""
+            interface = "score.mw.com.runtime.ResolveInstanceIDs"
+        }
+
+    }
+
+    section "Service Instance Identifiers"
+
+        section "InstanceSpecifier" {
+
+            ScoreReq.FailureMode InstanceSpecifierCreatedWithInvalidPath {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "The InstanceSpecifier is created with an invalid path which does not match the required string format (i.e. shortname path)."
+                failureeffect = "The InstanceSpecifier will not be able to be resolved to a valid InstanceIdentifier so no Skeletons / Proxies can be created and communication is impossible."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = ""
+                interface = "score.mw.com.InstanceSpecifier.Create"
+            }
+
+            ScoreReq.FailureMode ToStringDoesNotReturnCorrectStringRepresentationOfInstanceSpecifier {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "ToString returns a string which does not correctly represent the InstanceSpecifier itself."
+                failureeffect = "The stringified format could be incorrect which could violate safety goals if it's used to meet a safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = ""
+                interface = "score.mw.com.InstanceSpecifier.ToString"
+            }
+
+        }
+
+        section "InstanceIdentifier" {
+
+            ScoreReq.FailureMode ToStringDoesNotReturnCorrectStringRepresentationOfInstanceIdentifier {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "ToString returns a string which does not correctly represent the InstanceIdentifier itself."
+                failureeffect = "The stringified format could be incorrect which could violate safety goals if it's used to meet a safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = ""
+                interface = "score.mw.com.InstanceIdentifier.ToString"
+            }
+
+        }
+
     }
 
     section "Skeleton" {

@@ -16,6 +16,9 @@ filegroup(
     srcs = [
         "fta_code_does_not_match_configuration.puml",
         "in_memory_configuration_wrong_fta.puml",
+        "instance_specifier_resolves_to_subset_of_instance_identifier_fta.puml",
+        "instance_specifier_resolves_to_wrong_instance_identifier_fta.puml",
+        "resolved_instance_identifier_contains_wrong_data_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
