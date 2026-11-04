@@ -15,28 +15,28 @@ package MemoryShared
 import ScoreReq
 
 ScoreReq.FeatReq FEAT_CreateSharedMemoryObject {
-    description = "The shared memory library shall allow creating a named or an anonymous shared memory object of a requested size."
+    description = "The shared memory library shall allow creating a named shared memory object of a requested size."
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.ASR_InterProcessDataSharing@1]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_OpenSharedMemoryObject {
-    description = "The shared memory library shall allow opening an existing named shared memory object by its name."
+    description = "The shared memory library shall allow opening an existing shared memory object by its name."
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.ASR_InterProcessDataSharing@1]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_RemoveSharedMemoryObject {
-    description = "The shared memory library shall allow removing the name of a named shared memory object."
+    description = "The shared memory library shall allow removing the name of a shared memory object."
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.ASR_InterProcessDataSharing@1]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_ConcurrentCreateOrOpen {
-    description = """When several processes concurrently request to create a named shared memory object or to open it if it already exists,
+    description = """When several processes concurrently request to create a shared memory object or to open it if it already exists,
     the shared memory library shall ensure that exactly one of them creates it and all others open it."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.ASR_InterProcessDataSharing@1]
@@ -51,24 +51,17 @@ ScoreReq.FeatReq FEAT_SingleMappingPerProcess {
     version = 1
 }
 
-ScoreReq.FeatReq FEAT_ProcessIndependentAddressing {
-    description = """The shared memory library shall provide pointers that can be stored inside a shared memory object and refer to the same data
-    in every process, regardless of the address at which the object is mapped."""
-    safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.ASR_InterProcessDataSharing@1]
-    version = 1
-}
-
 ScoreReq.FeatReq FEAT_AllocationWithinSharedMemoryObject {
-    description = "The shared memory library shall allow allocating memory inside a shared memory object."
+    description = """The shared memory library shall allow allocating memory inside a shared memory object and shall only provide memory
+    that lies entirely within that object."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.ASR_InterProcessDataSharing@1]
+    derived_from = [MemoryShared.ASR_InterProcessDataSharing@1, MemoryShared.ASR_NoOutOfBoundsAccess@1]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_AccessRightsOnCreation {
-    description = """The shared memory library shall allow the creator of a named shared memory object or of an anonymous shared memory object in system memory
-    to define which users get read access and which users get write access to it."""
+    description = """The shared memory library shall allow the creator of a shared memory object to define which users get read access
+    and which users get write access to it."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.ASR_AccessControl@1]
     version = 1
@@ -84,25 +77,20 @@ ScoreReq.FeatReq FEAT_AccessModeOnOpening {
 
 ScoreReq.FeatReq FEAT_CreatorVerification {
     description = """The shared memory library shall allow a software element opening a shared memory object to specify the users expected to have created it,
-    in addition to the calling user, and shall refuse to provide the object if it was created by any other user."""
+    and shall refuse to provide the object if it was created neither by the calling user nor by one of the specified users."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.ASR_CreatorVerification@1]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_BoundsCheckedPointers {
-    description = """The shared memory library shall ensure that a pointer or reference stored in a shared memory object can only be used to access data
-    that lies entirely within that shared memory object."""
+    description = """The shared memory library shall provide a pointer type and a reference type which:
+    - allow referencing another object within the same shared memory object, independent of the address at which the shared memory object
+      is mapped into the process (offset pointer semantics), and
+    - detect an attempt to dereference an instance that points outside the shared memory object it is stored in, and terminate the process
+      instead of accessing that memory."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.ASR_NoOutOfBoundsAccess@1]
-    version = 1
-}
-
-ScoreReq.FeatReq FEAT_BoundsSafeManagementData {
-    description = """The shared memory library shall ensure that corrupted data it stores in a shared memory object for its own management,
-    such as allocation state, does not lead it to access or provide memory outside that object."""
-    safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.ASR_NoOutOfBoundsAccess@1]
+    derived_from = [MemoryShared.ASR_InterProcessDataSharing@1, MemoryShared.ASR_NoOutOfBoundsAccess@1]
     version = 1
 }
 
@@ -116,7 +104,8 @@ ScoreReq.FeatReq FEAT_SafeSilentOnUnrecoverableError {
 
 ScoreReq.FeatReq FEAT_NoResultOnFailure {
     description = """When an operation of the shared memory library cannot be completed as requested because of an error from which the library can recover,
-    the library shall not provide a result, so that the caller does not continue with a partially valid or different result."""
+    the library shall indicate the failure to the caller instead of providing a result, so that the caller does not continue with a partially valid
+    or different result."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.ASR_SafeState@1]
     version = 1
@@ -130,18 +119,18 @@ ScoreReq.FeatReq FEAT_InitializationOnCreation {
 }
 
 ScoreReq.FeatReq FEAT_OpenOnlyAfterInitialization {
-    description = """The shared memory library shall provide a named shared memory object to a software element opening it only after
+    description = """The shared memory library shall provide a shared memory object to a software element opening it only after
     the initialization of the object by its creator has completed."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.ASR_NoAccessBeforeInitialization@1]
     version = 1
 }
 
-ScoreReq.FeatReq FEAT_BoundedWaitingForOtherProcesses {
-    description = """The shared memory library shall limit the time any of its operations waits for another process to a fixed bound,
-    except for the blocking lock operation of the inter-process mutex."""
+ScoreReq.FeatReq FEAT_InterProcessLock {
+    description = """The shared memory library shall provide an inter-process lock that can be held either exclusively by one process
+    or shared by several processes, and whose acquisition can be tried without waiting."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.ASR_BoundedBlocking@1]
+    derived_from = [MemoryShared.ASR_InterProcessDataSharing@1]
     version = 1
 }
 
@@ -149,13 +138,5 @@ ScoreReq.FeatReq FEAT_FixedObjectSize {
     description = "The shared memory library shall not change the size of a shared memory object after creating it."
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.ASR_FixedMemoryBudget@1]
-    version = 1
-}
-
-ScoreReq.FeatReq FEAT_MemoryNeedMeasurement {
-    description = """The shared memory library shall allow measuring the memory needed by a set of allocations before the shared memory object
-    for them is created."""
-    safety = ScoreReq.Asil.QM
-    derived_from = [MemoryShared.ASR_MemoryNeedDeterminable@1]
     version = 1
 }

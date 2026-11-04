@@ -36,11 +36,12 @@ ScoreReq.AssumedSystemReq ASR_AccessControl {
 }
 
 ScoreReq.AssumedSystemReq ASR_NoOutOfBoundsAccess {
-    description = """The platform shall ensure that corrupted content of data exchanged via the inter-process data sharing mechanism does not lead
-    a software element to access memory outside the exchanged data."""
+    description = """The platform shall provide a means to store references between items of data exchanged via the inter-process data sharing mechanism,
+    such that a corrupted reference does not lead a software element to read or write memory outside the exchanged data."""
     safety = ScoreReq.Asil.B
-    rationale = """A software element with write access, e.g. a QM element, may corrupt content of the exchanged data that other elements interpret,
-    e.g. references between data items. An ASIL-B element must not be led by such corrupted content to read or write memory outside the exchanged data.
+    rationale = """A software element with write access, e.g. a QM element, may corrupt references stored in the exchanged data.
+    This includes positions the mechanism itself stores in the exchanged data, e.g. the position of the next allocation.
+    An ASIL-B element must not be led by such a reference to read or write memory outside the exchanged data.
     This addresses faulty software elements; protection against malicious access is a security topic and out of scope.
     ASIL-B because a QM software element must not be able to cause an ASIL-B software element to access memory it does not own."""
     version = 1
@@ -73,30 +74,12 @@ ScoreReq.AssumedSystemReq ASR_NoAccessBeforeInitialization {
     version = 1
 }
 
-ScoreReq.AssumedSystemReq ASR_BoundedBlocking {
-    description = """The platform shall ensure that operations of the inter-process data sharing mechanism do not block a software element
-    longer than a known, fixed bound."""
-    safety = ScoreReq.Asil.B
-    rationale = """Software elements have real-time constraints; unbounded waiting, e.g. on another software element, would delay or prevent their function.
-    A blocked software element can neither detect the fault nor transition to the safe state in time.
-    ASIL-B because blocking caused by a QM software element must not delay an ASIL-B software element indefinitely."""
-    version = 1
-}
-
 ScoreReq.AssumedSystemReq ASR_FixedMemoryBudget {
     description = """The platform shall ensure that the memory used for data exchanged via the inter-process data sharing mechanism
-    does not grow beyond a size fixed when the exchange is set up."""
+    does not grow beyond a maximum size defined when the exchange is set up."""
     safety = ScoreReq.Asil.B
     rationale = """Memory growing during operation could exhaust system memory and cause loss of function of other software elements.
+    The maximum size is given by the user or integrator; the memory may grow up to this size, e.g. to support dynamic data types.
     ASIL-B because exhaustion would affect ASIL-B software elements."""
-    version = 1
-}
-
-ScoreReq.AssumedSystemReq ASR_MemoryNeedDeterminable {
-    description = """The platform shall allow the memory needed for data exchanged via the inter-process data sharing mechanism
-    to be determined before the exchange is set up."""
-    safety = ScoreReq.Asil.QM
-    rationale = """The fixed memory budget of a data exchange (see ASR_FixedMemoryBudget) can only be set correctly if the need is known in advance.
-    A too small budget leads to termination, i.e. loss of availability, not a safety violation (see ASR_SafeState); therefore QM."""
     version = 1
 }
