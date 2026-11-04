@@ -46,6 +46,7 @@ int main()
         score::mw::com::InstanceSpecifier::Create(std::string{"/tutorial/event_send_receive/TirePressureService"});
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(specifier_result.has_value(), "Failed to create InstanceSpecifier!");
 
+    // [consumer-init-phase-start]
     score::mw::com::ServiceHandleContainer<TirePressureProxy::HandleType> handles{};
     for (std::uint32_t attempt = 0U; attempt < kMaxFindAttempts; ++attempt)
     {
@@ -77,7 +78,9 @@ int main()
     score::Result<void> subscribe_result = proxy.tire_pressure_update.Subscribe(kMaxSamples);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(subscribe_result.has_value(),
                                                 "Failed to subscribe to tire_pressure_update!");
+    // [consumer-init-phase-end]
 
+    // [consumer-operational-phase-start]
     // ---- OPERATIONAL PHASE (see README.rst for heap behavior of each API) ----
     score::mw::log::LogInfo("PxEs") << "Entering operational phase (heap forbidden)";
     heap_check::forbid_heap();
@@ -109,3 +112,4 @@ int main()
     score::mw::log::LogInfo("PxEs") << "Completed successfully";
     return 0;
 }
+// [consumer-operational-phase-end]

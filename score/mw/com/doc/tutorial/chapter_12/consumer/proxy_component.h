@@ -21,6 +21,7 @@
 
 namespace score::mw::com::tutorial
 {
+// [proxy-component-class-start]
 class ProxyComponent
 {
   public:
@@ -37,6 +38,7 @@ class ProxyComponent
     std::optional<HelloWorldProxy> hello_world_proxy_;
     size_t receive_counter_;
 };
+// [proxy-component-class-end]
 
 }  // namespace score::mw::com::tutorial
 

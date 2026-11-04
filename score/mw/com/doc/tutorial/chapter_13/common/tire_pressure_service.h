@@ -22,6 +22,7 @@
 
 #include "score/mw/com/types.h"
 
+// [tire-pressure-interface-start]
 namespace score::mw::com::tutorial
 {
 
@@ -57,5 +58,6 @@ using TirePressureSkeleton = score::mw::com::AsSkeleton<TirePressureInterface>;
 using TirePressureProxy = score::mw::com::AsProxy<TirePressureInterface>;
 
 }  // namespace score::mw::com::tutorial
+// [tire-pressure-interface-end]
 
 #endif  // SCORE_MW_COM_TUTORIAL_TIRE_PRESSURE_SERVICE_H
