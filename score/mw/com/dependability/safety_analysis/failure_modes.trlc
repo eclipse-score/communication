@@ -61,17 +61,6 @@ section "LoLa" {
             rationale = "The wrong user-configuration which could cause an abnormal behavior of the mw-implementation is covered via four AoUs. The broken file is ensured via a safety-certified file system. The broken JSON is covered via a safety-certified JSON-Parser implementation. The read-in-logic to our in-memory is covered via a specific preventive measure."
             interface = "mw.com.Runtime.Initialize"
         }
-        
-        // ID: 6370898
-        ScoreReq.FailureMode CodeDoesNotMatchConfiguration {
-            guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-            description = "Definitions of service-interfaces may not match the given mw::com configuration."
-            failureeffect = "A faulty configuration which does not lead to compile issues could lead to safety issues according to analysis."
-            version = 1
-            safety = ScoreReq.Asil.B
-            rationale = "Add an AoU that all code artifacts and configurations should be reviewed before use in a safety context."
-            interface = "score.mw.com.runtime.InitializeRuntime"
-        }
 
         ScoreReq.FailureMode InstanceSpecifierResolvesToWrongInstanceIdentifier {
             guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
