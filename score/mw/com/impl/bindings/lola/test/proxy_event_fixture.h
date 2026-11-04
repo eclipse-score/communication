@@ -100,10 +100,12 @@ std::shared_ptr<ScopedEventReceiveHandler> FromMockFunction(safecpp::Scope<>& ev
 class LolaProxyEventFixture : public LolaProxyEventResources
 {
   public:
-    LolaProxyEventFixture& GivenAProxyEvent(const ElementFqId element_fq_id, const std::string& event_name)
+    LolaProxyEventFixture& GivenAProxyEvent(const ElementFqId element_fq_id,
+                                            const std::string& event_name,
+                                            const CoherencyType coherency = CoherencyType::kNonCoherent)
     {
         test_proxy_event_ = std::make_unique<ProxyEvent>(
-            *proxy_, element_fq_id, event_name, CreateDataTypeSizeInfoFromTypes<TestSampleType>());
+            *proxy_, element_fq_id, event_name, CreateDataTypeSizeInfoFromTypes<TestSampleType>(), coherency);
         return *this;
     }
 

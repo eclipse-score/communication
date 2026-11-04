@@ -12,6 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/lola_proxy_element_building_blocks.h"
 
+#include "score/mw/com/impl/configuration/lola_field_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/service_instance_deployment.h"
+
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
@@ -53,6 +57,34 @@ lola::ElementFqId GetElementFqId(const HandleType& handle,
     }()};
 
     return {lola_type_deployment.service_id_, element_id, lola_instance_id->GetId(), element_type};
+}
+
+CoherencyType GetServiceElementCoherency(const HandleType& handle,
+                                         const std::string_view service_element_name,
+                                         const ServiceElementType element_type)
+{
+    const auto& lola_instance_deployment =
+        GetServiceInstanceDeploymentBinding<LolaServiceInstanceDeployment>(handle.GetServiceInstanceDeployment());
+
+    const std::string service_element_name_str{service_element_name};
+    switch (element_type)
+    {
+        case ServiceElementType::EVENT:
+            return GetServiceElementInstanceDeployment<ServiceElementType::EVENT>(lola_instance_deployment,
+                                                                                  service_element_name_str)
+                .GetCoherency();
+        case ServiceElementType::FIELD:
+            return GetServiceElementInstanceDeployment<ServiceElementType::FIELD>(lola_instance_deployment,
+                                                                                  service_element_name_str)
+                .lola_event_instance_deployment_.GetCoherency();
+        case ServiceElementType::METHOD:
+        case ServiceElementType::INVALID:
+        default:
+            score::mw::log::LogFatal("lola")
+                << "GetServiceElementCoherency called with invalid/unsupported ServiceElementType.";
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE(
+                "GetServiceElementCoherency called with invalid/unsupported ServiceElementType.");
+    }
 }
 
 }  // namespace score::mw::com::impl

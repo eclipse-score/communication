@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_H
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
@@ -20,6 +21,7 @@
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
+#include "score/mw/com/impl/configuration/coherency_type.h"
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
 #include "score/mw/com/impl/subscription_state.h"
@@ -57,10 +59,15 @@ class ProxyEvent final : public GenericProxyEventBinding
     /// \param data_type_size_info Size/alignment info of the event's data type, as determined by the caller (either
     ///        from the known SampleType of a typed proxy event, or looked up from the EventMetaInfo stored in
     ///        shared-memory for a generic/type-erased proxy event).
+    /// \param coherency The configured CoherencyType of the event, as looked up from the proxy-side instance
+    ///        deployment. Must be either CoherencyType::kCoherent or CoherencyType::kNonCoherent;
+    ///        CoherencyType::kMixed is invalid for a proxy-side event/field and must have already been rejected
+    ///        earlier (see IsCoherencyConfigurationValidForProxy()).
     ProxyEvent(Proxy& parent,
                const ElementFqId element_fq_id,
                const std::string_view event_name,
-               const memory::DataTypeSizeInfo data_type_size_info);
+               const memory::DataTypeSizeInfo data_type_size_info,
+               const CoherencyType coherency);
 
     ProxyEvent(const ProxyEvent&) = delete;
     ProxyEvent(ProxyEvent&&) noexcept = delete;
@@ -144,7 +151,13 @@ class ProxyEvent final : public GenericProxyEventBinding
     ElementFqId event_fq_id_;
     const std::string_view event_name_;
     TransactionLogId transaction_log_id_;
-    ConsumerEventDataControlLocalView<> event_data_control_local_;
+    const CoherencyType coherency_;
+    /// \brief Local view for a CoherencyType::kNonCoherent event. Populated iff coherency_ ==
+    /// CoherencyType::kNonCoherent.
+    std::optional<ConsumerEventDataControlLocalView<>> event_data_control_local_;
+    /// \brief Local view for a CoherencyType::kCoherent event. Populated iff coherency_ ==
+    /// CoherencyType::kCoherent.
+    std::optional<ConsumerEventDataControlCoherentLocalView> event_data_control_local_coherent_;
     std::reference_wrapper<EventSubscriptionControl<>> subscription_control_;
     std::reference_wrapper<TransactionLogSet> transaction_log_set_;
     SubscriptionStateMachine subscription_event_state_machine_;

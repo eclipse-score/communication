@@ -25,7 +25,8 @@ namespace score::mw::com::impl::lola
 ProxyEvent::ProxyEvent(Proxy& parent,
                        const ElementFqId element_fq_id,
                        const std::string_view event_name,
-                       const memory::DataTypeSizeInfo data_type_size_info)
+                       const memory::DataTypeSizeInfo data_type_size_info,
+                       const CoherencyType coherency)
     : GenericProxyEventBinding{},
       meta_info_{data_type_size_info},
       event_data_storage_local_{parent.GetEventDataStorage(element_fq_id), meta_info_.data_type_info_},
@@ -35,16 +36,47 @@ ProxyEvent::ProxyEvent(Proxy& parent,
       event_name_{event_name},
       // The transaction log is identified by the application's unique identifier.
       transaction_log_id_{GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetApplicationId()},
-      event_data_control_local_{parent_.GetConsumerEventDataControlLocalView(event_fq_id_)},
-      subscription_control_{parent_.GetEventSubscriptionControl(event_fq_id_)},
-      transaction_log_set_{parent_.GetTransactionLogSet(event_fq_id_)},
-      subscription_event_state_machine_{parent_.GetQualityType(),
-                                        event_fq_id_,
-                                        parent_.GetSourcePid(),
-                                        event_data_control_local_,
-                                        subscription_control_.get(),
-                                        transaction_log_set_.get(),
-                                        transaction_log_id_}
+      coherency_{coherency},
+      event_data_control_local_{[this]() -> std::optional<ConsumerEventDataControlLocalView<>> {
+          if (coherency_ == CoherencyType::kCoherent)
+          {
+              return {};
+          }
+          return std::optional<ConsumerEventDataControlLocalView<>>{std::in_place,
+                                                                    parent_.GetEventDataControl(event_fq_id_)};
+      }()},
+      event_data_control_local_coherent_{[this]() -> std::optional<ConsumerEventDataControlCoherentLocalView> {
+          if (coherency_ != CoherencyType::kCoherent)
+          {
+              return {};
+          }
+          return std::optional<ConsumerEventDataControlCoherentLocalView>{
+              std::in_place, parent_.GetEventDataControlCoherent(event_fq_id_)};
+      }()},
+      subscription_control_{coherency_ == CoherencyType::kCoherent
+                                ? parent_.GetEventSubscriptionControlCoherent(event_fq_id_)
+                                : parent_.GetEventSubscriptionControl(event_fq_id_)},
+      transaction_log_set_{coherency_ == CoherencyType::kCoherent ? parent_.GetTransactionLogSetCoherent(event_fq_id_)
+                                                                  : parent_.GetTransactionLogSet(event_fq_id_)},
+      subscription_event_state_machine_{[this]() -> SubscriptionStateMachine {
+          if (coherency_ == CoherencyType::kCoherent)
+          {
+              return SubscriptionStateMachine{parent_.GetQualityType(),
+                                              event_fq_id_,
+                                              parent_.GetSourcePid(),
+                                              event_data_control_local_coherent_.value(),
+                                              subscription_control_.get(),
+                                              transaction_log_set_.get(),
+                                              transaction_log_id_};
+          }
+          return SubscriptionStateMachine{parent_.GetQualityType(),
+                                          event_fq_id_,
+                                          parent_.GetSourcePid(),
+                                          event_data_control_local_.value(),
+                                          subscription_control_.get(),
+                                          transaction_log_set_.get(),
+                                          transaction_log_id_};
+      }()}
 {
     parent.RegisterEvent(event_name, *this);
 }
@@ -108,10 +140,15 @@ inline Result<std::size_t> ProxyEvent::GetNewSamples(Callback&& receiver, Tracke
     {
         const void* type_erased_sample_ptr = event_data_storage_local_.GetTypeErasedDataSlot(*slot_index_it);
 
-        const EventSlotStatus event_slot_status{event_data_control_local_[*slot_index_it]};
-        const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
+        const EventSlotStatus::EventTimeStamp sample_timestamp{
+            coherency_ == CoherencyType::kCoherent
+                ? event_data_control_local_coherent_.value()[*slot_index_it].GetTimeStamp()
+                : event_data_control_local_.value()[*slot_index_it].GetTimeStamp()};
 
-        SamplePtr sample{type_erased_sample_ptr, event_data_control_local_, *slot_index_it};
+        SamplePtr sample =
+            (coherency_ == CoherencyType::kCoherent)
+                ? SamplePtr{type_erased_sample_ptr, event_data_control_local_coherent_.value(), *slot_index_it}
+                : SamplePtr{type_erased_sample_ptr, event_data_control_local_.value(), *slot_index_it};
 
         auto guard = std::move(*tracker.TakeGuard());
         auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard));

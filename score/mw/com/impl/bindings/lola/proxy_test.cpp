@@ -323,7 +323,7 @@ TEST_F(ProxyCreationDeathTest, GettingEventDataControlWithoutInitialisedEventDat
     // Then trying to get the event data control for an event that was not registered in the ServiceDataStorage
     // Will terminate
     const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
-    EXPECT_DEATH(proxy_->GetConsumerEventDataControlLocalView(uninitialised_element_fq_id), ".*");
+    EXPECT_DEATH(proxy_->GetEventDataControl(uninitialised_element_fq_id), ".*");
 }
 
 TEST_F(ProxyCreationDeathTest, GettingCoherentEventDataControlWithoutInitialisedEventDataControlTerminates)
@@ -337,11 +337,11 @@ TEST_F(ProxyCreationDeathTest, GettingCoherentEventDataControlWithoutInitialised
     // Then trying to get the coherent event data control / subscription control for an event that was not registered
     // in event_controls_coherent_ will terminate
     const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
-    EXPECT_DEATH(proxy_->GetConsumerEventDataControlCoherentLocalView(uninitialised_element_fq_id), ".*");
+    EXPECT_DEATH(proxy_->GetEventDataControlCoherent(uninitialised_element_fq_id), ".*");
     EXPECT_DEATH(proxy_->GetEventSubscriptionControlCoherent(uninitialised_element_fq_id), ".*");
 }
 
-TEST_F(ProxyCreationFixture, GetConsumerEventDataControlCoherentLocalViewReturnsViewForRegisteredCoherentEvent)
+TEST_F(ProxyCreationFixture, GetEventDataControlCoherentReturnsControlForRegisteredCoherentEvent)
 {
     // Given a fake Skeleton which registers a CoherencyType::kCoherent event
     InitialiseDummySkeletonEventCoherent(kDummyElementFqId,
@@ -351,9 +351,8 @@ TEST_F(ProxyCreationFixture, GetConsumerEventDataControlCoherentLocalViewReturns
     InitialiseProxyWithConstructor(identifier_);
     EXPECT_NE(proxy_, nullptr);
 
-    // Then the coherent event data control view / subscription control can be looked up without terminating
-    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore =
-                                proxy_->GetConsumerEventDataControlCoherentLocalView(kDummyElementFqId));
+    // Then the coherent event data control / subscription control can be looked up without terminating
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventDataControlCoherent(kDummyElementFqId));
     EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventSubscriptionControlCoherent(kDummyElementFqId));
 }
 
@@ -508,7 +507,11 @@ TEST_F(ProxyAutoReconnectFixture, ProxyEventCreationWhenProviderNotExistsLeadsTo
     EXPECT_NE(proxy_, nullptr);
 
     // and a ProxyEvent registers itself with the Proxy
-    ProxyEvent proxy_event{*proxy_, kDummyElementFqId, kDummyEventName, CreateDataTypeSizeInfoFromTypes<SampleType>()};
+    ProxyEvent proxy_event{*proxy_,
+                           kDummyElementFqId,
+                           kDummyEventName,
+                           CreateDataTypeSizeInfoFromTypes<SampleType>(),
+                           CoherencyType::kNonCoherent};
     score::cpp::ignore = proxy_event.Subscribe(kMaxNumSlots);
 
     // Then the Proxy notified the event during registration that the provider service instance is not available,
@@ -539,7 +542,11 @@ TEST_F(ProxyAutoReconnectFixture, ProxyEventCreationWhenProviderExistsLeadsToSub
     EXPECT_NE(proxy_, nullptr);
 
     // and a ProxyEvent registers itself with the Proxy
-    ProxyEvent proxy_event{*proxy_, kDummyElementFqId, kDummyEventName, CreateDataTypeSizeInfoFromTypes<SampleType>()};
+    ProxyEvent proxy_event{*proxy_,
+                           kDummyElementFqId,
+                           kDummyEventName,
+                           CreateDataTypeSizeInfoFromTypes<SampleType>(),
+                           CoherencyType::kNonCoherent};
     score::cpp::ignore = proxy_event.Subscribe(kMaxNumSlots);
 
     // Then the Proxy notified the event during registration that the provider service instance is available, so the
@@ -577,8 +584,11 @@ TEST_F(ProxyAutoReconnectFixture, ProxyEventSubscriptionStateReflectsLatestState
     EXPECT_NE(proxy_, nullptr);
 
     // and the first ProxyEvent registers itself with the Proxy while the provider service instance is available
-    ProxyEvent proxy_event_0{
-        *proxy_, kDummyElementFqId, kDummyEventName, CreateDataTypeSizeInfoFromTypes<SampleType>()};
+    ProxyEvent proxy_event_0{*proxy_,
+                             kDummyElementFqId,
+                             kDummyEventName,
+                             CreateDataTypeSizeInfoFromTypes<SampleType>(),
+                             CoherencyType::kNonCoherent};
     score::cpp::ignore = proxy_event_0.Subscribe(kMaxNumSlots);
     ASSERT_EQ(proxy_event_0.GetSubscriptionState(), SubscriptionState::kSubscribed);
 
@@ -590,7 +600,11 @@ TEST_F(ProxyAutoReconnectFixture, ProxyEventSubscriptionStateReflectsLatestState
     EXPECT_EQ(proxy_event_0.GetSubscriptionState(), SubscriptionState::kSubscriptionPending);
 
     // and the second ProxyEvent registers itself with the Proxy while the provider service instance is unavailable
-    ProxyEvent proxy_event_1{*proxy_, element_fq_id_1, event_name_1, CreateDataTypeSizeInfoFromTypes<SampleType>()};
+    ProxyEvent proxy_event_1{*proxy_,
+                             element_fq_id_1,
+                             event_name_1,
+                             CreateDataTypeSizeInfoFromTypes<SampleType>(),
+                             CoherencyType::kNonCoherent};
     score::cpp::ignore = proxy_event_1.Subscribe(kMaxNumSlots);
 
     // Then the second ProxyEvent is notified during registration that the provider service instance is not available

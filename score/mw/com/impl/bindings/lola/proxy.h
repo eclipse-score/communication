@@ -13,7 +13,6 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_H
 
-#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 #include "score/mw/com/impl/bindings/lola/event_control_coherent.h"
@@ -130,16 +129,22 @@ class Proxy : public ProxyBinding
           score::filesystem::Filesystem filesystem,
           ProxyInstanceIdentifier::ProxyInstanceCounter proxy_instance_counter);
 
-    /// Returns the address of the control structure, for the given CoherencyType::kNonCoherent event ID.
+    /// Returns the EventDataControl for the given CoherencyType::kNonCoherent event ID.
     ///
     /// Terminates if the event control structure cannot be found.
-    ConsumerEventDataControlLocalView<> GetConsumerEventDataControlLocalView(const ElementFqId element_fq_id);
+    ///
+    /// \details Callers that need a ConsumerEventDataControlLocalView can construct one directly from the returned
+    /// reference, e.g. in-place via std::optional::emplace()/in_place construction, to avoid moving a non-movable
+    /// view.
+    EventDataControl& GetEventDataControl(const ElementFqId element_fq_id);
 
-    /// Returns the address of the control structure, for the given CoherencyType::kCoherent event ID.
+    /// Returns the EventDataControlCoherent for the given CoherencyType::kCoherent event ID.
     ///
     /// Terminates if the event control structure cannot be found.
-    ConsumerEventDataControlCoherentLocalView GetConsumerEventDataControlCoherentLocalView(
-        const ElementFqId element_fq_id);
+    ///
+    /// \details See GetEventDataControl() for the rationale of returning the EventDataControlCoherent itself instead
+    /// of a view wrapping it.
+    EventDataControlCoherent& GetEventDataControlCoherent(const ElementFqId element_fq_id);
 
     /// Returns the EventSubscriptionControl for the given CoherencyType::kNonCoherent event ID.
     ///
@@ -155,6 +160,14 @@ class Proxy : public ProxyBinding
     ///
     /// Terminates if the event control structure cannot be found.
     TransactionLogSet& GetTransactionLogSet(const ElementFqId element_fq_id);
+
+    /// Returns the TransactionLogSet for the given CoherencyType::kCoherent event ID.
+    ///
+    /// Terminates if the event control structure cannot be found.
+    ///
+    /// \details EventControlCoherent's transaction_log_set_ is still needed (unlike per-slot reference-counting
+    /// transactions) for crash-recovery of the subscribe/unsubscribe transaction - see EventControlCoherent.
+    TransactionLogSet& GetTransactionLogSetCoherent(const ElementFqId element_fq_id);
 
     /// Retrieves a reference to the event data storage area for a given ElementFqId.
     const EventDataStorage& GetEventDataStorage(const ElementFqId element_fq_id) const;

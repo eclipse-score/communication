@@ -33,7 +33,7 @@ class StateMachineThreadingFixture : public LolaProxyEventResources
   protected:
     StateMachineThreadingFixture()
         : LolaProxyEventResources(),
-          consumer_event_data_control_local_view_{proxy_->GetConsumerEventDataControlLocalView(element_fq_id_)},
+          consumer_event_data_control_local_view_{proxy_->GetEventDataControl(element_fq_id_)},
           state_machine_{proxy_->GetQualityType(),
                          element_fq_id_,
                          kDummyPid,
