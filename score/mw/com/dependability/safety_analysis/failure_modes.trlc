@@ -429,7 +429,7 @@ section "LoLa" {
         section "Find Service" {
 
             // ID: 6166029
-            ScoreReq.FailureMode ServiceNotFound {
+            ScoreReq.FailureMode ServiceNotFoundButIsCurrentlyOffered {
                 guidewords = [ ScoreReq.Guideword.LossOfFunction ]
                 description = "A proxy does not find a service instance, even though it was offered by a skeleton."
                 failureeffect = "No communication between process will happen, thus no information can be exchanged, thus any overall system functionality can stop."
@@ -451,7 +451,7 @@ section "LoLa" {
             }
 
             // ID: 6166060
-            ScoreReq.FailureMode ServiceIsFoundButDoesNotExist {
+            ScoreReq.FailureMode ServiceIsFoundButIsNotCurrentlyOffered {
                 guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
                 description = "Finding a service, returns a service, even though no service instance was offered."
                 failureeffect = "No communication between process will happen, thus no information can be exchanged, thus any overall system functionality can stop."
