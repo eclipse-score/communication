@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2025, 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -30,6 +30,8 @@
 
 #include <cstddef>
 #include <ctime>
+#include <memory>
+#include <mutex>
 #include <optional>
 #include <unordered_map>
 #include <utility>
@@ -72,7 +74,8 @@ class SkeletonMethod : public SkeletonMethodBinding
               const std::optional<score::cpp::span<std::byte>> return_arg);
     void CleanUpOldHandlers(const GlobalConfiguration::ApplicationId application_id, pid_t proxy_pid);
 
-    std::optional<SkeletonMethodBinding::TypeErasedHandler> type_erased_callback_;
+    std::shared_ptr<SkeletonMethodBinding::TypeErasedHandler> type_erased_callback_;
+    mutable std::mutex type_erased_callback_mutex_;
 
     std::unordered_map<ProxyMethodInstanceIdentifier, std::pair<pid_t, MethodCallRegistrationGuard>>
         registration_guards_;
