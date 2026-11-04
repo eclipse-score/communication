@@ -41,9 +41,6 @@
 namespace score::mw::com::impl
 {
 
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding. This rule states: "An identifier with external linkage shall have
-// exactly one definition". This a forward class declaration.
-// coverity[autosar_cpp14_m3_2_3_violation]
 template <typename FieldType, typename... Tags>
 class ProxyFieldAttorney;
 

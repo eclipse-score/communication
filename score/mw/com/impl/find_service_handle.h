@@ -118,11 +118,8 @@ class FindServiceHandle final
     explicit FindServiceHandle(const std::size_t uid);
 
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
-    // Suppress "AUTOSAR C++14 M3-2-3", The rule states: "A type, object or function that is used in multiple
-    // translation units shall be declared in one and only one file."
-    // Design decision: Friend class required to access private constructor. This pattern violates both above rules.
+    // Design decision: Friend class required to access private constructor. This pattern violates rule above.
     // However, it is necessery to hide implementation details.
-    // coverity[autosar_cpp14_m3_2_3_violation]
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend FindServiceHandle make_FindServiceHandle(const std::size_t uid);
 

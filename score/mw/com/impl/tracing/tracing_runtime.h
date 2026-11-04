@@ -59,10 +59,6 @@ class TracingRuntimeAtomicState
 
 }  // namespace detail_tracing_runtime
 
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding. This rule states: "A type, object or function that is used in multiple
-// translation units shall be declared in one and only one file.".
-// This is false positive. Function is declared only once.
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE]
 class TracingRuntime : public ITracingRuntime
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used."

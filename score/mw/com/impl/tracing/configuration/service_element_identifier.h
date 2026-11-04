@@ -70,14 +70,7 @@ template <>
 // another struct or class, (4) not inherit from another struct or class.".
 // Rationale: Point 2 of this rule is violated. Keeping struct for consistency with STL.
 
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding.
-// This rule states: "A type, object, or function that is used in multiple translation units shall be declared in one
-// and only one file."
-// Rationale: This is a false positive. The struct is declared in only one file. The Coverity tool
-// issues a violation due to template specialization in several places.
-
 // coverity[autosar_cpp14_a11_0_2_violation]
-// coverity[autosar_cpp14_m3_2_3_violation]
 struct hash<score::mw::com::impl::tracing::ServiceElementIdentifier>
 // NOLINTEND(score-struct-usage-compliance): STL defines hash as struct.
 {
