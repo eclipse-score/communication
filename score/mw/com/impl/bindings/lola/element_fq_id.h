@@ -30,10 +30,6 @@ namespace score::mw
 {
 namespace log
 {
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding. This rule declares: "A type, object or function that is used in
-// multiple translation units shall be declared in one and only one file.".
-// This is a forward declaration that does not vioalate this rule.
-// coverity[autosar_cpp14_m3_2_3_violation]
 class LogStream;
 }  // namespace log
 
