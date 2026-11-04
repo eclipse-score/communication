@@ -49,6 +49,11 @@ deviations:
     code-identifier: "compile-time-static-assert-limit-check"
     scope: "Applies only to the `static_assert` size-limit check marked with this code identifier in score/mw/com/impl/bindings/lola/tracing/tracing_runtime.cpp."
     justification: "The marked expression appears solely inside a `static_assert` condition, evaluated entirely at compile time against `std::numeric_limits<...>::max()` constants; it never executes at runtime and can never observe or propagate a runtime value. Its only purpose is to fail the build if a future change to the underlying typedefs would allow the sum of the two maxima to exceed `TraceContextId`'s range. There is no runtime signedness-change defect for this rule to prevent, and using a `score::safe_math` runtime helper is neither necessary (the check is compile-time only) nor possible (safe_math's checked operations are not usable in this `static_assert`'s constant-expression context in a way that would improve on the existing explicit compile-time check)."
+  - rule-id: "RULE-6-7-2"
+    query-id: "cpp/misra/global-variable-used"
+    code-identifier: "immutable-non-constexpr-constant"
+    scope: "Applies only to the `const` objects marked with this code identifier: `kShmPathPrefix` in score/mw/com/impl/bindings/lola/proxy.cpp, `TMP_PATH` in score/mw/com/impl/bindings/lola/service_discovery/flag_file.cpp and the `k*TracePointToTracingTracePointMap` lookup tables in score/mw/com/impl/tracing/tracing_runtime.cpp. This code-identifier must not be used anywhere else in the codebase."
+    justification: "These objects are `const` and therefore no risk of undefined behaviour due to data races. Because these variables do not depend on other global variables, they are not affected by the unspecified aspects of global variable initializations. `filesystem::Path` and `std::unordered_map` have no `constexpr` constructors, so constant initialization is not possible."
 guideline-recategorizations:
   - rule-id: "RULE-0-1-1"
     category: "disapplied"

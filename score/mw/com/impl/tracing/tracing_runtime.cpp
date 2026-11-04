@@ -50,10 +50,7 @@ bool IsNonRecoverableError(const score::result::Error error)
 }
 
 const std::unordered_map<ProxyEventTracePointType, analysis::tracing::TracePointType>
-    // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-    // constant-initialized.".
-    // std::unordered_map doesn't have a constexpr constructor.
-    // coverity[autosar_cpp14_a3_3_2_violation]
+    // Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(immutable-non-constexpr-constant)
     kProxyEventTracePointToTracingTracePointMap{
         {ProxyEventTracePointType::SUBSCRIBE, analysis::tracing::TracePointType::kProxyEventSub},
         {ProxyEventTracePointType::UNSUBSCRIBE, analysis::tracing::TracePointType::kProxyEventUnsub},
@@ -73,10 +70,7 @@ const std::unordered_map<ProxyEventTracePointType, analysis::tracing::TracePoint
     };
 
 const std::unordered_map<ProxyFieldTracePointType, analysis::tracing::TracePointType>
-    // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-    // constant-initialized.".
-    // std::unordered_map doesn't have a constexpr constructor.
-    // coverity[autosar_cpp14_a3_3_2_violation]
+    // Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(immutable-non-constexpr-constant)
     kProxyFieldTracePointToTracingTracePointMap{
         {ProxyFieldTracePointType::SUBSCRIBE, analysis::tracing::TracePointType::kProxyFieldSub},
         {ProxyFieldTracePointType::UNSUBSCRIBE, analysis::tracing::TracePointType::kProxyFieldUnsub},
@@ -100,20 +94,14 @@ const std::unordered_map<ProxyFieldTracePointType, analysis::tracing::TracePoint
     };
 
 const std::unordered_map<SkeletonEventTracePointType, analysis::tracing::TracePointType>
-    // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-    // constant-initialized.".
-    // std::unordered_map doesn't have a constexpr constructor.
-    // coverity[autosar_cpp14_a3_3_2_violation]
+    // Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(immutable-non-constexpr-constant)
     kSkeletonEventTracePointToTracingTracePointMap{
         {SkeletonEventTracePointType::SEND, analysis::tracing::TracePointType::kSkelEventSnd},
         {SkeletonEventTracePointType::SEND_WITH_ALLOCATE, analysis::tracing::TracePointType::kSkelEventSndA},
     };
 
 const std::unordered_map<SkeletonFieldTracePointType, analysis::tracing::TracePointType>
-    // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-    // constant-initialized.".
-    // std::unordered_map doesn't have a constexpr constructor.
-    // coverity[autosar_cpp14_a3_3_2_violation]
+    // Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(immutable-non-constexpr-constant)
     kSkeletonFieldTracePointToTracingTracePointMap{
         {SkeletonFieldTracePointType::UPDATE, analysis::tracing::TracePointType::kSkelFieldUpd},
         {SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE, analysis::tracing::TracePointType::kSkelFieldUpdA},

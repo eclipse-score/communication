@@ -89,14 +89,11 @@ constexpr LolaMethodInstanceDeployment::QueueSize kFieldMethodQueueSize{1U};
 // Checks whether we run over QNX or linux to choose the appropriate path.
 // coverity[autosar_cpp14_a16_0_1_violation]
 #ifdef __QNXNTO__
-// Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-// constant-initialized.".
-// score::filesystem::Path is not literal class as it has std::vector data member.
-// coverity[autosar_cpp14_a3_3_2_violation]
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(immutable-non-constexpr-constant)
 const filesystem::Path kShmPathPrefix{"/dev/shmem"};
 // coverity[autosar_cpp14_a16_0_1_violation]
 #else
-// coverity[autosar_cpp14_a3_3_2_violation]
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(immutable-non-constexpr-constant)
 const filesystem::Path kShmPathPrefix{"/dev/shm"};
 // coverity[autosar_cpp14_a16_0_1_violation]
 #endif
