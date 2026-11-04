@@ -82,6 +82,7 @@ class CopyableAtomic
     {
         return atomic_;
     }
+    const std::atomic<T>&& GetUnderlying() const&& = delete;
 
   private:
     std::atomic<T> atomic_;

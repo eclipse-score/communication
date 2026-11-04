@@ -145,9 +145,15 @@ TEST_F(ServiceDataStorageFixture, AddEventConstructsEventDataStorageWithGivenNum
     // When adding an event via AddEvent()
     auto& event_data_storage = unit.AddEvent(kElementFqId, number_of_slots, sample_size_info);
 
-    // Then the returned EventDataStorage was constructed with the given number of slots
-    EXPECT_EQ(event_data_storage.GetNumberOfSlots(), number_of_slots);
-    // Note: Whether the slots are correctly sized is tested in EventDataStorage tests.
+    // Then the returned EventDataStorage underlying storage is large enough to hold the given number of slots of sample
+    // size
+    auto* const start = event_data_storage.GetTypeErasedDataSlotsStart();
+    auto* const end = event_data_storage.GetTypeErasedDataSlotsEnd();
+    const auto storage_size = static_cast<std::size_t>(end - start);
+    const auto slot_storage_need = safe_math::Multiply<safe_math::ReturnMode::kAbortOnError, std::size_t>(
+        number_of_slots, sample_size_info.Size());
+    EXPECT_EQ(storage_size, slot_storage_need);
+    // Note: Detailed sizing/alignment is tested in EventDataStorage tests.
 }
 
 TEST_F(ServiceDataStorageFixture, AddEventRegistersEventDataStorageSoItCanBeFoundAgain)

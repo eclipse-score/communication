@@ -449,9 +449,6 @@ section "LoLa" {
                 rationale = "Both faults of wrongly configured and offered under wrong service IDs are covered by other analysis (Failuremode ServiceOfferedUnderWrongIds). For the InstanceSpecifier to Identifier we have the preventive measure \"InstanceSpecifier resolution can not retrieve wrong InstanceIdentifier resolution can not retrieve wrong InstanceIdentifier The last fault is covered by the ensured correct mapping of InstanceIdentifier to path."
                 interface = "mw.com.Proxy.FindService"
             }
-        }
-
-        section "Construction" {
 
             // ID: 6166060
             ScoreReq.FailureMode ServiceIsFoundButDoesNotExist {
@@ -462,6 +459,19 @@ section "LoLa" {
                 safety = ScoreReq.Asil.B
                 rationale = "The first root cause cannot happen, since otherwise the Operating System would make stupid stuff. mmap will not map any memory if a file does not exist. \"Service was offered, but not unlinked on stop offer\", is covered by our AoU that we do not notify on termination of the provider side. The other three faults are covered by the two preventive measures."
                 interface = "mw.com.Proxy.FindService"
+            }
+        }
+
+        section "Construction" {
+
+            ScoreReq.FailureMode ProxyCannotBeCreatedWithValidHandleWhenServiceIsOffered {
+                guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+                description = "After finding a service and getting a valid handle (and the service has not been since or is currently being stop offered), creating a proxy with that handle fails."
+                failureeffect = "No communication between process will happen, thus no information can be exchanged, thus any overall system functionality can stop."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = ""
+                interface = "mw.com.Proxy.Create"
             }
 
         }

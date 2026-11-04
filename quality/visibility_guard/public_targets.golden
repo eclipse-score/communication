@@ -38,7 +38,6 @@
 //score/memory/shared:shared_memory_resource_heap_allocator_mock
 //score/memory/shared:shared_memory_resource_mock
 //score/memory/shared:string
-//score/memory/shared:types
 //score/memory/shared:vector
 //score/message_passing/dependability:dependable_element_message_passing
 //score/message_passing/dependability:dependable_element_message_passing.serve

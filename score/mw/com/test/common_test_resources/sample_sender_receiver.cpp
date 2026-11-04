@@ -15,6 +15,7 @@
 
 #include "score/concurrency/notification.h"
 #include "score/memory/shared/vector.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event.h"
 #include "score/mw/com/types.h"
 #include "score/os/mman.h"
 

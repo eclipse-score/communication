@@ -362,7 +362,8 @@ TYPED_TEST(ProxyEventGetNewSamplesFixture, GetNewSamplesReturnsErrorIfMaxSamples
     Base::RecordProperty("Verifies", "SCR-14035773, SCR-21350367");
     Base::RecordProperty("lobster-tracing",
                          "Communication.ProxyFieldGetNewSamples, Communication.ProxyEventGetNewSamples, "
-                         "Communication.GenericProxyEventGetNewSamples");
+                         "Communication.GenericProxyEventGetNewSamples, "
+                         "Communication.GetNewSamplesReturnsErrorInsteadOfSampleCount");
     Base::RecordProperty("Description",
                          "Checks that GetNewSamples will return an error if the max samples has already been reached");
     Base::RecordProperty("TestType", "Requirements-based test");
@@ -392,7 +393,8 @@ TYPED_TEST(ProxyEventGetNewSamplesFixture, GetNewSamplesReturnsErrorIfNotSubscri
 
     Base::RecordProperty("lobster-tracing",
                          "Communication.ProxyFieldGetNewSamples, Communication.ProxyEventGetNewSamples, "
-                         "Communication.GenericProxyEventGetNewSamples");
+                         "Communication.GenericProxyEventGetNewSamples, "
+                         "Communication.GetNewSamplesReturnsErrorInsteadOfSampleCount");
     Base::RecordProperty("Description",
                          "Checks that GetNewSamples will forward an error kNotSubscribed from the binding");
     Base::RecordProperty("TestType", "Requirements-based test");
@@ -426,7 +428,8 @@ TYPED_TEST(ProxyEventGetNewSamplesFixture, GetNewSamplesReturnsErrorFromBinding)
 
     Base::RecordProperty("lobster-tracing",
                          "Communication.ProxyFieldGetNewSamples, Communication.ProxyEventGetNewSamples, "
-                         "Communication.GenericProxyEventGetNewSamples");
+                         "Communication.GenericProxyEventGetNewSamples, "
+                         "Communication.GetNewSamplesReturnsErrorInsteadOfSampleCount");
     Base::RecordProperty(
         "Description",
         "Checks that GetNewSamples will return kBindingFailure for a generic error code from the binding");

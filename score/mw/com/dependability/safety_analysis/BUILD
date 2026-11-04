@@ -15,6 +15,8 @@ load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
     "assumptions_of_use",
     "dependability_analysis",
+    "failure_modes",
+    "fault_trees",
     "safety_analysis",
 )
 
@@ -30,16 +32,19 @@ filegroup(
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
-safety_analysis(
-    name = "mw_com_safety_analysis",
-    arch_design = "//score/mw/com/dependability/architectural_design:software_architectural_design",
-    failuremodes = ["failure_modes.trlc"],
+failure_modes(
+    name = "mw_com_failure_modes",
+    srcs = ["failure_modes.trlc"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+fault_trees(
+    name = "mw_com_fault_trees",
+    srcs = [":root_causes"],
     fta_package = "mw_com_fta",
-    root_causes = [":root_causes"],
-    safetymeasures = [
-        "aou.trlc",
-    ],
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
+    deps = [":mw_com_failure_modes"],
 )
 
 assumptions_of_use(
@@ -48,7 +53,16 @@ assumptions_of_use(
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
     # Resolves mw_com_fta.<RootCause> in AoU.root_causes.
-    deps = [":mw_com_safety_analysis"],
+    deps = [":mw_com_fault_trees"],
+)
+
+safety_analysis(
+    name = "mw_com_safety_analysis",
+    arch_design = "//score/mw/com/dependability/architectural_design:software_architectural_design",
+    failure_modes = [":mw_com_failure_modes"],
+    fault_trees = ":mw_com_fault_trees",
+    safety_measures = [":aous"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 # dependable_element consumes DependabilityAnalysisInfo, which only this rule

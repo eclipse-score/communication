@@ -223,7 +223,7 @@ TYPED_TEST(SkeletonMethodTypedFixture, TwoParameterConstructorCorrectlyCallsBind
 
     // Expecting that a binding factory can create a binding
     EXPECT_CALL(this->skeleton_method_binding_factory_mock_guard_->factory_mock_,
-                Create(_ /*handle*/, _ /*parent binding*/, this->method_name_, _))
+                Create(_ /*handle*/, _ /*parent binding*/, this->method_name_, _, _, _))
         .WillOnce(testing::Return(
             testing::ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(this->mock_method_binding_))));
 
@@ -242,7 +242,7 @@ TYPED_TEST(SkeletonMethodTypedFixture, TwoParameterConstructorMarksBindingsAsInv
 
     // Expecting that a binding factory cannot create a binding
     EXPECT_CALL(this->skeleton_method_binding_factory_mock_guard_->factory_mock_,
-                Create(_ /*handle*/, _ /*parent binding*/, this->method_name_, _ /*method_type*/))
+                Create(_ /*handle*/, _ /*parent binding*/, this->method_name_, _ /*method_type*/, _, _))
         .WillOnce(testing::Return(testing::ByMove(nullptr)));
 
     // When the 2-parameter constructor of the SkeletonMethod class is called

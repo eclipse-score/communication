@@ -13,17 +13,17 @@
 @startuml safety_sentinel_mwcom_design
 title "mw_com_static_architecture"
 
-package "mw_com" as mw_com <<SEooC>>  {
-  component "Configuration" as mw_com_configuration <<unit>>
-  component "Binding Factories" as mw_com_binding_factories <<unit>>
-  component "Tracing" as mw_com_tracing <<unit>>
-  component "Service Instance Identifiers" as service_instance_identifiers <<unit>>
-  component "Errors" as errors <<unit>>
+package mw_com <<SEooC>>  {
+  component mw_com_configuration <<unit>>
+  component mw_com_binding_factories <<unit>>
+  component mw_com_tracing <<unit>>
+  component service_instance_identifiers <<unit>>
+  component errors <<unit>>
 
-  component "Binding Independent" as binding_independent <<component>>
-  component "Lola Binding" as lola_binding <<component>>
-  component "SomeIp Binding" as someip_binding <<component>>
-  component "Mock Binding" as mock_binding <<component>>
+  component binding_independent <<component>>
+  component lola_binding <<component>>
+  component someip_binding <<component>>
+  component mock_binding <<component>>
 }
 
 @enduml

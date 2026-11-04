@@ -47,6 +47,7 @@ class SubscribedState final : public SubscriptionStateBase
     std::optional<std::uint16_t> GetMaxSampleCount() const override;
     std::optional<SlotCollector>& GetSlotCollector() & noexcept override;
     const std::optional<SlotCollector>& GetSlotCollector() const& noexcept override;
+    const std::optional<SlotCollector>&& GetSlotCollector() const&& noexcept = delete;
 };
 
 }  // namespace score::mw::com::impl::lola

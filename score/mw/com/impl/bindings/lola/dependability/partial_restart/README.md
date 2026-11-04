@@ -99,9 +99,9 @@ Since in specific configurations we could have multiple local proxy event instan
 `TransactionLogSet::RollbackProxyTransactions()`. Since this would lead to data races, we explicitly synchronize
 (serialize) this case via a standard (process local) mutex.
 Therefore, we have a member of type `lola::RollbackSynchronization`, which is stored in `lola::Runtime` and provides a
-method `std::pair<std::mutex&, bool> GetMutex(const ServiceDataControl* proxy_element_control)`, which lazily creates
-a mutex for the given `ServiceDataControl*`, which identifies the service instance being used. So proxy instances
-relating to the same service instance can synchronize their rollback handling via the mutex returned by this API, which
+method `RollbackSynchronization::Entry& GetEntry(const SkeletonInstanceIdentifier)`, which lazily creates
+an entry (a mutex plus a `rollback_prepared` flag guarded by it) for the given service instance. So proxy instances
+relating to the same service instance can synchronize their rollback handling via the mutex of this entry, which
 is described [here](#differentiation-between-oldnew-transaction-logs) more thoroughly.
 
 ## Proxy side startup sequence

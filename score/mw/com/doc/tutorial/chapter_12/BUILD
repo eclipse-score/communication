@@ -13,7 +13,6 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
@@ -21,7 +20,6 @@ cc_library(
     name = "service_interface",
     srcs = ["hello_world_service.cpp"],
     hdrs = ["hello_world_service.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
     ],
@@ -31,7 +29,7 @@ cc_binary(
     name = "provider_app",
     srcs = ["provider/provider.cpp"],
     data = ["provider/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -47,7 +45,7 @@ cc_library(
         "provider/skeleton_component.cpp",
         "provider/skeleton_component.h",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -62,7 +60,7 @@ cc_library(
         "consumer/proxy_component.cpp",
         "consumer/proxy_component.h",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -77,7 +75,7 @@ cc_binary(
         "consumer/consumer.cpp",
     ],
     data = ["consumer/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -129,10 +127,10 @@ pkg_tar(
     ],
 )
 
+# [unit-test-targets-start]
 cc_unit_test(
     name = "proxy_component_test",
     srcs = ["consumer/proxy_component_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":proxy_component",
         "//score/mw/com:test_types",
@@ -142,12 +140,12 @@ cc_unit_test(
 cc_unit_test(
     name = "skeleton_component_test",
     srcs = ["provider/skeleton_component_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":skeleton_component",
         "//score/mw/com:test_types",
     ],
 )
+# [unit-test-targets-end]
 
 filegroup(
     name = "chapter_12",

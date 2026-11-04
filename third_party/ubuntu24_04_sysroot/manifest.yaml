@@ -22,11 +22,11 @@ archs:
   - amd64
   - arm64
 packages:
-  - base-files  # mergedusr symlinks
-  - libatomic1  # Non-lock-free atomics support
-  - libc6  # Core C/POSIX
-  - libc6-dev  # Core C/POSIX
-  - libgcc-s1  # Exception unwinding
-  - libstdc++-13-dev  # C++ standard library headers
-  - libstdc++6  # C++ standard library runtime
-  - linux-libc-dev  # Core C/POSIX
+  - base-files # mergedusr symlinks
+  - libatomic1 # Non-lock-free atomics support
+  - libc6 # Core C/POSIX
+  - libc6-dev # Core C/POSIX
+  - libgcc-s1 # Exception unwinding
+  - libstdc++-13-dev # C++ standard library headers
+  - libstdc++6 # C++ standard library runtime
+  - linux-libc-dev # Core C/POSIX

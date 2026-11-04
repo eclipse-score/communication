@@ -12,14 +12,12 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
     name = "api",
     srcs = ["api_under_test_smoke.cpp"],
     hdrs = glob(["api_under_test/**/*.h"]),
-    features = COMPILER_WARNING_FEATURES,
     strip_include_prefix = "api_under_test",
     deps = [
         "//score/memory/shared:polymorphic_offset_ptr_allocator",
@@ -32,7 +30,6 @@ cc_library(
 cc_unit_test(
     name = "generated_api_test",
     srcs = ["generated_api_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":api",
         "@score_baselibs//score/mw/log",

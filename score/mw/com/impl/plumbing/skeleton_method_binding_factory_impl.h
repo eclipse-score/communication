@@ -17,9 +17,12 @@
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/plumbing/i_skeleton_method_binding_factory.h"
 
+#include "score/memory/data_type_size_info.h"
+
 #include <score/assert.hpp>
 
 #include <memory>
+#include <optional>
 #include <string_view>
 
 namespace score::mw::com::impl
@@ -33,7 +36,9 @@ class SkeletonMethodBindingFactoryImpl : public ISkeletonMethodBindingFactory
     std::unique_ptr<SkeletonMethodBinding> Create(const InstanceIdentifier& instance_identifier,
                                                   SkeletonBinding& parent_binding,
                                                   const std::string_view method_name,
-                                                  MethodType method_type) override;
+                                                  MethodType method_type,
+                                                  std::optional<memory::DataTypeSizeInfo> in_arg_type_info,
+                                                  std::optional<memory::DataTypeSizeInfo> return_type_info) override;
 };
 
 }  // namespace score::mw::com::impl

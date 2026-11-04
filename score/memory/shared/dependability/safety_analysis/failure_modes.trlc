@@ -10,17 +10,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-package MessagePassing
+package MemoryShared
 
 import ScoreReq
 
-// TODO: Add Assumptions of Use (AoU) for message passing
-// Example:
-
-ScoreReq.AoU ExampleAoU {
-    description = "Example assumption description"
-    safety = ScoreReq.Asil.B
-    note = "Example note"
-    version = 1
-}
-
+// Intentionally empty: no FailureMode records yet. Wiring this
+// empty source is sufficient to activate the Public API coverage check.

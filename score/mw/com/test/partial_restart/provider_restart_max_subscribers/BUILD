@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
@@ -27,7 +26,6 @@ cc_binary(
     name = "provider_restart_max_subscribers_application",
     srcs = ["provider_restart_max_subscribers_application.cpp"],
     data = ["mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":consumer",
         ":provider",
@@ -45,7 +43,6 @@ cc_library(
     name = "consumer",
     srcs = ["consumer.cpp"],
     hdrs = ["consumer.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/test/common_test_resources:general_resources",
         "//score/mw/com/test/common_test_resources:test_resources",
@@ -59,7 +56,6 @@ cc_library(
     name = "provider",
     srcs = ["provider.cpp"],
     hdrs = ["provider.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:general_resources",

@@ -243,10 +243,14 @@ component-internal requirements with no feature-level parent.
 
 ### Assumptions of Use (AoU)
 
-`AoU` extends `RequirementSafety` (not `SafetyMeasure`) and captures conditions the integrating
-project must satisfy, via its own independent, optional `root_causes` field.
-The `assumptions_of_use` rule accepts raw `.trlc` **or** `.rst` files carrying `aou_req`
-directives (converted to TRLC automatically).
+`AoU` extends `SafetyMeasure` and captures conditions the integrating project must satisfy.
+`root_causes` is mandatory: every AoU references the fault-tree root causes it addresses
+(`<fta_package>.<RootCause>`), so the `assumptions_of_use` target lists the `fault_trees` target
+in `deps`. The `assumptions_of_use` rule takes `.trlc` files, or `rst_to_trlc` targets converting `.rst` files
+carrying `aou_req` directives (RST directives take `:root_causes: <fta_package>.<RootCause>, ...`).
+Pass the target as `safety_measures` to `safety_analysis`: that makes it an own AoU of the
+`dependable_element` (there is no AoU attribute on the element). Forwarding YAML
+entries name received AoUs with their version (`Package.Name@1`).
 
 ---
 
@@ -264,10 +268,11 @@ load(
 )
 ```
 
-Each requirement rule takes `name`, `srcs` (the `.trlc` files), and `deps` (other requirement
-targets whose records are cross-referenced). All three share the same optional attributes:
-`spec` (defaults to the `ScoreReq` model — override only for a custom schema), `lobster_config`,
-`ref_package`, and `image_srcs`.
+Each requirement rule takes `name`, `srcs` (the `.trlc` files, or `rst_to_trlc` targets converting `.rst`
+sources; `ref_package` of `rst_to_trlc` names the package that `satisfies`/`derived_from` resolve in), and
+`deps` (other requirement targets whose records are cross-referenced). All three share the same optional
+attributes: `spec` (defaults to the `ScoreReq` model — override only for a custom schema), `lobster_config`,
+and `image_srcs`.
 
 ```starlark
 # docs/requirements/BUILD

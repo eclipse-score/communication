@@ -40,6 +40,7 @@ class UnixDomainSocketAddress
     {
         return reinterpret_cast<const sockaddr*>(&addr_);
     }
+    const sockaddr* data() const&& noexcept = delete;
     static constexpr std::size_t size() noexcept
     {
         return sizeof(addr_);

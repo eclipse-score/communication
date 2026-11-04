@@ -11,3 +11,48 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/proxy_field_binding_factory_impl.h"
+
+#include "score/mw/com/impl/method_type.h"
+#include "score/mw/com/impl/plumbing/proxy_event_binding_factory.h"
+#include "score/mw/com/impl/plumbing/proxy_method_binding_factory.h"
+#include "score/mw/com/impl/service_element_type.h"
+
+#include <optional>
+#include <utility>
+
+namespace score::mw::com::impl
+{
+
+Result<std::unique_ptr<ProxyEventBinding>> ProxyFieldBindingFactoryImpl::CreateEventBinding(
+    HandleType parent_handle,
+    ProxyBinding& parent_binding,
+    const std::string_view field_name,
+    memory::DataTypeSizeInfo data_type_size_info) noexcept
+{
+    return ProxyEventBindingFactory::Create(
+        std::move(parent_handle), parent_binding, field_name, ServiceElementType::FIELD, data_type_size_info);
+}
+
+Result<std::unique_ptr<ProxyMethodBinding>> ProxyFieldBindingFactoryImpl::CreateGetMethodBinding(
+    HandleType parent_handle,
+    ProxyBinding& parent_binding,
+    const std::string_view field_name,
+    memory::DataTypeSizeInfo return_type_info) noexcept
+{
+    // A field's get-method never takes an argument (see GetMethodSignature), so there is no in-arg type info to pass.
+    return ProxyMethodBindingFactory::Create(
+        std::move(parent_handle), parent_binding, field_name, MethodType::kGet, std::nullopt, return_type_info);
+}
+
+Result<std::unique_ptr<ProxyMethodBinding>> ProxyFieldBindingFactoryImpl::CreateSetMethodBinding(
+    HandleType parent_handle,
+    ProxyBinding& parent_binding,
+    const std::string_view field_name,
+    memory::DataTypeSizeInfo in_arg_type_info,
+    memory::DataTypeSizeInfo return_type_info) noexcept
+{
+    return ProxyMethodBindingFactory::Create(
+        std::move(parent_handle), parent_binding, field_name, MethodType::kSet, in_arg_type_info, return_type_info);
+}
+
+}  // namespace score::mw::com::impl

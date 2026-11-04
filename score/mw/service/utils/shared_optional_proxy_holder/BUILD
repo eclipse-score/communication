@@ -12,15 +12,13 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
     name = "shared_optional_proxy_holder",
     srcs = ["shared_optional_proxy_holder.cpp"],
     hdrs = ["shared_optional_proxy_holder.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         "//score/mw/service:proxy_data",
         "//score/mw/service:proxy_future",
@@ -33,7 +31,7 @@ cc_library(
 cc_unit_test(
     name = "shared_optional_proxy_holder_test",
     srcs = ["shared_optional_proxy_holder_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "throws_upon_exception",
     ],
     visibility = ["//score/mw/service/utils:__pkg__"],

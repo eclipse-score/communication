@@ -12,14 +12,12 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_binary(
     name = "subscribe_handler",
     srcs = ["subscribe_handler_application.cpp"],
     data = ["mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:sample_sender_receiver",

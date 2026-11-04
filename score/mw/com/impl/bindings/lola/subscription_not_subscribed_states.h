@@ -45,6 +45,7 @@ class NotSubscribedState final : public SubscriptionStateBase
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;
     std::optional<SlotCollector>& GetSlotCollector() & noexcept override;
     const std::optional<SlotCollector>& GetSlotCollector() const& noexcept override;
+    const std::optional<SlotCollector>&& GetSlotCollector() const&& noexcept = delete;
 
     void OnEntry() override;
 };

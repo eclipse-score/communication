@@ -27,6 +27,7 @@
 #include "score/mw/com/impl/plumbing/proxy_field_binding_factory.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 #include "score/mw/com/impl/test/dummy_instance_identifier_builder.h"
+#include "score/mw/com/impl/util/type_erased_storage.h"
 
 #include <gtest/gtest.h>
 #include <exception>
@@ -116,16 +117,19 @@ class ProxyServiceElementBindingFactoryParamaterisedFixture : public lola::Proxy
         {
             case ServiceElementTypes::PROXY_EVENT:
             {
-                return ProxyEventBindingFactory<TestSampleType>::Create(
-                           handle, proxy_binding, kDummyEventName, ServiceElementType::EVENT)
+                return ProxyEventBindingFactory::Create(handle,
+                                                        proxy_binding,
+                                                        kDummyEventName,
+                                                        ServiceElementType::EVENT,
+                                                        CreateDataTypeSizeInfoFromTypes<TestSampleType>())
                     .and_then([](auto&& binding) -> Result<std::unique_ptr<ProxyEventBinding>> {
                         return std::unique_ptr<ProxyEventBinding>{static_cast<ProxyEventBinding*>(binding.release())};
                     });
             }
             case ServiceElementTypes::PROXY_FIELD:
             {
-                return ProxyFieldBindingFactory<TestSampleType>::CreateEventBinding(
-                           handle, proxy_binding, kDummyFieldName)
+                return ProxyFieldBindingFactory::CreateEventBinding(
+                           handle, proxy_binding, kDummyFieldName, CreateDataTypeSizeInfoFromTypes<TestSampleType>())
                     .and_then([](auto&& binding) -> Result<std::unique_ptr<ProxyEventBinding>> {
                         return std::unique_ptr<ProxyEventBinding>{static_cast<ProxyEventBinding*>(binding.release())};
                     });

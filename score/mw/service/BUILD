@@ -13,7 +13,6 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("@score_baselibs//score/quality/clang_tidy:extra_checks.bzl", "clang_tidy_extra_checks")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
@@ -30,9 +29,8 @@ cc_library(
         "proxy_container.h",
         "proxy_needs.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":multi_instance_holder",
         ":proxy_future",
@@ -47,9 +45,8 @@ cc_library(
     name = "factory",
     srcs = ["proxy_needs_factory.cpp"],
     hdrs = ["proxy_needs_factory.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":service",
         "//score/mw/service/details",
@@ -61,9 +58,8 @@ cc_library(
     name = "managed_service",
     srcs = ["managed_service.cpp"],
     hdrs = ["managed_service.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         "@score_baselibs//score/result",
     ],
@@ -73,9 +69,8 @@ cc_library(
     name = "provided_services_container",
     srcs = ["provided_services_container.cpp"],
     hdrs = ["provided_services_container.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":managed_service",
         "@score_baselibs//score/result",
@@ -86,9 +81,8 @@ cc_library(
     name = "single_instance_holder",
     srcs = ["single_instance_holder.cpp"],
     hdrs = ["single_instance_holder.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -98,9 +92,8 @@ cc_library(
     name = "multi_instance_holder",
     srcs = ["multi_instance_holder.cpp"],
     hdrs = ["multi_instance_holder.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":single_instance_holder",
         "@score_baselibs//score/concurrency",
@@ -113,9 +106,8 @@ cc_library(
     name = "proxy_builder_base",
     srcs = ["proxy_builder_base.cpp"],
     hdrs = ["proxy_builder_base.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":find_service_strategy",
         ":proxy_future",
@@ -128,9 +120,8 @@ cc_library(
     name = "find_service_strategy",
     srcs = ["find_service_strategy.cpp"],
     hdrs = ["find_service_strategy.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [],
 )
 
@@ -138,9 +129,8 @@ cc_library(
     name = "proxy_future",
     srcs = ["proxy_future.cpp"],
     hdrs = ["proxy_future.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         "@score_baselibs//score/concurrency/future",
         "@score_baselibs//score/language/futurecpp",
@@ -151,9 +141,8 @@ cc_library(
 cc_library(
     name = "proxy_data",
     hdrs = ["proxy_data.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":multi_instance_holder",
         ":proxy_future",
@@ -166,8 +155,7 @@ cc_library(
     testonly = True,
     srcs = ["find_service_strategy_mock.cpp"],
     hdrs = ["find_service_strategy_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":find_service_strategy",
         "@googletest//:gtest",
@@ -177,7 +165,6 @@ cc_library(
 cc_unit_test(
     name = "single_instance_holder_test",
     srcs = ["single_instance_holder_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":single_instance_holder",
     ],
@@ -186,14 +173,12 @@ cc_unit_test(
 cc_unit_test(
     name = "multi_instance_holder_test",
     srcs = ["multi_instance_holder_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [":multi_instance_holder"],
 )
 
 cc_unit_test(
     name = "provided_services_container_test",
     srcs = ["provided_services_container_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":provided_services_container",
         "@score_baselibs//score/result",
@@ -203,7 +188,6 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_container_test",
     srcs = ["proxy_container_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":service",
         "//score/mw/service/test_doubles",
@@ -215,7 +199,6 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_future_test",
     srcs = ["proxy_future_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":proxy_future",
         "@score_baselibs//score/concurrency",
@@ -226,7 +209,6 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_needs_factory_test",
     srcs = ["proxy_needs_factory_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":factory",
         "//score/mw/service/test_doubles",
@@ -236,7 +218,6 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_needs_test",
     srcs = ["proxy_needs_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":factory",
         ":find_service_strategy",

@@ -130,7 +130,6 @@ bool UnixDomainServer::ServerConnection::ProcessInput()
             // unrecognised message; drop connection
             return false;
     }
-    return true;
 }
 
 UnixDomainServer::ServerConnection::~ServerConnection() noexcept

@@ -1,3 +1,17 @@
+..
+   # *******************************************************************************
+   # Copyright (c) 2026 Contributors to the Eclipse Foundation
+   #
+   # See the NOTICE file(s) distributed with this work for additional
+   # information regarding copyright ownership.
+   #
+   # This program and the accompanying materials are made available under the
+   # terms of the Apache License Version 2.0 which is available at
+   # https://www.apache.org/licenses/LICENSE-2.0
+   #
+   # SPDX-License-Identifier: Apache-2.0
+   # *******************************************************************************
+
 Chapter 1: Hello World
 ======================
 
@@ -27,8 +41,6 @@ files:
      - This file contains bazel targets for this example.
    * - `consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/consumer.cpp>`__
      - Implementation of the service consumer app. The `main()` for the consumer
-   * - `consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/consumer.h>`__
-     - Header (empty - we just aways want to have cpp/h pairs) of the service consumer.
    * - `hello_world_service.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/hello_world_service.cpp>`__
      - This file is empty as the service interface is completely defined in the header.
    * - `hello_world_service.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/hello_world_service.h>`__
@@ -39,8 +51,6 @@ files:
      - This file contains the configuration for `score::mw::com` for our apps.
    * - `provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/provider.cpp>`__
      - Implementation of the service provider.
-   * - `provider.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/provider.h>`__
-     - Header (empty) of the service provider.
 
 
 ----------------------------------------

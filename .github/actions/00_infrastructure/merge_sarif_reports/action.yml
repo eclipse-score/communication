@@ -44,7 +44,7 @@ runs:
     - name: Merge SARIF reports
       id: merge
       shell: bash
-      run: |
+      run: |-
         set -euo pipefail
 
         if [[ ! -s "${{ inputs.bep-json }}" ]]; then

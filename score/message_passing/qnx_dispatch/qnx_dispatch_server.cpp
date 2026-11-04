@@ -313,9 +313,7 @@ QnxDispatchServer::QnxDispatchServer(std::shared_ptr<QnxDispatchEngine> engine,
       connect_callback_{},
       disconnect_callback_{},
       sent_callback_{},
-      sent_with_reply_callback_{},
-      listener_command_{},
-      listener_endpoint_{}
+      sent_with_reply_callback_{}
 {
     score::cpp::ignore = max_request_size_;  // currently unused
 }

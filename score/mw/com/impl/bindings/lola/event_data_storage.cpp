@@ -14,6 +14,7 @@
 
 #include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/memory/shared/memory_resource_proxy.h"
+#include "score/memory/shared/pointer_arithmetic_util.h"
 
 #include <score/assert.hpp>
 
@@ -70,6 +71,27 @@ EventDataStorage::~EventDataStorage() noexcept
     }
 }
 
+std::byte* EventDataStorage::GetTypeErasedDataSlotsStart() const
+{
+    return type_erased_data_slots_.get();
+}
+
+std::byte* EventDataStorage::GetTypeErasedDataSlotsEnd() const
+{
+    if (type_erased_data_slots_storage_size_in_bytes_ == 0U)
+    {
+        return GetTypeErasedDataSlotsStart();
+    }
+
+    // This is the OffsetPtr to the last valid byte in the storage. We apply explicit bounds-check here via get()
+    const auto last_valid_byte_offset_ptr =
+        type_erased_data_slots_ +
+        decltype(type_erased_data_slots_)::difference_type(type_erased_data_slots_storage_size_in_bytes_ - 1U);
+    auto* const last_valid_byte_raw_ptr = last_valid_byte_offset_ptr.get();
+    // Here we return the one-past-the-last-byte pointer, which may be already out-of-bounds.
+    return memory::shared::AddOffsetToPointer(last_valid_byte_raw_ptr, static_cast<std::size_t>(1U));
+}
+
 void EventDataStorage::InitializeSlots(const InitializeSampleCallback& initialization_callback)
 {
     // Retrieve 1st slot raw-pointer from OffsetPtr, which includes bounds-checking.
@@ -88,35 +110,6 @@ void EventDataStorage::InitializeSlots(const InitializeSampleCallback& initializ
             memory::shared::AddOffsetToPointer(first_slot_raw_ptr, sample_size_info_.Size() * slot_index);
         std::invoke(initialization_callback, current_slot_raw_ptr);
     }
-}
-
-void* EventDataStorage::GetTypeErasedDataSlot(SlotIndexType index, size_t data_size) const
-{
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(index < number_of_slots_);
-
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(data_size == sample_size_info_.Size());
-    const auto element_offset = data_size * index;
-
-    // we apply the required bounds-checking:
-    // Verify, that the start of the type-erased storage is still within bounds
-    auto* const slots_start_address = type_erased_data_slots_.get();
-    // Verify, that the complete slot to be accessed in the type-erased storage is still within bounds.
-    const auto slot_last_byte_offset_ptr =
-        type_erased_data_slots_ + decltype(type_erased_data_slots_)::difference_type(element_offset + data_size - 1U);
-    score::cpp::ignore = slot_last_byte_offset_ptr.get();
-
-    // In our architecture we have a one-to-one mapping between pointers and integral values.
-    // The preconditions above guarantee that element_address will always point inside type_erased_data_slots_.
-    // Therefore, casting between integers and pointers is well-defined in this case.
-    // NOLINTNEXTLINE(score-banned-function) see above
-    auto* const element_address = memory::shared::AddOffsetToPointer(slots_start_address, element_offset);
-
-    return element_address;
-}
-
-SlotIndexType EventDataStorage::GetNumberOfSlots() const
-{
-    return number_of_slots_;
 }
 
 void AddEventDataStorageShmSizeAllocation(std::vector<score::memory::DataTypeSizeInfo>& allocation_sequence,

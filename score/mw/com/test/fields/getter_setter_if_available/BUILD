@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
@@ -29,7 +28,6 @@ cc_library(
     hdrs = [
         "common_resources.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/test/common_test_resources:command_line_parser",
         "//score/mw/com/test/common_test_resources:fail_test",
@@ -41,7 +39,6 @@ cc_library(
     name = "field_consumer",
     srcs = ["consumer.cpp"],
     hdrs = ["consumer.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":common_resources",
         "//score/mw/com",
@@ -56,7 +53,6 @@ cc_library(
     name = "field_provider",
     srcs = ["provider.cpp"],
     hdrs = ["provider.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":common_resources",
         "//score/mw/com",
@@ -73,7 +69,7 @@ cc_binary(
         "config/logging.json",
         "config/mw_com_config.json",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//score/mw/com/test/fields:__pkg__"],
@@ -93,7 +89,7 @@ cc_binary(
         "config/logging.json",
         "config/mw_com_config.json",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//score/mw/com/test/fields:__pkg__"],
@@ -113,7 +109,7 @@ cc_binary(
         "config/logging.json",
         "config/mw_com_config.json",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//score/mw/com/test/fields:__pkg__"],

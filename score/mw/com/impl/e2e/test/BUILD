@@ -12,18 +12,15 @@
 # *******************************************************************************
 
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_unit_test(
     name = "e2e_health_tracker_test",
     srcs = ["e2e_health_tracker_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = ["//score/mw/com/impl/e2e:e2e_health_tracker"],
 )
 
 cc_unit_test(
     name = "e2e_summary_test",
     srcs = ["e2e_summary_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = ["//score/mw/com/impl/e2e:e2e_summary"],
 )

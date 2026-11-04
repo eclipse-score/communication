@@ -13,6 +13,7 @@
 #include "score/mw/com/doc/tutorial/chapter_2/hello_world_service.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <atomic>
 #include <csignal>
@@ -38,7 +39,7 @@ int main(int argc, const char* argv[])
     std::signal(SIGTERM, SignalHandler);
 
     // [consumer-initialize-runtime-start]
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
     // [consumer-initialize-runtime-end]
 
     auto instance_specifier = score::mw::com::InstanceSpecifier::Create(std::string{"MyHelloWorldServiceInstance"});

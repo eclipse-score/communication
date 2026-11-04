@@ -12,13 +12,61 @@
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/proxy_event_binding_factory_impl.h"
 
+#include "score/mw/com/impl/bindings/lola/proxy.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event.h"
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
 #include "score/mw/com/impl/plumbing/binding_factory_error.h"
 #include "score/mw/com/impl/plumbing/lola_proxy_element_building_blocks.h"
 #include "score/mw/com/impl/service_element_type.h"
 
+#include "score/mw/log/logging.h"
+
+#include <score/assert.hpp>
+#include <score/overload.hpp>
+
+#include <optional>
+
 namespace score::mw::com::impl
 {
+
+namespace
+{
+
+/// \brief Creates a lola::ProxyEvent for the given deployment/handle/binding combination.
+///
+/// This encapsulates the logic shared by ProxyEventBindingFactoryImpl::Create() and
+/// GenericProxyEventBindingFactoryImpl::Create(). The returned std::unique_ptr<lola::ProxyEvent> is implicitly
+/// convertible to std::unique_ptr<ProxyEventBinding> (and the enclosing Result to
+/// Result<std::unique_ptr<ProxyEventBinding>>), which is relied upon by ProxyEventBindingFactoryImpl::Create().
+/// \param parent_handle The handle containing the binding information.
+/// \param parent_binding The parent proxy binding, which must be a lola::Proxy.
+/// \param lola_type_deployment The lola specific service type deployment information.
+/// \param event_or_field_name The binding unspecific name of the event/field inside the proxy denoted by handle.
+/// \param service_element_type Whether the service element is an event or a field.
+/// \param data_type_size_info Size/alignment info of the event's data type.
+/// \return An instance of lola::ProxyEvent or an error in case binding creation fails.
+Result<std::unique_ptr<lola::ProxyEvent>> CreateLolaProxyEvent(const HandleType& parent_handle,
+                                                               ProxyBinding& parent_binding,
+                                                               const LolaServiceTypeDeployment& lola_type_deployment,
+                                                               const std::string_view event_or_field_name,
+                                                               const ServiceElementType service_element_type,
+                                                               const memory::DataTypeSizeInfo data_type_size_info)
+{
+    auto* const lola_proxy = dynamic_cast<lola::Proxy*>(&parent_binding);
+    if (lola_proxy == nullptr)
+    {
+        score::mw::log::LogError("lola") << "Proxy event binding could not be created for" << event_or_field_name
+                                         << "because the parent proxy binding is not a lola binding.";
+        return MakeUnexpected(BindingFactoryErrorCode::kParentBindingIsNotLola);
+    }
+
+    const auto element_fq_id =
+        GetElementFqId(parent_handle, lola_type_deployment, std::string{event_or_field_name}, service_element_type);
+
+    return std::make_unique<lola::ProxyEvent>(*lola_proxy, element_fq_id, event_or_field_name, data_type_size_info);
+}
+
+}  // namespace
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
 // not be called implicitly.". std::visit Throws std::bad_variant_access if
@@ -28,10 +76,46 @@ namespace score::mw::com::impl
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+Result<std::unique_ptr<ProxyEventBinding>> ProxyEventBindingFactoryImpl::Create(
+    HandleType parent_handle,
+    ProxyBinding& parent_binding,
+    const std::string_view event_or_field_name,
+    const ServiceElementType service_element_type,
+    const memory::DataTypeSizeInfo data_type_size_info) noexcept
+{
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(service_element_type == ServiceElementType::EVENT ||
+                                              service_element_type == ServiceElementType::FIELD);
+
+    using ReturnType = Result<std::unique_ptr<ProxyEventBinding>>;
+    auto deployment_info_visitor = score::cpp::overload(
+        [&parent_handle, &parent_binding, event_or_field_name, service_element_type, data_type_size_info](
+            const LolaServiceTypeDeployment& lola_type_deployment) -> ReturnType {
+            return CreateLolaProxyEvent(parent_handle,
+                                        parent_binding,
+                                        lola_type_deployment,
+                                        event_or_field_name,
+                                        service_element_type,
+                                        data_type_size_info);
+        },
+        // The SOME/IP binding does not support proxy events (yet). It is listed explicitly (instead of being served
+        // by the score::cpp::blank arm) because std::visit requires an arm for every variant alternative.
+        [](const SomeIpServiceTypeDeployment&) noexcept -> ReturnType {
+            // TODO(someip-proxy-event): Create the SOME/IP proxy event binding.
+            return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
+        },
+        [](const score::cpp::blank&) noexcept -> ReturnType {
+            return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
+        });
+
+    const auto& type_deployment = parent_handle.GetServiceTypeDeployment();
+    return std::visit(deployment_info_visitor, type_deployment.binding_info_);
+}
+
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 Result<std::unique_ptr<GenericProxyEventBinding>> GenericProxyEventBindingFactoryImpl::Create(
     HandleType parent_handle,
     ProxyBinding& parent_binding,
-    const std::string_view event_name,
+    const std::string_view event_or_field_name,
     const ServiceElementType service_element_type)
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD((service_element_type == ServiceElementType::EVENT) ||
@@ -39,10 +123,29 @@ Result<std::unique_ptr<GenericProxyEventBinding>> GenericProxyEventBindingFactor
 
     using ReturnType = Result<std::unique_ptr<lola::ProxyEvent>>;
     auto deployment_info_visitor = score::cpp::overload(
-        [&parent_handle, &parent_binding, event_name, service_element_type](
+        [&parent_handle, &parent_binding, event_or_field_name, service_element_type](
             const LolaServiceTypeDeployment& lola_type_deployment) -> ReturnType {
-            return detail::CreateLolaProxyEvent<ReturnType>(
-                parent_handle, parent_binding, lola_type_deployment, event_name, service_element_type);
+            // In case of GenericProxyEvent the caller doesn't know the event's data type Thus, we are looking up the
+            // DataTypeSizeInfo from the EventMetaInfo that the providing skeleton placed into shared-memory.
+            auto* const lola_proxy = dynamic_cast<lola::Proxy*>(&parent_binding);
+            if (lola_proxy == nullptr)
+            {
+                score::mw::log::LogError("lola")
+                    << "Proxy event binding could not be created for" << event_or_field_name
+                    << "because the parent proxy binding is not a lola binding.";
+                return MakeUnexpected(BindingFactoryErrorCode::kParentBindingIsNotLola);
+            }
+
+            const auto element_fq_id = GetElementFqId(
+                parent_handle, lola_type_deployment, std::string{event_or_field_name}, service_element_type);
+            memory::DataTypeSizeInfo data_type_size_info = lola_proxy->GetEventMetaInfo(element_fq_id).data_type_info_;
+
+            return CreateLolaProxyEvent(parent_handle,
+                                        parent_binding,
+                                        lola_type_deployment,
+                                        event_or_field_name,
+                                        service_element_type,
+                                        data_type_size_info);
         },
         // The SOME/IP binding does not support this service element (yet). It is listed explicitly (instead of
         // being served by the score::cpp::blank arm) because std::visit requires an arm for every variant

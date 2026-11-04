@@ -13,14 +13,12 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "test_type_utilities",
     testonly = True,
     srcs = ["test_type_utilities.cpp"],
     hdrs = ["test_type_utilities.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com/impl:instance_specifier",
         "//score/mw/com/impl/configuration",
@@ -40,7 +38,6 @@ cc_library(
     name = "i_proxy_event",
     srcs = ["i_proxy_event.cpp"],
     hdrs = ["i_proxy_event.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -60,7 +57,6 @@ cc_library(
     testonly = True,
     srcs = ["proxy_event_mock.cpp"],
     hdrs = ["proxy_event_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -74,7 +70,6 @@ cc_library(
     name = "i_skeleton_base",
     srcs = ["i_skeleton_base.cpp"],
     hdrs = ["i_skeleton_base.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -89,7 +84,6 @@ cc_library(
     testonly = True,
     srcs = ["skeleton_base_mock.cpp"],
     hdrs = ["skeleton_base_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -103,7 +97,6 @@ cc_library(
     name = "i_skeleton_event",
     srcs = ["i_skeleton_event.cpp"],
     hdrs = ["i_skeleton_event.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -120,7 +113,6 @@ cc_library(
     testonly = True,
     srcs = ["skeleton_event_mock.cpp"],
     hdrs = ["skeleton_event_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -134,7 +126,6 @@ cc_library(
     name = "i_skeleton_field",
     srcs = ["i_skeleton_field.cpp"],
     hdrs = ["i_skeleton_field.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -151,7 +142,6 @@ cc_library(
     testonly = True,
     srcs = ["skeleton_field_mock.cpp"],
     hdrs = ["skeleton_field_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -166,7 +156,6 @@ cc_library(
     testonly = True,
     srcs = ["skeleton_wrapper_class_test_view.cpp"],
     hdrs = ["skeleton_wrapper_class_test_view.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
@@ -189,7 +178,6 @@ cc_library(
     testonly = True,
     srcs = ["proxy_wrapper_class_test_view.cpp"],
     hdrs = ["proxy_wrapper_class_test_view.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
@@ -206,7 +194,6 @@ cc_library(
 cc_unit_test(
     name = "test_type_utilities_test",
     srcs = ["test_type_utilities_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":test_type_utilities",
     ],

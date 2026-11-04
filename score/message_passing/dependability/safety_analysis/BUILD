@@ -13,7 +13,10 @@
 
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
+    "component_requirements",
     "dependability_analysis",
+    "failure_modes",
+    "fault_trees",
     "safety_analysis",
 )
 
@@ -32,13 +35,33 @@ filegroup(
     visibility = ["//score/message_passing/dependability:__pkg__"],
 )
 
+failure_modes(
+    name = "message_passing_failure_modes",
+    srcs = ["failure_modes.trlc"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+fault_trees(
+    name = "message_passing_fault_trees",
+    srcs = [":fta_files"],
+    fta_package = "message_passing_fta",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [":message_passing_failure_modes"],
+)
+
+component_requirements(
+    name = "message_passing_safety_measures",
+    srcs = ["safetymeasures.trlc"],
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [":message_passing_fault_trees"],
+)
+
 safety_analysis(
     name = "message_passing_safety_analysis",
     arch_design = "//score/message_passing/dependability/software_architectural_design:message_passing_architectural_design",
-    failuremodes = ["failure_modes.trlc"],
-    fta_package = "message_passing_fta",
-    root_causes = [":fta_files"],
-    safetymeasures = ["safetymeasures.trlc"],
+    failure_modes = [":message_passing_failure_modes"],
+    fault_trees = ":message_passing_fault_trees",
+    safety_measures = [":message_passing_safety_measures"],
     visibility = ["//score/message_passing/dependability:__pkg__"],
 )
 

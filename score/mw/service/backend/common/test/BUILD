@@ -13,7 +13,6 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
@@ -21,8 +20,7 @@ cc_library(
     testonly = True,
     srcs = ["single_immediate_instantiation_strategy.cpp"],
     hdrs = ["single_immediate_instantiation_strategy.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         "//score/mw/service:proxy_builder_base",
         "@score_baselibs//score/language/futurecpp",
@@ -34,8 +32,7 @@ cc_library(
     testonly = True,
     srcs = ["multiple_immediate_instantiation_strategy.cpp"],
     hdrs = ["multiple_immediate_instantiation_strategy.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         "//score/mw/service:proxy_builder_base",
         "//score/mw/service/details:proxy_spec_traits",
@@ -46,7 +43,6 @@ cc_library(
 cc_unit_test(
     name = "single_immediate_instantiation_strategy_test",
     srcs = ["single_immediate_instantiation_strategy_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":single_immediate_instantiation_strategy",
     ],
@@ -55,7 +51,6 @@ cc_unit_test(
 cc_unit_test(
     name = "multiple_immediate_instantiation_strategy_test",
     srcs = ["multiple_immediate_instantiation_strategy_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":multiple_immediate_instantiation_strategy",
     ],
@@ -64,7 +59,7 @@ cc_unit_test(
 cc_unit_test(
     name = "instantiation_strategy_base_test",
     srcs = ["instantiation_strategy_base_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "throws_upon_exception",
     ],
     deps = [
