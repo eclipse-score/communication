@@ -27,6 +27,7 @@ filegroup(
         "//score/mw/com/dependability/safety_analysis/root_causes:general",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy:root_causes_proxy",
         "//score/mw/com/dependability/safety_analysis/root_causes/runtime:root_causes_runtime",
+        "//score/mw/com/dependability/safety_analysis/root_causes/service_instance_identifiers:general",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton:root_causes_skeleton",
         "//score/mw/com/dependability/safety_analysis/root_causes/smart_pointer:smart_pointer_fta",
     ],
