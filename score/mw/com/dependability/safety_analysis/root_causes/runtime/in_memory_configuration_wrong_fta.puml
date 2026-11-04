@@ -18,7 +18,6 @@
 $FailureMode("In-Memory configuration wrong", "Communication.InMemoryConfigurationWrong")
 
 $OrGate("Gate1", "Communication.InMemoryConfigurationWrong")
-$RootCause("User provided wrong configuration", "UserProvidedWrongConfiguration", "Gate1")
 $IntermediateEvent("JSON-Tree corrupt", "Event2", "Gate1")
 $OrGate("Gate2", "Event2")
 $RootCause("File corrupted", "FileCorrupted", "Gate2")
