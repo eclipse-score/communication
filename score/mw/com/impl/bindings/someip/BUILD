@@ -14,6 +14,22 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
+    name = "e2e_event_protection",
+    srcs = ["e2e_event_protection.cpp"],
+    hdrs = ["e2e_event_protection.h"],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl/configuration",
+        "//score/mw/com/impl/e2e:e2e_profile_stub",
+        "//score/mw/com/impl/e2e:e2e_result",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
     name = "element_fq_id",
     srcs = ["element_fq_id.cpp"],
     hdrs = ["element_fq_id.h"],

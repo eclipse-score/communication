@@ -14,6 +14,15 @@
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_unit_test(
+    name = "e2e_event_protection_test",
+    srcs = ["e2e_event_protection_test.cpp"],
+    deps = [
+        "//score/mw/com/impl/bindings/someip:e2e_event_protection",
+        "//score/mw/com/impl/configuration",
+    ],
+)
+
+cc_unit_test(
     name = "event_data_storage_test",
     srcs = ["event_data_storage_test.cpp"],
     deps = [
