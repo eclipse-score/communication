@@ -29,6 +29,7 @@ unit_design(
 # supports public_api directly.
 architectural_design(
     name = "memory_shared_architectural_design",
+    package = "memory_shared_api",
     public_api = ["public_api.puml"],
     visibility = ["//score/memory/shared/dependability:__subpackages__"],
 )
