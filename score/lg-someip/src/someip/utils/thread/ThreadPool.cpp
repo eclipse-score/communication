@@ -32,7 +32,10 @@ ThreadPool::ThreadPool(std::size_t thread_count) : stop_requested_(false), threa
 }
 
 ThreadPool::~ThreadPool() {
-    stop_requested_ = true;
+    {
+        std::lock_guard<std::mutex> lock(job_mutex_);
+        stop_requested_ = true;
+    }
     job_condition_.notify_all();
 
     for (auto& worker_thread : worker_threads_) {

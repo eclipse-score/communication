@@ -15,6 +15,7 @@
 #ifndef LG_SOMEIP_THREAD_POOL_H
 #define LG_SOMEIP_THREAD_POOL_H
 
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
@@ -38,7 +39,7 @@ public:
     std::future<typename std::result_of<F(Args...)>::type> enqueue_job(F&& f, Args&&... args);
 
 private:
-    bool stop_requested_;
+    std::atomic<bool> stop_requested_;
     std::size_t thread_count_;
     std::vector<std::thread> worker_threads_;
     std::queue<std::function<void()>> jobs_;
