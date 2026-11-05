@@ -1,0 +1,285 @@
+@startuml skeleton_create_offer_seq
+title "Lola Skeleton Creation and Offer Sequence"
+hide footbox
+
+participant "<u>:Process</u>\nmw::com application" as Process
+participant "mw_com::binding_independent::SkeletonAndServiceElements" as skeleton_and_service_elements
+participant "mw_com::Binding Factories" as mw_com_binding_factories
+participant "mw_com::lola_binding::SkeletonAndServiceElements" as lola_skeleton_and_service_elements
+participant "mw_com::lola_binding::Event Data and Control" as event_data_control
+participant "mw_com::binding_independent::Service Discovery" as service_discovery
+participant "memory::shared::Memory Shared" as memory_shared
+participant "mw_com::lola_binding::Message Passing Service" as message_passing_service
+
+activate Process
+
+' Start message passing thread
+Process -> message_passing_service: Construct
+activate message_passing_service
+
+message_passing_service -> message_passing_service: Start message reception thread
+note right of message_passing_service: We currently have no official way of representing a thread. \nFor now, this is represented by the lifetime of the \nMessage Passing Service.
+
+' Create Skeleton and binding
+Process -> skeleton_and_service_elements: Create(InstanceSpecifier)
+activate skeleton_and_service_elements
+
+skeleton_and_service_elements -> mw_com_binding_factories: CreateSkeletonBinding(InstanceIdentifier)
+activate mw_com_binding_factories
+
+mw_com_binding_factories -> lola_skeleton_and_service_elements: lola::Skeleton::Create()
+activate lola_skeleton_and_service_elements
+
+mw_com_binding_factories <-- lola_skeleton_and_service_elements: return: std::unique_ptr<lola::Skeleton>
+deactivate lola_skeleton_and_service_elements
+
+mw_com_binding_factories --> skeleton_and_service_elements: return: std::unique_ptr<SkeletonBinding>
+deactivate mw_com_binding_factories
+
+' Create events
+loop for all events
+
+skeleton_and_service_elements -> mw_com_binding_factories: CreateSkeletonEventBinding(InstanceIdentifier, SkeletonBinding&)
+activate mw_com_binding_factories
+
+mw_com_binding_factories -> lola_skeleton_and_service_elements: lola::SkeletonEvent::Create()
+activate lola_skeleton_and_service_elements
+
+mw_com_binding_factories <-- lola_skeleton_and_service_elements: return: std::unique_ptr<lola::SkeletonEvent>
+deactivate lola_skeleton_and_service_elements
+
+mw_com_binding_factories --> skeleton_and_service_elements: return: std::unique_ptr<SkeletonEventBinding>
+deactivate mw_com_binding_factories
+
+end
+
+' Create fields
+loop for all fields
+
+skeleton_and_service_elements -> mw_com_binding_factories: CreateSkeletonEventBinding(InstanceIdentifier, SkeletonBinding&)
+activate mw_com_binding_factories
+
+mw_com_binding_factories -> lola_skeleton_and_service_elements: lola::SkeletonEvent::Create()
+activate lola_skeleton_and_service_elements
+
+mw_com_binding_factories <-- lola_skeleton_and_service_elements: return: std::unique_ptr<lola::SkeletonEvent>
+deactivate lola_skeleton_and_service_elements
+
+mw_com_binding_factories --> skeleton_and_service_elements: return: std::unique_ptr<SkeletonEventBinding>
+deactivate mw_com_binding_factories
+
+alt if Setter enabled
+skeleton_and_service_elements -> mw_com_binding_factories: CreateSkeletonMethodBinding(InstanceIdentifier, SkeletonBinding&, ::score::mw::com::impl::kSet)
+activate mw_com_binding_factories
+
+mw_com_binding_factories -> lola_skeleton_and_service_elements: lola::SkeletonMethod::Create()
+activate lola_skeleton_and_service_elements
+
+mw_com_binding_factories <-- lola_skeleton_and_service_elements: return: std::unique_ptr<lola::SkeletonMethod>
+deactivate lola_skeleton_and_service_elements
+
+mw_com_binding_factories --> skeleton_and_service_elements: return: std::unique_ptr<SkeletonMethodBinding>
+deactivate mw_com_binding_factories
+
+end
+
+alt if Getter enabled
+skeleton_and_service_elements -> mw_com_binding_factories: CreateSkeletonMethodBinding(InstanceIdentifier, SkeletonBinding&, ::score::mw::com::impl::kGet)
+activate mw_com_binding_factories
+
+mw_com_binding_factories -> lola_skeleton_and_service_elements: lola::SkeletonMethod::Create()
+activate lola_skeleton_and_service_elements
+
+mw_com_binding_factories <-- lola_skeleton_and_service_elements: return: std::unique_ptr<lola::SkeletonMethod>
+deactivate lola_skeleton_and_service_elements
+
+mw_com_binding_factories --> skeleton_and_service_elements: return: std::unique_ptr<SkeletonMethodBinding>
+deactivate mw_com_binding_factories
+
+end
+
+end
+
+' Create methods
+loop for all methods
+
+skeleton_and_service_elements -> mw_com_binding_factories: CreateSkeletonEventBinding(InstanceIdentifier, SkeletonBinding&)
+activate mw_com_binding_factories
+
+mw_com_binding_factories -> lola_skeleton_and_service_elements: lola::SkeletonEvent::Create()
+activate lola_skeleton_and_service_elements
+
+mw_com_binding_factories <-- lola_skeleton_and_service_elements: return: std::unique_ptr<lola::SkeletonEvent>
+deactivate lola_skeleton_and_service_elements
+
+mw_com_binding_factories --> skeleton_and_service_elements: return: std::unique_ptr<SkeletonEventBinding>
+deactivate mw_com_binding_factories
+
+end
+
+skeleton_and_service_elements --> Process: return: SkeletonWrapperClass<Interface>
+deactivate skeleton_and_service_elements
+
+' Register method handlers
+loop for all methods
+
+Process -> skeleton_and_service_elements: RegisterMethodHandler<Callable>(Callable: method_handler)
+activate skeleton_and_service_elements
+
+skeleton_and_service_elements --> Process
+deactivate skeleton_and_service_elements
+
+end
+
+' Register field set handlers
+loop for all fields with setters enabled
+
+Process -> skeleton_and_service_elements: RegisterFieldSetHandler<Callable>(Callable: method_handler)
+activate skeleton_and_service_elements
+
+skeleton_and_service_elements --> Process
+deactivate skeleton_and_service_elements
+
+end
+
+' Offer service
+Process -> skeleton_and_service_elements: OfferService
+activate skeleton_and_service_elements
+
+skeleton_and_service_elements -> lola_skeleton_and_service_elements: PrepareOfferService
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements -> event_data_control: CreateQmServiceDataControlInShm()
+activate event_data_control
+
+event_data_control -> memory_shared: CreateShm()
+activate memory_shared
+
+memory_shared -> event_data_control: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+event_data_control --> lola_skeleton_and_service_elements
+deactivate event_data_control
+
+lola_skeleton_and_service_elements -> message_passing_service: RegisterQmOnServiceMethodSubscribedHandler()
+activate message_passing_service
+
+lola_skeleton_and_service_elements <-- message_passing_service
+deactivate message_passing_service
+
+alt Process is AsilB
+
+lola_skeleton_and_service_elements -> message_passing_service: RegisterAsilBOnServiceMethodSubscribedHandler()
+activate message_passing_service
+
+lola_skeleton_and_service_elements <-- message_passing_service
+deactivate message_passing_service
+
+end
+
+alt Process is AsilB
+
+lola_skeleton_and_service_elements -> event_data_control: CreateAsilBServiceDataControlInShm()
+activate event_data_control
+
+event_data_control -> memory_shared: CreateShm()
+activate memory_shared
+
+memory_shared --> event_data_control: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+event_data_control -> lola_skeleton_and_service_elements
+deactivate event_data_control
+
+end
+
+lola_skeleton_and_service_elements -> event_data_control: CreateServiceDataStorageInShm()
+activate event_data_control
+
+event_data_control -> memory_shared: CreateShm()
+activate memory_shared
+
+memory_shared -> event_data_control: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+event_data_control -> lola_skeleton_and_service_elements
+deactivate event_data_control
+
+lola_skeleton_and_service_elements --> skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+' Offer service for all events and fields
+loop for all events and fields
+
+skeleton_and_service_elements -> lola_skeleton_and_service_elements: PrepareOfferEvent()
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements -> event_data_control: CreateQmEventDataControlInShm(ElementFqId)
+activate event_data_control
+
+event_data_control -> memory_shared: CreateShm()
+activate memory_shared
+
+memory_shared --> event_data_control: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+event_data_control --> lola_skeleton_and_service_elements
+deactivate event_data_control
+
+alt Process is AsilB
+
+lola_skeleton_and_service_elements -> event_data_control: CreateAsilBEventDataControlInShm(ElementFqId)
+activate event_data_control
+
+event_data_control -> memory_shared: CreateShm()
+activate memory_shared
+
+memory_shared --> event_data_control: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+event_data_control --> lola_skeleton_and_service_elements
+deactivate event_data_control
+
+end
+
+lola_skeleton_and_service_elements -> event_data_control: CreateEventDataStorageInShm(ElementFqId)
+activate event_data_control
+
+event_data_control --> lola_skeleton_and_service_elements
+deactivate event_data_control
+
+lola_skeleton_and_service_elements --> skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+end loop
+
+skeleton_and_service_elements -> lola_skeleton_and_service_elements: VerifyAllMethodHandlersRegistered()
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements --> skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+skeleton_and_service_elements -> service_discovery: OfferService(InstanceIdentifier)
+activate service_discovery
+
+service_discovery --> skeleton_and_service_elements
+deactivate service_discovery
+
+skeleton_and_service_elements --> Process
+deactivate skeleton_and_service_elements
+
+deactivate Process
+
+message_passing_service -> lola_skeleton_and_service_elements: OnServiceMethodSubscribed(ProxyInstanceIdentifier)
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements -> memory_shared: OpenShm()
+activate memory_shared
+
+memory_shared --> lola_skeleton_and_service_elements: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+lola_skeleton_and_service_elements --> message_passing_service
+deactivate lola_skeleton_and_service_elements
+
+@enduml
