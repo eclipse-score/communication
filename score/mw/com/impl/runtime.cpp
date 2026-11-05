@@ -80,6 +80,7 @@ namespace score::mw::com::impl
 
 using TracingFilterConfig = tracing::TracingFilterConfig;
 
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 IRuntime* Runtime::mock_ = nullptr;
 std::optional<Configuration> Runtime::initialization_config_{};
 bool Runtime::runtime_initialization_locked_{false};
