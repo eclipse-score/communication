@@ -1637,7 +1637,7 @@ bool ApplicationManager::check_enabled_tp_message(MessageSOMEIP& message) {
 void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
     static std::uint32_t offset_value = 1;
     static std::uint32_t bytes_of_offset = 0;
-    static int order = 0;
+    static std::uint32_t order = 0;
 
     std::uint32_t msg_id = message.get_message_id();
     std::uint32_t req_id = message.get_request_id();
@@ -1645,7 +1645,8 @@ void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
     std::uint8_t type = message.get_message_type();
 
     // Read the SOME/IP-TP header.
-    int max_payload_size = configuration_->get_max_payload_size();
+    // The configured value is never negative.
+    const auto max_payload_size = static_cast<std::uint32_t>(configuration_->get_max_payload_size());
     auto recv_payload = message.get_payload_type();
 
     std::uint32_t tp_header{0};
