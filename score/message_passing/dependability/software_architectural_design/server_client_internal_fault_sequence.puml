@@ -34,11 +34,11 @@ skinparam ArrowFontName Courier
 
 title Server <-> Client Sequence Diagram: Library-Internal Fault Handling
 
-participant "ExternalClient" as ExternalClient
+actor ExternalClient
 participant client_connection
 participant unix_domain_server
 participant qnx_dispatch_server
-participant "ExternalServer" as ExternalServer
+actor ExternalServer
 
 note over client_connection, qnx_dispatch_server : Companion to the happy-path (server_client_sequence_*.puml) and\nunderlying-layer fault (server_client_os_fault_sequence_*.puml) diagrams.\nThis diagram covers deterministic, library-internal rejections -\nbounded resources and configured limits that the library checks\nitself, before any OS/transport call is attempted. These are not\nOS-layer faults and not user contract misuse (see\nresearch/backlog.md for the latter, tracked as candidate AoUs).
 

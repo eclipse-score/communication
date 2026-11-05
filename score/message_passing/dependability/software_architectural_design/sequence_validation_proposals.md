@@ -15,8 +15,9 @@ request/reply, and the per-connection-handler alternative are outside this pilot
 
 ## Pilot Modeling Conventions
 
-- Application actors have distinct aliases and `<<external>>` stereotypes. They
-  are not library units and must not be added to the certified unit hierarchy.
+- Applications have distinct identities and explicit `actor` declarations in
+  every sequence. They are not library units and must not be added to the
+  certified unit hierarchy.
 - Library lifelines are API object instances: `client : IClientConnection`,
   `server : IServer`, and `connection : IServerConnection`. A connection handle
   is not interchangeable with the listening server object.
@@ -26,14 +27,16 @@ request/reply, and the per-connection-handler alternative are outside this pilot
   `<<callback>>` and `operator()` describe existing `score::cpp::callback` type
   aliases, not new C++ virtual interfaces or new callback method names.
 - Callback calls are solid arrows to the application that supplied the callable.
-  Dashed arrows return from a C++ call. `IPC:` labels identify asynchronous
-  transport messages, not calls to an invented C++ interface. This label is a
-  provisional documentation convention, not an existing checker capability.
+  Their labels name the public callable contract; registration arguments retain
+  the real C++ variable names. Dashed arrows return from a C++ call. `IPC:` labels
+  identify asynchronous transport messages, not calls to an invented C++
+  interface. This label is a provisional documentation convention, not an
+  existing checker capability.
 - The drawing shows one permitted interleaving. Vertical placement does not
   establish an additional cross-thread guarantee. In particular, a completion
   callback is not promised to occur after `SendWithCallback()` returns.
 
-## Current Tooling Evidence
+## Historical Tooling Evidence
 
 Observed on 2026-10-23 with the repository's resolved `@score_tooling` dependency:
 
@@ -41,7 +44,7 @@ Observed on 2026-10-23 with the repository's resolved `@score_tooling` dependenc
   naming and interface-connection findings in the existing sequences.
 - Adding the callback declarations and signatures to the public API alone did
   not add findings. The parser accepts the `operator()` notation.
-- With the pilot registered in `architectural_design.dynamic`, validation reports
+- With the pilot registered in `architectural_design.dynamic`, validation reported
   **37 findings**, including **28 additional findings**: 3 Naming, 5 Interface,
   and 20 Method. There are no additional public/internal API declaration errors.
 - The build exits successfully because the target is in development maturity;
@@ -50,7 +53,7 @@ Observed on 2026-10-23 with the repository's resolved `@score_tooling` dependenc
 The additional findings are explained by the current model, rather than by
 missing implementation units:
 
-| Current behavior | Pilot evidence | Needed distinction |
+| Historical behavior | Pilot evidence | Needed distinction |
 | --- | --- | --- |
 | Every non-reserved participant must name an internal unit | `client_api`, `server_api`, `server_connection_api` are rejected | Public API object instance versus internal unit |
 | Only the literal alias `ExternalEndpoint` is special | Distinct application actors are rejected | Explicitly declared external actors |
@@ -62,9 +65,9 @@ The relevant upstream entry points are
 `validation/core/src/profiles/architectural_design.rs`,
 `validation/core/src/validators/component_sequence_validator.rs`, and
 `validation/core/src/validators/sequence_internal_api_validator.rs` in
-`@score_tooling`. The architectural-design profile currently passes public API
-information to the component/public-API validator, but not to sequence method
-validation.
+`@score_tooling`. In this historical model, the architectural-design profile
+passed public API information to the component/public-API validator, but not to
+sequence method validation.
 
 Reproduce from the repository root:
 
@@ -73,7 +76,53 @@ bazel build //score/message_passing/dependability/software_architectural_design:
 cat bazel-bin/score/message_passing/dependability/software_architectural_design/message_passing_architectural_design/validation.log
 ```
 
-## Proposed Capabilities
+## Tooling Update Compatibility
+
+Rechecked on 2026-11-05 against the pinned `score_tooling` 3.0.2 and the exact
+merge commit `c502e34c413f73725694099314ed311a32969f99` of
+[tooling PR #548](https://github.com/eclipse-score/tooling/pull/548). The merged
+revision was tested with a temporary command-line module override and local
+action execution; this was not a full CI or QNX analysis run.
+
+| Tooling | Before compatibility changes | After compatibility changes |
+| --- | --- | --- |
+| Pinned 3.0.2 | 37 findings | 37 findings |
+| PR #548 merge commit | 11 findings | 7 findings |
+
+The pilot now labels callback invocations with the declared public contract:
+
+| Registered callable | Callback arrow label |
+| --- | --- |
+| `state_callback` | `StateCallback(...)` |
+| `reply_callback` | `ReplyCallback(...)` |
+| `connect_callback` | `ConnectCallback(...)` |
+| `sent_with_reply_callback` | `MessageCallback(...)` |
+
+These labels remove four findings with the new validator. They do not establish
+registration bindings or argument-type correctness. Application actors remain
+distinct, with explicit `actor` declarations in every diagram. Under PR #548,
+an actor is checked against the public API; a `<<external>>` participant denotes
+a platform or another SEooC whose calls are not checked.
+
+The remaining seven findings are all in the pilot: three Naming findings for
+API-object lifelines, and two Interface plus two Method findings for IPC calls.
+PR #548 accepts unit, component and SEooC lifelines, but not arbitrary public
+API-object lifelines. It treats solid `->>` arrows as operation calls; `IPC:`
+does not exempt transport requests. Dashed replies are skipped, not verified
+transport interactions. No dummy units or invented IPC methods were added.
+
+Unwrapping the existing parenthesized API calls in the five implementation
+sequences was tested but deferred: it increased the 3.0.2 findings from 37 to
+54. Those existing labels remain for compatibility and still bypass method
+checking. After the tooling update, remove their outer parentheses, express
+slash-separated operation alternatives separately, and revalidate and render
+the diagrams. Until then, absence of findings does not mean those calls were
+checked. The pilot's calls remain unwrapped.
+
+## Original Proposed Capabilities
+
+The proposals below predate PR #548. Its implemented subset and the remaining
+gaps are recorded above; they are not all still missing capabilities.
 
 ### 1. Explicit External Actors And Integration Views
 
