@@ -58,8 +58,8 @@ private:
     std::function<void(void)> handler_{nullptr};
     std::string file_name_{SOMEIP_SOCKET_PATH};
     std::shared_ptr<lgsomeip::osabstraction::UDPSocket> socket_{nullptr};
-    std::uint32_t timer_interval_{0};
-    bool periodic_ = false;
+    std::atomic<std::uint32_t> timer_interval_{0};
+    std::atomic<bool> periodic_{false};
 
 private:
     void run_timer();

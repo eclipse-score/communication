@@ -27,9 +27,6 @@ TimerMux::TimerMux(std::string name) {
     // TODO(lg-someip): Generate a unique file name.
     file_name_ += name;
 
-    // Timer init
-    timer_init();
-
     // TODO(lg-someip): Create and open the socket file.
     std::shared_ptr<lgsomeip::osabstraction::Address> address =
         std::make_shared<lgsomeip::osabstraction::LocalAddress>();
@@ -38,11 +35,17 @@ TimerMux::TimerMux(std::string name) {
 
     socket_ = std::make_shared<lgsomeip::osabstraction::UDPSocket>(address);
     socket_->bind();
+
+    // Timer init
+    timer_init();
 }
 
 TimerMux::~TimerMux() {
     // Thread Stop & Join
-    timer_state_ = false;
+    {
+        std::lock_guard<std::mutex> lock(thread_mutex_);
+        timer_state_ = false;
+    }
     condition_.notify_one();
     try {
         thread_->join();
@@ -56,8 +59,11 @@ TimerMux::~TimerMux() {
 
 void TimerMux::set_timer(std::uint32_t interval_milliseconds, bool periodic) {
     if (socket_ != 0) {
-        periodic_ = periodic;
-        timer_interval_ = interval_milliseconds;
+        {
+            std::lock_guard<std::mutex> lock(thread_mutex_);
+            periodic_ = periodic;
+            timer_interval_ = interval_milliseconds;
+        }
         condition_.notify_one();
     } else {
         // TODO(lg-someip): Report the missing timer socket.
@@ -65,6 +71,7 @@ void TimerMux::set_timer(std::uint32_t interval_milliseconds, bool periodic) {
 }
 
 void TimerMux::cancel_timer() {
+    std::lock_guard<std::mutex> lock(thread_mutex_);
     timer_interval_ = 0;
     periodic_ = false;
 }
@@ -122,14 +129,16 @@ void TimerMux::run_timer() {
     std::chrono::steady_clock::time_point next(std::chrono::steady_clock::now());
 
     while (1) {
-        std::unique_lock<std::mutex> lock(thread_mutex_);
-        condition_.wait(lock, [&] { return timer_interval_ > 0 || !timer_state_; });
-        if (!timer_state_)
-            break;
+        {
+            std::unique_lock<std::mutex> lock(thread_mutex_);
+            condition_.wait(lock, [&] { return timer_interval_ > 0 || !timer_state_; });
+            if (!timer_state_)
+                break;
+        }
 
         //        std::chrono::duration<int, std::milli> msec(timer_interval_);
         //        std::this_thread::sleep_for(msec);
-        std::chrono::steady_clock::duration duration(std::chrono::milliseconds{timer_interval_});
+        std::chrono::steady_clock::duration duration(std::chrono::milliseconds{timer_interval_.load()});
         next += duration;
         std::this_thread::sleep_until(next);
 
