@@ -355,15 +355,13 @@ TEST(ApplicationManager, dispatches_request_to_registered_provider_handler) {
     std::mutex callback_mutex;
     std::condition_variable callback_condition;
     int callback_count = 0;
-    application_manager.register_message_handler(
-        0x1001, 0x0002, 0x0003,
-        [&](std::shared_ptr<Message>) {
-            {
-                std::lock_guard<std::mutex> lock(callback_mutex);
-                ++callback_count;
-            }
-            callback_condition.notify_all();
-        });
+    application_manager.register_message_handler(0x1001, 0x0002, 0x0003, [&](std::shared_ptr<Message>) {
+        {
+            std::lock_guard<std::mutex> lock(callback_mutex);
+            ++callback_count;
+        }
+        callback_condition.notify_all();
+    });
 
     auto request = MessageBuilder::create_request_message(0x1001, 0x0003, 0x01);
     request->set_instance_id(0x0002);

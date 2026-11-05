@@ -167,10 +167,10 @@ public:
             manager_->unregister_message_handler(service, instance, method);
             return;
         }
-        manager_->register_message_handler(
-            service, instance, method, [handler = std::move(handler)](std::shared_ptr<MessageSOMEIP> message) {
-                handler(from_internal_message(message));
-            });
+        manager_->register_message_handler(service, instance, method,
+                                           [handler = std::move(handler)](std::shared_ptr<MessageSOMEIP> message) {
+                                               handler(from_internal_message(message));
+                                           });
     }
     void unregister_message_handler(service_t service, instance_t instance, method_t method) override {
         manager_->unregister_message_handler(service, instance, method);
