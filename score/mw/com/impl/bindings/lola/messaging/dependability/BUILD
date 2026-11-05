@@ -20,9 +20,11 @@ load(
 # via '.. uml::' so both must be listed together in 'static'.
 unit_design(
     name = "unit_design",
-    static = glob([
-        "*.puml",
-        #"*.rst",
-    ]),
+    static = [],
+    # gtodo: Re-enable once the puml files are fixed according to the safety sentinel puml parser.
+    # glob([
+    #     "*.puml",
+    #     #"*.rst",
+    # ]),
     visibility = ["//score/mw/com/impl/bindings/lola/messaging:__pkg__"],
 )

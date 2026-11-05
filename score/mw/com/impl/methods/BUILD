@@ -170,7 +170,7 @@ cc_unit_test(
     ],
     deps = [
         ":proxy_method",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/plumbing:proxy_method_binding_factory_mock",
         "//score/mw/com/impl/test:binding_factory_resources",
@@ -235,7 +235,7 @@ cc_unit_test(
     ],
     deps = [
         ":skeleton_method",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/methods/test:callable_traits_resources",
         "//score/mw/com/impl/plumbing:skeleton_method_binding_factory_mock",
         "//score/mw/com/impl/test:binding_factory_resources",
@@ -251,7 +251,7 @@ cc_unit_test(
     deps = [
         ":skeleton_method",
         ":skeleton_method_base",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
