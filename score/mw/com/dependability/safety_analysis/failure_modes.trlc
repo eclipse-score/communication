@@ -152,10 +152,30 @@ section "LoLa" {
             }
         }
 
+        // Note. IsAvailableToConsumers means that if the proxy does everything correctly on its side, the service can be found. It doesn't consider issues in proxy side service discovery (i.e. in FindService or StartFindService).
         section "OfferAService" {
 
-            // ID: 31544607
-            ScoreReq.FailureMode ServiceOfferedWithoutInitialFieldValue {
+            ScoreReq.FailureMode OfferServiceFailedButServiceIsAvailableToConsumers {
+                guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+                description = "OfferService failed but the service is still visible to proxies and can be found via service discovery."
+                failureeffect = "A proxy which has been created after finding a service expects that it can communicate with / receive data from the connected skeleton. If the service was not succesfully offered, but the proxy finds it anyway, the proxy communication semantics are affected and thus can affect any safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "By explicitly requesting this case in our requirements and testing the requirement we make sure that the error case is tackled. The not working update functionality is covered already by other FMEA elements in Section SendAnEventOrField"
+                interface = "mw.com.Skeleton.OfferService"
+            }
+
+            ScoreReq.FailureMode OfferServiceNotFullySetupForConsumers {
+                guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+                description = "OfferService succeeded and the service is visible to proxies and can be found via service discovery but the service is not fully setup such that a created Proxy connected to the service cannot correctly interact with the service (e.g. receive data)."
+                failureeffect = "A proxy which has been created after finding a service expects that it can communicate with / receive data from the connected skeleton. If the service was succesfully offered such that the proxy can find it but it is not correctly setup for communicating with the proxy, the proxy and skeleton communication semantics are affected and thus can affect any safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = ""
+                interface = "mw.com.Skeleton.OfferService"
+            }
+
+            ScoreReq.FailureMode OfferServiceSucceededWithoutInitialFieldValue {
                 guidewords = [ ScoreReq.Guideword.LossOfFunction ]
                 description = "A service is offered, although at least one of its field has no initial value set by the provider."
                 failureeffect = "A user expects after seeing a service offered, in a call to GetNewSamples(), that he would at least get one new sample. This could hinder the expected semantics on user side, and thus affect any safety goal."
@@ -165,55 +185,20 @@ section "LoLa" {
                 // interface = "mw.com.Skeleton.OfferService"
             }
 
-            // ID: 6156955
-            ScoreReq.FailureMode ServiceNotOffered {
+            ScoreReq.FailureMode OfferServiceSucceededButServiceIsNotAvailableToConsumers {
                 guidewords = [ ScoreReq.Guideword.LossOfFunction ]
-                description = "A skeleton service is offering a service, but the service is silently not offered. Note: offered in this case means, that it is also connectable"
-                failureeffect = "No communication between process will happen, thus no information can be exchanged, thus any overall system functionality can stop."
+                description = "A skeleton service is offering a service, but the service is silently not offered."
+                failureeffect = "A proxy cannot be created so no communication will happen, thus no information can be exchanged, thus any overall system functionality can stop."
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "We added an AoU that no Safety-goal shall be harmed, if a service is not offered. Thus, this failure cannot have any safety-related bad effect."
                 // interface = "mw.com.Skeleton.OfferService"
             }
 
-            // ID: 6164063
-            ScoreReq.FailureMode ServiceOfferedOnWrongBinding {
-                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "A skeleton is offering a service on the wrong binding. Meaning, the service is not offered on the intended binding, but on an unintended one."
-                failureeffect = "No communication between processes will happen, thus, no information can be exchanged, thus, any overall system functionality can malfunction. The point that a service is offered on another binding should not have any effect, since no consumer will expect the service on this binding."
-                version = 1
-                safety = ScoreReq.Asil.B
-                rationale = "If a service is offered on the wrong binding, then it will not be visible on the expected binding. Thus, we can handle this part as if the service would not be offered at all. For the wrong binding, where the service is offered, no consumer expects the service, thus, no bad influence can happen."
-                // interface = "mw.com.Skeleton.OfferService"
-            }
-
-            // ID: 6164070
-            ScoreReq.FailureMode ServiceOfferedUnderWrongIds {
-                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "A skeleton is offering a service with wrong identifiers. This can include a service id, a instance id or also the service version."
-                failureeffect = "The actual intended communication will not happen, thus potential causing a complete loss of system functionality. In the worst case, the wrong identifiers are used by another service. In that case a wrong consumer could think that he found the right service, leading to a case where garbage data is transmitted, causing any potential issues in the whole system functionality (e.g. violating the top level safety goal)."
-                version = 1
-                safety = ScoreReq.Asil.B
-                rationale = "If a service is offered on a wrong binding, then the initial service is not offered. Covered by our AoU (\"No guarantee in availability of services\"). It looks different if we overwrite this way another service. This is prevented with explicit preventive measures for each root cause. The Service Discovery Marker files are already handled in the failure mode \"ServiceNotOffered\""
-                // interface = "mw.com.Skeleton.OfferService"
-            }
-
-            // ID: 6164082
-            ScoreReq.FailureMode OffersAlreadyOfferedService {
-                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "A skeleton offers a service that was already offered. Either by another process or by itself."
-                failureeffect = "Already existing communication could break up. Or data could be overwritten while transmitted. In any case this could cause potential garbage data, which could cause a complete malfunction of the system."
-                version = 1
-                safety = ScoreReq.Asil.B
-                rationale = "We avoid to overwrite shared memory segments of different processes by having ownership by a single UID which is assigned to a process. (This was in place before the FMEA) In addition we support partial restart, which is implemented and traced according to ASIL-B which enables to re-offer a previously offered service in a sane manner. To identify already offered services, control measures via marker files have been introduced."
-                // interface = "mw.com.Skeleton.OfferService"
-            }
-
-            // ID: 6164086
-            ScoreReq.FailureMode ServiceOnlyPartiallyOffered {
+            ScoreReq.FailureMode OfferServiceSucceededButServiceIsOnlyAvailableToSubsetOfConsumers {
                 guidewords = [ ScoreReq.Guideword.PartialFunction ]
-                description = "A skeleton offers a service, which is not visible to all consumers, but only to parts of them."
-                failureeffect = "This is equal to the case service not offered, thus no information can be exchanged, thus any overall system functionality can stop."
+                description = "A skeleton offers a service, which is not visible to all consumers, but only to a subset of them."
+                failureeffect = "This is equal to the case OfferServiceSucceededButServiceIsNotAvailableToConsumers, thus for the consumers which cannot find the service no information can be exchanged, thus any overall system functionality can stop."
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "Since both sub-trees (config is wrong, no ASIL level) are captured via different fault trees, we only need to ensure that all events are actually always registered. This is ensured via an preventive measure."

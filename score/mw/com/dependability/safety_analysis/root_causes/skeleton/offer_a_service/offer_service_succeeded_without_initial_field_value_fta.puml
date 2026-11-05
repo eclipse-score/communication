@@ -15,11 +15,12 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("Offers already offered service", "Communication.OffersAlreadyOfferedService")
+$FailureMode("OfferService succeeded without initial field values", "Communication.OfferServiceSucceededWithoutInitialFieldValue")
 
-$OrGate("Gate1", "Communication.OffersAlreadyOfferedService")
-$RootCause("Service was offered by another process", "ServiceWasOfferedByAnotherProcess", "Gate1")
-$RootCause("Service was already offered by our process", "ServiceWasAlreadyOfferedByOurProcess", "Gate1")
-$RootCause("Service was already offered by previous died process", "ServiceWasAlreadyOfferedByPreviousDiedProcess", "Gate1")
+$OrGate("OrGate1", "Communication.OfferServiceSucceededWithoutInitialFieldValue")
+$RootCause("OfferService did not check if user provided initial field value", "OfferCallDidNotCheckIfUserProvidedFieldValues", "OrGate1")
+
+$IntermediateEvent("Update functionality did not work", "UpdateFunctionalityDidNotWork", "OrGate1")
+' gtodo: reference update failed
 
 @enduml
