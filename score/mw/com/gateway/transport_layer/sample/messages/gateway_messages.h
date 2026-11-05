@@ -101,7 +101,10 @@ class ProvideServiceRequest : public TransportMessage
         return instance_specifier_;
     }
 
-    std::vector<EventInfo> GetServiceElements() const
+    /// \brief Returns the service elements as views over this object's own owned name storage.
+    /// \details The returned views are valid as long as this ProvideServiceRequest instance is alive and not
+    /// modified/deserialized again.
+    const std::vector<score::mw::com::EventInfo> GetServiceElements() const
     {
         std::vector<EventInfo> result;
         result.reserve(elements_.size());
