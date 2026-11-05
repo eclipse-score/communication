@@ -18,6 +18,8 @@
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
@@ -44,8 +46,23 @@ class DummyInstanceIdentifierBuilder
 
   private:
     LolaServiceInstanceDeployment service_instance_deployment_;
-
     LolaServiceTypeDeployment service_type_deployment_;
+    ServiceTypeDeployment type_deployment_;
+    ServiceIdentifierType type_;
+    InstanceSpecifier instance_specifier_;
+    std::unique_ptr<ServiceInstanceDeployment> instance_deployment_;
+};
+
+class SomeIpDummyInstanceIdentifierBuilder
+{
+  public:
+    SomeIpDummyInstanceIdentifierBuilder();
+
+    InstanceIdentifier CreateValidSomeipInstanceIdentifier();
+
+  private:
+    SomeIpServiceInstanceDeployment service_instance_deployment_;
+    SomeIpServiceTypeDeployment service_type_deployment_;
     ServiceTypeDeployment type_deployment_;
     ServiceIdentifierType type_;
     InstanceSpecifier instance_specifier_;
