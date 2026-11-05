@@ -162,7 +162,7 @@ TEST(SerializerTest, SerializeInt32) {
 }
 
 TEST(SerializerTest, SerializeFloat) {
-    float f{3.14};
+    float f{3.14F};
     std::uint8_t* p = reinterpret_cast<std::uint8_t*>(&f);
 
     Serializer serializer;

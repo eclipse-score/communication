@@ -63,6 +63,20 @@ bool serialize_external_sd(MessageSD& message, std::vector<std::uint8_t>& buffer
     buffer = serialize_sd(message);
     return true;
 }
+
+// Delay before the next repetition: the base delay doubled for each repetition already sent, saturated to the
+// range of the timer.
+std::uint32_t repetition_delay(std::uint16_t repetitions_base_delay, std::uint32_t count) {
+    const std::uint64_t base_delay = repetitions_base_delay;
+    const std::uint32_t shift = count + 1;
+    const std::uint64_t multiplier =
+        shift >= 64 ? std::numeric_limits<std::uint64_t>::max() : (std::uint64_t{1} << shift);
+    const std::uint64_t delay = base_delay > 0 && multiplier > std::numeric_limits<std::uint64_t>::max() / base_delay
+                                    ? std::numeric_limits<std::uint64_t>::max()
+                                    : base_delay * multiplier;
+    return static_cast<std::uint32_t>(
+        std::min(delay, static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max())));
+}
 } // namespace
 
 // Provide the out-of-line definition required for ODR-use.
@@ -256,16 +270,7 @@ void ServiceManager::on_send_cyclic_repetition_offer_service(std::shared_ptr<Mes
                         MessageComposer::add_entry(message, &entry, option1, nullptr);
 
                         item.state = item.state + 1;
-                        const std::uint64_t base_delay = sd_config->get_repetitions_base_delay();
-                        const std::uint32_t shift = count + 1;
-                        const std::uint64_t multiplier =
-                            shift >= 64 ? std::numeric_limits<std::uint64_t>::max() : (std::uint64_t{1} << shift);
-                        const std::uint64_t delay =
-                            base_delay > 0 && multiplier > std::numeric_limits<std::uint64_t>::max() / base_delay
-                                ? std::numeric_limits<std::uint64_t>::max()
-                                : base_delay * multiplier;
-                        item.timer = static_cast<std::uint32_t>(
-                            std::min(delay, static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max())));
+                        item.timer = repetition_delay(sd_config->get_repetitions_base_delay(), count);
 
                         LGSOMEIP_LOG_DEBUG << "ServiceManager::on_send_cyclic_repetition_offer_service / Service "
                                            << format_service_instance_id(serviceid, instanceid)
@@ -406,7 +411,7 @@ void ServiceManager::on_send_cyclic_repetition_find_service(std::shared_ptr<Mess
                         MessageComposer::add_entry(message, &entry, nullptr, nullptr);
 
                         item.state = item.state + 1;
-                        item.timer = sd_config->get_repetitions_base_delay() * std::pow(2, count + 1);
+                        item.timer = repetition_delay(sd_config->get_repetitions_base_delay(), count);
 
                         LGSOMEIP_LOG_DEBUG << "ServiceManager::on_send_cyclic_repetition_find_service / Service "
                                            << format_service_instance_id(serviceid, instanceid)

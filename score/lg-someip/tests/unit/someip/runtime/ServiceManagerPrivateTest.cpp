@@ -156,6 +156,35 @@ TEST(ServiceManagerPrivate, parses_endpoint_options_and_rejects_duplicates) {
     EXPECT_FALSE(manager.find_option_address(parsed_tcp, parsed_udp, options, 2, nullptr, 0));
 }
 
+TEST(ServiceManagerPrivate, doubles_the_repetition_delay_for_each_repetition) {
+    ScopedPrivateConfig config_file;
+    auto router = std::make_shared<PrivateServiceRouter>();
+    ServiceManager manager("private-test", config_file.path(), router);
+    auto message = MessageBuilder::create<SOMEIPSD>();
+    const std::uint32_t base_delay =
+        manager.get_configuration()->get_service_discovery_info()->get_repetitions_base_delay();
+    ASSERT_EQ(base_delay, 200U);
+
+    for (std::uint32_t count = 0; count < 3; ++count) {
+        const std::uint32_t expected = base_delay * (1U << (count + 1));
+
+        AvailableService offered(0x0007, true, 0x01, 0x00000003, 3, nullptr, nullptr);
+        offered.state = SOMEIP_SERVICE_STATE_REPETITION | count;
+        offered.timer = 1;
+        manager.repetition_offer_list_[0x1001][0x0002] = offered;
+        manager.on_send_cyclic_repetition_offer_service(message);
+        EXPECT_EQ(manager.repetition_offer_list_[0x1001][0x0002].timer, expected) << "offer, count " << count;
+
+        RequestedService requested(0x0005, 0x01, 0x00000003);
+        requested.state = SOMEIP_SERVICE_STATE_REPETITION | count;
+        requested.timer = 1;
+        manager.repetition_find_list_[0x1002][0x0003].clear();
+        manager.repetition_find_list_[0x1002][0x0003].push_back(requested);
+        manager.on_send_cyclic_repetition_find_service(message);
+        EXPECT_EQ(manager.repetition_find_list_[0x1002][0x0003].front().timer, expected) << "find, count " << count;
+    }
+}
+
 TEST(ServiceManagerPrivate, advances_repetition_offer_and_find_phases) {
     ScopedPrivateConfig config_file;
     auto router = std::make_shared<PrivateServiceRouter>();
