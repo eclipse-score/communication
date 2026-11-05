@@ -33,6 +33,9 @@ using servicelist_t =
     std::map<std::uint16_t, std::map<std::uint16_t, std::map<std::uint8_t, std::map<std::uint32_t, std::uint8_t>>>>;
 using eventlist_t =
     std::map<std::uint16_t, std::map<std::uint16_t, std::map<std::uint8_t, std::map<std::uint16_t, std::uint8_t>>>>;
+// service -> instance -> event group -> event -> offer state
+using offereventlist_t =
+    std::map<std::uint16_t, std::map<std::uint16_t, std::map<std::uint16_t, std::map<std::uint16_t, std::uint8_t>>>>;
 using reqeventlist_t =
     std::map<std::uint16_t, std::map<std::uint16_t, std::map<std::uint16_t, std::map<std::uint16_t, std::uint8_t>>>>;
 

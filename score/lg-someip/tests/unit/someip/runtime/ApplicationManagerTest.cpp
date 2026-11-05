@@ -424,6 +424,36 @@ TEST(ApplicationManager, handles_subscribe_eventgroup_accept_and_reject) {
     EXPECT_EQ(rejected_router->last_sd_message->entries().front().get_ttl(), SOMEIP_DEFAULT_TTL_OFF);
 }
 
+TEST(ApplicationManager, subscribe_eventgroup_distinguishes_eventgroups_with_equal_low_byte) {
+    auto make_subscribe = [](std::uint16_t eventgroup) {
+        auto message = MessageBuilder::create<SOMEIPSD>();
+        message->set_request_id(0x00050001);
+        SDEntry entry(SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID);
+        entry.set_service_id(0x1001);
+        entry.set_instance_id(0x0002);
+        entry.set_major_version(0x01);
+        entry.set_event_group_id(eventgroup);
+        entry.set_ttl(SOMEIP_DEFAULT_TTL_ON);
+        MessageComposer::add_entry(message, &entry);
+        return message;
+    };
+
+    auto router = std::make_shared<FakeApplicationRouter>();
+    ApplicationManager application_manager("test", "", router);
+    application_manager.init();
+    application_manager.offer_service(0x1001, 0x0002, 0x01, 0x00000003);
+    application_manager.offer_event(0x1001, 0x0002, 0x0003, {0x0004});
+
+    application_manager.on_subscribe_eventgroup(make_subscribe(0x0004));
+    ASSERT_NE(router->last_sd_message, nullptr);
+    EXPECT_EQ(router->last_sd_message->entries().front().get_ttl(), SOMEIP_DEFAULT_TTL_ON);
+
+    // Event group 0x0104 is not offered, even though its low byte equals the offered 0x0004.
+    application_manager.on_subscribe_eventgroup(make_subscribe(0x0104));
+    ASSERT_NE(router->last_sd_message, nullptr);
+    EXPECT_EQ(router->last_sd_message->entries().front().get_ttl(), SOMEIP_DEFAULT_TTL_OFF);
+}
+
 TEST(ApplicationManager, reports_subscription_ack_and_nack_status) {
     auto router = std::make_shared<FakeApplicationRouter>();
     ApplicationManager application_manager("test", "", router);

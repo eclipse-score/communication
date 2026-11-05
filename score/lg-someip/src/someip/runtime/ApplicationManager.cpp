@@ -636,7 +636,7 @@ void ApplicationManager::offer_event(std::uint16_t service, std::uint16_t instan
     }
     std::unique_lock<std::mutex> lck_offerevent(offer_event_list_mutex_);
     for (std::uint16_t eventgroup : event_groups) {
-        offer_event_list_[service][instance][static_cast<std::uint8_t>(eventgroup)][event_id] = SOMEIP_EVENT_OFFER;
+        offer_event_list_[service][instance][eventgroup][event_id] = SOMEIP_EVENT_OFFER;
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::offer_event "
                            << format_service_instance_event_id(service, instance, event_id) << " "
                            << format_named_id("EventGroupID", eventgroup, 4) << " is offered.";
@@ -908,11 +908,11 @@ void ApplicationManager::send_initial_event(std::uint16_t service, std::uint16_t
                        << " " << format_named_id("EventGroupID", event_group, 4);
 
     std::lock_guard<std::mutex> guard(offer_event_list_mutex_);
-    auto& eglist = offer_event_list_[service][instance][static_cast<std::uint8_t>(event_group)];
+    auto& eglist = offer_event_list_[service][instance][event_group];
 
     for (auto& event : eglist) {
         if (event.second == SOMEIP_EVENT_OFFER) {
-            event_manager_->notify_initial_event(service, instance, static_cast<std::uint16_t>(event.first));
+            event_manager_->notify_initial_event(service, instance, event.first);
         }
     }
 }
@@ -964,7 +964,7 @@ void ApplicationManager::on_subscribe_eventgroup(std::shared_ptr<MessageSD> mess
     lck_offer.unlock();
 
     std::unique_lock<std::mutex> lck_event(offer_event_list_mutex_);
-    auto& event_state = offer_event_list_[service_id][instance_id][static_cast<std::uint8_t>(eventgroup_id)];
+    auto& event_state = offer_event_list_[service_id][instance_id][eventgroup_id];
     for (auto& item : event_state) {
         if (item.second == SOMEIP_EVENT_OFFER) {
             result |= 0x01;

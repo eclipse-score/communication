@@ -132,7 +132,7 @@ private:
     // Event Message Management
     mutable std::mutex offer_event_list_mutex_;
     mutable std::mutex event_manager_mutex_;
-    servicelist_t offer_event_list_;
+    offereventlist_t offer_event_list_;
     std::shared_ptr<EventManager> event_manager_;
 
 public:
