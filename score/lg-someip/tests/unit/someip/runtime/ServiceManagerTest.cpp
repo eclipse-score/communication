@@ -72,6 +72,11 @@ public:
             ++add_route_count;
         }
         internal_message_condition.notify_all();
+        {
+            // Lets a test keep the route creation pending.
+            std::unique_lock<std::mutex> lock(internal_message_mutex);
+            internal_message_condition.wait_for(lock, std::chrono::seconds(5), [&] { return add_route_open; });
+        }
         return add_route_result;
     }
 
@@ -111,6 +116,7 @@ public:
     bool started = false;
     bool stopped = false;
     bool add_route_result = true;
+    bool add_route_open = true;
     int add_route_count = 0;
     int remove_route_count = 0;
     int set_instance_id_count = 0;
@@ -126,6 +132,14 @@ public:
         std::unique_lock<std::mutex> lock(internal_message_mutex);
         return internal_message_condition.wait_for(lock, std::chrono::seconds(1),
                                                    [&] { return internal_messages.size() >= count; });
+    }
+
+    void set_add_route_open(bool open) {
+        {
+            std::lock_guard<std::mutex> lock(internal_message_mutex);
+            add_route_open = open;
+        }
+        internal_message_condition.notify_all();
     }
 
     bool wait_for_add_routes(int count) {
@@ -326,6 +340,37 @@ TEST(ServiceManager, forwards_internal_offer_after_find_and_removes_it_on_stop) 
     ASSERT_EQ(stopped_offer->entries().size(), 1U);
     EXPECT_EQ(stopped_offer->entry(0).get_ttl(), SOMEIP_DEFAULT_TTL_OFF);
     EXPECT_EQ(router->remove_route_count, 1);
+}
+
+TEST(ServiceManager, answers_find_only_after_the_route_of_the_offered_service_is_ready) {
+    auto router = std::make_shared<FakeServiceRouter>();
+    router->set_add_route_open(false);
+    ServiceManager manager("service-test", "", router);
+
+    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
+                                                     0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
+    ASSERT_TRUE(router->wait_for_add_routes(1));
+
+    // The service is known, but the requester must not learn about it before it can reach the provider.
+    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
+                                                     0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00050001));
+    {
+        std::lock_guard<std::mutex> lock(router->internal_message_mutex);
+        EXPECT_TRUE(router->internal_messages.empty());
+    }
+
+    router->set_add_route_open(true);
+
+    ASSERT_TRUE(router->wait_for_internal_messages(1));
+    std::lock_guard<std::mutex> lock(router->internal_message_mutex);
+    ASSERT_EQ(router->internal_messages.front().first, 0x0005);
+    auto forwarded_offer = MessageBuilder::create<SOMEIPSD>();
+    ASSERT_TRUE(
+        MessageBuilder::build_message(*forwarded_offer, router->internal_messages.front().second.data(),
+                                      static_cast<std::uint32_t>(router->internal_messages.front().second.size())));
+    ASSERT_EQ(forwarded_offer->entries().size(), 1U);
+    EXPECT_EQ(forwarded_offer->entry(0).get_type(), SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
+    EXPECT_EQ(forwarded_offer->entry(0).get_ttl(), SOMEIP_DEFAULT_TTL_ON);
 }
 
 TEST(ServiceManager, serializes_external_offer_with_tcp_and_udp_options) {

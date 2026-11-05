@@ -1315,6 +1315,10 @@ void ServiceManager::on_internal_find_service(std::uint16_t service_id, std::uin
     // Register Find Service on Request Service List
     std::lock_guard<std::mutex> lock(request_list_mutex_);
     auto& req_app_list = request_service_list_[service_id][instance_id];
+    auto is_route_ready = [this](const AvailableService* service) {
+        std::lock_guard<std::recursive_mutex> available_lock(available_list_mutex_);
+        return service->route_ready;
+    };
     auto reqitem = std::find_if(std::begin(req_app_list), std::end(req_app_list),
                                 [&](struct RequestedService& i) { return i.app_id == app_id; });
 
@@ -1341,7 +1345,9 @@ void ServiceManager::on_internal_find_service(std::uint16_t service_id, std::uin
             }
 
             if (service_info != nullptr) {
-                if (check_service_version(major_version, service_info->major, minor_version, service_info->minor,
+                // A service whose route is still being created is announced by handle_new_offer_service().
+                if (is_route_ready(service_info) &&
+                    check_service_version(major_version, service_info->major, minor_version, service_info->minor,
                                           minimum_minor_version, has_minimum_minor)) {
                     req_app_list.back().state = SOMEIP_SERVICE_STATE_MAIN;
                     packet_router_->set_instance_id(service_id, instance_id, app_id);
@@ -1371,7 +1377,8 @@ void ServiceManager::on_internal_find_service(std::uint16_t service_id, std::uin
                         has_minimum_minor = service_config->has_minimum_minor_version();
                     }
 
-                    if (check_service_version(major_version, instance.second->major, minor_version,
+                    if (is_route_ready(instance.second) &&
+                        check_service_version(major_version, instance.second->major, minor_version,
                                               instance.second->minor, minimum_minor_version, has_minimum_minor)) {
                         req_app_list.back().state = SOMEIP_SERVICE_STATE_MAIN;
                         packet_router_->set_instance_id(service_id, instance.first, app_id);
@@ -2126,8 +2133,14 @@ void ServiceManager::handle_new_offer_service(std::uint16_t service_id, std::uin
                               << " add_route success";
 
             std::unique_lock<std::recursive_mutex> lock(available_list_mutex_);
-            if (available_service_list_.find(service_id) != available_service_list_.end()) {
+            auto service_it = available_service_list_.find(service_id);
+            if (service_it != available_service_list_.end()) {
+                auto instance_it = service_it->second.find(instance_id);
+                if (instance_it != service_it->second.end()) {
+                    instance_it->second.route_ready = true;
+                }
                 lock.unlock();
+                // Requesters that asked before the route existed are answered here.
                 send_internal_offer_service_all(service_id, instance_id, SOMEIP_DEFAULT_TTL_ON, major_version,
                                                 minor_version);
             } else {

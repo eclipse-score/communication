@@ -95,6 +95,7 @@ struct AvailableService {
         tcp_address = obj.tcp_address;
         udp_address = obj.udp_address;
         multicast = obj.multicast;
+        route_ready = obj.route_ready;
     }
 
     std::uint32_t ttl{0};
@@ -106,6 +107,9 @@ struct AvailableService {
 
     bool is_internal{false};
     bool is_in_config_file{false};
+    // Set once the route to the service exists. Requesters are only told about the service after that.
+    // Guarded by ServiceManager::available_list_mutex_.
+    bool route_ready{false};
     std::uint16_t app_id{0};                                                // for internal service
     std::shared_ptr<lgsomeip::osabstraction::Address> tcp_address{nullptr}; // for external service
     std::shared_ptr<lgsomeip::osabstraction::Address> udp_address{nullptr}; // for external service
