@@ -28,6 +28,10 @@ public:
               const SecureConfig& secure_config = SecureConfig());
     virtual ~TCPSocket() {}
 
+    // Keep the UDP overloads of the base class visible.
+    using Socket::receive;
+    using Socket::send;
+
     int send(int file_descriptor, const void* buffer, std::size_t size) override;
     int receive(char* buffer, std::size_t size) override;
 };

@@ -35,6 +35,10 @@ public:
     UDPSocket(std::shared_ptr<Address> address, const SecureConfig& secure_config = SecureConfig());
     ~UDPSocket() {}
 
+    // Keep the TCP overloads of the base class visible.
+    using Socket::receive;
+    using Socket::send;
+
     void send(const void* buffer, std::size_t size, std::shared_ptr<Address> to_address) override;
     int receive(char* buffer, std::size_t size, std::shared_ptr<Address> from_address) override;
 
