@@ -15,11 +15,12 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("Skeleton is offered without initial field values", "Communication.ServiceOfferedWithoutInitialFieldValue")
+$FailureMode("OfferService succeeded without initial field values", "Communication.OfferServiceSucceededWithoutInitialFieldValue")
 
-$OrGate("Gate1", "Communication.ServiceOfferedWithoutInitialFieldValue")
-$RootCause("Offer call did not check, if user provided field values", "OfferCallDidNotCheckIfUserProvidedFieldValues", "Gate1")
-$IntermediateEvent("Update functionality did not work", "Event2", "Gate1")
-$TransferInGate("Transfer1", "Event2")
+$OrGate("OrGate1", "Communication.OfferServiceSucceededWithoutInitialFieldValue")
+$RootCause("OfferService did not check if user provided initial field value", "OfferCallDidNotCheckIfUserProvidedFieldValues", "OrGate1")
+
+$IntermediateEvent("Update functionality did not work", "UpdateFunctionalityDidNotWork", "OrGate1")
+' gtodo: refernece update failed
 
 @enduml

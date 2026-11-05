@@ -1,0 +1,84 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("OfferService succeeded but service is not fully setup for consumers", "Communication.OfferServiceSucceededButNotFullySetupForConsumers")
+
+$AndGate("AndGate1", "Communication.OfferServiceSucceededButNotFullySetupForConsumers")
+$RootCause("Service discovery marker file was created", "ServiceDiscoveryMarkerFileWasCreated", "AndGate1")
+
+$IntermediateEvent("Service was not properly setup", "ServiceWasNotProperlySetup", "AndGate1")
+
+$OrGate("OrGate1", "ServiceWasNotProperlySetup")
+$RootCause("Handlers for all methods were not registered", "HandlersForAllMethodsWereNotRegistered", "OrGate1")
+
+$IntermediateEvent("Could not create or open service existence marker file", "CouldNotCreateOrOpenServiceExistenceMarkerFile", "OrGate1")
+$RootCause("Open OS error", "ServiceExistenceMarkerFileOpenOsError", "CouldNotCreateOrOpenServiceExistenceMarkerFile")
+
+' $IntermediateEvent("Acquired exclusive lock of usage marker file and could not create shared memory region", "ExclusiveUsageMarkerLockAndSharedMemoryCreationFailure", "OrGate1")
+$AndGate("AndGate2", "OrGate1")
+$RootCause("Acquired exclusive lock of usage marker file (no connected proxies)", "AcquiredExclusiveLockOfUsageMarkerFile", "AndGate2")
+
+$IntermediateEvent("Could not create shared memory region", "CouldNotCreateSharedMemoryRegion", "AndGate2")
+
+$OrGate("OrGate2", "CouldNotCreateSharedMemoryRegion")
+$RootCause("Shm open OS error", "ShmOpenOsError", "OrGate2")
+
+' $IntermediateEvent("Created shared memory region at wrong path", "CreatedSharedMemoryRegionAtWrongPath", "OrGate5")
+' $OrGate("OrGate4", "CreatedSharedMemoryRegionAtWrongPath")
+' $RootCause("Skeleton did not create shared memory in path derived from InstanceIdentifier", "SkeletonDidNotCreateSharedMemoryInPathDerivedFromInstanceIdentifier", "OrGate4")
+' $RootCause("InstanceSpecifier provided to OfferService resolved to wrong InstanceIdentifier", "SkeletonInstanceSpecifierResolvesToWrongInstanceIdentifier", "OrGate4")
+' $TransferInGate("Communication.InstanceSpecifierResolvesToWrongInstanceIdentifier", "SkeletonInstanceSpecifierResolvesToWrongInstanceIdentifier")
+' $RootCause("InstanceIdentifier contains wrong values", "ProxyInstanceIdentifierContainsWrongValues", "OrGate4")
+' $TransferInGate("Communication.ResolvedInstanceIdentifierContainsWrongData", "ProxyInstanceIdentifierContainsWrongValues")
+
+' $OrGate("OrGate5", "CouldNotCreateSharedMemoryRegion")
+' $IntermediateEvent("File already exists", "SharedMemoryFileAlreadyExists", "OrGate5")
+' $OrGate("OrGate6", "SharedMemoryFileAlreadyExists")
+' $IntermediateEvent("Other skeleton created shared memory region at wrong path", "OtherSkeletonCreatedSharedMemoryRegionAtWrongPath", "OrGate6")
+' ' $TransferInGate("CreatedSharedMemoryRegionAtWrongPath", "OtherSkeletonCreatedSharedMemoryRegionAtWrongPath")
+' $IntermediateEvent("Other skeleton is already offering this service", "OtherSkeletonAlreadyOfferingThisService", "OrGate6")
+' $TransferInGate("Communication.CreatingAlreadyCreatedService", "OtherSkeletonAlreadyOfferingThisService")
+
+
+' here and also in proxy create, under shm region is created / opened with wrong path, we should reference not creating according to instance identifier etc like we do for marker files.
+
+
+' $IntermediateEvent("Cannot create shared memory", "CannotCreateSharedMemory", "OrGate1")
+' $OrGate("OrGate2", "CannotCreateSharedMemory")
+' $IntermediateEvent("Shared Memory Object exists but not accessible", "SharedMemoryObjectNotAccessible", "OrGate2")
+' $OrGate("OrGate3", "SharedMemoryObjectNotAccessible")
+' $RootCause("Wrong shm path name", "WrongShmPathName", "OrGate3")
+' $RootCause("Wrong shm provider", "WrongShmProvider", "OrGate3")
+' $RootCause("Wrong shm ACL", "WrongShmAcl", "OrGate3")
+' $RootCause("Shm open os error", "ShmOpenOSError", "OrGate3")
+' $RootCause("Shared Memory Object does not exist", "SharedMemoryObjectDoesNotExist", "OrGate2")
+
+
+
+' ' OLD - do not use
+' $IntermediateEvent("Shared Memory segment was not created", "Event2", "Gate1")
+' $OrGate("Gate3", "Event2")
+' $RootCause("Shared Memory segment does not try to create segment.", "SharedMemorySegmentDoesNotTryToCreateSegment", "Gate3")
+' $RootCause("OS related functionality failed", "OsRelatedFunctionalityFailed", "Gate3")
+' $RootCause("Shared Memory segments are created under wrong name", "SharedMemorySegmentsAreCreatedUnderWrongName", "Gate1")
+
+' $IntermediateEvent("Shared Memory file name wrong", "Event2", "Gate1")
+' $OrGate("Gate3", "Event2")
+' $RootCause("Filename creation from config failed", "FilenameCreationFromConfigFailed", "Gate3")
+' $RootCause("OS creates file with wrong name", "OsCreatesFileWithWrongName", "Gate3")
+
+@enduml
