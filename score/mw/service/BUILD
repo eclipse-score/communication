@@ -120,7 +120,7 @@ cc_library(
     srcs = ["find_service_strategy.cpp"],
     hdrs = ["find_service_strategy.h"],
     tags = ["FFI"],
-    visibility = ["//visibility:public"],  # platform_only
+    visibility = ["//visibility:public"],
     deps = [
         ":proxy_builder_base",
     ],
