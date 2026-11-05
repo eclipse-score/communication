@@ -54,7 +54,9 @@ void TransactionLogSet::TransactionLogNode::Reset()
 TransactionLogSet::TransactionLogSet(const TransactionLogIndex max_number_of_logs,
                                      const std::size_t number_of_slots,
                                      memory::shared::ManagedMemoryResource& resource)
-    : proxy_transaction_logs_(max_number_of_logs, TransactionLogNode{number_of_slots, resource}, resource),
+    : proxy_transaction_logs_(static_cast<std::size_t>(max_number_of_logs),
+                              TransactionLogNode{number_of_slots, resource},
+                              resource),
       skeleton_tracing_transaction_log_{number_of_slots, resource}
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(

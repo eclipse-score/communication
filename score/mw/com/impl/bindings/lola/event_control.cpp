@@ -21,7 +21,7 @@ EventControl::EventControl(const SlotIndexType number_of_slots,
                            score::memory::shared::ManagedMemoryResource& resource)
     : data_control{number_of_slots, resource},
       subscription_control{number_of_slots, max_subscribers, enforce_max_samples},
-      transaction_log_set_{max_subscribers, number_of_slots, resource}
+      transaction_log_set_{max_subscribers, static_cast<std::size_t>(number_of_slots), resource}
 {
 }
 
