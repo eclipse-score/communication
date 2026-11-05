@@ -52,12 +52,13 @@ void on_message(std::shared_ptr<Message> msg) {
     received_count++;
 }
 
-void on_availability(std::uint16_t service_id, [[maybe_unused]] std::uint16_t instance_id, bool available) {
+void on_availability(std::uint16_t available_service_id, [[maybe_unused]] std::uint16_t instance_id, bool available) {
     std::cout << application_name << " / on_availability Called!! / state = " << available << std::endl;
     if (available) {
-        application_manager->register_message_handler(service_id, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID, on_message);
+        application_manager->register_message_handler(available_service_id, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID,
+                                                      on_message);
     } else {
-        application_manager->unregister_message_handler(service_id, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID);
+        application_manager->unregister_message_handler(available_service_id, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID);
     }
 }
 

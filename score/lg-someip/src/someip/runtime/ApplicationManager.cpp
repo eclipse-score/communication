@@ -540,26 +540,27 @@ void ApplicationManager::on_offer_service(const std::shared_ptr<MessageSD> messa
         }
         // When receiving StopOffer, the SOME/IP library should notify the binding layer of the state of subscription
         // for events related to this service.
-        std::lock_guard<std::mutex> guard(subscription_status_handler_mutex_);
+        std::lock_guard<std::mutex> status_guard(subscription_status_handler_mutex_);
 
-        auto send_subscription_state = [&](std::uint16_t service_id, std::uint16_t instance_id) -> void {
-            auto found_service = subscription_status_handler_set_.find(service_id);
+        auto send_subscription_state = [&](std::uint16_t status_service_id, std::uint16_t status_instance_id) -> void {
+            auto found_service = subscription_status_handler_set_.find(status_service_id);
             if (found_service == subscription_status_handler_set_.end())
                 return;
 
-            auto found_instance = found_service->second.find(instance_id);
+            auto found_instance = found_service->second.find(status_instance_id);
             if (found_instance != found_service->second.end()) {
                 for (auto& eventgroup : found_instance->second) {
                     for (auto& event : eventgroup.second) {
-                        auto handler = event.second.first;
-                        if (handler != nullptr) {
+                        auto status_handler = event.second.first;
+                        if (status_handler != nullptr) {
                             LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_offer_service "
-                                               << format_service_instance_id(service_id, instance_id) << " call "
+                                               << format_service_instance_id(status_service_id, status_instance_id)
+                                               << " call "
                                                << "subscription_status_handler for "
                                                << format_named_id("EventGroupID", eventgroup.first, 4) << " "
                                                << format_named_id("EventID", event.first, 4) << ", TTL: " << ttl;
 
-                            handler(service_id, instance_id, eventgroup.first, event.first, 0xff);
+                            status_handler(status_service_id, status_instance_id, eventgroup.first, event.first, 0xff);
                         }
                     }
                 }
@@ -583,12 +584,12 @@ void ApplicationManager::on_offer_service(const std::shared_ptr<MessageSD> messa
                                << format_named_id("State", subscribe.second, 2);
 
             if (subscribe.second == SOMEIP_EVENT_SUBSCRIBE) {
-                std::uint32_t ttl = SOMEIP_DEFAULT_TTL_ON;
+                std::uint32_t subscribe_ttl = SOMEIP_DEFAULT_TTL_ON;
 
                 LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_offer_service / sendSubscribedEventgroup "
                                    << format_named_id("EventGroupID", eventgroup_id, 4);
 
-                send_subscribe_eventgroup(service_id, instance_id, major_version, eventgroup_id, ttl);
+                send_subscribe_eventgroup(service_id, instance_id, major_version, eventgroup_id, subscribe_ttl);
             }
         }
     }
@@ -650,10 +651,10 @@ void ApplicationManager::offer_event(std::uint16_t service, std::uint16_t instan
     lck_service.lock();
     auto& service_state = offer_service_list_[service][instance];
     for (auto& majors : service_state) {
-        std::uint16_t major = majors.first;
+        std::uint8_t offered_major = majors.first;
         for (auto& minors : majors.second) {
             if (minors.second == SOMEIP_SERVICE_OFFER) {
-                event_manager_->set_service_enabled(service, instance, static_cast<std::uint8_t>(major), true);
+                event_manager_->set_service_enabled(service, instance, offered_major, true);
             }
         }
     }
@@ -1071,12 +1072,13 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
     // Subscribe-status callback.
     std::lock_guard<std::mutex> guard(requested_event_list_mutex_);
     auto& eventlist = requested_event_list_[service_id][instance_id];
-    auto handle_subscribe_eventgroup_ack = [&](std::uint16_t service_id, std::uint16_t instance_id) -> void {
-        auto found_service = subscription_status_handler_set_.find(service_id);
+    auto handle_subscribe_eventgroup_ack = [&](std::uint16_t status_service_id,
+                                               std::uint16_t status_instance_id) -> void {
+        auto found_service = subscription_status_handler_set_.find(status_service_id);
         if (found_service == subscription_status_handler_set_.end())
             return;
 
-        auto found_instance = found_service->second.find(instance_id);
+        auto found_instance = found_service->second.find(status_instance_id);
         if (found_instance != found_service->second.end()) {
             auto found_eventgroup = found_instance->second.find(static_cast<std::uint16_t>(eventgroup_id));
             if (found_eventgroup != found_instance->second.end()) {
@@ -1092,22 +1094,24 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
                             if (handler != nullptr) {
                                 LGSOMEIP_LOG_DEBUG
                                     << "ApplicationManager::on_subscribe_eventgroup_ack "
-                                    << format_service_instance_event_id(service_id, instance_id, event_id) << " call "
+                                    << format_service_instance_event_id(status_service_id, status_instance_id, event_id)
+                                    << " call "
                                     << "subscription_status_handler for "
                                     << format_named_id("EventGroupID", eventgroup_id, 4) << " TTL= " << ttl
                                     << " isSelective: " << (found_event->second.second ? "true" : "false");
 
                                 if (ttl != SOMEIP_DEFAULT_TTL_OFF) {
-                                    handler(service_id, instance_id, static_cast<std::uint16_t>(eventgroup_id),
-                                            event_id, 0);
+                                    handler(status_service_id, status_instance_id,
+                                            static_cast<std::uint16_t>(eventgroup_id), event_id, 0);
                                 } else if (found_event->second.second == true) {
-                                    handler(service_id, instance_id, static_cast<std::uint16_t>(eventgroup_id),
-                                            event_id, 0xff);
+                                    handler(status_service_id, status_instance_id,
+                                            static_cast<std::uint16_t>(eventgroup_id), event_id, 0xff);
                                 } else {
                                     LGSOMEIP_LOG_WARN
                                         << "ApplicationManager::on_subscribe_eventgroup_ack "
-                                        << format_service_instance_event_id(service_id, instance_id, event_id) << " "
-                                        << format_named_id("EventGroupID", eventgroup_id, 4) << " TTL= " << ttl
+                                        << format_service_instance_event_id(status_service_id, status_instance_id,
+                                                                            event_id)
+                                        << " " << format_named_id("EventGroupID", eventgroup_id, 4) << " TTL= " << ttl
                                         << " isSelective: " << (found_event->second.second ? "true" : "false")
                                         << " / does not notify the binding layer of the subscription state.";
                                 }
@@ -1121,21 +1125,23 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
                             if (handler != nullptr) {
                                 LGSOMEIP_LOG_DEBUG
                                     << "ApplicationManager::on_subscribe_eventgroup_ack "
-                                    << format_service_instance_event_id(service_id, instance_id, event_id) << " call "
+                                    << format_service_instance_event_id(status_service_id, status_instance_id, event_id)
+                                    << " call "
                                     << "subscription_status_handler for "
                                     << format_named_id("EventGroupID", eventgroup_id, 4) << " TTL= " << ttl;
 
                                 if (ttl != SOMEIP_DEFAULT_TTL_OFF) {
-                                    handler(service_id, instance_id, static_cast<std::uint16_t>(eventgroup_id),
-                                            event_id, 0);
+                                    handler(status_service_id, status_instance_id,
+                                            static_cast<std::uint16_t>(eventgroup_id), event_id, 0);
                                 } else if (its_any_event->second.second == true) {
-                                    handler(service_id, instance_id, static_cast<std::uint16_t>(eventgroup_id),
-                                            event_id, 0xff);
+                                    handler(status_service_id, status_instance_id,
+                                            static_cast<std::uint16_t>(eventgroup_id), event_id, 0xff);
                                 } else {
                                     LGSOMEIP_LOG_WARN
                                         << "ApplicationManager::on_subscribe_eventgroup_ack "
-                                        << format_service_instance_event_id(service_id, instance_id, event_id) << " "
-                                        << format_named_id("EventGroupID", eventgroup_id, 4) << " TTL= " << ttl
+                                        << format_service_instance_event_id(status_service_id, status_instance_id,
+                                                                            event_id)
+                                        << " " << format_named_id("EventGroupID", eventgroup_id, 4) << " TTL= " << ttl
                                         << " isSelective: " << (found_event->second.second ? "true" : "false")
                                         << " / does not notify the binding layer of the subscription state.";
                                 }
@@ -1572,14 +1578,14 @@ void ApplicationManager::on_application_state(bool connected) {
             }
             {
                 // Notify service unavailability
-                service_availability_handler_t handler = nullptr;
+                service_availability_handler_t availability_handler = nullptr;
                 for (auto& service : service_availability_handler_map_) {
                     for (auto& instance : service.second) {
                         for (auto& major : instance.second) {
                             for (auto& minor : major.second) {
-                                handler = minor.second;
-                                if (handler != nullptr) {
-                                    handler(service.first, instance.first, false);
+                                availability_handler = minor.second;
+                                if (availability_handler != nullptr) {
+                                    availability_handler(service.first, instance.first, false);
                                 }
                             }
                         }

@@ -128,17 +128,17 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
         if (multicast.HasMember(kConfigMulticastAddress) && multicast.HasMember(kConfigPort)) {
             auto multicast_addr = multicast[kConfigMulticastAddress].GetString();
             auto multicast_port = parse_unsigned<std::uint16_t>(multicast[kConfigPort], kConfigPort, 10);
-            std::shared_ptr<lgsomeip::osabstraction::Address> multicast;
+            std::shared_ptr<lgsomeip::osabstraction::Address> multicast_address;
             if (ip_type == 6) {
-                multicast = std::make_shared<lgsomeip::osabstraction::IP6Address>();
+                multicast_address = std::make_shared<lgsomeip::osabstraction::IP6Address>();
             } else {
-                multicast = std::make_shared<lgsomeip::osabstraction::IP4Address>();
+                multicast_address = std::make_shared<lgsomeip::osabstraction::IP4Address>();
             }
 
-            multicast->set_ip_address(multicast_addr);
-            multicast->set_reliable(false);
-            multicast->set_port_address(multicast_port);
-            multicast_addresses_->push_back(multicast);
+            multicast_address->set_ip_address(multicast_addr);
+            multicast_address->set_reliable(false);
+            multicast_address->set_port_address(multicast_port);
+            multicast_addresses_->push_back(multicast_address);
         }
     }
 

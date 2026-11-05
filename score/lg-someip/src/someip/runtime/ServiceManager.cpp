@@ -597,8 +597,8 @@ void ServiceManager::on_check_ttl_subscribe() {
                         auto config_service_info = get_configuration()->get_service_info(sid, iid);
                         if (config_service_info != nullptr) {
                             // Remove routes for external services.
-                            auto eventgroup = config_service_info->get_event_group(egid);
-                            for (std::uint16_t event_id : *eventgroup) {
+                            auto config_eventgroup = config_service_info->get_event_group(egid);
+                            for (std::uint16_t event_id : *config_eventgroup) {
                                 if (subscribe->app_id > 0) {
                                     packet_router_->remove_subscribe_route(
                                         sid, iid, event_id, static_cast<std::uint16_t>(subscribe->app_id));
@@ -1079,19 +1079,19 @@ void ServiceManager::on_external_message(std::shared_ptr<Endpoint> endpoint, std
                                 // Get Multicast Option corresponding to the serviceID, instnaceID, and eventgroupID
                                 auto service_config = get_configuration()->get_service_info(service_id, instance_id);
                                 auto eventgroup_object = service_config->get_event_group_object(eventgroup_id);
-                                std::shared_ptr<lgsomeip::osabstraction::Address> multicast = nullptr;
+                                std::shared_ptr<lgsomeip::osabstraction::Address> ack_multicast = nullptr;
 
                                 if ((service_config->get_multicast_address())->size() > 0) {
                                     if (eventgroup_object->is_multicast()) {
-                                        multicast = eventgroup_object->get_multicast_address();
-                                        if (multicast == nullptr) {
-                                            multicast = (service_config->get_multicast_address()->operator[](0));
+                                        ack_multicast = eventgroup_object->get_multicast_address();
+                                        if (ack_multicast == nullptr) {
+                                            ack_multicast = (service_config->get_multicast_address()->operator[](0));
                                         }
                                     }
                                 }
 
                                 // Set the multicast option on the SubscribeAck message.
-                                if (multicast != nullptr) {
+                                if (ack_multicast != nullptr) {
                                     SDOption option(SOMEIP_SD_OPTION::IP4MULTI::TYPEID);
                                     if (get_configuration()->get_ip_type() == 6) {
                                         option.set_type(SOMEIP_SD_OPTION::IP6MULTI::TYPEID);
@@ -1101,8 +1101,8 @@ void ServiceManager::on_external_message(std::shared_ptr<Endpoint> endpoint, std
                                     // Multicast Options are stored in mcastVector.
                                     auto mcast_it = std::find_if(
                                         std::begin(mcast_vector), std::end(mcast_vector),
-                                        [&multicast](std::shared_ptr<lgsomeip::osabstraction::Address>& i) {
-                                            return *multicast == *i;
+                                        [&ack_multicast](std::shared_ptr<lgsomeip::osabstraction::Address>& address) {
+                                            return *ack_multicast == *address;
                                         });
 
                                     // 1) New Multicast Option
@@ -1113,10 +1113,10 @@ void ServiceManager::on_external_message(std::shared_ptr<Endpoint> endpoint, std
                                             << format_service_instance_interface_major_version(service_id, instance_id,
                                                                                                major)
                                             << " " << format_named_id("EventGroupID", eventgroup_id, 4) << " , "
-                                            << multicast->to_string() << " , set new multicast option";
+                                            << ack_multicast->to_string() << " , set new multicast option";
 
-                                        mcast_vector.push_back(multicast);
-                                        option.set_address_option(multicast);
+                                        mcast_vector.push_back(ack_multicast);
+                                        option.set_address_option(ack_multicast);
                                         gathered_subscribe_ack_list_->options().push_back(option);
                                         ack_entry.set_option1st_index(option1_index++);
                                         ack_entry.set_option1st_count(
@@ -1135,7 +1135,7 @@ void ServiceManager::on_external_message(std::shared_ptr<Endpoint> endpoint, std
                                             << format_service_instance_interface_major_version(service_id, instance_id,
                                                                                                major)
                                             << " " << format_named_id("EventGroupID", eventgroup_id, 4) << " , "
-                                            << multicast->to_string() << " , set index as stored multicast option";
+                                            << ack_multicast->to_string() << " , set index as stored multicast option";
                                     }
                                 } else {
                                     ack_entry.set_option1st_count(0);
@@ -1955,18 +1955,18 @@ void ServiceManager::on_subscribe_eventgroup_ack(std::uint16_t service_id, std::
             subscribe->ip_address = target_ip;
 
             auto eventgroup_object = service_config->get_event_group_object(event_group_id);
-            std::shared_ptr<lgsomeip::osabstraction::Address> multicast = nullptr;
+            std::shared_ptr<lgsomeip::osabstraction::Address> ack_multicast = nullptr;
 
             if ((service_config->get_multicast_address())->size() > 0) {
                 if (eventgroup_object->is_multicast()) {
-                    multicast = eventgroup_object->get_multicast_address();
-                    if (multicast == nullptr) {
-                        multicast = (service_config->get_multicast_address()->operator[](0));
+                    ack_multicast = eventgroup_object->get_multicast_address();
+                    if (ack_multicast == nullptr) {
+                        ack_multicast = (service_config->get_multicast_address()->operator[](0));
                     }
                 }
             }
             send_subscribe_eventgroup_ack(service_id, instance_id, event_group_id, ttl, major_version, subscribe_app_id,
-                                          multicast, target_ip);
+                                          ack_multicast, target_ip);
         }
 
         if (ttl == 0) {
@@ -3055,28 +3055,28 @@ bool ServiceManager::write_current_state_someip_services(std::map<std::uint16_t,
             if (is_in_config_file == true) {
                 if (config != nullptr && application_list.find(app_id) != application_list.end()) {
                     rapidjson::Value provided_service(rapidjson::kObjectType);
-                    rapidjson::Value tmp_value_str;
+                    rapidjson::Value service_value_str;
 
-                    tmp_value_str.SetString(config->get_service_name().c_str(),
-                                            static_cast<std::uint32_t>(config->get_service_name().length()),
-                                            app_doc.alloc);
-                    provided_service.AddMember("name", tmp_value_str, app_doc.alloc);
-                    tmp_value_str.SetString(int_to_hex(service_id, 4).c_str(),
-                                            static_cast<std::uint32_t>(int_to_hex(service_id, 4).length()),
-                                            app_doc.alloc);
-                    provided_service.AddMember("service", tmp_value_str, app_doc.alloc);
-                    tmp_value_str.SetString(int_to_hex(instance_id, 4).c_str(),
-                                            static_cast<std::uint32_t>(int_to_hex(instance_id, 4).length()),
-                                            app_doc.alloc);
-                    provided_service.AddMember("instance", tmp_value_str, app_doc.alloc);
-                    tmp_value_str.SetString(int_to_hex(major_version, 4).c_str(),
-                                            static_cast<std::uint32_t>(int_to_hex(major_version, 4).length()),
-                                            app_doc.alloc);
-                    provided_service.AddMember("major_version", tmp_value_str, app_doc.alloc);
-                    tmp_value_str.SetString(int_to_hex(minor_version, 8).c_str(),
-                                            static_cast<std::uint32_t>(int_to_hex(minor_version, 8).length()),
-                                            app_doc.alloc);
-                    provided_service.AddMember("minorVersion", tmp_value_str, app_doc.alloc);
+                    service_value_str.SetString(config->get_service_name().c_str(),
+                                                static_cast<std::uint32_t>(config->get_service_name().length()),
+                                                app_doc.alloc);
+                    provided_service.AddMember("name", service_value_str, app_doc.alloc);
+                    service_value_str.SetString(int_to_hex(service_id, 4).c_str(),
+                                                static_cast<std::uint32_t>(int_to_hex(service_id, 4).length()),
+                                                app_doc.alloc);
+                    provided_service.AddMember("service", service_value_str, app_doc.alloc);
+                    service_value_str.SetString(int_to_hex(instance_id, 4).c_str(),
+                                                static_cast<std::uint32_t>(int_to_hex(instance_id, 4).length()),
+                                                app_doc.alloc);
+                    provided_service.AddMember("instance", service_value_str, app_doc.alloc);
+                    service_value_str.SetString(int_to_hex(major_version, 4).c_str(),
+                                                static_cast<std::uint32_t>(int_to_hex(major_version, 4).length()),
+                                                app_doc.alloc);
+                    provided_service.AddMember("major_version", service_value_str, app_doc.alloc);
+                    service_value_str.SetString(int_to_hex(minor_version, 8).c_str(),
+                                                static_cast<std::uint32_t>(int_to_hex(minor_version, 8).length()),
+                                                app_doc.alloc);
+                    provided_service.AddMember("minorVersion", service_value_str, app_doc.alloc);
                     if (instance.second.tcp_address != nullptr) {
                         provided_service.AddMember("tcp_port", instance.second.tcp_address->get_port_address(),
                                                    app_doc.alloc);

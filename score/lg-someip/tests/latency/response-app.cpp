@@ -41,7 +41,8 @@ void on_message(std::shared_ptr<Message> msg) {
     }
 }
 
-void on_availability(std::uint16_t service_id, [[maybe_unused]] std::uint16_t instance_id, bool available) {
+void on_availability([[maybe_unused]] std::uint16_t available_service_id, [[maybe_unused]] std::uint16_t instance_id,
+                     bool available) {
     std::cout << "Response App / on_availability Called!! / state = " << available << std::endl;
 }
 
