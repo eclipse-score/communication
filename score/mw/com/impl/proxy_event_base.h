@@ -161,16 +161,6 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
      */
     Result<void> UnsetReceiveHandler();
 
-    /**
-     * \api
-     * \brief Checks if the binding is valid.
-     * \return True if the binding is valid, false otherwise.
-     */
-    bool IsBindingValid() const noexcept
-    {
-        return binding_ != nullptr;
-    }
-
   protected:
     void InjectMock(IProxyEventBase& proxy_event_base_mock)
     {
