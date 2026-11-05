@@ -81,6 +81,12 @@ class FindServiceStrategy
     /// is still executing, or without `StartFind()` having been invoked before (e.g. upon destruction of the strategy).
     virtual void StopFind() noexcept = 0;
 
+    FindServiceStrategy() = default;
+    FindServiceStrategy(const FindServiceStrategy&) = default;
+    FindServiceStrategy(FindServiceStrategy&&) = default;
+    FindServiceStrategy& operator=(const FindServiceStrategy&) = delete;
+    FindServiceStrategy& operator=(FindServiceStrategy&&) = delete;
+
     virtual ~FindServiceStrategy() = default;
 };
 
