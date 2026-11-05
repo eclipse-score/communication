@@ -17,9 +17,11 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 # Master switch. All lg-someip targets are incompatible (skipped by `//...`)
 # unless this flag is set. Enable with `--config=lgsomeip` (see .bazelrc) or
 # `--//score/lg-someip:enable_lgsomeip=True`.
+# The default is True while lg-someip is under review, so that the CI jobs and
+# the tests cover it. It is changed to False when lg-someip is merged.
 bool_flag(
     name = "enable_lgsomeip",
-    build_setting_default = False,
+    build_setting_default = True,
 )
 
 config_setting(
