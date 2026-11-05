@@ -132,8 +132,8 @@ public:
         {
             std::lock_guard<std::mutex> lock(state_mutex_);
             connected_ = state == SOMEIP_APPLICATION_REGISTERED;
+            state_condition_.notify_all();
         }
-        state_condition_.notify_all();
     }
 
     void notify(std::shared_ptr<Payload> msg, std::uint16_t sid = SOMEIP_SERVICE_ID,
@@ -207,8 +207,8 @@ public:
         {
             std::lock_guard<std::mutex> lock(state_mutex_);
             connected_ = state == SOMEIP_APPLICATION_REGISTERED;
+            state_condition_.notify_all();
         }
-        state_condition_.notify_all();
     }
 
     void register_message_handler(std::uint16_t sid = SOMEIP_SERVICE_ID, std::uint16_t iid = SOMEIP_INSTANCE_ID,
@@ -331,8 +331,8 @@ public:
             std::lock_guard<std::mutex> lock(state_mutex_);
             available_services_[sid][iid] = available;
             ++availability_update_count_;
+            state_condition_.notify_all();
         }
-        state_condition_.notify_all();
     }
 
     void on_message(std::shared_ptr<Message> msg) {
@@ -342,8 +342,8 @@ public:
         {
             std::lock_guard<std::mutex> lock(state_mutex_);
             received_messages_.push_back(msg);
+            state_condition_.notify_all();
         }
-        state_condition_.notify_all();
     }
 
     void on_subscription_status(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t status) {
@@ -351,8 +351,8 @@ public:
             std::lock_guard<std::mutex> lock(state_mutex_);
             subscription_status_ = status;
             subscription_status_received_ = true;
+            state_condition_.notify_all();
         }
-        state_condition_.notify_all();
     }
 
     void send_request(std::uint16_t sid = SOMEIP_SERVICE_ID, std::uint16_t iid = SOMEIP_INSTANCE_ID,

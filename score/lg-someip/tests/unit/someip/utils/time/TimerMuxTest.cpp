@@ -12,6 +12,7 @@
  *
  ********************************************************************************/
 
+#include <atomic>
 #include <chrono>
 #include <gtest/gtest.h>
 #include <memory>
@@ -23,7 +24,7 @@
 using namespace lgsomeip;
 using namespace lgsomeip::osabstraction;
 
-static int timer_expired = 0;
+static std::atomic<int> timer_expired{0};
 void on_timer() {
     timer_expired++;
 }
@@ -41,13 +42,14 @@ TEST(TimerMux, OneShotTest) {
     std::chrono::duration<int, std::milli> msec1(200);
     std::this_thread::sleep_for(msec1);
 
-    ASSERT_EQ(0, timer_expired);
+    ASSERT_EQ(0, timer_expired.load());
 
     std::chrono::duration<int, std::milli> msec2(1000);
     std::this_thread::sleep_for(msec2);
-    ASSERT_EQ(1, timer_expired);
+    ASSERT_EQ(1, timer_expired.load());
 
     mux->stop();
+    mux->join();
 }
 
 TEST(TimerMux, PeriodicTimerTest) {
@@ -64,7 +66,8 @@ TEST(TimerMux, PeriodicTimerTest) {
     std::this_thread::sleep_for(msec1);
 
     timer.cancel_timer();
-    ASSERT_EQ(true, timer_expired > 4);
+    ASSERT_EQ(true, timer_expired.load() > 4);
 
     mux->stop();
+    mux->join();
 }
