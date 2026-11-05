@@ -43,6 +43,7 @@ class TransactionLogLocalView
     using UnsubscribeCallback =
         score::cpp::callback<void(TransactionLog::MaxSampleCountType subscription_max_sample_count)>;
 
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(transaction-log-view-implicit-construction)
     TransactionLogLocalView(TransactionLog& transaction_log);
 
     /// \brief Record Subscription / Unsubscription transactions
