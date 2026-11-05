@@ -110,7 +110,8 @@ int UDPSocket::receive_plain_packet(char* buffer, std::size_t size, std::shared_
         sockaddr_in peer_addr = {0};
         socklen_t peer_addr_size = sizeof(peer_addr);
 
-        str_len = ::recvfrom(get_socket_fd(), buffer, size, 0, (sockaddr*)&peer_addr, &peer_addr_size);
+        str_len =
+            static_cast<int>(::recvfrom(get_socket_fd(), buffer, size, 0, (sockaddr*)&peer_addr, &peer_addr_size));
 
         LGSOMEIP_LOG_DEBUG << "UDPSocket::receive_plain_packet / AF_INET Sender IP : " << inet_ntoa(peer_addr.sin_addr)
                            << ", PORT : " << ntohs(peer_addr.sin_port);
@@ -128,7 +129,8 @@ int UDPSocket::receive_plain_packet(char* buffer, std::size_t size, std::shared_
         sockaddr_in6 peer_addr = {0};
         socklen_t peer_addr_size = sizeof(peer_addr);
 
-        str_len = ::recvfrom(get_socket_fd(), buffer, size, 0, (sockaddr*)&peer_addr, &peer_addr_size);
+        str_len =
+            static_cast<int>(::recvfrom(get_socket_fd(), buffer, size, 0, (sockaddr*)&peer_addr, &peer_addr_size));
 
         char str[INET6_ADDRSTRLEN];
         inet_ntop(AF_INET6, &peer_addr.sin6_addr, str, sizeof(str));
@@ -151,7 +153,8 @@ int UDPSocket::receive_plain_packet(char* buffer, std::size_t size, std::shared_
         };
         socklen_t peer_addr_size = sizeof(peer_addr);
 
-        str_len = ::recvfrom(get_socket_fd(), buffer, size, 0, (sockaddr*)&peer_addr, &peer_addr_size);
+        str_len =
+            static_cast<int>(::recvfrom(get_socket_fd(), buffer, size, 0, (sockaddr*)&peer_addr, &peer_addr_size));
 
         if (from_address != nullptr) {
             from_address->set_file_path(peer_addr.sun_path);

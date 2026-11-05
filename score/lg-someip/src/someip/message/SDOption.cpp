@@ -152,7 +152,7 @@ std::uint32_t SDOption::serialize(std::uint8_t* data) {
         }
         buffer.push_back(0);
         std::copy(buffer.begin(), buffer.end(), data + SOMEIP_SD_OPTION::CONFIGURATION::POS::OPTIONS);
-        serialized_length = buffer.size() + SOMEIP_SD_OPTION::HEADER::SIZE + 1;
+        serialized_length = static_cast<std::uint32_t>(buffer.size() + SOMEIP_SD_OPTION::HEADER::SIZE + 1);
         break;
     }
 
@@ -329,7 +329,7 @@ void SDOption::set_configuration(std::string key, std::string value) {
 
     std::uint16_t serialized_length = 0;
     for (auto& item : configuration_) {
-        serialized_length += item.first.size() + item.second.size() + 2;
+        serialized_length = static_cast<std::uint16_t>(serialized_length + item.first.size() + item.second.size() + 2);
     }
 
     // add 2 byte to length (Rev + End)
@@ -355,7 +355,8 @@ void SDOption::remove_configuration(std::string key) {
 
         std::uint16_t serialized_length = 0;
         for (auto& item : configuration_) {
-            serialized_length += item.first.size() + item.second.size() + 2;
+            serialized_length =
+                static_cast<std::uint16_t>(serialized_length + item.first.size() + item.second.size() + 2);
         }
         option_length_ = serialized_length + 2;
     }

@@ -54,13 +54,15 @@ TEST(MessageBuilder, build_byte_stream_rejects_insufficient_capacity) {
     std::uint32_t length = 99;
     std::vector<std::uint8_t> buffer(msg->get_serialized_size() - 1, 0xA5);
 
-    EXPECT_EQ(MessageBuilder::build_byte_stream(buffer.data(), buffer.size(), &length, *msg), 0U);
+    EXPECT_EQ(
+        MessageBuilder::build_byte_stream(buffer.data(), static_cast<std::uint32_t>(buffer.size()), &length, *msg), 0U);
     EXPECT_EQ(length, 0U);
     EXPECT_EQ(std::count(buffer.begin(), buffer.end(), 0xA5), static_cast<std::ptrdiff_t>(buffer.size()));
 
     buffer.resize(msg->get_serialized_size());
-    EXPECT_EQ(MessageBuilder::build_byte_stream(buffer.data(), buffer.size(), &length, *msg),
-              SOMEIP_HEADER::SIZE + sizeof(payload));
+    EXPECT_EQ(
+        MessageBuilder::build_byte_stream(buffer.data(), static_cast<std::uint32_t>(buffer.size()), &length, *msg),
+        SOMEIP_HEADER::SIZE + sizeof(payload));
     EXPECT_EQ(length, SOMEIP_HEADER::SIZE + sizeof(payload));
 }
 

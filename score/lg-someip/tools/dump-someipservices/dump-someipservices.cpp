@@ -89,11 +89,11 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
 
     // Add the header of the trigger message
     while (hex_chars_stream >> std::hex >> byte_value) {
-        bytes.push_back(byte_value);
+        bytes.push_back(static_cast<uint8_t>(byte_value));
     }
 
     // set the length of the trigger message
-    bytes[7] = bytes.size() - 8;
+    bytes[7] = static_cast<uint8_t>(bytes.size() - 8);
 
 #if !defined(QNX)
     std::cout << get_current_time() << ": Try to send the trigger message via Unix domain socket to "

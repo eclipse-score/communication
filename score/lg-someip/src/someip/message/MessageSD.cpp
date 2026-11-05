@@ -32,7 +32,7 @@ std::uint32_t MessageSD::get_length() const {
     std::uint32_t total_len = SOMEIP_SD_HEADER::SIZE;
 
     total_len += 4; // Length Field of SOME/IP-SD Entities
-    total_len += entries_.size() * SOMEIP_SD_ENTRY::SIZE;
+    total_len += static_cast<std::uint32_t>(entries_.size() * SOMEIP_SD_ENTRY::SIZE);
 
     total_len += 4; // Length Field of SOME/IP-SD Options
     for (auto& item : options_) {
@@ -131,7 +131,7 @@ std::uint32_t MessageSD::serialize(std::uint8_t* data) {
     set_byte_stream(message_data + SOMEIP_SD_HEADER::POS::FLAGS, &flags_);
     position += SOMEIP_SD_HEADER::SIZE;
 
-    std::uint32_t entity_count = entries_.size() * 16;
+    std::uint32_t entity_count = static_cast<std::uint32_t>(entries_.size() * 16);
     set_byte_stream(message_data + position, &entity_count);
     position = position + 4;
 

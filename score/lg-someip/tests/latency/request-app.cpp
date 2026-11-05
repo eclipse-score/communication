@@ -41,8 +41,8 @@ int sent_count = 0;
 void on_message(std::shared_ptr<Message> msg) {
     std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
     std::uint32_t request_id = msg->get_request_id();
-    std::chrono::duration<double> difference = end - time_check[request_id];
-    time_check.erase(request_id);
+    std::chrono::duration<double> difference = end - time_check[static_cast<std::uint16_t>(request_id)];
+    time_check.erase(static_cast<std::uint16_t>(request_id));
 
     if (received_count % 1000 == 0) {
         std::cout << application_name << " / on_message Called, response time = " << std::dec
@@ -64,8 +64,10 @@ void on_availability(std::uint16_t service_id, [[maybe_unused]] std::uint16_t in
 void on_state(std::uint16_t state) {
     std::cout << application_name << " / on_state Called!! / state = " << state << std::endl;
 
-    application_manager->request_service(service_id, SOMEIP_INSTANCE_ID, SOMEIP_MAJOR_VERSION, SOMEIP_MINOR_VERSION);
-    application_manager->register_message_handler(service_id, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID, on_message);
+    application_manager->request_service(static_cast<std::uint16_t>(service_id), SOMEIP_INSTANCE_ID,
+                                         SOMEIP_MAJOR_VERSION, SOMEIP_MINOR_VERSION);
+    application_manager->register_message_handler(static_cast<std::uint16_t>(service_id), SOMEIP_INSTANCE_ID,
+                                                  SOMEIP_METHOD_ID, on_message);
 }
 
 int main([[maybe_unused]] int argc, char** argv) {
@@ -87,7 +89,7 @@ int main([[maybe_unused]] int argc, char** argv) {
         std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::steady_clock::now();
         application_manager->send(message);
         std::uint32_t request_id = message->get_request_id();
-        time_check[request_id] = start;
+        time_check[static_cast<std::uint16_t>(request_id)] = start;
 
         usleep(send_interval);
 

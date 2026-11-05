@@ -337,15 +337,17 @@ void application_impl::offer_event(service_t _service, instance_t _instance, eve
                                    std::chrono::milliseconds _cycle, [[maybe_unused]] bool _change_resets_cycle,
                                    const epsilon_change_func_t& _epsilon_change_func) {
     if (_epsilon_change_func) {
-        application_manager_->offer_event(_service, _instance, _event, _eventgroups, _is_field, _cycle.count(),
-                                         [_epsilon_change_func](const std::shared_ptr<lgsomeip::Payload>& _lhs,
-                                                                const std::shared_ptr<lgsomeip::Payload>& _rhs) {
-                                             auto its_lhs = std::make_shared<payload_impl>(_lhs);
-                                             auto its_rhs = std::make_shared<payload_impl>(_rhs);
-                                             return _epsilon_change_func(its_lhs, its_rhs);
-                                         });
+        application_manager_->offer_event(_service, _instance, _event, _eventgroups, _is_field,
+                                          static_cast<std::uint32_t>(_cycle.count()),
+                                          [_epsilon_change_func](const std::shared_ptr<lgsomeip::Payload>& _lhs,
+                                                                 const std::shared_ptr<lgsomeip::Payload>& _rhs) {
+                                              auto its_lhs = std::make_shared<payload_impl>(_lhs);
+                                              auto its_rhs = std::make_shared<payload_impl>(_rhs);
+                                              return _epsilon_change_func(its_lhs, its_rhs);
+                                          });
     } else {
-        application_manager_->offer_event(_service, _instance, _event, _eventgroups, _is_field, _cycle.count());
+        application_manager_->offer_event(_service, _instance, _event, _eventgroups, _is_field,
+                                          static_cast<std::uint32_t>(_cycle.count()));
     }
 }
 

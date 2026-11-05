@@ -48,12 +48,12 @@ std::shared_ptr<MessageSD> MessageComposer::add_entry(std::shared_ptr<MessageSD>
             }
 
             if (first_option_position == 0xff && second_option_position == 0xff) {
-                first_option_index = options.size();
+                first_option_index = static_cast<std::uint8_t>(options.size());
                 first_option_count = 2;
                 options.push_back(first_option[0]);
                 options.push_back(first_option[1]);
             } else if (first_option_position == 0xff) {
-                first_option_index = options.size();
+                first_option_index = static_cast<std::uint8_t>(options.size());
                 first_option_count = 1;
                 second_option_index = second_option_position;
                 second_option_count = 1;
@@ -61,7 +61,7 @@ std::shared_ptr<MessageSD> MessageComposer::add_entry(std::shared_ptr<MessageSD>
             } else if (second_option_position == 0xff) {
                 first_option_index = first_option_position;
                 first_option_count = 1;
-                second_option_index = options.size();
+                second_option_index = static_cast<std::uint8_t>(options.size());
                 second_option_count = 1;
                 options.push_back(first_option[1]);
             } else if (first_option_position != 0xff && second_option_position != 0xff) {
@@ -84,7 +84,7 @@ std::shared_ptr<MessageSD> MessageComposer::add_entry(std::shared_ptr<MessageSD>
             }
 
             if (first_option_position == 0xff) {
-                first_option_index = options.size();
+                first_option_index = static_cast<std::uint8_t>(options.size());
                 first_option_count = 1;
                 options.push_back(first_option[0]);
             } else {

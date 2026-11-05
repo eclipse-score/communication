@@ -145,7 +145,7 @@ int TCPSocket::send(int file_descriptor, const void* buffer, std::size_t size) {
         // The timeout measures a stall, so progress starts a new wait.
         deadline = std::chrono::steady_clock::time_point{};
     }
-    return write_len;
+    return static_cast<int>(write_len);
 }
 
 int TCPSocket::receive(char* buffer, std::size_t size) {
@@ -215,7 +215,7 @@ int TCPSocket::receive(char* buffer, std::size_t size) {
         read_len += ret;
     } while (read_len < size);
 
-    return read_len;
+    return static_cast<int>(read_len);
 }
 
 } // namespace osabstraction

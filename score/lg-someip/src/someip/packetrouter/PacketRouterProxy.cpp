@@ -340,13 +340,14 @@ void PacketRouterProxy::on_message(std::shared_ptr<Endpoint> endpoint, std::uint
                                    std::size_t message_length) {
     print_byte_message("PacketRouterProxy::on_message", message_data, message_length);
 
-    bool is_sd_message = MessageBuilder::is_sd_message(message_data, message_length);
+    bool is_sd_message = MessageBuilder::is_sd_message(message_data, static_cast<std::uint32_t>(message_length));
 
     if (is_sd_message) {
         std::shared_ptr<MessageSD> sdmessage = MessageBuilder::create<SOMEIPSD>();
 
         // Process the service-control message and send it to ApplicationManager.
-        if (false == MessageBuilder::build_message(*sdmessage, message_data, message_length)) {
+        if (false ==
+            MessageBuilder::build_message(*sdmessage, message_data, static_cast<std::uint32_t>(message_length))) {
             LGSOMEIP_LOG_INFO << "PacketRouterProxy::on_message / Fail to build_message of the SOMEIPSD!!!";
             return;
         }
@@ -366,7 +367,8 @@ void PacketRouterProxy::on_message(std::shared_ptr<Endpoint> endpoint, std::uint
         }
 
         // Process the SOME/IP message and send it to ApplicationManager.
-        if (false == MessageBuilder::build_message(*someip_message, message_data, message_length)) {
+        if (false ==
+            MessageBuilder::build_message(*someip_message, message_data, static_cast<std::uint32_t>(message_length))) {
             LGSOMEIP_LOG_INFO << "PacketRouterProxy::on_message / Fail to build_message of the SOMEIP!!!";
             return;
         }
@@ -650,7 +652,7 @@ void PacketRouterProxy::send_message(MessageSOMEIP& message) {
     instance_id = message.get_instance_id();
     set_byte_stream(payload_byte + send_buffer.size() - 2, &instance_id, 2);
 
-    length_message = send_buffer.size();
+    length_message = static_cast<std::uint32_t>(send_buffer.size());
 
     if (sender_ != nullptr) {
         do_send_message(sender_, payload_byte, length_message);

@@ -70,7 +70,7 @@ void ConfigurationSD::initialize(const rapidjson::Value& sd) {
     auto get_uint16 = [&](const char* member, std::uint16_t& value) -> void {
         if (sd.HasMember(member)) {
             if (sd[member].IsString()) {
-                value = std::stoi(sd[member].GetString());
+                value = static_cast<std::uint16_t>(std::stoi(sd[member].GetString()));
             } else if (sd[member].IsUint()) {
                 value = static_cast<std::uint16_t>(sd[member].GetUint());
             }
@@ -80,7 +80,7 @@ void ConfigurationSD::initialize(const rapidjson::Value& sd) {
     auto get_uint8 = [&](const char* member, std::uint8_t& value) -> void {
         if (sd.HasMember(member)) {
             if (sd[member].IsString()) {
-                value = std::stoi(sd[member].GetString());
+                value = static_cast<std::uint8_t>(std::stoi(sd[member].GetString()));
             } else if (sd[member].IsUint()) {
                 value = static_cast<std::uint8_t>(sd[member].GetUint());
             }

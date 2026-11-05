@@ -636,7 +636,7 @@ void ApplicationManager::offer_event(std::uint16_t service, std::uint16_t instan
     }
     std::unique_lock<std::mutex> lck_offerevent(offer_event_list_mutex_);
     for (std::uint16_t eventgroup : event_groups) {
-        offer_event_list_[service][instance][eventgroup][event_id] = SOMEIP_EVENT_OFFER;
+        offer_event_list_[service][instance][static_cast<std::uint8_t>(eventgroup)][event_id] = SOMEIP_EVENT_OFFER;
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::offer_event "
                            << format_service_instance_event_id(service, instance, event_id) << " "
                            << format_named_id("EventGroupID", eventgroup, 4) << " is offered.";
@@ -653,7 +653,7 @@ void ApplicationManager::offer_event(std::uint16_t service, std::uint16_t instan
         std::uint16_t major = majors.first;
         for (auto& minors : majors.second) {
             if (minors.second == SOMEIP_SERVICE_OFFER) {
-                event_manager_->set_service_enabled(service, instance, major, true);
+                event_manager_->set_service_enabled(service, instance, static_cast<std::uint8_t>(major), true);
             }
         }
     }
@@ -908,11 +908,11 @@ void ApplicationManager::send_initial_event(std::uint16_t service, std::uint16_t
                        << " " << format_named_id("EventGroupID", event_group, 4);
 
     std::lock_guard<std::mutex> guard(offer_event_list_mutex_);
-    auto& eglist = offer_event_list_[service][instance][event_group];
+    auto& eglist = offer_event_list_[service][instance][static_cast<std::uint8_t>(event_group)];
 
     for (auto& event : eglist) {
         if (event.second == SOMEIP_EVENT_OFFER) {
-            event_manager_->notify_initial_event(service, instance, event.first);
+            event_manager_->notify_initial_event(service, instance, static_cast<std::uint16_t>(event.first));
         }
     }
 }
@@ -964,7 +964,7 @@ void ApplicationManager::on_subscribe_eventgroup(std::shared_ptr<MessageSD> mess
     lck_offer.unlock();
 
     std::unique_lock<std::mutex> lck_event(offer_event_list_mutex_);
-    auto& event_state = offer_event_list_[service_id][instance_id][eventgroup_id];
+    auto& event_state = offer_event_list_[service_id][instance_id][static_cast<std::uint8_t>(eventgroup_id)];
     for (auto& item : event_state) {
         if (item.second == SOMEIP_EVENT_OFFER) {
             result |= 0x01;
@@ -1052,7 +1052,7 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
     std::unique_lock<std::mutex> lck_subevent(subscribe_event_list_mutex_);
     for (auto& item : subscribe_event_list_[service_id][instance_id]) {
         auto& eventgroup = item.second;
-        auto it = eventgroup.find(eventgroup_id);
+        auto it = eventgroup.find(static_cast<std::uint16_t>(eventgroup_id));
         if (it != eventgroup.end()) {
             if (it->second == SOMEIP_EVENT_SUBSCRIBE) {
                 it->second = (ttl == SOMEIP_DEFAULT_TTL_OFF) ? SOMEIP_EVENT_SUBSCRIBE_NACK : SOMEIP_EVENT_SUBSCRIBE_ACK;
@@ -1062,7 +1062,7 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
 
 #if defined(ENABLE_SOMEIP_IPC)
     if (is_internal_message_for_ipc(service_id, instance_id)) {
-        packet_router_->add_ipc_route(service_id, instance_id, eventgroup_id, app_id, true);
+        packet_router_->add_ipc_route(service_id, instance_id, static_cast<std::uint16_t>(eventgroup_id), app_id, true);
     }
 #endif // ENABLE_SOMEIP_IPC
 
@@ -1078,10 +1078,10 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
 
         auto found_instance = found_service->second.find(instance_id);
         if (found_instance != found_service->second.end()) {
-            auto found_eventgroup = found_instance->second.find(eventgroup_id);
+            auto found_eventgroup = found_instance->second.find(static_cast<std::uint16_t>(eventgroup_id));
             if (found_eventgroup != found_instance->second.end()) {
                 for (auto& event : eventlist) {
-                    auto item = event.second.find(eventgroup_id);
+                    auto item = event.second.find(static_cast<std::uint16_t>(eventgroup_id));
                     if (item != event.second.end() && item->second == SOMEIP_EVENT_REQUEST) {
                         auto event_id = event.first;
 
@@ -1098,9 +1098,11 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
                                     << " isSelective: " << (found_event->second.second ? "true" : "false");
 
                                 if (ttl != SOMEIP_DEFAULT_TTL_OFF) {
-                                    handler(service_id, instance_id, eventgroup_id, event_id, 0);
+                                    handler(service_id, instance_id, static_cast<std::uint16_t>(eventgroup_id),
+                                            event_id, 0);
                                 } else if (found_event->second.second == true) {
-                                    handler(service_id, instance_id, eventgroup_id, event_id, 0xff);
+                                    handler(service_id, instance_id, static_cast<std::uint16_t>(eventgroup_id),
+                                            event_id, 0xff);
                                 } else {
                                     LGSOMEIP_LOG_WARN
                                         << "ApplicationManager::on_subscribe_eventgroup_ack "
@@ -1124,9 +1126,11 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
                                     << format_named_id("EventGroupID", eventgroup_id, 4) << " TTL= " << ttl;
 
                                 if (ttl != SOMEIP_DEFAULT_TTL_OFF) {
-                                    handler(service_id, instance_id, eventgroup_id, event_id, 0);
+                                    handler(service_id, instance_id, static_cast<std::uint16_t>(eventgroup_id),
+                                            event_id, 0);
                                 } else if (its_any_event->second.second == true) {
-                                    handler(service_id, instance_id, eventgroup_id, event_id, 0xff);
+                                    handler(service_id, instance_id, static_cast<std::uint16_t>(eventgroup_id),
+                                            event_id, 0xff);
                                 } else {
                                     LGSOMEIP_LOG_WARN
                                         << "ApplicationManager::on_subscribe_eventgroup_ack "
@@ -1833,7 +1837,7 @@ void ApplicationManager::send(MessageSOMEIP& message, [[maybe_unused]] bool flus
             std::uint16_t app_id = static_cast<std::uint16_t>(req_id >> 16);
             LGSOMEIP_LOG_DEBUG << "ApplicationManager::send / ( IPC RESPONSE) / " << format_named_id("AppID", app_id, 4)
                                << " " << format_named_id("RequestID", req_id, 8);
-            packet_router_->send_ipc_response_message(message, req_id, app_id);
+            packet_router_->send_ipc_response_message(message, static_cast<std::uint16_t>(req_id), app_id);
         } else {
             packet_router_->send_ipc_message(message, is_provider);
         }
@@ -1944,7 +1948,7 @@ void ApplicationManager::send_error(std::shared_ptr<MessageSOMEIP> message, std:
         message->set_payload(nullptr, 0);
         message->set_message_type(SOMEIP_MESSAGE_TYPE::ERROR);
     } else {
-        message->set_payload(error_message, strlen((char*)error_message));
+        message->set_payload(error_message, static_cast<std::uint32_t>(strlen((char*)error_message)));
         message->set_message_type(SOMEIP_MESSAGE_TYPE::ERROR);
     }
 
@@ -2142,8 +2146,8 @@ void ApplicationManager::on_message(std::shared_ptr<MessageSOMEIP> message) {
 #if !defined(ENABLE_SOMEIP_IPC)
         std::vector<message_handler_t> handler = get_message_handler(serviceid, instanceid, methodid, major, type);
 #else
-        std::vector<message_handler_t> handler =
-            get_message_handler(serviceid, instanceid, methodid, major, type, app_id, req_id);
+        std::vector<message_handler_t> handler = get_message_handler(serviceid, instanceid, methodid, major, type,
+                                                                     app_id, static_cast<std::uint16_t>(req_id));
 #endif // ENABLE_SOMEIP_IPC
         if (!handler.empty()) {
             for (auto& it : handler) {

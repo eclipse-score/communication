@@ -600,7 +600,8 @@ void ServiceManager::on_check_ttl_subscribe() {
                             auto eventgroup = config_service_info->get_event_group(egid);
                             for (std::uint16_t event_id : *eventgroup) {
                                 if (subscribe->app_id > 0) {
-                                    packet_router_->remove_subscribe_route(sid, iid, event_id, subscribe->app_id);
+                                    packet_router_->remove_subscribe_route(
+                                        sid, iid, event_id, static_cast<std::uint16_t>(subscribe->app_id));
                                 } else {
                                     if (subscribe->tcp_address != nullptr) {
                                         packet_router_->remove_subscribe_route(sid, iid, event_id, 0,
@@ -824,7 +825,7 @@ void ServiceManager::on_internal_message(std::shared_ptr<MessageSD> message) {
     std::uint32_t ttl = 0;
 
     std::uint32_t req_id = message->get_request_id();
-    std::uint32_t len = message->entries().size();
+    std::uint32_t len = static_cast<std::uint32_t>(message->entries().size());
     for (std::uint32_t i = 0; i < len; i++) {
         entry = &message->entry(i);
         service_id = entry->get_service_id();
@@ -943,7 +944,7 @@ void ServiceManager::on_external_message(std::shared_ptr<Endpoint> endpoint, std
     gathered_offer_list_.clear();
     SDEntry ack_entry(SOMEIP_SD_ENTRY::SUBSCRIBEACK::TYPEID);
 
-    std::uint32_t len = message->entries().size();
+    std::uint32_t len = static_cast<std::uint32_t>(message->entries().size());
     std::uint8_t option1_index = 0;
 
     for (std::uint32_t i = 0; i < len; i++) {
@@ -1118,13 +1119,16 @@ void ServiceManager::on_external_message(std::shared_ptr<Endpoint> endpoint, std
                                         option.set_address_option(multicast);
                                         gathered_subscribe_ack_list_->options().push_back(option);
                                         ack_entry.set_option1st_index(option1_index++);
-                                        ack_entry.set_option1st_count(gathered_subscribe_ack_list_->options().size());
+                                        ack_entry.set_option1st_count(
+                                            static_cast<std::uint8_t>(gathered_subscribe_ack_list_->options().size()));
                                     } else { // 2) Duplicated Multicast Option
                                         // Calculate index and set the index to 1stIndex
                                         std::uint8_t multicast_index = 0;
-                                        multicast_index = std::distance(std::begin(mcast_vector), mcast_it);
+                                        multicast_index = static_cast<std::uint8_t>(
+                                            std::distance(std::begin(mcast_vector), mcast_it));
                                         ack_entry.set_option1st_index(multicast_index);
-                                        ack_entry.set_option1st_count(gathered_subscribe_ack_list_->options().size());
+                                        ack_entry.set_option1st_count(
+                                            static_cast<std::uint8_t>(gathered_subscribe_ack_list_->options().size()));
                                         LGSOMEIP_LOG_DEBUG
                                             << "ServiceManager::on_external_message / Set Multicast Option to "
                                             << "SubscribeAck "
@@ -1209,7 +1213,7 @@ void ServiceManager::on_external_message(std::shared_ptr<Endpoint> endpoint, std
         // Set the number of 1st options as final size of options.
         for (auto& itr : gathered_subscribe_ack_list_->entries()) {
             if (itr.get_option1st_count() != 0) {
-                itr.set_option1st_count(gathered_subscribe_ack_list_->options().size());
+                itr.set_option1st_count(static_cast<std::uint8_t>(gathered_subscribe_ack_list_->options().size()));
             }
         }
 
@@ -1238,7 +1242,7 @@ void ServiceManager::on_external_message(std::shared_ptr<Endpoint> endpoint, std
 }
 
 bool ServiceManager::check_sd_message(std::shared_ptr<MessageSD> message, std::string sender_ip_address) {
-    std::uint32_t len = message->entries().size();
+    std::uint32_t len = static_cast<std::uint32_t>(message->entries().size());
 
     SDEntry* entry = nullptr;
 
@@ -1265,7 +1269,7 @@ bool ServiceManager::check_sd_message(std::shared_ptr<MessageSD> message, std::s
         // --> send Nack with serviceID, instanceID, major, eventgroupID, reqid 0.
         LGSOMEIP_LOG_INFO << "ServiceManager::onCheckSDMessage / wrong length of entry";
         send_subscribe_eventgroup_ack(service_id, instance_id, eventgroup_id, SOMEIP_DEFAULT_TTL_OFF, major,
-                                      (reqid >> 16), nullptr, sender_ip_address);
+                                      static_cast<std::uint16_t>((reqid >> 16)), nullptr, sender_ip_address);
         return false;
     }
 
@@ -1274,7 +1278,7 @@ bool ServiceManager::check_sd_message(std::shared_ptr<MessageSD> message, std::s
         entry = &message->entry(i);
         index1 = entry->get_option1st_index() + entry->get_option1st_count();
         index2 = entry->get_option2nd_index() + entry->get_option2nd_count();
-        options = message->options().size();
+        options = static_cast<int>(message->options().size());
 
         if (options < index1 || options < index2) {
             // The received SD message has an invalid format.
@@ -1285,7 +1289,7 @@ bool ServiceManager::check_sd_message(std::shared_ptr<MessageSD> message, std::s
                 eventgroup_id = entry->get_event_group_id();
                 reqid = message->get_request_id();
                 send_subscribe_eventgroup_ack(service_id, instance_id, eventgroup_id, SOMEIP_DEFAULT_TTL_OFF, major,
-                                              (reqid >> 16), nullptr, sender_ip_address);
+                                              static_cast<std::uint16_t>((reqid >> 16)), nullptr, sender_ip_address);
             }
 
             LGSOMEIP_LOG_INFO << "ServiceManager::onCheckSDMessage / SD Message(from " << sender_ip_address
@@ -1855,7 +1859,7 @@ void ServiceManager::on_subscribe_eventgroup_ack(std::uint16_t service_id, std::
 
     // Update routing information.
     while (subscribe != std::end(subscribe_list)) {
-        std::uint16_t subscribe_app_id = subscribe->app_id;
+        std::uint16_t subscribe_app_id = static_cast<std::uint16_t>(subscribe->app_id);
         bool is_subscribed_from_internal = (subscribe_app_id != 0);
 
         if (subscribe->state == SubscribeState::SUBSCRIBED) {
@@ -2540,7 +2544,7 @@ void ServiceManager::send_internal_offer_service(std::uint16_t service_id, std::
     MessageComposer::add_entry(message, &entry, nullptr);
     auto send_buffer = serialize_sd(*message);
 
-    packet_router_->send_internal_message(send_buffer.data(), send_buffer.size(), app_id);
+    packet_router_->send_internal_message(send_buffer.data(), send_buffer.size(), static_cast<std::uint16_t>(app_id));
 }
 
 void ServiceManager::send_subscribe_eventgroup(std::uint16_t service_id, std::uint16_t instance_id,
@@ -2580,7 +2584,7 @@ void ServiceManager::send_subscribe_eventgroup(std::uint16_t service_id, std::ui
     entry.set_service_id(service_id);
     entry.set_instance_id(instance_id);
     entry.set_major_version(major_version);
-    entry.set_event_group_id(event_group_id);
+    entry.set_event_group_id(static_cast<std::uint16_t>(event_group_id));
     entry.set_flag(0x00);
 
     std::uint32_t effective_ttl = (target_appid == 0 && ttl >= 0xFFFF) ? 3 : ttl;
@@ -2671,7 +2675,7 @@ void ServiceManager::send_subscribe_eventgroup_ack(std::uint16_t service_id, std
     entry.set_service_id(service_id);
     entry.set_instance_id(instance_id);
     entry.set_major_version(major_version);
-    entry.set_event_group_id(event_group_id);
+    entry.set_event_group_id(static_cast<std::uint16_t>(event_group_id));
     entry.set_ttl(ttl);
     entry.set_flag(0x00);
 
@@ -2683,7 +2687,7 @@ void ServiceManager::send_subscribe_eventgroup_ack(std::uint16_t service_id, std
         }
         option.set_address_option(multicast);
         message->options().push_back(option);
-        entry.set_option1st_count(message->options().size());
+        entry.set_option1st_count(static_cast<std::uint8_t>(message->options().size()));
     }
 
     message->entries().push_back(entry);
@@ -3006,35 +3010,43 @@ bool ServiceManager::write_current_state_someip_services(std::map<std::uint16_t,
 
                     // Add this subscriber in the application document unless it is an internal one.
                     if (is_in_config_file == true && application_list.find(app_id) != application_list.end()) {
-                        if (subscribe.app_id != 0 &&
-                            application_list.find(subscribe.app_id) != application_list.end()) {
-                            tmp_str = int_to_hex(subscribe.app_id, 4) + "_" + application_list[subscribe.app_id];
-                            tmp_value_str.SetString(tmp_str.c_str(), tmp_str.length(), app_doc.alloc);
+                        if (subscribe.app_id != 0 && application_list.find(static_cast<std::uint16_t>(
+                                                         subscribe.app_id)) != application_list.end()) {
+                            tmp_str = int_to_hex(subscribe.app_id, 4) + "_" +
+                                      application_list[static_cast<std::uint16_t>(subscribe.app_id)];
+                            tmp_value_str.SetString(tmp_str.c_str(), static_cast<std::uint32_t>(tmp_str.length()),
+                                                    app_doc.alloc);
                             subscibers.AddMember("Internal(appId)", tmp_value_str, app_doc.alloc);
                         } else if (subscribe.app_id == 0) {
                             if (subscribe.tcp_address != nullptr) {
-                                tmp_value_str.SetString(subscribe.tcp_address->to_string().c_str(),
-                                                        subscribe.tcp_address->to_string().length(), app_doc.alloc);
+                                tmp_value_str.SetString(
+                                    subscribe.tcp_address->to_string().c_str(),
+                                    static_cast<std::uint32_t>(subscribe.tcp_address->to_string().length()),
+                                    app_doc.alloc);
                                 subscibers.AddMember("External(TCP)", tmp_value_str, app_doc.alloc);
                             }
                             if (subscribe.udp_address != nullptr) {
-                                tmp_value_str.SetString(subscribe.udp_address->to_string().c_str(),
-                                                        subscribe.udp_address->to_string().length(), app_doc.alloc);
+                                tmp_value_str.SetString(
+                                    subscribe.udp_address->to_string().c_str(),
+                                    static_cast<std::uint32_t>(subscribe.udp_address->to_string().length()),
+                                    app_doc.alloc);
                                 subscibers.AddMember("External(UDP)", tmp_value_str, app_doc.alloc);
                             }
                         }
                     }
 
                     if (is_in_config_file == true && subscribe.app_id != 0 &&
-                        application_list.find(subscribe.app_id) != application_list.end()) {
+                        application_list.find(static_cast<std::uint16_t>(subscribe.app_id)) != application_list.end()) {
                         // Add this subscription eventgroup into each application document
-                        subscribed_eventgroup_for_app[subscribe.app_id].push_back(eventgroup_id);
+                        subscribed_eventgroup_for_app[static_cast<std::uint16_t>(subscribe.app_id)].push_back(
+                            eventgroup_id);
                     }
 
                     subscribe_it++;
                 }
 
-                tmp_value_str.SetString(int_to_hex(eventgroup_id, 4).c_str(), int_to_hex(eventgroup_id, 4).length(),
+                tmp_value_str.SetString(int_to_hex(eventgroup_id, 4).c_str(),
+                                        static_cast<std::uint32_t>(int_to_hex(eventgroup_id, 4).length()),
                                         app_doc.alloc);
                 subscribed_services.AddMember(tmp_value_str, subscibers, app_doc.alloc);
             }
@@ -3045,19 +3057,24 @@ bool ServiceManager::write_current_state_someip_services(std::map<std::uint16_t,
                     rapidjson::Value provided_service(rapidjson::kObjectType);
                     rapidjson::Value tmp_value_str;
 
-                    tmp_value_str.SetString(config->get_service_name().c_str(), config->get_service_name().length(),
+                    tmp_value_str.SetString(config->get_service_name().c_str(),
+                                            static_cast<std::uint32_t>(config->get_service_name().length()),
                                             app_doc.alloc);
                     provided_service.AddMember("name", tmp_value_str, app_doc.alloc);
-                    tmp_value_str.SetString(int_to_hex(service_id, 4).c_str(), int_to_hex(service_id, 4).length(),
+                    tmp_value_str.SetString(int_to_hex(service_id, 4).c_str(),
+                                            static_cast<std::uint32_t>(int_to_hex(service_id, 4).length()),
                                             app_doc.alloc);
                     provided_service.AddMember("service", tmp_value_str, app_doc.alloc);
-                    tmp_value_str.SetString(int_to_hex(instance_id, 4).c_str(), int_to_hex(instance_id, 4).length(),
+                    tmp_value_str.SetString(int_to_hex(instance_id, 4).c_str(),
+                                            static_cast<std::uint32_t>(int_to_hex(instance_id, 4).length()),
                                             app_doc.alloc);
                     provided_service.AddMember("instance", tmp_value_str, app_doc.alloc);
-                    tmp_value_str.SetString(int_to_hex(major_version, 4).c_str(), int_to_hex(major_version, 4).length(),
+                    tmp_value_str.SetString(int_to_hex(major_version, 4).c_str(),
+                                            static_cast<std::uint32_t>(int_to_hex(major_version, 4).length()),
                                             app_doc.alloc);
                     provided_service.AddMember("major_version", tmp_value_str, app_doc.alloc);
-                    tmp_value_str.SetString(int_to_hex(minor_version, 8).c_str(), int_to_hex(minor_version, 8).length(),
+                    tmp_value_str.SetString(int_to_hex(minor_version, 8).c_str(),
+                                            static_cast<std::uint32_t>(int_to_hex(minor_version, 8).length()),
                                             app_doc.alloc);
                     provided_service.AddMember("minorVersion", tmp_value_str, app_doc.alloc);
                     if (instance.second.tcp_address != nullptr) {
@@ -3079,42 +3096,49 @@ bool ServiceManager::write_current_state_someip_services(std::map<std::uint16_t,
                 rapidjson::Value subscribed_service_for_app(rapidjson::kObjectType);
                 rapidjson::Value subscribed_service_for_app_group(rapidjson::kArrayType);
                 if (config != nullptr) {
-                    tmp_value_str.SetString(config->get_service_name().c_str(), config->get_service_name().length(),
+                    tmp_value_str.SetString(config->get_service_name().c_str(),
+                                            static_cast<std::uint32_t>(config->get_service_name().length()),
                                             app_doc.alloc);
                 } else {
                     tmp_value_str.SetString("no-name", 7, app_doc.alloc);
                 }
                 subscribed_service_for_app.AddMember("name", tmp_value_str, app_doc.alloc);
-                tmp_value_str.SetString(int_to_hex(service_id, 4).c_str(), int_to_hex(service_id, 4).length(),
-                                        app_doc.alloc);
+                tmp_value_str.SetString(int_to_hex(service_id, 4).c_str(),
+                                        static_cast<std::uint32_t>(int_to_hex(service_id, 4).length()), app_doc.alloc);
                 subscribed_service_for_app.AddMember("service", tmp_value_str, app_doc.alloc);
-                tmp_value_str.SetString(int_to_hex(instance_id, 4).c_str(), int_to_hex(instance_id, 4).length(),
-                                        app_doc.alloc);
+                tmp_value_str.SetString(int_to_hex(instance_id, 4).c_str(),
+                                        static_cast<std::uint32_t>(int_to_hex(instance_id, 4).length()), app_doc.alloc);
                 subscribed_service_for_app.AddMember("instance", tmp_value_str, app_doc.alloc);
-                tmp_value_str.SetString(int_to_hex(major_version, 4).c_str(), int_to_hex(major_version, 4).length(),
+                tmp_value_str.SetString(int_to_hex(major_version, 4).c_str(),
+                                        static_cast<std::uint32_t>(int_to_hex(major_version, 4).length()),
                                         app_doc.alloc);
                 subscribed_service_for_app.AddMember("major_version", tmp_value_str, app_doc.alloc);
-                tmp_value_str.SetString(int_to_hex(minor_version, 8).c_str(), int_to_hex(minor_version, 8).length(),
+                tmp_value_str.SetString(int_to_hex(minor_version, 8).c_str(),
+                                        static_cast<std::uint32_t>(int_to_hex(minor_version, 8).length()),
                                         app_doc.alloc);
                 subscribed_service_for_app.AddMember("minorVersion", tmp_value_str, app_doc.alloc);
 
                 if (is_in_config_file == true && application_list.find(app_id) != application_list.end()) {
                     tmp_str = int_to_hex(app_id, 4) + "_" + application_list[app_id];
-                    tmp_value_str.SetString(tmp_str.c_str(), tmp_str.length(), app_doc.alloc);
+                    tmp_value_str.SetString(tmp_str.c_str(), static_cast<std::uint32_t>(tmp_str.length()),
+                                            app_doc.alloc);
                     subscribed_service_for_app.AddMember("provider(appId)", tmp_value_str, app_doc.alloc);
                 } else if (is_in_config_file == true && app_id == 0) {
                     if (!tcp_addr.empty()) {
-                        tmp_value_str.SetString(tcp_addr.c_str(), tcp_addr.length(), app_doc.alloc);
+                        tmp_value_str.SetString(tcp_addr.c_str(), static_cast<std::uint32_t>(tcp_addr.length()),
+                                                app_doc.alloc);
                         subscribed_service_for_app.AddMember("provider(TCP)", tmp_value_str, app_doc.alloc);
                     }
                     if (!udp_addr.empty()) {
-                        tmp_value_str.SetString(udp_addr.c_str(), udp_addr.length(), app_doc.alloc);
+                        tmp_value_str.SetString(udp_addr.c_str(), static_cast<std::uint32_t>(udp_addr.length()),
+                                                app_doc.alloc);
                         subscribed_service_for_app.AddMember("provider(UDP)", tmp_value_str, app_doc.alloc);
                     }
                 }
 
                 for (auto group : element.second) {
-                    tmp_value_str.SetString(int_to_hex(group, 4).c_str(), int_to_hex(group, 4).length(), app_doc.alloc);
+                    tmp_value_str.SetString(int_to_hex(group, 4).c_str(),
+                                            static_cast<std::uint32_t>(int_to_hex(group, 4).length()), app_doc.alloc);
                     subscribed_service_for_app_group.PushBack(tmp_value_str, app_doc.alloc);
                 }
 

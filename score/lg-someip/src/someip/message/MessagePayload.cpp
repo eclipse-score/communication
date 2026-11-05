@@ -74,7 +74,7 @@ std::vector<std::uint8_t>& MessagePayload::get_payload_vector() {
 }
 
 std::uint32_t MessagePayload::get_length() const {
-    return payload_.size();
+    return static_cast<std::uint32_t>(payload_.size());
 }
 
 bool MessagePayload::operator==(const MessagePayload& rhs) {

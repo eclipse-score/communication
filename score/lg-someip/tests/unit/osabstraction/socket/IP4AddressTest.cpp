@@ -24,7 +24,7 @@ using namespace lgsomeip::osabstraction;
 TEST(IP4Address, get_address) {
     std::shared_ptr<Address> addr = std::make_shared<IP4Address>();
     int port = 7000;
-    addr->set_port_address(port);
+    addr->set_port_address(static_cast<std::uint16_t>(port));
 
     struct sockaddr_in* p_addr = reinterpret_cast<struct sockaddr_in*>(addr->get_address());
     unsigned sin_port = ntohs(p_addr->sin_port);

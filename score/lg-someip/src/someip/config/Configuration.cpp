@@ -361,7 +361,7 @@ void Configuration::initialize(std::string path) {
     // Use IPv4 by default when the configuration does not specify an IP version.
     if ((member_iterator = document.FindMember(kConfigIpType)) != document.MemberEnd()) {
         std::string ip_type_name = (member_iterator->value).GetString();
-        std::for_each(ip_type_name.begin(), ip_type_name.end(), [](char& c) { c = tolower(c); });
+        std::for_each(ip_type_name.begin(), ip_type_name.end(), [](char& c) { c = static_cast<char>(tolower(c)); });
         ip_type_ = (ip_type_name == "ipv6") ? 6 : 4;
     } else if (address_.find(":") != std::string::npos) {
         ip_type_ = 6;

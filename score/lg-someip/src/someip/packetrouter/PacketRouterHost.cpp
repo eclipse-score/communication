@@ -645,7 +645,7 @@ void PacketRouterHost::on_message(std::shared_ptr<Endpoint> endpoint, std::uint8
 
     print_byte_message("PacketRouterHost::on_message", message, message_length);
 
-    bool is_sd_message = MessageBuilder::is_sd_message(message, message_length);
+    bool is_sd_message = MessageBuilder::is_sd_message(message, static_cast<std::uint32_t>(message_length));
 
     std::unique_lock<std::recursive_mutex> lock_manage_route(route_management_mutex_);
     auto conn_info_it = connected_endpoints_.find(endpoint->get_socket()->get_socket_fd());
@@ -674,7 +674,7 @@ void PacketRouterHost::on_message(std::shared_ptr<Endpoint> endpoint, std::uint8
 
         auto sd_message = MessageBuilder::create<SOMEIPSD>();
         // Deserialization error in MessageSD(SDEntry, SDOption) returns true to send wrong SD Message(Nack).
-        if (false == MessageBuilder::build_message(*sd_message, message, message_length)) {
+        if (false == MessageBuilder::build_message(*sd_message, message, static_cast<std::uint32_t>(message_length))) {
             LGSOMEIP_LOG_WARN << "PacketRouterHost::on_message / Fail to build_message of the SOMEIPSD!!!";
             return;
         }
@@ -921,7 +921,7 @@ struct RoutingServiceInfo* PacketRouterHost::get_service_instance(std::uint16_t 
 void PacketRouterHost::on_internal_message(std::shared_ptr<Endpoint> endpoint, std::uint8_t* message,
                                            std::size_t message_length) {
     MessageHeader header;
-    bool success = header.deserialize(message, message_length);
+    bool success = header.deserialize(message, static_cast<std::uint32_t>(message_length));
     if (!success) {
         return;
     }
@@ -1325,7 +1325,7 @@ void PacketRouterHost::on_external_message(std::shared_ptr<Endpoint> endpoint, s
                                            std::size_t message_length) {
     MessageHeader header;
     try {
-        bool success = header.deserialize(message, message_length);
+        bool success = header.deserialize(message, static_cast<std::uint32_t>(message_length));
         if (!success) {
             throw LSAR_APPLICATION_ERROR(SOMEIP_RETURN_CODE::E_MALFORMED_MESSAGE);
         }
@@ -2710,7 +2710,7 @@ void PacketRouterHost::on_application_control_message(std::shared_ptr<Endpoint> 
         return;
     }
 
-    std::uint16_t fd = endpoint->get_socket()->get_socket_fd();
+    std::uint16_t fd = static_cast<std::uint16_t>(endpoint->get_socket()->get_socket_fd());
 
     LGSOMEIP_LOG_DEBUG << "PacketRouterHost::on_application_control_message / fd: " << fd
                        << ", AppName: " << message->option(0).get_configuration(SOMEIP_APPLICATION_NAME) << ", "
@@ -2721,7 +2721,7 @@ void PacketRouterHost::on_application_control_message(std::shared_ptr<Endpoint> 
     auto it = connected_endpoints_.find(fd);
     if (it != connected_endpoints_.end()) {
         std::string appname = message->option(0).get_configuration(SOMEIP_APPLICATION_NAME);
-        std::uint16_t app_id = message->get_request_id() >> 16;
+        std::uint16_t app_id = static_cast<std::uint16_t>(message->get_request_id() >> 16);
         if (!is_valid_application_name(appname) || app_id == 0) {
             LGSOMEIP_LOG_ERROR << "PacketRouterHost::on_application_control_message / Invalid application identity";
             return;
