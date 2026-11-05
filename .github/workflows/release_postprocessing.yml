@@ -37,24 +37,45 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
 
-      # dry_run: no-commit only rewrites the form file; the change is proposed via a PR
       - name: Populate version dropdown with published releases
-        uses: ShaMan123/gha-populate-form-version@1069c5fbc9d018875fdf26dbe11db854f4288b45
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          registry: github
-          form: .github/ISSUE_TEMPLATE/1-bugfix.yml
-          dropdown: _version
-          dry_run: no-commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release list --limit 1000 --exclude-drafts --json tagName --jq '.[].tagName' > releases.txt
+          python3 - <<'EOF'
+          import re
+
+          FORM = ".github/ISSUE_TEMPLATE/1-bugfix.yml"
+
+          def key(tag):
+              return [int(n) for n in re.findall(r"\d+", tag)]
+
+          with open("releases.txt") as f:
+              tags = sorted({t.strip() for t in f if t.strip()}, key=key, reverse=True)
+          if not tags:
+              raise SystemExit("No published releases found")
+
+          with open(FORM) as f:
+              lines = f.read().split("\n")
+
+          start = next(i for i, l in enumerate(lines) if re.match(r"\s*id:\s*_version\s*$", l))
+          opt = next(i for i in range(start, len(lines)) if re.match(r"\s*options:\s*$", lines[i]))
+          first = opt + 1
+          end = first
+          while end < len(lines) and re.match(r"\s*-\s", lines[end]):
+              end += 1
+          indent = re.match(r"\s*", lines[first]).group(0)
+          lines[first:end] = [f"{indent}- {t}" for t in tags]
+
+          with open(FORM, "w") as f:
+              f.write("\n".join(lines))
+          EOF
+          rm releases.txt
 
       - name: Prepare Bazel environment
         uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
         with:
           ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
-
-      # The form rewrite drops the copyright header; restore it with the repo's copyright tooling
-      - name: Restore copyright header
-        run: bazel run //third_party/cr_checker:issue_template_copyright.fix
 
       - name: Reformat YAML files
         run: bazel run //:format_YAML_with_yamlfmt
