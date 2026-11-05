@@ -17,15 +17,13 @@
 
 $FailureMode("Service not found, but is currently offered", "Communication.ServiceNotFoundButIsCurrentlyOffered")
 
-$OrGate("OrGate1", "Communication.ServiceNotFoundButIsCurrentlyOffered")
-$IntermediateEvent("Flag file was not created in correct place", "FlagFileNotCreatedInCorrectPlace", "OrGate1")
-$OrGate("OrGate2", "FlagFileNotCreatedInCorrectPlace")
-$RootCause("Skeleton did not create flag file in path derived from InstanceIdentifier", "SkeletonDidNotCreateFlagFileInPathDerivedFromInstanceIdentifier", "OrGate2")
-$RootCause("InstanceSpecifier provided to OfferService resolved to wrong InstanceIdentifier", "SkeletonInstanceSpecifierResolvedToWrongInstanceIdentifier", "OrGate2")
-
-$IntermediateEvent("Flag file is not searched for in correct place", "FlagFileNotSearchedForInCorrectPlace", "OrGate1")
+$IntermediateEvent("Service discovery flag file is not searched for in correct place", "FlagFileNotSearchedForInCorrectPlace", "Communication.ServiceNotFoundButIsCurrentlyOffered")
 $OrGate("OrGate3", "FlagFileNotSearchedForInCorrectPlace")
 $RootCause("Proxy is not searching for the flag file in a path derived from InstanceIdentifier", "ProxyNotSearchingForFlagFileInPathDerivedFromInstanceIdentifier", "OrGate3")
-$RootCause("InstanceSpecifier provided to FindService resolved to wrong InstanceIdentifier", "ProxyInstanceSpecifierResolvedToWrongInstanceIdentifier", "OrGate3")
+$RootCause("InstanceSpecifier provided to FindService resolved to wrong InstanceIdentifier", "ProxyInstanceSpecifierResolvesToWrongInstanceIdentifier", "OrGate3")
+$RootCause("InstanceIdentifier contains wrong values", "ProxyInstanceIdentifierContainsWrongValues", "OrGate3")
+' gtodo: reference instance identifier related root causes
+
+' instance identifier needs to have wrogn ids, wrong binding etc.
 
 @enduml

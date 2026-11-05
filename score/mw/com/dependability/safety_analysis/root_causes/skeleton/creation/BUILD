@@ -12,6 +12,14 @@
 # *******************************************************************************
 
 filegroup(
+    name = "creating_already_created_service_fta",
+    srcs = [
+        "creating_already_created_service_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
     name = "creation_of_skeleton_not_possible_fta",
     srcs = [
         "creation_of_skeleton_not_possible_fta.puml",
