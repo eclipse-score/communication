@@ -14,6 +14,7 @@
 
 #include "ServiceInfo.h"
 #include "ConfigConstant.h"
+#include "ConfigParse.h"
 #include <exception/Exception.h>
 #include <functional>
 #include <iostream>
@@ -28,7 +29,7 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
 
     // Load the service ID.
     if (service.HasMember(kConfigService)) {
-        service_id_ = static_cast<std::uint16_t>(std::stoi(service[kConfigService].GetString(), nullptr, 16));
+        service_id_ = parse_unsigned<std::uint16_t>(service[kConfigService], kConfigService, 16);
     } else {
         throw LSAR_CONFIGURATION_ERROR("field[service] must be included in service");
     }
@@ -40,27 +41,27 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
     }
     // Load the instance ID.
     if (service.HasMember(kConfigInstance)) {
-        instance_id_ = static_cast<std::uint16_t>(std::stoi(service[kConfigInstance].GetString(), nullptr, 16));
+        instance_id_ = parse_unsigned<std::uint16_t>(service[kConfigInstance], kConfigInstance, 16);
         has_instance_id_ = true;
     } else {
         throw LSAR_CONFIGURATION_ERROR("field[instance] must be included in service");
     }
     // Load the major service version.
     if (service.HasMember(kConfigMajorVersion)) {
-        major_version_ = static_cast<std::uint8_t>(std::stoi(service[kConfigMajorVersion].GetString(), nullptr, 16));
+        major_version_ = parse_unsigned<std::uint8_t>(service[kConfigMajorVersion], kConfigMajorVersion, 16);
         has_major_version_ = true;
     }
 
     // Load the minor service version.
     if (service.HasMember(kConfigMinorVersion)) {
-        minor_version_ = static_cast<std::uint32_t>(std::stoul(service[kConfigMinorVersion].GetString(), nullptr, 16));
+        minor_version_ = parse_unsigned<std::uint32_t>(service[kConfigMinorVersion], kConfigMinorVersion, 16);
         has_minor_version_ = true;
     }
 
     // Load the minimum minor service version.
     if (service.HasMember(kConfigMinimumMinorVersion)) {
         minimum_minor_version_ =
-            static_cast<std::uint32_t>(std::stoul(service[kConfigMinimumMinorVersion].GetString(), nullptr, 16));
+            parse_unsigned<std::uint32_t>(service[kConfigMinimumMinorVersion], kConfigMinimumMinorVersion, 16);
         has_minimum_minor_version_ = true;
     }
 
@@ -69,9 +70,9 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
         const rapidjson::Value& reliable = service[kConfigReliable];
 
         if (reliable.HasMember(kConfigPort)) {
-            reliable_port_ = static_cast<std::uint16_t>(std::stoi(reliable[kConfigPort].GetString()));
+            reliable_port_ = parse_unsigned<std::uint16_t>(reliable[kConfigPort], kConfigPort, 10);
             if (service.HasMember(kConfigVlanPriority)) {
-                vlan_priority_ = static_cast<std::uint8_t>(std::stoi(service[kConfigVlanPriority].GetString()));
+                vlan_priority_ = parse_unsigned<std::uint8_t>(service[kConfigVlanPriority], kConfigVlanPriority, 10);
             }
 
             if (ip_type == 6) {
@@ -95,9 +96,9 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
 
     // Load the unreliable transport configuration.
     if (service.HasMember(kConfigUnreliable)) {
-        unreliable_port_ = static_cast<std::uint16_t>(std::stoi(service[kConfigUnreliable].GetString()));
+        unreliable_port_ = parse_unsigned<std::uint16_t>(service[kConfigUnreliable], kConfigUnreliable, 10);
         if (service.HasMember(kConfigVlanPriority)) {
-            vlan_priority_ = static_cast<std::uint8_t>(std::stoi(service[kConfigVlanPriority].GetString()));
+            vlan_priority_ = parse_unsigned<std::uint8_t>(service[kConfigVlanPriority], kConfigVlanPriority, 10);
         }
 
         if (ip_type == 6) {
@@ -115,7 +116,7 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
     if (service.HasMember(kConfigSomeIpTp)) {
         const rapidjson::Value& t_pids = service[kConfigSomeIpTp];
         for (rapidjson::SizeType j = 0; j < t_pids.Size(); j++) {
-            std::uint16_t methodeventid = static_cast<std::uint16_t>(std::stoi(t_pids[j].GetString(), nullptr, 16));
+            std::uint16_t methodeventid = parse_unsigned<std::uint16_t>(t_pids[j], kConfigSomeIpTp, 16);
             tp_list_.push_back(methodeventid);
         }
     }
@@ -126,7 +127,7 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
 
         if (multicast.HasMember(kConfigMulticastAddress) && multicast.HasMember(kConfigPort)) {
             auto multicast_addr = multicast[kConfigMulticastAddress].GetString();
-            auto multicast_port = std::stoi(multicast[kConfigPort].GetString());
+            auto multicast_port = parse_unsigned<std::uint16_t>(multicast[kConfigPort], kConfigPort, 10);
             std::shared_ptr<lgsomeip::osabstraction::Address> multicast;
             if (ip_type == 6) {
                 multicast = std::make_shared<lgsomeip::osabstraction::IP6Address>();
@@ -136,7 +137,7 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
 
             multicast->set_ip_address(multicast_addr);
             multicast->set_reliable(false);
-            multicast->set_port_address(static_cast<std::uint16_t>(multicast_port));
+            multicast->set_port_address(multicast_port);
             multicast_addresses_->push_back(multicast);
         }
     }
@@ -165,7 +166,7 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
 
         for (rapidjson::SizeType i = 0;
              i < events.Size() && events[i].FindMember(kConfigEvent) != events[i].MemberEnd(); i++) {
-            eventid = static_cast<std::uint16_t>(std::stoi(events[i][kConfigEvent].GetString(), nullptr, 16));
+            eventid = parse_unsigned<std::uint16_t>(events[i][kConfigEvent], kConfigEvent, 16);
             bool isfield = false;
 
             if (events[i].HasMember(kConfigIsField)) {
@@ -178,10 +179,8 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
 
             std::uint32_t updatecycle = 0;
             if (events[i].HasMember(kConfigUpdateCycle)) {
-                if (events[i][kConfigUpdateCycle].IsUint()) {
-                    updatecycle = events[i][kConfigUpdateCycle].GetUint();
-                } else if (events[i][kConfigUpdateCycle].IsString()) {
-                    updatecycle = std::stoi(events[i][kConfigUpdateCycle].GetString());
+                if (events[i][kConfigUpdateCycle].IsUint() || events[i][kConfigUpdateCycle].IsString()) {
+                    updatecycle = parse_unsigned<std::uint32_t>(events[i][kConfigUpdateCycle], kConfigUpdateCycle, 10);
                 }
             }
             events_.emplace_back(eventid, isfield, updatecycle);
@@ -195,8 +194,7 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
         for (rapidjson::SizeType i = 0;
              i < eventgroups.Size() && eventgroups[i].FindMember(kConfigEventGroup) != eventgroups[i].MemberEnd();
              i++) {
-            eventgroup_id =
-                static_cast<std::uint16_t>(std::stoi(eventgroups[i][kConfigEventGroup].GetString(), nullptr, 16));
+            eventgroup_id = parse_unsigned<std::uint16_t>(eventgroups[i][kConfigEventGroup], kConfigEventGroup, 16);
 
             // create eventgroup object
             auto& eventgroup = event_groups_[eventgroup_id];
@@ -208,7 +206,7 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
 
                 if (multicast.HasMember(kConfigMulticastAddress) && multicast.HasMember(kConfigPort)) {
                     auto multicast_addr = multicast[kConfigMulticastAddress].GetString();
-                    auto multicast_port = std::stoi(multicast[kConfigPort].GetString());
+                    auto multicast_port = parse_unsigned<std::uint16_t>(multicast[kConfigPort], kConfigPort, 10);
 
                     if (ip_type == 6) {
                         eventgroup.multicast_address_ = std::make_shared<lgsomeip::osabstraction::IP6Address>();
@@ -218,7 +216,7 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
 
                     eventgroup.multicast_address_->set_ip_address(multicast_addr);
                     eventgroup.multicast_address_->set_reliable(false);
-                    eventgroup.multicast_address_->set_port_address(static_cast<std::uint16_t>(multicast_port));
+                    eventgroup.multicast_address_->set_port_address(multicast_port);
                     eventgroup.is_multicast_ = true;
                     multicast_addresses_->push_back(eventgroup.multicast_address_);
                 }
@@ -236,11 +234,9 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
 
             // threshold
             if (eventgroups[i].HasMember(kConfigThreshold)) {
-                if (eventgroups[i][kConfigThreshold].IsUint()) {
-                    eventgroup.threshold_ = static_cast<std::uint16_t>(eventgroups[i][kConfigThreshold].GetUint());
-                } else if (eventgroups[i][kConfigThreshold].IsString()) {
+                if (eventgroups[i][kConfigThreshold].IsUint() || eventgroups[i][kConfigThreshold].IsString()) {
                     eventgroup.threshold_ =
-                        static_cast<std::uint16_t>(std::stoi(eventgroups[i][kConfigThreshold].GetString()));
+                        parse_unsigned<std::uint16_t>(eventgroups[i][kConfigThreshold], kConfigThreshold, 10);
                 }
             }
 
@@ -251,7 +247,7 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
             auto& events_arr = eventgroup.events_;
             const rapidjson::Value& events = eventgroups[i][kConfigEvents];
             for (rapidjson::SizeType j = 0; j < events.Size(); j++) {
-                std::uint16_t eventid = static_cast<std::uint16_t>(std::stoi(events[j].GetString(), nullptr, 16));
+                std::uint16_t eventid = parse_unsigned<std::uint16_t>(events[j], kConfigEvents, 16);
                 events_arr.push_back(eventid); // event_id was added to groups_by_event_[event_group_id]
                 auto& temp = groups_by_event_[eventid];
                 temp.push_back(eventgroup_id); // event_group_id was added to groups_by_event_[event_id]

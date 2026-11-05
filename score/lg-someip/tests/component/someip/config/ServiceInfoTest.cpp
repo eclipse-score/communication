@@ -17,6 +17,7 @@
 #include <string>
 
 #include <config/ServiceInfo.h>
+#include <exception/Exception.h>
 
 using namespace lgsomeip;
 
@@ -89,4 +90,42 @@ TEST(ServiceInfo, parses_optional_transport_and_event_metadata) {
     EXPECT_TRUE(event_group->is_multicast());
     ASSERT_NE(event_group->get_multicast_address(), nullptr);
     EXPECT_EQ(event_group->get_multicast_address()->get_ip_address(), "224.0.0.2");
+}
+
+TEST(ServiceInfo, rejects_values_that_do_not_fit_the_target_type) {
+    auto initialize = [](const char* json) {
+        rapidjson::Document document;
+        document.Parse(json);
+        std::string ip_address = "127.0.0.1";
+        ServiceInfo service;
+        service.initialize(document, ip_address, 4);
+    };
+
+    EXPECT_NO_THROW(initialize(R"({"service": "0xFFFF", "instance": "0xFFFF", "major_version": "0xFF"})"));
+    EXPECT_NO_THROW(initialize(R"({"service": "0x1", "instance": "0x1", "unreliable": "65535"})"));
+
+    EXPECT_THROW(initialize(R"({"service": "0x10000", "instance": "0x1"})"), ConfigurationErrorException);
+    EXPECT_THROW(initialize(R"({"service": "0x1", "instance": "0x10000"})"), ConfigurationErrorException);
+    EXPECT_THROW(initialize(R"({"service": "0x1", "instance": "0x1", "major_version": "0x100"})"),
+                 ConfigurationErrorException);
+    EXPECT_THROW(initialize(R"({"service": "0x1", "instance": "0x1", "minor_version": "0x100000000"})"),
+                 ConfigurationErrorException);
+    EXPECT_THROW(initialize(R"({"service": "0x1", "instance": "0x1", "unreliable": "65536"})"),
+                 ConfigurationErrorException);
+    EXPECT_THROW(initialize(R"({"service": "0x1", "instance": "0x1", "unreliable": "30509", "vlan_qos": "256"})"),
+                 ConfigurationErrorException);
+    EXPECT_THROW(initialize(R"({"service": "0x1", "instance": "0x1", "unreliable": "30509abc"})"),
+                 ConfigurationErrorException);
+    EXPECT_THROW(
+        initialize(R"({"service": "0x1", "instance": "0x1", "multicast": {"address": "224.0.0.1", "port": "65536"}})"),
+        ConfigurationErrorException);
+    EXPECT_THROW(initialize(R"({"service": "0x1", "instance": "0x1", "events": [{"event": "0x10000"}]})"),
+                 ConfigurationErrorException);
+    EXPECT_THROW(
+        initialize(R"({"service": "0x1", "instance": "0x1", "events": [{"event": "0x1", "update-cycle": "-1"}]})"),
+        ConfigurationErrorException);
+    EXPECT_THROW(
+        initialize(
+            R"({"service": "0x1", "instance": "0x1", "eventgroups": [{"eventgroup": "0x10000", "events": []}]})"),
+        ConfigurationErrorException);
 }

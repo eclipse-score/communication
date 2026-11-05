@@ -16,6 +16,7 @@
 #include <rapidjson/document.h>
 
 #include <config/ConfigurationSD.h>
+#include <exception/Exception.h>
 
 using namespace lgsomeip;
 
@@ -77,4 +78,23 @@ TEST(ConfigurationSD, disabled_configuration_stops_after_enable_flag) {
 
     EXPECT_FALSE(configuration.is_enabled());
     EXPECT_EQ(configuration.get_port(), 0);
+}
+
+TEST(ConfigurationSD, rejects_values_that_do_not_fit_the_target_type) {
+    auto initialize = [](const char* json) {
+        rapidjson::Document document;
+        document.Parse(json);
+        ConfigurationSD configuration;
+        configuration.initialize(document);
+    };
+
+    EXPECT_NO_THROW(initialize(R"({"enable": true, "multicast": "224.0.0.1", "port": 65535, "vlan_qos": "255"})"));
+    EXPECT_THROW(initialize(R"({"enable": true, "multicast": "224.0.0.1", "port": 65536})"),
+                 ConfigurationErrorException);
+    EXPECT_THROW(initialize(R"({"enable": true, "multicast": "224.0.0.1", "port": "70000"})"),
+                 ConfigurationErrorException);
+    EXPECT_THROW(initialize(R"({"enable": true, "multicast": "224.0.0.1", "port": 30490, "vlan_qos": 256})"),
+                 ConfigurationErrorException);
+    EXPECT_THROW(initialize(R"({"enable": true, "multicast": "224.0.0.1", "port": 30490, "ttl": "-1"})"),
+                 ConfigurationErrorException);
 }

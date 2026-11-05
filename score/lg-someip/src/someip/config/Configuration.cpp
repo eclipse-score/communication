@@ -14,6 +14,7 @@
 
 #include "Configuration.h"
 #include "ConfigConstant.h"
+#include "ConfigParse.h"
 #include <algorithm>
 #include <cstdlib>
 #include <exception/Exception.h>
@@ -237,30 +238,6 @@ void validate_configuration_document(const rapidjson::Document& document) {
             }
         }
     }
-}
-
-template <typename Type> Type parse_unsigned(const rapidjson::Value& value, const char* member, int base) {
-    unsigned long parsed = 0;
-    if (value.IsUint()) {
-        parsed = value.GetUint();
-    } else if (value.IsString()) {
-        std::size_t processed = 0;
-        try {
-            parsed = std::stoul(value.GetString(), &processed, base);
-        } catch (const std::exception&) {
-            throw LSAR_CONFIGURATION_ERROR(std::string("invalid numeric value for '") + member + "'");
-        }
-        if (processed != std::strlen(value.GetString())) {
-            throw LSAR_CONFIGURATION_ERROR(std::string("invalid numeric value for '") + member + "'");
-        }
-    } else {
-        throw LSAR_CONFIGURATION_ERROR(std::string("'") + member + "' must be numeric");
-    }
-
-    if (parsed > std::numeric_limits<Type>::max()) {
-        throw LSAR_CONFIGURATION_ERROR(std::string("numeric value for '") + member + "' is out of range");
-    }
-    return static_cast<Type>(parsed);
 }
 
 } // namespace

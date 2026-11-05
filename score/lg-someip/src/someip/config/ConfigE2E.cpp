@@ -14,6 +14,7 @@
 
 #include "ConfigE2E.h"
 #include "ConfigConstant.h"
+#include "ConfigParse.h"
 #include <exception/Exception.h>
 
 // Example E2E configuration:
@@ -43,10 +44,8 @@ ConfigE2E::ConfigE2E(const rapidjson::Value& e2e, std::uint16_t service_id, std:
     : service_id_(service_id), event_id_(event_id) {
     auto get_uint16 = [&](const char* member) -> std::uint16_t {
         if (e2e.HasMember(member)) {
-            if (e2e[member].IsString()) {
-                return static_cast<std::uint16_t>(std::stoi(e2e[member].GetString()));
-            } else if (e2e[member].IsUint()) {
-                return static_cast<std::uint16_t>(e2e[member].GetUint());
+            if (e2e[member].IsString() || e2e[member].IsUint()) {
+                return parse_unsigned<std::uint16_t>(e2e[member], member, 10);
             }
         } else {
             std::string member_name = member;
