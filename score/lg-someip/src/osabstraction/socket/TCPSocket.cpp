@@ -29,6 +29,15 @@ namespace {
 // How long send() waits without any progress for a full socket buffer to drain before giving up on a message.
 constexpr std::chrono::milliseconds kSendTimeout{1000};
 
+// POSIX allows EAGAIN and EWOULDBLOCK to have the same value, as on Linux, but not all systems do.
+bool would_block(int error) {
+#if EAGAIN == EWOULDBLOCK
+    return error == EAGAIN;
+#else
+    return error == EAGAIN || error == EWOULDBLOCK;
+#endif
+}
+
 // Wait until file_descriptor can be written, or until deadline. Returns false on timeout or error.
 bool wait_writable(int file_descriptor, std::chrono::steady_clock::time_point deadline) {
     for (;;) {
@@ -109,7 +118,7 @@ int TCPSocket::send(int file_descriptor, const void* buffer, std::size_t size) {
             if (errno == EINTR) {
                 continue;
             }
-            if ((errno == EAGAIN || errno == EWOULDBLOCK)
+            if (would_block(errno)
 #if defined(ENABLE_TLS)
                 && !is_secure_connection()
 #endif // ENABLE_TLS
@@ -203,7 +212,7 @@ int TCPSocket::receive(char* buffer, std::size_t size) {
 #endif // ENABLE_TLS
 
         if (ret == static_cast<std::size_t>(-1)) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
+            if (would_block(errno))
                 break;
             LGSOMEIP_LOG_ERROR << "TCPSocket::receive / Socket READ Failed on FD:" << this->socket_fd_ << ", error#"
                                << strerror(errno);
