@@ -1,0 +1,47 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/mw/com/test/api_idempotency/api_idempotency_type",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 3431,
+          "events": [
+            {
+              "eventName": "test_event",
+              "eventId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "/score/mw/com/test/api_idempotency/api_idempotency_instance",
+      "serviceTypeName": "/score/mw/com/test/api_idempotency/api_idempotency_type",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1026,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "test_event",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
