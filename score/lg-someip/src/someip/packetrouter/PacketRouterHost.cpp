@@ -423,7 +423,7 @@ void PacketRouterHost::on_disconnect(std::shared_ptr<Endpoint> endpoint) {
     std::int32_t fd = endpoint->get_socket()->get_socket_fd();
     LGSOMEIP_LOG_INFO << "PacketRouterHost::on_disconnect / FD = " << fd;
 
-    std::lock_guard<std::recursive_mutex> guard(route_management_mutex_);
+    std::unique_lock<std::recursive_mutex> guard(route_management_mutex_);
 
     auto conn_info_it = connected_endpoints_.find(fd);
     if (conn_info_it == connected_endpoints_.end()) {
@@ -478,6 +478,7 @@ void PacketRouterHost::on_disconnect(std::shared_ptr<Endpoint> endpoint) {
             connected_endpoints_.erase(fd);
         }
         local_receiver_->remove_client_endpoint(fd);
+        guard.unlock();
         host_->on_disconnected_application(app_id);
     }
     // Handle disconnection from an external service endpoint.
@@ -558,6 +559,7 @@ void PacketRouterHost::on_disconnect(std::shared_ptr<Endpoint> endpoint) {
             }
         }
 
+        guard.unlock();
         host_->on_disconnected_service(addr);
     }
 }
