@@ -139,8 +139,11 @@ constexpr std::size_t kMaxSlots{10U};
 
 /// for our very basic valid deployment, we use a configured shm-size of 500
 static constexpr std::size_t kConfiguredDeploymentShmSize{1024U};
-static constexpr std::size_t kConfiguredDeploymentControlAsilBShmSize{1024U};
-static constexpr std::size_t kConfiguredDeploymentControlQmShmSize{1024U};
+// Sized with headroom above the actual (0-event) ServiceDataControl footprint (which grows as more
+// CoherencyType-specific event_controls_* containers are added to it), so that these fixed, manually-configured
+// test sizes keep fitting a real (possibly future, larger) ServiceDataControl.
+static constexpr std::size_t kConfiguredDeploymentControlAsilBShmSize{2048U};
+static constexpr std::size_t kConfiguredDeploymentControlQmShmSize{2048U};
 static constexpr LolaServiceInstanceId::InstanceId kDefaultLolaInstanceId{16U};
 
 static constexpr memory::DataTypeSizeInfo kTestSampleTypeSizeInfo{sizeof(test::TestSampleType),

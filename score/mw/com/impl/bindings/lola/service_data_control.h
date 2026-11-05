@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 #include "score/mw/com/impl/bindings/lola/event_control_coherent.h"
+#include "score/mw/com/impl/bindings/lola/event_control_mixed.h"
 #include "score/mw/com/impl/bindings/lola/linear_search_map.h"
 
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
@@ -45,13 +46,18 @@ class ServiceDataControl
     /// \param number_of_coherent_events_and_fields the (fixed) number of CoherencyType::kCoherent events + fields
     ///        this service-instance provides. Analogous to number_of_non_coherent_events_and_fields, but for the
     ///        event_controls_coherent_ container.
+    /// \param number_of_mixed_events_and_fields the (fixed) number of CoherencyType::kMixed events + fields this
+    ///        service-instance provides. Analogous to number_of_non_coherent_events_and_fields, but for the
+    ///        event_controls_mixed_ container.
     /// \param resource ManagedMemoryResource used for allocating underlying storage
 
     explicit ServiceDataControl(const std::size_t number_of_non_coherent_events_and_fields,
                                 const std::size_t number_of_coherent_events_and_fields,
+                                const std::size_t number_of_mixed_events_and_fields,
                                 score::memory::shared::ManagedMemoryResource& resource)
         : event_controls_(number_of_non_coherent_events_and_fields, resource),
           event_controls_coherent_(number_of_coherent_events_and_fields, resource),
+          event_controls_mixed_(number_of_mixed_events_and_fields, resource),
           application_id_pid_mapping_(kMaxApplicationIdPidMappings, resource)
     {
     }
@@ -73,6 +79,11 @@ class ServiceDataControl
     /// \details See EventControlCoherent for the differences to event_controls_' EventControl.
     // coverity[autosar_cpp14_m11_0_1_violation]
     LinearSearchMap<ElementFqId, EventControlCoherent> event_controls_coherent_;
+
+    /// \brief control information for all events/fields configured with CoherencyType::kMixed.
+    /// \details See EventControlMixed for the differences to event_controls_' EventControl.
+    // coverity[autosar_cpp14_m11_0_1_violation]
+    LinearSearchMap<ElementFqId, EventControlMixed> event_controls_mixed_;
 
     /// \brief mapping of a proxy's application identifier to its process ID (pid).
     /// \details Every proxy instance for this service shall register itself in this mapping. The identifier used is
@@ -120,10 +131,15 @@ struct ServiceElementControlSizeInfo
 ///        event_controls_coherent_ container is constructed with. Defaults to an empty span for callers which don't
 ///        (yet) provide any CoherencyType::kCoherent events/fields. Only the number_of_slots member of each entry is
 ///        used (CoherencyType::kCoherent events have no transaction-log, so max_subscribers is not needed for sizing).
+/// \param mixed_events_and_fields_size_info per CoherencyType::kMixed service-element sizing information. Its size
+///        equals the number of kMixed service-elements (events + fields), which is the fixed capacity the
+///        event_controls_mixed_ container is constructed with. Defaults to an empty span for callers which don't
+///        (yet) provide any CoherencyType::kMixed events/fields.
 /// \return the exact number of bytes needed for a single control shm-object.
 std::size_t CalculateServiceDataControlShmSize(
     score::cpp::span<const ServiceElementControlSizeInfo> events_and_fields_size_info,
-    score::cpp::span<const ServiceElementControlSizeInfo> coherent_events_and_fields_size_info = {});
+    score::cpp::span<const ServiceElementControlSizeInfo> coherent_events_and_fields_size_info = {},
+    score::cpp::span<const ServiceElementControlSizeInfo> mixed_events_and_fields_size_info = {});
 
 }  // namespace score::mw::com::impl::lola
 

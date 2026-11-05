@@ -77,7 +77,7 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
     TransactionLogRollbackExecutorFixture& WithTransactionLogRollbackExecutor()
     {
         service_data_control_ =
-            std::make_unique<ServiceDataControl>(kNonCoherentNumberOfServiceElements, 0U, memory_resource_mock_);
+            std::make_unique<ServiceDataControl>(kNonCoherentNumberOfServiceElements, 0U, 0U, memory_resource_mock_);
         AddEvent(kDummyElementFqId, kDummySkeletonEventProperties);
 
         unit_ = std::make_unique<TransactionLogRollbackExecutor>(*service_data_control_,
@@ -92,7 +92,7 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
     TransactionLogRollbackExecutorFixture& WithTransactionLogRollbackExecutorCoherent()
     {
         service_data_control_ =
-            std::make_unique<ServiceDataControl>(0U, kCoherentNumberOfServiceElements, memory_resource_mock_);
+            std::make_unique<ServiceDataControl>(0U, kCoherentNumberOfServiceElements, 0U, memory_resource_mock_);
         AddEventCoherent(kDummyElementFqId, kDummySkeletonEventProperties);
 
         unit_ = std::make_unique<TransactionLogRollbackExecutor>(*service_data_control_,

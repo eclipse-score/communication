@@ -903,8 +903,13 @@ void SkeletonMemoryManager::InitializeSharedMemoryForControl(
         number_of_non_coherent_events_and_fields_.has_value() && number_of_coherent_events_and_fields_.has_value(),
         "number_of_non_coherent_events_and_fields_ / number_of_coherent_events_and_fields_ must be set before "
         "constructing the ServiceDataControl.");
-    control = memory->construct<ServiceDataControl>(
-        number_of_non_coherent_events_and_fields_.value(), number_of_coherent_events_and_fields_.value(), *memory);
+    // \todo Phase D2: count CoherencyType::kMixed events/fields (currently always 0) and hand over the real number
+    // here, once SkeletonMemoryManager collects/creates CoherencyType::kMixed EventControlMixed entries.
+    constexpr std::size_t number_of_mixed_events_and_fields{0U};
+    control = memory->construct<ServiceDataControl>(number_of_non_coherent_events_and_fields_.value(),
+                                                    number_of_coherent_events_and_fields_.value(),
+                                                    number_of_mixed_events_and_fields,
+                                                    *memory);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control != nullptr);
 }
 

@@ -15,6 +15,7 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 #include "score/mw/com/impl/bindings/lola/event_control_coherent.h"
+#include "score/mw/com/impl/bindings/lola/event_control_mixed.h"
 #include "score/mw/com/impl/service_element_type.h"
 
 #include "score/memory/shared/new_delete_delegate_resource.h"
@@ -40,17 +41,20 @@ const std::uint64_t kMemoryResourceId{42U};
 constexpr bool kEnforceMaxSamples{false};
 
 /// \brief Constructs a real ServiceDataControl on the given resource and populates its event_controls_ with one
-/// EventControl per entry of service_elements_size_info, and its event_controls_coherent_ with one
-/// EventControlCoherent per entry of coherent_service_elements_size_info (mirroring what SkeletonMemoryManager does
-/// at runtime).
+/// EventControl per entry of service_elements_size_info, its event_controls_coherent_ with one EventControlCoherent
+/// per entry of coherent_service_elements_size_info, and its event_controls_mixed_ with one EventControlMixed per
+/// entry of mixed_service_elements_size_info (mirroring what SkeletonMemoryManager does at runtime).
 /// \return the number of bytes the given resource reports as allocated after construction.
 std::size_t ConstructServiceDataControlAndGetAllocatedBytes(
     const std::vector<ServiceElementControlSizeInfo>& service_elements_size_info,
     memory::shared::ManagedMemoryResource& resource,
-    const std::vector<ServiceElementControlSizeInfo>& coherent_service_elements_size_info = {})
+    const std::vector<ServiceElementControlSizeInfo>& coherent_service_elements_size_info = {},
+    const std::vector<ServiceElementControlSizeInfo>& mixed_service_elements_size_info = {})
 {
-    auto& control = *resource.construct<ServiceDataControl>(
-        service_elements_size_info.size(), coherent_service_elements_size_info.size(), resource);
+    auto& control = *resource.construct<ServiceDataControl>(service_elements_size_info.size(),
+                                                            coherent_service_elements_size_info.size(),
+                                                            mixed_service_elements_size_info.size(),
+                                                            resource);
 
     std::uint16_t element_id{0U};
     for (const auto& service_element : service_elements_size_info)
@@ -77,6 +81,19 @@ std::size_t ConstructServiceDataControlAndGetAllocatedBytes(
                 static_cast<EventControlCoherent::SubscriberCountType>(service_element.max_subscribers),
                 kEnforceMaxSamples,
                 resource));
+        ++element_id;
+    }
+
+    for (const auto& service_element : mixed_service_elements_size_info)
+    {
+        const ElementFqId element_fq_id{1U, element_id, 1U, ServiceElementType::EVENT};
+        score::cpp::ignore = control.event_controls_mixed_.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(element_fq_id),
+            std::forward_as_tuple(static_cast<SlotIndexType>(service_element.number_of_slots),
+                                  static_cast<EventControlMixed::SubscriberCountType>(service_element.max_subscribers),
+                                  kEnforceMaxSamples,
+                                  resource));
         ++element_id;
     }
 
@@ -304,6 +321,140 @@ TEST(ServiceDataControlShmSizeTest, AddingAnAdditionalServiceElementIncreasesCal
 
     // Then the calculated size for two service-elements is bigger than for a single one.
     EXPECT_GT(size_for_two_service_elements, size_for_single_service_element);
+}
+
+class ServiceDataControlMixedShmSizeParameterizedTestFixture : public ::testing::TestWithParam<ServiceElementsSizeInfo>
+{
+};
+
+TEST_P(ServiceDataControlMixedShmSizeParameterizedTestFixture, CalculatedSizeMatchesActualAllocation)
+{
+    // Given the sizing information of some (possibly zero) CoherencyType::kMixed service-elements (events/fields),
+    // plus one CoherencyType::kNonCoherent service-element
+    const auto& mixed_service_elements_size_info = GetParam();
+    const std::vector<ServiceElementControlSizeInfo> non_coherent_service_elements_size_info{
+        ServiceElementControlSizeInfo{4U, 2U}};
+
+    // When calculating the required shm-size for a ServiceDataControl holding these service-elements
+    const auto calculated_size = CalculateServiceDataControlShmSize(
+        score::cpp::span<const ServiceElementControlSizeInfo>{non_coherent_service_elements_size_info},
+        score::cpp::span<const ServiceElementControlSizeInfo>{},
+        score::cpp::span<const ServiceElementControlSizeInfo>{mixed_service_elements_size_info});
+
+    // Then the calculated size exactly matches the number of bytes actually allocated when constructing a real
+    // ServiceDataControl (and its EventControls/EventControlMixeds) with the very same sizing information.
+    memory::shared::NewDeleteDelegateMemoryResource resource{kMemoryResourceId};
+    const auto actual_allocated_bytes = ConstructServiceDataControlAndGetAllocatedBytes(
+        non_coherent_service_elements_size_info, resource, {}, mixed_service_elements_size_info);
+
+    EXPECT_EQ(calculated_size, actual_allocated_bytes);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    ServiceDataControlMixedShmSizeTests,
+    ServiceDataControlMixedShmSizeParameterizedTestFixture,
+    ::testing::Values(
+        // No CoherencyType::kMixed service-elements at all (an empty span)
+        ServiceElementsSizeInfo{},
+        // A single CoherencyType::kMixed service-element (event/field)
+        ServiceElementsSizeInfo{ServiceElementControlSizeInfo{5U, 3U}},
+        // Multiple CoherencyType::kMixed service-elements (events/fields) with differing numbers of slots
+        ServiceElementsSizeInfo{
+            ServiceElementControlSizeInfo{2U, 1U},
+            ServiceElementControlSizeInfo{7U, 4U},
+            ServiceElementControlSizeInfo{1U, 10U},
+        }));
+
+TEST(ServiceDataControlMixedShmSizeTest, IncreasingNumberOfSlotsOfAMixedServiceElementIncreasesCalculatedSize)
+{
+    // Given two sizing infos for a single CoherencyType::kMixed service-element that only differ in their number of
+    // slots
+    const std::vector<ServiceElementControlSizeInfo> mixed_elements_with_fewer_slots{
+        ServiceElementControlSizeInfo{2U, 3U}};
+    const std::vector<ServiceElementControlSizeInfo> mixed_elements_with_more_slots{
+        ServiceElementControlSizeInfo{20U, 3U}};
+
+    // When calculating the required shm-size for both sizing infos
+    const auto size_with_fewer_slots = CalculateServiceDataControlShmSize(
+        score::cpp::span<const ServiceElementControlSizeInfo>{},
+        score::cpp::span<const ServiceElementControlSizeInfo>{},
+        score::cpp::span<const ServiceElementControlSizeInfo>{mixed_elements_with_fewer_slots});
+    const auto size_with_more_slots = CalculateServiceDataControlShmSize(
+        score::cpp::span<const ServiceElementControlSizeInfo>{},
+        score::cpp::span<const ServiceElementControlSizeInfo>{},
+        score::cpp::span<const ServiceElementControlSizeInfo>{mixed_elements_with_more_slots});
+
+    // Then the calculated size for the CoherencyType::kMixed service-element with more slots is bigger, since each
+    // slot requires additional space in the event's EventDataControlMixed and in every subscriber's TransactionLog.
+    EXPECT_GT(size_with_more_slots, size_with_fewer_slots);
+}
+
+TEST(ServiceDataControlMixedShmSizeTest, IncreasingMaxSubscribersOfAMixedServiceElementIncreasesCalculatedSize)
+{
+    // Given two sizing infos for a single CoherencyType::kMixed service-element that only differ in their maximum
+    // number of subscribers
+    const std::vector<ServiceElementControlSizeInfo> mixed_elements_with_fewer_subscribers{
+        ServiceElementControlSizeInfo{2U, 1U}};
+    const std::vector<ServiceElementControlSizeInfo> mixed_elements_with_more_subscribers{
+        ServiceElementControlSizeInfo{2U, 20U}};
+
+    // When calculating the required shm-size for both sizing infos
+    const auto size_with_fewer_subscribers = CalculateServiceDataControlShmSize(
+        score::cpp::span<const ServiceElementControlSizeInfo>{},
+        score::cpp::span<const ServiceElementControlSizeInfo>{},
+        score::cpp::span<const ServiceElementControlSizeInfo>{mixed_elements_with_fewer_subscribers});
+    const auto size_with_more_subscribers = CalculateServiceDataControlShmSize(
+        score::cpp::span<const ServiceElementControlSizeInfo>{},
+        score::cpp::span<const ServiceElementControlSizeInfo>{},
+        score::cpp::span<const ServiceElementControlSizeInfo>{mixed_elements_with_more_subscribers});
+
+    // Then the calculated size for the CoherencyType::kMixed service-element with more subscribers is bigger, since
+    // every additional subscriber requires its own TransactionLogNode (and the TransactionLog's slots array nested
+    // within it), exactly as for a CoherencyType::kNonCoherent service-element.
+    EXPECT_GT(size_with_more_subscribers, size_with_fewer_subscribers);
+}
+
+TEST(ServiceDataControlMixedShmSizeTest, AddingAnAdditionalMixedServiceElementIncreasesCalculatedSize)
+{
+    // Given the sizing information of one CoherencyType::kMixed service-element and, additionally, the very same
+    // sizing information for two CoherencyType::kMixed service-elements
+    const std::vector<ServiceElementControlSizeInfo> single_mixed_service_element{
+        ServiceElementControlSizeInfo{3U, 2U}};
+    const std::vector<ServiceElementControlSizeInfo> two_mixed_service_elements{ServiceElementControlSizeInfo{3U, 2U},
+                                                                                ServiceElementControlSizeInfo{3U, 2U}};
+
+    // When calculating the required shm-size for both sizing infos
+    const auto size_for_single_mixed_service_element = CalculateServiceDataControlShmSize(
+        score::cpp::span<const ServiceElementControlSizeInfo>{},
+        score::cpp::span<const ServiceElementControlSizeInfo>{},
+        score::cpp::span<const ServiceElementControlSizeInfo>{single_mixed_service_element});
+    const auto size_for_two_mixed_service_elements = CalculateServiceDataControlShmSize(
+        score::cpp::span<const ServiceElementControlSizeInfo>{},
+        score::cpp::span<const ServiceElementControlSizeInfo>{},
+        score::cpp::span<const ServiceElementControlSizeInfo>{two_mixed_service_elements});
+
+    // Then the calculated size for two CoherencyType::kMixed service-elements is bigger than for a single one.
+    EXPECT_GT(size_for_two_mixed_service_elements, size_for_single_mixed_service_element);
+}
+
+TEST(ServiceDataControlMixedShmSizeTest, DefaultsToNoMixedServiceElements)
+{
+    // Given the sizing information of some CoherencyType::kNonCoherent service-elements, and no third argument
+    const std::vector<ServiceElementControlSizeInfo> non_coherent_service_elements{
+        ServiceElementControlSizeInfo{3U, 2U}};
+
+    // When calculating the required shm-size without explicitly providing a (empty) mixed span
+    const auto calculated_size = CalculateServiceDataControlShmSize(
+        score::cpp::span<const ServiceElementControlSizeInfo>{non_coherent_service_elements});
+
+    // Then the calculated size exactly matches the number of bytes actually allocated when constructing a real
+    // ServiceDataControl with zero CoherencyType::kMixed service-elements (i.e. the behavior is unchanged for
+    // callers which don't (yet) use CoherencyType::kMixed events/fields).
+    memory::shared::NewDeleteDelegateMemoryResource resource{kMemoryResourceId};
+    const auto actual_allocated_bytes =
+        ConstructServiceDataControlAndGetAllocatedBytes(non_coherent_service_elements, resource);
+
+    EXPECT_EQ(calculated_size, actual_allocated_bytes);
 }
 
 }  // namespace
