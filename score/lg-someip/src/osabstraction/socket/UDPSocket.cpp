@@ -107,7 +107,7 @@ int UDPSocket::receive_plain_packet(char* buffer, std::size_t size, std::shared_
     switch (my_addr->get_type()) {
     case AF_INET: // IPv4
     {
-        sockaddr_in peer_addr = {0};
+        sockaddr_in peer_addr = {};
         socklen_t peer_addr_size = sizeof(peer_addr);
 
         str_len =
@@ -126,7 +126,7 @@ int UDPSocket::receive_plain_packet(char* buffer, std::size_t size, std::shared_
     }
     case AF_INET6: // IPv6
     {
-        sockaddr_in6 peer_addr = {0};
+        sockaddr_in6 peer_addr = {};
         socklen_t peer_addr_size = sizeof(peer_addr);
 
         str_len =
@@ -148,9 +148,7 @@ int UDPSocket::receive_plain_packet(char* buffer, std::size_t size, std::shared_
     }
     case AF_UNIX: // UNIX domain socket
     {
-        sockaddr_un peer_addr = {
-            0,
-        };
+        sockaddr_un peer_addr = {};
         socklen_t peer_addr_size = sizeof(peer_addr);
 
         str_len =
@@ -273,7 +271,7 @@ int UDPSocket::receive_dtls_packet(char* buffer, std::size_t size, std::shared_p
     switch (my_address->get_type()) {
     case AF_INET: // IPv4
     {
-        sockaddr_in peer_address = {0};
+        sockaddr_in peer_address = {};
 
         is_available = SecureConnector::check_dtls_data_available(get_socket_fd(), (sockaddr*)&peer_address);
         addr = inet_ntoa(peer_address.sin_addr);
@@ -291,7 +289,7 @@ int UDPSocket::receive_dtls_packet(char* buffer, std::size_t size, std::shared_p
     }
     case AF_INET6: // IPv6
     {
-        sockaddr_in6 peer_address = {0};
+        sockaddr_in6 peer_address = {};
 
         is_available = SecureConnector::check_dtls_data_available(get_socket_fd(), (sockaddr*)&peer_address);
 
@@ -312,9 +310,7 @@ int UDPSocket::receive_dtls_packet(char* buffer, std::size_t size, std::shared_p
     }
     case AF_UNIX: // UNIX domain socket
     {
-        sockaddr_un peer_address = {
-            0,
-        };
+        sockaddr_un peer_address = {};
 
         is_available = SecureConnector::check_dtls_data_available(get_socket_fd(), (sockaddr*)&peer_address);
 

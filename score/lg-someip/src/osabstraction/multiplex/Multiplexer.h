@@ -53,9 +53,7 @@ public:
 
 private:
 #if defined(LINUX)
-    struct epoll_event epoll_events_[LSAR_EPOLL_SIZE] = {
-        0,
-    };
+    struct epoll_event epoll_events_[LSAR_EPOLL_SIZE] = {};
     int epoll_fd_;
     int condition_fd_; // wakeup notify
 #else

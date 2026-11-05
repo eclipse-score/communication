@@ -88,7 +88,7 @@ std::shared_ptr<Socket> TCPServerSocket::accept() {
 
     if (get_src_address()->get_type() == AF_INET6) {
         // Case : IPv6
-        sockaddr_in6 client_addr{0};
+        sockaddr_in6 client_addr{};
         client_addr_size = sizeof(client_addr);
         char str[INET6_ADDRSTRLEN];
 
@@ -107,7 +107,7 @@ std::shared_ptr<Socket> TCPServerSocket::accept() {
                            << ", Port : " << addr->get_port_address();
     } else if (get_src_address()->get_type() == AF_INET) {
         // Case : IPv4
-        sockaddr_in client_addr = {0};
+        sockaddr_in client_addr = {};
         client_addr_size = sizeof(client_addr);
 
         if (getpeername(new_socket, (struct sockaddr*)&client_addr, &client_addr_size)) {
@@ -123,7 +123,7 @@ std::shared_ptr<Socket> TCPServerSocket::accept() {
                            << ", Port : " << addr->get_port_address();
     } else if (get_src_address()->get_type() == AF_UNIX) {
         // Case : Unix Domain Socket
-        sockaddr_un client_addr = {0};
+        sockaddr_un client_addr = {};
         client_addr_size = sizeof(client_addr);
 
         // Unix-domain (local) sockets do not support getsockname()
