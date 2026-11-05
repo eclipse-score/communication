@@ -150,6 +150,23 @@ section "LoLa" {
                 rationale = "We added an AoU that no Safety-goal shall be harmed, if a service is not offered. Thus, this failure cannot have any safety-related bad effect."
                 interface = "mw.com.Skeleton.Create"
             }
+
+            ScoreReq.FailureMode CreatingAlreadyCreatedService {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "A skeleton is created for a service for which there is already a succesfully created skeleton."
+                failureeffect = "If the duplicate skeleton were to be offered, the existing communication could break up. Or data could be overwritten while transmitted. In any case this could cause potential garbage data, which could cause a complete malfunction of the system."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = ""
+                interface = "mw.com.Skeleton.Create"
+            }
+
+
+            ' SkeletonEventCannotBeCreated - event name in c++ interface is in configuration
+
+            ' SkeletonFieldCannotBeCreated
+
+            ' SkeletonMethodCannotBeCreated
         }
 
         // Note. IsAvailableToConsumers means that if the proxy does everything correctly on its side, the service can be found. It doesn't consider issues in proxy side service discovery (i.e. in FindService or StartFindService).
@@ -476,6 +493,7 @@ section "LoLa" {
             }
         }
 
+        // Note. IsCurrentlyOffered means that the skeleton did everything correctly when setting up / offering the service. It doesn't consider issues when the skeleton offers the service.
         section "Find Service" {
 
             // ID: 6166029
@@ -523,6 +541,19 @@ section "LoLa" {
                 rationale = ""
                 interface = "mw.com.Proxy.Create"
             }
+
+            ' Proxy is created with different binding to skeleton
+
+            ' ProxyEventCannotBeCreated 
+            '     -> event name in interface must exist in configuration
+            '     -> what happens if the configuration is different to the skeleton's configuration. 
+            '            -> the event id doesn't exist in skeleton's configuration. i.e. the event id is different to the event id of the skeleton's config for the same event name
+            '            -> the event id does exist but corresponds to a different event name. what happens if event id for a given name is wrong and matches to a different event name. It will then open the other event's EventDataSTorage but will access it with the wrong type
+            '          measure for this would be to store the hash of the event name in event storage in shm to check that the event name / event id match. That way we can remove the existing AOU: Add an AoU that all code artifacts and configurations should be reviewed before use in a safety context.
+
+            ' ProxyFieldCannotBeCreated
+
+            ' ProxyMethodCannotBeCreated
 
         }
 
