@@ -1318,6 +1318,7 @@ void ServiceManager::on_internal_find_service(std::uint16_t service_id, std::uin
                        << " TTL=" << ttl << " from " << format_named_id("AppID", app_id, 4);
 
     // Register Find Service on Request Service List
+    std::lock_guard<std::recursive_mutex> available_list_lock(available_list_mutex_);
     std::lock_guard<std::mutex> lock(request_list_mutex_);
     auto& req_app_list = request_service_list_[service_id][instance_id];
     auto is_route_ready = [this](const AvailableService* service) {
@@ -2506,6 +2507,7 @@ void ServiceManager::send_internal_offer_service_all(std::uint16_t service_id, s
     std::uint32_t minimum_minor_version = 0;
     bool has_minimum_minor = false;
 
+    std::lock_guard<std::recursive_mutex> available_list_lock(available_list_mutex_);
     std::lock_guard<std::mutex> lock(request_list_mutex_);
     for (auto& instance : request_service_list_[service_id]) {
         std::uint16_t iid = instance.first;
