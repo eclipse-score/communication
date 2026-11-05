@@ -11,7 +11,7 @@
 #include <vsomeip/export.hpp>
 #include "message_base_impl.hpp"
 
-#if _MSC_VER >= 1300
+#if defined(_MSC_VER) && _MSC_VER >= 1300
 /*
  * Diamond inheritance is used for the vsomeip::message_base base class.
  * The Microsoft compiler put warning (C4250) using a desired c++ feature: "Delegating to a sister class"
