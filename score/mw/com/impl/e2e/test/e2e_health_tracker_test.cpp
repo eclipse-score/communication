@@ -14,10 +14,15 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
+#include <cstdint>
+
 namespace score::mw::com::impl::e2e
 {
 namespace
 {
+
+using std::chrono_literals::operator""ms;
 
 constexpr HealthTrackerConfiguration kEnabledConfiguration{/* enabled */ true,
                                                            /* error_threshold */ 3U,
@@ -28,6 +33,14 @@ constexpr HealthTrackerConfiguration kDisabledConfiguration{/* enabled */ false,
                                                             /* error_threshold */ 3U,
                                                             /* recovery_threshold */ 5U,
                                                             /* window_size */ 7U};
+
+// A full window of 12 slots needs 6 passed samples to stay kOk, so 7 periods without new data switch to kError.
+constexpr HealthTrackerConfiguration kMinOkConfiguration{/* enabled */ true,
+                                                         /* error_threshold */ 5U,
+                                                         /* recovery_threshold */ 10U,
+                                                         /* window_size */ 12U,
+                                                         /* min_ok_threshold */ 6U,
+                                                         /* reception_timeout */ 10ms};
 
 HistoricalHealthStatus UpdateWithFailedSample(HealthTracker& tracker)
 {
@@ -423,6 +436,253 @@ TEST(E2eHealthTrackerDeathTest, ConstructionRejectsThresholdsWhichAllowOscillati
     // Given a health tracker configuration whose thresholds add up to exactly the window size, so that the state
     // could oscillate between kOk and kError
     constexpr HealthTrackerConfiguration kInvalidConfiguration{true, 3U, 5U, 8U};
+
+    // When constructing a health tracker from it
+    // Then the program terminates
+    EXPECT_DEATH(HealthTracker{kInvalidConfiguration}, ".*");
+}
+
+TEST(E2eHealthTrackerNoNewDataTest, NoNewDataNeverCountsAsFailure)
+{
+    // Given a health tracker without minimum passed samples which has seen several windows without new data
+    HealthTracker tracker{kEnabledConfiguration};
+    ASSERT_EQ(tracker.RecordNoNewData(kEnabledConfiguration.window_size), HistoricalHealthStatus::kOk);
+    ASSERT_EQ(tracker.RecordNoNewData(kEnabledConfiguration.window_size), HistoricalHealthStatus::kOk);
+
+    // When updating it with one failed sample less than the error threshold
+    // Then the status stays kOk
+    EXPECT_EQ(UpdateWithFailedSamples(kEnabledConfiguration.error_threshold - 1U, tracker),
+              HistoricalHealthStatus::kOk);
+
+    // When updating it with the failed sample reaching the error threshold
+    // Then the status switches to kError
+    EXPECT_EQ(UpdateWithFailedSample(tracker), HistoricalHealthStatus::kError);
+}
+
+TEST(E2eHealthTrackerNoNewDataTest, NoNewDataDoesNotCompleteTheErrorThreshold)
+{
+    // Given a health tracker which is one failed sample away from kError
+    HealthTracker tracker{kMinOkConfiguration};
+    ASSERT_EQ(UpdateWithFailedSamples(kMinOkConfiguration.error_threshold - 1U, tracker), HistoricalHealthStatus::kOk);
+
+    // When recording one period without new data
+    const auto status = tracker.RecordNoNewData(1U);
+
+    // Then the status stays kOk
+    EXPECT_EQ(status, HistoricalHealthStatus::kOk);
+}
+
+TEST(E2eHealthTrackerNoNewDataTest, FullWindowWithTooFewPassedSamplesSwitchesToError)
+{
+    // Given a health tracker with a full window of passed samples
+    HealthTracker tracker{kMinOkConfiguration};
+    ASSERT_EQ(UpdateWithPassedSamples(kMinOkConfiguration.window_size, tracker), HistoricalHealthStatus::kOk);
+
+    // When recording window_size - min_ok_threshold periods without new data, one at a time
+    // Then the status stays kOk, as exactly min_ok_threshold passed samples are left
+    for (std::uint8_t i = 0U; i < (kMinOkConfiguration.window_size - kMinOkConfiguration.min_ok_threshold); ++i)
+    {
+        EXPECT_EQ(tracker.RecordNoNewData(1U), HistoricalHealthStatus::kOk);
+    }
+
+    // When recording one more period without new data
+    // Then the status switches to kError
+    EXPECT_EQ(tracker.RecordNoNewData(1U), HistoricalHealthStatus::kError);
+}
+
+TEST(E2eHealthTrackerNoNewDataTest, CountedPeriodsGiveTheSameResultAsSinglePeriods)
+{
+    // Given a health tracker with a full window of passed samples
+    HealthTracker tracker{kMinOkConfiguration};
+    ASSERT_EQ(UpdateWithPassedSamples(kMinOkConfiguration.window_size, tracker), HistoricalHealthStatus::kOk);
+
+    // When recording window_size - min_ok_threshold + 1 periods without new data in one call
+    const auto status =
+        tracker.RecordNoNewData((kMinOkConfiguration.window_size - kMinOkConfiguration.min_ok_threshold) + 1U);
+
+    // Then the status switches to kError
+    EXPECT_EQ(status, HistoricalHealthStatus::kError);
+}
+
+TEST(E2eHealthTrackerNoNewDataTest, MinOkRuleIsNotJudgedBeforeWindowIsFull)
+{
+    // Given a fresh health tracker which has seen one passed sample
+    HealthTracker tracker{kMinOkConfiguration};
+    ASSERT_EQ(UpdateWithPassedSample(tracker), HistoricalHealthStatus::kOk);
+
+    // When recording periods without new data until one slot of the window is left
+    // Then the status stays kOk
+    EXPECT_EQ(tracker.RecordNoNewData(kMinOkConfiguration.window_size - 2U), HistoricalHealthStatus::kOk);
+
+    // When recording the period which fills the window
+    // Then the status switches to kError
+    EXPECT_EQ(tracker.RecordNoNewData(1U), HistoricalHealthStatus::kError);
+}
+
+TEST(E2eHealthTrackerNoNewDataTest, MissesAndFailuresTogetherLeaveTooFewPassedSamples)
+{
+    // Given a health tracker with a full window of passed samples
+    HealthTracker tracker{kMinOkConfiguration};
+    ASSERT_EQ(UpdateWithPassedSamples(kMinOkConfiguration.window_size, tracker), HistoricalHealthStatus::kOk);
+
+    // When recording 3 periods without new data, 2 failed samples and 1 more period without new data
+    // Then the status stays kOk, as 6 passed samples are left and only 2 samples failed
+    ASSERT_EQ(tracker.RecordNoNewData(3U), HistoricalHealthStatus::kOk);
+    ASSERT_EQ(UpdateWithFailedSamples(2U, tracker), HistoricalHealthStatus::kOk);
+    EXPECT_EQ(tracker.RecordNoNewData(1U), HistoricalHealthStatus::kOk);
+
+    // When recording one more period without new data
+    // Then the status switches to kError, as only 5 passed samples are left
+    EXPECT_EQ(tracker.RecordNoNewData(1U), HistoricalHealthStatus::kError);
+}
+
+TEST(E2eHealthTrackerNoNewDataTest, NoNewDataKeepsErrorAndPassedSamplesRecover)
+{
+    // Given a health tracker which switched to kError because of missing data
+    HealthTracker tracker{kMinOkConfiguration};
+    ASSERT_EQ(tracker.RecordNoNewData(kMinOkConfiguration.window_size), HistoricalHealthStatus::kError);
+
+    // When recording more periods without new data
+    // Then the status stays kError
+    EXPECT_EQ(tracker.RecordNoNewData(3U), HistoricalHealthStatus::kError);
+
+    // When updating it with one passed sample less than the recovery threshold
+    // Then the status stays kError
+    EXPECT_EQ(UpdateWithPassedSamples(kMinOkConfiguration.recovery_threshold - 1U, tracker),
+              HistoricalHealthStatus::kError);
+
+    // When updating it with the passed sample reaching the recovery threshold
+    // Then the status switches back to kOk
+    EXPECT_EQ(UpdateWithPassedSample(tracker), HistoricalHealthStatus::kOk);
+}
+
+TEST(E2eHealthTrackerNoNewDataTest, CountLargerThanWindowIsCappedAtWindowSize)
+{
+    // Given a health tracker with a full window of passed samples
+    HealthTracker tracker{kMinOkConfiguration};
+    ASSERT_EQ(UpdateWithPassedSamples(kMinOkConfiguration.window_size, tracker), HistoricalHealthStatus::kOk);
+
+    // When recording the largest possible number of periods without new data
+    // Then the status switches to kError
+    EXPECT_EQ(tracker.RecordNoNewData(UINT8_MAX), HistoricalHealthStatus::kError);
+
+    // And the usual number of passed samples recovers
+    EXPECT_EQ(UpdateWithPassedSamples(kMinOkConfiguration.recovery_threshold, tracker), HistoricalHealthStatus::kOk);
+}
+
+TEST(E2eHealthTrackerNoNewDataTest, ZeroPeriodsKeepTheStatus)
+{
+    // Given a health tracker in state kError
+    HealthTracker tracker{kMinOkConfiguration};
+    ASSERT_EQ(UpdateWithFailedSamples(kMinOkConfiguration.error_threshold, tracker), HistoricalHealthStatus::kError);
+
+    // When recording zero periods without new data
+    // Then the status stays kError
+    EXPECT_EQ(tracker.RecordNoNewData(0U), HistoricalHealthStatus::kError);
+}
+
+TEST(E2eHealthTrackerNoNewDataTest, DisabledTrackerReportsDisabled)
+{
+    // Given a disabled health tracker
+    HealthTracker tracker{kDisabledConfiguration};
+
+    // When recording periods without new data
+    // Then the status is kDisabled
+    EXPECT_EQ(tracker.RecordNoNewData(kDisabledConfiguration.window_size), HistoricalHealthStatus::kDisabled);
+}
+
+TEST(E2eHealthTrackerNoNewDataTest, ResetRestartsTheWindowForTheMinOkRule)
+{
+    // Given a health tracker with exactly min_ok_threshold passed samples left in a full window
+    HealthTracker tracker{kMinOkConfiguration};
+    UpdateWithPassedSamples(kMinOkConfiguration.window_size, tracker);
+    ASSERT_EQ(tracker.RecordNoNewData(kMinOkConfiguration.window_size - kMinOkConfiguration.min_ok_threshold),
+              HistoricalHealthStatus::kOk);
+
+    // When resetting the tracker and recording fewer periods without new data than the window size
+    tracker.Reset();
+    const auto status = tracker.RecordNoNewData(kMinOkConfiguration.window_size - 1U);
+
+    // Then the status stays kOk, as the window is not full again yet
+    EXPECT_EQ(status, HistoricalHealthStatus::kOk);
+}
+
+TEST(E2eHealthTrackerNoNewDataTest, MinOkRuleAtUpperBoundDoesNotChangeFailureOnlyBehaviour)
+{
+    // Given two trackers which only differ in min_ok_threshold: 0, and its upper bound window_size - error_threshold +
+    // 1
+    constexpr HealthTrackerConfiguration kWithoutMinOk{true, 5U, 10U, 12U, 0U};
+    constexpr HealthTrackerConfiguration kWithMinOk{true, 5U, 10U, 12U, 8U};
+    HealthTracker tracker_without_min_ok{kWithoutMinOk};
+    HealthTracker tracker_with_min_ok{kWithMinOk};
+
+    // When updating both with the same pseudo random sequence of passed and failed samples
+    // Then both always report the same status
+    std::uint32_t random_state{42U};
+    for (std::uint32_t i = 0U; i < 2000U; ++i)
+    {
+        random_state = (random_state * 1103515245U) + 12345U;
+        const bool failed{((random_state >> 16U) % 4U) == 0U};
+        const auto data_integrity = failed ? DataIntegrityStatus::kError : DataIntegrityStatus::kOk;
+        ASSERT_EQ(tracker_without_min_ok.Update(data_integrity, SequenceStatus::kOk),
+                  tracker_with_min_ok.Update(data_integrity, SequenceStatus::kOk))
+            << "at sample " << i;
+    }
+}
+
+TEST(E2eHealthTrackerGetStatusTest, ReportsCurrentStatusWithoutRecording)
+{
+    // Given a fresh enabled and a disabled health tracker
+    HealthTracker tracker{kEnabledConfiguration};
+    const HealthTracker disabled_tracker{kDisabledConfiguration};
+
+    // When reading the status
+    // Then the enabled tracker reports kOk and the disabled tracker reports kDisabled
+    EXPECT_EQ(tracker.GetStatus(), HistoricalHealthStatus::kOk);
+    EXPECT_EQ(disabled_tracker.GetStatus(), HistoricalHealthStatus::kDisabled);
+
+    // When the enabled tracker switched to kError
+    // Then reading the status repeatedly reports kError
+    UpdateWithFailedSamples(kEnabledConfiguration.error_threshold, tracker);
+    EXPECT_EQ(tracker.GetStatus(), HistoricalHealthStatus::kError);
+    EXPECT_EQ(tracker.GetStatus(), HistoricalHealthStatus::kError);
+}
+
+TEST(E2eHealthTrackerNoNewDataTest, ConstructionAcceptsMinOkAtUpperBound)
+{
+    // Given a configuration with min_ok_threshold equal to window_size - error_threshold + 1 and a reception timeout
+    constexpr HealthTrackerConfiguration kConfiguration{true, 5U, 10U, 12U, 8U, 10ms};
+
+    // When constructing a health tracker from it
+    // Then construction does not terminate
+    const HealthTracker tracker{kConfiguration};
+    static_cast<void>(tracker);
+}
+
+TEST(E2eHealthTrackerDeathTest, ConstructionRejectsMinOkAboveUpperBound)
+{
+    // Given a configuration with min_ok_threshold above window_size - error_threshold + 1
+    constexpr HealthTrackerConfiguration kInvalidConfiguration{true, 5U, 10U, 12U, 9U};
+
+    // When constructing a health tracker from it
+    // Then the program terminates
+    EXPECT_DEATH(HealthTracker{kInvalidConfiguration}, ".*");
+}
+
+TEST(E2eHealthTrackerDeathTest, ConstructionRejectsReceptionTimeoutWithoutMinOk)
+{
+    // Given a configuration with a reception timeout but without min_ok_threshold
+    constexpr HealthTrackerConfiguration kInvalidConfiguration{true, 5U, 10U, 12U, 0U, 10ms};
+
+    // When constructing a health tracker from it
+    // Then the program terminates
+    EXPECT_DEATH(HealthTracker{kInvalidConfiguration}, ".*");
+}
+
+TEST(E2eHealthTrackerDeathTest, ConstructionRejectsNegativeReceptionTimeout)
+{
+    // Given a configuration with a negative reception timeout
+    constexpr HealthTrackerConfiguration kInvalidConfiguration{true, 5U, 10U, 12U, 6U, -10ms};
 
     // When constructing a health tracker from it
     // Then the program terminates
