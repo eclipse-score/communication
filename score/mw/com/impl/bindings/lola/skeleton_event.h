@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/event_control_mixed.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_coherent_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
@@ -40,6 +41,7 @@
 #include <score/utility.hpp>
 
 #include <atomic>
+#include <functional>
 #include <optional>
 #include <string_view>
 #include <utility>
@@ -150,6 +152,15 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     ///        receive-handler registration flags are set.
     Result<void> NotifyConsumersIfHandlersRegistered();
 
+    /// \brief Populates the kNonCoherent-style local views (provider/consumer local views, composite, transaction
+    /// log registration, tracing guard) shared by CoherencyType::kNonCoherent and CoherencyType::kMixed events.
+    /// \details CoherencyType::kMixed events are, from a non-coherent consumer's point of view, indistinguishable
+    /// from CoherencyType::kNonCoherent events (same per-slot EventSlotStatus, same per-slot transaction-log based
+    /// crash-recovery). \p EventControlPairType is either SkeletonMemoryManager::EventControlNonCoherentPair or
+    /// SkeletonMemoryManager::EventControlMixedPair.
+    template <typename EventControlPairType>
+    void InitializeNonCoherentLikeControlViews(EventControlPairType& event_control_pair);
+
     Skeleton& parent_;
     std::string_view event_name_;
     ElementFqId element_fq_id_;
@@ -176,6 +187,15 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     std::optional<ProviderEventDataControlCoherentLocalView> provider_control_local_view_coherent_qm_;
     std::optional<ProviderEventDataControlCoherentLocalView> provider_control_local_view_coherent_asil_b_;
     std::optional<EventDataControlCoherentComposite> event_data_control_coherent_composite_;
+
+    /// \brief References to the EventDataControlMixed of a CoherencyType::kMixed event's QM and (if the Skeleton is
+    /// of ASIL-B quality type) ASIL-B control section, used in Send() to update newest_index_ after EventReady().
+    /// \details Everything else needed for a CoherencyType::kMixed event (provider/consumer local views, composite,
+    /// transaction logs) is shared with the CoherencyType::kNonCoherent members above, since CoherencyType::kMixed
+    /// behaves exactly like CoherencyType::kNonCoherent for non-coherent consumers (see
+    /// InitializeNonCoherentLikeControlViews()).
+    std::optional<std::reference_wrapper<EventDataControlMixed>> event_data_control_mixed_qm_;
+    std::optional<std::reference_wrapper<EventDataControlMixed>> event_data_control_mixed_asil_b_;
 
     EventSlotStatus::EventTimeStamp current_timestamp_;
     impl::tracing::SkeletonEventTracingData tracing_data_;

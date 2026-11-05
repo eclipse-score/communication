@@ -595,8 +595,9 @@ auto Skeleton::Register(const ElementFqId element_fq_id,
             // rolled back. If tracing was also disabled in the previous process or if there are no transactions to
             // rollback, RollbackSkeletonTracingTransactions will simply do nothing.
             // CoherencyType::kCoherent events have no transaction log / tracing support, so there is nothing to roll
-            // back in that case (the SkeletonMemoryManager::EventControlNonCoherentPair alternative is then simply
-            // not active).
+            // back in that case (the SkeletonMemoryManager::EventControlCoherentPair alternative is then simply not
+            // active). CoherencyType::kMixed events have a full transaction log (just like kNonCoherent), so they
+            // are rolled back the same way.
             if (auto* const non_coherent_pair =
                     std::get_if<SkeletonMemoryManager::EventControlNonCoherentPair>(&event_controls))
             {
@@ -604,6 +605,15 @@ auto Skeleton::Register(const ElementFqId element_fq_id,
                 if (non_coherent_pair->asil_b != nullptr)
                 {
                     memory_manager_.RollbackSkeletonTracingTransactions(*non_coherent_pair->asil_b);
+                }
+            }
+            else if (auto* const mixed_pair =
+                         std::get_if<SkeletonMemoryManager::EventControlMixedPair>(&event_controls))
+            {
+                memory_manager_.RollbackSkeletonTracingTransactions(mixed_pair->qm.get());
+                if (mixed_pair->asil_b != nullptr)
+                {
+                    memory_manager_.RollbackSkeletonTracingTransactions(*mixed_pair->asil_b);
                 }
             }
         }

@@ -90,11 +90,24 @@ class SkeletonMemoryManager final
         EventControlCoherent* asil_b;  ///< nullptr unless the Skeleton is of QualityType::kASIL_B.
     };
 
+    /// \brief The EventControlMixed(s) composing a CoherencyType::kMixed event's control section: a QM part (always
+    /// present) and, only if the Skeleton is of ASIL-B quality type, an ASIL-B part.
+    /// \details Just like a CoherencyType::kCoherent event, a CoherencyType::kMixed event is placed in both control
+    /// sections (QM and, if present, ASIL-B) - never just in one of them, for the same reasons (strict isolation of
+    /// the QM and ASIL-B control sections, see EventControlCoherentPair).
+    struct EventControlMixedPair
+    {
+        std::reference_wrapper<EventControlMixed> qm;
+        EventControlMixed* asil_b;  ///< nullptr unless the Skeleton is of QualityType::kASIL_B.
+    };
+
     /// \brief Result of creating / retrieving the EventControl(s) for a specific event: either an
-    /// EventControlNonCoherentPair (CoherencyType::kNonCoherent) or an EventControlCoherentPair
-    /// (CoherencyType::kCoherent). Which alternative is active is implied by the active variant index, making the
-    /// previously implicit "exactly one of these pointers is non-null" invariant explicit in the type.
-    using EventControlsResult = std::variant<EventControlNonCoherentPair, EventControlCoherentPair>;
+    /// EventControlNonCoherentPair (CoherencyType::kNonCoherent), an EventControlCoherentPair
+    /// (CoherencyType::kCoherent) or an EventControlMixedPair (CoherencyType::kMixed). Which alternative is active is
+    /// implied by the active variant index, making the previously implicit "exactly one of these pointers is
+    /// non-null" invariant explicit in the type.
+    using EventControlsResult =
+        std::variant<EventControlNonCoherentPair, EventControlCoherentPair, EventControlMixedPair>;
 
     /// \brief Create and initialize data and control shared memory segments
     ///
@@ -160,6 +173,13 @@ class SkeletonMemoryManager final
     /// The TransactionLog would only exist if a SkeletonEvent in a crashed process had tracing enabled. If tracing was
     /// not enabled, then this function will simply do nothing.
     void RollbackSkeletonTracingTransactions(EventControl& event_control);
+
+    /// \brief Rolls back any existing operations in the TransactionLog corresponding to a CoherencyType::kMixed
+    /// SkeletonEvent, mirroring RollbackSkeletonTracingTransactions(EventControl&).
+    /// \details Unlike CoherencyType::kCoherent (which has no transaction log at all), a CoherencyType::kMixed event
+    /// has a full transaction_log_set_ (see EventControlMixed), so the same crash-recovery rollback is needed as for
+    /// a CoherencyType::kNonCoherent event.
+    void RollbackSkeletonTracingTransactions(EventControlMixed& event_control);
 
     /// \brief Remove the control and data shared memory regions
     void RemoveSharedMemory();
@@ -261,6 +281,12 @@ class SkeletonMemoryManager final
                                                       ElementFqId element_fq_id,
                                                       const SkeletonEventProperties& element_properties);
 
+    /// \brief Emplaces a single EventControlMixed into the event_controls_mixed_ map of the control section
+    /// identified by asil_level (QM or ASIL-B), mirroring EmplaceEventControlCoherent.
+    EventControlMixed& EmplaceEventControlMixed(const QualityType asil_level,
+                                                ElementFqId element_fq_id,
+                                                const SkeletonEventProperties& element_properties);
+
     QualityType quality_type_;
     const IShmPathBuilder& shm_path_builder_;
     const LolaServiceInstanceDeployment& lola_service_instance_deployment_;
@@ -293,6 +319,11 @@ class SkeletonMemoryManager final
     /// \details Determines the fixed capacity of the event_controls_coherent_ container within ServiceDataControl.
     /// Set alongside number_of_events_and_fields_ in CreateSharedMemory.
     std::optional<std::size_t> number_of_coherent_events_and_fields_;
+
+    /// \brief Number of CoherencyType::kMixed events + fields of the service-instance.
+    /// \details Determines the fixed capacity of the event_controls_mixed_ container within ServiceDataControl. Set
+    /// alongside number_of_events_and_fields_ in CreateSharedMemory.
+    std::optional<std::size_t> number_of_mixed_events_and_fields_;
 
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> storage_resource_;
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> control_qm_resource_;
