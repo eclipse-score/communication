@@ -161,7 +161,7 @@ std::vector<SDEntry>& MessageSD::entries() {
     return entries_;
 }
 
-SDEntry& MessageSD::entry(int n) {
+SDEntry& MessageSD::entry(std::size_t n) {
     return entries_[n];
 }
 
@@ -169,7 +169,7 @@ std::vector<SDOption>& MessageSD::options() {
     return options_;
 }
 
-SDOption& MessageSD::option(int n) {
+SDOption& MessageSD::option(std::size_t n) {
     return options_[n];
 }
 

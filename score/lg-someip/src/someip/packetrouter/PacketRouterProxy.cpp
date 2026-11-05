@@ -311,8 +311,8 @@ void PacketRouterProxy::on_connect(std::shared_ptr<Endpoint> server_endpoint,
         listener_->start_listen(get_multiplexer());
     }
 #else
-    std::uint32_t serverfd = server_endpoint->get_socket()->get_socket_fd();
-    std::uint32_t clientfd = client_endpoint->get_socket()->get_socket_fd();
+    std::int32_t serverfd = server_endpoint->get_socket()->get_socket_fd();
+    std::int32_t clientfd = client_endpoint->get_socket()->get_socket_fd();
     if (receiver_ == server_endpoint) {
         LGSOMEIP_LOG_INFO << "PacketRouterProxy::on_connect"
                           << " receiver_ : " << receiver_->get_socket()->get_socket_fd() << " clientfd : " << clientfd
@@ -431,7 +431,7 @@ void PacketRouterProxy::on_disconnect(std::shared_ptr<Endpoint> endpoint) {
         LGSOMEIP_LOG_INFO << "PacketRouterProxy::on_disconnect / Listener Stop!";
     }
 #else
-    std::uint32_t fd = endpoint->get_socket()->get_socket_fd();
+    std::int32_t fd = endpoint->get_socket()->get_socket_fd();
     LGSOMEIP_LOG_DEBUG << "PacketRouterProxy::on_disconnect / fd = " << fd;
 
     struct RoutingConnectionInfo& info = connected_endpoints_[fd];

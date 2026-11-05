@@ -128,7 +128,7 @@ private:
     std::shared_ptr<Endpoint> sender_;
 #if defined(ENABLE_SOMEIP_IPC)
     std::map<std::uint16_t, struct RoutingApplicationInfo> local_applications_;
-    std::map<std::uint32_t, struct RoutingConnectionInfo> connected_endpoints_;
+    std::map<std::int32_t, struct RoutingConnectionInfo> connected_endpoints_;
 
     // IPC Info
     // service Id, Vector<app_id>

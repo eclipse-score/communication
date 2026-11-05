@@ -240,7 +240,7 @@ private:
     std::map<std::uint16_t, struct RoutingApplicationInfo> local_applications_;
 
     // Management All Endpoint / Mapping fd to Connection Info
-    std::unordered_map<std::uint32_t, struct RoutingConnectionInfo> connected_endpoints_;
+    std::unordered_map<std::int32_t, struct RoutingConnectionInfo> connected_endpoints_;
 
     // List of on-going Connection (Processing addRoute)
     // <Local Port, Remote Address, isReliable>

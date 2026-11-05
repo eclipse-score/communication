@@ -344,8 +344,8 @@ void PacketRouterHost::on_connect(std::shared_ptr<Endpoint> server_endpoint,
     std::lock_guard<std::mutex> lock(mutex_processing_);
 #endif // ENABLE_QNX_MESSAGE_PASSING
 
-    std::uint32_t serverfd = server_endpoint->get_socket()->get_socket_fd();
-    std::uint32_t clientfd = client_endpoint->get_socket()->get_socket_fd();
+    std::int32_t serverfd = server_endpoint->get_socket()->get_socket_fd();
+    std::int32_t clientfd = client_endpoint->get_socket()->get_socket_fd();
 
     std::lock_guard<std::recursive_mutex> guard(route_management_mutex_);
 

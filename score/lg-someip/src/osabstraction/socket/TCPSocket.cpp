@@ -94,10 +94,12 @@ int TCPSocket::send(int file_descriptor, const void* buffer, std::size_t size) {
         if (is_secure_connection()) {
             ret = secure_connector_->send(reinterpret_cast<const std::uint8_t*>(buffer) + write_len, size - write_len);
         } else {
-            ret = ::write(file_descriptor, reinterpret_cast<const std::uint8_t*>(buffer) + write_len, size - write_len);
+            ret = static_cast<std::size_t>(
+                ::write(file_descriptor, reinterpret_cast<const std::uint8_t*>(buffer) + write_len, size - write_len));
         }
 #else  // ENABLE_TLS
-        ret = ::write(file_descriptor, reinterpret_cast<const std::uint8_t*>(buffer) + write_len, size - write_len);
+        ret = static_cast<std::size_t>(
+            ::write(file_descriptor, reinterpret_cast<const std::uint8_t*>(buffer) + write_len, size - write_len));
 #endif // ENABLE_TLS
 
         if (ret == static_cast<std::size_t>(-1)) {
@@ -194,10 +196,10 @@ int TCPSocket::receive(char* buffer, std::size_t size) {
         if (is_secure_connection()) {
             ret = secure_connector_->receive(buffer + read_len, size - read_len);
         } else {
-            ret = ::read(socket_fd_, buffer + read_len, size - read_len);
+            ret = static_cast<std::size_t>(::read(socket_fd_, buffer + read_len, size - read_len));
         }
 #else  // ENABLE_TLS
-        ret = ::read(socket_fd_, buffer + read_len, size - read_len);
+        ret = static_cast<std::size_t>(::read(socket_fd_, buffer + read_len, size - read_len));
 #endif // ENABLE_TLS
 
         if (ret == static_cast<std::size_t>(-1)) {

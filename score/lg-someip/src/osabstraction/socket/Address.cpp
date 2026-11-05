@@ -25,7 +25,7 @@ struct sockaddr* Address::get_address() {
     return nullptr;
 }
 
-int Address::get_address_size() const {
+socklen_t Address::get_address_size() const {
     return 0;
 }
 

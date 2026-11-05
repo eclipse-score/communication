@@ -80,9 +80,9 @@ TEST(SDOption, setConfigurationAndSerialize) {
 
     SDOption option(SOMEIP_SD_OPTION::CONFIGURATION::TYPEID);
     option.set_configuration("NAME", "TestApp");
-    int len = option.serialize(data);
+    std::uint32_t len = option.serialize(data);
 
-    EXPECT_EQ(len, 18); // 15 + 3
+    EXPECT_EQ(len, 18U); // 15 + 3
     EXPECT_EQ(memcmp(payload, data, 18), 0);
 }
 
@@ -94,9 +94,9 @@ TEST(SDOptionTest, setConfigurationAndSerialize2) {
 
     SDOption option(SOMEIP_SD_OPTION::CONFIGURATION::TYPEID);
     option.set_configuration("NAME", "ApplicationTestClient");
-    int len = option.serialize(data);
+    std::uint32_t len = option.serialize(data);
 
-    EXPECT_EQ(len, 32);
+    EXPECT_EQ(len, 32U);
     EXPECT_EQ(memcmp(payload, data, 32), 0);
 }
 

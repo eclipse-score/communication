@@ -94,7 +94,7 @@ std::string NetworkDevice::get_device_addr() const {
     return std::string("");
 }
 
-int NetworkDevice::get_device_id() const {
+unsigned int NetworkDevice::get_device_id() const {
     if (initialized_)
         return device_id_;
     return 0;

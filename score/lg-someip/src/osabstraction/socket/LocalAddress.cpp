@@ -49,7 +49,7 @@ int LocalAddress::get_type() const {
     return AF_UNIX;
 }
 
-int LocalAddress::get_address_size() const {
+socklen_t LocalAddress::get_address_size() const {
     return sizeof(socket_address_);
 }
 

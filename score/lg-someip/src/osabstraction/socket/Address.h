@@ -32,7 +32,7 @@ public:
     virtual ~Address();
 
     virtual struct sockaddr* get_address();
-    virtual int get_address_size() const;
+    virtual socklen_t get_address_size() const;
     virtual int get_type() const;
 
     virtual void set_ip_address([[maybe_unused]] std::string address) {}

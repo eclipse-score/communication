@@ -15,6 +15,7 @@
 #ifndef LG_SOMEIP_SOMEIP_MESSAGE_MESSAGE_SD_H
 #define LG_SOMEIP_SOMEIP_MESSAGE_MESSAGE_SD_H
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
@@ -52,10 +53,10 @@ public:
     }
 
     std::vector<SDEntry>& entries();
-    SDEntry& entry(int pos);
+    SDEntry& entry(std::size_t pos);
 
     std::vector<SDOption>& options();
-    SDOption& option(int pos);
+    SDOption& option(std::size_t pos);
 
     bool get_reboot_flag();
 

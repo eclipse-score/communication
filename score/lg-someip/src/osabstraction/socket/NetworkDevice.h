@@ -50,13 +50,13 @@ public:
 
     std::string get_device_name() const;
     std::string get_device_addr() const;
-    int get_device_id() const;
+    unsigned int get_device_id() const;
 
 private:
     bool initialized_{false};
     std::string device_name_{""};
     std::string device_address_{""};
-    int device_id_{0};
+    unsigned int device_id_{0};
 };
 
 } // namespace osabstraction

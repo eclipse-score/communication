@@ -91,7 +91,7 @@ int main([[maybe_unused]] int argc, char** argv) {
         std::uint32_t request_id = message->get_request_id();
         time_check[static_cast<std::uint16_t>(request_id)] = start;
 
-        usleep(send_interval);
+        usleep(static_cast<useconds_t>(send_interval));
 
         sent_count++;
         if (sent_count == 1000000)

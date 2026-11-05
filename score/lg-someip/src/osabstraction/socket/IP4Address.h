@@ -26,7 +26,7 @@ public:
     virtual ~IP4Address();
 
     virtual struct sockaddr* get_address() override;
-    virtual int get_address_size() const;
+    virtual socklen_t get_address_size() const;
     virtual int get_type() const override;
 
     virtual std::string get_ip_address() const override;

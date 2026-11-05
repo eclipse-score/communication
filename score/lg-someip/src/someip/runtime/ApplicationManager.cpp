@@ -583,7 +583,7 @@ void ApplicationManager::on_offer_service(const std::shared_ptr<MessageSD> messa
                                << format_named_id("State", subscribe.second, 2);
 
             if (subscribe.second == SOMEIP_EVENT_SUBSCRIBE) {
-                int ttl = SOMEIP_DEFAULT_TTL_ON;
+                std::uint32_t ttl = SOMEIP_DEFAULT_TTL_ON;
 
                 LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_offer_service / sendSubscribedEventgroup "
                                    << format_named_id("EventGroupID", eventgroup_id, 4);
@@ -1629,8 +1629,8 @@ bool ApplicationManager::check_enabled_tp_message(MessageSOMEIP& message) {
 }
 
 void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
-    static int offset_value = 1;
-    static int bytes_of_offset = 0;
+    static std::uint32_t offset_value = 1;
+    static std::uint32_t bytes_of_offset = 0;
     static int order = 0;
 
     std::uint32_t msg_id = message.get_message_id();

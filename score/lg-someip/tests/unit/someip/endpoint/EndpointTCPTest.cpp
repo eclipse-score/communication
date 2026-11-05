@@ -17,6 +17,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <cstddef>
 #include <deque>
 
 #include <endpoint/EndpointTCP.h>
@@ -50,7 +51,7 @@ public:
     int receive(char* buffer, std::size_t size) override {
         std::size_t len = std::min(size, pending_.size());
         std::copy_n(pending_.begin(), len, buffer);
-        pending_.erase(pending_.begin(), pending_.begin() + len);
+        pending_.erase(pending_.begin(), pending_.begin() + static_cast<std::ptrdiff_t>(len));
         return static_cast<int>(len);
     }
 
@@ -62,7 +63,8 @@ const std::vector<std::uint8_t> kMessage = {0x12, 0x34, 0x80, 0x01, 0x00, 0x00, 
                                             0x00, 0x02, 0x01, 0x01, 0x00, 0x00, 0xde, 0xad, 0xbe, 0xef};
 
 std::vector<std::uint8_t> slice(const std::vector<std::uint8_t>& bytes, std::size_t from, std::size_t to) {
-    return std::vector<std::uint8_t>(bytes.begin() + from, bytes.begin() + to);
+    return std::vector<std::uint8_t>(bytes.begin() + static_cast<std::ptrdiff_t>(from),
+                                     bytes.begin() + static_cast<std::ptrdiff_t>(to));
 }
 
 // Delivers the stream in pieces of chunk bytes, calling the endpoint after each piece, as the multiplexer would.
@@ -107,7 +109,7 @@ TEST(EndpointTCPServer, manages_client_file_descriptors) {
 }
 
 TEST(EndpointTCPClient, reassembles_message_received_in_small_chunks) {
-    for (std::size_t chunk : {1, 3, 5, 7}) {
+    for (std::size_t chunk : {1U, 3U, 5U, 7U}) {
         EndpointTCPTestHost host;
         auto endpoint = std::make_shared<EndpointTCPClient<EndpointTCPTestHost>>(&host);
         auto socket = std::make_shared<FeedSocket>();
@@ -197,7 +199,7 @@ TEST(EndpointTCPClient, reads_instance_id_of_internal_message_in_small_chunks) {
     stream.push_back(0x12);
     stream.push_back(0x34);
 
-    for (std::size_t chunk : {1, 3}) {
+    for (std::size_t chunk : {1U, 3U}) {
         EndpointTCPTestHost host;
         auto endpoint = std::make_shared<EndpointTCPClient<EndpointTCPTestHost>>(&host);
         auto socket = std::make_shared<FeedSocket>(std::make_shared<osabstraction::LocalAddress>());

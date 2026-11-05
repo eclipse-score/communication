@@ -31,7 +31,7 @@ UDPSocket::UDPSocket(std::shared_ptr<Address> address, const SecureConfig& secur
             LGSOMEIP_LOG_ERROR << "UDPSocket::UDPSocket / Setting IP4 interface error in UDPSocket";
         }
     } else if (address->get_type() == AF_INET6) {
-        int ifidx = NetworkDevice::instance().get_device_id();
+        unsigned int ifidx = NetworkDevice::instance().get_device_id();
         if (setsockopt(get_socket_fd(), IPPROTO_IPV6, IPV6_MULTICAST_IF, &ifidx, sizeof(ifidx)) < 0) {
             LGSOMEIP_LOG_ERROR << "UDPSocket::UDPSocket / Setting IP6 interface error in UDPSocket";
         }

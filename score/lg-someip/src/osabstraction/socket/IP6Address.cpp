@@ -34,7 +34,7 @@ struct sockaddr* IP6Address::get_address() {
     return reinterpret_cast<struct sockaddr*>(&socket_address_);
 }
 
-int IP6Address::get_address_size() const {
+socklen_t IP6Address::get_address_size() const {
     return sizeof(socket_address_);
 }
 

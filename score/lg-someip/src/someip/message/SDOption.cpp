@@ -24,6 +24,7 @@
 #include <sstream>
 #include <cstring>
 #include <iterator>
+#include <limits>
 #include <vector>
 
 namespace lgsomeip {
@@ -206,9 +207,7 @@ std::uint8_t SDOption::get_type() const {
 // Addtional Option : Network Address
 void SDOption::set_address_option(std::shared_ptr<lgsomeip::osabstraction::Address> address) {
     std::uint32_t index = 0;
-    std::uint32_t address_type;
-
-    address_type = address->get_type();
+    int address_type = address->get_type();
     switch (address_type) {
     case AF_INET: {
         option_length_ = SOMEIP_SD_OPTION::IP4::SIZE - SOMEIP_SD_OPTION::HEADER::SIZE;
@@ -302,7 +301,7 @@ std::uint16_t SDOption::get_priority() {
     if (type_ == SOMEIP_SD_OPTION::LOADBALANCING::TYPEID) {
         return priority_;
     } else {
-        return -1;
+        return std::numeric_limits<std::uint16_t>::max();
     }
 }
 
@@ -317,7 +316,7 @@ std::uint16_t SDOption::get_weight() {
     if (type_ == SOMEIP_SD_OPTION::LOADBALANCING::TYPEID) {
         return weight_;
     } else {
-        return -1;
+        return std::numeric_limits<std::uint16_t>::max();
     }
 }
 
