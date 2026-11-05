@@ -170,10 +170,10 @@ TEST(EndpointTCPClient, receives_message_larger_than_static_buffer_in_pieces) {
     std::vector<std::uint8_t> message = {0x12, 0x34, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00,
                                          0x00, 0x01, 0x00, 0x02, 0x01, 0x01, 0x00, 0x00};
     const std::uint32_t length = static_cast<std::uint32_t>(8 + payload_size);
-    message[4] = length >> 24;
-    message[5] = length >> 16;
-    message[6] = length >> 8;
-    message[7] = length;
+    message[4] = static_cast<std::uint8_t>(length >> 24);
+    message[5] = static_cast<std::uint8_t>(length >> 16);
+    message[6] = static_cast<std::uint8_t>(length >> 8);
+    message[7] = static_cast<std::uint8_t>(length);
     for (std::size_t i = 0; i < payload_size; ++i) {
         message.push_back(static_cast<std::uint8_t>(i));
     }
