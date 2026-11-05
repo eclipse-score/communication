@@ -805,4 +805,52 @@ TEST_F(RuntimeTest, SOMEIPTPTest1) {
         FAIL() << "Unexpected exception: " << e.what();
     }
 }
+
+// Consecutive SOME/IP-TP requests share the same message ID, so each one must be reassembled from scratch.
+TEST_F(RuntimeTest, SOMEIPTPTest2) {
+    const auto timeout = std::chrono::seconds(10);
+
+    try {
+        DaemonSample daemon(daemon_name_, config_path_);
+
+        ServerAppSample server1(server_app_, config_path_);
+        ASSERT_TRUE(server1.wait_connected(timeout));
+
+        server1.register_message_handler();
+        server1.offer_service();
+
+        ClientAppSample client1(client_app_, config_path_);
+        ASSERT_TRUE(client1.wait_connected(timeout));
+
+        client1.register_available_handler();
+        client1.register_message_handler();
+        client1.request_service();
+
+        ASSERT_TRUE(client1.wait_available(true, timeout));
+
+        for (std::size_t round = 1; round <= 2; round++) {
+            std::shared_ptr<Payload> payload = std::make_shared<Payload>();
+            payload->append(std::vector<std::uint8_t>(5000, 0x11));
+
+            client1.send_request(SOMEIP_SERVICE_ID, SOMEIP_INSTANCE_ID, SOMEIP_MAJOR_VERSION, payload);
+            ASSERT_TRUE(client1.wait_received_messages(round, timeout)) << "round " << round;
+
+            auto send_message = client1.get_send_message();
+            auto received_message = client1.get_received_message();
+            ASSERT_NE(send_message, nullptr);
+            ASSERT_NE(received_message, nullptr);
+            EXPECT_EQ(send_message->get_request_id(), received_message->get_request_id()) << "round " << round;
+            EXPECT_EQ(send_message->get_payload_type()->get_length(),
+                      received_message->get_payload_type()->get_length())
+                << "round " << round;
+        }
+
+        client1.deinit();
+        server1.deinit();
+        daemon.deinit();
+    } catch (const std::exception& e) {
+        // Report unexpected exceptions as test failures.
+        FAIL() << "Unexpected exception: " << e.what();
+    }
+}
 #endif // ENABLE_SOMEIP_TP

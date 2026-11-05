@@ -1674,8 +1674,9 @@ void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
 
     std::shared_ptr<MessageSOMEIP> msg = nullptr;
 
-    // Process the new SOME/IP-TP segment first.
-    if (msg_id != previous_message_id_) {
+    // Process the new SOME/IP-TP segment first. The cache is empty after a message was completed or dropped,
+    // and consecutive messages can share the same message ID.
+    if (tp_message_cache_ == nullptr || msg_id != previous_message_id_) {
         tp_message_cache_ = std::make_shared<MessageSOMEIP>();
         msg = std::make_shared<MessageSOMEIP>();
         msg->set_message_id(msg_id);
@@ -1717,14 +1718,14 @@ void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
 
                 LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_message_tp / Success to reassembly";
             }
-            tp_message_cache_ == nullptr;
+            tp_message_cache_ = nullptr;
             order = 0;
         }
     } else {
         // Clear the reassembly buffers.
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_message_tp / Clear the reassembly buffers";
 
-        tp_message_cache_ == nullptr;
+        tp_message_cache_ = nullptr;
         order = 0;
     }
 }
