@@ -30,8 +30,10 @@
 #include <utils/statistics/SomeipPacketStatistics.h>
 #endif // ENABLE_SOMEIP_DELIVERY_STATISTICS
 
+#if defined(ENABLE_QNX_MESSAGE_PASSING)
 #define LGSOMEIP_RETRY_CONNECT_TIMER_ID 1
 #define LGSOMEIP_RETRY_CONNECT_TIME 1000
+#endif // ENABLE_QNX_MESSAGE_PASSING
 
 namespace lgsomeip {
 

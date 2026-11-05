@@ -23,7 +23,6 @@ using namespace std;
 using namespace lgsomeip;
 using namespace lgsomeip::osabstraction;
 
-#define SOMEIP_SERVICE_ID 0x1001
 #define SOMEIP_INSTANCE_ID 0x0001
 #define SOMEIP_METHOD_ID 0x0001
 #define SOMEIP_MAJOR_VERSION 0x01
