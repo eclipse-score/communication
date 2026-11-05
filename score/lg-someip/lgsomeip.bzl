@@ -56,12 +56,18 @@ _LINKOPTS = select({
 
 _FEATURES = ["-score_communication_treat_warnings_as_errors"]
 
+_ENABLED_ONLY = select({
+    "//score/lg-someip:lgsomeip_enabled": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
 def _with_defaults(kwargs, link):
     kwargs["local_defines"] = kwargs.get("local_defines", []) + _COMMON_DEFINES
     kwargs["copts"] = kwargs.get("copts", []) + _COPTS
 
     # The imported lg-someip sources are not warning-clean yet (the CMake build uses plain -Wall).
     kwargs["features"] = kwargs.get("features", []) + _FEATURES
+    kwargs["target_compatible_with"] = kwargs.get("target_compatible_with", []) + _ENABLED_ONLY
     if link:
         kwargs["linkopts"] = kwargs.get("linkopts", []) + _LINKOPTS
     kwargs.setdefault("visibility", ["//score/lg-someip:__subpackages__"])

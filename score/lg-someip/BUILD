@@ -14,6 +14,20 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
+# Master switch. All lg-someip targets are incompatible (skipped by `//...`)
+# unless this flag is set. Enable with `--config=lgsomeip` (see .bazelrc) or
+# `--//score/lg-someip:enable_lgsomeip=True`.
+bool_flag(
+    name = "enable_lgsomeip",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "lgsomeip_enabled",
+    flag_values = {":enable_lgsomeip": "True"},
+    visibility = ["//score/lg-someip:__subpackages__"],
+)
+
 # Build options. They mirror the ENABLE_* options of the CMake build and are
 # all OFF by default, e.g. `--//score/lg-someip:enable_someip_tp=True`.
 # ENABLE_TLS and ENABLE_DLT are not available in the Bazel build yet.
