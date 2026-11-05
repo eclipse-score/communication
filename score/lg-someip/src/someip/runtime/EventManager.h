@@ -17,6 +17,7 @@
 
 #include <cstdint>
 
+#include <atomic>
 #include <set>
 #include <memory>
 #include <vector>
@@ -48,7 +49,7 @@ private:
     ApplicationManager* host_;
 
     std::shared_ptr<std::thread> thread_{nullptr};
-    bool running_ = false;
+    std::atomic<bool> running_{false};
     std::condition_variable running_condition_;
     std::condition_variable condition_;
     std::mutex thread_mutex_;
