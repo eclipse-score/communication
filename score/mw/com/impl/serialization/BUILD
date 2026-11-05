@@ -1,0 +1,203 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+package(
+    default_visibility = ["//score/mw/com:__subpackages__"],
+)
+
+cc_library(
+    name = "serialization_request",
+    srcs = ["serialization_request.cpp"],
+    hdrs = ["serialization_request.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:instance_specifier",
+    ],
+)
+
+cc_test(
+    name = "serialization_request_test",
+    size = "small",
+    timeout = "short",
+    srcs = ["serialization_request_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":serialization_request",
+        "//score/mw/com/impl:instance_specifier",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "serialization_infrastructure",
+    srcs = ["serialization_infrastructure.cpp"],
+    hdrs = ["serialization_infrastructure.h"],
+    features = COMPILER_WARNING_FEATURES,
+    linkopts = ["-ldl"],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:error",
+        "@score_baselibs//score/os:dlfcn",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
+    name = "serializer",
+    hdrs = ["serializer.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+)
+
+cc_library(
+    name = "serializer_lookup_key",
+    srcs = ["serializer_lookup_key.cpp"],
+    hdrs = ["serializer_lookup_key.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+)
+
+cc_library(
+    name = "serialization_orchestrator",
+    srcs = ["serialization_orchestrator.cpp"],
+    hdrs = ["serialization_orchestrator.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":serialization_infrastructure",
+        ":serializer",
+        ":serializer_lookup_key",
+        "//score/mw/com/impl:error",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_test(
+    name = "serializer_lookup_key_test",
+    size = "small",
+    timeout = "short",
+    srcs = ["serializer_lookup_key_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":serializer_lookup_key",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "serialization_orchestrator_test",
+    size = "small",
+    timeout = "short",
+    srcs = ["serialization_orchestrator_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":serialization_orchestrator",
+        "@score_baselibs//score/os/mocklib:dlfcn_mock",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "serializer_key_resolver",
+    hdrs = ["serializer_key_resolver.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":serialization_request",
+        ":serializer_lookup_key",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
+    name = "serialization_service",
+    srcs = ["serialization_service.cpp"],
+    hdrs = ["serialization_service.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":serialization_orchestrator",
+        ":serialization_request",
+        ":serializer",
+        ":serializer_key_resolver",
+        "//score/mw/com/impl:error",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_test(
+    name = "serialization_service_test",
+    size = "small",
+    timeout = "short",
+    srcs = ["serialization_service_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":serialization_infrastructure",
+        ":serialization_orchestrator",
+        ":serialization_request",
+        ":serialization_service",
+        ":serializer",
+        ":serializer_key_resolver",
+        ":serializer_lookup_key",
+        "//score/mw/com/impl:error",
+        "//score/mw/com/impl:instance_specifier",
+        "@score_baselibs//score/os/mocklib:dlfcn_mock",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_binary(
+    name = "serialization_infrastructure_test_plugin.so",
+    srcs = ["serialization_infrastructure_test_plugin.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    linkshared = True,
+)
+
+cc_test(
+    name = "serialization_infrastructure_integration_test",
+    size = "small",
+    timeout = "short",
+    srcs = ["serialization_infrastructure_integration_test.cpp"],
+    data = [":serialization_infrastructure_test_plugin.so"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":serialization_infrastructure",
+        "@googletest//:gtest_main",
+        "@score_baselibs//score/os/mocklib:dlfcn_mock",
+    ],
+)
