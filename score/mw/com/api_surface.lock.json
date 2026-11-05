@@ -332,6 +332,12 @@
       "signature": "using GenericProxyEvent = impl::GenericProxyEvent"
     },
     {
+      "name": "EvaluateE2EHealth",
+      "qualified_name": "score::mw::com::GenericProxyEvent::EvaluateE2EHealth",
+      "kind": "method",
+      "signature": "EvaluateE2EHealth : e2e::HistoricalHealthStatus (std::chrono::steady_clock::time_point)"
+    },
+    {
       "name": "GetFreeSampleCount",
       "qualified_name": "score::mw::com::GenericProxyEvent::GetFreeSampleCount",
       "kind": "method",

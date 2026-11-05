@@ -19,6 +19,7 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <cstddef>
 #include <memory>
 #include <utility>
@@ -296,6 +297,160 @@ TEST_F(ProxyEventE2EHealthFixture, HistoricalHealthIsKeptWithoutUserResubscribe)
     // Then the history is kept and historical health stays kError
     ASSERT_EQ(results_after.size(), 1U);
     EXPECT_EQ(results_after[0].historical_health, e2e::HistoricalHealthStatus::kError);
+}
+
+/// \brief Reception supervision enabled: a full window of 4 slots needs 2 passed samples, one slot per 10ms period.
+class ProxyEventE2EReceptionTimeoutFixture : public ProxyEventE2EHealthFixture
+{
+  protected:
+    ProxyEventE2EReceptionTimeoutFixture()
+    {
+        e2e::HealthTrackerConfiguration configuration{};
+        configuration.enabled = true;
+        configuration.error_threshold = 2U;
+        configuration.recovery_threshold = 3U;
+        configuration.window_size = 4U;
+        configuration.min_ok_threshold = 2U;
+        configuration.reception_timeout = kReceptionTimeout;
+        ProxyEventBaseAttorney{proxy_event_}.SetHealthTrackerConfiguration(configuration);
+
+        std::ignore = proxy_event_.Subscribe(kMaxSamples);
+        ON_CALL(mock_proxy_event_, GetSubscriptionState())
+            .WillByDefault(::testing::Return(SubscriptionState::kSubscribed));
+        SetNumNewSamplesAvailable(0U);
+    }
+
+    static constexpr std::chrono::milliseconds kReceptionTimeout{10};
+
+    void SetNumNewSamplesAvailable(const std::size_t num_new_samples)
+    {
+        ON_CALL(mock_proxy_event_, GetNumNewSamplesAvailable())
+            .WillByDefault(::testing::Return(Result<std::size_t>{num_new_samples}));
+    }
+
+    /// \brief Receives a full window of passed samples and evaluates at start_.
+    void ReceiveFullWindowOfPassedSamples()
+    {
+        DeliverSamplesWithBindingResults({kPassed, kPassed, kPassed, kPassed});
+        ASSERT_EQ(GetNewSampleResults().size(), 4U);
+        ASSERT_EQ(proxy_event_.EvaluateE2EHealth(start_), e2e::HistoricalHealthStatus::kOk);
+    }
+
+    const std::chrono::steady_clock::time_point start_{std::chrono::steady_clock::now()};
+};
+
+TEST_F(ProxyEventE2EAttachFixture, EvaluateE2EHealthReportsDisabledWithoutHealthTracking)
+{
+    // Given an event without historical health tracking
+    std::ignore = proxy_event_.Subscribe(1U);
+
+    // When evaluating the health
+    const auto status = proxy_event_.EvaluateE2EHealth(std::chrono::steady_clock::now());
+
+    // Then the status is kDisabled
+    EXPECT_EQ(status, e2e::HistoricalHealthStatus::kDisabled);
+}
+
+TEST_F(ProxyEventE2EReceptionTimeoutFixture, NoTimeoutIsReportedBeforeTheFirstSample)
+{
+    // Given a subscribed event which has never received a sample
+
+    // When evaluating the health long after subscribing
+    const auto status = proxy_event_.EvaluateE2EHealth(start_ + (100 * kReceptionTimeout));
+
+    // Then the status stays kOk, as supervision starts with the first sample
+    EXPECT_EQ(status, e2e::HistoricalHealthStatus::kOk);
+}
+
+TEST_F(ProxyEventE2EReceptionTimeoutFixture, MissingSamplesSwitchToErrorWhenTooFewPassedSamplesAreLeft)
+{
+    // Given a full window of passed samples
+    ReceiveFullWindowOfPassedSamples();
+
+    // When two reception timeout periods elapse without a sample
+    // Then the status stays kOk, as exactly min_ok_threshold passed samples are left
+    EXPECT_EQ(proxy_event_.EvaluateE2EHealth(start_ + (2 * kReceptionTimeout)), e2e::HistoricalHealthStatus::kOk);
+
+    // When one more period elapses without a sample
+    // Then the status switches to kError
+    EXPECT_EQ(proxy_event_.EvaluateE2EHealth(start_ + (3 * kReceptionTimeout)), e2e::HistoricalHealthStatus::kError);
+}
+
+TEST_F(ProxyEventE2EReceptionTimeoutFixture, MissingSampleDoesNotCountAsFailure)
+{
+    // Given one failed sample, one below the error threshold
+    DeliverSamplesWithBindingResults({kFailed});
+    ASSERT_EQ(GetNewSampleResults().size(), 1U);
+    ASSERT_EQ(proxy_event_.EvaluateE2EHealth(start_), e2e::HistoricalHealthStatus::kOk);
+
+    // When one reception timeout period elapses without a sample
+    const auto status = proxy_event_.EvaluateE2EHealth(start_ + kReceptionTimeout);
+
+    // Then the status stays kOk, as the missing sample is neutral
+    EXPECT_EQ(status, e2e::HistoricalHealthStatus::kOk);
+}
+
+TEST_F(ProxyEventE2EReceptionTimeoutFixture, SamplesNotYetFetchedCountAsNewData)
+{
+    // Given a full window of passed samples
+    ReceiveFullWindowOfPassedSamples();
+
+    // When new samples are pending but not fetched yet after many periods
+    SetNumNewSamplesAvailable(1U);
+    const auto status_with_pending_samples = proxy_event_.EvaluateE2EHealth(start_ + (10 * kReceptionTimeout));
+
+    // Then the status stays kOk and the timeout restarts from this evaluation
+    EXPECT_EQ(status_with_pending_samples, e2e::HistoricalHealthStatus::kOk);
+    SetNumNewSamplesAvailable(0U);
+    EXPECT_EQ(proxy_event_.EvaluateE2EHealth(start_ + (12 * kReceptionTimeout)), e2e::HistoricalHealthStatus::kOk);
+}
+
+TEST_F(ProxyEventE2EReceptionTimeoutFixture, PassedSamplesRecoverFromTimeout)
+{
+    // Given a health status of kError caused by missing samples
+    ReceiveFullWindowOfPassedSamples();
+    ASSERT_EQ(proxy_event_.EvaluateE2EHealth(start_ + (3 * kReceptionTimeout)), e2e::HistoricalHealthStatus::kError);
+
+    // When receiving recovery_threshold passed samples
+    DeliverSamplesWithBindingResults({kPassed, kPassed, kPassed});
+    const auto delivered_results = GetNewSampleResults();
+
+    // Then historical health switches back to kOk with the last sample
+    ASSERT_EQ(delivered_results.size(), 3U);
+    EXPECT_EQ(delivered_results[1].historical_health, e2e::HistoricalHealthStatus::kError);
+    EXPECT_EQ(delivered_results[2].historical_health, e2e::HistoricalHealthStatus::kOk);
+    EXPECT_EQ(proxy_event_.EvaluateE2EHealth(start_ + (3 * kReceptionTimeout)), e2e::HistoricalHealthStatus::kOk);
+}
+
+TEST_F(ProxyEventE2EReceptionTimeoutFixture, ResubscribeRestartsSupervision)
+{
+    // Given a health status of kError caused by missing samples
+    ReceiveFullWindowOfPassedSamples();
+    ASSERT_EQ(proxy_event_.EvaluateE2EHealth(start_ + (3 * kReceptionTimeout)), e2e::HistoricalHealthStatus::kError);
+
+    // When the user unsubscribes and subscribes again
+    proxy_event_.Unsubscribe();
+    ON_CALL(mock_proxy_event_, GetSubscriptionState())
+        .WillByDefault(::testing::Return(SubscriptionState::kNotSubscribed));
+    std::ignore = proxy_event_.Subscribe(kMaxSamples);
+    ON_CALL(mock_proxy_event_, GetSubscriptionState()).WillByDefault(::testing::Return(SubscriptionState::kSubscribed));
+
+    // Then the status is kOk and stays kOk until the first sample arrives
+    EXPECT_EQ(proxy_event_.EvaluateE2EHealth(start_ + (100 * kReceptionTimeout)), e2e::HistoricalHealthStatus::kOk);
+}
+
+TEST_F(ProxyEventE2EReceptionTimeoutFixture, NothingIsRecordedWhileNotSubscribed)
+{
+    // Given a full window of passed samples and an event which is no longer subscribed
+    ReceiveFullWindowOfPassedSamples();
+    ON_CALL(mock_proxy_event_, GetSubscriptionState())
+        .WillByDefault(::testing::Return(SubscriptionState::kNotSubscribed));
+
+    // When evaluating the health after many periods
+    const auto status = proxy_event_.EvaluateE2EHealth(start_ + (100 * kReceptionTimeout));
+
+    // Then the status stays kOk
+    EXPECT_EQ(status, e2e::HistoricalHealthStatus::kOk);
 }
 
 TEST(ProxyEventE2EConfigurationTest, HealthTrackerConfigurationIsTakenFromBinding)
