@@ -155,6 +155,17 @@ TEST(EnrichedInstanceIdentifierBindingSpecificInstanceIdTest, CannotRetrieveInst
     EXPECT_FALSE(unit.GetBindingSpecificInstanceId<LolaServiceInstanceId>().has_value());
 }
 
+TEST(EnrichedInstanceIdentifierBindingSpecificInstanceIdTest, CannotRetrieveInstanceIdWhenVariantHoldsDifferentBinding)
+{
+    // Given an EnrichedInstanceIdentifier whose instance id is present and holds a Lola binding
+    const EnrichedInstanceIdentifier unit{kInstanceIdentifierFindAny, ServiceInstanceId{kLolaServiceInstanceId}};
+    ASSERT_TRUE(unit.GetInstanceId().has_value());
+
+    // When requesting the instance id for a different binding (SomeIp)
+    // Then no value is returned, since the instance id holds a Lola (not SomeIp) binding
+    EXPECT_FALSE(unit.GetBindingSpecificInstanceId<SomeIpServiceInstanceId>().has_value());
+}
+
 TEST(EnrichedInstanceIdentifierComparison, ComparesEqual)
 {
     const EnrichedInstanceIdentifier lhs{kLolaInstanceIdentifier};
