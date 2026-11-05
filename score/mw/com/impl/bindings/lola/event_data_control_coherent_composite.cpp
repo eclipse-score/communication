@@ -15,24 +15,30 @@
 namespace score::mw::com::impl::lola
 {
 
-EventDataControlCoherentComposite::EventDataControlCoherentComposite(
-    ProviderEventDataControlCoherentLocalView& qm_control_local) noexcept
-    : EventDataControlCoherentComposite{qm_control_local, nullptr}
+EventDataControlCoherentComposite::EventDataControlCoherentComposite(EventDataControlCoherent& qm_control) noexcept
+    : EventDataControlCoherentComposite{qm_control, nullptr}
 {
 }
 
 EventDataControlCoherentComposite::EventDataControlCoherentComposite(
-    ProviderEventDataControlCoherentLocalView& qm_control_local,
-    ProviderEventDataControlCoherentLocalView* const asil_b_control_local) noexcept
-    : qm_control_local_{qm_control_local}, asil_b_control_local_{asil_b_control_local}, ignore_qm_control_{false}
+    EventDataControlCoherent& qm_control,
+    EventDataControlCoherent* const asil_b_control) noexcept
+    : qm_control_local_{qm_control},
+      asil_b_control_local_storage_{},
+      asil_b_control_local_{nullptr},
+      ignore_qm_control_{false}
 {
+    if (asil_b_control != nullptr)
+    {
+        asil_b_control_local_ = &asil_b_control_local_storage_.emplace(*asil_b_control);
+    }
 }
 
 SlotIndexType EventDataControlCoherentComposite::AllocateNextSlot() noexcept
 {
     if (asil_b_control_local_ == nullptr)
     {
-        return qm_control_local_.get().AllocateNextSlot();
+        return qm_control_local_.AllocateNextSlot();
     }
 
     if (ignore_qm_control_)
@@ -40,7 +46,7 @@ SlotIndexType EventDataControlCoherentComposite::AllocateNextSlot() noexcept
         return asil_b_control_local_->AllocateNextSlot();
     }
 
-    const auto qm_slot = qm_control_local_.get().AllocateNextSlot();
+    const auto qm_slot = qm_control_local_.AllocateNextSlot();
     const auto asil_b_slot = asil_b_control_local_->AllocateNextSlot();
     if (qm_slot != asil_b_slot)
     {
@@ -65,7 +71,7 @@ void EventDataControlCoherentComposite::EventReady(const SlotIndexType slot_inde
     }
     if (!ignore_qm_control_)
     {
-        qm_control_local_.get().EventReady(slot_index, time_stamp);
+        qm_control_local_.EventReady(slot_index, time_stamp);
     }
 }
 
@@ -77,7 +83,7 @@ void EventDataControlCoherentComposite::Discard(const SlotIndexType slot_index) 
     }
     if (!ignore_qm_control_)
     {
-        qm_control_local_.get().Discard(slot_index);
+        qm_control_local_.Discard(slot_index);
     }
 }
 
@@ -89,8 +95,8 @@ CoherentEventSlotStatus::EventTimeStamp EventDataControlCoherentComposite::GetLa
         return newest_index.has_value() ? (*asil_b_control_local_)[newest_index.value()].GetTimeStamp()
                                         : CoherentEventSlotStatus::INVALID_TIMESTAMP;
     }
-    const auto newest_index = qm_control_local_.get().GetNewestIndex();
-    return newest_index.has_value() ? qm_control_local_.get()[newest_index.value()].GetTimeStamp()
+    const auto newest_index = qm_control_local_.GetNewestIndex();
+    return newest_index.has_value() ? qm_control_local_[newest_index.value()].GetTimeStamp()
                                     : CoherentEventSlotStatus::INVALID_TIMESTAMP;
 }
 

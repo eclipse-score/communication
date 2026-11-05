@@ -76,20 +76,17 @@ Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void> sample,
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_coherent_composite_.has_value());
         event_data_control_coherent_composite_.value().EventReady(slot, current_timestamp_);
     }
+    else if (event_properties_.coherency == CoherencyType::kMixed)
+    {
+        // EventDataControlMixedComposite::EventReady() also updates newest_index_, giving coherent consumers of
+        // this CoherencyType::kMixed event a starting point for their GetNewSamples() search (see
+        // Nautilus_LoLa.md, "Mixed Intra/Inter-Chain" / "Publishing Steps").
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_mixed_composite_.has_value());
+        event_data_control_mixed_composite_.value().EventReady(slot, current_timestamp_);
+    }
     else
     {
         event_data_control_composite_->EventReady(slot, current_timestamp_);
-        if (event_properties_.coherency == CoherencyType::kMixed)
-        {
-            // Give coherent consumers of this CoherencyType::kMixed event a starting point for their
-            // GetNewSamples() search (see Nautilus_LoLa.md, "Mixed Intra/Inter-Chain" / "Publishing Steps").
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_mixed_qm_.has_value());
-            event_data_control_mixed_qm_->get().newest_index_ = slot;
-            if (event_data_control_mixed_asil_b_.has_value())
-            {
-                event_data_control_mixed_asil_b_->get().newest_index_ = slot;
-            }
-        }
     }
     std::ignore = NotifyConsumersIfHandlersRegistered();
     if (send_trace_callback.has_value())
@@ -139,12 +136,13 @@ Result<impl::SampleAllocateePtr<void>> SkeletonEvent::Allocate(SampleAllocateeGu
             std::move(guard));
     }
 
-    if (!event_data_control_composite_.has_value())
+    auto* const event_data_control_composite_ptr = GetNonCoherentLikeEventDataControlComposite();
+    if (event_data_control_composite_ptr == nullptr)
     {
         ::score::mw::log::LogError("lola") << "Tried to allocate event, but the EventDataControl does not exist!";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
-    auto& event_data_control_composite = event_data_control_composite_.value();
+    auto& event_data_control_composite = *event_data_control_composite_ptr;
     const auto allocated_slot_result = event_data_control_composite.AllocateNextSlot();
 
     // Suppress "AUTOSAR C++14 A5-2-6" rule finding. This rule states:"The operands of a logical && or \\ shall be
@@ -182,7 +180,7 @@ Result<impl::SampleAllocateePtr<void>> SkeletonEvent::Allocate(SampleAllocateeGu
     // GetConsumerEventDataControlLocalView(kASIL_B) is a separate code path introduced specifically for
     // GetLatestSample().
     return MakeSampleAllocateePtr(SampleAllocateePtr(event_data_storage_local_view_->GetTypeErasedDataSlot(slot_index),
-                                                     GetEventDataControlComposite(),
+                                                     event_data_control_composite,
                                                      GetConsumerEventDataControlLocalView(QualityType::kASIL_QM),
                                                      slot_index),
                                   std::move(guard));
@@ -233,22 +231,14 @@ void SkeletonEvent::InitializeNonCoherentLikeControlViews(EventControlPairType& 
 {
     auto& event_control_qm = event_control_pair.qm.get();
 
-    auto& provider_control_local_view_qm =
-        provider_control_local_view_qm_.emplace(GetEventDataControlForLocalView(event_control_qm));
     score::cpp::ignore = consumer_control_local_view_qm_.emplace(GetEventDataControlForLocalView(event_control_qm));
 
     const bool is_skeleton_event_asil_b = event_control_pair.asil_b != nullptr;
-    ProviderEventDataControlLocalView<>* provider_control_local_view_asil_b_ptr{nullptr};
     if (is_skeleton_event_asil_b)
     {
-        auto& provider_control_local_view_asil_b =
-            provider_control_local_view_asil_b_.emplace(GetEventDataControlForLocalView(*event_control_pair.asil_b));
         score::cpp::ignore =
             consumer_control_local_view_asil_b_.emplace(GetEventDataControlForLocalView(*event_control_pair.asil_b));
-        provider_control_local_view_asil_b_ptr = &provider_control_local_view_asil_b;
     }
-    score::cpp::ignore =
-        event_data_control_composite_.emplace(provider_control_local_view_qm, provider_control_local_view_asil_b_ptr);
 
     const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
                                            (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
@@ -305,23 +295,16 @@ Result<void> SkeletonEvent::PrepareOffer(const std::optional<InitializeSampleCal
             "EventControlCoherent must be available for a CoherencyType::kCoherent event.");
         auto& event_control_coherent_qm = event_control_coherent_pair->qm.get();
 
-        auto& provider_control_local_view_coherent_qm =
-            provider_control_local_view_coherent_qm_.emplace(event_control_coherent_qm.data_control);
-
-        ProviderEventDataControlCoherentLocalView* provider_control_local_view_coherent_asil_b_ptr{nullptr};
-        if (event_control_coherent_pair->asil_b != nullptr)
-        {
-            provider_control_local_view_coherent_asil_b_ptr = &provider_control_local_view_coherent_asil_b_.emplace(
-                event_control_coherent_pair->asil_b->data_control);
-        }
-        score::cpp::ignore = event_data_control_coherent_composite_.emplace(
-            provider_control_local_view_coherent_qm, provider_control_local_view_coherent_asil_b_ptr);
+        EventDataControlCoherent* const asil_b_control_coherent =
+            (event_control_coherent_pair->asil_b != nullptr) ? &event_control_coherent_pair->asil_b->data_control
+                                                             : nullptr;
+        score::cpp::ignore = event_data_control_coherent_composite_.emplace(event_control_coherent_qm.data_control,
+                                                                            asil_b_control_coherent);
 
         // CoherencyType::kCoherent events do not support IPC-Tracing or field Getter/Setter semantics (enforced at
         // configuration-validation time, see CreateSkeletonEventProperties()), so unlike the kNonCoherent path
         // below, there is no transaction-log registration / type-erased-sample-ptrs-guard setup needed here. No
-        // consumer-side local view is needed either, see the provider_control_local_view_coherent_qm_/_asil_b_
-        // member doc.
+        // consumer-side local view is needed either, see the event_data_control_coherent_composite_ member doc.
     }
     else if (event_properties_.coherency == CoherencyType::kMixed)
     {
@@ -333,10 +316,15 @@ Result<void> SkeletonEvent::PrepareOffer(const std::optional<InitializeSampleCal
 
         InitializeNonCoherentLikeControlViews(*event_control_mixed_pair);
 
-        event_data_control_mixed_qm_ = event_control_mixed_pair->qm.get().data_control;
+        auto& event_data_control_mixed_qm = event_control_mixed_pair->qm.get().data_control;
         if (event_control_mixed_pair->asil_b != nullptr)
         {
-            event_data_control_mixed_asil_b_ = event_control_mixed_pair->asil_b->data_control;
+            score::cpp::ignore = event_data_control_mixed_composite_.emplace(
+                event_data_control_mixed_qm, &event_control_mixed_pair->asil_b->data_control);
+        }
+        else
+        {
+            score::cpp::ignore = event_data_control_mixed_composite_.emplace(event_data_control_mixed_qm);
         }
     }
     else
@@ -347,6 +335,11 @@ Result<void> SkeletonEvent::PrepareOffer(const std::optional<InitializeSampleCal
             non_coherent_pair != nullptr, "EventControl must be available for a CoherencyType::kNonCoherent event.");
 
         InitializeNonCoherentLikeControlViews(*non_coherent_pair);
+
+        auto& event_control_qm = non_coherent_pair->qm.get();
+        EventDataControl* const asil_b_control =
+            (non_coherent_pair->asil_b != nullptr) ? &non_coherent_pair->asil_b->data_control : nullptr;
+        score::cpp::ignore = event_data_control_composite_.emplace(event_control_qm.data_control, asil_b_control);
     }
 
     UpdateCurrentTimestamp();
@@ -407,15 +400,10 @@ void SkeletonEvent::PrepareStopOffer()
     ResetGuards();
 
     event_data_control_composite_.reset();
-    provider_control_local_view_qm_.reset();
-    provider_control_local_view_asil_b_.reset();
     consumer_control_local_view_qm_.reset();
     consumer_control_local_view_asil_b_.reset();
     event_data_control_coherent_composite_.reset();
-    provider_control_local_view_coherent_qm_.reset();
-    provider_control_local_view_coherent_asil_b_.reset();
-    event_data_control_mixed_qm_.reset();
-    event_data_control_mixed_asil_b_.reset();
+    event_data_control_mixed_composite_.reset();
 }
 
 void SkeletonEvent::SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept
@@ -433,9 +421,9 @@ void SkeletonEvent::UpdateCurrentTimestamp()
         return;
     }
 
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_.has_value(),
-                                                "EventDataControlComposite must be initialized.");
-    current_timestamp_ = event_data_control_composite_.value().GetLatestTimestamp();
+    auto* const composite = GetNonCoherentLikeEventDataControlComposite();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(composite != nullptr, "EventDataControlComposite must be initialized.");
+    current_timestamp_ = composite->GetLatestTimestamp();
 }
 
 void SkeletonEvent::SetQmNotificationsRegistered(bool value)
@@ -451,7 +439,7 @@ void SkeletonEvent::SetAsilBNotificationsRegistered(bool value)
 void SkeletonEvent::ResetGuards() noexcept
 {
     type_erased_sample_ptrs_guard_.reset();
-    if (event_data_control_composite_.has_value())
+    if (event_data_control_composite_.has_value() || event_data_control_mixed_composite_.has_value())
     {
         transaction_log_registration_guard_asil_b_.reset();
         transaction_log_registration_guard_qm_.reset();

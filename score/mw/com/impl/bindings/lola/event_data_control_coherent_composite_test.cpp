@@ -37,7 +37,7 @@ class EventDataControlCoherentCompositeFixture : public ::testing::Test
 using EventDataControlCoherentCompositeQmOnlyFixture = EventDataControlCoherentCompositeFixture;
 TEST_F(EventDataControlCoherentCompositeQmOnlyFixture, EventReadyOnlyWritesToQmWhenNoAsilBPresent)
 {
-    EventDataControlCoherentComposite unit{provider_view_qm_};
+    EventDataControlCoherentComposite unit{event_data_control_qm_};
 
     const auto slot_index = unit.AllocateNextSlot();
     unit.EventReady(slot_index, 1U);
@@ -48,7 +48,7 @@ TEST_F(EventDataControlCoherentCompositeQmOnlyFixture, EventReadyOnlyWritesToQmW
 
 TEST_F(EventDataControlCoherentCompositeFixture, EventReadyWritesToBothQmAndAsilB)
 {
-    EventDataControlCoherentComposite unit{provider_view_qm_, &provider_view_asil_b_};
+    EventDataControlCoherentComposite unit{event_data_control_qm_, &event_data_control_asil_b_};
 
     const auto slot_index = unit.AllocateNextSlot();
     unit.EventReady(slot_index, 1U);
@@ -59,7 +59,7 @@ TEST_F(EventDataControlCoherentCompositeFixture, EventReadyWritesToBothQmAndAsil
 
 TEST_F(EventDataControlCoherentCompositeFixture, AllocateNextSlotIsDerivedFromQmView)
 {
-    EventDataControlCoherentComposite unit{provider_view_qm_, &provider_view_asil_b_};
+    EventDataControlCoherentComposite unit{event_data_control_qm_, &event_data_control_asil_b_};
 
     for (SlotIndexType i = 0U; i < kMaxSlots; ++i)
     {
@@ -75,7 +75,7 @@ TEST_F(EventDataControlCoherentCompositeFixture, AllocateNextSlotIsDerivedFromQm
 
 TEST_F(EventDataControlCoherentCompositeFixture, DiscardIsANoOpOnBothQmAndAsilB)
 {
-    EventDataControlCoherentComposite unit{provider_view_qm_, &provider_view_asil_b_};
+    EventDataControlCoherentComposite unit{event_data_control_qm_, &event_data_control_asil_b_};
 
     const auto slot_index = unit.AllocateNextSlot();
     unit.Discard(slot_index);
@@ -86,14 +86,14 @@ TEST_F(EventDataControlCoherentCompositeFixture, DiscardIsANoOpOnBothQmAndAsilB)
 
 TEST_F(EventDataControlCoherentCompositeFixture, GetLatestTimestampReturnsInvalidTimestampWhenNothingPublishedYet)
 {
-    EventDataControlCoherentComposite unit{provider_view_qm_, &provider_view_asil_b_};
+    EventDataControlCoherentComposite unit{event_data_control_qm_, &event_data_control_asil_b_};
 
     EXPECT_EQ(unit.GetLatestTimestamp(), CoherentEventSlotStatus::INVALID_TIMESTAMP);
 }
 
 TEST_F(EventDataControlCoherentCompositeFixture, GetLatestTimestampReturnsTimestampOfMostRecentlyPublishedSlot)
 {
-    EventDataControlCoherentComposite unit{provider_view_qm_, &provider_view_asil_b_};
+    EventDataControlCoherentComposite unit{event_data_control_qm_, &event_data_control_asil_b_};
 
     const auto first_slot_index = unit.AllocateNextSlot();
     unit.EventReady(first_slot_index, 1U);

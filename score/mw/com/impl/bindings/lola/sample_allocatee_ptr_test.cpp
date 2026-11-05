@@ -42,7 +42,7 @@ class SampleAllocateePtrFixture : public ::testing::Test
     EventDataControl control_block_{kMaxSlots, memory_};
     ProviderEventDataControlLocalView<> provider_event_data_control_local_{control_block_};
     ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{control_block_};
-    EventDataControlComposite<> control_composite_{provider_event_data_control_local_, nullptr};
+    EventDataControlComposite<> control_composite_{control_block_, nullptr};
 };
 
 TEST_F(SampleAllocateePtrFixture, MarksSlotAsInvalidOnDestruction)
@@ -250,7 +250,7 @@ class SampleAllocateePtrCoherentFixture : public ::testing::Test
     EventDataControlCoherent event_data_control_asil_b_{kMaxSlots, memory_};
     ProviderEventDataControlCoherentLocalView provider_view_qm_{event_data_control_qm_};
     ProviderEventDataControlCoherentLocalView provider_view_asil_b_{event_data_control_asil_b_};
-    EventDataControlCoherentComposite control_composite_coherent_{provider_view_qm_, &provider_view_asil_b_};
+    EventDataControlCoherentComposite control_composite_coherent_{event_data_control_qm_, &event_data_control_asil_b_};
 };
 
 TEST_F(SampleAllocateePtrCoherentFixture, DiscardsSlotOnBothQmAndAsilBOnDestruction)

@@ -710,6 +710,7 @@ cc_library(
     deps = [
         ":coherent_event_slot_status",
         ":control_slot_types",
+        ":event_data_control_coherent",
         ":provider_event_data_control_coherent_local_view",
     ],
 )
@@ -844,6 +845,22 @@ cc_library(
 )
 
 cc_library(
+    name = "event_data_control_mixed_composite",
+    srcs = ["event_data_control_mixed_composite.cpp"],
+    hdrs = ["event_data_control_mixed_composite.h"],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":control_slot_types",
+        ":event_data_control_composite",
+        ":event_data_control_mixed",
+        ":event_slot_status",
+    ],
+)
+
+cc_library(
     name = "event_data_storage",
     srcs = ["event_data_storage.cpp"],
     hdrs = ["event_data_storage.h"],
@@ -915,6 +932,7 @@ cc_library(
         ":event_data_control_coherent",
         ":event_data_control_coherent_composite",
         ":event_data_control_composite",
+        ":event_data_control_mixed_composite",
         ":event_data_storage",
         ":event_slot_status",
         ":event_subscription_control",
@@ -1263,6 +1281,19 @@ cc_unit_test(
         ":event_data_control_coherent",
         ":event_data_control_coherent_composite",
         ":provider_event_data_control_coherent_local_view",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "event_data_control_mixed_composite_test",
+    srcs = [
+        "event_data_control_mixed_composite_test.cpp",
+    ],
+    deps = [
+        ":event_data_control_mixed",
+        ":event_data_control_mixed_composite",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@score_baselibs//score/mw/log",
     ],

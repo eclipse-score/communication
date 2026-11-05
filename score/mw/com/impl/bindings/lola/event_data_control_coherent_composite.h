@@ -15,9 +15,9 @@
 
 #include "score/mw/com/impl/bindings/lola/coherent_event_slot_status.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control_coherent.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_coherent_local_view.h"
 
-#include <functional>
 #include <optional>
 
 namespace score::mw::com::impl::lola
@@ -26,7 +26,10 @@ namespace score::mw::com::impl::lola
 /// \brief Encapsulates one or two ProviderEventDataControlCoherentLocalView instances (QM only, or QM and ASIL-B).
 ///
 /// \details This is class realizes for a CoherencyType::kCoherent event the equivalent composite pattern as
-/// EventDataControlComposite does for CoherencyType::kNonCoherent event.
+/// EventDataControlComposite does for CoherencyType::kNonCoherent event. The composite owns the
+/// ProviderEventDataControlCoherentLocalView(s) it operates on (constructed in-place from the given
+/// EventDataControlCoherent(s)), so callers do not need to separately keep a
+/// ProviderEventDataControlCoherentLocalView alive for as long as the composite is used.
 ///
 /// Unlike CoherencyType::kNonCoherent, a kCoherent consumer never writes to its control section at all (see
 /// Discard()), so the only variable a QM consumer could possibly corrupt (by writing into shared memory it is only
@@ -40,11 +43,11 @@ class EventDataControlCoherentComposite final
 {
   public:
     /// \brief Constructs a composite which will only manage a single QM control (no ASIL-B use-case).
-    explicit EventDataControlCoherentComposite(ProviderEventDataControlCoherentLocalView& qm_control_local) noexcept;
+    explicit EventDataControlCoherentComposite(EventDataControlCoherent& qm_control) noexcept;
 
     /// \brief Constructs a composite which will manage QM and ASIL-B control at the same time.
-    EventDataControlCoherentComposite(ProviderEventDataControlCoherentLocalView& qm_control_local,
-                                      ProviderEventDataControlCoherentLocalView* const asil_b_control_local) noexcept;
+    EventDataControlCoherentComposite(EventDataControlCoherent& qm_control,
+                                      EventDataControlCoherent* const asil_b_control) noexcept;
 
     /// \brief SampleAllocateePtr stores a raw pointer to this object, so any copy or move would silently invalidate
     /// that pointer, causing undefined behaviour.
@@ -87,7 +90,12 @@ class EventDataControlCoherentComposite final
     bool IsQmControlDisconnected() const noexcept;
 
   private:
-    std::reference_wrapper<ProviderEventDataControlCoherentLocalView> qm_control_local_;
+    ProviderEventDataControlCoherentLocalView qm_control_local_;
+
+    /// \brief Owns the ASIL-B ProviderEventDataControlCoherentLocalView, if any (empty for a QM-only composite).
+    /// \p asil_b_control_local_ below points into this storage, so that the rest of the implementation can keep
+    /// treating "no ASIL-B" as a nullptr, as before.
+    std::optional<ProviderEventDataControlCoherentLocalView> asil_b_control_local_storage_;
     ProviderEventDataControlCoherentLocalView* asil_b_control_local_;
     bool ignore_qm_control_;
 };

@@ -932,21 +932,11 @@ class SkeletonRegisterParamaterisedFixture : public SkeletonTestMockedSharedMemo
         const auto* const non_coherent_pair =
             std::get_if<SkeletonMemoryManager::EventControlNonCoherentPair>(&registration_result.event_controls);
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(non_coherent_pair != nullptr);
-        event_control_qm_local_view_.emplace(non_coherent_pair->qm.get().data_control);
 
-        if (non_coherent_pair->asil_b != nullptr)
-        {
-            event_control_asil_b_local_view_.emplace(non_coherent_pair->asil_b->data_control);
-        }
-
-        ProviderEventDataControlLocalView<>* event_control_asil_b_local_view =
-            non_coherent_pair->asil_b != nullptr ? &event_control_asil_b_local_view_.value() : nullptr;
-        return EventDataControlComposite<>{event_control_qm_local_view_.value(), event_control_asil_b_local_view};
+        EventDataControl* const asil_b_control =
+            (non_coherent_pair->asil_b != nullptr) ? &non_coherent_pair->asil_b->data_control : nullptr;
+        return EventDataControlComposite<>{non_coherent_pair->qm.get().data_control, asil_b_control};
     }
-
-  private:
-    std::optional<ProviderEventDataControlLocalView<>> event_control_qm_local_view_{};
-    std::optional<ProviderEventDataControlLocalView<>> event_control_asil_b_local_view_{};
 };
 
 TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillCreateEventDataIfShmRegionWasCreated)
