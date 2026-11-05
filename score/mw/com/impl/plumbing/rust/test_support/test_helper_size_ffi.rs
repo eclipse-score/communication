@@ -11,7 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-/// Unified FFI bindings to C++ TestSizeProvider for both SampleAllocateePtr and SamplePtr size verification
+/// Unified FFI bindings to C++ TestSizeProvider for SampleAllocateePtr, SamplePtr and MethodInArgPtr
+/// size verification
 use test_utils_rs::SizeInfo;
 
 unsafe extern "C" {
@@ -36,6 +37,12 @@ unsafe extern "C" {
     safe fn ffi_get_event_data_control_composite_size() -> SizeInfo;
     safe fn ffi_get_std_unique_ptr_size() -> SizeInfo;
     safe fn ffi_get_sample_allocatee_ptr_size() -> SizeInfo;
+
+    // FFI bindings for method_in_arg_ptr.rs struct types
+    // Safety: These functions are safe to call as they are read-only accessors that return constant size information
+    // with no side effects or undefined behavior risks.
+    safe fn ffi_get_method_in_arg_ptr_i32_size() -> SizeInfo;
+    safe fn ffi_get_method_in_arg_ptr_user_defined_type_size() -> SizeInfo;
 }
 
 /// C++ size provider for SampleAllocateePtr types
@@ -102,4 +109,32 @@ impl SamplePtrLola {
     pub fn get_mock_binding_sample_ptr_size() -> SizeInfo {
         ffi_get_mock_binding_sample_ptr_size()
     }
+}
+
+/// C++ size provider for MethodInArgPtr types
+pub struct MethodInArgPtrLola;
+
+impl MethodInArgPtrLola {
+    pub fn get_int32() -> SizeInfo {
+        ffi_get_method_in_arg_ptr_i32_size()
+    }
+
+    pub fn get_user_defined_type() -> SizeInfo {
+        ffi_get_method_in_arg_ptr_user_defined_type_size()
+    }
+}
+
+unsafe extern "C" {
+    /// Test-only: read owner representation and verify native move/destruction on local referents.
+    ///
+    /// # Safety
+    /// `owner` must point to readable storage of the native size/alignment with three
+    /// initialized pointer/pointer/usize fields; the expected pointer values are not dereferenced.
+    #[link_name = "ffi_verify_method_in_arg_cpp"]
+    pub fn verify_method_in_arg_cpp(
+        owner: *const core::ffi::c_void,
+        element: *const core::ffi::c_void,
+        active: *const core::ffi::c_void,
+        position: usize,
+    ) -> bool;
 }

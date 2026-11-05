@@ -78,6 +78,12 @@ class TestSizeProvider
 
     /// mock_binding::SamplePtr size info
     static SizeInfo GetMockBindingSamplePtrSize() noexcept;
+
+    /// Get size info for MethodInArgPtr<int32_t>
+    static SizeInfo GetMethodInArgPtrInt32Size() noexcept;
+
+    /// Get size info for MethodInArgPtr<UserType>
+    static SizeInfo GetMethodInArgPtrUserDefinedTypeSize() noexcept;
 };
 
 }  // namespace score::mw::com::impl
