@@ -16,12 +16,12 @@ std::map<std::string, std::string> runtime_impl::properties_;
 std::shared_ptr<runtime> runtime_impl::the_runtime_ = std::make_shared<runtime_impl>();
 uint32_t runtime_impl::postfix_id = 0;
 
-std::string runtime_impl::get_property(const std::string& _name) {
+std::string runtime_impl::get_property([[maybe_unused]] const std::string& _name) {
     throw std::runtime_error("runtime_impl::get_property / not implemented");
     return "";
 }
 
-void runtime_impl::set_property(const std::string& _name, const std::string& _value) {
+void runtime_impl::set_property([[maybe_unused]] const std::string& _name, [[maybe_unused]] const std::string& _value) {
     throw std::runtime_error("runtime_impl::set_property / not implemented");
 }
 

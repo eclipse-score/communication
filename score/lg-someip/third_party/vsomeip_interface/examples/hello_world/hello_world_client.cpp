@@ -144,7 +144,7 @@ hello_world_client *hw_cl_ptr(nullptr);
     }
 #endif
 
-int main(int argc, char **argv)
+int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv)
 {
     hello_world_client hw_cl;
 #ifndef VSOMEIP_ENABLE_SIGNAL_HANDLING

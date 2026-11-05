@@ -41,7 +41,7 @@ void on_message(std::shared_ptr<Message> msg) {
     }
 }
 
-void on_availability(std::uint16_t service_id, std::uint16_t instance_id, bool available) {
+void on_availability(std::uint16_t service_id, [[maybe_unused]] std::uint16_t instance_id, bool available) {
     std::cout << "Response App / on_availability Called!! / state = " << available << std::endl;
 }
 
@@ -51,7 +51,7 @@ void on_state(std::uint16_t state) {
     application_manager->offer_service(service_id, SOMEIP_INSTANCE_ID, SOMEIP_MAJOR_VERSION, SOMEIP_MINOR_VERSION);
 }
 
-int main(int argc, char** argv) {
+int main([[maybe_unused]] int argc, char** argv) {
     service_id = (uint16_t)strtol(argv[1], NULL, 16) + 0x1000;
     std::string app_number = argv[1];
     application_name = "response" + app_number;

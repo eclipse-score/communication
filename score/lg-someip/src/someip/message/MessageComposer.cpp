@@ -24,7 +24,8 @@ namespace lgsomeip {
 // MessageComposer public methods.
 
 std::shared_ptr<MessageSD> MessageComposer::add_entry(std::shared_ptr<MessageSD> message, SDEntry* entry,
-                                                      SDOption* first_option, SDOption* second_option) {
+                                                      SDOption* first_option,
+                                                      [[maybe_unused]] SDOption* second_option) {
     std::uint8_t option_index = 0;
     std::uint8_t first_option_count = static_cast<std::uint8_t>(entry->get_option1st_count());
     std::uint8_t first_option_index = 0;

@@ -11,12 +11,12 @@
 
 namespace vsomeip {
 
-std::string runtime::get_property(const std::string& _name) {
+std::string runtime::get_property([[maybe_unused]] const std::string& _name) {
     throw std::runtime_error("runtime::get_property / not implemented");
     return "";
 }
 
-void runtime::set_property(const std::string& _name, const std::string& _value) {
+void runtime::set_property([[maybe_unused]] const std::string& _name, [[maybe_unused]] const std::string& _value) {
     throw std::runtime_error("runtime::set_property / not implemented");
 }
 

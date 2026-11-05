@@ -82,7 +82,7 @@ void EndpointBase::send_message(const std::uint8_t* message, std::size_t size,
     }
 }
 
-void EndpointBase::callback(bool close) {
+void EndpointBase::callback([[maybe_unused]] bool close) {
     LGSOMEIP_LOG_ERROR << "EndpointBase::callback / callback not expected!";
 }
 

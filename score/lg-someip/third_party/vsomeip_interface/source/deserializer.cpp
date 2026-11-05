@@ -33,11 +33,11 @@ std::size_t deserializer::get_remaining() const {
     return 0;
 }
 
-void deserializer::set_remaining(std::size_t _remaining) {
+void deserializer::set_remaining([[maybe_unused]] std::size_t _remaining) {
     // remaining_ = _remaining;
 }
 
-bool deserializer::deserialize(uint8_t& _value) {
+bool deserializer::deserialize([[maybe_unused]] uint8_t& _value) {
     // if (0 == remaining_)
     //     return false;
 
@@ -47,7 +47,7 @@ bool deserializer::deserialize(uint8_t& _value) {
     return true;
 }
 
-bool deserializer::deserialize(uint16_t& _value) {
+bool deserializer::deserialize([[maybe_unused]] uint16_t& _value) {
     // if (2 > remaining_)
     //     return false;
 
@@ -61,7 +61,7 @@ bool deserializer::deserialize(uint16_t& _value) {
     return true;
 }
 
-bool deserializer::deserialize(uint32_t& _value, bool _omit_last_byte) {
+bool deserializer::deserialize([[maybe_unused]] uint32_t& _value, [[maybe_unused]] bool _omit_last_byte) {
     // if (3 > remaining_ || (!_omit_last_byte && 4 > remaining_))
     //     return false;
 
@@ -81,7 +81,7 @@ bool deserializer::deserialize(uint32_t& _value, bool _omit_last_byte) {
     return true;
 }
 
-bool deserializer::deserialize(uint8_t* _data, std::size_t _length) {
+bool deserializer::deserialize([[maybe_unused]] uint8_t* _data, [[maybe_unused]] std::size_t _length) {
     // if (_length > remaining_)
     //     return false;
 
@@ -92,7 +92,7 @@ bool deserializer::deserialize(uint8_t* _data, std::size_t _length) {
     return true;
 }
 
-bool deserializer::deserialize(std::vector<uint8_t>& _value) {
+bool deserializer::deserialize([[maybe_unused]] std::vector<uint8_t>& _value) {
     // if (_value.capacity() > remaining_)
     //     return false;
 
@@ -103,7 +103,7 @@ bool deserializer::deserialize(std::vector<uint8_t>& _value) {
     return true;
 }
 
-bool deserializer::look_ahead(std::size_t _index, uint8_t& _value) const {
+bool deserializer::look_ahead([[maybe_unused]] std::size_t _index, [[maybe_unused]] uint8_t& _value) const {
     // if (_index >= data_.size())
     //     return false;
 
@@ -112,7 +112,7 @@ bool deserializer::look_ahead(std::size_t _index, uint8_t& _value) const {
     return true;
 }
 
-bool deserializer::look_ahead(std::size_t _index, uint16_t& _value) const {
+bool deserializer::look_ahead([[maybe_unused]] std::size_t _index, [[maybe_unused]] uint16_t& _value) const {
     // if (_index+1 >= data_.size())
     //     return false;
 
@@ -122,7 +122,7 @@ bool deserializer::look_ahead(std::size_t _index, uint16_t& _value) const {
     return true;
 }
 
-bool deserializer::look_ahead(std::size_t _index, uint32_t& _value) const {
+bool deserializer::look_ahead([[maybe_unused]] std::size_t _index, [[maybe_unused]] uint32_t& _value) const {
     // if (_index+3 >= data_.size())
     //     return false;
 
@@ -146,7 +146,7 @@ message* deserializer::deserialize_message() {
     return nullptr;
 }
 
-void deserializer::set_data(const byte_t* _data, std::size_t _length) {
+void deserializer::set_data([[maybe_unused]] const byte_t* _data, [[maybe_unused]] std::size_t _length) {
     // if (0 != _data) {
     //     data_.assign(_data, _data + _length);
     //     position_ = data_.begin();
@@ -158,14 +158,14 @@ void deserializer::set_data(const byte_t* _data, std::size_t _length) {
     // }
 }
 
-void deserializer::append_data(const byte_t* _data, std::size_t _length) {
+void deserializer::append_data([[maybe_unused]] const byte_t* _data, [[maybe_unused]] std::size_t _length) {
     // std::size_t offset = (position_ - data_.begin());
     // data_.insert(data_.end(), _data, _data + _length);
     // position_ = data_.begin() + offset;
     // remaining_ += _length;
 }
 
-void deserializer::drop_data(std::size_t _length) {
+void deserializer::drop_data([[maybe_unused]] std::size_t _length) {
     // if (position_ + _length < data_.end())
     //     position_ += _length;
     // else

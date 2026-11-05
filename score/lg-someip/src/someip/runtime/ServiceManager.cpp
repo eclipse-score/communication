@@ -1413,7 +1413,8 @@ void ServiceManager::on_internal_find_service(std::uint16_t service_id, std::uin
 
 void ServiceManager::on_external_find_service(std::uint16_t service_id, std::uint16_t instance_id,
                                               std::uint8_t major_version, std::uint32_t minor_version,
-                                              std::uint32_t ttl, std::uint32_t request_id, bool unicast_flag_set) {
+                                              std::uint32_t ttl, [[maybe_unused]] std::uint32_t request_id,
+                                              [[maybe_unused]] bool unicast_flag_set) {
     std::shared_ptr<lgsomeip::osabstraction::Address> recv_addr =
         packet_router_->get_service_discovery_multicast_endpoint()->get_sender_address();
 

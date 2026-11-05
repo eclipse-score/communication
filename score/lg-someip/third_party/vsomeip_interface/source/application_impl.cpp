@@ -58,7 +58,7 @@ application_impl::~application_impl() {
     application_manager_.reset();
 }
 
-void application_impl::set_configuration(const std::shared_ptr<configuration> _configuration) {}
+void application_impl::set_configuration([[maybe_unused]] const std::shared_ptr<configuration> _configuration) {}
 
 bool application_impl::init() {
     application_manager_->init();
@@ -97,13 +97,14 @@ void application_impl::offer_service(service_t _service, instance_t _instance, m
     application_manager_->offer_service(_service, _instance, _major, _minor);
 }
 
-void application_impl::stop_offer_service(service_t _service, instance_t _instance, major_version_t _major,
-                                          minor_version_t _minor) {
+void application_impl::stop_offer_service(service_t _service, instance_t _instance,
+                                          [[maybe_unused]] major_version_t _major,
+                                          [[maybe_unused]] minor_version_t _minor) {
     application_manager_->stop_offer_service(_service, _instance);
 }
 
 void application_impl::request_service(service_t _service, instance_t _instance, major_version_t _major,
-                                       minor_version_t _minor, bool _use_exclusive_proxy) {
+                                       minor_version_t _minor, [[maybe_unused]] bool _use_exclusive_proxy) {
     // TODO : check parameter("_use_exclusive_proxy") usage
     application_manager_->request_service(_service, _instance, _major, _minor);
 }
@@ -113,7 +114,8 @@ void application_impl::release_service(service_t _service, instance_t _instance)
 }
 
 void application_impl::subscribe(service_t _service, instance_t _instance, eventgroup_t _eventgroup,
-                                 major_version_t _major, subscription_type_e _subscription_type, event_t _event) {
+                                 major_version_t _major, [[maybe_unused]] subscription_type_e _subscription_type,
+                                 event_t _event) {
     application_manager_->subscribe(_service, _instance, _eventgroup, _major, _event);
 }
 
@@ -121,7 +123,8 @@ void application_impl::unsubscribe(service_t _service, instance_t _instance, eve
     application_manager_->unsubscribe(_service, _instance, _eventgroup);
 }
 
-void application_impl::unsubscribe(service_t _service, instance_t _instance, eventgroup_t _eventgroup, event_t _event) {
+void application_impl::unsubscribe(service_t _service, instance_t _instance, eventgroup_t _eventgroup,
+                                   [[maybe_unused]] event_t _event) {
     // TODO : check paramete("event") is need to use.
     application_manager_->unsubscribe(_service, _instance, _eventgroup);
 }
@@ -139,7 +142,7 @@ bool application_impl::are_available(available_t& _available, service_t _service
     return areAvailable;
 }
 
-void application_impl::send(std::shared_ptr<message> _message, bool _flush) {
+void application_impl::send(std::shared_ptr<message> _message, [[maybe_unused]] bool _flush) {
     auto lsomeMsg = std::dynamic_pointer_cast<message_impl>(_message)->get_lgsomeip_message();
 
     application_manager_->send(lsomeMsg);
@@ -241,8 +244,10 @@ void application_impl::unregister_availability_handler(service_t _service, insta
     }
 }
 
-void application_impl::on_subscription(service_t _service, instance_t _instance, eventgroup_t _eventgroup,
-                                       client_t _client, bool _subscribed, std::function<void(bool)> _accepted_cb) {
+void application_impl::on_subscription([[maybe_unused]] service_t _service, [[maybe_unused]] instance_t _instance,
+                                       [[maybe_unused]] eventgroup_t _eventgroup, [[maybe_unused]] client_t _client,
+                                       [[maybe_unused]] bool _subscribed,
+                                       [[maybe_unused]] std::function<void(bool)> _accepted_cb) {
     // This callback method is not Used
 }
 
@@ -257,13 +262,16 @@ void application_impl::unregister_subscription_handler(service_t _service, insta
     application_manager_->unregister_subscription_handler(_service, _instance, _eventgroup);
 }
 
-void application_impl::on_subscription_status(service_t _service, instance_t _instance, eventgroup_t _eventgroup,
-                                              event_t _event, uint16_t _error) {
+void application_impl::on_subscription_status([[maybe_unused]] service_t _service,
+                                              [[maybe_unused]] instance_t _instance,
+                                              [[maybe_unused]] eventgroup_t _eventgroup,
+                                              [[maybe_unused]] event_t _event, [[maybe_unused]] uint16_t _error) {
     // This callback method is not Used
 }
 
-void application_impl::on_subscription_error(service_t _service, instance_t _instance, eventgroup_t _eventgroup,
-                                             uint16_t _error) {
+void application_impl::on_subscription_error([[maybe_unused]] service_t _service, [[maybe_unused]] instance_t _instance,
+                                             [[maybe_unused]] eventgroup_t _eventgroup,
+                                             [[maybe_unused]] uint16_t _error) {
     // This callback method is not Used
 }
 
@@ -287,16 +295,19 @@ void application_impl::unregister_subscription_status_handler(service_t _service
     application_manager_->unregister_subscription_status_handler(_service, _instance, _eventgroup, _event);
 }
 
-void application_impl::register_subscription_error_handler(service_t _service, instance_t _instance,
-                                                           eventgroup_t _eventgroup, error_handler_t _handler) {
+void application_impl::register_subscription_error_handler([[maybe_unused]] service_t _service,
+                                                           [[maybe_unused]] instance_t _instance,
+                                                           [[maybe_unused]] eventgroup_t _eventgroup,
+                                                           [[maybe_unused]] error_handler_t _handler) {
     // typedef std::function< void (const uint16_t) > error_handler_t;
 
     // This method is not implemented
     throw std::runtime_error("application_impl::register_subscription_error_handler / not implemented");
 }
 
-void application_impl::unregister_subscription_error_handler(service_t _service, instance_t _instance,
-                                                             eventgroup_t _eventgroup) {
+void application_impl::unregister_subscription_error_handler([[maybe_unused]] service_t _service,
+                                                             [[maybe_unused]] instance_t _instance,
+                                                             [[maybe_unused]] eventgroup_t _eventgroup) {
     // This method is not implemented
     throw std::runtime_error("application_impl::unregister_subscription_error_handler / not implemented");
 }
@@ -323,7 +334,7 @@ void application_impl::offer_event(service_t _service, instance_t _instance, eve
 
 void application_impl::offer_event(service_t _service, instance_t _instance, event_t _event,
                                    const std::set<eventgroup_t>& _eventgroups, bool _is_field,
-                                   std::chrono::milliseconds _cycle, bool _change_resets_cycle,
+                                   std::chrono::milliseconds _cycle, [[maybe_unused]] bool _change_resets_cycle,
                                    const epsilon_change_func_t& _epsilon_change_func) {
     if (_epsilon_change_func) {
         application_manager_->offer_event(_service, _instance, _event, _eventgroups, _is_field, _cycle.count(),
@@ -343,7 +354,7 @@ void application_impl::stop_offer_event(service_t _service, instance_t _instance
 }
 
 void application_impl::request_event(service_t _service, instance_t _instance, event_t _event,
-                                     const std::set<eventgroup_t>& _eventgroups, bool _is_field) {
+                                     const std::set<eventgroup_t>& _eventgroups, [[maybe_unused]] bool _is_field) {
     application_manager_->request_event(_service, _instance, _event, _eventgroups);
 }
 
@@ -364,20 +375,21 @@ std::shared_ptr<configuration> application_impl::get_configuration() const {
     return nullptr;
 }
 
-void application_impl::on_state(state_type_e _state) {
+void application_impl::on_state([[maybe_unused]] state_type_e _state) {
     // This callback method is not Used
 }
 
-void application_impl::on_availability(service_t _service, instance_t _instance, bool _is_available,
-                                       major_version_t _major, minor_version_t _minor) {
+void application_impl::on_availability([[maybe_unused]] service_t _service, [[maybe_unused]] instance_t _instance,
+                                       [[maybe_unused]] bool _is_available, [[maybe_unused]] major_version_t _major,
+                                       [[maybe_unused]] minor_version_t _minor) {
     // This callback method is not Used
 }
 
-void application_impl::on_message(const std::shared_ptr<message>&& _message) {
+void application_impl::on_message([[maybe_unused]] const std::shared_ptr<message>&& _message) {
     // This callback method is not Used
 }
 
-void application_impl::on_error(error_code_e _error) {
+void application_impl::on_error([[maybe_unused]] error_code_e _error) {
     // This callback method is not Used
 }
 
@@ -392,19 +404,22 @@ bool application_impl::is_routing() const {
     return true;
 }
 
-void application_impl::set_routing_state(routing_state_e _routing_state) {
+void application_impl::set_routing_state([[maybe_unused]] routing_state_e _routing_state) {
     throw std::runtime_error("application_impl::set_routing_state / not implemented");
 }
 
-void application_impl::get_offered_services_async(offer_type_e _offer_type, offered_services_handler_t _handler) {
+void application_impl::get_offered_services_async([[maybe_unused]] offer_type_e _offer_type,
+                                                  [[maybe_unused]] offered_services_handler_t _handler) {
     throw std::runtime_error("application_impl::get_offered_services_async / not implemented");
 }
 
-void application_impl::on_offered_services_info(std::vector<std::pair<service_t, instance_t>>& _services) {
+void application_impl::on_offered_services_info(
+    [[maybe_unused]] std::vector<std::pair<service_t, instance_t>>& _services) {
     throw std::runtime_error("application_impl::on_offered_services_info / not implemented");
 }
 
-void application_impl::set_watchdog_handler(watchdog_handler_t _handler, std::chrono::seconds _interval) {
+void application_impl::set_watchdog_handler([[maybe_unused]] watchdog_handler_t _handler,
+                                            [[maybe_unused]] std::chrono::seconds _interval) {
     throw std::runtime_error("application_impl::set_watchdog_handler / not implemented");
 }
 

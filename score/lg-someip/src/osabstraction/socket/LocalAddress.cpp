@@ -53,7 +53,7 @@ int LocalAddress::get_address_size() const {
     return sizeof(socket_address_);
 }
 
-void LocalAddress::set_ip_address(std::string address) {
+void LocalAddress::set_ip_address([[maybe_unused]] std::string address) {
     // TODO(lg-someip): Report unsupported IP-address operations as exceptions.
     LGSOMEIP_LOG_ERROR << "LocalAddress::set_ip_address / Failed!";
 }

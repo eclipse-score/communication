@@ -52,7 +52,7 @@ void on_message(std::shared_ptr<Message> msg) {
     received_count++;
 }
 
-void on_availability(std::uint16_t service_id, std::uint16_t instance_id, bool available) {
+void on_availability(std::uint16_t service_id, [[maybe_unused]] std::uint16_t instance_id, bool available) {
     std::cout << application_name << " / on_availability Called!! / state = " << available << std::endl;
     if (available) {
         application_manager->register_message_handler(service_id, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID, on_message);
@@ -68,7 +68,7 @@ void on_state(std::uint16_t state) {
     application_manager->register_message_handler(service_id, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID, on_message);
 }
 
-int main(int argc, char** argv) {
+int main([[maybe_unused]] int argc, char** argv) {
     service_id = (uint16_t)strtol(argv[1], NULL, 16) + 0x1000; // get the parameter how many services will be started
     std::cout << "service_id = " << std::dec << service_id << "service_id hex = " << std::hex << service_id << std::dec
               << std::endl;

@@ -77,7 +77,7 @@ std::string get_current_time() {
     return current_time;
 }
 
-int main(int argc, char* argv[]) {
+int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     // SOME/IP-SD data to trigger dumping the current state of SOME/IP services
     std::string hex_chars("ff ff 81 00 00 00 00 20 00 00 00 00 00 00 02 00 00 00 00 00 00 00 00 10 f1 f2 00 00 00 00 "
                           "00 00 00 00 00 00 00 00 00 00");

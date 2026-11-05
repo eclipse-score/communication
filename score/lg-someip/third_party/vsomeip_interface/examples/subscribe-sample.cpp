@@ -114,11 +114,9 @@ public:
         std::cout << "app_->are_available : " << (found ? "available." : "NOT available.") << std::endl;
     }
 
-    void subscription_status_changed(const vsomeip::service_t _service,
-                                     const vsomeip::instance_t _instance,
-                                     const vsomeip::eventgroup_t _eventgroup,
-                                     const vsomeip::event_t _event,
-                                     const uint16_t _error) {
+    void subscription_status_changed(const vsomeip::service_t _service, const vsomeip::instance_t _instance,
+                                     [[maybe_unused]] const vsomeip::eventgroup_t _eventgroup,
+                                     [[maybe_unused]] const vsomeip::event_t _event, const uint16_t _error) {
         std::cout << "Service [" << std::setw(4)
         << std::setfill('0') << std::hex << _service << "." << _instance
         << "] has " << (!_error ? "sent subscribe ack":" sent subscribe_nack") << "." << std::endl;

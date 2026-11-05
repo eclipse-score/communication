@@ -32,12 +32,12 @@ void message_impl::set_payload(std::shared_ptr<payload> _payload) {
     }
 }
 
-bool message_impl::serialize(serializer* _to) const {
+bool message_impl::serialize([[maybe_unused]] serializer* _to) const {
     throw std::runtime_error("message_impl::serialize / not implemented");
     return true;
 }
 
-bool message_impl::deserialize(deserializer* _from) {
+bool message_impl::deserialize([[maybe_unused]] deserializer* _from) {
     throw std::runtime_error("message_impl::deserialize / not implemented");
     return true;
 }

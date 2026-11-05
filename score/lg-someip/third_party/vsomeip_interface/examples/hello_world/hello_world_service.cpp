@@ -138,7 +138,7 @@ hello_world_service *hw_srv_ptr(nullptr);
     }
 #endif
 
-int main(int argc, char **argv)
+int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv)
 {
     hello_world_service hw_srv;
 #ifndef VSOMEIP_ENABLE_SIGNAL_HANDLING

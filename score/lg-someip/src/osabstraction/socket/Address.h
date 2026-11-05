@@ -35,12 +35,12 @@ public:
     virtual int get_address_size() const;
     virtual int get_type() const;
 
-    virtual void set_ip_address(std::string address) {}
+    virtual void set_ip_address([[maybe_unused]] std::string address) {}
     virtual std::string get_ip_address() const {
         return std::string();
     }
 
-    virtual void set_file_path(std::string path) {}
+    virtual void set_file_path([[maybe_unused]] std::string path) {}
     virtual std::string get_file_path() const {
         return std::string();
     }

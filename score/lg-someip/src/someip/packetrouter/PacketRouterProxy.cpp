@@ -668,7 +668,7 @@ void PacketRouterProxy::send_message(MessageSOMEIP& message) {
 }
 
 #if defined(ENABLE_SOMEIP_IPC)
-void PacketRouterProxy::send_ipc_response_message(MessageSOMEIP& message, std::uint16_t request_id,
+void PacketRouterProxy::send_ipc_response_message(MessageSOMEIP& message, [[maybe_unused]] std::uint16_t request_id,
                                                   std::uint16_t app_id) {
     std::uint32_t length;
     std::uint16_t service_id = 0;

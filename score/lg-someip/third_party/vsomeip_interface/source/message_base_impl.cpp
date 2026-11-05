@@ -150,7 +150,7 @@ bool message_base_impl::is_reliable() const {
     return true;
 }
 
-void message_base_impl::set_reliable(bool _is_reliable) {
+void message_base_impl::set_reliable([[maybe_unused]] bool _is_reliable) {
     // is_reliable_ = _is_reliable;
 
     // Message is not containing Reliable
@@ -163,7 +163,7 @@ bool message_base_impl::is_initial() const {
     return false;
 }
 
-void message_base_impl::set_initial(bool _is_initial) {
+void message_base_impl::set_initial([[maybe_unused]] bool _is_initial) {
     // is_initial_ = _is_initial;
 
     // Message is not containing initial

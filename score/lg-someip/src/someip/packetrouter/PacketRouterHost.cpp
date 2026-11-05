@@ -1421,7 +1421,7 @@ void PacketRouterHost::on_external_message(std::shared_ptr<Endpoint> endpoint, s
 }
 
 void PacketRouterHost::on_external_request(std::shared_ptr<Endpoint> endpoint, std::uint8_t* message,
-                                           std::size_t message_length, std::uint32_t message_id,
+                                           [[maybe_unused]] std::size_t message_length, std::uint32_t message_id,
                                            std::uint32_t request_id, bool no_response) {
     std::uint16_t sid = (std::uint16_t)(message_id >> 16);
     std::uint16_t iid = (std::uint16_t)(message_id & 0xffff);
@@ -1483,7 +1483,7 @@ void PacketRouterHost::on_external_request(std::shared_ptr<Endpoint> endpoint, s
     }
 }
 
-void PacketRouterHost::on_external_response(std::shared_ptr<Endpoint> endpoint, std::uint8_t* message,
+void PacketRouterHost::on_external_response([[maybe_unused]] std::shared_ptr<Endpoint> endpoint, std::uint8_t* message,
                                             std::size_t message_length, std::uint32_t message_id,
                                             std::uint32_t request_id) {
     std::uint16_t clientid = static_cast<std::uint16_t>(request_id >> 16);
@@ -2773,7 +2773,7 @@ void PacketRouterHost::send_internal_message(std::uint8_t* message, std::size_t 
 
 void PacketRouterHost::send_external_sd_message(std::uint8_t* message, std::size_t message_length,
                                                 std::shared_ptr<lgsomeip::osabstraction::Address> target_address,
-                                                bool multicast) {
+                                                [[maybe_unused]] bool multicast) {
     if (service_discovery_unicast_ != nullptr) {
         if (target_address != nullptr) {
             service_discovery_unicast_->send_message(message, message_length, target_address);

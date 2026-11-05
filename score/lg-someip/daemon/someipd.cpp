@@ -28,7 +28,7 @@ static std::condition_variable signal_handler_condition;
 static std::mutex signal_handler_mutex;
 static bool signal_received = false;
 
-void handle_signal(int signal_number) {
+void handle_signal([[maybe_unused]] int signal_number) {
     std::lock_guard<std::mutex> its_lock(signal_handler_mutex);
 
     signal_received = true;

@@ -25,7 +25,7 @@ namespace lgsomeip {
 namespace osabstraction {
 
 Socket::Socket(std::shared_ptr<Address> source_address, std::shared_ptr<Address> destination_address,
-               const SecureConfig& secure_config)
+               [[maybe_unused]] const SecureConfig& secure_config)
     : source_address_(source_address), destination_address_(destination_address)
 #if defined(ENABLE_TLS)
       ,
@@ -45,7 +45,8 @@ Socket::Socket(std::shared_ptr<Address> source_address, std::shared_ptr<Address>
 Socket::Socket(std::shared_ptr<Address> source_address, const SecureConfig& secure_config)
     : Socket(source_address, nullptr, secure_config) {}
 
-Socket::Socket(int file_descriptor, std::shared_ptr<Address> destination_address, const SecureConfig& secure_config)
+Socket::Socket(int file_descriptor, std::shared_ptr<Address> destination_address,
+               [[maybe_unused]] const SecureConfig& secure_config)
     : source_address_(nullptr), destination_address_(destination_address)
 #if defined(ENABLE_TLS)
       ,

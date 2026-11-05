@@ -1788,7 +1788,7 @@ void ApplicationManager::send(std::shared_ptr<MessageSOMEIP> message, bool flush
     send(*message, flush);
 }
 
-void ApplicationManager::send(MessageSOMEIP& message, bool flush) {
+void ApplicationManager::send(MessageSOMEIP& message, [[maybe_unused]] bool flush) {
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::send / " << format_named_id("MessageID", message.get_message_id(), 8)
                        << ", " << format_named_id("RequestID", message.get_request_id(), 8) << ", "
                        << format_named_id("MessageType", message.get_message_type(), 2) << ", "

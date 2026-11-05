@@ -18,23 +18,23 @@ serializer::serializer(std::uint32_t _buffer_shrink_threshold)
 
 serializer::~serializer() {}
 
-bool serializer::serialize(const serializable* _from) {
+bool serializer::serialize([[maybe_unused]] const serializable* _from) {
     // return (_from && _from->serialize(this));
     return true;
 }
 
-bool serializer::serialize(const uint8_t _value) {
+bool serializer::serialize([[maybe_unused]] const uint8_t _value) {
     // data_.push_back(_value);
     return true;
 }
 
-bool serializer::serialize(const uint16_t _value) {
+bool serializer::serialize([[maybe_unused]] const uint16_t _value) {
     // data_.push_back(VSOMEIP_WORD_BYTE1(_value));
     // data_.push_back(VSOMEIP_WORD_BYTE0(_value));
     return true;
 }
 
-bool serializer::serialize(const uint32_t _value, bool _omit_last_byte) {
+bool serializer::serialize([[maybe_unused]] const uint32_t _value, [[maybe_unused]] bool _omit_last_byte) {
     // if (!_omit_last_byte) {
     //     data_.push_back(VSOMEIP_LONG_BYTE3(_value));
     // }
@@ -44,7 +44,7 @@ bool serializer::serialize(const uint32_t _value, bool _omit_last_byte) {
     return true;
 }
 
-bool serializer::serialize(const uint8_t* _data, uint32_t _length) {
+bool serializer::serialize([[maybe_unused]] const uint8_t* _data, [[maybe_unused]] uint32_t _length) {
     // try {
     //     data_.insert(data_.end(), _data, _data + _length);
     // } catch(const std::bad_alloc &e) {
@@ -54,7 +54,7 @@ bool serializer::serialize(const uint8_t* _data, uint32_t _length) {
     return true;
 }
 
-bool serializer::serialize(const std::vector<byte_t>& _data) {
+bool serializer::serialize([[maybe_unused]] const std::vector<byte_t>& _data) {
     // try {
     //     data_.insert(data_.end(),_data.begin(), _data.end());
     // } catch(const std::bad_alloc &e) {
@@ -79,7 +79,7 @@ uint32_t serializer::get_size() const {
     return 0;
 }
 
-void serializer::set_data(byte_t* _data, uint32_t _capacity) {
+void serializer::set_data([[maybe_unused]] byte_t* _data, [[maybe_unused]] uint32_t _capacity) {
     // data_.clear();
     // try {
     //     data_.insert(data_.end(), _data, _data + _capacity);
