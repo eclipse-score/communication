@@ -604,6 +604,12 @@
       "signature": "Get : pointer () const noexcept"
     },
     {
+      "name": "GetE2EResult",
+      "qualified_name": "score::mw::com::SamplePtr::GetE2EResult",
+      "kind": "method",
+      "signature": "GetE2EResult : e2e::E2EResult () const"
+    },
+    {
       "name": "Reset",
       "qualified_name": "score::mw::com::SamplePtr::Reset",
       "kind": "method",
@@ -698,6 +704,30 @@
       "qualified_name": "score::mw::com::SamplePtr::~SamplePtr<SampleType>",
       "kind": "destructor",
       "signature": "~SamplePtr<SampleType> : void () noexcept"
+    },
+    {
+      "name": "data_integrity",
+      "qualified_name": "score::mw::com::E2EResult::data_integrity",
+      "kind": "field",
+      "signature": "data_integrity : DataIntegrityStatus"
+    },
+    {
+      "name": "historical_health",
+      "qualified_name": "score::mw::com::E2EResult::historical_health",
+      "kind": "field",
+      "signature": "historical_health : HistoricalHealthStatus"
+    },
+    {
+      "name": "sequence",
+      "qualified_name": "score::mw::com::E2EResult::sequence",
+      "kind": "field",
+      "signature": "sequence : SequenceStatus"
+    },
+    {
+      "name": "summary",
+      "qualified_name": "score::mw::com::E2EResult::summary",
+      "kind": "field",
+      "signature": "summary : Summary"
     },
     {
       "name": "SampleAllocateePtr",
