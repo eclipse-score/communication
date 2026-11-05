@@ -53,7 +53,7 @@ ProxyEventBase::ProxyEventBase(std::string_view event_name,
 {
     if (binding_ != nullptr)
     {
-        health_tracker_ = e2e::HealthTracker{binding_->GetHealthTrackerConfiguration()};
+        SetHealthTrackerConfiguration(binding_->GetHealthTrackerConfiguration());
     }
 }
 
@@ -96,6 +96,8 @@ Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count)
     {
         tracker_->Reset(max_sample_count);
         health_tracker_.Reset();
+        reception_timeout_monitor_.Reset();
+        sample_received_since_evaluation_ = false;
         const auto subscribe_result = binding_->Subscribe(max_sample_count);
         if (!subscribe_result.has_value())
         {
@@ -206,6 +208,31 @@ Result<std::size_t> ProxyEventBase::GetNumNewSamplesAvailable() const
         }
     }
     return get_num_new_samples_available_result;
+}
+
+e2e::HistoricalHealthStatus ProxyEventBase::EvaluateE2EHealth(const std::chrono::steady_clock::time_point now)
+{
+    if (proxy_event_base_mock_ != nullptr)
+    {
+        return proxy_event_base_mock_->EvaluateE2EHealth(now);
+    }
+
+    if ((!reception_timeout_monitor_.IsEnabled()) || (GetSubscriptionState() == SubscriptionState::kNotSubscribed))
+    {
+        return health_tracker_.GetStatus();
+    }
+
+    // Samples not yet fetched by the user also count as new data, so a slow consumer is not reported as a timeout.
+    const auto num_new_samples = binding_->GetNumNewSamplesAvailable();
+    const bool new_samples_pending{num_new_samples.has_value() && (num_new_samples.value() > 0U)};
+    if (sample_received_since_evaluation_ || new_samples_pending)
+    {
+        sample_received_since_evaluation_ = false;
+        reception_timeout_monitor_.OnActivity(now);
+        return health_tracker_.GetStatus();
+    }
+
+    return health_tracker_.RecordNoNewData(reception_timeout_monitor_.ConsumeMissedPeriods(now));
 }
 
 Result<void> ProxyEventBase::SetReceiveHandler(EventReceiveHandler handler)

@@ -31,6 +31,7 @@ class ProxyEventMock : public IProxyEvent<SampleType>
     MOCK_METHOD(SubscriptionState, GetSubscriptionState, (), (const, override));
     MOCK_METHOD(std::size_t, GetFreeSampleCount, (), (const, override));
     MOCK_METHOD(Result<std::size_t>, GetNumNewSamplesAvailable, (), (override));
+    MOCK_METHOD(e2e::HistoricalHealthStatus, EvaluateE2EHealth, (std::chrono::steady_clock::time_point), (override));
     MOCK_METHOD(Result<void>, SetReceiveHandler, (EventReceiveHandler), (override));
     MOCK_METHOD(Result<void>, UnsetReceiveHandler, (), (override));
     MOCK_METHOD(Result<void>, SetSubscriptionStateChangeHandler, (SubscriptionStateChangeHandler), (override));
