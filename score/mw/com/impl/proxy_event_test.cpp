@@ -175,6 +175,7 @@ TYPED_TEST(ProxyEventFixture, SamplePtrLimitsAreEnforced)
     Base::RecordProperty(
         "Verifies",
         "SCR-6367376, SCR-6342893, SCR-6225130, SCR-6338237, SCR-6340966, SCR-14035773, SCR-21350367, SCR-21803116");
+    Base::RecordProperty("lobster-tracing", "Communication.CalculationOfFreeSampleCount");
     Base::RecordProperty("Description",
                          "Checks event proxy by simulating an skeleton event. Also checks that GetFreeSampleCount "
                          "correctly reflects the number of samples that can be received by the user.");
@@ -237,6 +238,51 @@ TYPED_TEST(ProxyEventFixture, SamplePtrLimitsAreEnforced)
     ASSERT_EQ(samples.size(), 1U);
     EXPECT_EQ(GetSamplePtrValue(samples[0].get()), 4U);
     EXPECT_EQ(num_callback_calls, *get_result_2);
+}
+
+TYPED_TEST(ProxyEventFixture, AssigningNullptrToSamplePtrIncrementsFreeSampleCount)
+{
+    using Base = ProxyEventFixture<TypeParam>;
+
+    Base::RecordProperty("Verifies", "SCR-21803116");
+    Base::RecordProperty("lobster-tracing", "Communication.CalculationOfFreeSampleCount");
+    Base::RecordProperty("Description",
+                         "Checks that assigning nullptr to a SamplePtr obtained via GetNewSamples increments the free "
+                         "sample count, while the SamplePtr being held keeps it decremented.");
+    Base::RecordProperty("TestType", "Requirements-based test");
+    Base::RecordProperty("Priority", "1");
+    Base::RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    const std::size_t max_num_samples{2U};
+
+    EXPECT_CALL(Base::mock_proxy_event_, GetSubscriptionState())
+        .WillOnce(::testing::Return(SubscriptionState::kNotSubscribed));
+    EXPECT_CALL(Base::mock_proxy_event_, Subscribe(max_num_samples));
+    EXPECT_CALL(Base::mock_proxy_event_, GetNewSamples(_, _)).Times(1);
+
+    // Given a subscribed proxy event with max_num_samples free samples
+    std::ignore = Base::proxy_event_.Subscribe(max_num_samples);
+    EXPECT_EQ(Base::proxy_event_.GetFreeSampleCount(), max_num_samples);
+
+    // and one sample received and held by the user
+    Base::mock_proxy_event_.PushFakeSample(42U);
+    SamplePtr<typename Base::SampleType> held_sample{};
+    const auto get_result = Base::proxy_event_.GetNewSamples(
+        [&held_sample](SamplePtr<typename Base::SampleType> ptr) {
+            held_sample = std::move(ptr);
+        },
+        1U);
+    ASSERT_TRUE(get_result.has_value());
+    ASSERT_EQ(*get_result, 1U);
+
+    // Then the free sample count is decremented
+    EXPECT_EQ(Base::proxy_event_.GetFreeSampleCount(), max_num_samples - 1U);
+
+    // When nullptr is assigned to the SamplePtr
+    held_sample = nullptr;
+
+    // Then the free sample count is incremented again
+    EXPECT_EQ(Base::proxy_event_.GetFreeSampleCount(), max_num_samples);
 }
 
 template <typename T>
