@@ -142,15 +142,16 @@ justifications:
     category: defensive_programming
     platforms: [linux, qnx]
     reason: >
-      Defensive bounds check in std::hash<HandleType>. The local buffer is sized to
-      ServiceTypeDeployment::hashStringSize + ServiceInstanceId::hashStringSize, and both
-      ToHashString() results are bounded by those same constexpr sizes, so total_string_size
-      can never exceed hash_string_size. The assert-failure path is therefore unreachable and
-      cannot be triggered by a test without violating the type invariants.
-    locations:
-      - file: score/mw/com/impl/handle_type.h
-        line_start: 152
-        line_end: 155
+      ToHashString() always returns a fixed-length string of constexpr size, independent of the id values.
+      So the assertion gives the same result on every call (per compilation), and any test that hashes a
+      HandleType proves it never fails.
+
+  - id: reference-to-moveable-make-unique-nonnull-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      std::make_unique never returns nullptr (it throws std::bad_alloc on allocation failure),
+      so reference_to_moveable_ is always non-null. The assert-failure path is unreachable.
 
   - id: sample-allocatee-tracker-deallocate-underflow-assert
     category: defensive_programming
@@ -161,19 +162,11 @@ justifications:
       fetch_add) and deallocates at most once. Thus the pre-decrement value 'previous' is always
       greater than 0, making the assert-failure path unreachable without violating the guard's
       allocate/deallocate pairing.
-    locations:
-      - file: score/mw/com/impl/sample_allocatee_tracker.cpp
-        line_start: 51
-        line_end: 53
 
   - id: sample-reference-tracker-available-samples-assert
     category: defensive_programming
     platforms: [linux, qnx]
-    reason: >
+    reason: >-
       Available_samples_ starts at max_num_samples_ and every deallocation only gives back
       samples that were previously taken out, so it can never grow above max_num_samples_.
       The assert-failure path is therefore unreachable.
-    locations:
-      - file: score/mw/com/impl/sample_reference_tracker.cpp
-        line_start: 184
-        line_end: 184
