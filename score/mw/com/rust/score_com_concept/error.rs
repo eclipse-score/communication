@@ -110,6 +110,18 @@ pub enum EventFailedReason {
     MaxSampleOutOfBounds { max: usize, requested: usize },
 }
 
+/// Comprehensive error reasons for method-call failures.
+/// Also used by the field get/set paths, which reuse the Method infrastructure.
+#[derive(Debug, ScoreDebug, Error)]
+pub enum MethodFailedReason {
+    #[error("No handler is registered for this method on the producer side")]
+    HandlerNotRegistered,
+    #[error("The registered endpoint has different argument or return types than the caller expects")]
+    TypeMismatch,
+    #[error("Zero-copy method invocation is not supported by this runtime")]
+    ZeroCopyNotSupported,
+}
+
 /// Error enumeration for different failure cases in the Consumer/Producer/Runtime APIs.
 #[derive(Debug, ScoreDebug, Error)]
 pub enum Error {
@@ -125,4 +137,6 @@ pub enum Error {
     AllocateError(AllocationFailureReason),
     #[error("Receive operation failed due to: {0}")]
     ReceiveError(ReceiveFailedReason),
+    #[error("Method call failed due to: {0}")]
+    MethodError(MethodFailedReason),
 }
