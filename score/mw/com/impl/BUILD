@@ -1269,6 +1269,7 @@ cc_unit_test(
     name = "proxy_event_e2e_attach_test",
     srcs = ["proxy_event_e2e_attach_test.cpp"],
     deps = [
+        ":generic_proxy_event",
         ":proxy_event",
         "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
     ],

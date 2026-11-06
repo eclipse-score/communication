@@ -10,8 +10,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#include "score/mw/com/impl/bindings/mock_binding/generic_proxy_event.h"
 #include "score/mw/com/impl/bindings/mock_binding/proxy_event.h"
 #include "score/mw/com/impl/bindings/mock_binding/sample_ptr.h"
+#include "score/mw/com/impl/generic_proxy_event.h"
 #include "score/mw/com/impl/proxy_event.h"
 
 #include <gtest/gtest.h>
@@ -141,6 +143,77 @@ TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleStaysDisabledWhenBindingDidNot
     EXPECT_EQ(delivered_result.data_integrity, e2e::DataIntegrityStatus::kDisabled);
     EXPECT_EQ(delivered_result.sequence, e2e::SequenceStatus::kDisabled);
     EXPECT_EQ(delivered_result.summary, e2e::Summary::kDisabled);
+}
+
+class GenericProxyEventE2EAttachFixture : public ::testing::Test
+{
+  protected:
+    GenericProxyEventE2EAttachFixture()
+        : mock_proxy_event_ptr_{std::make_unique<::testing::NiceMock<mock_binding::GenericProxyEvent>>()},
+          mock_proxy_event_{*mock_proxy_event_ptr_},
+          proxy_event_{kEventName, std::move(mock_proxy_event_ptr_)}
+    {
+        ON_CALL(mock_proxy_event_, GetSubscriptionState())
+            .WillByDefault(::testing::Return(SubscriptionState::kNotSubscribed));
+        ON_CALL(mock_proxy_event_, Subscribe(::testing::_)).WillByDefault(::testing::Return(Result<void>{}));
+    }
+
+    std::unique_ptr<::testing::NiceMock<mock_binding::GenericProxyEvent>> mock_proxy_event_ptr_;
+    ::testing::NiceMock<mock_binding::GenericProxyEvent>& mock_proxy_event_;
+    GenericProxyEvent proxy_event_;
+
+    void DeliverSampleWithBindingResult(const e2e::RawCheckOutcome& binding_outcome)
+    {
+        ON_CALL(mock_proxy_event_, GetNewSamples(::testing::_, ::testing::_))
+            .WillByDefault([binding_outcome](GenericProxyEventBinding::Callback&& receiver,
+                                             TrackerGuardFactory& tracker) noexcept -> Result<std::size_t> {
+                SamplePtr<void> sample{mock_binding::MakeSamplePtr(new TestSampleType{4242U}),
+                                       std::move(*tracker.TakeGuard()),
+                                       binding_outcome};
+                receiver(std::move(sample), tracing::ITracingRuntime::TracePointDataId{0U});
+                return Result<std::size_t>{1U};
+            });
+    }
+
+    e2e::E2EResult GetNewSampleResult()
+    {
+        std::ignore = proxy_event_.Subscribe(1U);
+        e2e::E2EResult delivered_result{};
+        const auto result = proxy_event_.GetNewSamples(
+            [&delivered_result](SamplePtr<void> sample) noexcept {
+                delivered_result = sample.GetE2EResult();
+            },
+            1U);
+        EXPECT_TRUE(result.has_value());
+        return delivered_result;
+    }
+};
+
+TEST_F(GenericProxyEventE2EAttachFixture, DeliveredSampleSummaryIsOkWithDisabledChecksForValidBindingResult)
+{
+    // Given a binding that reports a valid data-integrity and sequence result for the delivered generic sample
+    DeliverSampleWithBindingResult(e2e::RawCheckOutcome{e2e::DataIntegrityStatus::kOk, e2e::SequenceStatus::kOk});
+
+    // When receiving the sample through the generic proxy event
+    const auto delivered_result = GetNewSampleResult();
+
+    // Then the summary is completed the same way as for a typed proxy event
+    EXPECT_EQ(delivered_result.data_integrity, e2e::DataIntegrityStatus::kOk);
+    EXPECT_EQ(delivered_result.sequence, e2e::SequenceStatus::kOk);
+    EXPECT_EQ(delivered_result.summary, e2e::Summary::kOkWithDisabledChecks);
+}
+
+TEST_F(GenericProxyEventE2EAttachFixture, DeliveredSampleSummaryIsErrorForBindingDataIntegrityError)
+{
+    // Given a binding that reports a data-integrity error for the delivered generic sample
+    DeliverSampleWithBindingResult(e2e::RawCheckOutcome{e2e::DataIntegrityStatus::kError, e2e::SequenceStatus::kOk});
+
+    // When receiving the sample through the generic proxy event
+    const auto delivered_result = GetNewSampleResult();
+
+    // Then the summary is kError
+    EXPECT_EQ(delivered_result.data_integrity, e2e::DataIntegrityStatus::kError);
+    EXPECT_EQ(delivered_result.summary, e2e::Summary::kError);
 }
 
 }  // namespace
