@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/plumbing/binding_factory_error.h"
+#include "score/mw/com/impl/plumbing/i_generic_proxy_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/i_proxy_event_binding_factory.h"
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding.h"

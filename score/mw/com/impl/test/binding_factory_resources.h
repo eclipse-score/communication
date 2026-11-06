@@ -18,6 +18,8 @@
 #include "score/mw/com/impl/bindings/mock_binding/proxy_event.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_event.h"
+#include "score/mw/com/impl/plumbing/generic_proxy_event_binding_factory.h"
+#include "score/mw/com/impl/plumbing/generic_proxy_event_binding_factory_mock.h"
 #include "score/mw/com/impl/plumbing/proxy_binding_factory.h"
 #include "score/mw/com/impl/plumbing/proxy_binding_factory_mock.h"
 #include "score/mw/com/impl/plumbing/proxy_event_binding_factory.h"

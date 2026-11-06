@@ -29,6 +29,7 @@
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/plumbing/generic_proxy_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/proxy_binding_factory.h"
 #include "score/mw/com/impl/plumbing/proxy_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/proxy_field_binding_factory.h"
