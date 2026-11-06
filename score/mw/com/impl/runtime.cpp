@@ -126,6 +126,7 @@ void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configurat
     auto config = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
     const auto validation_result = config.Validate();
 
+    // COV_JUSTIFIED_START runtime-initialize-config-validation-fatal
     if (!validation_result.has_value())
     {
         ::score::mw::log::LogFatal("lola") << validation_result.error().UserMessage();
@@ -133,6 +134,7 @@ void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configurat
         // configuration deployed to production must pass the validation.
         SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
+    // COV_JUSTIFIED_STOP
     score::cpp::ignore = initialization_config_.emplace(std::move(config));
 }
 
@@ -232,16 +234,16 @@ Runtime::Runtime(std::pair<Configuration&&, std::optional<TracingFilterConfig>&&
     {
         if (tracing_filter_configuration_.has_value())
         {
-            // LCOV_EXCL_START (Tool incorrectly marks this line as not covered. However, the lines before and after
-            // are covered so this is clearly an error by the tool. Suppression can be removed when bug is fixed in
-            // Ticket-Ticket-184255).
+            // COV_JUSTIFIED_START runtime-binding-tracing-map-tool-false-positive
             std::unordered_map<BindingType, tracing::IBindingTracingRuntime*> binding_tracing_runtimes{};
-            // LCOV_EXCL_STOP
+            // COV_JUSTIFIED_STOP
             for (auto& binding_runtime : binding_runtimes_)
             {
+                // COV_JUSTIFIED_START runtime-binding-tracing-runtime-assert
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
                     binding_runtime.second->GetTracingRuntime() != nullptr,
                     "Binding specific runtime has no tracing runtime although tracing is enabled!");
+                // COV_JUSTIFIED_STOP
                 score::cpp::ignore = binding_tracing_runtimes.emplace(binding_runtime.first,
                                                                       binding_runtime.second->GetTracingRuntime());
             }
@@ -267,21 +269,16 @@ std::vector<InstanceIdentifier> Runtime::resolve(const InstanceSpecifier& specif
         // @todo: Right now we don't support multi-binding, if we do, we need to have some kind of loop
         const auto type_deployment =
             configuration_.GetServiceTypeDeployment(instance_deployment.value().get().service_);
-        // LCOV_EXCL_BR_START defensive programming: The configuration parser ensures that if a matching service
-        // instance is available, there is also a matching service type available. Because parsing of the configuration
-        // is automatically done before instantiating the runtime, this condition is always positive. To increase the
-        // robustness of the code, we still check for this condition.
+        // COV_JUSTIFIED_START runtime-config-parser-guarantees-service-type
         if (type_deployment.has_value())
         {
             result.push_back(make_InstanceIdentifier(instance_deployment.value().get(), type_deployment.value().get()));
         }
         else
         {
-            // LCOV_EXCL_START see comment before if-statement
             mw::log::LogError("lola") << "Did not find a matching service type for the specifier" << specifier;
-            // LCOV_EXCL_STOP
         }
-        // LCOV_EXCL_BR_STOP
+        // COV_JUSTIFIED_STOP
     }
 
     return result;
@@ -297,6 +294,7 @@ Result<void> Runtime::MergeAdditionalConfiguration(const Configuration& addition
 
     const auto validation_result = configuration_.Validate();
 
+    // COV_JUSTIFIED_START runtime-merge-config-validation-fatal
     if (!validation_result.has_value())
     {
         ::score::mw::log::LogFatal("lola") << validation_result.error().UserMessage();
@@ -304,6 +302,7 @@ Result<void> Runtime::MergeAdditionalConfiguration(const Configuration& addition
         // A configuration deployed to production must pass the validation.
         SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
+    // COV_JUSTIFIED_STOP
 
     return {};
 }

@@ -82,6 +82,47 @@ justifications:
       and stable_name is the configuration key found for exactly that (already unique) event name.
       Therefore the emplace can never fail at this point.
 
+  - id: runtime-binding-tracing-map-tool-false-positive
+    category: tool_false_positive
+    platforms: [linux]
+    reason: >
+      Coverage tooling incorrectly marks the local binding-tracing map creation as uncovered even though the
+      surrounding tracing setup is fully exercised by the runtime tracing tests. The code is a straightforward
+      container initialization and the coverage report is known to be inaccurate for this construct.
+      This justification can be removed once the bug is fixed in Ticket-184255.
+
+  - id: runtime-config-parser-guarantees-service-type
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      This branch is defensive only. The configuration parser ensures a matching service instance is accompanied by a
+      matching service type, so the log/error path is unreachable under valid configuration load paths. It protects
+      against corrupted or externally edited configs and unexpected future parser changes.
+
+  - id: runtime-initialize-config-validation-fatal
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      Defensive programming: a configuration which fails Validate() is a fatal error. The failure path logs the error
+      and terminates the process via SCORE_LANGUAGE_FUTURECPP_UNREACHABLE(), so it cannot be reached by a
+      regular (non-terminating) unit test.
+
+  - id: runtime-merge-config-validation-fatal
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      Defensive programming: after merging an add-on configuration the combined configuration is validated again.
+      A validation failure is a fatal error. The failure path logs the error and terminates the process via
+      SCORE_LANGUAGE_FUTURECPP_UNREACHABLE(), so it cannot be reached by a regular (non-terminating) unit test.
+
+  - id: runtime-binding-tracing-runtime-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      Contract check only: every binding runtime created while tracing is enabled provides a tracing runtime. A
+      violation terminates the process via SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE, so the failing branch cannot
+      be reached by a regular (non-terminating) unit test.
+
   - id: gateway-clear-nonblock-on-accepted-socket
     platforms: [linux, qnx]
     category: defensive_programming

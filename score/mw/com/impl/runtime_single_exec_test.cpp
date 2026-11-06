@@ -18,6 +18,7 @@
 #include "score/mw/com/runtime_configuration.h"
 
 #include "score/filesystem/factory/filesystem_factory.h"
+#include "score/json/json_parser.h"
 #include "score/utils/meyer_singleton/test/single_test_per_process_fixture.h"
 
 #include <score/blank.hpp>
@@ -283,6 +284,31 @@ TEST_F(RuntimeInitializationTest, ConfigurationGetsMergedAndLoadedIfInitialConfi
 
         // When loading an add-on configuration with AddConfiguration
         const auto addon_init_result = Runtime::AddConfiguration(runtime::RuntimeConfiguration{config_to_merge_});
+
+        auto& updated_runtime = static_cast<Runtime&>(Runtime::getInstance());
+
+        const RuntimeAttorney attorney{updated_runtime};
+
+        // Then both configurations are loaded and merged into the runtime's configuration
+        EXPECT_TRUE(addon_init_result.has_value());
+        EXPECT_EQ(attorney.GetConfigurationAddress()->GetNumberOfServiceTypes(), 2);
+    });
+}
+
+TEST_F(RuntimeInitializationTest, AddConfigurationFromJsonMergesIntoLoadedConfiguration)
+{
+    TestInSeparateProcess([this]() {
+        // Given an initial complete configuration has been loaded earlier
+        const auto configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other_};
+        Runtime::Initialize(configuration);
+
+        // and an add-on configuration which is available as an already parsed json object
+        const score::json::JsonParser json_parser{};
+        auto addon_json = json_parser.FromFile(config_to_merge_);
+        ASSERT_TRUE(addon_json.has_value());
+
+        // When loading the add-on configuration with AddConfiguration(json::Any)
+        const auto addon_init_result = Runtime::AddConfiguration(std::move(addon_json).value());
 
         auto& updated_runtime = static_cast<Runtime&>(Runtime::getInstance());
 

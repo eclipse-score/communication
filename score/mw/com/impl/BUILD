@@ -1226,6 +1226,7 @@ cc_unit_test(
     deps = [
         ":impl",
         ":runtime",
+        "@score_baselibs//score/json",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/utils/meyer_singleton/test:single_test_per_process_fixture",
     ],
