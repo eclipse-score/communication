@@ -140,7 +140,23 @@ The Mock Runtime is an in-process, test-oriented implementation of all traits fr
 **Role and Scope**:
 The Mock Runtime is designed to enable testing of application code without dependencies on a concrete backend. This runtime allows developers to test the logic and integration of their producers and consumers in isolation, catching errors early.
 
-**Note**: Mock runtime support is not yet enabled in the current build.
+**Note**: The mock is a test-only, in-process implementation with no backend; it is reached through the
+test-only target `//score/mw/com/rust:score_com_mock` (re-exporting `MockRuntimeBuilderImpl`). The
+production path remains the LoLa runtime.
+
+Each independently built mock runtime has a separate registry; runtime clones share a registry.
+Discovery filters both instance specifier and interface ID. Events are also keyed by concrete data
+type and identifier. Active subscriptions have independent bounded FIFO queues; publication before
+subscription is not retained. Unsubscribe/drop reclaims a subscription, while dropping the last
+provider handle removes its offer. Receive and streams register wakers for subsequent publication;
+cancellation returns the retained samples with `ReceiveFailedReason::Cancelled`.
+
+The production `CommData` contract is `Send`, with neither `Clone` nor `Sync`. Single-subscriber
+mock delivery transfers ownership without extra bounds. Multicast requires explicit
+`MockRuntimeImpl::register_cloneable_data::<T>()` for cloneable test data. Without a registered copier,
+publication to multiple subscribers returns `EventFailedReason::EventPublishFailed` before delivery.
+Clone callbacks, payload destruction and executor wakeups occur outside registry/queue locks.
+
 
 ## Data Types and Serialization
 
