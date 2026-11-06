@@ -13,6 +13,7 @@
  ********************************************************************************/
 
 #include <sstream>
+#include <string>
 
 #include <message/Message.h>
 #include <message/MessageComposer.h>
@@ -64,7 +65,7 @@ ApplicationManager::ApplicationManager(std::string name, std::string config_path
     }
 
     if (application_name_.size() == 0) {
-        application_name_ = "noname" + application_id_;
+        application_name_ = "noname" + std::to_string(application_id_);
     }
 
     LGSOMEIP_LOG_INFO << "ApplicationManager::ApplicationManager / AppName: " << name << ", "

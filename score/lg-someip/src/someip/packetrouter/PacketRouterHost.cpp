@@ -2222,7 +2222,7 @@ void PacketRouterHost::remove_route(std::uint16_t app_id) {
                             LGSOMEIP_LOG_DEBUG
                                 << "PacketRouterHost::remove_route / referenceCount of this endpoint = "
                                 << static_cast<std::uint16_t>(client_conn_info.endpoint->get_reference_count())
-                                << ", FD = " + client;
+                                << ", FD = " << client;
 
                             if (client_conn_info.endpoint->get_reference_count() == 0) {
                                 connected_endpoints_.erase(client);

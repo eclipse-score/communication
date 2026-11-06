@@ -346,6 +346,15 @@ TEST(ApplicationManager, handler_registration_and_removal_paths_are_safe) {
     application_manager.register_availability_handler(0x1001, 0x0002, nullptr);
 }
 
+TEST(ApplicationManager, names_an_application_without_a_name_after_its_application_id) {
+    auto router = std::make_shared<FakeApplicationRouter>();
+    ApplicationManager application_manager("", "", router);
+
+    EXPECT_NE(application_manager.get_application_id(), 0);
+    EXPECT_EQ(application_manager.get_application_name(),
+              "noname" + std::to_string(application_manager.get_application_id()));
+}
+
 TEST(ApplicationManager, dispatches_request_to_registered_provider_handler) {
     auto router = std::make_shared<FakeApplicationRouter>();
     ApplicationManager application_manager("test", "", router);
