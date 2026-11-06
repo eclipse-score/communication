@@ -38,7 +38,7 @@ architectural_design(
 # by later stories.
 dependable_element(
     name = "dependable_element_memory_shared",
-    architectural_design = [":memory_shared_architectural_design"],
+    architectural_design = ["//score/memory/shared/dependability/architectural_design:software_architectural_design"],
     components = [],
     dependability_analysis = ["//score/memory/shared/dependability/safety_analysis:memory_shared_dependability_analysis"],
     integrity_level = "B",

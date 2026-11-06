@@ -1,0 +1,90 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+@startuml safety_sentinel_memory_shared_design
+title "memory_shared_static_architecture"
+skinparam nodesep 120
+skinparam ranksep 50
+
+' Public API provided/required by unit "factory_resources" (see
+' score/memory/shared/dependability/public_api.puml for the full class diagram).
+interface ManagedMemoryResource
+interface ISharedMemoryResource
+interface "ISharedMemoryResource::AccessControl" as AccessControl
+interface ISharedMemoryFactory
+interface SharedMemoryFactory
+interface MemoryResourceProxy
+interface TypedMemory
+interface InitializeCallback
+interface UserPermissions
+interface PermissionMap
+interface FileDescriptor <<external>>
+note right of FileDescriptor : Defined outside memory_shared (score::os::Acl);\nrequired, not provided, by factory_resources.
+
+' Public API provided by unit "allocator_pointer" (see
+' score/memory/shared/dependability/public_api.puml for the full class diagram).
+interface "OffsetPtr<T>" as OffsetPtr
+interface "PolymorphicOffsetPtrAllocator<T>" as PolymorphicOffsetPtrAllocator
+
+' Public API provided by unit "pointer_arithmetic" (see
+' score/memory/shared/dependability/public_api.puml for the full class diagram). On C++ level
+' this is a set of free-standing functions (pointer_arithmetic_util.h), aggregated here into a
+' single interface for the same reason as in public_api.puml.
+interface PointerArithmeticUtil
+
+component safety_software_seooc_memory_shared <<SEooC>>  {
+
+   component memory_shared <<component>> {
+      component pointer_arithmetic <<unit>>
+      pointer_arithmetic )-r- PointerArithmeticUtil
+
+      component factory_resources <<unit>>
+      factory_resources )-u- ManagedMemoryResource
+      factory_resources )-u- ISharedMemoryResource
+      factory_resources )-u- AccessControl
+      factory_resources )-u- ISharedMemoryFactory
+      factory_resources )-u- SharedMemoryFactory
+      factory_resources )-u- MemoryResourceProxy
+      factory_resources )-u- UserPermissions
+      factory_resources )-u- PermissionMap
+      factory_resources -d-( TypedMemory
+      factory_resources -d-( InitializeCallback
+      factory_resources -d-( FileDescriptor
+      factory_resources -r-( PointerArithmeticUtil
+      PointerArithmeticUtil -[hidden]r- TypedMemory
+
+      component allocator_pointer <<unit>>
+      allocator_pointer )-u- OffsetPtr
+      allocator_pointer )-u- PolymorphicOffsetPtrAllocator
+      allocator_pointer -r-( PointerArithmeticUtil
+  }
+}
+
+' SEooC boundary relations (not drawn; the interfaces/classes above cross the boundary, see
+' score-architecture skill / component_public_api validator: a public API interface must be
+' both declared top-level here and connected (any relation) from the SEooC itself).
+safety_software_seooc_memory_shared -[hidden]- ManagedMemoryResource
+safety_software_seooc_memory_shared -[hidden]- ISharedMemoryResource
+safety_software_seooc_memory_shared -[hidden]- AccessControl
+safety_software_seooc_memory_shared -[hidden]- ISharedMemoryFactory
+safety_software_seooc_memory_shared -[hidden]- SharedMemoryFactory
+safety_software_seooc_memory_shared -[hidden]- MemoryResourceProxy
+safety_software_seooc_memory_shared -[hidden]- TypedMemory
+safety_software_seooc_memory_shared -[hidden]- InitializeCallback
+safety_software_seooc_memory_shared -[hidden]- UserPermissions
+safety_software_seooc_memory_shared -[hidden]- PermissionMap
+safety_software_seooc_memory_shared -[hidden]- FileDescriptor
+safety_software_seooc_memory_shared -[hidden]- OffsetPtr
+safety_software_seooc_memory_shared -[hidden]- PolymorphicOffsetPtrAllocator
+safety_software_seooc_memory_shared -[hidden]- PointerArithmeticUtil
+
+@enduml
