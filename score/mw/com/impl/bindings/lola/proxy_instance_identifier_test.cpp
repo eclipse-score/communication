@@ -177,7 +177,7 @@ TEST(ProxyInstanceIdentifierEqualityTest, ObjectsWithDifferentApplicationIdsComp
     const ProxyInstanceIdentifier unit_1{kDummyProcessIdentifier + 1U, kDummyProxyInstanceCounter};
 
     // Then they do not compare equal
-    EXPECT_FALSE(unit_0 == unit_1);
+    EXPECT_NE(unit_0, unit_1);
 }
 
 TEST(ProxyInstanceIdentifierEqualityTest, ObjectsWithSameApplicationIdButDifferentProxyInstanceCounterCompareUnequal)
@@ -187,7 +187,7 @@ TEST(ProxyInstanceIdentifierEqualityTest, ObjectsWithSameApplicationIdButDiffere
     const ProxyInstanceIdentifier unit_1{kDummyProcessIdentifier, kDummyProxyInstanceCounter + 1U};
 
     // Then they do not compare equal
-    EXPECT_FALSE(unit_0 == unit_1);
+    EXPECT_NE(unit_0, unit_1);
 }
 
 }  // namespace
