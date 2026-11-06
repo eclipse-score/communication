@@ -285,6 +285,11 @@ void SkeletonMemoryManager::RemoveSharedMemory()
     RemoveMemoryIfExists(data_control_asil_path_);
     RemoveMemoryIfExists(data_storage_path_);
 
+    ReleaseSharedMemory();
+}
+
+void SkeletonMemoryManager::ReleaseSharedMemory()
+{
     storage_resource_.reset();
     control_qm_resource_.reset();
     control_asil_resource_.reset();
