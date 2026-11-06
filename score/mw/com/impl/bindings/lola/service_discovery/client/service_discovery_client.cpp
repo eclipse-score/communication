@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2025, 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -299,11 +299,12 @@ auto ServiceDiscoveryClient::TransferNewSearchRequest(NewSearchRequest search_re
     std::unordered_set<os::InotifyWatchDescriptor> watch_descriptor_placeholder{};
     watch_descriptor_placeholder.reserve(watch_descriptors.size());
 
-    const auto added_search_request = search_requests_.emplace(find_service_handle,
-                                                               SearchRequest{std::move(watch_descriptor_placeholder),
-                                                                             std::move(on_service_found_callback),
-                                                                             instance_identifier,
-                                                                             previous_handles});
+    const auto added_search_request = search_requests_.emplace(
+        find_service_handle,
+        SearchRequest{std::move(watch_descriptor_placeholder),
+                      std::make_shared<FindServiceHandler<HandleType>>(std::move(on_service_found_callback)),
+                      instance_identifier,
+                      previous_handles});
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         added_search_request.second, "The FindServiceHandle should be unique for every call to StartFindService");
 
@@ -584,12 +585,13 @@ auto ServiceDiscoveryClient::CallHandlers(const std::unordered_set<FindServiceHa
 
         previous_handles = new_handles;
 
-        const auto& handler = search_iterator->second.find_service_handler;
+        // A reentrant StartFindService may retire this search, but must not destroy the executing callback.
+        const auto handler = search_iterator->second.find_service_handler;
         // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "I a function is declared to be
         // noexcept, noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception"
         // we can't add noexcept to score::cpp::callback signature.
         // coverity[autosar_cpp14_a15_4_2_violation]
-        handler(std::move(known_handles), search_key);
+        (*handler)(std::move(known_handles), search_key);
 
         mw::log::LogDebug("lola") << "LoLa SD: Asynchronous call to handler for FindServiceHandle"
                                   << FindServiceHandleView{search_key}.getUid() << "finished";
@@ -713,6 +715,9 @@ Result<void> ServiceDiscoveryClient::StartFindService(const FindServiceHandle fi
     // coverity[autosar_cpp14_a8_5_3_violation : FALSE]
     const std::lock_guard worker_lock{worker_mutex_};
 
+    // Retire stopped watches before reusing the cache, so new searches cannot inherit events from an earlier offer.
+    TransferObsoleteSearchRequests();
+
     mw::log::LogDebug("lola") << "LoLa SD: Starting service discovery for"
                               << GetSearchPathForIdentifier(enriched_instance_identifier) << "with FindServiceHandle"
                               << FindServiceHandleView{find_service_handle}.getUid();
@@ -768,8 +773,8 @@ Result<void> ServiceDiscoveryClient::StartFindService(const FindServiceHandle fi
     {
         mw::log::LogDebug("lola") << "LoLa SD: Synchronously calling handler for FindServiceHandle"
                                   << FindServiceHandleView{find_service_handle}.getUid();
-        const auto& stored_handler = stored_search_request.second.find_service_handler;
-        stored_handler(known_handles, find_service_handle);
+        const auto stored_handler = stored_search_request.second.find_service_handler;
+        (*stored_handler)(known_handles, find_service_handle);
         mw::log::LogDebug("lola") << "LoLa SD: Synchronous call to handler for FindServiceHandle"
                                   << FindServiceHandleView{find_service_handle}.getUid() << "finished";
     }

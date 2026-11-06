@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2025, 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -78,7 +78,7 @@ class ServiceDiscoveryClient final : public IServiceDiscoveryClient
         // coverity[autosar_cpp14_m11_0_1_violation]
         std::unordered_set<os::InotifyWatchDescriptor> watch_descriptors;
         // coverity[autosar_cpp14_m11_0_1_violation]
-        FindServiceHandler<HandleType> find_service_handler;
+        std::shared_ptr<FindServiceHandler<HandleType>> find_service_handler;
         // coverity[autosar_cpp14_m11_0_1_violation]
         EnrichedInstanceIdentifier enriched_instance_identifier;
         // coverity[autosar_cpp14_m11_0_1_violation]
@@ -173,16 +173,10 @@ class ServiceDiscoveryClient final : public IServiceDiscoveryClient
     concurrency::Executor& long_running_threads_;
 
     /**
-     * It is important to consider the synchronization scheme in this class. All below attributes except for mutexes and
-     * the following containers are considered to be exclusively accessed by the worker thread:
-     *  - new_search_requests_
-     *  - obsolete_search_requests_
-     *
-     * While in theory it is possible to modify more attributes, this comes with the risk of ending up in concurrent
-     * modifications of the same container. For this reason it is also prohibited to modify the above sets from within
-     * a constructor or destructor (even if the lock is acquired).
-     *
-     * When modifying any of the above sets, worker_mutex_ must be locked.
+     * Search requests, watches, and the known-instance cache are protected by worker_mutex_. StopFindService marks
+     * requests as obsolete; the worker and StartFindService retire them under this lock before processing events or
+     * reusing cached state. Handler invocations retain shared ownership so reentrant retirement cannot destroy an
+     * executing callback.
      *
      * It is imperative that worker_mutex_ stays a recursive lock to not end up in deadlocks when the user calls
      * StartFindService() or StopFindService() from within the FindServiceHandler.
