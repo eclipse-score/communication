@@ -929,21 +929,11 @@ class SkeletonRegisterParamaterisedFixture : public SkeletonTestMockedSharedMemo
     EventDataControlComposite<> GetEventDataControlCompositeFromRegistrationResult(
         const Skeleton::RegistrationResult& registration_result)
     {
-        event_control_qm_local_view_.emplace(registration_result.event_control_qm.data_control);
-
-        if (registration_result.event_control_asil_b != nullptr)
-        {
-            event_control_asil_b_local_view_.emplace(registration_result.event_control_asil_b->data_control);
-        }
-
-        ProviderEventDataControlLocalView<>* event_control_asil_b_local_view =
-            registration_result.event_control_asil_b != nullptr ? &event_control_asil_b_local_view_.value() : nullptr;
-        return EventDataControlComposite<>{event_control_qm_local_view_.value(), event_control_asil_b_local_view};
+        EventDataControl* const asil_b_control = (registration_result.event_control_asil_b != nullptr)
+                                                     ? &registration_result.event_control_asil_b->data_control
+                                                     : nullptr;
+        return EventDataControlComposite<>{registration_result.event_control_qm.data_control, asil_b_control};
     }
-
-  private:
-    std::optional<ProviderEventDataControlLocalView<>> event_control_qm_local_view_{};
-    std::optional<ProviderEventDataControlLocalView<>> event_control_asil_b_local_view_{};
 };
 
 TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillCreateEventDataIfShmRegionWasCreated)

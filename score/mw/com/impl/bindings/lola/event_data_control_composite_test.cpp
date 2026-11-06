@@ -103,8 +103,7 @@ class EventDataControlCompositeFixture : public ::testing::Test
         proxy_qm_local_.emplace(*qm_, transaction_log_qm);
         proxy_asil_local_.emplace(*asil_, transaction_log_asil);
 
-        unit_ =
-            std::make_unique<EventDataControlComposite<>>(skeleton_qm_local_.value(), &skeleton_asil_local_.value());
+        unit_ = std::make_unique<EventDataControlComposite<>>(*qm_, asil_.get());
 
         return *this;
     }
@@ -121,8 +120,8 @@ class EventDataControlCompositeFixture : public ::testing::Test
         atomic_indirector_mock_guard_ =
             std::make_unique<AtomicIndirectorMockGuard<EventSlotStatus::value_type>>(*atomic_mock_);
 
-        unit_with_mock_atomics_ = std::make_unique<EventDataControlComposite<concurrency::AtomicIndirectorMock>>(
-            skeleton_qm_local_mock_.value(), &skeleton_asil_local_mock_.value());
+        unit_with_mock_atomics_ =
+            std::make_unique<EventDataControlComposite<concurrency::AtomicIndirectorMock>>(*qm_, asil_.get());
 
         return *this;
     }
@@ -136,7 +135,7 @@ class EventDataControlCompositeFixture : public ::testing::Test
         auto& transaction_log_qm = transaction_log_qm_.emplace(kSlotCount, memory_);
         proxy_qm_local_.emplace(*qm_, transaction_log_qm);
 
-        unit_ = std::make_unique<EventDataControlComposite<>>(skeleton_qm_local_.value(), nullptr);
+        unit_ = std::make_unique<EventDataControlComposite<>>(*qm_, nullptr);
 
         return *this;
     }
@@ -151,8 +150,8 @@ class EventDataControlCompositeFixture : public ::testing::Test
         atomic_indirector_mock_guard_ =
             std::make_unique<AtomicIndirectorMockGuard<EventSlotStatus::value_type>>(*atomic_mock_);
 
-        unit_with_mock_atomics_ = std::make_unique<EventDataControlComposite<concurrency::AtomicIndirectorMock>>(
-            skeleton_qm_local_mock_.value(), nullptr);
+        unit_with_mock_atomics_ =
+            std::make_unique<EventDataControlComposite<concurrency::AtomicIndirectorMock>>(*qm_, nullptr);
 
         return *this;
     }
@@ -660,10 +659,8 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
     constexpr auto MAX_SLOTS = 100;
     EventDataControl asil{MAX_SLOTS, memory};
     EventDataControl qm{MAX_SLOTS, memory};
-    ProviderEventDataControlLocalView skeleton_asil_local{asil};
-    ProviderEventDataControlLocalView skeleton_qm_local{qm};
 
-    EventDataControlComposite<> unit{skeleton_qm_local, &skeleton_asil_local};
+    EventDataControlComposite<> unit{qm, &asil};
 
     std::mutex allocated_slots_mutex{};
     std::set<std::uint8_t> allocated_slots{};
