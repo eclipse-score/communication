@@ -59,7 +59,7 @@ rust_doc_test(
 # `score_com_concept-test` without a circular dependency.
 rust_unit_test(
     name = "score_com_concept-macros-unit-tests",
-    srcs = ["interface_macros.rs"],
+    srcs = ["interface_producer_macros.rs"],
     features = ["link_std_cpp_lib"],
     rustc_flags = ["--cfg=standalone_macro_tests"],
     deps = ["//score/mw/com/rust:score_com"],
