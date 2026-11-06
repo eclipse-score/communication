@@ -37,7 +37,22 @@ single_version_override(
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
     # See https://github.com/eclipse-score/bazel_cpp_toolchains/issues/68
-    patches = ["//third_party/score_baselibs:restore_qnx8_poll_workaround.patch"],
+    # Also widen the visibility of the endianness target so it can be consumed
+    # by the SOME/IP serialization strategy in this module.
+    patches = [
+        "//third_party/score_baselibs:restore_qnx8_poll_workaround.patch",
+        # TODO: remove it. When change is merged in base_libs
+        "//third_party/score_baselibs:endianness_visibility.patch",
+        # TODO: Remove once the following serialization field-path commits are
+        # merged and released in baselibs:
+        #   9a7e72b77fb serialization: expose current byte offset on the (de)serialize iterators
+        #   3778d0f03eb score/serialization: allow latching a result on DeSerializeIterator
+        #   bf5af720ba8 score/serialization: add error for deserialized count exceeding capacity
+        #   7d13d53900f score/serialization: track field path during struct visitation
+        #   2e3de8ebd66 score/serialization: track last-in-struct per nesting level
+        #   f79c98f4a83 score/serialization: mark array-element descent in the field path
+        "//third_party/score_baselibs:serialization_field_path.patch",
+    ],
 )
 
 bazel_dep(name = "score_bazel_platforms", version = "1.1.0")

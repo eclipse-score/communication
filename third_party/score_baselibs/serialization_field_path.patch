@@ -1,0 +1,229 @@
+diff --git a/score/serialization/details/serialization_visitor.h b/score/serialization/details/serialization_visitor.h
+index cd54927a836..3e8f8cc4acd 100644
+--- a/score/serialization/details/serialization_visitor.h
++++ b/score/serialization/details/serialization_visitor.h
+@@ -22,6 +22,10 @@
+ #include <score/assert.hpp>
+ #include <score/type_traits.hpp>
+ 
++#include <array>
++#include <cstddef>
++#include <limits>
++
+ namespace score
+ {
+ namespace serialization
+@@ -69,8 +73,63 @@ class CommonVisitorLogic
+         return meta_;
+     }
+ 
++    void SetFieldIndex(std::size_t field_index)
++    {
++        meta_.field_index_ = field_index;
++    }
++
++    /// @brief Maximum supported struct/array nesting depth for the field path below.
++    static constexpr std::size_t kMaxNestingDepth{16U};
++
++    /// @brief Path marker standing for "descended into an array element" rather than a struct field index. Lets a
++    /// format tell array nesting apart from struct nesting when resolving per-level configuration.
++    static constexpr std::size_t kArrayElementMarker{std::numeric_limits<std::size_t>::max()};
++
++    /// @brief Records that traversal descended into the field at the given index of the current struct. Together with
++    /// PopField this maintains the full index path from the root to the element currently visited, letting a format
++    /// resolve per-level configuration for arbitrarily nested types. is_last records whether this field is the last one
++    /// of its struct, so a format can tell whether anything follows the element across all nesting levels.
++    void PushField(const std::size_t field_index, const bool is_last)
++    {
++        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(field_depth_ < kMaxNestingDepth);
++        field_path_[field_depth_] = field_index;
++        last_path_[field_depth_] = is_last;
++        ++field_depth_;
++    }
++
++    void PopField()
++    {
++        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(field_depth_ > 0U);
++        --field_depth_;
++    }
++
++    /// @brief Records that traversal descended into an array element (as opposed to a struct field). is_last marks
++    /// whether this is the array's last element, so trailing padding behind variable-length elements is correct.
++    void PushArrayElement(const bool is_last)
++    {
++        PushField(kArrayElementMarker, is_last);
++    }
++
++    const std::size_t* FieldPathData() const
++    {
++        return field_path_.data();
++    }
++
++    const bool* LastPathData() const
++    {
++        return last_path_.data();
++    }
++
++    std::size_t FieldDepth() const
++    {
++        return field_depth_;
++    }
++
+   private:
+     MetaInformation meta_{};
++    std::array<std::size_t, kMaxNestingDepth> field_path_{};
++    std::array<bool, kMaxNestingDepth> last_path_{};
++    std::size_t field_depth_{0U};
+ };
+ 
+ /// @brief Provides context for serialization but is not user
+diff --git a/score/serialization/details/visit.h b/score/serialization/details/visit.h
+index ba4bf5497f3..a89d7fb5251 100644
+--- a/score/serialization/details/visit.h
++++ b/score/serialization/details/visit.h
+@@ -41,6 +41,7 @@ template <typename Structure>
+ void MarkMetaInformationAboutElement(CommonVisitorLogic& visitor, std::size_t counter)
+ {
+     using visitable = ::score::common::visitor::struct_visitable<Structure>;
++    visitor.SetFieldIndex(counter);
+     if (counter == static_cast<std::size_t>(0U))
+     {
+         visitor.MarkAsFirstElementInStruct();
+@@ -112,11 +113,16 @@ inline void visit_as_struct(SerializationVisitor<Container, Strategy>& visitor,
+     // coverity[autosar_cpp14_a6_2_2_violation]
+     // coverity[autosar_cpp14_m5_2_10_violation]
+     score::cpp::ignore = (expander{(helper::MarkMetaInformationAboutElement<Structure>(visitor, counter),
+-                                    ::score::common::visitor::visit(visitor, std::forward<Args>(fields)),
+-                                    // Suppress "AUTOSAR C++14 M0-1-9" rule violations. The rule states "There shall be
+-                                    // no dead code.". This is expander expression and is not dead code.
+-                                    // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
+-                                    ++counter)...});
++                             visitor.PushField(
++                                 counter,
++                                 (counter + static_cast<std::size_t>(1U)) ==
++                                     ::score::common::visitor::struct_visitable<Structure>::fields),
++                             ::score::common::visitor::visit(visitor, std::forward<Args>(fields)),
++                             visitor.PopField(),
++                             // Suppress "AUTOSAR C++14 M0-1-9" rule violations. The rule states "There shall be no dead
++                             // code.". This is expander expression and is not dead code.
++                             // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
++                             ++counter)...});
+ 
+     visitor.MarkAsElementInStruct();  // neither first / nor last
+ }
+@@ -146,9 +152,14 @@ inline void visit_as_struct(DeSerializationVisitor<Container, Strategy>& visitor
+     // coverity[autosar_cpp14_a6_2_2_violation]
+     // coverity[autosar_cpp14_m5_2_10_violation]
+     score::cpp::ignore = (expander{(helper::MarkMetaInformationAboutElement<Structure>(visitor, counter),
+-                                    ::score::common::visitor::visit(visitor, std::forward<Args>(fields)),
+-                                    // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
+-                                    ++counter)...});
++                             visitor.PushField(
++                                 counter,
++                                 (counter + static_cast<std::size_t>(1U)) ==
++                                     ::score::common::visitor::struct_visitable<Structure>::fields),
++                             ::score::common::visitor::visit(visitor, std::forward<Args>(fields)),
++                             visitor.PopField(),
++                             // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
++                             ++counter)...});
+ 
+     visitor.MarkAsElementInStruct();  // neither first / nor last
+ }
+diff --git a/score/serialization/error/serialization_error.cpp b/score/serialization/error/serialization_error.cpp
+index 6c3bccd6c17..58ab72da4aa 100644
+--- a/score/serialization/error/serialization_error.cpp
++++ b/score/serialization/error/serialization_error.cpp
+@@ -48,6 +48,9 @@ class SerializationErrorDomain final : public score::result::ErrorDomain
+             case SerializationError::kNotAllDataDeserialized:
+                 return "Some data still left in input buffer after deserialization!";
+             // coverity[autosar_cpp14_m6_4_5_violation]
++            case SerializationError::kDeserializedCountExceedsCapacity:
++                return "Deserialized element count exceeds the container's fixed capacity!";
++            // coverity[autosar_cpp14_m6_4_5_violation]
+             default:
+                 return "Unknown Error!";
+         }
+diff --git a/score/serialization/error/serialization_error.h b/score/serialization/error/serialization_error.h
+index 8f458d30a44..2246a4396e7 100644
+--- a/score/serialization/error/serialization_error.h
++++ b/score/serialization/error/serialization_error.h
+@@ -31,7 +31,8 @@ enum class SerializationError : score::result::ErrorCode
+ {
+     kOutOfBoundsWrite,
+     kStringTooBig,
+-    kNotAllDataDeserialized
++    kNotAllDataDeserialized,
++    kDeserializedCountExceedsCapacity
+ };
+ 
+ /// @brief ADL overload to fulfill design requirements from lib/result
+diff --git a/score/serialization/meta_information.h b/score/serialization/meta_information.h
+index 0c6caad5758..c028ccc2ada 100644
+--- a/score/serialization/meta_information.h
++++ b/score/serialization/meta_information.h
+@@ -14,6 +14,7 @@
+ #ifndef SCORE_SERIALIZATION_META_INFORMATION_H
+ #define SCORE_SERIALIZATION_META_INFORMATION_H
+ 
++#include <cstddef>
+ namespace score
+ {
+ namespace serialization
+@@ -31,6 +32,10 @@ struct MetaInformation
+     bool is_first_element_in_struct_{false};
+     // coverity[autosar_cpp14_m11_0_1_violation]
+     bool is_last_element_in_struct_{false};
++    // Zero-based index of the current element within its struct. Lets a format apply per-element configuration
++    // (e.g. SOME/IP byte order / alignment) supplied out-of-band, without decorating the user's data type.
++    // coverity[autosar_cpp14_m11_0_1_violation]
++    std::size_t field_index_{0U};
+ };
+ 
+ }  // namespace serialization
+diff --git a/score/serialization/serialize_iterator.h b/score/serialization/serialize_iterator.h
+index 2897bb8bd8e..7d2bfc93283 100644
+--- a/score/serialization/serialize_iterator.h
++++ b/score/serialization/serialize_iterator.h
+@@ -129,6 +129,13 @@ class SerializeIterator
+         return *this;
+     }
+ 
++    /// @brief Bytes written so far (offset from the start of the destination). Enables position-dependent encodings
++    /// such as SOME/IP alignment padding.
++    std::size_t Offset() const
++    {
++        return GetNumberOfBytesWritten();
++    }
++
+     Result<std::size_t> GetResult() const
+     {
+         if (not result_->has_value())
+@@ -197,6 +204,14 @@ class DeSerializeIterator
+         return *iterator_;
+     }
+ 
++    /// @brief Latches a (negative) result so a caller can report a deserialization error it detected itself (e.g. a
++    /// declared length that cannot be read). Surfaced through GetResult(), mirroring SerializeIterator.
++    DeSerializeIterator<Container>& operator=(const Result<std::size_t>& result) &
++    {
++        *result_ = result;
++        return *this;
++    }
++
+     /// @brief Move iterator to next position (but not past end())
+     DeSerializeIterator<Container>& operator++()
+     {
+@@ -260,6 +275,13 @@ class DeSerializeIterator
+         return end;
+     }
+ 
++    /// @brief Bytes consumed so far (offset from the start of the source). Enables position-dependent decoding such as
++    /// skipping SOME/IP alignment padding.
++    std::size_t Offset() const
++    {
++        return GetNumberOfBytesWritten();
++    }
++
+   private:
+     // coverity[autosar_cpp14_a0_1_3_violation : FALSE]
+     std::size_t GetNumberOfBytesWritten() const

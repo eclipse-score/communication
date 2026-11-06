@@ -13,7 +13,11 @@
 
 load(":score_baselibs_stub.bzl", "score_baselibs_stub")
 
-exports_files(["restore_qnx8_poll_workaround.patch"])
+exports_files([
+    "restore_qnx8_poll_workaround.patch",
+    "endianness_visibility.patch",
+    "serialization_field_path.patch",
+])
 
 # Certified-scope stubs for score_baselibs dependencies used by mw_com.
 # Each stub declares the scope of one package group so the dependable_element
