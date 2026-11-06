@@ -601,8 +601,10 @@ void ClientConnection::SwitchToStopState() noexcept
     }
     while (!send_queue_.empty())
     {
-        auto callback = std::move(send_queue_.front().callback);
+        SendCommand& send = send_queue_.front();
+        auto callback = std::move(send.callback);
         send_queue_.pop_front();
+        send_pool_.push_front(send);
         if (!callback.empty())
         {
             lock.unlock();

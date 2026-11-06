@@ -70,6 +70,17 @@ implementation or a placeholder unit design cannot establish implementation
 fidelity. Consult [QNX unit-analysis readiness](issues/tooling-qnx-unit-analysis.md)
 for platform-specific coverage.
 
+The [client-connection unit-design pilot](../../dependability/software_unit_design/client_connection.rst)
+provides a class view and rationale for `ClientConnection`. Its implementation
+input is now `message_passing_client_connection`; engine unit inputs include
+their backend library and `message_passing_timed_command_queue`. The shared
+queue remains engine behavior, not a new SEooC unit. Library ownership is
+clearer while SEooC boundaries and names remain
+unchanged; see [the target map](build-and-test.md#implementation-versus-seooc-targets).
+Its unit wrapper explicitly uses development maturity; the DE's maturity does
+not propagate to units. See [the pilot's type-comparison findings](issues/tooling-client-connection-unit-design-types.md)
+before treating its successful build as zero-finding design acceptance.
+
 ## Integration Sequences and Limitations
 
 [The asynchronous integration pilot](../../dependability/software_architectural_design/client_server_async_integration.puml)

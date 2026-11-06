@@ -73,6 +73,7 @@ cc_library(
         "common_headers.cpp",
     ],
     hdrs = [
+        "client_server_communication.h",
         "i_client_connection.h",
         "i_client_factory.h",
         "i_connection_handler.h",
@@ -97,15 +98,12 @@ cc_library(
 )
 
 cc_library(
-    name = "message_passing_common",
+    name = "message_passing_client_connection",
     srcs = [
         "client_connection.cpp",
-        "timed_command_queue.cpp",
     ],
     hdrs = [
         "client_connection.h",
-        "client_server_communication.h",
-        "timed_command_queue.h",
     ],
     tags = ["FFI"],
     visibility = [
@@ -117,9 +115,19 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "message_passing_timed_command_queue",
+    srcs = ["timed_command_queue.cpp"],
+    hdrs = ["timed_command_queue.h"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [":common_headers"],
+)
+
 # Linux-only until unit() can be built on QNX, at which point the QNX branch takes effect.
 unit(
     name = "client_connection",
+    maturity = "development",
     scope = [
         "//score/message_passing:__subpackages__",
     ],
@@ -130,7 +138,7 @@ unit(
     unit_design = ["//score/message_passing/dependability/software_unit_design:client_connection_unit_design"],
     visibility = ["//score/message_passing/dependability:__pkg__"],
     implementation = [
-        "//score/message_passing:message_passing_common",
+        "//score/message_passing:message_passing_client_connection",
     ],
 )
 
@@ -143,7 +151,10 @@ cc_library(
     ],
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
-    deps = [":message_passing_common"] + _UNIX_DOMAIN_OS_DEPS,
+    deps = [
+        ":common_headers",
+        ":message_passing_timed_command_queue",
+    ] + _UNIX_DOMAIN_OS_DEPS,
 )
 
 cc_library(
@@ -153,7 +164,7 @@ cc_library(
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
-        ":message_passing_common",
+        ":message_passing_client_connection",
         ":message_passing_unix_domain_engine",
     ],
 )
@@ -172,7 +183,7 @@ cc_library(
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
-        ":message_passing_common",
+        ":common_headers",
         ":message_passing_unix_domain_engine",
     ],
 )
@@ -197,6 +208,7 @@ unit(
     unit_design = ["//score/message_passing/dependability/software_unit_design:unix_domain_engine_unit_design"],
     visibility = ["//score/message_passing/dependability:__pkg__"],
     implementation = [
+        ":message_passing_timed_command_queue",
         ":message_passing_unix_domain_engine",
     ],
 )
@@ -272,8 +284,10 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
-        ":message_passing_common",
+        ":common_headers",
+        ":message_passing_timed_command_queue",
         ":qnx_resource_path",
+        "@score_communication//score/message_passing/non_allocating_future",
     ] + _QNX_DISPATCH_OS_DEPS,
 )
 
@@ -284,7 +298,7 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
-        ":message_passing_common",
+        ":message_passing_client_connection",
         ":message_passing_qnx_dispatch_engine",
     ],
 )
@@ -303,7 +317,7 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
-        ":message_passing_common",
+        ":common_headers",
         ":message_passing_qnx_dispatch_engine",
     ],
 )
@@ -331,7 +345,10 @@ unit(
     unit_design = ["//score/message_passing/dependability/software_unit_design:qnx_dispatch_engine_unit_design"],
     visibility = ["//score/message_passing/dependability:__pkg__"],
     implementation = select({
-        "@platforms//os:qnx": [":message_passing_qnx_dispatch_engine"],
+        "@platforms//os:qnx": [
+            ":message_passing_qnx_dispatch_engine",
+            ":message_passing_timed_command_queue",
+        ],
         "//conditions:default": [],
     }),
 )
@@ -408,7 +425,7 @@ cc_unit_test(
         "client_connection_test.cpp",
     ],
     deps = [
-        ":message_passing_common",
+        ":message_passing_client_connection",
         ":mock",
     ],
 )
@@ -466,6 +483,6 @@ cc_unit_test(
         "timed_command_queue_test.cpp",
     ],
     deps = [
-        ":message_passing_common",
+        ":message_passing_timed_command_queue",
     ],
 )

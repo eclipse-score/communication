@@ -15,14 +15,25 @@
 
 Read when choosing a build, runtime test, or SEooC validation command.
 Scope: message-passing targets; run commands from the communication repository root.
-Evidence: BUILD/macro inspection on 2026-11-04; recipes are not new passing results.
+Evidence: BUILD/macro inspection on 2026-11-05; recipes are not new passing results.
 
 ## Implementation Versus SEooC Targets
 
 [The component BUILD](../../BUILD) distinguishes runtime libraries such as
-`:message_passing`, `:message_passing_common`, and backend libraries from
-`unit()` wrappers. The wrappers feed the SEooC structure in
+`:message_passing`, the ownership-specific libraries below, and backend
+libraries from `unit()` wrappers. The wrappers feed the SEooC structure in
 [dependability/BUILD](../../dependability/BUILD).
+
+| Library | Role |
+| --- | --- |
+| `:message_passing_client_connection` | Common client implementation; selected by the client unit and client tests. |
+| `:message_passing_timed_command_queue` | Shared engine queue implementation; selected by engine libraries, engine unit implementation inputs, and queue tests. |
+| `:common_headers` | Shared interfaces, queue-entry type, and protocol enums. |
+
+Both backend client factories depend on the connection library. Their engines
+depend on the queue library, not the connection implementation. The QNX engine
+also declares its own `NonAllocatingFuture` dependency. Existing SEooC names,
+nesting, and temporary QNX analysis guards are unchanged.
 
 Runtime libraries, runtime tests, and `unit()` analysis are separate evidence.
 Consult [QNX unit-analysis readiness](issues/tooling-qnx-unit-analysis.md) before
@@ -55,6 +66,16 @@ With the configured QNX SDK, toolchain, and QNX test-runner/QEMU prerequisites:
 bazel test --config=qnx //score/message_passing:client_connection_test
 bazel test --config=qnx //score/message_passing:qnx_dispatch_test
 ```
+
+For a QNX compilation-only check of the public library, without invoking the
+unsupported QNX unit-analysis wrappers:
+
+```sh
+bazel build --config=qnx //score/message_passing:message_passing
+```
+
+This compiles the native backend and both shared implementation libraries; it
+does not execute QNX runtime tests or establish QNX unit-design analysis.
 
 [cc_unit_test](../../../../quality/unit_testing/unit_testing.bzl) generates
 `_linux` and `_qnx` targets plus a public forwarding target. Prefer that public

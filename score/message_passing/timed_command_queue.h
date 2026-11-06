@@ -69,9 +69,10 @@ class TimedCommandQueue
     ///          queued entries without waiting for their execution. During the cleanup, the callbacks of the removed
     ///          entries are not called but destructed, which invokes destructors of their captured values.
     /// \param owner the owner argument of Register...() calls for the entries to remove. The value shall normally be
-    ///              the address of an object responsible for the lifetimes of the queue entry objects. To avoid
-    ///              unexpected interference between multiple users of a shared queue, the nullptr value, if provided,
-    ///              does not cause any entry to be removed.
+    ///              the address of an object responsible for the lifetimes of the queue entry objects.
+    /// \warning Passing nullptr removes all entries registered with a null owner, including entries registered with
+    ///          the default owner argument. In a shared queue this can unintentionally remove other users' entries
+    ///          and destroy their callback captures without invoking the callbacks.
     void CleanUpOwner(const void* const owner) noexcept;
 
   private:

@@ -15,6 +15,10 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit_design")
 
 unit_design(
     name = "client_connection_unit_design",
+    static = [
+        "client_connection.rst",
+        "client_connection_class_diagram.puml",
+    ],
     visibility = ["//score/message_passing:__pkg__"],
 )
 
