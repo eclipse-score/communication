@@ -149,8 +149,6 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     memory::DataTypeSizeInfo event_sample_size_info_;
     SkeletonEventProperties event_properties_;
 
-    std::optional<ProviderEventDataControlLocalView<>> provider_control_local_view_qm_;
-    std::optional<ProviderEventDataControlLocalView<>> provider_control_local_view_asil_b_;
     std::optional<ConsumerEventDataControlLocalView<>> consumer_control_local_view_qm_;
     std::optional<ConsumerEventDataControlLocalView<>> consumer_control_local_view_asil_b_;
     std::optional<EventDataControlComposite<>> event_data_control_composite_;
