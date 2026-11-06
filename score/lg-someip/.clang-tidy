@@ -1,0 +1,38 @@
+Checks: >-
+  -*,
+  bugprone-macro-parentheses,
+  bugprone-sizeof-expression,
+  bugprone-suspicious-missing-comma,
+  bugprone-suspicious-string-compare,
+  performance-for-range-copy,
+  performance-implicit-conversion-in-loop,
+  performance-move-const-arg,
+  readability-identifier-naming
+WarningsAsErrors: ''
+HeaderFilterRegex: '(^|/)(src|daemon|examples|tests|tools)/'
+FormatStyle: file
+CheckOptions:
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.MethodCase
+    value: lower_case
+  - key: readability-identifier-naming.GlobalFunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.GlobalFunctionIgnoredRegexp
+    value: '^(TEST|TEST_F)$'
+  - key: readability-identifier-naming.PrivateMethodCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.LocalVariableCase
+    value: lower_case
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: '_'
+  - key: readability-identifier-naming.ProtectedMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.ProtectedMemberSuffix
+    value: '_'
+  - key: readability-identifier-naming.MethodIgnoredRegexp
+    value: '^(SetUp|TearDown)$'

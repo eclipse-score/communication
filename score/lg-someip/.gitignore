@@ -1,0 +1,31 @@
+# Compiled and linked artifacts
+*.o
+*.obj
+*.a
+*.lo
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+
+# Coverage and profiling output
+*.gcda
+*.gcno
+*.gcov
+*.prof
+*.profraw
+*.profdata
+
+# Local IDE files
+.vscode/
+.idea/
+
+# Logs, temporary files, and OS metadata
+*.log
+*.tmp
+*.bak
+*~
+*.swp
+.DS_Store
+Thumbs.db

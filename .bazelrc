@@ -115,6 +115,9 @@ build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=shadow
 # Enable the experimental FlatBuffers configuration path.
 build:flatbuffers --//score/mw/com/flags:experimental_enable_flatbuffers_configuration=True
 
+# Enable the lg-someip targets (see //score/lg-someip:enable_lgsomeip).
+common:lgsomeip --//score/lg-someip:enable_lgsomeip=True
+
 common:linux_x86_64_score_gcc_12_2_0_posix --platforms=@score_bazel_platforms//:x86_64-linux-gcc_12.2.0-posix
 common:linux_x86_64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_x86_64_toolchain//:x86_64-linux
 # Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
