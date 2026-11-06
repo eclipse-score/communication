@@ -178,26 +178,49 @@ TEST(E2eProfileStubTest, CheckCounterWrappingFromMaximumToZeroReportsOk)
     EXPECT_EQ(outcome.sequence, SequenceStatus::kOk);
 }
 
-TEST(E2eProfileStubTest, CheckCounterGoingBackwardsReportsGapErrorEvenWithMaximumConfiguredThreshold)
+TEST(E2eProfileStubTest, CheckCounterGoingBackwardsReportsGapError)
 {
-    // Given two consecutive protected frames under the largest max delta counter, checked in reverse order
-    constexpr ProfileConfiguration kLenientConfiguration{0x3AU, 255U};
+    // Given two consecutive protected frames checked in reverse order
     Header older_header{};
     Header newer_header{};
     ProtectContext protect_context{};
     CheckContext check_context{};
-    ASSERT_TRUE(ProtectMessage(AsWritableSpan(older_header), PayloadSpan(), kLenientConfiguration, protect_context));
-    ASSERT_TRUE(ProtectMessage(AsWritableSpan(newer_header), PayloadSpan(), kLenientConfiguration, protect_context));
-    ASSERT_EQ(CheckMessage(AsReadOnlySpan(newer_header), PayloadSpan(), kLenientConfiguration, check_context).sequence,
+    ASSERT_TRUE(ProtectMessage(AsWritableSpan(older_header), PayloadSpan(), kConfiguration, protect_context));
+    ASSERT_TRUE(ProtectMessage(AsWritableSpan(newer_header), PayloadSpan(), kConfiguration, protect_context));
+    ASSERT_EQ(CheckMessage(AsReadOnlySpan(newer_header), PayloadSpan(), kConfiguration, check_context).sequence,
               SequenceStatus::kOk);
 
     // When checking the older frame after the newer one
-    const auto outcome =
-        CheckMessage(AsReadOnlySpan(older_header), PayloadSpan(), kLenientConfiguration, check_context);
+    const auto outcome = CheckMessage(AsReadOnlySpan(older_header), PayloadSpan(), kConfiguration, check_context);
 
-    // Then the negative counter delta exceeds the threshold
+    // Then the counter delta wraps to 255 and exceeds the threshold
     EXPECT_EQ(outcome.data_integrity, DataIntegrityStatus::kOk);
     EXPECT_EQ(outcome.sequence, SequenceStatus::kErrorGapExceedsThreshold);
+}
+
+TEST(E2eProfileStubTest, CheckForwardGapAboveHalfCounterRangeWithinConfiguredThresholdReportsGapWithinThreshold)
+{
+    // Given a frame with counter 0 and a frame with counter 200 under the largest max delta counter
+    constexpr ProfileConfiguration kLenientConfiguration{0x3AU, 255U};
+    Header first_header{};
+    Header later_header{};
+    ProtectContext first_protect_context{0U};
+    ProtectContext later_protect_context{200U};
+    CheckContext check_context{};
+    ASSERT_TRUE(
+        ProtectMessage(AsWritableSpan(first_header), PayloadSpan(), kLenientConfiguration, first_protect_context));
+    ASSERT_TRUE(
+        ProtectMessage(AsWritableSpan(later_header), PayloadSpan(), kLenientConfiguration, later_protect_context));
+    ASSERT_EQ(CheckMessage(AsReadOnlySpan(first_header), PayloadSpan(), kLenientConfiguration, check_context).sequence,
+              SequenceStatus::kOk);
+
+    // When checking the frame with counter 200
+    const auto outcome =
+        CheckMessage(AsReadOnlySpan(later_header), PayloadSpan(), kLenientConfiguration, check_context);
+
+    // Then the gap of 200 is within the configured threshold
+    EXPECT_EQ(outcome.data_integrity, DataIntegrityStatus::kOk);
+    EXPECT_EQ(outcome.sequence, SequenceStatus::kOkGapWithinThreshold);
 }
 
 TEST(E2eProfileStubTest, ProtectRejectsHeaderWithIncorrectSize)

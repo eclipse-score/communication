@@ -44,6 +44,7 @@ struct CheckContext
 };
 
 /// \brief Fixed header size used only by this POC profile stub.
+/// TODO(e2e-profile): Replace with the real Profile 4 header, which uses a 16-bit counter instead of 8 bits.
 constexpr std::size_t kProfileStubHeaderSize{4U};
 
 /// \brief Adds deterministic POC metadata to a fixed-size header.
@@ -57,7 +58,8 @@ bool ProtectMessage(score::cpp::span<std::byte> header,
 
 /// \brief Verifies one POC header and updates the receiver-local sequence state for valid headers.
 /// \details An invalid header or checksum produces kError, reports the sequence check as kSkipped and does not update
-///          check_context. The counter delta is signed, so a counter that goes backwards exceeds the threshold.
+///          check_context. The counter delta is taken modulo 256, so a counter that goes back by n appears as a
+///          gap of 256 - n.
 ///          The first valid header only seeds the sequence state and reports kOk, as there is no previous counter.
 RawCheckOutcome CheckMessage(score::cpp::span<const std::byte> header,
                              score::cpp::span<const std::byte> payload,

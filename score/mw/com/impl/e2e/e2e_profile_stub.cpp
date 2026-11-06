@@ -25,29 +25,15 @@ constexpr std::size_t kCounterOffset{1U};
 constexpr std::size_t kChecksumLowOffset{2U};
 constexpr std::size_t kChecksumHighOffset{3U};
 
-// The header counter is 8 bit wide.
-constexpr int kCounterRange{256};
-constexpr int kCounterHalfRange{kCounterRange / 2};
-
 std::uint8_t ToUint8(const std::byte value) noexcept
 {
     return std::to_integer<std::uint8_t>(value);
 }
 
-// The counter wraps from 255 to 0, so the difference is folded into [-128, 127]. A negative delta means the counter
-// went backwards.
-int CounterDelta(const std::uint8_t current, const std::uint8_t last) noexcept
+// Modulo 256, so a counter that went backwards appears as a large gap.
+std::uint8_t CounterDelta(const std::uint8_t current, const std::uint8_t last) noexcept
 {
-    int delta{static_cast<int>(current) - static_cast<int>(last)};
-    if (delta >= kCounterHalfRange)
-    {
-        delta -= kCounterRange;
-    }
-    else if (delta < -kCounterHalfRange)
-    {
-        delta += kCounterRange;
-    }
-    return delta;
+    return static_cast<std::uint8_t>(static_cast<std::uint32_t>(current) - static_cast<std::uint32_t>(last));
 }
 
 std::uint16_t CalculateChecksum(const std::uint8_t data_id,
@@ -120,19 +106,19 @@ RawCheckOutcome CheckMessage(const score::cpp::span<const std::byte> header,
         return {DataIntegrityStatus::kOk, SequenceStatus::kOk};
     }
 
-    const int delta{CounterDelta(counter, check_context.last_counter)};
+    const auto delta = CounterDelta(counter, check_context.last_counter);
     check_context.last_counter = counter;
 
     SequenceStatus sequence{SequenceStatus::kDisabled};
-    if (delta == 0)
+    if (delta == 0U)
     {
         sequence = SequenceStatus::kErrorRepeated;
     }
-    else if (delta == 1)
+    else if (delta == 1U)
     {
         sequence = SequenceStatus::kOk;
     }
-    else if ((delta > 1) && (delta <= configuration.max_delta_counter))
+    else if (delta <= configuration.max_delta_counter)
     {
         sequence = SequenceStatus::kOkGapWithinThreshold;
     }
