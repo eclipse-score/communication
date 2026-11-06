@@ -146,3 +146,36 @@ justifications:
       - file: score/mw/com/gateway/transport_layer/qemu/qemu_hypervisor_transport.cpp
         line_start: 356
         line_end: 357
+
+  - id: handle-type-hash-buffer-size-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      ToHashString() always returns a fixed-length string of constexpr size, independent of the id values.
+      So the assertion gives the same result on every call (per compilation), and any test that hashes a
+      HandleType proves it never fails.
+
+  - id: reference-to-moveable-make-unique-nonnull-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      std::make_unique never returns nullptr (it throws std::bad_alloc on allocation failure),
+      so reference_to_moveable_ is always non-null. The assert-failure path is unreachable.
+
+  - id: sample-allocatee-tracker-deallocate-underflow-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      Defensive underflow check in SampleAllocateeTracker::Deallocate(). Deallocate() is only
+      called via a SampleAllocateeGuard, which is handed out by Allocate() (which first does
+      fetch_add) and deallocates at most once. Thus the pre-decrement value 'previous' is always
+      greater than 0, making the assert-failure path unreachable without violating the guard's
+      allocate/deallocate pairing.
+
+  - id: sample-reference-tracker-available-samples-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >-
+      Available_samples_ starts at max_num_samples_ and every deallocation only gives back
+      samples that were previously taken out, so it can never grow above max_num_samples_.
+      The assert-failure path is therefore unreachable.
