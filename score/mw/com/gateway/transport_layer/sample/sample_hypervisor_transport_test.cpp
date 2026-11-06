@@ -231,7 +231,8 @@ TEST_F(SampleHyperVisorTransportTest, NotifyUpdateWithCorrectType)
                 SendNotification(::testing::Property(&TransportMessage::GetType, MessageType::kUpdateNotification)))
         .WillOnce(::testing::Return(score::Result<void>{}));
     // when calling NotifyUpdate on SampleHyperVisorTransport
-    std::ignore = transport_->NotifyUpdate(specifier, impl::ServiceElementType::EVENT, "SpeedEvent");
+    std::ignore =
+        transport_->NotifyUpdate(specifier, impl::ServiceElementType::EVENT, "SpeedEvent", std::vector<std::uint8_t>{});
 }
 
 TEST_F(SampleHyperVisorTransportTest, RegisterUpdateNotificationWithCorrectType)
@@ -551,7 +552,7 @@ TEST_F(SampleHyperVisorTransportTest,
     auto request = CreateMessageOfType(MessageType::kUpdateNotification);
 
     // Then NotifyUpdate should be called on the gateway core with the matching instance specifier
-    EXPECT_CALL(gateway_core_mock_, NotifyUpdate(::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(gateway_core_mock_, NotifyUpdate(::testing::_, ::testing::_, ::testing::_, ::testing::_))
         .WillOnce(::testing::Return(score::Result<void>{}));
 
     // Invoke the captured handler to trigger OnMessageReceived
@@ -569,7 +570,7 @@ TEST_F(SampleHyperVisorTransportTest,
     auto request = CreateMessageOfType(MessageType::kUpdateNotification, false);
 
     // Then NotifyUpdate should not be called on the gateway core
-    EXPECT_CALL(gateway_core_mock_, NotifyUpdate(::testing::_, ::testing::_, ::testing::_)).Times(0);
+    EXPECT_CALL(gateway_core_mock_, NotifyUpdate(::testing::_, ::testing::_, ::testing::_, ::testing::_)).Times(0);
 
     // Invoke the captured handler to trigger OnMessageReceived
     captured_handler_(std::move(request));

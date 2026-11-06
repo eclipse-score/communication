@@ -111,6 +111,14 @@ Key fields:
 
 See [gateway_application/configuration/](gateway_application/configuration/) for the JSON schema and examples.
 
+### Writing a Gateway Application
+
+This module provides the gateway logic as a library, not a ready-to-use application: a realistic gateway needs a
+`Transport` implementation for the concrete hypervisor/OS, which cannot be provided generically. How to write a
+gateway application around `GatewayApplication`, including a complete example application with configuration for
+both sides, is covered in
+[chapter 14 of the mw::com tutorial](../doc/tutorial/chapter_14/README.rst).
+
 ## Detailed Sequences
 
 ---
