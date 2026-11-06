@@ -50,11 +50,11 @@ int main(int argc, const char** argv)
 
         return EXIT_SUCCESS;
     }
-    else if (mode == "recv" || mode == "proxy")
+    else if (mode == "recv" || mode == "proxy" || mode == "recv-active")
     {
         const std::optional<std::chrono::milliseconds> cycle_time = {};
         return event_sender_receiver.RunAsProxy<score::mw::com::GenericProxy, score::mw::com::GenericProxyEvent>(
-            instance_specifier, cycle_time, num_cycles, std::cref(stop_token));
+            instance_specifier, cycle_time, num_cycles, std::cref(stop_token), false, mode != "recv-active");
     }
     else
     {

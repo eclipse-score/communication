@@ -494,6 +494,36 @@ TEST_F(GenericProxyFixture, MovingGenericProxyLeavesEventMapIntact)
     EXPECT_TRUE(events_from_moved_proxy.find(kEventName1) != events_from_moved_proxy.cend());
 }
 
+TEST_F(GenericProxyFixture, DestroyingGenericProxyUnsubscribesSubscribedEvents)
+{
+    // Given a handle containing a single event
+    CreateAHandle({kEventName1});
+
+    // and given a GenericProxyEvent binding which reports being subscribed after Subscribe is called
+    auto event_binding = std::make_unique<mock_binding::GenericProxyEvent>();
+    auto& event_binding_mock = *event_binding;
+    EXPECT_CALL(event_binding_mock, GetSubscriptionState())
+        .WillOnce(Return(SubscriptionState::kNotSubscribed))
+        .WillRepeatedly(Return(SubscriptionState::kSubscribed));
+    EXPECT_CALL(event_binding_mock, Subscribe(1U)).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_,
+                Create(_, _, std::string_view{kEventName1}, ServiceElementType::EVENT))
+        .WillOnce(Return(ByMove(std::move(event_binding))));
+
+    // Then the event binding is unsubscribed exactly once when the GenericProxy is destroyed
+    EXPECT_CALL(event_binding_mock, Unsubscribe()).Times(1);
+
+    {
+        // When creating a GenericProxy and subscribing to its event
+        auto generic_proxy_result = GenericProxy::Create(*handle_);
+        ASSERT_TRUE(generic_proxy_result.has_value());
+        auto events = generic_proxy_result.value().GetEvents();
+        ASSERT_TRUE(events.find(kEventName1)->second.Subscribe(1U).has_value());
+
+        // and destroying the GenericProxy without explicitly unsubscribing
+    }
+}
+
 using GenericProxyDeathTest = GenericProxyFixture;
 TEST_F(GenericProxyDeathTest, FillingEventMapWithDuplicateEventNamesWillTerminate)
 {

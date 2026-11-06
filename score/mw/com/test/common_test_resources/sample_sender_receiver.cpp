@@ -529,7 +529,8 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
                                     const std::optional<std::chrono::milliseconds> cycle_time,
                                     const std::size_t num_cycles,
                                     const score::cpp::stop_token& stop_token,
-                                    bool try_writing_to_data_segment)
+                                    bool try_writing_to_data_segment,
+                                    bool unsubscribe_before_exit)
 {
     // For a GenericProxy, the SampleType will be void. For a regular proxy, it will by MapApiLanesStamped.
     using SampleType =
@@ -545,6 +546,7 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
     }
     auto handle = handle_result.value();
 
+    concurrency::Notification event_received;
     auto proxy_result = ProxyType::Create(std::move(handle));
     if (!proxy_result.has_value())
     {
@@ -561,7 +563,6 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
     }
     auto& map_api_lanes_stamped_event = map_api_lanes_stamped_event_optional.value().get();
 
-    concurrency::Notification event_received;
     if (!cycle_time.has_value() && !SetReceiveHandler(map_api_lanes_stamped_event, event_received, instance_specifier))
     {
         return EXIT_FAILURE;
@@ -609,8 +610,16 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
         event_received.reset();
     }
 
-    std::cout << ToString(instance_specifier, ": Unsubscribing...\n");
-    map_api_lanes_stamped_event.Unsubscribe();
+    if (!unsubscribe_before_exit && stop_token.stop_requested())
+    {
+        std::cerr << "Stopped before receiving all samples, test is invalid.\n";
+        return EXIT_FAILURE;
+    }
+    if (unsubscribe_before_exit)
+    {
+        std::cout << ToString(instance_specifier, ": Unsubscribing...\n");
+        map_api_lanes_stamped_event.Unsubscribe();
+    }
     std::cout << ToString(instance_specifier, ": and terminating, bye bye\n");
     return EXIT_SUCCESS;
 }
@@ -1143,12 +1152,14 @@ template int EventSenderReceiver::RunAsProxy<BigDataProxy, impl::ProxyEvent<MapA
     const std::optional<std::chrono::milliseconds>,
     const std::size_t,
     const score::cpp::stop_token&,
-    bool try_writing_to_data_segment);
+    bool try_writing_to_data_segment,
+    bool unsubscribe_before_exit);
 template int EventSenderReceiver::RunAsProxy<GenericProxy, GenericProxyEvent>(
     const score::mw::com::InstanceSpecifier&,
     const std::optional<std::chrono::milliseconds>,
     const std::size_t,
     const score::cpp::stop_token&,
-    bool try_writing_to_data_segment);
+    bool try_writing_to_data_segment,
+    bool unsubscribe_before_exit);
 
 }  // namespace score::mw::com::test

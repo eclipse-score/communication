@@ -78,7 +78,8 @@ int main(int argc, const char** argv)
                                                   cycle_time,
                                                   num_cycles,
                                                   std::cref(stop_token),
-                                                  false);
+                                                  false,
+                                                  true);
             future_return_values.push_back(std::move(future_return_value));
         }
 
