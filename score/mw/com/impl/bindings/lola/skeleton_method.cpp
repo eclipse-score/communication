@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2025, 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -40,14 +40,18 @@ namespace score::mw::com::impl::lola
 {
 
 SkeletonMethod::SkeletonMethod(Skeleton& skeleton, UniqueMethodIdentifier unique_method_identifier)
-    : type_erased_callback_{}, registration_guards_{}, registration_guards_mutex_{}
+    : type_erased_callback_{}, type_erased_callback_mutex_{}, registration_guards_{}, registration_guards_mutex_{}
 {
     skeleton.RegisterMethod(unique_method_identifier, *this);
 }
 
 Result<void> SkeletonMethod::RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback)
 {
-    type_erased_callback_ = std::move(type_erased_callback);
+    auto callback = std::make_shared<SkeletonMethodBinding::TypeErasedHandler>(std::move(type_erased_callback));
+    {
+        const std::lock_guard lock{type_erased_callback_mutex_};
+        type_erased_callback_.swap(callback);
+    }
     return {};
 }
 
@@ -62,8 +66,7 @@ Result<void> SkeletonMethod::OnProxyMethodSubscribeFinished(
     const QualityType asil_level)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        type_erased_callback_.has_value(),
-        "Cannot register a method call handler without a registered handler from Register()!");
+        IsRegistered(), "Cannot register a method call handler without a registered handler from Register()!");
     // Note. the scope of the method call handler is owned by the parent Skeleton and will be expired during
     // StopOfferService.
     IMessagePassingService::MethodCallHandler method_call_callback{
@@ -128,19 +131,26 @@ void SkeletonMethod::UnregisterMethodCallHandlers()
 
 bool SkeletonMethod::IsRegistered() const
 {
-    return type_erased_callback_.has_value();
+    const std::lock_guard lock{type_erased_callback_mutex_};
+    return type_erased_callback_ != nullptr;
 }
 
 void SkeletonMethod::Call(const QualityType quality_type,
                           const std::optional<score::cpp::span<std::byte>> in_args,
                           const std::optional<score::cpp::span<std::byte>> return_arg)
 {
+    std::shared_ptr<SkeletonMethodBinding::TypeErasedHandler> callback;
+    {
+        const std::lock_guard lock{type_erased_callback_mutex_};
+        callback = type_erased_callback_;
+    }
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        type_erased_callback_.has_value(),
+        callback != nullptr,
         "Defensive programming: Call can only be called after OnProxyMethodSubscribeFinished has "
         "registered the callback with message passing. We check in OnProxyMethodSubscribeFinished "
-        "that type_erased_callback_ has a value.");
-    std::invoke(type_erased_callback_.value(), quality_type, in_args, return_arg);
+        "that a callback is registered.");
+    // Keep the selected handler alive across replacement, without holding the registration lock during user code.
+    std::invoke(*callback, quality_type, in_args, return_arg);
 }
 
 void SkeletonMethod::CleanUpOldHandlers(const GlobalConfiguration::ApplicationId application_id, pid_t proxy_pid)
