@@ -14,94 +14,211 @@ package MessagePassing
 
 import ScoreReq
 
-// ---------------------------------------------------------------------------
-// Channel availability (includes startup failures)
-// ---------------------------------------------------------------------------
 
-ScoreReq.FailureMode IpcChannelUnavailable {
-    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.PartialFunction, ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.UnintendedFunction, ScoreReq.Guideword.TooEarly, ScoreReq.Guideword.TooLate]
-    description = "The IPC channel between client and server cannot be established or maintained"
-    failureeffect = "Clients cannot send or receive messages."
+ScoreReq.FailureMode ServerRequestHandlingFailure {
+    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.TooLate]
+    description = "The server interface fails to register connection handlers or to process an incoming request correctly or in time."
+    failureeffect = "Requests are not handled or are handled late; the client receives no or a late response."
     version = 1
     safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IServer.StartListening", "score.message_passing.IServerConnection.GetUserData", "score.message_passing.ConnectCallback", "score.message_passing.DisconnectCallback", "score.message_passing.MessageCallback", "score.message_passing.IConnectionHandler.OnMessageSent", "score.message_passing.IConnectionHandler.OnMessageSentWithReply", "score.message_passing.IConnectionHandler.OnDisconnect"]
 }
 
-// ---------------------------------------------------------------------------
-// Message delivery failures
-// ---------------------------------------------------------------------------
-
-ScoreReq.FailureMode MessageNotDeliveredCorrectly {
-    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.PartialFunction, ScoreReq.Guideword.Corrupted]
-    description = "A message sent via the IPC channel is not, only partially with corrupted content delivered."
-    failureeffect = "The receiver processes no data, incomplete data, or incorrect data; messages may also be routed to an unintended server instance. Application behavior may be incorrect or a safety goal may be violated."
-    version = 1
-    safety = ScoreReq.Asil.B
-}
-
-// ---------------------------------------------------------------------------
-// Notification delivery failures (server -> client)
-// ---------------------------------------------------------------------------
-
-ScoreReq.FailureMode NotificationNotDelivered {
-    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.PartialFunction, ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.TooLate, ScoreReq.Guideword.UnintendedFunction]
-    description = "A server-initiated notification is not, only partially, delayed, with corrupted content or when not intended delivered."
-    failureeffect = "The client misses an asynchronous server event or acts on incomplete, corrupted, stale, or spurious notification data; application behavior may be incorrect or a safety goal may be violated."
-    version = 1
-    safety = ScoreReq.Asil.B
-}
-
-// ---------------------------------------------------------------------------
-// Server-side message handling failures
-// ---------------------------------------------------------------------------
-
-ScoreReq.FailureMode ServerMessageHandlingFailure {
-    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.UnintendedFunction, ScoreReq.Guideword.TooLate]
-    description = "Server-side message or connection handler fails to process a received message or to produce a required reply."
-    failureeffect = "Request message is silently dropped or never answered; the client's SendWaitReply call blocks or times out, stalling potential safety-relevant communication."
-    version = 1
-    safety = ScoreReq.Asil.B
-}
-
-ScoreReq.FailureMode MessageTimingViolated {
-    guidewords = [ScoreReq.Guideword.TooLate]
-    description = "A message or reply is delivered outside of the specified timing bounds required by the application."
-    failureeffect = "FTTI violations may occur on safety-relevant communication paths."
-    version = 1
-    safety = ScoreReq.Asil.B
-}
-
-// ---------------------------------------------------------------------------
-// API misuse and lifecycle violations
-// ---------------------------------------------------------------------------
-
-ScoreReq.FailureMode IpcApiMisuseOrLifecycleViolation {
-    guidewords = [ScoreReq.Guideword.TooEarly, ScoreReq.Guideword.UnintendedFunction]
-    description = "An IPC operation is invoked at the wrong lifecycle stage or outside its valid call context."
-    failureeffect = "Undefined behavior, silent message drop, or application crash; unexpected messages may corrupt application-level protocol state."
-    version = 1
-    safety = ScoreReq.Asil.B
-}
-
-// ---------------------------------------------------------------------------
-// Connection context data failures
-// ---------------------------------------------------------------------------
-
-ScoreReq.FailureMode ConnectionContextDataWrong {
-    guidewords = [ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.PartialFunction]
-    description = "Identity or cached context data associated with a server connection is absent, incomplete, or incorrect."
-    failureeffect = "The server makes access control or application logic decisions based on wrong context data; the client may be incorrectly granted or denied access, or receive incorrect responses, potentially violating safety goals."
-    version = 1
-    safety = ScoreReq.Asil.B
-}
-
-// ---------------------------------------------------------------------------
-// State machine failures
-// ---------------------------------------------------------------------------
-
-ScoreReq.FailureMode StateMachineError {
+ScoreReq.FailureMode ClientConnectionStateWrong {
     guidewords = [ScoreReq.Guideword.Wrong, ScoreReq.Guideword.LossOfFunction]
-    description = "GetState or GetStopReason returns an incorrect lifecycle state that does not match the actual connection state."
-    failureeffect = "Application logic based on connection state makes incorrect decisions; error recovery paths may be triggered incorrectly or missed entirely."
+    description = "The client interface reports a wrong connection lifecycle state or termination reason, or does not invoke the state-change callback."
+    failureeffect = "The application acts on an incorrect connection state, e.g. sends on a closed connection or does not react to a lost connection."
     version = 1
     safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IClientConnection.GetState", "score.message_passing.IClientConnection.GetStopReason", "score.message_passing.IClientConnection.StateCallback"]
+}
+
+ScoreReq.FailureMode ClientIdentityWrong {
+    guidewords = [ScoreReq.Guideword.Wrong, ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.UnintendedFunction]
+    description = "The server is provided with a wrong, missing, stale or spoofed OS-provided identity of the connecting client, or a peer without authorization is accepted as communication partner."
+    failureeffect = "The server takes wrong authentication or access-control decisions: an unauthorized process can send requests or receive data, or an authorized client is rejected."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IServerConnection.GetClientIdentity"]
+}
+
+ScoreReq.FailureMode ConnectionEndpointMisassociation {
+    guidewords = [ScoreReq.Guideword.UnintendedFunction]
+    description = "A connection is associated with more than one client or server endpoint, or message or state data of one connection is mixed with another connection."
+    failureeffect = "Messages or replies reach an unintended endpoint; application behavior is incorrect or a safety goal may be violated."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IServer.StartListening", "score.message_passing.IClientConnection.Start", "score.message_passing.ConnectCallback"]
+}
+
+ScoreReq.FailureMode SendBlocksCaller {
+    guidewords = [ScoreReq.Guideword.TooLate]
+    description = "A synchronous Send or SendWaitReply blocks the calling thread longer than expected, e.g. unbounded when the transport or receiver does not progress."
+    failureeffect = "The calling thread is stalled and its timing deadlines are violated."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWaitReply"]
+}
+
+ScoreReq.FailureMode AsyncMessageSilentlyDropped {
+    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.TooLate, ScoreReq.Guideword.UnintendedFunction]
+    description = "A message accepted locally for asynchronous delivery is dropped, delayed indefinitely or delivered more than once without notice to the sender."
+    failureeffect = "The receiver misses, receives late or receives duplicated data while the sender assumes the message was accepted."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWithCallback", "score.message_passing.IClientConnection.ReplyCallback"]
+}
+
+ScoreReq.FailureMode NotifyLocalAcceptanceFailure {
+    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.TooLate]
+    description = "A server Notify call is not accepted by the local message passing layer, or is accepted but never forwarded, or blocks."
+    failureeffect = "The client is not informed of a server event or is informed late."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IServerConnection.Notify"]
+}
+
+ScoreReq.FailureMode MessageContentCorruptedLocally {
+    guidewords = [ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.PartialFunction]
+    description = "Message content is corrupted, truncated or mixed up by buffer handling inside the sending or receiving process."
+    failureeffect = "The receiver processes incorrect or incomplete data."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IServerConnection.Reply", "score.message_passing.IServerConnection.Notify", "score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWaitReply", "score.message_passing.IClientConnection.SendWithCallback", "score.message_passing.MessageCallback", "score.message_passing.IConnectionHandler.OnMessageSent", "score.message_passing.IConnectionHandler.OnMessageSentWithReply", "score.message_passing.IClientConnection.NotifyCallback", "score.message_passing.IClientConnection.ReplyCallback"]
+}
+
+ScoreReq.FailureMode FailureNotSignalledToApplication {
+    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.UnintendedFunction]
+    description = "A failed communication attempt is reported as success, or a successful attempt is reported as failed."
+    failureeffect = "The application assumes a wrong communication outcome and may continue with stale or missing data."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWaitReply", "score.message_passing.IClientConnection.SendWithCallback", "score.message_passing.IServerConnection.Reply", "score.message_passing.IServerConnection.Notify", "score.message_passing.IClientConnection.ReplyCallback", "score.message_passing.IClientConnection.StateCallback"]
+}
+
+ScoreReq.FailureMode MemoryResourceExhaustion {
+    guidewords = [ScoreReq.Guideword.ExceedingFunction, ScoreReq.Guideword.LossOfFunction]
+    description = "The library allocates memory outside the bounded monotonic scheme, exceeds the preallocated bound, or fails when the preallocated resources are exhausted."
+    failureeffect = "Communication or other functions of the process fail; memory use is not bounded."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.Engine", "score.message_passing.IClientFactory.Create", "score.message_passing.IServerFactory.Create"]
+}
+
+ScoreReq.FailureMode SharedStateInterference {
+    guidewords = [ScoreReq.Guideword.UnintendedFunction, ScoreReq.Guideword.ArbitraryExecution]
+    description = "State shared between independent users or instances of the library causes interference between them, or the lifecycle of shared resources is unclear."
+    failureeffect = "Unintended interaction between components; resources are used after release or leaked."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.Engine", "score.message_passing.IClientFactory.GetEngine", "score.message_passing.IServerFactory.GetEngine"]
+}
+
+ScoreReq.FailureMode OsAbstractionBehaviourDeviates {
+    guidewords = [ScoreReq.Guideword.Wrong]
+    description = "At runtime, the OS-independent API returns results, errors, ordering or timing that differ from what the caller expects from the underlying OS-native IPC mechanism."
+    failureeffect = "Communication behaves differently than assumed by the caller."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IServer.StartListening", "score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWaitReply", "score.message_passing.IClientConnection.SendWithCallback"]
+}
+
+ScoreReq.FailureMode QmImplementationUsedInAsilBContext {
+    guidewords = [ScoreReq.Guideword.Wrong]
+    description = "A QM implementation on a non-QNX OS is used in an ASIL B context."
+    failureeffect = "ASIL B expectations are not fulfilled by the communication."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IServerFactory.Create", "score.message_passing.IClientFactory.Create"]
+}
+
+
+ScoreReq.FailureMode ConnectionEstablishmentFailure {
+    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.TooLate]
+    description = "A client cannot establish a connection to the named service, or establishment takes too long."
+    failureeffect = "The client cannot communicate with the server."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IClientConnection.Start", "score.message_passing.IClientConnection.Restart", "score.message_passing.IClientConnection.GetStopReason", "score.message_passing.IClientConnection.StateCallback"]
+}
+
+ScoreReq.FailureMode ConnectionLostOrPeerUnresponsive {
+    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.TooLate]
+    description = "An established connection is lost, or the peer process crashes, hangs or stops responding."
+    failureeffect = "Pending and future messages are not exchanged; the application must detect and recover."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWaitReply", "score.message_passing.IClientConnection.SendWithCallback", "score.message_passing.IServerConnection.Reply", "score.message_passing.IServerConnection.Notify", "score.message_passing.IClientConnection.Restart", "score.message_passing.IClientConnection.GetState", "score.message_passing.IClientConnection.GetStopReason", "score.message_passing.IClientConnection.StateCallback", "score.message_passing.DisconnectCallback", "score.message_passing.IConnectionHandler.OnDisconnect"]
+}
+
+ScoreReq.FailureMode MessageLost {
+    guidewords = [ScoreReq.Guideword.LossOfFunction]
+    description = "A one-way message, request or notification is lost between sender and receiver."
+    failureeffect = "The receiver does not process the message; application behavior may be incorrect."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IServerConnection.Reply", "score.message_passing.IServerConnection.Notify", "score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWaitReply", "score.message_passing.IClientConnection.SendWithCallback", "score.message_passing.MessageCallback", "score.message_passing.IConnectionHandler.OnMessageSent", "score.message_passing.IConnectionHandler.OnMessageSentWithReply", "score.message_passing.IClientConnection.NotifyCallback", "score.message_passing.IClientConnection.ReplyCallback"]
+}
+
+ScoreReq.FailureMode MessageCorruptedInTransit {
+    guidewords = [ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.PartialFunction]
+    description = "Message content is altered or truncated while transported between processes."
+    failureeffect = "The receiver processes incorrect or incomplete data."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IServerConnection.Reply", "score.message_passing.IServerConnection.Notify", "score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWaitReply", "score.message_passing.IClientConnection.SendWithCallback", "score.message_passing.MessageCallback", "score.message_passing.IConnectionHandler.OnMessageSent", "score.message_passing.IConnectionHandler.OnMessageSentWithReply", "score.message_passing.IClientConnection.NotifyCallback", "score.message_passing.IClientConnection.ReplyCallback"]
+}
+
+ScoreReq.FailureMode MessageDelayed {
+    guidewords = [ScoreReq.Guideword.TooLate, ScoreReq.Guideword.DelayedFunction]
+    description = "A message is delivered later than the receiver or sender expects."
+    failureeffect = "Time-dependent functions act on outdated information or miss deadlines."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IServerConnection.Reply", "score.message_passing.IServerConnection.Notify", "score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWaitReply", "score.message_passing.IClientConnection.SendWithCallback", "score.message_passing.MessageCallback", "score.message_passing.IConnectionHandler.OnMessageSent", "score.message_passing.IConnectionHandler.OnMessageSentWithReply", "score.message_passing.IClientConnection.NotifyCallback", "score.message_passing.IClientConnection.ReplyCallback"]
+}
+
+ScoreReq.FailureMode MessageUnintendedOrMisrouted {
+    guidewords = [ScoreReq.Guideword.UnintendedFunction]
+    description = "A message is duplicated, reordered or delivered to an unintended peer."
+    failureeffect = "The receiver acts on an unintended message; a safety goal may be violated."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IServerConnection.Reply", "score.message_passing.IServerConnection.Notify", "score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWaitReply", "score.message_passing.IClientConnection.SendWithCallback", "score.message_passing.MessageCallback", "score.message_passing.IConnectionHandler.OnMessageSent", "score.message_passing.IConnectionHandler.OnMessageSentWithReply", "score.message_passing.IClientConnection.NotifyCallback", "score.message_passing.IClientConnection.ReplyCallback"]
+}
+
+ScoreReq.FailureMode ReplyMissingOrMismatched {
+    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Wrong]
+    description = "The reply to a request is missing, or is assigned to a wrong request."
+    failureeffect = "The requester continues without a result or with a result for a different request."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IServerConnection.Reply", "score.message_passing.IConnectionHandler.OnMessageSentWithReply", "score.message_passing.IClientConnection.SendWaitReply", "score.message_passing.IClientConnection.ReplyCallback"]
+}
+
+ScoreReq.FailureMode NotificationDeliveryFailure {
+    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.TooLate, ScoreReq.Guideword.Corrupted]
+    description = "A server notification is not delivered to the client, is delivered late or with corrupted content."
+    failureeffect = "The client is not or wrongly informed about a server event."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IServerConnection.Notify", "score.message_passing.IClientConnection.NotifyCallback"]
+}
+
+ScoreReq.FailureMode IncompatibleConfigurationUndetected {
+    guidewords = [ScoreReq.Guideword.Wrong]
+    description = "Incompatible communication parameters of client and server are not detected when they first communicate."
+    failureeffect = "Communication silently misbehaves between independently built applications."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IClientFactory.Create", "score.message_passing.IServer.StartListening", "score.message_passing.IClientConnection.Start", "score.message_passing.IClientConnection.StateCallback", "score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWaitReply", "score.message_passing.IClientConnection.SendWithCallback", "score.message_passing.IServerConnection.Reply", "score.message_passing.IServerConnection.Notify"]
+}
+
+ScoreReq.FailureMode TransportServiceFaultUndetected {
+    guidewords = [ScoreReq.Guideword.Wrong, ScoreReq.Guideword.LossOfFunction]
+    description = "A fault of the underlying OS transport service is not detected or not signalled to the library."
+    failureeffect = "Communication errors remain undetected; ASIL B transport guarantees are not given."
+    version = 1
+    safety = ScoreReq.Asil.B
+    interface = ["score.message_passing.IServerConnection.Reply", "score.message_passing.IServerConnection.Notify", "score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWaitReply", "score.message_passing.IClientConnection.SendWithCallback", "score.message_passing.MessageCallback", "score.message_passing.IConnectionHandler.OnMessageSent", "score.message_passing.IConnectionHandler.OnMessageSentWithReply", "score.message_passing.IClientConnection.NotifyCallback", "score.message_passing.IClientConnection.ReplyCallback"]
 }
