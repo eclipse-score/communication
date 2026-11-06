@@ -732,6 +732,54 @@ TEST_F(ClientConnectionTest, GivenTrulyAsyncWhenSendIsCalledItIsQueued)
     StopCurrentConnection(connection);
 }
 
+TEST_F(ClientConnectionTest, GivenQueuedSends_WhenStoppedAndRestarted_ExpectSendCapacityRestored)
+{
+    client_config_.max_queued_sends = 2;
+    client_config_.max_async_replies = 1;
+    client_config_.truly_async = true;
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+
+    std::array<std::uint8_t, kMaxSendSize> send_buffer{};
+    std::uint32_t reply_callback_count{0};
+    for (std::uint32_t cycle = 0; cycle < 2; ++cycle)
+    {
+        if (cycle != 0)
+        {
+            CatchImmediateConnectCommand();
+            connection.Restart();
+            EXPECT_EQ(connection.GetState(), State::kStarting);
+
+            AtTryOpenCall_Return(kValidFd);
+            CatchPosixEndpointRegistration();
+            InvokeConnectCommand();
+            EXPECT_EQ(connection.GetState(), State::kReady);
+        }
+
+        CatchSendQueueCommand();
+        EXPECT_TRUE(connection.Send(send_buffer));
+        EXPECT_TRUE(connection.SendWithCallback(send_buffer, [&](auto message_expected) noexcept {
+            EXPECT_FALSE(message_expected);
+            if (!message_expected)
+            {
+                EXPECT_EQ(message_expected.error().GetOsDependentErrorCode(), EPIPE);
+            }
+            ++reply_callback_count;
+        }));
+        EXPECT_TRUE(connection.Send(send_buffer));
+
+        const auto send_result = connection.Send(send_buffer);
+        EXPECT_FALSE(send_result);
+        if (!send_result)
+        {
+            EXPECT_EQ(send_result.error().GetOsDependentErrorCode(), ENOBUFS);
+        }
+
+        StopCurrentConnection(connection);
+        EXPECT_EQ(reply_callback_count, cycle + 1);
+    }
+}
+
 TEST_F(ClientConnectionTest, SendIsNotQueuedIfTrulyAsyncButNoSlots)
 {
     ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.BE_SendQueueExhausted");

@@ -1,0 +1,69 @@
+@startuml client_connection_class_diagram
+hide empty members
+skinparam classAttributeIconSize 0
+left to right direction
+
+namespace score::message_passing {
+    abstract class "IClientConnection" as ClientInterface
+    abstract class "ISharedResourceEngine" as SharedEngine
+
+    namespace detail {
+        class "ClientConnection" as Connection {
+            + Start(state_callback : StateCallback, notify_callback : NotifyCallback) noexcept override : void
+            + Stop() noexcept override : void
+            + Restart() noexcept override : void
+            --
+            - engine_ : const std::shared_ptr<ISharedResourceEngine>
+            - client_fd_ : std::int32_t
+            - state_ : std::atomic<State>
+            - stop_reason_ : std::atomic<StopReason>
+            - callback_context_ : std::shared_ptr<CallbackContext>
+            - connect_retry_ms_ : std::int32_t
+            - send_mutex_ : std::mutex
+            - send_condition_ : std::condition_variable
+            - send_storage_ : score::cpp::pmr::vector<SendCommand>
+            - send_pool_ : score::containers::intrusive_list<SendCommand>
+            - send_queue_ : score::containers::intrusive_list<SendCommand>
+            - waiting_for_reply_ : std::optional<ReplyCallback>
+            --
+            - TryConnect() noexcept : void
+            - ArmSendQueueUnderLock() noexcept : void
+            - ProcessSendQueueUnderLock(lock : std::unique_lock<std::mutex>&) noexcept : void
+            - SwitchToStopState() noexcept : void
+            - ProcessStateChangeToStopped() noexcept : void
+        }
+
+        struct "ClientConnection::CallbackContext" as CallbackContext {
+            + state_callback : StateCallback
+            + finalize_mutex : std::recursive_mutex
+        }
+
+        class "ClientConnection::SendCommand" as SendCommand {
+            + message : score::cpp::pmr::vector<std::uint8_t>
+            + callback : ReplyCallback
+        }
+    }
+}
+
+ClientInterface <|-- Connection
+
+note right of SharedEngine
+    Injected client-side engine abstraction.
+    Connection retains shared engine ownership.
+end note
+
+note bottom of SendCommand
+    send_storage_ owns a fixed set of command objects.
+    send_pool_: free commands available for admission.
+    send_queue_: reserved commands awaiting transport.
+    A command being dispatched remains in use outside
+    both lists until returned after the transport call.
+end note
+
+note bottom of CallbackContext
+    The stopped-state dispatcher keeps a local shared reference.
+    If the callback destroys ClientConnection, the active callback
+    and finalize_mutex survive until invocation and unlock finish.
+end note
+
+@enduml

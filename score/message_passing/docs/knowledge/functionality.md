@@ -15,7 +15,8 @@
 
 Read when changing C++ behavior, an API contract, callbacks, or resource ownership.
 Scope: common client implementation, QNX dispatch, and Linux Unix Domain IPC.
-Evidence: source inspection on 2026-11-04; not a new runtime test result.
+Evidence: source inspection on 2026-11-04; queue-cleanup contract updated and
+tested on 2026-11-06.
 
 ## Start at the Owning Abstraction
 
@@ -77,6 +78,14 @@ Check its review status before treating recovered intent as an agreed contract.
 server implementation interface. Each backend's server uses its concrete
 engine: [QnxDispatchServer](../../qnx_dispatch/qnx_dispatch_server.h) or
 [UnixDomainServer](../../unix_domain/unix_domain_server.h).
+
+[TimedCommandQueue](../../timed_command_queue.h) cleans entries by owner-key
+equality. Its `CleanUpOwner(nullptr)` intentionally selects all null-owner
+entries, including default-owner registrations, and destroys their callback
+captures without invoking them. That group can span multiple users of a shared
+queue. This queue utility operation is distinct from `CleanUpOwner` on
+`QnxDispatchEngine` and `UnixDomainEngine`, which still return immediately for
+a null owner; their cleanup contracts are unchanged.
 
 Factories expose engine sharing through their constructor and `GetEngine()`;
 see the [QNX client factory](../../qnx_dispatch/qnx_dispatch_client_factory.h)
