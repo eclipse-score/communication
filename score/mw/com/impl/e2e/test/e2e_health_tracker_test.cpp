@@ -116,6 +116,23 @@ TEST(E2eHealthTrackerTest, SingleDataIntegrityErrorStaysOkBelowErrorThreshold)
     EXPECT_EQ(status, HistoricalHealthStatus::kOk);
 }
 
+TEST(E2eHealthTrackerTest, DataIntegrityErrorsWithSkippedSequenceReachErrorThreshold)
+{
+    // Given a health tracker which has seen one failed sample less than the error threshold, each with a skipped
+    // sequence check
+    HealthTracker tracker{kEnabledConfiguration};
+    for (std::uint8_t i = 0U; i < (kEnabledConfiguration.error_threshold - 1U); ++i)
+    {
+        ASSERT_EQ(tracker.Update(DataIntegrityStatus::kError, SequenceStatus::kSkipped), HistoricalHealthStatus::kOk);
+    }
+
+    // When updating with one more such sample
+    const auto status = tracker.Update(DataIntegrityStatus::kError, SequenceStatus::kSkipped);
+
+    // Then the status switches to kError, as the data integrity error counts as the failure
+    EXPECT_EQ(status, HistoricalHealthStatus::kError);
+}
+
 TEST(E2eHealthTrackerTest, SingleSequenceGapExceedsThresholdStaysOkBelowErrorThreshold)
 {
     // Given a fresh health tracker with an enabled configuration
