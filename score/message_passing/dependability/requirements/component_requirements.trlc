@@ -14,6 +14,33 @@ package MessagePassing
 
 import ScoreReq
 
+section "Platform Requirements" {
+
+ScoreReq.CompReq SafetyCertifiedTransportMechanismUnderQNX {
+    description = "On the QNX operating system, the message passing component shall use the QNX-message-passing as the underlying IPC mechanism."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.SafetyCertifiedTransportMechanism@2, MessagePassing.OSIndependentAPI@2]
+    version = 1
+}
+
+ScoreReq.CompReq TransportMechanismOnLinux {
+    description = "On the Linux operating system, the message passing component shall use unix domain-sockets as the underlying IPC mechanism."
+    note = "Lowered from ASIL B to QM: ASIL compliance is not currently pursued on Linux, which is used for host development and testing. The safety-certified transport for ASIL B is QNX-native messaging on QNX (see SafetyCertifiedTransportMechanismUnderQNX). A derived requirement must not have a lower ASIL than its parents, so this record derives neither from SafetyCertifiedTransportMechanism nor from OSIndependentAPI, but only from QMImplementationOnNonQnxOS, the feature-level capability this record's QM Linux implementation fulfills. That the Linux implementation provides the same OS-independent API is expressed by the architecture, not by derivation."
+    safety = ScoreReq.Asil.QM
+    derived_from = [MessagePassing.QMImplementationOnNonQnxOS@1]
+    version = 4
+}
+
+ScoreReq.CompReq OSProvidedClientIdentityPerConnection {
+    description = "The message passing server shall identify the client of a Server Connection once, when the connection is accepted, by the client's OS-provided process ID (PID), user ID (UID), and primary group ID (GID)."
+    note = "Replaces the retired OSProvidedSenderIdentity record: identification is established once per Server Connection, not re-derived per message, and now names all three OS-provided identifiers instead of only the UID."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.ServerInterface@2]
+    version = 1
+}
+
+}
+
 section "Behaviour Requirements" {
 
 ScoreReq.CompReq ServerCallbacksAreSequential {
