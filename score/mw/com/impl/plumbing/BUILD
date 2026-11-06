@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
@@ -155,6 +155,52 @@ cc_library(
 )
 
 cc_library(
+    name = "generic_proxy_event_binding_factory_mock",
+    testonly = True,
+    srcs = ["generic_proxy_event_binding_factory_mock.cpp"],
+    hdrs = ["generic_proxy_event_binding_factory_mock.h"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":i_generic_proxy_event_binding_factory",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "generic_proxy_event_binding_factory",
+    srcs = ["generic_proxy_event_binding_factory.cpp"],
+    hdrs = ["generic_proxy_event_binding_factory.h"],
+    implementation_deps = [":proxy_event_binding_factory_impl"],
+    tags = ["FFI"],
+    deps = [
+        ":i_generic_proxy_event_binding_factory",
+        "//score/mw/com/impl:generic_proxy_event_binding",
+        "//score/mw/com/impl:handle_type",
+        "//score/mw/com/impl:proxy_binding",
+        "//score/mw/com/impl:service_element_type",
+    ],
+)
+
+cc_library(
+    name = "i_generic_proxy_event_binding_factory",
+    srcs = ["i_generic_proxy_event_binding_factory.cpp"],
+    hdrs = ["i_generic_proxy_event_binding_factory.h"],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/plumbing:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:generic_proxy_event_binding",
+        "//score/mw/com/impl:handle_type",
+        "//score/mw/com/impl:proxy_binding",
+        "//score/mw/com/impl:service_element_type",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
     name = "i_proxy_binding_factory",
     srcs = ["i_proxy_binding_factory.cpp"],
     hdrs = ["i_proxy_binding_factory.h"],
@@ -179,9 +225,11 @@ cc_library(
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
-        "//score/mw/com/impl:instance_identifier",
-        "//score/mw/com/impl:proxy_base",
-        "@score_baselibs//score/language/futurecpp",
+        "//score/mw/com/impl:handle_type",
+        "//score/mw/com/impl:proxy_binding",
+        "//score/mw/com/impl:proxy_event_binding",
+        "@score_baselibs//score/memory:data_type_size_info",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -339,6 +387,7 @@ cc_library(
     ],
     deps = [
         ":binding_factory_error",
+        ":i_generic_proxy_event_binding_factory",
         ":i_proxy_event_binding_factory",
         ":lola_proxy_element_building_blocks",
         ":someip_proxy_element_building_blocks",
@@ -470,11 +519,15 @@ cc_library(
     name = "proxy_event_binding_factory",
     srcs = ["proxy_event_binding_factory.cpp"],
     hdrs = ["proxy_event_binding_factory.h"],
+    implementation_deps = [":proxy_event_binding_factory_impl"],
     tags = ["FFI"],
     deps = [
-        "proxy_event_binding_factory_impl",
         ":i_proxy_event_binding_factory",
-        "@score_baselibs//score/language/futurecpp",
+        "//score/mw/com/impl:handle_type",
+        "//score/mw/com/impl:proxy_binding",
+        "//score/mw/com/impl:service_element_type",
+        "@score_baselibs//score/memory:data_type_size_info",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -686,6 +739,7 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":generic_proxy_event_binding_factory",
         ":proxy_event_binding_factory",
         ":sample_allocatee_ptr",
         ":skeleton_event_binding_factory",
@@ -799,6 +853,7 @@ cc_unit_test(
         "proxy_event_binding_factory_test.cpp",
     ],
     deps = [
+        ":generic_proxy_event_binding_factory",
         ":proxy_event_binding_factory",
     ],
 )

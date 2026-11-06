@@ -25,6 +25,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/plumbing:generic_proxy_event_binding_factory_mock",
         "//score/mw/com/impl/plumbing:proxy_binding_factory_mock",
         "//score/mw/com/impl/plumbing:proxy_event_binding_factory_mock",
         "//score/mw/com/impl/plumbing:proxy_field_binding_factory_mock",
