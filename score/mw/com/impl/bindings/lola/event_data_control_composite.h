@@ -129,10 +129,7 @@ class EventDataControlComposite
     mutable ProviderEventDataControlLocalView<AtomicIndirectorType> asil_qm_control_local_;
 
     /// \brief Owns the ASIL-B ProviderEventDataControlLocalView, if any (empty for a QM-only composite).
-    /// \p asil_b_control_local_ below points into this storage, so that the rest of the implementation can keep
-    /// treating "no ASIL-B" as a nullptr, as before.
-    std::optional<ProviderEventDataControlLocalView<AtomicIndirectorType>> asil_b_control_local_storage_;
-    ProviderEventDataControlLocalView<AtomicIndirectorType>* asil_b_control_local_;
+    std::optional<ProviderEventDataControlLocalView<AtomicIndirectorType>> asil_b_control_local_;
 
     /// \brief flag indicating, whether qm_control part shall be ignored in any public API (AllocateNextSlot(),
     /// EventReady(), Discard()()

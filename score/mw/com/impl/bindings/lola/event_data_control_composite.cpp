@@ -37,14 +37,11 @@ EventDataControlComposite<AtomicIndirectorType>::EventDataControlComposite(Event
 template <template <class> class AtomicIndirectorType>
 EventDataControlComposite<AtomicIndirectorType>::EventDataControlComposite(EventDataControl& asil_qm_control,
                                                                            EventDataControl* const asil_b_control)
-    : asil_qm_control_local_{asil_qm_control},
-      asil_b_control_local_storage_{},
-      asil_b_control_local_{nullptr},
-      ignore_qm_control_{false}
+    : asil_qm_control_local_{asil_qm_control}, asil_b_control_local_{}, ignore_qm_control_{false}
 {
     if (asil_b_control != nullptr)
     {
-        asil_b_control_local_ = &asil_b_control_local_storage_.emplace(*asil_b_control);
+        asil_b_control_local_.emplace(*asil_b_control);
     }
 }
 
@@ -139,7 +136,7 @@ auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextMultiSlot() no
 template <template <class> class AtomicIndirectorType>
 auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextSlot() noexcept -> AllocationResult
 {
-    if (asil_b_control_local_ == nullptr)
+    if (!asil_b_control_local_.has_value())
     {
         return {asil_qm_control_local_.AllocateNextSlot(), false};
     }
@@ -168,7 +165,7 @@ auto EventDataControlComposite<AtomicIndirectorType>::EventReady(const SlotIndex
                                                                  EventSlotStatus::EventTimeStamp time_stamp) noexcept
     -> void
 {
-    if (asil_b_control_local_ != nullptr)
+    if (asil_b_control_local_.has_value())
     {
         asil_b_control_local_->EventReady(slot_index, time_stamp);
     }
@@ -182,7 +179,7 @@ auto EventDataControlComposite<AtomicIndirectorType>::EventReady(const SlotIndex
 template <template <class> class AtomicIndirectorType>
 auto EventDataControlComposite<AtomicIndirectorType>::Discard(const SlotIndexType slot_index) -> void
 {
-    if (asil_b_control_local_ != nullptr)
+    if (asil_b_control_local_.has_value())
     {
         asil_b_control_local_->Discard(slot_index);
     }
@@ -210,14 +207,14 @@ template <template <class> class AtomicIndirectorType>
 ProviderEventDataControlLocalView<AtomicIndirectorType>*
 EventDataControlComposite<AtomicIndirectorType>::GetAsilBEventDataControlLocal() noexcept
 {
-    return asil_b_control_local_;
+    return asil_b_control_local_.has_value() ? &(asil_b_control_local_.value()) : nullptr;
 }
 
 template <template <class> class AtomicIndirectorType>
 EventSlotStatus::EventTimeStamp EventDataControlComposite<AtomicIndirectorType>::GetEventSlotTimestamp(
     const SlotIndexType slot_index) const noexcept
 {
-    if (asil_b_control_local_ != nullptr)
+    if (asil_b_control_local_.has_value())
     {
         const EventSlotStatus event_slot_status{(*asil_b_control_local_)[slot_index]};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
@@ -240,7 +237,7 @@ template <template <class> class AtomicIndirectorType>
 EventSlotStatus::EventTimeStamp EventDataControlComposite<AtomicIndirectorType>::GetLatestTimestamp() const noexcept
 {
     EventSlotStatus::EventTimeStamp latest_time_stamp{EventSlotStatus::INVALID_TIMESTAMP};
-    auto& control = (asil_b_control_local_ != nullptr) ? *asil_b_control_local_ : asil_qm_control_local_;
+    auto& control = (asil_b_control_local_.has_value()) ? *asil_b_control_local_ : asil_qm_control_local_;
     for (SlotIndexType slot_index = 0U;
          // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
          // loss.". As the maximum number of slots is std::uint16_t, so there is no case for a data loss here.
