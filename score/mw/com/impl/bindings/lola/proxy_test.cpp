@@ -356,6 +356,25 @@ TEST_F(ProxyCreationFixture, GetEventDataControlCoherentReturnsControlForRegiste
     EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventSubscriptionControlCoherent(kDummyElementFqId));
 }
 
+TEST_F(ProxyCreationFixture, GetEventDataControlFallsBackToMixedEventControlsForRegisteredMixedEvent)
+{
+    // Given a fake Skeleton which registers a CoherencyType::kMixed event (i.e. only in event_controls_mixed_, not
+    // in event_controls_)
+    InitialiseDummySkeletonEventMixed(kDummyElementFqId,
+                                      SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
+
+    // When creating a proxy
+    InitialiseProxyWithConstructor(identifier_);
+    EXPECT_NE(proxy_, nullptr);
+
+    // Then a CoherencyType::kNonCoherent proxy-side lookup for that event (GetEventDataControl(),
+    // GetEventSubscriptionControl(), GetTransactionLogSet()) succeeds by falling back to event_controls_mixed_,
+    // without terminating
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventDataControl(kDummyElementFqId));
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventSubscriptionControl(kDummyElementFqId));
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetTransactionLogSet(kDummyElementFqId));
+}
+
 TEST_F(ProxyCreationFixture, ProxyCreationFailsWhenEventIsConfiguredWithMixedCoherencyOnProxySide)
 {
     // Given a deployment which contains an event configured with CoherencyType::kMixed

@@ -576,8 +576,8 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
-// value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
-// exception.
+// value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' /
+// 'event_controls_mixed_.find()' to throw an exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 EventDataControl& Proxy::GetEventDataControl(const ElementFqId element_fq_id)
 {
@@ -585,23 +585,33 @@ EventDataControl& Proxy::GetEventDataControl(const ElementFqId element_fq_id)
                                                       "Proxy::GetEventControl: Managed memory control pointer is Null");
     auto& service_data_control = GetServiceDataControl(*control_);
     auto* const event_entry = service_data_control.event_controls_.find(element_fq_id);
-    if (event_entry == service_data_control.event_controls_.end())
+    if (event_entry != service_data_control.event_controls_.end())
+    {
+        // Suppress "AUTOSAR C++14 M7-5-1" rule: "A function shall not return a reference or a pointer to an
+        // automatic variable (including parameters), defined within the function".
+        // Suppress "AUTOSAR C++14 M7-5-2" rule: "The address of an object with automatic storage shall not be
+        // assigned to another object that may persist after the first object has ceased to exist.".
+        // The result pointer is still valid outside this method until "control" parameter is alive.
+        // Suppress AUTOSAR C++14 A3-8-1 rule: "An object shall not be accessed outside of its lifetime.".
+        // Despite the returned object reference, the object's lifetime is still handled externally by the caller.
+        // coverity[autosar_cpp14_m7_5_1_violation]
+        // coverity[autosar_cpp14_m7_5_2_violation]
+        // coverity[autosar_cpp14_a3_8_1_violation]
+        return event_entry->second.data_control;
+    }
+    // Fall back to event_controls_mixed_: a CoherencyType::kNonCoherent proxy-side event is also compatible with a
+    // CoherencyType::kMixed skeleton-side event (see EventDataControlMixed for the rationale).
+    auto* const mixed_event_entry = service_data_control.event_controls_mixed_.find(element_fq_id);
+    if (mixed_event_entry == service_data_control.event_controls_mixed_.end())
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__
                                          << "Unable to find control channel for given event instance. Terminating.";
         std::terminate();
     }
-    // Suppress "AUTOSAR C++14 M7-5-1" rule: "A function shall not return a reference or a pointer to an automatic
-    // variable (including parameters), defined within the function".
-    // Suppress "AUTOSAR C++14 M7-5-2" rule: "The address of an object with automatic storage shall not be assigned
-    // to another object that may persist after the first object has ceased to exist.".
-    // The result pointer is still valid outside this method until "control" parameter is alive.
-    // Suppress AUTOSAR C++14 A3-8-1 rule: "An object shall not be accessed outside of its lifetime.".
-    // Despite the returned object reference, the object's lifetime is still handled externally by the caller.
     // coverity[autosar_cpp14_m7_5_1_violation]
     // coverity[autosar_cpp14_m7_5_2_violation]
     // coverity[autosar_cpp14_a3_8_1_violation]
-    return event_entry->second.data_control;
+    return mixed_event_entry->second.data_control.data_control_;
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -636,8 +646,8 @@ EventDataControlCoherent& Proxy::GetEventDataControlCoherent(const ElementFqId e
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
-// value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
-// exception.
+// value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' /
+// 'event_controls_mixed_.find()' to throw an exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 EventSubscriptionControl<>& Proxy::GetEventSubscriptionControl(const ElementFqId element_fq_id)
 {
@@ -645,13 +655,20 @@ EventSubscriptionControl<>& Proxy::GetEventSubscriptionControl(const ElementFqId
                                                       "Proxy::GetEventControl: Managed memory control pointer is Null");
     auto& service_data_control = GetServiceDataControl(*control_);
     auto* const event_entry = service_data_control.event_controls_.find(element_fq_id);
-    if (event_entry == service_data_control.event_controls_.end())
+    if (event_entry != service_data_control.event_controls_.end())
+    {
+        return event_entry->second.subscription_control;
+    }
+    // Fall back to event_controls_mixed_: a CoherencyType::kNonCoherent proxy-side event is also compatible with a
+    // CoherencyType::kMixed skeleton-side event (see EventDataControlMixed for the rationale).
+    auto* const mixed_event_entry = service_data_control.event_controls_mixed_.find(element_fq_id);
+    if (mixed_event_entry == service_data_control.event_controls_mixed_.end())
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__
                                          << "Unable to find control channel for given event instance. Terminating.";
         std::terminate();
     }
-    return event_entry->second.subscription_control;
+    return mixed_event_entry->second.subscription_control;
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -676,8 +693,8 @@ EventSubscriptionControl<>& Proxy::GetEventSubscriptionControlCoherent(const Ele
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
-// value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
-// exception.
+// value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' /
+// 'event_controls_mixed_.find()' to throw an exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 TransactionLogSet& Proxy::GetTransactionLogSet(const ElementFqId element_fq_id)
 {
@@ -685,13 +702,20 @@ TransactionLogSet& Proxy::GetTransactionLogSet(const ElementFqId element_fq_id)
                                                       "Proxy::GetEventControl: Managed memory control pointer is Null");
     auto& service_data_control = GetServiceDataControl(*control_);
     auto* const event_entry = service_data_control.event_controls_.find(element_fq_id);
-    if (event_entry == service_data_control.event_controls_.end())
+    if (event_entry != service_data_control.event_controls_.end())
+    {
+        return event_entry->second.transaction_log_set_;
+    }
+    // Fall back to event_controls_mixed_: a CoherencyType::kNonCoherent proxy-side event is also compatible with a
+    // CoherencyType::kMixed skeleton-side event (see EventDataControlMixed for the rationale).
+    auto* const mixed_event_entry = service_data_control.event_controls_mixed_.find(element_fq_id);
+    if (mixed_event_entry == service_data_control.event_controls_mixed_.end())
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__
                                          << "Unable to find control channel for given event instance. Terminating.";
         std::terminate();
     }
-    return event_entry->second.transaction_log_set_;
+    return mixed_event_entry->second.transaction_log_set_;
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called

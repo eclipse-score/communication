@@ -129,7 +129,10 @@ class Proxy : public ProxyBinding
           score::filesystem::Filesystem filesystem,
           ProxyInstanceIdentifier::ProxyInstanceCounter proxy_instance_counter);
 
-    /// Returns the EventDataControl for the given CoherencyType::kNonCoherent event ID.
+    /// Returns the EventDataControl for the given event ID, which must be configured with either
+    /// CoherencyType::kNonCoherent or CoherencyType::kMixed (the embedded EventDataControl of the latter's
+    /// EventDataControlMixed is returned, as a CoherencyType::kNonCoherent consumer accesses a CoherencyType::kMixed
+    /// event's CONTROL segment exactly as for CoherencyType::kNonCoherent, see EventDataControlMixed).
     ///
     /// Terminates if the event control structure cannot be found.
     ///
@@ -146,7 +149,9 @@ class Proxy : public ProxyBinding
     /// of a view wrapping it.
     EventDataControlCoherent& GetEventDataControlCoherent(const ElementFqId element_fq_id);
 
-    /// Returns the EventSubscriptionControl for the given CoherencyType::kNonCoherent event ID.
+    /// Returns the EventSubscriptionControl for the given event ID, which must be configured with either
+    /// CoherencyType::kNonCoherent or CoherencyType::kMixed (see GetEventDataControl() for the rationale of also
+    /// covering CoherencyType::kMixed events).
     ///
     /// Terminates if the event control structure cannot be found.
     EventSubscriptionControl<>& GetEventSubscriptionControl(const ElementFqId element_fq_id);
@@ -156,7 +161,9 @@ class Proxy : public ProxyBinding
     /// Terminates if the event control structure cannot be found.
     EventSubscriptionControl<>& GetEventSubscriptionControlCoherent(const ElementFqId element_fq_id);
 
-    /// Returns the TransactionLogSet for the given CoherencyType::kNonCoherent event ID.
+    /// Returns the TransactionLogSet for the given event ID, which must be configured with either
+    /// CoherencyType::kNonCoherent or CoherencyType::kMixed (see GetEventDataControl() for the rationale of also
+    /// covering CoherencyType::kMixed events).
     ///
     /// Terminates if the event control structure cannot be found.
     TransactionLogSet& GetTransactionLogSet(const ElementFqId element_fq_id);

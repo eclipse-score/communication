@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/consumer_event_data_control_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_control_coherent.h"
+#include "score/mw/com/impl/bindings/lola/event_control_mixed.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
@@ -170,6 +171,11 @@ class ProxyMockedMemoryFixture : public ::testing::Test
     void InitialiseDummySkeletonEventCoherent(const ElementFqId element_fq_id,
                                               const SkeletonEventProperties& skeleton_event_properties);
 
+    /// \brief Analogous to InitialiseDummySkeletonEvent, but adds a CoherencyType::kMixed event (i.e. to
+    /// event_controls_mixed_ instead of event_controls_).
+    void InitialiseDummySkeletonEventMixed(const ElementFqId element_fq_id,
+                                           const SkeletonEventProperties& skeleton_event_properties);
+
     LolaServiceInstanceId lola_service_instance_id_{0x10};
     LolaServiceId lola_service_id_{0xcdef};
     LolaServiceInstanceDeployment lola_service_instance_deployment_{lola_service_instance_id_};
@@ -198,6 +204,7 @@ class ProxyMockedMemoryFixture : public ::testing::Test
     std::unique_ptr<FakeMockedServiceData> fake_data_{nullptr};
     EventControl* event_control_{nullptr};
     EventControlCoherent* event_control_coherent_{nullptr};
+    EventControlMixed* event_control_mixed_{nullptr};
     std::optional<ProviderEventDataControlLocalView<>> provider_event_data_control_local_{};
     std::optional<ConsumerEventDataControlLocalView<>> consumer_event_data_control_local_{};
     std::optional<ConsumerEventDataControlCoherentLocalView> consumer_event_data_control_coherent_local_{};
