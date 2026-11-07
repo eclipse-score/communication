@@ -23,20 +23,17 @@ EventDataControlCoherentComposite::EventDataControlCoherentComposite(EventDataCo
 EventDataControlCoherentComposite::EventDataControlCoherentComposite(
     EventDataControlCoherent& qm_control,
     EventDataControlCoherent* const asil_b_control) noexcept
-    : qm_control_local_{qm_control},
-      asil_b_control_local_storage_{},
-      asil_b_control_local_{nullptr},
-      ignore_qm_control_{false}
+    : qm_control_local_{qm_control}, asil_b_control_local_{}, ignore_qm_control_{false}
 {
     if (asil_b_control != nullptr)
     {
-        asil_b_control_local_ = &asil_b_control_local_storage_.emplace(*asil_b_control);
+        asil_b_control_local_.emplace(*asil_b_control);
     }
 }
 
 SlotIndexType EventDataControlCoherentComposite::AllocateNextSlot() noexcept
 {
-    if (asil_b_control_local_ == nullptr)
+    if (!asil_b_control_local_.has_value())
     {
         return qm_control_local_.AllocateNextSlot();
     }
@@ -65,7 +62,7 @@ SlotIndexType EventDataControlCoherentComposite::AllocateNextSlot() noexcept
 void EventDataControlCoherentComposite::EventReady(const SlotIndexType slot_index,
                                                    const CoherentEventSlotStatus::EventTimeStamp time_stamp) noexcept
 {
-    if (asil_b_control_local_ != nullptr)
+    if (asil_b_control_local_.has_value())
     {
         asil_b_control_local_->EventReady(slot_index, time_stamp);
     }
@@ -77,7 +74,7 @@ void EventDataControlCoherentComposite::EventReady(const SlotIndexType slot_inde
 
 void EventDataControlCoherentComposite::Discard(const SlotIndexType slot_index) const noexcept
 {
-    if (asil_b_control_local_ != nullptr)
+    if (asil_b_control_local_.has_value())
     {
         asil_b_control_local_->Discard(slot_index);
     }
@@ -89,7 +86,7 @@ void EventDataControlCoherentComposite::Discard(const SlotIndexType slot_index) 
 
 CoherentEventSlotStatus::EventTimeStamp EventDataControlCoherentComposite::GetLatestTimestamp() const noexcept
 {
-    if (asil_b_control_local_ != nullptr)
+    if (asil_b_control_local_.has_value())
     {
         const auto newest_index = asil_b_control_local_->GetNewestIndex();
         return newest_index.has_value() ? (*asil_b_control_local_)[newest_index.value()].GetTimeStamp()

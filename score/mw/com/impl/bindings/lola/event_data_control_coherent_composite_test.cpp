@@ -105,7 +105,7 @@ TEST_F(EventDataControlCoherentCompositeFixture, GetLatestTimestampReturnsTimest
 
 TEST_F(EventDataControlCoherentCompositeFixture, IsQmControlDisconnectedIsFalseWhenNoAsilBPresent)
 {
-    EventDataControlCoherentComposite unit{provider_view_qm_};
+    EventDataControlCoherentComposite unit{event_data_control_qm_};
 
     static_cast<void>(unit.AllocateNextSlot());
 
@@ -114,7 +114,7 @@ TEST_F(EventDataControlCoherentCompositeFixture, IsQmControlDisconnectedIsFalseW
 
 TEST_F(EventDataControlCoherentCompositeFixture, IsQmControlDisconnectedIsFalseWhenQmAndAsilBAgree)
 {
-    EventDataControlCoherentComposite unit{provider_view_qm_, &provider_view_asil_b_};
+    EventDataControlCoherentComposite unit{event_data_control_qm_, &event_data_control_asil_b_};
 
     const auto slot_index = unit.AllocateNextSlot();
     unit.EventReady(slot_index, 1U);
@@ -125,7 +125,7 @@ TEST_F(EventDataControlCoherentCompositeFixture, IsQmControlDisconnectedIsFalseW
 
 TEST_F(EventDataControlCoherentCompositeFixture, DivergingQmAndAsilBResultsDisconnectsQmControlAndPrefersAsilB)
 {
-    EventDataControlCoherentComposite unit{provider_view_qm_, &provider_view_asil_b_};
+    EventDataControlCoherentComposite unit{event_data_control_qm_, &event_data_control_asil_b_};
 
     // Simulate a corrupted/misbehaving QM control section by only advancing the ASIL-B control's newest_index_
     // (bypassing the composite, i.e. not going through unit.AllocateNextSlot()/EventReady()).
@@ -141,7 +141,7 @@ TEST_F(EventDataControlCoherentCompositeFixture, DivergingQmAndAsilBResultsDisco
 
 TEST_F(EventDataControlCoherentCompositeFixture, EventReadyDoesNotWriteToQmControlOnceDisconnected)
 {
-    EventDataControlCoherentComposite unit{provider_view_qm_, &provider_view_asil_b_};
+    EventDataControlCoherentComposite unit{event_data_control_qm_, &event_data_control_asil_b_};
     provider_view_asil_b_.EventReady(0U, 5U);
     const auto slot_index = unit.AllocateNextSlot();
     ASSERT_TRUE(unit.IsQmControlDisconnected());
@@ -154,7 +154,7 @@ TEST_F(EventDataControlCoherentCompositeFixture, EventReadyDoesNotWriteToQmContr
 
 TEST_F(EventDataControlCoherentCompositeFixture, DiscardDoesNotTouchQmControlOnceDisconnected)
 {
-    EventDataControlCoherentComposite unit{provider_view_qm_, &provider_view_asil_b_};
+    EventDataControlCoherentComposite unit{event_data_control_qm_, &event_data_control_asil_b_};
     provider_view_asil_b_.EventReady(0U, 5U);
     const auto slot_index = unit.AllocateNextSlot();
     ASSERT_TRUE(unit.IsQmControlDisconnected());
@@ -167,7 +167,7 @@ TEST_F(EventDataControlCoherentCompositeFixture, DiscardDoesNotTouchQmControlOnc
 
 TEST_F(EventDataControlCoherentCompositeFixture, GetLatestTimestampPrefersAsilBOverQm)
 {
-    EventDataControlCoherentComposite unit{provider_view_qm_, &provider_view_asil_b_};
+    EventDataControlCoherentComposite unit{event_data_control_qm_, &event_data_control_asil_b_};
 
     // Directly diverge QM and ASIL-B (bypassing the composite) to verify GetLatestTimestamp() prefers ASIL-B.
     provider_view_qm_.EventReady(0U, 1U);

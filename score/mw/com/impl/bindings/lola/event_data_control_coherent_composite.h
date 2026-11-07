@@ -92,11 +92,8 @@ class EventDataControlCoherentComposite final
   private:
     ProviderEventDataControlCoherentLocalView qm_control_local_;
 
-    /// \brief Owns the ASIL-B ProviderEventDataControlCoherentLocalView, if any (empty for a QM-only composite).
-    /// \p asil_b_control_local_ below points into this storage, so that the rest of the implementation can keep
-    /// treating "no ASIL-B" as a nullptr, as before.
-    std::optional<ProviderEventDataControlCoherentLocalView> asil_b_control_local_storage_;
-    ProviderEventDataControlCoherentLocalView* asil_b_control_local_;
+    /// \brief The ASIL-B ProviderEventDataControlCoherentLocalView, if any (empty for a QM-only composite).
+    std::optional<ProviderEventDataControlCoherentLocalView> asil_b_control_local_;
     bool ignore_qm_control_;
 };
 
