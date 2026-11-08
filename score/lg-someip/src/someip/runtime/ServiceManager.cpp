@@ -2553,7 +2553,7 @@ void ServiceManager::send_internal_offer_service(std::uint16_t service_id, std::
     }
 
     std::uint16_t source_appid = service_info->app_id;
-    std::uint32_t req_id = (source_appid & 0xffff) << 16;
+    std::uint32_t req_id = (static_cast<std::uint32_t>(source_appid) & 0xffffU) << 16;
     message->set_request_id(req_id);
 
     LGSOMEIP_LOG_DEBUG << "ServiceManager::send_internal_offer_service "
@@ -2614,7 +2614,7 @@ void ServiceManager::send_subscribe_eventgroup(std::uint16_t service_id, std::ui
         LGSOMEIP_LOG_DEBUG << "ServiceManager::send_subscribe_eventgroup / Send Internal Service";
 
         // Send Internal Service!
-        message->set_request_id(app_id << 16);
+        message->set_request_id(static_cast<std::uint32_t>(app_id) << 16);
         message->set_flag(0xc0);
         message->entries().push_back(entry);
         auto send_buffer = serialize_sd(*message);
@@ -2739,7 +2739,7 @@ void ServiceManager::send_subscribe_eventgroup_ack(std::uint16_t service_id, std
     }
 
     if (target_appid > 0 && target_ip == "") {
-        message->set_request_id(source_appid << 16);
+        message->set_request_id(static_cast<std::uint32_t>(source_appid) << 16);
         message->set_flag(0xc0);
         auto send_buffer = serialize_sd(*message);
         packet_router_->send_internal_message(send_buffer.data(), send_buffer.size(), target_appid);

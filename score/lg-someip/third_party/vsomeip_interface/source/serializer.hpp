@@ -40,8 +40,8 @@ public:
 
 private:
     std::vector<byte_t> data_;
-    std::uint32_t shrink_count_;
-    std::uint32_t buffer_shrink_threshold_;
+    [[maybe_unused]] std::uint32_t shrink_count_;
+    [[maybe_unused]] std::uint32_t buffer_shrink_threshold_;
 };
 
 } // namespace vsomeip

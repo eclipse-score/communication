@@ -29,7 +29,9 @@ namespace lgsomeip {
 namespace osabstraction {
 
 class UDPSocket : public Socket {
+#if defined(ENABLE_TLS)
     const std::uint16_t dtls_handshake_wait_ms_ = 10;
+#endif // ENABLE_TLS
 
 public:
     UDPSocket(std::shared_ptr<Address> address, const SecureConfig& secure_config = SecureConfig());

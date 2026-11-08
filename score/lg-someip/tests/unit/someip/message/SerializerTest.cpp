@@ -25,7 +25,7 @@
 using namespace lgsomeip;
 using namespace lgsomeip::osabstraction;
 
-struct ComplexData : public Enumerable {
+struct ComplexData final : public Enumerable {
     ComplexData() {}
     ComplexData(int first_value, int second_value) : a(first_value), b(second_value) {}
     int a;

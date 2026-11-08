@@ -35,7 +35,7 @@ TEST(TimerMux, OneShotTest) {
     mux->start();
 
     TimerMux timer("Test");
-    timer.register_handler(std::bind(on_timer));
+    timer.register_handler(on_timer);
     timer.start_listen(mux);
     timer.set_timer(1000, false);
 
@@ -58,7 +58,7 @@ TEST(TimerMux, PeriodicTimerTest) {
     mux->start();
 
     TimerMux timer("Test");
-    timer.register_handler(std::bind(on_timer));
+    timer.register_handler(on_timer);
     timer.start_listen(mux);
     timer.set_timer(500, true);
 

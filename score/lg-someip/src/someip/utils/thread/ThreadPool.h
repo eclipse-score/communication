@@ -24,6 +24,8 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <tuple>
+#include <type_traits>
 #include <vector>
 
 #include <utils/log/formatLog.h>
@@ -35,8 +37,7 @@ public:
     ThreadPool(std::size_t thread_count);
     ~ThreadPool();
 
-    template <class F, class... Args>
-    std::future<typename std::result_of<F(Args...)>::type> enqueue_job(F&& f, Args&&... args);
+    template <class F, class... Args> std::future<std::invoke_result_t<F, Args...>> enqueue_job(F&& f, Args&&... args);
 
 private:
     std::atomic<bool> stop_requested_;
@@ -50,15 +51,18 @@ private:
 };
 
 template <class F, class... Args>
-std::future<typename std::result_of<F(Args...)>::type> ThreadPool::enqueue_job(F&& f, Args&&... args) {
+std::future<std::invoke_result_t<F, Args...>> ThreadPool::enqueue_job(F&& f, Args&&... args) {
     if (stop_requested_) {
         throw std::runtime_error("ThreadPool::enqueue_job / Stop thread pool");
     }
 
-    using return_type = typename std::result_of<F(Args...)>::type;
+    using return_type = std::invoke_result_t<F, Args...>;
 
-    auto job =
-        std::make_shared<std::packaged_task<return_type()>>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+    // The callable and the arguments are copied into the job and the callable is invoked with them as lvalues.
+    auto job = std::make_shared<std::packaged_task<return_type()>>(
+        [function = std::forward<F>(f), arguments = std::make_tuple(std::forward<Args>(args)...)]() mutable {
+            return std::apply(function, arguments);
+        });
     std::future<return_type> future_result = job->get_future();
     {
         LGSOMEIP_LOG_DEBUG << "ThreadPool::enqueue_job / Push the job to queue.";

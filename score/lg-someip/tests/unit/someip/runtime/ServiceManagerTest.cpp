@@ -22,7 +22,15 @@
 #include <endpoint/EndpointBase.h>
 #include <mutex>
 #include <packetrouter/ServiceRouter.h>
+// The test reads and sets the internal state of the class under test.
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wkeyword-macro"
+#endif
 #define private public
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 #include <runtime/ServiceManager.h>
 #undef private
 #include <socket/Socket.h>

@@ -52,7 +52,8 @@ bool NetworkDevice::initialize(std::string address, int ip_type) {
         }
 
         if (ip_type == 6 && ifa->ifa_addr->sa_family == AF_INET6) {
-            struct sockaddr_in6* addr = (struct sockaddr_in6*)ifa->ifa_addr;
+            // getifaddrs() allocates the address with the alignment of the concrete sockaddr type.
+            struct sockaddr_in6* addr = static_cast<struct sockaddr_in6*>(static_cast<void*>(ifa->ifa_addr));
 
             inet_ntop(AF_INET6, &addr->sin6_addr, buf_dev_v6_addr, INET6_ADDRSTRLEN);
             if (strcmp(buf_rcv_v6_addr, buf_dev_v6_addr) == 0) {
@@ -61,7 +62,7 @@ bool NetworkDevice::initialize(std::string address, int ip_type) {
                 break;
             }
         } else if (ip_type == 4 && ifa->ifa_addr->sa_family == AF_INET) {
-            struct sockaddr_in* addr = (struct sockaddr_in*)ifa->ifa_addr;
+            struct sockaddr_in* addr = static_cast<struct sockaddr_in*>(static_cast<void*>(ifa->ifa_addr));
 
             std::string ip_address{inet_ntoa(addr->sin_addr)};
             if (strcmp(inet_ntoa(addr->sin_addr), address.c_str()) == 0) {

@@ -35,7 +35,7 @@ std::shared_ptr<MessageSOMEIP> MessageBuilder::create_request_message(std::uint1
                                                                       std::uint8_t major_version, bool no_response) {
     std::shared_ptr<MessageSOMEIP> message = MessageBuilder::create<SOMEIP>();
     if (message != nullptr) {
-        std::uint32_t message_id = (service_id << 16) | ((std::uint32_t)method_id & 0xffff);
+        std::uint32_t message_id = (static_cast<std::uint32_t>(service_id) << 16) | ((std::uint32_t)method_id & 0xffff);
         std::uint8_t message_type = SOMEIP_MESSAGE_TYPE::REQUEST;
         if (no_response == true)
             message_type = SOMEIP_MESSAGE_TYPE::REQUEST_NO_RETURN;
@@ -73,7 +73,7 @@ std::shared_ptr<MessageSOMEIP> MessageBuilder::create_notification_message(std::
                                                                            std::uint16_t event_id) {
     std::shared_ptr<MessageSOMEIP> message = MessageBuilder::create<SOMEIP>();
     if (message != nullptr) {
-        std::uint32_t message_id = (service_id << 16) | ((std::uint32_t)event_id & 0xffff);
+        std::uint32_t message_id = (static_cast<std::uint32_t>(service_id) << 16) | ((std::uint32_t)event_id & 0xffff);
 
         message->set_message_id(message_id);
         message->set_interface_version(0);

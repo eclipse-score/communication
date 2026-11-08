@@ -779,7 +779,7 @@ void PacketRouterProxy::on_internal_request(std::uint16_t service_id, std::uint1
 std::shared_ptr<MessageSD> PacketRouterProxy::compose_application_register(bool register_application) {
     // Composing SOME/IP-SD Message
     std::shared_ptr<MessageSD> message = MessageBuilder::create<SOMEIPSD>();
-    std::uint32_t req_id = (host_->get_application_id() & 0xffff) << 16;
+    std::uint32_t req_id = (static_cast<std::uint32_t>(host_->get_application_id()) & 0xffffU) << 16;
     message->set_request_id(req_id);
 
     SDOption option[2]{SOMEIP_SD_OPTION::CONFIGURATION::TYPEID, 0};

@@ -223,11 +223,12 @@ AddressType Socket::get_address_type() const {
     if (addr == nullptr)
         return AddressType::None;
 
-    if (typeid(*addr) == typeid(LocalAddress))
+    const Address& address = *addr;
+    if (typeid(address) == typeid(LocalAddress))
         return AddressType::UnixDomain;
-    if (typeid(*addr) == typeid(IP4Address))
+    if (typeid(address) == typeid(IP4Address))
         return AddressType::IPv4;
-    if (typeid(*addr) == typeid(IP6Address))
+    if (typeid(address) == typeid(IP6Address))
         return AddressType::IPv6;
 
     return AddressType::None;
