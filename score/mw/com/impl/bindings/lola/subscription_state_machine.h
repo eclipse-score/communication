@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/consumer_event_data_control_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_mixed_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
 #include "score/mw/com/impl/bindings/lola/subscription_helpers.h"
@@ -50,18 +51,20 @@ class NotSubscribedState;
 class SubscriptionPendingState;
 class SubscribedState;
 
-/// \brief Variant holding a reference to the CoherencyType::kNonCoherent or CoherencyType::kCoherent flavour of the
-/// local view used to access an event/field's CONTROL segment from the consumer side.
+/// \brief Variant holding a reference to the CoherencyType::kNonCoherent, CoherencyType::kCoherent, or
+/// CoherencyType::kCoherent-proxy-reading-a-kMixed-skeleton-event flavour of the local view used to access an
+/// event/field's CONTROL segment from the consumer side.
 ///
-/// \details The two flavours (ConsumerEventDataControlLocalView<> / ConsumerEventDataControlCoherentLocalView) only
-/// differ in which local view type they reference: both share the same SubscriptionStateMachine-level transaction-
-/// log related state for crash-recovery of an in-flight subscribe/unsubscribe transaction (see NotSubscribedState),
-/// since Subscribe/Unsubscribe transaction logging (crash-recovery of the subscriber count) is required regardless
-/// of coherency. Only the per-slot reference-counting that the ConsumerEventDataControlLocalView<> alternative
-/// alone needs (see TransactionLogSet::RegisterProxyElement()'s two overloads) depends on which alternative is
-/// held.
+/// \details The three flavours (ConsumerEventDataControlLocalView<> / ConsumerEventDataControlCoherentLocalView /
+/// ConsumerEventDataControlMixedCoherentLocalView) only differ in which local view type they reference: all three
+/// share the same SubscriptionStateMachine-level transaction-log related state for crash-recovery of an in-flight
+/// subscribe/unsubscribe transaction (see NotSubscribedState), since Subscribe/Unsubscribe transaction logging
+/// (crash-recovery of the subscriber count) is required regardless of coherency. Only the per-slot reference-
+/// counting that the ConsumerEventDataControlLocalView<> alternative alone needs (see
+/// TransactionLogSet::RegisterProxyElement()'s two overloads) depends on which alternative is held.
 using EventDataControlLocalView = std::variant<std::reference_wrapper<ConsumerEventDataControlLocalView<>>,
-                                               std::reference_wrapper<ConsumerEventDataControlCoherentLocalView>>;
+                                               std::reference_wrapper<ConsumerEventDataControlCoherentLocalView>,
+                                               std::reference_wrapper<ConsumerEventDataControlMixedCoherentLocalView>>;
 
 /// \brief State machine that manages subscriptions to a ProxyEvent.
 ///
@@ -101,6 +104,16 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
                              const ElementFqId element_fq_id,
                              const pid_t event_source_pid,
                              ConsumerEventDataControlCoherentLocalView& event_data_control_local,
+                             EventSubscriptionControl<>& subscription_control,
+                             TransactionLogSet& transaction_log_set,
+                             const TransactionLogId& transaction_log_id) noexcept;
+
+    /// \brief Constructs a SubscriptionStateMachine for a CoherencyType::kCoherent proxy-side event, whose
+    /// skeleton-side counterpart was found to be configured with CoherencyType::kMixed.
+    SubscriptionStateMachine(const QualityType quality_type,
+                             const ElementFqId element_fq_id,
+                             const pid_t event_source_pid,
+                             ConsumerEventDataControlMixedCoherentLocalView& event_data_control_local,
                              EventSubscriptionControl<>& subscription_control,
                              TransactionLogSet& transaction_log_set,
                              const TransactionLogId& transaction_log_id) noexcept;

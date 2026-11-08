@@ -559,6 +559,7 @@ cc_library(
     deps = [
         ":consumer_event_data_control_coherent_local_view",
         ":consumer_event_data_control_local_view",
+        ":consumer_event_data_control_mixed_coherent_local_view",
         ":event_subscription_control",
         ":i_runtime",
         ":slot_collector",
@@ -1749,6 +1750,22 @@ cc_unit_test(
     ],
     deps = [
         ":event_data_control_coherent",
+        ":event_subscription_control",
+        ":subscription_state_machine",
+        ":transaction_log_id",
+        ":transaction_log_set",
+        "//score/mw/com/impl/bindings/lola/test_doubles",
+        "//score/mw/com/impl/configuration:quality_type",
+    ],
+)
+
+cc_unit_test(
+    name = "subscription_state_machine_mixed_coherent_test",
+    srcs = [
+        "subscription_state_machine_mixed_coherent_test.cpp",
+    ],
+    deps = [
+        ":event_data_control_mixed",
         ":event_subscription_control",
         ":subscription_state_machine",
         ":transaction_log_id",

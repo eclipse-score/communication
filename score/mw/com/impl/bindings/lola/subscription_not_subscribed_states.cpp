@@ -39,9 +39,9 @@ Result<void> NotSubscribedState::SubscribeEvent(const std::size_t max_sample_cou
 {
     // Only the CoherencyType::kNonCoherent alternative needs the 2-arg TransactionLogSet::RegisterProxyElement()
     // overload (injecting a cached TransactionLogLocalView into event_data_control_local for per-slot reference-
-    // counting transaction logging). The CoherencyType::kCoherent flavour (ConsumerEventDataControlCoherentLocalView)
-    // uses the 1-arg overload, since a kCoherent consumer never alters any per-slot state in the CONTROL segment, so
-    // it doesn't need to be distinguished here from kNonCoherent via its view argument.
+    // counting transaction logging). Both kCoherent flavours (ConsumerEventDataControlCoherentLocalView /
+    // ConsumerEventDataControlMixedCoherentLocalView) use the 1-arg overload identically, since neither ever alters
+    // per-slot CONTROL state, so they don't need to be distinguished here from each other.
     auto* const non_coherent_event_data_control_local =
         std::get_if<std::reference_wrapper<ConsumerEventDataControlLocalView<>>>(
             &state_machine_.event_data_control_local_);
