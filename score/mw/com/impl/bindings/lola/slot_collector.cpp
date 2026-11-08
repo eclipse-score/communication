@@ -36,6 +36,13 @@ SlotCollector::SlotCollector(ConsumerEventDataControlCoherentLocalView& event_da
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(max_slots > 0U, "Pre-allocated slot vector must not be empty!");
 }
 
+SlotCollector::SlotCollector(ConsumerEventDataControlMixedCoherentLocalView& event_data_control_local,
+                             const std::size_t max_slots) noexcept
+    : event_data_control_local_{event_data_control_local}, last_ts_{0U}, collected_slots_(max_slots)
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(max_slots > 0U, "Pre-allocated slot vector must not be empty!");
+}
+
 std::size_t SlotCollector::GetNumNewSamplesAvailable() const noexcept
 {
     return std::visit(
@@ -47,12 +54,16 @@ std::size_t SlotCollector::GetNumNewSamplesAvailable() const noexcept
 
 SlotCollector::SlotIndices SlotCollector::GetNewSamplesSlotIndices(const std::size_t max_count) noexcept
 {
-    const auto* const coherent_view =
-        std::get_if<std::reference_wrapper<ConsumerEventDataControlCoherentLocalView>>(&event_data_control_local_);
-    // CollectSlots()/CollectSlotsCoherent() return an iterator pointing to one past the end (end being the oldest
-    // collected slot, begin being the newest/youngest collected slot)
-    const auto collected_slots_end_const_iterator =
-        (coherent_view != nullptr) ? CollectSlotsCoherent(max_count) : CollectSlots(max_count);
+    // CollectSlots() return an iterator pointing to one past the end (end being the oldest collected slot, begin
+    // being the newest/youngest collected slot). Which CollectSlots() overload is invoked is determined by ordinary
+    // C++ overload resolution, based on the concrete local-view type held by event_data_control_local_ for this
+    // particular SlotCollector instance (the generic lambda below is instantiated once per std::variant
+    // alternative).
+    const auto collected_slots_end_const_iterator = std::visit(
+        [this, max_count](auto& event_data_control_local) noexcept -> SlotIndexVector::const_iterator {
+            return CollectSlots(event_data_control_local.get(), max_count);
+        },
+        event_data_control_local_);
 
     EventSlotStatus::EventTimeStamp newest_delivered{last_ts_};
     // we are iterating the collected slots from the oldest event (smallest timestamp) to the newest event
@@ -73,11 +84,10 @@ SlotCollector::SlotIndices SlotCollector::GetNewSamplesSlotIndices(const std::si
     return {std::make_reverse_iterator(collected_slots_end_const_iterator), collected_slots_.crend()};
 }
 
-SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlots(const std::size_t max_count) noexcept
+SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlots(
+    ConsumerEventDataControlLocalView<>& event_data_control_local,
+    const std::size_t max_count) noexcept
 {
-    auto& event_data_control_local =
-        std::get<std::reference_wrapper<ConsumerEventDataControlLocalView<>>>(event_data_control_local_).get();
-
     EventSlotStatus::EventTimeStamp current_highest = EventSlotStatus::TIMESTAMP_MAX;
     auto collected_slot = collected_slots_.begin();
 
@@ -105,11 +115,25 @@ SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlots(const
     return collected_slot;
 }
 
-SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlotsCoherent(const std::size_t max_count) noexcept
+SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlots(
+    ConsumerEventDataControlCoherentLocalView& event_data_control_local,
+    const std::size_t max_count) noexcept
 {
-    auto& event_data_control_local =
-        std::get<std::reference_wrapper<ConsumerEventDataControlCoherentLocalView>>(event_data_control_local_).get();
+    return CollectSlotsCoherentLike(event_data_control_local, max_count);
+}
 
+SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlots(
+    ConsumerEventDataControlMixedCoherentLocalView& event_data_control_local,
+    const std::size_t max_count) noexcept
+{
+    return CollectSlotsCoherentLike(event_data_control_local, max_count);
+}
+
+template <typename CoherentLikeLocalView>
+SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlotsCoherentLike(
+    CoherentLikeLocalView& event_data_control_local,
+    const std::size_t max_count) noexcept
+{
     // Defensive programming: We check in the constructor that collected_slots_ must not be empty
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(!collected_slots_.empty());
     const auto num_slots = std::min(max_count, collected_slots_.size());
@@ -123,5 +147,13 @@ SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlotsCohere
 
     return collected_slots_end;
 }
+
+// Explicit instantiations for the two coherent-flavoured local view types used by GetNewSamplesSlotIndices() above.
+template SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlotsCoherentLike(
+    ConsumerEventDataControlCoherentLocalView&,
+    const std::size_t) noexcept;
+template SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlotsCoherentLike(
+    ConsumerEventDataControlMixedCoherentLocalView&,
+    const std::size_t) noexcept;
 
 }  // namespace score::mw::com::impl::lola

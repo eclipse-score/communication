@@ -516,6 +516,7 @@ cc_library(
     deps = [
         ":consumer_event_data_control_coherent_local_view",
         ":consumer_event_data_control_local_view",
+        ":consumer_event_data_control_mixed_coherent_local_view",
         ":slot_decrementer",
     ],
 )
@@ -581,6 +582,7 @@ cc_library(
     deps = [
         ":consumer_event_data_control_coherent_local_view",
         ":consumer_event_data_control_local_view",
+        ":consumer_event_data_control_mixed_coherent_local_view",
         ":event_slot_status",
     ],
 )

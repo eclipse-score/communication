@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/consumer_event_data_control_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_mixed_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 
 #include <functional>
@@ -56,6 +57,14 @@ class SlotCollector final
     SlotCollector(ConsumerEventDataControlCoherentLocalView& event_data_control_local,
                   const std::size_t max_slots) noexcept;
 
+    /// Create a SlotCollector for a CoherencyType::kCoherent proxy-side event, whose skeleton-side counterpart was
+    /// found to be configured with CoherencyType::kMixed.
+    ///
+    /// \param event_data_control_local ConsumerEventDataControlMixedCoherentLocalView to be used for data reception.
+    /// \param max_slots Maximum number of samples that will be received in one call to GetNewSamples.
+    SlotCollector(ConsumerEventDataControlMixedCoherentLocalView& event_data_control_local,
+                  const std::size_t max_slots) noexcept;
+
     SlotCollector(SlotCollector&& other) noexcept = default;
     SlotCollector& operator=(SlotCollector&& other) & noexcept = delete;
     SlotCollector& operator=(const SlotCollector&) & = delete;
@@ -81,20 +90,45 @@ class SlotCollector final
   private:
     /// \brief Collects up to max_count slots (events) in collected_slots_, which have a timestamp > last_ts_
     ///        (are younger than last_ts_) and returns an iterator to one past the last collected (oldest) slot
+    /// \param event_data_control_local the CoherencyType::kNonCoherent local view to collect slots from.
     /// \param max_count maximum number of slots to collect.
     /// \return an iterator to one past the oldest collected slot (smallest timestamp).
-    SlotIndexVector::const_iterator CollectSlots(const std::size_t max_count) noexcept;
+    SlotIndexVector::const_iterator CollectSlots(ConsumerEventDataControlLocalView<>& event_data_control_local,
+                                                 const std::size_t max_count) noexcept;
 
-    /// \brief CoherencyType::kCoherent counterpart of CollectSlots(): delegates the actual slot search to
-    ///        ConsumerEventDataControlCoherentLocalView::GetNewSamplesSlotIndices(), which already returns the found
-    ///        slot indices directly (in ascending/oldest-to-newest order), so no per-slot reference-counting loop (as
-    ///        in CollectSlots()) is required/possible here.
+    /// \brief Overload of CollectSlots() for the CoherencyType::kCoherent flavour of the local view.
+    /// \param event_data_control_local the CoherencyType::kCoherent local view to collect slots from.
     /// \param max_count maximum number of slots to collect.
     /// \return an iterator to one past the oldest collected slot (smallest timestamp).
-    SlotIndexVector::const_iterator CollectSlotsCoherent(const std::size_t max_count) noexcept;
+    SlotIndexVector::const_iterator CollectSlots(ConsumerEventDataControlCoherentLocalView& event_data_control_local,
+                                                 const std::size_t max_count) noexcept;
+
+    /// \brief Overload of CollectSlots() for the CoherencyType::kCoherent-proxy-reading-a-kMixed-skeleton-event
+    ///        flavour of the local view.
+    /// \param event_data_control_local the ConsumerEventDataControlMixedCoherentLocalView to collect slots from.
+    /// \param max_count maximum number of slots to collect.
+    /// \return an iterator to one past the oldest collected slot (smallest timestamp).
+    SlotIndexVector::const_iterator CollectSlots(
+        ConsumerEventDataControlMixedCoherentLocalView& event_data_control_local,
+        const std::size_t max_count) noexcept;
+
+    /// \brief Common implementation shared by the CollectSlots() overloads for both the CoherencyType::kCoherent and
+    ///        the CoherencyType::kCoherent-proxy-reading-a-kMixed-skeleton-event flavours of the local view
+    ///        (ConsumerEventDataControlCoherentLocalView / ConsumerEventDataControlMixedCoherentLocalView): both
+    ///        expose the same GetNewSamplesSlotIndices(last_ts_, output_indices) signature, which already returns
+    ///        the found slot indices directly (in ascending/oldest-to-newest order), so no per-slot reference-
+    ///        counting loop (as in the CollectSlots() overload for ConsumerEventDataControlLocalView<>) is
+    ///        required/possible here.
+    /// \param event_data_control_local the coherent-flavoured local view to collect slots from.
+    /// \param max_count maximum number of slots to collect.
+    /// \return an iterator to one past the oldest collected slot (smallest timestamp).
+    template <typename CoherentLikeLocalView>
+    SlotIndexVector::const_iterator CollectSlotsCoherentLike(CoherentLikeLocalView& event_data_control_local,
+                                                             const std::size_t max_count) noexcept;
 
     std::variant<std::reference_wrapper<ConsumerEventDataControlLocalView<>>,
-                 std::reference_wrapper<ConsumerEventDataControlCoherentLocalView>>
+                 std::reference_wrapper<ConsumerEventDataControlCoherentLocalView>,
+                 std::reference_wrapper<ConsumerEventDataControlMixedCoherentLocalView>>
         event_data_control_local_;
     EventSlotStatus::EventTimeStamp last_ts_;
     SlotIndexVector collected_slots_;  // Pre-allocated scratchpad memory to present the events in-order to the user.
