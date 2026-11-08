@@ -759,6 +759,20 @@ cc_library(
 )
 
 cc_library(
+    name = "consumer_event_data_control_mixed_coherent_local_view",
+    srcs = ["consumer_event_data_control_mixed_coherent_local_view.cpp"],
+    hdrs = ["consumer_event_data_control_mixed_coherent_local_view.h"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        ":control_slot_types",
+        ":event_data_control_mixed",
+        ":event_slot_status",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
     name = "event_control",
     srcs = ["event_control.cpp"],
     hdrs = ["event_control.h"],
@@ -1329,6 +1343,20 @@ cc_unit_test(
         ":consumer_event_data_control_coherent_local_view",
         ":event_data_control_coherent",
         ":provider_event_data_control_coherent_local_view",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "consumer_event_data_control_mixed_coherent_local_view_test",
+    srcs = [
+        "consumer_event_data_control_mixed_coherent_local_view_test.cpp",
+    ],
+    deps = [
+        ":consumer_event_data_control_mixed_coherent_local_view",
+        ":event_data_control_mixed",
+        ":event_data_control_mixed_composite",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@score_baselibs//score/mw/log",
     ],
