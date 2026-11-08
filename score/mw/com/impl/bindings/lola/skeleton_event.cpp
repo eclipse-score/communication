@@ -14,6 +14,8 @@
 
 #include "score/mw/com/impl/bindings/lola/sample_ptr.h"
 
+#include <exception>
+
 namespace score::mw::com::impl::lola
 {
 
@@ -54,6 +56,7 @@ SkeletonEvent::SkeletonEvent(Skeleton& parent,
       qm_event_update_notifications_registered_{false},
       asil_b_event_update_notifications_registered_{false}
 {
+    ValidateCoherencyTracingCompatibility(tracing_data_);
 }
 
 Result<void> SkeletonEvent::Send(impl::SampleAllocateePtr<void> sample,
@@ -406,8 +409,31 @@ void SkeletonEvent::PrepareStopOffer()
     event_data_control_mixed_composite_.reset();
 }
 
+void SkeletonEvent::ValidateCoherencyTracingCompatibility(
+    const impl::tracing::SkeletonEventTracingData& tracing_data) const noexcept
+{
+    // CoherencyType::kCoherent events do not support IPC-Tracing, since the tracing subsystem accesses the CONTROL
+    // segment the same way a non-coherent consumer would (see CreateSamplePtrFromSampleAllocateePtr()). Unlike
+    // CreateSkeletonEventProperties(), which only rejects a configured numberOfIpcTracingSlots > 0, this check also
+    // catches a SEND / SEND_WITH_ALLOCATE trace point being enabled via the (independent) tracing filter config,
+    // without numberOfIpcTracingSlots being set - the only signal that actually determines whether Send() will
+    // invoke a trace callback.
+    if ((event_properties_.coherency == CoherencyType::kCoherent) &&
+        (tracing_data.enable_send || tracing_data.enable_send_with_allocate))
+    {
+        score::mw::log::LogFatal("lola")
+            << __func__ << __LINE__
+            << "IPC-Tracing (SEND / SEND_WITH_ALLOCATE trace point) is enabled for a CoherencyType::kCoherent "
+               "event/field, which is not supported. Configure CoherencyType::kNonCoherent or CoherencyType::kMixed "
+               "instead, or disable the trace point in the tracing filter config. Terminating:"
+            << element_fq_id_;
+        std::terminate();
+    }
+}
+
 void SkeletonEvent::SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept
 {
+    ValidateCoherencyTracingCompatibility(tracing_data);
     tracing_data_ = tracing_data;
 }
 

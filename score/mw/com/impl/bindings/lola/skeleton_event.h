@@ -127,6 +127,11 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     void SetAsilBNotificationsRegistered(bool value);
     void ResetGuards() noexcept;
 
+    /// \brief Terminates if the given tracing_data enables a trace point (SEND / SEND_WITH_ALLOCATE) that is
+    /// incompatible with a CoherencyType::kCoherent event/field (see SetSkeletonEventTracingData()).
+    void ValidateCoherencyTracingCompatibility(
+        const impl::tracing::SkeletonEventTracingData& tracing_data) const noexcept;
+
     /// \brief Returns a pointer to the EventDataControlComposite<> shared by CoherencyType::kNonCoherent (held
     /// directly in event_data_control_composite_) and CoherencyType::kMixed (held inside
     /// event_data_control_mixed_composite_), or nullptr if it hasn't been populated (yet) by PrepareOffer().
