@@ -375,6 +375,57 @@ TEST_F(ProxyCreationFixture, GetEventDataControlFallsBackToMixedEventControlsFor
     EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetTransactionLogSet(kDummyElementFqId));
 }
 
+TEST_F(ProxyCreationFixture, GetEventDataControlCoherentOrMixedReturnsCoherentAlternativeForRegisteredCoherentEvent)
+{
+    // Given a fake Skeleton which registers a CoherencyType::kCoherent event
+    InitialiseDummySkeletonEventCoherent(kDummyElementFqId,
+                                         SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
+
+    // When creating a proxy
+    InitialiseProxyWithConstructor(identifier_);
+    EXPECT_NE(proxy_, nullptr);
+
+    // Then a CoherencyType::kCoherent proxy-side lookup for that event via GetEventDataControlCoherentOrMixed()
+    // succeeds and holds the EventDataControlCoherent alternative
+    const auto event_data_control = proxy_->GetEventDataControlCoherentOrMixed(kDummyElementFqId);
+    EXPECT_TRUE(std::holds_alternative<std::reference_wrapper<EventDataControlCoherent>>(event_data_control));
+}
+
+TEST_F(ProxyCreationFixture, GetEventDataControlCoherentOrMixedFallsBackToMixedEventControlsForRegisteredMixedEvent)
+{
+    // Given a fake Skeleton which registers a CoherencyType::kMixed event (i.e. only in event_controls_mixed_, not
+    // in event_controls_coherent_)
+    InitialiseDummySkeletonEventMixed(kDummyElementFqId,
+                                      SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
+
+    // When creating a proxy
+    InitialiseProxyWithConstructor(identifier_);
+    EXPECT_NE(proxy_, nullptr);
+
+    // Then a CoherencyType::kCoherent proxy-side lookup for that event (GetEventDataControlCoherentOrMixed(),
+    // GetEventSubscriptionControlCoherent(), GetTransactionLogSetCoherent()) succeeds by falling back to
+    // event_controls_mixed_, without terminating, and GetEventDataControlCoherentOrMixed() holds the
+    // EventDataControlMixed alternative
+    const auto event_data_control = proxy_->GetEventDataControlCoherentOrMixed(kDummyElementFqId);
+    EXPECT_TRUE(std::holds_alternative<std::reference_wrapper<EventDataControlMixed>>(event_data_control));
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventSubscriptionControlCoherent(kDummyElementFqId));
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetTransactionLogSetCoherent(kDummyElementFqId));
+}
+
+TEST_F(ProxyCreationDeathTest, GetEventDataControlCoherentOrMixedWithoutInitialisedEventDataControlTerminates)
+{
+    // Given a fake Skeleton which creates an empty ServiceDataControl
+
+    // When creating a proxy
+    InitialiseProxyWithConstructor(identifier_);
+    EXPECT_NE(proxy_, nullptr);
+
+    // Then trying to get the coherent-or-mixed event data control for an event that was not registered in either
+    // event_controls_coherent_ or event_controls_mixed_ will terminate
+    const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
+    EXPECT_DEATH(score::cpp::ignore = proxy_->GetEventDataControlCoherentOrMixed(uninitialised_element_fq_id), ".*");
+}
+
 TEST_F(ProxyCreationFixture, ProxyCreationFailsWhenEventIsConfiguredWithMixedCoherencyOnProxySide)
 {
     // Given a deployment which contains an event configured with CoherencyType::kMixed

@@ -646,6 +646,35 @@ EventDataControlCoherent& Proxy::GetEventDataControlCoherent(const ElementFqId e
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
+// value is not comparable and in our case the key is comparable. so no way for 'event_controls_coherent_.find()' /
+// 'event_controls_mixed_.find()' to throw an exception.
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+EventDataControlCoherentOrMixed Proxy::GetEventDataControlCoherentOrMixed(const ElementFqId element_fq_id)
+{
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
+                                                      "Proxy::GetEventControl: Managed memory control pointer is Null");
+    auto& service_data_control = GetServiceDataControl(*control_);
+    auto* const event_entry = service_data_control.event_controls_coherent_.find(element_fq_id);
+    if (event_entry != service_data_control.event_controls_coherent_.end())
+    {
+        return EventDataControlCoherentOrMixed{std::in_place_type<std::reference_wrapper<EventDataControlCoherent>>,
+                                               event_entry->second.data_control};
+    }
+    // Fall back to event_controls_mixed_: a CoherencyType::kCoherent proxy-side event is also compatible with a
+    // CoherencyType::kMixed skeleton-side event (see EventDataControlMixed for the rationale).
+    auto* const mixed_event_entry = service_data_control.event_controls_mixed_.find(element_fq_id);
+    if (mixed_event_entry == service_data_control.event_controls_mixed_.end())
+    {
+        score::mw::log::LogFatal("lola") << __func__ << __LINE__
+                                         << "Unable to find control channel for given event instance. Terminating.";
+        std::terminate();
+    }
+    return EventDataControlCoherentOrMixed{std::in_place_type<std::reference_wrapper<EventDataControlMixed>>,
+                                           mixed_event_entry->second.data_control};
+}
+
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
+// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
 // value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' /
 // 'event_controls_mixed_.find()' to throw an exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
@@ -673,8 +702,8 @@ EventSubscriptionControl<>& Proxy::GetEventSubscriptionControl(const ElementFqId
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
-// value is not comparable and in our case the key is comparable. so no way for 'event_controls_coherent_.find()' to
-// throw an exception.
+// value is not comparable and in our case the key is comparable. so no way for 'event_controls_coherent_.find()' /
+// 'event_controls_mixed_.find()' to throw an exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 EventSubscriptionControl<>& Proxy::GetEventSubscriptionControlCoherent(const ElementFqId element_fq_id)
 {
@@ -682,13 +711,20 @@ EventSubscriptionControl<>& Proxy::GetEventSubscriptionControlCoherent(const Ele
                                                       "Proxy::GetEventControl: Managed memory control pointer is Null");
     auto& service_data_control = GetServiceDataControl(*control_);
     auto* const event_entry = service_data_control.event_controls_coherent_.find(element_fq_id);
-    if (event_entry == service_data_control.event_controls_coherent_.end())
+    if (event_entry != service_data_control.event_controls_coherent_.end())
+    {
+        return event_entry->second.subscription_control;
+    }
+    // Fall back to event_controls_mixed_: a CoherencyType::kCoherent proxy-side event is also compatible with a
+    // CoherencyType::kMixed skeleton-side event (see EventDataControlMixed for the rationale).
+    auto* const mixed_event_entry = service_data_control.event_controls_mixed_.find(element_fq_id);
+    if (mixed_event_entry == service_data_control.event_controls_mixed_.end())
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__
                                          << "Unable to find control channel for given event instance. Terminating.";
         std::terminate();
     }
-    return event_entry->second.subscription_control;
+    return mixed_event_entry->second.subscription_control;
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -720,8 +756,8 @@ TransactionLogSet& Proxy::GetTransactionLogSet(const ElementFqId element_fq_id)
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
-// value is not comparable and in our case the key is comparable. so no way for 'event_controls_coherent_.find()' to
-// throw an exception.
+// value is not comparable and in our case the key is comparable. so no way for 'event_controls_coherent_.find()' /
+// 'event_controls_mixed_.find()' to throw an exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 TransactionLogSet& Proxy::GetTransactionLogSetCoherent(const ElementFqId element_fq_id)
 {
@@ -729,13 +765,20 @@ TransactionLogSet& Proxy::GetTransactionLogSetCoherent(const ElementFqId element
                                                       "Proxy::GetEventControl: Managed memory control pointer is Null");
     auto& service_data_control = GetServiceDataControl(*control_);
     auto* const event_entry = service_data_control.event_controls_coherent_.find(element_fq_id);
-    if (event_entry == service_data_control.event_controls_coherent_.end())
+    if (event_entry != service_data_control.event_controls_coherent_.end())
+    {
+        return event_entry->second.transaction_log_set_;
+    }
+    // Fall back to event_controls_mixed_: a CoherencyType::kCoherent proxy-side event is also compatible with a
+    // CoherencyType::kMixed skeleton-side event (see EventDataControlMixed for the rationale).
+    auto* const mixed_event_entry = service_data_control.event_controls_mixed_.find(element_fq_id);
+    if (mixed_event_entry == service_data_control.event_controls_mixed_.end())
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__
                                          << "Unable to find control channel for given event instance. Terminating.";
         std::terminate();
     }
-    return event_entry->second.transaction_log_set_;
+    return mixed_event_entry->second.transaction_log_set_;
 }
 
 const EventDataStorage& Proxy::GetEventDataStorage(const ElementFqId element_fq_id) const
