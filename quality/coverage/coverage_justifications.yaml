@@ -203,3 +203,11 @@ justifications:
       Unsubscribe() only reaches this assert if is_subscribed_flag_ is set. The flag is only set after Subscribe()
       has used binding_ (or on the mock path, which returns earlier), and is cleared on move. So binding_ is never
       null here and the assert-failure path is unreachable.
+
+  - id: service-discovery-remove-unused-all-processed-guard
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >-
+      RemoveUnusedInstanceIdentifiers() is only called by StartFindService() when last_used_iterator is not equal
+      to container_end, so this early return is never taken. The guard is kept to protect against future misuse of
+      this private function.
