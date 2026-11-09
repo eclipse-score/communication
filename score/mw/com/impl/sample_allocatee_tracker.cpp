@@ -48,7 +48,9 @@ std::size_t SampleAllocateeTracker::GetNumAllocated() const
 void SampleAllocateeTracker::Deallocate()
 {
     const std::size_t previous = allocated_count_.fetch_sub(1U);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(previous > 0U, "Deallocating more samples than were allocated.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(  // COV_JUSTIFIED sample-allocatee-tracker-deallocate-underflow-assert
+        previous > 0U,
+        "Deallocating more samples than were allocated.");
 }
 
 }  // namespace score::mw::com::impl
