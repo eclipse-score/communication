@@ -356,8 +356,8 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
 ///     instance_info: R::ProviderInfo,
 /// }
 /// // Generated: producer.init()
-/// //   .update_left_tire(&v)?
-/// //   .register_set_handler_left_tire(|v| {})
+/// //   .update_left_tire(v)?
+/// //   .register_set_handler_left_tire(|v| async move { v })
 /// //   .register_process_handler(|req| { ... })
 /// //   .offer()?
 /// ```

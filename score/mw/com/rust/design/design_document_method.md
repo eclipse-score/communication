@@ -47,14 +47,14 @@ Methods are defined as part of an interface via the `interface!` macro alongside
 interface!(
     interface VehicleMethods {
         Id = "VehicleMethodsInterface",
-        update_tire_pressure(Tire) -> (),
-        update_front_tires_pressure(Tire, Tire) -> (),
-        get_tire_pressure() -> Tire,
+        update_tire_pressure: Method(Tire) -> (),
+        update_front_tires_pressure: Method(Tire, Tire) -> (),
+        get_tire_pressure: Method() -> Tire,
     }
 );
 ```
 
-The macro uses `fn`-like syntax: `method_name(ArgType0, ArgType1, ...) -> ReturnType`. For void return, `-> ()` is required.
+The macro uses the same member syntax as events and fields: `method_name: Method(ArgType0, ArgType1, ...) -> ReturnType`. For void return, `-> ()` is required.
 
 ---
 
@@ -346,15 +346,15 @@ The zero-copy path avoids copying argument data when the runtime backs arguments
 
 ## Interface Macro Integration
 
-The `interface!` macro in `interface_macros.rs` accepts methods using fn-like syntax:
+The `interface!` macro in `interface_macros.rs` accepts methods using the `name: Method(Args) -> Return` syntax:
 
 ```rust
 interface!(
     interface VehicleMethods {
         Id = "VehicleMethodsInterface",
-        update_tire_pressure(Tire) -> (),
-        get_tire_pressure() -> Tire,
-        update_front_tires_pressure(Tire, Tire) -> (),
+        update_tire_pressure: Method(Tire) -> (),
+        get_tire_pressure: Method() -> Tire,
+        update_front_tires_pressure: Method(Tire, Tire) -> (),
     }
 );
 ```

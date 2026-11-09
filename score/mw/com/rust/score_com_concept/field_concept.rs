@@ -12,12 +12,12 @@
  ********************************************************************************/
 
 // TODOs:
-// 1.Get and Set methods for field it is enabled based on tag, do we want to keep same kind of mechanism
-// or by default we will enable for user,
-// -> we can keep it default enable as of now,
-// and later we can add tag based mechanism if required because Interface side we need to check how we can do this
-// 2. We are offering get method after subscrption async but before subscription it is sync,
-// It is because subscribe API take the consumer instance by value and if we offer async get method then it will create issue with subscription.
+// 1. Get and Set for a field are currently enabled based on the capability tag
+// (`WithGetter` / `WithSetter`). Whether they should be enabled by default is still open.
+// We keep the tag based mechanism as of now and can revisit it later if required.
+// 2. `subscribe` takes the consumer field by value, so the generated `get_{name}()` and
+// `set_{name}()` wrappers (which borrow the whole consumer) cannot be used after a field has
+// been moved by `subscribe`. See TODO_implementation_time_decisions.md.
 
 // Note: We are using the event related trait as a base trait for where ever we have same common
 // APIs or functionality, as of now there are derived from concept crate but

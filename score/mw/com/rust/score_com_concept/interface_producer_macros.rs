@@ -202,7 +202,7 @@ macro_rules! interface_producer_mixed {
                         "ERROR: Cannot call {producer}.offer() directly.\n\
                          All fields must be initialized and all handlers must be registered first.\n\
                          Correct usage: producer.init()\
-                             .update_<field>(&val)?\
+                             .update_<field>(val)?\
                              .register_set_handler_<field>(|v| {{ ... }})\
                              .register_<method>_handler(|args| {{ ... }})\
                              .offer()?",

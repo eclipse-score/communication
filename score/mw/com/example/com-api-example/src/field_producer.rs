@@ -42,11 +42,7 @@ fn create_producer_field<R: Runtime + 'static>(
     service_id: InstanceSpecifier,
     initial_tire_value: Tire,
     initial_exhaust_value: Exhaust,
-) -> VehicleFieldOfferedProducer<R>
-where
-    <R as Runtime>::FieldPublisher<Tire>: Send + Sync,
-    <R as Runtime>::FieldPublisher<Exhaust>: Send,
-{
+) -> VehicleFieldOfferedProducer<R> {
     let producer_builder = runtime.producer_builder::<VehicleFieldInterface>(service_id);
     let producer = producer_builder.build().expect("Failed to build producer instance");
 

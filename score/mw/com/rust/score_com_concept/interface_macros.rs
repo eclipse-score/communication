@@ -168,10 +168,10 @@ pub struct WithNotifier;
 ///   before `offer()` can be called:
 /// ```ignore
 /// producer.init()
-///     .update_tire_pressure(&initial_value)?
+///     .update_tire_pressure(initial_value)?
 ///     .register_set_handler_tire_pressure(|v| async move { v })
 ///     .register_get_handler_speed(|| Speed { value: 0 }) // optional
-///     .update_status(&initial_status)?
+///     .update_status(initial_status)?
 ///     .register_calibrate_handler(|tire: &Tire| { let tire = tire.clone(); async move { tire } })
 ///     .offer()?;
 /// ```
@@ -697,7 +697,7 @@ mod tests {
     ///             Id = "AbcInterface",
     ///             left_tire: Event<Tire>,
     ///             left_tire_field: Field<Tire, WithGetter + WithSetter + WithNotifier>,
-    ///             left_tire_method(Tire) -> Tire,
+    ///             left_tire_method: Method(Tire) -> Tire,
     ///         }
     ///     );
     /// }
@@ -711,7 +711,7 @@ mod tests {
     ///   `left_tire_method: MethodCaller<(Tire,), Tire>`,
     ///   and a convenience `left_tire_method(arg0: Tire)` method.
     /// - `VehicleProducer<R>` derives `TypeStateValidator` and requires the `.init()` chain:
-    ///   `producer.init().update_left_tire_field(&val)?.register_set_handler_left_tire_field(f).register_left_tire_method_handler(h).offer()?`
+    ///   `producer.init().update_left_tire_field(val)?.register_set_handler_left_tire_field(f).register_left_tire_method_handler(h).offer()?`
     /// - `VehicleOfferedProducer<R>` has `left_tire: Publisher<Tire>` (created lazily on offer),
     ///   `left_tire_field: FieldPublisher<Tire>`, plus the active method handler.
     #[cfg(doctest)]
@@ -1400,4 +1400,136 @@ mod tests {
     /// Field definitions are not supported.
     #[cfg(doctest)]
     fn interface_producer_macro_with_Field() {}
+
+    /// Type-state validator: the complete chain compiles. Every field is initialized, the set handler
+    /// of every `WithSetter` field is registered, every method handler is registered, the optional get
+    /// handler is skipped for one field and registered for the other, and `offer()` becomes available.
+    ///
+    /// ```
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
+    ///                     FieldPublisher, WithGetter, WithSetter, WithNotifier};
+    ///     #[derive(Debug, Reloc, Clone)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire { const ID: &'static str = "Tire"; }
+    ///     score_com::interface!(interface Vehicle {
+    ///         left_tire: Field<Tire, WithGetter + WithSetter + WithNotifier>,
+    ///         exhaust: Field<Tire, WithNotifier>,
+    ///         calibrate: Method(Tire) -> Tire,
+    ///     });
+    ///     fn _check<R: score_com::Runtime + ?Sized>(p: VehicleProducer<R>) {
+    ///         let _ = p
+    ///             .init()
+    ///             .update_left_tire(Tire { pressure: 1.0 })
+    ///             .and_then(|v| v.update_exhaust(Tire { pressure: 2.0 }))
+    ///             .map(|v| {
+    ///                 v.register_set_handler_left_tire(|t: Tire| async move { t })
+    ///                     .register_get_handler_left_tire(|| Tire { pressure: 1.0 })
+    ///                     .register_calibrate_handler(|t: &Tire| {
+    ///                         let t = t.clone();
+    ///                         async move { t }
+    ///                     })
+    ///                     .offer()
+    ///             });
+    ///     }
+    /// }
+    /// ```
+    #[cfg(doctest)]
+    fn type_state_validator_complete_chain_compiles() {}
+
+    /// Type-state validator: `offer()` is not available while a field has not been initialized
+    /// with `update_<field>()`.
+    ///
+    /// ```compile_fail
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
+    ///                     FieldPublisher, WithGetter, WithSetter, WithNotifier};
+    ///     #[derive(Debug, Reloc, Clone)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire { const ID: &'static str = "Tire"; }
+    ///     score_com::interface!(interface Vehicle {
+    ///         left_tire: Field<Tire, WithGetter + WithNotifier>,
+    ///     });
+    ///     fn _check<R: score_com::Runtime + ?Sized>(p: VehicleProducer<R>) {
+    ///         let _ = p.init().offer();
+    ///     }
+    /// }
+    /// ```
+    #[cfg(doctest)]
+    fn type_state_validator_offer_without_field_update() {}
+
+    /// Type-state validator: `offer()` is not available while the set handler of a `WithSetter`
+    /// field has not been registered, even if the initial value was set.
+    ///
+    /// ```compile_fail
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
+    ///                     FieldPublisher, WithGetter, WithSetter, WithNotifier};
+    ///     #[derive(Debug, Reloc, Clone)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire { const ID: &'static str = "Tire"; }
+    ///     score_com::interface!(interface Vehicle {
+    ///         left_tire: Field<Tire, WithGetter + WithSetter>,
+    ///     });
+    ///     fn _check<R: score_com::Runtime + ?Sized>(p: VehicleProducer<R>) {
+    ///         let _ = p.init().update_left_tire(Tire { pressure: 1.0 }).map(|v| v.offer());
+    ///     }
+    /// }
+    /// ```
+    #[cfg(doctest)]
+    fn type_state_validator_offer_without_set_handler() {}
+
+    /// Type-state validator: `offer()` is not available while a method handler has not been
+    /// registered.
+    ///
+    /// ```compile_fail
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
+    ///                     FieldPublisher, WithGetter, WithSetter, WithNotifier};
+    ///     #[derive(Debug, Reloc, Clone)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire { const ID: &'static str = "Tire"; }
+    ///     score_com::interface!(interface Vehicle {
+    ///         left_tire: Field<Tire, WithGetter + WithNotifier>,
+    ///         calibrate: Method(Tire) -> Tire,
+    ///     });
+    ///     fn _check<R: score_com::Runtime + ?Sized>(p: VehicleProducer<R>) {
+    ///         let _ = p.init().update_left_tire(Tire { pressure: 1.0 }).map(|v| v.offer());
+    ///     }
+    /// }
+    /// ```
+    #[cfg(doctest)]
+    fn type_state_validator_offer_without_method_handler() {}
+
+    /// Type-state validator: the same step cannot be repeated to bypass the chain. After
+    /// `update_<field>()` the field is `Init` and a second initialization does not make `offer()`
+    /// available when another member is still missing.
+    ///
+    /// ```compile_fail
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
+    ///                     FieldPublisher, WithGetter, WithSetter, WithNotifier};
+    ///     #[derive(Debug, Reloc, Clone)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire { const ID: &'static str = "Tire"; }
+    ///     score_com::interface!(interface Vehicle {
+    ///         left_tire: Field<Tire, WithGetter + WithNotifier>,
+    ///         exhaust: Field<Tire, WithGetter + WithNotifier>,
+    ///     });
+    ///     fn _check<R: score_com::Runtime + ?Sized>(p: VehicleProducer<R>) {
+    ///         let _ = p
+    ///             .init()
+    ///             .update_left_tire(Tire { pressure: 1.0 })
+    ///             .and_then(|v| v.update_left_tire(Tire { pressure: 2.0 }))
+    ///             .map(|v| v.offer());
+    ///     }
+    /// }
+    /// ```
+    #[cfg(doctest)]
+    fn type_state_validator_repeated_update_does_not_complete_chain() {}
 }

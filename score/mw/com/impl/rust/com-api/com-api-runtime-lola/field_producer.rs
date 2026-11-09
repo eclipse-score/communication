@@ -26,8 +26,9 @@ use crate::LolaProviderInfo;
 use crate::LolaRuntimeImpl;
 
 pub struct LolaFieldPublisher<T, B: FFIBridge> {
-    _data: PhantomData<T>,
-    _bridge: PhantomData<B>,
+    // `fn() -> X` keeps the publisher `Send + Sync` independent of `T` and `B`.
+    _data: PhantomData<fn() -> T>,
+    _bridge: PhantomData<fn() -> B>,
 }
 
 #[derive(Debug)]

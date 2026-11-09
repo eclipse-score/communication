@@ -722,7 +722,8 @@ impl<T: CommData + Debug> Subscription<T, MockRuntimeImpl> for MockFieldSubscrip
 
 /// Field publisher type for Mock runtime.
 pub struct MockFieldPublisher<T: CommData + Debug> {
-    _data: PhantomData<T>,
+    // `fn() -> T` keeps the publisher `Send + Sync` independent of `T`.
+    _data: PhantomData<fn() -> T>,
 }
 
 /// Field sample mutable type.

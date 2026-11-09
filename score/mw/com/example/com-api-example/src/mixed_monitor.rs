@@ -77,11 +77,7 @@ fn create_monitor_producer<R: Runtime + 'static>(
     service_id: InstanceSpecifier,
     initial_tire: Tire,
     initial_exhaust: Exhaust,
-) -> VehicleMonitorOfferedProducer<R>
-where
-    <R as Runtime>::FieldPublisher<Tire>: Send + Sync,
-    <R as Runtime>::FieldPublisher<Exhaust>: Send,
-{
+) -> VehicleMonitorOfferedProducer<R> {
     let producer = runtime
         .producer_builder::<VehicleMonitorInterface>(service_id)
         .build()

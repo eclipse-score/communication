@@ -130,7 +130,7 @@ pub trait Runtime {
     type FieldSetCaller<T: CommData + Debug>: MethodCaller<(T,), T, Self>;
 
     /// `FieldPublisher<T>` types for Publishes field constructs and update the data
-    type FieldPublisher<T: CommData + Debug>: FieldPublisher<T, Self>;
+    type FieldPublisher<T: CommData + Debug>: FieldPublisher<T, Self> + Send + Sync;
 
     /// `ProviderInfo` types for Configuration data for service producers instances
     type ProviderInfo: ProviderInfo + Send + Clone;

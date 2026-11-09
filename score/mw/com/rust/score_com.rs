@@ -140,6 +140,11 @@
 pub use com_api_runtime_lola::LolaRuntimeImpl;
 pub use com_api_runtime_lola::RuntimeBuilderImpl as LolaRuntimeBuilderImpl;
 
+// NOTE: `EventSampleMut` is intentionally re-exported as `SampleMut`. Before the field and method
+// support, `SampleMut` was the only mutable sample trait and it was event specific. It was split
+// into the `SampleMut` base trait and `EventSampleMut` in `score_com_concept`. The alias keeps
+// existing users of `score_com::SampleMut` source compatible. Do not confuse it with
+// `score_com_concept::SampleMut`, which is the base trait shared with `FieldSampleMut`.
 pub use score_com_concept::{
     interface, interface_common, interface_consumer, interface_producer, Builder, CommData, Consumer, ConsumerBuilder,
     ConsumerDescriptor, Error, EventSampleMut as SampleMut, FieldPublisher, FieldSampleMut, FieldSubscriber,
