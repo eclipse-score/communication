@@ -27,9 +27,10 @@ namespace score::mw::com::runtime
 namespace detail
 {
 
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 IRuntime* RuntimeMockHolder::runtime_mock_{nullptr};
 
-}
+}  // namespace detail
 
 score::Result<InstanceIdentifierContainer> ResolveInstanceIDs(const impl::InstanceSpecifier& model_name)
 {
@@ -47,23 +48,7 @@ score::Result<InstanceIdentifierContainer> ResolveInstanceIDs(const impl::Instan
     return instance_identifier_container;
 }
 
-// C-style array tolerated for command line arguments. This API is deprecated and it will be removed.
-// NOLINTNEXTLINE(modernize-avoid-c-arrays)
-void InitializeRuntime(const std::int32_t argc, const char* argv[])
-{
-    if (auto* const runtime_mock_holder = detail::RuntimeMockHolder::GetRuntimeMock())
-    {
-        const score::cpp::span<const char*> argv_span(argv,
-                                                      static_cast<score::cpp::span<const char*>::size_type>(argc));
-        runtime_mock_holder->InitializeRuntime(argc, argv_span);
-        return;
-    }
-
-    const RuntimeConfiguration runtime_configuration{argc, argv};
-    InitializeRuntime(runtime_configuration);
-}
-
-void InitializeRuntime(const cpp::span<safecpp::zstring_view> command_line_arguments)
+void InitializeRuntime(const cpp::span<const safecpp::zstring_view> command_line_arguments)
 {
     if (auto* const runtime_mock_holder = detail::RuntimeMockHolder::GetRuntimeMock())
     {

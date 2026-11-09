@@ -12,14 +12,13 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_binary(
     name = "disabled_method_test",
     srcs = ["disabled_method_test.cpp"],
     data = ["config/disabled_methods_mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -38,7 +37,7 @@ cc_binary(
     name = "incomplete_handlers_test",
     srcs = ["incomplete_handlers_test.cpp"],
     data = ["config/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -55,7 +54,7 @@ cc_binary(
     name = "proxy_recreation_test",
     srcs = ["proxy_recreation_test.cpp"],
     data = ["config/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -72,7 +71,7 @@ cc_binary(
     name = "skeleton_recreation_test",
     srcs = ["skeleton_recreation_test.cpp"],
     data = ["config/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [

@@ -1,5 +1,5 @@
 ' *******************************************************************************
-' Copyright (c) {year} Contributors to the Eclipse Foundation
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
 '
 ' See the NOTICE file(s) distributed with this work for additional
 ' information regarding copyright ownership.
@@ -20,6 +20,5 @@ $FailureMode("Skeleton is offered without initial field values", "Communication.
 $OrGate("Gate1", "Communication.ServiceOfferedWithoutInitialFieldValue")
 $RootCause("Offer call did not check, if user provided field values", "OfferCallDidNotCheckIfUserProvidedFieldValues", "Gate1")
 $IntermediateEvent("Update functionality did not work", "Event2", "Gate1")
-$TransferInGate("Transfer1", "Event2")
 
 @enduml

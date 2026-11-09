@@ -129,6 +129,7 @@ TirePressureField& GetTireField(TirePressureExtendedProxy& proxy, const Tire tir
 // Reacts to a single tire_pressure_warning for the given tire: it reads (via the field getters) the current pressure of
 // the affected tire and the current threshold band, logs both, and then widens the band in the direction the pressure
 // left it (lower_threshold - 0.1 bar if the pressure was below the band, upper_threshold + 0.1 bar if it was above).
+// [consumer-handle-single-warning-start]
 void HandleSingleWarning(TirePressureExtendedProxy& proxy, const Tire tire)
 {
     // Read the current pressure of the affected tire via the field's Get() (request/response, not a subscription).
@@ -180,9 +181,11 @@ void HandleSingleWarning(TirePressureExtendedProxy& proxy, const Tire tire)
     std::cout << "  Adjusted tire_pressure_thresholds to [lower: " << accepted.lower_threshold
               << " bar, upper: " << accepted.upper_threshold << " bar]." << std::endl;
 }
+// [consumer-handle-single-warning-end]
 
 // Invoked (on an internal middleware thread) whenever new tire_pressure_warning samples have been received. It drains
 // all new samples and reacts to each of them.
+// [consumer-handle-warnings-start]
 void HandleWarnings(TirePressureExtendedProxy& proxy)
 {
     auto get_new_samples_result = proxy.tire_pressure_warning.GetNewSamples(
@@ -195,6 +198,7 @@ void HandleWarnings(TirePressureExtendedProxy& proxy)
         std::cerr << "Failed to get new tire_pressure_warning samples: " << get_new_samples_result.error() << std::endl;
     }
 }
+// [consumer-handle-warnings-end]
 
 }  // namespace
 
@@ -239,6 +243,7 @@ int main()
             // Register the receive handler for the tire_pressure_warning event *before* subscribing. The capture is
             // kept small (a single pointer) so that it fits into the score::cpp::callback storage of an
             // EventReceiveHandler.
+            // [consumer-subscribe-warnings-start]
             const auto set_receive_handler_result =
                 proxy_ptr->tire_pressure_warning.SetReceiveHandler([proxy_ptr]() noexcept {
                     HandleWarnings(*proxy_ptr);
@@ -258,6 +263,7 @@ int main()
                 std::exit(EXIT_FAILURE);
             }
             std::cout << "Subscribed to 'tire_pressure_warning'. Waiting for warnings ..." << std::endl;
+            // [consumer-subscribe-warnings-end]
         };
 
     auto find_service_handle_result =

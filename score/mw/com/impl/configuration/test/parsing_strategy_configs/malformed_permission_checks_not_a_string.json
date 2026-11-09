@@ -1,0 +1,38 @@
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/test/service",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1,
+                    "events": [],
+                    "fields": [],
+                    "methods": []
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "test/instance",
+            "serviceTypeName": "/test/service",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "instances": [
+                {
+                    "instanceId": 1,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "permission-checks": 123
+                }
+            ]
+        }
+    ]
+}

@@ -23,6 +23,11 @@ bool operator==(const ProxyInstanceIdentifier& lhs, const ProxyInstanceIdentifie
             safe_math::CmpEqual(lhs.proxy_instance_counter, rhs.proxy_instance_counter));
 }
 
+bool operator!=(const ProxyInstanceIdentifier& lhs, const ProxyInstanceIdentifier& rhs) noexcept
+{
+    return !(lhs == rhs);
+}
+
 std::ostream& operator<<(std::ostream& stream, const ProxyInstanceIdentifier& value)
 {
     stream << "Application ID: " << value.application_id

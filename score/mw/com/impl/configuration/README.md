@@ -1,6 +1,9 @@
+# mw::com Configuration
+
 ## mw::com Configuration Concept
 
 Following document contains a short documentation, how to configure a `mw::com` application.
+If you want to extend or change the configuration schema itself, see [SCHEMA_UPDATE.md](./SCHEMA_UPDATE.md).
 
 ### Central JSON File per App
 

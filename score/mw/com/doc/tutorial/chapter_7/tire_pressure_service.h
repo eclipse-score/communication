@@ -27,6 +27,7 @@ namespace score::mw::com::tutorial
 // SetReceiveHandler, GetSubscriptionState, ...) - which is exactly the subset we need here to receive the field value
 // updates. (WithGetter / WithSetter, which enable the request/response style Get()/Set() on a field, are covered in a
 // later chapter.)
+// [tire-pressure-interface-start]
 template <typename Trait>
 class TirePressureInterface : public Trait::Base
 {
@@ -46,6 +47,7 @@ class TirePressureInterface : public Trait::Base
         *this,
         "tire_pressure_rear_right"};
 };
+// [tire-pressure-interface-end]
 }  // namespace score::mw::com::tutorial
 
 #endif  // SCORE_MW_COM_TUTORIAL_TIRE_PRESSURE_SERVICE_H

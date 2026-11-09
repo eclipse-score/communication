@@ -1,0 +1,122 @@
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1234,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "eventId": 20
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "CurrentPressureFrontRight",
+                            "fieldId": 30
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "serviceTypeName": "/score/ncar/services/TireTemperatureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1235,
+                    "events": [
+                        {
+                            "eventName": "CurrentTemperatureFrontLeft",
+                            "eventId": 20
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "CurrentTemperatureFrontRight",
+                            "fieldId": 30
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 1234,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "maxSamples": 50,
+                            "maxSubscribers": 5,
+                            "numberOfIpcTracingSlots": 0
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "CurrentPressureFrontRight",
+                            "numberOfSampleSlots": 60,
+                            "maxSubscribers": 6,
+                            "numberOfIpcTracingSlots": 1
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "instanceSpecifier": "abc/abc/TireTemperaturePort",
+            "serviceTypeName": "/score/ncar/services/TireTemperatureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 4567,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "CurrentTemperatureFrontLeft",
+                            "maxSamples": 50,
+                            "maxSubscribers": 5,
+                            "numberOfIpcTracingSlots": 1
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "CurrentTemperatureFrontRight",
+                            "numberOfSampleSlots": 60,
+                            "maxSubscribers": 6,
+                            "numberOfIpcTracingSlots": 1
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "tracing": {
+        "enable": false,
+        "applicationInstanceID": "test_application_id"
+    }
+}

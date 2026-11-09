@@ -75,7 +75,7 @@ jobs:
       actions: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Bazel
         uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
@@ -95,7 +95,7 @@ jobs:
           archive-name: docs-${{ github.event.inputs.release_tag }}.tar.gz
 
       - name: Upload docs archive artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.event.repository.name }}_docs_release_${{ github.event.inputs.release_tag }}
           path: docs-${{ github.event.inputs.release_tag }}.tar.gz
@@ -118,7 +118,7 @@ jobs:
       release-tag: ${{ steps.release-tag.outputs.release-tag }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set release tag from workflow dispatch input
         id: release-tag
@@ -128,7 +128,7 @@ jobs:
 
       - name: Create draft release
         id: create-release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: ${{ steps.release-tag.outputs.release-tag }}
           name: ${{ steps.release-tag.outputs.release-tag }}
@@ -146,7 +146,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # ------------------------------------------------------------------
       # nightly_quality.yml's deploy-quality-reports job already downloads,
@@ -155,7 +155,7 @@ jobs:
       # artifact — reuse it directly instead of duplicating that logic here.
       # ------------------------------------------------------------------
       - name: Download unified quality reports artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: nightly-quality-reports
           path: ./_quality
@@ -179,10 +179,10 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Download docs archive artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ${{ github.event.repository.name }}_docs_release_${{ github.event.inputs.release_tag }}
           path: ./
@@ -222,7 +222,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Delete draft release due to failure
         run: |
@@ -231,6 +231,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Report failure
-        run: |
+        run: |-
           echo "Uploading artifacts to the draft release failed. Draft release has been deleted."
           exit 1

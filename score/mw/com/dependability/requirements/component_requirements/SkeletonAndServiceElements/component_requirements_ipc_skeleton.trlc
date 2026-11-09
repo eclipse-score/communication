@@ -48,7 +48,7 @@ section "com" {
 
                 * with a type providing the features required in Skeleton Event'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_EventType@1, Communication.FEAT_SupportForDataDrivenArchitecture@1, Communication.FEAT_CommunicationInterfaces@1]
+                derived_from = [Communication.FEAT_EventTypeStructure@1, Communication.FEAT_SupportForDataDrivenArchitecture@1, Communication.FEAT_CommunicationInterfaces@1]
                 version = 1
             }
 
@@ -76,7 +76,7 @@ section "com" {
 
                 * with return value and arguments according to: TBD'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForRequestDrivenArchitecture@1, Communication.FEAT_Method@1, Communication.FEAT_CommunicationInterfaces@1]
+                derived_from = [Communication.FEAT_SupportForRequestDrivenArchitecture@1, Communication.FEAT_MethodStructure@1, Communication.FEAT_CommunicationInterfaces@1]
                 version = 1
             }
 

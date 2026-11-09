@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Downloads the PR number from the artifact the trigger stage
       # uploaded (see review_checklists_trigger.yml for why this value is
@@ -107,7 +107,7 @@ jobs:
       # an empty pr_number, and downstream steps already tolerate that
       # (they simply have nothing to act on).
       - name: Download PR number
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         continue-on-error: true
         with:
           name: pr-number

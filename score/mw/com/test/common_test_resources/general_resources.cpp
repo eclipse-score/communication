@@ -232,4 +232,40 @@ bool WaitForChildProcessToTerminate(std::string_view message_prefix,
     return false;
 }
 
+bool KillChildAfterItLeftNotification(std::string_view message_prefix,
+                                      CheckPointControl& check_point_control,
+                                      ChildProcessGuard& child_process_guard,
+                                      std::chrono::milliseconds max_wait_time) noexcept
+{
+    const std::chrono::milliseconds poll_interval{10};
+    check_point_control.WaitForKill();
+    std::chrono::milliseconds current_wait_time{0};
+    while (!check_point_control.IsChildWaitingForKill())
+    {
+        if (current_wait_time >= max_wait_time)
+        {
+            std::cerr << message_prefix << ": child did not switch to 'wait for kill' state in time" << std::endl;
+            return false;
+        }
+        std::this_thread::sleep_for(poll_interval);
+        current_wait_time += poll_interval;
+    }
+    if (!child_process_guard.KillChildProcess())
+    {
+        return false;
+    }
+    check_point_control.SetChildWaitingForKill(false);
+    return true;
+}
+
+void IdleUntilKilled(CheckPointControl& check_point_control) noexcept
+{
+    std::cout << "Waiting to be killed by controller" << std::endl;
+    check_point_control.SetChildWaitingForKill();
+    while (true)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds{100});
+    }
+}
+
 }  // namespace score::mw::com::test

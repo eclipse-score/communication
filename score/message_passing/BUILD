@@ -14,7 +14,24 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+_UNIX_DOMAIN_OS_DEPS = [
+    "@score_baselibs//score/os:socket",
+    "@score_baselibs//score/os:sys_poll",
+    "@score_baselibs//score/os:unistd",
+    "@score_baselibs//score/os/utils:signal",
+]
+
+_QNX_DISPATCH_OS_DEPS = [
+    "@score_baselibs//score/os:fcntl",
+    "@score_baselibs//score/os:sys_uio",
+    "@score_baselibs//score/os:unistd",
+    "@score_baselibs//score/os/qnx:channel",
+    "@score_baselibs//score/os/qnx:dispatch",
+    "@score_baselibs//score/os/qnx:iofunc",
+    "@score_baselibs//score/os/qnx:timer",
+    "@score_baselibs//score/os/utils:signal",
+]
 
 test_suite(
     name = "unit_tests",
@@ -42,7 +59,6 @@ cc_library(
         "engine.h",
         "server_factory.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//visibility:public"],
     deps = select({
@@ -68,7 +84,6 @@ cc_library(
         "service_protocol_config.h",
         "timed_command_queue_entry.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -92,7 +107,6 @@ cc_library(
         "client_server_communication.h",
         "timed_command_queue.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -103,11 +117,13 @@ cc_library(
     ],
 )
 
+# Linux-only until unit() can be built on QNX, at which point the QNX branch takes effect.
 unit(
     name = "client_connection",
     scope = [
         "//score/message_passing:__subpackages__",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
     tests = [
         "//score/message_passing:client_connection_test_linux",
     ],
@@ -118,60 +134,111 @@ unit(
     ],
 )
 
-unit(
-    name = "server_connection",
-    scope = [
-        "//score/message_passing:__subpackages__",
+cc_library(
+    name = "message_passing_unix_domain_engine",
+    srcs = ["unix_domain/unix_domain_engine.cpp"],
+    hdrs = [
+        "unix_domain/unix_domain_engine.h",
+        "unix_domain/unix_domain_socket_address.h",
     ],
-    tests = [],
-    unit_design = ["//score/message_passing/dependability/software_unit_design:server_connection_unit_design"],
-    visibility = ["//score/message_passing/dependability:__pkg__"],
-    implementation = [
-        "//score/message_passing:common_headers",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [":message_passing_common"] + _UNIX_DOMAIN_OS_DEPS,
+)
+
+cc_library(
+    name = "message_passing_unix_domain_client_factory",
+    srcs = ["unix_domain/unix_domain_client_factory.cpp"],
+    hdrs = ["unix_domain/unix_domain_client_factory.h"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [
+        ":message_passing_common",
+        ":message_passing_unix_domain_engine",
+    ],
+)
+
+# The server and its factory include each other's headers, so they share one library.
+cc_library(
+    name = "message_passing_unix_domain_server",
+    srcs = [
+        "unix_domain/unix_domain_server.cpp",
+        "unix_domain/unix_domain_server_factory.cpp",
+    ],
+    hdrs = [
+        "unix_domain/unix_domain_server.h",
+        "unix_domain/unix_domain_server_factory.h",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [
+        ":message_passing_common",
+        ":message_passing_unix_domain_engine",
     ],
 )
 
 cc_library(
     name = "message_passing_unix_domain",
-    srcs = [
-        "unix_domain/unix_domain_client_factory.cpp",
-        "unix_domain/unix_domain_engine.cpp",
-        "unix_domain/unix_domain_server.cpp",
-        "unix_domain/unix_domain_server_factory.cpp",
-    ],
-    hdrs = [
-        "unix_domain/unix_domain_client_factory.h",
-        "unix_domain/unix_domain_engine.h",
-        "unix_domain/unix_domain_server.h",
-        "unix_domain/unix_domain_server_factory.h",
-        "unix_domain/unix_domain_socket_address.h",
-    ],
-    features = COMPILER_WARNING_FEATURES,
     target_compatible_with = ["@platforms//os:linux"],
-    visibility = [
-        "//score/mw/com/impl:__subpackages__",
-    ],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
-        ":message_passing_common",
-        "@score_baselibs//score/os:socket",
-        "@score_baselibs//score/os:sys_poll",
-        "@score_baselibs//score/os:unistd",
-        "@score_baselibs//score/os/utils:signal",
+        ":message_passing_unix_domain_client_factory",
+        ":message_passing_unix_domain_engine",
+        ":message_passing_unix_domain_server",
     ],
 )
 
 unit(
-    name = "unix_domain",
+    name = "unix_domain_engine",
+    scope = [
+        "//score/message_passing:__subpackages__",
+    ],
+    tests = [],
+    unit_design = ["//score/message_passing/dependability/software_unit_design:unix_domain_engine_unit_design"],
+    visibility = ["//score/message_passing/dependability:__pkg__"],
+    implementation = [
+        ":message_passing_unix_domain_engine",
+    ],
+)
+
+unit(
+    name = "unix_domain_client_factory",
+    scope = [
+        "//score/message_passing:__subpackages__",
+    ],
+    tests = [],
+    unit_design = ["//score/message_passing/dependability/software_unit_design:unix_domain_client_factory_unit_design"],
+    visibility = ["//score/message_passing/dependability:__pkg__"],
+    implementation = [
+        ":message_passing_unix_domain_client_factory",
+    ],
+)
+
+unit(
+    name = "unix_domain_server",
     scope = [
         "//score/message_passing:__subpackages__",
     ],
     tests = [
         ":unix_domain_test_linux",
     ],
-    unit_design = ["//score/message_passing/dependability/software_unit_design:unix_domain_unit_design"],
+    unit_design = ["//score/message_passing/dependability/software_unit_design:unix_domain_server_unit_design"],
     visibility = ["//score/message_passing/dependability:__pkg__"],
     implementation = [
-        ":message_passing_unix_domain",
+        ":message_passing_unix_domain_server",
+    ],
+)
+
+unit(
+    name = "unix_domain_server_factory",
+    scope = [
+        "//score/message_passing:__subpackages__",
+    ],
+    tests = [],
+    unit_design = ["//score/message_passing/dependability/software_unit_design:unix_domain_server_factory_unit_design"],
+    visibility = ["//score/message_passing/dependability:__pkg__"],
+    implementation = [
+        ":message_passing_unix_domain_server",
     ],
 )
 
@@ -183,7 +250,6 @@ cc_library(
     hdrs = [
         "qnx_dispatch/qnx_resource_path.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -194,47 +260,125 @@ cc_library(
 )
 
 cc_library(
-    name = "message_passing_qnx_dispatch",
+    name = "message_passing_qnx_dispatch_engine",
     srcs = [
         "qnx_dispatch/dispatch_thread_runner.cpp",
-        "qnx_dispatch/qnx_dispatch_client_factory.cpp",
         "qnx_dispatch/qnx_dispatch_engine.cpp",
-        "qnx_dispatch/qnx_dispatch_server.cpp",
-        "qnx_dispatch/qnx_dispatch_server_factory.cpp",
     ],
     hdrs = [
         "qnx_dispatch/dispatch_thread_runner.h",
-        "qnx_dispatch/qnx_dispatch_client_factory.h",
         "qnx_dispatch/qnx_dispatch_engine.h",
-        "qnx_dispatch/qnx_dispatch_server.h",
-        "qnx_dispatch/qnx_dispatch_server_factory.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":message_passing_common",
         ":qnx_resource_path",
-        "@score_baselibs//score/os:fcntl",
-        "@score_baselibs//score/os:sys_uio",
-        "@score_baselibs//score/os:unistd",
-        "@score_baselibs//score/os/qnx:channel",
-        "@score_baselibs//score/os/qnx:dispatch",
-        "@score_baselibs//score/os/qnx:iofunc",
-        "@score_baselibs//score/os/qnx:timer",
-        "@score_baselibs//score/os/utils:signal",
+    ] + _QNX_DISPATCH_OS_DEPS,
+)
+
+cc_library(
+    name = "message_passing_qnx_dispatch_client_factory",
+    srcs = ["qnx_dispatch/qnx_dispatch_client_factory.cpp"],
+    hdrs = ["qnx_dispatch/qnx_dispatch_client_factory.h"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [
+        ":message_passing_common",
+        ":message_passing_qnx_dispatch_engine",
     ],
 )
 
+# The server and its factory include each other's headers, so they share one library.
+cc_library(
+    name = "message_passing_qnx_dispatch_server",
+    srcs = [
+        "qnx_dispatch/qnx_dispatch_server.cpp",
+        "qnx_dispatch/qnx_dispatch_server_factory.cpp",
+    ],
+    hdrs = [
+        "qnx_dispatch/qnx_dispatch_server.h",
+        "qnx_dispatch/qnx_dispatch_server_factory.h",
+    ],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [
+        ":message_passing_common",
+        ":message_passing_qnx_dispatch_engine",
+    ],
+)
+
+cc_library(
+    name = "message_passing_qnx_dispatch",
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [
+        ":message_passing_qnx_dispatch_client_factory",
+        ":message_passing_qnx_dispatch_engine",
+        ":message_passing_qnx_dispatch_server",
+    ],
+)
+
+# The QNX implementations resolve to nothing on Linux, where the documentation is built.
+# Linux-only until unit() can be built on QNX, at which point the QNX branch takes effect.
 unit(
-    name = "qnx_dispatch",
+    name = "qnx_dispatch_engine",
     scope = [
         "//score/message_passing:__subpackages__",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
     tests = [],
-    unit_design = ["//score/message_passing/dependability/software_unit_design:qnx_dispatch_unit_design"],
+    unit_design = ["//score/message_passing/dependability/software_unit_design:qnx_dispatch_engine_unit_design"],
     visibility = ["//score/message_passing/dependability:__pkg__"],
-    implementation = [],
+    implementation = select({
+        "@platforms//os:qnx": [":message_passing_qnx_dispatch_engine"],
+        "//conditions:default": [],
+    }),
+)
+
+unit(
+    name = "qnx_dispatch_client_factory",
+    scope = [
+        "//score/message_passing:__subpackages__",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    unit_design = ["//score/message_passing/dependability/software_unit_design:qnx_dispatch_client_factory_unit_design"],
+    visibility = ["//score/message_passing/dependability:__pkg__"],
+    implementation = select({
+        "@platforms//os:qnx": [":message_passing_qnx_dispatch_client_factory"],
+        "//conditions:default": [],
+    }),
+)
+
+unit(
+    name = "qnx_dispatch_server",
+    scope = [
+        "//score/message_passing:__subpackages__",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    unit_design = ["//score/message_passing/dependability/software_unit_design:qnx_dispatch_server_unit_design"],
+    visibility = ["//score/message_passing/dependability:__pkg__"],
+    implementation = select({
+        "@platforms//os:qnx": [":message_passing_qnx_dispatch_server"],
+        "//conditions:default": [],
+    }),
+)
+
+unit(
+    name = "qnx_dispatch_server_factory",
+    scope = [
+        "//score/message_passing:__subpackages__",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    unit_design = ["//score/message_passing/dependability/software_unit_design:qnx_dispatch_server_factory_unit_design"],
+    visibility = ["//score/message_passing/dependability:__pkg__"],
+    implementation = select({
+        "@platforms//os:qnx": [":message_passing_qnx_dispatch_server"],
+        "//conditions:default": [],
+    }),
 )
 
 cc_library(
@@ -251,7 +395,6 @@ cc_library(
         "mock/server_mock.h",
         "mock/shared_resource_engine_mock.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         ":common_headers",
@@ -264,7 +407,6 @@ cc_unit_test(
     srcs = [
         "client_connection_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":message_passing_common",
         ":mock",
@@ -277,7 +419,6 @@ cc_unit_test(
         "unix_domain_server_test.cpp",
         "unix_domain_server_to_client_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":message_passing_unix_domain",
     ],
@@ -324,7 +465,6 @@ cc_unit_test(
     srcs = [
         "timed_command_queue_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":message_passing_common",
     ],

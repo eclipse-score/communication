@@ -1,0 +1,7 @@
+{
+    "serviceTypes": [],
+    "serviceInstances": [],
+    "global": {
+        "shm-size-calc-mode": "ANALYSIS"
+    }
+}

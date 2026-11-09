@@ -102,8 +102,6 @@ class FakeProxy
         return score::mw::com::impl::make_FindServiceHandle(uid);
     }
 
-    ~FakeProxy() noexcept = default;
-
     static Mock& GetMockInstance()
     {
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(gMockInstance != nullptr);

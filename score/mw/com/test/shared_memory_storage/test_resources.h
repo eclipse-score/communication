@@ -15,6 +15,7 @@
 #define SCORE_MW_COM_TEST_SHARED_MEMORY_STORAGE_TEST_RESOURCES_H
 
 #include "score/memory/shared/pointer_arithmetic_util.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event.h"
 #include "score/mw/com/test/common_test_resources/big_datatype.h"
 #include "score/mw/com/types.h"
 #include "score/os/utils/interprocess/interprocess_notification.h"

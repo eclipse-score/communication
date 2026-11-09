@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(default_visibility = [
     "//score/mw/com/impl/tracing/test:__subpackages__",
@@ -21,11 +20,10 @@ package(default_visibility = [
 cc_unit_test(
     name = "proxy_event_tracing_test",
     srcs = ["proxy_event_tracing_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl:runtime_mock",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:proxy_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
@@ -37,11 +35,10 @@ cc_unit_test(
 cc_unit_test(
     name = "skeleton_event_tracing_test",
     srcs = ["proxy_event_tracing_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl:runtime_mock",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:proxy_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
@@ -53,11 +50,10 @@ cc_unit_test(
 cc_unit_test(
     name = "skeleton_field_tracing_test",
     srcs = ["proxy_event_tracing_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl:runtime_mock",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:proxy_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
@@ -69,11 +65,10 @@ cc_unit_test(
 cc_unit_test(
     name = "skeleton_tracing_test",
     srcs = ["proxy_event_tracing_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl:runtime_mock",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:proxy_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",

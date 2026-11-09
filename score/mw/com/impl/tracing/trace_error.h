@@ -65,10 +65,6 @@ class TraceErrorDomain final : public score::result::ErrorDomain
     }
 };
 
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding. This rule states: "A type, object or function that is used in multiple
-// translation units shall be declared in one and only one file.".
-// This is false positive. Function is declared only once.
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE]
 score::result::Error MakeError(const TraceErrorCode code, const std::string_view message = "");
 
 }  // namespace score::mw::com::impl::tracing

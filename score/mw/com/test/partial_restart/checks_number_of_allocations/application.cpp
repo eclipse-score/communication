@@ -20,6 +20,7 @@
 #include "score/mw/com/test/partial_restart/test_datatype.h"
 #include "score/mw/com/types.h"
 #include "score/scope_exit/scope_exit.h"
+#include <chrono>
 #include <cstdlib>
 #include <iostream>
 
@@ -102,9 +103,15 @@ void PerformProviderActions(CheckPointControl& check_point_control, score::cpp::
     // Step (5)- Wait for Controller command to proceed
     // *********************************************
     std::cout << "Provider Step (5): waiting for proceed\n";
-    if (WaitForChildProceed(check_point_control, stop_token) != CheckPointControl::ProceedInstruction::FINISH_ACTIONS)
+    auto proceed_instruction = WaitForChildProceed(check_point_control, stop_token);
+    if (proceed_instruction == CheckPointControl::ProceedInstruction::WAIT_FOR_KILL)
     {
-        std::cerr << "Consumer Step (5): Received proceed-trigger from controller, but expected finish-trigger!"
+        score::mw::com::test::IdleUntilKilled(check_point_control);
+    }
+    if (proceed_instruction != CheckPointControl::ProceedInstruction::FINISH_ACTIONS)
+    {
+        std::cerr << "Provider Step (5): Received unexpected proceed-trigger from controller, expected "
+                     "finish-trigger!"
                   << std::endl;
         return;
     }
@@ -168,7 +175,10 @@ int main()
     // Step (4)- kill provider
     // *********************************************
     std::cout << "Controller Step (4): killing provider\n";
-    if (!first_process_pid.value().KillChildProcess())
+    if (!score::mw::com::test::KillChildAfterItLeftNotification("Controller Step (4)",
+                                                                skeleton_check_point_control,
+                                                                first_process_pid.value(),
+                                                                kMaxWaitTimeToReachCheckpoint))
     {
         object_cleanup_guard.CleanUp();
         return EXIT_FAILURE;

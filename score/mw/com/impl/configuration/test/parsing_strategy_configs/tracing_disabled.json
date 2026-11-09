@@ -1,0 +1,9 @@
+{
+    "serviceInstances": [],
+    "serviceTypes": [],
+    "tracing": {
+        "enable": false,
+        "applicationInstanceID": "test_application_id",
+        "traceFilterConfigPath": "./test_filter_config.json"
+    }
+}

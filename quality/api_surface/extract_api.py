@@ -665,6 +665,7 @@ def extract_from_ast(
     # --- Follow type aliases to underlying classes ---
     # Build an index of all class/struct definitions by qualified name
     class_index: dict[str, dict] = {}  # qualified_name -> CXXRecordDecl node
+    enum_index: dict[str, dict] = {}  # qualified_name -> EnumDecl node
 
     def index_classes(node: dict, ns_stack: list[str]):
         kind = node.get("kind", "")
@@ -679,6 +680,9 @@ def extract_from_ast(
         if kind == "CXXRecordDecl" and name and node.get("completeDefinition"):
             qualified = build_qualified_name(name, ns_stack)
             class_index[qualified] = node
+
+        if kind == "EnumDecl" and name and node.get("inner"):
+            enum_index[build_qualified_name(name, ns_stack)] = node
 
         if kind == "ClassTemplateDecl" and name:
             qualified = build_qualified_name(name, ns_stack)
@@ -699,21 +703,24 @@ def extract_from_ast(
     alias_symbols = [s for s in symbols if s.kind in ("type_alias", "template_type_alias")]
     followed_members: list[ApiSymbol] = []
 
-    def _resolve_class_node(type_name: str, alias_qualified_name: str = "") -> Optional[dict]:
-        """Resolve a type name to its CXXRecordDecl in the class index."""
+    def _resolve_class_node(
+        type_name: str, alias_qualified_name: str = "", index: Optional[dict[str, dict]] = None
+    ) -> Optional[dict]:
+        """Resolve a type name to its declaration node in the given index (default: class index)."""
+        class_index_ = class_index if index is None else index
         name = type_name.lstrip(":")
         base = name.split("<")[0].strip()
         if base.startswith("std::") or base.startswith("__"):
             return None
-        node = class_index.get(base)
+        node = class_index_.get(base)
         if not node and alias_qualified_name and "::" in alias_qualified_name:
             alias_namespace = alias_qualified_name.rsplit("::", 1)[0]
             if base.startswith("impl::"):
-                node = class_index.get(f"{alias_namespace}::{base}")
+                node = class_index_.get(f"{alias_namespace}::{base}")
             elif "::" not in base:
-                node = class_index.get(f"{alias_namespace}::{base}")
+                node = class_index_.get(f"{alias_namespace}::{base}")
         if not node:
-            for key, n in class_index.items():
+            for key, n in class_index_.items():
                 if key.endswith("::" + base.split("::")[-1]) and base.endswith(key.split("::")[-1]):
                     node = n
                     break
@@ -777,6 +784,27 @@ def extract_from_ast(
         # Skip external/standard library types
         base_name = underlying_type.lstrip(":").split("<")[0].strip()
         if base_name.startswith("std::") or base_name.startswith("__"):
+            continue
+
+        # Aliases to enums expose the enumerators under the alias name
+        enum_node = _resolve_class_node(underlying_type, alias_sym.qualified_name, enum_index)
+        if enum_node:
+            for child in enum_node.get("inner", []):
+                if child.get("kind") != "EnumConstantDecl" or not child.get("name"):
+                    continue
+                has_api, has_brief = get_comment_markers(find_comment(child))
+                followed_members.append(
+                    ApiSymbol(
+                        name=child["name"],
+                        qualified_name=f"{alias_sym.qualified_name}::{child['name']}",
+                        kind="enum_value",
+                        signature=child["name"],
+                        file=alias_sym.file,
+                        line=alias_sym.line,
+                        has_api_marker=has_api,
+                        has_brief_doc=has_brief,
+                    )
+                )
             continue
 
         # Look up in class index

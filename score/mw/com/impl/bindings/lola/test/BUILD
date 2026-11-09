@@ -12,14 +12,12 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "proxy_event_test_resources",
     testonly = True,
     srcs = ["proxy_event_test_resources.cpp"],
     hdrs = ["proxy_event_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         "//score/memory/shared:shared_memory_factory_mock",
@@ -27,6 +25,7 @@ cc_library(
         "//score/mw/com/impl:runtime_mock",
         "//score/mw/com/impl:service_discovery_mock",
         "//score/mw/com/impl/bindings/lola:event",
+        "//score/mw/com/impl/bindings/lola:event_data_storage_local_view",
         "//score/mw/com/impl/bindings/lola:proxy",
         "//score/mw/com/impl/bindings/lola/messaging:message_passing_service_mock",
         "//score/mw/com/impl/bindings/lola/test_doubles",
@@ -45,7 +44,6 @@ cc_library(
     name = "proxy_event_fixture",
     testonly = True,
     hdrs = ["proxy_event_fixture.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
         ":proxy_event_test_resources",
@@ -63,7 +61,6 @@ cc_library(
     testonly = True,
     srcs = ["skeleton_test_resources.cpp"],
     hdrs = ["skeleton_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -93,7 +90,6 @@ cc_library(
     testonly = True,
     srcs = ["skeleton_event_test_resources.cpp"],
     hdrs = ["skeleton_event_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
@@ -103,7 +99,7 @@ cc_library(
         "//score/mw/com/impl:service_discovery_mock",
         "//score/mw/com/impl/bindings/lola:event",
         "//score/mw/com/impl/bindings/lola/messaging:message_passing_service_mock",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -114,7 +110,6 @@ cc_library(
     testonly = True,
     srcs = ["service_discovery_test_resources.cpp"],
     hdrs = ["service_discovery_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":skeleton_test_resources",
@@ -132,7 +127,6 @@ cc_library(
     testonly = True,
     srcs = ["transaction_log_test_resources.cpp"],
     hdrs = ["transaction_log_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
@@ -151,7 +145,7 @@ cc_test(
     size = "small",
     timeout = "long",
     srcs = ["skeleton_component_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     tags = [
@@ -167,7 +161,7 @@ cc_test(
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl/bindings/lola:service_data_control",
         "//score/mw/com/impl/bindings/lola:service_data_storage",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
         "@score_baselibs//score/os/mocklib:acl_mock",
@@ -180,7 +174,7 @@ cc_test(
     size = "small",
     timeout = "long",
     srcs = ["skeleton_event_component_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     tags = [
@@ -195,6 +189,7 @@ cc_test(
         ":skeleton_test_resources",
         "//score/mw/com/impl:runtime_mock",
         "//score/mw/com/impl:service_discovery_mock",
+        "//score/mw/com/impl/bindings/lola:event_data_storage_local_view",
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/bindings/lola:skeleton",
         "//score/mw/com/impl/bindings/lola/messaging:message_passing_service_mock",
@@ -213,7 +208,7 @@ cc_test(
     size = "small",
     timeout = "moderate",
     srcs = ["proxy_component_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + ["aborts_upon_exception"],
+    features = ["aborts_upon_exception"],
     tags = [
         "exclusive",  # Sandboxing is not properly working with LoLa message passing 2.0 (Ticket-217341)
         "unit",

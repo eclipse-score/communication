@@ -11,14 +11,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
     name = "qemu_hypervisor_transport",
     srcs = ["qemu_hypervisor_transport.cpp"],
     hdrs = ["qemu_hypervisor_transport.h"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     visibility = ["//score/mw/com/gateway:__subpackages__"],
@@ -37,7 +36,6 @@ cc_library(
 cc_unit_test(
     name = "qemu_hypervisor_transport_test",
     srcs = ["qemu_hypervisor_transport_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":qemu_hypervisor_transport",
         "//score/mw/com/gateway/gateway_application:gateway_core_mock",

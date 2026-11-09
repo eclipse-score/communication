@@ -73,6 +73,7 @@ std::mutex g_callback_call_mutex{};
 // the chapter: the serialized string is turned back into a fully self-contained InstanceIdentifier via
 // InstanceIdentifier::Create(), even though this callback instance does NOT appear in the provider's own configuration.
 // Returns false if deserialization failed.
+// [provider-ensure-callback-identifier-start]
 bool EnsureCallbackIdentifier(const std::string& serialized_instance_id)
 {
     std::lock_guard<std::mutex> lock{g_callback_cache_mutex};
@@ -91,12 +92,14 @@ bool EnsureCallbackIdentifier(const std::string& serialized_instance_id)
     g_callback_identifiers.emplace(serialized_instance_id, std::move(instance_identifier_result).value());
     return true;
 }
+// [provider-ensure-callback-identifier-end]
 
 // Creates - or returns the cached - callback proxy for the given serialized InstanceIdentifier. Uses the (already
 // deserialized and cached) InstanceIdentifier to perform a *targeted* FindService(): as the InstanceIdentifier fully
 // describes the callback instance, this returns exactly the one matching handle - no ambiguous "find any" search is
 // needed. The whole find/create is serialized by g_callback_cache_mutex, so concurrent timer threads will not create
 // the same proxy twice.
+// [provider-get-or-create-callback-proxy-start]
 std::shared_ptr<LongRunningServiceResultProxy> GetOrCreateCallbackProxy(const std::string& serialized_instance_id)
 {
     std::lock_guard<std::mutex> lock{g_callback_cache_mutex};
@@ -141,6 +144,7 @@ std::shared_ptr<LongRunningServiceResultProxy> GetOrCreateCallbackProxy(const st
     std::cout << "Created and cached a new callback proxy for a consumer's callback instance." << std::endl;
     return proxy;
 }
+// [provider-get-or-create-callback-proxy-end]
 
 // Reconstructs the serialized InstanceIdentifier string (a NUL-padded fixed-size buffer) into a std::string.
 std::string ToSerializedString(const SerializedInstanceIdentifier& buffer)
@@ -169,6 +173,7 @@ int main()
     // synchronously: it just deserializes/caches the consumer's callback InstanceIdentifier and arms a timer. The
     // actual FindService/proxy creation and the callback call happen later, on the timer thread (outside this
     // middleware handler thread). Handlers MUST be registered before OfferService.
+    // [provider-post-job-handler-start]
     const auto handler_result = service_instance.post_long_running_job_.RegisterHandler(
         [](bool& queued,
            const std::uint32_t& job_argument,
@@ -227,6 +232,7 @@ int main()
                                                 "Failed to offer LongRunningServiceSkeleton instance!");
     std::cout << "OfferService: LongRunningService instance is now offered. Waiting for PostLongRunningJob calls ..."
               << std::endl;
+    // [provider-post-job-handler-end]
 
     {
         std::unique_lock<std::mutex> lock{g_shutdown_mutex};

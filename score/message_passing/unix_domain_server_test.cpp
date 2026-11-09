@@ -30,10 +30,11 @@ using namespace ::testing;
 
 using GetOsResourcesPointer = decltype(&UnixDomainEngine::GetOsResources);
 using GetLoggerInterfacePointer = decltype(&ISharedResourceEngine::GetLogger);
-using GetLoggerPointer = decltype(&UnixDomainEngine::GetLogger);
+using GetLoggerPointer = const LoggingCallback& (UnixDomainEngine::*)() & noexcept;
 using GetClientIdentityInterfacePointer = decltype(&IServerConnection::GetClientIdentity);
-using GetClientIdentityPointer = decltype(&detail::UnixDomainServer::ServerConnection::GetClientIdentity);
-using SocketAddressDataPointer = decltype(&detail::UnixDomainSocketAddress::data);
+using GetClientIdentityPointer =
+    const ClientIdentity& (detail::UnixDomainServer::ServerConnection::*)() const& noexcept;
+using SocketAddressDataPointer = const sockaddr* (detail::UnixDomainSocketAddress::*)() const& noexcept;
 
 static_assert(std::is_invocable_v<GetOsResourcesPointer, UnixDomainEngine&>);
 static_assert(!std::is_invocable_v<GetOsResourcesPointer, UnixDomainEngine&&>);

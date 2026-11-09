@@ -69,7 +69,7 @@ def _generate_quality_links_impl(ctx):
         # quality reports are published alongside the latest/ docs
         coverage_ref = "`Coverage report <quality/coverage/index.html>`__"
         dashboard_ref = "`Quality Dashboard <quality/index.html>`__"
-        clang_tidy_ref = "`Clang-Tidy report <quality/clang_tidy_findings.txt>`__"
+        clang_tidy_ref = "`Clang-Tidy report <quality/clang-tidy.sarif>`__"
         codeql_ref = "`CodeQL findings <quality/codeql_findings.sarif>`__"
         codeql_integrity_ref = "`Database integrity <quality/codeql/database_integrity_report.md>`__"
         codeql_deviations_ref = "`Deviations <quality/codeql/deviations_report.md>`__"
@@ -102,7 +102,7 @@ def _generate_quality_links_impl(ctx):
             )
         else:
             clang_tidy_ref = ("`Clang-Tidy report (latest) <" + latest +
-                              "/quality/clang_tidy_findings.txt>`__")
+                              "/quality/clang-tidy.sarif>`__")
         if release_codeql_asset_url:
             codeql_ref = ("`CodeQL findings (release artifact) <" +
                           release_codeql_asset_url + ">`__")

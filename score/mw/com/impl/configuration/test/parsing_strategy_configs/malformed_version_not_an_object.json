@@ -1,0 +1,10 @@
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/test/service",
+            "version": "not_an_object",
+            "bindings": []
+        }
+    ],
+    "serviceInstances": []
+}

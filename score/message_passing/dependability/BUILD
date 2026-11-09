@@ -20,9 +20,9 @@ load(
 component(
     name = "component_message_passing",
     components = [
-        "//score/message_passing:client_connection",
-        "//score/message_passing:server_connection",
-        ":dispatch",
+        ":client",
+        ":engine",
+        ":server",
     ],
     requirements = [
         "//score/message_passing/dependability/requirements:component_requirements",
@@ -33,13 +33,35 @@ component(
 )
 
 component(
-    name = "dispatch",
+    name = "client",
     components = [
-        "//score/message_passing:unix_domain",
-        "//score/message_passing:qnx_dispatch",
+        "//score/message_passing:client_connection",
+        "//score/message_passing:unix_domain_client_factory",
+        "//score/message_passing:qnx_dispatch_client_factory",
     ],
-    requirements = [
-        "//score/message_passing/dependability/requirements:component_requirements",
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+)
+
+component(
+    name = "server",
+    components = [
+        "//score/message_passing:unix_domain_server",
+        "//score/message_passing:qnx_dispatch_server",
+        "//score/message_passing:unix_domain_server_factory",
+        "//score/message_passing:qnx_dispatch_server_factory",
+    ],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+)
+
+component(
+    name = "engine",
+    components = [
+        "//score/message_passing:unix_domain_engine",
+        "//score/message_passing:qnx_dispatch_engine",
     ],
     tags = ["manual"],
     target_compatible_with = ["@platforms//os:linux"],
@@ -49,7 +71,6 @@ component(
 dependable_element(
     name = "dependable_element_message_passing",
     architectural_design = ["//score/message_passing/dependability/software_architectural_design:message_passing_architectural_design"],
-    assumptions_of_use = ["//score/message_passing/dependability/assumed_system:aous"],
     components = [":component_message_passing"],
     dependability_analysis = ["//score/message_passing/dependability/safety_analysis:message_passing_dependability_analysis"],
     integrity_level = "B",

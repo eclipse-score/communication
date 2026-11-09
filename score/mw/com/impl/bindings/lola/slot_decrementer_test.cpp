@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log.h"
+#include "score/quality/compiler_warnings/warnings.h"
 
 #include <gtest/gtest.h>
 
@@ -127,6 +128,8 @@ TEST_F(SlotDecrementerFixture, MoveAssigningWillDecrementSlotOfMovedToSlotDecrem
     EXPECT_EQ(GetSlotReferenceCount(second_slot_index), 1U);
 }
 
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_SELF_MOVE  // We intentionally test self move
 TEST_F(SlotDecrementerFixture, SelfMoveAssigningWillNotDereferenceSlot)
 {
     // Given a SlotDecrementer
@@ -138,6 +141,7 @@ TEST_F(SlotDecrementerFixture, SelfMoveAssigningWillNotDereferenceSlot)
     // Then the reference count of the slot managed by the SlotDecrementer will still be 1
     EXPECT_EQ(GetSlotReferenceCount(event_slot_index_.value()), 1U);
 }
+DISABLE_WARNING_POP
 
 }  // namespace
 }  // namespace score::mw::com::impl::lola

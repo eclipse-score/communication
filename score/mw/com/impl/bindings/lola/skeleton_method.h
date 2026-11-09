@@ -21,7 +21,6 @@
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 
 #include "score/language/safecpp/scoped_function/scope.h"
-#include "score/memory/data_type_size_info.h"
 #include "score/result/result.h"
 
 #include <sched.h>
@@ -73,8 +72,6 @@ class SkeletonMethod : public SkeletonMethodBinding
               const std::optional<score::cpp::span<std::byte>> return_arg);
     void CleanUpOldHandlers(const GlobalConfiguration::ApplicationId application_id, pid_t proxy_pid);
 
-    std::optional<memory::DataTypeSizeInfo> in_args_type_erased_info_;
-    std::optional<memory::DataTypeSizeInfo> return_type_type_erased_info_;
     std::optional<SkeletonMethodBinding::TypeErasedHandler> type_erased_callback_;
 
     std::unordered_map<ProxyMethodInstanceIdentifier, std::pair<pid_t, MethodCallRegistrationGuard>>

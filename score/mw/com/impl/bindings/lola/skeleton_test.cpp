@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/binding_type.h"
+#include "score/mw/com/impl/bindings/lola/event_data_storage_local_view.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder_mock.h"
@@ -1008,12 +1009,12 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillOpenEventDataIfShmRegio
     auto& existing_event_data_storage =
         GetEventStorageFromServiceDataStorage(test::kDummyElementFqId, existing_service_data_storage_);
 
-    ProviderEventDataControlLocalView<> opened_event_control_local_qm =
-        registration_result.event_control_qm.data_control;
+    ProviderEventDataControlLocalView<> opened_event_control_local_qm{
+        registration_result.event_control_qm.data_control};
 
     ASSERT_TRUE(registration_result.event_control_asil_b != nullptr);
-    ProviderEventDataControlLocalView<> opened_event_control_local_asil_b =
-        registration_result.event_control_asil_b->data_control;
+    ProviderEventDataControlLocalView<> opened_event_control_local_asil_b{
+        registration_result.event_control_asil_b->data_control};
 
     EXPECT_EQ(existing_event_control_qm.data_control.state_slots_[0], 0U);
     EXPECT_EQ(existing_event_control_asil_b.data_control.state_slots_[0], 0U);
@@ -1180,9 +1181,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventDataSlotsExistAfterEventI
         skeleton_->Register(element_fq_id, test::kDefaultEventProperties, test::kTestSampleTypeSizeInfo);
 
     // Then a valid slot-vector with the right size exists and we can access/write to it:
-    ASSERT_EQ(event_reg_result.event_data_storage.GetNumberOfSlots(), test::kMaxSlots);
-    auto* type_erased_slot_ptr =
-        event_reg_result.event_data_storage.GetTypeErasedDataSlot(3, test::kTestSampleTypeSizeInfo.Size());
+    const EventDataStorageLocalView event_data_storage_local_view{event_reg_result.event_data_storage,
+                                                                  test::kTestSampleTypeSizeInfo};
+    auto* type_erased_slot_ptr = event_data_storage_local_view.GetTypeErasedDataSlot(3);
     test::TestSampleType test_value = 42U;
     memcpy(type_erased_slot_ptr, &test_value, test::kTestSampleTypeSizeInfo.Size());
 

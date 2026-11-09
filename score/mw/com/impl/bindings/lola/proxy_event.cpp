@@ -22,10 +22,13 @@
 namespace score::mw::com::impl::lola
 {
 
-ProxyEvent::ProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name)
+ProxyEvent::ProxyEvent(Proxy& parent,
+                       const ElementFqId element_fq_id,
+                       const std::string_view event_name,
+                       const memory::DataTypeSizeInfo data_type_size_info)
     : GenericProxyEventBinding{},
-      meta_info_{parent.GetEventMetaInfo(element_fq_id)},
-      event_data_storage_{parent.GetEventDataStorage(element_fq_id)},
+      meta_info_{data_type_size_info},
+      event_data_storage_local_{parent.GetEventDataStorage(element_fq_id), meta_info_.data_type_info_},
       test_slot_collector_{},
       parent_{parent},
       event_fq_id_{element_fq_id},
@@ -103,8 +106,7 @@ inline Result<std::size_t> ProxyEvent::GetNewSamples(Callback&& receiver, Tracke
 
     for (auto slot_index_it = slot_indices.begin; slot_index_it != slot_indices.end; ++slot_index_it)
     {
-        const void* type_erased_sample_ptr =
-            event_data_storage_.GetTypeErasedDataSlot(*slot_index_it, meta_info_.data_type_info_.Size());
+        const void* type_erased_sample_ptr = event_data_storage_local_.GetTypeErasedDataSlot(*slot_index_it);
 
         const EventSlotStatus event_slot_status{event_data_control_local_[*slot_index_it]};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};

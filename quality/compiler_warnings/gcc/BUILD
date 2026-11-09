@@ -16,22 +16,11 @@
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
 
-cc_args(
-    name = "default_link_args",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:link_actions",
-    ],
-    args = [
-        "-fuse-ld=gold",
-    ],
-)
-
 cc_feature(
     name = "default_flags",
     args = [
         "//quality/compiler_warnings:default_compile_args",
         "//quality/compiler_warnings:default_link_args",
-        ":default_link_args",
     ],
     feature_name = "score_communication_gcc_default_flags",
     visibility = ["//visibility:public"],
@@ -43,9 +32,6 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
     args = [
-        "-Wno-builtin-macro-redefined",
-        # Reduce known GCC false positives.
-        "-Wno-maybe-uninitialized",
         "-Warray-bounds=2",  # A5-2-5
         "-Wdisabled-optimization",
         "-Wimplicit-fallthrough=4",
@@ -63,8 +49,6 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
     ],
     args = [
-        "-Wno-literal-suffix",
-        "-Wno-noexcept-type",
         "-Wdelete-non-virtual-dtor",
         "-Woverloaded-virtual",
         "-Wregister",

@@ -15,7 +15,6 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("//quality/api_surface:api_surface.bzl", "api_surface_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 # Capture README.md for Sphinx documentation.
 sphinx_docs_library(
@@ -29,7 +28,6 @@ cc_library(
     name = "com_error_domain",
     srcs = ["com_error_domain.cpp"],
     hdrs = ["com_error_domain.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
@@ -41,7 +39,6 @@ cc_library(
     name = "types",
     srcs = ["types.cpp"],
     hdrs = ["types.h"],
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
@@ -56,7 +53,6 @@ cc_library(
     name = "runtime",
     srcs = ["runtime.cpp"],
     hdrs = ["runtime.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/language/futurecpp"],
     tags = ["FFI"],
     visibility = [
@@ -73,7 +69,6 @@ cc_library(
 
 cc_library(
     name = "com",
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FUSA"],
     visibility = ["//visibility:public"],
     deps = [
@@ -88,7 +83,6 @@ cc_library(
     name = "runtime_configuration",
     srcs = ["runtime_configuration.cpp"],
     hdrs = ["runtime_configuration.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/string_manipulation/arguments",
@@ -108,7 +102,6 @@ cc_library(
     testonly = True,
     srcs = ["test_types.cpp"],
     hdrs = ["test_types.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         ":runtime",
@@ -144,7 +137,6 @@ cc_unit_test(
     data = [
         "//score/mw/com/impl/configuration:mw_com_config.json",
     ],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
@@ -160,7 +152,6 @@ cc_unit_test(
 cc_unit_test(
     name = "runtime_configuration_test",
     srcs = ["runtime_configuration_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "runtime_configuration",
         "@score_baselibs//score/mw/log",

@@ -1,3 +1,17 @@
+..
+   # *******************************************************************************
+   # Copyright (c) 2026 Contributors to the Eclipse Foundation
+   #
+   # See the NOTICE file(s) distributed with this work for additional
+   # information regarding copyright ownership.
+   #
+   # This program and the accompanying materials are made available under the
+   # terms of the Apache License Version 2.0 which is available at
+   # https://www.apache.org/licenses/LICENSE-2.0
+   #
+   # SPDX-License-Identifier: Apache-2.0
+   # *******************************************************************************
+
 Chapter 4: Subscription state
 =============================
 
@@ -61,16 +75,12 @@ files as chapter 3 (just adapted in content):
      - This file contains bazel targets for this example.
    * - `consumer/consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/consumer/consumer.cpp>`__
      - Implementation of the service consumer app. The `main()` for the consumer
-   * - `consumer/consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/consumer/consumer.h>`__
-     - Header (empty - we just always want to have cpp/h pairs) of the service consumer.
    * - `consumer/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/consumer/mw_com_config.json>`__
      - This file contains the configuration for `score::mw::com` for the consumer app.
    * - `consumer/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/consumer/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
    * - `provider/provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/provider/provider.cpp>`__
      - Implementation of the service provider.
-   * - `provider/provider.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/provider/provider.h>`__
-     - Header (empty) of the service provider.
    * - `provider/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/provider/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
    * - `provider/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/provider/mw_com_config.json>`__
@@ -166,7 +176,8 @@ Two durations control the cycle:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 32-33
+   :start-after: [provider-offer-durations-start]
+   :end-before: [provider-offer-durations-end]
    :caption: provider/provider.cpp
 
 
@@ -175,7 +186,8 @@ phase change is due. On each phase change it either stops or (re-)starts offerin
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 108-122
+   :start-after: [provider-phase-change-start]
+   :end-before: [provider-phase-change-end]
    :caption: provider/provider.cpp
 
 
@@ -183,7 +195,8 @@ Event updates (`SendSample()`) are only published while the service is currently
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 133-134
+   :start-after: [provider-send-while-offered-start]
+   :end-before: [provider-send-while-offered-end]
    :caption: provider/provider.cpp
 
 
@@ -191,7 +204,7 @@ Note: `StopOfferService()` does **not** invalidate the consumer's proxy or its s
 "armed"; only its state changes to `kSubscriptionPending`. When the provider offers the service again, the state
 automatically goes back to `kSubscribed`. This functionality/behavior is called "proxy auto reconnect" and there is a
 specific chapter in the design documentation that explains it in detail
-(see `here <https://github.com/eclipse-score/communication/blob/main/score/mw/com/design/skeleton_proxy/README.md#proxy-auto-reconnect-functionality>`__).
+(see `here <https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/bindings/lola/dependability/proxy_and_service_elements/lola_proxy_and_service_elements_unit_design.md#proxy-auto-reconnect-functionality>`__).
 
 Consumer application
 ~~~~~~~~~~~~~~~~~~~~
@@ -209,7 +222,8 @@ capture capacity):
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 112-137
+   :start-after: [consumer-shared-state-start]
+   :end-before: [consumer-shared-state-end]
    :caption: consumer/consumer.cpp
 
 
@@ -225,7 +239,8 @@ called once, with a non-empty set:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 178-178
+   :start-after: [consumer-stop-search-in-handler-start]
+   :end-before: [consumer-stop-search-in-handler-end]
    :caption: consumer/consumer.cpp
 
 
@@ -236,13 +251,15 @@ terminating:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 188-191
+   :start-after: [consumer-proxy-1-fatal-error-start]
+   :end-before: [consumer-proxy-1-fatal-error-end]
    :caption: consumer/consumer.cpp
 
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 278-281
+   :start-after: [consumer-main-loop-fatal-error-start]
+   :end-before: [consumer-main-loop-fatal-error-end]
    :caption: consumer/consumer.cpp
 
 
@@ -255,7 +272,8 @@ After subscribing, proxy_1 polls the subscription state **exactly once** via `Ge
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 197-213
+   :start-after: [consumer-proxy-1-poll-state-start]
+   :end-before: [consumer-proxy-1-poll-state-end]
    :caption: consumer/consumer.cpp
 
 
@@ -264,7 +282,8 @@ subscription state:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 296-298
+   :start-after: [consumer-proxy-1-receive-start]
+   :end-before: [consumer-proxy-1-receive-end]
    :caption: consumer/consumer.cpp
 
 
@@ -284,7 +303,8 @@ records the new state in an atomic and returns `true` to stay registered:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 236-251
+   :start-after: [consumer-subscription-state-change-handler-start]
+   :end-before: [consumer-subscription-state-change-handler-end]
    :caption: consumer/consumer.cpp
 
 
@@ -294,7 +314,8 @@ state returns to `kSubscribed`:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 304-311
+   :start-after: [consumer-proxy-2-receive-start]
+   :end-before: [consumer-proxy-2-receive-end]
    :caption: consumer/consumer.cpp
 
 

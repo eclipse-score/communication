@@ -25,6 +25,7 @@ namespace score::mw::com::tutorial
 // tire's pressure leaves the currently configured threshold band, the provider sends one such event carrying the
 // affected tire. The enum has a fixed-size underlying type (std::uint8_t) so that it is trivially copyable and can be
 // transported through shared memory.
+// [tire-enum-start]
 enum class Tire : std::uint8_t
 {
     front_left,
@@ -32,15 +33,18 @@ enum class Tire : std::uint8_t
     rear_left,
     rear_right,
 };
+// [tire-enum-end]
 
 // The value type of the "tire_pressure_thresholds" field. It describes the pressure band a tire pressure is expected to
 // stay within. As it is the data type of a field with a getter and a setter (i.e. it is transported as a method
 // argument/return value through shared memory), it must be trivially copyable: it therefore only aggregates two floats.
+// [tire-pressure-threshold-start]
 struct TirePressureThreshold
 {
     float lower_threshold;
     float upper_threshold;
 };
+// [tire-pressure-threshold-end]
 
 static_assert(std::is_trivially_copyable_v<TirePressureThreshold>,
               "TirePressureThreshold must be trivially copyable to be usable as a field (method) data type.");
@@ -54,6 +58,7 @@ static_assert(std::is_trivially_copyable_v<TirePressureThreshold>,
 // threshold band and is declared WithGetter *and* WithSetter, so that a consumer can both read and modify it. Finally,
 // an event "tire_pressure_warning" is used by the provider to notify consumers about a tire whose pressure has left the
 // current threshold band.
+// [extended-interface-start]
 template <typename Trait>
 class TirePressureExtendedInterface : public Trait::Base
 {
@@ -80,6 +85,7 @@ class TirePressureExtendedInterface : public Trait::Base
     // Notifies consumers about a tire whose current pressure has left the configured threshold band.
     typename Trait::template Event<Tire> tire_pressure_warning{*this, "tire_pressure_warning"};
 };
+// [extended-interface-end]
 
 using TirePressureExtendedProxy = score::mw::com::AsProxy<TirePressureExtendedInterface>;
 using TirePressureExtendedSkeleton = score::mw::com::AsSkeleton<TirePressureExtendedInterface>;

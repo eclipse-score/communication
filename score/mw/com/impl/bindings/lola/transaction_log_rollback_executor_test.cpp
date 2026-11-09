@@ -109,7 +109,7 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
     {
         auto find_result = service_data_control_->event_controls_.find(element_fq_id);
         EXPECT_NE(find_result, service_data_control_->event_controls_.cend());
-        return {find_result->second.data_control};
+        return ConsumerEventDataControlLocalView<>{find_result->second.data_control};
     }
 
     TransactionLogSet& GetTransactionLogSet(const ElementFqId element_fq_id) noexcept
@@ -121,9 +121,10 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
 
     void InsertServiceDataControl() noexcept
     {
-        auto rollback_mutex = rollback_synchronization_.GetMutex(kSkeletonInstanceIdentifier);
-        // we expect that the mutex did not yet exist, but has been created by our call.
-        ASSERT_FALSE(rollback_mutex.second);
+        auto& entry = rollback_synchronization_.GetEntry(kSkeletonInstanceIdentifier);
+        // we expect that the entry did not yet exist, but has been created by our call.
+        ASSERT_FALSE(entry.rollback_prepared);
+        entry.rollback_prepared = true;
     }
 
     TransactionLogSet::TransactionLogNode& RegisterProxyElementWithTransactionLogSet(
@@ -199,8 +200,8 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture,
     std::ignore = unit_->RollbackTransactionLogs();
 
     // expect, that the synchronization mutex for service_data_control_ exists afterward
-    auto [mutex, mutex_existed] = rollback_synchronization_.GetMutex(kSkeletonInstanceIdentifier);
-    EXPECT_EQ(mutex_existed, true);
+    auto& entry = rollback_synchronization_.GetEntry(kSkeletonInstanceIdentifier);
+    EXPECT_TRUE(entry.rollback_prepared);
 }
 
 TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillNotifyProviderOutdatedPidWhenPidAlreadyRegistered)
@@ -255,15 +256,17 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, RollbackTransactionLog
         });
     }
 
-    for (std::size_t i = 0; i < kMaxSubscribers; ++i)
+    // Each call rolls back one arbitrary node, so node i is not tied to thread i. Wait for all threads before checking.
+    for (auto& thread : threads)
     {
-        auto& thread = threads.at(i);
         if (thread.joinable())
         {
             thread.join();
         }
+    }
 
-        auto transaction_log_node = transaction_log_nodes.at(i);
+    for (const auto& transaction_log_node : transaction_log_nodes)
+    {
         EXPECT_FALSE(transaction_log_node.get().IsActive());
         EXPECT_FALSE(transaction_log_node.get().NeedsRollback());
     }

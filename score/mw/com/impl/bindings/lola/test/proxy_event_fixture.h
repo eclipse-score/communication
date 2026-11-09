@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
 #include "score/mw/com/impl/subscription_state.h"
+#include "score/mw/com/impl/util/type_erased_storage.h"
 
 #include "score/language/safecpp/scoped_function/scope.h"
 
@@ -101,7 +102,8 @@ class LolaProxyEventFixture : public LolaProxyEventResources
   public:
     LolaProxyEventFixture& GivenAProxyEvent(const ElementFqId element_fq_id, const std::string& event_name)
     {
-        test_proxy_event_ = std::make_unique<ProxyEvent>(*proxy_, element_fq_id, event_name);
+        test_proxy_event_ = std::make_unique<ProxyEvent>(
+            *proxy_, element_fq_id, event_name, CreateDataTypeSizeInfoFromTypes<TestSampleType>());
         return *this;
     }
 

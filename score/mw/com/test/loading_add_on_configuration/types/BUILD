@@ -12,13 +12,11 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "example_interface",
     srcs = ["example_interface.cpp"],
     hdrs = ["example_interface.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test/loading_add_on_configuration:__pkg__"],
     deps = [
         "//score/mw/com",
@@ -29,7 +27,6 @@ cc_library(
     name = "addon_interface",
     srcs = ["addon_interface.cpp"],
     hdrs = ["addon_interface.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test/loading_add_on_configuration:__pkg__"],
     deps = [
         "//score/mw/com",

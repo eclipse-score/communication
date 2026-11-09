@@ -1,0 +1,277 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml generic_proxy_model
+title "Generic Proxy Extension"
+
+class "score::mw::com::impl::HandleType" as score_mw_com_impl_HandleType {
+  -indentifier_: InstanceIdentifier
+  +operator==(const HandleType& other): bool
+  +operator<(const HandleType& other): bool
+  +GetInstanceId(): InstanceIdentifier&
+  +GetServiceInstanceDeployment(): ServiceInstanceDeployment&
+}
+
+class "ProxyBindingFactory" as ProxyBindingFactory {
+  +{static} Create(HandleType handle): std::unique_ptr<ProxyBinding>
+  +{static} CreateGeneric(HandleType handle, ServiceElementMap<GenericProxyEvent>& events): std::unique_ptr<ProxyBinding>
+  +{static} FindService(InstanceIdentifier) : std::optional<HandleType>
+}
+
+abstract class "score::mw::com::impl::ProxyBase" as score_mw_com_impl_ProxyBase {
+  -proxy_binding_ : std::unique_ptr<ProxyBinding>
+  -handle_ : HandleType
+  +{static} FindService(InstanceSpecifier): ServiceHandleContainer<HandleType>
+  +{static} Preconstruct(const HandleType&): Result<ConstructionToken>
+  +GetHandle() : const HandleType&
+}
+
+note right of score_mw_com_impl_ProxyBase
+  ProxyBase is not copyable but moveable
+end note
+
+abstract class "ProxyBinding" as ProxyBinding {
+  +{abstract} IsEventProvided() : bool
+}
+
+class "mw::com::impl::GenericProxy" as mw_com_impl_GenericProxy #yellow {
+  using HandleType = ProxyBase::HandleType
+  using EventMapView = ServiceElementMapView<GenericProxyEvent>
+  --
+  +{static} Create(HandleType instance_handle) : Result<GenericProxy>
+  -GenericProxy(std::unique_ptr<ProxyBinding> proxy_binding, HandleType instance_handle)
+  +GetEvents() : EventMapView
+
+  -events_ : std::unique_ptr<map_type>
+}
+
+class "lola::Proxy" as lola_Proxy {
+  +{static} Create(const LolaServiceInstanceDeployment& shm_binding, const LolaServiceTypeDeployment& service_deployment, QualityType quality_type) : Result<Proxy>
+  +{static} Create(const LolaServiceInstanceDeployment& shm_binding, const LolaServiceTypeDeployment& service_deployment, QualityType quality_type, ServiceElementMap<GenericProxyEvent>&) : Result<Proxy>
+  +Proxy(Proxy&&)
+  +GetServiceHandles(instance_identifier : InstanceIdentifier) : score::Result<std::vector<HandleType>>
+  +GetEventControlLocal(element_fq_id : const ElementFqId) : ConsumerEventControlLocalView&
+  +GetRawDataStorage(element_fq_id : const ElementFqId) : void*
+  +GetEventMetaInfo(element_fq_id : const ElementFqId) :  const EventMetaInfo&
+  +GetQualityType() : QualityType
+  +GetSourcePid() : pid_t
+  +{abstract} IsEventProvided(): bool
+  --
+  -service_data_control_local_ : ProxyServiceDataControlLocalView
+}
+
+class "mw::com::impl::ProxyEvent<SampleType>" as mw_com_impl_ProxyEvent_SampleType {
+  + GetNewSamples(F&& receiver, size_t max_num_samples): Result<size_t>
+}
+
+abstract class "ProxyEventBindingBase" as ProxyEventBindingBase {
+  +{abstract} Subscribe(size_t maxSampleCount) : void
+  +{abstract} GetSubscriptionState() : SubscriptionState
+  +{abstract} Unsubscribe() : void
+  +{abstract} SetReceiveHandler(EventReceiveHandler handler) : void
+  +{abstract} UnsetReceiveHandler() : void
+  +{abstract} GetNumNewSamplesAvailable() : Result<std::size_t>
+}
+
+abstract class "ProxyEventBinding<SampleType>" as ProxyEventBinding_SampleType {
+  using Callback = score::cpp::callback<void(SamplePtr<SampleType>)>
+  --
+  +{abstract} GetNewSamples(Callback&&, TrackerGuardFactory&) : Result<size_t>
+}
+
+class "SampleReferenceTracker" as SampleReferenceTracker {
+  +SampleReferenceTracker()
+  +SampleReferenceTracker(size_t max_num_samples)
+  +GetNumAvailableSamples(): size_t
+  +Allocate(size_t count) : TrackerGuardFactory
+  +Reset(size_t new_max_count) : void
+  +IsUsed() : bool
+}
+
+class "lola::ProxyEvent<SampleType>" as lola_ProxyEvent_SampleType {
+  +ProxyEvent(lola::Proxy& parent)
+  +GetNewSamples(ProxyEventBinding::Callback&&, TrackerGuardFactory&): Result<size_t>
+  -common_dispatch_ : lola::ProxyEventCommon
+}
+
+note right of lola_ProxyEvent_SampleType
+  Dispatches all calls to functions in ProxyEventBindingBase interface to ProxyEventCommon
+end note
+
+class "ProxyEventBindingFactory" as ProxyEventBindingFactory {
+  +{static} Create(ProxyBase& parent, std::string_view event_name): std::unique_ptr<ProxyEventBinding<SampleType>>
+  +{static} CreateGeneric(ProxyBase& parent, std::string_view event_name): std::unique_ptr<GenericProxyEventBinding>
+}
+
+class "lola::SubscriptionStateMachine" as lola_SubscriptionStateMachine
+
+note right of lola_SubscriptionStateMachine
+  State machine that manages subscriptions to a ProxyEvent.
+  Details about the state machine can be found in
+  proxy_event_state_machine.puml.
+end note
+
+class "ProxyBaseView" as ProxyBaseView {
+  +ProxyBaseView(proxy_base : ProxyBase&)
+  +GetImpl() : ProxyBinding&
+}
+
+class "lola::SlotCollector" as lola_SlotCollector {
+  using SlotIndexVector = std::vector<SlotIndexType>;
+  --
+  -event_data_control_local_: ConsumerEventDataControlLocalView<>&
+  +SlotCollector(event_data_control_local: ConsumerEventDataControlLocalView<>&, const std::size_t max_slots)
+  +GetNumNewSamplesAvailable(): size_t
+  +GetNewSamplesSlotIndices(size_t max_count): pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>
+}
+
+note right of lola_SlotCollector
+  SlotCollector is not copyable.
+  Uses ConsumerEventDataControlLocalView to avoid OffsetPtr overhead
+  during GetNewSamples().
+end note
+
+class "DummyProxy" as DummyProxy <<generated>>  {
+  using HandleType = ProxyBase::HandleType
+  --
+  +DummyProxy(ConstructionToken&&)
+  +DummyProxy(HandleType)
+  +DummyEvent : events::DummyEvent
+}
+
+abstract class "mw::com::impl::ProxyEventBase" as mw_com_impl_ProxyEventBase #yellow {
+  +ProxyEventBase(ProxyEventBindingBase&)
+  +Subscribe(size_t max_sample_count): void
+  +GetSubscriptionState() : SubscriptionState
+  +Unsubscribe(): void
+  +GetFreeSampleCount(): Result<size_t>
+  +GetNumNewSamplesAvailable(): Result<std::size_t>
+  +SetReceiveHandler(EventReceiveHandler handler) : void
+  +UnsetReceiveHandler() : void
+}
+
+class "mw::com::impl::GenericProxyEvent" as mw_com_impl_GenericProxyEvent #yellow {
+  +GetDataTypeSizeInfo() const : memory::DataTypeSizeInfo
+  +HasSerializedFormat() const : bool
+  +GetNewSamples(F&& receiver, size_t max_num_samples): Result<size_t>
+}
+
+abstract class "GenericProxyEventBinding" as GenericProxyEventBinding #yellow {
+  using Callback = score::cpp::callback<void(SamplePtr<void>)>
+  --
+  +GetDataTypeSizeInfo() const : memory::DataTypeSizeInfo
+  +HasSerializedFormat() const : bool
+  +{abstract} GetNewSamples(Callback&&, size_t max_num_samples) : Result<size_t>
+}
+
+class "lola::ProxyEventCommon" as lola_ProxyEventCommon #yellow {
+  -element_fq_id_: ElementFqId
+  -parent_: lola::Proxy&
+  -subscription_event_state_machine_: std::shared_ptr<SubscriptionStateMachine>
+  -test_slot_collector_: std::optional<SlotCollector>
+  -event_data_control_local_: ConsumerEventDataControlLocalView<>
+  +ProxyEventCommon(lola::Proxy& parent, ElementFqId)
+  +Subscribe(size_t max_sample_count): void
+  +Unsubscribe(): void
+  +GetSubscriptionState() : SubscriptionState
+  +SetReceiveHandler(EventReceiveHandler handler) : void
+  +UnsetReceiveHandler(EventReceiveHandler handler) : void
+  +GetElementFQId() : ElementFqId
+  +GetNumNewSamplesAvailable(): Result<std::size_t>
+  +GetEventControl(): ConsumerEventControlLocalView&
+  +GetNewSamplesSlotIndices(size_t max_count): pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>
+}
+
+note right of lola_ProxyEventCommon
+  lola::ProxyEventCommon is not moveable or copyable.
+  event_control_local_ is obtained from Proxy::GetEventControlLocal() at construction.
+  SlotCollector is instantiated by the SubscriptionStateMachine when it enters the
+  Subscribed state. It is cleared if it subsequently leaves the Subscribed state.
+end note
+
+class "lola::GenericProxyEvent" as lola_GenericProxyEvent #yellow {
+  +GenericProxyEvent(lola::Proxy& parent)
+  +GetNewSamples(GenericProxyEventBinding::Callback&&, TrackerGuardFactory&): Result<size_t>
+  -common_dispatch_ : lola::ProxyEventCommon
+}
+
+class "ServiceElementMapViewFactory<ElementType>" as ServiceElementMapViewFactory_ElementType {
+  using map_type = ServiceElementMapView<ElementType>
+  --
+  +Create(map_type&) : ServiceElementMapView<ElementType>
+}
+
+class "ServiceElementMapView<ElementType>" as ServiceElementMapView_ElementType {
+  using key = std::string_view;
+  using value_type = std::pair<const key, Value>
+  using iterator = map_type::iterator
+  using const_iterator = map_type::const_iterator
+  using size_type = map_type::size_type
+  using map_type = std::map<key, Value>
+  --
+  +cbegin() : const_iterator
+  +cend() : const_iterator
+  +find() : const_iterator
+  +size() : std::size_t
+  +empty() : bool
+}
+
+class "ProxyServiceDataControlLocalView" as ProxyServiceDataControlLocalView
+class "ConsumerEventControlLocalView" as ConsumerEventControlLocalView
+class "ConsumerEventDataControlLocalView" as ConsumerEventDataControlLocalView
+
+' Relationships
+score_mw_com_impl_HandleType <.. score_mw_com_impl_ProxyBase : uses
+
+score_mw_com_impl_ProxyBase *--> ProxyBinding
+score_mw_com_impl_ProxyBase <|-- DummyProxy
+score_mw_com_impl_ProxyBase <|-- mw_com_impl_GenericProxy
+ProxyBindingFactory ..> ProxyBinding : creates
+ProxyBinding <|-- lola_Proxy
+lola_ProxyEventCommon o-- "1" lola_Proxy
+ProxyBindingFactory <.. mw_com_impl_GenericProxy : uses
+ProxyBindingFactory <.. DummyProxy : uses
+DummyProxy *--> mw_com_impl_ProxyEvent_SampleType : "0..n"
+mw_com_impl_GenericProxy *--> mw_com_impl_GenericProxyEvent : "0..n"
+mw_com_impl_GenericProxy ..> ServiceElementMapViewFactory_ElementType : uses
+ServiceElementMapViewFactory_ElementType ..> ServiceElementMapView_ElementType : creates
+ServiceElementMapView_ElementType o-- mw_com_impl_GenericProxyEvent : "0..n"
+mw_com_impl_ProxyEventBase *-- SampleReferenceTracker
+mw_com_impl_ProxyEventBase <|-- mw_com_impl_ProxyEvent_SampleType
+mw_com_impl_ProxyEventBase <|-- mw_com_impl_GenericProxyEvent
+SampleReferenceTracker <.. lola_ProxyEvent_SampleType : uses
+SampleReferenceTracker <.. lola_GenericProxyEvent : uses
+GenericProxyEventBinding --* mw_com_impl_GenericProxyEvent : "1"
+ProxyEventBindingFactory *-- ProxyBaseView
+ProxyEventBindingFactory ..> ProxyEventBinding_SampleType : creates
+mw_com_impl_ProxyEvent_SampleType ..> ProxyEventBindingFactory : uses
+ProxyEventBinding_SampleType --* mw_com_impl_ProxyEvent_SampleType : "1"
+
+GenericProxyEventBinding <|-- lola_GenericProxyEvent
+
+ProxyEventBindingBase <|-- ProxyEventBinding_SampleType
+ProxyEventBindingBase <|-- GenericProxyEventBinding
+ProxyEventBinding_SampleType <|-- lola_ProxyEvent_SampleType
+
+lola_ProxyEvent_SampleType *-- lola_ProxyEventCommon : common_dispatch_
+lola_GenericProxyEvent *-- lola_ProxyEventCommon : common_dispatch_
+
+lola_ProxyEventCommon o-- ConsumerEventControlLocalView : event_control_local_
+lola_SubscriptionStateMachine --* lola_ProxyEventCommon
+lola_ProxyEventCommon *-- lola_SlotCollector
+lola_SlotCollector o-- ConsumerEventDataControlLocalView
+lola_Proxy *-- ProxyServiceDataControlLocalView : service_data_control_local_
+ProxyServiceDataControlLocalView *-- "1..n" ConsumerEventControlLocalView
+ConsumerEventControlLocalView *-- ConsumerEventDataControlLocalView
+
+@enduml

@@ -35,10 +35,10 @@ on:
     types: [completed]
 
 permissions:
-  contents: write  # needed for uploading release assets
+  contents: write # needed for uploading release assets
   pages: write
   id-token: write
-  actions: write    # needed to download artifacts from the nightly workflow_run and delete old bazel caches
+  actions: write # needed to download artifacts from the nightly workflow_run and delete old bazel caches
 
 concurrency:
   group: "pages"
@@ -46,10 +46,10 @@ concurrency:
 
 jobs:
   build-docs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Bazel
         uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
@@ -132,7 +132,7 @@ jobs:
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: publish
 
@@ -145,11 +145,11 @@ jobs:
   deploy-pages:
     needs: build-docs
     if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

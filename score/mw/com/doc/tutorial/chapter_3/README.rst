@@ -1,3 +1,17 @@
+..
+   # *******************************************************************************
+   # Copyright (c) 2026 Contributors to the Eclipse Foundation
+   #
+   # See the NOTICE file(s) distributed with this work for additional
+   # information regarding copyright ownership.
+   #
+   # This program and the accompanying materials are made available under the
+   # terms of the Apache License Version 2.0 which is available at
+   # https://www.apache.org/licenses/LICENSE-2.0
+   #
+   # SPDX-License-Identifier: Apache-2.0
+   # *******************************************************************************
+
 Chapter 3: Finding (multiple) service instances asynchronously
 ==============================================================
 
@@ -31,16 +45,12 @@ files as chapter 2 (just adapted in content):
      - This file contains bazel targets for this example.
    * - `consumer/consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/consumer/consumer.cpp>`__
      - Implementation of the service consumer app. The `main()` for the consumer
-   * - `consumer/consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/consumer/consumer.h>`__
-     - Header (empty - we just always want to have cpp/h pairs) of the service consumer.
    * - `consumer/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/consumer/mw_com_config.json>`__
      - This file contains the configuration for `score::mw::com` for the consumer app.
    * - `consumer/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/consumer/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
    * - `provider/provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/provider/provider.cpp>`__
      - Implementation of the service provider.
-   * - `provider/provider.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/provider/provider.h>`__
-     - Header (empty) of the service provider.
    * - `provider/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/provider/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
    * - `provider/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/provider/mw_com_config.json>`__
@@ -129,7 +139,8 @@ instance to offer:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 28-30
+   :start-after: [provider-instance-specifiers-start]
+   :end-before: [provider-instance-specifiers-end]
    :caption: provider/provider.cpp
 
 
@@ -142,7 +153,8 @@ of its instances by 5 seconds each:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 104-132
+   :start-after: [provider-main-loop-start]
+   :end-before: [provider-main-loop-end]
    :caption: provider/provider.cpp
 
 
@@ -177,7 +189,8 @@ handing over the container of **all** currently matching service handles.
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 116-152
+   :start-after: [consumer-find-service-handler-start]
+   :end-before: [consumer-find-service-handler-end]
    :caption: consumer/consumer.cpp
 
 
@@ -208,7 +221,8 @@ The portable way to get a representation of the instance id out of a handle is:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 53-59
+   :start-after: [consumer-describe-instance-id-start]
+   :end-before: [consumer-describe-instance-id-end]
    :caption: consumer/consumer.cpp
 
 
@@ -225,7 +239,8 @@ The main loop of the consumer then simply polls the `message` event of **every**
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 162-174
+   :start-after: [consumer-main-loop-start]
+   :end-before: [consumer-main-loop-end]
    :caption: consumer/consumer.cpp
 
 
@@ -235,7 +250,8 @@ longer be called):
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 184-184
+   :start-after: [consumer-stop-find-service-start]
+   :end-before: [consumer-stop-find-service-end]
    :caption: consumer/consumer.cpp
 
 
@@ -260,7 +276,7 @@ array. Each entry maps a distinct `instanceSpecifier` to a distinct `instanceId`
 
 .. literalinclude:: provider/mw_com_config.json
    :language: json
-   :lines: 25-69
+   :lines: 24-89
    :caption: provider/mw_com_config.json
 
 
@@ -277,7 +293,7 @@ The magic that enables the **"find-any"** search is in the consumer configuratio
 
 .. literalinclude:: consumer/mw_com_config.json
    :language: json
-   :lines: 25-34
+   :lines: 24-37
    :caption: consumer/mw_com_config.json
 
 

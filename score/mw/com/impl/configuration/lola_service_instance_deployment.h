@@ -118,7 +118,10 @@ const auto& GetServiceElementInstanceDeployment(const LolaServiceInstanceDeploym
         // EVENT, FIELD, or METHOD (we have a static_assert at the start of this function).
         else
         {
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(0);
+            // Reachable in principle, but must not be reached in production: The else branch is compiled out for every
+            // valid service_element_type (static_assert at the start of the function). It can only be reached by an
+            // invalid template argument, which must not be used in production.
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
         }
         // LCOV_EXCL_STOP
     }();

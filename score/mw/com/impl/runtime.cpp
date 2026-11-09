@@ -80,6 +80,7 @@ namespace score::mw::com::impl
 
 using TracingFilterConfig = tracing::TracingFilterConfig;
 
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 IRuntime* Runtime::mock_ = nullptr;
 std::optional<Configuration> Runtime::initialization_config_{};
 bool Runtime::runtime_initialization_locked_{false};
@@ -128,7 +129,9 @@ void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configurat
     if (!validation_result.has_value())
     {
         ::score::mw::log::LogFatal("lola") << validation_result.error().UserMessage();
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        // Reachable in principle, but must not be reached in production: The configuration can fail validation. A
+        // configuration deployed to production must pass the validation.
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
     score::cpp::ignore = initialization_config_.emplace(std::move(config));
 }
@@ -297,7 +300,9 @@ Result<void> Runtime::MergeAdditionalConfiguration(const Configuration& addition
     if (!validation_result.has_value())
     {
         ::score::mw::log::LogFatal("lola") << validation_result.error().UserMessage();
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        // Reachable in principle, but must not be reached in production: The merged configuration can fail validation.
+        // A configuration deployed to production must pass the validation.
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
 
     return {};

@@ -11,3 +11,26 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/proxy_field_binding_factory.h"
+
+#include "score/mw/com/impl/plumbing/proxy_field_binding_factory_impl.h"
+
+namespace score::mw::com::impl
+{
+
+IProxyFieldBindingFactory* ProxyFieldBindingFactory::mock_{nullptr};
+
+auto ProxyFieldBindingFactory::instance() noexcept -> IProxyFieldBindingFactory&
+{
+    if (mock_ != nullptr)
+    {
+        return *mock_;
+    }
+
+    // Suppress "AUTOSAR C++14 A3-2-2", The rule states: "Static and thread-local objects shall be constant-initialized"
+    // It cannot be made const since we will need to call non-const methods from a static instance.
+    // coverity[autosar_cpp14_a3_3_2_violation]
+    static ProxyFieldBindingFactoryImpl instance{};
+    return instance;
+}
+
+}  // namespace score::mw::com::impl

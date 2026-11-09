@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
@@ -27,7 +26,6 @@ cc_library(
     name = "test_constants",
     srcs = ["test_constants.cpp"],
     hdrs = ["test_constants.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":datatype",
         "//score/mw/com",
@@ -38,7 +36,6 @@ cc_library(
     name = "datatype",
     srcs = ["all_service_elements_datatype.cpp"],
     hdrs = ["all_service_elements_datatype.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = ["//score/mw/com"],
 )
 
@@ -46,7 +43,6 @@ cc_library(
     name = "consumer",
     srcs = ["consumer.cpp"],
     hdrs = ["consumer.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":datatype",
         ":test_constants",
@@ -64,7 +60,6 @@ cc_library(
     name = "provider",
     srcs = ["provider.cpp"],
     hdrs = ["provider.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":datatype",
         ":test_constants",
@@ -81,7 +76,7 @@ cc_binary(
     data = [
         "config/mw_com_config.json",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -102,7 +97,7 @@ cc_binary(
     data = [
         "config/mw_com_config.json",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -121,7 +116,7 @@ cc_binary(
     data = [
         "config/mw_com_config.json",
     ],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [

@@ -1,0 +1,227 @@
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1234,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "eventId": 20
+                        },
+                        {
+                            "eventName": "CurrentPressureFrontRight",
+                            "eventId": 21
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "CurrentTemperatureFrontLeft",
+                            "fieldId": 30
+                        },
+                        {
+                            "fieldName": "CurrentTemperatureFrontRight",
+                            "fieldId": 31
+                        }
+                    ],
+                    "methods": [
+                        {
+                            "methodName": "SetPressure",
+                            "methodId": 40
+                        },
+                        {
+                            "methodName": "ResetPressure",
+                            "methodId": 41
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "serviceTypeName": "/score/ncar/services/TireTemperatureService",
+            "version": {
+                "major": 1,
+                "minor": 2
+            },
+            "bindings": [
+                {
+                    "binding": "SOMEIP",
+                    "serviceId": 5678,
+                    "events": [
+                        {
+                            "eventName": "TemperatureFrontLeft",
+                            "eventId": 50
+                        },
+                        {
+                            "eventName": "TemperatureFrontRight",
+                            "eventId": 51
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "TemperatureLimitFrontLeft",
+                            "fieldId": 60
+                        },
+                        {
+                            "fieldName": "TemperatureLimitFrontRight",
+                            "fieldId": 61
+                        }
+                    ],
+                    "methods": [
+                        {
+                            "methodName": "Calibrate",
+                            "methodId": 70
+                        },
+                        {
+                            "methodName": "SelfTest",
+                            "methodId": 71
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 1234,
+                    "asil-level": "B",
+                    "binding": "SHM",
+                    "shm-size": 10000,
+                    "control-asil-b-shm-size": 20000,
+                    "control-qm-shm-size": 30000,
+                    "permission-checks": "strict",
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "numberOfSampleSlots": 50,
+                            "maxSubscribers": 5,
+                            "enforceMaxSamples": true,
+                            "numberOfIpcTracingSlots": 1
+                        },
+                        {
+                            "eventName": "CurrentPressureFrontRight",
+                            "numberOfSampleSlots": 51,
+                            "maxSubscribers": 6
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "CurrentTemperatureFrontLeft",
+                            "numberOfSampleSlots": 60,
+                            "maxSubscribers": 7,
+                            "enforceMaxSamples": true,
+                            "numberOfIpcTracingSlots": 2,
+                            "useGetIfAvailable": true,
+                            "useSetIfAvailable": false
+                        },
+                        {
+                            "fieldName": "CurrentTemperatureFrontRight",
+                            "numberOfSampleSlots": 61,
+                            "maxSubscribers": 8
+                        }
+                    ],
+                    "methods": [
+                        {
+                            "methodName": "SetPressure",
+                            "queueSize": 20,
+                            "use": true
+                        },
+                        {
+                            "methodName": "ResetPressure",
+                            "queueSize": 21,
+                            "use": false
+                        }
+                    ],
+                    "allowedConsumer": {
+                        "QM": [
+                            42,
+                            43
+                        ],
+                        "B": [
+                            54,
+                            55
+                        ]
+                    },
+                    "allowedProvider": {
+                        "QM": [
+                            15
+                        ],
+                        "B": [
+                            16
+                        ]
+                    },
+                    "interVmSupport": true,
+                    "interVmForwarded": true
+                }
+            ]
+        },
+        {
+            "instanceSpecifier": "abc/abc/TireTemperaturePort",
+            "serviceTypeName": "/score/ncar/services/TireTemperatureService",
+            "version": {
+                "major": 1,
+                "minor": 2
+            },
+            "instances": [
+                {
+                    "instanceId": 99,
+                    "asil-level": "QM",
+                    "binding": "SOMEIP",
+                    "events": [
+                        {
+                            "eventName": "TemperatureFrontLeft",
+                            "numberOfSampleSlots": 10,
+                            "maxSubscribers": 3
+                        },
+                        {
+                            "eventName": "TemperatureFrontRight",
+                            "numberOfSampleSlots": 11,
+                            "maxSubscribers": 4
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "TemperatureLimitFrontLeft",
+                            "numberOfSampleSlots": 12,
+                            "maxSubscribers": 5
+                        },
+                        {
+                            "fieldName": "TemperatureLimitFrontRight",
+                            "numberOfSampleSlots": 13,
+                            "maxSubscribers": 6
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "global": {
+        "asil-level": "B",
+        "applicationID": 4321,
+        "queue-size": {
+            "QM-receiver": 8,
+            "B-receiver": 5,
+            "B-sender": 12
+        },
+        "shm-size-calc-mode": "SIMULATION"
+    },
+    "tracing": {
+        "enable": true,
+        "applicationInstanceID": "maximum_nesting",
+        "traceFilterConfigPath": "./mw_com_trace_filter.json"
+    }
+}

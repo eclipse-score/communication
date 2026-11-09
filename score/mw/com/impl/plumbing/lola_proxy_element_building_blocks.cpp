@@ -40,13 +40,10 @@ lola::ElementFqId GetElementFqId(const HandleType& handle,
         {
             case ServiceElementType::EVENT:
                 return GetServiceElementId<ServiceElementType::EVENT>(lola_type_deployment, service_element_name_str);
-                break;
             case ServiceElementType::FIELD:
                 return GetServiceElementId<ServiceElementType::FIELD>(lola_type_deployment, service_element_name_str);
-                break;
             case ServiceElementType::METHOD:
                 return GetServiceElementId<ServiceElementType::METHOD>(lola_type_deployment, service_element_name_str);
-                break;
             case ServiceElementType::INVALID:
             default:
                 score::mw::log::LogFatal("lola") << "LookupLolaProxyElement called with invalid ServiceElementType.";

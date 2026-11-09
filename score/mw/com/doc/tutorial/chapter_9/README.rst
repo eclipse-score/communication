@@ -1,3 +1,17 @@
+..
+   # *******************************************************************************
+   # Copyright (c) 2026 Contributors to the Eclipse Foundation
+   #
+   # See the NOTICE file(s) distributed with this work for additional
+   # information regarding copyright ownership.
+   #
+   # This program and the accompanying materials are made available under the
+   # terms of the Apache License Version 2.0 which is available at
+   # https://www.apache.org/licenses/LICENSE-2.0
+   #
+   # SPDX-License-Identifier: Apache-2.0
+   # *******************************************************************************
+
 Chapter 9: Fields - Get() and Set()
 ===================================
 
@@ -73,7 +87,8 @@ The event data type is a plain enum with a fixed underlying type (so it stays tr
 
 .. literalinclude:: tire_pressure_extended_service.h
    :language: cpp
-   :lines: 28-34
+   :start-after: [tire-enum-start]
+   :end-before: [tire-enum-end]
    :caption: tire_pressure_extended_service.h
 
 
@@ -83,7 +98,8 @@ saw for method arguments in chapter 8):
 
 .. literalinclude:: tire_pressure_extended_service.h
    :language: cpp
-   :lines: 39-43
+   :start-after: [tire-pressure-threshold-start]
+   :end-before: [tire-pressure-threshold-end]
    :caption: tire_pressure_extended_service.h
 
 
@@ -91,7 +107,8 @@ The interface itself:
 
 .. literalinclude:: tire_pressure_extended_service.h
    :language: cpp
-   :lines: 57-82
+   :start-after: [extended-interface-start]
+   :end-before: [extended-interface-end]
    :caption: tire_pressure_extended_service.h
 
 
@@ -113,16 +130,12 @@ structure as the previous chapters, with the service interface renamed to ``tire
      - This file contains bazel targets for this example.
    * - `consumer/consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_9/consumer/consumer.cpp>`__
      - Implementation of the service consumer app. The `main()` for the consumer
-   * - `consumer/consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_9/consumer/consumer.h>`__
-     - Header (empty - we just always want to have cpp/h pairs) of the service consumer.
    * - `consumer/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_9/consumer/mw_com_config.json>`__
      - This file contains the configuration for `score::mw::com` for the consumer app.
    * - `consumer/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_9/consumer/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
    * - `provider/provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_9/provider/provider.cpp>`__
      - Implementation of the service provider.
-   * - `provider/provider.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_9/provider/provider.h>`__
-     - Header (empty) of the service provider.
    * - `provider/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_9/provider/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
    * - `provider/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_9/provider/mw_com_config.json>`__
@@ -187,7 +200,8 @@ whenever it has to adjust a value:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 136-151
+   :start-after: [provider-set-handler-start]
+   :end-before: [provider-set-handler-end]
    :caption: provider/provider.cpp
 
 
@@ -197,7 +211,8 @@ field, the provider must supply an **initial value for each field** before offer
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 156-172
+   :start-after: [provider-initial-field-values-start]
+   :end-before: [provider-initial-field-values-end]
    :caption: provider/provider.cpp
 
 
@@ -208,7 +223,8 @@ carrying the affected tire (several warnings may be sent after a single cycle):
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 204-237
+   :start-after: [provider-update-and-warn-start]
+   :end-before: [provider-update-and-warn-end]
    :caption: provider/provider.cpp
 
 
@@ -228,7 +244,8 @@ of chapter 7:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 241-259
+   :start-after: [consumer-subscribe-warnings-start]
+   :end-before: [consumer-subscribe-warnings-end]
    :caption: consumer/consumer.cpp
 
 
@@ -236,7 +253,8 @@ The receive handler drains all new warning samples via ``GetNewSamples()`` and r
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 186-198
+   :start-after: [consumer-handle-warnings-start]
+   :end-before: [consumer-handle-warnings-end]
    :caption: consumer/consumer.cpp
 
 
@@ -248,7 +266,8 @@ accepted (the provider may have clamped it):
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 132-182
+   :start-after: [consumer-handle-single-warning-start]
+   :end-before: [consumer-handle-single-warning-end]
    :caption: consumer/consumer.cpp
 
 

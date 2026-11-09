@@ -102,7 +102,7 @@ auto ConsumerEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent
 
         // An assertion to make sure that status_new_val will never overflow after assigning candidate_slot_status
         // value.
-        static_assert(std::is_same_v<decltype(candidate_slot_status)::value_type, decltype(status_new_val)>,
+        static_assert(std::is_same_v<typename decltype(candidate_slot_status)::value_type, decltype(status_new_val)>,
                       "ReferenceNextEvent: status_new_val overflow dangerous.");
         // As status_new_val increment will take place and in case status_new_val has the maximum limit, an error
         // message logged and terminate to avoid status_new_val overflow.

@@ -90,6 +90,7 @@ int main()
     // initial value for *each* field via Field::Update(). Omitting this for any field would make the OfferService()
     // call fail.
     std::cout << "Setting initial tire pressures (before offering the service):" << std::endl;
+    // [provider-initial-field-values-start]
     UpdateField(service_instance.tire_pressure_front_left, "tire_pressure_front_left", kInitialTirePressure);
     UpdateField(service_instance.tire_pressure_front_right, "tire_pressure_front_right", kInitialTirePressure);
     UpdateField(service_instance.tire_pressure_rear_left, "tire_pressure_rear_left", kInitialTirePressure);
@@ -98,6 +99,7 @@ int main()
     auto offer_result = service_instance.OfferService();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(offer_result.has_value(),
                                                 "Failed to offer TirePressureSkeleton instance!");
+    // [provider-initial-field-values-end]
     std::cout << "OfferService: TirePressure service instance is now offered." << std::endl;
 
     // Give a consumer time to discover, subscribe and observe the *initial* field values before we start updating them.
@@ -105,6 +107,7 @@ int main()
     std::this_thread::sleep_for(kInitialUpdateDelay);
 
     // Random number generators for the randomized update cadence and the randomized field values.
+    // [provider-random-field-updates-start]
     std::mt19937 random_engine{std::random_device{}()};
     std::uniform_int_distribution<std::chrono::milliseconds::rep> delay_distribution{kMinUpdateDelay.count(),
                                                                                      kMaxUpdateDelay.count()};
@@ -135,5 +138,6 @@ int main()
                     "tire_pressure_rear_right",
                     pressure_distribution(random_engine));
     }
+    // [provider-random-field-updates-end]
     std::cout << "TirePressure service provider going down." << std::endl;
 }

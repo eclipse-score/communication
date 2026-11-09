@@ -129,9 +129,9 @@ TEST_F(SingleImmediateInstantiationStrategyFixture, CallingFindWithShouldFindPro
     // Expecting that the user callback will be called
     EXPECT_CALL(mock_user_callback, Call(_));
 
-    // When calling Find() with a BuilderCallback which wraps mocked user callback
+    // When calling StartFind() with a BuilderCallback which wraps mocked user callback
     auto on_found_builder_callback = CreateBuilderCallbackWithMockedUserCallback();
-    strategy.Find(std::move(on_found_builder_callback));
+    strategy.StartFind(std::move(on_found_builder_callback));
 }
 
 TEST_F(SingleImmediateInstantiationStrategyFixture, CallingFindWithShouldFindProxyFalseDoesNotInvokeCallback)
@@ -143,9 +143,9 @@ TEST_F(SingleImmediateInstantiationStrategyFixture, CallingFindWithShouldFindPro
     // Expecting that the user callback will not be called
     EXPECT_CALL(mock_user_callback, Call(_)).Times(0);
 
-    // When calling Find() with a BuilderCallback which wraps mocked user callback
+    // When calling StartFind() with a BuilderCallback which wraps mocked user callback
     auto on_found_builder_callback = CreateBuilderCallbackWithMockedUserCallback();
-    strategy.Find(std::move(on_found_builder_callback));
+    strategy.StartFind(std::move(on_found_builder_callback));
 }
 
 TEST_F(SingleImmediateInstantiationStrategyFixture, CallingFindWithShouldFindProxyFalseStoresCallback)
@@ -154,9 +154,9 @@ TEST_F(SingleImmediateInstantiationStrategyFixture, CallingFindWithShouldFindPro
     constexpr bool kShouldFindProxy{false};
     SingleImmediateInstantiationStrategy<DummyReceiver, IsActiveReceiverMockFactory, kShouldFindProxy> strategy{};
 
-    // When calling Find() with a BuilderCallback which wraps a user callback containing a DestructorRecorder
+    // When calling StartFind() with a BuilderCallback which wraps a user callback containing a DestructorRecorder
     auto on_found_builder_callback = CreateBuilderCallbackWithDestructorRecordingUserCallback();
-    strategy.Find(std::move(on_found_builder_callback));
+    strategy.StartFind(std::move(on_found_builder_callback));
 
     // Then the user callback should be stored within the strategy object (i.e. it should not be destroyed)
     EXPECT_FALSE(was_destructor_called);
@@ -168,10 +168,10 @@ TEST_F(SingleImmediateInstantiationStrategyFixture, CallingStopFindDestroysStore
     constexpr bool kShouldFindProxy{false};
     SingleImmediateInstantiationStrategy<DummyReceiver, IsActiveReceiverMockFactory, kShouldFindProxy> strategy{};
 
-    // and given Find() was previously called with a BuilderCallback which wraps a user callback containing a
+    // and given StartFind() was previously called with a BuilderCallback which wraps a user callback containing a
     // DestructorRecorder
     auto on_found_builder_callback = CreateBuilderCallbackWithDestructorRecordingUserCallback();
-    strategy.Find(std::move(on_found_builder_callback));
+    strategy.StartFind(std::move(on_found_builder_callback));
 
     // When calling StopFind
     EXPECT_FALSE(was_destructor_called);
@@ -188,10 +188,10 @@ TEST_F(SingleImmediateInstantiationStrategyFixture, StoredCallbackIsDestroyedOnD
     auto strategy = std::make_unique<
         SingleImmediateInstantiationStrategy<DummyReceiver, IsActiveReceiverMockFactory, kShouldFindProxy>>();
 
-    // and given Find() was previously called with a BuilderCallback which wraps a user callback containing a
+    // and given StartFind() was previously called with a BuilderCallback which wraps a user callback containing a
     // DestructorRecorder
     auto on_found_builder_callback = CreateBuilderCallbackWithDestructorRecordingUserCallback();
-    strategy->Find(std::move(on_found_builder_callback));
+    strategy->StartFind(std::move(on_found_builder_callback));
 
     // When destroying the strategy
     EXPECT_FALSE(was_destructor_called);
@@ -208,9 +208,9 @@ TEST_F(SingleImmediateInstantiationStrategyFixture, ConstructingWithFactoryInsta
     SingleImmediateInstantiationStrategy<DummyReceiver, RecordingReceiverFactory> strategy{
         RecordingReceiverFactory{was_factory_invoked}};
 
-    // When calling Find() with a BuilderCallback which wraps mocked user callback
+    // When calling StartFind() with a BuilderCallback which wraps mocked user callback
     auto on_found_builder_callback = CreateBuilderCallbackWithMockedUserCallback();
-    strategy.Find(std::move(on_found_builder_callback));
+    strategy.StartFind(std::move(on_found_builder_callback));
 
     // Then the factory instance provided via the constructor should have been invoked
     EXPECT_TRUE(was_factory_invoked);

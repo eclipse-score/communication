@@ -13,13 +13,11 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_rust//rust:defs.bzl", "rust_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "bigdata_com_api_gen_cpp",
     srcs = ["bigdata_com_api_gen.cpp"],
     hdrs = ["bigdata_com_api_gen.h"],
-    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com/rust/score_com_cpp_bridge:register_interface",
     ],

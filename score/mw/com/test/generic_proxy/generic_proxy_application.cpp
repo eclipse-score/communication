@@ -11,8 +11,6 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#include "score/mw/com/test/generic_proxy/generic_proxy_application.h"
-
 #include "score/mw/com/test/common_test_resources/sample_sender_receiver.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
 #include "score/mw/com/types.h"

@@ -54,6 +54,7 @@ class TypeErasedCallQueue final
     std::optional<score::cpp::span<std::byte>> GetReturnValueQueueStorage() const;
 
     auto GetTypeErasedElementInfo() const& -> const TypeErasedElementInfo&;
+    auto GetTypeErasedElementInfo() const&& -> const TypeErasedElementInfo&& = delete;
 
   private:
     struct OffsetPtrSpan

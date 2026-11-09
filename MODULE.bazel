@@ -21,13 +21,16 @@ bazel_dep(name = "download_utils", version = "1.2.2")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "platforms", version = "1.1.0")
-bazel_dep(name = "rules_cc", version = "0.2.17")
+bazel_dep(name = "rules_cc", version = "0.2.25")
+bazel_dep(name = "rules_multitool", version = "1.11.1")
+
+multitool = use_extension("@rules_multitool//multitool:extension.bzl", "multitool")
+use_repo(multitool, "actionlint_hub", "multitool")
+
 bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "rules_rust", version = "0.68.2-score")
-
-# Cannot be dev-dependency due to being required in "load" statements
-bazel_dep(name = "score_qnx_unit_tests", version = "0.2.0")
-bazel_dep(name = "score_baselibs", version = "0.2.15")
+bazel_dep(name = "score_qnx_unit_tests", version = "0.3.0")
+bazel_dep(name = "score_baselibs", version = "0.2.17")
 single_version_override(
     module_name = "score_baselibs",
     patch_strip = 1,
@@ -38,6 +41,7 @@ single_version_override(
 )
 
 bazel_dep(name = "score_bazel_platforms", version = "1.1.0")
+bazel_dep(name = "score_cpp_policies", version = "0.1.2")
 bazel_dep(name = "score_crates", version = "0.0.13", repo_name = "score_communication_crate_index")
 
 download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
@@ -49,7 +53,10 @@ download_archive(
     urls = ["https://github.com/python-jsonschema/jsonschema/archive/refs/tags/v4.23.0.tar.gz"],
 )
 
-bazel_dep(name = "score_tooling", version = "2.3.1")
+bazel_dep(name = "score_tooling", version = "3.0.2")
+
+# TRLC dependency for requirements traceability
+bazel_dep(name = "trlc", version = "3.1.1")
 
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
 bazel_dep(name = "gcc_toolchain", version = "0.13.0", dev_dependency = True)
@@ -60,10 +67,7 @@ gcc_toolchains.toolchain(
     extra_cxxflags = [
         # Diagnostics
         "-fdiagnostics-color=always",
-        "-Wswitch-enum",  # Warn on unhandled enum in switch (MISRA Rule 9.6.4)
-        "-Wno-maybe-uninitialized",  # GCC 8/9 false positives (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=80635)
         "-Wno-dangling-reference",  # disabled for the moment
-        "-Wno-self-move",  # disabled for the moment
     ],
     extra_enabled_features = [
         "//quality/compiler_warnings:treat_warnings_as_errors",
@@ -80,19 +84,9 @@ gcc_toolchains.toolchain(
 )
 use_repo(gcc_toolchains, "gcc_toolchain_x86_64")
 
-bazel_dep(name = "score_bazel_cpp_toolchains", version = "1.0.4", dev_dependency = True)
+bazel_dep(name = "score_bazel_cpp_toolchains", version = "1.0.5", dev_dependency = True)
 
 score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
-
-SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
-    "-Wswitch-bool",  # Helps to achieve MISRA C++:2023 Rule 7-0-1
-    "-Wunused-parameter",
-]
-
-SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS = [
-    "-Wno-literal-suffix",
-    "-Wno-noexcept-type",
-]
 
 GCC_BASED_COMPILER_ENABLED_FEATURES = [
     "//quality/compiler_warnings:fortify_source",
@@ -104,8 +98,6 @@ GCC_BASED_COMPILER_ENABLED_FEATURES = [
 
 score_gcc.toolchain(
     name = "score_gcc_x86_64_toolchain",
-    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
-    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     extra_enabled_features = GCC_BASED_COMPILER_ENABLED_FEATURES,
     target_cpu = "x86_64",
     target_os = "linux",
@@ -115,8 +107,6 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_gcc_aarch64_toolchain",
-    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
-    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     extra_enabled_features = GCC_BASED_COMPILER_ENABLED_FEATURES,
     target_cpu = "aarch64",
     target_os = "linux",
@@ -126,8 +116,6 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_x86_64_toolchain",
-    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
-    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     extra_enabled_features = GCC_BASED_COMPILER_ENABLED_FEATURES,
     sdp_version = "8.0.4",
     target_cpu = "x86_64",
@@ -137,8 +125,6 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_aarch64_toolchain",
-    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
-    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     extra_enabled_features = GCC_BASED_COMPILER_ENABLED_FEATURES,
     sdp_version = "8.0.4",
     target_cpu = "aarch64",
@@ -156,7 +142,7 @@ use_repo(
     "score_qcc_x86_64_toolchain_pkg",
 )
 
-bazel_dep(name = "score_itf", version = "0.6.0", dev_dependency = True)
+bazel_dep(name = "score_itf", version = "0.7.0", dev_dependency = True)
 bazel_dep(name = "score_rules_imagefs", version = "0.1.0", dev_dependency = True)
 
 imagefs = use_extension("@score_rules_imagefs//extensions:imagefs.bzl", "imagefs", dev_dependency = True)
@@ -223,7 +209,6 @@ sysroot_from_lock(
     lock = "@ubuntu24_04_sysroot_resolve//:lock.json",
 )
 
-bazel_dep(name = "score_cpp_policies", version = "0.1.1", dev_dependency = True)
 bazel_dep(name = "toolchains_llvm", version = "1.8.0", dev_dependency = True)
 
 llvm = use_extension(
@@ -237,6 +222,8 @@ llvm.toolchain(
         "//quality/compiler_warnings/clang:default_flags",
         "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings/clang:minimal_warnings",
+        "//quality/compiler_warnings/clang:misra_warnings",
+        "//quality/compiler_warnings:treat_warnings_as_errors",
     ],
     extra_known_features = [
         "@score_cpp_policies//sanitizers/features:debug_symbols",
@@ -245,7 +232,6 @@ llvm.toolchain(
         "@score_cpp_policies//sanitizers/features:ubsan_clang",
         "@score_cpp_policies//sanitizers/features:lsan",
         "@score_cpp_policies//sanitizers/features:tsan",
-        "//quality/compiler_warnings:treat_warnings_as_errors",
         "//quality/coverage:enable_llvm_coverage_for_death_tests",
     ],
     link_libs = {"": [
@@ -270,6 +256,12 @@ use_repo(llvm, "llvm_toolchain", "llvm_toolchain_llvm")
 
 bazel_dep(name = "score_toolchains_rust", version = "0.10.0", dev_dependency = True)
 
+FERROCENE_TOOLCHAIN_BUILDER_URL = "https://github.com/eclipse-score/ferrocene_toolchain_builder/"
+
+FERROCENE_TOOLCHAIN_BUILDER_VERSION = "1.3.1"
+
+FERROCENE_UPSTREAM_COMMIT = "779fbed05ae9e9fe2a04137929d99cc9b3d516fd"
+
 gcc_ferrocene = use_extension(
     "@score_toolchains_rust//extensions:ferrocene_toolchain_ext.bzl",
     "ferrocene_toolchain_ext",
@@ -277,9 +269,13 @@ gcc_ferrocene = use_extension(
 )
 gcc_ferrocene.toolchain(
     name = "ferrocene_x86_64_unknown_linux_gnu_llvm",
-    coverage_tools_sha256 = "f4b1cdcaf644b3dac429dfc50c674cde8f9620e1a563e3dcdfb313a7ce68c888",
+    coverage_tools_sha256 = "9cf5d76b2e505bf2a8b2b47c60f191ac1273f87851ed387e53080b8e5d14dedf",
     coverage_tools_strip_prefix = "779fbed05ae9e9fe2a04137929d99cc9b3d516fd/x86_64-unknown-linux-gnu",
-    coverage_tools_url = "https://github.com/eclipse-score/ferrocene_toolchain_builder/releases/download/1.3.0/coverage-tools-779fbed05ae9e9fe2a04137929d99cc9b3d516fd-x86_64-unknown-linux-gnu.tar.gz",
+    coverage_tools_url = "{url}releases/download/{version}/coverage-tools-{commit}-x86_64-unknown-linux-gnu.tar.gz".format(
+        commit = FERROCENE_UPSTREAM_COMMIT,
+        url = FERROCENE_TOOLCHAIN_BUILDER_URL,
+        version = FERROCENE_TOOLCHAIN_BUILDER_VERSION,
+    ),
     exec_triple = "x86_64-unknown-linux-gnu",
     extra_rustc_flags = [
         "-Clink-arg=-Wl,--no-as-needed",
@@ -287,13 +283,17 @@ gcc_ferrocene.toolchain(
         "-Clink-arg=-lm",
         "-Clink-arg=-lc",
     ],
-    sha256 = "4c08b41eaafd39cff66333ca4d4646a5331c780050b8b9a8447353fcd301dddc",
+    sha256 = "6fd7c7053a80463b2bfd24202de02e16959b18ed185c55b738148e9caac42eff",
     target_compatible_with = [
         "@platforms//cpu:x86_64",
         "@platforms//os:linux",
     ],
     target_triple = "x86_64-unknown-linux-gnu",
-    url = "https://github.com/eclipse-score/ferrocene_toolchain_builder/releases/download/1.0.1/ferrocene-779fbed05ae9e9fe2a04137929d99cc9b3d516fd-x86_64-unknown-linux-gnu.tar.gz",
+    url = "{url}releases/download/{version}/ferrocene-{commit}-x86_64-unknown-linux-gnu.tar.gz".format(
+        commit = FERROCENE_UPSTREAM_COMMIT,
+        url = FERROCENE_TOOLCHAIN_BUILDER_URL,
+        version = FERROCENE_TOOLCHAIN_BUILDER_VERSION,
+    ),
 )
 use_repo(
     gcc_ferrocene,
@@ -380,8 +380,6 @@ pip.parse(
 )
 use_repo(pip, "review_checklists_dependencies")
 
-# TRLC dependency for requirements traceability
-bazel_dep(name = "trlc", version = "3.0.1", dev_dependency = True)
 bazel_dep(name = "rules_oci", version = "2.2.7", dev_dependency = True)
 bazel_dep(name = "rules_pkg", version = "1.2.0", dev_dependency = True)
 

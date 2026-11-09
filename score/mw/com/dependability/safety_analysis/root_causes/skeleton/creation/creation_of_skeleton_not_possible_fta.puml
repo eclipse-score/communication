@@ -1,5 +1,5 @@
 ' *******************************************************************************
-' Copyright (c) {year} Contributors to the Eclipse Foundation
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
 '
 ' See the NOTICE file(s) distributed with this work for additional
 ' information regarding copyright ownership.
@@ -23,6 +23,6 @@ $IntermediateEvent("InstanceSpecifier cannot be resolved", "Event1", "Gate1")
 $OrGate("Gate2", "Event1")
 $RootCause("Instance Specifier resolution logic broken", "InstanceSpecifierResolutionLogicBroken", "Gate2")
 $IntermediateEvent("Configuration broken", "Event3", "Gate2")
-$TransferInGate("Transfer1", "Event3")
+$TransferInGate("Communication.InMemoryConfigurationWrong", "Event3")
 
 @enduml

@@ -357,10 +357,13 @@ score::Result<void> GatewayApplication::ProvideService(score::mw::com::InstanceS
     auto existing_it = skeletons_.find(service_instance_specifier_str);
     if (existing_it != skeletons_.end())
     {
-        // Reuse the existing skeleton. Creating a new one would do placement-new on the SHM
-        // EventSubscriptionControl, zeroing it while the local consumer proxy still holds an
-        // active subscription — causing a fatal Unsubscribe assertion crash at shutdown.
-        // Re-offer (if stopped by HandleStopOfferServiceRequest) and re-register event
+        // NOTE: This part of code never gets executed, it left here for future reference!
+
+        // A skeleton for this specifier is already offered (this is a re-discovery/re-propagation, not a
+        // restart — StopOfferService() below always erases the skeleton, so if it had been stopped this
+        // branch would not be reached). Reuse it: creating a new one here would do placement-new on the
+        // SHM EventSubscriptionControl while the still-offered skeleton's local consumer proxy holds an
+        // active subscription — a fatal Unsubscribe assertion crash at shutdown. Re-register event
         // subscriptions so the (re-started) source gateway knows which events have active consumers.
         score::mw::log::LogInfo() << "GatewayApplication: Reusing existing skeleton for " << service_instance_specifier;
 
@@ -422,11 +425,27 @@ void GatewayApplication::StopOfferService(score::mw::com::InstanceSpecifier serv
         return;
     }
 
-    // Stop offering but keep the skeleton. The source side may decide to re-offer anytime, then we need our skeleton
-    // anyhow.
     it->second.StopOfferService();
-    score::mw::log::LogInfo() << "GatewayApplication: Stopped offering " << service_instance_specifier
-                              << " (skeleton kept for reuse)";
+
+    // Always tear the skeleton down completely here, regardless of whether a local consumer still looks
+    // subscribed. This is not just "mirrors a real provider restart" — it is required for correctness:
+    // if StopOfferService() above could not exclusively lock the usage marker file (a proxy is still
+    // attached), lola::Skeleton::PrepareStopOffer() takes an early return and never calls
+    // memory_manager_.Reset() (score/mw/com/impl/bindings/lola/skeleton.cpp ~line 485-489, 519). If we
+    // later called OfferService() again on this SAME C++ object, PrepareOffer() would eventually pick
+    // kRecreateShm (once the proxy is actually gone) and call RemoveStaleSharedMemoryArtefacts(), which
+    // fatally asserts because this process's SharedMemoryFactory still tracks the never-reset resource
+    // ("RemoveStaleArtefacts must not be called when the path corresponds to a currently owned resource",
+    // score/memory/shared/shared_memory_factory_impl.cpp ~line 364-370) — terminating the whole gateway.
+    // Destroying the C++ object here instead means any future re-offer goes through a fresh Create(),
+    // whose brand-new memory_manager_ never hits that stale-tracking conflict: PrepareOffer() on the
+    // fresh object still correctly reuses the SHM (no placement-new) if a proxy is still attached, and
+    // only recreates it once the usage marker file flock is genuinely free — which can only happen once
+    // no live Proxy could still call Unsubscribe() against it. ProvideService() creates a fresh skeleton
+    // if/when the source side re-offers.
+    skeletons_.erase(it);
+    score::mw::log::LogInfo() << "GatewayApplication: Stopped offering and reset skeleton for "
+                              << service_instance_specifier;
 }
 
 score::Result<void> GatewayApplication::OfferService(score::mw::com::InstanceSpecifier service_instance_specifier)

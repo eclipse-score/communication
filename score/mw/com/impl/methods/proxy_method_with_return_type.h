@@ -64,10 +64,12 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
   public:
     ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
         : ProxyMethodBase(method_name,
-                          ProxyMethodBindingFactory<ReturnType()>::Create(proxy_base.GetHandle(),
-                                                                          ProxyBaseView{proxy_base}.GetBinding(),
-                                                                          method_name,
-                                                                          MethodType::kMethod),
+                          ProxyMethodBindingFactory::Create(proxy_base.GetHandle(),
+                                                            ProxyBaseView{proxy_base}.GetBinding(),
+                                                            method_name,
+                                                            MethodType::kMethod,
+                                                            type_erased_in_args_,
+                                                            type_erased_return_type_),
                           MethodType::kMethod)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};

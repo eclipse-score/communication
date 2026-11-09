@@ -31,14 +31,6 @@ namespace score::memory::shared
 
 namespace test
 {
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding: "A type, object or function that is used in multiple translation units
-// shall be declared in one and only one file.".
-// The forward declaration of MemoryResourceRegistryAttorney is necessary to avoid cyclic dependencies and to ensure
-// that the ManagedMemoryResource class can be declared without requiring the full definition of
-// MemoryResourceRegistryAttorney. This forward declaration does not violate the AUTOSAR C++14 M3-2-3 guideline as it is
-// a common practice to handle dependencies in large codebases. The full definition of MemoryResourceRegistryAttorney
-// will be provided elsewhere in the codebase.
-// coverity[autosar_cpp14_m3_2_3_violation]
 class MemoryResourceRegistryAttorney;
 }  // namespace test
 
@@ -49,10 +41,6 @@ class MemoryResourceRegistryAttorney;
  *        It will be used by a MemoryResourceProxy to query its associated
  *        MemoryResource based on a common identifier.
  */
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding: "A type, object or function that is used in multiple translation units
-// shall be declared in one and only one file.".
-// this is false positive. MemoryResourceRegistry is declared only once.
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE]
 class MemoryResourceRegistry final
 {
     // Suppress "AUTOSAR C++14 A11-3-1"

@@ -29,19 +29,17 @@
 namespace score::mw::service::backend::mw_com
 {
 
-template <typename Proxy, typename ProxyImpl, typename MwComProxy, typename PortIdentifier = void>
+template <typename ProxyBase, typename ProxyImpl, typename MwComProxy, typename PortIdentifier = void>
 class SingleInstantiationStrategy final
-    : public common::InstantiationStrategyBase<MwComProxy, internal::ProxyHolderCreator<MwComProxy>>
+    : public common::InstantiationStrategyBase<ProxyBase, MwComProxy, internal::ProxyHolderCreator<MwComProxy>>
 {
     static_assert(std::is_void_v<PortIdentifier> || common::IsValidPortIdentifierType<PortIdentifier>(),
                   "template parameter `PortIdentifier` lacks a static method "
                   "named `Get` which's result can be converted to std::string");
 
-    using Base = common::InstantiationStrategyBase<MwComProxy, internal::ProxyHolderCreator<MwComProxy>>;
+    using Base = common::InstantiationStrategyBase<ProxyBase, MwComProxy, internal::ProxyHolderCreator<MwComProxy>>;
 
   public:
-    using BaseProxy = Proxy;
-
     template <typename PortIdentifierProvider = PortIdentifier,
               std::enable_if_t<std::is_void_v<PortIdentifierProvider>, bool> = true>
     explicit SingleInstantiationStrategy(std::string port_identifier) noexcept : Base(std::move(port_identifier))
@@ -55,10 +53,10 @@ class SingleInstantiationStrategy final
     }
 
     /// @brief Start the service discovery for `MwComProxy`.
-    /// @note It must be ensured by the caller of Find() that StopFind() gets invoked *after* Find() returned!
-    void Find(std::unique_ptr<typename ProxyBuilderBase<Proxy>::BuilderCallback> on_found)
+    /// @note It must be ensured by the caller of StartFind() that StopFind() gets invoked *after* StartFind() returned!
+    void StartFind(std::unique_ptr<typename Base::OnServiceFoundCallback> on_found) override
     {
-        Base::StartFind(
+        Base::StartFindInternal(
             [on_found{std::move(on_found)}](std::vector<std::unique_ptr<MwComProxy>> mw_com_proxies,
                                             std::string_view port_identifier) -> typename Base::ShallStopFindService {
                 const bool no_mw_com_proxies_found{mw_com_proxies.empty() || mw_com_proxies.front() == nullptr};

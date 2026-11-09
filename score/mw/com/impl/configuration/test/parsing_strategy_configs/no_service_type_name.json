@@ -1,0 +1,17 @@
+{
+    "serviceTypes": [
+        {
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1234
+                }
+            ]
+        }
+    ],
+    "serviceInstances": []
+}

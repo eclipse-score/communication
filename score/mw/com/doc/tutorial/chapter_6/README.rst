@@ -1,3 +1,17 @@
+..
+   # *******************************************************************************
+   # Copyright (c) 2026 Contributors to the Eclipse Foundation
+   #
+   # See the NOTICE file(s) distributed with this work for additional
+   # information regarding copyright ownership.
+   #
+   # This program and the accompanying materials are made available under the
+   # terms of the Apache License Version 2.0 which is available at
+   # https://www.apache.org/licenses/LICENSE-2.0
+   #
+   # SPDX-License-Identifier: Apache-2.0
+   # *******************************************************************************
+
 Chapter 6: Strategies for Sizing sample slots
 =============================================
 
@@ -75,8 +89,6 @@ The `bazel` project for this chapter is located in `score/mw/com/doc/tutorial/ch
      - This file contains bazel targets for this example.
    * - `consumer/consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/consumer/consumer.cpp>`__
      - Implementation of the service consumer app (polling, keeps `SamplePtr`\s).
-   * - `consumer/consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/consumer/consumer.h>`__
-     - Header (empty - we just always want to have cpp/h pairs) of the service consumer.
    * - `consumer/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/consumer/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
    * - `consumer/client_1/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/consumer/client_1/mw_com_config.json>`__
@@ -85,8 +97,6 @@ The `bazel` project for this chapter is located in `score/mw/com/doc/tutorial/ch
      - `score::mw::com` configuration for consumer **instance 2** (`applicationID` 18).
    * - `provider/provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/provider/provider.cpp>`__
      - Implementation of the service provider (taken over from chapter 2).
-   * - `provider/provider.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/provider/provider.h>`__
-     - Header (empty) of the service provider.
    * - `provider/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/provider/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
    * - `provider/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/provider/mw_com_config.json>`__
@@ -109,7 +119,8 @@ sample slot – which is exactly what we want to observe in this chapter:
 
 .. literalinclude:: provider/provider.cpp
    :language: cpp
-   :lines: 58-61
+   :start-after: [provider-allocate-start]
+   :end-before: [provider-allocate-end]
    :caption: provider/provider.cpp
 
 
@@ -138,7 +149,8 @@ this chapter is more realistic:
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 137-166
+   :start-after: [consumer-keep-sample-ptrs-start]
+   :end-before: [consumer-keep-sample-ptrs-end]
    :caption: consumer/consumer.cpp
 
 
@@ -147,7 +159,8 @@ The concrete `SamplePtr` type is deduced from the proxy's event member (its publ
 
 .. literalinclude:: consumer/consumer.cpp
    :language: cpp
-   :lines: 37-38
+   :start-after: [consumer-sample-ptr-type-start]
+   :end-before: [consumer-sample-ptr-type-end]
    :caption: consumer/consumer.cpp
 
 

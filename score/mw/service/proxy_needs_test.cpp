@@ -37,12 +37,10 @@ std::future<void> gAsyncFindFutureIOtherFakeProxy{};
 std::atomic_uint64_t gStopFindInvokedCount{0};
 score::cpp::stop_source gWaitStopSource{};
 
-class TestNotFoundStrategy : public FindServiceStrategy
+class TestNotFoundStrategy : public FindServiceStrategy<FakeProxyBase>
 {
   public:
-    using BaseProxy = FakeProxyBase;
-
-    void Find(std::unique_ptr<typename ProxyBuilderBase<FakeProxyBase>::BuilderCallback> on_found)
+    void StartFind(std::unique_ptr<OnServiceFoundCallback> on_found) override
     {
         score::cpp::ignore = on_found;
     }
@@ -53,12 +51,10 @@ class TestNotFoundStrategy : public FindServiceStrategy
     }
 };
 
-class TestProxyFindStrategy : public FindServiceStrategy
+class TestProxyFindStrategy : public FindServiceStrategy<FakeProxyBase>
 {
   public:
-    using BaseProxy = FakeProxyBase;
-
-    void Find(std::unique_ptr<typename ProxyBuilderBase<FakeProxyBase>::BuilderCallback> on_found)
+    void StartFind(std::unique_ptr<OnServiceFoundCallback> on_found) override
     {
         gAsyncFindFutureIFakeProxy = std::async(std::launch::async, [on_found = std::move(on_found)]() mutable {
             score::concurrency::wait_for(gWaitStopSource.get_token(), gWaitTimeToServiceFoundIFakeProxy);
@@ -70,12 +66,10 @@ class TestProxyFindStrategy : public FindServiceStrategy
     void StopFind() noexcept override {}
 };
 
-class TestProxyFindStrategyMultiInstances : public FindServiceStrategy
+class TestProxyFindStrategyMultiInstances : public FindServiceStrategy<Multiple<FakeProxyBase>>
 {
   public:
-    using BaseProxy = Multiple<FakeProxyBase>;
-
-    void Find(std::unique_ptr<typename ProxyBuilderBase<Multiple<FakeProxyBase>>::BuilderCallback> on_found)
+    void StartFind(std::unique_ptr<OnServiceFoundCallback> on_found) override
     {
         gAsyncFindFutureIFakeProxy = std::async(std::launch::async, [on_found = std::move(on_found)]() mutable {
             score::concurrency::wait_for(gWaitStopSource.get_token(), gWaitTimeToServiceFoundIFakeProxy);
@@ -91,12 +85,10 @@ class TestProxyFindStrategyMultiInstances : public FindServiceStrategy
     void StopFind() noexcept override {}
 };
 
-class TestOtherProxyFindStrategy : public FindServiceStrategy
+class TestOtherProxyFindStrategy : public FindServiceStrategy<OtherFakeProxyBase>
 {
   public:
-    using BaseProxy = OtherFakeProxyBase;
-
-    void Find(std::unique_ptr<typename ProxyBuilderBase<OtherFakeProxyBase>::BuilderCallback> on_found)
+    void StartFind(std::unique_ptr<OnServiceFoundCallback> on_found) override
     {
         gAsyncFindFutureIOtherFakeProxy = std::async(std::launch::async, [on_found = std::move(on_found)]() mutable {
             score::concurrency::wait_for(gWaitStopSource.get_token(), gWaitTimeToServiceFoundIOtherFakeProxy);
@@ -108,13 +100,10 @@ class TestOtherProxyFindStrategy : public FindServiceStrategy
     void StopFind() noexcept override {}
 };
 
-class TestAlternativeProxyFindStrategy : public FindServiceStrategy
+class TestAlternativeProxyFindStrategy : public FindServiceStrategy<Variant<FakeProxyBase, OtherFakeProxyBase>>
 {
   public:
-    using BaseProxy = Variant<FakeProxyBase, OtherFakeProxyBase>;
-
-    void Find(std::unique_ptr<typename ProxyBuilderBase<Variant<FakeProxyBase, OtherFakeProxyBase>>::BuilderCallback>
-                  on_found)
+    void StartFind(std::unique_ptr<OnServiceFoundCallback> on_found) override
     {
         gAsyncFindFutureIFakeProxy = std::async(std::launch::async, [on_found = std::move(on_found)]() mutable {
             score::concurrency::wait_for(gWaitStopSource.get_token(), gWaitTimeToServiceFoundIFakeProxy);
@@ -126,13 +115,10 @@ class TestAlternativeProxyFindStrategy : public FindServiceStrategy
     void StopFind() noexcept override {}
 };
 
-class TestAlternativeProxyFindOtherStrategy : public FindServiceStrategy
+class TestAlternativeProxyFindOtherStrategy : public FindServiceStrategy<Variant<FakeProxyBase, OtherFakeProxyBase>>
 {
   public:
-    using BaseProxy = Variant<FakeProxyBase, OtherFakeProxyBase>;
-
-    void Find(std::unique_ptr<typename ProxyBuilderBase<Variant<FakeProxyBase, OtherFakeProxyBase>>::BuilderCallback>
-                  on_found)
+    void StartFind(std::unique_ptr<OnServiceFoundCallback> on_found) override
     {
         gAsyncFindFutureIOtherFakeProxy = std::async(std::launch::async, [on_found = std::move(on_found)]() mutable {
             score::concurrency::wait_for(gWaitStopSource.get_token(), gWaitTimeToServiceFoundIOtherFakeProxy);

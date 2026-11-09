@@ -33,20 +33,21 @@ class UnixDomainSocketAddress
 
     bool IsAbstract() const noexcept
     {
-        return !addr_.sun_path[0];
+        return addr_.sun_path[0] == '\0';
     }
 
     const sockaddr* data() const& noexcept
     {
         return reinterpret_cast<const sockaddr*>(&addr_);
     }
+    const sockaddr* data() const&& noexcept = delete;
     static constexpr std::size_t size() noexcept
     {
         return sizeof(addr_);
     }
 
   private:
-    struct sockaddr_un addr_;
+    struct sockaddr_un addr_{};
 };
 
 inline UnixDomainSocketAddress::UnixDomainSocketAddress(const std::string_view path, const bool isAbstract) noexcept

@@ -118,10 +118,6 @@ void AssertOffsetBoundsCheck(const void* const address,
 ///          it can be deactivated.
 /// \param enable true - enables bounds-checking, false - disables it
 /// \return previous value of bounds-check-enabled
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding: "A type, object or function that is used in multiple translation units
-// shall be declared in one and only one file.".
-// this is false positive. EnableOffsetPtrBoundsChecking is declared only once.
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE]
 bool EnableOffsetPtrBoundsChecking(const bool enable);
 
 /// \brief Custom implementation of an offset pointer (aka fancy pointer or relative pointer). When in a
@@ -146,11 +142,7 @@ template <typename PointedType>
 // Rationale: A move constructor and move assignment operator are not implemented so that the copy constructor /
 // assignment operators are used when moving an OffsetPtr. There would be no performance benefit of a move constructor /
 // assignment operator since whether we move or copy, we still need to re-calculate the memory offset.
-// Suppress "AUTOSAR C++14 M3-2-3", The rule states: "A type, object or function that is used in multiple translation
-// units shall be declared in one and only one file."
-// Rationale: this is false positive. OffsetPtr is declared only once.
 // NOLINTBEGIN(cppcoreguidelines-special-member-functions): Discard movement operations.
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE]
 // coverity[autosar_cpp14_a12_0_1_violation]
 class OffsetPtr
 // NOLINTEND(cppcoreguidelines-special-member-functions): see above
@@ -403,7 +395,7 @@ class OffsetPtr
     friend void swap(OffsetPtr<T>& left, OffsetPtr<T>& right) noexcept;
 };
 
-// maybe-unitialized is triggered here by some compilers, because they thing that `this` in the initalizer-list
+// maybe-unitialized is triggered here by some compilers, because they think that `this` in the initalizer-list
 // is maybe unitialized. Fact is, that `this`, in this case, is not derefenced and thus its fine to use it.
 // This is also described in the C++ Standard: https://eel.is/c++draft/class.init#class.base.init-15
 // NOLINTBEGIN(score-banned-preprocessor-directives) : required due to false positive compiler warning
@@ -735,8 +727,6 @@ auto OffsetPtr<PointedType>::operator--(std::int32_t) -> OffsetPtr
 // We generate operators for comparing OffsetPtrs with other OffsetPtrs of the same type or pointers of the same type
 // with all combinations of (non-) const / volatile.
 template <typename T1, typename T2, class = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding: Function is declared more than once.
-// Rationale: Overload signatures are different
 // Suppress "AUTOSAR C++14 A13-5-5", The rule states: "Comparison operators shall be non-member functions with identical
 // parameter types and noexcept.".
 // Rationale: The justification for the rule is that operators with non-identical operators can be
@@ -746,7 +736,6 @@ template <typename T1, typename T2, class = std::enable_if_t<detail_offset_ptr::
 // declaration.".
 // Rationale: False positive: all non-type specifiers are before any type specifiers.
 // coverity[autosar_cpp14_a13_5_5_violation]
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE]
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE]
 inline bool operator==(const OffsetPtr<T1>& offset_ptr1, const OffsetPtr<T2>& offset_ptr2)
 {
@@ -755,7 +744,6 @@ inline bool operator==(const OffsetPtr<T1>& offset_ptr1, const OffsetPtr<T2>& of
 }
 
 template <typename T1, typename T2, class = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator==(const OffsetPtr<T1>& offset_ptr1, T2* const ptr2)
@@ -766,7 +754,6 @@ inline bool operator==(const OffsetPtr<T1>& offset_ptr1, T2* const ptr2)
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator==(T1* const ptr1, const OffsetPtr<T2>& offset_ptr2)
@@ -775,7 +762,6 @@ inline bool operator==(T1* const ptr1, const OffsetPtr<T2>& offset_ptr2)
 }
 
 template <typename T>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 inline bool operator==(const OffsetPtr<T>& offset_ptr1, const std::nullptr_t /*null_ptr2*/) noexcept
 {
@@ -783,7 +769,6 @@ inline bool operator==(const OffsetPtr<T>& offset_ptr1, const std::nullptr_t /*n
 }
 
 template <typename T>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator==(const std::nullptr_t /*null_ptr1*/, const OffsetPtr<T>& offset_ptr2) noexcept
@@ -794,7 +779,6 @@ inline bool operator==(const std::nullptr_t /*null_ptr1*/, const OffsetPtr<T>& o
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator!=(const OffsetPtr<T1>& offset_ptr1, const OffsetPtr<T2>& offset_ptr2) noexcept
@@ -805,7 +789,6 @@ inline bool operator!=(const OffsetPtr<T1>& offset_ptr1, const OffsetPtr<T2>& of
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator!=(const OffsetPtr<T1>& offset_ptr1, T2* const ptr2) noexcept
@@ -816,7 +799,6 @@ inline bool operator!=(const OffsetPtr<T1>& offset_ptr1, T2* const ptr2) noexcep
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator!=(T1* const ptr1, const OffsetPtr<T2>& offset_ptr2) noexcept
@@ -825,7 +807,6 @@ inline bool operator!=(T1* const ptr1, const OffsetPtr<T2>& offset_ptr2) noexcep
 }
 
 template <typename T>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 inline bool operator!=(const OffsetPtr<T>& offset_ptr1, const std::nullptr_t null_ptr2) noexcept
 {
@@ -833,7 +814,6 @@ inline bool operator!=(const OffsetPtr<T>& offset_ptr1, const std::nullptr_t nul
 }
 
 template <typename T>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 inline bool operator!=(const std::nullptr_t null_ptr1, const OffsetPtr<T>& offset_ptr2) noexcept
 {
@@ -843,7 +823,6 @@ inline bool operator!=(const std::nullptr_t null_ptr1, const OffsetPtr<T>& offse
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator<(const OffsetPtr<T1>& offset_ptr1, const OffsetPtr<T2>& offset_ptr2)
@@ -855,7 +834,6 @@ inline bool operator<(const OffsetPtr<T1>& offset_ptr1, const OffsetPtr<T2>& off
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator<(const OffsetPtr<T1>& offset_ptr1, T2* const ptr2)
@@ -868,7 +846,6 @@ inline bool operator<(const OffsetPtr<T1>& offset_ptr1, T2* const ptr2)
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator<(T1* const ptr1, const OffsetPtr<T2>& offset_ptr2)
@@ -879,7 +856,6 @@ inline bool operator<(T1* const ptr1, const OffsetPtr<T2>& offset_ptr2)
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator<=(const OffsetPtr<T1>& offset_ptr1, const OffsetPtr<T2>& offset_ptr2)
@@ -891,7 +867,6 @@ inline bool operator<=(const OffsetPtr<T1>& offset_ptr1, const OffsetPtr<T2>& of
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator<=(const OffsetPtr<T1>& offset_ptr1, T2* const ptr2)
@@ -904,7 +879,6 @@ inline bool operator<=(const OffsetPtr<T1>& offset_ptr1, T2* const ptr2)
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator<=(T1* const ptr1, const OffsetPtr<T2>& offset_ptr2)
@@ -915,7 +889,6 @@ inline bool operator<=(T1* const ptr1, const OffsetPtr<T2>& offset_ptr2)
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator>(const OffsetPtr<T1>& offset_ptr1, const OffsetPtr<T2>& offset_ptr2) noexcept
@@ -926,7 +899,6 @@ inline bool operator>(const OffsetPtr<T1>& offset_ptr1, const OffsetPtr<T2>& off
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator>(const OffsetPtr<T1>& offset_ptr1, T2* const ptr2) noexcept
@@ -937,7 +909,6 @@ inline bool operator>(const OffsetPtr<T1>& offset_ptr1, T2* const ptr2) noexcept
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator>(T1* const ptr1, const OffsetPtr<T2>& offset_ptr2) noexcept
@@ -948,7 +919,6 @@ inline bool operator>(T1* const ptr1, const OffsetPtr<T2>& offset_ptr2) noexcept
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator>=(const OffsetPtr<T1>& offset_ptr1, const OffsetPtr<T2>& offset_ptr2) noexcept
@@ -959,7 +929,6 @@ inline bool operator>=(const OffsetPtr<T1>& offset_ptr1, const OffsetPtr<T2>& of
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator>=(const OffsetPtr<T1>& offset_ptr1, T2* const ptr2) noexcept
@@ -970,7 +939,6 @@ inline bool operator>=(const OffsetPtr<T1>& offset_ptr1, T2* const ptr2) noexcep
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator>=(T1* const ptr1, const OffsetPtr<T2>& offset_ptr2) noexcept
@@ -979,7 +947,6 @@ inline bool operator>=(T1* const ptr1, const OffsetPtr<T2>& offset_ptr2) noexcep
 }
 
 template <typename T>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 inline auto operator+(typename OffsetPtr<T>::difference_type diff, OffsetPtr<T> right) noexcept -> OffsetPtr<T>
 {
     right += diff;
@@ -987,12 +954,6 @@ inline auto operator+(typename OffsetPtr<T>::difference_type diff, OffsetPtr<T> 
 }
 
 template <typename T>
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding: Function is declared more than once.
-// Rationale: The two overloads of operator+ are necessary to support both commutative forms of addition
-// between OffsetPtr<T> and its difference_type. This is a valid use of function overloading in C++, and
-// the warning is a false positive because the rule is intended to prevent identical declarations, not
-// legitimate overloads.
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE]
 inline auto operator+(OffsetPtr<T> left, typename OffsetPtr<T>::difference_type diff) -> OffsetPtr<T>
 {
     left += diff;
@@ -1000,7 +961,6 @@ inline auto operator+(OffsetPtr<T> left, typename OffsetPtr<T>::difference_type 
 }
 
 template <typename T>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 inline auto operator-(OffsetPtr<T> left, typename OffsetPtr<T>::difference_type diff) -> OffsetPtr<T>
 {
     left -= diff;
@@ -1008,7 +968,6 @@ inline auto operator-(OffsetPtr<T> left, typename OffsetPtr<T>::difference_type 
 }
 
 template <typename T>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 inline auto operator-(typename OffsetPtr<T>::difference_type diff, OffsetPtr<T> right) -> OffsetPtr<T>
 {
     right -= diff;
@@ -1018,7 +977,6 @@ inline auto operator-(typename OffsetPtr<T>::difference_type diff, OffsetPtr<T> 
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline auto operator-(const OffsetPtr<T1>& offset_ptr1, const OffsetPtr<T2>& offset_ptr2) ->
     typename OffsetPtr<T1>::difference_type
@@ -1043,7 +1001,6 @@ inline auto operator-(const OffsetPtr<T1>& offset_ptr1, const OffsetPtr<T2>& off
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline auto operator-(const OffsetPtr<T1>& offset_ptr1, T2* const ptr2) -> typename OffsetPtr<T1>::difference_type
 {
@@ -1067,7 +1024,6 @@ inline auto operator-(const OffsetPtr<T1>& offset_ptr1, T2* const ptr2) -> typen
 template <typename T1,
           typename T2,
           typename = std::enable_if_t<detail_offset_ptr::cv_stripped_types_equal<T1, T2>::value>>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline auto operator-(T1* const ptr1, const OffsetPtr<T2>& offset_ptr2) -> typename OffsetPtr<T1>::difference_type
 {
@@ -1089,7 +1045,6 @@ inline auto operator-(T1* const ptr1, const OffsetPtr<T2>& offset_ptr2) -> typen
 }
 
 template <typename T>
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE] See rationale for autosar_cpp14_m3_2_3_violation above
 void swap(OffsetPtr<T>& left, OffsetPtr<T>& right) noexcept
 {
     auto* const right_ptr = OffsetPtr<T>::GetPointerWithoutBoundsCheck(&right, right.offset_);
