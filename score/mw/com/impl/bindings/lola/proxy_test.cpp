@@ -337,7 +337,7 @@ TEST_F(ProxyCreationDeathTest, GettingCoherentEventDataControlWithoutInitialised
     // Then trying to get the coherent event data control / subscription control for an event that was not registered
     // in event_controls_coherent_ will terminate
     const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
-    EXPECT_DEATH(proxy_->GetEventDataControlCoherent(uninitialised_element_fq_id), ".*");
+    EXPECT_DEATH(score::cpp::ignore = proxy_->GetEventDataControlCoherentOrMixed(uninitialised_element_fq_id), ".*");
     EXPECT_DEATH(proxy_->GetEventSubscriptionControlCoherent(uninitialised_element_fq_id), ".*");
 }
 
@@ -352,7 +352,7 @@ TEST_F(ProxyCreationFixture, GetEventDataControlCoherentReturnsControlForRegiste
     EXPECT_NE(proxy_, nullptr);
 
     // Then the coherent event data control / subscription control can be looked up without terminating
-    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventDataControlCoherent(kDummyElementFqId));
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventDataControlCoherentOrMixed(kDummyElementFqId));
     EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventSubscriptionControlCoherent(kDummyElementFqId));
 }
 

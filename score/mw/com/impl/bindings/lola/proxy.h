@@ -152,14 +152,6 @@ class Proxy : public ProxyBinding
     /// view.
     EventDataControl& GetEventDataControl(const ElementFqId element_fq_id);
 
-    /// Returns the EventDataControlCoherent for the given CoherencyType::kCoherent event ID.
-    ///
-    /// Terminates if the event control structure cannot be found.
-    ///
-    /// \details See GetEventDataControl() for the rationale of returning the EventDataControlCoherent itself instead
-    /// of a view wrapping it.
-    EventDataControlCoherent& GetEventDataControlCoherent(const ElementFqId element_fq_id);
-
     /// Returns the EventDataControlCoherent or EventDataControlMixed for the given CoherencyType::kCoherent
     /// proxy-side event ID, depending on how the skeleton-side counterpart is actually configured: a
     /// CoherencyType::kCoherent proxy-side event is compatible with a skeleton-side event configured with either

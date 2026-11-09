@@ -14,6 +14,8 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_H
 
 #include "score/mw/com/impl/bindings/lola/consumer_event_data_control_coherent_local_view.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_mixed_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
@@ -33,6 +35,7 @@
 #include <optional>
 #include <string_view>
 #include <utility>
+#include <variant>
 
 namespace score::mw::com::impl::lola
 {
@@ -152,12 +155,17 @@ class ProxyEvent final : public GenericProxyEventBinding
     const std::string_view event_name_;
     TransactionLogId transaction_log_id_;
     const CoherencyType coherency_;
-    /// \brief Local view for a CoherencyType::kNonCoherent event. Populated iff coherency_ ==
-    /// CoherencyType::kNonCoherent.
-    std::optional<ConsumerEventDataControlLocalView<>> event_data_control_local_;
-    /// \brief Local view for a CoherencyType::kCoherent event. Populated iff coherency_ ==
-    /// CoherencyType::kCoherent.
-    std::optional<ConsumerEventDataControlCoherentLocalView> event_data_control_local_coherent_;
+    /// \brief Local view used to access this event's CONTROL segment from the consumer side.
+    ///
+    /// \details Holds a ConsumerEventDataControlLocalView<> if coherency_ == CoherencyType::kNonCoherent, a
+    /// ConsumerEventDataControlCoherentLocalView if coherency_ == CoherencyType::kCoherent and the skeleton-side
+    /// event is also configured with CoherencyType::kCoherent, or a ConsumerEventDataControlMixedCoherentLocalView
+    /// if coherency_ == CoherencyType::kCoherent and the skeleton-side event is configured with
+    /// CoherencyType::kMixed (see Proxy::GetEventDataControlCoherentOrMixed()).
+    using EventDataControlLocalView = std::variant<ConsumerEventDataControlLocalView<>,
+                                                   ConsumerEventDataControlCoherentLocalView,
+                                                   ConsumerEventDataControlMixedCoherentLocalView>;
+    EventDataControlLocalView event_data_control_local_;
     std::reference_wrapper<EventSubscriptionControl<>> subscription_control_;
     std::reference_wrapper<TransactionLogSet> transaction_log_set_;
     SubscriptionStateMachine subscription_event_state_machine_;
