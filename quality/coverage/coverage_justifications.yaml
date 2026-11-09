@@ -179,3 +179,19 @@ justifications:
       Available_samples_ starts at max_num_samples_ and every deallocation only gives back
       samples that were previously taken out, so it can never grow above max_num_samples_.
       The assert-failure path is therefore unreachable.
+
+  - id: service-discovery-find-service-handle-unique
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      Defensive programming: The FindServiceHandle is freshly created by GetNextFreeFindServiceHandle() from a
+      monotonically increasing atomic counter directly before the assertion, and handle_to_instances_ is private
+      and only filled for handles created that way. The assertion can therefore never be violated.
+
+  - id: service-discovery-remove-unused-all-identifiers-processed
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >-
+      Defensive programming: RemoveUnusedInstanceIdentifiers is a private function which is only called by
+      StartFindService with an iterator that is not equal to the end of the container, so the early return
+      can never be taken.
