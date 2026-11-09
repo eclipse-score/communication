@@ -686,9 +686,8 @@ TEST_F(ProxyEventTraceCallGetNewSamplesCallbackDeathTest,
 
     // When calling TraceCallGetNewSamplesCallback
     // Then we terminate
-    EXPECT_DEATH(
-        TraceCallGetNewSamplesCallback(proxy_event_tracing_data_, proxy_event_binding_, trace_point_data_id),
-        ".*");
+    EXPECT_DEATH(TraceCallGetNewSamplesCallback(proxy_event_tracing_data_, proxy_event_binding_, trace_point_data_id),
+                 ".*");
 }
 
 using ProxyEventTraceCallReceiveHandlerFixture = ProxyEventTracingFixture;
@@ -839,8 +838,7 @@ TEST_P(ProxyEventTraceSubscriptionStateChangedFixture, TraceSubscriptionStateCha
     EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _, _, _)).Times(0);
 
     // When calling TraceSubscriptionStateChanged
-    TraceSubscriptionStateChanged(
-        proxy_event_tracing_data_, proxy_event_binding_, SubscriptionState::kNotSubscribed);
+    TraceSubscriptionStateChanged(proxy_event_tracing_data_, proxy_event_binding_, SubscriptionState::kNotSubscribed);
 }
 
 TEST_P(ProxyEventTraceSubscriptionStateChangedFixture,
@@ -871,8 +869,7 @@ TEST_P(ProxyEventTraceSubscriptionStateChangedFixture,
         .WillByDefault(Return(MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints)));
 
     // When calling TraceSubscriptionStateChanged
-    TraceSubscriptionStateChanged(
-        proxy_event_tracing_data_, proxy_event_binding_, SubscriptionState::kNotSubscribed);
+    TraceSubscriptionStateChanged(proxy_event_tracing_data_, proxy_event_binding_, SubscriptionState::kNotSubscribed);
 
     // Then all trace points are disabled
     EXPECT_TRUE(AreAllTracePointsDisabled(proxy_event_tracing_data_));
