@@ -149,7 +149,9 @@ TEST_F(SomeIpStrategyFixture, ArrayOfArrayUsesPerLevelLengthFieldAndByteOrder)
 {
     // Given an array-of-array layout: the outer array has a 2-byte length field, each inner array a 1-byte one, and the
     // inner scalars are little-endian -- all supplied through the outer array's nested layout.
-    static constexpr SomeIpLayout kInnerLayout{{ByteOrder::kLittleEndian, kAlign8Bits, 1U}, nullptr, 0U};
+    static constexpr SomeIpLayout kScalarLayout{{ByteOrder::kLittleEndian, kAlign8Bits}, nullptr, 0U};
+    static constexpr SomeIpLayout kInnerLayout{
+        {ByteOrder::kLittleEndian, kAlign8Bits, 1U, &kScalarLayout}, nullptr, 0U};
     static constexpr ElementLayout kRootFields[] = {
         {ByteOrder::kBigEndian, kAlign8Bits, 2U, &kInnerLayout},  // rows: 2-byte outer length, inner via nested layout
     };
@@ -193,6 +195,31 @@ TEST_F(SomeIpStrategyFixture, ArrayOfArrayUsesPerLevelLengthFieldAndByteOrder)
 
     // GetMaxSize mirrors the per-level layout: outer length(2) + 2 * [inner length(1) + capacity 2 * sizeof(uint16)].
     EXPECT_EQ(GetMaxSize<Matrix>(layout), 2U + (2U * (1U + (2U * sizeof(std::uint16_t)))));
+}
+
+TEST_F(SomeIpStrategyFixture, NullNestedLayoutUsesDefaultsInSerializerAndGetMaxSize)
+{
+    // Given a struct field with non-default settings but no nested layout ...
+    static constexpr ElementLayout kOuterFields[] = {
+        {ByteOrder::kBigEndian, kAlign32Bits, 1U, nullptr},  // inner: its own fields fall back to the defaults
+        {ByteOrder::kBigEndian, kAlign8Bits},                // trailer
+    };
+    const SomeIpLayout layout{{ByteOrder::kBigEndian, kAlign8Bits}, kOuterFields, 2U};
+    const SomeIpStrategy strategy{layout};
+    const Serializer<SomeIpStrategy> unit{strategy};
+    std::vector<std::uint8_t> buffer{};
+
+    OuterArray value{};
+    value.inner.tag = 0x09;
+    value.inner.data = score::cpp::static_vector<std::uint8_t, 4U>{0x01, 0x02, 0x03, 0x04};
+    value.trailer = 0x01020304U;
+
+    // ... when a full instance is serialized ...
+    ASSERT_TRUE(unit.Serialize(value, buffer).has_value());
+
+    // ... then InnerArray::data uses the default 4-byte length and 8-bit alignment, and GetMaxSize agrees.
+    EXPECT_EQ(buffer.size(), 1U + (4U + 4U) + 4U);
+    EXPECT_EQ(buffer.size(), GetMaxSize<OuterArray>(layout));
 }
 
 }  // namespace

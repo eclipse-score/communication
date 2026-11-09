@@ -67,6 +67,12 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "someip_layout_test",
+    srcs = ["someip_layout_test.cpp"],
+    deps = [":someip_strategy"],
+)
+
+cc_unit_test(
     name = "someip_wire_format_test",
     srcs = ["someip_wire_format_test.cpp"],
     deps = [
