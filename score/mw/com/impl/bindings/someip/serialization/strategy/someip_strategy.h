@@ -53,9 +53,9 @@ namespace serialization
 /// * bool (single byte, 0x00 / 0x01)
 /// * structs, including nested ones (each field is routed back through the strategy by the visitor, in declaration
 ///   order, with its own per-field layout)
-/// * score::serialization::types::LengthPrefixedVector (on wire: configurable n-byte length field, then the actual
-///   elements -- compact, no capacity padding)
-/// * score::cpp::static_vector (bounded array: configurable length field, then the actual elements)
+/// * score::serialization::types::LengthPrefixedVector (on wire: sizeof(LengthType)-byte length field holding the byte
+///   length of the elements, then the actual elements -- compact, no capacity padding)
+/// * score::cpp::static_vector (bounded array: configurable length field holding the byte length, then the elements)
 /// * score::cpp::pmr::string (UTF-8 on wire: configurable-width length field, then a UTF-8 BOM, the characters, and a
 ///   null terminator -- compact, no capacity padding)
 ///

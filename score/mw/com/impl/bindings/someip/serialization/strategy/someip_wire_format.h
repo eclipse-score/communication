@@ -16,8 +16,10 @@
 #include "score/mw/com/impl/bindings/someip/serialization/strategy/someip_layout.h"
 
 #include "score/memory/endianness.h"
+#include "score/serialization/error/serialization_error.h"
 #include "score/serialization/serialize_iterator.h"
 
+#include <score/assert.hpp>
 #include <score/utility.hpp>
 
 #include <cstddef>
@@ -63,14 +65,19 @@ void ReadScalar(DeSerializeIterator<Container>& iterator, T& value, const bool r
     // Write the incoming bytes straight into the object representation in the configured order -- no temporary.
     // coverity[autosar_cpp14_a5_2_4_violation]
     auto* const raw = reinterpret_cast<std::uint8_t*>(&value);  // NOLINT(*-reinterpret-cast) justified
+    if (iterator.HasError())
+    {
+        return;
+    }
+    const std::size_t remaining = iterator.End().GetResult().value() - iterator.GetResult().value();
+    if (remaining < size)
+    {
+        // Truncated input: latch an error instead of dereferencing the exhausted iterator (which would abort).
+        iterator.SetError(SerializationError::kOutOfBoundsWrite);
+        return;
+    }
     for (std::size_t index{0U}; index < size; ++index)
     {
-        if (iterator == iterator.End())
-        {
-            // Truncated input: latch an error instead of dereferencing the exhausted iterator (which would abort).
-            iterator = MakeUnexpected(SerializationError::kOutOfBoundsWrite);
-            return;
-        }
         const std::size_t destination{reverse ? ((size - 1U) - index) : index};
         raw[destination] = *iterator;
         score::cpp::ignore = ++iterator;
@@ -83,7 +90,9 @@ void EmitAlignmentPadding(SerializeIterator<Container>& iterator, const std::uin
     const std::size_t align = static_cast<std::size_t>(alignment_bits) / kBitsPerByte;
     if (align > 1U)
     {
-        const std::size_t pad = (align - (iterator.Offset() % align)) % align;
+        const auto offset = iterator.GetResult();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(offset.has_value());
+        const std::size_t pad = (align - (offset.value() % align)) % align;
         for (std::size_t i{0U}; i < pad; ++i)
         {
             iterator = kPaddingByte;  // padding byte
@@ -97,8 +106,11 @@ void SkipAlignmentPadding(DeSerializeIterator<Container>& iterator, const std::u
     const std::size_t align = static_cast<std::size_t>(alignment_bits) / kBitsPerByte;
     if (align > 1U)
     {
-        const std::size_t pad = (align - (iterator.Offset() % align)) % align;
-        for (std::size_t i{0U}; i < pad; ++i)
+        const auto offset = iterator.GetResult();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(offset.has_value());
+        const std::size_t pad = (align - (offset.value() % align)) % align;
+        // Stop at the end of input: the last element of a message carries no trailing padding.
+        for (std::size_t i{0U}; (i < pad) && (iterator != iterator.End()); ++i)
         {
             score::cpp::ignore = ++iterator;  // skip padding
         }
@@ -111,7 +123,7 @@ void SkipAlignmentPadding(DeSerializeIterator<Container>& iterator, const std::u
 template <typename Container>
 void WriteLengthField(SerializeIterator<Container> iterator, const std::uint64_t length, const ElementLayout& layout)
 {
-    if ((layout.length_field_bytes > kMaxLengthFieldBytes) ||
+    if ((!IsValidLengthFieldBytes(layout.length_field_bytes)) ||
         ((length >> (kBitsPerByte * layout.length_field_bytes)) != 0U))
     {
         iterator = MakeUnexpected(SerializationError::kOutOfBoundsWrite);  // length does not fit the length field
@@ -126,12 +138,35 @@ void WriteLengthField(SerializeIterator<Container> iterator, const std::uint64_t
     }
 }
 
+/// @brief Overwrites a length field previously written by WriteLengthField at the given offset.
+template <typename Container>
+void PatchLengthField(SerializeIterator<Container> iterator,
+                      const std::size_t offset,
+                      const std::uint64_t length,
+                      const ElementLayout& layout)
+{
+    if ((!IsValidLengthFieldBytes(layout.length_field_bytes)) ||
+        ((length >> (kBitsPerByte * layout.length_field_bytes)) != 0U))
+    {
+        iterator = MakeUnexpected(SerializationError::kOutOfBoundsWrite);  // length does not fit the length field
+        return;
+    }
+    const bool big_endian = (layout.byte_order == ByteOrder::kBigEndian);
+    for (std::uint8_t index{0U}; index < layout.length_field_bytes; ++index)
+    {
+        const std::uint8_t byte_index =
+            big_endian ? static_cast<std::uint8_t>(layout.length_field_bytes - 1U - index) : index;
+        iterator.WriteAt(offset + index,
+                         static_cast<std::uint8_t>((length >> (kBitsPerByte * byte_index)) & kByteMask));
+    }
+}
+
 template <typename Container>
 std::uint64_t ReadLengthField(DeSerializeIterator<Container>& iterator, const ElementLayout& layout)
 {
-    if (layout.length_field_bytes > kMaxLengthFieldBytes)
+    if (!IsValidLengthFieldBytes(layout.length_field_bytes))
     {
-        iterator = MakeUnexpected(SerializationError::kOutOfBoundsWrite);  // SOME/IP length field is at most 4 bytes
+        iterator.SetError(SerializationError::kOutOfBoundsWrite);
         return 0U;
     }
     const bool big_endian = (layout.byte_order == ByteOrder::kBigEndian);
@@ -141,7 +176,7 @@ std::uint64_t ReadLengthField(DeSerializeIterator<Container>& iterator, const El
         if (iterator == iterator.End())
         {
             // Truncated input: latch an error instead of dereferencing the exhausted iterator (which would abort).
-            iterator = MakeUnexpected(SerializationError::kOutOfBoundsWrite);
+            iterator.SetError(SerializationError::kOutOfBoundsWrite);
             return 0U;
         }
         const std::uint8_t byte_index =

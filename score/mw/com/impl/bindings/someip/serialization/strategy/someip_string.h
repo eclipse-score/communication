@@ -81,7 +81,7 @@ Result<void> DeSerializeString(Visitor& visitor,
     }
 
     // Guard against manipulated input declaring more payload bytes than remain, before reserving memory for them.
-    const std::size_t remaining = iterator.End().Offset() - iterator.Offset();
+    const std::size_t remaining = iterator.End().GetResult().value() - iterator.GetResult().value();
     if (length > static_cast<std::uint64_t>(remaining))
     {
         return MakeUnexpected(SerializationError::kOutOfBoundsWrite);

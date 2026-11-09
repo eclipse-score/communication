@@ -45,9 +45,12 @@ constexpr std::uint16_t kAlign256Bits{256U};
 /// @brief SOME/IP defaults: 8-bit alignment (packed) and a 4-byte on-wire length prefix.
 constexpr std::uint16_t kDefaultAlignmentBits{kAlign8Bits};
 constexpr std::uint8_t kDefaultLengthFieldBytes{4U};
-/// @brief Maximum on-wire length-prefix width. SOME/IP permits 0/1/2/4-byte length fields; 4 is the widest (and the
-/// default). ReadLengthField/WriteLengthField reject wider values.
-constexpr std::uint8_t kMaxLengthFieldBytes{4U};
+/// @brief SOME/IP permits only 0/1/2/4-byte length fields.
+constexpr bool IsValidLengthFieldBytes(const std::uint8_t bytes)
+{
+    return (bytes == 0U) || (bytes == sizeof(std::uint8_t)) || (bytes == sizeof(std::uint16_t)) ||
+           (bytes == sizeof(std::uint32_t));
+}
 
 namespace someip_detail
 {
