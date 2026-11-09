@@ -958,6 +958,102 @@
       "signature": "summary : Summary"
     },
     {
+      "name": "kDisabled",
+      "qualified_name": "score::mw::com::DataIntegrityStatus::kDisabled",
+      "kind": "enum_value",
+      "signature": "kDisabled"
+    },
+    {
+      "name": "kError",
+      "qualified_name": "score::mw::com::DataIntegrityStatus::kError",
+      "kind": "enum_value",
+      "signature": "kError"
+    },
+    {
+      "name": "kOk",
+      "qualified_name": "score::mw::com::DataIntegrityStatus::kOk",
+      "kind": "enum_value",
+      "signature": "kOk"
+    },
+    {
+      "name": "kDisabled",
+      "qualified_name": "score::mw::com::SequenceStatus::kDisabled",
+      "kind": "enum_value",
+      "signature": "kDisabled"
+    },
+    {
+      "name": "kErrorGapExceedsThreshold",
+      "qualified_name": "score::mw::com::SequenceStatus::kErrorGapExceedsThreshold",
+      "kind": "enum_value",
+      "signature": "kErrorGapExceedsThreshold"
+    },
+    {
+      "name": "kErrorRepeated",
+      "qualified_name": "score::mw::com::SequenceStatus::kErrorRepeated",
+      "kind": "enum_value",
+      "signature": "kErrorRepeated"
+    },
+    {
+      "name": "kOk",
+      "qualified_name": "score::mw::com::SequenceStatus::kOk",
+      "kind": "enum_value",
+      "signature": "kOk"
+    },
+    {
+      "name": "kOkGapWithinThreshold",
+      "qualified_name": "score::mw::com::SequenceStatus::kOkGapWithinThreshold",
+      "kind": "enum_value",
+      "signature": "kOkGapWithinThreshold"
+    },
+    {
+      "name": "kSkipped",
+      "qualified_name": "score::mw::com::SequenceStatus::kSkipped",
+      "kind": "enum_value",
+      "signature": "kSkipped"
+    },
+    {
+      "name": "kDisabled",
+      "qualified_name": "score::mw::com::HistoricalHealthStatus::kDisabled",
+      "kind": "enum_value",
+      "signature": "kDisabled"
+    },
+    {
+      "name": "kError",
+      "qualified_name": "score::mw::com::HistoricalHealthStatus::kError",
+      "kind": "enum_value",
+      "signature": "kError"
+    },
+    {
+      "name": "kOk",
+      "qualified_name": "score::mw::com::HistoricalHealthStatus::kOk",
+      "kind": "enum_value",
+      "signature": "kOk"
+    },
+    {
+      "name": "kDisabled",
+      "qualified_name": "score::mw::com::E2ESummary::kDisabled",
+      "kind": "enum_value",
+      "signature": "kDisabled"
+    },
+    {
+      "name": "kError",
+      "qualified_name": "score::mw::com::E2ESummary::kError",
+      "kind": "enum_value",
+      "signature": "kError"
+    },
+    {
+      "name": "kOk",
+      "qualified_name": "score::mw::com::E2ESummary::kOk",
+      "kind": "enum_value",
+      "signature": "kOk"
+    },
+    {
+      "name": "kOkWithDisabledChecks",
+      "qualified_name": "score::mw::com::E2ESummary::kOkWithDisabledChecks",
+      "kind": "enum_value",
+      "signature": "kOkWithDisabledChecks"
+    },
+    {
       "name": "SampleAllocateePtr",
       "qualified_name": "score::mw::com::SampleAllocateePtr",
       "kind": "template_type_alias",
