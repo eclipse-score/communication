@@ -97,8 +97,10 @@ Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count)
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
     }
+    // COV_JUSTIFIED_START subscribe-state-exhaustive
     else if ((current_state == SubscriptionState::kSubscribed) ||
              (current_state == SubscriptionState::kSubscriptionPending))
+    // COV_JUSTIFIED_STOP
     {
         const auto current_max_sample_count = binding_->GetMaxSampleCount();
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(current_max_sample_count.has_value(),
@@ -130,8 +132,10 @@ void ProxyEventBase::Unsubscribe()
         return;
     }
 
+    // COV_JUSTIFIED_START unsubscribe-binding-nonnull-assert
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ != nullptr,
                                                 "binding_ must be set if Subscribe completed successfully.");
+    // COV_JUSTIFIED_STOP
 
     tracing::TraceUnsubscribe(tracing_data_, *binding_);
 

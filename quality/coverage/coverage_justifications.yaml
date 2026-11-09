@@ -175,7 +175,23 @@ justifications:
   - id: sample-reference-tracker-available-samples-assert
     category: defensive_programming
     platforms: [linux, qnx]
-    reason: >-
+    reason: >
       Available_samples_ starts at max_num_samples_ and every deallocation only gives back
       samples that were previously taken out, so it can never grow above max_num_samples_.
       The assert-failure path is therefore unreachable.
+
+  - id: subscribe-state-exhaustive
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      SubscriptionState has exactly three enumerators: kNotSubscribed, kSubscribed and kSubscriptionPending.
+      kNotSubscribed is handled by the preceding branch, so when the else-if is reached the state is always
+      kSubscribed or kSubscriptionPending. The condition can therefore never evaluate to false.
+
+  - id: unsubscribe-binding-nonnull-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >-
+      Unsubscribe() only reaches this assert if is_subscribed_flag_ is set. The flag is only set after Subscribe()
+      has used binding_ (or on the mock path, which returns earlier), and is cleared on move. So binding_ is never
+      null here and the assert-failure path is unreachable.
