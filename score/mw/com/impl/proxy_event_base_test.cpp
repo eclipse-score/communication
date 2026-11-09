@@ -29,6 +29,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
+#include <optional>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -122,6 +123,10 @@ TYPED_TEST_SUITE(ProxyEventBaseUnsubscribeDeathTest, MyTypes, );
 template <typename T>
 using ProxyEventBaseSubscribeFixture = ProxyEventBaseFixture<T>;
 TYPED_TEST_SUITE(ProxyEventBaseSubscribeFixture, MyTypes, );
+
+template <typename T>
+using ProxyEventBaseSubscribeDeathTest = ProxyEventBaseFixture<T>;
+TYPED_TEST_SUITE(ProxyEventBaseSubscribeDeathTest, MyTypes, );
 
 template <typename T>
 using ProxyEventBaseGetSubscriptionStatefixture = ProxyEventBaseFixture<T>;
@@ -618,6 +623,54 @@ TYPED_TEST(AServiceElement,
     auto binding_event_receive_handler_weak_ptr = this->GetBindingDependentHandler();
     auto binding_event_receive_handler = binding_event_receive_handler_weak_ptr.lock();
     EXPECT_FALSE(binding_event_receive_handler);
+}
+
+TYPED_TEST(AServiceElement, UnsettingTheReceiveHandlerFromWithinTheReceiveHandlerSucceedsWithoutDeadlock)
+{
+    // Given a Service Element, that is connected to a mock binding that captures the binding dependent handler
+    this->ThatCapturesTheReceiveHandlerGivenToBinding();
+
+    // and given a receive handler which un-sets itself when it is invoked
+    bool unset_succeeded{false};
+    auto& service_element = *this->service_element_;
+    const auto set_handler_result = service_element.SetReceiveHandler(EventReceiveHandler{[&]() {
+        unset_succeeded = service_element.UnsetReceiveHandler().has_value();
+    }});
+    ASSERT_TRUE(set_handler_result.has_value());
+
+    // Expecting that the un-set is dispatched to the binding
+    EXPECT_CALL(*this->mock_service_element_binding_, UnsetReceiveHandler()).WillOnce(Return(score::Result<void>{}));
+
+    // When the binding invokes the receive handler
+    auto binding_event_receive_handler = this->GetBindingDependentHandler().lock();
+    ASSERT_TRUE(binding_event_receive_handler);
+    std::ignore = (*binding_event_receive_handler)();
+
+    // Then the un-set from within the receive handler returns without deadlocking and succeeds
+    EXPECT_TRUE(unset_succeeded);
+}
+
+TYPED_TEST(ProxyEventBaseSubscribeDeathTest, CallingSubscribeWhileSubscribedWithoutMaxSampleCountInBindingTerminates)
+{
+    const auto CallSubscribeWhileSubscribedWithoutMaxSampleCount = [this]() {
+        const std::uint8_t max_sample_count{7U};
+
+        // Given a Service Element, that is connected to a mock binding
+        this->CreateServiceElement();
+
+        // and given that the binding reports being subscribed
+        EXPECT_CALL(*this->mock_service_element_binding_, GetSubscriptionState())
+            .WillOnce(Return(SubscriptionState::kSubscribed));
+
+        // but that the binding has no current max sample count set
+        EXPECT_CALL(*this->mock_service_element_binding_, GetMaxSampleCount()).WillOnce(Return(std::nullopt));
+
+        // When Subscribe is called on the Service Element
+        std::ignore = this->service_element_->Subscribe(max_sample_count);
+    };
+
+    // Then the program terminates since a max sample count must be set when subscribed
+    EXPECT_DEATH(CallSubscribeWhileSubscribedWithoutMaxSampleCount(), ".*");
 }
 
 TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeWhileUnsubscribedDispatchesToBinding)
