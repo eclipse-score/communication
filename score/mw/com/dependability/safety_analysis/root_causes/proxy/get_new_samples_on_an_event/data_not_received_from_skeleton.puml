@@ -1,0 +1,45 @@
+' ********************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' ********************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("Data not received from skeleton", "Communication.DataNotReceivedFromSkeleton")
+' Could not open shared memory
+'     Could not open data region
+'     Could not open control region
+'         
+' Opened wrong shared memory
+$IntermediateEvent("Cannot open shared memory","CannotOpenSharedMemory", "Communication.DataNotReceivedFromSkeleton")
+$OrGate("OrGate2", "CannotOpenSharedMemory")
+$IntermediateEvent("Shared Memory Object can be found but not accessible", "SharedMemoryObjectNotAccessible", "OrGate2")
+$OrGate("OrGate3", "SharedMemoryObjectNotAccessible")
+$RootCause("Looking for shared memory in wrong path", "LookingForSharedMemoryInWrongPath", "OrGate2")
+$OrGate("OrGate4", "LookingForSharedMemoryInWrongPath")
+$RootCause("Not searching for shared memory in path derived from Handle", "NotSearchingForSharedMemoryInPathDerivedFromHandle", "OrGate4")
+$RootCause("Handle contains wrong values", "HandleContainsWrongValues", "OrGate4")
+$RootCause("Skeleton created shared memory with wrong provider uid", "WrongShmProvider", "OrGate3")
+$RootCause("Skeleton created shared memory with wrong provider ACL", "WrongShmAcl", "OrGate3")
+$RootCause("Shm open os error", "ShmOpenOSError", "OrGate3")
+$IntermediateEvent("Shared Memory Object was created by skeleton in the wrong path", "SharedMemoryObjectCreatedInWrongPath", "OrGate2")
+' Creating shared memory in the wrong path
+'    Not creating shared memory in path derived from Instance Identifier
+'    InstanceIdentifier contains wrong data
+'        In memory configuration is wrong
+'            Json configuration is wrong
+'            Json parsing is wrong
+'            ...
+'    
+
+@enduml

@@ -12,41 +12,73 @@
 # *******************************************************************************
 
 filegroup(
-    name = "callback_invoked_with_wrong_data_fta",
+    name = "callback_not_called_with_samples_received_from_skeleton_fta",
     srcs = [
-        "callback_invoked_with_wrong_data_fta.puml",
+        "callback_not_called_with_samples_received_from_skeleton_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
-    name = "callback_not_invoked_despite_samples_available_fta",
+    name = "data_pointed_to_by_sample_ptr_has_different_value_to_sample_sent_by_skeleton_fta",
     srcs = [
-        "callback_not_invoked_despite_samples_available_fta.puml",
+        "data_pointed_to_by_sample_ptr_has_different_value_to_sample_sent_by_skeleton_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
-    name = "returns_wrong_sample_count_fta",
+    name = "receiver_is_called_more_times_than_allowed_fta",
     srcs = [
-        "returns_wrong_sample_count_fta.puml",
+        "receiver_is_called_more_times_than_allowed_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
-    name = "uses_too_many_sampleptr_fta",
+    name = "returned_call_count_different_to_number_of_times_receiver_called_fta",
     srcs = [
-        "uses_too_many_sampleptr_fta.puml",
+        "returned_call_count_different_to_number_of_times_receiver_called_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
-    name = "succeeds_despite_an_error_fta",
+    name = "returns_an_error_although_called_receiver_correct_number_of_times_fta",
     srcs = [
-        "succeeds_despite_an_error_fta.puml",
+        "returns_an_error_although_called_receiver_correct_number_of_times_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
+    name = "returns_not_subscribed_error_although_in_active_subscription_fta",
+    srcs = [
+        "returns_not_subscribed_error_although_in_active_subscription_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
+    name = "returns_success_although_did_not_call_receiver_correct_number_of_times_fta",
+    srcs = [
+        "returns_success_although_did_not_call_receiver_correct_number_of_times_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
+    name = "returns_success_although_not_in_active_subscription_fta",
+    srcs = [
+        "returns_success_although_not_in_active_subscription_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
+    name = "sample_ptr_returned_which_was_received_before_last_get_new_samples_fta",
+    srcs = [
+        "sample_ptr_returned_which_was_received_before_last_get_new_samples_fta.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

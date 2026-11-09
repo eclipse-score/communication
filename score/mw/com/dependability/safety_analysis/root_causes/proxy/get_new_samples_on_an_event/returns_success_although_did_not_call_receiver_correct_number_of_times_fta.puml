@@ -1,0 +1,28 @@
+' ********************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' ********************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+' gtodo: Check with Jochen whether this AND gate and TransferInGate are correctly used here: Here it seems that the root cause is 
+' essentially restating the failure mode (which is just a "contract violation") and in the end we will have a requirement which says
+' that if the receiver is not called the correct number of times, an error should be returned. Do we really need to break this down 
+' further e.g. with the AND gate or do we even need the FTA?
+$FailureMode("Returns success although did not call receiver correct number of times", "Communication.ReturnsSuccessAlthoughDidNotCallReceiverCorrectNumberOfTimes")
+$AndGate("AndGate1", "Communication.ReturnsSuccessAlthoughDidNotCallReceiverCorrectNumberOfTimes")
+$IntermediateEvent("Did not call receiver correct number of times", "DidNotCallReceiverCorrectNumberOfTimes", "AndGate1")
+$TransferInGate("CallbackNotCalledWithSamplesReceivedFromSkeleton", "DidNotCallReceiverCorrectNumberOfTimes")
+$RootCause("Did not return an error", "DidNotReturnAnError", "AndGate1")
+
+@enduml

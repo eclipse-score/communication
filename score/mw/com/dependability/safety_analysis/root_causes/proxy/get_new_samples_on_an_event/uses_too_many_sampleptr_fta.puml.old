@@ -15,7 +15,8 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("GetNewSamples succeeds despite an error", "Communication.GetNewSamplesSucceedsDespiteAnError")
-$RootCause("Root Cause GetNewSamples succeeds despite an error", "RootCauseGetNewSamplesSucceedsDespiteAnError", "Communication.GetNewSamplesSucceedsDespiteAnError")
+$FailureMode("User already holds max sample count, but another SamplePtr is handed out", "Communication.UsesTooManySampleptr")
+
+$RootCause("Reference counting facility for SamplePtr is broken", "ReferenceCountingFacilityForSampleptrIsBroken", "Communication.UsesTooManySampleptr")
 
 @enduml

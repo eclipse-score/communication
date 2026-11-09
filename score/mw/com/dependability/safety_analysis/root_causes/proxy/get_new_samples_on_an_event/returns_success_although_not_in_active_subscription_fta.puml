@@ -1,0 +1,29 @@
+' ********************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' ********************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("Returns success although not in active subscription", "Communication.ReturnsSuccessAlthoughNotInActiveSubscription")
+
+$OrGate("OrGate1", "Communication.ReturnsSuccessAlthoughNotInActiveSubscription")
+$RootCause("Didn't check if we're currently subscribed", "DidNotCheckIfCurrentlySubscribed", "OrGate1")
+$IntermediateEvent("Stored subscription state is wrong", "StoredSubscriptionStateIsWrong", "OrGate1")
+$OrGate("OrGate2", "StoredSubscriptionStateIsWrong")
+$RootCause("Subscribe did not update state machine", "SubscribeDidNotUpdateStateMachine", "OrGate2")
+$RootCause("Subscribe updated state machine incorrectly", "SubscribeUpdatedStateMachineIncorrectly", "OrGate2")
+$RootCause("Unsubscribe updated state machine incorrectly", "UnsubscribeUpdatedStateMachineIncorrectly", "OrGate2")
+$RootCause("Proxy auto reconnect find service handler updated state machine incorrectly", "ProxyAutoReconnectFindServiceHandlerUpdatedStateMachineIncorrectly", "OrGate2")
+
+@enduml

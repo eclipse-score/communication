@@ -17,7 +17,7 @@
 
 $FailureMode("Service is available for consumers but is not fully functional", "Communication.OfferServiceNotFullySetupForConsumers")
 ' Event communication is not fully functional
-'   Cannot create shared memory
+'   
 
 
 ' Method communication is not fully functional
