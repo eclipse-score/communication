@@ -24,11 +24,14 @@
 
 using namespace lgsomeip;
 
-struct EndpointTCPTestHost {
-    void on_message(std::shared_ptr<Endpoint>, std::uint8_t* message, std::size_t length) {
+struct EndpointTCPTestHost
+{
+    void on_message(std::shared_ptr<Endpoint>, std::uint8_t* message, std::size_t length)
+    {
         received.assign(message, message + length);
     }
-    void on_disconnect(std::shared_ptr<Endpoint>) {
+    void on_disconnect(std::shared_ptr<Endpoint>)
+    {
         ++disconnect_count;
     }
     void on_connect(std::shared_ptr<Endpoint>, std::shared_ptr<Endpoint>) {}
@@ -39,45 +42,53 @@ struct EndpointTCPTestHost {
 
 // A socket whose incoming bytes are supplied by the test. Like TCPSocket::receive(), receive() returns as many
 // of the requested bytes as are available, which is zero when nothing has arrived.
-class FeedSocket : public osabstraction::Socket {
-public:
+class FeedSocket : public osabstraction::Socket
+{
+  public:
     explicit FeedSocket(std::shared_ptr<osabstraction::Address> address = std::make_shared<osabstraction::IP4Address>())
-        : osabstraction::Socket(-1, address) {}
+        : osabstraction::Socket(-1, address)
+    {
+    }
 
-    void feed(const std::vector<std::uint8_t>& bytes) {
+    void feed(const std::vector<std::uint8_t>& bytes)
+    {
         pending_.insert(pending_.end(), bytes.begin(), bytes.end());
     }
 
-    int receive(char* buffer, std::size_t size) override {
+    int receive(char* buffer, std::size_t size) override
+    {
         std::size_t len = std::min(size, pending_.size());
         std::copy_n(pending_.begin(), len, buffer);
         pending_.erase(pending_.begin(), pending_.begin() + static_cast<std::ptrdiff_t>(len));
         return static_cast<int>(len);
     }
 
-private:
+  private:
     std::deque<std::uint8_t> pending_;
 };
 
 const std::vector<std::uint8_t> kMessage = {0x12, 0x34, 0x80, 0x01, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x01,
                                             0x00, 0x02, 0x01, 0x01, 0x00, 0x00, 0xde, 0xad, 0xbe, 0xef};
 
-std::vector<std::uint8_t> slice(const std::vector<std::uint8_t>& bytes, std::size_t from, std::size_t to) {
+std::vector<std::uint8_t> slice(const std::vector<std::uint8_t>& bytes, std::size_t from, std::size_t to)
+{
     return std::vector<std::uint8_t>(bytes.begin() + static_cast<std::ptrdiff_t>(from),
                                      bytes.begin() + static_cast<std::ptrdiff_t>(to));
 }
 
 // Delivers the stream in pieces of chunk bytes, calling the endpoint after each piece, as the multiplexer would.
 template <typename EndpointT>
-void feed_in_chunks(FeedSocket& socket, EndpointT& endpoint, const std::vector<std::uint8_t>& stream,
-                    std::size_t chunk) {
-    for (std::size_t pos = 0; pos < stream.size(); pos += chunk) {
+void feed_in_chunks(FeedSocket& socket, EndpointT& endpoint, const std::vector<std::uint8_t>& stream, std::size_t chunk)
+{
+    for (std::size_t pos = 0; pos < stream.size(); pos += chunk)
+    {
         socket.feed(slice(stream, pos, std::min(pos + chunk, stream.size())));
         endpoint.callback(false);
     }
 }
 
-TEST(EndpointTCPClient, recognizes_server_and_client_magic_cookies) {
+TEST(EndpointTCPClient, recognizes_server_and_client_magic_cookies)
+{
     EndpointTCPClient<EndpointTCPTestHost> endpoint(nullptr);
     std::uint8_t invalid_cookie[kLenMagicCookie] = {};
 
@@ -86,7 +97,8 @@ TEST(EndpointTCPClient, recognizes_server_and_client_magic_cookies) {
     EXPECT_FALSE(endpoint.is_magic_cookie(invalid_cookie, sizeof(invalid_cookie)));
 }
 
-TEST(EndpointTCPClient, stores_server_endpoint_reference) {
+TEST(EndpointTCPClient, stores_server_endpoint_reference)
+{
     EndpointTCPClient<EndpointTCPTestHost> client(nullptr);
     auto server = std::make_shared<EndpointTCPServer<EndpointTCPTestHost>>(nullptr);
 
@@ -95,7 +107,8 @@ TEST(EndpointTCPClient, stores_server_endpoint_reference) {
     EXPECT_EQ(client.get_server_endpoint(), server);
 }
 
-TEST(EndpointTCPServer, manages_client_file_descriptors) {
+TEST(EndpointTCPServer, manages_client_file_descriptors)
+{
     EndpointTCPServer<EndpointTCPTestHost> server(nullptr);
 
     server.add_client_endpoint(10);
@@ -108,8 +121,10 @@ TEST(EndpointTCPServer, manages_client_file_descriptors) {
     EXPECT_EQ(server.get_client_list(), (std::vector<std::int32_t>{11}));
 }
 
-TEST(EndpointTCPClient, reassembles_message_received_in_small_chunks) {
-    for (std::size_t chunk : {1U, 3U, 5U, 7U}) {
+TEST(EndpointTCPClient, reassembles_message_received_in_small_chunks)
+{
+    for (std::size_t chunk : {1U, 3U, 5U, 7U})
+    {
         EndpointTCPTestHost host;
         auto endpoint = std::make_shared<EndpointTCPClient<EndpointTCPTestHost>>(&host);
         auto socket = std::make_shared<FeedSocket>();
@@ -121,9 +136,11 @@ TEST(EndpointTCPClient, reassembles_message_received_in_small_chunks) {
     }
 }
 
-TEST(EndpointTCPClient, keeps_partial_message_until_the_rest_arrives) {
+TEST(EndpointTCPClient, keeps_partial_message_until_the_rest_arrives)
+{
     // Every split point: inside the header, at the header end, inside the body, and one byte before the end.
-    for (std::size_t split = 1; split < kMessage.size(); ++split) {
+    for (std::size_t split = 1; split < kMessage.size(); ++split)
+    {
         EndpointTCPTestHost host;
         auto endpoint = std::make_shared<EndpointTCPClient<EndpointTCPTestHost>>(&host);
         auto socket = std::make_shared<FeedSocket>();
@@ -145,7 +162,8 @@ TEST(EndpointTCPClient, keeps_partial_message_until_the_rest_arrives) {
     }
 }
 
-TEST(EndpointTCPClient, does_not_consume_bytes_of_the_following_message) {
+TEST(EndpointTCPClient, does_not_consume_bytes_of_the_following_message)
+{
     EndpointTCPTestHost host;
     auto endpoint = std::make_shared<EndpointTCPClient<EndpointTCPTestHost>>(&host);
     auto socket = std::make_shared<FeedSocket>();
@@ -165,16 +183,18 @@ TEST(EndpointTCPClient, does_not_consume_bytes_of_the_following_message) {
     EXPECT_EQ(host.disconnect_count, 0);
 }
 
-TEST(EndpointTCPClient, receives_message_larger_than_static_buffer_in_pieces) {
+TEST(EndpointTCPClient, receives_message_larger_than_static_buffer_in_pieces)
+{
     const std::size_t payload_size = EndpointBase::STATIC_BUFFER_SIZE * 2 + 5;
-    std::vector<std::uint8_t> message = {0x12, 0x34, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00,
-                                         0x00, 0x01, 0x00, 0x02, 0x01, 0x01, 0x00, 0x00};
+    std::vector<std::uint8_t> message = {
+        0x12, 0x34, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x01, 0x01, 0x00, 0x00};
     const std::uint32_t length = static_cast<std::uint32_t>(8 + payload_size);
     message[4] = static_cast<std::uint8_t>(length >> 24);
     message[5] = static_cast<std::uint8_t>(length >> 16);
     message[6] = static_cast<std::uint8_t>(length >> 8);
     message[7] = static_cast<std::uint8_t>(length);
-    for (std::size_t i = 0; i < payload_size; ++i) {
+    for (std::size_t i = 0; i < payload_size; ++i)
+    {
         message.push_back(static_cast<std::uint8_t>(i));
     }
 
@@ -194,12 +214,14 @@ TEST(EndpointTCPClient, receives_message_larger_than_static_buffer_in_pieces) {
     EXPECT_EQ(host.received, message);
 }
 
-TEST(EndpointTCPClient, reads_instance_id_of_internal_message_in_small_chunks) {
+TEST(EndpointTCPClient, reads_instance_id_of_internal_message_in_small_chunks)
+{
     std::vector<std::uint8_t> stream = kMessage;
     stream.push_back(0x12);
     stream.push_back(0x34);
 
-    for (std::size_t chunk : {1U, 3U}) {
+    for (std::size_t chunk : {1U, 3U})
+    {
         EndpointTCPTestHost host;
         auto endpoint = std::make_shared<EndpointTCPClient<EndpointTCPTestHost>>(&host);
         auto socket = std::make_shared<FeedSocket>(std::make_shared<osabstraction::LocalAddress>());
@@ -212,7 +234,8 @@ TEST(EndpointTCPClient, reads_instance_id_of_internal_message_in_small_chunks) {
     }
 }
 
-TEST(EndpointTCPClient, waits_for_instance_id_that_arrives_late) {
+TEST(EndpointTCPClient, waits_for_instance_id_that_arrives_late)
+{
     EndpointTCPTestHost host;
     auto endpoint = std::make_shared<EndpointTCPClient<EndpointTCPTestHost>>(&host);
     auto socket = std::make_shared<FeedSocket>(std::make_shared<osabstraction::LocalAddress>());
@@ -229,12 +252,14 @@ TEST(EndpointTCPClient, waits_for_instance_id_that_arrives_late) {
     EXPECT_EQ(endpoint->get_instance_id(), 0x1234);
 }
 
-TEST(EndpointTCPClient, disconnects_when_length_field_is_invalid) {
+TEST(EndpointTCPClient, disconnects_when_length_field_is_invalid)
+{
     const std::vector<std::uint8_t> zero_length = {0x12, 0x34, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
     const std::vector<std::uint8_t> short_length = {0x12, 0x34, 0x80, 0x01, 0x00, 0x00, 0x00, 0x07, 0x00, 0x01};
     const std::vector<std::uint8_t> huge_length = {0x12, 0x34, 0x80, 0x01, 0xfd, 0x00, 0x00, 0xff, 0x00, 0x01};
 
-    for (const auto& stream : {zero_length, short_length, huge_length}) {
+    for (const auto& stream : {zero_length, short_length, huge_length})
+    {
         EndpointTCPTestHost host;
         auto endpoint = std::make_shared<EndpointTCPClient<EndpointTCPTestHost>>(&host);
         auto socket = std::make_shared<FeedSocket>();
@@ -247,7 +272,8 @@ TEST(EndpointTCPClient, disconnects_when_length_field_is_invalid) {
     }
 }
 
-TEST(EndpointTCPClient, drops_partial_message_when_connection_closes) {
+TEST(EndpointTCPClient, drops_partial_message_when_connection_closes)
+{
     EndpointTCPTestHost host;
     auto endpoint = std::make_shared<EndpointTCPClient<EndpointTCPTestHost>>(&host);
     auto socket = std::make_shared<FeedSocket>();
@@ -264,11 +290,14 @@ TEST(EndpointTCPClient, drops_partial_message_when_connection_closes) {
     EXPECT_EQ(host.received, kMessage);
 }
 
-namespace {
+namespace
+{
 
 // Two connected stream sockets, so that the real socket code (non-blocking reads, end of stream) is exercised.
-struct SocketPair {
-    SocketPair() {
+struct SocketPair
+{
+    SocketPair()
+    {
         int fds[2];
         EXPECT_EQ(0, socketpair(AF_UNIX, SOCK_STREAM, 0, fds));
         auto address = std::make_shared<osabstraction::IP4Address>();
@@ -276,15 +305,19 @@ struct SocketPair {
         endpoint_socket = std::make_shared<osabstraction::TCPSocket>(fds[0], address);
         peer_fd = fds[1];
     }
-    ~SocketPair() {
-        if (peer_fd >= 0) {
+    ~SocketPair()
+    {
+        if (peer_fd >= 0)
+        {
             ::close(peer_fd);
         }
     }
-    void write(const std::vector<std::uint8_t>& bytes) {
+    void write(const std::vector<std::uint8_t>& bytes)
+    {
         ASSERT_EQ(static_cast<ssize_t>(bytes.size()), ::write(peer_fd, bytes.data(), bytes.size()));
     }
-    void close_peer() {
+    void close_peer()
+    {
         ::close(peer_fd);
         peer_fd = -1;
     }
@@ -293,9 +326,10 @@ struct SocketPair {
     int peer_fd{-1};
 };
 
-} // namespace
+}  // namespace
 
-TEST(EndpointTCPClient, receives_message_written_in_two_steps_on_a_real_socket) {
+TEST(EndpointTCPClient, receives_message_written_in_two_steps_on_a_real_socket)
+{
     SocketPair pair;
     EndpointTCPTestHost host;
     auto endpoint = std::make_shared<EndpointTCPClient<EndpointTCPTestHost>>(&host);
@@ -311,7 +345,8 @@ TEST(EndpointTCPClient, receives_message_written_in_two_steps_on_a_real_socket) 
     EXPECT_EQ(host.received, kMessage);
 }
 
-TEST(EndpointTCPClient, disconnects_when_peer_closes_the_stream) {
+TEST(EndpointTCPClient, disconnects_when_peer_closes_the_stream)
+{
     SocketPair pair;
     EndpointTCPTestHost host;
     auto endpoint = std::make_shared<EndpointTCPClient<EndpointTCPTestHost>>(&host);
@@ -325,7 +360,8 @@ TEST(EndpointTCPClient, disconnects_when_peer_closes_the_stream) {
     EXPECT_TRUE(host.received.empty());
 }
 
-TEST(EndpointTCPClient, disconnects_when_peer_closes_in_the_middle_of_a_message) {
+TEST(EndpointTCPClient, disconnects_when_peer_closes_in_the_middle_of_a_message)
+{
     SocketPair pair;
     EndpointTCPTestHost host;
     auto endpoint = std::make_shared<EndpointTCPClient<EndpointTCPTestHost>>(&host);
@@ -339,7 +375,8 @@ TEST(EndpointTCPClient, disconnects_when_peer_closes_in_the_middle_of_a_message)
     EXPECT_TRUE(host.received.empty());
 }
 
-TEST(EndpointTCPClient, does_not_disconnect_when_no_data_is_available_yet) {
+TEST(EndpointTCPClient, does_not_disconnect_when_no_data_is_available_yet)
+{
     SocketPair pair;
     EndpointTCPTestHost host;
     auto endpoint = std::make_shared<EndpointTCPClient<EndpointTCPTestHost>>(&host);

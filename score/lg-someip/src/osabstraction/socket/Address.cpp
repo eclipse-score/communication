@@ -14,63 +14,78 @@
 
 #include "Address.h"
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
 Address::Address() {}
 
 Address::~Address() {}
 
-struct sockaddr* Address::get_address() {
+struct sockaddr* Address::get_address()
+{
     return nullptr;
 }
 
-socklen_t Address::get_address_size() const {
+socklen_t Address::get_address_size() const
+{
     return 0;
 }
 
-uint16_t Address::get_port_address() const {
+uint16_t Address::get_port_address() const
+{
     return port_;
 }
 
-int Address::get_type() const {
+int Address::get_type() const
+{
     return -1;
 }
 
-bool Address::is_multicast() const {
+bool Address::is_multicast() const
+{
     return multicast_;
 }
 
-bool Address::get_reliable() const {
+bool Address::get_reliable() const
+{
     return reliable_;
 }
 
-void Address::set_reliable(bool reliable) {
+void Address::set_reliable(bool reliable)
+{
     reliable_ = reliable;
 }
 
-void Address::set_port_address(uint16_t port) {
+void Address::set_port_address(uint16_t port)
+{
     port_ = port;
 }
 
-void Address::set_vlan_priority(uint8_t vlan_priority) {
+void Address::set_vlan_priority(uint8_t vlan_priority)
+{
     vlan_priority_ = vlan_priority;
 }
 
-uint8_t Address::get_vlan_priority() const {
+uint8_t Address::get_vlan_priority() const
+{
     return vlan_priority_;
 }
 
-std::string Address::to_string() {
+std::string Address::to_string()
+{
     return "Address";
 }
 
-bool operator==(const Address& left, const Address& right) {
-    if (left.reliable_ == right.reliable_ && left.port_ == right.port_ && left.address_ == right.address_) {
+bool operator==(const Address& left, const Address& right)
+{
+    if (left.reliable_ == right.reliable_ && left.port_ == right.port_ && left.address_ == right.address_)
+    {
         return true;
     }
     return false;
 }
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip

@@ -30,10 +30,12 @@
 #include <socket/LocalAddress.h>
 #include <socket/UDPSocket.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class TimerMux {
-public:
+class TimerMux
+{
+  public:
     TimerMux(std::string name);
     virtual ~TimerMux();
 
@@ -48,11 +50,11 @@ public:
     void register_handler(std::function<void(void)> handler);
     void unregister_handler();
 
-protected:
+  protected:
     void timer_init();
     void callback();
 
-private:
+  private:
     std::shared_ptr<lgsomeip::osabstraction::Multiplexer> multiplexer_ = nullptr;
     std::atomic<bool> timer_state_{true};
     std::function<void(void)> handler_{nullptr};
@@ -61,13 +63,13 @@ private:
     std::atomic<std::uint32_t> timer_interval_{0};
     std::atomic<bool> periodic_{false};
 
-private:
+  private:
     void run_timer();
     std::shared_ptr<std::thread> thread_{nullptr};
     std::condition_variable condition_;
     std::mutex thread_mutex_;
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_UTILS_TIME_TIMER_MUX_H
+#endif  // LG_SOMEIP_UTILS_TIME_TIMER_MUX_H

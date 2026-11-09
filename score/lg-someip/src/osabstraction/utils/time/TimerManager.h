@@ -15,59 +15,72 @@
 #ifndef LG_SOMEIP_TIMER_MANAGER_H
 #define LG_SOMEIP_TIMER_MANAGER_H
 
-#include <memory>
-#include <mutex>
+#include <chrono>
 #include <condition_variable>
 #include <functional>
-#include <list>
-#include <chrono>
 #include <iostream>
-#include <thread>
+#include <list>
+#include <memory>
+#include <mutex>
 #include <queue>
+#include <thread>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 #define LG_SOMEIP_TO_MS_RESOLUTION(time_point) std::chrono::time_point_cast<std::chrono::milliseconds>(time_point)
 #define LG_SOMEIP_INVALID_TIME LG_SOMEIP_TO_MS_RESOLUTION(std::chrono::steady_clock::time_point::max())
-class TimerManager {
-public:
+class TimerManager
+{
+  public:
     using TimerId = const void*;
 
-protected:
+  protected:
     using TimePoint = std::chrono::time_point<std::chrono::steady_clock, std::chrono::milliseconds>;
     const std::chrono::milliseconds max_sleep_time_ = std::chrono::milliseconds(10000);
 
-    class TimerInfo {
-    public:
+    class TimerInfo
+    {
+      public:
         TimerInfo(std::chrono::milliseconds interval, std::function<void(TimerId)> callback)
-            : is_one_shot_(false), is_valid_(true), interval_(interval), func_(callback) {}
+            : is_one_shot_(false), is_valid_(true), interval_(interval), func_(callback)
+        {
+        }
 
-        TimerInfo(TimePoint now, std::chrono::milliseconds interval, std::function<void(TimerId)> callback,
+        TimerInfo(TimePoint now,
+                  std::chrono::milliseconds interval,
+                  std::function<void(TimerId)> callback,
                   bool one_shot)
-            : is_one_shot_(one_shot), is_valid_(true), interval_(interval), func_(callback) {
+            : is_one_shot_(one_shot), is_valid_(true), interval_(interval), func_(callback)
+        {
             expire_time_ = now + interval_;
         }
         ~TimerInfo() {}
 
-        bool is_valid() const {
+        bool is_valid() const
+        {
             return is_valid_;
         }
-        void invalidate() {
+        void invalidate()
+        {
             is_valid_ = false;
         }
-        void on_expired() {
+        void on_expired()
+        {
             if (is_valid_ == true)
                 func_(this);
         }
 
-        void update_expire_time(TimePoint now) {
+        void update_expire_time(TimePoint now)
+        {
             expire_time_ = (is_one_shot_ ? LG_SOMEIP_INVALID_TIME : now + interval_);
         }
 
-        TimePoint get_expire_time() const {
+        TimePoint get_expire_time() const
+        {
             return (is_valid_ ? expire_time_ : LG_SOMEIP_INVALID_TIME);
         }
 
-    private:
+      private:
         const bool is_one_shot_;
         bool is_valid_;
         std::chrono::milliseconds interval_;
@@ -75,20 +88,23 @@ protected:
         TimePoint expire_time_;
     };
 
-protected:
+  protected:
     TimerManager() {}
 
-public:
-    virtual ~TimerManager() {
+  public:
+    virtual ~TimerManager()
+    {
         pending_timers_.clear();
     }
 
-    static TimerManager& get() {
+    static TimerManager& get()
+    {
         static TimerManager instance;
         return instance;
     }
 
-    TimerId start_one_shot_timer(std::chrono::milliseconds milliseconds, std::function<void(TimerId)> callback) {
+    TimerId start_one_shot_timer(std::chrono::milliseconds milliseconds, std::function<void(TimerId)> callback)
+    {
         std::shared_ptr<TimerInfo> info = std::make_shared<TimerInfo>(
             LG_SOMEIP_TO_MS_RESOLUTION(std::chrono::steady_clock::now()), milliseconds, callback, true);
 
@@ -99,7 +115,8 @@ public:
         return info.get();
     }
 
-    TimerId start_timer(std::chrono::milliseconds milliseconds, std::function<void(TimerId)> callback) {
+    TimerId start_timer(std::chrono::milliseconds milliseconds, std::function<void(TimerId)> callback)
+    {
         std::shared_ptr<TimerInfo> info = std::make_shared<TimerInfo>(milliseconds, callback);
         info->update_expire_time(LG_SOMEIP_TO_MS_RESOLUTION(std::chrono::steady_clock::now()));
 
@@ -110,24 +127,29 @@ public:
         return info.get();
     }
 
-    void kill_timer(TimerId id) {
+    void kill_timer(TimerId id)
+    {
         TimerInfo* timer_pointer = static_cast<TimerInfo*>(const_cast<void*>(id));
 
         std::unique_lock<std::mutex> lock(loop_mutex_);
-        for (auto it = pending_timers_.begin(); it != pending_timers_.end(); it++) {
-            if (timer_pointer == (*it).get()) {
+        for (auto it = pending_timers_.begin(); it != pending_timers_.end(); it++)
+        {
+            if (timer_pointer == (*it).get())
+            {
                 (*it)->invalidate();
                 pending_timers_.erase(it);
                 break;
             }
         }
     }
-    static bool is_valid_timer(TimerId id) {
+    static bool is_valid_timer(TimerId id)
+    {
         TimerInfo* timer_pointer = static_cast<TimerInfo*>(const_cast<void*>(id));
         return timer_pointer->is_valid();
     }
 
-    TimePoint iterate_loop() {
+    TimePoint iterate_loop()
+    {
         TimePoint till;
 
         std::unique_lock<std::mutex> lock(loop_mutex_);
@@ -141,28 +163,34 @@ public:
         return till;
     }
 
-protected:
+  protected:
     // HOLD loop_mutex_
-    void update_now() {
+    void update_now()
+    {
         now_ = LG_SOMEIP_TO_MS_RESOLUTION(std::chrono::steady_clock::now());
     }
 
-    void check_timers() {
+    void check_timers()
+    {
         std::unique_lock<std::mutex> lock(loop_mutex_);
 
-        for (auto& timer_info : pending_timers_) {
+        for (auto& timer_info : pending_timers_)
+        {
             TimePoint expiration_time = timer_info->get_expire_time();
 
-            if (timer_info->is_valid() && expiration_time <= now_) {
+            if (timer_info->is_valid() && expiration_time <= now_)
+            {
                 expired_timers_.push(timer_info);
                 timer_info->update_expire_time(now_);
             }
         }
     }
 
-    void process_expired_timers() {
+    void process_expired_timers()
+    {
         std::unique_lock<std::mutex> lock(loop_mutex_);
-        while (!expired_timers_.empty()) {
+        while (!expired_timers_.empty())
+        {
             std::shared_ptr<TimerInfo> timer = expired_timers_.front();
             expired_timers_.pop();
             lock.unlock();
@@ -171,12 +199,14 @@ protected:
         }
     }
 
-    TimePoint query_timeout() {
+    TimePoint query_timeout()
+    {
         std::unique_lock<std::mutex> lock(loop_mutex_);
 
         TimePoint minimum_expire_time = now_ + max_sleep_time_;
 
-        for (auto it = pending_timers_.begin(); it != pending_timers_.end(); it++) {
+        for (auto it = pending_timers_.begin(); it != pending_timers_.end(); it++)
+        {
             std::shared_ptr<TimerInfo> info = (*it);
             TimePoint expiration_time = info->get_expire_time();
 
@@ -186,13 +216,13 @@ protected:
         return minimum_expire_time;
     }
 
-private:
+  private:
     std::mutex loop_mutex_;
     std::list<std::shared_ptr<TimerInfo>> pending_timers_;
     std::queue<std::shared_ptr<TimerInfo>> expired_timers_;
     TimePoint now_;
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
 #endif

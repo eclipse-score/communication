@@ -19,28 +19,33 @@
 #include <ctime>
 #include <iostream>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class TimeCheck {
-public:
-    void start() {
+class TimeCheck
+{
+  public:
+    void start()
+    {
         start_time_ = std::chrono::steady_clock::now();
     }
 
-    void end() {
+    void end()
+    {
         end_time_ = std::chrono::steady_clock::now();
     }
 
-    double get_duration() {
+    double get_duration()
+    {
         std::chrono::duration<double> diff = end_time_ - start_time_;
         return diff.count();
     }
 
-private:
+  private:
     std::chrono::time_point<std::chrono::steady_clock> start_time_;
     std::chrono::time_point<std::chrono::steady_clock> end_time_;
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_UTILS_TIME_TIME_CHECK_H
+#endif  // LG_SOMEIP_UTILS_TIME_TIME_CHECK_H

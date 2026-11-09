@@ -15,34 +15,38 @@
 #ifndef LG_SOMEIP_OSABSTRACTION_MESSAGEPASSING_MESSAGEPASSINGSERVER_H
 #define LG_SOMEIP_OSABSTRACTION_MESSAGEPASSING_MESSAGEPASSINGSERVER_H
 
-#include <cstdint>
 #include <atomic>
+#include <cstdint>
 
-#include <cstdio>
-#include <cstdlib>
+#include <sys/dispatch.h>
+#include <sys/iofunc.h>
+#include <sys/iomsg.h>
+#include <sys/neutrino.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/neutrino.h>
-#include <sys/iomsg.h>
-#include <sys/iofunc.h>
-#include <sys/dispatch.h>
-#include <thread>
+#include <cstdio>
+#include <cstdlib>
 #include <map>
 #include <queue>
 #include <string>
+#include <thread>
 
 #include "MessagePassingListener.h"
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
-struct MessagePassingTimer {
+struct MessagePassingTimer
+{
     timer_t timer_;
     MessagePassingTimerListener* listener_;
 };
 
-class MessagePassingServer {
-public:
+class MessagePassingServer
+{
+  public:
     MessagePassingServer(const std::string& name);
     ~MessagePassingServer();
 
@@ -51,15 +55,17 @@ public:
 
     bool set_data_listener(const MessagePassingConnectionInformation& info, MessagePassingDataListener* listener);
 
-    void set_timer(const std::int32_t id, const std::uint32_t interval_milliseconds, const bool periodic,
+    void set_timer(const std::int32_t id,
+                   const std::uint32_t interval_milliseconds,
+                   const bool periodic,
                    MessagePassingTimerListener* listener);
 
     void kill_timer(const std::int32_t id);
 
-private:
+  private:
     void receive_thread();
 
-private:
+  private:
     name_attach_t* attached_name_;
     int self_coid_{-1};
 
@@ -80,7 +86,7 @@ private:
     std::recursive_mutex mutex_timers_;
 };
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_OSABSTRACTION_MESSAGEPASSING_MESSAGEPASSINGSERVER_H
+#endif  // LG_SOMEIP_OSABSTRACTION_MESSAGEPASSING_MESSAGEPASSINGSERVER_H

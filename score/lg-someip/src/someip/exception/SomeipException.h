@@ -15,33 +15,37 @@
 #ifndef LG_SOMEIP_EXCEPTION_SOMEIP_EXCEPTION_H
 #define LG_SOMEIP_EXCEPTION_SOMEIP_EXCEPTION_H
 
-#include <iomanip>
-#include <exception>
-#include <string>
-#include <sstream>
-#include <cstdint>
 #include <message/MessageConstant.h>
+#include <cstdint>
+#include <exception>
+#include <iomanip>
+#include <sstream>
+#include <string>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class SOMEIPException : public std::exception {
-public:
-    SOMEIPException(const std::string file, int line) : line_(line) {
+class SOMEIPException : public std::exception
+{
+  public:
+    SOMEIPException(const std::string file, int line) : line_(line)
+    {
         auto position = file.find_last_of('/');
         file_ = file.substr(position + 1, file.length());
         message_stream_ << "[Exception/" << file_ << ":" << std::to_string(line_) << "] ";
     }
-    virtual const char* what() const noexcept override {
+    virtual const char* what() const noexcept override
+    {
         return message_.c_str();
     }
 
-protected:
+  protected:
     std::ostringstream message_stream_;
     std::string file_;
     std::string message_;
     int line_ = 0;
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif //  LG_SOMEIP_EXCEPTION_SOMEIP_EXCEPTION_H
+#endif  //  LG_SOMEIP_EXCEPTION_SOMEIP_EXCEPTION_H

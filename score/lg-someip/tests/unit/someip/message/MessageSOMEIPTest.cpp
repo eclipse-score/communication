@@ -12,8 +12,8 @@
  *
  ********************************************************************************/
 
-#include <cstring>
 #include <gtest/gtest.h>
+#include <cstring>
 #include <iostream>
 #include <memory>
 
@@ -24,12 +24,14 @@ using namespace lgsomeip::osabstraction;
 
 extern std::uint8_t test_message[1000];
 
-TEST(MessageSOMEIP, createSOMEIP) {
+TEST(MessageSOMEIP, createSOMEIP)
+{
     auto msg = MessageBuilder::create<SOMEIP>();
     EXPECT_FALSE(msg->is_service_discovery());
     EXPECT_EQ(msg->get_length(), SOMEIP_HEADER::SIZE);
 }
-TEST(MessageSOMEIP, payloadTest1) {
+TEST(MessageSOMEIP, payloadTest1)
+{
     auto msg = MessageBuilder::create<SOMEIP>();
 
     auto payload = msg->get_payload_type();
@@ -45,7 +47,8 @@ TEST(MessageSOMEIP, payloadTest1) {
     EXPECT_EQ(msg->get_length(), SOMEIP_HEADER::SIZE + 14);
 }
 
-TEST(MessageSOMEIP, payloadTest2) {
+TEST(MessageSOMEIP, payloadTest2)
+{
     auto msg = MessageBuilder::create<SOMEIP>();
 
     const std::uint8_t data[] = {0x00, 0x64, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x64};

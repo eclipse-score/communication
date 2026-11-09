@@ -22,25 +22,31 @@
 #include <message/MessageSD.h>
 #include <message/MessageSOMEIP.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-struct SOMEIP {
+struct SOMEIP
+{
     typedef MessageSOMEIP type;
 };
 
-struct SOMEIPSD {
+struct SOMEIPSD
+{
     typedef MessageSD type;
 };
 
-class MessageBuilder {
-public:
+class MessageBuilder
+{
+  public:
     static bool is_sd_message(std::uint8_t* data, std::uint32_t length);
 
     //  Request/Response (4.2.2)
-    template <typename MessageType> static std::shared_ptr<typename MessageType::type> create();
+    template <typename MessageType>
+    static std::shared_ptr<typename MessageType::type> create();
 
     //  Request / Fire & Forgot Communication(4.2.3)
-    static std::shared_ptr<MessageSOMEIP> create_request_message(std::uint16_t service_id, std::uint16_t method_id,
+    static std::shared_ptr<MessageSOMEIP> create_request_message(std::uint16_t service_id,
+                                                                 std::uint16_t method_id,
                                                                  std::uint8_t major_version = 0xFF,
                                                                  bool no_response = false);
 
@@ -57,33 +63,44 @@ public:
 
     // Returns 0 and writes nothing when the serialized message does not fit in capacity.
     template <typename MessageType>
-    static std::uint32_t build_byte_stream(std::uint8_t* data, std::uint32_t capacity, std::uint32_t* length,
+    static std::uint32_t build_byte_stream(std::uint8_t* data,
+                                           std::uint32_t capacity,
+                                           std::uint32_t* length,
                                            MessageType& message);
 
     template <typename MessageType>
-    static std::uint32_t build_byte_stream_some_ip_header(std::uint8_t* data, std::uint32_t* length,
+    static std::uint32_t build_byte_stream_some_ip_header(std::uint8_t* data,
+                                                          std::uint32_t* length,
                                                           MessageType& message);
 };
 
-template <typename MessageType> std::shared_ptr<typename MessageType::type> MessageBuilder::create() {
+template <typename MessageType>
+std::shared_ptr<typename MessageType::type> MessageBuilder::create()
+{
     return std::make_shared<typename MessageType::type>();
 }
 
 template <typename MessageType>
-bool MessageBuilder::build_message(MessageType& message, std::uint8_t* data, std::uint32_t length) {
+bool MessageBuilder::build_message(MessageType& message, std::uint8_t* data, std::uint32_t length)
+{
     return message.deserialize(data, length);
 }
 
 template <typename MessageType>
-std::uint32_t MessageBuilder::build_byte_stream(std::uint8_t* data, std::uint32_t* length, MessageType& message) {
+std::uint32_t MessageBuilder::build_byte_stream(std::uint8_t* data, std::uint32_t* length, MessageType& message)
+{
     *length = message.serialize(data);
     return *length;
 }
 
 template <typename MessageType>
-std::uint32_t MessageBuilder::build_byte_stream(std::uint8_t* data, std::uint32_t capacity, std::uint32_t* length,
-                                                MessageType& message) {
-    if (message.get_serialized_size() > capacity) {
+std::uint32_t MessageBuilder::build_byte_stream(std::uint8_t* data,
+                                                std::uint32_t capacity,
+                                                std::uint32_t* length,
+                                                MessageType& message)
+{
+    if (message.get_serialized_size() > capacity)
+    {
         *length = 0;
         return 0;
     }
@@ -91,12 +108,14 @@ std::uint32_t MessageBuilder::build_byte_stream(std::uint8_t* data, std::uint32_
 }
 
 template <typename MessageType>
-std::uint32_t MessageBuilder::build_byte_stream_some_ip_header(std::uint8_t* data, std::uint32_t* length,
-                                                               MessageType& message) {
+std::uint32_t MessageBuilder::build_byte_stream_some_ip_header(std::uint8_t* data,
+                                                               std::uint32_t* length,
+                                                               MessageType& message)
+{
     *length = message.serialize_some_ip_header(data);
     return *length;
 }
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_SOMEIP_MESSAGE_MESSAGEBUILDER_H
+#endif  // LG_SOMEIP_SOMEIP_MESSAGE_MESSAGEBUILDER_H

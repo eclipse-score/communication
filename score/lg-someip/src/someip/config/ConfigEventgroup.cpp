@@ -14,28 +14,34 @@
 
 #include "ConfigEventgroup.h"
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 ConfigEventgroup::ConfigEventgroup() {}
 
-std::uint16_t ConfigEventgroup::get_event_group_id() const {
+std::uint16_t ConfigEventgroup::get_event_group_id() const
+{
     return event_group_id_;
 }
 
-std::uint16_t ConfigEventgroup::get_threshold() const {
+std::uint16_t ConfigEventgroup::get_threshold() const
+{
     return threshold_;
 }
 
-bool ConfigEventgroup::is_multicast() const {
+bool ConfigEventgroup::is_multicast() const
+{
     return is_multicast_;
 }
 
-std::vector<std::uint16_t> ConfigEventgroup::get_events() const {
+std::vector<std::uint16_t> ConfigEventgroup::get_events() const
+{
     return events_;
 }
 
-std::shared_ptr<lgsomeip::osabstraction::Address> ConfigEventgroup::get_multicast_address() const {
+std::shared_ptr<lgsomeip::osabstraction::Address> ConfigEventgroup::get_multicast_address() const
+{
     return multicast_address_;
 }
 
-} // namespace lgsomeip
+}  // namespace lgsomeip

@@ -13,12 +13,12 @@
  ********************************************************************************/
 
 #include <arpa/inet.h>
-#include <cstdio>
-#include <exception/ConfigurationError.h>
 #include <config/Configuration.h>
+#include <exception/ConfigurationError.h>
+#include <gtest/gtest.h>
+#include <cstdio>
 #include <cstring>
 #include <fstream>
-#include <gtest/gtest.h>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -113,25 +113,30 @@ char myjson[] = R"(
 }
 )";
 
-class ScopedConfigFile {
-public:
-    ScopedConfigFile(const char* path, const char* contents) : path_(path) {
+class ScopedConfigFile
+{
+  public:
+    ScopedConfigFile(const char* path, const char* contents) : path_(path)
+    {
         std::ofstream file(path_);
-        if (!file) {
+        if (!file)
+        {
             throw std::runtime_error("Unable to create test configuration file: " + path_);
         }
         file << contents;
     }
 
-    ~ScopedConfigFile() {
+    ~ScopedConfigFile()
+    {
         std::remove(path_.c_str());
     }
 
-private:
+  private:
     std::string path_;
 };
 
-TEST(ConfigurationTest, Configuration) {
+TEST(ConfigurationTest, Configuration)
+{
     ScopedConfigFile config_file("ex.json", myjson);
 
     Configuration config("ex.json");
@@ -139,7 +144,8 @@ TEST(ConfigurationTest, Configuration) {
     EXPECT_EQ(config.get_ip_type(), 6);
 }
 
-TEST(ConfigurationTest, UsesEnvironmentConfigurationWhenPathIsEmpty) {
+TEST(ConfigurationTest, UsesEnvironmentConfigurationWhenPathIsEmpty)
+{
     ScopedConfigFile config_file("env.json", myjson);
     ASSERT_EQ(setenv("LGSOMEIP_CONFIGURATION", "env.json", 1), 0);
 
@@ -149,7 +155,8 @@ TEST(ConfigurationTest, UsesEnvironmentConfigurationWhenPathIsEmpty) {
     EXPECT_EQ(unsetenv("LGSOMEIP_CONFIGURATION"), 0);
 }
 
-TEST(ConfigurationTest, RejectsDuplicateApplicationIds) {
+TEST(ConfigurationTest, RejectsDuplicateApplicationIds)
+{
     ScopedConfigFile config_file("duplicate_application_ids.json",
                                  R"({
             "unicast": "127.0.0.1",
@@ -167,13 +174,15 @@ TEST(ConfigurationTest, RejectsDuplicateApplicationIds) {
     EXPECT_THROW({ Configuration config("duplicate_application_ids.json"); }, ConfigurationErrorException);
 }
 
-TEST(ConfigurationTest, RejectsMalformedJson) {
+TEST(ConfigurationTest, RejectsMalformedJson)
+{
     ScopedConfigFile config_file("malformed.json", "[");
 
     EXPECT_THROW({ Configuration config("malformed.json"); }, ConfigurationErrorException);
 }
 
-TEST(ConfigurationTest, RejectsInvalidApplicationId) {
+TEST(ConfigurationTest, RejectsInvalidApplicationId)
+{
     ScopedConfigFile config_file("invalid_application_id.json",
                                  R"({
             "unicast": "127.0.0.1",
@@ -190,7 +199,8 @@ TEST(ConfigurationTest, RejectsInvalidApplicationId) {
     EXPECT_THROW({ Configuration config("invalid_application_id.json"); }, ConfigurationErrorException);
 }
 
-TEST(ConfigurationTest, RejectsInvalidNestedServiceShape) {
+TEST(ConfigurationTest, RejectsInvalidNestedServiceShape)
+{
     ScopedConfigFile config_file("invalid_service_shape.json",
                                  R"({
             "unicast": "127.0.0.1",
@@ -212,7 +222,8 @@ TEST(ConfigurationTest, RejectsInvalidNestedServiceShape) {
     EXPECT_THROW({ Configuration config("invalid_service_shape.json"); }, ConfigurationErrorException);
 }
 
-TEST(ConfigurationTest, ServiceInfo) {
+TEST(ConfigurationTest, ServiceInfo)
+{
     ScopedConfigFile config_file("ex.json", myjson);
     Configuration config("ex.json");
 
@@ -226,7 +237,8 @@ TEST(ConfigurationTest, ServiceInfo) {
     EXPECT_EQ((*(config.get_service_info(0x1234, 0x5678)->get_events()))[0x0777][1], 0x4555);
 }
 
-TEST(ConfigurationTest, ServiceDiscovery) {
+TEST(ConfigurationTest, ServiceDiscovery)
+{
     ScopedConfigFile config_file("ex.json", myjson);
     Configuration config("ex.json");
 
@@ -242,7 +254,8 @@ TEST(ConfigurationTest, ServiceDiscovery) {
     EXPECT_EQ(config.get_service_discovery_info()->get_request_response_delay(), 1500);
 }
 
-TEST(ConfigurationTest, Event) {
+TEST(ConfigurationTest, Event)
+{
     ScopedConfigFile config_file("ex.json", myjson);
     Configuration config("ex.json");
     ConfigEvent* event = config.get_service_info(0x1234, 0x5678)->get_event(0x0777);
@@ -348,7 +361,8 @@ char myjson2[] = R"(
 }
 )";
 
-TEST(ConfigurationTest, Configuration2) {
+TEST(ConfigurationTest, Configuration2)
+{
     ScopedConfigFile config_file("ex2.json", myjson2);
 
     Configuration config("ex2.json");
@@ -356,7 +370,8 @@ TEST(ConfigurationTest, Configuration2) {
     EXPECT_EQ(config.get_ip_type(), 4);
 }
 
-TEST(ConfigurationTest, ServiceInfo2) {
+TEST(ConfigurationTest, ServiceInfo2)
+{
     ScopedConfigFile config_file("ex2.json", myjson2);
     Configuration config("ex2.json");
 
@@ -373,7 +388,8 @@ TEST(ConfigurationTest, ServiceInfo2) {
     EXPECT_EQ(config.get_service_info(0x1235, 0x5678)->get_instance_id(), 0x5678);
 }
 
-TEST(ConfigurationTest, ServiceDiscovery2) {
+TEST(ConfigurationTest, ServiceDiscovery2)
+{
     ScopedConfigFile config_file("ex2.json", myjson2);
     Configuration config("ex2.json");
 
@@ -389,7 +405,8 @@ TEST(ConfigurationTest, ServiceDiscovery2) {
     EXPECT_EQ(config.get_service_discovery_info()->get_request_response_delay(), 1500);
 }
 
-TEST(ConfigurationTest, Event2) {
+TEST(ConfigurationTest, Event2)
+{
     ScopedConfigFile config_file("ex2.json", myjson2);
     Configuration config("ex2.json");
     ConfigEvent* event = config.get_service_info(0x1234, 0x5678)->get_event(0x8777);

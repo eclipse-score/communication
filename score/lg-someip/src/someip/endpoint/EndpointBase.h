@@ -21,16 +21,18 @@
 #include <map>
 #include <memory>
 
+#include <message/MessageConstant.h>
 #include <multiplex/Multiplexer.h>
 #include <socket/Socket.h>
-#include <message/MessageConstant.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class EndpointBase : public std::enable_shared_from_this<EndpointBase> {
-public:
+class EndpointBase : public std::enable_shared_from_this<EndpointBase>
+{
+  public:
     const static std::uint32_t MAX_TRANSFER_PACKET_LENGTH =
-        524288 + 1000; // To support 512Kbytes including header (about 1000bytes)
+        524288 + 1000;  // To support 512Kbytes including header (about 1000bytes)
 
     // Stream messages up to this size avoid heap allocation; larger ones use a dynamic buffer.
     const static std::uint32_t STATIC_BUFFER_SIZE = SOMEIP_UDP::MAX_MESSAGE_SIZE;
@@ -45,7 +47,8 @@ public:
     virtual void start_listen(std::shared_ptr<lgsomeip::osabstraction::Multiplexer> multiplexer = nullptr);
     virtual void stop_listen();
 
-    virtual void send_message(const std::uint8_t* message, std::size_t size,
+    virtual void send_message(const std::uint8_t* message,
+                              std::size_t size,
                               std::shared_ptr<lgsomeip::osabstraction::Address> address = nullptr);
 
     // Callback Table : must be implemented in child class
@@ -57,42 +60,51 @@ public:
     // Operator Overloading
     friend bool operator==(const EndpointBase& lhs, const EndpointBase& rhs);
 
-    void set_instance_id(std::uint16_t instance_id) {
+    void set_instance_id(std::uint16_t instance_id)
+    {
         current_received_someip_packet_instance_id_ = instance_id;
     }
-    std::uint16_t get_instance_id(void) {
+    std::uint16_t get_instance_id(void)
+    {
         return current_received_someip_packet_instance_id_;
     }
 
-    void increase_reference_count(void) {
+    void increase_reference_count(void)
+    {
         ++reference_count_;
     }
-    void decrease_reference_count(void) {
+    void decrease_reference_count(void)
+    {
         if (--reference_count_ < 0)
             reference_count_ = 0;
     }
-    std::uint8_t get_reference_count(void) {
+    std::uint8_t get_reference_count(void)
+    {
         return reference_count_;
     }
 
-    void set_app_id(std::uint16_t app_id) {
+    void set_app_id(std::uint16_t app_id)
+    {
         app_id_ = app_id;
     }
-    std::uint16_t get_app_id() {
+    std::uint16_t get_app_id()
+    {
         return app_id_;
     }
 
-    void set_magic_cookie_enabled(bool flag) {
+    void set_magic_cookie_enabled(bool flag)
+    {
         magic_cookie_enabled_ = flag;
     }
-    inline bool get_magic_cookie_enabled() const {
+    inline bool get_magic_cookie_enabled() const
+    {
         return magic_cookie_enabled_;
     }
 
-protected:
+  protected:
     virtual void callback(bool close = false);
 
-protected:
+  protected:
     std::shared_ptr<lgsomeip::osabstraction::Multiplexer> multiplexer_{nullptr};
     std::shared_ptr<lgsomeip::osabstraction::Socket> socket_{nullptr};
 
@@ -112,6 +124,6 @@ protected:
 
 using Endpoint = EndpointBase;
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_ENDPOINT_ENDPOINTBASE_H
+#endif  // LG_SOMEIP_ENDPOINT_ENDPOINTBASE_H

@@ -23,12 +23,15 @@
 #include <socket/IP4Address.h>
 #include <socket/IP6Address.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class SDOption {
-public:
+class SDOption
+{
+  public:
     SDOption();
-    SDOption(std::uint8_t type) {
+    SDOption(std::uint8_t type)
+    {
         type_ = type;
     }
     ~SDOption();
@@ -41,20 +44,20 @@ public:
     friend bool operator==(const SDOption& lhs, const SDOption& rhs);
 
     // Common Option
-public:
+  public:
     void set_type(std::uint8_t type);
     std::uint8_t get_type() const;
 
-private:
+  private:
     std::uint16_t option_length_ = 0;
     std::uint8_t type_ = 0;
 
     // Addtional Option : Network Address
-public:
+  public:
     void set_address_option(std::shared_ptr<lgsomeip::osabstraction::Address> address);
     std::shared_ptr<lgsomeip::osabstraction::Address> get_address_option();
 
-private:
+  private:
     std::uint8_t address_bytes_[16] = {
         0,
     };
@@ -62,29 +65,30 @@ private:
     std::uint16_t port_ = 0;
 
     // Addtional Option : LoadBalance
-public:
+  public:
     void set_priority(std::uint16_t priority);
     std::uint16_t get_priority();
     void set_weight(std::uint16_t weight);
     std::uint16_t get_weight();
 
-private:
+  private:
     std::uint16_t priority_ = 0;
     std::uint16_t weight_ = 0;
 
     // Addtional Option : Configuration
-public:
-    std::uint32_t get_configuration_count() const {
+  public:
+    std::uint32_t get_configuration_count() const
+    {
         return configuration_.size();
     }
     void set_configuration(std::string key, std::string value);
     std::string get_configuration(std::string key);
     void remove_configuration(std::string key);
 
-private:
+  private:
     std::map<std::string, std::string> configuration_;
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_SOMEIP_MESSAGE_SD_OPTION_H
+#endif  // LG_SOMEIP_SOMEIP_MESSAGE_SD_OPTION_H

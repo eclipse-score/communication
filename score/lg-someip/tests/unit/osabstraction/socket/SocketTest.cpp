@@ -18,22 +18,26 @@
 
 using namespace lgsomeip::osabstraction;
 
-class SocketTest : public ::testing::Test {
-protected:
-    void SetUp() override {
+class SocketTest : public ::testing::Test
+{
+  protected:
+    void SetUp() override
+    {
         address_ = std::make_shared<IP4Address>();
         address_->set_reliable(true);
     }
     std::shared_ptr<Address> address_;
 };
 
-TEST_F(SocketTest, get_socket_fd) {
+TEST_F(SocketTest, get_socket_fd)
+{
     int fd = ::socket(PF_INET, SOCK_STREAM, 0);
     Socket socket(fd, address_);
     ASSERT_EQ(fd, socket.get_socket_fd());
 }
 
-TEST_F(SocketTest, constructor) {
+TEST_F(SocketTest, constructor)
+{
     Socket socket(address_);
     ASSERT_NE(socket.get_socket_fd(), -1);
 
@@ -43,7 +47,8 @@ TEST_F(SocketTest, constructor) {
     ASSERT_NE(socket.get_socket_fd(), socket2.get_socket_fd());
 }
 
-TEST_F(SocketTest, deconstructor) {
+TEST_F(SocketTest, deconstructor)
+{
     int fd = -1;
     {
         Socket socket(address_);
@@ -53,13 +58,15 @@ TEST_F(SocketTest, deconstructor) {
     ASSERT_EQ(::close(fd), -1);
 }
 
-TEST_F(SocketTest, close_socket) {
+TEST_F(SocketTest, close_socket)
+{
     Socket socket(address_);
     socket.close_socket();
     ASSERT_EQ(socket.get_socket_fd(), kInvalidSocket);
 }
 
-TEST_F(SocketTest, create_socket) {
+TEST_F(SocketTest, create_socket)
+{
     Socket socket(kInvalidSocket, address_);
     ASSERT_EQ(socket.get_socket_fd(), kInvalidSocket);
 

@@ -15,14 +15,16 @@
 #ifndef LG_SOMEIP_OSABSTRACTION_SOCKET_SOCKETCONSTANT
 #define LG_SOMEIP_OSABSTRACTION_SOCKET_SOCKETCONSTANT
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
 static constexpr int kInvalidSocket = -1;
 static constexpr int kUnixPathMax = 108;
 static constexpr int kDefaultBacklog = 10;
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_OSABSTRACTION_SOCKET_SOCKETCONSTANT
+#endif  // LG_SOMEIP_OSABSTRACTION_SOCKET_SOCKETCONSTANT

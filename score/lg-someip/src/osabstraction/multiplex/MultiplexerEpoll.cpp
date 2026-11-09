@@ -13,39 +13,47 @@
  ********************************************************************************/
 
 #include "Multiplexer.h"
+#include <sys/file.h>
+#include <unistd.h>
 #include <errno.h>
+#include <cstring>
 #include <map>
 #include <memory>
-#include <cstring>
-#include <sys/file.h>
 #include <thread>
-#include <unistd.h>
 
 #include <utils/time/TimerManager.h>
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
 // If LINUX is defined, the Epoll Multiplexer is executed.
-Multiplexer::Multiplexer() {
+Multiplexer::Multiplexer()
+{
     constexpr char lock_path[] = "/tmp/someip/multiplexer.lock";
     int lock_fd = ::open(lock_path, O_RDONLY | O_CREAT, 0600);
     // Just try to do best-effort. If there are error, just try to create epoll
-    if (lock_fd != -1) {
+    if (lock_fd != -1)
+    {
         ::flock(lock_fd, LOCK_EX);
     }
     epoll_fd_ = epoll_create(LSAR_EPOLL_SIZE);
-    if (lock_fd != -1) {
+    if (lock_fd != -1)
+    {
         ::flock(lock_fd, LOCK_UN);
         ::close(lock_fd);
     }
 
     // wakeup condition fd
     condition_fd_ = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-    if (condition_fd_ < 0) {
+    if (condition_fd_ < 0)
+    {
         LGSOMEIP_LOG_WARN << "Multiplexer::Multiplexer() / Create eventfd fail.";
         condition_fd_ = -1;
-    } else {
+    }
+    else
+    {
         LGSOMEIP_LOG_DEBUG
             << "Multiplexer::Multiplexer() / Create event FD to be used to stop the multiplex thread, FD: "
             << condition_fd_;
@@ -53,127 +61,159 @@ Multiplexer::Multiplexer() {
     }
 }
 
-Multiplexer::~Multiplexer() {
+Multiplexer::~Multiplexer()
+{
     stop();
     join();
 
-    if (condition_fd_ != -1) {
+    if (condition_fd_ != -1)
+    {
         ::close(condition_fd_);
         condition_fd_ = -1;
     }
-    if (epoll_fd_ != -1) {
+    if (epoll_fd_ != -1)
+    {
         ::close(epoll_fd_);
         epoll_fd_ = -1;
     }
 }
 
-void Multiplexer::start() {
+void Multiplexer::start()
+{
     running_ = true;
     thread_ = std::make_shared<std::thread>(&Multiplexer::run, this);
     // Assign a descriptive name to this worker thread.
     pthread_setname_np(thread_->native_handle(), "SomeipEpollMux");
 }
 
-void Multiplexer::stop() {
-    if (running_.load()) {
+void Multiplexer::stop()
+{
+    if (running_.load())
+    {
         running_.store(false);
         // Wake the multiplexer thread.
-        if (condition_fd_ != -1) {
+        if (condition_fd_ != -1)
+        {
             eventfd_write(condition_fd_, 1);
         }
     }
 }
 
-void Multiplexer::join() {
-    if (thread_ != nullptr && thread_->joinable()) {
+void Multiplexer::join()
+{
+    if (thread_ != nullptr && thread_->joinable())
+    {
         thread_->join();
     }
 }
 
-void Multiplexer::run() {
+void Multiplexer::run()
+{
     int event_count;
     auto get_callback = [this](int file_descriptor) {
         std::lock_guard<std::mutex> lock(callbacks_mutex_);
         auto callback = callbacks_.find(file_descriptor);
-        if (callback == callbacks_.end()) {
+        if (callback == callbacks_.end())
+        {
             return std::function<void(bool)>();
         }
         return callback->second;
     };
 
-    while (running_.load()) {
+    while (running_.load())
+    {
         event_count = epoll_wait(epoll_fd_, epoll_events_, LSAR_EPOLL_SIZE, 1000);
 
-        for (int index = 0; index < event_count; index++) {
+        for (int index = 0; index < event_count; index++)
+        {
 #if defined(EPOLLRDHUP)
-            if (epoll_events_[index].events & EPOLLRDHUP) {
+            if (epoll_events_[index].events & EPOLLRDHUP)
+            {
                 const int file_descriptor = epoll_events_[index].data.fd;
                 LGSOMEIP_LOG_DEBUG << "Multiplexer::run / EPOLLRDHUP fd : " << file_descriptor;
                 auto callback = get_callback(file_descriptor);
-                if (callback != nullptr) {
-                    callback(true); // disconnect
+                if (callback != nullptr)
+                {
+                    callback(true);  // disconnect
                 }
                 unset(file_descriptor);
             }
 #else
-            if (epoll_events_[index].events & EPOLLHUP) {
+            if (epoll_events_[index].events & EPOLLHUP)
+            {
                 const int file_descriptor = epoll_events_[index].data.fd;
                 LGSOMEIP_LOG_DEBUG << "Multiplexer::run / EPOLLHUP fd : " << file_descriptor;
                 auto callback = get_callback(file_descriptor);
-                if (callback != nullptr) {
-                    callback(true); // disconnect
+                if (callback != nullptr)
+                {
+                    callback(true);  // disconnect
                 }
                 unset(file_descriptor);
             }
-#endif // EPOLLRDHUP
-            else if (epoll_events_[index].events & EPOLLERR) {
+#endif  // EPOLLRDHUP
+            else if (epoll_events_[index].events & EPOLLERR)
+            {
                 const int file_descriptor = epoll_events_[index].data.fd;
                 LGSOMEIP_LOG_DEBUG << "Multiplexer::run / EPOLLERR fd : " << file_descriptor;
                 auto callback = get_callback(file_descriptor);
-                if (callback != nullptr) {
-                    callback(true); // disconnect
+                if (callback != nullptr)
+                {
+                    callback(true);  // disconnect
                 }
                 unset(file_descriptor);
-            } else {
+            }
+            else
+            {
                 const int file_descriptor = epoll_events_[index].data.fd;
                 auto callback = get_callback(file_descriptor);
-                if ((epoll_events_[index].events & EPOLLIN) && callback != nullptr) {
+                if ((epoll_events_[index].events & EPOLLIN) && callback != nullptr)
+                {
                     callback(false);
-                } else {
+                }
+                else
+                {
                     LGSOMEIP_LOG_DEBUG << "Multiplexer::run / callbacks_[" << file_descriptor << "] is nullptr";
                 }
             }
         }
 
         // TimerManager singleton instance may be destroyed before stopping Multiplexer
-        if (running_.load()) {
+        if (running_.load())
+        {
             TimerManager::get().iterate_loop();
-        } else {
+        }
+        else
+        {
             // Thread stop
             break;
         }
 
-        if (event_count == -1) {
+        if (event_count == -1)
+        {
             LGSOMEIP_LOG_DEBUG << "Multiplexer::run / epoll wait() error #" << errno;
             break;
         }
-        if (event_count == 0) {
+        if (event_count == 0)
+        {
             std::function<void()> timeout_callback;
             {
                 std::lock_guard<std::mutex> lock(callbacks_mutex_);
                 timeout_callback = timeout_callback_;
             }
-            if (timeout_callback != nullptr) {
+            if (timeout_callback != nullptr)
+            {
                 timeout_callback();
             }
             continue;
         }
 
-    } // End while(running_)
+    }  // End while(running_)
 }
 
-void Multiplexer::unset(int file_descriptor) {
-    if (file_descriptor == -1) {
+void Multiplexer::unset(int file_descriptor)
+{
+    if (file_descriptor == -1)
+    {
         LGSOMEIP_LOG_WARN << "Multiplexer::unset / FD : " << file_descriptor;
         return;
     }
@@ -183,8 +223,10 @@ void Multiplexer::unset(int file_descriptor) {
     callbacks_.erase(file_descriptor);
 }
 
-void Multiplexer::set(int file_descriptor, std::function<void(bool)> callback) {
-    if (file_descriptor == -1) {
+void Multiplexer::set(int file_descriptor, std::function<void(bool)> callback)
+{
+    if (file_descriptor == -1)
+    {
         LGSOMEIP_LOG_ERROR << "Multiplexer::set EPOLL_CTL_ADD fail for socket / FD : " << file_descriptor;
         return;
     }
@@ -195,11 +237,12 @@ void Multiplexer::set(int file_descriptor, std::function<void(bool)> callback) {
 #else
     // for old libraries
     event.events |= EPOLLHUP;
-#endif // EPOLLRDHUP
+#endif  // EPOLLRDHUP
     event.data.fd = file_descriptor;
 
     std::lock_guard<std::mutex> lock(callbacks_mutex_);
-    if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, file_descriptor, &event) < 0) {
+    if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, file_descriptor, &event) < 0)
+    {
         LGSOMEIP_LOG_ERROR << "Multiplexer::set EPOLL_CTL_ADD fail for socket " << file_descriptor << "with errno #"
                            << errno;
         callbacks_.erase(file_descriptor);
@@ -208,10 +251,11 @@ void Multiplexer::set(int file_descriptor, std::function<void(bool)> callback) {
     callbacks_[file_descriptor] = callback;
 }
 
-void Multiplexer::set_timeout(std::function<void()> callback) {
+void Multiplexer::set_timeout(std::function<void()> callback)
+{
     std::lock_guard<std::mutex> lock(callbacks_mutex_);
     timeout_callback_ = callback;
 }
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip

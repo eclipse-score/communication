@@ -12,16 +12,17 @@
  *
  ********************************************************************************/
 
-#include <socket/Address.h>
 #include <arpa/inet.h>
-#include <cstring>
 #include <gtest/gtest.h>
+#include <socket/Address.h>
+#include <cstring>
 #include <iostream>
 #include <memory>
 
 using namespace lgsomeip::osabstraction;
 
-TEST(Address, get_reliable) {
+TEST(Address, get_reliable)
+{
     std::shared_ptr<Address> addr = std::make_shared<Address>();
 
     addr->set_reliable(true);
@@ -31,7 +32,8 @@ TEST(Address, get_reliable) {
     EXPECT_EQ(false, addr->get_reliable());
 }
 
-TEST(Address, get_port_address) {
+TEST(Address, get_port_address)
+{
     std::shared_ptr<Address> addr = std::make_shared<Address>();
 
     addr->set_port_address(8081);

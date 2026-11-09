@@ -12,8 +12,8 @@
  *
  ********************************************************************************/
 
-#include <cstring>
 #include <gtest/gtest.h>
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <memory>
@@ -24,7 +24,8 @@
 using namespace lgsomeip;
 using namespace lgsomeip::osabstraction;
 
-TEST(MessageComposer, ComposeApplicationRegisterMessage) {
+TEST(MessageComposer, ComposeApplicationRegisterMessage)
+{
     std::shared_ptr<MessageSD> message = MessageBuilder::create<SOMEIPSD>();
 
     SDOption option(SOMEIP_SD_OPTION::CONFIGURATION::TYPEID);
@@ -47,7 +48,8 @@ TEST(MessageComposer, ComposeApplicationRegisterMessage) {
     EXPECT_EQ(memcmp(ret, buffer + 24, 38), 0);
 }
 
-TEST(MessageComposer, ComposeApplicationDeregisterMessage) {
+TEST(MessageComposer, ComposeApplicationDeregisterMessage)
+{
     std::shared_ptr<MessageSD> message = MessageBuilder::create<SOMEIPSD>();
 
     SDOption option(SOMEIP_SD_OPTION::CONFIGURATION::TYPEID);
@@ -71,7 +73,8 @@ TEST(MessageComposer, ComposeApplicationDeregisterMessage) {
     EXPECT_EQ(memcmp(ret, buffer + 24, 52), 0);
 }
 
-TEST(MessageComposer, AddsEntryWithoutOptions) {
+TEST(MessageComposer, AddsEntryWithoutOptions)
+{
     auto message = MessageBuilder::create<SOMEIPSD>();
     SDEntry entry(SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID);
 
@@ -83,7 +86,8 @@ TEST(MessageComposer, AddsEntryWithoutOptions) {
     EXPECT_EQ(message->entry(0).get_option2nd_count(), 0);
 }
 
-TEST(MessageComposer, AddsAndReusesTwoOptions) {
+TEST(MessageComposer, AddsAndReusesTwoOptions)
+{
     auto message = MessageBuilder::create<SOMEIPSD>();
     auto first_address = std::make_shared<IP4Address>();
     first_address->set_ip_address("192.0.2.1");

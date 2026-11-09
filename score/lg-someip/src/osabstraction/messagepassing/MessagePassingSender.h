@@ -15,28 +15,32 @@
 #ifndef LG_SOMEIP_OSABSTRACTION_MESSAGEPASSING_MESSAGEPASSINGSENDER_H
 #define LG_SOMEIP_OSABSTRACTION_MESSAGEPASSING_MESSAGEPASSINGSENDER_H
 
-#include <cstdint>
 #include <atomic>
+#include <cstdint>
 
-#include <cstdio>
-#include <cstdlib>
+#include <sys/dispatch.h>
+#include <sys/iofunc.h>
+#include <sys/iomsg.h>
+#include <sys/neutrino.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/neutrino.h>
-#include <sys/iomsg.h>
-#include <sys/iofunc.h>
-#include <sys/dispatch.h>
-#include <thread>
 #include <condition_variable>
+#include <cstdio>
+#include <cstdlib>
 #include <queue>
 #include <string>
+#include <thread>
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
-class MessageData {
-public:
-    MessageData(const void* data, std::size_t size) {
+class MessageData
+{
+  public:
+    MessageData(const void* data, std::size_t size)
+    {
         std::uint8_t* data_bytes = (std::uint8_t*)(data);
         data_.assign(data_bytes, data_bytes + size);
         size_ = size;
@@ -44,13 +48,14 @@ public:
 
     ~MessageData() {}
 
-public:
+  public:
     std::vector<std::uint8_t> data_;
     std::size_t size_;
 };
 
-class MessagePassingSender {
-public:
+class MessagePassingSender
+{
+  public:
     MessagePassingSender();
     ~MessagePassingSender();
 
@@ -60,10 +65,10 @@ public:
 
     bool send(const void* buffer, std::size_t size);
 
-private:
+  private:
     void send_thread(const std::string& server_name);
 
-private:
+  private:
     int coid_;
 
     std::condition_variable messages_cv_;
@@ -74,7 +79,7 @@ private:
     std::atomic_bool thread_send_run_;
 };
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_OSABSTRACTION_MESSAGEPASSING_MESSAGEPASSINGSENDER_H
+#endif  // LG_SOMEIP_OSABSTRACTION_MESSAGEPASSING_MESSAGEPASSINGSENDER_H

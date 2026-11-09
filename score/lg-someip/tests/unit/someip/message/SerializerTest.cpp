@@ -12,41 +12,46 @@
  *
  ********************************************************************************/
 
-#include <cstring>
 #include <gtest/gtest.h>
+#include <cstring>
 #include <iostream>
 #include <memory>
 
 #include <message/Message.h>
 #include <message/Serializer.h>
-#include <vector>
 #include <string>
+#include <vector>
 
 using namespace lgsomeip;
 using namespace lgsomeip::osabstraction;
 
-struct ComplexData final : public Enumerable {
+struct ComplexData final : public Enumerable
+{
     ComplexData() {}
     ComplexData(int first_value, int second_value) : a(first_value), b(second_value) {}
     int a;
     int b;
 
-    void enumerate(Serializer& serializer) {
+    void enumerate(Serializer& serializer)
+    {
         serializer.push(a);
         serializer.push(b);
     }
 
-    void enumerate(Deserializer& deserializer) {
+    void enumerate(Deserializer& deserializer)
+    {
         deserializer.pop(a);
         deserializer.pop(b);
     }
 
-    std::uint32_t size() const {
+    std::uint32_t size() const
+    {
         return 8;
     }
 };
 
-TEST(Serializer, Primitives1) {
+TEST(Serializer, Primitives1)
+{
     Serializer s;
 
     int a = 14, b = 15;
@@ -67,7 +72,8 @@ TEST(Serializer, Primitives1) {
     EXPECT_EQ(db, 15);
 }
 
-TEST(Serializer, Primitives2) {
+TEST(Serializer, Primitives2)
+{
     Serializer s;
 
     int a = 14;
@@ -90,14 +96,15 @@ TEST(Serializer, Primitives2) {
     EXPECT_EQ(db, 100.0);
 }
 
-TEST(Serializer, DynamicArray) {
+TEST(Serializer, DynamicArray)
+{
     Serializer s;
 
     std::vector<int> send{1, 2, 3};
     s.push(send);
 
-    std::vector<std::uint8_t> ret{0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x01,
-                                  0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03};
+    std::vector<std::uint8_t> ret{
+        0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03};
     EXPECT_EQ(s.get_data(), ret);
 
     Deserializer ds;
@@ -109,7 +116,8 @@ TEST(Serializer, DynamicArray) {
     EXPECT_EQ(send, recv);
 }
 
-TEST(Serializer, DynamicLengthString) {
+TEST(Serializer, DynamicLengthString)
+{
     Serializer s;
 
     std::string send = "ABCDEF";
@@ -127,7 +135,8 @@ TEST(Serializer, DynamicLengthString) {
     EXPECT_EQ(send, recv);
 }
 
-TEST(SerializerTest, ComplexType1) {
+TEST(SerializerTest, ComplexType1)
+{
     Serializer s;
 
     ComplexData send(14, 15);
@@ -146,7 +155,8 @@ TEST(SerializerTest, ComplexType1) {
     EXPECT_EQ(send.b, recv.b);
 }
 
-TEST(SerializerTest, ComplexType2) {
+TEST(SerializerTest, ComplexType2)
+{
     Serializer s;
 
     std::vector<ComplexData> send;
@@ -169,7 +179,8 @@ TEST(SerializerTest, ComplexType2) {
     EXPECT_EQ(send.size(), recv.size());
 
     bool check_data = true;
-    for (std::size_t i = 0; i < send.size(); i++) {
+    for (std::size_t i = 0; i < send.size(); i++)
+    {
         if (send[i].a != recv[i].a || send[i].b != recv[i].b)
             check_data = false;
     }

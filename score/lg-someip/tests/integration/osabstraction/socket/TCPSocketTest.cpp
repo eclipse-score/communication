@@ -36,35 +36,42 @@ char tcp_client_received[kTcpMax];
 int tcp_client_received_length = 0;
 std::string local_socket_path;
 
-class ScopedUnixSocketFiles {
-public:
+class ScopedUnixSocketFiles
+{
+  public:
     explicit ScopedUnixSocketFiles(const char* path) : path_(path) {}
 
-    ~ScopedUnixSocketFiles() {
+    ~ScopedUnixSocketFiles()
+    {
         std::remove(path_.c_str());
         std::remove((path_ + ".lock").c_str());
     }
 
-private:
+  private:
     std::string path_;
 };
 
-int receive_until_full(Socket& socket, char* buffer, std::size_t size) {
+int receive_until_full(Socket& socket, char* buffer, std::size_t size)
+{
     std::size_t received_length = 0;
-    for (int attempt = 0; attempt < 100 && received_length < size; ++attempt) {
+    for (int attempt = 0; attempt < 100 && received_length < size; ++attempt)
+    {
         int current_length = socket.receive(buffer + received_length, size - received_length);
-        if (current_length < 0) {
+        if (current_length < 0)
+        {
             return current_length;
         }
         received_length += static_cast<std::size_t>(current_length);
-        if (received_length < size) {
+        if (received_length < size)
+        {
             usleep(1000);
         }
     }
     return static_cast<int>(received_length);
 }
 
-void tcp_client_run() {
+void tcp_client_run()
+{
     usleep(10);
     std::shared_ptr<Address> addr = std::make_shared<IP4Address>();
     addr->set_ip_address("127.0.0.1");
@@ -76,7 +83,8 @@ void tcp_client_run() {
     client.send(client.get_socket_fd(), tcp_message, sizeof(tcp_message));
     tcp_client_received_length = receive_until_full(client, tcp_client_received, sizeof(tcp_client_received));
 }
-TEST(TCPSocketTest, TCPSocketTest) {
+TEST(TCPSocketTest, TCPSocketTest)
+{
     char message[kTcpMax];
     create_msg(tcp_message, kTcpMax);
 
@@ -86,24 +94,25 @@ TEST(TCPSocketTest, TCPSocketTest) {
     addr->set_reliable(true);
     addr->set_port_address(get_test_port());
 
-    TCPServerSocket server(addr); // create_socket
+    TCPServerSocket server(addr);  // create_socket
     ASSERT_NE(server.get_socket_fd(), -1);
 
-    ASSERT_EQ(0, server.listen()); // listen
+    ASSERT_EQ(0, server.listen());  // listen
     thread = std::make_shared<std::thread>(tcp_client_run);
 
     std::shared_ptr<Socket> client_socket = server.accept();
-    ASSERT_NE(client_socket->get_socket_fd(), -1); // accept
+    ASSERT_NE(client_socket->get_socket_fd(), -1);  // accept
 
     int received_length = receive_until_full(*client_socket, message, sizeof(message));
     ASSERT_EQ(received_length, sizeof(message));
-    ASSERT_STREQ(tcp_message, message); // send & receive
+    ASSERT_STREQ(tcp_message, message);  // send & receive
     client_socket->send(client_socket->get_socket_fd(), tcp_message, sizeof(tcp_message));
     thread->join();
     ASSERT_EQ(tcp_client_received_length, sizeof(tcp_client_received));
     ASSERT_STREQ(tcp_message, tcp_client_received);
 }
-void tcp_client_ipv6_run() {
+void tcp_client_ipv6_run()
+{
     usleep(10);
     std::shared_ptr<Address> addr = std::make_shared<IP6Address>();
     addr->set_ip_address("::1");
@@ -115,7 +124,8 @@ void tcp_client_ipv6_run() {
     client.send(client.get_socket_fd(), tcp_message, sizeof(tcp_message));
     tcp_client_received_length = receive_until_full(client, tcp_client_received, sizeof(tcp_client_received));
 }
-TEST(TCPSocketTest, TCPSocketIPv6Test) {
+TEST(TCPSocketTest, TCPSocketIPv6Test)
+{
     char message[kTcpMax];
     create_msg(tcp_message, kTcpMax);
 
@@ -125,18 +135,18 @@ TEST(TCPSocketTest, TCPSocketIPv6Test) {
     addr->set_reliable(true);
     addr->set_port_address(get_test_port());
 
-    TCPServerSocket server(addr); // create_socket
+    TCPServerSocket server(addr);  // create_socket
     ASSERT_NE(server.get_socket_fd(), -1);
 
-    ASSERT_EQ(0, server.listen()); // listen
+    ASSERT_EQ(0, server.listen());  // listen
     thread = std::make_shared<std::thread>(tcp_client_ipv6_run);
 
     std::shared_ptr<Socket> client_socket = server.accept();
-    ASSERT_NE(client_socket->get_socket_fd(), -1); // accept
+    ASSERT_NE(client_socket->get_socket_fd(), -1);  // accept
 
     int received_length = receive_until_full(*client_socket, message, sizeof(message));
     ASSERT_EQ(received_length, sizeof(message));
-    ASSERT_STREQ(tcp_message, message); // send & receive
+    ASSERT_STREQ(tcp_message, message);  // send & receive
     client_socket->send(client_socket->get_socket_fd(), tcp_message, sizeof(tcp_message));
     thread->join();
     ASSERT_EQ(tcp_client_received_length, sizeof(tcp_client_received));
@@ -145,7 +155,8 @@ TEST(TCPSocketTest, TCPSocketIPv6Test) {
 constexpr int kLocalMax = 5000;
 char local_message[kLocalMax];
 
-void local_tcp_client_run() {
+void local_tcp_client_run()
+{
     usleep(10);
 
     std::shared_ptr<Address> addr = std::make_shared<LocalAddress>();
@@ -157,7 +168,8 @@ void local_tcp_client_run() {
     client.send(client.get_socket_fd(), local_message, sizeof(local_message));
     tcp_client_received_length = receive_until_full(client, tcp_client_received, sizeof(tcp_client_received));
 }
-TEST(TCPSocketTest, LocalTCPSocket) {
+TEST(TCPSocketTest, LocalTCPSocket)
+{
     char message[kLocalMax];
     local_socket_path = get_test_socket_path("LocalSocketTest");
     ScopedUnixSocketFiles socket_files(local_socket_path.c_str());
@@ -168,18 +180,18 @@ TEST(TCPSocketTest, LocalTCPSocket) {
     addr->set_reliable(true);
     addr->set_file_path(local_socket_path);
 
-    TCPServerSocket server(addr); // create_socket
+    TCPServerSocket server(addr);  // create_socket
     ASSERT_NE(server.get_socket_fd(), -1);
 
-    ASSERT_EQ(0, server.listen()); // listen
+    ASSERT_EQ(0, server.listen());  // listen
     thread = std::make_shared<std::thread>(local_tcp_client_run);
 
     std::shared_ptr<Socket> client_socket = server.accept();
-    ASSERT_NE(client_socket->get_socket_fd(), -1); // accept
+    ASSERT_NE(client_socket->get_socket_fd(), -1);  // accept
 
     int received_length = receive_until_full(*client_socket, message, sizeof(message));
     ASSERT_EQ(received_length, sizeof(message));
-    ASSERT_STREQ(local_message, message); // send & receive
+    ASSERT_STREQ(local_message, message);  // send & receive
 
     client_socket->send(client_socket->get_socket_fd(), local_message, sizeof(local_message));
     thread->join();
@@ -187,21 +199,25 @@ TEST(TCPSocketTest, LocalTCPSocket) {
     ASSERT_STREQ(local_message, tcp_client_received);
 }
 
-namespace {
+namespace
+{
 
-void set_socket_buffers(int fd, int size) {
+void set_socket_buffers(int fd, int size)
+{
     setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &size, sizeof(size));
     setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
 }
 
 // Connects a client to a server whose small socket buffers fill up quickly.
-struct BackpressureConnection {
+struct BackpressureConnection
+{
     std::unique_ptr<TCPServerSocket> server;
     std::unique_ptr<TCPClientSocket> client;
     std::shared_ptr<Socket> accepted;
 };
 
-void connect_with_small_buffers(BackpressureConnection& connection) {
+void connect_with_small_buffers(BackpressureConnection& connection)
+{
     std::shared_ptr<Address> addr = std::make_shared<IP4Address>();
     addr->set_ip_address("127.0.0.1");
     addr->set_reliable(true);
@@ -219,9 +235,10 @@ void connect_with_small_buffers(BackpressureConnection& connection) {
     ASSERT_NE(connection.accepted->get_socket_fd(), -1);
 }
 
-} // namespace
+}  // namespace
 
-TEST(TCPSocketTest, SendWaitsForSlowReaderAcrossMultipleTimeouts) {
+TEST(TCPSocketTest, SendWaitsForSlowReaderAcrossMultipleTimeouts)
+{
     BackpressureConnection connection;
     connect_with_small_buffers(connection);
     ASSERT_NE(connection.client, nullptr);
@@ -233,9 +250,11 @@ TEST(TCPSocketTest, SendWaitsForSlowReaderAcrossMultipleTimeouts) {
     std::atomic<bool> send_failed{false};
     std::thread reader([&] {
         std::vector<char> buffer(16 * 1024);
-        while (received < message_size && !send_failed) {
+        while (received < message_size && !send_failed)
+        {
             int length = connection.accepted->receive(buffer.data(), buffer.size());
-            if (length < 0) {
+            if (length < 0)
+            {
                 break;
             }
             received += static_cast<std::size_t>(length);
@@ -255,7 +274,8 @@ TEST(TCPSocketTest, SendWaitsForSlowReaderAcrossMultipleTimeouts) {
     EXPECT_GT(elapsed, std::chrono::milliseconds(1200));
 }
 
-TEST(TCPSocketTest, SendGivesUpWhenReaderStalls) {
+TEST(TCPSocketTest, SendGivesUpWhenReaderStalls)
+{
     BackpressureConnection connection;
     connect_with_small_buffers(connection);
     ASSERT_NE(connection.client, nullptr);

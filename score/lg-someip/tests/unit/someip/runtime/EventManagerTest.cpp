@@ -20,8 +20,9 @@
 
 using namespace lgsomeip;
 
-class EventFakeRouter final : public ApplicationRouter {
-public:
+class EventFakeRouter final : public ApplicationRouter
+{
+  public:
     void init() override {}
     void start() override {}
     void stop() override {}
@@ -29,12 +30,14 @@ public:
 
     void send_message(std::shared_ptr<MessageSD>) override {}
 
-    void send_message(std::shared_ptr<MessageSOMEIP> message) override {
+    void send_message(std::shared_ptr<MessageSOMEIP> message) override
+    {
         ++message_count;
         last_message = std::move(message);
     }
 
-    void send_message(MessageSOMEIP& message) override {
+    void send_message(MessageSOMEIP& message) override
+    {
         ++message_count;
         last_message = std::make_shared<MessageSOMEIP>(message);
     }
@@ -42,26 +45,30 @@ public:
 #if defined(ENABLE_SOMEIP_IPC)
     void add_ipc_route(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t, bool) override {}
     // Services missing from the configuration are routed over IPC, so record them like regular messages.
-    void send_ipc_message(std::shared_ptr<MessageSOMEIP> message) override {
+    void send_ipc_message(std::shared_ptr<MessageSOMEIP> message) override
+    {
         ++message_count;
         last_message = std::move(message);
     }
-    void send_ipc_message(MessageSOMEIP& message, bool) override {
+    void send_ipc_message(MessageSOMEIP& message, bool) override
+    {
         ++message_count;
         last_message = std::make_shared<MessageSOMEIP>(message);
     }
-    void send_ipc_response_message(MessageSOMEIP& message, std::uint16_t, std::uint16_t) override {
+    void send_ipc_response_message(MessageSOMEIP& message, std::uint16_t, std::uint16_t) override
+    {
         ++message_count;
         last_message = std::make_shared<MessageSOMEIP>(message);
     }
     void on_internal_request(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t) override {}
-#endif // ENABLE_SOMEIP_IPC
+#endif  // ENABLE_SOMEIP_IPC
 
     int message_count = 0;
     std::shared_ptr<MessageSOMEIP> last_message;
 };
 
-TEST(EventManager, notifies_enabled_update_on_change_event) {
+TEST(EventManager, notifies_enabled_update_on_change_event)
+{
     auto router = std::make_shared<EventFakeRouter>();
     ApplicationManager application("event-test", "", router);
     EventManager events(&application);
@@ -82,7 +89,8 @@ TEST(EventManager, notifies_enabled_update_on_change_event) {
 }
 
 // SOME/IP spec 6.4.1 "update on change": an unchanged value is not sent again, for an event and a field alike.
-static void expect_update_on_change(bool is_field) {
+static void expect_update_on_change(bool is_field)
+{
     auto router = std::make_shared<EventFakeRouter>();
     ApplicationManager application("event-test", "", router);
     EventManager events(&application);
@@ -105,15 +113,18 @@ static void expect_update_on_change(bool is_field) {
     EXPECT_EQ(router->message_count, 3);
 }
 
-TEST(EventManager, update_on_change_event_is_sent_only_when_payload_changes_or_forced) {
+TEST(EventManager, update_on_change_event_is_sent_only_when_payload_changes_or_forced)
+{
     expect_update_on_change(false);
 }
 
-TEST(EventManager, update_on_change_field_is_sent_only_when_payload_changes_or_forced) {
+TEST(EventManager, update_on_change_field_is_sent_only_when_payload_changes_or_forced)
+{
     expect_update_on_change(true);
 }
 
-TEST(EventManager, cyclic_event_is_sent_on_flush_even_with_unchanged_payload) {
+TEST(EventManager, cyclic_event_is_sent_on_flush_even_with_unchanged_payload)
+{
     auto router = std::make_shared<EventFakeRouter>();
     ApplicationManager application("event-test", "", router);
     EventManager events(&application);
@@ -134,7 +145,8 @@ TEST(EventManager, cyclic_event_is_sent_on_flush_even_with_unchanged_payload) {
     EXPECT_EQ(router->message_count, 2);
 }
 
-TEST(EventManager, notify_one_targets_the_client_and_session_id_keeps_counting) {
+TEST(EventManager, notify_one_targets_the_client_and_session_id_keeps_counting)
+{
     auto router = std::make_shared<EventFakeRouter>();
     ApplicationManager application("event-test", "", router);
     EventManager events(&application);
@@ -158,7 +170,8 @@ TEST(EventManager, notify_one_targets_the_client_and_session_id_keeps_counting) 
     EXPECT_EQ(router->last_message->get_request_id(), 0x00000003U);
 }
 
-TEST(EventManager, ignores_duplicate_event_registration) {
+TEST(EventManager, ignores_duplicate_event_registration)
+{
     auto router = std::make_shared<EventFakeRouter>();
     ApplicationManager application("event-test", "", router);
     EventManager events(&application);
@@ -174,7 +187,8 @@ TEST(EventManager, ignores_duplicate_event_registration) {
     EXPECT_EQ(router->message_count, 1);
 }
 
-TEST(EventManager, sends_initial_event_for_field_and_removes_event) {
+TEST(EventManager, sends_initial_event_for_field_and_removes_event)
+{
     auto router = std::make_shared<EventFakeRouter>();
     ApplicationManager application("event-test", "", router);
     EventManager events(&application);
@@ -195,7 +209,8 @@ TEST(EventManager, sends_initial_event_for_field_and_removes_event) {
     EXPECT_EQ(router->message_count, 1);
 }
 
-TEST(EventManager, start_stop_join_is_idempotent) {
+TEST(EventManager, start_stop_join_is_idempotent)
+{
     auto router = std::make_shared<EventFakeRouter>();
     ApplicationManager application("event-test", "", router);
     EventManager events(&application);

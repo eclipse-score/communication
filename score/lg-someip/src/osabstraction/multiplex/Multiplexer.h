@@ -15,8 +15,8 @@
 #ifndef LG_SOMEIP_OSABSTRACTION_MULTIPLEXER_MULTIPLEXER
 #define LG_SOMEIP_OSABSTRACTION_MULTIPLEXER_MULTIPLEXER
 
-#include <condition_variable>
 #include <atomic>
+#include <condition_variable>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -26,8 +26,10 @@
 
 #include <utils/log/logger.h>
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
 #if defined(LINUX)
 #include <sys/epoll.h>
@@ -35,10 +37,11 @@ namespace osabstraction {
 #define LSAR_EPOLL_SIZE 1024
 #elif defined(QNX)
 #include <sys/select.h>
-#endif // LINUX
+#endif  // LINUX
 
-class Multiplexer {
-public:
+class Multiplexer
+{
+  public:
     Multiplexer();
     virtual ~Multiplexer();
 
@@ -51,14 +54,14 @@ public:
     void unset(int file_descriptor);
     void run();
 
-private:
+  private:
 #if defined(LINUX)
     struct epoll_event epoll_events_[LSAR_EPOLL_SIZE] = {};
     int epoll_fd_;
-    int condition_fd_; // wakeup notify
+    int condition_fd_;  // wakeup notify
 #else
     fd_set master_fd_set_;
-#endif // LINUX
+#endif  // LINUX
 
     std::map<int, std::function<void(bool)>> callbacks_;
     std::mutex callbacks_mutex_;
@@ -71,7 +74,7 @@ private:
     std::function<void()> timeout_callback_{nullptr};
 };
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_OSABSTRACTION_MULTIPLEXER_MULTIPLEXER
+#endif  // LG_SOMEIP_OSABSTRACTION_MULTIPLEXER_MULTIPLEXER

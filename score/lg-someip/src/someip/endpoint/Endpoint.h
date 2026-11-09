@@ -21,6 +21,6 @@
 
 #if defined(ENABLE_QNX_MESSAGE_PASSING)
 #include <endpoint/EndpointMessagePassing.h>
-#endif // ENABLE_QNX_MESSAGE_PASSING
+#endif  // ENABLE_QNX_MESSAGE_PASSING
 
-#endif // LG_SOMEIP_ENDPOINT_ENDPOINT_H
+#endif  // LG_SOMEIP_ENDPOINT_ENDPOINT_H

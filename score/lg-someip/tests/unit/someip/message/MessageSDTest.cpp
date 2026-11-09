@@ -19,7 +19,8 @@
 
 using namespace lgsomeip;
 
-TEST(MessageSD, defaults_to_service_discovery) {
+TEST(MessageSD, defaults_to_service_discovery)
+{
     MessageSD message;
 
     EXPECT_TRUE(message.is_service_discovery());
@@ -29,7 +30,8 @@ TEST(MessageSD, defaults_to_service_discovery) {
     EXPECT_FALSE(message.get_reboot_flag());
 }
 
-TEST(MessageSD, serializes_and_deserializes_entries_and_flags) {
+TEST(MessageSD, serializes_and_deserializes_entries_and_flags)
+{
     MessageSD source;
     source.set_flag(SOMEIP_REBOOT_FLAG);
 
@@ -58,7 +60,8 @@ TEST(MessageSD, serializes_and_deserializes_entries_and_flags) {
     EXPECT_EQ(decoded.entry(0).get_ttl(), 0x000003U);
 }
 
-TEST(MessageSD, serialize_writes_only_serialized_size) {
+TEST(MessageSD, serialize_writes_only_serialized_size)
+{
     MessageSD source;
     SDEntry entry(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
     entry.set_service_id(0x1001);
@@ -68,19 +71,22 @@ TEST(MessageSD, serialize_writes_only_serialized_size) {
     std::vector<std::uint8_t> buffer(size + 8U, 0xA5);
 
     EXPECT_EQ(source.serialize(buffer.data()), size);
-    for (std::size_t i = size; i < buffer.size(); ++i) {
+    for (std::size_t i = size; i < buffer.size(); ++i)
+    {
         EXPECT_EQ(buffer[i], 0xA5) << "guard byte " << i << " was overwritten";
     }
 }
 
-TEST(MessageSD, rejects_short_input) {
+TEST(MessageSD, rejects_short_input)
+{
     MessageSD message;
     std::uint8_t buffer[SOMEIP_HEADER::SIZE] = {};
 
     EXPECT_FALSE(message.deserialize(buffer, sizeof(buffer)));
 }
 
-TEST(MessageSD, rejects_truncated_sections) {
+TEST(MessageSD, rejects_truncated_sections)
+{
     MessageSD message;
     std::uint8_t buffer[SOMEIP_HEADER::SIZE + SOMEIP_SD_HEADER::SIZE] = {};
 
@@ -93,7 +99,8 @@ TEST(MessageSD, rejects_truncated_sections) {
     EXPECT_FALSE(message.deserialize(buffer, sizeof(buffer)));
 }
 
-TEST(MessageSD, rejects_option_section_outside_message) {
+TEST(MessageSD, rejects_option_section_outside_message)
+{
     MessageSD message;
     std::uint8_t buffer[SOMEIP_HEADER::SIZE + SOMEIP_SD_HEADER::SIZE + 8] = {};
 

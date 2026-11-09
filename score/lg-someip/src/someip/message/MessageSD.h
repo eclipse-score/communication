@@ -19,36 +19,42 @@
 #include <cstdint>
 #include <vector>
 
-#include <message/MessageHeader.h>
 #include <message/MessageConstant.h>
+#include <message/MessageHeader.h>
 #include <message/SDEntry.h>
 #include <message/SDOption.h>
 
 #define SOMEIP_REBOOT_FLAG 0x80
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class MessageSD : public MessageHeader {
-public:
+class MessageSD : public MessageHeader
+{
+  public:
     MessageSD();
     virtual ~MessageSD();
 
     virtual std::uint32_t get_length() const;
     // Total bytes written by serialize(): SOME/IP header plus SD payload.
-    std::uint32_t get_serialized_size() const {
+    std::uint32_t get_serialized_size() const
+    {
         return get_length() + 8;
     }
-    virtual bool is_service_discovery() {
+    virtual bool is_service_discovery()
+    {
         return true;
     }
 
     virtual std::uint32_t serialize(std::uint8_t* data);
     virtual bool deserialize(std::uint8_t* data, std::uint32_t len);
 
-    std::uint8_t get_flag() {
+    std::uint8_t get_flag()
+    {
         return flags_;
     }
-    void set_flag(std::uint8_t flag) {
+    void set_flag(std::uint8_t flag)
+    {
         flags_ = flag;
     }
 
@@ -60,7 +66,7 @@ public:
 
     bool get_reboot_flag();
 
-public:
+  public:
     std::vector<SDEntry> entries_;
     std::vector<SDOption> options_;
 
@@ -68,6 +74,6 @@ public:
     bool reboot_flag_;
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_SOMEIP_MESSAGE_MESSAGE_SD_H
+#endif  // LG_SOMEIP_SOMEIP_MESSAGE_MESSAGE_SD_H

@@ -18,7 +18,8 @@
 
 using namespace lgsomeip;
 
-TEST(TimeCheck, measures_non_negative_duration) {
+TEST(TimeCheck, measures_non_negative_duration)
+{
     TimeCheck timer;
 
     timer.start();
@@ -27,7 +28,8 @@ TEST(TimeCheck, measures_non_negative_duration) {
     EXPECT_GE(timer.get_duration(), 0.0);
 }
 
-TEST(TimeCheck, can_restart_measurement) {
+TEST(TimeCheck, can_restart_measurement)
+{
     TimeCheck timer;
 
     timer.start();

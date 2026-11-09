@@ -12,10 +12,10 @@
  *
  ********************************************************************************/
 
+#include <signal.h>
 #include <cstdint>
 #include <cstring>
 #include <iostream>
-#include <signal.h>
 
 #include <message/Message.h>
 #include <runtime/ServiceManager.h>
@@ -28,24 +28,29 @@ static std::condition_variable signal_handler_condition;
 static std::mutex signal_handler_mutex;
 static bool signal_received = false;
 
-void handle_signal([[maybe_unused]] int signal_number) {
+void handle_signal([[maybe_unused]] int signal_number)
+{
     std::lock_guard<std::mutex> its_lock(signal_handler_mutex);
 
     signal_received = true;
     signal_handler_condition.notify_all();
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
     // Handle the following signals
     signal(SIGINT, handle_signal);
     signal(SIGTERM, handle_signal);
 
-    try {
+    try
+    {
         std::string config_path("");
-        if (argc >= 2) {
+        if (argc >= 2)
+        {
             config_path = argv[1];
         }
-        if (config_path == "-v") {
+        if (config_path == "-v")
+        {
             LGSOMEIP_LOG_INFO << "LG SOME/IP Version : " << SOMEIP_VERSION << "\n";
             return 0;
         }
@@ -59,12 +64,15 @@ int main(int argc, char* argv[]) {
         LGSOMEIP_LOG_INFO << "LG SOME/IP Daemon v" << SOMEIP_VERSION << " Start!!";
 
         std::unique_lock<std::mutex> its_lock(signal_handler_mutex);
-        while (!signal_received) {
+        while (!signal_received)
+        {
             signal_handler_condition.wait(its_lock);
         }
         LGSOMEIP_LOG_INFO << "LG SOME/IP Daemon is shutting down!!!";
         svc_mgmt.stop();
-    } catch (const std::exception& exception) {
+    }
+    catch (const std::exception& exception)
+    {
         std::cerr << "LG SOME/IP Daemon failed to start: " << exception.what() << std::endl;
         return 1;
     }

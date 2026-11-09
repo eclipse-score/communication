@@ -16,35 +16,40 @@
 #define LG_SOMEIP_OSABSTRACTION_NETWORK_DEVICE
 
 #include <arpa/inet.h>
-#include <iostream>
-#include <memory>
 #include <netdb.h>
 #include <cstring>
+#include <iostream>
+#include <memory>
 #include <string>
 
 #include "Address.h"
 #include "IP6Address.h"
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
-class NetworkDevice {
-public:
-    static NetworkDevice& instance() {
+class NetworkDevice
+{
+  public:
+    static NetworkDevice& instance()
+    {
         return device_;
     }
 
-private:
+  private:
     static NetworkDevice device_;
 
-private:
+  private:
     NetworkDevice() {}
     NetworkDevice(const NetworkDevice&) = delete;
     NetworkDevice operator=(const NetworkDevice&) = delete;
 
-public:
+  public:
     bool initialize(std::string address, int iptype);
-    bool is_initialized() {
+    bool is_initialized()
+    {
         return initialized_;
     };
 
@@ -52,14 +57,14 @@ public:
     std::string get_device_addr() const;
     unsigned int get_device_id() const;
 
-private:
+  private:
     bool initialized_{false};
     std::string device_name_{""};
     std::string device_address_{""};
     unsigned int device_id_{0};
 };
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_OSABSTRACTION_NETWORK_DEVICE
+#endif  // LG_SOMEIP_OSABSTRACTION_NETWORK_DEVICE

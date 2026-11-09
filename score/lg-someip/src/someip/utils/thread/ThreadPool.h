@@ -31,15 +31,18 @@
 #include <utils/log/formatLog.h>
 #include <utils/log/logger.h>
 
-namespace lgsomeip {
-class ThreadPool {
-public:
+namespace lgsomeip
+{
+class ThreadPool
+{
+  public:
     ThreadPool(std::size_t thread_count);
     ~ThreadPool();
 
-    template <class F, class... Args> std::future<std::invoke_result_t<F, Args...>> enqueue_job(F&& f, Args&&... args);
+    template <class F, class... Args>
+    std::future<std::invoke_result_t<F, Args...>> enqueue_job(F&& f, Args&&... args);
 
-private:
+  private:
     std::atomic<bool> stop_requested_;
     std::size_t thread_count_;
     std::vector<std::thread> worker_threads_;
@@ -51,8 +54,10 @@ private:
 };
 
 template <class F, class... Args>
-std::future<std::invoke_result_t<F, Args...>> ThreadPool::enqueue_job(F&& f, Args&&... args) {
-    if (stop_requested_) {
+std::future<std::invoke_result_t<F, Args...>> ThreadPool::enqueue_job(F&& f, Args&&... args)
+{
+    if (stop_requested_)
+    {
         throw std::runtime_error("ThreadPool::enqueue_job / Stop thread pool");
     }
 
@@ -68,13 +73,15 @@ std::future<std::invoke_result_t<F, Args...>> ThreadPool::enqueue_job(F&& f, Arg
         LGSOMEIP_LOG_DEBUG << "ThreadPool::enqueue_job / Push the job to queue.";
 
         std::lock_guard<std::mutex> lock(job_mutex_);
-        jobs_.push([job]() { (*job)(); });
+        jobs_.push([job]() {
+            (*job)();
+        });
     }
     job_condition_.notify_one();
 
     return future_result;
 }
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_THREAD_POOL_H
+#endif  // LG_SOMEIP_THREAD_POOL_H

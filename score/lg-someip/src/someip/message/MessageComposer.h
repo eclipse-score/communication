@@ -17,14 +17,18 @@
 
 #include <message/MessageBuilder.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class MessageComposer {
-public:
-    static std::shared_ptr<MessageSD> add_entry(std::shared_ptr<MessageSD> message, SDEntry* entry,
-                                                SDOption* first_option = nullptr, SDOption* second_option = nullptr);
+class MessageComposer
+{
+  public:
+    static std::shared_ptr<MessageSD> add_entry(std::shared_ptr<MessageSD> message,
+                                                SDEntry* entry,
+                                                SDOption* first_option = nullptr,
+                                                SDOption* second_option = nullptr);
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_MESSAGE_MESSAGE_COMPOSER_H
+#endif  // LG_SOMEIP_MESSAGE_MESSAGE_COMPOSER_H

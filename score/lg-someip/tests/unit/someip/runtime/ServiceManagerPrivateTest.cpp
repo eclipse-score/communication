@@ -19,8 +19,8 @@
 #include <packetrouter/ServiceRouter.h>
 #include <runtime/ApplicationCommonTypes.h>
 #include <runtime/ApplicationConstant.h>
-#include <utils/time/TimerMux.h>
 #include <unistd.h>
+#include <utils/time/TimerMux.h>
 
 // The test reads and sets the internal state of the class under test.
 #if defined(__clang__)
@@ -40,37 +40,61 @@
 using namespace lgsomeip;
 using namespace lgsomeip::osabstraction;
 
-class PrivateServiceRouter final : public ServiceRouter {
-public:
+class PrivateServiceRouter final : public ServiceRouter
+{
+  public:
     void init() override {}
     void start() override {}
     void stop() override {}
-    std::shared_ptr<Multiplexer> get_multiplexer() override {
+    std::shared_ptr<Multiplexer> get_multiplexer() override
+    {
         return nullptr;
     }
-    std::shared_ptr<Endpoint> get_service_discovery_multicast_endpoint() override {
+    std::shared_ptr<Endpoint> get_service_discovery_multicast_endpoint() override
+    {
         return nullptr;
     }
-    std::shared_ptr<Endpoint> get_service_discovery_unicast_endpoint() override {
+    std::shared_ptr<Endpoint> get_service_discovery_unicast_endpoint() override
+    {
         return nullptr;
     }
-    std::shared_ptr<Address> make_address() override {
+    std::shared_ptr<Address> make_address() override
+    {
         return std::make_shared<IP4Address>();
     }
     void set_instance_id(std::uint16_t, std::uint16_t, std::uint16_t) override {}
-    bool add_route(std::uint16_t, std::uint16_t, std::uint16_t, std::shared_ptr<Address>, std::uint16_t,
-                   std::shared_ptr<Address>, std::uint16_t, std::uint8_t,
-                   std::shared_ptr<std::vector<std::shared_ptr<Address>>>) override {
+    bool add_route(std::uint16_t,
+                   std::uint16_t,
+                   std::uint16_t,
+                   std::shared_ptr<Address>,
+                   std::uint16_t,
+                   std::shared_ptr<Address>,
+                   std::uint16_t,
+                   std::uint8_t,
+                   std::shared_ptr<std::vector<std::shared_ptr<Address>>>) override
+    {
         return true;
     }
     void remove_route(std::uint16_t, std::uint16_t) override {}
-    std::int32_t find_connection(std::uint16_t, std::uint16_t, std::shared_ptr<Address>) override {
+    std::int32_t find_connection(std::uint16_t, std::uint16_t, std::shared_ptr<Address>) override
+    {
         return -1;
     }
-    void add_subscribe_route(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t, std::shared_ptr<Address>,
-                             std::uint16_t) override {}
-    void remove_subscribe_route(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t,
-                                std::shared_ptr<Address>) override {}
+    void add_subscribe_route(std::uint16_t,
+                             std::uint16_t,
+                             std::uint16_t,
+                             std::uint16_t,
+                             std::shared_ptr<Address>,
+                             std::uint16_t) override
+    {
+    }
+    void remove_subscribe_route(std::uint16_t,
+                                std::uint16_t,
+                                std::uint16_t,
+                                std::uint16_t,
+                                std::shared_ptr<Address>) override
+    {
+    }
     void remove_subscribe_route(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t) override {}
     void send_internal_message(std::uint8_t*, std::size_t, std::uint16_t) override {}
     void send_external_sd_message(std::uint8_t*, std::size_t, std::shared_ptr<Address>, bool) override {}
@@ -78,9 +102,11 @@ public:
     void reboot_route(std::shared_ptr<Address>) override {}
 };
 
-class ScopedPrivateConfig final {
-public:
-    ScopedPrivateConfig() : path_("/tmp/lgsomeip-service-manager-private-" + std::to_string(::getpid()) + ".json") {
+class ScopedPrivateConfig final
+{
+  public:
+    ScopedPrivateConfig() : path_("/tmp/lgsomeip-service-manager-private-" + std::to_string(::getpid()) + ".json")
+    {
         std::ofstream file(path_);
         file << R"({
             "unicast": "127.0.0.1",
@@ -101,19 +127,22 @@ public:
         })";
     }
 
-    ~ScopedPrivateConfig() {
+    ~ScopedPrivateConfig()
+    {
         std::remove(path_.c_str());
     }
 
-    const std::string& path() const {
+    const std::string& path() const
+    {
         return path_;
     }
 
-private:
+  private:
     std::string path_;
 };
 
-TEST(ServiceManagerPrivate, matches_exact_any_and_minimum_versions) {
+TEST(ServiceManagerPrivate, matches_exact_any_and_minimum_versions)
+{
     auto router = std::make_shared<PrivateServiceRouter>();
     ServiceManager manager("private-test", "", router);
 
@@ -124,7 +153,8 @@ TEST(ServiceManagerPrivate, matches_exact_any_and_minimum_versions) {
     EXPECT_FALSE(manager.check_service_version(1, 1, 3, 4, 0, false));
 }
 
-TEST(ServiceManagerPrivate, rolls_session_id_and_clears_reboot_flag) {
+TEST(ServiceManagerPrivate, rolls_session_id_and_clears_reboot_flag)
+{
     auto router = std::make_shared<PrivateServiceRouter>();
     ServiceManager manager("private-test", "", router);
     manager.session_info_["192.0.2.1"] = {0xffff, 0x80};
@@ -135,7 +165,8 @@ TEST(ServiceManagerPrivate, rolls_session_id_and_clears_reboot_flag) {
     EXPECT_EQ(session.second, 0);
 }
 
-TEST(ServiceManagerPrivate, parses_endpoint_options_and_rejects_duplicates) {
+TEST(ServiceManagerPrivate, parses_endpoint_options_and_rejects_duplicates)
+{
     auto router = std::make_shared<PrivateServiceRouter>();
     ServiceManager manager("private-test", "", router);
     auto tcp = std::make_shared<IP4Address>();
@@ -164,7 +195,8 @@ TEST(ServiceManagerPrivate, parses_endpoint_options_and_rejects_duplicates) {
     EXPECT_FALSE(manager.find_option_address(parsed_tcp, parsed_udp, options, 2, nullptr, 0));
 }
 
-TEST(ServiceManagerPrivate, doubles_the_repetition_delay_for_each_repetition) {
+TEST(ServiceManagerPrivate, doubles_the_repetition_delay_for_each_repetition)
+{
     ScopedPrivateConfig config_file;
     auto router = std::make_shared<PrivateServiceRouter>();
     ServiceManager manager("private-test", config_file.path(), router);
@@ -173,7 +205,8 @@ TEST(ServiceManagerPrivate, doubles_the_repetition_delay_for_each_repetition) {
         manager.get_configuration()->get_service_discovery_info()->get_repetitions_base_delay();
     ASSERT_EQ(base_delay, 200U);
 
-    for (std::uint32_t count = 0; count < 3; ++count) {
+    for (std::uint32_t count = 0; count < 3; ++count)
+    {
         const std::uint32_t expected = base_delay * (1U << (count + 1));
 
         AvailableService offered(0x0007, true, 0x01, 0x00000003, 3, nullptr, nullptr);
@@ -193,7 +226,8 @@ TEST(ServiceManagerPrivate, doubles_the_repetition_delay_for_each_repetition) {
     }
 }
 
-TEST(ServiceManagerPrivate, advances_repetition_offer_and_find_phases) {
+TEST(ServiceManagerPrivate, advances_repetition_offer_and_find_phases)
+{
     ScopedPrivateConfig config_file;
     auto router = std::make_shared<PrivateServiceRouter>();
     ServiceManager manager("private-test", config_file.path(), router);
@@ -215,7 +249,8 @@ TEST(ServiceManagerPrivate, advances_repetition_offer_and_find_phases) {
         manager.get_configuration()->get_service_discovery_info()->get_repetitions_max();
     manager.repetition_offer_list_[0x1001][0x0002].timer = 1;
     manager.on_send_cyclic_repetition_offer_service(offer_message);
-    for (int i = 0; i < 11; ++i) {
+    for (int i = 0; i < 11; ++i)
+    {
         manager.on_send_cyclic_repetition_offer_service(offer_message);
     }
     EXPECT_TRUE(manager.repetition_offer_list_.empty());
@@ -241,12 +276,14 @@ TEST(ServiceManagerPrivate, advances_repetition_offer_and_find_phases) {
     EXPECT_TRUE(find_message->entries().empty());
 }
 
-TEST(ServiceManagerPrivate, removes_expired_service_after_ttl_timer) {
+TEST(ServiceManagerPrivate, removes_expired_service_after_ttl_timer)
+{
     auto router = std::make_shared<PrivateServiceRouter>();
     ServiceManager manager("private-test", "", router);
     manager.available_service_list_[0x1001][0x0002] = AvailableService(0, false, 1, 3, 0, nullptr, nullptr);
 
-    for (int i = 0; i < 11; ++i) {
+    for (int i = 0; i < 11; ++i)
+    {
         manager.on_check_ttl_service();
     }
 
@@ -254,7 +291,8 @@ TEST(ServiceManagerPrivate, removes_expired_service_after_ttl_timer) {
     EXPECT_TRUE(manager.available_service_list_[0x1001].empty());
 }
 
-TEST(ServiceManagerPrivate, sends_cyclic_main_offer_for_main_provider) {
+TEST(ServiceManagerPrivate, sends_cyclic_main_offer_for_main_provider)
+{
     ScopedPrivateConfig config_file;
     auto router = std::make_shared<PrivateServiceRouter>();
     ServiceManager manager("private-test", config_file.path(), router);
@@ -263,7 +301,8 @@ TEST(ServiceManagerPrivate, sends_cyclic_main_offer_for_main_provider) {
     service = AvailableService(0x0007, true, 0x01, 0x00000003, 3, nullptr, nullptr);
     service.state = SOMEIP_SERVICE_STATE_MAIN;
 
-    for (int i = 0; i < 25 && message->entries().empty(); ++i) {
+    for (int i = 0; i < 25 && message->entries().empty(); ++i)
+    {
         manager.on_send_cyclic_main_offer_service(message);
     }
 
@@ -271,7 +310,8 @@ TEST(ServiceManagerPrivate, sends_cyclic_main_offer_for_main_provider) {
     EXPECT_EQ(message->entry(0).get_type(), SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
 }
 
-TEST(ServiceManagerPrivate, removes_expired_subscription_after_ttl_timer) {
+TEST(ServiceManagerPrivate, removes_expired_subscription_after_ttl_timer)
+{
     ScopedPrivateConfig config_file;
     auto router = std::make_shared<PrivateServiceRouter>();
     ServiceManager manager("private-test", config_file.path(), router);
@@ -282,7 +322,8 @@ TEST(ServiceManagerPrivate, removes_expired_subscription_after_ttl_timer) {
     subscription.ttl = 0;
     service.subscribe[0x0004].push_back(subscription);
 
-    for (int i = 0; i < 11; ++i) {
+    for (int i = 0; i < 11; ++i)
+    {
         manager.on_check_ttl_subscribe();
     }
 

@@ -12,8 +12,8 @@
  *
  ********************************************************************************/
 
-#include <cstring>
 #include <gtest/gtest.h>
+#include <cstring>
 #include <iostream>
 #include <memory>
 
@@ -24,7 +24,8 @@ using namespace lgsomeip::osabstraction;
 
 extern std::uint8_t test_message[1000];
 
-TEST(SDOption, get_address_option) {
+TEST(SDOption, get_address_option)
+{
     auto msg = MessageBuilder::create<SOMEIPSD>();
     MessageBuilder::build_message(*msg, test_message, sizeof(test_message));
 
@@ -32,7 +33,8 @@ TEST(SDOption, get_address_option) {
     EXPECT_EQ(addr->get_ip_address(), std::string("160.48.199.16"));
 }
 
-TEST(SDOption, set_address_option) {
+TEST(SDOption, set_address_option)
+{
     SDOption option;
 
     std::shared_ptr<Address> addr = std::make_shared<IP4Address>();
@@ -51,9 +53,10 @@ TEST(SDOption, set_address_option) {
     EXPECT_EQ(memcmp(ret, buf, len), 0);
 }
 
-TEST(SDOption, Configuration) {
-    std::uint8_t payload[19] = {0x00, 0x10, 0x01, 0x00, 0x05, 'a', 'b', 'c', '=', 'x',
-                                0x07, 'd',  'e',  'f',  '=',  '1', '2', '3', 0x00};
+TEST(SDOption, Configuration)
+{
+    std::uint8_t payload[19] = {
+        0x00, 0x10, 0x01, 0x00, 0x05, 'a', 'b', 'c', '=', 'x', 0x07, 'd', 'e', 'f', '=', '1', '2', '3', 0x00};
     SDOption option;
     option.deserialize(payload, 19);
 
@@ -66,27 +69,30 @@ TEST(SDOption, Configuration) {
     EXPECT_EQ(memcmp(payload, buf, len), 0);
 }
 
-TEST(SDOption, rejects_truncated_fixed_option) {
+TEST(SDOption, rejects_truncated_fixed_option)
+{
     std::uint8_t payload[] = {0x00, 0x09, 0x04};
     SDOption option;
 
     EXPECT_EQ(option.deserialize(payload, sizeof(payload)), 0U);
 }
 
-TEST(SDOption, setConfigurationAndSerialize) {
-    std::uint8_t payload[18] = {0x00, 0x0f, 0x01, 0x00, 0x0c, 0x4e, 0x41, 0x4d, 0x45,
-                                0x3d, 0x54, 0x65, 0x73, 0x74, 0x41, 0x70, 0x70, 0x00};
+TEST(SDOption, setConfigurationAndSerialize)
+{
+    std::uint8_t payload[18] = {
+        0x00, 0x0f, 0x01, 0x00, 0x0c, 0x4e, 0x41, 0x4d, 0x45, 0x3d, 0x54, 0x65, 0x73, 0x74, 0x41, 0x70, 0x70, 0x00};
     std::uint8_t data[18];
 
     SDOption option(SOMEIP_SD_OPTION::CONFIGURATION::TYPEID);
     option.set_configuration("NAME", "TestApp");
     std::uint32_t len = option.serialize(data);
 
-    EXPECT_EQ(len, 18U); // 15 + 3
+    EXPECT_EQ(len, 18U);  // 15 + 3
     EXPECT_EQ(memcmp(payload, data, 18), 0);
 }
 
-TEST(SDOptionTest, setConfigurationAndSerialize2) {
+TEST(SDOptionTest, setConfigurationAndSerialize2)
+{
     std::uint8_t payload[32] = {0x00, 0x1d, 0x01, 0x00, 0x1a, 0x4e, 0x41, 0x4d, 0x45, 0x3d, 0x41,
                                 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54,
                                 0x65, 0x73, 0x74, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x00};
@@ -100,7 +106,8 @@ TEST(SDOptionTest, setConfigurationAndSerialize2) {
     EXPECT_EQ(memcmp(payload, data, 32), 0);
 }
 
-TEST(SDOption, load_balancing_round_trip) {
+TEST(SDOption, load_balancing_round_trip)
+{
     SDOption source(SOMEIP_SD_OPTION::LOADBALANCING::TYPEID);
     source.set_priority(0x1234);
     source.set_weight(0x5678);
@@ -115,7 +122,8 @@ TEST(SDOption, load_balancing_round_trip) {
     EXPECT_EQ(decoded.get_weight(), 0x5678);
 }
 
-TEST(SDOption, configuration_can_remove_entries) {
+TEST(SDOption, configuration_can_remove_entries)
+{
     SDOption option(SOMEIP_SD_OPTION::CONFIGURATION::TYPEID);
     option.set_configuration("A", "1");
     option.set_configuration("B", "2");
@@ -128,7 +136,8 @@ TEST(SDOption, configuration_can_remove_entries) {
     EXPECT_EQ(option.get_configuration("B"), "2");
 }
 
-TEST(SDOption, ipv6_address_round_trip) {
+TEST(SDOption, ipv6_address_round_trip)
+{
     auto address = std::make_shared<IP6Address>();
     address->set_ip_address("2001:db8::1");
     address->set_port_address(30490);

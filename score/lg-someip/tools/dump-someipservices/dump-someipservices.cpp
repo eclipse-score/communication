@@ -12,31 +12,31 @@
  *
  ********************************************************************************/
 
-#include <iostream>
-#include <sstream>
-#include <bitset>
-#include <cstdio>
-#include <string>
-#include <vector>
-#include <cstdlib>
-#include <unistd.h>
-#include <cstring>
-#include <sys/types.h>
-#include <sys/un.h>
-#include <sys/socket.h>
-#include <sys/time.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <unistd.h>
+#include <bitset>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <ctime>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #if defined(QNX)
-#include <sys/neutrino.h>
-#include <sys/iomsg.h>
-#include <sys/iofunc.h>
-#include <sys/dispatch.h>
-#include <queue>
 #include <libgen.h>
+#include <sys/dispatch.h>
+#include <sys/iofunc.h>
+#include <sys/iomsg.h>
+#include <sys/neutrino.h>
+#include <queue>
 #endif
 
 #define SOMEIP_DAEMON_UDS_NAME "/tmp/someip/someip-0000"
@@ -46,7 +46,8 @@
 #define SOMEIP_DAEMON_MESSAGEPASSING_CHANNEL_NAME "someip/someip-0000"
 #endif
 
-constexpr bool is_little_endian(void) {
+constexpr bool is_little_endian(void)
+{
 #if defined(LINUX)
     return __BYTE_ORDER == __LITTLE_ENDIAN;
 #elif defined(QNX)
@@ -61,7 +62,8 @@ constexpr bool is_little_endian(void) {
 #endif
 }
 
-std::string get_current_time() {
+std::string get_current_time()
+{
     char buffer[26];
     struct tm* tm_info;
     struct timeval tv;
@@ -77,10 +79,12 @@ std::string get_current_time() {
     return current_time;
 }
 
-int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
+int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
+{
     // SOME/IP-SD data to trigger dumping the current state of SOME/IP services
-    std::string hex_chars("ff ff 81 00 00 00 00 20 00 00 00 00 00 00 02 00 00 00 00 00 00 00 00 10 f1 f2 00 00 00 00 "
-                          "00 00 00 00 00 00 00 00 00 00");
+    std::string hex_chars(
+        "ff ff 81 00 00 00 00 20 00 00 00 00 00 00 02 00 00 00 00 00 00 00 00 10 f1 f2 00 00 00 00 "
+        "00 00 00 00 00 00 00 00 00 00");
     std::istringstream hex_chars_stream(hex_chars);
     std::vector<unsigned char> bytes;
 
@@ -88,7 +92,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     unsigned int byte_value;
 
     // Add the header of the trigger message
-    while (hex_chars_stream >> std::hex >> byte_value) {
+    while (hex_chars_stream >> std::hex >> byte_value)
+    {
         bytes.push_back(static_cast<uint8_t>(byte_value));
     }
 
@@ -103,29 +108,35 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     struct sockaddr_un someip_daemon_addr{}, dump_someipservices_addr{};
 
     socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
-    if (socket_fd == -1) {
+    if (socket_fd == -1)
+    {
         perror("socket creation failed");
         exit(EXIT_FAILURE);
     }
 
     dump_someipservices_addr.sun_family = PF_UNIX;
-    std::snprintf(dump_someipservices_addr.sun_path, sizeof(dump_someipservices_addr.sun_path), "%s",
+    std::snprintf(dump_someipservices_addr.sun_path,
+                  sizeof(dump_someipservices_addr.sun_path),
+                  "%s",
                   DUMP_SOMEIPSERVICES_UDS_NAME);
 
     someip_daemon_addr.sun_family = PF_UNIX;
     std::snprintf(someip_daemon_addr.sun_path, sizeof(someip_daemon_addr.sun_path), "%s", SOMEIP_DAEMON_UDS_NAME);
 
     // remove the previous UDS file of this application
-    if (access(dump_someipservices_addr.sun_path, F_OK) == 0) {
+    if (access(dump_someipservices_addr.sun_path, F_OK) == 0)
+    {
         unlink(dump_someipservices_addr.sun_path);
     }
 
-    if (bind(socket_fd, (struct sockaddr*)&dump_someipservices_addr, sizeof(struct sockaddr_un)) == -1) {
+    if (bind(socket_fd, (struct sockaddr*)&dump_someipservices_addr, sizeof(struct sockaddr_un)) == -1)
+    {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
 
-    if (connect(socket_fd, (struct sockaddr*)&someip_daemon_addr, sizeof(struct sockaddr_un)) < 0) {
+    if (connect(socket_fd, (struct sockaddr*)&someip_daemon_addr, sizeof(struct sockaddr_un)) < 0)
+    {
         perror("connect failed");
         exit(EXIT_FAILURE);
     }
@@ -137,7 +148,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     // Send a trigger message to make the someip-daemon create the files
     // including the current subscription/providing states of SOME/IP services.
     const ssize_t bytes_written = write(socket_fd, (const char*)bytes.data(), bytes.size());
-    if (bytes_written != static_cast<ssize_t>(bytes.size())) {
+    if (bytes_written != static_cast<ssize_t>(bytes.size()))
+    {
         perror("sendto failed");
         exit(EXIT_FAILURE);
     }
@@ -153,7 +165,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
 
     constexpr std::uint16_t kMessageData = _IO_MAX + 1;
     constexpr std::uint16_t kMessageConnect = _IO_MAX + 2;
-    union MessagePassingIoHeader {
+    union MessagePassingIoHeader
+    {
         std::uint16_t type;
         struct _pulse pulse;
     };
@@ -164,14 +177,16 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     std::string name_path = "/dev/name/local/";
     name_path += server_name;
 
-    if (waitfor(name_path.c_str(), 100 * 1000, 100) != 0) {
+    if (waitfor(name_path.c_str(), 100 * 1000, 100) != 0)
+    {
         std::cerr << get_current_time() << ": Message-passing server was not found." << std::endl;
         return EXIT_FAILURE;
     }
 
     connection_id = name_open(server_name.data(), 0);
 
-    if (connection_id != -1) {
+    if (connection_id != -1)
+    {
         ConnectServerInfo(0, connection_id, &server_info);
 
         MessagePassingIoHeader header;
@@ -190,7 +205,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
         header.type = kMessageData;
         MsgSendv(connection_id, iov, 2, NULL, 0);
         name_close(connection_id);
-    } else {
+    }
+    else
+    {
         std::cerr << get_current_time() << ": Cannot connect with messagepassing server." << std::endl;
         return EXIT_FAILURE;
     }

@@ -15,17 +15,18 @@
 #ifndef LG_SOMEIP_SOMEIP_MESSAGE_MESSAGE_H
 #define LG_SOMEIP_SOMEIP_MESSAGE_MESSAGE_H
 
-#include <message/MessageSD.h>
-#include <message/MessageSOMEIP.h>
-#include <message/MessagePayload.h>
 #include <message/MessageBuilder.h>
 #include <message/MessageComposer.h>
+#include <message/MessagePayload.h>
+#include <message/MessageSD.h>
+#include <message/MessageSOMEIP.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 using Message = MessageSOMEIP;
 using Payload = MessagePayload;
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_SOMEIP_MESSAGE_MESSAGE_H
+#endif  // LG_SOMEIP_SOMEIP_MESSAGE_MESSAGE_H

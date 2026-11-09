@@ -12,9 +12,9 @@
  *
  ********************************************************************************/
 
+#include <unistd.h>
 #include <cstdint>
 #include <iostream>
-#include <unistd.h>
 
 #include <message/Message.h>
 #include <runtime/ApplicationManager.h>
@@ -37,13 +37,15 @@ std::map<std::uint16_t, std::chrono::time_point<std::chrono::steady_clock>> time
 int received_count = 0;
 int sent_count = 0;
 
-void on_message(std::shared_ptr<Message> msg) {
+void on_message(std::shared_ptr<Message> msg)
+{
     std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
     std::uint32_t request_id = msg->get_request_id();
     std::chrono::duration<double> difference = end - time_check[static_cast<std::uint16_t>(request_id)];
     time_check.erase(static_cast<std::uint16_t>(request_id));
 
-    if (received_count % 1000 == 0) {
+    if (received_count % 1000 == 0)
+    {
         std::cout << application_name << " / on_message Called, response time = " << std::dec
                   << difference.count() * 1000000 << " microsecond" << std::endl;
     }
@@ -51,37 +53,44 @@ void on_message(std::shared_ptr<Message> msg) {
     received_count++;
 }
 
-void on_availability(std::uint16_t available_service_id, [[maybe_unused]] std::uint16_t instance_id, bool available) {
+void on_availability(std::uint16_t available_service_id, [[maybe_unused]] std::uint16_t instance_id, bool available)
+{
     std::cout << application_name << " / on_availability Called!! / state = " << available << std::endl;
-    if (available) {
-        application_manager->register_message_handler(available_service_id, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID,
-                                                      on_message);
-    } else {
+    if (available)
+    {
+        application_manager->register_message_handler(
+            available_service_id, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID, on_message);
+    }
+    else
+    {
         application_manager->unregister_message_handler(available_service_id, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID);
     }
 }
 
-void on_state(std::uint16_t state) {
+void on_state(std::uint16_t state)
+{
     std::cout << application_name << " / on_state Called!! / state = " << state << std::endl;
 
-    application_manager->request_service(static_cast<std::uint16_t>(service_id), SOMEIP_INSTANCE_ID,
-                                         SOMEIP_MAJOR_VERSION, SOMEIP_MINOR_VERSION);
-    application_manager->register_message_handler(static_cast<std::uint16_t>(service_id), SOMEIP_INSTANCE_ID,
-                                                  SOMEIP_METHOD_ID, on_message);
+    application_manager->request_service(
+        static_cast<std::uint16_t>(service_id), SOMEIP_INSTANCE_ID, SOMEIP_MAJOR_VERSION, SOMEIP_MINOR_VERSION);
+    application_manager->register_message_handler(
+        static_cast<std::uint16_t>(service_id), SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID, on_message);
 }
 
-int main([[maybe_unused]] int argc, char** argv) {
-    service_id = (uint16_t)strtol(argv[1], NULL, 16) + 0x1000; // get the parameter how many services will be started
+int main([[maybe_unused]] int argc, char** argv)
+{
+    service_id = (uint16_t)strtol(argv[1], NULL, 16) + 0x1000;  // get the parameter how many services will be started
     std::cout << "service_id = " << std::dec << service_id << "service_id hex = " << std::hex << service_id << std::dec
               << std::endl;
-    std::string app_number = argv[1];  // get the parameter how many apps will be started
-    int send_interval = stoi(argv[2]); // get the parameter as send interval(microseconds)
+    std::string app_number = argv[1];   // get the parameter how many apps will be started
+    int send_interval = stoi(argv[2]);  // get the parameter as send interval(microseconds)
     application_name = "request" + app_number;
     application_manager = new ApplicationManager(application_name);
     application_manager->init();
     application_manager->register_application_state_handler(on_state);
     application_manager->start();
-    while (true) {
+    while (true)
+    {
         auto message = MessageBuilder::create<SOMEIP>();
         message->set_message_id(service_id << 16 | 0x0001);
         message->set_interface_version(0x00);

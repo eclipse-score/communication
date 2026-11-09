@@ -18,22 +18,27 @@
 
 using namespace lgsomeip;
 
-TEST(TimerManager, fires_one_shot_timer_once) {
+TEST(TimerManager, fires_one_shot_timer_once)
+{
     auto& manager = TimerManager::get();
     int callback_count = 0;
-    const auto timer_id = manager.start_one_shot_timer(std::chrono::milliseconds(0),
-                                                       [&callback_count](TimerManager::TimerId) { ++callback_count; });
+    const auto timer_id =
+        manager.start_one_shot_timer(std::chrono::milliseconds(0), [&callback_count](TimerManager::TimerId) {
+            ++callback_count;
+        });
 
     manager.iterate_loop();
     EXPECT_EQ(callback_count, 1);
     manager.kill_timer(timer_id);
 }
 
-TEST(TimerManager, repeating_timer_can_be_killed) {
+TEST(TimerManager, repeating_timer_can_be_killed)
+{
     auto& manager = TimerManager::get();
     int callback_count = 0;
-    const auto timer_id = manager.start_timer(std::chrono::milliseconds(0),
-                                              [&callback_count](TimerManager::TimerId) { ++callback_count; });
+    const auto timer_id = manager.start_timer(std::chrono::milliseconds(0), [&callback_count](TimerManager::TimerId) {
+        ++callback_count;
+    });
 
     manager.iterate_loop();
     ASSERT_EQ(callback_count, 1);

@@ -23,16 +23,18 @@
 #include "rapidjson/istreamwrapper.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
+#include <socket/Address.h>
 #include <iostream>
+#include <memory>
 #include <unordered_map>
 #include <vector>
-#include <memory>
-#include <socket/Address.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class ServiceInfo {
-public:
+class ServiceInfo
+{
+  public:
     ServiceInfo() {}
     ~ServiceInfo() {}
 
@@ -66,7 +68,7 @@ public:
     bool is_provider() const;
     bool is_secure_connection() const;
 
-private:
+  private:
     std::vector<ConfigEvent> events_;
     std::unordered_map<std::uint16_t, ConfigEventgroup> event_groups_;
     std::unordered_map<std::uint16_t, std::vector<std::uint16_t>> groups_by_event_;
@@ -98,6 +100,6 @@ private:
     bool has_minimum_minor_version_{false};
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_CONFIG_SERVICEINFO_H
+#endif  // LG_SOMEIP_CONFIG_SERVICEINFO_H

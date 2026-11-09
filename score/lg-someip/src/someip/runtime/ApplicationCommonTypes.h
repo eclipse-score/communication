@@ -17,14 +17,15 @@
 
 #include <cstdint>
 
+#include <message/Message.h>
+#include <socket/Address.h>
 #include <functional>
 #include <map>
 #include <memory>
-#include <message/Message.h>
 #include <set>
-#include <socket/Address.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 using available_t = std::map<std::uint16_t, std::map<std::uint16_t, std::map<std::uint8_t, std::uint32_t>>>;
 
@@ -52,10 +53,16 @@ using error_handler_t = std::function<void(const uint16_t)>;
 
 using epsilon_change_func_t = std::function<bool(const std::shared_ptr<Payload>&, const std::shared_ptr<Payload>&)>;
 
-enum class SubscribeState : std::uint32_t { SUBSCRIBED, UPDATE, UNSUBSCRIBED };
+enum class SubscribeState : std::uint32_t
+{
+    SUBSCRIBED,
+    UPDATE,
+    UNSUBSCRIBED
+};
 
 // Service Management Types
-struct RequestedSubscribe {
+struct RequestedSubscribe
+{
     SubscribeState state{SubscribeState::UNSUBSCRIBED};
     std::uint32_t ttl{0};
 
@@ -63,17 +70,23 @@ struct RequestedSubscribe {
     std::uint32_t request_id_received{0};
     std::uint32_t request_id_management{0};
     std::string ip_address;
-    std::shared_ptr<lgsomeip::osabstraction::Address> tcp_address{nullptr}; // for external service
-    std::shared_ptr<lgsomeip::osabstraction::Address> udp_address{nullptr}; // for external service
+    std::shared_ptr<lgsomeip::osabstraction::Address> tcp_address{nullptr};  // for external service
+    std::shared_ptr<lgsomeip::osabstraction::Address> udp_address{nullptr};  // for external service
 };
 
 // Service Management Types
-struct AvailableService {
+struct AvailableService
+{
     AvailableService() {}
-    AvailableService(std::uint16_t app_id, bool in_config_file, std::uint8_t major_version, std::uint32_t minor_version,
-                     std::uint32_t ttl, std::shared_ptr<lgsomeip::osabstraction::Address> tcp,
+    AvailableService(std::uint16_t app_id,
+                     bool in_config_file,
+                     std::uint8_t major_version,
+                     std::uint32_t minor_version,
+                     std::uint32_t ttl,
+                     std::shared_ptr<lgsomeip::osabstraction::Address> tcp,
                      std::shared_ptr<lgsomeip::osabstraction::Address> udp,
-                     std::shared_ptr<lgsomeip::osabstraction::Address> multicast = nullptr) {
+                     std::shared_ptr<lgsomeip::osabstraction::Address> multicast = nullptr)
+    {
         this->app_id = app_id;
         is_in_config_file = in_config_file;
         is_internal = (this->app_id != 0);
@@ -85,7 +98,8 @@ struct AvailableService {
         this->multicast = multicast;
     }
 
-    AvailableService(const AvailableService& obj) {
+    AvailableService(const AvailableService& obj)
+    {
         app_id = obj.app_id;
         is_internal = obj.is_internal;
         is_in_config_file = obj.is_in_config_file;
@@ -110,16 +124,18 @@ struct AvailableService {
     // Set once the route to the service exists. Requesters are only told about the service after that.
     // Guarded by ServiceManager::available_list_mutex_.
     bool route_ready{false};
-    std::uint16_t app_id{0};                                                // for internal service
-    std::shared_ptr<lgsomeip::osabstraction::Address> tcp_address{nullptr}; // for external service
-    std::shared_ptr<lgsomeip::osabstraction::Address> udp_address{nullptr}; // for external service
-    std::shared_ptr<lgsomeip::osabstraction::Address> multicast{nullptr};   // for external service
+    std::uint16_t app_id{0};                                                 // for internal service
+    std::shared_ptr<lgsomeip::osabstraction::Address> tcp_address{nullptr};  // for external service
+    std::shared_ptr<lgsomeip::osabstraction::Address> udp_address{nullptr};  // for external service
+    std::shared_ptr<lgsomeip::osabstraction::Address> multicast{nullptr};    // for external service
 
     std::map<std::uint16_t, std::vector<struct RequestedSubscribe>> subscribe;
 };
 
-struct RequestedService {
-    RequestedService(std::uint16_t app_id, std::uint8_t major_version, std::uint32_t minor_version) {
+struct RequestedService
+{
+    RequestedService(std::uint16_t app_id, std::uint8_t major_version, std::uint32_t minor_version)
+    {
         this->app_id = app_id;
         major = major_version;
         minor = minor_version;
@@ -133,6 +149,6 @@ struct RequestedService {
     std::uint32_t timer{0};
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_APPLICATION_APPLICATION_COMMON_TYPES_H
+#endif  // LG_SOMEIP_APPLICATION_APPLICATION_COMMON_TYPES_H

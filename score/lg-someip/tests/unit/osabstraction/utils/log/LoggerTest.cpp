@@ -23,39 +23,47 @@
 #include <utils/log/formatLog.h>
 #include <utils/log/logger.h>
 
-namespace {
+namespace
+{
 
-class CoutCapture {
-public:
+class CoutCapture
+{
+  public:
     CoutCapture() : original_buffer_(std::cout.rdbuf(captured_.rdbuf())) {}
 
-    ~CoutCapture() {
+    ~CoutCapture()
+    {
         std::cout.rdbuf(original_buffer_);
     }
 
-    std::string str() const {
+    std::string str() const
+    {
         return captured_.str();
     }
 
-private:
+  private:
     std::ostringstream captured_;
     std::streambuf* original_buffer_;
 };
 
-void set_log_level(lgsomeip::Logger& instance, const std::string& level) {
+void set_log_level(lgsomeip::Logger& instance, const std::string& level)
+{
     CoutCapture capture;
     instance.init(level);
 }
 
-void emit_stream_log() {
+void emit_stream_log()
+{
     LGSOMEIP_LOG_INFO << "stream message " << 42;
 }
 
-void emit_location_log() {
+void emit_location_log()
+{
     LGSOMEIP_LOG_INFO << "located message";
 }
 
-TEST(LoggerTest, AcceptsConfiguredLevelNames) {
+TEST(LoggerTest, AcceptsConfiguredLevelNames)
+{
     auto& instance = lgsomeip::Logger::instance();
     set_log_level(instance, "debug");
 
@@ -66,7 +74,8 @@ TEST(LoggerTest, AcceptsConfiguredLevelNames) {
     EXPECT_NE(capture.str().find("debug message"), std::string::npos);
 }
 
-TEST(LoggerTest, OmitsSourceLocationFromDefaultOutput) {
+TEST(LoggerTest, OmitsSourceLocationFromDefaultOutput)
+{
     auto& instance = lgsomeip::Logger::instance();
     set_log_level(instance, "info");
 
@@ -78,7 +87,8 @@ TEST(LoggerTest, OmitsSourceLocationFromDefaultOutput) {
     EXPECT_NE(capture.str().find("located message"), std::string::npos);
 }
 
-TEST(LoggerTest, StreamsMessageDirectly) {
+TEST(LoggerTest, StreamsMessageDirectly)
+{
     auto& instance = lgsomeip::Logger::instance();
     set_log_level(instance, "info");
 
@@ -88,7 +98,8 @@ TEST(LoggerTest, StreamsMessageDirectly) {
     EXPECT_NE(capture.str().find("stream message 42"), std::string::npos);
 }
 
-TEST(LoggerTest, SkipsDisabledStreamExpression) {
+TEST(LoggerTest, SkipsDisabledStreamExpression)
+{
     auto& instance = lgsomeip::Logger::instance();
     set_log_level(instance, "info");
 
@@ -100,7 +111,8 @@ TEST(LoggerTest, SkipsDisabledStreamExpression) {
     EXPECT_TRUE(capture.str().empty());
 }
 
-TEST(LoggerTest, FiltersBeforeEvaluatingTheMessage) {
+TEST(LoggerTest, FiltersBeforeEvaluatingTheMessage)
+{
     auto& instance = lgsomeip::Logger::instance();
     set_log_level(instance, "info");
 
@@ -112,7 +124,8 @@ TEST(LoggerTest, FiltersBeforeEvaluatingTheMessage) {
     EXPECT_TRUE(capture.str().empty());
 }
 
-TEST(LoggerTest, WritesConfiguredFileSink) {
+TEST(LoggerTest, WritesConfiguredFileSink)
+{
     auto& instance = lgsomeip::Logger::instance();
     const std::string path = "logger_file_test.log";
     std::remove(path.c_str());
@@ -131,7 +144,8 @@ TEST(LoggerTest, WritesConfiguredFileSink) {
     std::remove(path.c_str());
 }
 
-TEST(FormatLogTest, FormatsRelatedIdsWithConsistentBrackets) {
+TEST(FormatLogTest, FormatsRelatedIdsWithConsistentBrackets)
+{
     EXPECT_EQ(lgsomeip::message_id_to_string(static_cast<std::uint8_t>(0xab), 2), "ab");
     EXPECT_EQ(lgsomeip::message_id_to_string(static_cast<std::uint8_t>(0xab), 4), "00ab");
     EXPECT_EQ(lgsomeip::format_service_instance_id(0x1234, 0x0002), "[1234:0002]");
@@ -143,7 +157,8 @@ TEST(FormatLogTest, FormatsRelatedIdsWithConsistentBrackets) {
     EXPECT_EQ(lgsomeip::format_named_id("EventID", 0x00ab, 4), "EventID[00ab]");
 }
 
-TEST(FormatLogTest, CapsByteMessageDump) {
+TEST(FormatLogTest, CapsByteMessageDump)
+{
     auto& instance = lgsomeip::Logger::instance();
     set_log_level(instance, "verbose");
 
@@ -155,4 +170,4 @@ TEST(FormatLogTest, CapsByteMessageDump) {
     set_log_level(instance, "info");
 }
 
-} // namespace
+}  // namespace

@@ -28,33 +28,35 @@
 #if defined(ENABLE_DLT)
 #include <dlt/dlt.h>
 #else
+#include <sys/time.h>
+#include <unistd.h>
 #include <chrono>
+#include <cmath>
+#include <cstdio>
 #include <ctime>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <string>
-#include <unistd.h>
-#include <cstdio>
-#include <sys/time.h>
-#include <cmath>
-#include <iomanip>
 
 #if defined(LINUX)
 #include <sys/syscall.h>
-#endif // LINUX
-#endif // ENABLE_DLT
+#endif  // LINUX
+#endif  // ENABLE_DLT
 
 #if !defined(ENABLE_DLT) && !defined(_GNU_SOURCE)
 // Declared at global scope; inside namespace lgsomeip it would not link.
 extern char* __progname;
 #endif
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 using LogStream = std::ostream;
 
 #if !defined(ENABLE_DLT)
-inline std::size_t get_thread_id() {
+inline std::size_t get_thread_id()
+{
 #if defined(LINUX)
     return static_cast<std::size_t>(syscall(SYS_gettid));
 #else
@@ -66,20 +68,31 @@ inline std::size_t get_thread_id() {
 static const char* app_name = program_invocation_short_name;
 #else
 static const char* app_name = ::__progname;
-#endif // _GNU_SOURCE
-#endif // ENABLE_DLT
+#endif  // _GNU_SOURCE
+#endif  // ENABLE_DLT
 
-class Logger {
-public:
-    enum class LogLevel : unsigned char { Off, Fatal, Error, Warn, Info, Debug, Verbose };
+class Logger
+{
+  public:
+    enum class LogLevel : unsigned char
+    {
+        Off,
+        Fatal,
+        Error,
+        Warn,
+        Info,
+        Debug,
+        Verbose
+    };
 
-public:
+  public:
     Logger(const Logger&) = delete;
     void operator=(const Logger&) = delete;
 
     // Sets the console log level (no-op when built with ENABLE_DLT;
     // the DLT daemon controls verbosity at runtime).
-    void init(std::string log_level) {
+    void init(std::string log_level)
+    {
 #if !defined(ENABLE_DLT)
         init(std::move(log_level), true, false, "");
 #else
@@ -87,7 +100,8 @@ public:
 #endif
     }
 
-    void init(std::string log_level, bool console_enabled, bool file_enabled, std::string file_path) {
+    void init(std::string log_level, bool console_enabled, bool file_enabled, std::string file_path)
+    {
 #if !defined(ENABLE_DLT)
         const LogLevel level = parse_log_level(log_level);
         log_level_.store(level, std::memory_order_relaxed);
@@ -96,10 +110,12 @@ public:
             std::lock_guard<std::mutex> lock(output_mutex_);
             console_enabled_.store(console_enabled, std::memory_order_relaxed);
             file_enabled_.store(false, std::memory_order_relaxed);
-            if (log_file_.is_open()) {
+            if (log_file_.is_open())
+            {
                 log_file_.close();
             }
-            if (file_enabled && !file_path.empty()) {
+            if (file_enabled && !file_path.empty())
+            {
                 log_file_.open(file_path.c_str(), std::ios::out | std::ios::app);
                 file_enabled_.store(log_file_.is_open(), std::memory_order_relaxed);
             }
@@ -117,12 +133,14 @@ public:
 #endif
     }
 
-    static Logger& instance() {
+    static Logger& instance()
+    {
         static Logger instance;
         return instance;
     }
 
-    bool is_enabled(LogLevel level) {
+    bool is_enabled(LogLevel level)
+    {
 #if defined(ENABLE_DLT)
         const DltLogLevelType dlt_level = dlt_level_for(level);
         return dlt_level != DLT_LOG_OFF && DLT_IS_LOG_LEVEL_ENABLED(dlt_context_, dlt_level);
@@ -132,62 +150,82 @@ public:
 #endif
     }
 
-    class LogMessage : public std::ostream {
-    public:
+    class LogMessage : public std::ostream
+    {
+      public:
         LogMessage(Logger& logger, LogLevel level, const char* level_name)
-            : std::ostream(nullptr), logger_(logger), level_(level), level_name_(level_name),
-              buffer_(logger.is_enabled(level)) {
+            : std::ostream(nullptr),
+              logger_(logger),
+              level_(level),
+              level_name_(level_name),
+              buffer_(logger.is_enabled(level))
+        {
             rdbuf(&buffer_);
         }
 
-        template <typename Log> LogMessage& operator()(Log&& print_log) {
-            if (buffer_.enabled()) {
+        template <typename Log>
+        LogMessage& operator()(Log&& print_log)
+        {
+            if (buffer_.enabled())
+            {
                 print_log(*this);
             }
             return *this;
         }
 
-        ~LogMessage() noexcept override {
-            try {
-                if (buffer_.enabled()) {
+        ~LogMessage() noexcept override
+        {
+            try
+            {
+                if (buffer_.enabled())
+                {
                     logger_.dispatch(level_, level_name_, buffer_.take());
                 }
-            } catch (...) {
+            }
+            catch (...)
+            {
             }
         }
 
         LogMessage(const LogMessage&) = delete;
         LogMessage& operator=(const LogMessage&) = delete;
 
-    private:
-        class MessageBuffer : public std::streambuf {
-        public:
+      private:
+        class MessageBuffer : public std::streambuf
+        {
+          public:
             explicit MessageBuffer(bool enabled) : enabled_(enabled) {}
 
-            bool enabled() const {
+            bool enabled() const
+            {
                 return enabled_;
             }
 
-            std::string take() {
+            std::string take()
+            {
                 return std::move(message_);
             }
 
-        protected:
-            int_type overflow(int_type character) override {
-                if (enabled_ && !traits_type::eq_int_type(character, traits_type::eof())) {
+          protected:
+            int_type overflow(int_type character) override
+            {
+                if (enabled_ && !traits_type::eq_int_type(character, traits_type::eof()))
+                {
                     message_.push_back(static_cast<char>(character));
                 }
                 return traits_type::not_eof(character);
             }
 
-            std::streamsize xsputn(const char* data, std::streamsize size) override {
-                if (enabled_) {
+            std::streamsize xsputn(const char* data, std::streamsize size) override
+            {
+                if (enabled_)
+                {
                     message_.append(data, static_cast<std::size_t>(size));
                 }
                 return size;
             }
 
-        private:
+          private:
             bool enabled_;
             std::string message_;
         };
@@ -198,9 +236,12 @@ public:
         MessageBuffer buffer_;
     };
 
-    template <typename Log> void log_fatal(Log&& print_log) {
+    template <typename Log>
+    void log_fatal(Log&& print_log)
+    {
 #if defined(ENABLE_DLT)
-        if (!is_enabled(LogLevel::Fatal)) {
+        if (!is_enabled(LogLevel::Fatal))
+        {
             return;
         }
         std::ostringstream output_stream;
@@ -212,7 +253,9 @@ public:
 #endif
     }
 
-    template <typename Log> void log_fatal(const char* file, int line, const char* function, Log&& print_log) {
+    template <typename Log>
+    void log_fatal(const char* file, int line, const char* function, Log&& print_log)
+    {
 #if defined(ENABLE_DLT)
         (void)file;
         (void)line;
@@ -223,9 +266,12 @@ public:
 #endif
     }
 
-    template <typename Log> void log_error(Log&& print_log) {
+    template <typename Log>
+    void log_error(Log&& print_log)
+    {
 #if defined(ENABLE_DLT)
-        if (!is_enabled(LogLevel::Error)) {
+        if (!is_enabled(LogLevel::Error))
+        {
             return;
         }
         std::ostringstream output_stream;
@@ -237,7 +283,9 @@ public:
 #endif
     }
 
-    template <typename Log> void log_error(const char* file, int line, const char* function, Log&& print_log) {
+    template <typename Log>
+    void log_error(const char* file, int line, const char* function, Log&& print_log)
+    {
 #if defined(ENABLE_DLT)
         (void)file;
         (void)line;
@@ -248,9 +296,12 @@ public:
 #endif
     }
 
-    template <typename Log> void log_warn(Log&& print_log) {
+    template <typename Log>
+    void log_warn(Log&& print_log)
+    {
 #if defined(ENABLE_DLT)
-        if (!is_enabled(LogLevel::Warn)) {
+        if (!is_enabled(LogLevel::Warn))
+        {
             return;
         }
         std::ostringstream output_stream;
@@ -262,7 +313,9 @@ public:
 #endif
     }
 
-    template <typename Log> void log_warn(const char* file, int line, const char* function, Log&& print_log) {
+    template <typename Log>
+    void log_warn(const char* file, int line, const char* function, Log&& print_log)
+    {
 #if defined(ENABLE_DLT)
         (void)file;
         (void)line;
@@ -273,9 +326,12 @@ public:
 #endif
     }
 
-    template <typename Log> void log_info(Log&& print_log) {
+    template <typename Log>
+    void log_info(Log&& print_log)
+    {
 #if defined(ENABLE_DLT)
-        if (!is_enabled(LogLevel::Info)) {
+        if (!is_enabled(LogLevel::Info))
+        {
             return;
         }
         std::ostringstream output_stream;
@@ -287,7 +343,9 @@ public:
 #endif
     }
 
-    template <typename Log> void log_info(const char* file, int line, const char* function, Log&& print_log) {
+    template <typename Log>
+    void log_info(const char* file, int line, const char* function, Log&& print_log)
+    {
 #if defined(ENABLE_DLT)
         (void)file;
         (void)line;
@@ -298,9 +356,12 @@ public:
 #endif
     }
 
-    template <typename Log> void log_debug(Log&& print_log) {
+    template <typename Log>
+    void log_debug(Log&& print_log)
+    {
 #if defined(ENABLE_DLT)
-        if (!is_enabled(LogLevel::Debug)) {
+        if (!is_enabled(LogLevel::Debug))
+        {
             return;
         }
         std::ostringstream output_stream;
@@ -312,7 +373,9 @@ public:
 #endif
     }
 
-    template <typename Log> void log_debug(const char* file, int line, const char* function, Log&& print_log) {
+    template <typename Log>
+    void log_debug(const char* file, int line, const char* function, Log&& print_log)
+    {
 #if defined(ENABLE_DLT)
         (void)file;
         (void)line;
@@ -323,9 +386,12 @@ public:
 #endif
     }
 
-    template <typename Log> void log_verbose(Log&& print_log) {
+    template <typename Log>
+    void log_verbose(Log&& print_log)
+    {
 #if defined(ENABLE_DLT)
-        if (!is_enabled(LogLevel::Verbose)) {
+        if (!is_enabled(LogLevel::Verbose))
+        {
             return;
         }
         std::ostringstream output_stream;
@@ -337,7 +403,9 @@ public:
 #endif
     }
 
-    template <typename Log> void log_verbose(const char* file, int line, const char* function, Log&& print_log) {
+    template <typename Log>
+    void log_verbose(const char* file, int line, const char* function, Log&& print_log)
+    {
 #if defined(ENABLE_DLT)
         (void)file;
         (void)line;
@@ -348,33 +416,37 @@ public:
 #endif
     }
 
-private:
+  private:
 #if defined(ENABLE_DLT)
-    static DltLogLevelType dlt_level_for(LogLevel level) {
-        switch (level) {
-        case LogLevel::Fatal:
-            return DLT_LOG_FATAL;
-        case LogLevel::Error:
-            return DLT_LOG_ERROR;
-        case LogLevel::Warn:
-            return DLT_LOG_WARN;
-        case LogLevel::Info:
-            return DLT_LOG_INFO;
-        case LogLevel::Debug:
-            return DLT_LOG_DEBUG;
-        case LogLevel::Verbose:
-            return DLT_LOG_VERBOSE;
-        case LogLevel::Off:
-            return DLT_LOG_OFF;
+    static DltLogLevelType dlt_level_for(LogLevel level)
+    {
+        switch (level)
+        {
+            case LogLevel::Fatal:
+                return DLT_LOG_FATAL;
+            case LogLevel::Error:
+                return DLT_LOG_ERROR;
+            case LogLevel::Warn:
+                return DLT_LOG_WARN;
+            case LogLevel::Info:
+                return DLT_LOG_INFO;
+            case LogLevel::Debug:
+                return DLT_LOG_DEBUG;
+            case LogLevel::Verbose:
+                return DLT_LOG_VERBOSE;
+            case LogLevel::Off:
+                return DLT_LOG_OFF;
         }
         return DLT_LOG_OFF;
     }
 #endif
 
-    void dispatch(LogLevel level, const char* level_name, std::string message) {
+    void dispatch(LogLevel level, const char* level_name, std::string message)
+    {
 #if defined(ENABLE_DLT)
         const DltLogLevelType dlt_level = dlt_level_for(level);
-        if (dlt_level == DLT_LOG_OFF) {
+        if (dlt_level == DLT_LOG_OFF)
+        {
             return;
         }
         (void)level_name;
@@ -386,17 +458,20 @@ private:
 
 #if defined(ENABLE_DLT)
     DltContext dlt_context_;
-    Logger() {
+    Logger()
+    {
         dlt_enable_local_print();
         DLT_REGISTER_APP("LSIP", "LG SOME/IP");
         DLT_REGISTER_CONTEXT(dlt_context_, "LSIP", "LG SOME/IP logging context");
     }
-    ~Logger() {
+    ~Logger()
+    {
         DLT_UNREGISTER_CONTEXT(dlt_context_);
         DLT_UNREGISTER_APP();
     }
 #else
-    struct LogRecord {
+    struct LogRecord
+    {
         LogLevel level;
         const char* level_name;
         std::string message;
@@ -404,14 +479,18 @@ private:
         std::size_t thread_id;
     };
 
-    static LogLevel parse_log_level(std::string log_level) {
-        for (char& character : log_level) {
-            if (character >= 'A' && character <= 'Z') {
+    static LogLevel parse_log_level(std::string log_level)
+    {
+        for (char& character : log_level)
+        {
+            if (character >= 'A' && character <= 'Z')
+            {
                 character = static_cast<char>(character - 'A' + 'a');
             }
         }
 
-        if (!log_level.empty() && log_level.front() == 'k') {
+        if (!log_level.empty() && log_level.front() == 'k')
+        {
             log_level.erase(log_level.begin());
         }
 
@@ -430,40 +509,51 @@ private:
         return LogLevel::Info;
     }
 
-    static const char* level_name(LogLevel level) {
-        switch (level) {
-        case LogLevel::Off:
-            return "off";
-        case LogLevel::Fatal:
-            return "fatal";
-        case LogLevel::Error:
-            return "error";
-        case LogLevel::Warn:
-            return "warn";
-        case LogLevel::Info:
-            return "info";
-        case LogLevel::Debug:
-            return "debug";
-        case LogLevel::Verbose:
-            return "verbose";
+    static const char* level_name(LogLevel level)
+    {
+        switch (level)
+        {
+            case LogLevel::Off:
+                return "off";
+            case LogLevel::Fatal:
+                return "fatal";
+            case LogLevel::Error:
+                return "error";
+            case LogLevel::Warn:
+                return "warn";
+            case LogLevel::Info:
+                return "info";
+            case LogLevel::Debug:
+                return "debug";
+            case LogLevel::Verbose:
+                return "verbose";
         }
         return "info";
     }
 
-    bool should_log(LogLevel level) const {
+    bool should_log(LogLevel level) const
+    {
         return static_cast<unsigned int>(log_level_.load(std::memory_order_relaxed)) >=
                static_cast<unsigned int>(level);
     }
 
-    template <typename Log> void log(LogLevel level, const char* level_name_text, Log&& print_log) {
+    template <typename Log>
+    void log(LogLevel level, const char* level_name_text, Log&& print_log)
+    {
         log(level, level_name_text, nullptr, 0, nullptr, std::forward<Log>(print_log));
     }
 
     template <typename Log>
-    void log(LogLevel level, const char* level_name_text, const char* file, int line, const char* function,
-             Log&& print_log) {
+    void log(LogLevel level,
+             const char* level_name_text,
+             const char* file,
+             int line,
+             const char* function,
+             Log&& print_log)
+    {
         if (!should_log(level) ||
-            (!console_enabled_.load(std::memory_order_relaxed) && !file_enabled_.load(std::memory_order_relaxed))) {
+            (!console_enabled_.load(std::memory_order_relaxed) && !file_enabled_.load(std::memory_order_relaxed)))
+        {
             return;
         }
 
@@ -475,9 +565,10 @@ private:
         write_record(level, level_name_text, output_stream.str());
     }
 
-    void write_record(LogLevel level, const char* level_name_text, std::string message) {
-        const LogRecord record{level, level_name_text, std::move(message), std::chrono::system_clock::now(),
-                               get_thread_id()};
+    void write_record(LogLevel level, const char* level_name_text, std::string message)
+    {
+        const LogRecord record{
+            level, level_name_text, std::move(message), std::chrono::system_clock::now(), get_thread_id()};
         const auto duration = record.timestamp.time_since_epoch();
         const auto seconds_duration = std::chrono::duration_cast<std::chrono::seconds>(duration);
         const std::time_t seconds = static_cast<std::time_t>(seconds_duration.count());
@@ -495,11 +586,13 @@ private:
         const std::string output = output_stream.str();
 
         std::lock_guard<std::mutex> lock(output_mutex_);
-        if (console_enabled_.load(std::memory_order_relaxed)) {
+        if (console_enabled_.load(std::memory_order_relaxed))
+        {
             std::cout << output;
             std::cout.flush();
         }
-        if (file_enabled_.load(std::memory_order_relaxed) && log_file_.is_open()) {
+        if (file_enabled_.load(std::memory_order_relaxed) && log_file_.is_open())
+        {
             log_file_ << output;
             log_file_.flush();
         }
@@ -514,12 +607,13 @@ private:
 #endif
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
 // Common expansion shared by all LGSOMEIP_LOG_* macros below; LEVEL and LEVEL_NAME are substituted per level.
-#define LGSOMEIP_LOG_IMPL(LEVEL, LEVEL_NAME)                                                                           \
-    for (bool lgsomeip_log_enabled = lgsomeip::Logger::instance().is_enabled(lgsomeip::Logger::LogLevel::LEVEL);       \
-         lgsomeip_log_enabled; lgsomeip_log_enabled = false)                                                           \
+#define LGSOMEIP_LOG_IMPL(LEVEL, LEVEL_NAME)                                                                     \
+    for (bool lgsomeip_log_enabled = lgsomeip::Logger::instance().is_enabled(lgsomeip::Logger::LogLevel::LEVEL); \
+         lgsomeip_log_enabled;                                                                                   \
+         lgsomeip_log_enabled = false)                                                                           \
     lgsomeip::Logger::LogMessage(lgsomeip::Logger::instance(), lgsomeip::Logger::LogLevel::LEVEL, LEVEL_NAME)
 
 #define LGSOMEIP_LOG_FATAL LGSOMEIP_LOG_IMPL(Fatal, " [Fatal] ")
@@ -529,4 +623,4 @@ private:
 #define LGSOMEIP_LOG_DEBUG LGSOMEIP_LOG_IMPL(Debug, " [Debug] ")
 #define LGSOMEIP_LOG_VERBOSE LGSOMEIP_LOG_IMPL(Verbose, " [Verbose] ")
 
-#endif // LG_SOMEIP_OSABSTRACTION_LOGGER_LOGGER_H
+#endif  // LG_SOMEIP_OSABSTRACTION_LOGGER_LOGGER_H

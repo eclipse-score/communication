@@ -22,7 +22,8 @@
 
 // Consumer example: discover a service, then send one request per second while
 // the provider is available.
-namespace {
+namespace
+{
 
 constexpr lgsomeip::api::service_t kServiceId = 0x1001;
 constexpr lgsomeip::api::instance_t kInstanceId = 0x0001;
@@ -34,32 +35,38 @@ std::atomic<bool> service_available{false};
 // The core remembers requested services and retries discovery after reconnects.
 bool service_requested = false;
 
-void on_message(const std::shared_ptr<lgsomeip::api::Message>& message) {
+void on_message(const std::shared_ptr<lgsomeip::api::Message>& message)
+{
     std::cout << application->name() << " response: service=0x" << std::hex << message->service << " method=0x"
               << message->method << std::dec << std::endl;
 }
 
-void on_availability(lgsomeip::api::service_t, lgsomeip::api::instance_t, bool available) {
+void on_availability(lgsomeip::api::service_t, lgsomeip::api::instance_t, bool available)
+{
     std::cout << application->name() << " service available = " << available << std::endl;
     // Availability is separate from application registration. This callback
     // can run on a worker thread while main sends requests.
     service_available = available;
 }
 
-void on_state(bool registered) {
+void on_state(bool registered)
+{
     // Request discovery once. The core retains the request and retries it
     // after reconnects, so repeated registration must not add duplicate state.
-    if (registered && !service_requested) {
+    if (registered && !service_requested)
+    {
         application->request_service(kServiceId, kInstanceId, kMajorVersion);
         service_requested = true;
     }
 }
 
-} // namespace
+}  // namespace
 
-int main() {
+int main()
+{
     application = lgsomeip::api::Runtime::instance().create_application("request-1");
-    if (!application->init()) {
+    if (!application->init())
+    {
         return 1;
     }
 
@@ -70,8 +77,10 @@ int main() {
     application->register_availability_handler(kServiceId, kInstanceId, on_availability, kMajorVersion);
     application->start();
 
-    while (true) {
-        if (service_available) {
+    while (true)
+    {
+        if (service_available)
+        {
             // A request is identified by its service/instance/method and
             // interface version. The core assigns the client/session ID on send.
             lgsomeip::api::Message request;

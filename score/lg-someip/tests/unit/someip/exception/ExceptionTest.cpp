@@ -12,55 +12,76 @@
  *
  ********************************************************************************/
 
-#include <cstring>
+#include <exception/Exception.h>
 #include <gtest/gtest.h>
+#include <cstring>
 #include <iostream>
 #include <string>
-#include <exception/Exception.h>
 
 using namespace lgsomeip;
 
-TEST(ExceptionTest, ExceptionMessage) {
+TEST(ExceptionTest, ExceptionMessage)
+{
     int ret = 0;
 
-    try {
+    try
+    {
         std::string msg{"MESSAGE"};
         throw LSAR_CONFIGURATION_ERROR(msg);
-    } catch (const ConfigurationErrorException& e) {
+    }
+    catch (const ConfigurationErrorException& e)
+    {
         std::cout << e.what() << std::endl;
         if (std::string(e.what()).find("Configuration Error : MESSAGE") != std::string::npos)
             ret++;
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e)
+    {
     }
 
-    try {
+    try
+    {
         std::uint8_t code{0x01};
         throw LSAR_APPLICATION_ERROR(code);
-    } catch (const ApplicationErrorException& e) {
+    }
+    catch (const ApplicationErrorException& e)
+    {
         std::cout << e.what() << std::endl;
         if (std::string(e.what()).find("Application Error : Error Code(0x01)") != std::string::npos)
             ret++;
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e)
+    {
     }
 
-    try {
+    try
+    {
         std::string msg{"MESSAGE"};
         throw LSAR_SUBSCRIBE_ERROR(msg);
-    } catch (const SubscribeErrorException& e) {
+    }
+    catch (const SubscribeErrorException& e)
+    {
         std::cout << e.what() << std::endl;
         if (std::string(e.what()).find("Subscribe Error : MESSAGE") != std::string::npos)
             ret++;
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e)
+    {
     }
 
-    try {
+    try
+    {
         std::string msg{"MESSAGE"};
         throw LSAR_RUNTIME_ERROR(msg);
-    } catch (const RuntimeErrorException& e) {
+    }
+    catch (const RuntimeErrorException& e)
+    {
         std::cout << e.what() << std::endl;
         if (std::string(e.what()).find("Runtime Error : MESSAGE") != std::string::npos)
             ret++;
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e)
+    {
     }
 
     EXPECT_EQ(ret, 4);

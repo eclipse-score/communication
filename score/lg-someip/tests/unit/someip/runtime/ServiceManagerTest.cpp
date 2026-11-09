@@ -14,14 +14,14 @@
 
 #include <gtest/gtest.h>
 
+#include <endpoint/EndpointBase.h>
+#include <message/MessageComposer.h>
+#include <packetrouter/ServiceRouter.h>
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
 #include <fstream>
-#include <message/MessageComposer.h>
-#include <endpoint/EndpointBase.h>
 #include <mutex>
-#include <packetrouter/ServiceRouter.h>
 // The test reads and sets the internal state of the class under test.
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -39,42 +39,58 @@
 using namespace lgsomeip;
 using namespace lgsomeip::osabstraction;
 
-class FakeServiceRouter final : public ServiceRouter {
-public:
-    void init() override {
+class FakeServiceRouter final : public ServiceRouter
+{
+  public:
+    void init() override
+    {
         initialized = true;
     }
 
-    void start() override {
+    void start() override
+    {
         started = true;
     }
-    void stop() override {
+    void stop() override
+    {
         stopped = true;
     }
 
-    std::shared_ptr<Multiplexer> get_multiplexer() override {
+    std::shared_ptr<Multiplexer> get_multiplexer() override
+    {
         return nullptr;
     }
 
-    std::shared_ptr<Endpoint> get_service_discovery_multicast_endpoint() override {
+    std::shared_ptr<Endpoint> get_service_discovery_multicast_endpoint() override
+    {
         return service_discovery_endpoint;
     }
 
-    std::shared_ptr<Endpoint> get_service_discovery_unicast_endpoint() override {
+    std::shared_ptr<Endpoint> get_service_discovery_unicast_endpoint() override
+    {
         return nullptr;
     }
 
-    std::shared_ptr<Address> make_address() override {
+    std::shared_ptr<Address> make_address() override
+    {
         return std::make_shared<IP4Address>();
     }
 
-    void set_instance_id(std::uint16_t, std::uint16_t, std::uint16_t) override {
+    void set_instance_id(std::uint16_t, std::uint16_t, std::uint16_t) override
+    {
         ++set_instance_id_count;
     }
 
-    bool add_route(std::uint16_t, std::uint16_t, std::uint16_t, std::shared_ptr<Address>, std::uint16_t,
-                   std::shared_ptr<Address>, std::uint16_t, std::uint8_t,
-                   std::shared_ptr<std::vector<std::shared_ptr<Address>>>) override {
+    bool add_route(std::uint16_t,
+                   std::uint16_t,
+                   std::uint16_t,
+                   std::shared_ptr<Address>,
+                   std::uint16_t,
+                   std::shared_ptr<Address>,
+                   std::uint16_t,
+                   std::uint8_t,
+                   std::shared_ptr<std::vector<std::shared_ptr<Address>>>) override
+    {
         {
             std::lock_guard<std::mutex> lock(internal_message_mutex);
             ++add_route_count;
@@ -83,26 +99,42 @@ public:
         {
             // Lets a test keep the route creation pending.
             std::unique_lock<std::mutex> lock(internal_message_mutex);
-            internal_message_condition.wait_for(lock, std::chrono::seconds(5), [&] { return add_route_open; });
+            internal_message_condition.wait_for(lock, std::chrono::seconds(5), [&] {
+                return add_route_open;
+            });
         }
         return add_route_result;
     }
 
-    void remove_route(std::uint16_t, std::uint16_t) override {
+    void remove_route(std::uint16_t, std::uint16_t) override
+    {
         ++remove_route_count;
     }
 
-    std::int32_t find_connection(std::uint16_t, std::uint16_t, std::shared_ptr<Address>) override {
+    std::int32_t find_connection(std::uint16_t, std::uint16_t, std::shared_ptr<Address>) override
+    {
         return 0;
     }
 
-    void add_subscribe_route(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t, std::shared_ptr<Address>,
-                             std::uint16_t) override {}
-    void remove_subscribe_route(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t,
-                                std::shared_ptr<Address>) override {}
+    void add_subscribe_route(std::uint16_t,
+                             std::uint16_t,
+                             std::uint16_t,
+                             std::uint16_t,
+                             std::shared_ptr<Address>,
+                             std::uint16_t) override
+    {
+    }
+    void remove_subscribe_route(std::uint16_t,
+                                std::uint16_t,
+                                std::uint16_t,
+                                std::uint16_t,
+                                std::shared_ptr<Address>) override
+    {
+    }
     void remove_subscribe_route(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t) override {}
 
-    void send_internal_message(std::uint8_t* message, std::size_t length, std::uint16_t target_app_id) override {
+    void send_internal_message(std::uint8_t* message, std::size_t length, std::uint16_t target_app_id) override
+    {
         {
             std::lock_guard<std::mutex> lock(internal_message_mutex);
             internal_messages.emplace_back(target_app_id, std::vector<std::uint8_t>(message, message + length));
@@ -110,8 +142,11 @@ public:
         internal_message_condition.notify_all();
     }
 
-    void send_external_sd_message(std::uint8_t* message, std::size_t length, std::shared_ptr<Address> address,
-                                  bool multicast) override {
+    void send_external_sd_message(std::uint8_t* message,
+                                  std::size_t length,
+                                  std::shared_ptr<Address> address,
+                                  bool multicast) override
+    {
         captured_message.assign(message, message + length);
         captured_address = std::move(address);
         captured_multicast = multicast;
@@ -136,13 +171,16 @@ public:
     std::mutex internal_message_mutex;
     std::condition_variable internal_message_condition;
 
-    bool wait_for_internal_messages(std::size_t count) {
+    bool wait_for_internal_messages(std::size_t count)
+    {
         std::unique_lock<std::mutex> lock(internal_message_mutex);
-        return internal_message_condition.wait_for(lock, std::chrono::seconds(1),
-                                                   [&] { return internal_messages.size() >= count; });
+        return internal_message_condition.wait_for(lock, std::chrono::seconds(1), [&] {
+            return internal_messages.size() >= count;
+        });
     }
 
-    void set_add_route_open(bool open) {
+    void set_add_route_open(bool open)
+    {
         {
             std::lock_guard<std::mutex> lock(internal_message_mutex);
             add_route_open = open;
@@ -150,16 +188,20 @@ public:
         internal_message_condition.notify_all();
     }
 
-    bool wait_for_add_routes(int count) {
+    bool wait_for_add_routes(int count)
+    {
         std::unique_lock<std::mutex> lock(internal_message_mutex);
-        return internal_message_condition.wait_for(lock, std::chrono::seconds(1),
-                                                   [&] { return add_route_count >= count; });
+        return internal_message_condition.wait_for(lock, std::chrono::seconds(1), [&] {
+            return add_route_count >= count;
+        });
     }
 };
 
-class ScopedServiceManagerConfig final {
-public:
-    ScopedServiceManagerConfig() : path_("/tmp/lgsomeip-service-manager-test-" + std::to_string(::getpid()) + ".json") {
+class ScopedServiceManagerConfig final
+{
+  public:
+    ScopedServiceManagerConfig() : path_("/tmp/lgsomeip-service-manager-test-" + std::to_string(::getpid()) + ".json")
+    {
         std::ofstream file(path_);
         file << R"({
             "unicast": "127.0.0.1",
@@ -195,19 +237,22 @@ public:
         })";
     }
 
-    ~ScopedServiceManagerConfig() {
+    ~ScopedServiceManagerConfig()
+    {
         std::remove(path_.c_str());
     }
 
-    const std::string& path() const {
+    const std::string& path() const
+    {
         return path_;
     }
 
-private:
+  private:
     std::string path_;
 };
 
-std::shared_ptr<EndpointBase> make_service_discovery_endpoint(FakeServiceRouter& router) {
+std::shared_ptr<EndpointBase> make_service_discovery_endpoint(FakeServiceRouter& router)
+{
     auto sender_address = std::make_shared<IP4Address>();
     sender_address->set_ip_address("192.0.2.1");
     sender_address->set_port_address(30490);
@@ -218,9 +263,14 @@ std::shared_ptr<EndpointBase> make_service_discovery_endpoint(FakeServiceRouter&
     return endpoint;
 }
 
-std::shared_ptr<MessageSD> make_service_message(std::uint8_t type, std::uint16_t service, std::uint16_t instance,
-                                                std::uint8_t major, std::uint32_t minor, std::uint32_t ttl,
-                                                std::uint32_t request_id) {
+std::shared_ptr<MessageSD> make_service_message(std::uint8_t type,
+                                                std::uint16_t service,
+                                                std::uint16_t instance,
+                                                std::uint8_t major,
+                                                std::uint32_t minor,
+                                                std::uint32_t ttl,
+                                                std::uint32_t request_id)
+{
     auto message = MessageBuilder::create<SOMEIPSD>();
     message->set_request_id(request_id);
     SDEntry entry(type);
@@ -233,7 +283,8 @@ std::shared_ptr<MessageSD> make_service_message(std::uint8_t type, std::uint16_t
     return message;
 }
 
-TEST(ServiceManager, forwards_external_find_service_as_sd_message) {
+TEST(ServiceManager, forwards_external_find_service_as_sd_message)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
 
@@ -246,8 +297,8 @@ TEST(ServiceManager, forwards_external_find_service_as_sd_message) {
     EXPECT_TRUE(router->captured_multicast);
 
     auto message = MessageBuilder::create<SOMEIPSD>();
-    ASSERT_TRUE(MessageBuilder::build_message(*message, router->captured_message.data(),
-                                              static_cast<std::uint32_t>(router->captured_message.size())));
+    ASSERT_TRUE(MessageBuilder::build_message(
+        *message, router->captured_message.data(), static_cast<std::uint32_t>(router->captured_message.size())));
     ASSERT_EQ(message->entries().size(), 1U);
     EXPECT_EQ(message->entry(0).get_type(), SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID);
     EXPECT_EQ(message->entry(0).get_service_id(), 0x1001);
@@ -257,7 +308,8 @@ TEST(ServiceManager, forwards_external_find_service_as_sd_message) {
     EXPECT_EQ(message->entry(0).get_ttl(), 3U);
 }
 
-TEST(ServiceManager, uses_injected_router_for_lifecycle) {
+TEST(ServiceManager, uses_injected_router_for_lifecycle)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
 
@@ -272,14 +324,16 @@ TEST(ServiceManager, uses_injected_router_for_lifecycle) {
     EXPECT_EQ(manager.get_application_name(), "service-test");
 }
 
-TEST(ServiceManager, on_disconnected_application_without_registered_services_is_noop) {
+TEST(ServiceManager, on_disconnected_application_without_registered_services_is_noop)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
 
     EXPECT_NO_THROW(manager.on_disconnected_application(0x0007));
 }
 
-TEST(ServiceManager, on_disconnected_service_without_registered_services_is_noop) {
+TEST(ServiceManager, on_disconnected_service_without_registered_services_is_noop)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
 
@@ -287,7 +341,8 @@ TEST(ServiceManager, on_disconnected_service_without_registered_services_is_noop
     EXPECT_NO_THROW(manager.on_disconnected_service(address));
 }
 
-TEST(ServiceManager, send_external_find_service_all_builds_sd_message_for_each_entry) {
+TEST(ServiceManager, send_external_find_service_all_builds_sd_message_for_each_entry)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
 
@@ -301,8 +356,8 @@ TEST(ServiceManager, send_external_find_service_all_builds_sd_message_for_each_e
 
     ASSERT_FALSE(router->captured_message.empty());
     auto message = MessageBuilder::create<SOMEIPSD>();
-    ASSERT_TRUE(MessageBuilder::build_message(*message, router->captured_message.data(),
-                                              static_cast<std::uint32_t>(router->captured_message.size())));
+    ASSERT_TRUE(MessageBuilder::build_message(
+        *message, router->captured_message.data(), static_cast<std::uint32_t>(router->captured_message.size())));
     ASSERT_EQ(message->entries().size(), 2U);
     EXPECT_EQ(message->entry(0).get_type(), SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID);
     EXPECT_EQ(message->entry(0).get_service_id(), 0x1001);
@@ -316,20 +371,22 @@ TEST(ServiceManager, send_external_find_service_all_builds_sd_message_for_each_e
     EXPECT_EQ(message->entry(1).get_minor_version(), 0x00000003U);
 }
 
-TEST(ServiceManager, forwards_internal_offer_after_find_and_removes_it_on_stop) {
+TEST(ServiceManager, forwards_internal_offer_after_find_and_removes_it_on_stop)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
 
-    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
-                                                     0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00050001));
-    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
-                                                     0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
+    manager.on_internal_message(make_service_message(
+        SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00050001));
+    manager.on_internal_message(make_service_message(
+        SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
 
     ASSERT_TRUE(router->wait_for_internal_messages(1));
     ASSERT_EQ(router->internal_messages.front().first, 0x0005);
     auto forwarded_offer = MessageBuilder::create<SOMEIPSD>();
     ASSERT_TRUE(
-        MessageBuilder::build_message(*forwarded_offer, router->internal_messages.front().second.data(),
+        MessageBuilder::build_message(*forwarded_offer,
+                                      router->internal_messages.front().second.data(),
                                       static_cast<std::uint32_t>(router->internal_messages.front().second.size())));
     ASSERT_EQ(forwarded_offer->entries().size(), 1U);
     EXPECT_EQ(forwarded_offer->entry(0).get_type(), SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
@@ -337,31 +394,33 @@ TEST(ServiceManager, forwards_internal_offer_after_find_and_removes_it_on_stop) 
     EXPECT_EQ(router->add_route_count, 1);
     EXPECT_EQ(router->set_instance_id_count, 1);
 
-    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
-                                                     0x00000003, SOMEIP_DEFAULT_TTL_OFF, 0x00070001));
+    manager.on_internal_message(make_service_message(
+        SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_OFF, 0x00070001));
 
     ASSERT_TRUE(router->wait_for_internal_messages(2));
     auto stopped_offer = MessageBuilder::create<SOMEIPSD>();
     ASSERT_TRUE(
-        MessageBuilder::build_message(*stopped_offer, router->internal_messages.back().second.data(),
+        MessageBuilder::build_message(*stopped_offer,
+                                      router->internal_messages.back().second.data(),
                                       static_cast<std::uint32_t>(router->internal_messages.back().second.size())));
     ASSERT_EQ(stopped_offer->entries().size(), 1U);
     EXPECT_EQ(stopped_offer->entry(0).get_ttl(), SOMEIP_DEFAULT_TTL_OFF);
     EXPECT_EQ(router->remove_route_count, 1);
 }
 
-TEST(ServiceManager, answers_find_only_after_the_route_of_the_offered_service_is_ready) {
+TEST(ServiceManager, answers_find_only_after_the_route_of_the_offered_service_is_ready)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     router->set_add_route_open(false);
     ServiceManager manager("service-test", "", router);
 
-    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
-                                                     0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
+    manager.on_internal_message(make_service_message(
+        SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
     ASSERT_TRUE(router->wait_for_add_routes(1));
 
     // The service is known, but the requester must not learn about it before it can reach the provider.
-    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
-                                                     0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00050001));
+    manager.on_internal_message(make_service_message(
+        SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00050001));
     {
         std::lock_guard<std::mutex> lock(router->internal_message_mutex);
         EXPECT_TRUE(router->internal_messages.empty());
@@ -374,14 +433,16 @@ TEST(ServiceManager, answers_find_only_after_the_route_of_the_offered_service_is
     ASSERT_EQ(router->internal_messages.front().first, 0x0005);
     auto forwarded_offer = MessageBuilder::create<SOMEIPSD>();
     ASSERT_TRUE(
-        MessageBuilder::build_message(*forwarded_offer, router->internal_messages.front().second.data(),
+        MessageBuilder::build_message(*forwarded_offer,
+                                      router->internal_messages.front().second.data(),
                                       static_cast<std::uint32_t>(router->internal_messages.front().second.size())));
     ASSERT_EQ(forwarded_offer->entries().size(), 1U);
     EXPECT_EQ(forwarded_offer->entry(0).get_type(), SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
     EXPECT_EQ(forwarded_offer->entry(0).get_ttl(), SOMEIP_DEFAULT_TTL_ON);
 }
 
-TEST(ServiceManager, serializes_external_offer_with_tcp_and_udp_options) {
+TEST(ServiceManager, serializes_external_offer_with_tcp_and_udp_options)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
 
@@ -401,8 +462,8 @@ TEST(ServiceManager, serializes_external_offer_with_tcp_and_udp_options) {
 
     ASSERT_FALSE(router->captured_message.empty());
     auto message = MessageBuilder::create<SOMEIPSD>();
-    ASSERT_TRUE(MessageBuilder::build_message(*message, router->captured_message.data(),
-                                              static_cast<std::uint32_t>(router->captured_message.size())));
+    ASSERT_TRUE(MessageBuilder::build_message(
+        *message, router->captured_message.data(), static_cast<std::uint32_t>(router->captured_message.size())));
     ASSERT_EQ(message->entries().size(), 1U);
     ASSERT_EQ(message->options().size(), 2U);
     EXPECT_EQ(message->entry(0).get_type(), SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
@@ -413,17 +474,18 @@ TEST(ServiceManager, serializes_external_offer_with_tcp_and_udp_options) {
     EXPECT_TRUE(router->captured_multicast);
 }
 
-TEST(ServiceManager, missing_service_subscribe_ack_serializes_nack) {
+TEST(ServiceManager, missing_service_subscribe_ack_serializes_nack)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
 
-    manager.send_subscribe_eventgroup_ack(0x1001, 0x0002, 0x0004, SOMEIP_DEFAULT_TTL_ON, 0x01, 0, nullptr,
-                                          "192.0.2.12");
+    manager.send_subscribe_eventgroup_ack(
+        0x1001, 0x0002, 0x0004, SOMEIP_DEFAULT_TTL_ON, 0x01, 0, nullptr, "192.0.2.12");
 
     ASSERT_FALSE(router->captured_message.empty());
     auto message = MessageBuilder::create<SOMEIPSD>();
-    ASSERT_TRUE(MessageBuilder::build_message(*message, router->captured_message.data(),
-                                              static_cast<std::uint32_t>(router->captured_message.size())));
+    ASSERT_TRUE(MessageBuilder::build_message(
+        *message, router->captured_message.data(), static_cast<std::uint32_t>(router->captured_message.size())));
     ASSERT_EQ(message->entries().size(), 1U);
     EXPECT_EQ(message->entry(0).get_type(), SOMEIP_SD_ENTRY::SUBSCRIBEACK::TYPEID);
     EXPECT_EQ(message->entry(0).get_ttl(), SOMEIP_DEFAULT_TTL_OFF);
@@ -432,11 +494,12 @@ TEST(ServiceManager, missing_service_subscribe_ack_serializes_nack) {
     EXPECT_EQ(router->captured_address->get_ip_address(), "192.0.2.12");
 }
 
-TEST(ServiceManager, internal_subscribe_without_service_sends_nack_to_requester) {
+TEST(ServiceManager, internal_subscribe_without_service_sends_nack_to_requester)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
-    auto subscribe = make_service_message(SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID, 0x1001, 0x0002, 0x01, 0,
-                                          SOMEIP_DEFAULT_TTL_ON, 0x00050001);
+    auto subscribe = make_service_message(
+        SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID, 0x1001, 0x0002, 0x01, 0, SOMEIP_DEFAULT_TTL_ON, 0x00050001);
     subscribe->entry(0).set_event_group_id(0x0004);
 
     manager.on_internal_message(subscribe);
@@ -445,21 +508,23 @@ TEST(ServiceManager, internal_subscribe_without_service_sends_nack_to_requester)
     ASSERT_EQ(router->internal_messages.front().first, 0x0005);
     auto acknowledgement = MessageBuilder::create<SOMEIPSD>();
     ASSERT_TRUE(
-        MessageBuilder::build_message(*acknowledgement, router->internal_messages.front().second.data(),
+        MessageBuilder::build_message(*acknowledgement,
+                                      router->internal_messages.front().second.data(),
                                       static_cast<std::uint32_t>(router->internal_messages.front().second.size())));
     ASSERT_EQ(acknowledgement->entries().size(), 1U);
     EXPECT_EQ(acknowledgement->entry(0).get_type(), SOMEIP_SD_ENTRY::SUBSCRIBEACK::TYPEID);
     EXPECT_EQ(acknowledgement->entry(0).get_ttl(), SOMEIP_DEFAULT_TTL_OFF);
 }
 
-TEST(ServiceManager, sends_internal_subscribe_and_ack_for_offered_service) {
+TEST(ServiceManager, sends_internal_subscribe_and_ack_for_offered_service)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
 
-    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
-                                                     0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00050001));
-    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
-                                                     0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
+    manager.on_internal_message(make_service_message(
+        SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00050001));
+    manager.on_internal_message(make_service_message(
+        SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
     ASSERT_TRUE(router->wait_for_internal_messages(1));
 
     manager.send_subscribe_eventgroup(0x1001, 0x0002, 0x0004, SOMEIP_DEFAULT_TTL_ON, 0x01, 0x0005);
@@ -467,7 +532,8 @@ TEST(ServiceManager, sends_internal_subscribe_and_ack_for_offered_service) {
     ASSERT_EQ(router->internal_messages.back().first, 0x0007);
     auto subscribe = MessageBuilder::create<SOMEIPSD>();
     ASSERT_TRUE(
-        MessageBuilder::build_message(*subscribe, router->internal_messages.back().second.data(),
+        MessageBuilder::build_message(*subscribe,
+                                      router->internal_messages.back().second.data(),
                                       static_cast<std::uint32_t>(router->internal_messages.back().second.size())));
     ASSERT_EQ(subscribe->entries().size(), 1U);
     EXPECT_EQ(subscribe->entry(0).get_type(), SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID);
@@ -478,23 +544,25 @@ TEST(ServiceManager, sends_internal_subscribe_and_ack_for_offered_service) {
     ASSERT_EQ(router->internal_messages.back().first, 0x0005);
     auto acknowledgement = MessageBuilder::create<SOMEIPSD>();
     ASSERT_TRUE(
-        MessageBuilder::build_message(*acknowledgement, router->internal_messages.back().second.data(),
+        MessageBuilder::build_message(*acknowledgement,
+                                      router->internal_messages.back().second.data(),
                                       static_cast<std::uint32_t>(router->internal_messages.back().second.size())));
     ASSERT_EQ(acknowledgement->entries().size(), 1U);
     EXPECT_EQ(acknowledgement->entry(0).get_type(), SOMEIP_SD_ENTRY::SUBSCRIBEACK::TYPEID);
     EXPECT_EQ(acknowledgement->entry(0).get_ttl(), SOMEIP_DEFAULT_TTL_ON);
 }
 
-TEST(ServiceManager, handles_internal_subscribe_update_stop_and_ack_lifecycle) {
+TEST(ServiceManager, handles_internal_subscribe_update_stop_and_ack_lifecycle)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
 
-    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
-                                                     0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
+    manager.on_internal_message(make_service_message(
+        SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
     ASSERT_TRUE(router->wait_for_add_routes(1));
 
-    auto subscribe = make_service_message(SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID, 0x1001, 0x0002, 0x01, 0,
-                                          SOMEIP_DEFAULT_TTL_ON, 0x00050001);
+    auto subscribe = make_service_message(
+        SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID, 0x1001, 0x0002, 0x01, 0, SOMEIP_DEFAULT_TTL_ON, 0x00050001);
     subscribe->entry(0).set_event_group_id(0x0004);
     manager.on_internal_message(subscribe);
     ASSERT_TRUE(router->wait_for_internal_messages(1));
@@ -502,8 +570,8 @@ TEST(ServiceManager, handles_internal_subscribe_update_stop_and_ack_lifecycle) {
     manager.on_internal_message(subscribe);
     ASSERT_TRUE(router->wait_for_internal_messages(2));
 
-    auto subscribe_ack = make_service_message(SOMEIP_SD_ENTRY::SUBSCRIBEACK::TYPEID, 0x1001, 0x0002, 0x01, 0,
-                                              SOMEIP_DEFAULT_TTL_ON, 0x00050001);
+    auto subscribe_ack = make_service_message(
+        SOMEIP_SD_ENTRY::SUBSCRIBEACK::TYPEID, 0x1001, 0x0002, 0x01, 0, SOMEIP_DEFAULT_TTL_ON, 0x00050001);
     subscribe_ack->entry(0).set_event_group_id(0x0004);
     manager.on_internal_message(subscribe_ack);
     ASSERT_TRUE(router->wait_for_internal_messages(3));
@@ -514,30 +582,33 @@ TEST(ServiceManager, handles_internal_subscribe_update_stop_and_ack_lifecycle) {
 
     auto stop_ack = MessageBuilder::create<SOMEIPSD>();
     ASSERT_TRUE(
-        MessageBuilder::build_message(*stop_ack, router->internal_messages.back().second.data(),
+        MessageBuilder::build_message(*stop_ack,
+                                      router->internal_messages.back().second.data(),
                                       static_cast<std::uint32_t>(router->internal_messages.back().second.size())));
     ASSERT_EQ(stop_ack->entries().size(), 1U);
     EXPECT_EQ(stop_ack->entry(0).get_type(), SOMEIP_SD_ENTRY::SUBSCRIBEACK::TYPEID);
     EXPECT_EQ(stop_ack->entry(0).get_ttl(), SOMEIP_DEFAULT_TTL_OFF);
 }
 
-TEST(ServiceManager, ignores_internal_offer_when_requested_version_does_not_match) {
+TEST(ServiceManager, ignores_internal_offer_when_requested_version_does_not_match)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
 
-    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
-                                                     0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00050001));
+    manager.on_internal_message(make_service_message(
+        SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00050001));
     manager.send_internal_offer_service_all(0x1001, 0x0002, SOMEIP_DEFAULT_TTL_ON, 0x02, 0x00000004);
 
     EXPECT_TRUE(router->internal_messages.empty());
 }
 
-TEST(ServiceManager, removes_internal_find_request_when_ttl_is_zero) {
+TEST(ServiceManager, removes_internal_find_request_when_ttl_is_zero)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
 
-    auto find = make_service_message(SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003,
-                                     SOMEIP_DEFAULT_TTL_ON, 0x00050001);
+    auto find = make_service_message(
+        SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00050001);
     manager.on_internal_message(find);
     find->entry(0).set_ttl(SOMEIP_DEFAULT_TTL_OFF);
     manager.on_internal_message(find);
@@ -545,7 +616,8 @@ TEST(ServiceManager, removes_internal_find_request_when_ttl_is_zero) {
     EXPECT_TRUE(router->internal_messages.empty());
 }
 
-TEST(ServiceManager, processes_configured_external_offer_and_stop_offer) {
+TEST(ServiceManager, processes_configured_external_offer_and_stop_offer)
+{
     ScopedServiceManagerConfig config_file;
     auto router = std::make_shared<FakeServiceRouter>();
 
@@ -557,8 +629,8 @@ TEST(ServiceManager, processes_configured_external_offer_and_stop_offer) {
     offered_address->set_port_address(30509);
     offered_address->set_reliable(false);
 
-    auto offer = make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003,
-                                      SOMEIP_DEFAULT_TTL_ON, 0x00000001);
+    auto offer = make_service_message(
+        SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00000001);
     SDOption option(SOMEIP_SD_OPTION::IP4::TYPEID);
     option.set_address_option(offered_address);
     offer->options().push_back(option);
@@ -571,8 +643,8 @@ TEST(ServiceManager, processes_configured_external_offer_and_stop_offer) {
     EXPECT_EQ(router->add_route_count, 1);
     EXPECT_EQ(router->remove_route_count, 0);
 
-    auto stop_offer = make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003,
-                                           SOMEIP_DEFAULT_TTL_OFF, 0x00000001);
+    auto stop_offer = make_service_message(
+        SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_OFF, 0x00000001);
     stop_offer->options().push_back(option);
     stop_offer->entry(0).set_option1st_index(0);
     stop_offer->entry(0).set_option1st_count(1);
@@ -581,7 +653,8 @@ TEST(ServiceManager, processes_configured_external_offer_and_stop_offer) {
     EXPECT_EQ(router->remove_route_count, 1);
 }
 
-TEST(ServiceManager, removes_external_service_when_tcp_peer_disconnects) {
+TEST(ServiceManager, removes_external_service_when_tcp_peer_disconnects)
+{
     ScopedServiceManagerConfig config_file;
     auto router = std::make_shared<FakeServiceRouter>();
     auto endpoint = make_service_discovery_endpoint(*router);
@@ -590,8 +663,8 @@ TEST(ServiceManager, removes_external_service_when_tcp_peer_disconnects) {
     offered_address->set_ip_address("192.0.2.20");
     offered_address->set_port_address(40511);
     offered_address->set_reliable(true);
-    auto offer = make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003,
-                                      SOMEIP_DEFAULT_TTL_ON, 0x00000001);
+    auto offer = make_service_message(
+        SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00000001);
     SDOption option(SOMEIP_SD_OPTION::IP4::TYPEID);
     option.set_address_option(offered_address);
     offer->options().push_back(option);
@@ -606,20 +679,21 @@ TEST(ServiceManager, removes_external_service_when_tcp_peer_disconnects) {
     EXPECT_EQ(router->remove_route_count, 0);
 }
 
-TEST(ServiceManager, removes_internal_provider_when_application_disconnects) {
+TEST(ServiceManager, removes_internal_provider_when_application_disconnects)
+{
     ScopedServiceManagerConfig config_file;
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", config_file.path(), router);
 
-    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
-                                                     0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
+    manager.on_internal_message(make_service_message(
+        SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
     ASSERT_TRUE(router->wait_for_add_routes(1));
     manager.on_disconnected_application(0x0007);
 
     ASSERT_FALSE(router->captured_message.empty());
     auto stop_offer = MessageBuilder::create<SOMEIPSD>();
-    ASSERT_TRUE(MessageBuilder::build_message(*stop_offer, router->captured_message.data(),
-                                              static_cast<std::uint32_t>(router->captured_message.size())));
+    ASSERT_TRUE(MessageBuilder::build_message(
+        *stop_offer, router->captured_message.data(), static_cast<std::uint32_t>(router->captured_message.size())));
     ASSERT_EQ(stop_offer->entries().size(), 1U);
     EXPECT_EQ(stop_offer->entry(0).get_type(), SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
     EXPECT_EQ(stop_offer->entry(0).get_ttl(), SOMEIP_DEFAULT_TTL_OFF);
@@ -627,25 +701,26 @@ TEST(ServiceManager, removes_internal_provider_when_application_disconnects) {
     EXPECT_EQ(router->remove_route_count, 0);
 }
 
-TEST(ServiceManager, external_find_service_returns_offer_for_internal_provider) {
+TEST(ServiceManager, external_find_service_returns_offer_for_internal_provider)
+{
     ScopedServiceManagerConfig config_file;
     auto router = std::make_shared<FakeServiceRouter>();
     auto endpoint = make_service_discovery_endpoint(*router);
     ServiceManager manager("service-test", config_file.path(), router);
 
-    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
-                                                     0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
+    manager.on_internal_message(make_service_message(
+        SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
     ASSERT_TRUE(router->wait_for_add_routes(1));
 
-    auto find = make_service_message(SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003,
-                                     SOMEIP_DEFAULT_TTL_ON, 0x00090001);
+    auto find = make_service_message(
+        SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00090001);
     find->set_flag(0x40);
     manager.on_external_message(endpoint, find, false);
 
     ASSERT_FALSE(router->captured_message.empty());
     auto response = MessageBuilder::create<SOMEIPSD>();
-    ASSERT_TRUE(MessageBuilder::build_message(*response, router->captured_message.data(),
-                                              static_cast<std::uint32_t>(router->captured_message.size())));
+    ASSERT_TRUE(MessageBuilder::build_message(
+        *response, router->captured_message.data(), static_cast<std::uint32_t>(router->captured_message.size())));
     ASSERT_EQ(response->entries().size(), 1U);
     EXPECT_EQ(response->entry(0).get_type(), SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
     EXPECT_EQ(response->entry(0).get_service_id(), 0x1001);
@@ -655,22 +730,23 @@ TEST(ServiceManager, external_find_service_returns_offer_for_internal_provider) 
     EXPECT_EQ(router->captured_address->get_ip_address(), "192.0.2.1");
 }
 
-TEST(ServiceManager, external_subscribe_is_forwarded_to_internal_provider) {
+TEST(ServiceManager, external_subscribe_is_forwarded_to_internal_provider)
+{
     ScopedServiceManagerConfig config_file;
     auto router = std::make_shared<FakeServiceRouter>();
     auto endpoint = make_service_discovery_endpoint(*router);
     ServiceManager manager("service-test", config_file.path(), router);
 
-    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
-                                                     0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
+    manager.on_internal_message(make_service_message(
+        SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
     ASSERT_TRUE(router->wait_for_add_routes(1));
 
     auto subscriber_address = std::make_shared<IP4Address>();
     subscriber_address->set_ip_address("192.0.2.1");
     subscriber_address->set_port_address(40000);
     subscriber_address->set_reliable(false);
-    auto subscribe = make_service_message(SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000000,
-                                          SOMEIP_DEFAULT_TTL_ON, 0x00090001);
+    auto subscribe = make_service_message(
+        SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000000, SOMEIP_DEFAULT_TTL_ON, 0x00090001);
     subscribe->entry(0).set_event_group_id(0x0004);
     SDOption option(SOMEIP_SD_OPTION::IP4::TYPEID);
     option.set_address_option(subscriber_address);
@@ -684,14 +760,16 @@ TEST(ServiceManager, external_subscribe_is_forwarded_to_internal_provider) {
     ASSERT_EQ(router->internal_messages.back().first, 0x0007);
     auto forwarded_subscribe = MessageBuilder::create<SOMEIPSD>();
     ASSERT_TRUE(
-        MessageBuilder::build_message(*forwarded_subscribe, router->internal_messages.back().second.data(),
+        MessageBuilder::build_message(*forwarded_subscribe,
+                                      router->internal_messages.back().second.data(),
                                       static_cast<std::uint32_t>(router->internal_messages.back().second.size())));
     ASSERT_EQ(forwarded_subscribe->entries().size(), 1U);
     EXPECT_EQ(forwarded_subscribe->entry(0).get_type(), SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID);
     EXPECT_EQ(forwarded_subscribe->entry(0).get_event_group_id(), 0x0004);
 }
 
-TEST(ServiceManager, rejects_empty_external_sd_message) {
+TEST(ServiceManager, rejects_empty_external_sd_message)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     auto endpoint = make_service_discovery_endpoint(*router);
     ServiceManager manager("service-test", "", router);
@@ -701,12 +779,13 @@ TEST(ServiceManager, rejects_empty_external_sd_message) {
     EXPECT_TRUE(router->captured_message.empty());
 }
 
-TEST(ServiceManager, rejects_external_subscribe_with_invalid_option_index) {
+TEST(ServiceManager, rejects_external_subscribe_with_invalid_option_index)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     auto endpoint = make_service_discovery_endpoint(*router);
     ServiceManager manager("service-test", "", router);
-    auto subscribe = make_service_message(SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID, 0x1001, 0x0002, 0x01, 0,
-                                          SOMEIP_DEFAULT_TTL_ON, 0x00090001);
+    auto subscribe = make_service_message(
+        SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID, 0x1001, 0x0002, 0x01, 0, SOMEIP_DEFAULT_TTL_ON, 0x00090001);
     subscribe->entry(0).set_event_group_id(0x0004);
     subscribe->entry(0).set_option1st_index(1);
     subscribe->entry(0).set_option1st_count(1);
@@ -715,50 +794,55 @@ TEST(ServiceManager, rejects_external_subscribe_with_invalid_option_index) {
 
     ASSERT_FALSE(router->captured_message.empty());
     auto acknowledgement = MessageBuilder::create<SOMEIPSD>();
-    ASSERT_TRUE(MessageBuilder::build_message(*acknowledgement, router->captured_message.data(),
+    ASSERT_TRUE(MessageBuilder::build_message(*acknowledgement,
+                                              router->captured_message.data(),
                                               static_cast<std::uint32_t>(router->captured_message.size())));
     ASSERT_EQ(acknowledgement->entries().size(), 1U);
     EXPECT_EQ(acknowledgement->entry(0).get_type(), SOMEIP_SD_ENTRY::SUBSCRIBEACK::TYPEID);
     EXPECT_EQ(acknowledgement->entry(0).get_ttl(), SOMEIP_DEFAULT_TTL_OFF);
 }
 
-TEST(ServiceManager, ignores_external_offer_without_endpoint_option) {
+TEST(ServiceManager, ignores_external_offer_without_endpoint_option)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     auto endpoint = make_service_discovery_endpoint(*router);
     ServiceManager manager("service-test", "", router);
-    auto offer = make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003,
-                                      SOMEIP_DEFAULT_TTL_ON, 0x00090001);
+    auto offer = make_service_message(
+        SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00090001);
 
     manager.on_external_message(endpoint, offer, false);
 
     EXPECT_TRUE(router->captured_message.empty());
 }
 
-TEST(ServiceManager, external_subscribe_without_endpoint_option_sends_nack) {
+TEST(ServiceManager, external_subscribe_without_endpoint_option_sends_nack)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     auto endpoint = make_service_discovery_endpoint(*router);
     ServiceManager manager("service-test", "", router);
-    auto subscribe = make_service_message(SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID, 0x1001, 0x0002, 0x01, 0,
-                                          SOMEIP_DEFAULT_TTL_ON, 0x00090001);
+    auto subscribe = make_service_message(
+        SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID, 0x1001, 0x0002, 0x01, 0, SOMEIP_DEFAULT_TTL_ON, 0x00090001);
     subscribe->entry(0).set_event_group_id(0x0004);
 
     manager.on_external_message(endpoint, subscribe, false);
 
     ASSERT_FALSE(router->captured_message.empty());
     auto acknowledgement = MessageBuilder::create<SOMEIPSD>();
-    ASSERT_TRUE(MessageBuilder::build_message(*acknowledgement, router->captured_message.data(),
+    ASSERT_TRUE(MessageBuilder::build_message(*acknowledgement,
+                                              router->captured_message.data(),
                                               static_cast<std::uint32_t>(router->captured_message.size())));
     ASSERT_EQ(acknowledgement->entries().size(), 1U);
     EXPECT_EQ(acknowledgement->entry(0).get_type(), SOMEIP_SD_ENTRY::SUBSCRIBEACK::TYPEID);
     EXPECT_EQ(acknowledgement->entry(0).get_ttl(), SOMEIP_DEFAULT_TTL_OFF);
 }
 
-TEST(ServiceManager, rejects_duplicate_external_endpoint_options) {
+TEST(ServiceManager, rejects_duplicate_external_endpoint_options)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     auto endpoint = make_service_discovery_endpoint(*router);
     ServiceManager manager("service-test", "", router);
-    auto subscribe = make_service_message(SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID, 0x1001, 0x0002, 0x01, 0,
-                                          SOMEIP_DEFAULT_TTL_ON, 0x00090001);
+    auto subscribe = make_service_message(
+        SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID, 0x1001, 0x0002, 0x01, 0, SOMEIP_DEFAULT_TTL_ON, 0x00090001);
     subscribe->entry(0).set_event_group_id(0x0004);
     auto first = std::make_shared<IP4Address>();
     first->set_ip_address("192.0.2.1");
@@ -781,13 +865,15 @@ TEST(ServiceManager, rejects_duplicate_external_endpoint_options) {
 
     ASSERT_FALSE(router->captured_message.empty());
     auto acknowledgement = MessageBuilder::create<SOMEIPSD>();
-    ASSERT_TRUE(MessageBuilder::build_message(*acknowledgement, router->captured_message.data(),
+    ASSERT_TRUE(MessageBuilder::build_message(*acknowledgement,
+                                              router->captured_message.data(),
                                               static_cast<std::uint32_t>(router->captured_message.size())));
     ASSERT_EQ(acknowledgement->entries().size(), 1U);
     EXPECT_EQ(acknowledgement->entry(0).get_ttl(), SOMEIP_DEFAULT_TTL_OFF);
 }
 
-TEST(ServiceManager, external_ack_serializes_multicast_option) {
+TEST(ServiceManager, external_ack_serializes_multicast_option)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
     auto multicast = std::make_shared<IP4Address>();
@@ -795,13 +881,13 @@ TEST(ServiceManager, external_ack_serializes_multicast_option) {
     multicast->set_port_address(30501);
     multicast->set_reliable(false);
 
-    manager.send_subscribe_eventgroup_ack(0x1001, 0x0002, 0x0004, SOMEIP_DEFAULT_TTL_ON, 0x01, 0, multicast,
-                                          "192.0.2.12");
+    manager.send_subscribe_eventgroup_ack(
+        0x1001, 0x0002, 0x0004, SOMEIP_DEFAULT_TTL_ON, 0x01, 0, multicast, "192.0.2.12");
 
     ASSERT_FALSE(router->captured_message.empty());
     auto message = MessageBuilder::create<SOMEIPSD>();
-    ASSERT_TRUE(MessageBuilder::build_message(*message, router->captured_message.data(),
-                                              static_cast<std::uint32_t>(router->captured_message.size())));
+    ASSERT_TRUE(MessageBuilder::build_message(
+        *message, router->captured_message.data(), static_cast<std::uint32_t>(router->captured_message.size())));
     ASSERT_EQ(message->entries().size(), 1U);
     ASSERT_EQ(message->options().size(), 1U);
     EXPECT_EQ(message->entry(0).get_option1st_count(), 1);
@@ -809,7 +895,8 @@ TEST(ServiceManager, external_ack_serializes_multicast_option) {
     EXPECT_EQ(message->option(0).get_address_option()->get_port_address(), 30501);
 }
 
-TEST(ServiceManager, external_subscribe_to_offered_service_is_sent_with_endpoint_options) {
+TEST(ServiceManager, external_subscribe_to_offered_service_is_sent_with_endpoint_options)
+{
     ScopedServiceManagerConfig config_file;
     auto router = std::make_shared<FakeServiceRouter>();
     auto endpoint = make_service_discovery_endpoint(*router);
@@ -818,8 +905,8 @@ TEST(ServiceManager, external_subscribe_to_offered_service_is_sent_with_endpoint
     offered_address->set_ip_address("192.0.2.10");
     offered_address->set_port_address(30509);
     offered_address->set_reliable(false);
-    auto offer = make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003,
-                                      SOMEIP_DEFAULT_TTL_ON, 0x00000001);
+    auto offer = make_service_message(
+        SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00000001);
     SDOption option(SOMEIP_SD_OPTION::IP4::TYPEID);
     option.set_address_option(offered_address);
     offer->options().push_back(option);
@@ -832,8 +919,8 @@ TEST(ServiceManager, external_subscribe_to_offered_service_is_sent_with_endpoint
 
     ASSERT_FALSE(router->captured_message.empty());
     auto message = MessageBuilder::create<SOMEIPSD>();
-    ASSERT_TRUE(MessageBuilder::build_message(*message, router->captured_message.data(),
-                                              static_cast<std::uint32_t>(router->captured_message.size())));
+    ASSERT_TRUE(MessageBuilder::build_message(
+        *message, router->captured_message.data(), static_cast<std::uint32_t>(router->captured_message.size())));
     ASSERT_EQ(message->entries().size(), 1U);
     EXPECT_EQ(message->entry(0).get_type(), SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID);
     EXPECT_EQ(message->entry(0).get_event_group_id(), 0x0004);
@@ -844,31 +931,38 @@ TEST(ServiceManager, external_subscribe_to_offered_service_is_sent_with_endpoint
     EXPECT_FALSE(router->captured_multicast);
 }
 
-namespace {
+namespace
+{
 // Serialized size of an SD message that carries only option-less entries.
-constexpr std::uint32_t sd_size_with_entries(std::uint32_t entries) {
+constexpr std::uint32_t sd_size_with_entries(std::uint32_t entries)
+{
     return SOMEIP_HEADER::SIZE + SOMEIP_SD_HEADER::SIZE + 4 + entries * SOMEIP_SD_ENTRY::SIZE + 4;
 }
 
-constexpr std::uint32_t max_sd_entries_per_datagram() {
+constexpr std::uint32_t max_sd_entries_per_datagram()
+{
     return (SOMEIP_UDP::MAX_MESSAGE_SIZE - sd_size_with_entries(0)) / SOMEIP_SD_ENTRY::SIZE;
 }
 
-void send_find_for_entries(ServiceManager& manager, std::uint32_t count) {
+void send_find_for_entries(ServiceManager& manager, std::uint32_t count)
+{
     std::vector<RequestedService> requests;
     requests.reserve(count);
     std::map<std::uint16_t, std::map<std::uint16_t, RequestedService*>> find_list;
-    for (std::uint32_t i = 0; i < count; ++i) {
+    for (std::uint32_t i = 0; i < count; ++i)
+    {
         requests.emplace_back(0x0005, 0x01, 0x00000002);
         find_list[static_cast<std::uint16_t>(0x2000 + i)][0x0001] = &requests.back();
     }
     manager.send_external_find_service_all(find_list);
 }
 
-std::shared_ptr<MessageSD> make_subscribe_message(std::uint32_t entries) {
+std::shared_ptr<MessageSD> make_subscribe_message(std::uint32_t entries)
+{
     auto message = MessageBuilder::create<SOMEIPSD>();
     message->set_request_id(0x00090001);
-    for (std::uint32_t i = 0; i < entries; ++i) {
+    for (std::uint32_t i = 0; i < entries; ++i)
+    {
         SDEntry entry(SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID);
         entry.set_service_id(0x1001);
         entry.set_instance_id(0x0002);
@@ -879,9 +973,10 @@ std::shared_ptr<MessageSD> make_subscribe_message(std::uint32_t entries) {
     }
     return message;
 }
-} // namespace
+}  // namespace
 
-TEST(ServiceManager, external_sd_message_at_udp_limit_is_sent_with_exact_size) {
+TEST(ServiceManager, external_sd_message_at_udp_limit_is_sent_with_exact_size)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
     const std::uint32_t count = max_sd_entries_per_datagram();
@@ -891,12 +986,13 @@ TEST(ServiceManager, external_sd_message_at_udp_limit_is_sent_with_exact_size) {
     ASSERT_EQ(router->captured_message.size(), sd_size_with_entries(count));
     EXPECT_LE(router->captured_message.size(), SOMEIP_UDP::MAX_MESSAGE_SIZE);
     auto message = MessageBuilder::create<SOMEIPSD>();
-    ASSERT_TRUE(MessageBuilder::build_message(*message, router->captured_message.data(),
-                                              static_cast<std::uint32_t>(router->captured_message.size())));
+    ASSERT_TRUE(MessageBuilder::build_message(
+        *message, router->captured_message.data(), static_cast<std::uint32_t>(router->captured_message.size())));
     EXPECT_EQ(message->entries().size(), count);
 }
 
-TEST(ServiceManager, external_sd_message_over_udp_limit_is_not_sent) {
+TEST(ServiceManager, external_sd_message_over_udp_limit_is_not_sent)
+{
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", "", router);
 
@@ -905,7 +1001,8 @@ TEST(ServiceManager, external_sd_message_over_udp_limit_is_not_sent) {
     EXPECT_TRUE(router->captured_message.empty());
 }
 
-TEST(ServiceManager, gathered_ack_at_udp_limit_is_sent_and_over_limit_is_not) {
+TEST(ServiceManager, gathered_ack_at_udp_limit_is_sent_and_over_limit_is_not)
+{
     const std::uint32_t count = max_sd_entries_per_datagram();
     {
         auto router = std::make_shared<FakeServiceRouter>();
@@ -916,7 +1013,8 @@ TEST(ServiceManager, gathered_ack_at_udp_limit_is_sent_and_over_limit_is_not) {
 
         ASSERT_EQ(router->captured_message.size(), sd_size_with_entries(count));
         auto acknowledgement = MessageBuilder::create<SOMEIPSD>();
-        ASSERT_TRUE(MessageBuilder::build_message(*acknowledgement, router->captured_message.data(),
+        ASSERT_TRUE(MessageBuilder::build_message(*acknowledgement,
+                                                  router->captured_message.data(),
                                                   static_cast<std::uint32_t>(router->captured_message.size())));
         ASSERT_EQ(acknowledgement->entries().size(), count);
         EXPECT_EQ(acknowledgement->entry(count - 1).get_type(), SOMEIP_SD_ENTRY::SUBSCRIBEACK::TYPEID);
@@ -933,16 +1031,17 @@ TEST(ServiceManager, gathered_ack_at_udp_limit_is_sent_and_over_limit_is_not) {
     }
 }
 
-TEST(ServiceManager, writes_current_state_for_configured_internal_provider) {
+TEST(ServiceManager, writes_current_state_for_configured_internal_provider)
+{
     ScopedServiceManagerConfig config_file;
     auto router = std::make_shared<FakeServiceRouter>();
     ServiceManager manager("service-test", config_file.path(), router);
 
-    manager.on_internal_message(make_service_message(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01,
-                                                     0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
+    manager.on_internal_message(make_service_message(
+        SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID, 0x1001, 0x0002, 0x01, 0x00000003, SOMEIP_DEFAULT_TTL_ON, 0x00070001));
     ASSERT_TRUE(router->wait_for_add_routes(1));
-    auto subscribe = make_service_message(SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID, 0x1001, 0x0002, 0x01, 0,
-                                          SOMEIP_DEFAULT_TTL_ON, 0x00050001);
+    auto subscribe = make_service_message(
+        SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID, 0x1001, 0x0002, 0x01, 0, SOMEIP_DEFAULT_TTL_ON, 0x00050001);
     subscribe->entry(0).set_event_group_id(0x0004);
     manager.on_internal_message(subscribe);
 

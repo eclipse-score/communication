@@ -17,24 +17,25 @@
 
 #include <cstdint>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 #define SOMEIP_SOCKET_PATH "/tmp/someip/"
 #define SOMEIP_SOCKET_PREFIX "/tmp/someip/someip-"
 
 #if defined(ENABLE_QNX_MESSAGE_PASSING)
 #define SOMEIP_MESSAGEPASSING_CHANNEL_NAME_PREFIX "someip/someip-"
-#endif // ENABLE_QNX_MESSAGE_PASSING
+#endif  // ENABLE_QNX_MESSAGE_PASSING
 
-const std::uint8_t kServerMagicCookie[] = {0xFF, 0xFF, 0x80, 0x00, 0x00, 0x00, 0x00, 0x08,
-                                           0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x01, 0x02, 0x00};
-const std::uint8_t kClientMagicCookie[] = {0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08,
-                                           0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x01, 0x01, 0x00};
+const std::uint8_t kServerMagicCookie[] =
+    {0xFF, 0xFF, 0x80, 0x00, 0x00, 0x00, 0x00, 0x08, 0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x01, 0x02, 0x00};
+const std::uint8_t kClientMagicCookie[] =
+    {0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x01, 0x01, 0x00};
 const std::size_t kLenMagicCookie = 16;
 
 // Length of the instance ID that follows a SOME/IP message on internal domain sockets.
 const std::size_t kLenInstanceId = 2;
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_ENDPOINT_ENDPOINT_CONSTANT_H
+#endif  // LG_SOMEIP_ENDPOINT_ENDPOINT_CONSTANT_H

@@ -17,11 +17,14 @@
 
 #include "Address.h"
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
-class IP4Address : public Address {
-public:
+class IP4Address : public Address
+{
+  public:
     IP4Address();
     virtual ~IP4Address();
 
@@ -36,11 +39,11 @@ public:
 
     friend bool operator==(const IP4Address& left, const IP4Address& right);
 
-protected:
+  protected:
     struct sockaddr_in socket_address_{};
 };
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_OSABSTRACTION_SOCKET_IP4ADDRESS
+#endif  // LG_SOMEIP_OSABSTRACTION_SOCKET_IP4ADDRESS

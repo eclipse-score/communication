@@ -21,11 +21,15 @@
 #include <message/Message.h>
 #include <runtime/ApplicationManager.h>
 
-namespace lgsomeip {
-namespace api {
-namespace {
+namespace lgsomeip
+{
+namespace api
+{
+namespace
+{
 
-std::shared_ptr<MessageSOMEIP> to_internal_message(const Message& message) {
+std::shared_ptr<MessageSOMEIP> to_internal_message(const Message& message)
+{
     auto result = std::make_shared<MessageSOMEIP>();
     const auto message_id = (static_cast<std::uint32_t>(message.service) << 16) | message.method;
     const auto request_id = (static_cast<std::uint32_t>(message.client) << 16) | message.session;
@@ -42,8 +46,10 @@ std::shared_ptr<MessageSOMEIP> to_internal_message(const Message& message) {
     return result;
 }
 
-std::shared_ptr<Message> from_internal_message(const std::shared_ptr<MessageSOMEIP>& message) {
-    if (!message) {
+std::shared_ptr<Message> from_internal_message(const std::shared_ptr<MessageSOMEIP>& message)
+{
+    if (!message)
+    {
         return nullptr;
     }
 
@@ -58,169 +64,233 @@ std::shared_ptr<Message> from_internal_message(const std::shared_ptr<MessageSOME
     result->interface_version = message->get_interface_version();
     result->type = static_cast<MessageType>(message->get_message_type());
     result->return_code = static_cast<ReturnCode>(message->get_return_code());
-    if (const auto payload = message->get_payload_type()) {
+    if (const auto payload = message->get_payload_type())
+    {
         result->payload = payload->get_payload_vector();
     }
     return result;
 }
 
-class ApplicationImpl final : public Application {
-public:
+class ApplicationImpl final : public Application
+{
+  public:
     ApplicationImpl(std::string name, std::string config_path)
-        : manager_(std::make_shared<ApplicationManager>(std::move(name), std::move(config_path))) {}
+        : manager_(std::make_shared<ApplicationManager>(std::move(name), std::move(config_path)))
+    {
+    }
 
-    const std::string& name() const override {
+    const std::string& name() const override
+    {
         return manager_->get_application_name();
     }
-    client_t client_id() const override {
+    client_t client_id() const override
+    {
         return manager_->get_application_id();
     }
-    bool init() override {
-        try {
+    bool init() override
+    {
+        try
+        {
             manager_->init();
             initialized_ = true;
             return true;
-        } catch (...) {
+        }
+        catch (...)
+        {
             return false;
         }
     }
-    void start() override {
-        if (!initialized_) {
+    void start() override
+    {
+        if (!initialized_)
+        {
             throw std::logic_error("lgsomeip::api::Application::init must be called before start");
         }
         manager_->start();
     }
-    void join() override {
-        if (initialized_) {
+    void join() override
+    {
+        if (initialized_)
+        {
             manager_->join();
         }
     }
-    void stop() override {
+    void stop() override
+    {
         manager_->stop();
     }
 
-    void offer_service(service_t service, instance_t instance, major_version_t major, minor_version_t minor) override {
+    void offer_service(service_t service, instance_t instance, major_version_t major, minor_version_t minor) override
+    {
         manager_->offer_service(service, instance, major, minor);
     }
-    void stop_offer_service(service_t service, instance_t instance, major_version_t major,
-                            minor_version_t minor) override {
+    void stop_offer_service(service_t service,
+                            instance_t instance,
+                            major_version_t major,
+                            minor_version_t minor) override
+    {
         manager_->stop_offer_service(service, instance, major, minor);
     }
-    void find_service(service_t service, instance_t instance, major_version_t major, minor_version_t minor) override {
+    void find_service(service_t service, instance_t instance, major_version_t major, minor_version_t minor) override
+    {
         manager_->find_service(service, instance, major, minor);
     }
-    void request_service(service_t service, instance_t instance, major_version_t major,
-                         minor_version_t minor) override {
+    void request_service(service_t service, instance_t instance, major_version_t major, minor_version_t minor) override
+    {
         manager_->request_service(service, instance, major, minor);
     }
-    void release_service(service_t service, instance_t instance) override {
+    void release_service(service_t service, instance_t instance) override
+    {
         manager_->release_service(service, instance);
     }
-    bool is_service_available(service_t service, instance_t instance, major_version_t major,
-                              minor_version_t minor) const override {
+    bool is_service_available(service_t service,
+                              instance_t instance,
+                              major_version_t major,
+                              minor_version_t minor) const override
+    {
         return manager_->is_service_available(service, instance, major, minor);
     }
 
-    void offer_event(service_t service, instance_t instance, event_t event, const std::set<eventgroup_t>& eventgroups,
-                     bool is_field) override {
+    void offer_event(service_t service,
+                     instance_t instance,
+                     event_t event,
+                     const std::set<eventgroup_t>& eventgroups,
+                     bool is_field) override
+    {
         manager_->offer_event(service, instance, event, eventgroups, is_field);
     }
-    void stop_offer_event(service_t service, instance_t instance, event_t event) override {
+    void stop_offer_event(service_t service, instance_t instance, event_t event) override
+    {
         manager_->stop_offer_event(service, instance, event);
     }
-    void request_event(service_t service, instance_t instance, event_t event,
-                       const std::set<eventgroup_t>& eventgroups) override {
+    void request_event(service_t service,
+                       instance_t instance,
+                       event_t event,
+                       const std::set<eventgroup_t>& eventgroups) override
+    {
         manager_->request_event(service, instance, event, eventgroups);
     }
-    void release_event(service_t service, instance_t instance, event_t event) override {
+    void release_event(service_t service, instance_t instance, event_t event) override
+    {
         manager_->release_event(service, instance, event);
     }
-    void subscribe(service_t service, instance_t instance, eventgroup_t eventgroup, major_version_t major,
-                   event_t event_filter) override {
+    void subscribe(service_t service,
+                   instance_t instance,
+                   eventgroup_t eventgroup,
+                   major_version_t major,
+                   event_t event_filter) override
+    {
         manager_->subscribe(service, instance, eventgroup, major, event_filter);
     }
-    void unsubscribe(service_t service, instance_t instance, eventgroup_t eventgroup) override {
+    void unsubscribe(service_t service, instance_t instance, eventgroup_t eventgroup) override
+    {
         manager_->unsubscribe(service, instance, eventgroup);
     }
 
-    void send(const Message& message) override {
+    void send(const Message& message) override
+    {
         manager_->send(to_internal_message(message));
     }
-    void notify(service_t service, instance_t instance, event_t event, const Payload& payload, bool force,
-                bool flush) override {
+    void notify(service_t service, instance_t instance, event_t event, const Payload& payload, bool force, bool flush)
+        override
+    {
         auto internal_payload = std::make_shared<MessagePayload>();
         internal_payload->set_payload(payload);
         manager_->notify(service, instance, event, std::move(internal_payload), 0, force, flush);
     }
 
-    void register_application_state_handler(ApplicationStateHandler handler) override {
-        if (!handler) {
+    void register_application_state_handler(ApplicationStateHandler handler) override
+    {
+        if (!handler)
+        {
             manager_->unregister_application_state_handler();
             return;
         }
-        manager_->register_application_state_handler(
-            [handler = std::move(handler)](std::uint16_t state) { handler(state != 0); });
+        manager_->register_application_state_handler([handler = std::move(handler)](std::uint16_t state) {
+            handler(state != 0);
+        });
     }
-    void register_message_handler(service_t service, instance_t instance, method_t method,
-                                  MessageHandler handler) override {
-        if (!handler) {
+    void register_message_handler(service_t service,
+                                  instance_t instance,
+                                  method_t method,
+                                  MessageHandler handler) override
+    {
+        if (!handler)
+        {
             manager_->unregister_message_handler(service, instance, method);
             return;
         }
-        manager_->register_message_handler(service, instance, method,
-                                           [handler = std::move(handler)](std::shared_ptr<MessageSOMEIP> message) {
-                                               handler(from_internal_message(message));
-                                           });
+        manager_->register_message_handler(
+            service, instance, method, [handler = std::move(handler)](std::shared_ptr<MessageSOMEIP> message) {
+                handler(from_internal_message(message));
+            });
     }
-    void unregister_message_handler(service_t service, instance_t instance, method_t method) override {
+    void unregister_message_handler(service_t service, instance_t instance, method_t method) override
+    {
         manager_->unregister_message_handler(service, instance, method);
     }
-    void register_availability_handler(service_t service, instance_t instance, AvailabilityHandler handler,
-                                       major_version_t major, minor_version_t minor) override {
-        if (!handler) {
+    void register_availability_handler(service_t service,
+                                       instance_t instance,
+                                       AvailabilityHandler handler,
+                                       major_version_t major,
+                                       minor_version_t minor) override
+    {
+        if (!handler)
+        {
             manager_->unregister_availability_handler(service, instance, major, minor);
             return;
         }
         manager_->register_availability_handler(service, instance, std::move(handler), major, minor);
     }
-    void unregister_availability_handler(service_t service, instance_t instance, major_version_t major,
-                                         minor_version_t minor) override {
+    void unregister_availability_handler(service_t service,
+                                         instance_t instance,
+                                         major_version_t major,
+                                         minor_version_t minor) override
+    {
         manager_->unregister_availability_handler(service, instance, major, minor);
     }
-    void register_subscription_handler(service_t service, instance_t instance, eventgroup_t eventgroup,
-                                       SubscriptionHandler handler) override {
-        if (!handler) {
+    void register_subscription_handler(service_t service,
+                                       instance_t instance,
+                                       eventgroup_t eventgroup,
+                                       SubscriptionHandler handler) override
+    {
+        if (!handler)
+        {
             manager_->unregister_subscription_handler(service, instance, eventgroup);
             return;
         }
         manager_->register_subscription_handler(service, instance, eventgroup, std::move(handler));
     }
-    void unregister_subscription_handler(service_t service, instance_t instance, eventgroup_t eventgroup) override {
+    void unregister_subscription_handler(service_t service, instance_t instance, eventgroup_t eventgroup) override
+    {
         manager_->unregister_subscription_handler(service, instance, eventgroup);
     }
 
-private:
+  private:
     std::shared_ptr<ApplicationManager> manager_;
     bool initialized_{false};
 };
 
-class RuntimeImpl final : public Runtime {
-public:
-    std::shared_ptr<Application> create_application(const std::string& name, const std::string& config_path) override {
+class RuntimeImpl final : public Runtime
+{
+  public:
+    std::shared_ptr<Application> create_application(const std::string& name, const std::string& config_path) override
+    {
         return std::make_shared<ApplicationImpl>(name, config_path);
     }
 };
 
-} // namespace
+}  // namespace
 
 Application::~Application() = default;
 
-Runtime& Runtime::instance() {
+Runtime& Runtime::instance()
+{
     static RuntimeImpl runtime;
     return runtime;
 }
 
 Runtime::~Runtime() = default;
 
-} // namespace api
-} // namespace lgsomeip
+}  // namespace api
+}  // namespace lgsomeip

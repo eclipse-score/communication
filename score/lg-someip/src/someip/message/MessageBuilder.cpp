@@ -17,24 +17,33 @@
 
 #include <message/MessageBuilder.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 static const std::uint8_t kSdPreamble[4] = {0xff, 0xff, 0x81, 0x00};
 
-bool MessageBuilder::is_sd_message(std::uint8_t* data, std::uint32_t length) {
-    if (data == nullptr || length < SOMEIP_HEADER::SIZE) {
+bool MessageBuilder::is_sd_message(std::uint8_t* data, std::uint32_t length)
+{
+    if (data == nullptr || length < SOMEIP_HEADER::SIZE)
+    {
         return false;
-    } else if (memcmp(kSdPreamble, data, 4) == 0) {
+    }
+    else if (memcmp(kSdPreamble, data, 4) == 0)
+    {
         return true;
     }
 
     return false;
 }
 
-std::shared_ptr<MessageSOMEIP> MessageBuilder::create_request_message(std::uint16_t service_id, std::uint16_t method_id,
-                                                                      std::uint8_t major_version, bool no_response) {
+std::shared_ptr<MessageSOMEIP> MessageBuilder::create_request_message(std::uint16_t service_id,
+                                                                      std::uint16_t method_id,
+                                                                      std::uint8_t major_version,
+                                                                      bool no_response)
+{
     std::shared_ptr<MessageSOMEIP> message = MessageBuilder::create<SOMEIP>();
-    if (message != nullptr) {
+    if (message != nullptr)
+    {
         std::uint32_t message_id = (static_cast<std::uint32_t>(service_id) << 16) | ((std::uint32_t)method_id & 0xffff);
         std::uint8_t message_type = SOMEIP_MESSAGE_TYPE::REQUEST;
         if (no_response == true)
@@ -51,9 +60,11 @@ std::shared_ptr<MessageSOMEIP> MessageBuilder::create_request_message(std::uint1
     return message;
 }
 
-std::shared_ptr<MessageSOMEIP> MessageBuilder::create_response_message(MessageSOMEIP& message) {
+std::shared_ptr<MessageSOMEIP> MessageBuilder::create_response_message(MessageSOMEIP& message)
+{
     std::shared_ptr<MessageSOMEIP> response = nullptr;
-    if (message.get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST) {
+    if (message.get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST)
+    {
         response = MessageBuilder::create<SOMEIP>();
         response->set_message_id(message.get_message_id());
         response->set_instance_id(message.get_instance_id());
@@ -62,7 +73,9 @@ std::shared_ptr<MessageSOMEIP> MessageBuilder::create_response_message(MessageSO
         response->set_request_id(message.get_request_id());
         response->set_return_code(SOMEIP_RETURN_CODE::E_OK);
         response->set_message_type(SOMEIP_MESSAGE_TYPE::RESPONSE);
-    } else {
+    }
+    else
+    {
         // TODO(lg-someip): Report an error when a response is requested for a non-request message.
     }
 
@@ -70,9 +83,11 @@ std::shared_ptr<MessageSOMEIP> MessageBuilder::create_response_message(MessageSO
 }
 
 std::shared_ptr<MessageSOMEIP> MessageBuilder::create_notification_message(std::uint16_t service_id,
-                                                                           std::uint16_t event_id) {
+                                                                           std::uint16_t event_id)
+{
     std::shared_ptr<MessageSOMEIP> message = MessageBuilder::create<SOMEIP>();
-    if (message != nullptr) {
+    if (message != nullptr)
+    {
         std::uint32_t message_id = (static_cast<std::uint32_t>(service_id) << 16) | ((std::uint32_t)event_id & 0xffff);
 
         message->set_message_id(message_id);
@@ -86,4 +101,4 @@ std::shared_ptr<MessageSOMEIP> MessageBuilder::create_notification_message(std::
     return message;
 }
 
-} // namespace lgsomeip
+}  // namespace lgsomeip

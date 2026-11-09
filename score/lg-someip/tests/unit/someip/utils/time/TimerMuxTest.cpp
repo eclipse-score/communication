@@ -12,9 +12,9 @@
  *
  ********************************************************************************/
 
+#include <gtest/gtest.h>
 #include <atomic>
 #include <chrono>
-#include <gtest/gtest.h>
 #include <memory>
 
 #include <endpoint/EndpointConstant.h>
@@ -25,11 +25,13 @@ using namespace lgsomeip;
 using namespace lgsomeip::osabstraction;
 
 static std::atomic<int> timer_expired{0};
-void on_timer() {
+void on_timer()
+{
     timer_expired++;
 }
 
-TEST(TimerMux, OneShotTest) {
+TEST(TimerMux, OneShotTest)
+{
     timer_expired = 0;
     std::shared_ptr<Multiplexer> mux = std::make_shared<Multiplexer>();
     mux->start();
@@ -52,7 +54,8 @@ TEST(TimerMux, OneShotTest) {
     mux->join();
 }
 
-TEST(TimerMux, PeriodicTimerTest) {
+TEST(TimerMux, PeriodicTimerTest)
+{
     timer_expired = 0;
     std::shared_ptr<Multiplexer> mux = std::make_shared<Multiplexer>();
     mux->start();

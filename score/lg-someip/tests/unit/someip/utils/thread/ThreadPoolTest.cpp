@@ -12,8 +12,8 @@
  *
  ********************************************************************************/
 
-#include <atomic>
 #include <gtest/gtest.h>
+#include <atomic>
 #include <stdexcept>
 #include <vector>
 
@@ -21,33 +21,47 @@
 
 using namespace lgsomeip;
 
-TEST(ThreadPool, returns_job_result) {
+TEST(ThreadPool, returns_job_result)
+{
     ThreadPool pool(2);
 
-    auto result = pool.enqueue_job([](int first, int second) { return first + second; }, 2, 3);
+    auto result = pool.enqueue_job(
+        [](int first, int second) {
+            return first + second;
+        },
+        2,
+        3);
 
     EXPECT_EQ(result.get(), 5);
 }
 
-TEST(ThreadPool, propagates_job_exception_through_future) {
+TEST(ThreadPool, propagates_job_exception_through_future)
+{
     ThreadPool pool(1);
 
-    auto result = pool.enqueue_job([]() -> int { throw std::runtime_error("job failure"); });
+    auto result = pool.enqueue_job([]() -> int {
+        throw std::runtime_error("job failure");
+    });
 
     EXPECT_THROW(result.get(), std::runtime_error);
 }
 
-TEST(ThreadPool, drains_queued_jobs_before_destruction) {
+TEST(ThreadPool, drains_queued_jobs_before_destruction)
+{
     std::atomic<int> completed_jobs{0};
     std::vector<std::future<void>> results;
 
     {
         ThreadPool pool(2);
-        for (int index = 0; index < 8; ++index) {
-            results.push_back(pool.enqueue_job([&completed_jobs] { ++completed_jobs; }));
+        for (int index = 0; index < 8; ++index)
+        {
+            results.push_back(pool.enqueue_job([&completed_jobs] {
+                ++completed_jobs;
+            }));
         }
 
-        for (auto& result : results) {
+        for (auto& result : results)
+        {
             result.get();
         }
     }

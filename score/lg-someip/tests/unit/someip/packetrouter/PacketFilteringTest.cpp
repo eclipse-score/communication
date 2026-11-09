@@ -18,7 +18,8 @@
 
 using namespace lgsomeip;
 
-TEST(PacketFiltering, passes_first_message_and_releases_latest_blocked_message) {
+TEST(PacketFiltering, passes_first_message_and_releases_latest_blocked_message)
+{
     PacketFiltering filtering;
     filtering.set_filter_list({{0x1001, 0}});
 

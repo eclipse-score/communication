@@ -12,9 +12,9 @@
  *
  ********************************************************************************/
 
+#include <gtest/gtest.h>
 #include <algorithm>
 #include <cstring>
-#include <gtest/gtest.h>
 #include <iostream>
 #include <memory>
 
@@ -25,7 +25,8 @@ using namespace lgsomeip::osabstraction;
 
 extern std::uint8_t test_message[1000];
 
-TEST(MessageBuilder, build_message) {
+TEST(MessageBuilder, build_message)
+{
     auto msg = MessageBuilder::create<SOMEIPSD>();
     MessageBuilder::build_message(*msg, test_message, sizeof(test_message));
 
@@ -35,7 +36,8 @@ TEST(MessageBuilder, build_message) {
     EXPECT_EQ(msg->options().size(), 1);
 }
 
-TEST(MessageBuilder, build_byte_stream) {
+TEST(MessageBuilder, build_byte_stream)
+{
     auto msg = MessageBuilder::create<SOMEIPSD>();
     MessageBuilder::build_message(*msg, test_message, sizeof(test_message));
 
@@ -46,7 +48,8 @@ TEST(MessageBuilder, build_byte_stream) {
     EXPECT_EQ(memcmp(buffer, test_message, length), 0);
 }
 
-TEST(MessageBuilder, build_byte_stream_rejects_insufficient_capacity) {
+TEST(MessageBuilder, build_byte_stream_rejects_insufficient_capacity)
+{
     auto msg = MessageBuilder::create<SOMEIP>();
     std::uint8_t payload[10] = {};
     msg->set_payload(payload, sizeof(payload));
@@ -66,43 +69,50 @@ TEST(MessageBuilder, build_byte_stream_rejects_insufficient_capacity) {
     EXPECT_EQ(length, SOMEIP_HEADER::SIZE + sizeof(payload));
 }
 
-TEST(MessageBuilder, udp_limits_derive_from_payload_limit) {
+TEST(MessageBuilder, udp_limits_derive_from_payload_limit)
+{
     EXPECT_EQ(SOMEIP_UDP::MAX_MESSAGE_SIZE, SOMEIP_HEADER::SIZE + SOMEIP_UDP::MAX_PAYLOAD_SIZE);
     EXPECT_EQ(SOMEIP_UDP::TP_MAX_SEGMENT_SIZE % 16, 0U);
     EXPECT_LE(4 + SOMEIP_UDP::TP_MAX_SEGMENT_SIZE, SOMEIP_UDP::MAX_PAYLOAD_SIZE);
     EXPECT_GT(4 + SOMEIP_UDP::TP_MAX_SEGMENT_SIZE + 16, SOMEIP_UDP::MAX_PAYLOAD_SIZE);
 }
 
-TEST(MessageBuilder, is_sd_message) {
+TEST(MessageBuilder, is_sd_message)
+{
     auto ret = MessageBuilder::is_sd_message(nullptr, 0);
     EXPECT_EQ(ret, false);
 }
 
-TEST(MessageBuilder, is_sd_message_rejects_null_data) {
+TEST(MessageBuilder, is_sd_message_rejects_null_data)
+{
     EXPECT_FALSE(MessageBuilder::is_sd_message(nullptr, 5));
 }
 
-TEST(MessageBuilder, is_sd_message_rejects_short_header) {
+TEST(MessageBuilder, is_sd_message_rejects_short_header)
+{
     std::uint8_t data[SOMEIP_HEADER::SIZE - 1] = {0xff, 0xff, 0x81, 0x00};
 
     EXPECT_FALSE(MessageBuilder::is_sd_message(data, sizeof(data)));
 }
 
-TEST(MessageBuilder, build_message_rejects_truncated_header) {
+TEST(MessageBuilder, build_message_rejects_truncated_header)
+{
     auto msg = MessageBuilder::create<SOMEIP>();
     std::uint8_t data[SOMEIP_HEADER::SIZE - 1] = {};
 
     EXPECT_FALSE(MessageBuilder::build_message(*msg, data, sizeof(data)));
 }
 
-TEST(MessageBuilder, create_notification_message) {
+TEST(MessageBuilder, create_notification_message)
+{
     auto msg = MessageBuilder::create_notification_message(0x1000, 0x0001);
     EXPECT_EQ(msg->get_message_id(), 0x10000001);
     EXPECT_EQ(msg->get_protocol_version(), 0x01);
     EXPECT_EQ(msg->get_message_type(), SOMEIP_MESSAGE_TYPE::NOTIFICATION);
 }
 
-TEST(MessageBuilder, create_request_message_variants) {
+TEST(MessageBuilder, create_request_message_variants)
+{
     auto request = MessageBuilder::create_request_message(0x1001, 0x0001, 0x02);
     ASSERT_NE(request, nullptr);
     EXPECT_EQ(request->get_message_id(), 0x10010001U);
@@ -116,7 +126,8 @@ TEST(MessageBuilder, create_request_message_variants) {
     EXPECT_EQ(no_response->get_message_type(), SOMEIP_MESSAGE_TYPE::REQUEST_NO_RETURN);
 }
 
-TEST(MessageBuilder, create_response_message_copies_request_identity) {
+TEST(MessageBuilder, create_response_message_copies_request_identity)
+{
     auto request = MessageBuilder::create_request_message(0x1001, 0x0001, 0x02);
     request->set_request_id(0x01230045);
 
@@ -130,7 +141,8 @@ TEST(MessageBuilder, create_response_message_copies_request_identity) {
     EXPECT_EQ(response->get_return_code(), SOMEIP_RETURN_CODE::E_OK);
 }
 
-TEST(MessageBuilder, create_response_message_rejects_non_request) {
+TEST(MessageBuilder, create_response_message_rejects_non_request)
+{
     auto notification = MessageBuilder::create_notification_message(0x1001, 0x0001);
 
     EXPECT_EQ(MessageBuilder::create_response_message(*notification), nullptr);

@@ -20,7 +20,8 @@
 
 using namespace lgsomeip;
 
-TEST(ConfigurationSD, initialize_sets_defaults) {
+TEST(ConfigurationSD, initialize_sets_defaults)
+{
     ConfigurationSD configuration;
     configuration.initialize();
 
@@ -32,7 +33,8 @@ TEST(ConfigurationSD, initialize_sets_defaults) {
     EXPECT_EQ(configuration.get_ttl(), 3);
 }
 
-TEST(ConfigurationSD, parses_numeric_values) {
+TEST(ConfigurationSD, parses_numeric_values)
+{
     rapidjson::Document document;
     document.Parse(R"({
         "enable": true,
@@ -65,7 +67,8 @@ TEST(ConfigurationSD, parses_numeric_values) {
     EXPECT_EQ(configuration.get_request_response_delay(), 50);
 }
 
-TEST(ConfigurationSD, disabled_configuration_stops_after_enable_flag) {
+TEST(ConfigurationSD, disabled_configuration_stops_after_enable_flag)
+{
     rapidjson::Document document;
     document.Parse(R"({
         "enable": false,
@@ -80,7 +83,8 @@ TEST(ConfigurationSD, disabled_configuration_stops_after_enable_flag) {
     EXPECT_EQ(configuration.get_port(), 0);
 }
 
-TEST(ConfigurationSD, rejects_values_that_do_not_fit_the_target_type) {
+TEST(ConfigurationSD, rejects_values_that_do_not_fit_the_target_type)
+{
     auto initialize = [](const char* json) {
         rapidjson::Document document;
         document.Parse(json);

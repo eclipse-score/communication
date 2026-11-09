@@ -12,8 +12,8 @@
  *
  ********************************************************************************/
 
-#include <cstring>
 #include <gtest/gtest.h>
+#include <cstring>
 #include <iostream>
 #include <memory>
 
@@ -24,9 +24,11 @@ using namespace lgsomeip::osabstraction;
 
 extern std::uint8_t test_message[1000];
 
-class SDEntryTest : public ::testing::Test {
-protected:
-    virtual void SetUp() {
+class SDEntryTest : public ::testing::Test
+{
+  protected:
+    virtual void SetUp()
+    {
         message_ = MessageBuilder::create<SOMEIPSD>();
         MessageBuilder::build_message(*message_, test_message, sizeof(test_message));
     }
@@ -34,19 +36,23 @@ protected:
     std::shared_ptr<MessageSD> message_;
 };
 
-TEST_F(SDEntryTest, get_service_id) {
+TEST_F(SDEntryTest, get_service_id)
+{
     EXPECT_EQ(message_->entries().back().get_service_id(), 0xb00f);
 }
 
-TEST_F(SDEntryTest, get_instance_id) {
+TEST_F(SDEntryTest, get_instance_id)
+{
     EXPECT_EQ(message_->entries().back().get_instance_id(), 1);
 }
 
-TEST_F(SDEntryTest, get_major_version) {
+TEST_F(SDEntryTest, get_major_version)
+{
     EXPECT_EQ(message_->entries().back().get_major_version(), 1);
 }
 
-TEST(SDEntry, offer_service_round_trip) {
+TEST(SDEntry, offer_service_round_trip)
+{
     SDEntry source(SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID);
     source.set_option1st_index(2);
     source.set_option1st_count(1);
@@ -75,7 +81,8 @@ TEST(SDEntry, offer_service_round_trip) {
     EXPECT_EQ(decoded.get_ttl(), 0x000405U);
 }
 
-TEST(SDEntry, subscribe_round_trip) {
+TEST(SDEntry, subscribe_round_trip)
+{
     SDEntry source(SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID);
     source.set_service_id(0x1001);
     source.set_instance_id(0x0002);
@@ -94,7 +101,8 @@ TEST(SDEntry, subscribe_round_trip) {
     EXPECT_EQ(decoded.get_event_group_id(), 0x4455);
 }
 
-TEST(SDEntry, rejects_short_and_unknown_data) {
+TEST(SDEntry, rejects_short_and_unknown_data)
+{
     SDEntry entry;
     std::uint8_t short_data[SOMEIP_SD_ENTRY::SIZE - 1] = {};
     std::uint8_t unknown_data[SOMEIP_SD_ENTRY::SIZE] = {};

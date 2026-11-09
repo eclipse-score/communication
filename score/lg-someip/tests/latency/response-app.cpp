@@ -12,9 +12,9 @@
  *
  ********************************************************************************/
 
+#include <unistd.h>
 #include <cstdint>
 #include <iostream>
-#include <unistd.h>
 
 #include <message/Message.h>
 #include <runtime/ApplicationManager.h>
@@ -32,26 +32,32 @@ std::string application_name;
 ApplicationManager* application_manager;
 uint16_t service_id = 0x1001;
 
-void on_message(std::shared_ptr<Message> msg) {
-    if (msg->get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST) {
+void on_message(std::shared_ptr<Message> msg)
+{
+    if (msg->get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST)
+    {
         auto message = MessageBuilder::create_response_message(*msg);
         message->set_payload(msg->get_payload(), msg->get_length() - 8);
         application_manager->send(message);
     }
 }
 
-void on_availability([[maybe_unused]] std::uint16_t available_service_id, [[maybe_unused]] std::uint16_t instance_id,
-                     bool available) {
+void on_availability([[maybe_unused]] std::uint16_t available_service_id,
+                     [[maybe_unused]] std::uint16_t instance_id,
+                     bool available)
+{
     std::cout << "Response App / on_availability Called!! / state = " << available << std::endl;
 }
 
-void on_state(std::uint16_t state) {
+void on_state(std::uint16_t state)
+{
     std::cout << "Response App / on_state Called!! / state = " << state << std::endl;
     application_manager->register_message_handler(service_id, SOMEIP_INSTANCE_ID, SOMEIP_METHOD_ID, on_message);
     application_manager->offer_service(service_id, SOMEIP_INSTANCE_ID, SOMEIP_MAJOR_VERSION, SOMEIP_MINOR_VERSION);
 }
 
-int main([[maybe_unused]] int argc, char** argv) {
+int main([[maybe_unused]] int argc, char** argv)
+{
     service_id = (uint16_t)strtol(argv[1], NULL, 16) + 0x1000;
     std::string app_number = argv[1];
     application_name = "response" + app_number;
@@ -60,7 +66,8 @@ int main([[maybe_unused]] int argc, char** argv) {
     application_manager->register_application_state_handler(on_state);
     application_manager->start();
 
-    while (true) {
+    while (true)
+    {
         sleep(1);
     }
 

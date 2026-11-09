@@ -14,16 +14,18 @@
 
 #include "ConfigurationSD.h"
 #include "ConfigParse.h"
+#include <signal.h>
 #include <functional>
 #include <iostream>
-#include <signal.h>
 #include <sstream>
 
 #include <exception/Exception.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-void ConfigurationSD::initialize() {
+void ConfigurationSD::initialize()
+{
     // default value
     enabled_ = true;
     multicast_address_ = "224.244.224.245";
@@ -39,14 +41,19 @@ void ConfigurationSD::initialize() {
     request_response_delay_ = 1500;
 }
 
-void ConfigurationSD::initialize(const rapidjson::Value& sd) {
-    if (sd[kConfigEnable].IsBool()) {
+void ConfigurationSD::initialize(const rapidjson::Value& sd)
+{
+    if (sd[kConfigEnable].IsBool())
+    {
         enabled_ = sd[kConfigEnable].GetBool();
-    } else if (sd[kConfigEnable].IsString()) {
+    }
+    else if (sd[kConfigEnable].IsString())
+    {
         enabled_ = strcmp(sd[kConfigEnable].GetString(), "true") == 0 ? true : false;
     }
 
-    if (enabled_ != true) {
+    if (enabled_ != true)
+    {
         return;
     }
 
@@ -60,25 +67,31 @@ void ConfigurationSD::initialize(const rapidjson::Value& sd) {
     cyclic_offer_delay_ = 1000;
     request_response_delay_ = 1500;
 
-    if (sd.HasMember(kConfigMulticast)) {
+    if (sd.HasMember(kConfigMulticast))
+    {
         multicast_address_ = sd[kConfigMulticast].GetString();
     }
 
-    if (sd.HasMember(kConfigProtocol)) {
+    if (sd.HasMember(kConfigProtocol))
+    {
         protocol_ = sd[kConfigProtocol].GetString();
     }
 
     auto get_uint16 = [&](const char* member, std::uint16_t& value) -> void {
-        if (sd.HasMember(member)) {
-            if (sd[member].IsString() || sd[member].IsUint()) {
+        if (sd.HasMember(member))
+        {
+            if (sd[member].IsString() || sd[member].IsUint())
+            {
                 value = parse_unsigned<std::uint16_t>(sd[member], member, 10);
             }
         }
     };
 
     auto get_uint8 = [&](const char* member, std::uint8_t& value) -> void {
-        if (sd.HasMember(member)) {
-            if (sd[member].IsString() || sd[member].IsUint()) {
+        if (sd.HasMember(member))
+        {
+            if (sd[member].IsString() || sd[member].IsUint())
+            {
                 value = parse_unsigned<std::uint8_t>(sd[member], member, 10);
             }
         }
@@ -95,7 +108,8 @@ void ConfigurationSD::initialize(const rapidjson::Value& sd) {
     get_uint16(kConfigRequestResponseDelay, request_response_delay_);
 
     // Check if port and multicast address are valid
-    if (port_ == 0 || multicast_address_.empty()) {
+    if (port_ == 0 || multicast_address_.empty())
+    {
         std::ostringstream sout;
         sout << "Configuration Error! : Invalid port and multicast address [" << "port: " << port_
              << ", multicast address: " << multicast_address_ << "]";
@@ -103,52 +117,64 @@ void ConfigurationSD::initialize(const rapidjson::Value& sd) {
     }
 }
 
-bool ConfigurationSD::is_enabled() const {
+bool ConfigurationSD::is_enabled() const
+{
     return enabled_;
 }
 
-std::string ConfigurationSD::get_multicast() const {
+std::string ConfigurationSD::get_multicast() const
+{
     return multicast_address_;
 }
 
-std::string ConfigurationSD::get_protocol() const {
+std::string ConfigurationSD::get_protocol() const
+{
     return protocol_;
 }
 
-std::uint16_t ConfigurationSD::get_port() const {
+std::uint16_t ConfigurationSD::get_port() const
+{
     return port_;
 }
 
-std::uint8_t ConfigurationSD::get_vlan_priority() const {
+std::uint8_t ConfigurationSD::get_vlan_priority() const
+{
     return vlan_priority_;
 }
 
-std::uint16_t ConfigurationSD::get_initial_delay_min() const {
+std::uint16_t ConfigurationSD::get_initial_delay_min() const
+{
     return initial_delay_min_;
 }
 
-std::uint16_t ConfigurationSD::get_initial_delay_max() const {
+std::uint16_t ConfigurationSD::get_initial_delay_max() const
+{
     return initial_delay_max_;
 }
 
-std::uint16_t ConfigurationSD::get_repetitions_base_delay() const {
+std::uint16_t ConfigurationSD::get_repetitions_base_delay() const
+{
     return repetitions_base_delay_;
 }
 
-std::uint16_t ConfigurationSD::get_repetitions_max() const {
+std::uint16_t ConfigurationSD::get_repetitions_max() const
+{
     return repetitions_max_;
 }
 
-std::uint16_t ConfigurationSD::get_ttl() const {
+std::uint16_t ConfigurationSD::get_ttl() const
+{
     return ttl_;
 }
 
-std::uint16_t ConfigurationSD::get_cyclic_offer_delay() const {
+std::uint16_t ConfigurationSD::get_cyclic_offer_delay() const
+{
     return cyclic_offer_delay_;
 }
 
-std::uint16_t ConfigurationSD::get_request_response_delay() const {
+std::uint16_t ConfigurationSD::get_request_response_delay() const
+{
     return request_response_delay_;
 }
 
-} // namespace lgsomeip
+}  // namespace lgsomeip

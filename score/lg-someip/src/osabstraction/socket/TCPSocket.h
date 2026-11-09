@@ -17,14 +17,19 @@
 
 #include "Socket.h"
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
-class TCPSocket : public Socket {
-public:
-    TCPSocket(std::shared_ptr<Address> source_address, std::shared_ptr<Address> destination_address,
+class TCPSocket : public Socket
+{
+  public:
+    TCPSocket(std::shared_ptr<Address> source_address,
+              std::shared_ptr<Address> destination_address,
               const SecureConfig& secure_config = SecureConfig());
-    TCPSocket(int file_descriptor, std::shared_ptr<Address> destination_address,
+    TCPSocket(int file_descriptor,
+              std::shared_ptr<Address> destination_address,
               const SecureConfig& secure_config = SecureConfig());
     virtual ~TCPSocket() {}
 
@@ -36,7 +41,7 @@ public:
     int receive(char* buffer, std::size_t size) override;
 };
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_OSABSTRACTION_SOCKET_TCPSOCKET
+#endif  // LG_SOMEIP_OSABSTRACTION_SOCKET_TCPSOCKET

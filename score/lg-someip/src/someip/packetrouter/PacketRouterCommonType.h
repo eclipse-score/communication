@@ -22,34 +22,39 @@
 
 #include <endpoint/Endpoint.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-struct RoutingApplicationInfo {
+struct RoutingApplicationInfo
+{
     std::string name;
     std::shared_ptr<Endpoint> sender = nullptr;
     std::shared_ptr<Endpoint> receiver = nullptr;
 };
 
-struct RoutingConnectionInfo {
+struct RoutingConnectionInfo
+{
     std::shared_ptr<Endpoint> endpoint = nullptr;
     bool is_internal = false;
     std::uint16_t app_id = 0;
-    std::int32_t serverfd = 0; // server endpoint fd in clinet endpoint
+    std::int32_t serverfd = 0;  // server endpoint fd in clinet endpoint
 };
 
-struct RoutingServiceInfo {
-    std::uint16_t app_id = 0;                        // for internal
-    std::shared_ptr<Endpoint> svcendpoint = nullptr; // for internal (only internal service)
+struct RoutingServiceInfo
+{
+    std::uint16_t app_id = 0;                         // for internal
+    std::shared_ptr<Endpoint> svcendpoint = nullptr;  // for internal (only internal service)
 
-    std::shared_ptr<Endpoint> tcpendpoint = nullptr; // for external receiver(tcp)
-    std::shared_ptr<Endpoint> udpendpoint = nullptr; // for external receiver(udp)
+    std::shared_ptr<Endpoint> tcpendpoint = nullptr;  // for external receiver(tcp)
+    std::shared_ptr<Endpoint> udpendpoint = nullptr;  // for external receiver(udp)
     std::shared_ptr<lgsomeip::osabstraction::Address> udpserveraddress{nullptr};
-    std::vector<std::shared_ptr<Endpoint>> multicasts; // for multicast Sender receiver(udp)
+    std::vector<std::shared_ptr<Endpoint>> multicasts;  // for multicast Sender receiver(udp)
 
     std::map<std::uint16_t, std::vector<struct RoutingSubscribeInfo>> eventinfos;
 };
 
-struct RoutingSubscribeInfo {
+struct RoutingSubscribeInfo
+{
     // bool isack = false;
     std::uint16_t app_id = 0;
     std::uint16_t eventgroupid = 0;
@@ -57,13 +62,14 @@ struct RoutingSubscribeInfo {
     std::shared_ptr<Endpoint> endpoint = nullptr;
 };
 
-struct RoutingRequestPacket {
-    std::uint32_t reqid{0};                      // external ReqID
-    std::uint32_t ttl{0};                        // TTL
-    std::shared_ptr<Endpoint> endpoint{nullptr}; // external Endpoint
+struct RoutingRequestPacket
+{
+    std::uint32_t reqid{0};                       // external ReqID
+    std::uint32_t ttl{0};                         // TTL
+    std::shared_ptr<Endpoint> endpoint{nullptr};  // external Endpoint
     std::shared_ptr<lgsomeip::osabstraction::Address> targeaddr = nullptr;
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_PACKET_ROUTER_COMMON_TYPE_H
+#endif  // LG_SOMEIP_PACKET_ROUTER_COMMON_TYPE_H

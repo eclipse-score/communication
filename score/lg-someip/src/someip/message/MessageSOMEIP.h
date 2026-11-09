@@ -15,25 +15,29 @@
 #ifndef LG_SOMEIP_SOMEIP_MESSAGE_MESSAGE_SOMEIP_H
 #define LG_SOMEIP_SOMEIP_MESSAGE_MESSAGE_SOMEIP_H
 
+#include <message/MessageConstant.h>
+#include <message/MessageHeader.h>
+#include <message/MessagePayload.h>
 #include <cstdint>
 #include <memory>
-#include <message/MessageHeader.h>
-#include <message/MessageConstant.h>
-#include <message/MessagePayload.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class MessageSOMEIP : public MessageHeader {
-public:
+class MessageSOMEIP : public MessageHeader
+{
+  public:
     MessageSOMEIP();
     virtual ~MessageSOMEIP();
 
-    virtual bool is_service_discovery() {
+    virtual bool is_service_discovery()
+    {
         return false;
     }
     virtual std::uint32_t get_length() const;
     // Total bytes written by serialize(): SOME/IP header plus payload.
-    std::uint32_t get_serialized_size() const {
+    std::uint32_t get_serialized_size() const
+    {
         return get_length();
     }
 
@@ -51,12 +55,12 @@ public:
     std::uint16_t get_instance_id() const;
     bool get_is_valid_crc() const;
 
-private:
+  private:
     std::shared_ptr<MessagePayload> payload_;
     std::uint16_t instance_id_ = 0;
     bool valid_crc_{true};
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_SOMEIP_MESSAGE_MESSAGE_SOMEIP_H
+#endif  // LG_SOMEIP_SOMEIP_MESSAGE_MESSAGE_SOMEIP_H

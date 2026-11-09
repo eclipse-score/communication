@@ -29,7 +29,7 @@
 
 #if defined(ENABLE_SOMEIP_DELIVERY_STATISTICS)
 #include <utils/statistics/SomeipPacketStatistics.h>
-#endif // ENABLE_SOMEIP_DELIVERY_STATISTICS
+#endif  // ENABLE_SOMEIP_DELIVERY_STATISTICS
 
 #if defined(LINUX)
 #include <sys/syscall.h>
@@ -38,14 +38,18 @@
 #endif
 #include <thread>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 // ApplicationManager public methods.
 
-ApplicationManager::ApplicationManager(std::string name, std::string config_path,
+ApplicationManager::ApplicationManager(std::string name,
+                                       std::string config_path,
                                        std::shared_ptr<ApplicationRouter> packet_router)
-    : application_name_(name), packet_router_(std::move(packet_router)) {
-    if (packet_router_ == nullptr) {
+    : application_name_(name), packet_router_(std::move(packet_router))
+{
+    if (packet_router_ == nullptr)
+    {
         packet_router_ = std::make_shared<PacketRouterProxy>(this);
     }
 
@@ -54,7 +58,8 @@ ApplicationManager::ApplicationManager(std::string name, std::string config_path
 
     thread_pool_ = std::make_shared<ThreadPool>(LGSOMEIP_NUM_OF_THREADS);
 
-    if (application_id_ == 0) {
+    if (application_id_ == 0)
+    {
 #if defined(LINUX)
         application_id_ = static_cast<std::uint16_t>(syscall(SYS_gettid));
 #elif defined(QNX)
@@ -64,7 +69,8 @@ ApplicationManager::ApplicationManager(std::string name, std::string config_path
                           << format_named_id("AppID", this->application_id_, 4);
     }
 
-    if (application_name_.size() == 0) {
+    if (application_name_.size() == 0)
+    {
         application_name_ = "noname" + std::to_string(application_id_);
     }
 
@@ -72,52 +78,64 @@ ApplicationManager::ApplicationManager(std::string name, std::string config_path
                       << format_named_id("AppID", this->application_id_, 4);
 }
 
-ApplicationManager::~ApplicationManager() {
+ApplicationManager::~ApplicationManager()
+{
     stop();
     join();
     thread_pool_.reset();
 }
 
-void ApplicationManager::init() {
+void ApplicationManager::init()
+{
     packet_router_->init();
     event_manager_ = std::make_shared<EventManager>(this);
 }
 
-void ApplicationManager::start() {
+void ApplicationManager::start()
+{
     LGSOMEIP_LOG_INFO << "LG SOME/IP Library v" << SOMEIP_VERSION << " Start!!";
     packet_router_->start();
     event_manager_->start();
 }
 
-void ApplicationManager::stop() {
+void ApplicationManager::stop()
+{
     clear_all_handler();
 
-    if (event_manager_ != nullptr) {
+    if (event_manager_ != nullptr)
+    {
         event_manager_->stop();
     }
-    if (packet_router_ != nullptr) {
+    if (packet_router_ != nullptr)
+    {
         packet_router_->stop();
     }
 }
 
-void ApplicationManager::join() {
-    if (event_manager_ != nullptr) {
+void ApplicationManager::join()
+{
+    if (event_manager_ != nullptr)
+    {
         event_manager_->join();
     }
-    if (packet_router_ != nullptr) {
+    if (packet_router_ != nullptr)
+    {
         packet_router_->join();
     }
 }
 
-std::uint16_t ApplicationManager::get_application_id() {
+std::uint16_t ApplicationManager::get_application_id()
+{
     return application_id_;
 }
 
-const std::string& ApplicationManager::get_application_name() {
+const std::string& ApplicationManager::get_application_name()
+{
     return application_name_;
 }
 
-void ApplicationManager::clear_all_handler() {
+void ApplicationManager::clear_all_handler()
+{
     unregister_application_state_handler();
     {
         std::lock_guard<std::mutex> guard(service_management_mutex_);
@@ -144,8 +162,11 @@ void ApplicationManager::clear_all_handler() {
 // ApplicationManager public service-management methods.
 
 // OfferService handling.
-void ApplicationManager::offer_service(std::uint16_t service, std::uint16_t instance, std::uint8_t major_version,
-                                       std::uint32_t minor_version) {
+void ApplicationManager::offer_service(std::uint16_t service,
+                                       std::uint16_t instance,
+                                       std::uint8_t major_version,
+                                       std::uint32_t minor_version)
+{
     std::unique_lock<std::recursive_mutex> lck_offer(offer_service_list_mutex_);
 
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::offer_service "
@@ -160,8 +181,11 @@ void ApplicationManager::offer_service(std::uint16_t service, std::uint16_t inst
     send_offer_service(service, instance, major_version, minor_version, ttl);
 }
 
-void ApplicationManager::stop_offer_service(std::uint16_t service, std::uint16_t instance, std::uint8_t major_version,
-                                            std::uint32_t minor_version) {
+void ApplicationManager::stop_offer_service(std::uint16_t service,
+                                            std::uint16_t instance,
+                                            std::uint8_t major_version,
+                                            std::uint32_t minor_version)
+{
     std::lock_guard<std::recursive_mutex> guard(offer_service_list_mutex_);
 
     LGSOMEIP_LOG_INFO << "ApplicationManager::stop_offer_service "
@@ -170,36 +194,48 @@ void ApplicationManager::stop_offer_service(std::uint16_t service, std::uint16_t
     std::uint8_t major;
     std::uint32_t minor;
 
-    if (major_version == SOMEIP_DEFAULT_ANY_MAJOR) {
+    if (major_version == SOMEIP_DEFAULT_ANY_MAJOR)
+    {
         auto& majorlist = offer_service_list_[service][instance];
-        for (auto& majors : majorlist) {
+        for (auto& majors : majorlist)
+        {
             major = majors.first;
             if (major == SOMEIP_DEFAULT_ANY_MAJOR)
                 continue;
-            if (minor_version == SOMEIP_DEFAULT_ANY_MINOR) {
+            if (minor_version == SOMEIP_DEFAULT_ANY_MINOR)
+            {
                 auto& minorlist = offer_service_list_[service][instance][major];
-                for (auto& minors : minorlist) {
+                for (auto& minors : minorlist)
+                {
                     minor = minors.first;
                     if (minor == SOMEIP_DEFAULT_ANY_MINOR)
                         continue;
                     stop_offer_service(service, instance, major, minor);
                 }
-            } else {
+            }
+            else
+            {
                 minor = minor_version;
                 stop_offer_service(service, instance, major, minor);
             }
         }
-    } else if (minor_version == SOMEIP_DEFAULT_ANY_MINOR) {
+    }
+    else if (minor_version == SOMEIP_DEFAULT_ANY_MINOR)
+    {
         major = major_version;
         auto& minorlist = offer_service_list_[service][instance][major];
-        for (auto& minors : minorlist) {
+        for (auto& minors : minorlist)
+        {
             minor = minors.first;
             if (minor == SOMEIP_DEFAULT_ANY_MINOR)
                 continue;
             stop_offer_service(service, instance, major, minor);
         }
-    } else {
-        if (offer_service_list_[service][instance][major_version][minor_version] == SOMEIP_SERVICE_OFFER) {
+    }
+    else
+    {
+        if (offer_service_list_[service][instance][major_version][minor_version] == SOMEIP_SERVICE_OFFER)
+        {
             offer_service_list_[service][instance][major_version][minor_version] = SOMEIP_SERVICE_STOP_OFFER;
             event_manager_->set_service_enabled(service, instance, major_version, false);
 
@@ -210,8 +246,11 @@ void ApplicationManager::stop_offer_service(std::uint16_t service, std::uint16_t
 }
 
 // FindService handling.
-void ApplicationManager::find_service(std::uint16_t service, std::uint16_t instance, std::uint8_t major_version,
-                                      std::uint32_t minor_version) {
+void ApplicationManager::find_service(std::uint16_t service,
+                                      std::uint16_t instance,
+                                      std::uint8_t major_version,
+                                      std::uint32_t minor_version)
+{
     std::lock_guard<std::mutex> guard(service_management_mutex_);
 
     LGSOMEIP_LOG_INFO << "ApplicationManager::find_service "
@@ -224,15 +263,19 @@ void ApplicationManager::find_service(std::uint16_t service, std::uint16_t insta
     send_find_service(service, instance, major_version, minor_version, ttl);
 }
 
-void ApplicationManager::request_service(std::uint16_t service, std::uint16_t instance, std::uint8_t major_version,
-                                         std::uint32_t minor_version) {
+void ApplicationManager::request_service(std::uint16_t service,
+                                         std::uint16_t instance,
+                                         std::uint8_t major_version,
+                                         std::uint32_t minor_version)
+{
     std::lock_guard<std::mutex> guard(service_management_mutex_);
 
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::request_service "
                        << format_service_instance_interface_version(service, instance, major_version, minor_version)
                        << " start";
 
-    if (application_state_ == false) {
+    if (application_state_ == false)
+    {
         LGSOMEIP_LOG_INFO << "ApplicationManager::request_service "
                           << format_service_instance_interface_version(service, instance, major_version, minor_version)
                           << " Application is disconnected!";
@@ -240,22 +283,27 @@ void ApplicationManager::request_service(std::uint16_t service, std::uint16_t in
 
     auto service_config = configuration_->get_service_info(service, instance);
     // If service_config is null, handle the service through IPC.
-    if (service_config != nullptr) {
+    if (service_config != nullptr)
+    {
         // Read the instance ID, major version, and minor version from configuration when available.
         // Otherwise, use the values supplied by the SOME/IP binding layer.
-        if (service_config->has_instance_id()) {
+        if (service_config->has_instance_id())
+        {
             instance = service_config->get_instance_id();
         }
-        if (service_config->has_major_version()) {
+        if (service_config->has_major_version())
+        {
             major_version = service_config->get_major_version();
         }
-        if (service_config->has_minor_version()) {
+        if (service_config->has_minor_version())
+        {
             minor_version = service_config->get_minor_version();
         }
     }
 
     auto state = get_requested_service_state(service, instance, major_version, minor_version);
-    if (state == SOMEIP_SERVICE_REQUEST || state == SOMEIP_SERVICE_AVAILABLE) {
+    if (state == SOMEIP_SERVICE_REQUEST || state == SOMEIP_SERVICE_AVAILABLE)
+    {
         LGSOMEIP_LOG_INFO << "ApplicationManager::request_service "
                           << format_service_instance_interface_version(service, instance, major_version, minor_version)
                           << " Already requested.";
@@ -272,17 +320,21 @@ void ApplicationManager::request_service(std::uint16_t service, std::uint16_t in
     send_find_service(service, instance, major_version, minor_version, ttl);
 }
 
-void ApplicationManager::release_service(std::uint16_t service, std::uint16_t instance) {
+void ApplicationManager::release_service(std::uint16_t service, std::uint16_t instance)
+{
     std::lock_guard<std::mutex> guard(service_management_mutex_);
 
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::release_service " << format_service_instance_id(service, instance)
                        << " start";
 
-    if (request_service_list_[service][instance].size() > 0) {
+    if (request_service_list_[service][instance].size() > 0)
+    {
         std::uint32_t ttl = SOMEIP_DEFAULT_TTL_OFF;
-        for (auto& instance_info : request_service_list_[service][instance]) {
+        for (auto& instance_info : request_service_list_[service][instance])
+        {
             std::uint8_t major = instance_info.first;
-            for (auto& info : instance_info.second) {
+            for (auto& info : instance_info.second)
+            {
                 std::uint32_t minor = info.first;
                 std::uint8_t state = info.second;
                 if (state != SOMEIP_SERVICE_REQUEST && state == SOMEIP_SERVICE_AVAILABLE)
@@ -302,37 +354,46 @@ void ApplicationManager::release_service(std::uint16_t service, std::uint16_t in
     }
 }
 
-std::string get_request_service_state_string(std::uint8_t state) {
+std::string get_request_service_state_string(std::uint8_t state)
+{
     std::string state_string;
 
-    switch (state) {
-    case SOMEIP_SERVICE_AVAILABLE:
-        state_string = "SOMEIP_SERVICE_AVAILABLE";
-        break;
-    case SOMEIP_SERVICE_REQUEST:
-        state_string = "SOMEIP_SERVICE_REQUEST";
-        break;
-    default:
-        state_string = "NONE";
-        break;
+    switch (state)
+    {
+        case SOMEIP_SERVICE_AVAILABLE:
+            state_string = "SOMEIP_SERVICE_AVAILABLE";
+            break;
+        case SOMEIP_SERVICE_REQUEST:
+            state_string = "SOMEIP_SERVICE_REQUEST";
+            break;
+        default:
+            state_string = "NONE";
+            break;
     }
 
     return state_string;
 }
 
-void ApplicationManager::set_requested_service_state(std::uint16_t service, std::uint16_t instance,
-                                                     std::uint8_t major_version, std::uint32_t minor_version,
-                                                     std::uint8_t state) {
-    for (auto& service_entry : request_service_list_) {
+void ApplicationManager::set_requested_service_state(std::uint16_t service,
+                                                     std::uint16_t instance,
+                                                     std::uint8_t major_version,
+                                                     std::uint32_t minor_version,
+                                                     std::uint8_t state)
+{
+    for (auto& service_entry : request_service_list_)
+    {
         if (service_entry.first != service)
             continue;
-        for (auto& instance_entry : service_entry.second) {
+        for (auto& instance_entry : service_entry.second)
+        {
             if (instance_entry.first != instance && instance_entry.first != SOMEIP_DEFAULT_ANY_INSTANCE)
                 continue;
             // major.first stores the value recorded in request_service_list_ by FindService.
             // major_version stores the value received in OfferService.
-            for (auto& major : instance_entry.second) {
-                for (auto& minor : major.second) {
+            for (auto& major : instance_entry.second)
+            {
+                for (auto& minor : major.second)
+                {
                     // The service has already been requested by FindService.
                     LGSOMEIP_LOG_DEBUG << "ApplicationManager::set_requested_service_state "
                                        << format_service_instance_interface_version(
@@ -346,7 +407,8 @@ void ApplicationManager::set_requested_service_state(std::uint16_t service, std:
         }
     }
 
-    if (request_service_list_[service][instance][major_version][minor_version] == 0) {
+    if (request_service_list_[service][instance][major_version][minor_version] == 0)
+    {
         // The service has not been requested by FindService.
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::set_requested_service_state "
                            << format_service_instance_interface_version(service, instance, major_version, minor_version)
@@ -358,19 +420,25 @@ void ApplicationManager::set_requested_service_state(std::uint16_t service, std:
     // TODO(lg-someip): Implement handling for service ID ANY_MAJOR (0xFFFF).
 }
 
-std::uint8_t ApplicationManager::get_requested_service_state(std::uint16_t service, std::uint16_t instance,
+std::uint8_t ApplicationManager::get_requested_service_state(std::uint16_t service,
+                                                             std::uint16_t instance,
                                                              std::uint8_t major_version,
-                                                             std::uint32_t minor_version) const {
+                                                             std::uint32_t minor_version) const
+{
     // Get the requested service state: SOMEIP_SERVICE_AVAILABLE or SOMEIP_SERVICE_REQUEST.
     // Return 0 when no state is found.
-    for (auto& service_entry : request_service_list_) {
+    for (auto& service_entry : request_service_list_)
+    {
         if (service_entry.first != service && service_entry.first != SOMEIP_DEFAULT_ANY_SERVICE)
             continue;
-        for (auto& instance_entry : service_entry.second) {
+        for (auto& instance_entry : service_entry.second)
+        {
             if (instance_entry.first != instance && instance_entry.first != SOMEIP_DEFAULT_ANY_INSTANCE)
                 continue;
-            for (auto& major : instance_entry.second) {
-                for (auto& minor : major.second) {
+            for (auto& major : instance_entry.second)
+            {
+                for (auto& minor : major.second)
+                {
                     LGSOMEIP_LOG_DEBUG << "ApplicationManager::get_requested_service_state "
                                        << format_service_instance_interface_version(
                                               service_entry.first, instance_entry.first, major.first, minor.first)
@@ -395,8 +463,11 @@ std::uint8_t ApplicationManager::get_requested_service_state(std::uint16_t servi
     return std::uint8_t{0};
 }
 
-bool ApplicationManager::is_service_available(std::uint16_t service, std::uint16_t instance, std::uint8_t major_version,
-                                              std::uint32_t minor_version) const {
+bool ApplicationManager::is_service_available(std::uint16_t service,
+                                              std::uint16_t instance,
+                                              std::uint8_t major_version,
+                                              std::uint32_t minor_version) const
+{
     std::lock_guard<std::mutex> guard(service_management_mutex_);
 
     std::uint8_t state = get_requested_service_state(service, instance, major_version, minor_version);
@@ -411,19 +482,28 @@ bool ApplicationManager::is_service_available(std::uint16_t service, std::uint16
     return false;
 }
 
-bool ApplicationManager::are_service_available(available_t& available, std::uint16_t service, std::uint16_t instance,
-                                               std::uint8_t major_version, std::uint32_t minor_version) const {
+bool ApplicationManager::are_service_available(available_t& available,
+                                               std::uint16_t service,
+                                               std::uint16_t instance,
+                                               std::uint8_t major_version,
+                                               std::uint32_t minor_version) const
+{
     std::lock_guard<std::mutex> guard(service_management_mutex_);
 
-    for (auto& service_entry : request_service_list_) {
+    for (auto& service_entry : request_service_list_)
+    {
         if (service_entry.first != service && service_entry.first != SOMEIP_DEFAULT_ANY_SERVICE)
             continue;
-        for (auto& instance_entry : service_entry.second) {
+        for (auto& instance_entry : service_entry.second)
+        {
             if (instance_entry.first != instance && instance_entry.first != SOMEIP_DEFAULT_ANY_INSTANCE)
                 continue;
-            for (auto& major : instance_entry.second) {
-                for (auto& minor : major.second) {
-                    if (minor.second == SOMEIP_SERVICE_AVAILABLE) {
+            for (auto& major : instance_entry.second)
+            {
+                for (auto& minor : major.second)
+                {
+                    if (minor.second == SOMEIP_SERVICE_AVAILABLE)
+                    {
                         available[service_entry.first][instance_entry.first][major.first] = minor.first;
                     }
                 }
@@ -431,7 +511,8 @@ bool ApplicationManager::are_service_available(available_t& available, std::uint
         }
     }
 
-    if (available.empty()) {
+    if (available.empty())
+    {
         available[service][instance][major_version] = minor_version;
 
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::are_service_available "
@@ -448,7 +529,8 @@ bool ApplicationManager::are_service_available(available_t& available, std::uint
     return true;
 }
 
-void ApplicationManager::on_offer_service(const std::shared_ptr<MessageSD> message) {
+void ApplicationManager::on_offer_service(const std::shared_ptr<MessageSD> message)
+{
     auto& entry = message->entry(0);
     std::uint32_t req_id = message->get_request_id();
     std::uint16_t app_id = static_cast<std::uint16_t>(req_id >> 16);
@@ -459,36 +541,43 @@ void ApplicationManager::on_offer_service(const std::shared_ptr<MessageSD> messa
     std::uint32_t ttl = entry.get_ttl();
 
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_offer_service "
-                       << format_service_instance_interface_version(service_id, instance_id, major_version,
-                                                                    minor_version)
+                       << format_service_instance_interface_version(
+                              service_id, instance_id, major_version, minor_version)
                        << ", " << format_named_id("AppID", app_id, 4) << ", TTL: " << ttl;
 
     std::unique_lock<std::mutex> lck_service(service_management_mutex_);
 
 #if defined(ENABLE_SOMEIP_IPC)
-    if (is_internal_message_for_ipc(service_id, instance_id)) {
+    if (is_internal_message_for_ipc(service_id, instance_id))
+    {
         packet_router_->add_ipc_route(service_id, instance_id, 0xffff, app_id, true);
     }
-#endif // ENABLE_SOMEIP_IPC
+#endif  // ENABLE_SOMEIP_IPC
 
     service_availability_handler_t handler = nullptr;
-    for (auto& service : service_availability_handler_map_) {
+    for (auto& service : service_availability_handler_map_)
+    {
         if (service.first != service_id && service.first != SOMEIP_DEFAULT_ANY_SERVICE)
             continue;
-        for (auto& instance : service.second) {
+        for (auto& instance : service.second)
+        {
             if (instance.first != instance_id && instance.first != SOMEIP_DEFAULT_ANY_INSTANCE)
                 continue;
-            for (auto& major : instance.second) {
-                for (auto& minor : major.second) {
+            for (auto& major : instance.second)
+            {
+                for (auto& minor : major.second)
+                {
                     handler = minor.second;
-                    if (handler != nullptr) {
+                    if (handler != nullptr)
+                    {
                         // Notify the availability handler only once.
                         if (get_requested_service_state(service_id, instance_id, major_version, minor_version) !=
                                 SOMEIP_SERVICE_AVAILABLE ||
-                            ttl == 0) {
+                            ttl == 0)
+                        {
                             LGSOMEIP_LOG_INFO << "ApplicationManager::on_offer_service "
-                                              << format_service_instance_interface_version(service_id, instance_id,
-                                                                                           major_version, minor_version)
+                                              << format_service_instance_interface_version(
+                                                     service_id, instance_id, major_version, minor_version)
                                               << " call ServiceAvailablilityHandler, " << "TTL: " << ttl;
 
                             std::thread t([handler, service_id, instance_id, ttl]() {
@@ -497,27 +586,34 @@ void ApplicationManager::on_offer_service(const std::shared_ptr<MessageSD> messa
                             // For assigning thread name
                             pthread_setname_np(t.native_handle(), "SomeipOnOffer");
                             t.detach();
-                        } else {
-                            LGSOMEIP_LOG_DEBUG
-                                << "ApplicationManager::on_offer_service "
-                                << format_service_instance_interface_version(service.first, instance.first, major.first,
-                                                                             minor.first)
-                                << " ServiceAvailablilityHandler has been already called, " << "TTL: " << ttl;
                         }
-                    } else {
+                        else
+                        {
+                            LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_offer_service "
+                                               << format_service_instance_interface_version(
+                                                      service.first, instance.first, major.first, minor.first)
+                                               << " ServiceAvailablilityHandler has been already called, "
+                                               << "TTL: " << ttl;
+                        }
+                    }
+                    else
+                    {
                         LGSOMEIP_LOG_INFO << "ApplicationManager::on_offer_service "
-                                          << format_service_instance_interface_version(service.first, instance.first,
-                                                                                       major.first, minor.first)
+                                          << format_service_instance_interface_version(
+                                                 service.first, instance.first, major.first, minor.first)
                                           << " ServiceAvailablilityHandler is null, " << "TTL: " << ttl;
                     }
                 }
             }
         }
     }
-    if (ttl > 0) {
+    if (ttl > 0)
+    {
         // Mark the request as SOMEIP_SERVICE_AVAILABLE.
         set_requested_service_state(service_id, instance_id, major_version, minor_version, SOMEIP_SERVICE_AVAILABLE);
-    } else {
+    }
+    else
+    {
         set_requested_service_state(service_id, instance_id, major_version, minor_version, SOMEIP_SERVICE_REQUEST);
     }
     lck_service.unlock();
@@ -525,16 +621,21 @@ void ApplicationManager::on_offer_service(const std::shared_ptr<MessageSD> messa
     // Send a SubscribeEventgroup message.
     std::lock_guard<std::mutex> guard(subscribe_event_list_mutex_);
     auto& subscribelist = subscribe_event_list_[service_id][instance_id];
-    if (subscribelist.size() == 0) {
+    if (subscribelist.size() == 0)
+    {
         subscribelist = subscribe_event_list_[service_id][SOMEIP_DEFAULT_ANY_INSTANCE];
         if (subscribelist.size() == 0)
             return;
     }
 
-    if (ttl == 0) {
-        for (auto& eventgrouplist : subscribelist) {
-            for (auto& subscribe : eventgrouplist.second) {
-                if (subscribe.second != SOMEIP_EVENT_SUBSCRIBE) {
+    if (ttl == 0)
+    {
+        for (auto& eventgrouplist : subscribelist)
+        {
+            for (auto& subscribe : eventgrouplist.second)
+            {
+                if (subscribe.second != SOMEIP_EVENT_SUBSCRIBE)
+                {
                     subscribe.second = SOMEIP_EVENT_SUBSCRIBE;
                 }
             }
@@ -549,11 +650,15 @@ void ApplicationManager::on_offer_service(const std::shared_ptr<MessageSD> messa
                 return;
 
             auto found_instance = found_service->second.find(status_instance_id);
-            if (found_instance != found_service->second.end()) {
-                for (auto& eventgroup : found_instance->second) {
-                    for (auto& event : eventgroup.second) {
+            if (found_instance != found_service->second.end())
+            {
+                for (auto& eventgroup : found_instance->second)
+                {
+                    for (auto& event : eventgroup.second)
+                    {
                         auto status_handler = event.second.first;
-                        if (status_handler != nullptr) {
+                        if (status_handler != nullptr)
+                        {
                             LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_offer_service "
                                                << format_service_instance_id(status_service_id, status_instance_id)
                                                << " call "
@@ -569,22 +674,27 @@ void ApplicationManager::on_offer_service(const std::shared_ptr<MessageSD> messa
         };
         send_subscription_state(service_id, instance_id);
         send_subscription_state(service_id, SOMEIP_DEFAULT_ANY_INSTANCE);
-    } else {
+    }
+    else
+    {
         auto eventgrouplist = subscribelist[major_version];
-        if (eventgrouplist.size() == 0) {
+        if (eventgrouplist.size() == 0)
+        {
             eventgrouplist = subscribelist[SOMEIP_DEFAULT_ANY_MAJOR];
             if (eventgrouplist.size() == 0)
                 return;
         }
 
-        for (auto& subscribe : eventgrouplist) {
+        for (auto& subscribe : eventgrouplist)
+        {
             std::uint16_t eventgroup_id = subscribe.first;
 
             LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_offer_service / Subscribed "
                                << format_named_id("EventGroupID", eventgroup_id, 4) << " "
                                << format_named_id("State", subscribe.second, 2);
 
-            if (subscribe.second == SOMEIP_EVENT_SUBSCRIBE) {
+            if (subscribe.second == SOMEIP_EVENT_SUBSCRIBE)
+            {
                 std::uint32_t subscribe_ttl = SOMEIP_DEFAULT_TTL_ON;
 
                 LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_offer_service / sendSubscribedEventgroup "
@@ -596,7 +706,8 @@ void ApplicationManager::on_offer_service(const std::shared_ptr<MessageSD> messa
     }
 }
 
-void ApplicationManager::on_find_service(std::shared_ptr<MessageSD> message) {
+void ApplicationManager::on_find_service(std::shared_ptr<MessageSD> message)
+{
     auto& entry = message->entry(0);
     std::uint32_t req_id = message->get_request_id();
     std::uint16_t app_id = static_cast<std::uint16_t>(req_id >> 16);
@@ -607,17 +718,22 @@ void ApplicationManager::on_find_service(std::shared_ptr<MessageSD> message) {
     std::uint32_t ttl = entry.get_ttl();
 
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_offer_service "
-                       << format_service_instance_interface_version(service_id, instance_id, major_version,
-                                                                    minor_version)
+                       << format_service_instance_interface_version(
+                              service_id, instance_id, major_version, minor_version)
                        << ", " << format_named_id("AppID", app_id, 4) << ", TTL: " << ttl;
 
     // TODO(lg-someip): Implement processing for FindService messages.
 }
 
 // ApplicationManager public event-management methods.
-void ApplicationManager::offer_event(std::uint16_t service, std::uint16_t instance, std::uint16_t event_id,
-                                     const std::set<std::uint16_t>& event_groups, bool is_field, std::uint32_t cycle,
-                                     epsilon_change_func_t epsilon_change_function) {
+void ApplicationManager::offer_event(std::uint16_t service,
+                                     std::uint16_t instance,
+                                     std::uint16_t event_id,
+                                     const std::set<std::uint16_t>& event_groups,
+                                     bool is_field,
+                                     std::uint32_t cycle,
+                                     epsilon_change_func_t epsilon_change_function)
+{
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::offer_event "
                        << format_service_instance_event_id(service, instance, event_id)
                        << ", is_field: " << (is_field ? "true" : "false") << ", update_cycle: " << cycle
@@ -627,17 +743,20 @@ void ApplicationManager::offer_event(std::uint16_t service, std::uint16_t instan
 
     std::unique_lock<std::recursive_mutex> lck_service(offer_service_list_mutex_);
     auto& svc_state = offer_service_list_[service][instance];
-    if (svc_state.size() != 0) {
+    if (svc_state.size() != 0)
+    {
         major = svc_state.begin()->first;
     }
     lck_service.unlock();
 
-    if (event_id < 0x8000) {
+    if (event_id < 0x8000)
+    {
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::offer_event / event < 0x8000), "
                            << format_service_instance_event_id(service, instance, event_id);
     }
     std::unique_lock<std::mutex> lck_offerevent(offer_event_list_mutex_);
-    for (std::uint16_t eventgroup : event_groups) {
+    for (std::uint16_t eventgroup : event_groups)
+    {
         offer_event_list_[service][instance][eventgroup][event_id] = SOMEIP_EVENT_OFFER;
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::offer_event "
                            << format_service_instance_event_id(service, instance, event_id) << " "
@@ -651,22 +770,27 @@ void ApplicationManager::offer_event(std::uint16_t service, std::uint16_t instan
     // Enable the event when the service was previously offered.
     lck_service.lock();
     auto& service_state = offer_service_list_[service][instance];
-    for (auto& majors : service_state) {
+    for (auto& majors : service_state)
+    {
         std::uint8_t offered_major = majors.first;
-        for (auto& minors : majors.second) {
-            if (minors.second == SOMEIP_SERVICE_OFFER) {
+        for (auto& minors : majors.second)
+        {
+            if (minors.second == SOMEIP_SERVICE_OFFER)
+            {
                 event_manager_->set_service_enabled(service, instance, offered_major, true);
             }
         }
     }
 }
 
-void ApplicationManager::stop_offer_event(std::uint16_t service, std::uint16_t instance, std::uint16_t event_id) {
+void ApplicationManager::stop_offer_event(std::uint16_t service, std::uint16_t instance, std::uint16_t event_id)
+{
     LGSOMEIP_LOG_INFO << "ApplicationManager::stop_offer_event "
                       << format_service_instance_event_id(service, instance, event_id);
 
     std::unique_lock<std::mutex> lck_offerevent(offer_event_list_mutex_);
-    for (auto& eventgroupinfo : offer_event_list_[service][instance]) {
+    for (auto& eventgroupinfo : offer_event_list_[service][instance])
+    {
         eventgroupinfo.second.erase(event_id);
     }
     lck_offerevent.unlock();
@@ -676,19 +800,24 @@ void ApplicationManager::stop_offer_event(std::uint16_t service, std::uint16_t i
 }
 
 // ApplicationManager public event-message management methods.
-void ApplicationManager::request_event(std::uint16_t service, std::uint16_t instance, std::uint16_t event_id,
-                                       const std::set<std::uint16_t>& event_groups) {
+void ApplicationManager::request_event(std::uint16_t service,
+                                       std::uint16_t instance,
+                                       std::uint16_t event_id,
+                                       const std::set<std::uint16_t>& event_groups)
+{
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::request_event "
                        << format_service_instance_event_id(service, instance, event_id) << " start";
 
     // Validate configuration data against the requested event and event-group subscriptions.
     auto service_config = configuration_->get_service_info(service, instance);
 
-    if (service_config == nullptr) {
+    if (service_config == nullptr)
+    {
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::request_event " << format_service_instance_id(service, instance)
                            << " is not in the someip configuration. This service is for IPC.";
 
-        for (std::uint16_t eventgroupid : event_groups) {
+        for (std::uint16_t eventgroupid : event_groups)
+        {
             LGSOMEIP_LOG_DEBUG << "ApplicationManager::request_event "
                                << format_service_instance_event_id(service, instance, event_id) << " "
                                << format_named_id("EventGroupID", eventgroupid, 4) << " is requested!";
@@ -699,14 +828,17 @@ void ApplicationManager::request_event(std::uint16_t service, std::uint16_t inst
         return;
     }
 
-    if (service_config->get_event(event_id) == nullptr) {
+    if (service_config->get_event(event_id) == nullptr)
+    {
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::request_event "
                            << format_service_instance_event_id(service, instance, event_id)
                            << " is not in the someip configuration, but it will be used.";
     }
 
-    for (std::uint16_t eventgroupid : event_groups) {
-        if (service_config->get_event_group(eventgroupid) == nullptr) {
+    for (std::uint16_t eventgroupid : event_groups)
+    {
+        if (service_config->get_event_group(eventgroupid) == nullptr)
+        {
             LGSOMEIP_LOG_DEBUG << "ApplicationManager::request_event " << format_service_instance_id(service, instance)
                                << " " << format_named_id("EventGroupID", eventgroupid, 4)
                                << " is not in the someip configuration, but it will be used.";
@@ -721,7 +853,8 @@ void ApplicationManager::request_event(std::uint16_t service, std::uint16_t inst
     }
 }
 
-void ApplicationManager::release_event(std::uint16_t service, std::uint16_t instance, std::uint16_t event_id) {
+void ApplicationManager::release_event(std::uint16_t service, std::uint16_t instance, std::uint16_t event_id)
+{
     std::lock_guard<std::mutex> guard(requested_event_list_mutex_);
 
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::release_event / "
@@ -741,8 +874,12 @@ void ApplicationManager::release_event(std::uint16_t service, std::uint16_t inst
                        << format_service_instance_event_id(service, instance, event_id) << " is removed.";
 }
 
-void ApplicationManager::subscribe(std::uint16_t service, std::uint16_t instance, std::uint16_t event_group,
-                                   std::uint8_t major_version, std::uint16_t event_id) {
+void ApplicationManager::subscribe(std::uint16_t service,
+                                   std::uint16_t instance,
+                                   std::uint16_t event_group,
+                                   std::uint8_t major_version,
+                                   std::uint16_t event_id)
+{
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::subscribe "
                        << format_service_instance_interface_major_version(service, instance, major_version) << " "
                        << format_service_instance_event_id(service, instance, event_id) << " "
@@ -751,10 +888,13 @@ void ApplicationManager::subscribe(std::uint16_t service, std::uint16_t instance
     // Validate configuration data against the requested event and event-group subscriptions.
     auto service_config = configuration_->get_service_info(service, instance);
 
-    if (service_config == nullptr) {
+    if (service_config == nullptr)
+    {
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::subscribe " << format_service_instance_id(service, instance)
                            << " is not in the someip configuration, but it will be used.";
-    } else if (service_config->get_event_group(event_group) == nullptr) {
+    }
+    else if (service_config->get_event_group(event_group) == nullptr)
+    {
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::subscribe " << format_service_instance_id(service, instance) << " "
                            << format_named_id("EventGroupID", event_group, 4)
                            << " is not in the someip configuration, but it will be used.";
@@ -764,9 +904,11 @@ void ApplicationManager::subscribe(std::uint16_t service, std::uint16_t instance
 
     std::unique_lock<std::mutex> lck_reqevent(requested_event_list_mutex_);
     auto& eventlist = requested_event_list_[service][instance];
-    for (auto& event : eventlist) {
+    for (auto& event : eventlist)
+    {
         auto item = event.second.find(event_group);
-        if (item != event.second.end() && item->second == SOMEIP_EVENT_REQUEST) {
+        if (item != event.second.end() && item->second == SOMEIP_EVENT_REQUEST)
+        {
             LGSOMEIP_LOG_DEBUG << "ApplicationManager::subscribe "
                                << format_service_instance_event_id(service, instance, event.first) << " "
                                << format_named_id("EventGroupID", event_group, 4) << " is found!";
@@ -776,7 +918,8 @@ void ApplicationManager::subscribe(std::uint16_t service, std::uint16_t instance
     }
     lck_reqevent.unlock();
 
-    if (!find_req_event) {
+    if (!find_req_event)
+    {
         LGSOMEIP_LOG_WARN << "ApplicationManager::subscribe "
                           << format_service_instance_event_id(service, instance, event_id) << " "
                           << format_named_id("EventGroupID", event_group, 4) << " is NOT requested!";
@@ -785,7 +928,8 @@ void ApplicationManager::subscribe(std::uint16_t service, std::uint16_t instance
     }
 
     // Set service information.
-    if (application_state_ == false) {
+    if (application_state_ == false)
+    {
         LGSOMEIP_LOG_WARN << "ApplicationManager::subscribe / Application is disconnected.";
     }
 
@@ -794,10 +938,13 @@ void ApplicationManager::subscribe(std::uint16_t service, std::uint16_t instance
     auto servicestate = get_requested_service_state(service, instance, major_version, SOMEIP_DEFAULT_ANY_MINOR);
 
     std::lock_guard<std::mutex> guard(subscribe_event_list_mutex_);
-    if (servicestate == SOMEIP_SERVICE_AVAILABLE) {
+    if (servicestate == SOMEIP_SERVICE_AVAILABLE)
+    {
         subscribe_event_list_[service][instance][major_version][event_group] = SOMEIP_EVENT_SUBSCRIBE;
         send_subscribe_eventgroup(service, instance, major_version, event_group, SOMEIP_DEFAULT_TTL_ON);
-    } else {
+    }
+    else
+    {
         subscribe_event_list_[service][instance][major_version][event_group] = SOMEIP_EVENT_SUBSCRIBE;
 
         LGSOMEIP_LOG_WARN << "ApplicationManager::subscribe "
@@ -807,18 +954,22 @@ void ApplicationManager::subscribe(std::uint16_t service, std::uint16_t instance
     }
 }
 
-void ApplicationManager::unsubscribe(std::uint16_t service, std::uint16_t instance, std::uint16_t event_group) {
+void ApplicationManager::unsubscribe(std::uint16_t service, std::uint16_t instance, std::uint16_t event_group)
+{
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::unsubscribe " << format_service_instance_id(service, instance) << " "
                        << format_named_id("EventGroupID", event_group, 4) << " start";
 
     std::lock_guard<std::mutex> guard(subscribe_event_list_mutex_);
-    for (auto& item : subscribe_event_list_[service][instance]) {
+    for (auto& item : subscribe_event_list_[service][instance])
+    {
         std::uint8_t major = item.first;
         auto& eventgroup = item.second;
         auto it = eventgroup.find(event_group);
-        if (it != eventgroup.end()) {
+        if (it != eventgroup.end())
+        {
             // Send UnsubscribeEventgroup before receiving SubscribeAck.
-            if (it->second == SOMEIP_EVENT_SUBSCRIBE_ACK || it->second == SOMEIP_EVENT_SUBSCRIBE) {
+            if (it->second == SOMEIP_EVENT_SUBSCRIBE_ACK || it->second == SOMEIP_EVENT_SUBSCRIBE)
+            {
                 it->second = SOMEIP_EVENT_UNSUBSCRIBE;
 
                 send_subscribe_eventgroup(service, instance, major, event_group, SOMEIP_DEFAULT_TTL_OFF);
@@ -832,8 +983,12 @@ void ApplicationManager::unsubscribe(std::uint16_t service, std::uint16_t instan
 }
 
 // Compose and send the SOME/IP-SD message.
-void ApplicationManager::send_offer_service(std::uint16_t service, std::uint16_t instance, std::uint8_t major_version,
-                                            std::uint32_t minor_version, std::uint32_t ttl) {
+void ApplicationManager::send_offer_service(std::uint16_t service,
+                                            std::uint16_t instance,
+                                            std::uint8_t major_version,
+                                            std::uint32_t minor_version,
+                                            std::uint32_t ttl)
+{
     LGSOMEIP_LOG_INFO << "ApplicationManager::send_offer_service "
                       << format_service_instance_interface_version(service, instance, major_version, minor_version)
                       << ", TTL: " << ttl;
@@ -855,8 +1010,12 @@ void ApplicationManager::send_offer_service(std::uint16_t service, std::uint16_t
     packet_router_->send_message(message);
 }
 
-void ApplicationManager::send_find_service(std::uint16_t service, std::uint16_t instance, std::uint8_t major_version,
-                                           std::uint32_t minor_version, std::uint32_t ttl) {
+void ApplicationManager::send_find_service(std::uint16_t service,
+                                           std::uint16_t instance,
+                                           std::uint8_t major_version,
+                                           std::uint32_t minor_version,
+                                           std::uint32_t ttl)
+{
     LGSOMEIP_LOG_INFO << "ApplicationManager::send_find_service "
                       << format_service_instance_interface_version(service, instance, major_version, minor_version)
                       << ", TTL: " << ttl;
@@ -878,9 +1037,12 @@ void ApplicationManager::send_find_service(std::uint16_t service, std::uint16_t 
     packet_router_->send_message(message);
 }
 
-void ApplicationManager::send_subscribe_eventgroup(std::uint16_t service, std::uint16_t instance,
-                                                   std::uint8_t major_version, std::uint16_t event_group,
-                                                   std::uint32_t ttl) {
+void ApplicationManager::send_subscribe_eventgroup(std::uint16_t service,
+                                                   std::uint16_t instance,
+                                                   std::uint8_t major_version,
+                                                   std::uint16_t event_group,
+                                                   std::uint32_t ttl)
+{
     LGSOMEIP_LOG_INFO << "ApplicationManager::send_subscribe_eventgroup "
                       << format_service_instance_interface_major_version(service, instance, major_version) << " "
                       << format_named_id("EventGroupID", event_group, 4) << ", TTL: " << ttl;
@@ -904,33 +1066,40 @@ void ApplicationManager::send_subscribe_eventgroup(std::uint16_t service, std::u
     packet_router_->send_message(message);
 }
 
-void ApplicationManager::send_initial_event(std::uint16_t service, std::uint16_t instance,
-                                            const std::uint16_t event_group) {
+void ApplicationManager::send_initial_event(std::uint16_t service,
+                                            std::uint16_t instance,
+                                            const std::uint16_t event_group)
+{
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::send_initial_event " << format_service_instance_id(service, instance)
                        << " " << format_named_id("EventGroupID", event_group, 4);
 
     std::lock_guard<std::mutex> guard(offer_event_list_mutex_);
     auto& eglist = offer_event_list_[service][instance][event_group];
 
-    for (auto& event : eglist) {
-        if (event.second == SOMEIP_EVENT_OFFER) {
+    for (auto& event : eglist)
+    {
+        if (event.second == SOMEIP_EVENT_OFFER)
+        {
             event_manager_->notify_initial_event(service, instance, event.first);
         }
     }
 }
 
 #if defined(ENABLE_SOMEIP_IPC)
-bool ApplicationManager::is_internal_message_for_ipc(std::uint16_t service_id, std::uint16_t instance_id) {
-    if (configuration_->get_service_info(service_id, instance_id) == nullptr) {
+bool ApplicationManager::is_internal_message_for_ipc(std::uint16_t service_id, std::uint16_t instance_id)
+{
+    if (configuration_->get_service_info(service_id, instance_id) == nullptr)
+    {
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::is_internal_message_for_ipc "
                            << format_service_instance_id(service_id, instance_id);
         return true;
     }
     return false;
 }
-#endif // ENABLE_SOMEIP_IPC
+#endif  // ENABLE_SOMEIP_IPC
 
-void ApplicationManager::on_subscribe_eventgroup(std::shared_ptr<MessageSD> message) {
+void ApplicationManager::on_subscribe_eventgroup(std::shared_ptr<MessageSD> message)
+{
     auto& entry = message->entry(0);
     std::uint32_t req_id = message->get_request_id();
     std::uint16_t app_id = static_cast<std::uint16_t>(req_id >> 16);
@@ -950,32 +1119,38 @@ void ApplicationManager::on_subscribe_eventgroup(std::shared_ptr<MessageSD> mess
 
     std::unique_lock<std::recursive_mutex> lck_offer(offer_service_list_mutex_);
     auto& svc_state = offer_service_list_[service_id][instance_id][major];
-    for (auto& item : svc_state) {
-        if (item.second == SOMEIP_SERVICE_OFFER) {
+    for (auto& item : svc_state)
+    {
+        if (item.second == SOMEIP_SERVICE_OFFER)
+        {
             result |= 0x10;
         }
     }
 
 #if defined(ENABLE_SOMEIP_IPC)
-    if (is_internal_message_for_ipc(service_id, instance_id)) {
+    if (is_internal_message_for_ipc(service_id, instance_id))
+    {
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_subscribe_eventgroup for IPC";
         packet_router_->add_ipc_route(service_id, instance_id, eventgroup_id, app_id, false);
     }
-#endif // ENABLE_SOMEIP_IPC
+#endif  // ENABLE_SOMEIP_IPC
 
     lck_offer.unlock();
 
     std::unique_lock<std::mutex> lck_event(offer_event_list_mutex_);
     auto& event_state = offer_event_list_[service_id][instance_id][eventgroup_id];
-    for (auto& item : event_state) {
-        if (item.second == SOMEIP_EVENT_OFFER) {
+    for (auto& item : event_state)
+    {
+        if (item.second == SOMEIP_EVENT_OFFER)
+        {
             result |= 0x01;
         }
     }
     lck_event.unlock();
 
     entry.set_type(SOMEIP_SD_ENTRY::SUBSCRIBEACK::TYPEID);
-    if (result != 0x11 || ttl == 0) {
+    if (result != 0x11 || ttl == 0)
+    {
         entry.set_ttl(SOMEIP_DEFAULT_TTL_OFF);
     }
 
@@ -985,49 +1160,57 @@ void ApplicationManager::on_subscribe_eventgroup(std::shared_ptr<MessageSD> mess
                        << format_service_instance_id(service_id, instance_id) << " "
                        << format_named_id("RequestID", sendto_req_id, 8) << ", "
                        << format_named_id("AppID", sendto_app_id, 4);
-    auto send_subscribe_ack_func = [this, &message, service_id, instance_id, eventgroup_id,
-                                    &entry](const bool subscription_accepted) {
-        if (subscription_accepted) {
-            LGSOMEIP_LOG_INFO << "ApplicationManager::sendSubscribeAckFunc "
-                              << format_service_instance_id(service_id, instance_id) << " "
-                              << format_named_id("EventGroupID", eventgroup_id, 4) << ", SubscribeAck";
-            packet_router_->send_message(message);
+    auto send_subscribe_ack_func =
+        [this, &message, service_id, instance_id, eventgroup_id, &entry](const bool subscription_accepted) {
+            if (subscription_accepted)
+            {
+                LGSOMEIP_LOG_INFO << "ApplicationManager::sendSubscribeAckFunc "
+                                  << format_service_instance_id(service_id, instance_id) << " "
+                                  << format_named_id("EventGroupID", eventgroup_id, 4) << ", SubscribeAck";
+                packet_router_->send_message(message);
 
-            // The server must send the first notifications (initial events) immediately after
-            // sending the SubscribeEventgroupAck. ApplicationManager::sendSubscribeAckFunc runs
-            // only once, on the first subscribe; subsequent SubscribeAcks are sent directly by
-            // someip-daemon, so send_initial_event() also runs only once here.
-            send_initial_event(service_id, instance_id, eventgroup_id);
-        } else {
-            entry.set_ttl(SOMEIP_DEFAULT_TTL_OFF);
-            LGSOMEIP_LOG_INFO << "ApplicationManager::sendSubscribeAckFunc "
-                              << format_service_instance_id(service_id, instance_id) << " "
-                              << format_named_id("EventGroupID", eventgroup_id, 4) << ", SubscribeNack";
-            packet_router_->send_message(message);
-        }
-    };
+                // The server must send the first notifications (initial events) immediately after
+                // sending the SubscribeEventgroupAck. ApplicationManager::sendSubscribeAckFunc runs
+                // only once, on the first subscribe; subsequent SubscribeAcks are sent directly by
+                // someip-daemon, so send_initial_event() also runs only once here.
+                send_initial_event(service_id, instance_id, eventgroup_id);
+            }
+            else
+            {
+                entry.set_ttl(SOMEIP_DEFAULT_TTL_OFF);
+                LGSOMEIP_LOG_INFO << "ApplicationManager::sendSubscribeAckFunc "
+                                  << format_service_instance_id(service_id, instance_id) << " "
+                                  << format_named_id("EventGroupID", eventgroup_id, 4) << ", SubscribeNack";
+                packet_router_->send_message(message);
+            }
+        };
 
     std::unique_lock<std::mutex> lck_subhdr(subscription_handler_mutex_);
     std::pair<subscription_handler_t, async_subscription_handler_t> handlers;
     auto found_service = subscription_handler_map_.find(service_id);
-    if (found_service != subscription_handler_map_.end()) {
+    if (found_service != subscription_handler_map_.end())
+    {
         auto found_instance = found_service->second.find(instance_id);
-        if (found_instance != found_service->second.end()) {
+        if (found_instance != found_service->second.end())
+        {
             auto found_eventgroup = found_instance->second.find(eventgroup_id);
-            if (found_eventgroup != found_instance->second.end()) {
+            if (found_eventgroup != found_instance->second.end())
+            {
                 handlers = found_eventgroup->second;
             }
         }
     }
     lck_subhdr.unlock();
 
-    if (auto handler = handlers.first) {
+    if (auto handler = handlers.first)
+    {
         bool ret = handler(app_id, ((ttl == 0) ? false : true));
         send_subscribe_ack_func(ret);
         return;
     }
 
-    if (auto handler = handlers.second) {
+    if (auto handler = handlers.second)
+    {
         handler(app_id, ((ttl == 0) ? false : true), send_subscribe_ack_func);
         return;
     }
@@ -1035,7 +1218,8 @@ void ApplicationManager::on_subscribe_eventgroup(std::shared_ptr<MessageSD> mess
     send_subscribe_ack_func(true);
 }
 
-void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> message) {
+void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> message)
+{
     auto& entry = message->entry(0);
     std::uint32_t req_id = message->get_request_id();
     std::uint16_t app_id = static_cast<std::uint16_t>(req_id >> 16);
@@ -1052,21 +1236,25 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
                       << format_named_id("AppID", app_id, 4) << ", TTL: " << ttl;
 
     std::unique_lock<std::mutex> lck_subevent(subscribe_event_list_mutex_);
-    for (auto& item : subscribe_event_list_[service_id][instance_id]) {
+    for (auto& item : subscribe_event_list_[service_id][instance_id])
+    {
         auto& eventgroup = item.second;
         auto it = eventgroup.find(static_cast<std::uint16_t>(eventgroup_id));
-        if (it != eventgroup.end()) {
-            if (it->second == SOMEIP_EVENT_SUBSCRIBE) {
+        if (it != eventgroup.end())
+        {
+            if (it->second == SOMEIP_EVENT_SUBSCRIBE)
+            {
                 it->second = (ttl == SOMEIP_DEFAULT_TTL_OFF) ? SOMEIP_EVENT_SUBSCRIBE_NACK : SOMEIP_EVENT_SUBSCRIBE_ACK;
             }
         }
     }
 
 #if defined(ENABLE_SOMEIP_IPC)
-    if (is_internal_message_for_ipc(service_id, instance_id)) {
+    if (is_internal_message_for_ipc(service_id, instance_id))
+    {
         packet_router_->add_ipc_route(service_id, instance_id, static_cast<std::uint16_t>(eventgroup_id), app_id, true);
     }
-#endif // ENABLE_SOMEIP_IPC
+#endif  // ENABLE_SOMEIP_IPC
 
     lck_subevent.unlock();
 
@@ -1080,19 +1268,25 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
             return;
 
         auto found_instance = found_service->second.find(status_instance_id);
-        if (found_instance != found_service->second.end()) {
+        if (found_instance != found_service->second.end())
+        {
             auto found_eventgroup = found_instance->second.find(static_cast<std::uint16_t>(eventgroup_id));
-            if (found_eventgroup != found_instance->second.end()) {
-                for (auto& event : eventlist) {
+            if (found_eventgroup != found_instance->second.end())
+            {
+                for (auto& event : eventlist)
+                {
                     auto item = event.second.find(static_cast<std::uint16_t>(eventgroup_id));
-                    if (item != event.second.end() && item->second == SOMEIP_EVENT_REQUEST) {
+                    if (item != event.second.end() && item->second == SOMEIP_EVENT_REQUEST)
+                    {
                         auto event_id = event.first;
 
                         auto found_event = found_eventgroup->second.find(event_id);
-                        if (found_event != found_eventgroup->second.end()) {
+                        if (found_event != found_eventgroup->second.end())
+                        {
                             auto handler = found_event->second.first;
 
-                            if (handler != nullptr) {
+                            if (handler != nullptr)
+                            {
                                 LGSOMEIP_LOG_DEBUG
                                     << "ApplicationManager::on_subscribe_eventgroup_ack "
                                     << format_service_instance_event_id(status_service_id, status_instance_id, event_id)
@@ -1101,17 +1295,28 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
                                     << format_named_id("EventGroupID", eventgroup_id, 4) << " TTL= " << ttl
                                     << " isSelective: " << (found_event->second.second ? "true" : "false");
 
-                                if (ttl != SOMEIP_DEFAULT_TTL_OFF) {
-                                    handler(status_service_id, status_instance_id,
-                                            static_cast<std::uint16_t>(eventgroup_id), event_id, 0);
-                                } else if (found_event->second.second == true) {
-                                    handler(status_service_id, status_instance_id,
-                                            static_cast<std::uint16_t>(eventgroup_id), event_id, 0xff);
-                                } else {
+                                if (ttl != SOMEIP_DEFAULT_TTL_OFF)
+                                {
+                                    handler(status_service_id,
+                                            status_instance_id,
+                                            static_cast<std::uint16_t>(eventgroup_id),
+                                            event_id,
+                                            0);
+                                }
+                                else if (found_event->second.second == true)
+                                {
+                                    handler(status_service_id,
+                                            status_instance_id,
+                                            static_cast<std::uint16_t>(eventgroup_id),
+                                            event_id,
+                                            0xff);
+                                }
+                                else
+                                {
                                     LGSOMEIP_LOG_WARN
                                         << "ApplicationManager::on_subscribe_eventgroup_ack "
-                                        << format_service_instance_event_id(status_service_id, status_instance_id,
-                                                                            event_id)
+                                        << format_service_instance_event_id(
+                                               status_service_id, status_instance_id, event_id)
                                         << " " << format_named_id("EventGroupID", eventgroup_id, 4) << " TTL= " << ttl
                                         << " isSelective: " << (found_event->second.second ? "true" : "false")
                                         << " / does not notify the binding layer of the subscription state.";
@@ -1120,10 +1325,12 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
                         }
 
                         auto its_any_event = found_eventgroup->second.find(SOMEIP_DEFAULT_ANY_EVENT);
-                        if (its_any_event != found_eventgroup->second.end()) {
+                        if (its_any_event != found_eventgroup->second.end())
+                        {
                             auto handler = its_any_event->second.first;
 
-                            if (handler != nullptr) {
+                            if (handler != nullptr)
+                            {
                                 LGSOMEIP_LOG_DEBUG
                                     << "ApplicationManager::on_subscribe_eventgroup_ack "
                                     << format_service_instance_event_id(status_service_id, status_instance_id, event_id)
@@ -1131,17 +1338,28 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
                                     << "subscription_status_handler for "
                                     << format_named_id("EventGroupID", eventgroup_id, 4) << " TTL= " << ttl;
 
-                                if (ttl != SOMEIP_DEFAULT_TTL_OFF) {
-                                    handler(status_service_id, status_instance_id,
-                                            static_cast<std::uint16_t>(eventgroup_id), event_id, 0);
-                                } else if (its_any_event->second.second == true) {
-                                    handler(status_service_id, status_instance_id,
-                                            static_cast<std::uint16_t>(eventgroup_id), event_id, 0xff);
-                                } else {
+                                if (ttl != SOMEIP_DEFAULT_TTL_OFF)
+                                {
+                                    handler(status_service_id,
+                                            status_instance_id,
+                                            static_cast<std::uint16_t>(eventgroup_id),
+                                            event_id,
+                                            0);
+                                }
+                                else if (its_any_event->second.second == true)
+                                {
+                                    handler(status_service_id,
+                                            status_instance_id,
+                                            static_cast<std::uint16_t>(eventgroup_id),
+                                            event_id,
+                                            0xff);
+                                }
+                                else
+                                {
                                     LGSOMEIP_LOG_WARN
                                         << "ApplicationManager::on_subscribe_eventgroup_ack "
-                                        << format_service_instance_event_id(status_service_id, status_instance_id,
-                                                                            event_id)
+                                        << format_service_instance_event_id(
+                                               status_service_id, status_instance_id, event_id)
                                         << " " << format_named_id("EventGroupID", eventgroup_id, 4) << " TTL= " << ttl
                                         << " isSelective: " << (found_event->second.second ? "true" : "false")
                                         << " / does not notify the binding layer of the subscription state.";
@@ -1160,7 +1378,8 @@ void ApplicationManager::on_subscribe_eventgroup_ack(std::shared_ptr<MessageSD> 
 }
 
 // ApplicationManager public handler-management methods.
-void ApplicationManager::register_application_state_handler(application_state_handler_t handler) {
+void ApplicationManager::register_application_state_handler(application_state_handler_t handler)
+{
     std::lock_guard<std::mutex> guard(application_handler_mutex_);
 
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::register_application_state_handler";
@@ -1168,7 +1387,8 @@ void ApplicationManager::register_application_state_handler(application_state_ha
     application_state_handler_ = handler;
 }
 
-void ApplicationManager::unregister_application_state_handler() {
+void ApplicationManager::unregister_application_state_handler()
+{
     std::lock_guard<std::mutex> guard(application_handler_mutex_);
 
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::unregister_application_state_handler";
@@ -1176,8 +1396,11 @@ void ApplicationManager::unregister_application_state_handler() {
     application_state_handler_ = nullptr;
 }
 
-void ApplicationManager::register_message_handler(std::uint16_t service, std::uint16_t instance,
-                                                  std::uint16_t method_id, message_handler_t handler) {
+void ApplicationManager::register_message_handler(std::uint16_t service,
+                                                  std::uint16_t instance,
+                                                  std::uint16_t method_id,
+                                                  message_handler_t handler)
+{
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::register_message_handler "
                        << format_service_instance_id(service, instance) << " "
                        << format_named_id("MethodID", method_id, 4) << " is registered.";
@@ -1189,8 +1412,10 @@ void ApplicationManager::register_message_handler(std::uint16_t service, std::ui
     msg_handler_vector.push_back(handler);
 }
 
-void ApplicationManager::unregister_message_handler(std::uint16_t service, std::uint16_t instance,
-                                                    std::uint16_t method_id) {
+void ApplicationManager::unregister_message_handler(std::uint16_t service,
+                                                    std::uint16_t instance,
+                                                    std::uint16_t method_id)
+{
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::unregister_message_handler "
                        << format_service_instance_id(service, instance) << " "
                        << format_named_id("MethodID", method_id, 4) << " is unregistered.";
@@ -1202,23 +1427,30 @@ void ApplicationManager::unregister_message_handler(std::uint16_t service, std::
     msg_handler_vector.clear();
 }
 
-void ApplicationManager::register_subscription_handler(std::uint16_t service, std::uint16_t instance,
-                                                       std::uint16_t event_group, subscription_handler_t handler) {
+void ApplicationManager::register_subscription_handler(std::uint16_t service,
+                                                       std::uint16_t instance,
+                                                       std::uint16_t event_group,
+                                                       subscription_handler_t handler)
+{
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::register_subscription_handler "
                        << format_service_instance_id(service, instance) << " "
                        << format_named_id("EventGroupID", event_group, 4)
                        << ", handler: " << (handler ? "set" : "not set") << " start";
 
-    if (!handler) {
+    if (!handler)
+    {
         unregister_subscription_handler(service, instance, event_group);
         return;
     }
     std::lock_guard<std::mutex> guard(subscription_handler_mutex_);
     auto handlers = subscription_handler_map_[service][instance].find(event_group);
 
-    if (handlers == subscription_handler_map_[service][instance].end()) {
+    if (handlers == subscription_handler_map_[service][instance].end())
+    {
         subscription_handler_map_[service][instance][event_group] = std::make_pair(handler, nullptr);
-    } else {
+    }
+    else
+    {
         subscription_handler_map_[service][instance][event_group] = std::make_pair(handler, handlers->second.second);
     }
 
@@ -1227,8 +1459,10 @@ void ApplicationManager::register_subscription_handler(std::uint16_t service, st
                        << format_named_id("EventGroupID", event_group, 4) << " is registered.";
 }
 
-void ApplicationManager::unregister_subscription_handler(std::uint16_t service, std::uint16_t instance,
-                                                         std::uint16_t event_group) {
+void ApplicationManager::unregister_subscription_handler(std::uint16_t service,
+                                                         std::uint16_t instance,
+                                                         std::uint16_t event_group)
+{
     std::lock_guard<std::mutex> guard(subscription_handler_mutex_);
 
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::unregister_subscription_handler "
@@ -1236,22 +1470,28 @@ void ApplicationManager::unregister_subscription_handler(std::uint16_t service, 
                        << format_named_id("EventGroupID", event_group, 4) << " start";
 
     auto found_service = subscription_handler_map_.find(service);
-    if (found_service != subscription_handler_map_.end()) {
+    if (found_service != subscription_handler_map_.end())
+    {
         auto found_instance = found_service->second.find(instance);
-        if (found_instance != found_service->second.end()) {
+        if (found_instance != found_service->second.end())
+        {
             auto found_eventgroup = found_instance->second.find(event_group);
-            if (found_eventgroup != found_instance->second.end()) {
+            if (found_eventgroup != found_instance->second.end())
+            {
                 found_eventgroup->second.first = nullptr;
-                if (found_eventgroup->second.second == nullptr) {
+                if (found_eventgroup->second.second == nullptr)
+                {
                     found_instance->second.erase(event_group);
 
                     LGSOMEIP_LOG_DEBUG << "ApplicationManager::unregister_subscription_handler "
                                        << format_service_instance_id(service, instance) << " "
                                        << format_named_id("EventGroupID", event_group, 4) << " is unregistered.";
 
-                    if (found_instance->second.size() == 0) {
+                    if (found_instance->second.size() == 0)
+                    {
                         found_service->second.erase(instance);
-                        if (found_service->second.size() == 0) {
+                        if (found_service->second.size() == 0)
+                        {
                             subscription_handler_map_.erase(found_service);
                         }
                     }
@@ -1261,15 +1501,18 @@ void ApplicationManager::unregister_subscription_handler(std::uint16_t service, 
     }
 }
 
-void ApplicationManager::register_async_subscription_handler(std::uint16_t service, std::uint16_t instance,
+void ApplicationManager::register_async_subscription_handler(std::uint16_t service,
+                                                             std::uint16_t instance,
                                                              std::uint16_t event_group,
-                                                             async_subscription_handler_t handler) {
+                                                             async_subscription_handler_t handler)
+{
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::register_async_subscription_handler "
                        << format_service_instance_id(service, instance) << " "
                        << format_named_id("EventGroupID", event_group, 4)
                        << ", handler: " << (handler ? "set" : "not set") << " start";
 
-    if (!handler) {
+    if (!handler)
+    {
         unregister_async_subscription_handler(service, instance, event_group);
         return;
     }
@@ -1277,9 +1520,12 @@ void ApplicationManager::register_async_subscription_handler(std::uint16_t servi
     std::lock_guard<std::mutex> guard(subscription_handler_mutex_);
     auto handlers = subscription_handler_map_[service][instance].find(event_group);
 
-    if (handlers == subscription_handler_map_[service][instance].end()) {
+    if (handlers == subscription_handler_map_[service][instance].end())
+    {
         subscription_handler_map_[service][instance][event_group] = std::make_pair(nullptr, handler);
-    } else {
+    }
+    else
+    {
         subscription_handler_map_[service][instance][event_group] = std::make_pair(handlers->second.first, handler);
     }
 
@@ -1288,8 +1534,10 @@ void ApplicationManager::register_async_subscription_handler(std::uint16_t servi
                        << format_named_id("EventGroupID", event_group, 4) << " is registered.";
 }
 
-void ApplicationManager::unregister_async_subscription_handler(std::uint16_t service, std::uint16_t instance,
-                                                               std::uint16_t event_group) {
+void ApplicationManager::unregister_async_subscription_handler(std::uint16_t service,
+                                                               std::uint16_t instance,
+                                                               std::uint16_t event_group)
+{
     std::lock_guard<std::mutex> guard(subscription_handler_mutex_);
 
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::unregister_async_subscription_handler "
@@ -1297,22 +1545,28 @@ void ApplicationManager::unregister_async_subscription_handler(std::uint16_t ser
                        << format_named_id("EventGroupID", event_group, 4) << " start";
 
     auto found_service = subscription_handler_map_.find(service);
-    if (found_service != subscription_handler_map_.end()) {
+    if (found_service != subscription_handler_map_.end())
+    {
         auto found_instance = found_service->second.find(instance);
-        if (found_instance != found_service->second.end()) {
+        if (found_instance != found_service->second.end())
+        {
             auto found_eventgroup = found_instance->second.find(event_group);
-            if (found_eventgroup != found_instance->second.end()) {
+            if (found_eventgroup != found_instance->second.end())
+            {
                 found_eventgroup->second.second = nullptr;
-                if (found_eventgroup->second.first == nullptr) {
+                if (found_eventgroup->second.first == nullptr)
+                {
                     found_instance->second.erase(event_group);
 
                     LGSOMEIP_LOG_DEBUG << "ApplicationManager::unregister_async_subscription_handler "
                                        << format_service_instance_id(service, instance) << " "
                                        << format_named_id("EventGroupID", event_group, 4) << " is unregistered.";
 
-                    if (found_instance->second.size() == 0) {
+                    if (found_instance->second.size() == 0)
+                    {
                         found_service->second.erase(instance);
-                        if (found_service->second.size() == 0) {
+                        if (found_service->second.size() == 0)
+                        {
                             subscription_handler_map_.erase(found_service);
                         }
                     }
@@ -1322,9 +1576,13 @@ void ApplicationManager::unregister_async_subscription_handler(std::uint16_t ser
     }
 }
 
-void ApplicationManager::register_subscription_status_handler(std::uint16_t service, std::uint16_t instance,
-                                                              std::uint16_t event_group, std::uint16_t event_id,
-                                                              subscription_status_handler_t handler, bool selective) {
+void ApplicationManager::register_subscription_status_handler(std::uint16_t service,
+                                                              std::uint16_t instance,
+                                                              std::uint16_t event_group,
+                                                              std::uint16_t event_id,
+                                                              subscription_status_handler_t handler,
+                                                              bool selective)
+{
     std::lock_guard<std::mutex> guard(subscription_status_handler_mutex_);
 
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::register_subscription_status_handler "
@@ -1333,31 +1591,40 @@ void ApplicationManager::register_subscription_status_handler(std::uint16_t serv
                        << ", handler: " << (handler ? "set" : "not set")
                        << ", isSelective: " << (selective ? "true" : "false");
 
-    if (handler) {
+    if (handler)
+    {
         subscription_status_handler_set_[service][instance][event_group][event_id] = std::make_pair(handler, selective);
 
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::register_subscription_status_handler / "
                            << format_service_instance_event_id(service, instance, event_id) << " "
                            << format_named_id("EventGroupID", event_group, 4) << " is registered.";
-    } else {
+    }
+    else
+    {
         auto found_service = subscription_status_handler_set_.find(service);
-        if (found_service != subscription_status_handler_set_.end()) {
+        if (found_service != subscription_status_handler_set_.end())
+        {
             auto found_instance = found_service->second.find(instance);
-            if (found_instance != found_service->second.end()) {
+            if (found_instance != found_service->second.end())
+            {
                 auto found_eventgroup = found_instance->second.find(event_group);
 
-                if (found_eventgroup != found_instance->second.end()) {
+                if (found_eventgroup != found_instance->second.end())
+                {
                     found_eventgroup->second.erase(event_id);
 
                     LGSOMEIP_LOG_DEBUG << "ApplicationManager::register_subscription_status_handler "
                                        << format_service_instance_id(service, instance) << " "
                                        << format_named_id("EventGroupID", event_group, 4) << " is unregistered.";
 
-                    if (found_eventgroup->second.size() == 0) {
+                    if (found_eventgroup->second.size() == 0)
+                    {
                         found_instance->second.erase(event_group);
-                        if (found_instance->second.size() == 0) {
+                        if (found_instance->second.size() == 0)
+                        {
                             found_service->second.erase(instance);
-                            if (found_service->second.size() == 0) {
+                            if (found_service->second.size() == 0)
+                            {
                                 subscription_status_handler_set_.erase(found_service);
                             }
                         }
@@ -1368,13 +1635,19 @@ void ApplicationManager::register_subscription_status_handler(std::uint16_t serv
     }
 }
 
-void ApplicationManager::unregister_subscription_status_handler(std::uint16_t service, std::uint16_t instance,
-                                                                std::uint16_t event_group, std::uint16_t event_id) {
+void ApplicationManager::unregister_subscription_status_handler(std::uint16_t service,
+                                                                std::uint16_t instance,
+                                                                std::uint16_t event_group,
+                                                                std::uint16_t event_id)
+{
     register_subscription_status_handler(service, instance, event_group, event_id, nullptr, false);
 }
 
-void ApplicationManager::register_subscription_error_handler(std::uint16_t service, std::uint16_t instance,
-                                                             std::uint16_t event_group, error_handler_t handler) {
+void ApplicationManager::register_subscription_error_handler(std::uint16_t service,
+                                                             std::uint16_t instance,
+                                                             std::uint16_t event_group,
+                                                             error_handler_t handler)
+{
     std::lock_guard<std::mutex> guard(error_handler_mutex_);
 
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::register_subscription_error_handler "
@@ -1385,8 +1658,10 @@ void ApplicationManager::register_subscription_error_handler(std::uint16_t servi
     error_handler_set_[service][instance][event_group] = handler;
 }
 
-void ApplicationManager::unregister_subscription_error_handler(std::uint16_t service, std::uint16_t instance,
-                                                               std::uint16_t event_group) {
+void ApplicationManager::unregister_subscription_error_handler(std::uint16_t service,
+                                                               std::uint16_t instance,
+                                                               std::uint16_t event_group)
+{
     std::lock_guard<std::mutex> guard(error_handler_mutex_);
 
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::unregister_subscription_error_handler "
@@ -1396,14 +1671,18 @@ void ApplicationManager::unregister_subscription_error_handler(std::uint16_t ser
     error_handler_set_[service][instance][event_group] = nullptr;
 }
 
-void ApplicationManager::register_availability_handler(std::uint16_t service, std::uint16_t instance,
+void ApplicationManager::register_availability_handler(std::uint16_t service,
+                                                       std::uint16_t instance,
                                                        service_availability_handler_t handler,
-                                                       std::uint8_t major_version, std::uint32_t minor_version) {
+                                                       std::uint8_t major_version,
+                                                       std::uint32_t minor_version)
+{
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::register_availability_handler "
                        << format_service_instance_interface_version(service, instance, major_version, minor_version)
                        << ", handler: " << (handler ? "set" : "not set");
 
-    if (handler == nullptr) {
+    if (handler == nullptr)
+    {
         LGSOMEIP_LOG_ERROR << "ApplicationManager::register_availability_handler "
                            << format_service_instance_interface_version(service, instance, major_version, minor_version)
                            << " ServiceAvailabilityHandler is nullptr.";
@@ -1417,23 +1696,29 @@ void ApplicationManager::register_availability_handler(std::uint16_t service, st
                        << format_service_instance_interface_version(service, instance, major_version, minor_version)
                        << " is registered.";
 
-    if (instance == SOMEIP_DEFAULT_ANY_INSTANCE) {
-        for (auto& service_entry : request_service_list_) {
+    if (instance == SOMEIP_DEFAULT_ANY_INSTANCE)
+    {
+        for (auto& service_entry : request_service_list_)
+        {
             if (service_entry.first != service)
                 continue;
-            for (auto& instance_entry : service_entry.second) {
+            for (auto& instance_entry : service_entry.second)
+            {
                 if (instance_entry.first == SOMEIP_DEFAULT_ANY_INSTANCE)
                     continue;
 
                 bool state = false;
-                for (auto& major : instance_entry.second) {
-                    for (auto& minor : major.second) {
+                for (auto& major : instance_entry.second)
+                {
+                    for (auto& minor : major.second)
+                    {
                         if (minor.second == SOMEIP_SERVICE_AVAILABLE)
                             state = true;
                     }
                 }
 
-                if (state == true) {
+                if (state == true)
+                {
                     LGSOMEIP_LOG_INFO
                         << "ApplicationManager::register_availability_handler "
                         << format_service_instance_id(service_entry.first, instance_entry.first)
@@ -1441,32 +1726,40 @@ void ApplicationManager::register_availability_handler(std::uint16_t service, st
 
                     std::uint16_t service_id = service_entry.first;
                     std::uint16_t instance_id = instance_entry.first;
-                    std::thread callback_thread(
-                        [handler, service_id, instance_id]() { handler(service_id, instance_id, true); });
+                    std::thread callback_thread([handler, service_id, instance_id]() {
+                        handler(service_id, instance_id, true);
+                    });
                     // For assigning thread name
                     pthread_setname_np(callback_thread.native_handle(), "SomeipAvailCB");
                     callback_thread.detach();
                 }
             }
         }
-    } else {
+    }
+    else
+    {
         // Check whether the requested instance has already been offered.
-        for (auto& service_entry : request_service_list_) {
+        for (auto& service_entry : request_service_list_)
+        {
             if (service_entry.first != service)
                 continue;
-            for (auto& instance_entry : service_entry.second) {
+            for (auto& instance_entry : service_entry.second)
+            {
                 if (instance_entry.first != instance && instance_entry.first != SOMEIP_DEFAULT_ANY_INSTANCE)
                     continue;
 
                 bool state = false;
-                for (auto& major : instance_entry.second) {
-                    for (auto& minor : major.second) {
+                for (auto& major : instance_entry.second)
+                {
+                    for (auto& minor : major.second)
+                    {
                         if (minor.second == SOMEIP_SERVICE_AVAILABLE)
                             state = true;
                     }
                 }
 
-                if (state == true) {
+                if (state == true)
+                {
                     LGSOMEIP_LOG_INFO
                         << "ApplicationManager::register_availability_handler "
                         << format_service_instance_id(service_entry.first, instance_entry.first)
@@ -1474,8 +1767,9 @@ void ApplicationManager::register_availability_handler(std::uint16_t service, st
 
                     std::uint16_t service_id = service_entry.first;
                     std::uint16_t instance_id = instance_entry.first;
-                    std::thread callback_thread(
-                        [handler, service_id, instance_id]() { handler(service_id, instance_id, true); });
+                    std::thread callback_thread([handler, service_id, instance_id]() {
+                        handler(service_id, instance_id, true);
+                    });
                     // For assigning thread name
                     pthread_setname_np(callback_thread.native_handle(), "SomeipAvailCB");
                     callback_thread.detach();
@@ -1485,8 +1779,11 @@ void ApplicationManager::register_availability_handler(std::uint16_t service, st
     }
 }
 
-void ApplicationManager::unregister_availability_handler(std::uint16_t service, std::uint16_t instance,
-                                                         std::uint8_t major_version, std::uint32_t minor_version) {
+void ApplicationManager::unregister_availability_handler(std::uint16_t service,
+                                                         std::uint16_t instance,
+                                                         std::uint8_t major_version,
+                                                         std::uint32_t minor_version)
+{
     std::lock_guard<std::mutex> guard(service_management_mutex_);
 
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::unregister_availability_handler "
@@ -1495,34 +1792,43 @@ void ApplicationManager::unregister_availability_handler(std::uint16_t service, 
     service_availability_handler_map_[service][instance][major_version][minor_version] = nullptr;
 }
 
-void ApplicationManager::on_application_state(bool connected) {
+void ApplicationManager::on_application_state(bool connected)
+{
     LGSOMEIP_LOG_INFO << "ApplicationManager::on_application_state / " << (connected ? "Connected" : "Disconnected");
 
-    if (application_state_ != connected) {
+    if (application_state_ != connected)
+    {
         application_state_ = connected;
         application_state_handler_t handler;
         {
             std::lock_guard<std::mutex> guard(application_handler_mutex_);
             handler = application_state_handler_;
         }
-        if (handler) {
+        if (handler)
+        {
             handler(connected ? SOMEIP_APPLICATION_REGISTERED : SOMEIP_APPLICATION_DEREGISTERED);
         }
 
-        if (connected == true) { // OnConnected
+        if (connected == true)
+        {  // OnConnected
             {
                 // Offer service again
                 std::unique_lock<std::recursive_mutex> lck_offer(offer_service_list_mutex_);
-                for (auto& service : offer_service_list_) {
-                    for (auto& instance : service.second) {
-                        for (auto& major : instance.second) {
-                            for (auto& minor : major.second) {
-                                if (minor.second == SOMEIP_SERVICE_OFFER) {
+                for (auto& service : offer_service_list_)
+                {
+                    for (auto& instance : service.second)
+                    {
+                        for (auto& major : instance.second)
+                        {
+                            for (auto& minor : major.second)
+                            {
+                                if (minor.second == SOMEIP_SERVICE_OFFER)
+                                {
                                     LGSOMEIP_LOG_INFO << "ApplicationManager::on_application_state offer service "
                                                       << format_service_instance_interface_version(
                                                              service.first, instance.first, major.first, minor.first);
-                                    send_offer_service(service.first, instance.first, major.first, minor.first,
-                                                       0xFFFFFF);
+                                    send_offer_service(
+                                        service.first, instance.first, major.first, minor.first, 0xFFFFFF);
                                 }
                             }
                         }
@@ -1532,31 +1838,45 @@ void ApplicationManager::on_application_state(bool connected) {
             {
                 // Find service again
                 std::lock_guard<std::mutex> guard(service_management_mutex_);
-                for (auto& service : request_service_list_) {
-                    for (auto& instance : service.second) {
-                        for (auto& majorversion : instance.second) {
-                            for (auto& minorversion : majorversion.second) {
-                                if (minorversion.second == SOMEIP_SERVICE_REQUEST) {
+                for (auto& service : request_service_list_)
+                {
+                    for (auto& instance : service.second)
+                    {
+                        for (auto& majorversion : instance.second)
+                        {
+                            for (auto& minorversion : majorversion.second)
+                            {
+                                if (minorversion.second == SOMEIP_SERVICE_REQUEST)
+                                {
                                     LGSOMEIP_LOG_INFO
                                         << "ApplicationManager::on_application_state find service "
                                         << format_service_instance_interface_version(
                                                service.first, instance.first, majorversion.first, minorversion.first);
-                                    send_find_service(service.first, instance.first, majorversion.first,
-                                                      minorversion.first, SOMEIP_DEFAULT_TTL_ON);
+                                    send_find_service(service.first,
+                                                      instance.first,
+                                                      majorversion.first,
+                                                      minorversion.first,
+                                                      SOMEIP_DEFAULT_TTL_ON);
                                 }
                             }
                         }
                     }
                 }
             }
-        } else { // OnDisconnected
+        }
+        else
+        {  // OnDisconnected
             {
                 // Clear requested service
                 std::lock_guard<std::mutex> guard(service_management_mutex_);
-                for (auto& service : request_service_list_) {
-                    for (auto& instance : service.second) {
-                        for (auto& majorversion : instance.second) {
-                            for (auto& minorversion : majorversion.second) {
+                for (auto& service : request_service_list_)
+                {
+                    for (auto& instance : service.second)
+                    {
+                        for (auto& majorversion : instance.second)
+                        {
+                            for (auto& minorversion : majorversion.second)
+                            {
                                 minorversion.second = SOMEIP_SERVICE_REQUEST;
                             }
                         }
@@ -1566,10 +1886,14 @@ void ApplicationManager::on_application_state(bool connected) {
             {
                 // Clear SubscribeEvent state
                 std::unique_lock<std::mutex> lck_subevent(subscribe_event_list_mutex_);
-                for (auto& service : subscribe_event_list_) {
-                    for (auto& instance : service.second) {
-                        for (auto& major : instance.second) {
-                            for (auto& eventgroup : major.second) {
+                for (auto& service : subscribe_event_list_)
+                {
+                    for (auto& instance : service.second)
+                    {
+                        for (auto& major : instance.second)
+                        {
+                            for (auto& eventgroup : major.second)
+                            {
                                 if (eventgroup.second != SOMEIP_EVENT_UNSUBSCRIBE)
                                     eventgroup.second = SOMEIP_EVENT_SUBSCRIBE;
                             }
@@ -1580,12 +1904,17 @@ void ApplicationManager::on_application_state(bool connected) {
             {
                 // Notify service unavailability
                 service_availability_handler_t availability_handler = nullptr;
-                for (auto& service : service_availability_handler_map_) {
-                    for (auto& instance : service.second) {
-                        for (auto& major : instance.second) {
-                            for (auto& minor : major.second) {
+                for (auto& service : service_availability_handler_map_)
+                {
+                    for (auto& instance : service.second)
+                    {
+                        for (auto& major : instance.second)
+                        {
+                            for (auto& minor : major.second)
+                            {
                                 availability_handler = minor.second;
-                                if (availability_handler != nullptr) {
+                                if (availability_handler != nullptr)
+                                {
                                     availability_handler(service.first, instance.first, false);
                                 }
                             }
@@ -1599,7 +1928,8 @@ void ApplicationManager::on_application_state(bool connected) {
 
 // ApplicationManager private SOME/IP-TP methods.
 #if defined(ENABLE_SOMEIP_TP)
-bool ApplicationManager::check_enabled_tp_message(MessageSOMEIP& message) {
+bool ApplicationManager::check_enabled_tp_message(MessageSOMEIP& message)
+{
     std::uint16_t svcid = static_cast<std::uint16_t>(message.get_message_id() >> 16);
     std::uint16_t methodid = static_cast<std::uint16_t>(message.get_message_id() & 0xffff);
 
@@ -1607,7 +1937,8 @@ bool ApplicationManager::check_enabled_tp_message(MessageSOMEIP& message) {
                        << " " << format_named_id("MethodID", methodid, 4);
 
     auto service_config = configuration_->get_service_info(svcid, SOMEIP_DEFAULT_ANY_INSTANCE);
-    if (service_config == nullptr) {
+    if (service_config == nullptr)
+    {
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::check_enabled_tp_message / IPC communication "
                            << format_named_id("ServiceID", svcid, 4);
         return false;
@@ -1617,11 +1948,15 @@ bool ApplicationManager::check_enabled_tp_message(MessageSOMEIP& message) {
     auto tp_list = service_config->get_tp_list();
 
     auto it = find(tp_list.begin(), tp_list.end(), methodid);
-    if (it == tp_list.end()) {
+    if (it == tp_list.end())
+    {
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::check_enabled_tp_message / No method/event id in tp_list";
         return false;
-    } else {
-        for (auto i : tp_list) {
+    }
+    else
+    {
+        for (auto i : tp_list)
+        {
             LGSOMEIP_LOG_DEBUG << "ApplicationManager::check_enabled_tp_message / "
                                << format_named_id("MethodID", i, 4);
         }
@@ -1635,7 +1970,8 @@ bool ApplicationManager::check_enabled_tp_message(MessageSOMEIP& message) {
     return true;
 }
 
-void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
+void ApplicationManager::on_message_tp(MessageSOMEIP& message)
+{
     static std::uint32_t offset_value = 1;
     static std::uint32_t bytes_of_offset = 0;
     static std::uint32_t order = 0;
@@ -1660,31 +1996,33 @@ void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
                        << " / " << format_named_id("MessageType", type, 2) << " / Len=" << message.get_length() << " / "
                        << format_named_id("TPOffset", tp_header, 8);
 
-    switch (type) {
-    case SOMEIP_MESSAGE_TYPE::TP_REQUEST:
-        type = SOMEIP_MESSAGE_TYPE::REQUEST;
-        break;
-    case SOMEIP_MESSAGE_TYPE::TP_REQUEST_NO_RETURN:
-        type = SOMEIP_MESSAGE_TYPE::REQUEST_NO_RETURN;
-        break;
-    case SOMEIP_MESSAGE_TYPE::TP_RESPONSE:
-        type = SOMEIP_MESSAGE_TYPE::RESPONSE;
-        break;
-    case SOMEIP_MESSAGE_TYPE::TP_ERROR:
-        type = SOMEIP_MESSAGE_TYPE::ERROR;
-        break;
-    case SOMEIP_MESSAGE_TYPE::TP_NOTIFICATION:
-        type = SOMEIP_MESSAGE_TYPE::NOTIFICATION;
-        break;
-    default:
-        return;
+    switch (type)
+    {
+        case SOMEIP_MESSAGE_TYPE::TP_REQUEST:
+            type = SOMEIP_MESSAGE_TYPE::REQUEST;
+            break;
+        case SOMEIP_MESSAGE_TYPE::TP_REQUEST_NO_RETURN:
+            type = SOMEIP_MESSAGE_TYPE::REQUEST_NO_RETURN;
+            break;
+        case SOMEIP_MESSAGE_TYPE::TP_RESPONSE:
+            type = SOMEIP_MESSAGE_TYPE::RESPONSE;
+            break;
+        case SOMEIP_MESSAGE_TYPE::TP_ERROR:
+            type = SOMEIP_MESSAGE_TYPE::ERROR;
+            break;
+        case SOMEIP_MESSAGE_TYPE::TP_NOTIFICATION:
+            type = SOMEIP_MESSAGE_TYPE::NOTIFICATION;
+            break;
+        default:
+            return;
     }
 
     std::shared_ptr<MessageSOMEIP> msg = nullptr;
 
     // Process the new SOME/IP-TP segment first. The cache is empty after a message was completed or dropped,
     // and consecutive messages can share the same message ID.
-    if (tp_message_cache_ == nullptr || msg_id != previous_message_id_) {
+    if (tp_message_cache_ == nullptr || msg_id != previous_message_id_)
+    {
         tp_message_cache_ = std::make_shared<MessageSOMEIP>();
         msg = std::make_shared<MessageSOMEIP>();
         msg->set_message_id(msg_id);
@@ -1698,9 +2036,12 @@ void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
         previous_message_id_ = msg_id;
         previous_session_id_ = session_id;
         order = 0;
-    } else {
+    }
+    else
+    {
         msg = tp_message_cache_;
-        if (order == 1) {
+        if (order == 1)
+        {
             offset_value = tp_header;
             bytes_of_offset = offset_value * 16;
         }
@@ -1708,7 +2049,8 @@ void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
 
     // The session ID must remain stable while the configured reassembly buffer is filled.
     if (max_payload_size > msg->get_length() && session_id == previous_session_id_ &&
-        (tp_header / offset_value) == order) {
+        (tp_header / offset_value) == order)
+    {
         std::uint8_t more = (*(recv_payload->get_payload() + 3)) & 0x01;
         msg->get_payload_type()->append(static_cast<const std::uint8_t*>(recv_payload->get_payload() + 4),
                                         recv_payload->get_length() - 4);
@@ -1716,12 +2058,14 @@ void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
                            << " / Len=" << recv_payload->get_length();
         order++;
 
-        if (more == 0x00) {
+        if (more == 0x00)
+        {
             msg->set_payload(msg->get_payload_type());
 
             // Compare the reassembled message size with the received message length.
             if ((tp_header / offset_value * bytes_of_offset) + (message.get_length() - 4 - 8) ==
-                (msg->get_length() - 8)) {
+                (msg->get_length() - 8))
+            {
                 on_message(msg);
 
                 LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_message_tp / Success to reassembly";
@@ -1729,7 +2073,9 @@ void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
             tp_message_cache_ = nullptr;
             order = 0;
         }
-    } else {
+    }
+    else
+    {
         // Clear the reassembly buffers.
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_message_tp / Clear the reassembly buffers";
 
@@ -1738,30 +2084,32 @@ void ApplicationManager::on_message_tp(MessageSOMEIP& message) {
     }
 }
 
-void ApplicationManager::send_tp_message(MessageSOMEIP& message) {
+void ApplicationManager::send_tp_message(MessageSOMEIP& message)
+{
     std::uint32_t offset = 0;
     std::uint32_t remains = message.get_payload_type()->get_length();
     std::uint32_t reqid = message.get_request_id();
 
     std::uint8_t type = message.get_message_type();
-    switch (type) {
-    case SOMEIP_MESSAGE_TYPE::REQUEST:
-        type = SOMEIP_MESSAGE_TYPE::TP_REQUEST;
-        break;
-    case SOMEIP_MESSAGE_TYPE::REQUEST_NO_RETURN:
-        type = SOMEIP_MESSAGE_TYPE::TP_REQUEST_NO_RETURN;
-        break;
-    case SOMEIP_MESSAGE_TYPE::RESPONSE:
-        type = SOMEIP_MESSAGE_TYPE::TP_RESPONSE;
-        break;
-    case SOMEIP_MESSAGE_TYPE::ERROR:
-        type = SOMEIP_MESSAGE_TYPE::TP_ERROR;
-        break;
-    case SOMEIP_MESSAGE_TYPE::NOTIFICATION:
-        type = SOMEIP_MESSAGE_TYPE::TP_NOTIFICATION;
-        break;
-    default:
-        return;
+    switch (type)
+    {
+        case SOMEIP_MESSAGE_TYPE::REQUEST:
+            type = SOMEIP_MESSAGE_TYPE::TP_REQUEST;
+            break;
+        case SOMEIP_MESSAGE_TYPE::REQUEST_NO_RETURN:
+            type = SOMEIP_MESSAGE_TYPE::TP_REQUEST_NO_RETURN;
+            break;
+        case SOMEIP_MESSAGE_TYPE::RESPONSE:
+            type = SOMEIP_MESSAGE_TYPE::TP_RESPONSE;
+            break;
+        case SOMEIP_MESSAGE_TYPE::ERROR:
+            type = SOMEIP_MESSAGE_TYPE::TP_ERROR;
+            break;
+        case SOMEIP_MESSAGE_TYPE::NOTIFICATION:
+            type = SOMEIP_MESSAGE_TYPE::TP_NOTIFICATION;
+            break;
+        default:
+            return;
     }
 
     MessageSOMEIP msg;
@@ -1776,7 +2124,8 @@ void ApplicationManager::send_tp_message(MessageSOMEIP& message) {
 
     const std::uint32_t max_segment = SOMEIP_UDP::TP_MAX_SEGMENT_SIZE;
 
-    while (remains > 0) {
+    while (remains > 0)
+    {
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::send_tp_message / remains : " << remains;
 
         bool more = remains > max_segment;
@@ -1794,28 +2143,32 @@ void ApplicationManager::send_tp_message(MessageSOMEIP& message) {
         packet_router_->send_message(msg);
     }
 }
-#endif // ENABLE_SOMEIP_TP
+#endif  // ENABLE_SOMEIP_TP
 
 // ApplicationManager public message-sending methods.
-void ApplicationManager::send(std::shared_ptr<MessageSOMEIP> message, bool flush) {
+void ApplicationManager::send(std::shared_ptr<MessageSOMEIP> message, bool flush)
+{
     send(*message, flush);
 }
 
-void ApplicationManager::send(MessageSOMEIP& message, [[maybe_unused]] bool flush) {
+void ApplicationManager::send(MessageSOMEIP& message, [[maybe_unused]] bool flush)
+{
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::send / " << format_named_id("MessageID", message.get_message_id(), 8)
                        << ", " << format_named_id("RequestID", message.get_request_id(), 8) << ", "
                        << format_named_id("MessageType", message.get_message_type(), 2) << ", "
                        << format_named_id("InstanceID", message.get_instance_id(), 4);
 
     std::uint32_t req_id = get_new_request_id(message.get_request_id(), message.get_message_type());
-    if (req_id == 0) {
+    if (req_id == 0)
+    {
         LGSOMEIP_LOG_WARN << "ApplicationManager::send / wrong request id!";
 
 #if defined(ENABLE_SOMEIP_DELIVERY_STATISTICS)
         SomeipPacketStatistics::get_instance().increase_dropped_packet(
-            SomeipPacketStatistics::kOutgoing, message.get_message_id(),
+            SomeipPacketStatistics::kOutgoing,
+            message.get_message_id(),
             SomeipPacketStatistics::kApplicationManagerWrongRequestId);
-#endif // ENABLE_SOMEIP_DELIVERY_STATISTICS
+#endif  // ENABLE_SOMEIP_DELIVERY_STATISTICS
 
         return;
     }
@@ -1824,106 +2177,131 @@ void ApplicationManager::send(MessageSOMEIP& message, [[maybe_unused]] bool flus
     // Check whether SOME/IP-TP is enabled.
 #if !defined(ENABLE_SOMEIP_IPC)
 #if defined(ENABLE_SOMEIP_TP)
-    if (check_enabled_tp_message(message)) {
+    if (check_enabled_tp_message(message))
+    {
         send_tp_message(message);
-    } else {
+    }
+    else
+    {
         packet_router_->send_message(message);
     }
 #else
     packet_router_->send_message(message);
-#endif // ENABLE_SOMEIP_TP
+#endif  // ENABLE_SOMEIP_TP
 #else
     std::uint16_t service_id = static_cast<std::uint16_t>(message.get_message_id() >> 16);
     std::uint16_t instance_id = message.get_instance_id();
     std::uint16_t method_id = static_cast<std::uint16_t>(message.get_message_id() & 0xffff);
     bool is_provider = message.get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST ? true : false;
 
-    if (is_internal_message_for_ipc(service_id, instance_id)) {
+    if (is_internal_message_for_ipc(service_id, instance_id))
+    {
         LGSOMEIP_LOG_DEBUG << "ApplicationManager::send / "
                            << format_service_instance_event_id(service_id, instance_id, method_id)
                            << (is_provider ? " Provider" : " Consumer");
-        if (message.get_message_type() == SOMEIP_MESSAGE_TYPE::RESPONSE) {
+        if (message.get_message_type() == SOMEIP_MESSAGE_TYPE::RESPONSE)
+        {
             std::uint16_t app_id = static_cast<std::uint16_t>(req_id >> 16);
             LGSOMEIP_LOG_DEBUG << "ApplicationManager::send / ( IPC RESPONSE) / " << format_named_id("AppID", app_id, 4)
                                << " " << format_named_id("RequestID", req_id, 8);
             packet_router_->send_ipc_response_message(message, static_cast<std::uint16_t>(req_id), app_id);
-        } else {
+        }
+        else
+        {
             packet_router_->send_ipc_message(message, is_provider);
         }
-    } else {
+    }
+    else
+    {
 #if defined(ENABLE_SOMEIP_TP)
-        if (check_enabled_tp_message(message)) {
+        if (check_enabled_tp_message(message))
+        {
             send_tp_message(message);
-        } else {
+        }
+        else
+        {
             packet_router_->send_message(message);
         }
 #else
         packet_router_->send_message(message);
-#endif // ENABLE_SOMEIP_TP
+#endif  // ENABLE_SOMEIP_TP
     }
-#endif // ENABLE_SOMEIP_IPC
+#endif  // ENABLE_SOMEIP_IPC
 
 #if defined(ENABLE_SOMEIP_DELIVERY_STATISTICS)
     SomeipPacketStatistics::get_instance().increase_received_packet(SomeipPacketStatistics::kOutgoing,
                                                                     message.get_message_id());
-#endif // ENABLE_SOMEIP_DELIVERY_STATISTICS
+#endif  // ENABLE_SOMEIP_DELIVERY_STATISTICS
 }
 
-void ApplicationManager::notify(std::uint16_t service, std::uint16_t instance, std::uint16_t event_id,
-                                std::shared_ptr<Payload> payload, std::uint16_t client, bool force, bool flush) const {
+void ApplicationManager::notify(std::uint16_t service,
+                                std::uint16_t instance,
+                                std::uint16_t event_id,
+                                std::shared_ptr<Payload> payload,
+                                std::uint16_t client,
+                                bool force,
+                                bool flush) const
+{
     event_manager_->notify(service, instance, event_id, payload, client, force, flush);
 }
 
 // ApplicationManager public message-receiving methods.
 // Handle control-message callbacks.
-void ApplicationManager::on_message(std::shared_ptr<MessageSD> message) {
-    for (auto& entry : message->entries()) {
+void ApplicationManager::on_message(std::shared_ptr<MessageSD> message)
+{
+    for (auto& entry : message->entries())
+    {
         std::uint8_t type = entry.get_type();
 
-        switch (type) {
-        case SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID:
+        switch (type)
+        {
+            case SOMEIP_SD_ENTRY::FINDSERVICE::TYPEID:
 #if defined(ENABLE_SOMEIP_DELIVERY_STATISTICS)
-            SomeipPacketStatistics::get_instance().increase_sd_type_packet(
-                SomeipPacketStatistics::kIncoming, entry.get_service_id(),
-                SomeipPacketStatistics::kSomeipSdFindServiceReceived);
-#endif // ENABLE_SOMEIP_DELIVERY_STATISTICS
+                SomeipPacketStatistics::get_instance().increase_sd_type_packet(
+                    SomeipPacketStatistics::kIncoming,
+                    entry.get_service_id(),
+                    SomeipPacketStatistics::kSomeipSdFindServiceReceived);
+#endif  // ENABLE_SOMEIP_DELIVERY_STATISTICS
 
-            on_find_service(message);
+                on_find_service(message);
 
-            break;
-        case SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID:
+                break;
+            case SOMEIP_SD_ENTRY::OFFERSERVICE::TYPEID:
 #if defined(ENABLE_SOMEIP_DELIVERY_STATISTICS)
-            SomeipPacketStatistics::get_instance().increase_sd_type_packet(
-                SomeipPacketStatistics::kIncoming, entry.get_service_id(),
-                SomeipPacketStatistics::kSomeipSdOfferServiceReceived);
-#endif // ENABLE_SOMEIP_DELIVERY_STATISTICS
+                SomeipPacketStatistics::get_instance().increase_sd_type_packet(
+                    SomeipPacketStatistics::kIncoming,
+                    entry.get_service_id(),
+                    SomeipPacketStatistics::kSomeipSdOfferServiceReceived);
+#endif  // ENABLE_SOMEIP_DELIVERY_STATISTICS
 
-            on_offer_service(message);
+                on_offer_service(message);
 
-            break;
-        case SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID:
+                break;
+            case SOMEIP_SD_ENTRY::SUBSCRIBE::TYPEID:
 #if defined(ENABLE_SOMEIP_DELIVERY_STATISTICS)
-            SomeipPacketStatistics::get_instance().increase_sd_type_packet(
-                SomeipPacketStatistics::kIncoming, entry.get_service_id(),
-                SomeipPacketStatistics::kSomeipSdSubscribeReceived);
-#endif // ENABLE_SOMEIP_DELIVERY_STATISTICS
+                SomeipPacketStatistics::get_instance().increase_sd_type_packet(
+                    SomeipPacketStatistics::kIncoming,
+                    entry.get_service_id(),
+                    SomeipPacketStatistics::kSomeipSdSubscribeReceived);
+#endif  // ENABLE_SOMEIP_DELIVERY_STATISTICS
 
-            on_subscribe_eventgroup(message);
+                on_subscribe_eventgroup(message);
 
-            break;
-        case SOMEIP_SD_ENTRY::SUBSCRIBEACK::TYPEID:
+                break;
+            case SOMEIP_SD_ENTRY::SUBSCRIBEACK::TYPEID:
 #if defined(ENABLE_SOMEIP_DELIVERY_STATISTICS)
-            SomeipPacketStatistics::get_instance().increase_sd_type_packet(
-                SomeipPacketStatistics::kIncoming, entry.get_service_id(),
-                SomeipPacketStatistics::kSomeipSdSubscribeAckReceived);
-#endif // ENABLE_SOMEIP_DELIVERY_STATISTICS
+                SomeipPacketStatistics::get_instance().increase_sd_type_packet(
+                    SomeipPacketStatistics::kIncoming,
+                    entry.get_service_id(),
+                    SomeipPacketStatistics::kSomeipSdSubscribeAckReceived);
+#endif  // ENABLE_SOMEIP_DELIVERY_STATISTICS
 
-            on_subscribe_eventgroup_ack(message);
+                on_subscribe_eventgroup_ack(message);
 
-            break;
-        default:
-            LGSOMEIP_LOG_WARN << "ApplicationManager::on_message / NoType";
-            break;
+                break;
+            default:
+                LGSOMEIP_LOG_WARN << "ApplicationManager::on_message / NoType";
+                break;
         }
     }
 }
@@ -1947,16 +2325,21 @@ void ApplicationManager::on_message(std::shared_ptr<MessageSD> message) {
 // Base error handling on the received message type and validate fields in the
 // order defined by the SOME/IP specification.
 
-void ApplicationManager::send_error(std::shared_ptr<MessageSOMEIP> message, std::uint8_t return_code,
-                                    std::uint8_t* error_message) {
+void ApplicationManager::send_error(std::shared_ptr<MessageSOMEIP> message,
+                                    std::uint8_t return_code,
+                                    std::uint8_t* error_message)
+{
     LGSOMEIP_LOG_DEBUG << "ApplicationManager::send_error / "
                        << format_named_id("MessageID", message->get_message_id(), 8) << ", "
                        << format_named_id("ReturnCode", return_code, 2) << ", errorMessage: " << error_message;
 
-    if (error_message == nullptr) {
+    if (error_message == nullptr)
+    {
         message->set_payload(nullptr, 0);
         message->set_message_type(SOMEIP_MESSAGE_TYPE::ERROR);
-    } else {
+    }
+    else
+    {
         message->set_payload(error_message, static_cast<std::uint32_t>(strlen((char*)error_message)));
         message->set_message_type(SOMEIP_MESSAGE_TYPE::ERROR);
     }
@@ -1967,15 +2350,20 @@ void ApplicationManager::send_error(std::shared_ptr<MessageSOMEIP> message, std:
 }
 
 #if !defined(ENABLE_SOMEIP_IPC)
-std::vector<message_handler_t>
-ApplicationManager::get_message_handler(std::uint16_t service_id, std::uint16_t instance_id, std::uint16_t method_id,
-                                        std::uint8_t major_version, std::uint8_t type)
+std::vector<message_handler_t> ApplicationManager::get_message_handler(std::uint16_t service_id,
+                                                                       std::uint16_t instance_id,
+                                                                       std::uint16_t method_id,
+                                                                       std::uint8_t major_version,
+                                                                       std::uint8_t type)
 #else
-std::vector<message_handler_t>
-ApplicationManager::get_message_handler(std::uint16_t service_id, std::uint16_t instance_id, std::uint16_t method_id,
-                                        std::uint8_t major_version, std::uint8_t type, std::uint16_t app_id,
-                                        std::uint16_t request_id)
-#endif // ENABLE_SOMEIP_IPC
+std::vector<message_handler_t> ApplicationManager::get_message_handler(std::uint16_t service_id,
+                                                                       std::uint16_t instance_id,
+                                                                       std::uint16_t method_id,
+                                                                       std::uint8_t major_version,
+                                                                       std::uint8_t type,
+                                                                       std::uint16_t app_id,
+                                                                       std::uint16_t request_id)
+#endif  // ENABLE_SOMEIP_IPC
 {
     std::uint16_t serviceid = service_id;
     std::uint16_t methodid = method_id;
@@ -1991,47 +2379,57 @@ ApplicationManager::get_message_handler(std::uint16_t service_id, std::uint16_t 
                        << format_named_id("MethodID", methodid, 4) << " start";
 
     // Check the major version and IPC routing.
-    if (type == SOMEIP_MESSAGE_TYPE::REQUEST || type == SOMEIP_MESSAGE_TYPE::REQUEST_NO_RETURN) {
+    if (type == SOMEIP_MESSAGE_TYPE::REQUEST || type == SOMEIP_MESSAGE_TYPE::REQUEST_NO_RETURN)
+    {
         is_provider = true;
         std::lock_guard<std::recursive_mutex> guard(offer_service_list_mutex_);
 
         auto service = offer_service_list_[service_id][instanceid][major];
-        if (service.size() == 0) {
+        if (service.size() == 0)
+        {
             service = offer_service_list_[service_id][instanceid][SOMEIP_DEFAULT_ANY_MAJOR];
-            if (service.size() == 0) {
+            if (service.size() == 0)
+            {
                 error = SOMEIP_RETURN_CODE::E_WRONG_INTERFACE_VERSION;
                 throw LSAR_APPLICATION_ERROR(error);
             }
         }
 
-        if (service.begin()->second != SOMEIP_SERVICE_OFFER) {
+        if (service.begin()->second != SOMEIP_SERVICE_OFFER)
+        {
             error = SOMEIP_RETURN_CODE::E_WRONG_INTERFACE_VERSION;
             throw LSAR_APPLICATION_ERROR(error);
         }
 
 #if defined(ENABLE_SOMEIP_IPC)
-        if (is_internal_message_for_ipc(serviceid, instanceid)) {
+        if (is_internal_message_for_ipc(serviceid, instanceid))
+        {
             LGSOMEIP_LOG_DEBUG << "ApplicationManager::get_message_handler is_internal_message_for_ipc "
                                << format_service_instance_id(serviceid, instanceid) << " "
                                << format_named_id("MethodID", methodid, 4) << (is_provider ? " Provider" : " Consumer");
             packet_router_->add_ipc_route(serviceid, instanceid, methodid, app_id, false);
             packet_router_->on_internal_request(serviceid, instanceid, request_id, app_id);
         }
-#endif // ENABLE_SOMEIP_IPC
+#endif  // ENABLE_SOMEIP_IPC
     }
 
     // Find the registered message handler.
     std::lock_guard<std::mutex> guard(message_handler_mutex_);
-    for (auto& svc : message_handler_set_) {
+    for (auto& svc : message_handler_set_)
+    {
         if (svc.first != serviceid && svc.first != SOMEIP_DEFAULT_ANY_SERVICE)
             continue;
-        for (auto& ins : svc.second) {
+        for (auto& ins : svc.second)
+        {
             if (ins.first != instanceid && ins.first != SOMEIP_DEFAULT_ANY_INSTANCE)
                 continue;
-            for (auto& mth : ins.second) {
-                if (mth.first == methodid || mth.first == SOMEIP_DEFAULT_ANY_METHOD) {
+            for (auto& mth : ins.second)
+            {
+                if (mth.first == methodid || mth.first == SOMEIP_DEFAULT_ANY_METHOD)
+                {
                     handler_vector = message_handler_set_[svc.first][ins.first][mth.first];
-                    if (!handler_vector.empty()) {
+                    if (!handler_vector.empty())
+                    {
                         serviceid = svc.first;
                         instanceid = ins.first;
                         methodid = mth.first;
@@ -2046,36 +2444,46 @@ ApplicationManager::get_message_handler(std::uint16_t service_id, std::uint16_t 
                        << format_service_instance_id(serviceid, instanceid) << " "
                        << format_named_id("MethodID", methodid, 4) << " " << (is_provider ? "Provider" : "Consumer");
 
-    if (!handler_vector.empty()) {
+    if (!handler_vector.empty())
+    {
         LGSOMEIP_LOG_DEBUG << " ==> Handler " << format_service_instance_id(serviceid, instanceid) << " "
                            << format_named_id("MethodID", methodid, 4) << ", "
                            << (is_provider ? "Provider, " : "Consumer, ") << handler_vector.size() << " Handlers";
-    } else {
+    }
+    else
+    {
         LGSOMEIP_LOG_DEBUG << " : message handler is not registered!";
     }
 
     return handler_vector;
 }
 
-std::uint16_t ApplicationManager::get_new_session_id() {
+std::uint16_t ApplicationManager::get_new_session_id()
+{
     session_count_ = (session_count_ % 0xffff) + 1;
     return session_count_;
 }
 
-std::uint32_t ApplicationManager::get_new_request_id(std::uint32_t request_id, std::uint8_t type) {
+std::uint32_t ApplicationManager::get_new_request_id(std::uint32_t request_id, std::uint8_t type)
+{
     std::uint32_t clientid = static_cast<std::uint32_t>(get_application_id()) << 16;
     std::uint32_t sessionid = static_cast<std::uint32_t>(request_id & 0x0000ffff);
 
     if (type == SOMEIP_MESSAGE_TYPE::REQUEST || type == SOMEIP_MESSAGE_TYPE::REQUEST_NO_RETURN ||
-        type == SOMEIP_MESSAGE_TYPE::TP_REQUEST || type == SOMEIP_MESSAGE_TYPE::TP_REQUEST_NO_RETURN) {
+        type == SOMEIP_MESSAGE_TYPE::TP_REQUEST || type == SOMEIP_MESSAGE_TYPE::TP_REQUEST_NO_RETURN)
+    {
         if (sessionid == 0)
             sessionid = get_new_session_id();
         std::uint32_t req_id = clientid | sessionid;
         return req_id;
-    } else if (type == SOMEIP_MESSAGE_TYPE::RESPONSE) {
+    }
+    else if (type == SOMEIP_MESSAGE_TYPE::RESPONSE)
+    {
         if (sessionid == 0)
             return 0;
-    } else if (type == SOMEIP_MESSAGE_TYPE::NOTIFICATION) {
+    }
+    else if (type == SOMEIP_MESSAGE_TYPE::NOTIFICATION)
+    {
         if (sessionid == 0)
             return 0;
     }
@@ -2083,13 +2491,15 @@ std::uint32_t ApplicationManager::get_new_request_id(std::uint32_t request_id, s
     return request_id;
 }
 
-std::uint32_t ApplicationManager::get_sd_request_id() {
+std::uint32_t ApplicationManager::get_sd_request_id()
+{
     std::uint32_t req_id = static_cast<std::uint32_t>(get_application_id()) << 16;
     return req_id;
 }
 
 // Handle data-message callbacks.
-void ApplicationManager::on_message(std::shared_ptr<MessageSOMEIP> message) {
+void ApplicationManager::on_message(std::shared_ptr<MessageSOMEIP> message)
+{
     std::uint16_t serviceid = static_cast<std::uint16_t>(message->get_message_id() >> 16);
     std::uint16_t methodid = static_cast<std::uint16_t>(message->get_message_id() & 0xffff);
     std::uint8_t major = message->get_interface_version();
@@ -2098,45 +2508,57 @@ void ApplicationManager::on_message(std::shared_ptr<MessageSOMEIP> message) {
 #if defined(ENABLE_SOMEIP_IPC)
     std::uint32_t req_id = message->get_request_id();
     std::uint16_t app_id = static_cast<std::uint16_t>(req_id >> 16);
-#endif // ENABLE_SOMEIP_IPC
+#endif  // ENABLE_SOMEIP_IPC
     bool can_handle = false;
 
     // Check the instance ID.
-    if (instanceid == 0) {
+    if (instanceid == 0)
+    {
         std::lock_guard<std::mutex> guard(message_handler_mutex_);
         auto instance_list = message_handler_set_.find(serviceid);
-        if (instance_list == message_handler_set_.end()) {
+        if (instance_list == message_handler_set_.end())
+        {
             serviceid = SOMEIP_DEFAULT_ANY_SERVICE;
             instance_list = message_handler_set_.find(serviceid);
-            if (instance_list == message_handler_set_.end()) {
+            if (instance_list == message_handler_set_.end())
+            {
                 LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_message / Invalid "
                                    << format_named_id("ServiceID", serviceid, 4);
 
-                if (message->get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST) {
+                if (message->get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST)
+                {
                     throw LSAR_APPLICATION_ERROR(SOMEIP_RETURN_CODE::E_UNKNOWN_METHOD);
-                } else {
+                }
+                else
+                {
                     throw LSAR_APPLICATION_ERROR(SOMEIP_RETURN_CODE::E_NOT_OK);
                 }
             }
         }
 
-        for (auto it = instance_list->second.begin(); it != instance_list->second.end(); it++) {
+        for (auto it = instance_list->second.begin(); it != instance_list->second.end(); it++)
+        {
             instanceid = it->first;
             if (!message_handler_set_[serviceid][instanceid][methodid].empty() ||
-                !message_handler_set_[serviceid][instanceid][SOMEIP_DEFAULT_ANY_METHOD].empty()) {
+                !message_handler_set_[serviceid][instanceid][SOMEIP_DEFAULT_ANY_METHOD].empty())
+            {
                 message->set_instance_id(instanceid);
                 can_handle = true;
                 break;
             }
         }
-        if (can_handle == false) {
+        if (can_handle == false)
+        {
             LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_message / Handler "
                                << format_service_instance_id(serviceid, instanceid) << " "
                                << format_named_id("MethodID", methodid, 4) << " : message handler is not registered!";
 
-            if (message->get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST) {
+            if (message->get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST)
+            {
                 throw LSAR_APPLICATION_ERROR(SOMEIP_RETURN_CODE::E_UNKNOWN_METHOD);
-            } else {
+            }
+            else
+            {
                 throw LSAR_APPLICATION_ERROR(SOMEIP_RETURN_CODE::E_NOT_OK);
             }
         }
@@ -2144,22 +2566,26 @@ void ApplicationManager::on_message(std::shared_ptr<MessageSOMEIP> message) {
 
     if (type == SOMEIP_MESSAGE_TYPE::TP_REQUEST || type == SOMEIP_MESSAGE_TYPE::TP_REQUEST_NO_RETURN ||
         type == SOMEIP_MESSAGE_TYPE::TP_NOTIFICATION || type == SOMEIP_MESSAGE_TYPE::TP_RESPONSE ||
-        type == SOMEIP_MESSAGE_TYPE::TP_ERROR) {
+        type == SOMEIP_MESSAGE_TYPE::TP_ERROR)
+    {
 #if defined(ENABLE_SOMEIP_TP)
         on_message_tp(*message);
-#endif // ENABLE_SOMEIP_TP
+#endif  // ENABLE_SOMEIP_TP
         return;
     }
 
-    try {
+    try
+    {
 #if !defined(ENABLE_SOMEIP_IPC)
         std::vector<message_handler_t> handler = get_message_handler(serviceid, instanceid, methodid, major, type);
 #else
-        std::vector<message_handler_t> handler = get_message_handler(serviceid, instanceid, methodid, major, type,
-                                                                     app_id, static_cast<std::uint16_t>(req_id));
-#endif // ENABLE_SOMEIP_IPC
-        if (!handler.empty()) {
-            for (auto& it : handler) {
+        std::vector<message_handler_t> handler = get_message_handler(
+            serviceid, instanceid, methodid, major, type, app_id, static_cast<std::uint16_t>(req_id));
+#endif  // ENABLE_SOMEIP_IPC
+        if (!handler.empty())
+        {
+            for (auto& it : handler)
+            {
                 LGSOMEIP_LOG_DEBUG << "ApplicationManager::on_message "
                                    << format_service_instance_id(serviceid, instanceid) << " "
                                    << format_named_id("MethodID", methodid, 4) << " call the callback function.";
@@ -2171,29 +2597,40 @@ void ApplicationManager::on_message(std::shared_ptr<MessageSOMEIP> message) {
 #if defined(ENABLE_SOMEIP_DELIVERY_STATISTICS)
             SomeipPacketStatistics::get_instance().increase_delivered_packet(SomeipPacketStatistics::kIncoming,
                                                                              message->get_message_id());
-#endif // ENABLE_SOMEIP_DELIVERY_STATISTICS
-        } else {
+#endif  // ENABLE_SOMEIP_DELIVERY_STATISTICS
+        }
+        else
+        {
             LGSOMEIP_LOG_WARN << "ApplicationManager::on_message No message handler";
-            if (message->get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST) {
+            if (message->get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST)
+            {
                 throw LSAR_APPLICATION_ERROR(SOMEIP_RETURN_CODE::E_UNKNOWN_METHOD);
-            } else {
+            }
+            else
+            {
                 throw LSAR_APPLICATION_ERROR(SOMEIP_RETURN_CODE::E_NOT_OK);
             }
         }
-    } catch (const ApplicationErrorException& e) {
-        if (message->get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST) {
+    }
+    catch (const ApplicationErrorException& e)
+    {
+        if (message->get_message_type() == SOMEIP_MESSAGE_TYPE::REQUEST)
+        {
             LGSOMEIP_LOG_WARN << "ApplicationManager::on_message / Send error message, error: " << e.what();
             send_error(message, e.get_error_code());
-        } else {
+        }
+        else
+        {
             LGSOMEIP_LOG_WARN << "ApplicationManager::on_message / Ignore messge, error: " << e.what();
         }
 
 #if defined(ENABLE_SOMEIP_DELIVERY_STATISTICS)
         SomeipPacketStatistics::get_instance().increase_dropped_packet(
-            SomeipPacketStatistics::kIncoming, message->get_message_id(),
+            SomeipPacketStatistics::kIncoming,
+            message->get_message_id(),
             SomeipPacketStatistics::kApplicationManagerError);
-#endif // ENABLE_SOMEIP_DELIVERY_STATISTICS
+#endif  // ENABLE_SOMEIP_DELIVERY_STATISTICS
     }
 }
 
-} // namespace lgsomeip
+}  // namespace lgsomeip

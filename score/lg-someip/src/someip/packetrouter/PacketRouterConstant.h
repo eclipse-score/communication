@@ -19,13 +19,14 @@
 
 #include <endpoint/EndpointConstant.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 #define SOMEIP_DAEMON_ID 0
 #define SOMEIP_APPLICATION_NAME "NAME"
 
 constexpr std::uint16_t kMagicCookiePeriodMs = 10000;
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_PACKET_ROUTER_CONSTANT_H
+#endif  // LG_SOMEIP_PACKET_ROUTER_CONSTANT_H

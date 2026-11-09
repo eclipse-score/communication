@@ -14,18 +14,21 @@
 
 #include <message/MessageComposer.h>
 
-#include <iostream>
 #include <exception>
+#include <iostream>
 
 #include <utils/log/logger.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 // MessageComposer public methods.
 
-std::shared_ptr<MessageSD> MessageComposer::add_entry(std::shared_ptr<MessageSD> message, SDEntry* entry,
+std::shared_ptr<MessageSD> MessageComposer::add_entry(std::shared_ptr<MessageSD> message,
+                                                      SDEntry* entry,
                                                       SDOption* first_option,
-                                                      [[maybe_unused]] SDOption* second_option) {
+                                                      [[maybe_unused]] SDOption* second_option)
+{
     std::uint8_t option_index = 0;
     std::uint8_t first_option_count = static_cast<std::uint8_t>(entry->get_option1st_count());
     std::uint8_t first_option_index = 0;
@@ -35,64 +38,89 @@ std::shared_ptr<MessageSD> MessageComposer::add_entry(std::shared_ptr<MessageSD>
 
     auto& options = message->options();
 
-    try {
-        if (first_option_count == 2) {
+    try
+    {
+        if (first_option_count == 2)
+        {
             std::uint8_t first_option_position = 0xff;
             std::uint8_t second_option_position = 0xff;
-            for (option_index = 0; option_index < options.size(); option_index++) {
-                if (options[option_index] == first_option[0]) {
+            for (option_index = 0; option_index < options.size(); option_index++)
+            {
+                if (options[option_index] == first_option[0])
+                {
                     first_option_position = option_index;
-                } else if (options[option_index] == first_option[1]) {
+                }
+                else if (options[option_index] == first_option[1])
+                {
                     second_option_position = option_index;
                 }
             }
 
-            if (first_option_position == 0xff && second_option_position == 0xff) {
+            if (first_option_position == 0xff && second_option_position == 0xff)
+            {
                 first_option_index = static_cast<std::uint8_t>(options.size());
                 first_option_count = 2;
                 options.push_back(first_option[0]);
                 options.push_back(first_option[1]);
-            } else if (first_option_position == 0xff) {
+            }
+            else if (first_option_position == 0xff)
+            {
                 first_option_index = static_cast<std::uint8_t>(options.size());
                 first_option_count = 1;
                 second_option_index = second_option_position;
                 second_option_count = 1;
                 options.push_back(first_option[0]);
-            } else if (second_option_position == 0xff) {
+            }
+            else if (second_option_position == 0xff)
+            {
                 first_option_index = first_option_position;
                 first_option_count = 1;
                 second_option_index = static_cast<std::uint8_t>(options.size());
                 second_option_count = 1;
                 options.push_back(first_option[1]);
-            } else if (first_option_position != 0xff && second_option_position != 0xff) {
-                if (first_option_position + 1 == second_option_position) {
+            }
+            else if (first_option_position != 0xff && second_option_position != 0xff)
+            {
+                if (first_option_position + 1 == second_option_position)
+                {
                     first_option_index = first_option_position;
                     first_option_count = 2;
-                } else {
+                }
+                else
+                {
                     first_option_index = first_option_position;
                     first_option_count = 1;
                     second_option_index = second_option_position;
                     second_option_count = 1;
                 }
             }
-        } else if (first_option_count == 1) {
+        }
+        else if (first_option_count == 1)
+        {
             std::uint8_t first_option_position = 0xff;
-            for (option_index = 0; option_index < options.size(); option_index++) {
-                if (options[option_index] == first_option[0]) {
+            for (option_index = 0; option_index < options.size(); option_index++)
+            {
+                if (options[option_index] == first_option[0])
+                {
                     first_option_position = option_index;
                 }
             }
 
-            if (first_option_position == 0xff) {
+            if (first_option_position == 0xff)
+            {
                 first_option_index = static_cast<std::uint8_t>(options.size());
                 first_option_count = 1;
                 options.push_back(first_option[0]);
-            } else {
+            }
+            else
+            {
                 first_option_index = first_option_position;
                 first_option_count = 1;
             }
         }
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e)
+    {
         LGSOMEIP_LOG_ERROR << "MessageComposer::add_entry() gets exception " << e.what();
     }
 
@@ -106,4 +134,4 @@ std::shared_ptr<MessageSD> MessageComposer::add_entry(std::shared_ptr<MessageSD>
     return message;
 }
 
-} // namespace lgsomeip
+}  // namespace lgsomeip

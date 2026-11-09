@@ -21,10 +21,12 @@
 #include "rapidjson/document.h"
 #include <iostream>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class ConfigurationSD {
-public:
+class ConfigurationSD
+{
+  public:
     ConfigurationSD() {}
     virtual ~ConfigurationSD() {}
     void initialize();
@@ -42,7 +44,7 @@ public:
     std::uint16_t get_cyclic_offer_delay() const;
     std::uint16_t get_request_response_delay() const;
 
-private:
+  private:
     bool enabled_{false};
     std::string multicast_address_;
     std::string protocol_;
@@ -57,6 +59,6 @@ private:
     std::uint16_t request_response_delay_{0};
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_CONFIG_SERVICEDISCOVERY_H
+#endif  // LG_SOMEIP_CONFIG_SERVICEDISCOVERY_H

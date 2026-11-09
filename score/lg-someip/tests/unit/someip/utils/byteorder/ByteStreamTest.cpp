@@ -12,15 +12,16 @@
  *
  ********************************************************************************/
 
-#include <chrono>
 #include <gtest/gtest.h>
+#include <chrono>
 #include <memory>
 
 #include <utils/byteorder/bytestream.h>
 
 using namespace lgsomeip;
 
-TEST(ByteStreamTest, ByteStreamTest) {
+TEST(ByteStreamTest, ByteStreamTest)
+{
     std::uint32_t value = 0x11223344;
     std::uint32_t result;
 

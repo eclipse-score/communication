@@ -19,7 +19,8 @@
 
 // Second event consumer: it uses the same event-group flow as subscribe-1 but
 // reports payload size instead of interpreting the bytes.
-namespace {
+namespace
+{
 
 constexpr lgsomeip::api::service_t kServiceId = 0x1001;
 constexpr lgsomeip::api::instance_t kInstanceId = 0x0001;
@@ -32,25 +33,32 @@ constexpr lgsomeip::api::event_t kEventId2 = 0x8778;
 std::shared_ptr<lgsomeip::api::Application> application;
 bool subscriptions_requested = false;
 
-void on_message(const std::shared_ptr<lgsomeip::api::Message>& message) {
+void on_message(const std::shared_ptr<lgsomeip::api::Message>& message)
+{
     std::cout << "subscribe-2 / service=0x" << std::hex << message->service << " event=0x" << message->method
               << std::dec << " / payload size=" << message->payload.size() << std::endl;
 }
 
-void on_availability(lgsomeip::api::service_t, lgsomeip::api::instance_t, bool available) {
+void on_availability(lgsomeip::api::service_t, lgsomeip::api::instance_t, bool available)
+{
     std::cout << "subscribe-2 / service available = " << available << std::endl;
-    if (available) {
+    if (available)
+    {
         // Events are requested by ID, then received after subscribing by group.
         application->subscribe(kServiceId, kInstanceId, kEventGroup, kMajorVersion);
-    } else {
+    }
+    else
+    {
         application->unsubscribe(kServiceId, kInstanceId, kEventGroup);
     }
 }
 
-void on_state(bool registered) {
+void on_state(bool registered)
+{
     // Register interests once. The core retains these relationships and
     // restores discovery/subscription behavior after reconnects.
-    if (registered && !subscriptions_requested) {
+    if (registered && !subscriptions_requested)
+    {
         application->request_event(kServiceId, kInstanceId, kEventId1, {kEventGroup});
         application->request_event(kServiceId, kInstanceId, kEventId2, {kEventGroup});
         application->request_service(kServiceId, kInstanceId, kMajorVersion);
@@ -58,11 +66,13 @@ void on_state(bool registered) {
     }
 }
 
-} // namespace
+}  // namespace
 
-int main() {
+int main()
+{
     application = lgsomeip::api::Runtime::instance().create_application("subscribe-2");
-    if (!application->init()) {
+    if (!application->init())
+    {
         return 1;
     }
 

@@ -17,16 +17,19 @@
 
 #include <exception/SomeipException.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class MessageErrorException : public SOMEIPException {
-public:
-    MessageErrorException(std::string message, const std::string file, int line) : SOMEIPException(file, line) {
+class MessageErrorException : public SOMEIPException
+{
+  public:
+    MessageErrorException(std::string message, const std::string file, int line) : SOMEIPException(file, line)
+    {
         message_stream_ << "Message Error : " << message;
         message_ = message_stream_.str();
     }
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif //  LG_SOMEIP_EXCEPTION_MESSAGE_ERROR_H
+#endif  //  LG_SOMEIP_EXCEPTION_MESSAGE_ERROR_H

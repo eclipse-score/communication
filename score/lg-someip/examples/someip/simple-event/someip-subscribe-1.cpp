@@ -12,16 +12,17 @@
  *
  ********************************************************************************/
 
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <thread>
-#include <chrono>
 
 #include <lgsomeip/LgsomeipApi.h>
 
 // Event consumer example: request two event IDs, subscribe to their shared
 // event group, and print each notification as text.
-namespace {
+namespace
+{
 
 constexpr lgsomeip::api::service_t kServiceId = 0x1001;
 constexpr lgsomeip::api::instance_t kInstanceId = 0x0001;
@@ -34,10 +35,12 @@ constexpr lgsomeip::api::event_t kEventId2 = 0x8778;
 std::shared_ptr<lgsomeip::api::Application> application;
 bool subscriptions_requested = false;
 
-void on_message(const std::shared_ptr<lgsomeip::api::Message>& message) {
+void on_message(const std::shared_ptr<lgsomeip::api::Message>& message)
+{
     std::cout << "subscribe-1 / service=0x" << std::hex << message->service << " event=0x" << message->method
               << std::dec << " / payload=";
-    for (const auto byte : message->payload) {
+    for (const auto byte : message->payload)
+    {
         // This sample's provider sends ASCII bytes; real payloads need their
         // service-specific decoder here.
         std::cout << static_cast<char>(byte);
@@ -45,21 +48,27 @@ void on_message(const std::shared_ptr<lgsomeip::api::Message>& message) {
     std::cout << std::endl;
 }
 
-void on_availability(lgsomeip::api::service_t, lgsomeip::api::instance_t, bool available) {
+void on_availability(lgsomeip::api::service_t, lgsomeip::api::instance_t, bool available)
+{
     std::cout << "subscribe-1 / service available = " << available << std::endl;
-    if (available) {
+    if (available)
+    {
         // request_event() declares which event IDs this app consumes;
         // subscribe() joins the provider's event group to start delivery.
         application->subscribe(kServiceId, kInstanceId, kEventGroup, kMajorVersion);
-    } else {
+    }
+    else
+    {
         application->unsubscribe(kServiceId, kInstanceId, kEventGroup);
     }
 }
 
-void on_state(bool registered) {
+void on_state(bool registered)
+{
     // Declare event interest once after connecting to the daemon. The separate
     // availability callback below controls the actual group subscription.
-    if (registered && !subscriptions_requested) {
+    if (registered && !subscriptions_requested)
+    {
         application->request_event(kServiceId, kInstanceId, kEventId1, {kEventGroup});
         application->request_event(kServiceId, kInstanceId, kEventId2, {kEventGroup});
         application->request_service(kServiceId, kInstanceId, kMajorVersion);
@@ -67,11 +76,13 @@ void on_state(bool registered) {
     }
 }
 
-} // namespace
+}  // namespace
 
-int main() {
+int main()
+{
     application = lgsomeip::api::Runtime::instance().create_application("subscribe-1");
-    if (!application->init()) {
+    if (!application->init())
+    {
         return 1;
     }
 

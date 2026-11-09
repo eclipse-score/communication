@@ -15,43 +15,56 @@
 #ifndef LG_SOMEIP_CONFIG_CONFIGPARSE_H
 #define LG_SOMEIP_CONFIG_CONFIGPARSE_H
 
+#include <exception/Exception.h>
+#include <rapidjson/document.h>
 #include <cstddef>
 #include <cstring>
-#include <exception/Exception.h>
 #include <limits>
-#include <rapidjson/document.h>
 #include <stdexcept>
 #include <string>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 // Reads an unsigned configuration value given as a JSON number or a numeric string in the given base.
 // Throws a configuration error for non-numeric, trailing-garbage and out-of-range values instead of
 // silently truncating them to Type.
-template <typename Type> Type parse_unsigned(const rapidjson::Value& value, const char* member, int base) {
+template <typename Type>
+Type parse_unsigned(const rapidjson::Value& value, const char* member, int base)
+{
     unsigned long parsed = 0;
-    if (value.IsUint()) {
+    if (value.IsUint())
+    {
         parsed = value.GetUint();
-    } else if (value.IsString()) {
+    }
+    else if (value.IsString())
+    {
         std::size_t processed = 0;
-        try {
+        try
+        {
             parsed = std::stoul(value.GetString(), &processed, base);
-        } catch (const std::exception&) {
+        }
+        catch (const std::exception&)
+        {
             throw LSAR_CONFIGURATION_ERROR(std::string("invalid numeric value for '") + member + "'");
         }
-        if (processed != std::strlen(value.GetString())) {
+        if (processed != std::strlen(value.GetString()))
+        {
             throw LSAR_CONFIGURATION_ERROR(std::string("invalid numeric value for '") + member + "'");
         }
-    } else {
+    }
+    else
+    {
         throw LSAR_CONFIGURATION_ERROR(std::string("'") + member + "' must be numeric");
     }
 
-    if (parsed > std::numeric_limits<Type>::max()) {
+    if (parsed > std::numeric_limits<Type>::max())
+    {
         throw LSAR_CONFIGURATION_ERROR(std::string("numeric value for '") + member + "' is out of range");
     }
     return static_cast<Type>(parsed);
 }
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_CONFIG_CONFIGPARSE_H
+#endif  // LG_SOMEIP_CONFIG_CONFIGPARSE_H

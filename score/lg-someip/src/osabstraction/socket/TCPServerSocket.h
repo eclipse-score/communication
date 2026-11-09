@@ -15,16 +15,19 @@
 #ifndef LG_SOMEIP_OSABSTRACTION_SOCKET_TCPSERVERSOCKET
 #define LG_SOMEIP_OSABSTRACTION_SOCKET_TCPSERVERSOCKET
 
-#include <netdb.h>
-#include <netinet/tcp.h> // TCP_NODELAY
-#include <cstdlib>
 #include "TCPSocket.h"
+#include <netdb.h>
+#include <netinet/tcp.h>  // TCP_NODELAY
+#include <cstdlib>
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
-class TCPServerSocket : public TCPSocket {
-public:
+class TCPServerSocket : public TCPSocket
+{
+  public:
     TCPServerSocket(std::shared_ptr<Address> address, const SecureConfig& secure_config = SecureConfig());
     ~TCPServerSocket() {}
 
@@ -32,7 +35,7 @@ public:
     std::shared_ptr<Socket> accept();
 };
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_OSABSTRACTION_SOCKET_TCPSERVERSOCKET
+#endif  // LG_SOMEIP_OSABSTRACTION_SOCKET_TCPSERVERSOCKET

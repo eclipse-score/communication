@@ -15,14 +15,15 @@
 #ifndef LG_SOMEIP_CONFIG_CONFIGCONSTANT_H
 #define LG_SOMEIP_CONFIG_CONFIGCONSTANT_H
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 constexpr char kConfigDefaultPath[] = "/etc/lgsomeip_config.json";
 
 #if defined(ENABLE_SOMEIP_PACKET_FILTERING)
 constexpr char kConfigSomeIpPacketFilterPath[] = "/etc/someip_packet_filter_config.json";
 constexpr char kConfigProtectedIntervalMs[] = "protected_interval_ms";
-#endif // ENABLE_SOMEIP_PACKET_FILTERING
+#endif  // ENABLE_SOMEIP_PACKET_FILTERING
 
 constexpr char kConfigLogging[] = "logging";
 constexpr char kConfigLogLevel[] = "level";
@@ -85,6 +86,6 @@ constexpr char kConfigCounterOffset[] = "counter_offset";
 constexpr char kConfigDataIdMode[] = "data_id_mode";
 constexpr char kConfigDataIdNibbleOffset[] = "data_id_nibble_offset";
 constexpr char kConfigDataLength[] = "data_length";
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_CONFIG_CONFIGCONSTANT_H
+#endif  // LG_SOMEIP_CONFIG_CONFIGCONSTANT_H

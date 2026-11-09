@@ -19,17 +19,19 @@
 
 #include <endpoint/EndpointBase.h>
 
-#include <messagepassing/MessagePassingServer.h>
 #include <messagepassing/MessagePassingSender.h>
+#include <messagepassing/MessagePassingServer.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 class EndpointMessagePassingServer;
 class EndpointMessagePassingReceiver;
 class EndpointMessagePassingSender;
 
-class EndPointMessagePassingListener {
-public:
+class EndPointMessagePassingListener
+{
+  public:
 #if !defined(ENABLE_SOMEIP_IPC)
     virtual void on_message_passing_connect(std::shared_ptr<Endpoint> server_endpoint,
                                             std::shared_ptr<Endpoint> client_endpoint) = 0;
@@ -37,12 +39,14 @@ public:
     virtual void on_message_passing_disconnect(std::shared_ptr<Endpoint> endpoint) = 0;
 #else
     virtual void on_message_passing_connect(std::shared_ptr<Endpoint> server_endpoint,
-                                            std::shared_ptr<Endpoint> client_endpoint, int connection_id = 0xff) = 0;
+                                            std::shared_ptr<Endpoint> client_endpoint,
+                                            int connection_id = 0xff) = 0;
 
     virtual void on_message_passing_disconnect(std::shared_ptr<Endpoint> endpoint, int connection_id = 0xff) = 0;
-#endif // ENABLE_SOMEIP_IPC
+#endif  // ENABLE_SOMEIP_IPC
 
-    virtual void on_message_passing_message(std::shared_ptr<Endpoint> endpoint, std::uint8_t* message,
+    virtual void on_message_passing_message(std::shared_ptr<Endpoint> endpoint,
+                                            std::uint8_t* message,
                                             std::size_t message_length) = 0;
 
     virtual void on_message_passing_timer(const int32_t id) {}
@@ -50,8 +54,9 @@ public:
 
 class EndpointMessagePassingServer : public EndpointBase,
                                      lgsomeip::osabstraction::MessagePassingConnectionListener,
-                                     lgsomeip::osabstraction::MessagePassingTimerListener {
-public:
+                                     lgsomeip::osabstraction::MessagePassingTimerListener
+{
+  public:
     EndpointMessagePassingServer(EndPointMessagePassingListener* listener, const std::string& name);
     virtual ~EndpointMessagePassingServer();
 
@@ -59,7 +64,8 @@ public:
 
     virtual void stop_listen() override;
 
-    virtual void send_message(const std::uint8_t* message, std::size_t size,
+    virtual void send_message(const std::uint8_t* message,
+                              std::size_t size,
                               std::shared_ptr<lgsomeip::osabstraction::Address> address = nullptr) override;
 
     virtual void on_connect(const lgsomeip::osabstraction::MessagePassingConnectionInformation& info) override;
@@ -74,7 +80,7 @@ public:
 
     virtual void on_timer(const std::int32_t id);
 
-private:
+  private:
     EndPointMessagePassingListener* listener_;
 
     lgsomeip::osabstraction::MessagePassingServer message_passing_server_;
@@ -82,8 +88,9 @@ private:
     std::map<int, std::shared_ptr<EndpointMessagePassingReceiver>> receivers_;
 };
 
-class EndpointMessagePassingReceiver : public EndpointBase, lgsomeip::osabstraction::MessagePassingDataListener {
-public:
+class EndpointMessagePassingReceiver : public EndpointBase, lgsomeip::osabstraction::MessagePassingDataListener
+{
+  public:
     EndpointMessagePassingReceiver(EndPointMessagePassingListener* listener);
     virtual ~EndpointMessagePassingReceiver();
 
@@ -91,7 +98,8 @@ public:
 
     virtual void stop_listen() override;
 
-    virtual void send_message(const std::uint8_t* message, std::size_t size,
+    virtual void send_message(const std::uint8_t* message,
+                              std::size_t size,
                               std::shared_ptr<lgsomeip::osabstraction::Address> address = nullptr) override;
 
     virtual void on_message(std::uint8_t* data, std::size_t size) override;
@@ -105,15 +113,16 @@ public:
 
     int get_connection_id();
 
-private:
+  private:
     EndPointMessagePassingListener* listener_;
 
     lgsomeip::osabstraction::MessagePassingServer* message_passing_server_;
     lgsomeip::osabstraction::MessagePassingConnectionInformation connection_information_;
 };
 
-class EndpointMessagePassingSender : public EndpointBase {
-public:
+class EndpointMessagePassingSender : public EndpointBase
+{
+  public:
     EndpointMessagePassingSender(const std::string& server_name);
     virtual ~EndpointMessagePassingSender();
 
@@ -122,16 +131,17 @@ public:
 
     virtual void stop_listen() override;
 
-    virtual void send_message(const std::uint8_t* message, std::size_t size,
+    virtual void send_message(const std::uint8_t* message,
+                              std::size_t size,
                               std::shared_ptr<lgsomeip::osabstraction::Address> address = nullptr) override;
 
     virtual std::shared_ptr<lgsomeip::osabstraction::Address> get_sender_address() override;
 
-private:
+  private:
     lgsomeip::osabstraction::MessagePassingSender message_passing_sender_;
     bool is_connected_;
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_ENDPOINT_ENDPOINTMESSAGEPASSING_H
+#endif  // LG_SOMEIP_ENDPOINT_ENDPOINTMESSAGEPASSING_H

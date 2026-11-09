@@ -17,35 +17,46 @@
 
 #include <cstdint>
 
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include <atomic>
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <cstring>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <fcntl.h>
 
 #include "Address.h"
 #include "IP4Address.h"
 #include "IP6Address.h"
 #include "LocalAddress.h"
-#include "SocketConstant.h"
 #include "SecureConnector.h"
+#include "SocketConstant.h"
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
-enum class AddressType : std::uint16_t { None = 0, UnixDomain = 1, IPv4 = 4, IPv6 = 6 };
+enum class AddressType : std::uint16_t
+{
+    None = 0,
+    UnixDomain = 1,
+    IPv4 = 4,
+    IPv6 = 6
+};
 
-class Socket {
-public:
-    Socket(std::shared_ptr<Address> source_address, std::shared_ptr<Address> destination_address,
+class Socket
+{
+  public:
+    Socket(std::shared_ptr<Address> source_address,
+           std::shared_ptr<Address> destination_address,
            const SecureConfig& secure_config = SecureConfig());
     Socket(std::shared_ptr<Address> source_address, const SecureConfig& secure_config = SecureConfig());
-    Socket(int file_descriptor, std::shared_ptr<Address> destination_address,
+    Socket(int file_descriptor,
+           std::shared_ptr<Address> destination_address,
            const SecureConfig& secure_config = SecureConfig());
 
     virtual ~Socket();
@@ -66,35 +77,39 @@ public:
 
     AddressType get_address_type() const;
     bool get_reliable() const;
-    inline int get_socket_fd() const {
+    inline int get_socket_fd() const
+    {
         return socket_fd_;
     }
-    inline std::shared_ptr<Address> get_src_address() const {
+    inline std::shared_ptr<Address> get_src_address() const
+    {
         return source_address_;
     }
-    inline std::shared_ptr<Address> get_dst_address() const {
+    inline std::shared_ptr<Address> get_dst_address() const
+    {
         return destination_address_;
     }
 
-protected:
+  protected:
     int socket_fd_;
     std::atomic<bool> non_blocking_{false};
     std::shared_ptr<Address> source_address_{nullptr};
     std::shared_ptr<Address> destination_address_{nullptr};
 #if defined(ENABLE_TLS)
-public:
-    inline bool is_secure_connection() const {
+  public:
+    inline bool is_secure_connection() const
+    {
         return secure_config_.is_secure_connection;
     }
     void start_secure_connection(const int& file_descriptor, std::shared_ptr<Address> peer_address = nullptr);
 
-protected:
+  protected:
     SecureConfig secure_config_;
     std::unique_ptr<SecureConnector> secure_connector_{nullptr};
-#endif // ENABLE_TLS
+#endif  // ENABLE_TLS
 };
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_OSABSTRACTION_SOCKET_SOCKET
+#endif  // LG_SOMEIP_OSABSTRACTION_SOCKET_SOCKET

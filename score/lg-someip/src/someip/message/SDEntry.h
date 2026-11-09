@@ -17,12 +17,15 @@
 
 #include <cstdint>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class SDEntry {
-public:
+class SDEntry
+{
+  public:
     SDEntry();
-    SDEntry(std::uint8_t type) {
+    SDEntry(std::uint8_t type)
+    {
         type_ = type;
     }
     ~SDEntry();
@@ -32,7 +35,7 @@ public:
     std::uint32_t serialize(std::uint8_t* data);
     bool deserialize(std::uint8_t* data, std::uint32_t length);
 
-public: // Common Item of Entity
+  public:  // Common Item of Entity
     std::uint8_t get_type() const;
     std::uint8_t get_option1st_index() const;
     std::uint8_t get_option1st_count() const;
@@ -53,23 +56,23 @@ public: // Common Item of Entity
     void set_major_version(std::uint8_t major_version);
     void set_ttl(std::uint32_t ttl);
 
-public: // For FINDSERVICE and OFFERSERVICE
+  public:  // For FINDSERVICE and OFFERSERVICE
     std::uint32_t get_minor_version() const;
     void set_minor_version(std::uint32_t minor_version);
 
-public: // For SUBSCRIBE and SUBSCRIBEACK
+  public:  // For SUBSCRIBE and SUBSCRIBEACK
     std::uint8_t get_flag() const;
     std::uint16_t get_event_group_id() const;
 
     void set_flag(std::uint8_t flag);
     void set_event_group_id(std::uint16_t event_group_id);
 
-public: // For CHECK LENGTH OF ENTRY
+  public:  // For CHECK LENGTH OF ENTRY
     bool get_wrong_length() const;
 
     void set_wrong_length(bool wrong_length);
 
-private:
+  private:
     std::uint8_t type_ = 0;
     std::uint8_t first_option_index_ = 0;
     std::uint8_t second_option_index_ = 0;
@@ -93,6 +96,6 @@ private:
     bool wrong_length_ = false;
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_SOMEIP_MESSAGE_SD_ENTRY_H
+#endif  // LG_SOMEIP_SOMEIP_MESSAGE_SD_ENTRY_H

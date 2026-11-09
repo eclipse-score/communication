@@ -14,48 +14,58 @@
 
 #include "Multiplexer.h"
 #include <errno.h>
+#include <cstring>
 #include <map>
 #include <memory>
-#include <cstring>
 #include <thread>
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
 // If LINUX is not defined, the Select Multiplexer is executed.
-Multiplexer::Multiplexer() {
+Multiplexer::Multiplexer()
+{
     FD_ZERO(&master_fd_set_);
 }
 
 Multiplexer::~Multiplexer() {}
 
-void Multiplexer::start() {
+void Multiplexer::start()
+{
     running_ = true;
     thread_ = std::make_shared<std::thread>(&Multiplexer::run, this);
     // Assign a descriptive name to this worker thread.
     pthread_setname_np(thread_->native_handle(), "SomeipSelectMux");
 }
 
-void Multiplexer::stop() {
-    if (running_.load()) {
+void Multiplexer::stop()
+{
+    if (running_.load())
+    {
         running_.store(false);
         // Wake the multiplexer thread.
         condition_.notify_one();
     }
 }
 
-void Multiplexer::join() {
-    if (thread_ != nullptr && thread_->joinable()) {
+void Multiplexer::join()
+{
+    if (thread_ != nullptr && thread_->joinable())
+    {
         thread_->join();
     }
 }
 
-void Multiplexer::run() {
+void Multiplexer::run()
+{
     struct timeval timeout;
     fd_set working_set;
     int select_result, descriptors_ready, first_file_descriptor, max_file_descriptor;
 
-    while (running_.load()) {
+    while (running_.load())
+    {
         timeout.tv_sec = 1;
         timeout.tv_usec = 0;
 
@@ -63,8 +73,11 @@ void Multiplexer::run() {
         std::map<int, std::function<void(bool)>> callbacks_snapshot;
         {
             std::unique_lock<std::mutex> lock(callbacks_mutex_);
-            condition_.wait(lock, [this] { return !callbacks_.empty() || !running_.load(); });
-            if (!running_.load()) {
+            condition_.wait(lock, [this] {
+                return !callbacks_.empty() || !running_.load();
+            });
+            if (!running_.load())
+            {
                 break;
             }
             callbacks_snapshot = callbacks_;
@@ -77,37 +90,50 @@ void Multiplexer::run() {
 
         select_result = select(max_file_descriptor, &working_set, NULL, NULL, &timeout);
 
-        if (select_result < 0) {
+        if (select_result < 0)
+        {
             // TODO(lg-someip): Throw an exception when select() fails.
             LGSOMEIP_LOG_ERROR << "Multiplexer::run / select failed / " << strerror(errno);
-        } else if (select_result > 0) {
+        }
+        else if (select_result > 0)
+        {
             descriptors_ready = select_result;
-            for (int i = first_file_descriptor; i < max_file_descriptor && descriptors_ready > 0; i++) {
-                if (FD_ISSET(i, &working_set)) {
+            for (int i = first_file_descriptor; i < max_file_descriptor && descriptors_ready > 0; i++)
+            {
+                if (FD_ISSET(i, &working_set))
+                {
                     auto callback = callbacks_snapshot.find(i);
-                    if (callback != callbacks_snapshot.end() && callback->second != nullptr) {
+                    if (callback != callbacks_snapshot.end() && callback->second != nullptr)
+                    {
                         callback->second(false);
-                    } else {
+                    }
+                    else
+                    {
                         LGSOMEIP_LOG_DEBUG << "Multiplexer::run / callbacks_[" << i << "] is nullptr";
                     }
                     descriptors_ready--;
                 }
             }
-        } else {
+        }
+        else
+        {
             std::function<void()> timeout_callback;
             {
                 std::lock_guard<std::mutex> lock(callbacks_mutex_);
                 timeout_callback = timeout_callback_;
             }
-            if (timeout_callback != nullptr) {
+            if (timeout_callback != nullptr)
+            {
                 timeout_callback();
             }
         }
-    } // End while()
+    }  // End while()
 }
 
-void Multiplexer::unset(int file_descriptor) {
-    if (file_descriptor == -1) {
+void Multiplexer::unset(int file_descriptor)
+{
+    if (file_descriptor == -1)
+    {
         LGSOMEIP_LOG_WARN << "Multiplexer::unset / FD : " << file_descriptor;
         return;
     }
@@ -117,8 +143,10 @@ void Multiplexer::unset(int file_descriptor) {
     callbacks_.erase(file_descriptor);
 }
 
-void Multiplexer::set(int file_descriptor, std::function<void(bool)> callback) {
-    if (file_descriptor == -1) {
+void Multiplexer::set(int file_descriptor, std::function<void(bool)> callback)
+{
+    if (file_descriptor == -1)
+    {
         LGSOMEIP_LOG_ERROR << "Multiplexer::set EPOLL_CTL_ADD fail for socket / FD : " << file_descriptor;
         return;
     }
@@ -130,15 +158,17 @@ void Multiplexer::set(int file_descriptor, std::function<void(bool)> callback) {
     LGSOMEIP_LOG_DEBUG << "Multiplexer::set / FD : " << file_descriptor << " is set";
 
     // thread wakeup
-    if (callbacks_.size() == 1) {
+    if (callbacks_.size() == 1)
+    {
         condition_.notify_one();
     }
 }
 
-void Multiplexer::set_timeout(std::function<void()> callback) {
+void Multiplexer::set_timeout(std::function<void()> callback)
+{
     std::lock_guard<std::mutex> lock(callbacks_mutex_);
     timeout_callback_ = callback;
 }
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip

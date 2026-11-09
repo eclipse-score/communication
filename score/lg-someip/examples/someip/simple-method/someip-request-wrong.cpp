@@ -23,7 +23,8 @@
 
 // Negative test: method 0x0002 is not offered by the response example, so the
 // client expects the daemon/provider path to return a SOME/IP error response.
-namespace {
+namespace
+{
 
 constexpr lgsomeip::api::service_t kServiceId = 0x1001;
 constexpr lgsomeip::api::instance_t kInstanceId = 0x0001;
@@ -37,7 +38,8 @@ std::shared_ptr<lgsomeip::api::Application> application;
 bool service_requested = false;
 std::atomic<bool> request_sent{false};
 
-void on_message(const std::shared_ptr<lgsomeip::api::Message>&) {
+void on_message(const std::shared_ptr<lgsomeip::api::Message>&)
+{
     std::cout << "[Wrong Method Request Test] Response was arrived even though wrong method id used. What happens?"
               << std::endl;
 
@@ -48,8 +50,10 @@ void on_message(const std::shared_ptr<lgsomeip::api::Message>&) {
     condition_var.notify_one();
 }
 
-void on_availability(lgsomeip::api::service_t, lgsomeip::api::instance_t, bool available) {
-    if (available && !request_sent.exchange(true)) {
+void on_availability(lgsomeip::api::service_t, lgsomeip::api::instance_t, bool available)
+{
+    if (available && !request_sent.exchange(true))
+    {
         lgsomeip::api::Message request;
         request.service = kServiceId;
         request.instance = kInstanceId;
@@ -60,18 +64,22 @@ void on_availability(lgsomeip::api::service_t, lgsomeip::api::instance_t, bool a
     }
 }
 
-void on_state(bool registered) {
-    if (registered && !service_requested) {
+void on_state(bool registered)
+{
+    if (registered && !service_requested)
+    {
         application->request_service(kServiceId, kInstanceId);
         service_requested = true;
     }
 }
 
-} // namespace
+}  // namespace
 
-int main() {
+int main()
+{
     application = lgsomeip::api::Runtime::instance().create_application("wrongmethod-test");
-    if (!application->init()) {
+    if (!application->init())
+    {
         return 1;
     }
     application->register_message_handler(kServiceId, kInstanceId, kMethodId, on_message);
@@ -82,7 +90,10 @@ int main() {
     // The message callback signals this condition when the error response arrives.
     {
         std::unique_lock<std::mutex> lock(method_mutex);
-        if (!condition_var.wait_for(lock, std::chrono::seconds(10), [] { return response_done; })) {
+        if (!condition_var.wait_for(lock, std::chrono::seconds(10), [] {
+                return response_done;
+            }))
+        {
             std::cerr << "[Wrong Method Request Test] Timed out waiting for the error response" << std::endl;
             application->stop();
             application->join();

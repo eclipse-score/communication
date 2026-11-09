@@ -38,16 +38,22 @@
 //     }
 // }
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 ConfigE2E::ConfigE2E(const rapidjson::Value& e2e, std::uint16_t service_id, std::uint16_t event_id)
-    : service_id_(service_id), event_id_(event_id) {
+    : service_id_(service_id), event_id_(event_id)
+{
     auto get_uint16 = [&](const char* member) -> std::uint16_t {
-        if (e2e.HasMember(member)) {
-            if (e2e[member].IsString() || e2e[member].IsUint()) {
+        if (e2e.HasMember(member))
+        {
+            if (e2e[member].IsString() || e2e[member].IsUint())
+            {
                 return parse_unsigned<std::uint16_t>(e2e[member], member, 10);
             }
-        } else {
+        }
+        else
+        {
             std::string member_name = member;
             throw LSAR_CONFIGURATION_ERROR(member_name + " must be included in e2e");
         }
@@ -61,57 +67,73 @@ ConfigE2E::ConfigE2E(const rapidjson::Value& e2e, std::uint16_t service_id, std:
     data_id_nibble_offset_ = get_uint16(kConfigDataIdNibbleOffset);
     data_length_ = get_uint16(kConfigDataLength);
 
-    if (e2e.HasMember(kConfigVariant)) {
+    if (e2e.HasMember(kConfigVariant))
+    {
         variant_ = e2e[kConfigVariant].GetString();
-    } else {
+    }
+    else
+    {
         throw LSAR_CONFIGURATION_ERROR(std::string(kConfigVariant) + " must be included in e2e");
     }
 
-    if (e2e.HasMember(kConfigProfile)) {
+    if (e2e.HasMember(kConfigProfile))
+    {
         profile_ = e2e[kConfigProfile].GetString();
-    } else {
+    }
+    else
+    {
         throw LSAR_CONFIGURATION_ERROR(std::string(kConfigProfile) + " must be included in e2e");
     }
 }
 
-std::uint16_t ConfigE2E::get_data_id() const {
+std::uint16_t ConfigE2E::get_data_id() const
+{
     return data_id_;
 }
 
-std::uint16_t ConfigE2E::get_service_id() const {
+std::uint16_t ConfigE2E::get_service_id() const
+{
     return service_id_;
 }
 
-std::uint16_t ConfigE2E::get_event_id() const {
+std::uint16_t ConfigE2E::get_event_id() const
+{
     return event_id_;
 }
 
-std::string ConfigE2E::get_variant() const {
+std::string ConfigE2E::get_variant() const
+{
     return variant_;
 }
 
-std::string ConfigE2E::get_profile() const {
+std::string ConfigE2E::get_profile() const
+{
     return profile_;
 }
 
-std::uint16_t ConfigE2E::get_crc_offset() const {
+std::uint16_t ConfigE2E::get_crc_offset() const
+{
     return crc_offset_;
 }
 
-std::uint16_t ConfigE2E::get_counter_offset() const {
+std::uint16_t ConfigE2E::get_counter_offset() const
+{
     return counter_offset_;
 }
 
-std::uint16_t ConfigE2E::get_data_id_mode() const {
+std::uint16_t ConfigE2E::get_data_id_mode() const
+{
     return data_id_mode_;
 }
 
-std::uint16_t ConfigE2E::get_data_id_nibble_offset() const {
+std::uint16_t ConfigE2E::get_data_id_nibble_offset() const
+{
     return data_id_nibble_offset_;
 }
 
-std::uint16_t ConfigE2E::get_data_length() const {
+std::uint16_t ConfigE2E::get_data_length() const
+{
     return data_length_;
 }
 
-} // namespace lgsomeip
+}  // namespace lgsomeip

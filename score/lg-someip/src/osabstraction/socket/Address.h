@@ -17,17 +17,20 @@
 
 #include <arpa/inet.h>
 #if defined(QNX)
-#include <netinet/in.h> // sockaddr_in
-#include <sys/socket.h> // sockaddr_storage, AF_*
-#endif                  // QNX
+#include <netinet/in.h>  // sockaddr_in
+#include <sys/socket.h>  // sockaddr_storage, AF_*
+#endif                   // QNX
 #include <cstdint>
 #include <string>
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
-class Address {
-public:
+class Address
+{
+  public:
     Address();
     virtual ~Address();
 
@@ -36,12 +39,14 @@ public:
     virtual int get_type() const;
 
     virtual void set_ip_address([[maybe_unused]] std::string address) {}
-    virtual std::string get_ip_address() const {
+    virtual std::string get_ip_address() const
+    {
         return std::string();
     }
 
     virtual void set_file_path([[maybe_unused]] std::string path) {}
-    virtual std::string get_file_path() const {
+    virtual std::string get_file_path() const
+    {
         return std::string();
     }
 
@@ -60,7 +65,7 @@ public:
 
     friend bool operator==(const Address& left, const Address& right);
 
-protected:
+  protected:
     bool multicast_{false};
     bool reliable_{false};
     std::uint16_t port_{0};
@@ -68,7 +73,7 @@ protected:
     std::string address_{""};
 };
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_OSABSTRACTION_SOCKET_ADDRESS
+#endif  // LG_SOMEIP_OSABSTRACTION_SOCKET_ADDRESS

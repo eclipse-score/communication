@@ -17,7 +17,8 @@
 
 #include <cstdint>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 // Application Register
 const std::uint16_t SOMEIP_APPLICATION_DEREGISTERED = 0x0000;
@@ -77,6 +78,6 @@ const std::uint16_t SOMEIP_EVENT_SUBSCRIBETYPE_PRE_UNRELIABLE = 0x20;
 
 const std::int32_t SOMEIP_DEFAULT_TIMER_CYCLE = 100;
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_APPLICATION_APPLICATION_CONSTANT_H
+#endif  // LG_SOMEIP_APPLICATION_APPLICATION_CONSTANT_H

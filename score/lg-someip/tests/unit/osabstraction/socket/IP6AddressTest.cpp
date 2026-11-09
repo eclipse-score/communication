@@ -20,7 +20,8 @@
 
 using namespace lgsomeip::osabstraction;
 
-TEST(IP6Address, get_address) {
+TEST(IP6Address, get_address)
+{
     auto address = std::make_shared<IP6Address>();
     address->set_port_address(7000);
 
@@ -29,7 +30,8 @@ TEST(IP6Address, get_address) {
     EXPECT_EQ(socket_address->sin6_family, AF_INET6);
 }
 
-TEST(IP6Address, set_ip_address) {
+TEST(IP6Address, set_ip_address)
+{
     auto address = std::make_shared<IP6Address>();
     address->set_ip_address("::1");
 
@@ -39,20 +41,23 @@ TEST(IP6Address, set_ip_address) {
     EXPECT_STREQ("::1", buffer);
 }
 
-TEST(IP6Address, get_ip_address) {
+TEST(IP6Address, get_ip_address)
+{
     auto address = std::make_shared<IP6Address>();
     address->set_ip_address("2001:db8::1");
 
     EXPECT_EQ(address->get_ip_address(), "2001:db8::1");
 }
 
-TEST(IP6Address, get_type) {
+TEST(IP6Address, get_type)
+{
     auto address = std::make_shared<IP6Address>();
 
     EXPECT_EQ(address->get_type(), AF_INET6);
 }
 
-TEST(IP6Address, get_address_size) {
+TEST(IP6Address, get_address_size)
+{
     auto address = std::make_shared<IP6Address>();
 
     EXPECT_EQ(address->get_address_size(), sizeof(sockaddr_in6));

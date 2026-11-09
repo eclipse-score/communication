@@ -17,12 +17,13 @@
 
 // SOMEIP Exception Module
 #include "ApplicationError.h"
-#include "SubscribeError.h"
+#include "ConfigurationError.h"
 #include "MessageError.h"
 #include "RuntimeError.h"
-#include "ConfigurationError.h"
+#include "SubscribeError.h"
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 #define LSAR_APPLICATION_ERROR(code) ApplicationErrorException(code, __FILE__, __LINE__)
 #define LSAR_CONFIGURATION_ERROR(msg) ConfigurationErrorException(msg, __FILE__, __LINE__)
@@ -30,6 +31,6 @@ namespace lgsomeip {
 #define LSAR_MESSAGE_ERROR(msg) MessageErrorException(msg, __FILE__, __LINE__)
 #define LSAR_RUNTIME_ERROR(msg) RuntimeErrorException(msg, __FILE__, __LINE__)
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif //  LG_SOMEIP_EXCEPTION_EXCEPTION_H
+#endif  //  LG_SOMEIP_EXCEPTION_EXCEPTION_H

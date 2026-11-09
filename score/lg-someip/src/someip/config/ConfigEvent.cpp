@@ -14,21 +14,27 @@
 
 #include "ConfigEvent.h"
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 ConfigEvent::ConfigEvent(std::uint16_t event_id, bool is_field, std::uint32_t update_cycle)
-    : event_id_(event_id), is_field_(is_field), update_cycle_(update_cycle) {}
+    : event_id_(event_id), is_field_(is_field), update_cycle_(update_cycle)
+{
+}
 
-std::uint16_t ConfigEvent::get_event_id() const {
+std::uint16_t ConfigEvent::get_event_id() const
+{
     return event_id_;
 }
 
-bool ConfigEvent::is_field() const {
+bool ConfigEvent::is_field() const
+{
     return is_field_;
 }
 
-std::uint32_t ConfigEvent::get_update_cycle() const {
+std::uint32_t ConfigEvent::get_update_cycle() const
+{
     return update_cycle_;
 }
 
-} // namespace lgsomeip
+}  // namespace lgsomeip

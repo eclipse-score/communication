@@ -18,24 +18,29 @@
 #include <cstdint>
 
 #if defined(ENABLE_TLS)
+#include <sys/socket.h>
 #include <cstddef>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <string>
-#include <sys/socket.h>
-#endif // ENABLE_TLS
+#endif  // ENABLE_TLS
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
-struct SecureConfig {
+struct SecureConfig
+{
     bool is_secure_connection = false;
     bool is_reliable = false;
     bool is_server = false;
 
     SecureConfig(bool secure_connection = false, bool reliable = false, bool server = false)
-        : is_secure_connection(secure_connection), is_reliable(reliable), is_server(server) {}
+        : is_secure_connection(secure_connection), is_reliable(reliable), is_server(server)
+    {
+    }
 };
 
 #if defined(ENABLE_TLS)
@@ -45,11 +50,12 @@ class Address;
 // OpenSSL-backed TLS (TCP) / DTLS (UDP) connector. The OpenSSL session type is
 // hidden behind a private forward declaration so OpenSSL headers stay out of the
 // socket layer.
-class SecureConnector {
+class SecureConnector
+{
     struct TlsSession;
     const std::string tcp_connector_ = "TCP";
 
-public:
+  public:
     explicit SecureConnector(const SecureConfig& config);
     ~SecureConnector();
 
@@ -66,7 +72,7 @@ public:
     // consuming the datagram. Returns true when data is available.
     static bool check_dtls_data_available(int file_descriptor, struct sockaddr* peer_address);
 
-private:
+  private:
     void init_tls();
 
     std::map<std::string, std::unique_ptr<TlsSession>> tls_connections_;
@@ -76,9 +82,9 @@ private:
     int socket_fd_;
 };
 
-#endif // ENABLE_TLS
+#endif  // ENABLE_TLS
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_OSABSTRACTION_SOCKET_SECURECONNECTOR
+#endif  // LG_SOMEIP_OSABSTRACTION_SOCKET_SECURECONNECTOR

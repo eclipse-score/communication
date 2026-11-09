@@ -19,25 +19,29 @@
 
 #include <exception/SomeipException.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class ApplicationErrorException : public SOMEIPException {
-public:
+class ApplicationErrorException : public SOMEIPException
+{
+  public:
     ApplicationErrorException(std::uint8_t code, const std::string file, int line)
-        : SOMEIPException(file, line), error_code_(code) {
+        : SOMEIPException(file, line), error_code_(code)
+    {
         message_stream_ << "Application Error : Error Code(0x" << std::setfill('0') << std::setw(2) << std::hex
                         << std::to_string((int)error_code_) << ")";
         message_ = message_stream_.str();
     }
 
-    std::uint8_t get_error_code() const {
+    std::uint8_t get_error_code() const
+    {
         return error_code_;
     }
 
-private:
+  private:
     std::uint8_t error_code_{SOMEIP_RETURN_CODE::E_OK};
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif //  LG_SOMEIP_EXCEPTION_APPLICATION_ERROR_H
+#endif  //  LG_SOMEIP_EXCEPTION_APPLICATION_ERROR_H

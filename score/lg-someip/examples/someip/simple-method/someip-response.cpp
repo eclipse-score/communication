@@ -18,7 +18,8 @@
 #include <lgsomeip/LgsomeipApi.h>
 
 // Provider example: offer one service and answer requests for one method.
-namespace {
+namespace
+{
 
 constexpr lgsomeip::api::service_t kServiceId = 0x1001;
 constexpr lgsomeip::api::instance_t kInstanceId = 0x0001;
@@ -29,8 +30,10 @@ std::shared_ptr<lgsomeip::api::Application> application;
 // Offers are retained by the core and announced again after reconnects.
 bool service_offered = false;
 
-void on_message(const std::shared_ptr<lgsomeip::api::Message>& request) {
-    if (!request || request->type != lgsomeip::api::MessageType::Request) {
+void on_message(const std::shared_ptr<lgsomeip::api::Message>& request)
+{
+    if (!request || request->type != lgsomeip::api::MessageType::Request)
+    {
         return;
     }
 
@@ -47,10 +50,12 @@ void on_message(const std::shared_ptr<lgsomeip::api::Message>& request) {
     application->send(response);
 }
 
-void on_state(bool registered) {
+void on_state(bool registered)
+{
     // Application registration means the daemon connection is ready; it is
     // distinct from offering a service, which this callback does next.
-    if (!registered || service_offered) {
+    if (!registered || service_offered)
+    {
         return;
     }
 
@@ -58,11 +63,13 @@ void on_state(bool registered) {
     service_offered = true;
 }
 
-} // namespace
+}  // namespace
 
-int main() {
+int main()
+{
     application = lgsomeip::api::Runtime::instance().create_application("response");
-    if (!application->init()) {
+    if (!application->init())
+    {
         return 1;
     }
 

@@ -16,68 +16,88 @@
 #include "ConfigConstant.h"
 #include "ConfigParse.h"
 #include <exception/Exception.h>
+#include <socket/IP4Address.h>
+#include <socket/IP6Address.h>
 #include <functional>
 #include <iostream>
 #include <memory>
-#include <socket/IP4Address.h>
-#include <socket/IP6Address.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, std::uint16_t ip_type) {
+void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, std::uint16_t ip_type)
+{
     multicast_addresses_ = std::make_shared<std::vector<std::shared_ptr<lgsomeip::osabstraction::Address>>>();
 
     // Load the service ID.
-    if (service.HasMember(kConfigService)) {
+    if (service.HasMember(kConfigService))
+    {
         service_id_ = parse_unsigned<std::uint16_t>(service[kConfigService], kConfigService, 16);
-    } else {
+    }
+    else
+    {
         throw LSAR_CONFIGURATION_ERROR("field[service] must be included in service");
     }
     // Load the service name.
-    if (service.HasMember(kConfigName)) {
+    if (service.HasMember(kConfigName))
+    {
         service_name_ = service[kConfigName].GetString();
-    } else {
+    }
+    else
+    {
         service_name_ = "no-name";
     }
     // Load the instance ID.
-    if (service.HasMember(kConfigInstance)) {
+    if (service.HasMember(kConfigInstance))
+    {
         instance_id_ = parse_unsigned<std::uint16_t>(service[kConfigInstance], kConfigInstance, 16);
         has_instance_id_ = true;
-    } else {
+    }
+    else
+    {
         throw LSAR_CONFIGURATION_ERROR("field[instance] must be included in service");
     }
     // Load the major service version.
-    if (service.HasMember(kConfigMajorVersion)) {
+    if (service.HasMember(kConfigMajorVersion))
+    {
         major_version_ = parse_unsigned<std::uint8_t>(service[kConfigMajorVersion], kConfigMajorVersion, 16);
         has_major_version_ = true;
     }
 
     // Load the minor service version.
-    if (service.HasMember(kConfigMinorVersion)) {
+    if (service.HasMember(kConfigMinorVersion))
+    {
         minor_version_ = parse_unsigned<std::uint32_t>(service[kConfigMinorVersion], kConfigMinorVersion, 16);
         has_minor_version_ = true;
     }
 
     // Load the minimum minor service version.
-    if (service.HasMember(kConfigMinimumMinorVersion)) {
+    if (service.HasMember(kConfigMinimumMinorVersion))
+    {
         minimum_minor_version_ =
             parse_unsigned<std::uint32_t>(service[kConfigMinimumMinorVersion], kConfigMinimumMinorVersion, 16);
         has_minimum_minor_version_ = true;
     }
 
     // Load the reliable transport configuration.
-    if (service.HasMember(kConfigReliable)) {
+    if (service.HasMember(kConfigReliable))
+    {
         const rapidjson::Value& reliable = service[kConfigReliable];
 
-        if (reliable.HasMember(kConfigPort)) {
+        if (reliable.HasMember(kConfigPort))
+        {
             reliable_port_ = parse_unsigned<std::uint16_t>(reliable[kConfigPort], kConfigPort, 10);
-            if (service.HasMember(kConfigVlanPriority)) {
+            if (service.HasMember(kConfigVlanPriority))
+            {
                 vlan_priority_ = parse_unsigned<std::uint8_t>(service[kConfigVlanPriority], kConfigVlanPriority, 10);
             }
 
-            if (ip_type == 6) {
+            if (ip_type == 6)
+            {
                 reliable_address_ = std::make_shared<lgsomeip::osabstraction::IP6Address>();
-            } else {
+            }
+            else
+            {
                 reliable_address_ = std::make_shared<lgsomeip::osabstraction::IP4Address>();
             }
             reliable_address_->set_ip_address(ip);
@@ -85,25 +105,34 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
             reliable_address_->set_port_address(reliable_port_);
             reliable_address_->set_vlan_priority(vlan_priority_);
         }
-        if (reliable.HasMember(kConfigMagicCookies)) {
-            if (reliable[kConfigMagicCookies].IsBool()) {
+        if (reliable.HasMember(kConfigMagicCookies))
+        {
+            if (reliable[kConfigMagicCookies].IsBool())
+            {
                 magic_cookies_enabled_ = reliable[kConfigMagicCookies].GetBool();
-            } else {
+            }
+            else
+            {
                 magic_cookies_enabled_ = strcmp(reliable[kConfigMagicCookies].GetString(), "true") == 0 ? true : false;
             }
         }
     }
 
     // Load the unreliable transport configuration.
-    if (service.HasMember(kConfigUnreliable)) {
+    if (service.HasMember(kConfigUnreliable))
+    {
         unreliable_port_ = parse_unsigned<std::uint16_t>(service[kConfigUnreliable], kConfigUnreliable, 10);
-        if (service.HasMember(kConfigVlanPriority)) {
+        if (service.HasMember(kConfigVlanPriority))
+        {
             vlan_priority_ = parse_unsigned<std::uint8_t>(service[kConfigVlanPriority], kConfigVlanPriority, 10);
         }
 
-        if (ip_type == 6) {
+        if (ip_type == 6)
+        {
             unreliable_address_ = std::make_shared<lgsomeip::osabstraction::IP6Address>();
-        } else {
+        }
+        else
+        {
             unreliable_address_ = std::make_shared<lgsomeip::osabstraction::IP4Address>();
         }
         unreliable_address_->set_ip_address(ip);
@@ -113,25 +142,32 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
     }
 
     // Load SOME/IP-TP method and event identifiers.
-    if (service.HasMember(kConfigSomeIpTp)) {
+    if (service.HasMember(kConfigSomeIpTp))
+    {
         const rapidjson::Value& t_pids = service[kConfigSomeIpTp];
-        for (rapidjson::SizeType j = 0; j < t_pids.Size(); j++) {
+        for (rapidjson::SizeType j = 0; j < t_pids.Size(); j++)
+        {
             std::uint16_t methodeventid = parse_unsigned<std::uint16_t>(t_pids[j], kConfigSomeIpTp, 16);
             tp_list_.push_back(methodeventid);
         }
     }
 
     // Load the multicast address configuration.
-    if (service.HasMember(kConfigMulticast)) {
+    if (service.HasMember(kConfigMulticast))
+    {
         const rapidjson::Value& multicast = service[kConfigMulticast];
 
-        if (multicast.HasMember(kConfigMulticastAddress) && multicast.HasMember(kConfigPort)) {
+        if (multicast.HasMember(kConfigMulticastAddress) && multicast.HasMember(kConfigPort))
+        {
             auto multicast_addr = multicast[kConfigMulticastAddress].GetString();
             auto multicast_port = parse_unsigned<std::uint16_t>(multicast[kConfigPort], kConfigPort, 10);
             std::shared_ptr<lgsomeip::osabstraction::Address> multicast_address;
-            if (ip_type == 6) {
+            if (ip_type == 6)
+            {
                 multicast_address = std::make_shared<lgsomeip::osabstraction::IP6Address>();
-            } else {
+            }
+            else
+            {
                 multicast_address = std::make_shared<lgsomeip::osabstraction::IP4Address>();
             }
 
@@ -143,43 +179,60 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
     }
 
     // Load whether the service is provided locally.
-    if (service.HasMember(kConfigIsProvider)) {
-        if (service[kConfigIsProvider].IsBool()) {
+    if (service.HasMember(kConfigIsProvider))
+    {
+        if (service[kConfigIsProvider].IsBool())
+        {
             provider_ = service[kConfigIsProvider].GetBool();
-        } else {
+        }
+        else
+        {
             provider_ = strcmp(service[kConfigIsProvider].GetString(), "true") == 0 ? true : false;
         }
     }
 
     // Load the secure-connection setting.
-    if (service.HasMember(kConfigSecureConnection)) {
-        if (service[kConfigSecureConnection].IsBool()) {
+    if (service.HasMember(kConfigSecureConnection))
+    {
+        if (service[kConfigSecureConnection].IsBool())
+        {
             secure_connection_ = service[kConfigSecureConnection].GetBool();
-        } else {
+        }
+        else
+        {
             secure_connection_ = strcmp(service[kConfigSecureConnection].GetString(), "true") == 0 ? true : false;
         }
     }
 
-    if (service.FindMember(kConfigEvents) != service.MemberEnd()) {
+    if (service.FindMember(kConfigEvents) != service.MemberEnd())
+    {
         std::uint16_t eventid;
         const rapidjson::Value& events = service[kConfigEvents];
 
         for (rapidjson::SizeType i = 0;
-             i < events.Size() && events[i].FindMember(kConfigEvent) != events[i].MemberEnd(); i++) {
+             i < events.Size() && events[i].FindMember(kConfigEvent) != events[i].MemberEnd();
+             i++)
+        {
             eventid = parse_unsigned<std::uint16_t>(events[i][kConfigEvent], kConfigEvent, 16);
             bool isfield = false;
 
-            if (events[i].HasMember(kConfigIsField)) {
-                if (events[i][kConfigIsField].IsBool()) {
+            if (events[i].HasMember(kConfigIsField))
+            {
+                if (events[i][kConfigIsField].IsBool())
+                {
                     isfield = events[i][kConfigIsField].GetBool();
-                } else {
+                }
+                else
+                {
                     isfield = strcmp(events[i][kConfigIsField].GetString(), "true") == 0 ? true : false;
                 }
             }
 
             std::uint32_t updatecycle = 0;
-            if (events[i].HasMember(kConfigUpdateCycle)) {
-                if (events[i][kConfigUpdateCycle].IsUint() || events[i][kConfigUpdateCycle].IsString()) {
+            if (events[i].HasMember(kConfigUpdateCycle))
+            {
+                if (events[i][kConfigUpdateCycle].IsUint() || events[i][kConfigUpdateCycle].IsString())
+                {
                     updatecycle = parse_unsigned<std::uint32_t>(events[i][kConfigUpdateCycle], kConfigUpdateCycle, 10);
                 }
             }
@@ -188,12 +241,14 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
     }
 
     // loading eventgroups of service
-    if (service.FindMember(kConfigEventGroups) != service.MemberEnd()) {
+    if (service.FindMember(kConfigEventGroups) != service.MemberEnd())
+    {
         const rapidjson::Value& eventgroups = service[kConfigEventGroups];
         std::uint16_t eventgroup_id;
         for (rapidjson::SizeType i = 0;
              i < eventgroups.Size() && eventgroups[i].FindMember(kConfigEventGroup) != eventgroups[i].MemberEnd();
-             i++) {
+             i++)
+        {
             eventgroup_id = parse_unsigned<std::uint16_t>(eventgroups[i][kConfigEventGroup], kConfigEventGroup, 16);
 
             // create eventgroup object
@@ -201,16 +256,21 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
             eventgroup.event_group_id_ = eventgroup_id;
 
             // multicast address, port
-            if (eventgroups[i].HasMember(kConfigMulticast)) {
+            if (eventgroups[i].HasMember(kConfigMulticast))
+            {
                 const rapidjson::Value& multicast = eventgroups[i][kConfigMulticast];
 
-                if (multicast.HasMember(kConfigMulticastAddress) && multicast.HasMember(kConfigPort)) {
+                if (multicast.HasMember(kConfigMulticastAddress) && multicast.HasMember(kConfigPort))
+                {
                     auto multicast_addr = multicast[kConfigMulticastAddress].GetString();
                     auto multicast_port = parse_unsigned<std::uint16_t>(multicast[kConfigPort], kConfigPort, 10);
 
-                    if (ip_type == 6) {
+                    if (ip_type == 6)
+                    {
                         eventgroup.multicast_address_ = std::make_shared<lgsomeip::osabstraction::IP6Address>();
-                    } else {
+                    }
+                    else
+                    {
                         eventgroup.multicast_address_ = std::make_shared<lgsomeip::osabstraction::IP4Address>();
                     }
 
@@ -223,111 +283,139 @@ void ServiceInfo::initialize(const rapidjson::Value& service, std::string& ip, s
             }
 
             // is_multicast
-            if (eventgroups[i].HasMember(kConfigIsMulticast)) {
-                if (eventgroups[i][kConfigIsMulticast].IsBool()) {
+            if (eventgroups[i].HasMember(kConfigIsMulticast))
+            {
+                if (eventgroups[i][kConfigIsMulticast].IsBool())
+                {
                     eventgroup.is_multicast_ = eventgroups[i][kConfigIsMulticast].GetBool();
-                } else {
+                }
+                else
+                {
                     eventgroup.is_multicast_ =
                         strcmp(eventgroups[i][kConfigIsMulticast].GetString(), "true") == 0 ? true : false;
                 }
             }
 
             // threshold
-            if (eventgroups[i].HasMember(kConfigThreshold)) {
-                if (eventgroups[i][kConfigThreshold].IsUint() || eventgroups[i][kConfigThreshold].IsString()) {
+            if (eventgroups[i].HasMember(kConfigThreshold))
+            {
+                if (eventgroups[i][kConfigThreshold].IsUint() || eventgroups[i][kConfigThreshold].IsString())
+                {
                     eventgroup.threshold_ =
                         parse_unsigned<std::uint16_t>(eventgroups[i][kConfigThreshold], kConfigThreshold, 10);
                 }
             }
 
-            if (eventgroup.threshold_ == 0) {
+            if (eventgroup.threshold_ == 0)
+            {
                 eventgroup.is_multicast_ = false;
             }
 
             auto& events_arr = eventgroup.events_;
             const rapidjson::Value& events = eventgroups[i][kConfigEvents];
-            for (rapidjson::SizeType j = 0; j < events.Size(); j++) {
+            for (rapidjson::SizeType j = 0; j < events.Size(); j++)
+            {
                 std::uint16_t eventid = parse_unsigned<std::uint16_t>(events[j], kConfigEvents, 16);
-                events_arr.push_back(eventid); // event_id was added to groups_by_event_[event_group_id]
+                events_arr.push_back(eventid);  // event_id was added to groups_by_event_[event_group_id]
                 auto& temp = groups_by_event_[eventid];
-                temp.push_back(eventgroup_id); // event_group_id was added to groups_by_event_[event_id]
+                temp.push_back(eventgroup_id);  // event_group_id was added to groups_by_event_[event_id]
             }
         }
     }
 }
 
-std::uint16_t ServiceInfo::get_instance_id() const {
+std::uint16_t ServiceInfo::get_instance_id() const
+{
     return instance_id_;
 }
 
-bool ServiceInfo::has_instance_id() const {
+bool ServiceInfo::has_instance_id() const
+{
     return has_instance_id_;
 }
 
-std::uint8_t ServiceInfo::get_major_version() const {
+std::uint8_t ServiceInfo::get_major_version() const
+{
     return major_version_;
 }
 
-bool ServiceInfo::has_major_version() const {
+bool ServiceInfo::has_major_version() const
+{
     return has_major_version_;
 }
 
-std::uint32_t ServiceInfo::get_minor_version() const {
+std::uint32_t ServiceInfo::get_minor_version() const
+{
     return minor_version_;
 }
 
-bool ServiceInfo::has_minor_version() const {
+bool ServiceInfo::has_minor_version() const
+{
     return has_minor_version_;
 }
 
-std::uint32_t ServiceInfo::get_minimum_minor_version() const {
+std::uint32_t ServiceInfo::get_minimum_minor_version() const
+{
     return minimum_minor_version_;
 }
 
-bool ServiceInfo::has_minimum_minor_version() const {
+bool ServiceInfo::has_minimum_minor_version() const
+{
     return has_minimum_minor_version_;
 }
 
-std::uint16_t ServiceInfo::get_reliable_port() const {
+std::uint16_t ServiceInfo::get_reliable_port() const
+{
     return reliable_port_;
 }
 
-std::uint16_t ServiceInfo::get_unreliable_port() const {
+std::uint16_t ServiceInfo::get_unreliable_port() const
+{
     return unreliable_port_;
 }
 
-std::uint8_t ServiceInfo::get_vlan_priority() const {
+std::uint8_t ServiceInfo::get_vlan_priority() const
+{
     return vlan_priority_;
 }
 
-std::shared_ptr<lgsomeip::osabstraction::Address> ServiceInfo::get_reliable_address() const {
+std::shared_ptr<lgsomeip::osabstraction::Address> ServiceInfo::get_reliable_address() const
+{
     return reliable_address_;
 }
 
-std::shared_ptr<lgsomeip::osabstraction::Address> ServiceInfo::get_unreliable_address() const {
+std::shared_ptr<lgsomeip::osabstraction::Address> ServiceInfo::get_unreliable_address() const
+{
     return unreliable_address_;
 }
 
-std::shared_ptr<std::vector<std::shared_ptr<lgsomeip::osabstraction::Address>>>
-ServiceInfo::get_multicast_address() const {
+std::shared_ptr<std::vector<std::shared_ptr<lgsomeip::osabstraction::Address>>> ServiceInfo::get_multicast_address()
+    const
+{
     return multicast_addresses_;
 }
 
-std::uint16_t ServiceInfo::get_service_id() const {
+std::uint16_t ServiceInfo::get_service_id() const
+{
     return service_id_;
 }
 
-std::string ServiceInfo::get_service_name() {
+std::string ServiceInfo::get_service_name()
+{
     return service_name_;
 }
 
-bool ServiceInfo::get_state_magic_cookies() const {
+bool ServiceInfo::get_state_magic_cookies() const
+{
     return magic_cookies_enabled_;
 }
 
-ConfigEvent* ServiceInfo::get_event(std::uint16_t event_id) {
-    for (auto it = events_.begin(); it != events_.end(); it++) {
-        if (it->get_event_id() == event_id) {
+ConfigEvent* ServiceInfo::get_event(std::uint16_t event_id)
+{
+    for (auto it = events_.begin(); it != events_.end(); it++)
+    {
+        if (it->get_event_id() == event_id)
+        {
             return &(*it);
         }
     }
@@ -335,38 +423,50 @@ ConfigEvent* ServiceInfo::get_event(std::uint16_t event_id) {
     return nullptr;
 }
 
-std::vector<std::uint16_t>* ServiceInfo::get_event_group(std::uint16_t event_group_id) {
+std::vector<std::uint16_t>* ServiceInfo::get_event_group(std::uint16_t event_group_id)
+{
     auto it = event_groups_.find(event_group_id);
-    if (it != event_groups_.end()) {
+    if (it != event_groups_.end())
+    {
         return &((it->second).events_);
-    } else {
+    }
+    else
+    {
         return nullptr;
     }
 }
 
-ConfigEventgroup* ServiceInfo::get_event_group_object(std::uint16_t event_group_id) {
+ConfigEventgroup* ServiceInfo::get_event_group_object(std::uint16_t event_group_id)
+{
     auto it = event_groups_.find(event_group_id);
-    if (it != event_groups_.end()) {
+    if (it != event_groups_.end())
+    {
         return &(it->second);
-    } else {
+    }
+    else
+    {
         return nullptr;
     }
 }
 
-std::unordered_map<std::uint16_t, std::vector<std::uint16_t>>* ServiceInfo::get_events() {
+std::unordered_map<std::uint16_t, std::vector<std::uint16_t>>* ServiceInfo::get_events()
+{
     return &groups_by_event_;
 }
 
-std::vector<std::uint16_t> ServiceInfo::get_tp_list() {
+std::vector<std::uint16_t> ServiceInfo::get_tp_list()
+{
     return tp_list_;
 }
 
-bool ServiceInfo::is_provider() const {
+bool ServiceInfo::is_provider() const
+{
     return provider_;
 }
 
-bool ServiceInfo::is_secure_connection() const {
+bool ServiceInfo::is_secure_connection() const
+{
     return secure_connection_;
 }
 
-} // namespace lgsomeip
+}  // namespace lgsomeip

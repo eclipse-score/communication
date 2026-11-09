@@ -21,7 +21,8 @@
 using namespace lgsomeip;
 using namespace lgsomeip::osabstraction;
 
-TEST(EndpointBase, stores_metadata) {
+TEST(EndpointBase, stores_metadata)
+{
     EndpointBase endpoint;
 
     endpoint.set_instance_id(0x1234);
@@ -39,7 +40,8 @@ TEST(EndpointBase, stores_metadata) {
     EXPECT_EQ(endpoint.get_reference_count(), 0);
 }
 
-TEST(EndpointBase, creates_sender_address_for_unreliable_ipv4_socket) {
+TEST(EndpointBase, creates_sender_address_for_unreliable_ipv4_socket)
+{
     auto address = std::make_shared<IP4Address>();
     address->set_reliable(false);
     auto socket = std::make_shared<Socket>(address);
@@ -49,7 +51,8 @@ TEST(EndpointBase, creates_sender_address_for_unreliable_ipv4_socket) {
     EXPECT_EQ(endpoint.get_sender_address()->get_type(), AF_INET);
 }
 
-TEST(EndpointBase, compares_socket_identity) {
+TEST(EndpointBase, compares_socket_identity)
+{
     auto address = std::make_shared<IP4Address>();
     address->set_reliable(true);
     auto socket = std::make_shared<Socket>(address);

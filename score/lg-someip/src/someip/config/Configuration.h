@@ -15,26 +15,28 @@
 #ifndef LG_SOMEIP_CONFIG_CONFIGURATION_H
 #define LG_SOMEIP_CONFIG_CONFIGURATION_H
 
+#include "ConfigE2E.h"
 #include "ConfigurationSD.h"
 #include "ServiceInfo.h"
-#include "ConfigE2E.h"
 #include "rapidjson/document.h"
 #include "rapidjson/istreamwrapper.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
+#include <e2exf/config.hpp>
+#include <utils/log/logger.h>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <unordered_map>
 #include <vector>
-#include <e2exf/config.hpp>
-#include <utils/log/logger.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class Configuration {
-public:
+class Configuration
+{
+  public:
     Configuration(std::string path = "");
     ~Configuration();
 
@@ -48,7 +50,7 @@ public:
     std::map<vsomeip::e2exf::data_identifier, std::shared_ptr<ConfigE2E>> get_e2e_configs();
     bool has_config() const;
 
-private:
+  private:
     bool has_config_{false};
     void initialize(std::string path);
     bool e2e_enabled_{false};
@@ -63,21 +65,22 @@ private:
     std::map<vsomeip::e2exf::data_identifier, std::shared_ptr<ConfigE2E>> e2e_configs_;
     ConfigurationSD service_discovery_;
 
-private:
+  private:
     std::unordered_map<std::string, std::uint16_t> applications_;
 
 #if defined(ENABLE_SOMEIP_PACKET_FILTERING)
-public:
-    std::map<std::uint32_t, std::uint16_t> get_someip_packet_filter_list(void) {
+  public:
+    std::map<std::uint32_t, std::uint16_t> get_someip_packet_filter_list(void)
+    {
         return packet_filter_list_;
     }
     void configure_someip_packet_filter(void);
 
-private:
+  private:
     std::map<std::uint32_t, std::uint16_t> packet_filter_list_;
-#endif // ENABLE_SOMEIP_PACKET_FILTERING
+#endif  // ENABLE_SOMEIP_PACKET_FILTERING
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_CONFIG_CONFIGURATION_H
+#endif  // LG_SOMEIP_CONFIG_CONFIGURATION_H

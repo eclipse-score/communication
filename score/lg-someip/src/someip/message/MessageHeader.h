@@ -17,7 +17,8 @@
 
 #include <cstdint>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 // Message Header Module
 
@@ -65,8 +66,9 @@ namespace lgsomeip {
 //  SOMEIP Header : Endianness
 //  SOMEIP Header : Endianness
 
-class MessageHeader {
-public:
+class MessageHeader
+{
+  public:
     MessageHeader();
     virtual ~MessageHeader();
 
@@ -91,7 +93,7 @@ public:
     void set_request_id(std::uint32_t request_id);
     void set_return_code(std::uint8_t ret_code);
 
-protected:
+  protected:
     std::uint32_t message_id_{0};
     std::uint32_t length_{0};
     std::uint32_t request_id_{0};
@@ -101,6 +103,6 @@ protected:
     std::uint8_t message_type_{0};
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_SOMEIP_MESSAGE_MESSAGEHEADER_H
+#endif  // LG_SOMEIP_SOMEIP_MESSAGE_MESSAGEHEADER_H

@@ -14,12 +14,13 @@
 
 #include <gtest/gtest.h>
 
-#include <message/MessageHeader.h>
 #include <message/MessageConstant.h>
+#include <message/MessageHeader.h>
 
 using namespace lgsomeip;
 
-TEST(MessageHeader, serialize_and_deserialize_round_trip) {
+TEST(MessageHeader, serialize_and_deserialize_round_trip)
+{
     MessageHeader source;
     source.set_message_id(0x12345678);
     source.set_length(0x00000020);
@@ -43,7 +44,8 @@ TEST(MessageHeader, serialize_and_deserialize_round_trip) {
     EXPECT_EQ(decoded.get_return_code(), source.get_return_code());
 }
 
-TEST(MessageHeader, rejects_null_or_short_input) {
+TEST(MessageHeader, rejects_null_or_short_input)
+{
     MessageHeader header;
     std::uint8_t buffer[SOMEIP_HEADER::SIZE] = {};
 
@@ -51,7 +53,8 @@ TEST(MessageHeader, rejects_null_or_short_input) {
     EXPECT_FALSE(header.deserialize(buffer, SOMEIP_HEADER::SIZE - 1));
 }
 
-TEST(MessageHeader, detects_service_discovery_message_id) {
+TEST(MessageHeader, detects_service_discovery_message_id)
+{
     MessageHeader header;
 
     header.set_message_id(0xFFFF8100);

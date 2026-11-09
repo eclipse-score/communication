@@ -12,25 +12,31 @@
  *
  ********************************************************************************/
 
-#include "utils/log/logger.h"
 #include "TCPClientSocket.h"
+#include "utils/log/logger.h"
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
-TCPClientSocket::TCPClientSocket(std::shared_ptr<Address> server_address, std::shared_ptr<Address> client_address,
+TCPClientSocket::TCPClientSocket(std::shared_ptr<Address> server_address,
+                                 std::shared_ptr<Address> client_address,
                                  const SecureConfig& secure_config)
-    : TCPSocket(client_address, server_address, secure_config) {
+    : TCPSocket(client_address, server_address, secure_config)
+{
     LGSOMEIP_LOG_DEBUG << "TCPClientSocket::TCPClientSocket / fd : " << this->socket_fd_;
 
     bind();
     connect();
 
-    if (server_address->get_type() != AF_UNIX) {
+    if (server_address->get_type() != AF_UNIX)
+    {
         // Nagle Algoritm Off
         int option = 1;
 
-        if (::setsockopt(get_socket_fd(), IPPROTO_TCP, TCP_NODELAY, &option, sizeof(option))) {
+        if (::setsockopt(get_socket_fd(), IPPROTO_TCP, TCP_NODELAY, &option, sizeof(option)))
+        {
             LGSOMEIP_LOG_ERROR
                 << "TCPClientSocket::TCPClientSocket / Fail to set options associated with a socket. error#"
                 << strerror(errno);
@@ -40,11 +46,14 @@ TCPClientSocket::TCPClientSocket(std::shared_ptr<Address> server_address, std::s
 
 // Constructor delegation
 TCPClientSocket::TCPClientSocket(std::shared_ptr<Address> server_address, const SecureConfig& secure_config)
-    : TCPClientSocket(server_address, nullptr, secure_config) {}
+    : TCPClientSocket(server_address, nullptr, secure_config)
+{
+}
 
-int TCPClientSocket::connect() {
-    if (::connect(get_socket_fd(), destination_address_->get_address(), destination_address_->get_address_size()) !=
-        0) {
+int TCPClientSocket::connect()
+{
+    if (::connect(get_socket_fd(), destination_address_->get_address(), destination_address_->get_address_size()) != 0)
+    {
         LGSOMEIP_LOG_ERROR << "TCPClientSocket::connect / Connect failed!";
         close_socket();
         return -1;
@@ -52,13 +61,14 @@ int TCPClientSocket::connect() {
     LGSOMEIP_LOG_DEBUG << "TCPClientSocket::connect / Connect OK";
 
 #if defined(ENABLE_TLS)
-    if (is_secure_connection()) {
+    if (is_secure_connection())
+    {
         start_secure_connection(get_socket_fd());
     }
-#endif // ENABLE_TLS
+#endif  // ENABLE_TLS
 
     return 0;
 }
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip

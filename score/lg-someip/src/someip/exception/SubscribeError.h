@@ -17,16 +17,19 @@
 
 #include <exception/SomeipException.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class SubscribeErrorException : public SOMEIPException {
-public:
-    SubscribeErrorException(std::string message, const std::string file, int line) : SOMEIPException(file, line) {
+class SubscribeErrorException : public SOMEIPException
+{
+  public:
+    SubscribeErrorException(std::string message, const std::string file, int line) : SOMEIPException(file, line)
+    {
         message_stream_ << "Subscribe Error : " << message;
         message_ = message_stream_.str();
     }
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif //  LG_SOMEIP_EXCEPTION_SUBSCRIBE_ERROR_H
+#endif  //  LG_SOMEIP_EXCEPTION_SUBSCRIBE_ERROR_H

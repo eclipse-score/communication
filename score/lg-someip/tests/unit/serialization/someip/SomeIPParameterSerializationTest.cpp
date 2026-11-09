@@ -12,21 +12,23 @@
  *
  ********************************************************************************/
 
+#include <gtest/gtest.h>
+#include <serialization/someip/SomeIPParameterSerialization.h>
 #include <cstdint>
 #include <cstring>
 #include <memory>
 #include <new>
-#include <gtest/gtest.h>
-#include <serialization/someip/SomeIPParameterSerialization.h>
 
 using namespace lgsomeip::serialization;
 
-TEST(SerializerTest, is_host_network_byte_order) {
+TEST(SerializerTest, is_host_network_byte_order)
+{
     unsigned int i = 1;
     ASSERT_EQ(!(*reinterpret_cast<char*>(&i) == 0x01), is_host_network_byte_order());
 }
 
-TEST(SerializerTest, NetworkByteOrder) {
+TEST(SerializerTest, NetworkByteOrder)
+{
     std::uint8_t d8 = 0x0F;
     ASSERT_EQ(0x0F, to_network_byte_order(d8));
     ASSERT_EQ(0x0F, from_network_byte_order(to_network_byte_order(d8)));
@@ -40,7 +42,8 @@ TEST(SerializerTest, NetworkByteOrder) {
     ASSERT_EQ(d32, from_network_byte_order(to_network_byte_order(d32)));
 }
 
-TEST(SerializerTest, SerializeBool) {
+TEST(SerializerTest, SerializeBool)
+{
     bool value{true};
 
     Serializer serializer;
@@ -56,7 +59,8 @@ TEST(SerializerTest, SerializeBool) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(SerializerTest, SerializeUint8) {
+TEST(SerializerTest, SerializeUint8)
+{
     std::uint8_t value{0x11};
 
     Serializer serializer;
@@ -72,7 +76,8 @@ TEST(SerializerTest, SerializeUint8) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(SerializerTest, SerializeInt8) {
+TEST(SerializerTest, SerializeInt8)
+{
     std::int8_t value{0x11};
 
     Serializer serializer;
@@ -88,7 +93,8 @@ TEST(SerializerTest, SerializeInt8) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(SerializerTest, SerializeUint16) {
+TEST(SerializerTest, SerializeUint16)
+{
     std::uint16_t value{0x2211};
 
     Serializer serializer;
@@ -105,7 +111,8 @@ TEST(SerializerTest, SerializeUint16) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(SerializerTest, SerializeInt16) {
+TEST(SerializerTest, SerializeInt16)
+{
     std::int16_t value{0x2211};
 
     Serializer serializer;
@@ -122,7 +129,8 @@ TEST(SerializerTest, SerializeInt16) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(SerializerTest, SerializeUint32) {
+TEST(SerializerTest, SerializeUint32)
+{
     std::uint32_t value{0x44332211};
 
     Serializer serializer;
@@ -141,7 +149,8 @@ TEST(SerializerTest, SerializeUint32) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(SerializerTest, SerializeInt32) {
+TEST(SerializerTest, SerializeInt32)
+{
     std::int32_t value{0x44332211};
     std::uint8_t* p = reinterpret_cast<std::uint8_t*>(&value);
 
@@ -161,7 +170,8 @@ TEST(SerializerTest, SerializeInt32) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(SerializerTest, SerializeFloat) {
+TEST(SerializerTest, SerializeFloat)
+{
     float f{3.14F};
     std::uint8_t* p = reinterpret_cast<std::uint8_t*>(&f);
 
@@ -181,7 +191,8 @@ TEST(SerializerTest, SerializeFloat) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(SerializerTest, SerializeDouble) {
+TEST(SerializerTest, SerializeDouble)
+{
     double d{3.14};
     std::uint8_t* p = reinterpret_cast<std::uint8_t*>(&d);
 
@@ -205,8 +216,9 @@ TEST(SerializerTest, SerializeDouble) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-class SerializerInitTest : public ::testing::Test {
-protected:
+class SerializerInitTest : public ::testing::Test
+{
+  protected:
     virtual void SetUp() {}
 
     virtual void TearDown() {}
@@ -214,12 +226,15 @@ protected:
     Serializer serializer_;
 };
 
-TEST_F(SerializerInitTest, Initialization) {
+TEST_F(SerializerInitTest, Initialization)
+{
     ASSERT_EQ(0, serializer_.get_length());
 }
 
-TEST_F(SerializerInitTest, SerializeData) {
-    struct {
+TEST_F(SerializerInitTest, SerializeData)
+{
+    struct
+    {
         std::uint8_t a;
         std::uint8_t b;
         double d;
@@ -244,8 +259,10 @@ TEST_F(SerializerInitTest, SerializeData) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(ComplexTypeSerializerTest, NoLengthConfig) {
-    struct Data {
+TEST(ComplexTypeSerializerTest, NoLengthConfig)
+{
+    struct Data
+    {
         std::uint8_t a;
         std::uint8_t b;
         double d;
@@ -275,11 +292,13 @@ TEST(ComplexTypeSerializerTest, NoLengthConfig) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(ComplexTypeSerializerTest, OneByteLengthConfig) {
+TEST(ComplexTypeSerializerTest, OneByteLengthConfig)
+{
     Serializer serializer;
     PacketBuffer& buffer = serializer.get_buffer();
 
-    struct Data {
+    struct Data
+    {
         std::uint8_t a;
         std::uint8_t b;
         double d;
@@ -307,11 +326,13 @@ TEST(ComplexTypeSerializerTest, OneByteLengthConfig) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(ComplexTypeSerializerTest, TwoByteLengthConfig) {
+TEST(ComplexTypeSerializerTest, TwoByteLengthConfig)
+{
     Serializer serializer;
     PacketBuffer& buffer = serializer.get_buffer();
 
-    struct {
+    struct
+    {
         std::uint8_t a;
         std::uint8_t b;
         double d;
@@ -337,11 +358,13 @@ TEST(ComplexTypeSerializerTest, TwoByteLengthConfig) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(ComplexTypeSerializerTest, FourByteLengthConfig) {
+TEST(ComplexTypeSerializerTest, FourByteLengthConfig)
+{
     Serializer serializer;
     PacketBuffer& buffer = serializer.get_buffer();
 
-    struct {
+    struct
+    {
         std::uint8_t a;
         std::uint8_t b;
         double d;
@@ -368,16 +391,19 @@ TEST(ComplexTypeSerializerTest, FourByteLengthConfig) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(TlvSerializerTest, SerializeStructure) {
+TEST(TlvSerializerTest, SerializeStructure)
+{
     const std::uint32_t data_id_a = 0;
     const std::uint32_t data_id_c = 2;
     const std::uint32_t data_id_cc1 = 1;
-    struct {
-        std::uint8_t a{};       // Data ID = 0, optional = false
-        std::uint8_t b{};       // Data ID = 1, optional = false
-        struct {                // Data ID = 2, optional = false
-            std::uint8_t c1{};  // Data ID = 1, optional = false
-            std::uint32_t c2{}; // Data ID = 0, optional = false
+    struct
+    {
+        std::uint8_t a{};  // Data ID = 0, optional = false
+        std::uint8_t b{};  // Data ID = 1, optional = false
+        struct
+        {                        // Data ID = 2, optional = false
+            std::uint8_t c1{};   // Data ID = 1, optional = false
+            std::uint32_t c2{};  // Data ID = 0, optional = false
         } c;
     } data;
 
@@ -390,8 +416,8 @@ TEST(TlvSerializerTest, SerializeStructure) {
     ASSERT_EQ(4, serializer.get_length());
 
     {
-        TlvSerializer<LengthFieldConfig<std::uint32_t>> tlv_serializer_data_a{&serializer, WireTypeEnum::BaseType8Bit,
-                                                                              data_id_a};
+        TlvSerializer<LengthFieldConfig<std::uint32_t>> tlv_serializer_data_a{
+            &serializer, WireTypeEnum::BaseType8Bit, data_id_a};
         tlv_serializer_data_a.push_back(data.a);
         tlv_serializer_data_a.finish();
     }
@@ -418,46 +444,50 @@ TEST(TlvSerializerTest, SerializeStructure) {
     length1 = length1 << 8 | buffer[3];
     ASSERT_EQ(12, length1);
 
-    ASSERT_EQ(data_id_a, buffer[5]); // data id = 0
-    ASSERT_EQ(11, buffer[6]);        // value 11
+    ASSERT_EQ(data_id_a, buffer[5]);  // data id = 0
+    ASSERT_EQ(11, buffer[6]);         // value 11
 
-    ASSERT_EQ(0x40, buffer[7] & 0x70); // Complext Data Type from data definition
-    ASSERT_EQ(data_id_c, buffer[8]);   // data id = 2
+    ASSERT_EQ(0x40, buffer[7] & 0x70);  // Complext Data Type from data definition
+    ASSERT_EQ(data_id_c, buffer[8]);    // data id = 2
     std::uint32_t length2 = buffer[9];
     length2 = length2 << 8 | buffer[10];
     length2 = length2 << 8 | buffer[11];
     length2 = length2 << 8 | buffer[12];
 
-    ASSERT_EQ(33, buffer[15]); // data id = 2
+    ASSERT_EQ(33, buffer[15]);  // data id = 2
 
     Deserializer deserializer(serializer.finish());
     ComplexTypeDeserializer<LengthFieldConfig<std::uint32_t>> complex_deserializer{&deserializer};
 
     int members = 0;
-    while (complex_deserializer.has_remaining_data()) {
+    while (complex_deserializer.has_remaining_data())
+    {
         ASSERT_LT(members, 2);
         TlvDeserializer<LengthFieldConfig<std::uint32_t>> tlv_deserializer_data{&deserializer, &complex_deserializer};
         TlvTag tag = tlv_deserializer_data.consume_tag();
-        switch (tag.data_id_) {
-        case data_id_a: {
-            std::uint8_t d{};
-            ASSERT_EQ(1, tlv_deserializer_data.pop_front(d));
-            ASSERT_EQ(11, d);
-            break;
-        }
-        case data_id_c: {
-            // The nested member reports what it reads to the member that contains it.
-            TlvDeserializer<LengthFieldConfig<std::uint32_t>> tlv_deserializer_data_c{&deserializer,
-                                                                                      &tlv_deserializer_data};
-            TlvTag inner_tag = tlv_deserializer_data_c.consume_tag();
-            ASSERT_EQ(data_id_cc1, inner_tag.data_id_);
-            std::uint8_t d{};
-            ASSERT_EQ(1, tlv_deserializer_data_c.pop_front(d));
-            ASSERT_EQ(33, d);
-            break;
-        }
-        default:
-            FAIL() << "unexpected data id " << tag.data_id_;
+        switch (tag.data_id_)
+        {
+            case data_id_a:
+            {
+                std::uint8_t d{};
+                ASSERT_EQ(1, tlv_deserializer_data.pop_front(d));
+                ASSERT_EQ(11, d);
+                break;
+            }
+            case data_id_c:
+            {
+                // The nested member reports what it reads to the member that contains it.
+                TlvDeserializer<LengthFieldConfig<std::uint32_t>> tlv_deserializer_data_c{&deserializer,
+                                                                                          &tlv_deserializer_data};
+                TlvTag inner_tag = tlv_deserializer_data_c.consume_tag();
+                ASSERT_EQ(data_id_cc1, inner_tag.data_id_);
+                std::uint8_t d{};
+                ASSERT_EQ(1, tlv_deserializer_data_c.pop_front(d));
+                ASSERT_EQ(33, d);
+                break;
+            }
+            default:
+                FAIL() << "unexpected data id " << tag.data_id_;
         }
         members++;
     }
@@ -466,14 +496,15 @@ TEST(TlvSerializerTest, SerializeStructure) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(TlvSerializerTest, DecodesWireTypeAndDataIdAbove255) {
+TEST(TlvSerializerTest, DecodesWireTypeAndDataIdAbove255)
+{
     const std::uint16_t data_id = 0x0A23;
     const std::uint32_t expected_value = 0xCAFEBABEU;
 
     Serializer serializer;
     {
-        TlvSerializer<LengthFieldConfig<std::uint32_t>> tlv_serializer{&serializer, WireTypeEnum::BaseType32Bit,
-                                                                       data_id};
+        TlvSerializer<LengthFieldConfig<std::uint32_t>> tlv_serializer{
+            &serializer, WireTypeEnum::BaseType32Bit, data_id};
         tlv_serializer.push_back(expected_value);
         tlv_serializer.finish();
     }
@@ -491,7 +522,8 @@ TEST(TlvSerializerTest, DecodesWireTypeAndDataIdAbove255) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(DeserializerTest, TruncatedInputReturnsZeroAndKeepsPosition) {
+TEST(DeserializerTest, TruncatedInputReturnsZeroAndKeepsPosition)
+{
     Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x01, 0x02, 0x03})};
 
     std::uint32_t word{};
@@ -507,7 +539,8 @@ TEST(DeserializerTest, TruncatedInputReturnsZeroAndKeepsPosition) {
     ASSERT_EQ(1, deserializer.get_remaining_length());
 }
 
-TEST(ComplexTypeDeserializerTest, LengthFieldLargerThanBuffer) {
+TEST(ComplexTypeDeserializerTest, LengthFieldLargerThanBuffer)
+{
     // The length field announces 8 bytes but only 2 follow.
     Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x00, 0x00, 0x00, 0x08, 0x01, 0x02})};
     ComplexTypeDeserializer<LengthFieldConfig<std::uint32_t>> complex_deserializer{&deserializer};
@@ -520,7 +553,8 @@ TEST(ComplexTypeDeserializerTest, LengthFieldLargerThanBuffer) {
     ASSERT_TRUE(complex_deserializer.has_remaining_data());
 }
 
-TEST(ComplexTypeDeserializerTest, MissingLengthField) {
+TEST(ComplexTypeDeserializerTest, MissingLengthField)
+{
     Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x00, 0x00})};
     ComplexTypeDeserializer<LengthFieldConfig<std::uint32_t>> complex_deserializer{&deserializer};
 
@@ -529,7 +563,8 @@ TEST(ComplexTypeDeserializerTest, MissingLengthField) {
     ASSERT_FALSE(complex_deserializer.has_remaining_data());
 }
 
-TEST(TlvDeserializerTest, TruncatedMember) {
+TEST(TlvDeserializerTest, TruncatedMember)
+{
     // 32-bit base type member whose value is cut off after two bytes.
     Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x20, 0x01, 0x11, 0x22})};
     TlvDeserializer<LengthFieldConfig<std::uint16_t>> tlv_deserializer{&deserializer};
@@ -543,13 +578,15 @@ TEST(TlvDeserializerTest, TruncatedMember) {
     ASSERT_EQ(2, deserializer.get_remaining_length());
 }
 
-TEST(DeserializerTest, BooleanUsesOnlyLowestBit) {
+TEST(DeserializerTest, BooleanUsesOnlyLowestBit)
+{
     // feat_req_someip_817: the other bits are reserved and shall be ignored on receiving.
     const PacketBuffer input{0x00, 0x01, 0x02, 0x03, 0x80, 0xFF};
     const bool expected[] = {false, true, false, true, false, true};
 
     Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer(input))};
-    for (const bool want : expected) {
+    for (const bool want : expected)
+    {
         bool value = !want;
         ASSERT_EQ(1, deserializer.pop_front(value));
         ASSERT_EQ(want, value);
@@ -557,7 +594,8 @@ TEST(DeserializerTest, BooleanUsesOnlyLowestBit) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(TlvDeserializerTest, HasNoDataBeforeTheFirstTagIsRead) {
+TEST(TlvDeserializerTest, HasNoDataBeforeTheFirstTagIsRead)
+{
     // Construct the object over memory filled with a pattern, as happens for a local variable on a used stack.
     alignas(TlvDeserializer<LengthFieldConfig<std::uint16_t>>) unsigned char
         storage[sizeof(TlvDeserializer<LengthFieldConfig<std::uint16_t>>)];
@@ -569,7 +607,8 @@ TEST(TlvDeserializerTest, HasNoDataBeforeTheFirstTagIsRead) {
     tlv_deserializer->~TlvDeserializer();
 }
 
-TEST(ComplexTypeDeserializerTest, NoLengthFieldHasNoAnnouncedData) {
+TEST(ComplexTypeDeserializerTest, NoLengthFieldHasNoAnnouncedData)
+{
     alignas(ComplexTypeDeserializer<LengthFieldConfig<void>>) unsigned char
         storage[sizeof(ComplexTypeDeserializer<LengthFieldConfig<void>>)];
     std::memset(storage, 0x55, sizeof(storage));
@@ -580,11 +619,13 @@ TEST(ComplexTypeDeserializerTest, NoLengthFieldHasNoAnnouncedData) {
     complex_deserializer->~ComplexTypeDeserializer();
 }
 
-TEST(ComplexTypeSerializerTest, LengthFieldOverflowIsReported) {
+TEST(ComplexTypeSerializerTest, LengthFieldOverflowIsReported)
+{
     {
         Serializer serializer;
         ComplexTypeSerializer<LengthFieldConfig<std::uint8_t>> complex_serializer{&serializer};
-        for (int i = 0; i < 255; i++) {
+        for (int i = 0; i < 255; i++)
+        {
             complex_serializer.push_back(static_cast<std::uint8_t>(i));
         }
         ASSERT_TRUE(complex_serializer.finish());
@@ -593,7 +634,8 @@ TEST(ComplexTypeSerializerTest, LengthFieldOverflowIsReported) {
     {
         Serializer serializer;
         ComplexTypeSerializer<LengthFieldConfig<std::uint8_t>> complex_serializer{&serializer};
-        for (int i = 0; i < 256; i++) {
+        for (int i = 0; i < 256; i++)
+        {
             complex_serializer.push_back(static_cast<std::uint8_t>(i));
         }
         // 256 bytes do not fit into an 8 bit length field; the field must not claim a wrong size.
@@ -603,7 +645,8 @@ TEST(ComplexTypeSerializerTest, LengthFieldOverflowIsReported) {
     {
         Serializer serializer;
         ComplexTypeSerializer<LengthFieldConfig<std::uint16_t>> complex_serializer{&serializer};
-        for (std::uint32_t i = 0; i < 0x10000U; i++) {
+        for (std::uint32_t i = 0; i < 0x10000U; i++)
+        {
             complex_serializer.push_back(static_cast<std::uint8_t>(i));
         }
         ASSERT_FALSE(complex_serializer.finish());
@@ -616,18 +659,20 @@ TEST(ComplexTypeSerializerTest, LengthFieldOverflowIsReported) {
     }
 }
 
-TEST(TlvSerializerTest, LengthFieldOverflowIsReported) {
+TEST(TlvSerializerTest, LengthFieldOverflowIsReported)
+{
     Serializer serializer;
-    TlvSerializer<LengthFieldConfig<std::uint16_t>> tlv_serializer{&serializer,
-                                                                   WireTypeEnum::ComplexDataType8BitLengthField, 1};
-    for (int i = 0; i < 256; i++) {
+    TlvSerializer<LengthFieldConfig<std::uint16_t>> tlv_serializer{
+        &serializer, WireTypeEnum::ComplexDataType8BitLengthField, 1};
+    for (int i = 0; i < 256; i++)
+    {
         tlv_serializer.push_back(static_cast<std::uint8_t>(i));
     }
     ASSERT_FALSE(tlv_serializer.finish());
 
     Serializer fitting;
-    TlvSerializer<LengthFieldConfig<std::uint16_t>> fitting_serializer{&fitting,
-                                                                       WireTypeEnum::ComplexDataType8BitLengthField, 1};
+    TlvSerializer<LengthFieldConfig<std::uint16_t>> fitting_serializer{
+        &fitting, WireTypeEnum::ComplexDataType8BitLengthField, 1};
     fitting_serializer.push_back(static_cast<std::uint8_t>(7));
     ASSERT_TRUE(fitting_serializer.finish());
 
@@ -637,7 +682,8 @@ TEST(TlvSerializerTest, LengthFieldOverflowIsReported) {
     ASSERT_TRUE(base_serializer.finish());
 }
 
-TEST(DeserializerTest, SkipBytes) {
+TEST(DeserializerTest, SkipBytes)
+{
     Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x01, 0x02, 0x03, 0x04})};
 
     ASSERT_EQ(0, deserializer.skip(5));
@@ -651,7 +697,8 @@ TEST(DeserializerTest, SkipBytes) {
     ASSERT_EQ(0x04, value);
 }
 
-TEST(ComplexTypeDeserializerTest, SkipsBytesOfAnExtendedStruct) {
+TEST(ComplexTypeDeserializerTest, SkipsBytesOfAnExtendedStruct)
+{
     // feat_req_someip_601: a struct longer than the known definition carries extra bytes that are skipped.
     // The struct knows one uint8; the sender added three more bytes. 0xAA follows the struct.
     Deserializer deserializer{
@@ -671,7 +718,8 @@ TEST(ComplexTypeDeserializerTest, SkipsBytesOfAnExtendedStruct) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(ComplexTypeDeserializerTest, SkipFailsWhenTheAnnouncedBytesAreMissing) {
+TEST(ComplexTypeDeserializerTest, SkipFailsWhenTheAnnouncedBytesAreMissing)
+{
     Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x00, 0x08, 0x01, 0x02})};
     ComplexTypeDeserializer<LengthFieldConfig<std::uint16_t>> complex_deserializer{&deserializer};
 
@@ -681,7 +729,8 @@ TEST(ComplexTypeDeserializerTest, SkipFailsWhenTheAnnouncedBytesAreMissing) {
     ASSERT_EQ(1, deserializer.get_remaining_length());
 }
 
-TEST(ComplexTypeDeserializerTest, SkipWithoutLengthFieldDoesNothing) {
+TEST(ComplexTypeDeserializerTest, SkipWithoutLengthFieldDoesNothing)
+{
     Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x01, 0x02})};
     ComplexTypeDeserializer<LengthFieldConfig<void>> complex_deserializer{&deserializer};
 
@@ -689,7 +738,8 @@ TEST(ComplexTypeDeserializerTest, SkipWithoutLengthFieldDoesNothing) {
     ASSERT_EQ(2, deserializer.get_remaining_length());
 }
 
-TEST(ComplexTypeDeserializerTest, SkipInsideANestedStruct) {
+TEST(ComplexTypeDeserializerTest, SkipInsideANestedStruct)
+{
     // Outer (8 bit length) { Inner (8 bit length) { u8 known, 2 unknown bytes }, u8 0x09 }
     Deserializer deserializer{std::unique_ptr<PacketBuffer>(new PacketBuffer{0x05, 0x03, 0x01, 0xEE, 0xEF, 0x09})};
     ComplexTypeDeserializer<LengthFieldConfig<std::uint8_t>> outer{&deserializer};
@@ -707,7 +757,8 @@ TEST(ComplexTypeDeserializerTest, SkipInsideANestedStruct) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(TlvDeserializerTest, SkipsUnknownMember) {
+TEST(TlvDeserializerTest, SkipsUnknownMember)
+{
     // An unknown member (data id 5, 8 bit length field, 3 bytes) in front of a known uint8 member (data id 1).
     Deserializer deserializer{
         std::unique_ptr<PacketBuffer>(new PacketBuffer{0x50, 0x05, 0x03, 0xA1, 0xA2, 0xA3, 0x00, 0x01, 0x07})};
@@ -728,7 +779,8 @@ TEST(TlvDeserializerTest, SkipsUnknownMember) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(TlvDeserializerTest, SkipReportsBytesToTheContainingStruct) {
+TEST(TlvDeserializerTest, SkipReportsBytesToTheContainingStruct)
+{
     // Struct (8 bit length, 8 bytes) { unknown member (5 bytes), known uint8 member (3 bytes) }
     Deserializer deserializer{
         std::unique_ptr<PacketBuffer>(new PacketBuffer{0x08, 0x50, 0x05, 0x02, 0xA1, 0xA2, 0x00, 0x01, 0x07})};
@@ -736,13 +788,17 @@ TEST(TlvDeserializerTest, SkipReportsBytesToTheContainingStruct) {
 
     int members = 0;
     std::uint8_t value{};
-    while (complex_deserializer.has_remaining_data()) {
+    while (complex_deserializer.has_remaining_data())
+    {
         ASSERT_LT(members, 2);
         TlvDeserializer<LengthFieldConfig<std::uint16_t>> tlv{&deserializer, &complex_deserializer};
         TlvTag tag = tlv.consume_tag();
-        if (tag.data_id_ == 1) {
+        if (tag.data_id_ == 1)
+        {
             ASSERT_EQ(1, tlv.pop_front(value));
-        } else {
+        }
+        else
+        {
             ASSERT_TRUE(tlv.skip_remaining());
         }
         members++;
@@ -752,19 +808,23 @@ TEST(TlvDeserializerTest, SkipReportsBytesToTheContainingStruct) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-namespace {
+namespace
+{
 
-PacketBuffer bytes_of(Serializer& serializer) {
+PacketBuffer bytes_of(Serializer& serializer)
+{
     return *serializer.finish();
 }
 
-std::unique_ptr<PacketBuffer> buffer_of(const PacketBuffer& bytes) {
+std::unique_ptr<PacketBuffer> buffer_of(const PacketBuffer& bytes)
+{
     return std::unique_ptr<PacketBuffer>(new PacketBuffer(bytes));
 }
 
-} // namespace
+}  // namespace
 
-TEST(StringTest, DynamicUtf8) {
+TEST(StringTest, DynamicUtf8)
+{
     Serializer serializer;
     ASSERT_TRUE(push_back_string(serializer, std::string("Hi")));
     // 32 bit length (6), BOM, "Hi", terminating zero; the length field does not count itself.
@@ -779,7 +839,8 @@ TEST(StringTest, DynamicUtf8) {
     ASSERT_EQ(0, deserializer.get_remaining_length());
 }
 
-TEST(StringTest, DynamicUtf8KoreanAndEmpty) {
+TEST(StringTest, DynamicUtf8KoreanAndEmpty)
+{
     const std::string korean = "\xED\x95\x9C\xEA\xB8\x80";
     Serializer serializer;
     ASSERT_TRUE(push_back_string(serializer, korean));
@@ -796,7 +857,8 @@ TEST(StringTest, DynamicUtf8KoreanAndEmpty) {
     ASSERT_EQ("", text);
 }
 
-TEST(StringTest, DynamicUtf16) {
+TEST(StringTest, DynamicUtf16)
+{
     const std::u16string text16 = u"Hi";
     {
         Serializer serializer;
@@ -822,7 +884,8 @@ TEST(StringTest, DynamicUtf16) {
     }
 }
 
-TEST(StringTest, LengthFieldWidth) {
+TEST(StringTest, LengthFieldWidth)
+{
     Serializer serializer;
     ASSERT_TRUE(push_back_string<LengthFieldConfig<std::uint8_t>>(serializer, std::string("Hi")));
     ASSERT_TRUE(push_back_string<LengthFieldConfig<std::uint16_t>>(serializer, std::string("Hi")));
@@ -837,7 +900,8 @@ TEST(StringTest, LengthFieldWidth) {
     ASSERT_EQ("Hi", text);
 }
 
-TEST(StringTest, LengthFieldOverflow) {
+TEST(StringTest, LengthFieldOverflow)
+{
     // BOM and terminator take 4 bytes; 251 characters make 255, which is the largest 8 bit length.
     Serializer fitting;
     ASSERT_TRUE(push_back_string<LengthFieldConfig<std::uint8_t>>(fitting, std::string(251, 'a')));
@@ -847,14 +911,16 @@ TEST(StringTest, LengthFieldOverflow) {
     ASSERT_FALSE(push_back_string<LengthFieldConfig<std::uint8_t>>(too_long, std::string(252, 'a')));
 }
 
-TEST(StringTest, EmbeddedZeroIsRejected) {
+TEST(StringTest, EmbeddedZeroIsRejected)
+{
     Serializer serializer;
     ASSERT_FALSE(push_back_string(serializer, std::string("a\0b", 3)));
     ASSERT_FALSE(push_back_string(serializer, std::u16string(u"a\0b", 3), StringEncoding::Utf16BE));
     ASSERT_FALSE(push_back_string(serializer, std::u16string(u"a"), StringEncoding::Utf8));
 }
 
-TEST(StringTest, FixedLength) {
+TEST(StringTest, FixedLength)
+{
     {
         // 8 bytes: BOM, "Hi", terminator, unused space filled with zeros.
         Serializer serializer;
@@ -888,7 +954,8 @@ TEST(StringTest, FixedLength) {
     }
 }
 
-TEST(StringTest, PaddingBehindTheTerminatorIsIgnored) {
+TEST(StringTest, PaddingBehindTheTerminatorIsIgnored)
+{
     // feat_req_someip_239: a string may be extended with zeros to reach an alignment.
     const PacketBuffer input{0x00, 0x00, 0x00, 0x08, 0xEF, 0xBB, 0xBF, 0x48, 0x69, 0x00, 0x00, 0x00};
     Deserializer deserializer{buffer_of(input)};
@@ -897,7 +964,8 @@ TEST(StringTest, PaddingBehindTheTerminatorIsIgnored) {
     ASSERT_EQ("Hi", text);
 }
 
-TEST(StringTest, OddUtf16LengthIgnoresTheLastByte) {
+TEST(StringTest, OddUtf16LengthIgnoresTheLastByte)
+{
     // feat_req_someip_641: BOM, "H", terminator, and one extra byte that is ignored.
     const PacketBuffer input{0x00, 0x00, 0x00, 0x07, 0xFE, 0xFF, 0x00, 0x48, 0x00, 0x00, 0x99};
     Deserializer deserializer{buffer_of(input)};
@@ -906,15 +974,17 @@ TEST(StringTest, OddUtf16LengthIgnoresTheLastByte) {
     ASSERT_EQ(u"H", text);
 }
 
-TEST(StringTest, MalformedStringsAreRejected) {
+TEST(StringTest, MalformedStringsAreRejected)
+{
     const PacketBuffer cases[] = {
-        {0x00, 0x00, 0x00, 0x03, 0x48, 0x69, 0x00},                         // no BOM
-        {0x00, 0x00, 0x00, 0x05, 0xEF, 0xBB, 0xBF, 0x48, 0x69},             // no terminator
-        {0x00, 0x00, 0x00, 0x08, 0xEF, 0xBB, 0xBF, 0x48, 0x69, 0x00},       // length exceeds the data
-        {0x00, 0x00, 0x00, 0x07, 0xEF, 0xBB, 0xBF, 0x48, 0x00, 0x69, 0x00}, // data behind the terminator
-        {0x00, 0x00, 0x00},                                                 // length field cut off
+        {0x00, 0x00, 0x00, 0x03, 0x48, 0x69, 0x00},                          // no BOM
+        {0x00, 0x00, 0x00, 0x05, 0xEF, 0xBB, 0xBF, 0x48, 0x69},              // no terminator
+        {0x00, 0x00, 0x00, 0x08, 0xEF, 0xBB, 0xBF, 0x48, 0x69, 0x00},        // length exceeds the data
+        {0x00, 0x00, 0x00, 0x07, 0xEF, 0xBB, 0xBF, 0x48, 0x00, 0x69, 0x00},  // data behind the terminator
+        {0x00, 0x00, 0x00},                                                  // length field cut off
     };
-    for (const auto& input : cases) {
+    for (const auto& input : cases)
+    {
         Deserializer deserializer{buffer_of(input)};
         std::string text;
         ASSERT_EQ(0, pop_front_string(deserializer, text));
@@ -927,7 +997,8 @@ TEST(StringTest, MalformedStringsAreRejected) {
     ASSERT_EQ(0, pop_front_string(deserializer, text, StringEncoding::Utf16BE));
 }
 
-TEST(StringTest, StringInsideAStruct) {
+TEST(StringTest, StringInsideAStruct)
+{
     // Struct (16 bit length) { uint8 1, string (8 bit length) "Hi", uint8 2 }
     Serializer serializer;
     ComplexTypeSerializer<LengthFieldConfig<std::uint16_t>> complex_serializer{&serializer};
@@ -952,7 +1023,8 @@ TEST(StringTest, StringInsideAStruct) {
     ASSERT_FALSE(complex_deserializer.has_remaining_data());
 }
 
-TEST(UnionTest, SpecificationExample) {
+TEST(UnionTest, SpecificationExample)
+{
     // Union of uint8 (type 1) and uint16 (type 2): the shorter element is padded to the longest one.
     {
         Serializer serializer;
@@ -992,7 +1064,8 @@ TEST(UnionTest, SpecificationExample) {
     }
 }
 
-TEST(UnionTest, WithoutPaddingAndNull) {
+TEST(UnionTest, WithoutPaddingAndNull)
+{
     Serializer serializer;
     UnionSerializer<> unpadded{&serializer, 1};
     unpadded.push_back(static_cast<std::uint8_t>(0x7F));
@@ -1000,8 +1073,8 @@ TEST(UnionTest, WithoutPaddingAndNull) {
     // Type 0 is NULL: the union has no element.
     UnionSerializer<> null_union{&serializer, 0};
     ASSERT_TRUE(null_union.finish());
-    const PacketBuffer golden{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x7F,
-                              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    const PacketBuffer golden{
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x7F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     ASSERT_EQ(golden, bytes_of(serializer));
 
     Deserializer deserializer{buffer_of(golden)};
@@ -1017,7 +1090,8 @@ TEST(UnionTest, WithoutPaddingAndNull) {
     ASSERT_EQ(0, second.pop_front(value));
 }
 
-TEST(UnionTest, ConfiguredFieldsAndOrder) {
+TEST(UnionTest, ConfiguredFieldsAndOrder)
+{
     {
         // 16 bit length and 8 bit type.
         Serializer serializer;
@@ -1056,7 +1130,8 @@ TEST(UnionTest, ConfiguredFieldsAndOrder) {
     }
 }
 
-TEST(UnionTest, WithoutLengthField) {
+TEST(UnionTest, WithoutLengthField)
+{
     // feat_req_someip_583: all types have the same length, the shorter ones are padded.
     Serializer serializer;
     UnionSerializer<LengthFieldConfig<void>, std::uint8_t> union_serializer{&serializer, 1};
@@ -1076,23 +1151,27 @@ TEST(UnionTest, WithoutLengthField) {
     ASSERT_EQ(1, deserializer.get_remaining_length());
 }
 
-TEST(UnionTest, ElementLongerThanPaddedLengthIsReported) {
+TEST(UnionTest, ElementLongerThanPaddedLengthIsReported)
+{
     Serializer serializer;
     UnionSerializer<> union_serializer{&serializer, 1};
     union_serializer.push_back(static_cast<std::uint32_t>(1));
     ASSERT_FALSE(union_serializer.finish(2));
 }
 
-TEST(UnionTest, LengthFieldOverflowIsReported) {
+TEST(UnionTest, LengthFieldOverflowIsReported)
+{
     Serializer serializer;
     UnionSerializer<LengthFieldConfig<std::uint8_t>> union_serializer{&serializer, 1};
-    for (int i = 0; i < 256; i++) {
+    for (int i = 0; i < 256; i++)
+    {
         union_serializer.push_back(static_cast<std::uint8_t>(i));
     }
     ASSERT_FALSE(union_serializer.finish());
 }
 
-TEST(UnionTest, UnknownTypeIsSkipped) {
+TEST(UnionTest, UnknownTypeIsSkipped)
+{
     // An element of an unknown type is skipped as a whole; the next value is still read correctly.
     const PacketBuffer input{0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x09, 0xAA, 0xBB, 0xCC, 0x12, 0x34};
     Deserializer deserializer{buffer_of(input)};
@@ -1104,7 +1183,8 @@ TEST(UnionTest, UnknownTypeIsSkipped) {
     ASSERT_EQ(0x1234, next);
 }
 
-TEST(UnionTest, ReadingIsLimitedByTheLength) {
+TEST(UnionTest, ReadingIsLimitedByTheLength)
+{
     const PacketBuffer input{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0xAA, 0xBB};
     Deserializer deserializer{buffer_of(input)};
     UnionDeserializer<> union_deserializer{&deserializer};
@@ -1115,13 +1195,15 @@ TEST(UnionTest, ReadingIsLimitedByTheLength) {
     ASSERT_EQ(0, union_deserializer.pop_front(byte));
 }
 
-TEST(UnionTest, TruncatedFieldsAreDetected) {
+TEST(UnionTest, TruncatedFieldsAreDetected)
+{
     const PacketBuffer cases[] = {
         {},
         {0x00, 0x00},
         {0x00, 0x00, 0x00, 0x04, 0x00, 0x00},
     };
-    for (const auto& input : cases) {
+    for (const auto& input : cases)
+    {
         Deserializer deserializer{buffer_of(input)};
         UnionDeserializer<> union_deserializer{&deserializer};
         ASSERT_FALSE(union_deserializer.valid());
@@ -1131,7 +1213,8 @@ TEST(UnionTest, TruncatedFieldsAreDetected) {
     }
 }
 
-TEST(UnionTest, AnnouncedElementIsMissing) {
+TEST(UnionTest, AnnouncedElementIsMissing)
+{
     const PacketBuffer input{0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0xAB};
     Deserializer deserializer{buffer_of(input)};
     UnionDeserializer<> union_deserializer{&deserializer};

@@ -12,17 +12,17 @@
  *
  ********************************************************************************/
 
-#include <cstring>
-#include <atomic>
 #include <gtest/gtest.h>
-#include <iostream>
-#include <memory>
 #include <socket/IP4Address.h>
 #include <socket/IP6Address.h>
 #include <socket/NetworkDevice.h>
 #include <socket/UDPSocket.h>
-#include <thread>
 #include <sys/time.h>
+#include <atomic>
+#include <cstring>
+#include <iostream>
+#include <memory>
+#include <thread>
 
 #include "Helper.h"
 
@@ -34,7 +34,8 @@ int count = 0;
 std::atomic<bool> udp_client_message_matches{false};
 std::string multicast_ip6 = "FF02::1:FF00";
 
-void udp_client_run() {
+void udp_client_run()
+{
     usleep(10);
     std::shared_ptr<Address> addr = std::make_shared<IP4Address>();
     addr->set_ip_address("127.0.0.1");
@@ -51,12 +52,13 @@ void udp_client_run() {
                                  std::memcmp(udp_message, receive_message, sizeof(receive_message)) == 0;
 }
 
-void multicast_sender_ipv4() {
+void multicast_sender_ipv4()
+{
     usleep(10);
     std::shared_ptr<Address> address = std::make_shared<IP4Address>();
     address->set_reliable(false);
-    address->set_port_address(get_test_port(1)); // Multicast Port
-    address->set_ip_address("224.0.0.1");        // Multicast IP
+    address->set_port_address(get_test_port(1));  // Multicast Port
+    address->set_ip_address("224.0.0.1");         // Multicast IP
 
     UDPSocket sender(address);
     std::uint32_t ttl = 64;
@@ -65,12 +67,13 @@ void multicast_sender_ipv4() {
     sender.send(udp_message, sizeof(udp_message), address);
 }
 
-void multicast_sender_ipv6() {
+void multicast_sender_ipv6()
+{
     usleep(10);
     std::shared_ptr<Address> address = std::make_shared<IP6Address>();
     address->set_reliable(false);
-    address->set_port_address(get_test_port(2)); // Multicast Port
-    address->set_ip_address(multicast_ip6);      // Multicast IP
+    address->set_port_address(get_test_port(2));  // Multicast Port
+    address->set_ip_address(multicast_ip6);       // Multicast IP
 
     UDPSocket sender(address);
     std::uint32_t ttl = 64;
@@ -79,7 +82,8 @@ void multicast_sender_ipv6() {
     sender.send(udp_message, sizeof(udp_message), address);
 }
 
-TEST(UDPSocketTest, UDPSocketTest) {
+TEST(UDPSocketTest, UDPSocketTest)
+{
     char message[kUdpMax];
     create_msg(udp_message, kUdpMax);
     std::shared_ptr<std::thread> udp_thread, sender_thread, receiver_thread;
@@ -113,7 +117,8 @@ TEST(UDPSocketTest, UDPSocketTest) {
     ASSERT_TRUE(udp_client_message_matches);
 }
 
-TEST(UDPSocketTest, UDPMulticastIPv4) {
+TEST(UDPSocketTest, UDPMulticastIPv4)
+{
     char multicast_message[kUdpMax];
     std::shared_ptr<std::thread> sender_thread;
     std::string multicast_ip = "224.0.0.1";
@@ -125,7 +130,8 @@ TEST(UDPSocketTest, UDPMulticastIPv4) {
     UDPSocket receiver(addr);
     receiver.bind();
 
-    if (!receiver.join_multicast(multicast_ip)) {
+    if (!receiver.join_multicast(multicast_ip))
+    {
         GTEST_SKIP() << "IPv4 multicast is unavailable on this host";
     }
     timeval receive_timeout{1, 0};
@@ -135,19 +141,22 @@ TEST(UDPSocketTest, UDPMulticastIPv4) {
     sender_thread = std::make_shared<std::thread>(multicast_sender_ipv4);
     int received_length = receiver.receive(multicast_message, sizeof(multicast_message), client_addr);
     sender_thread->join();
-    if (received_length < 0) {
+    if (received_length < 0)
+    {
         GTEST_SKIP() << "IPv4 multicast packets are unavailable on this host";
     }
     ASSERT_STREQ(udp_message, multicast_message);
     receiver.leave_multicast(multicast_ip);
 }
 
-TEST(UDPSocketTest, UDPMulticastIPv6) {
+TEST(UDPSocketTest, UDPMulticastIPv6)
+{
     char multicast_message[kUdpMax];
     create_msg(udp_message, kUdpMax);
     std::shared_ptr<std::thread> sender_thread;
 
-    if (!NetworkDevice::instance().initialize("::1", 6)) {
+    if (!NetworkDevice::instance().initialize("::1", 6))
+    {
         GTEST_SKIP() << "IPv6 loopback interface is unavailable on this host";
     }
 
@@ -158,7 +167,8 @@ TEST(UDPSocketTest, UDPMulticastIPv6) {
     UDPSocket receiver(addr);
     receiver.bind();
 
-    if (!receiver.join_multicast(multicast_ip6)) {
+    if (!receiver.join_multicast(multicast_ip6))
+    {
         GTEST_SKIP() << "IPv6 multicast is unavailable on this host";
     }
     std::uint32_t on = 1;
@@ -171,7 +181,8 @@ TEST(UDPSocketTest, UDPMulticastIPv6) {
     sender_thread = std::make_shared<std::thread>(multicast_sender_ipv6);
     int received_length = receiver.receive(multicast_message, sizeof(multicast_message), client_addr);
     sender_thread->join();
-    if (received_length < 0) {
+    if (received_length < 0)
+    {
         GTEST_SKIP() << "IPv6 multicast packets are unavailable on this host";
     }
     ASSERT_STREQ(udp_message, multicast_message);

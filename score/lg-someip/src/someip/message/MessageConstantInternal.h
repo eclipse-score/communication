@@ -17,12 +17,15 @@
 
 #include <cstdint>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 // Internal SOME/IP-SD entry information for application management.
-namespace SOMEIP_SD_ENTRY {
+namespace SOMEIP_SD_ENTRY
+{
 
-namespace INTERNAL {
+namespace INTERNAL
+{
 const std::uint8_t TYPEID = APPLICATION_MGMT_ENTRY;
 const std::uint16_t SOMEIP_SERVICE_ID = 0xFFFF;
 const std::uint16_t SOMEIP_INSTANCE_ID = 0xFFFF;
@@ -32,7 +35,8 @@ const std::uint32_t REGISTER = 0xFFFFFF;
 const std::uint32_t DEREGISTER = 0x0;
 const std::uint32_t CHECKALIVE = 0x1;
 
-namespace POS {
+namespace POS
+{
 const std::uint32_t TYPE = 0;
 const std::uint32_t OPTION1 = 1;
 const std::uint32_t OPTION2 = 2;
@@ -43,11 +47,11 @@ const std::uint32_t MAJOR = 8;
 const std::uint32_t TTL = 9;
 
 const std::uint32_t MINOR = 12;
-} // namespace POS
-} // namespace INTERNAL
+}  // namespace POS
+}  // namespace INTERNAL
 
-} // namespace SOMEIP_SD_ENTRY
+}  // namespace SOMEIP_SD_ENTRY
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_SOMEIP_MESSAGE_MESSAGECONSTANT_INTERNAL_H
+#endif  // LG_SOMEIP_SOMEIP_MESSAGE_MESSAGECONSTANT_INTERNAL_H

@@ -14,13 +14,13 @@
 
 #include <gtest/gtest.h>
 
-#include <cstdio>
-#include <fstream>
 #include <endpoint/EndpointBase.h>
 #include <endpoint/EndpointUtils.h>
 #include <runtime/ServiceManager.h>
 #include <socket/IP4Address.h>
 #include <socket/Socket.h>
+#include <cstdio>
+#include <fstream>
 
 #include <unistd.h>
 
@@ -39,37 +39,61 @@
 using namespace lgsomeip;
 using namespace lgsomeip::osabstraction;
 
-class PacketRouterServiceFake final : public ServiceRouter {
-public:
+class PacketRouterServiceFake final : public ServiceRouter
+{
+  public:
     void init() override {}
     void start() override {}
     void stop() override {}
-    std::shared_ptr<Multiplexer> get_multiplexer() override {
+    std::shared_ptr<Multiplexer> get_multiplexer() override
+    {
         return nullptr;
     }
-    std::shared_ptr<Endpoint> get_service_discovery_multicast_endpoint() override {
+    std::shared_ptr<Endpoint> get_service_discovery_multicast_endpoint() override
+    {
         return nullptr;
     }
-    std::shared_ptr<Endpoint> get_service_discovery_unicast_endpoint() override {
+    std::shared_ptr<Endpoint> get_service_discovery_unicast_endpoint() override
+    {
         return nullptr;
     }
-    std::shared_ptr<Address> make_address() override {
+    std::shared_ptr<Address> make_address() override
+    {
         return std::make_shared<IP4Address>();
     }
     void set_instance_id(std::uint16_t, std::uint16_t, std::uint16_t) override {}
-    bool add_route(std::uint16_t, std::uint16_t, std::uint16_t, std::shared_ptr<Address>, std::uint16_t,
-                   std::shared_ptr<Address>, std::uint16_t, std::uint8_t,
-                   std::shared_ptr<std::vector<std::shared_ptr<Address>>>) override {
+    bool add_route(std::uint16_t,
+                   std::uint16_t,
+                   std::uint16_t,
+                   std::shared_ptr<Address>,
+                   std::uint16_t,
+                   std::shared_ptr<Address>,
+                   std::uint16_t,
+                   std::uint8_t,
+                   std::shared_ptr<std::vector<std::shared_ptr<Address>>>) override
+    {
         return true;
     }
     void remove_route(std::uint16_t, std::uint16_t) override {}
-    std::int32_t find_connection(std::uint16_t, std::uint16_t, std::shared_ptr<Address>) override {
+    std::int32_t find_connection(std::uint16_t, std::uint16_t, std::shared_ptr<Address>) override
+    {
         return -1;
     }
-    void add_subscribe_route(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t, std::shared_ptr<Address>,
-                             std::uint16_t) override {}
-    void remove_subscribe_route(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t,
-                                std::shared_ptr<Address>) override {}
+    void add_subscribe_route(std::uint16_t,
+                             std::uint16_t,
+                             std::uint16_t,
+                             std::uint16_t,
+                             std::shared_ptr<Address>,
+                             std::uint16_t) override
+    {
+    }
+    void remove_subscribe_route(std::uint16_t,
+                                std::uint16_t,
+                                std::uint16_t,
+                                std::uint16_t,
+                                std::shared_ptr<Address>) override
+    {
+    }
     void remove_subscribe_route(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t) override {}
     void send_internal_message(std::uint8_t*, std::size_t, std::uint16_t) override {}
     void send_external_sd_message(std::uint8_t*, std::size_t, std::shared_ptr<Address>, bool) override {}
@@ -77,9 +101,11 @@ public:
     void reboot_route(std::shared_ptr<Address>) override {}
 };
 
-class CapturingEndpoint final : public EndpointBase {
-public:
-    void send_message(const std::uint8_t* message, std::size_t size, std::shared_ptr<Address> = nullptr) override {
+class CapturingEndpoint final : public EndpointBase
+{
+  public:
+    void send_message(const std::uint8_t* message, std::size_t size, std::shared_ptr<Address> = nullptr) override
+    {
         ++message_count;
         last_message.assign(message, message + size);
     }
@@ -88,13 +114,16 @@ public:
     std::vector<std::uint8_t> last_message;
 };
 
-std::unique_ptr<ServiceManager> make_service_manager() {
+std::unique_ptr<ServiceManager> make_service_manager()
+{
     return std::make_unique<ServiceManager>("packet-router-test", "", std::make_shared<PacketRouterServiceFake>());
 }
 
-class ScopedPacketRouterConfig final {
-public:
-    ScopedPacketRouterConfig() : path_("/tmp/lgsomeip-packet-router-test-" + std::to_string(::getpid()) + ".json") {
+class ScopedPacketRouterConfig final
+{
+  public:
+    ScopedPacketRouterConfig() : path_("/tmp/lgsomeip-packet-router-test-" + std::to_string(::getpid()) + ".json")
+    {
         std::ofstream file(path_);
         file << R"({
             "unicast": "127.0.0.1",
@@ -123,19 +152,22 @@ public:
         })";
     }
 
-    ~ScopedPacketRouterConfig() {
+    ~ScopedPacketRouterConfig()
+    {
         std::remove(path_.c_str());
     }
 
-    const std::string& path() const {
+    const std::string& path() const
+    {
         return path_;
     }
 
-private:
+  private:
     std::string path_;
 };
 
-TEST(PacketRouterHost, find_instance_id_returns_zero_when_service_unmapped) {
+TEST(PacketRouterHost, find_instance_id_returns_zero_when_service_unmapped)
+{
     PacketRouterHost router(nullptr);
     auto endpoint = std::make_shared<EndpointBase>();
     endpoint->set_app_id(0x0005);
@@ -143,7 +175,8 @@ TEST(PacketRouterHost, find_instance_id_returns_zero_when_service_unmapped) {
     EXPECT_EQ(router.find_instance_id(0x1001, endpoint), 0);
 }
 
-TEST(PacketRouterHost, find_instance_id_resolves_local_endpoint_mapped_by_app_id) {
+TEST(PacketRouterHost, find_instance_id_resolves_local_endpoint_mapped_by_app_id)
+{
     PacketRouterHost router(nullptr);
     auto endpoint = std::make_shared<EndpointBase>();
     endpoint->set_app_id(0x0005);
@@ -153,7 +186,8 @@ TEST(PacketRouterHost, find_instance_id_resolves_local_endpoint_mapped_by_app_id
     EXPECT_EQ(router.find_instance_id(0x1001, endpoint), 0x0002);
 }
 
-TEST(PacketRouterHost, find_instance_id_short_circuits_when_endpoint_already_has_instance_id) {
+TEST(PacketRouterHost, find_instance_id_short_circuits_when_endpoint_already_has_instance_id)
+{
     PacketRouterHost router(nullptr);
     auto endpoint = std::make_shared<EndpointBase>();
     endpoint->set_app_id(0x0005);
@@ -163,7 +197,8 @@ TEST(PacketRouterHost, find_instance_id_short_circuits_when_endpoint_already_has
     EXPECT_EQ(router.find_instance_id(0x1001, endpoint), 0x0009);
 }
 
-TEST(PacketRouterHost, find_instance_id_resolves_udp_endpoint_mapped_by_address) {
+TEST(PacketRouterHost, find_instance_id_resolves_udp_endpoint_mapped_by_address)
+{
     PacketRouterHost router(nullptr);
     auto address = std::make_shared<IP4Address>();
     address->set_reliable(false);
@@ -177,7 +212,8 @@ TEST(PacketRouterHost, find_instance_id_resolves_udp_endpoint_mapped_by_address)
     EXPECT_EQ(router.find_instance_id(0x1001, endpoint), 0x0003);
 }
 
-TEST(PacketRouterHost, creates_configured_ipv4_addresses) {
+TEST(PacketRouterHost, creates_configured_ipv4_addresses)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
 
@@ -190,7 +226,8 @@ TEST(PacketRouterHost, creates_configured_ipv4_addresses) {
     EXPECT_EQ(address->get_vlan_priority(), 3);
 }
 
-TEST(PacketRouterHost, manages_internal_route_and_subscription_without_sockets) {
+TEST(PacketRouterHost, manages_internal_route_and_subscription_without_sockets)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
 
@@ -206,7 +243,8 @@ TEST(PacketRouterHost, manages_internal_route_and_subscription_without_sockets) 
     EXPECT_EQ(router.find_connection(0x1001, 0x0002, address), -1);
 }
 
-TEST(PacketRouterHost, find_connection_returns_zero_for_unicast_udp_route) {
+TEST(PacketRouterHost, find_connection_returns_zero_for_unicast_udp_route)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     ASSERT_TRUE(router.add_route(0x1001, 0x0002, 0x0005));
@@ -219,7 +257,8 @@ TEST(PacketRouterHost, find_connection_returns_zero_for_unicast_udp_route) {
     EXPECT_EQ(router.find_connection(0x1001, 0x0002, address), 0);
 }
 
-TEST(PacketRouterHost, gets_service_instance_for_internal_route) {
+TEST(PacketRouterHost, gets_service_instance_for_internal_route)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto endpoint = std::make_shared<EndpointBase>();
@@ -234,7 +273,8 @@ TEST(PacketRouterHost, gets_service_instance_for_internal_route) {
     EXPECT_EQ(endpoint->get_instance_id(), 0x0002);
 }
 
-TEST(PacketRouterHost, handles_unknown_route_cleanup_and_tcp_lookup) {
+TEST(PacketRouterHost, handles_unknown_route_cleanup_and_tcp_lookup)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto tcp_address = std::make_shared<IP4Address>();
@@ -249,7 +289,8 @@ TEST(PacketRouterHost, handles_unknown_route_cleanup_and_tcp_lookup) {
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, detects_repeated_reboot_session) {
+TEST(PacketRouterHost, detects_repeated_reboot_session)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
 
@@ -269,7 +310,8 @@ TEST(PacketRouterHost, detects_repeated_reboot_session) {
     EXPECT_FALSE(router.is_reboot(endpoint, false, 2));
 }
 
-TEST(PacketRouterHost, detects_peer_reboot_once_across_multicast_and_unicast) {
+TEST(PacketRouterHost, detects_peer_reboot_once_across_multicast_and_unicast)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
 
@@ -300,7 +342,8 @@ TEST(PacketRouterHost, detects_peer_reboot_once_across_multicast_and_unicast) {
     EXPECT_TRUE(router.is_reboot(other_peer, true, 1));
 }
 
-TEST(PacketRouterHost, empty_send_and_cookie_operations_are_safe) {
+TEST(PacketRouterHost, empty_send_and_cookie_operations_are_safe)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     std::uint8_t message[] = {0x00};
@@ -310,7 +353,8 @@ TEST(PacketRouterHost, empty_send_and_cookie_operations_are_safe) {
     router.check_and_send_magic_cookies();
 }
 
-TEST(PacketRouterHost, ignores_invalid_internal_message) {
+TEST(PacketRouterHost, ignores_invalid_internal_message)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto endpoint = std::make_shared<EndpointBase>();
@@ -319,7 +363,8 @@ TEST(PacketRouterHost, ignores_invalid_internal_message) {
     router.on_internal_message(endpoint, message, sizeof(message));
 }
 
-TEST(PacketRouterHost, ignores_internal_callbacks_without_service_or_request_state) {
+TEST(PacketRouterHost, ignores_internal_callbacks_without_service_or_request_state)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto endpoint = std::make_shared<EndpointBase>();
@@ -330,7 +375,8 @@ TEST(PacketRouterHost, ignores_internal_callbacks_without_service_or_request_sta
     router.on_internal_notification(endpoint, message, sizeof(message), 0x10010002, 0x00050001);
 }
 
-TEST(PacketRouterHost, creates_and_removes_udp_provider_route) {
+TEST(PacketRouterHost, creates_and_removes_udp_provider_route)
+{
     ScopedPacketRouterConfig config_file;
     auto service_router = std::make_shared<PacketRouterServiceFake>();
     ServiceManager manager("packet-router-test", config_file.path(), service_router);
@@ -352,7 +398,8 @@ TEST(PacketRouterHost, creates_and_removes_udp_provider_route) {
     EXPECT_EQ(router.find_connection(0x1001, 0x0002, std::make_shared<IP4Address>()), -1);
 }
 
-TEST(PacketRouterHost, creates_and_removes_udp_client_route) {
+TEST(PacketRouterHost, creates_and_removes_udp_client_route)
+{
     ScopedPacketRouterConfig config_file;
     auto service_router = std::make_shared<PacketRouterServiceFake>();
     ServiceManager manager("packet-router-test", config_file.path(), service_router);
@@ -367,14 +414,16 @@ TEST(PacketRouterHost, creates_and_removes_udp_client_route) {
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, rejects_route_without_transport_endpoint) {
+TEST(PacketRouterHost, rejects_route_without_transport_endpoint)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
 
     EXPECT_FALSE(router.add_route(0x1001, 0x0002, 0));
 }
 
-TEST(PacketRouterHost, rejects_unreachable_tcp_client_route) {
+TEST(PacketRouterHost, rejects_unreachable_tcp_client_route)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto remote = std::make_shared<IP4Address>();
@@ -387,7 +436,8 @@ TEST(PacketRouterHost, rejects_unreachable_tcp_client_route) {
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, tracks_and_removes_internal_connection_before_registration) {
+TEST(PacketRouterHost, tracks_and_removes_internal_connection_before_registration)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto server_address = std::make_shared<IP4Address>();
@@ -409,7 +459,8 @@ TEST(PacketRouterHost, tracks_and_removes_internal_connection_before_registratio
     EXPECT_EQ(router.connected_endpoints_.count(client->get_socket()->get_socket_fd()), 0U);
 }
 
-TEST(PacketRouterHost, cleans_registered_application_on_disconnect) {
+TEST(PacketRouterHost, cleans_registered_application_on_disconnect)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto server_address = std::make_shared<IP4Address>();
@@ -441,7 +492,8 @@ TEST(PacketRouterHost, cleans_registered_application_on_disconnect) {
     EXPECT_EQ(router.registered_service_info_.count(0x1001), 0U);
 }
 
-TEST(PacketRouterHost, tracks_and_removes_external_tcp_connection) {
+TEST(PacketRouterHost, tracks_and_removes_external_tcp_connection)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto server_source = std::make_shared<IP4Address>();
@@ -470,7 +522,8 @@ TEST(PacketRouterHost, tracks_and_removes_external_tcp_connection) {
     EXPECT_EQ(router.connected_endpoints_.count(server->get_socket()->get_socket_fd()), 0U);
 }
 
-TEST(PacketRouterHost, adds_and_removes_external_udp_subscription) {
+TEST(PacketRouterHost, adds_and_removes_external_udp_subscription)
+{
     ScopedPacketRouterConfig config_file;
     auto service_router = std::make_shared<PacketRouterServiceFake>();
     ServiceManager manager("packet-router-test", config_file.path(), service_router);
@@ -489,7 +542,8 @@ TEST(PacketRouterHost, adds_and_removes_external_udp_subscription) {
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, finds_provider_endpoint_by_local_address) {
+TEST(PacketRouterHost, finds_provider_endpoint_by_local_address)
+{
     ScopedPacketRouterConfig config_file;
     auto service_router = std::make_shared<PacketRouterServiceFake>();
     ServiceManager manager("packet-router-test", config_file.path(), service_router);
@@ -502,7 +556,8 @@ TEST(PacketRouterHost, finds_provider_endpoint_by_local_address) {
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, finds_client_endpoint_with_matching_source_and_destination) {
+TEST(PacketRouterHost, finds_client_endpoint_with_matching_source_and_destination)
+{
     ScopedPacketRouterConfig config_file;
     auto service_router = std::make_shared<PacketRouterServiceFake>();
     ServiceManager manager("packet-router-test", config_file.path(), service_router);
@@ -522,7 +577,8 @@ TEST(PacketRouterHost, finds_client_endpoint_with_matching_source_and_destinatio
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, sends_error_response_to_socketless_internal_endpoint) {
+TEST(PacketRouterHost, sends_error_response_to_socketless_internal_endpoint)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto receiver = std::make_shared<CapturingEndpoint>();
@@ -546,7 +602,8 @@ TEST(PacketRouterHost, sends_error_response_to_socketless_internal_endpoint) {
     EXPECT_EQ(endpoint->last_message[SOMEIP_HEADER::POS::RETURNCODE], SOMEIP_RETURN_CODE::E_UNKNOWN_SERVICE);
 }
 
-TEST(PacketRouterHost, handles_unknown_subscription_and_multicast_connection_paths) {
+TEST(PacketRouterHost, handles_unknown_subscription_and_multicast_connection_paths)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto address = std::make_shared<IP4Address>();
@@ -559,7 +616,8 @@ TEST(PacketRouterHost, handles_unknown_subscription_and_multicast_connection_pat
     EXPECT_EQ(router.find_connection(0x1001, 0x0002, address), -1);
 }
 
-TEST(PacketRouterHost, registers_and_removes_connected_endpoint_bookkeeping) {
+TEST(PacketRouterHost, registers_and_removes_connected_endpoint_bookkeeping)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto address = std::make_shared<IP4Address>();
@@ -574,7 +632,8 @@ TEST(PacketRouterHost, registers_and_removes_connected_endpoint_bookkeeping) {
     EXPECT_EQ(router.connected_endpoints_.count(fd), 0U);
 }
 
-TEST(PacketRouterHost, sends_expired_magic_cookie_for_external_tcp_endpoint) {
+TEST(PacketRouterHost, sends_expired_magic_cookie_for_external_tcp_endpoint)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     int sockets[2] = {};
@@ -599,7 +658,8 @@ TEST(PacketRouterHost, sends_expired_magic_cookie_for_external_tcp_endpoint) {
     ::close(sockets[1]);
 }
 
-TEST(PacketRouterHost, ignores_disconnect_for_unknown_endpoint) {
+TEST(PacketRouterHost, ignores_disconnect_for_unknown_endpoint)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto address = std::make_shared<IP4Address>();
@@ -610,7 +670,8 @@ TEST(PacketRouterHost, ignores_disconnect_for_unknown_endpoint) {
     router.on_disconnect(endpoint);
 }
 
-TEST(PacketRouterHost, rejects_application_control_message_on_unknown_connection) {
+TEST(PacketRouterHost, rejects_application_control_message_on_unknown_connection)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto address = std::make_shared<IP4Address>();
@@ -626,7 +687,8 @@ TEST(PacketRouterHost, rejects_application_control_message_on_unknown_connection
     router.on_application_control_message(endpoint, message);
 }
 
-TEST(PacketRouterHost, registers_application_control_message_from_known_connection) {
+TEST(PacketRouterHost, registers_application_control_message_from_known_connection)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     const auto app_id = static_cast<std::uint16_t>(0x0a00 | (::getpid() & 0x00ff));
@@ -662,7 +724,8 @@ TEST(PacketRouterHost, registers_application_control_message_from_known_connecti
     ::unlink((socket_path + ".lock").c_str());
 }
 
-TEST(PacketRouterHost, forwards_external_response_to_saved_external_request_endpoint) {
+TEST(PacketRouterHost, forwards_external_response_to_saved_external_request_endpoint)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto service_receiver = std::make_shared<CapturingEndpoint>();
@@ -691,7 +754,8 @@ TEST(PacketRouterHost, forwards_external_response_to_saved_external_request_endp
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, forwards_internal_request_to_external_udp_service) {
+TEST(PacketRouterHost, forwards_internal_request_to_external_udp_service)
+{
     ScopedPacketRouterConfig config_file;
     auto service_router = std::make_shared<PacketRouterServiceFake>();
     ServiceManager manager("packet-router-test", config_file.path(), service_router);
@@ -709,7 +773,8 @@ TEST(PacketRouterHost, forwards_internal_request_to_external_udp_service) {
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, forwards_internal_notification_to_external_udp_subscriber) {
+TEST(PacketRouterHost, forwards_internal_notification_to_external_udp_subscriber)
+{
     ScopedPacketRouterConfig config_file;
     auto service_router = std::make_shared<PacketRouterServiceFake>();
     ServiceManager manager("packet-router-test", config_file.path(), service_router);
@@ -728,7 +793,8 @@ TEST(PacketRouterHost, forwards_internal_notification_to_external_udp_subscriber
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, forwards_internal_request_to_local_service_endpoint) {
+TEST(PacketRouterHost, forwards_internal_request_to_local_service_endpoint)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto receiver = std::make_shared<CapturingEndpoint>();
@@ -747,7 +813,8 @@ TEST(PacketRouterHost, forwards_internal_request_to_local_service_endpoint) {
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, forwards_internal_response_to_saved_request_endpoint) {
+TEST(PacketRouterHost, forwards_internal_response_to_saved_request_endpoint)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto receiver = std::make_shared<CapturingEndpoint>();
@@ -761,7 +828,8 @@ TEST(PacketRouterHost, forwards_internal_response_to_saved_request_endpoint) {
     EXPECT_EQ(receiver->last_message.size(), 18U);
 }
 
-TEST(PacketRouterHost, forwards_internal_notification_to_subscriber) {
+TEST(PacketRouterHost, forwards_internal_notification_to_subscriber)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto receiver = std::make_shared<CapturingEndpoint>();
@@ -783,7 +851,8 @@ TEST(PacketRouterHost, forwards_internal_notification_to_subscriber) {
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, uses_any_event_subscription_for_unlisted_notification) {
+TEST(PacketRouterHost, uses_any_event_subscription_for_unlisted_notification)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto receiver = std::make_shared<CapturingEndpoint>();
@@ -800,7 +869,8 @@ TEST(PacketRouterHost, uses_any_event_subscription_for_unlisted_notification) {
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, forwards_external_request_to_internal_service) {
+TEST(PacketRouterHost, forwards_external_request_to_internal_service)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto receiver = std::make_shared<CapturingEndpoint>();
@@ -822,7 +892,8 @@ TEST(PacketRouterHost, forwards_external_request_to_internal_service) {
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, forwards_external_notification_to_internal_subscriber) {
+TEST(PacketRouterHost, forwards_external_notification_to_internal_subscriber)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto receiver = std::make_shared<CapturingEndpoint>();
@@ -845,7 +916,8 @@ TEST(PacketRouterHost, forwards_external_notification_to_internal_subscriber) {
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, ignores_external_request_with_error_return_code) {
+TEST(PacketRouterHost, ignores_external_request_with_error_return_code)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto endpoint = std::make_shared<EndpointBase>();
@@ -855,7 +927,8 @@ TEST(PacketRouterHost, ignores_external_request_with_error_return_code) {
     router.on_external_request(endpoint, message, SOMEIP_HEADER::SIZE, 0x10010001, 0x00050001, false);
 }
 
-TEST(PacketRouterHost, ignores_external_response_without_saved_request) {
+TEST(PacketRouterHost, ignores_external_response_without_saved_request)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto endpoint = std::make_shared<EndpointBase>();
@@ -864,7 +937,8 @@ TEST(PacketRouterHost, ignores_external_response_without_saved_request) {
     router.on_external_response(endpoint, message, SOMEIP_HEADER::SIZE, 0x10010001, 0x00050001);
 }
 
-TEST(PacketRouterHost, ignores_external_notification_without_service_info) {
+TEST(PacketRouterHost, ignores_external_notification_without_service_info)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto endpoint = std::make_shared<EndpointBase>();
@@ -873,7 +947,8 @@ TEST(PacketRouterHost, ignores_external_notification_without_service_info) {
     router.on_external_notification(endpoint, message, SOMEIP_HEADER::SIZE, 0x10010002, 0x00050001);
 }
 
-TEST(PacketRouterHost, reboot_route_removes_matching_request_state) {
+TEST(PacketRouterHost, reboot_route_removes_matching_request_state)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto address = std::make_shared<IP4Address>();
@@ -890,7 +965,8 @@ TEST(PacketRouterHost, reboot_route_removes_matching_request_state) {
     EXPECT_EQ(router.request_map_.count(0x0006), 1U);
 }
 
-TEST(PacketRouterHost, dispatches_malformed_internal_someip_without_crashing) {
+TEST(PacketRouterHost, dispatches_malformed_internal_someip_without_crashing)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto address = std::make_shared<IP4Address>();
@@ -904,7 +980,8 @@ TEST(PacketRouterHost, dispatches_malformed_internal_someip_without_crashing) {
     router.on_message(endpoint, message, sizeof(message));
 }
 
-TEST(PacketRouterHost, rejects_external_sd_message_from_unknown_port) {
+TEST(PacketRouterHost, rejects_external_sd_message_from_unknown_port)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto address = std::make_shared<IP4Address>();
@@ -929,7 +1006,8 @@ TEST(PacketRouterHost, rejects_external_sd_message_from_unknown_port) {
     router.on_message(endpoint, data, length);
 }
 
-TEST(PacketRouterHost, rejects_external_sd_message_from_local_address) {
+TEST(PacketRouterHost, rejects_external_sd_message_from_local_address)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto address = std::make_shared<IP4Address>();
@@ -954,7 +1032,8 @@ TEST(PacketRouterHost, rejects_external_sd_message_from_local_address) {
     router.on_message(endpoint, data, length);
 }
 
-TEST(PacketRouterHost, handles_service_state_dump_trigger_validation) {
+TEST(PacketRouterHost, handles_service_state_dump_trigger_validation)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto address = std::make_shared<IP4Address>();
@@ -978,7 +1057,8 @@ TEST(PacketRouterHost, handles_service_state_dump_trigger_validation) {
     router.on_message(endpoint, message, sizeof(message));
 }
 
-TEST(PacketRouterHost, dispatches_internal_someip_message_types) {
+TEST(PacketRouterHost, dispatches_internal_someip_message_types)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto address = std::make_shared<IP4Address>();
@@ -993,7 +1073,8 @@ TEST(PacketRouterHost, dispatches_internal_someip_message_types) {
     auto response = MessageBuilder::create_response_message(*request);
     auto notification = MessageBuilder::create_notification_message(0x1001, 0x0002);
     std::vector<std::shared_ptr<MessageSOMEIP>> messages = {request, response, notification};
-    for (const auto& message : messages) {
+    for (const auto& message : messages)
+    {
         std::uint8_t data[128] = {};
         std::uint32_t length = 0;
         MessageBuilder::build_byte_stream(data, &length, *message);
@@ -1001,7 +1082,8 @@ TEST(PacketRouterHost, dispatches_internal_someip_message_types) {
     }
 }
 
-TEST(PacketRouterHost, rejects_malformed_external_datagram_without_response) {
+TEST(PacketRouterHost, rejects_malformed_external_datagram_without_response)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto endpoint = std::make_shared<EndpointBase>();
@@ -1010,7 +1092,8 @@ TEST(PacketRouterHost, rejects_malformed_external_datagram_without_response) {
     router.on_external_message(endpoint, malformed, sizeof(malformed));
 }
 
-TEST(PacketRouterHost, sends_error_for_wrong_external_protocol_version) {
+TEST(PacketRouterHost, sends_error_for_wrong_external_protocol_version)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto address = std::make_shared<IP4Address>();
@@ -1035,7 +1118,8 @@ TEST(PacketRouterHost, sends_error_for_wrong_external_protocol_version) {
     EXPECT_EQ(endpoint->last_message[SOMEIP_HEADER::POS::MESSAGETYPE], SOMEIP_MESSAGE_TYPE::ERROR);
 }
 
-TEST(PacketRouterHost, sends_error_for_unknown_external_message_type) {
+TEST(PacketRouterHost, sends_error_for_unknown_external_message_type)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto address = std::make_shared<IP4Address>();
@@ -1061,7 +1145,8 @@ TEST(PacketRouterHost, sends_error_for_unknown_external_message_type) {
     EXPECT_EQ(endpoint->last_message[SOMEIP_HEADER::POS::MESSAGETYPE], SOMEIP_MESSAGE_TYPE::ERROR);
 }
 
-TEST(PacketRouterHost, dispatches_valid_external_request_through_message_parser) {
+TEST(PacketRouterHost, dispatches_valid_external_request_through_message_parser)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto receiver = std::make_shared<CapturingEndpoint>();
@@ -1088,7 +1173,8 @@ TEST(PacketRouterHost, dispatches_valid_external_request_through_message_parser)
     router.remove_route(0x1001, 0x0002);
 }
 
-TEST(PacketRouterHost, ignores_non_request_or_null_messages_in_error_builder) {
+TEST(PacketRouterHost, ignores_non_request_or_null_messages_in_error_builder)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     auto endpoint = std::make_shared<CapturingEndpoint>();
@@ -1101,7 +1187,8 @@ TEST(PacketRouterHost, ignores_non_request_or_null_messages_in_error_builder) {
     EXPECT_EQ(endpoint->message_count, 0);
 }
 
-TEST(PacketRouterHost, handles_external_response_without_endpoint_state) {
+TEST(PacketRouterHost, handles_external_response_without_endpoint_state)
+{
     auto manager = make_service_manager();
     PacketRouterHost router(manager.get());
     router.request_map_[0x0005].endpoint = nullptr;

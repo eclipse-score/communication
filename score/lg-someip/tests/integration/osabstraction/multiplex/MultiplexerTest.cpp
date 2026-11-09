@@ -12,20 +12,20 @@
  *
  ********************************************************************************/
 
+#include "../socket/Helper.h"
 #include <endpoint/Endpoint.h>
 #include <endpoint/EndpointTCP.h>
 #include <gtest/gtest.h>
+#include <multiplex/Multiplexer.h>
+#include <socket/TCPClientSocket.h>
+#include <socket/TCPServerSocket.h>
+#include <socket/UDPSocket.h>
 #include <chrono>
 #include <condition_variable>
 #include <cstring>
 #include <map>
-#include <multiplex/Multiplexer.h>
 #include <mutex>
-#include <socket/TCPClientSocket.h>
-#include <socket/TCPServerSocket.h>
-#include <socket/UDPSocket.h>
 #include <thread>
-#include "../socket/Helper.h"
 
 using namespace lgsomeip;
 using namespace lgsomeip::osabstraction;
@@ -43,63 +43,80 @@ int udp_message_count = 0;
 int on_connect_count = 0;
 bool messages_match = true;
 
-class EndpointClient : public Endpoint {
-public:
+class EndpointClient : public Endpoint
+{
+  public:
     using Endpoint::Endpoint;
 
-    void callback(bool close) override {
-        if (close) {
+    void callback(bool close) override
+    {
+        if (close)
+        {
             return;
         }
 
         std::uint8_t received_message[kMaxLen] = {};
         int received_length = 0;
-        if (get_socket()->get_reliable()) {
+        if (get_socket()->get_reliable())
+        {
             std::size_t total_received = 0;
-            for (int attempt = 0; attempt < 100 && total_received < sizeof(received_message); ++attempt) {
+            for (int attempt = 0; attempt < 100 && total_received < sizeof(received_message); ++attempt)
+            {
                 int current_received = get_socket()->receive(reinterpret_cast<char*>(received_message) + total_received,
                                                              sizeof(received_message) - total_received);
-                if (current_received < 0) {
+                if (current_received < 0)
+                {
                     return;
                 }
-                if (current_received == 0) {
+                if (current_received == 0)
+                {
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
                     continue;
                 }
                 total_received += static_cast<std::size_t>(current_received);
             }
             received_length = static_cast<int>(total_received);
-        } else {
-            received_length = get_socket()->receive(reinterpret_cast<char*>(received_message), sizeof(received_message),
-                                                    get_sender_address());
+        }
+        else
+        {
+            received_length = get_socket()->receive(
+                reinterpret_cast<char*>(received_message), sizeof(received_message), get_sender_address());
         }
 
-        if (received_length > 0) {
+        if (received_length > 0)
+        {
             on_message(received_message, static_cast<std::size_t>(received_length));
         }
     }
 
-    void on_message(std::uint8_t* message_data, std::size_t message_length) override {
+    void on_message(std::uint8_t* message_data, std::size_t message_length) override
+    {
         const bool message_matches =
             message_length == sizeof(message) && std::memcmp(message_data, message, sizeof(message)) == 0;
         std::lock_guard<std::mutex> lock(callback_mutex);
         ++on_message_count;
         messages_match = messages_match && message_matches;
-        if (get_socket()->get_reliable()) {
+        if (get_socket()->get_reliable())
+        {
             ++tcp_message_count;
-        } else {
+        }
+        else
+        {
             ++udp_message_count;
         }
         callback_condition.notify_all();
     }
 };
 
-class EndpointServer : public Endpoint {
-public:
+class EndpointServer : public Endpoint
+{
+  public:
     using Endpoint::Endpoint;
 
-    void callback(bool close) override {
-        if (close) {
+    void callback(bool close) override
+    {
+        if (close)
+        {
             return;
         }
 
@@ -117,7 +134,8 @@ public:
     }
 };
 
-void udp_run() {
+void udp_run()
+{
     std::shared_ptr<Address> addr = std::make_shared<IP4Address>();
     addr->set_ip_address("127.0.0.1");
     addr->set_reliable(false);
@@ -128,7 +146,8 @@ void udp_run() {
     client.send(message, sizeof(message), addr);
 }
 
-void tcp_run() {
+void tcp_run()
+{
     std::shared_ptr<Address> addr = std::make_shared<IP4Address>();
     addr->set_ip_address("127.0.0.1");
     addr->set_reliable(true);
@@ -139,9 +158,12 @@ void tcp_run() {
     client.send(client.get_socket_fd(), message, sizeof(message));
 
     std::unique_lock<std::mutex> lock(callback_mutex);
-    callback_condition.wait_for(lock, std::chrono::seconds(1), [] { return tcp_message_count > 0; });
+    callback_condition.wait_for(lock, std::chrono::seconds(1), [] {
+        return tcp_message_count > 0;
+    });
 }
-TEST(Multiplexer, Multiplexer) {
+TEST(Multiplexer, Multiplexer)
+{
     std::shared_ptr<std::thread> udp_thread, tcp_thread;
     create_msg(message, kMaxLen);
     {
@@ -183,8 +205,9 @@ TEST(Multiplexer, Multiplexer) {
     udp_thread = std::make_shared<std::thread>(udp_run);
 
     std::unique_lock<std::mutex> lock(callback_mutex);
-    const bool received_messages = callback_condition.wait_for(
-        lock, std::chrono::seconds(2), [] { return on_message_count == 2 && on_connect_count == 1; });
+    const bool received_messages = callback_condition.wait_for(lock, std::chrono::seconds(2), [] {
+        return on_message_count == 2 && on_connect_count == 1;
+    });
     lock.unlock();
 
     udp_thread->join();

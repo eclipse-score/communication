@@ -17,34 +17,40 @@
 
 #include <cstdint>
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
-struct MessagePassingConnectionInformation {
+struct MessagePassingConnectionInformation
+{
     int scoid_;
     pid_t pid_;
 };
 
-class MessagePassingConnectionListener {
-public:
+class MessagePassingConnectionListener
+{
+  public:
     virtual void on_connect(const MessagePassingConnectionInformation& info) = 0;
 
     virtual void on_disconnect(const MessagePassingConnectionInformation& info) = 0;
 };
 
-class MessagePassingDataListener {
-public:
+class MessagePassingDataListener
+{
+  public:
     virtual void on_message(std::uint8_t* data, std::size_t size) = 0;
 
     virtual void on_error() = 0;
 };
 
-class MessagePassingTimerListener {
-public:
+class MessagePassingTimerListener
+{
+  public:
     virtual void on_timer(const std::int32_t id) = 0;
 };
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_OSABSTRACTION_MESSAGEPASSING_MESSAGEPASSINGLISTENER_H
+#endif  // LG_SOMEIP_OSABSTRACTION_MESSAGEPASSING_MESSAGEPASSINGLISTENER_H

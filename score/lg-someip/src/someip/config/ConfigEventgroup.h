@@ -17,16 +17,18 @@
 
 #include <cstdint>
 
+#include <socket/Address.h>
 #include <iostream>
+#include <memory>
 #include <unordered_map>
 #include <vector>
-#include <memory>
-#include <socket/Address.h>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class ConfigEventgroup {
-public:
+class ConfigEventgroup
+{
+  public:
     ConfigEventgroup();
     std::uint16_t get_event_group_id() const;
     std::uint16_t get_threshold() const;
@@ -34,7 +36,7 @@ public:
     std::shared_ptr<lgsomeip::osabstraction::Address> get_multicast_address() const;
     std::vector<std::uint16_t> get_events() const;
 
-private:
+  private:
     std::vector<std::uint16_t> events_;
     std::uint16_t event_group_id_{0};
     std::uint16_t threshold_{0};
@@ -44,6 +46,6 @@ private:
     friend class ServiceInfo;
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_CONFIG_EVENTGROUP_H
+#endif  // LG_SOMEIP_CONFIG_EVENTGROUP_H

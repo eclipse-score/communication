@@ -21,10 +21,12 @@
 #include "rapidjson/document.h"
 #include <iostream>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class ConfigE2E {
-public:
+class ConfigE2E
+{
+  public:
     ConfigE2E(const rapidjson::Value& e2e, std::uint16_t service_id, std::uint16_t event_id);
     ~ConfigE2E() {}
     std::uint16_t get_data_id() const;
@@ -38,7 +40,7 @@ public:
     std::uint16_t get_data_id_nibble_offset() const;
     std::uint16_t get_data_length() const;
 
-private:
+  private:
     std::uint16_t data_id_{0};
     std::uint16_t service_id_{0};
     std::uint16_t event_id_{0};
@@ -51,6 +53,6 @@ private:
     std::uint16_t data_length_{0};
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_CONFIG_E2E_H
+#endif  // LG_SOMEIP_CONFIG_E2E_H

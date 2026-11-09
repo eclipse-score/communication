@@ -18,11 +18,14 @@
 #include "Address.h"
 #include <sys/un.h>
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
-class LocalAddress : public Address {
-public:
+class LocalAddress : public Address
+{
+  public:
     LocalAddress();
     virtual ~LocalAddress();
 
@@ -40,12 +43,12 @@ public:
 
     friend bool operator==(const LocalAddress& lhs, const LocalAddress& rhs);
 
-protected:
+  protected:
     int lock_fd_{-1};
     struct sockaddr_un socket_address_{};
 };
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_OSABSTRACTION_SOCKET_LOCAL_ADDRESS_H
+#endif  // LG_SOMEIP_OSABSTRACTION_SOCKET_LOCAL_ADDRESS_H

@@ -16,12 +16,15 @@
 
 #include <unistd.h>
 
-void create_msg(char* message, std::size_t max_length) {
-    if (message == nullptr || max_length == 0) {
+void create_msg(char* message, std::size_t max_length)
+{
+    if (message == nullptr || max_length == 0)
+    {
         return;
     }
 
-    for (std::size_t index = 0; index + 1 < max_length; index++) {
+    for (std::size_t index = 0; index + 1 < max_length; index++)
+    {
         if (index % 2)
             message[index] = '1';
         else
@@ -30,13 +33,15 @@ void create_msg(char* message, std::size_t max_length) {
     message[max_length - 1] = 0;
 }
 
-std::uint16_t get_test_port(std::uint16_t offset) {
+std::uint16_t get_test_port(std::uint16_t offset)
+{
     constexpr std::uint16_t test_port_base = 20000;
     constexpr std::uint16_t test_port_range = 20000;
     return static_cast<std::uint16_t>(test_port_base + (static_cast<unsigned long>(getpid()) % test_port_range) +
                                       offset);
 }
 
-std::string get_test_socket_path(const char* name) {
+std::string get_test_socket_path(const char* name)
+{
     return std::string("/tmp/someip/") + name + "-" + std::to_string(getpid());
 }

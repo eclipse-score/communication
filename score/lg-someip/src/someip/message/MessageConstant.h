@@ -15,15 +15,18 @@
 #ifndef LG_SOMEIP_SOMEIP_MESSAGE_MESSAGECONSTANT_H
 #define LG_SOMEIP_SOMEIP_MESSAGE_MESSAGECONSTANT_H
 
-#include <cstdint>
 #include <message/MessageConstantInternal.h>
+#include <cstdint>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
 // SOME/IP header information.
-namespace SOMEIP_HEADER {
+namespace SOMEIP_HEADER
+{
 const std::uint32_t SIZE = 16;
-namespace POS {
+namespace POS
+{
 const std::uint32_t MESSAGEID = 0;
 const std::uint32_t LENGTH = 4;
 const std::uint32_t REQUESTID = 8;
@@ -31,9 +34,10 @@ const std::uint32_t PROTOCOL = 12;
 const std::uint32_t INTERFACE = 13;
 const std::uint32_t MESSAGETYPE = 14;
 const std::uint32_t RETURNCODE = 15;
-} // namespace POS
+}  // namespace POS
 
-namespace LEN {
+namespace LEN
+{
 const std::uint32_t MESSAGEID = 4;
 const std::uint32_t LENGTH = 4;
 const std::uint32_t REQUESTID = 4;
@@ -41,9 +45,10 @@ const std::uint32_t PROTOCOL = 1;
 const std::uint32_t INTERFACE = 1;
 const std::uint32_t MESSAGETYPE = 1;
 const std::uint32_t RETURNCODE = 1;
-} // namespace LEN
+}  // namespace LEN
 
-namespace ACCUM_LEN {
+namespace ACCUM_LEN
+{
 const std::uint32_t MESSAGEID = 4;
 const std::uint32_t LENGTH = 8;
 const std::uint32_t REQUESTID = 12;
@@ -51,11 +56,12 @@ const std::uint32_t PROTOCOL = 13;
 const std::uint32_t INTERFACE = 14;
 const std::uint32_t MESSAGETYPE = 15;
 const std::uint32_t RETURNCODE = 16;
-} // namespace ACCUM_LEN
-} // namespace SOMEIP_HEADER
+}  // namespace ACCUM_LEN
+}  // namespace SOMEIP_HEADER
 
 // SOMEIP_UDP_MAX_PAYLOAD_SIZE limits only the SOME/IP payload (bytes after the 16-byte header).
-namespace SOMEIP_UDP {
+namespace SOMEIP_UDP
+{
 const std::uint32_t MAX_PAYLOAD_SIZE = SOMEIP_UDP_MAX_PAYLOAD_SIZE;
 // Largest serialized SOME/IP message (header + payload) in one UDP datagram.
 const std::uint32_t MAX_MESSAGE_SIZE = SOMEIP_HEADER::SIZE + MAX_PAYLOAD_SIZE;
@@ -66,9 +72,10 @@ const std::uint32_t RECEIVE_BUFFER_SIZE = (ETHERNET_MTU > MAX_MESSAGE_SIZE) ? ET
 const std::uint32_t TP_MAX_SEGMENT_SIZE = ((MAX_PAYLOAD_SIZE - 4) / 16) * 16;
 static_assert(MAX_PAYLOAD_SIZE >= 20, "SOMEIP_UDP_MAX_PAYLOAD_SIZE must hold a TP header and one 16-byte block");
 static_assert(MAX_MESSAGE_SIZE <= 65507, "SOMEIP_UDP_MAX_PAYLOAD_SIZE exceeds the UDP datagram limit");
-} // namespace SOMEIP_UDP
+}  // namespace SOMEIP_UDP
 
-namespace SOMEIP_MESSAGE_TYPE {
+namespace SOMEIP_MESSAGE_TYPE
+{
 const std::uint8_t REQUEST = 0x00;
 const std::uint8_t REQUEST_NO_RETURN = 0x01;
 const std::uint8_t NOTIFICATION = 0x02;
@@ -79,10 +86,11 @@ const std::uint8_t TP_REQUEST_NO_RETURN = 0x21;
 const std::uint8_t TP_NOTIFICATION = 0x22;
 const std::uint8_t TP_RESPONSE = 0xa0;
 const std::uint8_t TP_ERROR = 0xa1;
-} // namespace SOMEIP_MESSAGE_TYPE
+}  // namespace SOMEIP_MESSAGE_TYPE
 
 //  Return Code(4.2.6.1)
-namespace SOMEIP_RETURN_CODE {
+namespace SOMEIP_RETURN_CODE
+{
 const std::uint8_t E_OK = 0x00;
 const std::uint8_t E_NOT_OK = 0x01;
 const std::uint8_t E_UNKNOWN_SERVICE = 0x02;
@@ -99,23 +107,28 @@ const std::uint8_t E_E2E_WRONG_SEQUENCE = 0x0C;
 const std::uint8_t E_E2E = 0x0D;
 const std::uint8_t E_E2E_NOT_AVAILABLE = 0x0E;
 const std::uint8_t E_E2E_NO_NEW_DATA = 0x0F;
-} // namespace SOMEIP_RETURN_CODE
+}  // namespace SOMEIP_RETURN_CODE
 
 // SOME/IP-SD header information (4 bytes).
-namespace SOMEIP_SD_HEADER {
+namespace SOMEIP_SD_HEADER
+{
 const std::uint32_t SIZE = 4;
-namespace POS {
+namespace POS
+{
 const std::uint32_t FLAGS = 0;
 }
-} // namespace SOMEIP_SD_HEADER
+}  // namespace SOMEIP_SD_HEADER
 
 // SOME/IP-SD entry information.
-namespace SOMEIP_SD_ENTRY {
+namespace SOMEIP_SD_ENTRY
+{
 const std::uint32_t SIZE = 16;
 
-namespace FINDSERVICE {
+namespace FINDSERVICE
+{
 const std::uint8_t TYPEID = 0x00;
-namespace POS {
+namespace POS
+{
 const std::uint32_t TYPE = 0;
 const std::uint32_t OPTION1 = 1;
 const std::uint32_t OPTION2 = 2;
@@ -126,12 +139,14 @@ const std::uint32_t MAJOR = 8;
 const std::uint32_t TTL = 9;
 
 const std::uint32_t MINOR = 12;
-} // namespace POS
-} // namespace FINDSERVICE
+}  // namespace POS
+}  // namespace FINDSERVICE
 
-namespace OFFERSERVICE {
+namespace OFFERSERVICE
+{
 const std::uint8_t TYPEID = 0x01;
-namespace POS {
+namespace POS
+{
 const std::uint32_t TYPE = 0;
 const std::uint32_t OPTION1 = 1;
 const std::uint32_t OPTION2 = 2;
@@ -142,12 +157,14 @@ const std::uint32_t MAJOR = 8;
 const std::uint32_t TTL = 9;
 
 const std::uint32_t MINOR = 12;
-} // namespace POS
-} // namespace OFFERSERVICE
+}  // namespace POS
+}  // namespace OFFERSERVICE
 
-namespace SUBSCRIBE {
+namespace SUBSCRIBE
+{
 const std::uint8_t TYPEID = 0x06;
-namespace POS {
+namespace POS
+{
 const std::uint32_t TYPE = 0;
 const std::uint32_t OPTION1 = 1;
 const std::uint32_t OPTION2 = 2;
@@ -159,12 +176,14 @@ const std::uint32_t TTL = 9;
 
 const std::uint32_t FLAGS = 13;
 const std::uint32_t EVENTGROUPID = 14;
-} // namespace POS
-} // namespace SUBSCRIBE
+}  // namespace POS
+}  // namespace SUBSCRIBE
 
-namespace SUBSCRIBEACK {
+namespace SUBSCRIBEACK
+{
 const std::uint8_t TYPEID = 0x07;
-namespace POS {
+namespace POS
+{
 const std::uint32_t TYPE = 0;
 const std::uint32_t OPTION1 = 1;
 const std::uint32_t OPTION2 = 2;
@@ -176,90 +195,105 @@ const std::uint32_t TTL = 9;
 
 const std::uint32_t FLAGS = 13;
 const std::uint32_t EVENTGROUPID = 14;
-} // namespace POS
-} // namespace SUBSCRIBEACK
-} // namespace SOMEIP_SD_ENTRY
+}  // namespace POS
+}  // namespace SUBSCRIBEACK
+}  // namespace SOMEIP_SD_ENTRY
 
 // SOME/IP-SD option information.
-namespace SOMEIP_SD_OPTION {
-namespace HEADER {
+namespace SOMEIP_SD_OPTION
+{
+namespace HEADER
+{
 const std::uint32_t SIZE = 3;
-namespace POS {
+namespace POS
+{
 const std::uint32_t LENGTH = 0;
 const std::uint32_t TYPE = 2;
-} // namespace POS
-} // namespace HEADER
+}  // namespace POS
+}  // namespace HEADER
 
-namespace CONFIGURATION {
+namespace CONFIGURATION
+{
 const std::uint32_t SIZE = 0xFFFFFFFF;
 const std::uint16_t TYPEID = 0x01;
-namespace POS {
-const std::uint32_t LENGTH = 0; // STATIC VALUE = 0x10
+namespace POS
+{
+const std::uint32_t LENGTH = 0;  // STATIC VALUE = 0x10
 const std::uint32_t TYPE = 2;
 const std::uint32_t OPTIONS = 4;
-} // namespace POS
-} // namespace CONFIGURATION
+}  // namespace POS
+}  // namespace CONFIGURATION
 
-namespace LOADBALANCING {
+namespace LOADBALANCING
+{
 const std::uint32_t SIZE = 8;
 const std::uint16_t TYPEID = 0x02;
-namespace POS {
-const std::uint32_t LENGTH = 0; // STATIC VALUE = 0x05
+namespace POS
+{
+const std::uint32_t LENGTH = 0;  // STATIC VALUE = 0x05
 const std::uint32_t TYPE = 2;
 const std::uint32_t PRIORITY = 4;
 const std::uint32_t WEIGHT = 6;
-} // namespace POS
-} // namespace LOADBALANCING
+}  // namespace POS
+}  // namespace LOADBALANCING
 
-namespace IP4 {
+namespace IP4
+{
 const std::uint32_t SIZE = 12;
-const std::uint16_t TYPEID = 0x04; // IPv4 UNICAST 0x04
-namespace POS {
-const std::uint32_t LENGTH = 0; // STATIC VALUE = 0x09
+const std::uint16_t TYPEID = 0x04;  // IPv4 UNICAST 0x04
+namespace POS
+{
+const std::uint32_t LENGTH = 0;  // STATIC VALUE = 0x09
 const std::uint32_t TYPE = 2;
 const std::uint32_t ADDRESS = 4;
 const std::uint32_t PROTOCOL = 9;
 const std::uint32_t PORT = 10;
-} // namespace POS
-} // namespace IP4
+}  // namespace POS
+}  // namespace IP4
 
-namespace IP4MULTI {
+namespace IP4MULTI
+{
 const std::uint32_t SIZE = 12;
-const std::uint16_t TYPEID = 0x14; // IPv4 MULTICAST 0x14
-namespace POS {
-const std::uint32_t LENGTH = 0; // STATIC VALUE = 0x09
+const std::uint16_t TYPEID = 0x14;  // IPv4 MULTICAST 0x14
+namespace POS
+{
+const std::uint32_t LENGTH = 0;  // STATIC VALUE = 0x09
 const std::uint32_t TYPE = 2;
 const std::uint32_t ADDRESS = 4;
 const std::uint32_t PROTOCOL = 9;
 const std::uint32_t PORT = 10;
-} // namespace POS
-} // namespace IP4MULTI
+}  // namespace POS
+}  // namespace IP4MULTI
 
-namespace IP6 {
+namespace IP6
+{
 const std::uint32_t SIZE = 24;
-const std::uint16_t TYPEID = 0x06; // IPv6 UNICAST 0x06
-namespace POS {
-const std::uint32_t LENGTH = 0; // STATIC VALUE = 0x15
+const std::uint16_t TYPEID = 0x06;  // IPv6 UNICAST 0x06
+namespace POS
+{
+const std::uint32_t LENGTH = 0;  // STATIC VALUE = 0x15
 const std::uint32_t TYPE = 2;
 const std::uint32_t ADDRESS = 4;
 const std::uint32_t PROTOCOL = 21;
 const std::uint32_t PORT = 22;
-} // namespace POS
-} // namespace IP6
+}  // namespace POS
+}  // namespace IP6
 
-namespace IP6MULTI {
+namespace IP6MULTI
+{
 const std::uint32_t SIZE = 24;
-const std::uint16_t TYPEID = 0x16; // IPv6 MULTICAST 0x16
-namespace POS {
-const std::uint32_t LENGTH = 0; // STATIC VALUE = 0x15
+const std::uint16_t TYPEID = 0x16;  // IPv6 MULTICAST 0x16
+namespace POS
+{
+const std::uint32_t LENGTH = 0;  // STATIC VALUE = 0x15
 const std::uint32_t TYPE = 2;
 const std::uint32_t ADDRESS = 4;
 const std::uint32_t PROTOCOL = 21;
 const std::uint32_t PORT = 22;
-} // namespace POS
-} // namespace IP6MULTI
-} // namespace SOMEIP_SD_OPTION
+}  // namespace POS
+}  // namespace IP6MULTI
+}  // namespace SOMEIP_SD_OPTION
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_SOMEIP_MESSAGE_MESSAGECONSTANT_H
+#endif  // LG_SOMEIP_SOMEIP_MESSAGE_MESSAGECONSTANT_H

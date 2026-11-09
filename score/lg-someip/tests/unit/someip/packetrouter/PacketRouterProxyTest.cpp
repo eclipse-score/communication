@@ -21,8 +21,9 @@
 using namespace lgsomeip;
 using namespace lgsomeip::osabstraction;
 
-class ProxyApplicationRouterFake final : public ApplicationRouter {
-public:
+class ProxyApplicationRouterFake final : public ApplicationRouter
+{
+  public:
     void init() override {}
     void start() override {}
     void stop() override {}
@@ -36,10 +37,11 @@ public:
     void send_ipc_message(MessageSOMEIP&, bool) override {}
     void send_ipc_response_message(MessageSOMEIP&, std::uint16_t, std::uint16_t) override {}
     void on_internal_request(std::uint16_t, std::uint16_t, std::uint16_t, std::uint16_t) override {}
-#endif // ENABLE_SOMEIP_IPC
+#endif  // ENABLE_SOMEIP_IPC
 };
 
-TEST(PacketRouterProxy, handles_malformed_and_unhandled_messages_without_daemon) {
+TEST(PacketRouterProxy, handles_malformed_and_unhandled_messages_without_daemon)
+{
     auto application_router = std::make_shared<ProxyApplicationRouterFake>();
     ApplicationManager application("proxy-test", "", application_router);
     PacketRouterProxy proxy(&application);
@@ -59,7 +61,8 @@ TEST(PacketRouterProxy, handles_malformed_and_unhandled_messages_without_daemon)
     proxy.send_message(request);
 }
 
-TEST(PacketRouterProxy, reconnect_and_lifecycle_are_safe_without_daemon) {
+TEST(PacketRouterProxy, reconnect_and_lifecycle_are_safe_without_daemon)
+{
     auto application_router = std::make_shared<ProxyApplicationRouterFake>();
     ApplicationManager application("proxy-test", "", application_router);
     PacketRouterProxy proxy(&application);

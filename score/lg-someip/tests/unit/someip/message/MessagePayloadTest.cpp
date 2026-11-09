@@ -12,14 +12,15 @@
  *
  ********************************************************************************/
 
-#include <cstring>
 #include <gtest/gtest.h>
+#include <cstring>
 
 #include <message/MessagePayload.h>
 
 using namespace lgsomeip;
 
-TEST(MessagePayload, appends_big_endian_scalars) {
+TEST(MessagePayload, appends_big_endian_scalars)
+{
     MessagePayload payload;
 
     payload.append(static_cast<std::uint16_t>(0x1122));
@@ -30,7 +31,8 @@ TEST(MessagePayload, appends_big_endian_scalars) {
     EXPECT_EQ(std::memcmp(payload.get_payload(), expected, sizeof(expected)), 0);
 }
 
-TEST(MessagePayload, appends_native_order_when_requested) {
+TEST(MessagePayload, appends_native_order_when_requested)
+{
     MessagePayload payload;
     const std::uint16_t value = 0x1122;
 
@@ -40,7 +42,8 @@ TEST(MessagePayload, appends_native_order_when_requested) {
     EXPECT_EQ(std::memcmp(payload.get_payload(), &value, sizeof(value)), 0);
 }
 
-TEST(MessagePayload, copies_and_replaces_payload) {
+TEST(MessagePayload, copies_and_replaces_payload)
+{
     const std::vector<std::uint8_t> source{1, 2, 3};
     MessagePayload payload;
     payload.append(source);
@@ -55,7 +58,8 @@ TEST(MessagePayload, copies_and_replaces_payload) {
     EXPECT_EQ(copy.get_payload_vector(), (std::vector<std::uint8_t>{4, 5}));
 }
 
-TEST(MessagePayload, empty_payload_is_supported) {
+TEST(MessagePayload, empty_payload_is_supported)
+{
     MessagePayload payload;
     const std::vector<std::uint8_t> empty;
 
@@ -66,7 +70,8 @@ TEST(MessagePayload, empty_payload_is_supported) {
     EXPECT_TRUE(payload == MessagePayload());
 }
 
-TEST(MessagePayload, empty_pointer_payload_is_supported) {
+TEST(MessagePayload, empty_pointer_payload_is_supported)
+{
     MessagePayload payload;
 
     payload.set_payload(nullptr, 0);

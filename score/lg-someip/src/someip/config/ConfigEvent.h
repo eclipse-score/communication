@@ -20,21 +20,23 @@
 #include <iostream>
 #include <vector>
 
-namespace lgsomeip {
+namespace lgsomeip
+{
 
-class ConfigEvent {
-public:
+class ConfigEvent
+{
+  public:
     ConfigEvent(std::uint16_t event_id, bool is_field, std::uint32_t update_cycle);
     std::uint16_t get_event_id() const;
     bool is_field() const;
     std::uint32_t get_update_cycle() const;
 
-private:
+  private:
     std::uint16_t event_id_{0};
     bool is_field_{false};
     std::uint32_t update_cycle_{0};
 };
 
-} // namespace lgsomeip
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_CONFIG_EVENT_H
+#endif  // LG_SOMEIP_CONFIG_EVENT_H

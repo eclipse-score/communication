@@ -11,9 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  ********************************************************************************/
-#include <iostream>
 #include <atomic>
 #include <chrono>
+#include <iostream>
 #include <memory>
 #include <thread>
 
@@ -21,7 +21,8 @@
 
 // Event provider example: offer two events in one event group and publish the
 // same four-byte payload on each event once per second.
-namespace {
+namespace
+{
 
 constexpr lgsomeip::api::service_t kServiceId = 0x1001;
 constexpr lgsomeip::api::instance_t kInstanceId = 0x0001;
@@ -37,9 +38,11 @@ std::atomic<bool> registered{false};
 // The core retains event/service offers and restores them after reconnects.
 bool service_offered = false;
 
-void on_state(bool is_registered) {
+void on_state(bool is_registered)
+{
     registered = is_registered;
-    if (is_registered && !service_offered) {
+    if (is_registered && !service_offered)
+    {
         // Define event-group membership before offering the service so clients
         // can discover both events as part of the provider's service.
         const std::set<lgsomeip::api::eventgroup_t> eventgroups{kEventGroup};
@@ -50,11 +53,13 @@ void on_state(bool is_registered) {
     }
 }
 
-} // namespace
+}  // namespace
 
-int main() {
+int main()
+{
     application = lgsomeip::api::Runtime::instance().create_application("notify");
-    if (!application->init()) {
+    if (!application->init())
+    {
         return 1;
     }
     application->register_application_state_handler(on_state);
@@ -63,8 +68,10 @@ int main() {
     // The API transports bytes, not application structs. Encode/decode any
     // application-specific fields before passing the payload to notify().
     lgsomeip::api::Payload payload{'D', 'A', 'T', 'A'};
-    while (true) {
-        if (registered) {
+    while (true)
+    {
+        if (registered)
+        {
             // Change one byte so subscribers can see each published update.
             payload[0] = payload[0] == 'D' ? 'F' : 'D';
             application->notify(kServiceId, kInstanceId, kEventId1, payload);

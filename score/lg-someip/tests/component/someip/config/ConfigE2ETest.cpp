@@ -20,7 +20,8 @@
 
 using namespace lgsomeip;
 
-TEST(ConfigE2E, parses_numeric_values) {
+TEST(ConfigE2E, parses_numeric_values)
+{
     rapidjson::Document document;
     document.Parse(R"({
         "data_id": 28,
@@ -47,7 +48,8 @@ TEST(ConfigE2E, parses_numeric_values) {
     EXPECT_EQ(config.get_data_length(), 56);
 }
 
-TEST(ConfigE2E, rejects_missing_required_member) {
+TEST(ConfigE2E, rejects_missing_required_member)
+{
     rapidjson::Document document;
     document.Parse(R"({
         "data_id": "28",
@@ -62,7 +64,8 @@ TEST(ConfigE2E, rejects_missing_required_member) {
     EXPECT_THROW(ConfigE2E(document, 0x7532, 0x8002), ConfigurationErrorException);
 }
 
-TEST(ConfigE2E, rejects_values_that_do_not_fit_uint16) {
+TEST(ConfigE2E, rejects_values_that_do_not_fit_uint16)
+{
     rapidjson::Document document;
     document.Parse(R"({
         "data_id": 65536,

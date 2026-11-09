@@ -17,24 +17,29 @@
 
 #include "MessagePassingSender.h"
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
 constexpr std::uint16_t kMessageData = _IO_MAX + 1;
 constexpr std::uint16_t kMessageConnect = _IO_MAX + 2;
 
-union MessagePassingIoHeader {
+union MessagePassingIoHeader
+{
     std::uint16_t type;
     struct _pulse pulse;
 };
 
 MessagePassingSender::MessagePassingSender() : coid_(-1), thread_send_(nullptr), thread_send_run_(false) {}
 
-MessagePassingSender::~MessagePassingSender() {
+MessagePassingSender::~MessagePassingSender()
+{
     disconnect();
 }
 
-bool MessagePassingSender::connect(const std::string& server_name) {
+bool MessagePassingSender::connect(const std::string& server_name)
+{
     struct _server_info server_info;
     bool result = false;
 
@@ -44,15 +49,18 @@ bool MessagePassingSender::connect(const std::string& server_name) {
     LGSOMEIP_LOG_DEBUG << "MessagePassingSender::connect() wait for path: " << server_name;
 
     struct stat stat_buffer;
-    if (stat(name_path.c_str(), &stat_buffer) != -1) {
+    if (stat(name_path.c_str(), &stat_buffer) != -1)
+    {
         LGSOMEIP_LOG_DEBUG << "MessagePassingSender::connect() completed checking path: " << server_name;
 
         coid_ = name_open(server_name.data(), 0);
 
-        if (coid_ != -1) {
+        if (coid_ != -1)
+        {
             ConnectServerInfo(0, coid_, &server_info);
 
-            if (thread_send_run_ == false) {
+            if (thread_send_run_ == false)
+            {
                 thread_send_run_ = true;
                 thread_send_ = new std::thread([this, server_name] {
                     // Assign a descriptive name to this worker thread.
@@ -69,8 +77,10 @@ bool MessagePassingSender::connect(const std::string& server_name) {
     return result;
 }
 
-void MessagePassingSender::disconnect() {
-    if (thread_send_run_ != false) {
+void MessagePassingSender::disconnect()
+{
+    if (thread_send_run_ != false)
+    {
         thread_send_run_ = false;
         messages_cv_.notify_one();
         thread_send_->join();
@@ -78,18 +88,21 @@ void MessagePassingSender::disconnect() {
         thread_send_ = nullptr;
     }
 
-    if (coid_ != -1) {
+    if (coid_ != -1)
+    {
         name_close(coid_);
         coid_ = -1;
     }
 
     std::lock_guard<std::mutex> lock(mutex_messages_);
-    while (messages_.empty() == false) {
+    while (messages_.empty() == false)
+    {
         messages_.pop();
     }
 }
 
-bool MessagePassingSender::send(const void* buffer, std::size_t size) {
+bool MessagePassingSender::send(const void* buffer, std::size_t size)
+{
     std::lock_guard<std::mutex> lock(mutex_messages_);
 
     std::shared_ptr<MessageData> message = std::make_shared<MessageData>(buffer, size);
@@ -101,7 +114,8 @@ bool MessagePassingSender::send(const void* buffer, std::size_t size) {
     return true;
 }
 
-void MessagePassingSender::send_thread(const std::string& server_name) {
+void MessagePassingSender::send_thread(const std::string& server_name)
+{
     MessagePassingIoHeader header;
     iov_t iov[2];
 
@@ -121,11 +135,15 @@ void MessagePassingSender::send_thread(const std::string& server_name) {
         LGSOMEIP_LOG_INFO << "MessagePassingSender::send_thread() completed connection: " << server_name;
     }
 
-    while (thread_send_run_ != false) {
+    while (thread_send_run_ != false)
+    {
         std::unique_lock<std::mutex> lock(mutex_messages_);
-        messages_cv_.wait(lock, [this]() { return ((messages_.empty() == false) || (thread_send_run_ == false)); });
+        messages_cv_.wait(lock, [this]() {
+            return ((messages_.empty() == false) || (thread_send_run_ == false));
+        });
 
-        if (thread_send_run_ == false) {
+        if (thread_send_run_ == false)
+        {
             break;
         }
 
@@ -141,5 +159,5 @@ void MessagePassingSender::send_thread(const std::string& server_name) {
     }
 }
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip

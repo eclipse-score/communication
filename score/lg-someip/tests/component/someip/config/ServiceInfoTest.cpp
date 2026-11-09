@@ -21,7 +21,8 @@
 
 using namespace lgsomeip;
 
-TEST(ServiceInfo, parses_optional_transport_and_event_metadata) {
+TEST(ServiceInfo, parses_optional_transport_and_event_metadata)
+{
     rapidjson::Document document;
     document.Parse(R"({
         "service": "0x1234",
@@ -92,7 +93,8 @@ TEST(ServiceInfo, parses_optional_transport_and_event_metadata) {
     EXPECT_EQ(event_group->get_multicast_address()->get_ip_address(), "224.0.0.2");
 }
 
-TEST(ServiceInfo, rejects_values_that_do_not_fit_the_target_type) {
+TEST(ServiceInfo, rejects_values_that_do_not_fit_the_target_type)
+{
     auto initialize = [](const char* json) {
         rapidjson::Document document;
         document.Parse(json);

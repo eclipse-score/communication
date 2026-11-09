@@ -27,8 +27,10 @@
 #include <string>
 #include <vector>
 
-namespace lgsomeip {
-namespace api {
+namespace lgsomeip
+{
+namespace api
+{
 
 /** @brief SOME/IP service identifier. */
 using service_t = std::uint16_t;
@@ -68,7 +70,8 @@ constexpr event_t kAnyEvent = 0xFFFF;
  * The underlying values match the SOME/IP wire specification, including
  * Transport Protocol variants.
  */
-enum class MessageType : std::uint8_t {
+enum class MessageType : std::uint8_t
+{
     Request = 0x00,
     RequestNoReturn = 0x01,
     Notification = 0x02,
@@ -86,7 +89,8 @@ enum class MessageType : std::uint8_t {
  *
  * The underlying values match the SOME/IP wire specification.
  */
-enum class ReturnCode : std::uint8_t {
+enum class ReturnCode : std::uint8_t
+{
     Ok = 0x00,
     NotOk = 0x01,
     UnknownService = 0x02,
@@ -129,7 +133,8 @@ enum class ReturnCode : std::uint8_t {
  * @var Message::return_code Return or error code carried by a response.
  * @var Message::payload Serialized application payload bytes.
  */
-struct Message {
+struct Message
+{
     service_t service{0};
     instance_t instance{0};
     method_t method{0};
@@ -157,8 +162,9 @@ using SubscriptionHandler = std::function<bool(client_t, bool)>;
  * and state callbacks may run asynchronously. start() is non-blocking; use
  * join() to wait until stop() ends message processing.
  */
-class Application {
-public:
+class Application
+{
+  public:
     /** @brief Destroy the application and its owned communication resources. */
     virtual ~Application();
 
@@ -210,7 +216,9 @@ public:
      * @param minor Minor service-interface version.
      * @note Call after the application-state handler reports daemon registration.
      */
-    virtual void offer_service(service_t service, instance_t instance, major_version_t major = kDefaultMajorVersion,
+    virtual void offer_service(service_t service,
+                               instance_t instance,
+                               major_version_t major = kDefaultMajorVersion,
                                minor_version_t minor = kDefaultMinorVersion) = 0;
 
     /**
@@ -220,7 +228,9 @@ public:
      * @param major Major version, or kAnyMajorVersion for all major versions.
      * @param minor Minor version, or kAnyMinorVersion for all minor versions.
      */
-    virtual void stop_offer_service(service_t service, instance_t instance, major_version_t major = kAnyMajorVersion,
+    virtual void stop_offer_service(service_t service,
+                                    instance_t instance,
+                                    major_version_t major = kAnyMajorVersion,
                                     minor_version_t minor = kAnyMinorVersion) = 0;
 
     /**
@@ -230,7 +240,9 @@ public:
      * @param major Major version to find, or kAnyMajorVersion.
      * @param minor Minor version to find, or kAnyMinorVersion.
      */
-    virtual void find_service(service_t service, instance_t instance, major_version_t major = kAnyMajorVersion,
+    virtual void find_service(service_t service,
+                              instance_t instance,
+                              major_version_t major = kAnyMajorVersion,
                               minor_version_t minor = kAnyMinorVersion) = 0;
 
     /**
@@ -241,7 +253,9 @@ public:
      * @param minor Required minor version, or kAnyMinorVersion.
      * @note The request is retried after a routing-daemon reconnect.
      */
-    virtual void request_service(service_t service, instance_t instance, major_version_t major = kAnyMajorVersion,
+    virtual void request_service(service_t service,
+                                 instance_t instance,
+                                 major_version_t major = kAnyMajorVersion,
                                  minor_version_t minor = kAnyMinorVersion) = 0;
 
     /**
@@ -259,7 +273,9 @@ public:
      * @param minor Minor version to match, or kAnyMinorVersion.
      * @return true if a matching service instance is available.
      */
-    virtual bool is_service_available(service_t service, instance_t instance, major_version_t major = kAnyMajorVersion,
+    virtual bool is_service_available(service_t service,
+                                      instance_t instance,
+                                      major_version_t major = kAnyMajorVersion,
                                       minor_version_t minor = kAnyMinorVersion) const = 0;
 
     /**
@@ -270,8 +286,11 @@ public:
      * @param eventgroups Event groups that contain the event.
      * @param is_field true when the event represents a field.
      */
-    virtual void offer_event(service_t service, instance_t instance, event_t event,
-                             const std::set<eventgroup_t>& eventgroups, bool is_field = false) = 0;
+    virtual void offer_event(service_t service,
+                             instance_t instance,
+                             event_t event,
+                             const std::set<eventgroup_t>& eventgroups,
+                             bool is_field = false) = 0;
 
     /**
      * @brief Withdraw an offered event or field.
@@ -289,7 +308,9 @@ public:
      * @param eventgroups Event groups that contain the event.
      * @note Call before subscribe() for each event the application wants to receive.
      */
-    virtual void request_event(service_t service, instance_t instance, event_t event,
+    virtual void request_event(service_t service,
+                               instance_t instance,
+                               event_t event,
                                const std::set<eventgroup_t>& eventgroups) = 0;
 
     /**
@@ -311,8 +332,11 @@ public:
      * @param major Major service version.
      * @param event_filter One requested event, or kAnyEvent for all requested events.
      */
-    virtual void subscribe(service_t service, instance_t instance, eventgroup_t eventgroup,
-                           major_version_t major = kDefaultMajorVersion, event_t event_filter = kAnyEvent) = 0;
+    virtual void subscribe(service_t service,
+                           instance_t instance,
+                           eventgroup_t eventgroup,
+                           major_version_t major = kDefaultMajorVersion,
+                           event_t event_filter = kAnyEvent) = 0;
 
     /**
      * @brief Unsubscribe from an event group.
@@ -340,8 +364,12 @@ public:
      * @param force Send even if the payload is unchanged (update-on-change otherwise skips it) when true.
      * @param flush true to flush queued data immediately; false to allow batching.
      */
-    virtual void notify(service_t service, instance_t instance, event_t event, const Payload& payload,
-                        bool force = false, bool flush = false) = 0;
+    virtual void notify(service_t service,
+                        instance_t instance,
+                        event_t event,
+                        const Payload& payload,
+                        bool force = false,
+                        bool flush = false) = 0;
 
     /**
      * @brief Register a callback for routing-daemon connection changes.
@@ -360,7 +388,9 @@ public:
      * @param handler Callback invoked on a matching message.
      * @note Register handlers before start(); callbacks may run on worker threads.
      */
-    virtual void register_message_handler(service_t service, instance_t instance, method_t method,
+    virtual void register_message_handler(service_t service,
+                                          instance_t instance,
+                                          method_t method,
                                           MessageHandler handler) = 0;
     /**
      * @brief Remove a message callback.
@@ -378,7 +408,9 @@ public:
      * @param major Major version to match, or kAnyMajorVersion.
      * @param minor Minor version to match, or kAnyMinorVersion.
      */
-    virtual void register_availability_handler(service_t service, instance_t instance, AvailabilityHandler handler,
+    virtual void register_availability_handler(service_t service,
+                                               instance_t instance,
+                                               AvailabilityHandler handler,
                                                major_version_t major = kAnyMajorVersion,
                                                minor_version_t minor = kAnyMinorVersion) = 0;
 
@@ -389,7 +421,8 @@ public:
      * @param major Major version to match, or kAnyMajorVersion.
      * @param minor Minor version to match, or kAnyMinorVersion.
      */
-    virtual void unregister_availability_handler(service_t service, instance_t instance,
+    virtual void unregister_availability_handler(service_t service,
+                                                 instance_t instance,
                                                  major_version_t major = kAnyMajorVersion,
                                                  minor_version_t minor = kAnyMinorVersion) = 0;
 
@@ -401,7 +434,9 @@ public:
      * @param handler Callback receiving client ID and subscribe/unsubscribe state;
      *        return true to accept a subscription.
      */
-    virtual void register_subscription_handler(service_t service, instance_t instance, eventgroup_t eventgroup,
+    virtual void register_subscription_handler(service_t service,
+                                               instance_t instance,
+                                               eventgroup_t eventgroup,
                                                SubscriptionHandler handler) = 0;
 
     /**
@@ -416,8 +451,9 @@ public:
 /**
  * @brief Process-wide factory for public LG SOME/IP objects.
  */
-class Runtime {
-public:
+class Runtime
+{
+  public:
     /**
      * @brief Return the process-wide runtime instance.
      * @return The shared runtime factory.
@@ -438,11 +474,11 @@ public:
     virtual std::shared_ptr<Application> create_application(const std::string& name,
                                                             const std::string& config_path = "") = 0;
 
-protected:
+  protected:
     Runtime() = default;
 };
 
-} // namespace api
-} // namespace lgsomeip
+}  // namespace api
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_LGSOMEIP_API_H
+#endif  // LG_SOMEIP_LGSOMEIP_API_H

@@ -17,23 +17,26 @@
 
 #include <cstdint>
 
+#include <chrono>
+#include <map>
 #include <string>
 #include <thread>
-#include <map>
-#include <chrono>
 
 #include "Address.h"
 #include "Socket.h"
 
-namespace lgsomeip {
-namespace osabstraction {
+namespace lgsomeip
+{
+namespace osabstraction
+{
 
-class UDPSocket : public Socket {
+class UDPSocket : public Socket
+{
 #if defined(ENABLE_TLS)
     const std::uint16_t dtls_handshake_wait_ms_ = 10;
-#endif // ENABLE_TLS
+#endif  // ENABLE_TLS
 
-public:
+  public:
     UDPSocket(std::shared_ptr<Address> address, const SecureConfig& secure_config = SecureConfig());
     ~UDPSocket() {}
 
@@ -49,17 +52,17 @@ public:
     void set_multicast_ttl(const std::uint32_t ttl);
     void set_multicast_loop(const std::uint32_t on);
 
-private:
+  private:
     int receive_plain_packet(char* buffer, std::size_t size, std::shared_ptr<Address> from_address);
 #if defined(ENABLE_TLS)
-private:
+  private:
     int receive_dtls_packet(char* buffer, std::size_t size, std::shared_ptr<Address> from_address);
 
     std::map<std::string, std::thread> new_dtls_connection_threads_;
-#endif // ENABLE_TLS
+#endif  // ENABLE_TLS
 };
 
-} // namespace osabstraction
-} // namespace lgsomeip
+}  // namespace osabstraction
+}  // namespace lgsomeip
 
-#endif // LG_SOMEIP_OSABSTRACTION_SOCKET_UDPSOCKET
+#endif  // LG_SOMEIP_OSABSTRACTION_SOCKET_UDPSOCKET

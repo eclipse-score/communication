@@ -18,7 +18,8 @@
 
 using namespace lgsomeip::osabstraction;
 
-TEST(NetworkDevice, initialize_rejects_unassigned_address) {
+TEST(NetworkDevice, initialize_rejects_unassigned_address)
+{
     auto& device = NetworkDevice::instance();
 
     EXPECT_FALSE(device.initialize("203.0.113.1", 4));
@@ -28,7 +29,8 @@ TEST(NetworkDevice, initialize_rejects_unassigned_address) {
     EXPECT_EQ(device.get_device_id(), 0);
 }
 
-TEST(NetworkDevice, initialize_loopback) {
+TEST(NetworkDevice, initialize_loopback)
+{
     auto& device = NetworkDevice::instance();
 
     ASSERT_TRUE(device.initialize("127.0.0.1", 4));
