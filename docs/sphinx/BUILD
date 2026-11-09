@@ -98,5 +98,6 @@ sphinx_module(
     ],
     index = "index.rst",
     target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//score/message_passing/dependability/software_unit_design:__pkg__"],
     deps = [],
 )

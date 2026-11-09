@@ -12,6 +12,7 @@
 # *******************************************************************************
 
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit_design")
+load("//tools/documentation:defs.bzl", "html_integrity_test", "plantuml_render")
 
 unit_design(
     name = "client_connection_unit_design",
@@ -34,6 +35,20 @@ unit_design(
         "client_connection_class_diagram.puml",
     ],
     visibility = ["//score/message_passing:__pkg__"],
+)
+
+plantuml_render(
+    name = "client_connection_render",
+    srcs = glob(["client_connection*.puml"]),
+)
+
+html_integrity_test(
+    name = "client_connection_html_test",
+    size = "small",
+    expectations = "client_connection_html_expectations.json",
+    site = "//docs/sphinx:sphinx_doc",
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 unit_design(

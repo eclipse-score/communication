@@ -101,6 +101,14 @@ renderer does not make a bare page-fragment link inside an activity image point
 to the containing unit page. See [activity procedure navigation](issues/tooling-activity-procedure-navigation.md)
 for the reproduced limitation and verified shared-finalization pattern.
 
+The [documentation-check pilot](../../../../tools/documentation/README.md)
+provides a declared-tool render target and a reusable HTML/SVG integrity test.
+The [build/test commands](build-and-test.md#requirements-and-architecture)
+replace recurring cache-path renderer calls and ad hoc HTML scripts. Its client
+contract checks diagram presence and caption navigation, not C++ operation or
+runtime test counts. Tool regression tests include SVG-object link bases,
+figure permalinks, and Bazel runfiles symlink paths.
+
 ## Historical Parser Workarounds
 
 Earlier tooling investigations found a resolver failure when sequence groups
