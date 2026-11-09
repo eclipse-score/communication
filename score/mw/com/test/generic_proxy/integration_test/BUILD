@@ -19,3 +19,10 @@ integration_test(
     srcs = ["test_generic_proxy.py"],
     filesystem = "//score/mw/com/test/generic_proxy:generic_proxy-pkg",
 )
+
+integration_test(
+    name = "generic_proxy_destruction_with_active_subscription",
+    timeout = "moderate",
+    srcs = ["test_generic_proxy_destruction_with_active_subscription.py"],
+    filesystem = "//score/mw/com/test/generic_proxy:generic_proxy-pkg",
+)
