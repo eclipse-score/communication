@@ -360,7 +360,7 @@ int UDPSocket::receive_dtls_packet(char* buffer, std::size_t size, std::shared_p
             LGSOMEIP_LOG_DEBUG << "UDPSocket::receive_dtls_packet / handshake done with peer Addr:" << address_key;
             new_dtls_connection_threads_.erase(thread_it);
         } else {
-            str_len = secure_connector_->receive(buffer, size, addr, port);
+            str_len = static_cast<int>(secure_connector_->receive(buffer, size, addr, port));
             if (!str_len) {
                 secure_connector_->handle_disconnect(addr, port);
             }
