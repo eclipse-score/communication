@@ -15,6 +15,20 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit_design")
 
 unit_design(
     name = "client_connection_unit_design",
+    dynamic = [
+        "client_connection_arm_send_queue_activity.puml",
+        "client_connection_connect_activity.puml",
+        "client_connection_endpoint_callbacks_activity.puml",
+        "client_connection_object_lifetime_activity.puml",
+        "client_connection_process_input_event_activity.puml",
+        "client_connection_process_send_queue_activity.puml",
+        "client_connection_send_activity.puml",
+        "client_connection_send_wait_reply_activity.puml",
+        "client_connection_send_with_callback_activity.puml",
+        "client_connection_stop_activity.puml",
+        "client_connection_switch_to_stop_state_activity.puml",
+        "client_connection_try_queue_message_activity.puml",
+    ],
     static = [
         "client_connection.rst",
         "client_connection_class_diagram.puml",

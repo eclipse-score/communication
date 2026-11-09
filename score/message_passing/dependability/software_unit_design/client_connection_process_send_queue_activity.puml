@@ -1,0 +1,57 @@
+@startuml client_connection_process_send_queue_activity
+title ClientConnection - queued send dispatch
+
+start
+:ProcessSendQueueUnderLock(lock);
+note right
+    Entry: the caller holds send_mutex_ through lock.
+    The procedure releases it around transport and callbacks,
+    then reacquires it before changing queue or slot state.
+end note
+
+while (send_queue_ is non-empty?) is (yes)
+    :Take the front command and remove it from send_queue_;
+    if (command.callback is non-empty?) then (yes)
+        :Move command.callback into waiting_for_reply_;
+        :Unlock send_mutex_;
+        :SendProtocolMessage(client_fd_, REQUEST, command.message);
+        :Relock send_mutex_;
+        :Return the command to the front of send_pool_;
+        if (Transport succeeded?) then (yes)
+            :Return with the reply slot engaged and lock held;
+            stop
+        else (no)
+            :Move the reply callback out of waiting_for_reply_;
+            :Keep the optional reply slot engaged;
+            :Unlock send_mutex_;
+            :Invoke the callback with the transport error;
+            :Relock send_mutex_;
+            :Reset waiting_for_reply_;
+        endif
+    else (no)
+        :Set waiting_for_reply_ to an empty ReplyCallback marker;
+        :Unlock send_mutex_;
+        :SendProtocolMessage(client_fd_, SEND, command.message);
+        :Ignore the transport result;
+        :Relock send_mutex_;
+        :Return the command to the front of send_pool_;
+        :Reset waiting_for_reply_;
+    endif
+endwhile (no)
+
+:Return with lock held;
+stop
+
+legend
+    The queue is FIFO; recycled free commands are reused LIFO.
+    A detached command stays reserved until transport finishes.
+    A successful request releases its command storage before its reply.
+    Its reply slot stays engaged and pauses remaining queue dispatch.
+    Failed requests invoke their callback, then continue draining.
+    The engaged slot also keeps reentrant requests queued during that callback.
+    An empty callback selects SEND, not REQUEST, in this procedure.
+    An empty queue at entry leaves the incoming reply-slot state unchanged.
+    This is local dispatch control flow, not full send/stop reentrancy proof.
+endlegend
+
+@enduml

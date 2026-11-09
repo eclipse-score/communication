@@ -47,10 +47,24 @@ existing stopped connection. Follow the public lifetime contract: callback
 captures and the connection must remain valid while callbacks can still run.
 The destructor's cleanup code is not permission to ignore those preconditions.
 
+`TrySetStopReason` is the [stop-transition ownership gate](decisions/2026-11-06-client-stop-transition-ownership.md)
+between API stopping and engine input-failure handling. A stop is rejected when
+no lifecycle is active or another path has already claimed stopping; the winner
+owns cleanup for that cycle. This is not an open-descriptor check: an active
+`kStarting` cycle can be stopped before a descriptor is acquired. Keep the
+single-finalization intent distinct from the remaining concurrency review gaps.
+
 Callbacks are not uniformly dispatched on a background thread. In particular,
 the starting-state callback runs synchronously during start/restart. Other
 ordering and thread guarantees are documented on `StateCallback`. Do not infer
 cross-thread ordering from the vertical order in a sequence diagram.
+
+The [client unit design](../../dependability/software_unit_design/client_connection.rst)
+has focused common-client tests for competing stop requests, ready-callback
+stopping, and stopped-callback restart/destruction. These are not complete
+reentrancy qualification. Read [establishment-stop review gaps](issues/functionality-client-stop-during-establishment.md)
+before treating stopping from the starting callback or during an open attempt
+as verified by those isolated callback cases.
 
 - `Send()` sends without a reply, but still has an error result and bounded
   resource/configuration constraints. Avoid implying unlimited buffering.

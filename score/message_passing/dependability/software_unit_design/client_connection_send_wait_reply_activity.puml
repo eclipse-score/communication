@@ -1,0 +1,89 @@
+@startuml client_connection_send_wait_reply_activity
+title ClientConnection - sending and waiting for a reply
+
+start
+:SendWaitReply(message, reply);
+if (IsInCallback()?) then (yes)
+    :Return EAGAIN without blocking the engine callback thread;
+    stop
+else (no)
+    :Call is outside engine callback context;
+endif
+if (message.size() > max_send_size_?) then (yes)
+    :Return EMSGSIZE;
+    stop
+else (no)
+    :Message size is admissible;
+endif
+if (state_ != kReady?) then (yes)
+    :Return EINVAL;
+    stop
+else (no)
+    :Connection is ready at the admission check;
+endif
+
+:Prepare result and NonAllocatingFuture(send_mutex_, send_condition_, result);
+:Create completion callback capturing reply and future by reference;
+note right
+    Completion callback:
+    On error, store that error and mark the result ready.
+    If the received reply exceeds reply.size(), store EMSGSIZE.
+    Otherwise copy bytes into the caller's reply buffer and store
+    a span trimmed to the received size. Mark the result ready.
+    Marking ready notifies send_condition_.
+end note
+
+:Lock send_mutex_;
+if (waiting_for_reply_ is engaged?) then (yes)
+    :TryQueueMessage(message, move(completion callback));
+    if (Message admitted to send_queue_?) then (yes)
+        :Leave the existing reply/drain slot in place;
+    else (no)
+        :Unlock send_mutex_;
+        :Return ENOBUFS: no free send command;
+        stop
+    endif
+else (no)
+    :Move completion callback into waiting_for_reply_;
+    :Unlock send_mutex_;
+    :SendProtocolMessage(client_fd_, REQUEST, message);
+    :Relock send_mutex_;
+    if (Transport failed?) then (yes)
+        if (send_queue_ is empty?) then (yes)
+            :Reset waiting_for_reply_;
+        else (no)
+            :ArmSendQueueUnderLock();
+            note right
+                This is the existing direct-error recovery call.
+                Its reply-slot precondition is a queue-design review gap.
+            end note
+        endif
+        :Unlock send_mutex_;
+        :Return the transport error without waiting for completion;
+        stop
+    else (no)
+        :Request was sent successfully;
+    endif
+endif
+
+:Unlock send_mutex_;
+:future.Wait(): wait until the completion callback has marked the result ready;
+note right
+    The predicate also handles completion before Wait() begins.
+    The condition wait releases send_mutex_ while blocked.
+    No reply deadline is applied by this method.
+end note
+:Return the reply span or completion error;
+stop
+
+legend
+    A free reply/drain slot causes direct transport regardless
+    of fully_ordered or truly_async. An engaged slot causes queuing.
+    During direct transport the occupied slot makes other request
+    callers queue, while send_mutex_ is released.
+    The local future and referenced reply buffer remain in scope
+    until completion, except on immediate admission/transport failure.
+    Queue dispatch and reply delivery are separate continuations.
+endlegend
+
+@enduml
