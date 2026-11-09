@@ -36,10 +36,10 @@ TEST_F(SomeIpStrategyFixture, LengthPrefixedVectorIsCompact)
     // ... when it is serialized and deserialized ...
     RoundTrip(value);
 
-    // ... then only the actual element count and bytes are emitted, big-endian.
+    // ... then the byte length of the elements and the actual bytes are emitted, big-endian.
     ASSERT_EQ(buffer_.size(), 1U + (3U * sizeof(std::uint16_t)));  // length + actual bytes only
     auto it = buffer_.cbegin();
-    EXPECT_EQ(*it++, 0x03);  // length = actual element count (3)
+    EXPECT_EQ(*it++, 0x06);  // length = byte length of the elements (3 * 2)
     EXPECT_EQ(*it++, 0x0A);  // elements, big-endian
     EXPECT_EQ(*it++, 0x0B);
     EXPECT_EQ(*it++, 0x0C);
@@ -73,8 +73,8 @@ TEST_F(SomeIpStrategyFixture, ConfigurableLengthFieldWidth)
     auto it = buffer.cbegin();
     EXPECT_EQ(*it++, 0x01);  // id big-endian
     EXPECT_EQ(*it++, 0x02);
-    EXPECT_EQ(*it++, 0x00);  // 2-byte big-endian length = 1
-    EXPECT_EQ(*it++, 0x01);
+    EXPECT_EQ(*it++, 0x00);  // 2-byte big-endian length = 4 bytes
+    EXPECT_EQ(*it++, 0x04);
     EXPECT_EQ(*it++, 0xAA);  // single element, big-endian
     EXPECT_EQ(*it++, 0xBB);
     EXPECT_EQ(*it++, 0xCC);
@@ -233,6 +233,78 @@ TEST_F(SomeIpStrategyFixture, AlignmentIsCalculatedFromMessageStart)
     ASSERT_EQ(decoded.data.size(), 1U);
     EXPECT_EQ(decoded.data[0], 0xAA);
     EXPECT_EQ(decoded.trailer, 0x01020304U);
+}
+
+struct ByteArrayMessage
+{
+    score::cpp::static_vector<std::uint16_t, 2U> data{};  // field 0
+};
+SCORE_STRUCT_VISITABLE(ByteArrayMessage, data)
+
+class SomeIpArrayLengthFixture : public ::testing::Test
+{
+  protected:
+    static constexpr ElementLayout kFields[] = {{ByteOrder::kBigEndian, kAlign8Bits, 1U}};
+    const SomeIpLayout layout_{{ByteOrder::kBigEndian, kAlign8Bits}, kFields, 1U};
+    const Serializer<SomeIpStrategy> unit_{SomeIpStrategy{layout_}};
+};
+
+TEST_F(SomeIpArrayLengthFixture, RejectsByteLengthBeyondInput)
+{
+    // Given a length field declaring more bytes than follow ...
+    const std::vector<std::uint8_t> buffer{0x04U, 0x00U, 0x01U};
+    ByteArrayMessage decoded{};
+
+    // ... then deserialization fails.
+    EXPECT_FALSE(unit_.DeSerialize(buffer, decoded).has_value());
+}
+
+TEST_F(SomeIpArrayLengthFixture, RejectsByteLengthEndingInsideElement)
+{
+    // Given a byte length of 3 for 2-byte elements, the second element would cross the array end ...
+    const std::vector<std::uint8_t> buffer{0x03U, 0x00U, 0x01U, 0x00U, 0x02U};
+    ByteArrayMessage decoded{};
+
+    // ... then deserialization fails.
+    EXPECT_FALSE(unit_.DeSerialize(buffer, decoded).has_value());
+}
+
+TEST_F(SomeIpArrayLengthFixture, RejectsMoreElementsThanCapacity)
+{
+    // Given a byte length covering 3 elements for a capacity of 2 ...
+    const std::vector<std::uint8_t> buffer{0x06U, 0x00U, 0x01U, 0x00U, 0x02U, 0x00U, 0x03U};
+    ByteArrayMessage decoded{};
+
+    // ... then deserialization fails.
+    EXPECT_FALSE(unit_.DeSerialize(buffer, decoded).has_value());
+}
+
+struct WideArrayMessage
+{
+    score::cpp::static_vector<std::uint64_t, 32U> data{};  // field 0
+};
+SCORE_STRUCT_VISITABLE(WideArrayMessage, data)
+
+TEST_F(SomeIpArrayLengthFixture, RejectsByteLengthExceedingLengthField)
+{
+    // Given 32 * 8 = 256 bytes of elements and a 1-byte length field ...
+    WideArrayMessage value{};
+    value.data.resize(32U);
+    std::vector<std::uint8_t> buffer{};
+
+    // ... then serialization fails instead of truncating the length.
+    EXPECT_FALSE(unit_.Serialize(value, buffer).has_value());
+}
+
+TEST_F(SomeIpStrategyFixture, LengthPrefixedVectorRejectsByteLengthBeyondInput)
+{
+    // Given a 1-byte length field (sizeof(LengthType)) declaring 16 bytes while only one element byte follows ...
+    const std::vector<std::uint8_t> buffer{0x10U, 0xAAU};
+    LengthPrefixedVector<std::uint8_t, std::uint8_t> decoded{};
+
+    // ... then deserialization fails and no element is appended.
+    EXPECT_FALSE(unit_.DeSerialize(buffer, decoded).has_value());
+    EXPECT_EQ(decoded.size(), 0);
 }
 
 }  // namespace

@@ -168,17 +168,17 @@ TEST_F(SomeIpStrategyFixture, ArrayOfArrayUsesPerLevelLengthFieldAndByteOrder)
     auto result = unit.Serialize(value, buffer);
     ASSERT_TRUE(result.has_value());
 
-    // ... then the outer length is 2 bytes, each inner length 1 byte, and the scalars little-endian.
+    // ... then each length holds the byte length of its data, the outer one including the inner length fields.
     ASSERT_EQ(buffer.size(), 2U + (1U + 4U) + (1U + 2U));
     auto it = buffer.cbegin();
-    EXPECT_EQ(*it++, 0x00);  // outer length = 2 (2-byte big-endian)
-    EXPECT_EQ(*it++, 0x02);
-    EXPECT_EQ(*it++, 0x02);  // row 0: inner length = 2 (1 byte)
+    EXPECT_EQ(*it++, 0x00);  // outer length = 8 bytes (2-byte big-endian)
+    EXPECT_EQ(*it++, 0x08);
+    EXPECT_EQ(*it++, 0x04);  // row 0: inner length = 4 bytes
     EXPECT_EQ(*it++, 0x02);  // 0x0102 little-endian
     EXPECT_EQ(*it++, 0x01);
     EXPECT_EQ(*it++, 0x04);  // 0x0304 little-endian
     EXPECT_EQ(*it++, 0x03);
-    EXPECT_EQ(*it++, 0x01);  // row 1: inner length = 1 (1 byte)
+    EXPECT_EQ(*it++, 0x02);  // row 1: inner length = 2 bytes
     EXPECT_EQ(*it++, 0x06);  // 0x0506 little-endian
     EXPECT_EQ(*it++, 0x05);
 

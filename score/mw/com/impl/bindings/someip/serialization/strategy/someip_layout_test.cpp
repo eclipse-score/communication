@@ -31,6 +31,21 @@ void ExpectDefault(const ElementLayout& leaf)
     EXPECT_EQ(leaf.nested, nullptr);
 }
 
+TEST(SomeIpLengthFieldBytesTest, AcceptsWidthsPermittedBySomeIp)
+{
+    EXPECT_TRUE(IsValidLengthFieldBytes(0U));
+    EXPECT_TRUE(IsValidLengthFieldBytes(sizeof(std::uint8_t)));
+    EXPECT_TRUE(IsValidLengthFieldBytes(sizeof(std::uint16_t)));
+    EXPECT_TRUE(IsValidLengthFieldBytes(sizeof(std::uint32_t)));
+}
+
+TEST(SomeIpLengthFieldBytesTest, RejectsOtherWidths)
+{
+    EXPECT_FALSE(IsValidLengthFieldBytes(sizeof(std::uint16_t) + 1U));
+    EXPECT_FALSE(IsValidLengthFieldBytes(sizeof(std::uint32_t) + 1U));
+    EXPECT_FALSE(IsValidLengthFieldBytes(sizeof(std::uint64_t)));
+}
+
 TEST(SomeIpLayoutCursorTest, RootCursorUsesLayoutDefault)
 {
     const SomeIpLayout layout{{ByteOrder::kLittleEndian, kAlign32Bits, 2U, nullptr}, nullptr, 0U};
