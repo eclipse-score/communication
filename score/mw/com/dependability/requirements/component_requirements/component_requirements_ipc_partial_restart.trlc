@@ -41,7 +41,7 @@ section "com" {
                 description = '''We define a {{restart}} as the execution of an executable as a process with a different and new POSIX PID,
 
                 while the old POSIX PID, belonging to the execution of the same executable, is no longer valid.'''
-                safety = ScoreReq.Asil.QM
+                safety = ScoreReq.Asil.B
                 derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
                 version = 1
             }
@@ -67,7 +67,7 @@ section "com" {
             /* broken_link_c/issue/31295554 */
             ScoreReq.CompReq DefinitionOfResourceNeeds {
                 description = '''A service instance provider side is configured to support a given number of proxy instances with defined sample-counts in their event/field subscriptions. Therefore it reserves given resources to fulfill the communication setup demanded by this configuration'''
-                safety = ScoreReq.Asil.QM
+                safety = ScoreReq.Asil.B
                 derived_from = [Communication.FEAT_ProducerConsumerPattern@1]
                 version = 1
             }

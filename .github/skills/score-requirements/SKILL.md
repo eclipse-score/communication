@@ -42,7 +42,7 @@ Bazel build/test rules.
 ## Not for
 
 - Architecture diagrams, `unit` / `component` / `dependable_element` structure → **score-architecture**
-- FMEA / FailureMode / SafetyMeasure / FTA safety analysis → **score-safety-analysis**
+- FMEA / FailureMode / RootCauseAssessment / FTA safety analysis → **score-safety-analysis**
 - Test annotation and coverage → **score-testing**
 - End-to-end SEooC assembly / choosing which skill to use → **rules-score**
 
@@ -168,6 +168,8 @@ Requirement          → description (Markup_String), version (Integer),
 - `note` is optional and non-normative.
 - The model does **not** enforce a "shall/should" keyword check (unlike some downstream
   projects). Still, write requirements with "shall" for clarity.
+- `FeatReq` and `CompReq` must not have a lower `safety` than any upstream requirement
+  in `derived_from` (`QM < B < D`); `trlc --verify` fails otherwise.
 
 ### Versioned reference tuples
 
@@ -243,11 +245,10 @@ component-internal requirements with no feature-level parent.
 
 ### Assumptions of Use (AoU)
 
-`AoU` extends `SafetyMeasure` and captures conditions the integrating project must satisfy.
-`root_causes` is mandatory: every AoU references the fault-tree root causes it addresses
-(`<fta_package>.<RootCause>`), so the `assumptions_of_use` target lists the `fault_trees` target
-in `deps`. The `assumptions_of_use` rule takes `.trlc` files, or `rst_to_trlc` targets converting `.rst` files
-carrying `aou_req` directives (RST directives take `:root_causes: <fta_package>.<RootCause>, ...`).
+`AoU` captures a condition the integrating project must satisfy. It has no root-cause field:
+a `RootCauseAssessment` of the `safety_analysis` lists it, with its version, as a measure.
+The `assumptions_of_use` rule takes `.trlc` files, or `rst_to_trlc` targets converting `.rst` files
+carrying `aou_req` directives.
 Pass the target as `safety_measures` to `safety_analysis`: that makes it an own AoU of the
 `dependable_element` (there is no AoU attribute on the element). Forwarding YAML
 entries name received AoUs with their version (`Package.Name@1`).

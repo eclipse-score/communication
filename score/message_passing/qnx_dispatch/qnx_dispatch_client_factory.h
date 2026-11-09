@@ -18,10 +18,6 @@
 namespace score::message_passing
 {
 
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding. This rule states: "A type, object or function that is used in multiple
-// translation units shall be declared in one and only one file.".
-// This is a forward declaration
-// coverity[autosar_cpp14_m3_2_3_violation]
 class QnxDispatchEngine;
 
 class QnxDispatchClientFactory final : public IClientFactory

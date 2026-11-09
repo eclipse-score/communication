@@ -52,13 +52,11 @@ assumptions_of_use(
     srcs = ["aou.trlc"],
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
-    # Resolves mw_com_fta.<RootCause> in AoU.root_causes.
-    deps = [":mw_com_fault_trees"],
 )
 
 safety_analysis(
     name = "mw_com_safety_analysis",
-    arch_design = "//score/mw/com/dependability/architectural_design:software_architectural_design",
+    assessments = ["assessments.trlc"],
     failure_modes = [":mw_com_failure_modes"],
     fault_trees = ":mw_com_fault_trees",
     safety_measures = [":aous"],

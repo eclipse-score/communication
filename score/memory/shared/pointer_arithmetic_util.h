@@ -92,10 +92,6 @@ std::uintptr_t CastPointerToInteger(const void* const pointer) noexcept;
 /// \brief Casts an integer to a pointer.
 ///
 /// According to https://timsong-cpp.github.io/cppwp/n4659/expr.reinterpret.cast#5, this is implementation defined.
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding: A type, object or function that is used in multiple translation units
-// shall be declared in one and only one file.
-// Rationale: False positive CastIntegerToPointer is declared only once.
-// coverity[autosar_cpp14_m3_2_3_violation : FALSE]
 template <typename PointerType>
 auto CastIntegerToPointer(std::uintptr_t integer) noexcept -> PointerType
 {

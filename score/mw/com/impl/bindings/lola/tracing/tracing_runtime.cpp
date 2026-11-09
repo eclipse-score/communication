@@ -95,12 +95,7 @@ bool TracingRuntime::RegisterWithGenericTraceApi() noexcept
     trace_client_id_ = *register_client_result;
 
     analysis::tracing::TraceDoneCallBackType trace_done_callback{
-        receive_handler_scope_,
-        // Suppress "AUTOSAR C++14 M3-2-3" rule finding. This rule states: "A type, object or function that is used in
-        // multiple translation units shall be declared in one and only one file.".
-        // This is false positive. Function is declared only once.
-        // coverity[autosar_cpp14_m3_2_3_violation : FALSE]
-        [this](analysis::tracing::TraceContextId trace_context_id) noexcept {
+        receive_handler_scope_, [this](analysis::tracing::TraceContextId trace_context_id) noexcept {
             if (!IsTracingSlotUsed(trace_context_id))
             {
                 score::mw::log::LogWarn("lola")

@@ -160,5 +160,35 @@ TEST_P(ProxyInstanceIdentifierParamaterisedFixture, LogStreamOperatorOutputsExpe
     score::mw::log::LogDebug() << proxy_instance_identifier;
 }
 
+TEST(ProxyInstanceIdentifierEqualityTest, EqualIdentifierAndCounterCompareEqual)
+{
+    // Given two ProxyInstanceIdentifier objects containing the same values
+    const ProxyInstanceIdentifier unit_0{kDummyProcessIdentifier, kDummyProxyInstanceCounter};
+    const ProxyInstanceIdentifier unit_1{kDummyProcessIdentifier, kDummyProxyInstanceCounter};
+
+    // Then they compare equal
+    EXPECT_EQ(unit_0, unit_1);
+}
+
+TEST(ProxyInstanceIdentifierEqualityTest, ObjectsWithDifferentApplicationIdsCompareUnequal)
+{
+    // Given two ProxyInstanceIdentifier objects with different application ids but the same proxy instance counter
+    const ProxyInstanceIdentifier unit_0{kDummyProcessIdentifier, kDummyProxyInstanceCounter};
+    const ProxyInstanceIdentifier unit_1{kDummyProcessIdentifier + 1U, kDummyProxyInstanceCounter};
+
+    // Then they do not compare equal
+    EXPECT_NE(unit_0, unit_1);
+}
+
+TEST(ProxyInstanceIdentifierEqualityTest, ObjectsWithSameApplicationIdButDifferentProxyInstanceCounterCompareUnequal)
+{
+    // Given two ProxyInstanceIdentifier objects with the same application id but different proxy instance counters
+    const ProxyInstanceIdentifier unit_0{kDummyProcessIdentifier, kDummyProxyInstanceCounter};
+    const ProxyInstanceIdentifier unit_1{kDummyProcessIdentifier, kDummyProxyInstanceCounter + 1U};
+
+    // Then they do not compare equal
+    EXPECT_NE(unit_0, unit_1);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola

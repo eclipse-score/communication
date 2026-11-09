@@ -62,6 +62,7 @@ cc_unit_test(
     deps = [
         ":details",
         "//score/mw/service:find_service_strategy",
+        "//score/mw/service:find_service_strategy_mock",
         "//score/mw/service/test_doubles",
         "@score_baselibs//score/concurrency",
         "@score_baselibs//score/language/futurecpp",

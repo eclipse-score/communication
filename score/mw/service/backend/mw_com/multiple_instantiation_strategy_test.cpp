@@ -93,7 +93,7 @@ class MultipleInstantiationStrategyFixture : public ::testing::Test
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(strategy.has_value());
         auto on_found_builder_callback = CreateBuilderCallbackWithMockedUserCallback();
-        strategy.value().Find(std::move(on_found_builder_callback));
+        strategy->StartFind(std::move(on_found_builder_callback));
         return *this;
     }
 

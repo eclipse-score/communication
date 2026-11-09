@@ -23,7 +23,7 @@ cc_unit_test(
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl:runtime_mock",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:proxy_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
@@ -38,7 +38,7 @@ cc_unit_test(
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl:runtime_mock",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:proxy_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
@@ -53,7 +53,7 @@ cc_unit_test(
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl:runtime_mock",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:proxy_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
@@ -68,7 +68,7 @@ cc_unit_test(
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl:runtime_mock",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:proxy_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",

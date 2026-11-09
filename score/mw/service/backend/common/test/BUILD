@@ -22,6 +22,7 @@ cc_library(
     hdrs = ["single_immediate_instantiation_strategy.h"],
     visibility = ["//visibility:public"],
     deps = [
+        "//score/mw/service:find_service_strategy",
         "//score/mw/service:proxy_builder_base",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -34,6 +35,7 @@ cc_library(
     hdrs = ["multiple_immediate_instantiation_strategy.h"],
     visibility = ["//visibility:public"],
     deps = [
+        "//score/mw/service:find_service_strategy",
         "//score/mw/service:proxy_builder_base",
         "//score/mw/service/details:proxy_spec_traits",
         "@score_baselibs//score/language/futurecpp",

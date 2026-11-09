@@ -109,7 +109,6 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//visibility:public"],
     deps = [
-        ":find_service_strategy",
         ":proxy_future",
         "//score/mw/service/details:proxy_spec_traits",
         "@score_baselibs//score/language/futurecpp",
@@ -122,7 +121,9 @@ cc_library(
     hdrs = ["find_service_strategy.h"],
     tags = ["FFI"],
     visibility = ["//visibility:public"],
-    deps = [],
+    deps = [
+        ":proxy_builder_base",
+    ],
 )
 
 cc_library(
@@ -211,6 +212,7 @@ cc_unit_test(
     srcs = ["proxy_needs_factory_test.cpp"],
     deps = [
         ":factory",
+        ":find_service_strategy",
         "//score/mw/service/test_doubles",
     ],
 )

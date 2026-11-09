@@ -201,13 +201,13 @@ package safety_software_seooc_example <<SEooC>> {
 
         interface InternalInterface
         unit_1 -l-( InternalInterface
-        unit_2 )-r- InternalInterface
+        unit_2 -r- InternalInterface
     }
 }
 
 interface SampleLibraryAPI
 
-safety_software_seooc_example )-d- SampleLibraryAPI
+safety_software_seooc_example -d- SampleLibraryAPI
 
 @enduml
 ```
@@ -219,7 +219,7 @@ target names, and `safety_software_seooc_example` matches the `dependable_elemen
 ### Interfaces & ports
 
 Any component-type element (`<<SEooC>>` or `<<component>>`) can bind an interface with lollipop
-syntax — `-(` for a **required** (incoming) binding and `)-` for a **provided** (outgoing) one.
+syntax — `-(` for a **required** (incoming) binding and `-`, `--`, or `--()` for a **provided** (outgoing) one.
 The `bazel_component` validator does not check interface bindings themselves, but the API and
 sequence validators do (see below).
 
@@ -237,7 +237,7 @@ interface IRequired
 interface IProvided
 
 p_in  -( IRequired : requires
-p_out )- IProvided : provides
+p_out - IProvided : provides
 ```
 
 - `portin` / `portout` must be declared **inside** the `<<SEooC>>` or `<<component>>` element.
@@ -256,7 +256,7 @@ cross-checked against each other and against the implementation.
 |------|-----------|-----------------------|---------|
 | **Static** | `static` | Bazel `dependable_element`/`component`/`unit` tree; internal API; public API; sequences | Structural component/unit tree — the anchor for all other checks |
 | **Dynamic** (sequence) | `dynamic` | Static component diagram; internal API | Unit interactions — participant names and cross-unit calls |
-| **Public API** | `public_api` | Static diagram (top-level interfaces bound from the SEooC) | Interfaces the SEooC exposes; also feeds `FailureMode.interface` traceability |
+| **Public API** | `public_api` | Static diagram (top-level interfaces bound from the SEooC) | Interfaces the SEooC exposes (class diagrams only); each public method becomes an `ApiMethod` TRLC record that `FailureMode.interface` references |
 | **Internal API** | `internal_api` | Static component diagram; sequences | Interfaces between components/units inside the SEooC |
 
 Real example diagrams (verbatim, from [`examples/seooc/design/`](../../../bazel/rules/rules_score/examples/seooc/design)):
@@ -297,8 +297,11 @@ namespace safety_software_seooc_example {
 ```
 
 - **Public API** interfaces must be top-level in the static diagram and bound from the `<<SEooC>>`
-  (e.g. `safety_software_seooc_example )-d- SampleLibraryAPI`); interfaces nested inside
+  (e.g. `safety_software_seooc_example -d- SampleLibraryAPI`); interfaces nested inside
   components/units are treated as *internal* API.
+- **Public API records**: only public methods (all overloads) and free functions yield `ApiMethod`
+  records; attributes, enums, typedefs and non-public members yield none. `package` is required with
+  `public_api`; reports show the generated `public_api.trlc` as item location, not the `.puml`.
 - **Internal API** interfaces are modeled inside the owning element's `namespace` so their
   fully-qualified name reflects containment.
 
@@ -386,6 +389,7 @@ One target bundles every diagram kind (from [`examples/seooc/design/BUILD`](../.
 ```starlark
 architectural_design(
     name         = "sample_seooc_design",
+    package      = "sample_seooc_api",   # required with public_api; TRLC package of public_api.trlc
     static       = ["static_design.puml", "overview_design.puml", "index.md"],
     dynamic      = ["dynamic_design.puml"],
     public_api   = ["public_api.puml", "public_api.rst"],

@@ -11,8 +11,20 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
+
+unit(
+    name = "mw_com_binding_factories",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/plumbing/dependability:unit_design",
+    ],
+    visibility = ["//score/mw/com/dependability:__pkg__"],
+    implementation = [],
+)
 
 cc_library(
     name = "plumbing",
@@ -115,7 +127,7 @@ cc_unit_test(
     deps = [
         ":skeleton_method_binding_factory",
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
@@ -294,6 +306,26 @@ cc_library(
 )
 
 cc_library(
+    name = "someip_proxy_element_building_blocks",
+    srcs = ["someip_proxy_element_building_blocks.cpp"],
+    hdrs = ["someip_proxy_element_building_blocks.h"],
+    implementation_deps = [
+        "@score_baselibs//score/language/futurecpp",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/plumbing:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:handle_type",
+        "//score/mw/com/impl:service_element_type",
+        "//score/mw/com/impl/bindings/someip:element_fq_id",
+        "//score/mw/com/impl/configuration",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
     name = "proxy_event_binding_factory_impl",
     srcs = ["proxy_event_binding_factory_impl.cpp"],
     hdrs = ["proxy_event_binding_factory_impl.h"],
@@ -309,6 +341,7 @@ cc_library(
         ":binding_factory_error",
         ":i_proxy_event_binding_factory",
         ":lola_proxy_element_building_blocks",
+        ":someip_proxy_element_building_blocks",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -735,7 +768,7 @@ cc_unit_test(
         ":binding_factory_error",
         ":proxy_method_binding_factory",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "//score/mw/com/impl/util:type_erased_storage",
@@ -749,8 +782,11 @@ cc_unit_test(
         "proxy_event_field_binding_factory_test.cpp",
     ],
     deps = [
+        ":proxy_event_binding_factory",
+        ":proxy_field_binding_factory",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/bindings/someip",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "//score/mw/com/impl/util:type_erased_storage",
@@ -786,7 +822,7 @@ cc_unit_test(
         ":skeleton_event_binding_factory",
         ":skeleton_field_binding_factory",
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
     ],
@@ -800,7 +836,7 @@ cc_unit_test(
     deps = [
         ":skeleton_event_binding_factory",
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
     ],
@@ -814,7 +850,7 @@ cc_unit_test(
     deps = [
         ":skeleton_field_binding_factory",
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
     ],
@@ -864,7 +900,7 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "//score/mw/com/impl/bindings/lola/test_doubles",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "//score/mw/com/impl/test:runtime_mock_guard",
         "@score_baselibs//score/mw/log",

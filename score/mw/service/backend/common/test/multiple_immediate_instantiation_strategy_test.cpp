@@ -117,9 +117,9 @@ TEST_F(MultipleImmediateInstantiationStrategyFixture, CallingFindWithNumberOfFou
     // Expecting that the user callback will not be called
     EXPECT_CALL(mock_user_callback, Call(_)).Times(0);
 
-    // When calling Find() with a BuilderCallback which wraps mocked user callback
+    // When calling StartFind() with a BuilderCallback which wraps mocked user callback
     auto on_found_builder_callback = CreateBuilderCallbackWithMockedUserCallback();
-    strategy.Find(std::move(on_found_builder_callback));
+    strategy.StartFind(std::move(on_found_builder_callback));
 }
 
 TEST_F(MultipleImmediateInstantiationStrategyFixture, CallingFindWithNumberOfFoundProxiesOneInvokesCallbackOnce)
@@ -132,9 +132,9 @@ TEST_F(MultipleImmediateInstantiationStrategyFixture, CallingFindWithNumberOfFou
     // Expecting that the user callback will be called once
     EXPECT_CALL(mock_user_callback, Call(_)).Times(1);
 
-    // When calling Find() with a BuilderCallback which wraps mocked user callback
+    // When calling StartFind() with a BuilderCallback which wraps mocked user callback
     auto on_found_builder_callback = CreateBuilderCallbackWithMockedUserCallback();
-    strategy.Find(std::move(on_found_builder_callback));
+    strategy.StartFind(std::move(on_found_builder_callback));
 }
 
 TEST_F(MultipleImmediateInstantiationStrategyFixture,
@@ -148,9 +148,9 @@ TEST_F(MultipleImmediateInstantiationStrategyFixture,
     // Expecting that the user callback will be called 3 times
     EXPECT_CALL(mock_user_callback, Call(_)).Times(3);
 
-    // When calling Find() with a BuilderCallback which wraps mocked user callback
+    // When calling StartFind() with a BuilderCallback which wraps mocked user callback
     auto on_found_builder_callback = CreateBuilderCallbackWithMockedUserCallback();
-    strategy.Find(std::move(on_found_builder_callback));
+    strategy.StartFind(std::move(on_found_builder_callback));
 }
 
 TEST_F(MultipleImmediateInstantiationStrategyFixture, ConstructingWithFactoryInstanceInvokesProvidedFactoryOnFind)
@@ -161,9 +161,9 @@ TEST_F(MultipleImmediateInstantiationStrategyFixture, ConstructingWithFactoryIns
     test::MultipleImmediateInstantiationStrategy<DummyReceiver, RecordingReceiverFactory, kNumberOfFoundProxies>
         strategy{RecordingReceiverFactory{invocation_count}};
 
-    // When calling Find() with a BuilderCallback which wraps mocked user callback
+    // When calling StartFind() with a BuilderCallback which wraps mocked user callback
     auto on_found_builder_callback = CreateBuilderCallbackWithMockedUserCallback();
-    strategy.Find(std::move(on_found_builder_callback));
+    strategy.StartFind(std::move(on_found_builder_callback));
 
     // Then the factory instance provided via the constructor should have been invoked 3 times
     EXPECT_EQ(invocation_count, kNumberOfFoundProxies);

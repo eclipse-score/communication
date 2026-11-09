@@ -15,13 +15,13 @@
 title "Sequence during sample reception on proxy side"
 hide footbox
 
-participant "<u>App</u>" as App
-participant "<u>ProxyEvent</u>" as ProxyEvent
-participant "<u>tracker:SampleReferenceTracker</u>" as Tracker
-participant "<u>ProxyEventBinding</u>" as Binding
-participant "<u>guard_factory:TrackerGuardFactory</u>" as GuardFactory
-participant "<u>sample_ptr:SamplePtr</u>" as SamplePtr
-participant "<u>SampleReferenceGuard</u>" as Guard
+participant "App" as App
+participant "ProxyEvent" as ProxyEvent
+participant "SampleReferenceTracker" as Tracker
+participant "ProxyEventBinding" as Binding
+participant "TrackerGuardFactory" as GuardFactory
+participant "SamplePtr" as SamplePtr
+participant "SampleReferenceGuard" as Guard
 
 activate App
 activate ProxyEvent

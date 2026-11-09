@@ -80,7 +80,10 @@ bool RestartConsumerAndAdvanceSecondConsumer(const TestParameters& test_paramete
         if (test_parameters.kill_consumer)
         {
             std::cout << "Controller (Step 9): killing c1:" << consumer_1_pid_guard.GetPid() << " \n";
-            auto kill_result = consumer_1_pid_guard.KillChildProcess();
+            auto kill_result = score::mw::com::test::KillChildAfterItLeftNotification("Controller Step (9)",
+                                                                                      consumer_1_checkpoint_control,
+                                                                                      consumer_1_pid_guard,
+                                                                                      kMaxWaitTimeToReachCheckpoint);
             if (!kill_result)
             {
                 std::cerr << "Controller: Step (9) failed. Error killing provider child process" << std::endl;

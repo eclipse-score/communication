@@ -83,24 +83,6 @@ namespace
 
 constexpr LolaMethodInstanceDeployment::QueueSize kFieldMethodQueueSize{1U};
 
-// Suppress "AUTOSAR C++14 A16-0-1" rule findings. This rule stated: "The pre-processor shall only be used for
-// unconditional and conditional file inclusion and include guards, and using the following directives: (1) #ifndef,
-// #ifdef, (3) #if, (4) #if defined, (5) #elif, (6) #else, (7) #define, (8) #endif, (9) #include.".
-// Checks whether we run over QNX or linux to choose the appropriate path.
-// coverity[autosar_cpp14_a16_0_1_violation]
-#ifdef __QNXNTO__
-// Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-// constant-initialized.".
-// score::filesystem::Path is not literal class as it has std::vector data member.
-// coverity[autosar_cpp14_a3_3_2_violation]
-const filesystem::Path kShmPathPrefix{"/dev/shmem"};
-// coverity[autosar_cpp14_a16_0_1_violation]
-#else
-// coverity[autosar_cpp14_a3_3_2_violation]
-const filesystem::Path kShmPathPrefix{"/dev/shm"};
-// coverity[autosar_cpp14_a16_0_1_violation]
-#endif
-
 using memory::DataTypeSizeInfo;
 
 /// \brief Tries to place a shared flock on the given service instance usage marker file
@@ -659,6 +641,13 @@ bool Proxy::IsEventProvided(const std::string_view event_name) const
 
 score::Result<void> Proxy::SetupMethods(const std::size_t additional_shm_size_bytes)
 {
+    // path variables are made static to not have to construct them on every call
+#ifdef __QNXNTO__
+    static const filesystem::Path kShmPathPrefix{"/dev/shmem"};
+#else
+    static const filesystem::Path kShmPathPrefix{"/dev/shm"};
+#endif
+
     auto enabled_method_data = GetMethodIdAndQueueSizeForEnabledMethods();
 
     if (enabled_method_data.empty())

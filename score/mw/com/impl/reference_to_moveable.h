@@ -143,7 +143,8 @@ class ReferenceToMoveable
     explicit ReferenceToMoveable(EnableReferenceToMoveableFromThis<T>& field)
         : reference_to_moveable_{std::make_unique<Reference>(typename Reference::PrivateConstructorTag{}, field)}
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(reference_to_moveable_ != nullptr);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(  // COV_JUSTIFIED reference-to-moveable-make-unique-nonnull-assert
+            reference_to_moveable_ != nullptr);
     }
 
     std::unique_ptr<Reference> reference_to_moveable_;

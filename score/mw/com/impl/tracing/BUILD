@@ -12,7 +12,19 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
+
+unit(
+    name = "mw_com_tracing",
+    scope = [],
+    tests = [],
+    unit_design = [
+        "//score/mw/com/impl/tracing/dependability:unit_design",
+    ],
+    visibility = ["//score/mw/com/dependability:__pkg__"],
+    implementation = [],
+)
 
 package(
     default_visibility = [
@@ -277,7 +289,7 @@ cc_unit_test(
         ":skeleton_tracing",
         ":tracing_runtime_mock",
         "//score/mw/com/impl",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:runtime_mock_guard",
     ],
@@ -316,7 +328,7 @@ cc_unit_test(
     deps = [
         ":skeleton_event_tracing",
         ":tracing_runtime_mock",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/mocking:test_type_utilities",
         "//score/mw/com/impl/test:runtime_mock_guard",
@@ -330,7 +342,7 @@ cc_unit_test(
     deps = [
         ":proxy_event_tracing",
         ":tracing_runtime_mock",
-        "//score/mw/com/impl/bindings/mock_binding:mock_binding_lib",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:runtime_mock_guard",
     ],
 )
