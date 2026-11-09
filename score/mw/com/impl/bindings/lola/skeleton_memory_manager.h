@@ -133,8 +133,10 @@ class SkeletonMemoryManager final
     /// \brief Remove the control and data shared memory regions
     void RemoveSharedMemory();
 
-    /// \brief Drops the references to the control and data shared memory regions without removing the regions, so
-    ///        that proxies which are still attached keep using them.
+    /// \brief Releases the skeleton's shared_ptrs to the control and data SharedMemoryResources without unlinking
+    ///        the shared memory regions or removing them from the process's map of currently opened regions in
+    ///        SharedMemoryFactory. This allows the regions to be reopened if a proxy is still connected when
+    ///        re-offering, or destroyed and recreated if no connected proxies remain.
     void ReleaseSharedMemory();
 
     /// \brief Removes stale shared memory artefacts from the filesystem in case a process crashed while creating a

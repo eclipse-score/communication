@@ -164,7 +164,7 @@ Skeleton::ShmReuseStrategy Skeleton::DetermineShmReuseStrategy(
 
     // If we cannot lock the usage marker file, proxies are still using the previous SHM region.
     // This means the previous skeleton crashed, or a skeleton (this one or a previous one) stopped offering, while
-    // proxies were subscribed. In both cases, we reuse the existing SHM.
+    // proxies were subscribed and the proxies are still subscribed. In both cases, we reuse the existing SHM.
     return ShmReuseStrategy::kReuseExistingShm;
 }
 
@@ -487,8 +487,11 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
             score::mw::log::LogInfo("lola")
                 << "Skeleton::PrepareStopOffer(): Could not exclusively lock service instance usage "
                    "marker file indicating that some proxies are still subscribed. Will not remove shared memory.";
-            // Proxies still use the shared memory, so we keep it and only close it on our side.
-            // Otherwise the next offer finds it still open here and the assert in RemoveStaleArtefacts aborts.
+            // Proxies still use the shared memory, so we release our shared_ptrs to the SharedMemoryResource, so
+            // that the lifetime of the resource is now dependent on the connected proxies. If the proxies are alive
+            // when we reoffer, then we can reopen the region (which will either return a copy of that proxy's
+            // shared_ptr to the resource if it's in the same process or will reopen the region if the proxy is in
+            // another process). If the proxies are not alive when we reoffer, then we can recreate the region.
             memory_manager_.ReleaseSharedMemory();
             break;
 
