@@ -62,8 +62,8 @@ copyright_checker(
         "third_party",
         "tools",
     ],
-    config = "//third_party/cr_checker:config",
-    template = "//third_party/cr_checker:templates",
+    config = "@score_tooling//cr_checker/resources:config",
+    template = "@score_tooling//cr_checker/resources:templates",
     visibility = ["//:__pkg__"],
 )
 
