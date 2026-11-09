@@ -1,0 +1,29 @@
+@startuml client_connection_arm_send_queue_activity
+title ClientConnection - arming queued send dispatch
+
+start
+:ArmSendQueueUnderLock();
+note right
+    Entry: the caller holds send_mutex_.
+    Debug assertion requires waiting_for_reply_ to be disengaged.
+    Direct-error recovery's occupied-slot call remains a review gap.
+end note
+:Set waiting_for_reply_ to an empty ReplyCallback marker;
+:Enqueue async_send_command_ at TimePoint{}, owner = this;
+note right
+    When the engine executes the queued callback:
+    acquire send_mutex_ with a unique lock,
+    then call ProcessSendQueueUnderLock(lock).
+    This continuation is separate from the arming call.
+end note
+:Return with the caller's lock still held;
+stop
+
+legend
+    The marker engages the optional slot without registering a reply callback.
+    Admission paths seeing that occupied slot queue instead of arming again.
+    The command entry is embedded; connection ownership permits stop cleanup.
+    Dispatch decides when to reset the marker or replace it with a reply callback.
+endlegend
+
+@enduml

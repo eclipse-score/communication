@@ -1,0 +1,77 @@
+@startuml client_connection_connect_activity
+title ClientConnection - connection establishment
+
+start
+if (Entry point?) then (Start)
+    :Store state_callback in callback_context_;
+    :Store notify_callback_;
+else (Restart)
+    :Restart(): inspect state_;
+    if (state_ == kStopped?) then (yes)
+        :Reuse the existing callbacks;
+    else (no)
+        :Return without restarting;
+        stop
+    endif
+endif
+
+:DoRestart(): set stop_reason_ = kNone;
+:ProcessStateChange(kStarting);
+note right
+    Publish kStarting, then invoke the state callback
+    synchronously in the Start / Restart calling thread.
+end note
+:Reset connect_retry_ms_ to 50 ms;
+if (client_config_.sync_first_connect?) then (yes)
+    :Call TryConnect() directly;
+else (no)
+    :Enqueue connection_timer_ at TimePoint{}, owner = this;
+    :Engine invokes TryConnect();
+endif
+
+while (TryOpenClientConnection(identifier_) fails?) is (yes)
+    if (errno is EAGAIN, ECONNREFUSED, or ENOENT?) then (yes)
+        :retry_delay = connect_retry_ms_;
+        :retry_increase_ms = ceil(connect_retry_ms_ / 3);
+        if (connect_retry_ms_ + retry_increase_ms <= 5000?) then (yes)
+            :Increase connect_retry_ms_ by retry_increase_ms;
+        else (no)
+            :Keep connect_retry_ms_ unchanged;
+        endif
+        :Enqueue connection_timer_ at FromNow(retry_delay), owner = this;
+        :Return from this TryConnect() invocation;
+        :Engine invokes TryConnect() when the command is due;
+        note right
+            Each iteration is a separate invocation.
+            There is no sleep loop inside TryConnect().
+            Retry count and total elapsed time are not bounded here.
+        end note
+    else (no)
+        :Select kPermission for EACCES, otherwise kIoError;
+        if (TrySetStopReason(selected reason) succeeds?) then (yes)
+            :ProcessStateChange(kStopping);
+            :SwitchToStopState();
+        else (no)
+            :Preserve the already selected stop reason;
+        endif
+        :Return without scheduling another retry;
+        stop
+    endif
+endwhile (no)
+
+:Store client_fd_ and initialize posix_endpoint_;
+if (IsInCallback()?) then (yes)
+    :RegisterPosixEndpoint(posix_endpoint_);
+else (no)
+    :Enqueue endpoint registration using connection_timer_, owner = this;
+endif
+:ProcessStateChange(kReady);
+stop
+
+legend
+    This view records local establishment control flow.
+    Stop() and callback reentrancy can interleave with it.
+    It does not prove cancellation or callback ordering for those interleavings.
+endlegend
+
+@enduml

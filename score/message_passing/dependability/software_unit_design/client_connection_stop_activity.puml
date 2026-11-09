@@ -1,0 +1,41 @@
+@startuml client_connection_stop_activity
+title ClientConnection - user-requested stopping
+
+start
+:Stop(): claim stopping for the current connection lifecycle;
+if (TrySetStopReason(kUserRequested) succeeds?) then (yes)
+    :ProcessStateChange(kStopping);
+    note right
+        Publish kStopping and invoke its callback
+        in the winning Stop() call before cleanup.
+        Losing stop requests do not schedule cleanup.
+    end note
+    if (IsInCallback()?) then (yes)
+        :Call SwitchToStopState() directly;
+    else (no)
+        :Enqueue disconnection_command_ at TimePoint{}, owner = this;
+        :Return from Stop() without waiting for cleanup;
+        :Engine invokes SwitchToStopState();
+    endif
+else (no)
+    :Return without state change or cleanup;
+    note right
+        No active lifecycle, or stopping has already been claimed,
+        for example by the engine after a communication failure.
+        The reason is already non-kNone, or a competing stop path
+        won the compare/exchange. Preserve its reason and cleanup.
+        This is not an open-descriptor check: Starting can be stopped.
+    end note
+    stop
+endif
+stop
+
+legend
+    This view records the winning explicit Stop() path.
+    On the engine callback thread, cleanup can finish inline.
+    Stop() from the ready-state callback can therefore invoke
+    stopping and stopped callbacks before the ready callback returns.
+    The view does not qualify Stop() during connection establishment.
+endlegend
+
+@enduml

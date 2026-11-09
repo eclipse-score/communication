@@ -18,7 +18,9 @@
 #include "score/message_passing/mock/shared_resource_engine_mock.h"
 
 #include <future>
+#include <memory>
 #include <thread>
+#include <vector>
 
 namespace score::message_passing
 {
@@ -567,6 +569,174 @@ TEST_F(ClientConnectionTest, SuccessfullySyncConnectingAtFirstAttemptThenExplici
     MakeSuccessfulConnection(connection);
 
     StopCurrentConnectionAsIfInCallback(connection);
+}
+
+TEST_F(ClientConnectionTest, ReadyStateCallbackCanStopConnection)
+{
+    ::testing::Test::RecordProperty(
+        "lobster-tracing",
+        "MessagePassing.ClientConnectionMaintainsStateMachine MessagePassing.ClientConnectionStateCallbackInvocation");
+    ::testing::Test::RecordProperty("given", "connection whose ready-state callback requests Stop");
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    std::vector<State> callback_states;
+
+    CatchImmediateConnectCommand();
+    connection.Start(
+        [&](State state) noexcept {
+            callback_states.push_back(state);
+            EXPECT_EQ(connection.GetState(), state);
+            if (state == State::kReady)
+            {
+                connection.Stop();
+                EXPECT_EQ(connection.GetState(), State::kStopped);
+            }
+        },
+        {});
+
+    ::testing::Test::RecordProperty("when",
+                                    "the engine establishes the connection and invokes the ready-state callback");
+    AtTryOpenCall_Return(kValidFd);
+    CatchPosixEndpointRegistration();
+    ExpectCleanUpOwner(connection);
+    ExpectCloseFd();
+    InvokeConnectCommand();
+
+    ::testing::Test::RecordProperty("then",
+                                    "stopping and stopped callbacks complete before the ready-state callback returns");
+    const std::vector<State> expected_states{State::kStarting, State::kReady, State::kStopping, State::kStopped};
+    EXPECT_EQ(callback_states, expected_states);
+    EXPECT_EQ(connection.GetState(), State::kStopped);
+    EXPECT_EQ(connection.GetStopReason(), StopReason::kUserRequested);
+}
+
+TEST_F(ClientConnectionTest, StoppedStateCallbackCanRestartConnection)
+{
+    ::testing::Test::RecordProperty(
+        "lobster-tracing",
+        "MessagePassing.ClientConnectionMaintainsStateMachine MessagePassing.ClientConnectionStateCallbackInvocation");
+    ::testing::Test::RecordProperty("given", "ready connection whose first stopped-state callback requests Restart");
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    std::uint32_t stopped_callback_count{0};
+    MakeSuccessfulConnection(connection, [&](State state) noexcept {
+        if (state == State::kStopped)
+        {
+            ++stopped_callback_count;
+            if (stopped_callback_count == 1U)
+            {
+                connection.Restart();
+                EXPECT_EQ(connection.GetState(), State::kStarting);
+            }
+        }
+    });
+
+    ::testing::Test::RecordProperty("when", "queued stop cleanup invokes the stopped-state callback");
+    CatchDisconnectCommand();
+    connection.Stop();
+    ExpectCleanUpOwner(connection);
+    ExpectCloseFd();
+    CatchImmediateConnectCommand();
+    InvokeDisconnectCommand();
+
+    ::testing::Test::RecordProperty(
+        "then", "restart enters Starting before the stopped-state callback returns and can reconnect");
+    EXPECT_EQ(stopped_callback_count, 1U);
+    EXPECT_EQ(connection.GetState(), State::kStarting);
+    EXPECT_EQ(connection.GetStopReason(), StopReason::kNone);
+    AtTryOpenCall_Return(kValidFd);
+    CatchPosixEndpointRegistration();
+    InvokeConnectCommand();
+    EXPECT_EQ(connection.GetState(), State::kReady);
+    StopCurrentConnection(connection);
+    EXPECT_EQ(stopped_callback_count, 2U);
+}
+
+TEST_F(ClientConnectionTest, StoppedStateCallbackKeepsOwnedCaptureAliveDuringDestruction)
+{
+    ::testing::Test::RecordProperty(
+        "lobster-tracing",
+        "MessagePassing.ClientConnectionMaintainsStateMachine MessagePassing.ClientConnectionStateCallbackInvocation");
+    ::testing::Test::RecordProperty("given", "stopped-state callback owning a capture and destroying its connection");
+    auto connection = std::make_unique<detail::ClientConnection>(engine_, protocol_config_, client_config_);
+    auto captured_value = std::make_shared<std::uint32_t>(42U);
+    const std::weak_ptr<std::uint32_t> capture_lifetime{captured_value};
+    const auto destroy_connection = [&]() noexcept {
+        connection.reset();
+        EXPECT_FALSE(capture_lifetime.expired());
+    };
+    MakeSuccessfulConnection(*connection,
+                             [&destroy_connection, captured_value = std::move(captured_value)](State state) noexcept {
+                                 if (state == State::kStopped)
+                                 {
+                                     destroy_connection();
+                                     EXPECT_EQ(*captured_value, 42U);
+                                 }
+                             });
+
+    ::testing::Test::RecordProperty("when", "queued stop cleanup invokes the stopped-state callback");
+    CatchDisconnectCommand();
+    connection->Stop();
+    ExpectCleanUpOwner(*connection);
+    ExpectCloseFd();
+    InvokeDisconnectCommand();
+
+    ::testing::Test::RecordProperty(
+        "then", "the connection is destroyed but its callback capture survives until callback return");
+    EXPECT_FALSE(connection);
+    EXPECT_TRUE(capture_lifetime.expired());
+}
+
+TEST_F(ClientConnectionTest, ConcurrentStopRequestsFinalizeOnce)
+{
+    ::testing::Test::RecordProperty(
+        "lobster-tracing",
+        "MessagePassing.ClientConnectionMaintainsStateMachine MessagePassing.ClientConnectionStateCallbackInvocation");
+    ::testing::Test::RecordProperty("given", "ready connection with registered state callbacks");
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    std::atomic<std::uint32_t> stopping_callback_count{0};
+    std::atomic<std::uint32_t> stopped_callback_count{0};
+    MakeSuccessfulConnection(connection, [&](State state) noexcept {
+        if (state == State::kStopping)
+        {
+            ++stopping_callback_count;
+        }
+        else if (state == State::kStopped)
+        {
+            ++stopped_callback_count;
+        }
+    });
+
+    ::testing::Test::RecordProperty("when", "two application threads request Stop before queued cleanup executes");
+    CatchDisconnectCommand();
+    std::promise<void> release_stops;
+    const auto start_stops = release_stops.get_future().share();
+    std::thread first_stop([&]() {
+        start_stops.wait();
+        connection.Stop();
+    });
+    std::thread second_stop([&]() {
+        start_stops.wait();
+        connection.Stop();
+    });
+    release_stops.set_value();
+    first_stop.join();
+    second_stop.join();
+    connection.Stop();
+
+    EXPECT_EQ(connection.GetState(), State::kStopping);
+    EXPECT_EQ(connection.GetStopReason(), StopReason::kUserRequested);
+    EXPECT_EQ(stopping_callback_count.load(), 1U);
+    EXPECT_EQ(stopped_callback_count.load(), 0U);
+
+    ::testing::Test::RecordProperty(
+        "then", "one cleanup and one stopped-state callback occur, and further Stop calls are no-ops");
+    ExpectCleanUpOwner(connection);
+    ExpectCloseFd();
+    InvokeDisconnectCommand();
+    connection.Stop();
+    EXPECT_EQ(connection.GetState(), State::kStopped);
+    EXPECT_EQ(connection.GetStopReason(), StopReason::kUserRequested);
+    EXPECT_EQ(stopping_callback_count.load(), 1U);
+    EXPECT_EQ(stopped_callback_count.load(), 1U);
 }
 
 TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptThenFirstReadDisconnected)

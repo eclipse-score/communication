@@ -1,0 +1,31 @@
+@startuml client_connection_try_queue_message_activity
+title ClientConnection - queued message admission
+
+start
+:TryQueueMessage(message, callback);
+note right
+    Entry: the caller holds send_mutex_.
+    Message-size and lifecycle checks belong to the API caller.
+end note
+if (send_pool_ is empty?) then (yes)
+    :Return false without reserving a command;
+    stop
+else (no)
+    :Take the front free command;
+endif
+:Remove the command from send_pool_;
+:Copy message bytes into command.message;
+:Move callback into command.callback;
+:Append the command to the back of send_queue_;
+:Return true with the caller's lock still held;
+stop
+
+legend
+    send_storage_ retains ownership of the command and its message storage.
+    Intrusive membership moves from the free pool to the FIFO send queue.
+    Admission does not send, claim the reply slot, or arm queue dispatch.
+    The caller turns false into ENOBUFS and decides whether to schedule work.
+    Empty versus non-empty callback selects SEND versus REQUEST at dispatch.
+endlegend
+
+@enduml

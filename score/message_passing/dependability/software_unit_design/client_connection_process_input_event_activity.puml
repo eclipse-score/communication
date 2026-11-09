@@ -1,0 +1,69 @@
+@startuml client_connection_process_input_event_activity
+title ClientConnection - processing received input
+
+start
+:ProcessInputEvent();
+:ReceiveProtocolMessage(client_fd_, code);
+if (Receive failed?) then (yes)
+    if (errno == EAGAIN?) then (yes)
+        :Log a spurious wake-up;
+        :Return kNone;
+        stop
+    else (no)
+        :Receive failure is not a spurious wake-up;
+        if (errno == EPIPE?) then (yes)
+            :Return kClosedByPeer;
+        else (no)
+            :Return kIoError;
+        endif
+        stop
+    endif
+else (no)
+    :Use the received message span;
+endif
+
+if (code == REPLY?) then (yes)
+    :Lock send_mutex_;
+    if (waiting_for_reply_ is engaged?) then (yes)
+        :Move its callback into a local ReplyCallback;
+        :Reset waiting_for_reply_;
+        :ProcessSendQueueUnderLock(lock);
+        :Unlock send_mutex_;
+        :Invoke the local callback with the received span;
+        :Return kNone;
+        stop
+    else (no)
+        :Unlock send_mutex_;
+        :Return kIoError: reply with no occupied slot;
+        stop
+    endif
+else (no)
+    :The code is not REPLY;
+    if (code == NOTIFY?) then (yes)
+        if (notify_callback_ is non-empty?) then (yes)
+            :Invoke notify_callback_ with the received span;
+        else (no)
+            :Ignore this notification;
+        endif
+    else (no)
+        :Return kIoError: unrecognized message code;
+        stop
+    endif
+endif
+
+:Return kNone;
+stop
+
+legend
+    Returned stop reasons are consumed by the endpoint input callback.
+    This procedure does not itself claim stopping or unregister the endpoint.
+    Reply processing drains queued sends before invoking the completed callback.
+    Queue dispatch can therefore replace the free slot with a new pending reply.
+    The reply guard checks optional engagement, not callback non-emptiness.
+    An empty drain marker passes that guard; invocation has no empty check here.
+    Notifications are ignored when no callback is installed, without stopping.
+    Receive-size enforcement belongs to the engine; caller reply-buffer bounds
+    are handled by the SendWaitReply completion callback.
+endlegend
+
+@enduml

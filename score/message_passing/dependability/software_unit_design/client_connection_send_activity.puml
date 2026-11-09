@@ -1,0 +1,68 @@
+@startuml client_connection_send_activity
+title ClientConnection - sending without a reply
+
+start
+:Send(message);
+if (message.size() > max_send_size_?) then (yes)
+    :Return EMSGSIZE;
+    stop
+else (no)
+    :Message size is admissible;
+endif
+if (state_ != kReady?) then (yes)
+    :Return EINVAL;
+    stop
+else (no)
+    :Connection is ready at the admission check;
+endif
+
+if (!fully_ordered and !truly_async?) then (yes)
+    :SendProtocolMessage(client_fd_, SEND, message);
+    :Return the transport result;
+    stop
+else (no)
+    :Lock send_mutex_;
+endif
+
+if (waiting_for_reply_ is engaged?) then (yes)
+    :TryQueueMessage(message, empty ReplyCallback);
+    if (Message admitted to send_queue_?) then (yes)
+        :Leave the existing reply/drain slot in place;
+    else (no)
+        :Unlock send_mutex_;
+        :Return ENOBUFS: no free send command;
+        stop
+    endif
+else (no)
+    :The reply/drain slot is free;
+    if (truly_async?) then (yes)
+        :TryQueueMessage(message, empty ReplyCallback);
+        if (Message admitted to send_queue_?) then (yes)
+            :ArmSendQueueUnderLock();
+        else (no)
+            :Unlock send_mutex_;
+            :Return ENOBUFS: no free send command;
+            stop
+        endif
+    else (no)
+        :SendProtocolMessage(client_fd_, SEND, message) under send_mutex_;
+        :Unlock send_mutex_;
+        :Return the transport result;
+        stop
+    endif
+endif
+
+:Unlock send_mutex_;
+:Return local acceptance;
+stop
+
+legend
+    The default direct path does not inspect waiting_for_reply_.
+    fully_ordered queues only behind an engaged reply/drain slot.
+    truly_async queues even when that slot is free.
+    An engaged slot may be an empty queue-draining marker.
+    Direct transport runs in the caller; queue dispatch runs later.
+    Local acceptance is not confirmation that the peer received the message.
+endlegend
+
+@enduml
