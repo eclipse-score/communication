@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/generic_proxy_event.h"
 
-#include "score/mw/com/impl/plumbing/proxy_event_binding_factory.h"
+#include "score/mw/com/impl/plumbing/generic_proxy_event_binding_factory.h"
 
 #include <score/assert.hpp>
 

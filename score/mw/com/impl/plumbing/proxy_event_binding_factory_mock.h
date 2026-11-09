@@ -33,16 +33,6 @@ class ProxyEventBindingFactoryMock : public IProxyEventBindingFactory
                 (noexcept, override));
 };
 
-class GenericProxyEventBindingFactoryMock : public IGenericProxyEventBindingFactory
-{
-  public:
-    MOCK_METHOD(
-        Result<std::unique_ptr<GenericProxyEventBinding>>,
-        Create,
-        (HandleType, ProxyBinding&, const std::string_view event_name, const ServiceElementType service_element_type),
-        (override));
-};
-
 }  // namespace score::mw::com::impl
 
 #endif  // SCORE_MW_COM_IMPL_PLUMBING_PROXY_EVENT_BINDING_FACTORY_MOCK_H
