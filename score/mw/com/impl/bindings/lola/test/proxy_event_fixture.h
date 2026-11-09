@@ -137,6 +137,30 @@ class LolaProxyEventFixture : public LolaProxyEventResources
         return *this;
     }
 
+    /// \brief Analogous to WithSkeletonEventData(), but publishes via PutDataCoherent() (i.e. for a
+    /// CoherencyType::kCoherent skeleton-side event).
+    LolaProxyEventFixture& WithSkeletonEventDataCoherent(
+        const std::vector<std::pair<TestSampleType, EventSlotStatus::EventTimeStamp>> data)
+    {
+        for (const auto& datum : data)
+        {
+            score::cpp::ignore = this->PutDataCoherent(datum.first, datum.second);
+        }
+        return *this;
+    }
+
+    /// \brief Analogous to WithSkeletonEventData(), but publishes via PutDataMixed() (i.e. for a
+    /// CoherencyType::kMixed skeleton-side event).
+    LolaProxyEventFixture& WithSkeletonEventDataMixed(
+        const std::vector<std::pair<TestSampleType, EventSlotStatus::EventTimeStamp>> data)
+    {
+        for (const auto& datum : data)
+        {
+            score::cpp::ignore = this->PutDataMixed(datum.first, datum.second);
+        }
+        return *this;
+    }
+
     Result<std::size_t> GetNewSamples(
         std::function<void(impl::SamplePtr<void>, const tracing::ITracingRuntime::TracePointDataId)> receiver,
         const std::size_t max_num_samples)

@@ -1498,6 +1498,18 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "proxy_event_coherency_test",
+    srcs = ["proxy_event_coherency_test.cpp"],
+    deps = [
+        ":proxy",
+        "//score/mw/com/impl:sample_reference_tracker",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_fixture",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_unit_test(
     name = "slot_decrementer_test",
     srcs = ["slot_decrementer_test.cpp"],
     deps = [

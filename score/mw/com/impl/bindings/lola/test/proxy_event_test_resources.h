@@ -21,6 +21,7 @@
 #include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event.h"
@@ -235,6 +236,17 @@ class LolaProxyEventResources : public ProxyMockedMemoryFixture
 
     SlotIndexType PutData(const std::uint32_t value = 42, const EventSlotStatus::EventTimeStamp timestamp = 1);
 
+    /// \brief Analogous to PutData(), but writes via a ProviderEventDataControlCoherentLocalView on
+    /// event_control_coherent_->data_control (i.e. for a CoherencyType::kCoherent skeleton-side event, which must
+    /// have been set up beforehand via InitialiseDummySkeletonEventCoherent()).
+    SlotIndexType PutDataCoherent(const std::uint32_t value = 42, const EventSlotStatus::EventTimeStamp timestamp = 1);
+
+    /// \brief Analogous to PutData(), but writes via a ProviderEventDataControlLocalView on
+    /// event_control_mixed_->data_control.data_control_ and additionally advances newest_index_ (i.e. for a
+    /// CoherencyType::kMixed skeleton-side event, which must have been set up beforehand via
+    /// InitialiseDummySkeletonEventMixed()).
+    SlotIndexType PutDataMixed(const std::uint32_t value = 42, const EventSlotStatus::EventTimeStamp timestamp = 1);
+
     const std::size_t max_num_slots_{5U};
     const std::uint8_t max_subscribers_{10U};
 
@@ -244,6 +256,16 @@ class LolaProxyEventResources : public ProxyMockedMemoryFixture
                                      lola_element_id_,
                                      lola_service_instance_id_.GetId(),
                                      ServiceElementType::EVENT};
+
+    /// \brief A second ElementFqId/event name, distinct from element_fq_id_/event_name_ (which is already registered
+    /// as a CoherencyType::kNonCoherent event by the LolaProxyEventResources constructor), for tests that need a
+    /// CoherencyType::kCoherent or CoherencyType::kMixed skeleton-side event instead.
+    const std::string event_name_coherency_{"dummy_event_coherency"};
+    const std::uint8_t lola_element_id_coherency_{0x6};
+    const ElementFqId element_fq_id_coherency_{lola_service_id_,
+                                               lola_element_id_coherency_,
+                                               lola_service_instance_id_.GetId(),
+                                               ServiceElementType::EVENT};
 
     IMessagePassingService::HandlerRegistrationNoType current_subscription_no_ = 37U;
 };
