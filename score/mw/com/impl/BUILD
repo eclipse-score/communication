@@ -1540,6 +1540,7 @@ cc_unit_test(
         "//score/mw/com:types",
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:proxy_resources",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
 
