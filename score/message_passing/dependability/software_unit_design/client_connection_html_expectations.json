@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "pages": [
+    {
+      "anchor": "client-connection-dynamic-coverage",
+      "required_anchors": [
+        "client-connection-object-lifetime",
+        "client-connection-establishment",
+        "client-connection-send-one-way",
+        "client-connection-send-with-callback",
+        "client-connection-send-wait-reply",
+        "client-connection-queue-admission",
+        "client-connection-queue-arming",
+        "client-connection-send-queue-dispatch",
+        "client-connection-input-processing",
+        "client-connection-endpoint-callbacks",
+        "client-connection-stop-initiation",
+        "client-connection-switch-to-stop-state",
+        "client-connection-execution-context"
+      ],
+      "diagrams": [
+        {
+          "title": "Injected client-side engine abstraction.",
+          "caption_targets": []
+        },
+        {
+          "title": "ClientConnection - object lifetime",
+          "caption_targets": ["#client-connection-switch-to-stop-state"]
+        },
+        {
+          "title": "ClientConnection - connection establishment",
+          "caption_targets": ["#client-connection-switch-to-stop-state"]
+        },
+        {
+          "title": "ClientConnection - sending without a reply",
+          "caption_targets": ["#client-connection-queue-admission", "#client-connection-queue-arming"]
+        },
+        {
+          "title": "ClientConnection - sending with a reply callback",
+          "caption_targets": ["#client-connection-queue-admission", "#client-connection-queue-arming"]
+        },
+        {
+          "title": "ClientConnection - sending and waiting for a reply",
+          "caption_targets": ["#client-connection-queue-admission", "#client-connection-queue-arming"]
+        },
+        {
+          "title": "ClientConnection - queued message admission",
+          "caption_targets": []
+        },
+        {
+          "title": "ClientConnection - arming queued send dispatch",
+          "caption_targets": ["#client-connection-send-queue-dispatch"]
+        },
+        {
+          "title": "ClientConnection - queued send dispatch",
+          "caption_targets": []
+        },
+        {
+          "title": "ClientConnection - processing received input",
+          "caption_targets": ["#client-connection-send-queue-dispatch"]
+        },
+        {
+          "title": "ClientConnection - registered endpoint callbacks",
+          "caption_targets": ["#client-connection-input-processing", "#client-connection-switch-to-stop-state"]
+        },
+        {
+          "title": "ClientConnection - user-requested stopping",
+          "caption_targets": ["#client-connection-switch-to-stop-state"]
+        },
+        {
+          "title": "ClientConnection - shared stop finalization",
+          "caption_targets": []
+        }
+      ]
+    }
+  ]
+}

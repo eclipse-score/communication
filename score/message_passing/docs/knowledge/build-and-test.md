@@ -86,6 +86,24 @@ constraint. SDK setup and host prerequisites belong in the
 
 ## Requirements and Architecture
 
+For the documentation-check pilot, the existing unit check, fast rendering,
+and published HTML integrity are distinct targets:
+
+```sh
+bazel build //score/message_passing:client_connection
+bazel build //score/message_passing/dependability/software_unit_design:client_connection_render
+bazel test //score/message_passing/dependability/software_unit_design:client_connection_html_test
+```
+
+The render target uses declared pinned tools, fonts, and include inputs rather
+than a personal cache path. The HTML test consumes the existing Sphinx output
+and [client page contract](../../dependability/software_unit_design/client_connection_html_expectations.json).
+It is manually tagged and must be requested explicitly; recursive wildcard
+tests do not run it. Rendering and HTML contracts do not clear the unit's known
+class-comparison findings or establish behavioral/safety acceptance. See
+[documentation checks](../../../../tools/documentation/README.md) for generic
+target usage and checker limits.
+
 ```sh
 bazel test //score/message_passing/dependability/assumed_system/... //score/message_passing/dependability/requirements/...
 bazel build //score/message_passing/dependability/software_architectural_design:message_passing_architectural_design
