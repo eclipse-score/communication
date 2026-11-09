@@ -94,7 +94,7 @@ struct ElementLayout
     std::uint8_t length_field_bytes{
         kDefaultLengthFieldBytes};  // width of the on-wire length prefix for dynamic members (string/vector)
     // Layout for this element's own sub-structure: a nested struct's fields, or an array's element type. Null means
-    // that subtree is uniform (the element's own layout is inherited).
+    // that subtree uses the SOME/IP default ElementLayout.
     const SomeIpLayout* nested{nullptr};
 };
 
@@ -106,6 +106,46 @@ struct SomeIpLayout
     const ElementLayout* per_field{nullptr};
     std::size_t per_field_count{0U};
 };
+
+namespace someip_detail
+{
+
+/// @brief Position in the layout tree while descending into nested elements. Shared by the strategy and GetMaxSize so
+/// both resolve identical layouts. A null layout anywhere yields the SOME/IP default ElementLayout.
+struct LayoutCursor
+{
+    const SomeIpLayout* struct_layout{nullptr};  // layout whose fields the next field step indexes
+    ElementLayout leaf{};                        // layout of the current element
+};
+
+inline LayoutCursor RootCursor(const SomeIpLayout& layout)
+{
+    return {&layout, layout.default_};
+}
+
+inline ElementLayout ElementAt(const SomeIpLayout* const layout, const std::size_t field_index)
+{
+    if (layout == nullptr)
+    {
+        return ElementLayout{};
+    }
+    return ((layout->per_field != nullptr) && (field_index < layout->per_field_count)) ? layout->per_field[field_index]
+                                                                                       : layout->default_;
+}
+
+inline LayoutCursor EnterField(const LayoutCursor& cursor, const std::size_t field_index)
+{
+    const ElementLayout leaf = ElementAt(cursor.struct_layout, field_index);
+    return {leaf.nested, leaf};
+}
+
+inline LayoutCursor EnterArrayElement(const LayoutCursor& cursor)
+{
+    const SomeIpLayout* const nested = cursor.leaf.nested;
+    return {nested, (nested != nullptr) ? nested->default_ : ElementLayout{}};
+}
+
+}  // namespace someip_detail
 
 }  // namespace serialization
 }  // namespace score

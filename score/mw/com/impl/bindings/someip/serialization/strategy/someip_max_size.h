@@ -42,22 +42,10 @@ namespace serialization
 // -----------------------------------------------------------------------------
 namespace someip_detail
 {
-template <typename>
-struct is_static_vector : std::false_type
-{
-};
-template <typename U, std::size_t M>
-struct is_static_vector<score::cpp::static_vector<U, M>> : std::true_type
-{
-};
-
 struct MaxSizeSink
 {
     std::size_t bytes{0U};
-    const SomeIpLayout* layout{nullptr};  // optional: adds worst-case alignment padding behind variable-length fields
-    std::uint8_t length_field_bytes{
-        kDefaultLengthFieldBytes};  // width of the length prefix for the field currently being visited
-    std::uint16_t alignment_bits{kDefaultAlignmentBits};  // alignment behind the field currently being visited
+    LayoutCursor cursor{};  // layout of the element currently being visited
 };
 
 /// @brief Fixed-width scalars, enums (and bool, size 1) contribute their fixed width. No padding behind fixed-length
@@ -80,21 +68,12 @@ template <typename T, std::size_t N>
 // coverity[autosar_cpp14_m3_2_2_violation]
 void visit_as(MaxSizeSink& sink, score::cpp::static_vector<T, N>& /*unused*/)
 {
-    sink.bytes += sink.length_field_bytes;  // length field
-    MaxSizeSink element{};
-    if (sink.layout != nullptr)
-    {
-        const ElementLayout element_layout = sink.layout->default_;
-        // A nested array element takes its own length-field width and alignment from the array's nested layout; a
-        // struct element instead consults that nested layout's fields, and a scalar element ignores both.
-        element.length_field_bytes = element_layout.length_field_bytes;
-        element.alignment_bits = element_layout.alignment_bits;
-        element.layout = is_static_vector<T>::value ? element_layout.nested : sink.layout;
-    }
+    sink.bytes += sink.cursor.leaf.length_field_bytes;
+    MaxSizeSink element{0U, EnterArrayElement(sink.cursor)};
     T probe{};
     ::score::common::visitor::visit(element, probe);
     sink.bytes += N * element.bytes;
-    const std::size_t align = static_cast<std::size_t>(sink.alignment_bits) / kBitsPerByte;
+    const std::size_t align = static_cast<std::size_t>(sink.cursor.leaf.alignment_bits) / kBitsPerByte;
     if (align > 1U)
     {
         sink.bytes += (align - 1U);  // worst-case trailing padding behind the variable-length element
@@ -106,25 +85,16 @@ template <typename S, typename... Args>
 // coverity[autosar_cpp14_m3_2_2_violation]
 void visit_as_struct(MaxSizeSink& sink, S&& /*unused*/, Args&... fields)
 {
+    const LayoutCursor outer = sink.cursor;
     std::size_t index{0U};
-    const auto handle = [&sink, &index](auto& field) {
-        ElementLayout element_layout{};
-        if (sink.layout != nullptr)
-        {
-            element_layout = ((sink.layout->per_field != nullptr) && (index < sink.layout->per_field_count))
-                                 ? sink.layout->per_field[index]
-                                 : sink.layout->default_;
-        }
-        sink.length_field_bytes = element_layout.length_field_bytes;
-        sink.alignment_bits = element_layout.alignment_bits;
-        const SomeIpLayout* const outer = sink.layout;
-        sink.layout = element_layout.nested;  // descend so a nested struct / array element uses its own layout
+    const auto handle = [&sink, &index, &outer](auto& field) {
+        sink.cursor = EnterField(outer, index);
         ::score::common::visitor::visit(sink, field);
-        sink.layout = outer;
         ++index;
     };
     const std::initializer_list<int> expand{(handle(fields), 0)...};
     score::cpp::ignore = expand;
+    sink.cursor = outer;
 }
 }  // namespace someip_detail
 
@@ -143,8 +113,7 @@ std::size_t GetMaxSize()
 template <typename T>
 std::size_t GetMaxSize(const SomeIpLayout& layout)
 {
-    someip_detail::MaxSizeSink sink{};
-    sink.layout = &layout;
+    someip_detail::MaxSizeSink sink{0U, someip_detail::RootCursor(layout)};
     T instance{};
     ::score::common::visitor::visit(sink, instance);
     return sink.bytes;

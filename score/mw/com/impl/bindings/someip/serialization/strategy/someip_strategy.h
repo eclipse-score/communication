@@ -23,6 +23,7 @@
 #include "score/serialization/serialize_iterator.h"
 #include "score/serialization/types/length_prefixed_vector.h"
 
+#include <score/span.hpp>
 #include <score/static_vector.hpp>
 #include <score/string.hpp>
 
@@ -63,13 +64,13 @@ namespace serialization
 ///
 /// Nested layout resolution: the layout is a tree -- each ElementLayout may carry a `nested` SomeIpLayout -- and the
 /// element currently visited is resolved by replaying the visitor's field path from the root (see
-/// ResolveElementLayout). A null nested layout keeps a subtree uniform, reproducing the single-level default. The cases
-/// handled, and how:
+/// ResolveElementLayout, shared with GetMaxSize). A null nested layout means the SOME/IP default ElementLayout for that
+/// subtree. The cases handled, and how:
 /// * Flat struct: each field uses layout.per_field[field_index] (or layout.default_). This is the original behaviour.
 /// * Nested struct (arbitrary depth): on descending into field i, the field's `nested` layout becomes the layout for
-///   that sub-struct's fields; with no `nested` the sub-struct inherits the field's own layout.
-/// * Array of scalars: the length field uses the array field's layout; elements inherit that same layout (so they share
-///   its byte order), because an array-element path step with a null `nested` inherits the array's layout.
+///   that sub-struct's fields; with no `nested` the sub-struct's fields use the defaults.
+/// * Array of scalars: the length field uses the array field's layout; elements use the array's `nested->default_`, or
+///   the defaults when `nested` is null.
 /// * Array of structs: the array field's `nested` layout describes the element struct's fields, resolved per field.
 /// * Array of arrays (any depth): each array element is marked in the field path (kArrayElementMarker), so an inner
 ///   array descends into the outer array's `nested` layout and gets its own length-field width, alignment and byte
@@ -186,52 +187,23 @@ class SomeIpStrategy final
         return {};
     }
 
-    static ElementLayout ElementAt(const SomeIpLayout& layout, const std::size_t field_index)
-    {
-        return ((layout.per_field != nullptr) && (field_index < layout.per_field_count)) ? layout.per_field[field_index]
-                                                                                         : layout.default_;
-    }
-
-    // Resolves the layout of the element currently being visited by following the field path from the root. Struct
-    // field markers index into the current struct layout; an array-element marker descends into the array's nested
-    // layout (or, when that is uniform/null, lets the element inherit the array's own layout).
-    ElementLayout ResolveElementLayout(const std::size_t* const path,
-                                       const std::size_t depth,
+    // Replays the visitor's field path from the root to resolve the layout of the element currently being visited.
+    ElementLayout ResolveElementLayout(const score::cpp::span<const std::size_t> path,
                                        const std::size_t array_marker) const
     {
-        const SomeIpLayout* struct_layout = &layout_;
-        ElementLayout leaf = layout_.default_;
-        for (std::size_t level{0U}; level < depth; ++level)
+        someip_detail::LayoutCursor cursor = someip_detail::RootCursor(layout_);
+        for (const std::size_t step : path)
         {
-            if (path[level] == array_marker)
-            {
-                if (leaf.nested != nullptr)
-                {
-                    struct_layout = leaf.nested;
-                    leaf = leaf.nested->default_;
-                }
-                else
-                {
-                    struct_layout = nullptr;  // uniform array: the element inherits the array's own layout
-                }
-            }
-            else if (struct_layout != nullptr)
-            {
-                leaf = ElementAt(*struct_layout, path[level]);
-                struct_layout = leaf.nested;  // null => uniform subtree below, keep inheriting leaf
-            }
-            else
-            {
-                // Uniform subtree below a null nested layout: keep inheriting the current leaf.
-            }
+            cursor = (step == array_marker) ? someip_detail::EnterArrayElement(cursor)
+                                            : someip_detail::EnterField(cursor, step);
         }
-        return leaf;
+        return cursor.leaf;
     }
 
     template <typename Visitor>
     ElementLayout LayoutFor(const Visitor& visitor) const
     {
-        return ResolveElementLayout(visitor.FieldPath().data(), visitor.FieldDepth(), Visitor::kArrayElementMarker);
+        return ResolveElementLayout(visitor.FieldPath(), Visitor::kArrayElementMarker);
     }
 
     // True when data follows the element currently being visited anywhere in the message, i.e. it is not the last
