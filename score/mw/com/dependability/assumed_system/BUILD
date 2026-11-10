@@ -24,7 +24,10 @@ assumed_system_requirements(
     name = "assumed_system_requirements",
     srcs = ["assumed_system_requirements.trlc"],
     target_compatible_with = ["@platforms//os:linux"],
-    visibility = ["//score/mw/com/dependability:__subpackages__"],
+    visibility = [
+        "//score/mw/com/dependability:__subpackages__",
+        "//score/someip/dependability:__subpackages__",
+    ],
 )
 
 trlc_requirements_ai_test(
