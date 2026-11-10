@@ -16,7 +16,7 @@ single_version_override(
 )
 
 # Only required to build the example, shall be replaceable with nearly every other C++ Toolchain setup
-bazel_dep(name = "score_bazel_platforms", version = "1.1.0", dev_dependency = True)
+bazel_dep(name = "score_bazel_platforms", version = "1.3.0", dev_dependency = True)
 bazel_dep(name = "score_bazel_cpp_toolchains", version = "1.0.5", dev_dependency = True)
 
 score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
