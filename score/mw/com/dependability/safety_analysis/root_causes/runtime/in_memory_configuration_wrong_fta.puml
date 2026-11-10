@@ -15,7 +15,7 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("In-Memory configuration wrong", "Communication.InMemoryConfigurationWrong")
+$FailureMode("In-Memory configuration wrong", "mw_com.InMemoryConfigurationWrong")
 
 $OrGate("Gate1", "Communication.InMemoryConfigurationWrong")
 $IntermediateEvent("JSON-Tree corrupt", "Event2", "Gate1")

@@ -15,7 +15,7 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("Proxy cannot be created with valid handle when service is offered", "Communication.ProxyCannotBeCreatedWithValidHandleWhenServiceIsOffered")
+$FailureMode("Proxy cannot be created with valid handle when service is offered", "mw_com.ProxyCannotBeCreatedWithValidHandleWhenServiceIsOffered")
 
 ' - An fta should have consequences up high and causes lower.
 ' - The consequences should be related to the contract of the function. E.g. if Proxy::Create opens shm but this isn't part of the official contract, then failing 
@@ -60,3 +60,7 @@ $IntermediateEvent("Shared Memory Object was created by skeleton in the wrong pa
 ' $RootCause("Proxy instance counter overflowed", "ProxyInstanceCounterOverflows", "OrGate1")
 
 @enduml
+
+' Could not read samples
+'    Shared memory was not initialized correctly
+'

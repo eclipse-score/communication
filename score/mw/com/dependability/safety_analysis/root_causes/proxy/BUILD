@@ -24,6 +24,7 @@ filegroup(
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/generic_proxy/getting_access_to_generic_proxy_events:map_containing_nonexistent_events_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/get_free_sample_count_for_an_event:returns_wrong_free_sample_count_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/get_new_samples_on_an_event:callback_not_called_with_samples_received_from_skeleton_fta",
+        "//score/mw/com/dependability/safety_analysis/root_causes/proxy/get_new_samples_on_an_event:data_not_received_from_skeleton_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/get_new_samples_on_an_event:data_pointed_to_by_sample_ptr_has_different_value_to_sample_sent_by_skeleton_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/get_new_samples_on_an_event:receiver_is_called_more_times_than_allowed_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/get_new_samples_on_an_event:returned_call_count_different_to_number_of_times_receiver_called_fta",

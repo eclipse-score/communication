@@ -20,6 +20,14 @@ filegroup(
 )
 
 filegroup(
+    name = "data_not_received_from_skeleton_fta",
+    srcs = [
+        "data_not_received_from_skeleton.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+filegroup(
     name = "data_pointed_to_by_sample_ptr_has_different_value_to_sample_sent_by_skeleton_fta",
     srcs = [
         "data_pointed_to_by_sample_ptr_has_different_value_to_sample_sent_by_skeleton_fta.puml",
