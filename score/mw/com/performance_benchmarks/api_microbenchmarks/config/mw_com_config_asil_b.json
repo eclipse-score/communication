@@ -1,0 +1,96 @@
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/score/mw/com/test/TestInterface",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 3429,
+                    "events": [
+                        {
+                            "eventName": "test_event",
+                            "eventId": 1
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "test/lolabenchmark_non_coherent",
+            "serviceTypeName": "/score/mw/com/test/TestInterface",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "instances": [
+                {
+                    "instanceId": 1,
+                    "asil-level": "B",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "test_event",
+                            "numberOfSampleSlots": 100,
+                            "maxSubscribers": 20
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "instanceSpecifier": "test/lolabenchmark_coherent",
+            "serviceTypeName": "/score/mw/com/test/TestInterface",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "instances": [
+                {
+                    "instanceId": 1,
+                    "asil-level": "B",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "test_event",
+                            "numberOfSampleSlots": 100,
+                            "maxSubscribers": 20,
+                            "coherency": "COHERENT"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "instanceSpecifier": "test/lolabenchmark_mixed_coherent",
+            "serviceTypeName": "/score/mw/com/test/TestInterface",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "instances": [
+                {
+                    "instanceId": 1,
+                    "asil-level": "B",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "test_event",
+                            "numberOfSampleSlots": 100,
+                            "maxSubscribers": 20,
+                            "coherency": "MIXED"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "global": {
+        "asil-level": "B"
+    }
+}

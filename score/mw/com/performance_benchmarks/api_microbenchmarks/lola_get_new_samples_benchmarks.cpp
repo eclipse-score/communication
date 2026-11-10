@@ -10,6 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#include "score/mw/com/performance_benchmarks/api_microbenchmarks/benchmark_cli_args.h"
 #include "score/mw/com/performance_benchmarks/api_microbenchmarks/lola_interface.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/runtime_configuration.h"
@@ -28,7 +29,7 @@ namespace
 {
 
 std::size_t gGetNewSamplesBenchmarkIndex{0};
-constexpr std::string_view kBenchmarkInstanceSpecifier = "test/lolabenchmark";
+BenchmarkCliArgs gBenchmarkCliArgs{};
 
 struct DataExchangeConfig
 {
@@ -69,17 +70,14 @@ class LolaGetNewSamplesBenchmarkFixture : public benchmark::Fixture
         // benchmark process.
         if (!fixture_initialized_)
         {
-            // clang-format off
-            auto config_path = runtime::RuntimeConfiguration(
-        "score/mw/com/performance_benchmarks/api_microbenchmarks/config/mw_com_config_qm_high_frequency_send_large_data.json");
-            // clang-format on
+            auto config_path = runtime::RuntimeConfiguration(gBenchmarkCliArgs.config_path);
             score::mw::com::runtime::InitializeRuntime(config_path);
             fixture_initialized_ = true;
         }
 
         // Created Skeleton
-        auto skeleton_result_ =
-            TestDataSkeleton::Create(InstanceSpecifier::Create(std::string{kBenchmarkInstanceSpecifier}).value());
+        auto skeleton_result_ = TestDataSkeleton::Create(
+            InstanceSpecifier::Create(std::string{gBenchmarkCliArgs.skeleton_instance_specifier}).value());
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(skeleton_result_.has_value());
         skeleton_ = std::move(skeleton_result_.value());
 
@@ -88,8 +86,8 @@ class LolaGetNewSamplesBenchmarkFixture : public benchmark::Fixture
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(offer_result.has_value());
 
         // Find and create proxy
-        auto handle =
-            TestDataProxy::FindService(InstanceSpecifier::Create(std::string{kBenchmarkInstanceSpecifier}).value());
+        auto handle = TestDataProxy::FindService(
+            InstanceSpecifier::Create(std::string{gBenchmarkCliArgs.proxy_instance_specifier}).value());
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(handle.has_value());
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(!handle.value().empty());
 
@@ -176,4 +174,16 @@ BENCHMARK_F(LolaGetNewSamplesBenchmarkFixture, GetNewSamples)(benchmark::State& 
 
 }  // namespace score::mw::com::test
 
-BENCHMARK_MAIN();
+int main(int argc, char** argv)
+{
+    score::mw::com::test::gBenchmarkCliArgs = score::mw::com::test::ParseBenchmarkCliArgs(argc, argv);
+
+    benchmark::Initialize(&argc, argv);
+    if (benchmark::ReportUnrecognizedArguments(argc, argv))
+    {
+        return 1;
+    }
+    benchmark::RunSpecifiedBenchmarks();
+    benchmark::Shutdown();
+    return 0;
+}

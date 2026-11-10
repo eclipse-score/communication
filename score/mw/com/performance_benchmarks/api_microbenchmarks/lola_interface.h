@@ -20,6 +20,7 @@
 
 namespace score::mw::com::test
 {
+
 namespace
 {
 using byte = std::uint8_t;

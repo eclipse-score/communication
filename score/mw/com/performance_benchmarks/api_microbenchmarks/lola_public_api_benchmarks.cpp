@@ -47,7 +47,7 @@ class LolaBenchmarkFixture : public benchmark::Fixture
         if (!fixture_initialized_)
         {
             auto config_path = runtime::RuntimeConfiguration(
-                "score/mw/com/performance_benchmarks/api_microbenchmarks/config/mw_com_config.json");
+                "score/mw/com/performance_benchmarks/api_microbenchmarks/config/mw_com_config_asil_b.json");
             score::mw::com::runtime::InitializeRuntime(config_path);
             fixture_initialized_ = true;
         }

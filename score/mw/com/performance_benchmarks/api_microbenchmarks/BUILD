@@ -26,13 +26,23 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "benchmark_cli_args",
+    srcs = ["benchmark_cli_args.cpp"],
+    hdrs = ["benchmark_cli_args.h"],
+    features = [
+        "aborts_upon_exception",
+    ],
+    visibility = ["//score/mw/com/performance_benchmarks/api_microbenchmarks:__pkg__"],
+)
+
 cc_binary(
     name = "lola_public_api_benchmarks",
     srcs = [
         "lola_public_api_benchmarks.cpp",
     ],
     data = [
-        "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:basic_config",
+        "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:config_asil_b",
     ],
     tags = ["benchmark"],
     deps = [
@@ -49,13 +59,17 @@ cc_binary(
         "lola_get_num_new_samples_benchmarks.cpp",
     ],
     data = [
-        "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:basic_config",
+        "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:config_asil_b",
+        "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:config_qm",
+        "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json",
     ],
+    env = {"MW_LOG_CONFIG_FILE": "$(location //score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json)"},
     tags = ["benchmark"],
     deps = [
+        ":benchmark_cli_args",
         ":lola_interface",
         "//score/mw/com",
-        "@google_benchmark//:benchmark_main",
+        "@google_benchmark//:benchmark",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
     ],
@@ -67,15 +81,17 @@ cc_binary(
         "lola_get_new_samples_benchmarks.cpp",
     ],
     data = [
-        "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:config_qm_high_frequency_send_large_data",
+        "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:config_asil_b",
+        "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:config_qm",
         "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json",
     ],
     env = {"MW_LOG_CONFIG_FILE": "$(location //score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json)"},
     tags = ["benchmark"],
     deps = [
+        ":benchmark_cli_args",
         ":lola_interface",
         "//score/mw/com",
-        "@google_benchmark//:benchmark_main",
+        "@google_benchmark//:benchmark",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
     ],
@@ -87,15 +103,17 @@ cc_binary(
         "lola_allocate_send_benchmarks.cpp",
     ],
     data = [
-        "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:config_qm_high_frequency_send_large_data",
+        "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:config_asil_b",
+        "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:config_qm",
         "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json",
     ],
     env = {"MW_LOG_CONFIG_FILE": "$(location //score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json)"},
     tags = ["benchmark"],
     deps = [
+        ":benchmark_cli_args",
         ":lola_interface",
         "//score/mw/com",
-        "@google_benchmark//:benchmark_main",
+        "@google_benchmark//:benchmark",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
     ],
