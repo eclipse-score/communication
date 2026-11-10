@@ -1,3 +1,16 @@
+<!-- ----------------------------------------------------------------------------
+  Copyright (c) 2026 Contributors to the Eclipse Foundation
+
+  See the NOTICE file(s) distributed with this work for additional
+  information regarding copyright ownership.
+
+  This program and the accompanying materials are made available under the
+  terms of the Apache License Version 2.0 which is available at
+  https://www.apache.org/licenses/LICENSE-2.0
+
+  SPDX-License-Identifier: Apache-2.0
+----------------------------------------------------------------------------- -->
+
 # MISRA C++:2023 Guideline Enforcement Plan (GEP)
 
 This is the guideline enforcement plan for S-CORE communication for MISRA C++:2023.
@@ -17,7 +30,7 @@ Note: According to MISRA Compliance:2020 document, every guideline within "The G
 | RULE-0-1-1 | | `-Wunused-variable` | `clang-analyzer-deadcode.DeadStores` | `UnnecessaryWriteToLocalObject.ql` |
 | RULE-0-1-2 | | | `bugprone-unused-return-value` | `UnusedReturnValueMisraCpp.ql` |
 | RULE-0-2-1 | `-Wunused-variable` | `-Wunused-variable` | `clang-diagnostic-unused-const-variable` <br/> `clang-diagnostic-unused-template` <br/> `clang-diagnostic-unused-variable` | `UnusedLimitedVisibilityVariable.ql` |
-| RULE-0-2-2 | | `-Wunused-exception-parameter` <br/> `-Wunused-lambda-capture` <br/> `-Wunused-parameter` | | `UnusedParameterMisraCpp.ql` |
+| RULE-0-2-2 | `-Wunused-parameter` | `-Wunused-exception-parameter` <br/> `-Wunused-lambda-capture` <br/> `-Wunused-parameter` | | `UnusedParameterMisraCpp.ql` |
 | RULE-0-2-3 | `-Wunused-local-typedefs` | | `clang-diagnostic-unused-local-typedef` | `UnusedTypeWithLimitedVisibility.ql` |
 | RULE-0-2-4 | `-Wunused-function` | `-Wunused-function` <br/> `-Wunused-member-function` <br/> `-Wunused-template` | | `UnusedLimitedVisibilityFunction.ql` |
 | DIR-0-3-1 | | | | `PossibleMisuseOfInfiniteFloatingPointValue.ql`<br/> `PossibleMisuseOfNaNFloatingPointValue.ql` |
@@ -95,7 +108,7 @@ Note: According to MISRA Compliance:2020 document, every guideline within "The G
 | RULE-9-2-1 | | `-Wunused-value` | `bugprone-unused-raii` | `NoStandaloneTypeCastExpression.ql` |
 | RULE-9-3-1 | `-Wparentheses` <br/> `-Wdangling-else` <br/> `-Wmisleading-indentation` | `-Wparentheses` <br/> `-Wdangling-else` <br/> `-Wmisleading-indentation` <br/> `-Wempty-body` | `readability-braces-around-statements` | `SwitchBodyCompoundCondition.ql`<br/> `LoopBodyCompoundCondition.ql` |
 | RULE-9-4-1 | | | | `IfElseIfEndCondition.ql` |
-| RULE-9-4-2 | | `-Wimplicit-fallthrough` <br/> `-Wswitch` <br/> `-Wswitch-default` <br/> `-Wswitch-enum` | `hicpp-multiway-paths-covered` | `AppropriateStructureOfSwitchStatement.ql` |
+| RULE-9-4-2 | `-Wswitch-enum` | `-Wimplicit-fallthrough` <br/> `-Wswitch` <br/> `-Wswitch-default` <br/> `-Wswitch-enum` | `hicpp-multiway-paths-covered` | `AppropriateStructureOfSwitchStatement.ql` |
 | RULE-9-5-1 | | | `bugprone-too-small-loop-variable` | `LegacyForStatementsShouldBeSimple.ql` |
 | RULE-9-5-2 | | `-Wdangling-gsl` | | `ForRangeInitializerAtMostOneFunctionCall.ql` |
 | RULE-9-6-1 | | | `cppcoreguidelines-avoid-goto` | `GotoStatementShouldNotBeUsed.ql` |

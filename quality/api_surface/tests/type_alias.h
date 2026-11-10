@@ -30,10 +30,20 @@ class PointImpl
     double y_;
 };
 
+enum class ColorImpl
+{
+    kRed,
+    kGreen
+};
+
 }  // namespace impl
 
 /// \brief A point in 2D space (type alias to impl).
 /// \api
 using Point = impl::PointImpl;
+
+/// \brief A color (enum alias to impl).
+/// \api
+using Color = impl::ColorImpl;
 
 }  // namespace test

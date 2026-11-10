@@ -188,6 +188,10 @@ void PerformFirstConsumerActions(CheckPointControl& check_point_control,
     const auto proceed_instruction = WaitForChildProceed(check_point_control, stop_token);
     std::cout << "First Consumer Step (7): received parent command to proceed\n";
 
+    if (proceed_instruction == CheckPointControl::ProceedInstruction::WAIT_FOR_KILL)
+    {
+        IdleUntilKilled(check_point_control);
+    }
     if (proceed_instruction != CheckPointControl::ProceedInstruction::FINISH_ACTIONS)
     {
         std::cerr << "Provider Step (P.3): Unexpected proceed instruction received: "

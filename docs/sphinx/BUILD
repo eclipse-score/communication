@@ -71,6 +71,7 @@ sphinx_module(
         [
             "index.rst",
             "lola.rst",
+            "memory_shared.rst",
             "message_passing.rst",
             "quality_reports.rst",
             ":doxygen_xml",
@@ -81,6 +82,7 @@ sphinx_module(
     docs_library_deps = [
         "//score/mw/com/dependability:mw_com_rst",
         "//score/message_passing/dependability:dependable_element_message_passing_rst",
+        "//score/memory/shared/dependability:dependable_element_memory_shared_rst",
         "//:contributing_md",
         "//score/mw/com:readme_md",
         "//score/mw/com/doc/tutorial:tutorial_rst",

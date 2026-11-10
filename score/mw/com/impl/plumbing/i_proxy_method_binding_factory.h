@@ -18,9 +18,11 @@
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
 #include "score/mw/com/impl/proxy_binding.h"
 
+#include "score/memory/data_type_size_info.h"
 #include "score/result/result.h"
 
 #include <memory>
+#include <optional>
 #include <string_view>
 
 namespace score::mw::com::impl
@@ -45,11 +47,20 @@ class IProxyMethodBindingFactory
     /// \param parent_binding Reference to the parent binding which can be cast to the actual binding type like
     /// lola::Proxy.
     /// \param method_name The binding unspecific name of the method inside the proxy denoted by handle.
+    /// \param in_arg_type_info The size/alignment info of the method's in-args (type-erased), or std::nullopt if the
+    /// method has no in-args. The caller (which knows the concrete argument types at compile-time) is responsible
+    /// for computing this, e.g. via TypeErasedMethodSignatureInfo.
+    /// \param return_type_info The size/alignment info of the method's return type (type-erased), or std::nullopt if
+    /// the method has a void return type. The caller (which knows the concrete return type at compile-time) is
+    /// responsible for computing this, e.g. via TypeErasedMethodSignatureInfo.
     /// \return An instance of ProxyMethodBinding or an error in case binding creation fails.
     virtual auto Create(HandleType parent_handle,
                         ProxyBinding& parent_binding,
                         const std::string_view method_name,
-                        MethodType method_type) -> Result<std::unique_ptr<ProxyMethodBinding>> = 0;
+                        MethodType method_type,
+                        std::optional<memory::DataTypeSizeInfo> in_arg_type_info,
+                        std::optional<memory::DataTypeSizeInfo> return_type_info)
+        -> Result<std::unique_ptr<ProxyMethodBinding>> = 0;
 };
 
 }  // namespace score::mw::com::impl

@@ -1,5 +1,6 @@
 //quality/compiler_warnings/clang:default_flags
 //quality/compiler_warnings/clang:minimal_warnings
+//quality/compiler_warnings/clang:misra_warnings
 //quality/compiler_warnings/gcc:default_flags
 //quality/compiler_warnings/gcc:minimal_warnings
 //quality/compiler_warnings/gcc:misra_warnings
@@ -7,6 +8,12 @@
 //quality/compiler_warnings:optimize_code
 //quality/compiler_warnings:treat_warnings_as_errors
 //quality/coverage:enable_llvm_coverage_for_death_tests
+//score/memory/shared/dependability:dependable_element_memory_shared
+//score/memory/shared/dependability:dependable_element_memory_shared.serve
+//score/memory/shared/dependability:dependable_element_memory_shared_doc
+//score/memory/shared/dependability:dependable_element_memory_shared_doc_needs
+//score/memory/shared/dependability:dependable_element_memory_shared_index
+//score/memory/shared/dependability:dependable_element_memory_shared_rst
 //score/memory/shared/fake:fake_memory_resources
 //score/memory/shared/fake:my_bounded_shared_memory_resource
 //score/memory/shared/flock:exclusive_flock_mutex
@@ -31,7 +38,6 @@
 //score/memory/shared:shared_memory_resource_heap_allocator_mock
 //score/memory/shared:shared_memory_resource_mock
 //score/memory/shared:string
-//score/memory/shared:types
 //score/memory/shared:vector
 //score/message_passing/dependability:dependable_element_message_passing
 //score/message_passing/dependability:dependable_element_message_passing.serve

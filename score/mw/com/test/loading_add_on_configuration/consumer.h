@@ -80,10 +80,10 @@ void run_consumer(const score::cpp::stop_token& stop_token,
         FailTest("Consumer: Did not receive all expected samples in event scenario");
     }
 
-    // Step 6. Notify provider that data was received
+    // Step 6. The provider is notified exactly once by process_synchronizer_guard when leaving this function.
+    // Notifying explicitly here as well would leave a stale notification behind that can arrive after the provider
+    // has reset the synchronizer, making the provider of the next round finish before the consumer got its samples.
     std::cout << "\nConsumer: Step 6 - Notify provider that data was received" << std::endl;
-
-    process_synchronizer.Notify();
 }
 
 }  // namespace score::mw::com::test

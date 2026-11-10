@@ -1,5 +1,5 @@
 ' *******************************************************************************
-' Copyright (c) {year} Contributors to the Eclipse Foundation
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
 '
 ' See the NOTICE file(s) distributed with this work for additional
 ' information regarding copyright ownership.
@@ -21,7 +21,6 @@ $OrGate("Gate1", "Communication.SendingEventSendsToWrongConsumer")
 $IntermediateEvent("Writing Data into totally wrong Shared Memory segment", "Event1", "Gate1")
 $IntermediateEvent("Writing data into wrong slot", "Event2", "Gate1")
 
-$TransferInGate("Transfer1", "Event1")
-$TransferInGate("Transfer2", "Event2")
+$TransferInGate("Communication.MemoryAllocatedInWrongSection", "Event1")
 
 @enduml

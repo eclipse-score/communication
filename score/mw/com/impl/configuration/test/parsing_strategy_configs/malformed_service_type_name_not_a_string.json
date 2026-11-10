@@ -1,0 +1,13 @@
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": 123,
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "bindings": []
+        }
+    ],
+    "serviceInstances": []
+}

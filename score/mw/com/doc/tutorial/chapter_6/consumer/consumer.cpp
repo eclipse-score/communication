@@ -34,8 +34,10 @@ using HelloWorldProxy = score::mw::com::AsProxy<score::mw::com::tutorial::HelloW
 
 // Deduce the sample type of the "message" event from the proxy member (public SampleType alias of ProxyEvent) instead
 // of referencing internal (impl-namespace) types. The GetNewSamples() receiver is handed a SamplePtr<SampleType>.
+// [consumer-sample-ptr-type-start]
 using MessageSampleType = decltype(HelloWorldProxy::message)::SampleType;
 using MessageSamplePtr = score::mw::com::SamplePtr<MessageSampleType>;
+// [consumer-sample-ptr-type-end]
 
 namespace
 {
@@ -133,6 +135,7 @@ int main(int argc, const char** argv)
     // received SamplePtr immediately at the end of the GetNewSamples() callback - this consumer keeps the SamplePtrs
     // by moving them out of the callback into this deque. It therefore holds up to 'max_sample_count' samples in
     // parallel, which is exactly what it announced in its Subscribe() call. The oldest sample is at the front.
+    // [consumer-keep-sample-ptrs-start]
     std::deque<MessageSamplePtr> held_samples{};
 
     while (g_running.load(std::memory_order_relaxed))
@@ -168,6 +171,7 @@ int main(int argc, const char** argv)
             std::cerr << "Failed to get new samples: " << get_new_samples_result.error() << std::endl;
         }
     }
+    // [consumer-keep-sample-ptrs-end]
 
     // Stop the asynchronous service discovery before shutting down (no-op if it was already stopped by the handler).
     score::cpp::ignore = HelloWorldProxy::StopFindService(find_service_handle_result.value());

@@ -99,7 +99,7 @@ cc_args(
         "-lstdc++",
         "-Wl,--build-id=sha1",
         "-Wl,--warn-execstack",
-        "-Wl,--no-fatal-warnings",
+        "-Wl,--fatal-warnings",
     ],
     visibility = ["//quality/compiler_warnings:__subpackages__"],
 )
@@ -168,16 +168,19 @@ cc_args(
     args = [
         "-Wtype-limits",  # Helps to achieve MISRA C++:2023 Rule 0-0-2
         "-Wunused-variable",  # Helps to achieve MISRA C++:2023 Rule 0-2-1 in gcc and clang and Rule 0-1-1 in clang
+        "-Wunused-parameter",  # Helps to achieve MISRA C++:2023 Rule 0-2-2
         "-Wunused-function",  # Helps to achieve MISRA C++:2023 Rule 0-2-4
         "-Wtrigraphs",  # Helps to achieve MISRA C++:2023 Rule 5-0-1
         "-Wcomment",  # Helps to achieve MISRA C++:2023 Rule 5-7-1 and 5-7-3
         "-Wshadow",  # Helps to achieve MISRA C++:2023 Rule 6-4-1 in gcc and clang and Rule 10-2-2 in clang
         "-Wparentheses",  # Helps to achieve MISRA C++:2023 Rule 8-0-1, 8-18-2, and 9-3-1 in gcc and clang and Rule 6-0-1 in gcc
+        "-Wswitch-bool",  # Helps to achieve MISRA C++:2023 Rule 7-0-1
         "-Wsign-compare",  # Helps to achieve MISRA C++:2023 Rule 7-0-5
         "-Wconversion",  # Helps to achieve MISRA C++:2023 Rule 7-0-6 in gcc and clang, Rule 7-0-5 in gcc, and Rule 7-0-3 and 8-20-1 in clang
         "-Waddress",  # Helps to achieve MISRA C++:2023 Rule 7-11-3
         "-Wdangling-else",  # Helps to achieve MISRA C++:2023 Rule 9-3-1
         "-Wmisleading-indentation",  # Helps to achieve MISRA C++:2023 Rule 9-3-1
+        "-Wswitch-enum",  # Helps to achieve MISRA C++:2023 Rule 9-4-2
         "-Wreturn-type",  # Helps to achieve MISRA C++:2023 Rule 9-6-5
         "-Wignored-qualifiers",  # Helps to achieve MISRA C++:2023 Rule 10-1-2
         "-Wenum-compare",  # Helps to achieve MISRA C++:2023 Rule 10-2-3

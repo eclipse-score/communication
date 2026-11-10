@@ -21,6 +21,7 @@
 namespace score::memory::shared
 {
 
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 ISealedShm* SealedShm::mock_{nullptr};
 
 // Suppress "AUTOSAR C++14 A16-0-1" rule findings. This rule stated: "The pre-processor shall only be used for

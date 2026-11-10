@@ -385,17 +385,9 @@ class SkeletonMemoryManagerTestAttorney
         return nullptr;
     }
 
-    std::optional<EventMetaInfo> GetEventMetaInfo(const ElementFqId element_fq_id) const
+    const EventMetaInfo& GetEventMetaInfo(const ElementFqId element_fq_id) const
     {
-        auto search = skeleton_memory_manager_.storage_->events_metainfo_.find(element_fq_id);
-        if (search == skeleton_memory_manager_.storage_->events_metainfo_.cend())
-        {
-            return std::nullopt;
-        }
-        else
-        {
-            return search->second;
-        }
+        return skeleton_memory_manager_.storage_->GetEventMetaInfo(element_fq_id);
     }
 
   private:
@@ -412,7 +404,7 @@ class SkeletonAttorney
         return SkeletonMemoryManagerTestAttorney{skeleton_.memory_manager_}.GetServiceDataControl(quality_type);
     }
 
-    std::optional<EventMetaInfo> GetEventMetaInfo(const ElementFqId element_fq_id) const
+    const EventMetaInfo& GetEventMetaInfo(const ElementFqId element_fq_id) const
     {
         return SkeletonMemoryManagerTestAttorney{skeleton_.memory_manager_}.GetEventMetaInfo(element_fq_id);
     }
@@ -478,16 +470,7 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
         memory::DataTypeSizeInfo sample_size_info{sizeof(SampleType), alignof(SampleType)};
         ServiceDataStorage service_data_storage{1U, *data_shared_memory_resource_mock_};
 
-        auto* event_data_storage = data_shared_memory_resource_mock_->construct<EventDataStorage>(
-            *data_shared_memory_resource_mock_, SlotIndexType{10U}, sample_size_info);
-
-        auto inserted_data_slots = service_data_storage.events_.emplace(
-            std::piecewise_construct, std::forward_as_tuple(element_fq_id), std::forward_as_tuple(event_data_storage));
-        EXPECT_TRUE(inserted_data_slots.second);
-
-        auto inserted_meta_info = service_data_storage.events_metainfo_.emplace(
-            std::piecewise_construct, std::forward_as_tuple(element_fq_id), std::forward_as_tuple(sample_size_info));
-        EXPECT_TRUE(inserted_meta_info.second);
+        service_data_storage.AddEvent(element_fq_id, SlotIndexType{10U}, sample_size_info);
 
         return service_data_storage;
     }
@@ -495,13 +478,7 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
     EventDataStorage& GetEventStorageFromServiceDataStorage(ElementFqId element_fq_id,
                                                             ServiceDataStorage& service_data_storage) noexcept
     {
-        auto event_data_storage_it = service_data_storage.events_.find(element_fq_id);
-        EXPECT_NE(event_data_storage_it, service_data_storage.events_.cend());
-        auto event_data_storage_offset_ptr = event_data_storage_it->second;
-
-        auto* const event_data_storage = event_data_storage_offset_ptr.template get<EventDataStorage>();
-        EXPECT_NE(event_data_storage, nullptr);
-        return *event_data_storage;
+        return service_data_storage.GetEventDataStorage(element_fq_id);
     }
 
     void CleanUpSkeleton();

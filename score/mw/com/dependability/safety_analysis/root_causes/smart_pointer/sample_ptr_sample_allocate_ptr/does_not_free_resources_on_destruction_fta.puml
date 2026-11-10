@@ -15,7 +15,7 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("Does not free resources on destruction", "Communication.DoesNotFreeResourcesOnDestruction", "Communication.DoesNotReserveResources")
+$FailureMode("Resources not freed or wrong resources freed on destruction", "Communication.DoesNotFreeResourcesOnDestruction", "Communication.FreesWrongResources", "Communication.DoesNotReserveResources")
 
 $IntermediateEvent("Does not free slot", "Event1", "Communication.DoesNotFreeResourcesOnDestruction")
 $OrGate("Gate1", "Event1")

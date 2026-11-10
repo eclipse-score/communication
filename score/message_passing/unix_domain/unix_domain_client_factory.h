@@ -28,6 +28,11 @@ class UnixDomainClientFactory final : public IClientFactory
     explicit UnixDomainClientFactory(const std::shared_ptr<UnixDomainEngine> engine) noexcept;
     ~UnixDomainClientFactory() noexcept;
 
+    UnixDomainClientFactory(const UnixDomainClientFactory&) = delete;
+    UnixDomainClientFactory& operator=(const UnixDomainClientFactory&) = delete;
+    UnixDomainClientFactory(UnixDomainClientFactory&&) = delete;
+    UnixDomainClientFactory& operator=(UnixDomainClientFactory&&) = delete;
+
     score::cpp::pmr::unique_ptr<IClientConnection> Create(const ServiceProtocolConfig& protocol_config,
                                                           const ClientConfig& client_config) noexcept override;
 

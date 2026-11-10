@@ -64,7 +64,7 @@ justifications:
   #
   - id: flag-file-crawler-defensive
     category: defensive_programming
-    platforms: [linux, qnx]  # applies to both platforms
+    platforms: [linux, qnx] # applies to both platforms
     reason: >
       Defensive guard for flag file parsing. Only entered if a flag file exists,
       so the file must be parseable. Guard protects against filesystem race conditions.
@@ -73,26 +73,35 @@ justifications:
         line_start: 29
         line_end: 29
 
+  - id: generic-skeleton-event-emplace-failure-unreachable
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      Defensive programming: emplace() into the events map can only fail if the key already exists.
+      Duplicate event names are rejected earlier in GenericSkeleton::Create() (kServiceElementAlreadyExists),
+      and stable_name is the configuration key found for exactly that (already unique) event name.
+      Therefore the emplace can never fail at this point.
+
   - id: gateway-clear-nonblock-on-accepted-socket
     platforms: [linux, qnx]
     category: defensive_programming
     reason: >
-       Defensive programming: Posix system call can only go wrong if the socket file descriptor is invalid,
-       but socket has just been accepted in an earlier step.
+      Defensive programming: Posix system call can only go wrong if the socket file descriptor is invalid,
+      but socket has just been accepted in an earlier step.
 
   - id: gateway-handle-response-only-ack-response
     platforms: [linux, qnx]
     category: defensive_programming
     reason: >
-       Defensive programming: Type has already been checked before this function has been called.
+      Defensive programming: Type has already been checked before this function has been called.
 
   - id: gateway-dispatch-loop-calls-handler
     platforms: [linux, qnx]
     category: tool_false_positive
     reason: >
-       Coverage tool incorrectly marks this line as not covered. Lines immediately before and after are covered.
-       Covered by the test BidirectionalTransportSocketFixture.DispatchThreadDeliversQueuedMessageToHandler
-       inside score/mw/com/gateway/transport_layer/sample/bidirectional_transport_test.cpp
+      Coverage tool incorrectly marks this line as not covered. Lines immediately before and after are covered.
+      Covered by the test BidirectionalTransportSocketFixture.DispatchThreadDeliversQueuedMessageToHandler
+      inside score/mw/com/gateway/transport_layer/sample/bidirectional_transport_test.cpp
 
   - id: ivshmem-bind-shm-to-bar-shm-ctl-special-success
     category: defensive_programming
@@ -109,7 +118,7 @@ justifications:
     category: defensive_programming
     platforms: [qnx]
     reason: >
-      Idempotent guard in WriteDirectoryEntry() requires multi-VM concurrent write race; 
+      Idempotent guard in WriteDirectoryEntry() requires multi-VM concurrent write race;
       single-process tests cache allocations on first write, preventing re-entry.
     locations:
       - file: score/mw/com/gateway/transport_layer/qemu/ivshmem/ivshmem_typed_memory_provider.cpp
@@ -120,7 +129,7 @@ justifications:
     category: defensive_programming
     platforms: [qnx]
     reason: >
-      QNX PCI API calls require real ivshmem device. Tests with no hardware hit pci_device_find→PCI_BDF_NONE 
+      QNX PCI API calls require real ivshmem device. Tests with no hardware hit pci_device_find→PCI_BDF_NONE
       and cannot mock PCI subsystem APIs.
     locations:
       - file: score/mw/com/gateway/transport_layer/qemu/ivshmem/ivshmem_bar_discovery.cpp
@@ -137,3 +146,36 @@ justifications:
       - file: score/mw/com/gateway/transport_layer/qemu/qemu_hypervisor_transport.cpp
         line_start: 356
         line_end: 357
+
+  - id: handle-type-hash-buffer-size-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      ToHashString() always returns a fixed-length string of constexpr size, independent of the id values.
+      So the assertion gives the same result on every call (per compilation), and any test that hashes a
+      HandleType proves it never fails.
+
+  - id: reference-to-moveable-make-unique-nonnull-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      std::make_unique never returns nullptr (it throws std::bad_alloc on allocation failure),
+      so reference_to_moveable_ is always non-null. The assert-failure path is unreachable.
+
+  - id: sample-allocatee-tracker-deallocate-underflow-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      Defensive underflow check in SampleAllocateeTracker::Deallocate(). Deallocate() is only
+      called via a SampleAllocateeGuard, which is handed out by Allocate() (which first does
+      fetch_add) and deallocates at most once. Thus the pre-decrement value 'previous' is always
+      greater than 0, making the assert-failure path unreachable without violating the guard's
+      allocate/deallocate pairing.
+
+  - id: sample-reference-tracker-available-samples-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >-
+      Available_samples_ starts at max_num_samples_ and every deallocation only gives back
+      samples that were previously taken out, so it can never grow above max_num_samples_.
+      The assert-failure path is therefore unreachable.

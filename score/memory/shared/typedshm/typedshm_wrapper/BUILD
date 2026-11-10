@@ -14,7 +14,6 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 selects.config_setting_group(
     name = "QNX_AND_USE_TYPED_SHMD",
@@ -39,7 +38,6 @@ cc_library(
         ],
         "//conditions:default": ["ALLOW_QM"],
     }),
-    features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
         "//visibility:public",
@@ -63,7 +61,6 @@ cc_library(
 cc_unit_test(
     name = "typed_memory_test",
     srcs = ["typed_memory_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     target_compatible_with = select({
         "//score/memory/shared/flags:config_use_typedshmd": ["@platforms//os:qnx"],
         "//conditions:default": ["@platforms//:incompatible"],

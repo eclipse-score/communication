@@ -33,7 +33,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout default branch
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.repository.default_branch }}
 
@@ -47,8 +47,20 @@ jobs:
           dropdown: _version
           dry_run: no-commit
 
+      - name: Prepare Bazel environment
+        uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
+        with:
+          ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+      # The form rewrite drops the copyright header; restore it with the repo's copyright tooling
+      - name: Restore copyright header
+        run: bazel run //third_party/cr_checker:issue_template_copyright.fix
+
+      - name: Reformat YAML files
+        run: bazel run //:format_YAML_with_yamlfmt
+
       - name: Create pull request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: chore/update-issue-template-versions

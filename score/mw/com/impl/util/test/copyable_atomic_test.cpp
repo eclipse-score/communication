@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/util/copyable_atomic.h"
+#include "score/quality/compiler_warnings/warnings.h"
 
 #include <gtest/gtest.h>
 
@@ -43,6 +44,8 @@ TEST(CopyableAtomicTest, CopyAssign)
     EXPECT_EQ(unit2, true);
 }
 
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_SELF_ASSIGN_OVERLOADED  // testing correctness of implementation
 TEST(CopyableAtomicTest, SelfAssigningCopyableAtomicWillNotModifyStoredValue)
 {
     // Given a CopyableAtomic storing a value
@@ -55,6 +58,7 @@ TEST(CopyableAtomicTest, SelfAssigningCopyableAtomicWillNotModifyStoredValue)
     // Then the CopyableAtomic will still store the same value
     EXPECT_EQ(unit, initial_value);
 }
+DISABLE_WARNING_POP
 
 }  // namespace
 

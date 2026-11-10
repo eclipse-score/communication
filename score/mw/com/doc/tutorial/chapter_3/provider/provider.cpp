@@ -25,9 +25,11 @@
 
 // In this chapter the provider offers 3 different instances of the HelloWorldService. Each instance is mapped to its
 // own InstanceSpecifier in the provider configuration (mw_com_config.json).
+// [provider-instance-specifiers-start]
 constexpr std::array<std::string_view, 3U> kInstanceSpecifierStrings{"MyHelloWorldServiceInstance_1",
                                                                      "MyHelloWorldServiceInstance_2",
                                                                      "MyHelloWorldServiceInstance_3"};
+// [provider-instance-specifiers-end]
 
 // The provider waits this amount of time after bringing up a service instance before it brings up the next one.
 constexpr std::chrono::seconds kInstanceStaggerDelay{5};
@@ -101,6 +103,7 @@ int main()
     std::signal(SIGINT, SignalHandler);
     std::signal(SIGTERM, SignalHandler);
 
+    // [provider-main-loop-start]
     std::vector<HelloWorldSkeleton> service_instances{};
     service_instances.reserve(kInstanceSpecifierStrings.size());
 
@@ -131,5 +134,6 @@ int main()
         }
         ++send_counter;
     }
+    // [provider-main-loop-end]
     std::cout << "HelloWorld service provider going down." << std::endl;
 }

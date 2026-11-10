@@ -49,80 +49,6 @@ bool IsNonRecoverableError(const score::result::Error error)
     return !(analysis::tracing::IsErrorRecoverable(static_cast<ErrorCode>(*error)));
 }
 
-const std::unordered_map<ProxyEventTracePointType, analysis::tracing::TracePointType>
-    // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-    // constant-initialized.".
-    // std::unordered_map doesn't have a constexpr constructor.
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    kProxyEventTracePointToTracingTracePointMap{
-        {ProxyEventTracePointType::SUBSCRIBE, analysis::tracing::TracePointType::kProxyEventSub},
-        {ProxyEventTracePointType::UNSUBSCRIBE, analysis::tracing::TracePointType::kProxyEventUnsub},
-        {ProxyEventTracePointType::SUBSCRIBE_STATE_CHANGE,
-         analysis::tracing::TracePointType::kProxyEventSubstateChange},
-        {ProxyEventTracePointType::SET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
-         analysis::tracing::TracePointType::kProxyEventSetChghdl},
-        {ProxyEventTracePointType::UNSET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
-         analysis::tracing::TracePointType::kProxyEventUnsetChghdl},
-        {ProxyEventTracePointType::SUBSCRIPTION_STATE_CHANGE_HANDLER_CALLBACK,
-         analysis::tracing::TracePointType::kProxyEventChghdl},
-        {ProxyEventTracePointType::SET_RECEIVE_HANDLER, analysis::tracing::TracePointType::kProxyEventSetRechdl},
-        {ProxyEventTracePointType::UNSET_RECEIVE_HANDLER, analysis::tracing::TracePointType::kProxyEventUnsetRechdl},
-        {ProxyEventTracePointType::RECEIVE_HANDLER_CALLBACK, analysis::tracing::TracePointType::kProxyEventRechdl},
-        {ProxyEventTracePointType::GET_NEW_SAMPLES, analysis::tracing::TracePointType::kProxyEventGetSamples},
-        {ProxyEventTracePointType::GET_NEW_SAMPLES_CALLBACK, analysis::tracing::TracePointType::kProxyEventSampleCb},
-    };
-
-const std::unordered_map<ProxyFieldTracePointType, analysis::tracing::TracePointType>
-    // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-    // constant-initialized.".
-    // std::unordered_map doesn't have a constexpr constructor.
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    kProxyFieldTracePointToTracingTracePointMap{
-        {ProxyFieldTracePointType::SUBSCRIBE, analysis::tracing::TracePointType::kProxyFieldSub},
-        {ProxyFieldTracePointType::UNSUBSCRIBE, analysis::tracing::TracePointType::kProxyFieldUnsub},
-        {ProxyFieldTracePointType::SUBSCRIBE_STATE_CHANGE,
-         analysis::tracing::TracePointType::kProxyFieldSubstateChange},
-        {ProxyFieldTracePointType::SET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
-         analysis::tracing::TracePointType::kProxyFieldSetChghdl},
-        {ProxyFieldTracePointType::UNSET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
-         analysis::tracing::TracePointType::kProxyFieldUnsetChghdl},
-        {ProxyFieldTracePointType::SUBSCRIPTION_STATE_CHANGE_HANDLER_CALLBACK,
-         analysis::tracing::TracePointType::kProxyFieldChghdl},
-        {ProxyFieldTracePointType::SET_RECEIVE_HANDLER, analysis::tracing::TracePointType::kProxyFieldSetRechdl},
-        {ProxyFieldTracePointType::UNSET_RECEIVE_HANDLER, analysis::tracing::TracePointType::kProxyFieldUnsetRechdl},
-        {ProxyFieldTracePointType::RECEIVE_HANDLER_CALLBACK, analysis::tracing::TracePointType::kProxyFieldRechdl},
-        {ProxyFieldTracePointType::GET_NEW_SAMPLES, analysis::tracing::TracePointType::kProxyFieldGetSamples},
-        {ProxyFieldTracePointType::GET_NEW_SAMPLES_CALLBACK, analysis::tracing::TracePointType::kProxyFieldSampleCb},
-        {ProxyFieldTracePointType::GET, analysis::tracing::TracePointType::kProxyFieldGet},
-        {ProxyFieldTracePointType::GET_RESULT, analysis::tracing::TracePointType::kProxyFieldGetResult},
-        {ProxyFieldTracePointType::SET, analysis::tracing::TracePointType::kProxyFieldSet},
-        {ProxyFieldTracePointType::SET_RESULT, analysis::tracing::TracePointType::kProxyFieldSetResult},
-    };
-
-const std::unordered_map<SkeletonEventTracePointType, analysis::tracing::TracePointType>
-    // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-    // constant-initialized.".
-    // std::unordered_map doesn't have a constexpr constructor.
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    kSkeletonEventTracePointToTracingTracePointMap{
-        {SkeletonEventTracePointType::SEND, analysis::tracing::TracePointType::kSkelEventSnd},
-        {SkeletonEventTracePointType::SEND_WITH_ALLOCATE, analysis::tracing::TracePointType::kSkelEventSndA},
-    };
-
-const std::unordered_map<SkeletonFieldTracePointType, analysis::tracing::TracePointType>
-    // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-    // constant-initialized.".
-    // std::unordered_map doesn't have a constexpr constructor.
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    kSkeletonFieldTracePointToTracingTracePointMap{
-        {SkeletonFieldTracePointType::UPDATE, analysis::tracing::TracePointType::kSkelFieldUpd},
-        {SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE, analysis::tracing::TracePointType::kSkelFieldUpdA},
-        {SkeletonFieldTracePointType::GET_CALL, analysis::tracing::TracePointType::kSkelFieldGetCall},
-        {SkeletonFieldTracePointType::GET_CALL_RESULT, analysis::tracing::TracePointType::kSkelFieldGetCallResult},
-        {SkeletonFieldTracePointType::SET_CALL, analysis::tracing::TracePointType::kSkelFieldSetCall},
-        {SkeletonFieldTracePointType::SET_CALL_RESULT, analysis::tracing::TracePointType::kSkelFieldSetCallResult},
-    };
-
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
 // not be called implicitly.". std::visit Throws std::bad_variant_access if
 // as-variant(vars_i).valueless_by_exception() is true for any variant vars_i in vars. The variant may only become
@@ -134,6 +60,69 @@ const std::unordered_map<SkeletonFieldTracePointType, analysis::tracing::TracePo
 analysis::tracing::TracePointType InternalToExternalTracePointType(
     const TracingRuntime::TracePointType& internal_trace_point_type)
 {
+    // unordered_maps are static to not have to construct them on every call
+    static const std::unordered_map<ProxyEventTracePointType, analysis::tracing::TracePointType>
+        kProxyEventTracePointToTracingTracePointMap{
+            {ProxyEventTracePointType::SUBSCRIBE, analysis::tracing::TracePointType::kProxyEventSub},
+            {ProxyEventTracePointType::UNSUBSCRIBE, analysis::tracing::TracePointType::kProxyEventUnsub},
+            {ProxyEventTracePointType::SUBSCRIBE_STATE_CHANGE,
+             analysis::tracing::TracePointType::kProxyEventSubstateChange},
+            {ProxyEventTracePointType::SET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
+             analysis::tracing::TracePointType::kProxyEventSetChghdl},
+            {ProxyEventTracePointType::UNSET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
+             analysis::tracing::TracePointType::kProxyEventUnsetChghdl},
+            {ProxyEventTracePointType::SUBSCRIPTION_STATE_CHANGE_HANDLER_CALLBACK,
+             analysis::tracing::TracePointType::kProxyEventChghdl},
+            {ProxyEventTracePointType::SET_RECEIVE_HANDLER, analysis::tracing::TracePointType::kProxyEventSetRechdl},
+            {ProxyEventTracePointType::UNSET_RECEIVE_HANDLER,
+             analysis::tracing::TracePointType::kProxyEventUnsetRechdl},
+            {ProxyEventTracePointType::RECEIVE_HANDLER_CALLBACK, analysis::tracing::TracePointType::kProxyEventRechdl},
+            {ProxyEventTracePointType::GET_NEW_SAMPLES, analysis::tracing::TracePointType::kProxyEventGetSamples},
+            {ProxyEventTracePointType::GET_NEW_SAMPLES_CALLBACK,
+             analysis::tracing::TracePointType::kProxyEventSampleCb},
+        };
+
+    static const std::unordered_map<ProxyFieldTracePointType, analysis::tracing::TracePointType>
+        kProxyFieldTracePointToTracingTracePointMap{
+            {ProxyFieldTracePointType::SUBSCRIBE, analysis::tracing::TracePointType::kProxyFieldSub},
+            {ProxyFieldTracePointType::UNSUBSCRIBE, analysis::tracing::TracePointType::kProxyFieldUnsub},
+            {ProxyFieldTracePointType::SUBSCRIBE_STATE_CHANGE,
+             analysis::tracing::TracePointType::kProxyFieldSubstateChange},
+            {ProxyFieldTracePointType::SET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
+             analysis::tracing::TracePointType::kProxyFieldSetChghdl},
+            {ProxyFieldTracePointType::UNSET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
+             analysis::tracing::TracePointType::kProxyFieldUnsetChghdl},
+            {ProxyFieldTracePointType::SUBSCRIPTION_STATE_CHANGE_HANDLER_CALLBACK,
+             analysis::tracing::TracePointType::kProxyFieldChghdl},
+            {ProxyFieldTracePointType::SET_RECEIVE_HANDLER, analysis::tracing::TracePointType::kProxyFieldSetRechdl},
+            {ProxyFieldTracePointType::UNSET_RECEIVE_HANDLER,
+             analysis::tracing::TracePointType::kProxyFieldUnsetRechdl},
+            {ProxyFieldTracePointType::RECEIVE_HANDLER_CALLBACK, analysis::tracing::TracePointType::kProxyFieldRechdl},
+            {ProxyFieldTracePointType::GET_NEW_SAMPLES, analysis::tracing::TracePointType::kProxyFieldGetSamples},
+            {ProxyFieldTracePointType::GET_NEW_SAMPLES_CALLBACK,
+             analysis::tracing::TracePointType::kProxyFieldSampleCb},
+            {ProxyFieldTracePointType::GET, analysis::tracing::TracePointType::kProxyFieldGet},
+            {ProxyFieldTracePointType::GET_RESULT, analysis::tracing::TracePointType::kProxyFieldGetResult},
+            {ProxyFieldTracePointType::SET, analysis::tracing::TracePointType::kProxyFieldSet},
+            {ProxyFieldTracePointType::SET_RESULT, analysis::tracing::TracePointType::kProxyFieldSetResult},
+        };
+
+    static const std::unordered_map<SkeletonEventTracePointType, analysis::tracing::TracePointType>
+        kSkeletonEventTracePointToTracingTracePointMap{
+            {SkeletonEventTracePointType::SEND, analysis::tracing::TracePointType::kSkelEventSnd},
+            {SkeletonEventTracePointType::SEND_WITH_ALLOCATE, analysis::tracing::TracePointType::kSkelEventSndA},
+        };
+
+    static const std::unordered_map<SkeletonFieldTracePointType, analysis::tracing::TracePointType>
+        kSkeletonFieldTracePointToTracingTracePointMap{
+            {SkeletonFieldTracePointType::UPDATE, analysis::tracing::TracePointType::kSkelFieldUpd},
+            {SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE, analysis::tracing::TracePointType::kSkelFieldUpdA},
+            {SkeletonFieldTracePointType::GET_CALL, analysis::tracing::TracePointType::kSkelFieldGetCall},
+            {SkeletonFieldTracePointType::GET_CALL_RESULT, analysis::tracing::TracePointType::kSkelFieldGetCallResult},
+            {SkeletonFieldTracePointType::SET_CALL, analysis::tracing::TracePointType::kSkelFieldSetCall},
+            {SkeletonFieldTracePointType::SET_CALL_RESULT, analysis::tracing::TracePointType::kSkelFieldSetCallResult},
+        };
+
     auto visitor = score::cpp::overload(
         [](const ProxyEventTracePointType& proxy_event_trace_point) -> analysis::tracing::TracePointType {
             if (proxy_event_trace_point == ProxyEventTracePointType::INVALID)
@@ -244,7 +233,7 @@ void TracingRuntime::DisableTracing() noexcept
 
 bool TracingRuntime::IsTracingEnabled()
 {
-    return atomic_state_.is_tracing_enabled;
+    return atomic_state_.is_tracing_enabled.load();
 }
 
 ServiceElementTracingData TracingRuntime::RegisterServiceElement(const BindingType binding_type,
@@ -325,7 +314,7 @@ TracingRuntime::TracingRuntime(
 
 void TracingRuntime::SetDataLossFlag(const BindingType binding_type) noexcept
 {
-    if (!atomic_state_.is_tracing_enabled)
+    if (!atomic_state_.is_tracing_enabled.load())
     {
         return;
     }
@@ -343,7 +332,7 @@ void TracingRuntime::RegisterShmObject(
     const memory::shared::ISharedMemoryResource::FileDescriptor shm_object_fd,
     void* const shm_memory_start_address)
 {
-    if (!atomic_state_.is_tracing_enabled)
+    if (!atomic_state_.is_tracing_enabled.load())
     {
         return;
     }
@@ -400,7 +389,7 @@ void TracingRuntime::RegisterShmObject(
 void TracingRuntime::UnregisterShmObject(BindingType binding_type,
                                          ServiceElementInstanceIdentifierView service_element_instance_identifier_view)
 {
-    if (!atomic_state_.is_tracing_enabled)
+    if (!atomic_state_.is_tracing_enabled.load())
     {
         return;
     }
@@ -516,7 +505,7 @@ Result<void> TracingRuntime::Trace(const BindingType binding_type,
                                    const void* const shm_data_ptr,
                                    const std::size_t shm_data_size)
 {
-    if (!atomic_state_.is_tracing_enabled)
+    if (!atomic_state_.is_tracing_enabled.load())
     {
         return MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints);
     }
@@ -609,7 +598,7 @@ Result<void> TracingRuntime::Trace(const BindingType binding_type,
                                    const void* const local_data_ptr,
                                    const std::size_t local_data_size)
 {
-    if (!atomic_state_.is_tracing_enabled)
+    if (!atomic_state_.is_tracing_enabled.load())
     {
         return MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints);
     }

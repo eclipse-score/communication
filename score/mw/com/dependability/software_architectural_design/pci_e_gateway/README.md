@@ -1,3 +1,16 @@
+<!-- ----------------------------------------------------------------------------
+  Copyright (c) 2026 Contributors to the Eclipse Foundation
+
+  See the NOTICE file(s) distributed with this work for additional
+  information regarding copyright ownership.
+
+  This program and the accompanying materials are made available under the
+  terms of the Apache License Version 2.0 which is available at
+  https://www.apache.org/licenses/LICENSE-2.0
+
+  SPDX-License-Identifier: Apache-2.0
+----------------------------------------------------------------------------- -->
+
 # Concept for a LoLa PCIe Gateway
 
 ## Intro
@@ -459,8 +472,7 @@ Most likely we need to create specific FMEAs for these faults.
 
   For this we currently do have **no** solution on `mw::com` public API level. The "straight forward" solution would be
   to introduce additional meta-information to the existing public API. I.e. `GetNewSamples()` could provide additional
-  information like a data-loss indicator. This kind of enhancement is similar to `E2E`-extensions defined in `ara::com`
-  (AUTOSAR communication API). Maybe it really makes sense then to design such a generic `E2E` like extension also for
+  information like a data-loss indicator. Maybe it makes sense to design a generic `E2E` like extension also for
   the `mw::com` API, which then is also prepared for further bindings, which need fully fledged `E2E` state-machines in
   case the underlying transport is an untrusted "grey-channel".
 - `Insertion of information`: This has to be solved by implementing and testing the gateway implementation according to

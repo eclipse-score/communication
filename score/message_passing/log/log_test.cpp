@@ -14,6 +14,7 @@
 #include <gtest/gtest.h>
 
 #include "score/message_passing/log/log.h"
+#include "score/quality/compiler_warnings/warnings.h"
 
 #include <score/utility.hpp>
 
@@ -101,6 +102,9 @@ TEST(LogTest, IntLogger)
     EXPECT_EQ(counter, 4);
 }
 
+// False positive in QCC, see https://godbolt.org/z/WEfbv4oP3
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_MAYBE_UNINITIALIZED
 TEST(LogTest, StringViewLogger)
 {
     std::int32_t counter{0};
@@ -122,6 +126,7 @@ TEST(LogTest, StringViewLogger)
 
     EXPECT_EQ(counter, 4);
 }
+DISABLE_WARNING_POP
 
 TEST(LogTest, EmptyStringViewLogger)
 {
@@ -145,6 +150,9 @@ TEST(LogTest, EmptyStringViewLogger)
     EXPECT_EQ(counter, 4);
 }
 
+// False positive in QCC, see https://godbolt.org/z/WEfbv4oP3
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_MAYBE_UNINITIALIZED
 TEST(LogTest, StringViewReferenceWrapperLogger)
 {
     std::int32_t counter{0};
@@ -166,6 +174,7 @@ TEST(LogTest, StringViewReferenceWrapperLogger)
 
     EXPECT_EQ(counter, 4);
 }
+DISABLE_WARNING_POP
 
 TEST(LogTest, PointerLogger)
 {

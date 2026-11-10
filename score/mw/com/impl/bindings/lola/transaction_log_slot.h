@@ -25,11 +25,11 @@ class TransactionLogSlot
 
     void SetTransactionBegin(bool new_value) noexcept
     {
-        transaction_begin_ = static_cast<std::uint8_t>(new_value);
+        transaction_begin_ = static_cast<std::uint8_t>(new_value ? 1U : 0U);
     }
     void SetTransactionEnd(bool new_value) noexcept
     {
-        transaction_end_ = static_cast<std::uint8_t>(new_value);
+        transaction_end_ = static_cast<std::uint8_t>(new_value ? 1U : 0U);
     }
 
     bool GetTransactionBegin() const noexcept

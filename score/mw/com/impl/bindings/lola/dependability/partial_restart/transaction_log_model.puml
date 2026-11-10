@@ -1,0 +1,101 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml transaction_log_model
+title "TransactionLogSet"
+
+class "lola::TransactionLog" {
+  +SubscribeTransactionBegin(std::size_t subscription_max_sample_count) : void
+  +SubscribeTransactionCommit() : void
+  +SubscribeTransactionAbort() : void
+  +UnsubscribeTransactionBegin() : void
+  +UnsubscribeTransactionCommit() : void
+  +ReferenceTransactionBegin(SlotIndexType slot_index) : void
+  +ReferenceTransactionCommit(SlotIndexType slot_index) : void
+  +ReferenceTransactionAbort(SlotIndexType slot_index) : void
+  +DereferenceTransactionBegin(SlotIndexType slot_index) : void
+  +DereferenceTransactionCommit(SlotIndexType slot_index) : void
+  +RollbackProxyElementLog(const DereferenceSlotCallback&, const UnsubscribeCallback&) : Result<void>
+  +RollbackSkeletonTracingElementLog(const DereferenceSlotCallback&) : Result<void>
+  +ContainsTransactions() const : bool
+  -reference_count_slots_ : TransactionLogSlots
+  -subscribe_transactions_ : TransactionLogSlot
+  -subscription_max_sample_count_ : std::reference_wrapper<std::optional<std::uint16_t>>
+}
+
+class "lola::TransactionLogSet" {
+  +RollbackProxyTransactions(const TransactionLogId&, TransactionLogLocalView::DereferenceSlotCallback,TransactionLogLocalView::DereferenceSlotCallback) : Result<void>
+  +RollbackSkeletonTracingTransactions(TransactionLogLocalView::DereferenceSlotCallback) : Result<void>
+  +RegisterProxyElement(const TransactionLogId&) : score::Result<TransactionLogIndex>
+  +RegisterSkeletonTransactionLog() : TransactionLogIndex
+  +Unregister(TransactionLogIndex) : void
+  +GetTransactionLog(TransactionLogIndex) : TransactionLog&
+  +MarkTransactionLogsNeedRollback(const TransactionLogId& ) : void
+  -proxy_transaction_logs_ : TransactionLogCollection
+  -skeleton_tracing_transaction_log_ : TransactionLogNode
+}
+
+class "lola::TransactionLogSet::TransactionLogNode" {
+  -needs_rollback : bool
+  -transaction_log_ : lola::TransactionLog
+  -transaction_log_id_: std::atomic<TransactionLogId>
+}
+
+class "lola::EventControl" <<SharedMemory>> {
+  +data_control : EventDataControl
+  +subscription_control : EventSubscriptionControl
+  +transaction_log_set_ : TransactionLogSet
+  ..
+  <u>Notes:</u>
+  Composite shared-memory object per provided Event.\n  Groups EventDataControl (slot state), EventSubscriptionControl,\n  and TransactionLogSet together in shared memory.
+}
+
+class "lola::EventDataControl" <<SharedMemory>> {
+  -state_slots_ : DynamicArray<std::atomic<EventSlotStatusType::value_type>>
+  ..
+  <u>Notes:</u>
+  Pure data class. All behaviour (AllocateNextSlot, EventReady,\n  Discard, ReferenceNextEvent, DereferenceEvent, GetNumNewEvents)\n  has been moved to ProviderEventDataControlLocalView /\n  ConsumerEventDataControlLocalView (local views, no OffsetPtr on hot path).
+}
+
+class "lola::TransactionLogID" {
+  + uid_ : uid_t
+}
+
+class "lola::TransactionLogSlot" {
+  +SetTransactionBegin(bool new_value) : void
+  +SetTransactionEnd(bool new_value) : void
+  +GetTransactionBegin() const : bool
+  +GetTransactionEnd() const : bool
+  -transaction_begin_ : std::uint8_t : 1
+  -transaction_end_ :  std::uint8_t  : 2
+}
+
+note right of "lola::TransactionLog"
+  For each potential subscriber of the Event a
+  TransactionLog is pre-allocated (i.e. the
+  number correlates with max_subscribers
+  from configuration)
+
+  A transaction log for the skeleton/provider side
+  gets allocated for IPC Tracing, which technically
+  acts like a provider/skeleton side proxy.
+end note
+
+"lola::EventControl" *-- "lola::EventDataControl"
+"lola::EventControl" *-- "lola::TransactionLogSet"
+"lola::TransactionLogSet" *-- "lola::TransactionLog" : proxy_transaction_logs_\n0..n
+"lola::TransactionLogSet" *-- "lola::TransactionLog" : skeleton_tracing_transaction_log_\n0..1
+"lola::TransactionLog" *-- "lola::TransactionLogSlot" : 1..n
+"lola::TransactionLogSet" +-- "lola::TransactionLogSet::TransactionLogNode"
+
+@enduml

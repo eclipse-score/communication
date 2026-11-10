@@ -121,5 +121,17 @@ TYPED_TEST(ErrorSerializationTypedFixture, DeserializeTerminatesWhenPassingInteg
                                                           ErrorSerializer<TypeParam>::Deserialize(serialized_value));
 }
 
+TYPED_TEST(ErrorSerializationTypedFixture, DeserializeTerminatesWhenValueIsSmallerThanInvalid)
+{
+    // Given a serialized error code smaller than kInvalid
+    const typename ErrorSerializer<TypeParam>::SerializedErrorType serialized_value{
+        static_cast<typename ErrorSerializer<TypeParam>::SerializedErrorType>(TypeParam::kInvalid) - 1};
+
+    // When calling Deserialize
+    // Then a contract violation occurs
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
+                                                          ErrorSerializer<TypeParam>::Deserialize(serialized_value));
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl

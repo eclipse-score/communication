@@ -1,0 +1,130 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml structural_view_ipc_tracing
+title "Structural View IPC Tracing"
+
+enum SkeletonEventTracePointType {
+  INVALID = 0U
+  SEND
+  SEND_WITH_ALLOCATE
+  SUBSCRIBE
+  UNSUBSCRIBE
+}
+
+enum SkeletonFieldTracePointType {
+  INVALID = 0U
+  UPDATE
+  UPDATE_WITH_ALLOCATE
+  GET_CALL
+  GET_CALL_RESULT
+  SET_CALL
+  SET_CALL_RESULT
+  SUBSCRIBE
+  UNSUBSCRIBE
+}
+
+enum ProxyEventTracePointType {
+  INVALID = 0
+  SUBSCRIBE
+  UNSUBSCRIBE
+  SUBSCRIBE_STATE_CHANGE
+  SET_SUBSCRIPTION_STATE_CHANGE_HANDLER
+  UNSET_SUBSCRIPTION_STATE_CHANGE_HANDLER
+  SUBSCRIPTION_STATE_CHANGE_HANDLER_CALLBACK
+  SET_RECEIVE_HANDLER
+  UNSET_RECEIVE_HANDLER
+  RECEIVE_HANDLER_CALLBACK
+  GET_NEW_SAMPLES
+  GET_NEW_SAMPLES_CALLBACK
+}
+
+enum ProxyFieldTracePointType {
+  INVALID = 0
+  SUBSCRIBE
+  UNSUBSCRIBE
+  SUBSCRIBE_STATE_CHANGE
+  SET_SUBSCRIPTION_STATE_CHANGE_HANDLER
+  UNSET_SUBSCRIPTION_STATE_CHANGE_HANDLER
+  SUBSCRIPTION_STATE_CHANGE_HANDLER_CALLBACK
+  SET_RECEIVE_HANDLER
+  UNSET_RECEIVE_HANDLER
+  RECEIVE_HANDLER_CALLBACK
+  GET_NEW_SAMPLES
+  GET_NEW_SAMPLES_CALLBACK
+  SET
+  SET_RESULT
+  GET
+  GET_RESULT
+}
+
+abstract class ITracingFilterConfig {
+  {abstract} +IsTracePointEnabled(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonEventTracePointType skeleton_event_trace_point_type) const noexcept : bool
+  {abstract} +IsTracePointEnabled(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonFieldTracePointType skeleton_field_trace_point_type) const noexcept : bool
+  {abstract} +IsTracePointEnabled(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, ProxyEventTracePointType proxy_event_trace_point_type) const noexcept : bool
+  {abstract} +IsTracePointEnabled(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, ProxyFieldTracePointType proxy_field_trace_point_type) const noexcept : bool
+  {abstract} +AddTracePoint(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonEventTracePointType skeleton_event_trace_point_type) noexcept : void
+  {abstract} +AddTracePoint(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonFieldTracePointType skeleton_field_trace_point_type) noexcept : void
+  {abstract} +AddTracePoint(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, ProxyEventTracePointType proxy_event_trace_point_type) noexcept : void
+  {abstract} +AddTracePoint(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, ProxyFieldTracePointType proxy_field_trace_point_type) noexcept : void
+}
+
+class TracingFilterConfig {
+  +IsTracePointEnabled(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonEventTracePointType skeleton_event_trace_point_type) const noexcept : bool
+  +IsTracePointEnabled(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonFieldTracePointType skeleton_field_trace_point_type) const noexcept : bool
+  +IsTracePointEnabled(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, ProxyEventTracePointType proxy_event_trace_point_type) const noexcept : bool
+  +IsTracePointEnabled(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, ProxyFieldTracePointType proxy_field_trace_point_type) const noexcept : bool
+  +AddTracePoint(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonEventTracePointType skeleton_event_trace_point_type) noexcept : void
+  +AddTracePoint(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonFieldTracePointType skeleton_field_trace_point_type) noexcept : void
+  +AddTracePoint(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, ProxyEventTracePointType proxy_event_trace_point_type) noexcept : void
+  +AddTracePoint(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, ProxyFieldTracePointType proxy_field_trace_point_type) noexcept : void
+  -config_names : std::set<std::string>
+  -skeleton_event_trace_points : std::unordered_map<TracePointKey, std::vector<InstanceID>
+  -skeleton_field_trace_points : std::unordered_map<TracePointKey, std::vector<InstanceID>
+  -proxy_event_trace_points : std::unordered_map<TracePointKey, std::vector<InstanceID>
+  -proxy_field_trace_points : std::unordered_map<TracePointKey, std::vector<InstanceID>
+}
+
+class TracePointKey {
+  +service_element : ServiceElementIdentifierView
+  +trace_point_type : std::uint8_t
+}
+
+class "std::hash<TracePointKey>" {
+  +operator()(const TracePointKey& k) const noexcept : std::size_t
+}
+
+abstract class "mw::com::impl::IRuntime" {
+  {abstract} +resolve(const InstanceSpecifier&) : std::vector<InstanceIdentifier>
+  {abstract} +GetTracingFilterConfig() : const ITracingFilterConfig*
+  {abstract} +getBindingRuntime(BindingType binding) : IBindingRuntime*
+}
+
+class "mw::com::impl::Runtime" {
+  -binding_runtimes_ : std:unordered_map<BindingType, std::unique_ptr<IBindingRuntime>>
+  {static} +Initialize(runtime::RuntimeConfiguration&) : void
+  {static} +getInstance() : Runtime&
+  +Runtime(Configuration&& config)
+  +resolve(const InstanceSpecifier&) : std::vector<InstanceIdentifier>
+  +GetTracingFilterConfig() : const ITracingFilterConfig*
+  +getBindingRuntime(BindingType binding) : IBindingRuntime*
+  ..
+  <u>Note:</u>
+  Runtime is not copyable.
+}
+
+ITracingFilterConfig <|-- TracingFilterConfig
+"mw::com::impl::IRuntime" <|-- "mw::com::impl::Runtime"
+"mw::com::impl::Runtime" ..> TracingFilterConfig : Creates in Initialize()
+
+@enduml

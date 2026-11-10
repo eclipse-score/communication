@@ -13,6 +13,7 @@
 #include "score/mw/com/doc/tutorial/chapter_11/long_running_service.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <atomic>
 #include <chrono>
@@ -84,10 +85,11 @@ int main(int argc, const char* argv[])
     std::signal(SIGINT, SignalHandler);
     std::signal(SIGTERM, SignalHandler);
 
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
 
     // 1. Create and offer our own callback service instance (LongRunningServiceResult). The provider will later call
     //    SetJobResult() on exactly this instance.
+    // [consumer-callback-service-start]
     auto result_specifier = score::mw::com::InstanceSpecifier::Create(std::string{kResultInstanceSpecifierString});
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(result_specifier.has_value(),
                                                 "Failed to create callback InstanceSpecifier!");
@@ -112,11 +114,13 @@ int main(int argc, const char* argv[])
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(result_offer_result.has_value(),
                                                 "Failed to offer LongRunningServiceResultSkeleton instance!");
     std::cout << "Callback service instance offered." << std::endl;
+    // [consumer-callback-service-end]
 
     // 2. Resolve the InstanceIdentifier of our just-offered callback instance and serialize it. ResolveInstanceIDs()
     //    performs the InstanceSpecifier -> InstanceIdentifier lookup in our configuration; we expect exactly ONE
     //    InstanceIdentifier (the "instances" array holds exactly one element - see the chapter text). Its ToString()
     //    representation is what we hand to the provider so it can later find *this* callback instance.
+    // [consumer-serialize-instance-identifier-start]
     auto resolve_result = score::mw::com::runtime::ResolveInstanceIDs(result_specifier.value());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(resolve_result.has_value(),
                                                 "Failed to resolve callback InstanceIdentifier!");
@@ -127,8 +131,10 @@ int main(int argc, const char* argv[])
         SerializeCallbackInstanceIdentifier(serialized_callback_id_view);
     std::cout << "Serialized callback InstanceIdentifier (" << serialized_callback_id_view.size()
               << " bytes) prepared for PostLongRunningJob calls." << std::endl;
+    // [consumer-serialize-instance-identifier-end]
 
     // 3. Discover the LongRunningService and create a proxy for it.
+    // [consumer-start-find-service-start]
     auto service_specifier = score::mw::com::InstanceSpecifier::Create(std::string{kServiceInstanceSpecifierString});
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_specifier.has_value(),
                                                 "Failed to create service InstanceSpecifier!");
@@ -158,6 +164,7 @@ int main(int argc, const char* argv[])
         LongRunningServiceProxy::StartFindService(std::move(find_service_handler), service_specifier.value());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(find_service_handle_result.has_value(),
                                                 "Failed to start service discovery for LongRunningService!");
+    // [consumer-start-find-service-end]
 
     // Wait until the proxy has been created (or a shutdown was requested in the meantime).
     {
@@ -169,6 +176,7 @@ int main(int argc, const char* argv[])
 
     // 4. Cyclically post long running jobs until a shutdown is requested. The results are delivered asynchronously via
     //    the SetJobResult() callback handler registered above (invoked on an internal middleware thread).
+    // [consumer-post-jobs-loop-start]
     if (proxy.has_value())
     {
         std::mt19937 random_engine{std::random_device{}()};
@@ -198,6 +206,7 @@ int main(int argc, const char* argv[])
             });
         }
     }
+    // [consumer-post-jobs-loop-end]
 
     score::cpp::ignore = LongRunningServiceProxy::StopFindService(find_service_handle_result.value());
     std::cout << "LongRunningService consumer going down." << std::endl;

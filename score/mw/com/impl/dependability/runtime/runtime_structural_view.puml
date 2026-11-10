@@ -1,0 +1,90 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml runtime_structural_view
+title "Structural View Runtime"
+
+interface "mw::com::impl::IRuntime" as IRuntime {
+    +{abstract} resolve(const InstanceSpecifier&) : std::vector<InstanceIdentifier>
+    +{abstract} getBindingRuntime(BindingType binding) : IBindingRuntime*
+}
+
+enum BindingType {
+    LoLa = 0
+    Fake = 1
+}
+
+class "mw::com::impl::Runtime" as Runtime {
+    -binding_runtimes_ : std::unordered_map<BindingType, std::unique_ptr<IBindingRuntime>>
+    +{static} Initialize(const runtime::RuntimeConfiguration& runtime_configuration) : void
+    +{static} getInstance() : Runtime&
+    +Runtime(Configuration&& config)
+    +resolve(const InstanceSpecifier&) : std::vector<InstanceIdentifier>
+    +getBindingRuntime(BindingType binding) : IBindingRuntime*
+    ..
+    <u>Notes:</u>
+    Runtime is not copyable.
+}
+
+class "mw::com::impl::RuntimeMock" as RuntimeMock {
+    +resolve(const InstanceSpecifier&): std::vector<InstanceIdentifier>
+    +GetBindingRuntime(BindingType binding): IBindingRuntime*
+    ..
+    Mock for unit-testing/mocking of Runtime func.
+}
+
+interface "mw::com::impl::IBindingRuntime" as IBindingRuntime {
+    +{abstract} GetBindingType() : BindingType
+    +{abstract} GetServiceDiscoveryClient() : IServiceDiscoveryClient&
+    +{abstract} GetTracingRuntime() : tracing::IBindingTracingRuntime*
+}
+
+class "mw::com::impl::BindingRuntimeFactory" as BindingRuntimeFactory << plumbing >> {
+    +{static} CreateBindingRuntimes(configuration : Configuration&) : std::unordered_map<score::mw::com::impl::BindingType, std::unique_ptr<score::mw::com::impl::IBindingRuntime>>
+}
+
+interface "mw::com::impl::lola::IRuntime" as LolaIRuntime {
+    +{abstract} HasAsilBSupport() : bool
+    +{abstract} GetLolaMessaging() : lola::IMessagePassingService&
+    +{abstract} GetShmSizeCalculationMode() : ShmSizeCalculationMode
+    +{abstract} GetRollbackSynchronization() : RollbackSynchronization&
+    +{abstract} GetPid() : pid_t
+    +{abstract} GetUid() : uid_t
+}
+
+class "mw::com::impl::lola:Runtime" as LolaRuntime {
+    -lola_message_passing_control_ : lola::MessagePassingControl
+    -lola_messaging_ : lola::MessagePassingFacade
+    +GetLolaMessaging() : lola::IMessagePassingService&
+    +HasAsilBSupport() : bool
+    +GetMessagePassingCfg(const QualityType asil_level) : MessagePassingFacade::AsilSpecificCfg
+    +GetRollbackSynchronization() : RollbackSynchronization&
+}
+
+class "mw::com::impl::lola:RuntimeMock" as LolaRuntimeMock {
+    +GetLolaMessaging() : lola::IMessagePassingService&
+    +HasAsilBSupport() : bool
+}
+
+IRuntime <|-- Runtime
+IRuntime <|-- RuntimeMock
+Runtime "1" *--> "0..n" IBindingRuntime
+
+IBindingRuntime <|-- LolaIRuntime
+LolaIRuntime <|-- LolaRuntime
+LolaIRuntime <|-- LolaRuntimeMock
+
+BindingRuntimeFactory ..> LolaRuntime : creates
+Runtime ..> BindingRuntimeFactory : uses
+
+@enduml

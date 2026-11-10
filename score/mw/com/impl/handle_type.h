@@ -80,6 +80,7 @@ class HandleType
      * \return The InstanceIdentifier that is associated with this handle
      */
     const InstanceIdentifier& GetInstanceIdentifier() const& noexcept;
+    const InstanceIdentifier&& GetInstanceIdentifier() const&& noexcept = delete;
 
     /// Extracts the deployment instance information from the handle.
     ///
@@ -148,7 +149,7 @@ class hash<score::mw::com::impl::HandleType>
         const std::size_t total_string_size{instance_id_hash_string.size() +
                                             service_type_deployment_hash_string.size()};
 
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(  // COV_JUSTIFIED handle-type-hash-buffer-size-assert
             total_string_size <= hash_string_size,
             "InstansceIdentifier and/or ServiceTypeDeployment obtained from handle_type produce a hash "
             "string that is too long. These strings together do not fit in the buffer.");

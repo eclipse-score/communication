@@ -135,11 +135,13 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
                                       std::forward_as_tuple(stable_name),
                                       std::forward_as_tuple(skeleton, stable_name, std::move(event_binding_ptr)));
 
+        // COV_JUSTIFIED_START generic-skeleton-event-emplace-failure-unreachable
         if (!emplace_result.second)
         {
             score::mw::log::LogError("GenericSkeleton") << "Failed to emplace event in map: " << info.name;
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
+        // COV_JUSTIFIED_STOP
     }
 
     return skeleton;

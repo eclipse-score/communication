@@ -33,7 +33,6 @@ class GatewayConfiguration
           transport_config_path_{std::move(transport_config_path)}
     {
     }
-    ~GatewayConfiguration() noexcept = default;
 
     std::vector<std::string> GetForwardedServices() const
     {

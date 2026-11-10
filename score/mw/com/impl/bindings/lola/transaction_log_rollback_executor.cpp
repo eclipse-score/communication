@@ -101,20 +101,20 @@ Result<void> TransactionLogRollbackExecutor::RollbackTransactionLogs() noexcept
     auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
     auto& rollback_synchronization = lola_runtime.GetRollbackSynchronization();
 
-    auto [lock, mutex_existed] = rollback_synchronization.GetMutex(skeleton_instance_identifier_);
+    auto& synchronization_entry = rollback_synchronization.GetEntry(skeleton_instance_identifier_);
     // Suppress Autosar C++14 A8-5-3 states that auto variables shall not be initialized using braced initialization.
     // This is a false positive, we don't use auto here
     // coverity[autosar_cpp14_a8_5_3_violation : FALSE]
-    std::lock_guard map_lock{lock};
+    std::lock_guard map_lock{synchronization_entry.mutex};
 
     // If another Proxy instance has already prepared the rollback for the given service_data_control_ (the special case
     // where we have more than one proxy instance in the same process, which uses the same service instance ->
-    // service_data_control_), then we must not prepare rollback a 2nd time! If the mutex was not created (but an
-    // existing one returned), this is the sign, that another proxy already did the PrepareRollback for the same
-    // service_data_control_
-    if (!mutex_existed)
+    // service_data_control_), then we must not prepare rollback a 2nd time! The flag is checked under the mutex, so
+    // no proxy can start rolling back before the preparation (marking the logs as needing rollback) has happened.
+    if (!synchronization_entry.rollback_prepared)
     {
         PrepareRollback(lola_runtime);
+        synchronization_entry.rollback_prepared = true;
     }
 
     for (auto& element : service_data_control_.event_controls_)

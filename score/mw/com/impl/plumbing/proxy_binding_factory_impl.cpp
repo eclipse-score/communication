@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/plumbing/proxy_binding_factory_impl.h"
 
 #include "score/mw/com/impl/bindings/lola/proxy.h"
+#include "score/mw/com/impl/bindings/someip/proxy.h"
 #include "score/mw/com/impl/plumbing/binding_factory_error.h"
 
 #include <score/overload.hpp>
@@ -50,13 +51,14 @@ Result<std::unique_ptr<ProxyBinding>> ProxyBindingFactoryImpl::Create(const Hand
             }
             return proxy_creation_result;
         },
-        // The SOME/IP binding does not support this service element (yet). It is listed explicitly (instead of
-        // being served by the score::cpp::blank arm) because std::visit requires an arm for every variant
-        // alternative.
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](const SomeIpServiceInstanceDeployment&) noexcept -> ReturnType {
-            // TODO(someip-proxy): Create the SOME/IP proxy binding.
-            return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
+        [handle](const SomeIpServiceInstanceDeployment&) noexcept -> ReturnType {
+            auto proxy_creation_result = someip::Proxy::Create(handle);
+            if (proxy_creation_result == nullptr)
+            {
+                return MakeUnexpected(BindingFactoryErrorCode::kProxyCreationFailed);
+            }
+            return proxy_creation_result;
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> ReturnType {

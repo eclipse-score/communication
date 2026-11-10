@@ -1,15 +1,15 @@
-<!--
-Copyright (c) 2026 Contributors to the Eclipse Foundation
+<!-- ----------------------------------------------------------------------------
+  Copyright (c) 2026 Contributors to the Eclipse Foundation
 
-See the NOTICE file(s) distributed with this work for additional
-information regarding copyright ownership.
+  See the NOTICE file(s) distributed with this work for additional
+  information regarding copyright ownership.
 
-This program and the accompanying materials are made available under the
-terms of the Apache License Version 2.0 which is available at
-https://www.apache.org/licenses/LICENSE-2.0
+  This program and the accompanying materials are made available under the
+  terms of the Apache License Version 2.0 which is available at
+  https://www.apache.org/licenses/LICENSE-2.0
 
-SPDX-License-Identifier: Apache-2.0
--->
+  SPDX-License-Identifier: Apache-2.0
+----------------------------------------------------------------------------- -->
 
 # Detailed Design
 
@@ -111,11 +111,11 @@ target you will want to use the service discovery capabilities of the correspond
 purposes, you might want to immediately instantiate a mock class, or you might want to immediately fail to test the
 fault reaction paths inside your application.
 
-For that part, the factory will default instantiate the find strategy (`<Name>FindStrategy`) and invoke `Find()` with a
-factory specific callback. This callback will vary between the three different build options: Mandatory Proxy, Optional
-Proxy or Multiple Proxies. The find strategy then starts middleware specific service discovery actions. The main part
-being that it invokes the mentioned factory callback once the service is found. After it created the service instance
-(`<Name>Proxy`) with the necessary information from the middleware specific proxy instance.
+For that part, the factory will default instantiate the find strategy (`<Name>FindStrategy`) and invoke `StartFind()`
+with a factory specific callback. This callback will vary between the three different build options: Mandatory Proxy,
+Optional Proxy or Multiple Proxies. The find strategy then starts middleware specific service discovery actions. The
+main part being that it invokes the mentioned factory callback once the service is found. After it created the service
+instance (`<Name>Proxy`) with the necessary information from the middleware specific proxy instance.
 
 The `ConcreteDataObject` represents the earlier mentioned `Business Object Abstraction`.
 

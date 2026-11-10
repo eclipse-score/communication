@@ -13,7 +13,6 @@
 package Communication
 
 import ScoreReq
-import mw_com_fta
 
 /* broken_link_c/issue/5834990 */
 ScoreReq.AoU MonotonicSemiDynamicMemoryAllocation {
@@ -22,9 +21,6 @@ ScoreReq.AoU MonotonicSemiDynamicMemoryAllocation {
     safety = ScoreReq.Asil.B
     note = "LoLa implements a Monotonic Memory Resource. Once memory is claimed, there is no possibility to release it. LoLa pre-allocates a memory pool, only within this memory pool the monotonic allocations will happen."
     version = 1
-    root_causes = [
-        mw_com_fta.TooMuchMemoryAllocated
-    ]
 }
 
 /* broken_link_c/issue/5835013 */
@@ -34,25 +30,6 @@ ScoreReq.AoU CorrectlyConfiguredMaximumNumberOfSubscriber {
     safety = ScoreReq.Asil.B
     note = "The maximum number of subscriber is used to calculate necessary memory from LoLa side, ensure wait-freedom and ensure data consistency. Without the correct number, none of these guarantees can be given."
     version = 1
-    root_causes = [
-        mw_com_fta.UserProvidedWrongConfiguration,
-        mw_com_fta.FileCorrupted,
-        mw_com_fta.JsonParserBroken,
-        mw_com_fta.ManipulateReadData,
-        mw_com_fta.OmitReadingOfRelevantElements,
-        mw_com_fta.MappingFromActualEventidToEventTypeIncorrect,
-        mw_com_fta.LiteralyWrongNumberOfSlotsReserved,
-        mw_com_fta.HoldsMoreSampleptrThanAnnounced,
-        mw_com_fta.HoldsMoreSampleptrThanConfigured,
-        mw_com_fta.ConsumerUsesAnOlderSlotThanHeAlreadyHasBlockedInThePreviousAccess,
-        mw_com_fta.RetryLogicNotBulletProof,
-        mw_com_fta.IssueInLockFreeSychronization,
-        mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
-        mw_com_fta.AllocateClaimsTooFewMemory,
-        mw_com_fta.NecessarySizeCalculationRetrievesWrongValue,
-        mw_com_fta.SharedMemoryTruncationFails,
-        mw_com_fta.TooMuchMemoryAllocated
-    ]
 }
 
 /* broken_link_c/issue/5835045 */
@@ -62,25 +39,6 @@ ScoreReq.AoU CorrectlyConfiguredMaximumNumberOfMaximumElementsPerSubscriber {
     safety = ScoreReq.Asil.B
     note = "The maximum number of elements per subscriber is used to calculate necessary memory from LoLa side, ensure wait-freedom and ensure data consistency. Without the correct number, none of these guarantees can be given."
     version = 1
-    root_causes = [
-        mw_com_fta.UserProvidedWrongConfiguration,
-        mw_com_fta.FileCorrupted,
-        mw_com_fta.JsonParserBroken,
-        mw_com_fta.ManipulateReadData,
-        mw_com_fta.OmitReadingOfRelevantElements,
-        mw_com_fta.MappingFromActualEventidToEventTypeIncorrect,
-        mw_com_fta.LiteralyWrongNumberOfSlotsReserved,
-        mw_com_fta.HoldsMoreSampleptrThanAnnounced,
-        mw_com_fta.HoldsMoreSampleptrThanConfigured,
-        mw_com_fta.ConsumerUsesAnOlderSlotThanHeAlreadyHasBlockedInThePreviousAccess,
-        mw_com_fta.RetryLogicNotBulletProof,
-        mw_com_fta.IssueInLockFreeSychronization,
-        mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
-        mw_com_fta.AllocateClaimsTooFewMemory,
-        mw_com_fta.NecessarySizeCalculationRetrievesWrongValue,
-        mw_com_fta.SharedMemoryTruncationFails,
-        mw_com_fta.TooMuchMemoryAllocated
-    ]
 }
 
 /* broken_link_c/issue/5835084 */
@@ -90,13 +48,6 @@ ScoreReq.AoU CorrectlyConfiguredAsilLevel {
     safety = ScoreReq.Asil.B
     note = "The ASIL-Level is used to ensure Freedom from Interference (e.g. by configuring access rights). Without a proper configured level, this cannot be ensured."
     version = 1
-    root_causes = [
-        mw_com_fta.UserProvidedWrongConfiguration,
-        mw_com_fta.FileCorrupted,
-        mw_com_fta.JsonParserBroken,
-        mw_com_fta.ManipulateReadData,
-        mw_com_fta.OmitReadingOfRelevantElements
-    ]
 }
 
 /* broken_link_c/issue/5835098 */
@@ -106,20 +57,6 @@ ScoreReq.AoU OnlyLoLaSupportedTypes {
     safety = ScoreReq.Asil.B
     note = "Every type T transmitted via LoLa needs to fulfill all the following properties: DefaultConstructible (std::is_default_constructible(T) returns true), CopyAssignable (std::is_copy_assignable(T) == true), are not polymorphic (std::is_polymorphic(T) == false), T doesn't allocate dynamic memory."
     version = 1
-    root_causes = [
-        mw_com_fta.SharedMemoryResourceReturnsWrongProxy,
-        mw_com_fta.SharedmemoryfactoryReturnsWrongMemoryRessource,
-        mw_com_fta.SharedMemoryRessourceNotForwarded,
-        mw_com_fta.UserFehler,
-        mw_com_fta.MiddlewareProvidedTypeIsWrong,
-        mw_com_fta.UserProvidedTypeIsWrong,
-        mw_com_fta.SharedMemoryResourceOpensWrongSharedMemorySegment,
-        mw_com_fta.ForwardedTheWrongSharedMemorySegmentFromTheBeginning,
-        mw_com_fta.OffsetPtrCorruption,
-        mw_com_fta.BrokenAllocator,
-        mw_com_fta.DataTypeItselfIsAllocatedOnStack,
-        mw_com_fta.ProxyIdOverwritten
-    ]
 }
 
 /* broken_link_c/issue/5835119 */
@@ -128,9 +65,6 @@ ScoreReq.AoU NoApisFromImplementationNamespace {
     safety = ScoreReq.Asil.B
     note = "Certain measurements and maybe implemented around the implementation namespace, while it is theoretically possible to directly use these functions, this could lead to unknown and untested side-effects."
     version = 1
-    root_causes = [
-            mw_com_fta.InternalApiUsed
-    ]
 }
 
 /* broken_link_c/issue/5835135 */
@@ -140,15 +74,6 @@ ScoreReq.AoU NoGuaranteesForNotifications {
     safety = ScoreReq.Asil.B
     note = "It is not guaranteed that notifications will arrive, neither in which latency this will happen, or if they happen too often or on a wrong event. This is caused by underlying OS/HW safety claims."
     version = 1
-    root_causes = [
-        mw_com_fta.ReceiveErrorOnRegistration,
-        mw_com_fta.ServerProcessCrash,
-        mw_com_fta.AlgorithmicBug,
-        mw_com_fta.RootCauseReceiveHandlerNotInvoked,
-        mw_com_fta.RootCauseReceiveHandlerInvokedWithWrongEvent,
-        mw_com_fta.RootCauseReceiveHandlerInvokedMultipleTimes,
-        mw_com_fta.RootCauseReceiveHandlerInvokedWithoutEventNotification
-    ]
 }
 
 /* broken_link_c/issue/5835150 */
@@ -158,15 +83,6 @@ ScoreReq.AoU CheckingForPossibleMessageOverflow {
     safety = ScoreReq.Asil.B
     note = "A message overflow will take place if the event receiver checks/receives samples on a lower rate, than the event sender produces them. A message overflow/loss can be detected by checking if all reserved slots are full. If that is the case a message loss is possible and thus it needs to be handled as if a message loss has happened."
     version = 1
-    root_causes = [
-        mw_com_fta.PtrDangling,
-        mw_com_fta.CallbackDangling,
-        mw_com_fta.ActivelyManipulateByProgrammParts,
-        mw_com_fta.EventfqidWronglyConstructed,
-        mw_com_fta.OrderingWrong,
-        mw_com_fta.SlotAllocationSynchronisationWrongTimestamp,
-        mw_com_fta.SlotAllocationSynchronisationWrongState
-    ]
 }
 
 /* broken_link_c/issue/5835175 */
@@ -176,12 +92,6 @@ ScoreReq.AoU DifferentUserForAsilAndQmProcesses {
     safety = ScoreReq.Asil.B
     note = "LoLa utilizes operating system ACL mechanisms to ensure Freedom From Interference. If a lower ASIL process is executed with the rights of a higher level one, the Freedom from Interference can no longer be guaranteed."
     version = 1
-    root_causes = [
-        mw_com_fta.WrongValueInsertedSlotStatus,
-        mw_com_fta.WrongAclConfigurationForShmSegments,
-        mw_com_fta.WrongValueInsertedTimestamp,
-        mw_com_fta.CallbackIsNotStoredCorrectly
-    ]
 }
 
 /* broken_link_c/issue/5835192 */
@@ -191,13 +101,6 @@ ScoreReq.AoU ConfigOnASafeFilesystem {
     safety = ScoreReq.Asil.B
     note = "The configuration needs to be ensured to be valid and it needs to be ensured that no issue in the filesystem causes configuration issues."
     version = 1
-    root_causes = [
-        mw_com_fta.UserProvidedWrongConfiguration,
-        mw_com_fta.FileCorrupted,
-        mw_com_fta.JsonParserBroken,
-        mw_com_fta.ManipulateReadData,
-        mw_com_fta.OmitReadingOfRelevantElements
-    ]
 }
 
 /* broken_link_c/issue/5835198 */
@@ -206,9 +109,6 @@ ScoreReq.AoU NoStaticContextSupport {
     safety = ScoreReq.Asil.B
     note = "LoLa uses itself static context within C++. A usage within static context could possibly cause the static (De-)Initialization-Fiasco."
     version = 1
-    root_causes = [
-            mw_com_fta.ApiUsedInWrongContext
-    ]
 }
 
 /* broken_link_c/issue/5835213 */
@@ -218,10 +118,6 @@ ScoreReq.AoU NoGuaranteeInAvailabilityOfServices {
     safety = ScoreReq.Asil.B
     note = "LoLa is a Service-Discovery based middleware. In such cases it is possible that a service is not offered. Thus, LoLa cannot give any guarantee that a service will be found."
     version = 1
-    root_causes = [
-        mw_com_fta.StaticCreateFunctionReturnsAnError,
-        mw_com_fta.InstanceSpecifierResolutionLogicBroken
-    ]
 }
 
 /* broken_link_c/issue/5835249 */
@@ -239,19 +135,6 @@ ScoreReq.AoU CheckForAllocationError {
     safety = ScoreReq.Asil.B
     note = "An error returned by Allocate() indicates a non-recoverable error and further indicates an issue in the memory control."
     version = 1
-    root_causes = [
-        mw_com_fta.MappingFromActualEventidToEventTypeIncorrect,
-        mw_com_fta.LiteralyWrongNumberOfSlotsReserved,
-        mw_com_fta.HoldsMoreSampleptrThanAnnounced,
-        mw_com_fta.HoldsMoreSampleptrThanConfigured,
-        mw_com_fta.ConsumerUsesAnOlderSlotThanHeAlreadyHasBlockedInThePreviousAccess,
-        mw_com_fta.RetryLogicNotBulletProof,
-        mw_com_fta.IssueInLockFreeSychronization,
-        mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
-        mw_com_fta.AllocateClaimsTooFewMemory,
-        mw_com_fta.NecessarySizeCalculationRetrievesWrongValue,
-        mw_com_fta.SharedMemoryTruncationFails
-    ]
 }
 
 /* broken_link_c/issue/5835317 */
@@ -261,19 +144,6 @@ ScoreReq.AoU OneProducerOnlyOneAllocateePtr {
     safety = ScoreReq.Asil.B
     note = "LoLa does not support multi-producer pattern."
     version = 1
-    root_causes = [
-        mw_com_fta.MappingFromActualEventidToEventTypeIncorrect,
-        mw_com_fta.LiteralyWrongNumberOfSlotsReserved,
-        mw_com_fta.HoldsMoreSampleptrThanAnnounced,
-        mw_com_fta.HoldsMoreSampleptrThanConfigured,
-        mw_com_fta.ConsumerUsesAnOlderSlotThanHeAlreadyHasBlockedInThePreviousAccess,
-        mw_com_fta.RetryLogicNotBulletProof,
-        mw_com_fta.IssueInLockFreeSychronization,
-        mw_com_fta.MoreThanOneSampleallocateeptrInParallel,
-        mw_com_fta.AllocateClaimsTooFewMemory,
-        mw_com_fta.NecessarySizeCalculationRetrievesWrongValue,
-        mw_com_fta.SharedMemoryTruncationFails
-    ]
 }
 
 /* broken_link_c/issue/5835324 */
@@ -300,10 +170,6 @@ ScoreReq.AoU SkeletonAliveWhileItsAllocateePtrBeingUsed {
     safety = ScoreReq.Asil.B
     note = "A destruction of a Skeleton will invalidate the memory that the AllocateePtr is pointing to."
     version = 1
-    root_causes = [
-        mw_com_fta.LifeCycleIssuesSamplePtr,
-        mw_com_fta.WrongSlotReferenced
-    ]
 }
 
 /* broken_link_c/issue/5835346 */
@@ -313,17 +179,6 @@ ScoreReq.AoU EventSubscriptionActiveWhileHoldingSamplePtr {
     safety = ScoreReq.Asil.B
     note = "Unsubscription of the proxy event will invalidate the memory that the SamplePtr is pointing to."
     version = 1
-    root_causes = [
-        mw_com_fta.LifeCycleIssuesSamplePtr,
-        mw_com_fta.WrongSlotReferenced,
-        mw_com_fta.PtrDangling,
-        mw_com_fta.CallbackDangling,
-        mw_com_fta.ActivelyManipulateByProgrammParts,
-        mw_com_fta.EventfqidWronglyConstructed,
-        mw_com_fta.OrderingWrong,
-        mw_com_fta.SlotAllocationSynchronisationWrongTimestamp,
-        mw_com_fta.SlotAllocationSynchronisationWrongState
-    ]
 }
 
 /* broken_link_c/issue/5835351 */
@@ -332,9 +187,6 @@ ScoreReq.AoU NoneTerminatingCallbacks {
     safety = ScoreReq.Asil.B
     note = "The behavior is undefined if a callback is throwing."
     version = 1
-    root_causes = [
-        mw_com_fta.TerminatingUserCallback
-    ]
 }
 
 /* broken_link_c/issue/5835363 */
@@ -344,15 +196,6 @@ ScoreReq.AoU ValidCallbacksWhileProxyAlive {
     safety = ScoreReq.Asil.B
     note = "While a proxy is alive, it is possible that mentioned callbacks are invoked. If a callback contains for example a dangling reference or pointer, the correct execution cannot be ensured."
     version = 1
-    root_causes = [
-        mw_com_fta.PtrDangling,
-        mw_com_fta.CallbackDangling,
-        mw_com_fta.ActivelyManipulateByProgrammParts,
-        mw_com_fta.EventfqidWronglyConstructed,
-        mw_com_fta.OrderingWrong,
-        mw_com_fta.SlotAllocationSynchronisationWrongTimestamp,
-        mw_com_fta.SlotAllocationSynchronisationWrongState
-    ]
 }
 
 /* broken_link_c/issue/5835376 */
@@ -362,15 +205,6 @@ ScoreReq.AoU QualityOfDataIsDependentOnProducer {
     safety = ScoreReq.Asil.B
     note = "LoLa doesn't do ANY checks on the transmitted data. LoLa provides any data ASIL transparent. Meaning, it neither degrades the ASIL-Level nor does it perform any additional checks to enhance it."
     version = 1
-    root_causes = [
-        mw_com_fta.PtrDangling,
-        mw_com_fta.CallbackDangling,
-        mw_com_fta.ActivelyManipulateByProgrammParts,
-        mw_com_fta.EventfqidWronglyConstructed,
-        mw_com_fta.OrderingWrong,
-        mw_com_fta.SlotAllocationSynchronisationWrongTimestamp,
-        mw_com_fta.SlotAllocationSynchronisationWrongState
-    ]
 }
 
 /* broken_link_c/issue/5835388 */
@@ -380,10 +214,6 @@ ScoreReq.AoU ValidityOfPointerOnLoLaPointer {
     safety = ScoreReq.Asil.B
     note = "Issue: Once the smart-pointers are invalid their respective memory is unmanaged and any access leads to undefined behavior."
     version = 1
-    root_causes = [
-        mw_com_fta.LifeCycleIssuesSamplePtr,
-        mw_com_fta.WrongSlotReferenced
-    ]
 }
 
 /* broken_link_c/issue/5835398 */
@@ -393,20 +223,6 @@ ScoreReq.AoU LoLaMemoryOnlyAccessedThroughLoLa {
     safety = ScoreReq.Asil.B
     note = "A static mapping of memory or a wild access of heap memory causes undefined behavior."
     version = 1
-    root_causes = [
-        mw_com_fta.SharedMemoryResourceReturnsWrongProxy,
-        mw_com_fta.SharedmemoryfactoryReturnsWrongMemoryRessource,
-        mw_com_fta.SharedMemoryRessourceNotForwarded,
-        mw_com_fta.UserFehler,
-        mw_com_fta.MiddlewareProvidedTypeIsWrong,
-        mw_com_fta.UserProvidedTypeIsWrong,
-        mw_com_fta.SharedMemoryResourceOpensWrongSharedMemorySegment,
-        mw_com_fta.ForwardedTheWrongSharedMemorySegmentFromTheBeginning,
-        mw_com_fta.OffsetPtrCorruption,
-        mw_com_fta.BrokenAllocator,
-        mw_com_fta.DataTypeItselfIsAllocatedOnStack,
-        mw_com_fta.ProxyIdOverwritten
-    ]
 }
 
 /* broken_link_c/issue/5835403 */
@@ -416,20 +232,6 @@ ScoreReq.AoU NoSharedMemoryAllocationInNamespaceLola {
     safety = ScoreReq.Asil.B
     note = "Certain contracts are based on the shared memory segment naming, these might get influenced by other code segments using this prefix."
     version = 1
-    root_causes = [
-        mw_com_fta.SharedMemoryResourceReturnsWrongProxy,
-        mw_com_fta.SharedmemoryfactoryReturnsWrongMemoryRessource,
-        mw_com_fta.SharedMemoryRessourceNotForwarded,
-        mw_com_fta.UserFehler,
-        mw_com_fta.MiddlewareProvidedTypeIsWrong,
-        mw_com_fta.UserProvidedTypeIsWrong,
-        mw_com_fta.SharedMemoryResourceOpensWrongSharedMemorySegment,
-        mw_com_fta.ForwardedTheWrongSharedMemorySegmentFromTheBeginning,
-        mw_com_fta.OffsetPtrCorruption,
-        mw_com_fta.BrokenAllocator,
-        mw_com_fta.DataTypeItselfIsAllocatedOnStack,
-        mw_com_fta.ProxyIdOverwritten
-    ]
 }
 
 /* broken_link_c/issue/5835427 */
@@ -439,11 +241,13 @@ ScoreReq.AoU LoLaSpecificQnxMessagingEndPointsOnlyAccessedThroughLoLa {
     safety = ScoreReq.Asil.B
     note = "Any influence from other parts of the code might destroy expected contracts. The LoLa specific QNX Message Passing endpoints are located under: /mw_com/message_passing/LoLa_*"
     version = 1
-    root_causes = [
-        mw_com_fta.ReceiveErrorOnRegistration,
-        mw_com_fta.ServerProcessCrash,
-        mw_com_fta.AlgorithmicBug
-    ]
+}
+
+ScoreReq.AoU ArtifactsRequireManualReview {
+    description = "Input artifacts (C++ service-interface definitions and mw::config) shall be manually reviewed for correctness"
+    safety = ScoreReq.Asil.B
+    note = "C++ service-interface definitions and mw::config are hand-written artifacts and might not be in sync or match."
+    version = 1
 }
 
 /* broken_link_c/issue/5835457 */
@@ -453,20 +257,6 @@ ScoreReq.AoU UnsupportedDataTypes {
     safety = ScoreReq.Asil.B
     note = "LoLa theoretically supports these data-types, but they were not subject to audit and extensive testing."
     version = 1
-    root_causes = [
-        mw_com_fta.SharedMemoryResourceReturnsWrongProxy,
-        mw_com_fta.SharedmemoryfactoryReturnsWrongMemoryRessource,
-        mw_com_fta.SharedMemoryRessourceNotForwarded,
-        mw_com_fta.UserFehler,
-        mw_com_fta.MiddlewareProvidedTypeIsWrong,
-        mw_com_fta.UserProvidedTypeIsWrong,
-        mw_com_fta.SharedMemoryResourceOpensWrongSharedMemorySegment,
-        mw_com_fta.ForwardedTheWrongSharedMemorySegmentFromTheBeginning,
-        mw_com_fta.OffsetPtrCorruption,
-        mw_com_fta.BrokenAllocator,
-        mw_com_fta.DataTypeItselfIsAllocatedOnStack,
-        mw_com_fta.ProxyIdOverwritten
-    ]
 }
 
 /* broken_link_c/issue/6346567 */
@@ -476,9 +266,6 @@ ScoreReq.AoU NoGuaranteeOnExecutionTime {
     safety = ScoreReq.Asil.B
     note = "This implies that safety-relevant code, where the safety goal is dependent on timing, needs to be supervised."
     version = 1
-    root_causes = [
-        mw_com_fta.RootCauseAnyFunctionBlocksLongerThanExpected
-    ]
 }
 
 /* broken_link_c/issue/7091801 */
@@ -519,11 +306,6 @@ ScoreReq.AoU NoGuaranteesForTimelyMethodCallExecution {
     safety = ScoreReq.Asil.B
     note = "It is not guaranteed that a method call initiated by the caller will arrive at the callee, neither in which latency this will happen. It is also not guaranteed, that the completion of the call is notified to the caller at all, neither in which latency this will happen. This is caused by underlying OS/HW safety claims - see also [NoGuaranteesForNotifications]. The runtime of a user-provided method-handler is not supervised at all."
     version = 1
-    root_causes = [
-        mw_com_fta.BlocksOnCaller,
-        mw_com_fta.CallBlocksOnCallee,
-        mw_com_fta.CallBlocksOnUserHandler
-    ]
 }
 
 /* @ToDo - this is not an AoU but a PreventiveMeasure: Update, when our schema supports this differentiation */
@@ -533,11 +315,6 @@ ScoreReq.AoU MethodInArgPtrMatches {
     safety = ScoreReq.Asil.B
     note = "It is not guaranteed that a method call initiated by the caller will arrive at the callee, neither in which latency this will happen. It is also not guaranteed, that the completion of the call is notified to the caller at all, neither in which latency this will happen. This is caused by underlying OS/HW safety claims - see also [NoGuaranteesForNotifications]."
     version = 1
-    root_causes = [
-        mw_com_fta.BlocksOnCaller,
-        mw_com_fta.CallBlocksOnCallee,
-        mw_com_fta.CallBlocksOnUserHandler
-    ]
 }
 
 /* broken_link_c/issue/79416086 */
@@ -545,5 +322,19 @@ ScoreReq.AoU NoGuaranteeOnSubscriptionStateCorrectness {
     description = "For safety critical use cases, an application must treat a SubscriptionState of kSubscribed or kSubscriptionPending (returned by GetSubscriptionState() or reported by the SubscriptionStateChangeHandler) as the same."
     safety = ScoreReq.Asil.B
     note = "On a technical level, kSubscribed and kSubscriptionPending cannot be reliably differentiated, see {{SubscriptionState}} Component requirement for more details"
+    version = 1
+}
+
+ScoreReq.AoU NoCreationOfServiceElements {
+    description = "It is not allowed to create instances of event, field and method classes on the proxy and skeleton side."
+    safety = ScoreReq.Asil.B
+    note = "Instances of these classes can only exist in the context of enclosing ProxyWrapperClass or SkeletonWrapperClass. They can only be created by the score::mw::com framework, which ensures that they are correctly initialized and registered."
+    version = 1
+}
+
+ScoreReq.AoU NoMoveOfServiceElements {
+    description = "It is not allowed to move instances of event, field and method classes on the proxy and skeleton side independently of the parent proxy / skeleton."
+    safety = ScoreReq.Asil.B
+    note = "Moving these members would leave the instances of the classes, which contain these members in an invalid state, which would lead to undefined behavior."
     version = 1
 }

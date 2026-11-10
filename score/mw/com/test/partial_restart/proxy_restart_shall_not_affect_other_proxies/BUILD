@@ -12,14 +12,12 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_binary(
     name = "proxy_restart_shall_not_affect_other_proxies",
     srcs = ["application.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test:__pkg__"],
     deps = [
         ":consumer",
@@ -36,7 +34,6 @@ cc_library(
     name = "consumer",
     srcs = ["consumer.cpp"],
     hdrs = ["consumer.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test:__pkg__"],
     deps = [
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
@@ -51,7 +48,6 @@ cc_library(
     name = "provider",
     srcs = ["provider.cpp"],
     hdrs = ["provider.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/test:__pkg__"],
     deps = [
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",

@@ -26,23 +26,6 @@ namespace score::mw::com::impl::lola
 {
 namespace
 {
-// Suppress "AUTOSAR C++14 A16-0-1" rule findings. This rule stated: "The pre-processor shall only be used for
-// unconditional and conditional file inclusion and include guards, and using the following directives: (1) #ifndef,
-// #ifdef, (3) #if, (4) #if defined, (5) #elif, (6) #else, (7) #define, (8) #endif, (9) #include.".
-// Checks whether we run over QNX or linux to choose the appropriate path.
-// coverity[autosar_cpp14_a16_0_1_violation]
-#ifdef __QNXNTO__
-// Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-// constant-initialized.".
-// score::filesystem::Path is not literal class as it has std::vector data member.
-// coverity[autosar_cpp14_a3_3_2_violation]
-const filesystem::Path TMP_PATH{"/tmp_discovery/mw_com_lola/service_discovery"};
-// coverity[autosar_cpp14_a16_0_1_violation]
-#else
-// coverity[autosar_cpp14_a3_3_2_violation]
-const filesystem::Path TMP_PATH{"/tmp/mw_com_lola/service_discovery"};
-// coverity[autosar_cpp14_a16_0_1_violation]
-#endif
 
 constexpr os::Stat::Mode ALL_PERMISSIONS{os::Stat::Mode::kReadWriteExecUser | os::Stat::Mode::kReadWriteExecGroup |
                                          os::Stat::Mode::kReadWriteExecOthers};
@@ -149,6 +132,13 @@ auto GetQualityTypeString(QualityType quality_type) noexcept -> std::string_view
 
 auto GetSearchPathForIdentifier(const EnrichedInstanceIdentifier& enriched_instance_identifier) -> filesystem::Path
 {
+// path variables are made static to not have to construct them on every call
+#ifdef __QNXNTO__
+    static const filesystem::Path TMP_PATH{"/tmp_discovery/mw_com_lola/service_discovery"};
+#else
+    static const filesystem::Path TMP_PATH{"/tmp/mw_com_lola/service_discovery"};
+#endif
+
     const auto service_id =
         enriched_instance_identifier.GetBindingSpecificServiceId<LolaServiceTypeDeployment>().value();
     auto search_path = TMP_PATH / std::to_string(static_cast<std::uint32_t>(service_id));

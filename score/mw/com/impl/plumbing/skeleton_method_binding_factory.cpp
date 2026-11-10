@@ -20,9 +20,12 @@ std::unique_ptr<SkeletonMethodBinding> SkeletonMethodBindingFactory::Create(
     const InstanceIdentifier& instance_identifier,
     SkeletonBinding& parent_binding,
     const std::string_view method_name,
-    MethodType method_type)
+    MethodType method_type,
+    std::optional<memory::DataTypeSizeInfo> in_arg_type_info,
+    std::optional<memory::DataTypeSizeInfo> return_type_info)
 {
-    return instance().Create(instance_identifier, parent_binding, method_name, method_type);
+    return instance().Create(
+        instance_identifier, parent_binding, method_name, method_type, in_arg_type_info, return_type_info);
 }
 
 auto SkeletonMethodBindingFactory::instance() -> ISkeletonMethodBindingFactory&
@@ -41,5 +44,6 @@ auto SkeletonMethodBindingFactory::instance() -> ISkeletonMethodBindingFactory&
 // Suppress "AUTOSAR_C++14_A3-1-1" rule finding. This rule states:" It shall be possible to include any header file
 // in multiple translation units without violating the One Definition Rule".
 // coverity[autosar_cpp14_a3_1_1_violation] This is false-positive, "mock_" is defined once
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 ISkeletonMethodBindingFactory* SkeletonMethodBindingFactory::mock_ = nullptr;
 }  // namespace score::mw::com::impl

@@ -13,14 +13,12 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_library(
     name = "service_interface",
     srcs = ["hello_world_service.cpp"],
     hdrs = ["hello_world_service.h"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
     ],
@@ -28,12 +26,9 @@ cc_library(
 
 cc_binary(
     name = "provider_app",
-    srcs = [
-        "provider/provider.cpp",
-        "provider/provider.h",
-    ],
+    srcs = ["provider/provider.cpp"],
     data = ["provider/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
@@ -44,17 +39,15 @@ cc_binary(
 
 cc_binary(
     name = "consumer_app",
-    srcs = [
-        "consumer/consumer.cpp",
-        "consumer/consumer.h",
-    ],
+    srcs = ["consumer/consumer.cpp"],
     data = ["consumer/consumer_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
+    features = [
         "aborts_upon_exception",
     ],
     deps = [
         ":service_interface",
         "//score/mw/com",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 

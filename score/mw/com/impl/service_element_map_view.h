@@ -93,7 +93,7 @@ class ServiceElementMapView
     /// \details ctor is private. Creation shall be done via ServiceElementMapView<>::Create().
     /// @param service_element_map underlying map on which the view is created. It must not be moved or copied after
     ///        being passed to this ctor.
-    ServiceElementMapView(map_type& service_element_map) noexcept : elements_{service_element_map} {}
+    explicit ServiceElementMapView(map_type& service_element_map) noexcept : elements_{service_element_map} {}
 
     std::reference_wrapper<map_type> elements_;
 };

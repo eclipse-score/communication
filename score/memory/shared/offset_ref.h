@@ -62,6 +62,12 @@ class OffsetRef
   public:
     using value_type = T;
 
+    // maybe-unitialized is triggered here by some compilers, because they think that `this` in the initalizer-list
+    // is maybe unitialized. Fact is, that `this`, in this case, is not derefenced and thus its fine to use it.
+    // This is also described in the C++ Standard: https://eel.is/c++draft/class.init#class.base.init-15
+    // NOLINTBEGIN(score-banned-preprocessor-directives) : required due to false positive compiler warning
+    DISABLE_WARNING_PUSH
+    DISABLE_WARNING_MAYBE_UNINITIALIZED
     /// \brief Constructs an OffsetRef referencing ref.
     /// \param ref the object to reference. Must remain valid for at least as long as this OffsetRef is used.
     /// \details It is noexcept, mirroring OffsetPtr's constructor. The precondition check below (like OffsetPtr's own
@@ -79,6 +85,8 @@ class OffsetRef
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE((offset_ >= self_size) || ((offset_ + referenced_size) <= 0),
                                                     "OffsetRef must not overlap with the referenced object.");
     }
+    DISABLE_WARNING_POP
+    // NOLINTEND(score-banned-preprocessor-directives)
 
     // OffsetRef behaves like a native reference: it cannot be re-bound to reference a different object, so it is
     // neither copyable nor moveable.

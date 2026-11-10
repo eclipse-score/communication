@@ -1,0 +1,56 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml sampleptr_ref_counting
+title "Sequence during sample reception on proxy side"
+hide footbox
+
+participant "App" as App
+participant "ProxyEvent" as ProxyEvent
+participant "SampleReferenceTracker" as Tracker
+participant "ProxyEventBinding" as Binding
+participant "TrackerGuardFactory" as GuardFactory
+participant "SamplePtr" as SamplePtr
+participant "SampleReferenceGuard" as Guard
+
+activate App
+activate ProxyEvent
+activate Tracker
+activate Binding
+App -> ProxyEvent: GetNewSamples(callback, num_samples)
+ProxyEvent -> Tracker: Allocate(num_samples)
+Tracker --> ProxyEvent: guard_factory
+activate GuardFactory
+ProxyEvent -> Binding: GetNewSamples(callback, guard_factory)
+
+loop num_samples
+    Binding -> GuardFactory: TakeGuard
+    GuardFactory --> Binding: SampleReferenceGuard
+    Binding --> App: callback(sample_ptr)
+end
+
+GuardFactory -> Tracker: Deallocate(unused_samples)
+GuardFactory -[#white]> GuardFactory
+deactivate GuardFactory
+
+activate SamplePtr
+App -> SamplePtr: (sample_ptr destruction)
+activate Guard
+SamplePtr -> Guard: (SampleReferenceGuard destruction)
+Guard -> Tracker: Deallocate(1)
+SamplePtr -[#white]> SamplePtr
+Guard -[#white]> Guard
+deactivate Guard
+deactivate SamplePtr
+
+@enduml

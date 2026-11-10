@@ -21,23 +21,22 @@ namespace score::mw::com::impl
 {
 
 /// Factory for the binding specific part of a proxy event.
-template <typename SampleType>
-class ProxyFieldBindingFactoryMock : public IProxyFieldBindingFactory<SampleType>
+class ProxyFieldBindingFactoryMock : public IProxyFieldBindingFactory
 {
   public:
     MOCK_METHOD(Result<std::unique_ptr<ProxyEventBinding>>,
                 CreateEventBinding,
-                (HandleType, ProxyBinding&, std::string_view),
+                (HandleType, ProxyBinding&, std::string_view, memory::DataTypeSizeInfo),
                 (noexcept, override));
 
     MOCK_METHOD(Result<std::unique_ptr<ProxyMethodBinding>>,
                 CreateGetMethodBinding,
-                (HandleType, ProxyBinding&, std::string_view),
+                (HandleType, ProxyBinding&, std::string_view, memory::DataTypeSizeInfo),
                 (noexcept, override));
 
     MOCK_METHOD(Result<std::unique_ptr<ProxyMethodBinding>>,
                 CreateSetMethodBinding,
-                (HandleType, ProxyBinding&, std::string_view),
+                (HandleType, ProxyBinding&, std::string_view, memory::DataTypeSizeInfo, memory::DataTypeSizeInfo),
                 (noexcept, override));
 };
 

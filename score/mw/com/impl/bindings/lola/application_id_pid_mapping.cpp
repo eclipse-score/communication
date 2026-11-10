@@ -83,15 +83,10 @@ std::optional<pid_t> TryUpdatePidForExistingId(
 namespace detail
 {
 
-// Suppress "AUTOSAR C++14 M3-2-3" rule finding. The rule states: "The One Definition Rule shall not be violated."
-// This is a template function which is declared in the header and defined here in the cpp file only once.
-// We are aware that implementing templates in header files in C++ is a requirement due to how templates are compiled
-// and instantiated. However, we do NOT want to expose this code to the user for encapsulation reasons.
 // Suppress "AUTOSAR C++14 A8-4-10" rule. The rule declares "A parameter shall be passed by reference if it can’t be
 // NULL". We need this parameter as an iterator over a container, semantically it should never be a nullptr as
 // the DynamicArray always provides valid iterators from begin() / end().
 template <template <class> class AtomicIndirectorType>
-// coverity[autosar_cpp14_m3_2_3_violation]
 // coverity[autosar_cpp14_a8_4_10_violation]
 std::optional<pid_t> RegisterPid(score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
                                  score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,

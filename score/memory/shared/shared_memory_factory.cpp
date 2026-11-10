@@ -28,6 +28,7 @@
 namespace score::memory::shared
 {
 
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(mock-injection-static-pointer)
 ISharedMemoryFactory* SharedMemoryFactory::mock_{nullptr};
 
 auto score::memory::shared::SharedMemoryFactory::Open(

@@ -27,3 +27,5 @@ Safety documentation reports
      - Dependable Element
    * - `MW::COM <mw_com_doc/index.html>`_
      - Dependable Element
+   * - `Shared Memory <dependable_element_memory_shared_doc/index.html>`_
+     - Dependable Element

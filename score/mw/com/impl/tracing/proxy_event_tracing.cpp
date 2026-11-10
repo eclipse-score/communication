@@ -186,10 +186,12 @@ void TraceSubscribe(ProxyEventTracingData& proxy_event_tracing_data,
         }
         else
         {
+            // Reachable in principle, but must not be reached in production: Other ServiceElementType values exist, but
+            // proxy events and fields are the only callers. Callers must pass EVENT or FIELD in production.
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Service element type must be EVENT or FIELD");
         }
 
         const auto binding_type = proxy_event_binding.GetBindingType();
@@ -220,10 +222,12 @@ void TraceUnsubscribe(ProxyEventTracingData& proxy_event_tracing_data, const Pro
         }
         else
         {
+            // Reachable in principle, but must not be reached in production: Other ServiceElementType values exist, but
+            // proxy events and fields are the only callers. Callers must pass EVENT or FIELD in production.
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Service element type must be EVENT or FIELD");
         }
 
         const auto binding_type = proxy_event_binding.GetBindingType();
@@ -255,10 +259,12 @@ void TraceSetReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
         }
         else
         {
+            // Reachable in principle, but must not be reached in production: Other ServiceElementType values exist, but
+            // proxy events and fields are the only callers. Callers must pass EVENT or FIELD in production.
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Service element type must be EVENT or FIELD");
         }
 
         const auto binding_type = proxy_event_binding.GetBindingType();
@@ -290,10 +296,12 @@ void TraceUnsetReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
         }
         else
         {
+            // Reachable in principle, but must not be reached in production: Other ServiceElementType values exist, but
+            // proxy events and fields are the only callers. Callers must pass EVENT or FIELD in production.
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Service element type must be EVENT or FIELD");
         }
 
         const auto binding_type = proxy_event_binding.GetBindingType();
@@ -324,10 +332,12 @@ void TraceGetNewSamples(ProxyEventTracingData& proxy_event_tracing_data, const P
         }
         else
         {
+            // Reachable in principle, but must not be reached in production: Other ServiceElementType values exist, but
+            // proxy events and fields are the only callers. Callers must pass EVENT or FIELD in production.
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Service element type must be EVENT or FIELD");
         }
 
         const auto binding_type = proxy_event_binding.GetBindingType();
@@ -360,10 +370,12 @@ void TraceCallGetNewSamplesCallback(ProxyEventTracingData& proxy_event_tracing_d
         }
         else
         {
+            // Reachable in principle, but must not be reached in production: Other ServiceElementType values exist, but
+            // proxy events and fields are the only callers. Callers must pass EVENT or FIELD in production.
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Service element type must be EVENT or FIELD");
         }
 
         const auto binding_type = proxy_event_binding.GetBindingType();
@@ -398,10 +410,12 @@ void TraceCallReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
         }
         else
         {
+            // Reachable in principle, but must not be reached in production: Other ServiceElementType values exist, but
+            // proxy events and fields are the only callers. Callers must pass EVENT or FIELD in production.
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Service element type must be EVENT or FIELD");
         }
 
         const auto binding_type = proxy_event_binding.GetBindingType();

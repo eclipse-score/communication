@@ -25,6 +25,8 @@
 #include "score/mw/com/impl/test/proxy_resources.h"
 #include "score/mw/com/types.h"
 
+#include <score/assert_support.hpp>
+
 #include <gtest/gtest.h>
 #include <memory>
 #include <type_traits>
@@ -187,6 +189,26 @@ TEST(GenericProxyEventHasSerializedFormatTest, HasSerializedFormatDispatchesToBi
 
     // Then the result will contain the value returned by the binding
     EXPECT_EQ(has_serialized_format, expected_has_serialized_format);
+}
+
+TEST(GenericProxyEventTest, GetDataTypeSizeInfoTerminatesIfBindingIsNull)
+{
+    // Given a generic proxy event which holds no binding
+    GenericProxyEvent proxy_event{kEventName, std::unique_ptr<GenericProxyEventBinding>{nullptr}};
+
+    // When GetDataTypeSizeInfo is called
+    // Then the program terminates since the downcast of the binding fails
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_CONTRACT_VIOLATED(std::ignore = proxy_event.GetDataTypeSizeInfo());
+}
+
+TEST(GenericProxyEventDeathTest, HasSerializedFormatTerminatesIfBindingIsNull)
+{
+    // Given a generic proxy event which holds no binding
+    GenericProxyEvent proxy_event{kEventName, std::unique_ptr<GenericProxyEventBinding>{nullptr}};
+
+    // When HasSerializedFormat (noexcept) is called
+    // Then the program terminates since the downcast of the binding fails
+    EXPECT_DEATH(std::ignore = proxy_event.HasSerializedFormat(), ".*");
 }
 
 TEST(GenericProxyEventGetNewSamplesTest, GetNewSamplesContainsCorrectReceiverSignature)

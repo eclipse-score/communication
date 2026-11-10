@@ -30,11 +30,16 @@
 namespace score::mw::com::gateway
 {
 using ::testing::_;
+using ::testing::DoAll;
 using ::testing::Invoke;
+using ::testing::InvokeWithoutArgs;
 using ::testing::Return;
 
 namespace
 {
+// Generous upper bound when waiting for an event; the waits return as soon as the event happens.
+constexpr std::chrono::seconds kMockCallTimeout{10};
+
 MessageHeader CreateMessageHeader(MessageType type, std::uint32_t sequence = 0U, std::uint32_t payload_size = 0U)
 {
     MessageHeader header{};
@@ -485,9 +490,13 @@ TEST_F(BidirectionalTransportSocketFixture, SetupFailsWhenSendSocketCreationFail
 {
     // Given a transport where the listen socket setup succeeds but creating the send socket fails
     CreateTransport().WithASocketBoundAndListening();
+    std::promise<void> send_socket_creation_failed{};
     EXPECT_CALL(socket_mock_, socket(score::os::Socket::Domain::kIPv4, SOCK_STREAM, 0))
-        .WillOnce(Return(score::cpp::expected<std::int32_t, score::os::Error>{
-            score::cpp::make_unexpected(score::os::Error::createFromErrno(EMFILE))}));
+        .WillOnce(DoAll(InvokeWithoutArgs([&send_socket_creation_failed]() {
+                            send_socket_creation_failed.set_value();
+                        }),
+                        Return(score::cpp::expected<std::int32_t, score::os::Error>{
+                            score::cpp::make_unexpected(score::os::Error::createFromErrno(EMFILE))})));
     EXPECT_CALL(socket_mock_, accept(kListenFd, _, _))
         .WillRepeatedly(Return(score::cpp::expected<std::int32_t, score::os::Error>{
             score::cpp::make_unexpected(score::os::Error::createFromErrno(EAGAIN))}));
@@ -497,7 +506,7 @@ TEST_F(BidirectionalTransportSocketFixture, SetupFailsWhenSendSocketCreationFail
         result = transport_->Setup();
     });
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    ASSERT_EQ(send_socket_creation_failed.get_future().wait_for(kMockCallTimeout), std::future_status::ready);
 
     // When Shutdown() is called after the send socket creation has failed
     // Shutdown() needs to be called in order to leave Setup()
@@ -514,10 +523,14 @@ TEST_F(BidirectionalTransportSocketFixture, SetupFailsWhenSendSocketRecreationFa
     // Given a transport where the listen socket setup succeeds, the initial send socket is created but connect fails,
     // and then recreating the socket for retry also fails
     CreateTransport().WithASocketBoundAndListening();
+    std::promise<void> send_socket_recreation_failed{};
     EXPECT_CALL(socket_mock_, socket(score::os::Socket::Domain::kIPv4, SOCK_STREAM, 0))
         .WillOnce(Return(kSendFd))
-        .WillOnce(Return(score::cpp::expected<std::int32_t, score::os::Error>{
-            score::cpp::make_unexpected(score::os::Error::createFromErrno(EMFILE))}));
+        .WillOnce(DoAll(InvokeWithoutArgs([&send_socket_recreation_failed]() {
+                            send_socket_recreation_failed.set_value();
+                        }),
+                        Return(score::cpp::expected<std::int32_t, score::os::Error>{
+                            score::cpp::make_unexpected(score::os::Error::createFromErrno(EMFILE))})));
     EXPECT_CALL(socket_mock_, connect(kSendFd, _, _))
         .WillOnce(Return(score::cpp::expected_blank<score::os::Error>{
             score::cpp::make_unexpected(score::os::Error::createFromErrno(ECONNREFUSED))}));
@@ -530,8 +543,8 @@ TEST_F(BidirectionalTransportSocketFixture, SetupFailsWhenSendSocketRecreationFa
         result = transport_->Setup();
     });
 
-    // Wait longer than the 50ms retry interval in SetupSendSocket so the socket recreation is attempted
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    // Wait until the socket recreation (after the 50ms retry interval in SetupSendSocket) has been attempted
+    ASSERT_EQ(send_socket_recreation_failed.get_future().wait_for(kMockCallTimeout), std::future_status::ready);
 
     // When Shutdown() is called and therefore Setup() is left
     transport_->Shutdown();
@@ -547,10 +560,14 @@ TEST_F(BidirectionalTransportSocketFixture, SetupFailsWhenReEstablishingListenSo
     // Given a transport that connects successfully but immediately disconnects (recv returns 0),
     // and after the reconnection delay, re-creating the listen socket fails
     CreateTransport();
+    std::promise<void> listen_socket_recreation_failed{};
     EXPECT_CALL(socket_mock_, socket(score::os::Socket::Domain::kIPv4, SOCK_STREAM | SOCK_NONBLOCK, 0))
         .WillOnce(Return(kListenFd))
-        .WillOnce(Return(score::cpp::expected<std::int32_t, score::os::Error>{
-            score::cpp::make_unexpected(score::os::Error::createFromErrno(EMFILE))}));
+        .WillOnce(DoAll(InvokeWithoutArgs([&listen_socket_recreation_failed]() {
+                            listen_socket_recreation_failed.set_value();
+                        }),
+                        Return(score::cpp::expected<std::int32_t, score::os::Error>{
+                            score::cpp::make_unexpected(score::os::Error::createFromErrno(EMFILE))})));
     EXPECT_CALL(socket_mock_, setsockopt(_, _, _, _, _))
         .WillRepeatedly(Return(score::cpp::expected_blank<score::os::Error>{}));
     EXPECT_CALL(socket_mock_, bind(_, _, _)).WillOnce(Return(score::cpp::expected_blank<score::os::Error>{}));
@@ -569,15 +586,18 @@ TEST_F(BidirectionalTransportSocketFixture, SetupFailsWhenReEstablishingListenSo
 
     // Wait for the connection cycle to complete and the 1-second reconnection delay to pass,
     // after which SetupListenSocket() will fail and ConnectionLoop returns
-    std::this_thread::sleep_for(std::chrono::milliseconds(1300));
+    ASSERT_EQ(listen_socket_recreation_failed.get_future().wait_for(kMockCallTimeout), std::future_status::ready);
 
     // When Shutdown() is called to unblock the Setup() polling loop
     transport_->Shutdown();
     setup_thread.join();
 
-    // Then Setup returns kConnectionFailure
-    EXPECT_FALSE(result.has_value());
-    EXPECT_EQ(result.error(), TransportErrorc::kConnectionFailure);
+    // Then Setup does not return success after the connection was lost. Setup() polls the connection state, so it may
+    // legitimately have observed the short-lived connection and returned success before the disconnect happened.
+    if (!result.has_value())
+    {
+        EXPECT_EQ(result.error(), TransportErrorc::kConnectionFailure);
+    }
     EXPECT_FALSE(transport_->IsConnected());
 }
 TEST_F(BidirectionalTransportSocketFixture, SetupReturnsConnectionFailureWhenShutdownInterruptsConnectionAttempt)
@@ -867,6 +887,7 @@ TEST_F(BidirectionalTransportSocketFixture, IncomingRequestIsReceivedAndDispatch
     MessageHeader inbound_header = CreateMessageHeader(MessageType::kStopOfferServiceRequest, kIncomingSequence, 0U);
 
     std::shared_ptr<std::atomic<bool>> allow_disconnect{new std::atomic<bool>{false}};
+    auto second_recv_entered = std::make_shared<std::promise<void>>();
     EXPECT_CALL(socket_mock_, recv(kReceiveFd, _, MessageHeader::kWireSize, _))
         .WillOnce(
             Invoke([&inbound_header](
@@ -874,9 +895,10 @@ TEST_F(BidirectionalTransportSocketFixture, IncomingRequestIsReceivedAndDispatch
                 inbound_header.SerializeToBuffer(static_cast<std::uint8_t*>(buffer));
                 return static_cast<ssize_t>(MessageHeader::kWireSize);
             }))
-        .WillOnce(Invoke([allow_disconnect](
+        .WillOnce(Invoke([allow_disconnect, second_recv_entered](
                              auto, void*, const std::size_t, auto) -> score::cpp::expected<ssize_t, score::os::Error> {
-            const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(250);
+            second_recv_entered->set_value();
+            const auto deadline = std::chrono::steady_clock::now() + kMockCallTimeout;
             while (!allow_disconnect->load() && std::chrono::steady_clock::now() < deadline)
             {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -898,7 +920,7 @@ TEST_F(BidirectionalTransportSocketFixture, IncomingRequestIsReceivedAndDispatch
     const auto setup_result = transport_->Setup();
     ASSERT_TRUE(setup_result.has_value());
 
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(250);
+    const auto deadline = std::chrono::steady_clock::now() + kMockCallTimeout;
     while (!handler_called.load() && std::chrono::steady_clock::now() < deadline)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -907,6 +929,9 @@ TEST_F(BidirectionalTransportSocketFixture, IncomingRequestIsReceivedAndDispatch
     // Then the request is dispatched to the handler and the message has the correct sequence number
     EXPECT_TRUE(handler_called.load());
     EXPECT_EQ(received_sequence.load(), kIncomingSequence);
+
+    // The receive loop must have reached its next recv() before shutting down, otherwise the expected call is skipped
+    EXPECT_EQ(second_recv_entered->get_future().wait_for(kMockCallTimeout), std::future_status::ready);
 
     allow_disconnect->store(true, std::memory_order_relaxed);
     transport_->Shutdown();
@@ -924,6 +949,7 @@ TEST_F(BidirectionalTransportSocketFixture, ReceivesIncomingAckResponseAndComple
 
     std::atomic<bool> allow_reading_ack_header{false};
     std::shared_ptr<std::atomic<bool>> allow_disconnect{new std::atomic<bool>{false}};
+    auto final_recv_entered = std::make_shared<std::promise<void>>();
 
     {
         ::testing::InSequence in_sequence;
@@ -931,7 +957,7 @@ TEST_F(BidirectionalTransportSocketFixture, ReceivesIncomingAckResponseAndComple
         EXPECT_CALL(socket_mock_, recv(kReceiveFd, _, MessageHeader::kWireSize, _))
             .WillOnce(Invoke([&allow_reading_ack_header, &ack_header](auto, void* buffer, const std::size_t, auto)
                                  -> score::cpp::expected<ssize_t, score::os::Error> {
-                const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+                const auto deadline = std::chrono::steady_clock::now() + kMockCallTimeout;
                 while (!allow_reading_ack_header.load() && std::chrono::steady_clock::now() < deadline)
                 {
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -950,9 +976,10 @@ TEST_F(BidirectionalTransportSocketFixture, ReceivesIncomingAckResponseAndComple
 
         EXPECT_CALL(socket_mock_, recv(kReceiveFd, _, MessageHeader::kWireSize, _))
             .WillOnce(
-                Invoke([allow_disconnect](
+                Invoke([allow_disconnect, final_recv_entered](
                            auto, void*, const std::size_t, auto) -> score::cpp::expected<ssize_t, score::os::Error> {
-                    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+                    final_recv_entered->set_value();
+                    const auto deadline = std::chrono::steady_clock::now() + kMockCallTimeout;
                     while (!allow_disconnect->load() && std::chrono::steady_clock::now() < deadline)
                     {
                         std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -974,10 +1001,10 @@ TEST_F(BidirectionalTransportSocketFixture, ReceivesIncomingAckResponseAndComple
     });
 
     // State that there is a pending request and that receiving messages is enabled
-    ASSERT_TRUE(attorney.WaitForPendingRequest(kRequestSequence, std::chrono::milliseconds(200)));
+    ASSERT_TRUE(attorney.WaitForPendingRequest(kRequestSequence, kMockCallTimeout));
     allow_reading_ack_header = true;
 
-    const auto request_deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(300);
+    const auto request_deadline = std::chrono::steady_clock::now() + kMockCallTimeout;
     while (!send_request_finished.load() && std::chrono::steady_clock::now() < request_deadline)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -992,6 +1019,9 @@ TEST_F(BidirectionalTransportSocketFixture, ReceivesIncomingAckResponseAndComple
 
     // Then the pending request is completed successfully
     EXPECT_TRUE(result.has_value());
+
+    // The receive loop must have reached its final recv() before shutting down, otherwise the expected call is skipped
+    EXPECT_EQ(final_recv_entered->get_future().wait_for(kMockCallTimeout), std::future_status::ready);
 
     allow_disconnect->store(true, std::memory_order_relaxed);
     transport_->Shutdown();

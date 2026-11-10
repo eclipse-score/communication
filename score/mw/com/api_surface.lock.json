@@ -29,7 +29,7 @@
       "name": "InitializeRuntime",
       "qualified_name": "score::mw::com::runtime::InitializeRuntime",
       "kind": "function",
-      "signature": "InitializeRuntime : void (const cpp::span<safecpp::zstring_view>)"
+      "signature": "InitializeRuntime : void (const cpp::span<const safecpp::zstring_view>)"
     },
     {
       "name": "InitializeRuntime",
@@ -59,7 +59,7 @@
       "name": "RuntimeConfiguration",
       "qualified_name": "score::mw::com::runtime::RuntimeConfiguration::RuntimeConfiguration",
       "kind": "constructor",
-      "signature": "RuntimeConfiguration : void (cpp::span<safecpp::zstring_view>)"
+      "signature": "RuntimeConfiguration : void (cpp::span<const safecpp::zstring_view>)"
     },
     {
       "name": "RuntimeConfiguration",
@@ -412,6 +412,216 @@
   ],
   "undocumented_symbols": [
     {
+      "name": "kBindingFailure",
+      "qualified_name": "score::mw::com::ComErrc::kBindingFailure",
+      "kind": "enum_value",
+      "signature": "kBindingFailure"
+    },
+    {
+      "name": "kCallQueueFull",
+      "qualified_name": "score::mw::com::ComErrc::kCallQueueFull",
+      "kind": "enum_value",
+      "signature": "kCallQueueFull"
+    },
+    {
+      "name": "kCommunicationLinkError",
+      "qualified_name": "score::mw::com::ComErrc::kCommunicationLinkError",
+      "kind": "enum_value",
+      "signature": "kCommunicationLinkError"
+    },
+    {
+      "name": "kCommunicationStackError",
+      "qualified_name": "score::mw::com::ComErrc::kCommunicationStackError",
+      "kind": "enum_value",
+      "signature": "kCommunicationStackError"
+    },
+    {
+      "name": "kCouldNotExecute",
+      "qualified_name": "score::mw::com::ComErrc::kCouldNotExecute",
+      "kind": "enum_value",
+      "signature": "kCouldNotExecute"
+    },
+    {
+      "name": "kCouldNotRestartProxy",
+      "qualified_name": "score::mw::com::ComErrc::kCouldNotRestartProxy",
+      "kind": "enum_value",
+      "signature": "kCouldNotRestartProxy"
+    },
+    {
+      "name": "kErroneousFileHandle",
+      "qualified_name": "score::mw::com::ComErrc::kErroneousFileHandle",
+      "kind": "enum_value",
+      "signature": "kErroneousFileHandle"
+    },
+    {
+      "name": "kEventNotExisting",
+      "qualified_name": "score::mw::com::ComErrc::kEventNotExisting",
+      "kind": "enum_value",
+      "signature": "kEventNotExisting"
+    },
+    {
+      "name": "kFieldValueIsNotValid",
+      "qualified_name": "score::mw::com::ComErrc::kFieldValueIsNotValid",
+      "kind": "enum_value",
+      "signature": "kFieldValueIsNotValid"
+    },
+    {
+      "name": "kFindServiceHandlerFailure",
+      "qualified_name": "score::mw::com::ComErrc::kFindServiceHandlerFailure",
+      "kind": "enum_value",
+      "signature": "kFindServiceHandlerFailure"
+    },
+    {
+      "name": "kGrantEnforcementError",
+      "qualified_name": "score::mw::com::ComErrc::kGrantEnforcementError",
+      "kind": "enum_value",
+      "signature": "kGrantEnforcementError"
+    },
+    {
+      "name": "kIllegalUseOfAllocate",
+      "qualified_name": "score::mw::com::ComErrc::kIllegalUseOfAllocate",
+      "kind": "enum_value",
+      "signature": "kIllegalUseOfAllocate"
+    },
+    {
+      "name": "kInstanceIDCouldNotBeResolved",
+      "qualified_name": "score::mw::com::ComErrc::kInstanceIDCouldNotBeResolved",
+      "kind": "enum_value",
+      "signature": "kInstanceIDCouldNotBeResolved"
+    },
+    {
+      "name": "kInvalid",
+      "qualified_name": "score::mw::com::ComErrc::kInvalid",
+      "kind": "enum_value",
+      "signature": "kInvalid"
+    },
+    {
+      "name": "kInvalidBindingInformation",
+      "qualified_name": "score::mw::com::ComErrc::kInvalidBindingInformation",
+      "kind": "enum_value",
+      "signature": "kInvalidBindingInformation"
+    },
+    {
+      "name": "kInvalidConfiguration",
+      "qualified_name": "score::mw::com::ComErrc::kInvalidConfiguration",
+      "kind": "enum_value",
+      "signature": "kInvalidConfiguration"
+    },
+    {
+      "name": "kInvalidHandle",
+      "qualified_name": "score::mw::com::ComErrc::kInvalidHandle",
+      "kind": "enum_value",
+      "signature": "kInvalidHandle"
+    },
+    {
+      "name": "kInvalidInstanceIdentifierString",
+      "qualified_name": "score::mw::com::ComErrc::kInvalidInstanceIdentifierString",
+      "kind": "enum_value",
+      "signature": "kInvalidInstanceIdentifierString"
+    },
+    {
+      "name": "kInvalidMetaModelShortname",
+      "qualified_name": "score::mw::com::ComErrc::kInvalidMetaModelShortname",
+      "kind": "enum_value",
+      "signature": "kInvalidMetaModelShortname"
+    },
+    {
+      "name": "kMaxSampleCountNotRealizable",
+      "qualified_name": "score::mw::com::ComErrc::kMaxSampleCountNotRealizable",
+      "kind": "enum_value",
+      "signature": "kMaxSampleCountNotRealizable"
+    },
+    {
+      "name": "kMaxSamplesReached",
+      "qualified_name": "score::mw::com::ComErrc::kMaxSamplesReached",
+      "kind": "enum_value",
+      "signature": "kMaxSamplesReached"
+    },
+    {
+      "name": "kMaxSubscribersExceeded",
+      "qualified_name": "score::mw::com::ComErrc::kMaxSubscribersExceeded",
+      "kind": "enum_value",
+      "signature": "kMaxSubscribersExceeded"
+    },
+    {
+      "name": "kMethodBindingDisabled",
+      "qualified_name": "score::mw::com::ComErrc::kMethodBindingDisabled",
+      "kind": "enum_value",
+      "signature": "kMethodBindingDisabled"
+    },
+    {
+      "name": "kNoClients",
+      "qualified_name": "score::mw::com::ComErrc::kNoClients",
+      "kind": "enum_value",
+      "signature": "kNoClients"
+    },
+    {
+      "name": "kNotOffered",
+      "qualified_name": "score::mw::com::ComErrc::kNotOffered",
+      "kind": "enum_value",
+      "signature": "kNotOffered"
+    },
+    {
+      "name": "kNotSubscribed",
+      "qualified_name": "score::mw::com::ComErrc::kNotSubscribed",
+      "kind": "enum_value",
+      "signature": "kNotSubscribed"
+    },
+    {
+      "name": "kNumEnumElements",
+      "qualified_name": "score::mw::com::ComErrc::kNumEnumElements",
+      "kind": "enum_value",
+      "signature": "kNumEnumElements"
+    },
+    {
+      "name": "kPeerIsUnreachable",
+      "qualified_name": "score::mw::com::ComErrc::kPeerIsUnreachable",
+      "kind": "enum_value",
+      "signature": "kPeerIsUnreachable"
+    },
+    {
+      "name": "kSampleAllocationFailure",
+      "qualified_name": "score::mw::com::ComErrc::kSampleAllocationFailure",
+      "kind": "enum_value",
+      "signature": "kSampleAllocationFailure"
+    },
+    {
+      "name": "kServiceElementAlreadyExists",
+      "qualified_name": "score::mw::com::ComErrc::kServiceElementAlreadyExists",
+      "kind": "enum_value",
+      "signature": "kServiceElementAlreadyExists"
+    },
+    {
+      "name": "kServiceInstanceAlreadyOffered",
+      "qualified_name": "score::mw::com::ComErrc::kServiceInstanceAlreadyOffered",
+      "kind": "enum_value",
+      "signature": "kServiceInstanceAlreadyOffered"
+    },
+    {
+      "name": "kServiceNotAvailable",
+      "qualified_name": "score::mw::com::ComErrc::kServiceNotAvailable",
+      "kind": "enum_value",
+      "signature": "kServiceNotAvailable"
+    },
+    {
+      "name": "kServiceNotOffered",
+      "qualified_name": "score::mw::com::ComErrc::kServiceNotOffered",
+      "kind": "enum_value",
+      "signature": "kServiceNotOffered"
+    },
+    {
+      "name": "kSetHandlerNotSet",
+      "qualified_name": "score::mw::com::ComErrc::kSetHandlerNotSet",
+      "kind": "enum_value",
+      "signature": "kSetHandlerNotSet"
+    },
+    {
+      "name": "kUnsetFailure",
+      "qualified_name": "score::mw::com::ComErrc::kUnsetFailure",
+      "kind": "enum_value",
+      "signature": "kUnsetFailure"
+    },
+    {
       "name": "ErrorDomain",
       "qualified_name": "score::mw::com::ComErrorDomain::ErrorDomain",
       "kind": "constructor",
@@ -457,7 +667,7 @@
       "name": "InitializeRuntime",
       "qualified_name": "score::mw::com::runtime::IRuntime::InitializeRuntime",
       "kind": "method",
-      "signature": "InitializeRuntime : void (const cpp::span<safecpp::zstring_view>)"
+      "signature": "InitializeRuntime : void (const cpp::span<const safecpp::zstring_view>)"
     },
     {
       "name": "InitializeRuntime",
@@ -490,34 +700,16 @@
       "signature": "operator= : IRuntime &(const IRuntime &) &"
     },
     {
-      "name": "InitializeRuntime",
-      "qualified_name": "score::mw::com::runtime::InitializeRuntime",
-      "kind": "function",
-      "signature": "InitializeRuntime : void (const std::int32_t, const char **) [[deprecated]]"
-    },
-    {
       "name": "RuntimeConfiguration",
       "qualified_name": "score::mw::com::runtime::RuntimeConfiguration::RuntimeConfiguration",
       "kind": "constructor",
       "signature": "RuntimeConfiguration : void ()"
     },
     {
-      "name": "RuntimeConfiguration",
-      "qualified_name": "score::mw::com::runtime::RuntimeConfiguration::RuntimeConfiguration",
-      "kind": "constructor",
-      "signature": "RuntimeConfiguration : void (const std::int32_t, const char **) [[deprecated]]"
-    },
-    {
       "name": "~InstanceIdentifier",
       "qualified_name": "score::mw::com::InstanceIdentifier::~InstanceIdentifier",
       "kind": "destructor",
       "signature": "~InstanceIdentifier : void () noexcept"
-    },
-    {
-      "name": "Create",
-      "qualified_name": "score::mw::com::InstanceSpecifier::Create",
-      "kind": "template_function",
-      "signature": "static Create : score::Result<InstanceSpecifier> (T &&) noexcept [[deprecated]]"
     },
     {
       "name": "~FindServiceHandle",
@@ -578,6 +770,24 @@
       "qualified_name": "score::mw::com::HandleType::~HandleType",
       "kind": "destructor",
       "signature": "~HandleType : void () noexcept"
+    },
+    {
+      "name": "kNotSubscribed",
+      "qualified_name": "score::mw::com::SubscriptionState::kNotSubscribed",
+      "kind": "enum_value",
+      "signature": "kNotSubscribed"
+    },
+    {
+      "name": "kSubscribed",
+      "qualified_name": "score::mw::com::SubscriptionState::kSubscribed",
+      "kind": "enum_value",
+      "signature": "kSubscribed"
+    },
+    {
+      "name": "kSubscriptionPending",
+      "qualified_name": "score::mw::com::SubscriptionState::kSubscriptionPending",
+      "kind": "enum_value",
+      "signature": "kSubscriptionPending"
     },
     {
       "name": "SamplePtr",

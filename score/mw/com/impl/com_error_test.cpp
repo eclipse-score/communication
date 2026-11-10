@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/com_error.h"
 
+#include "score/quality/compiler_warnings/warnings.h"
+
 #include <score/utility.hpp>
 
 #include <gtest/gtest.h>
@@ -159,10 +161,14 @@ TEST_F(ComErrorMessageForFixture, MessageForInvalidMetaModelShortname)
                      "Meta model short name does not adhere to naming requirements.");
 }
 
+// The use of a deprecated API is intended because this test is testing it.
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_DEPRECATED
 TEST_F(ComErrorMessageForFixture, MessageForServiceInstanceAlreadyOffered)
 {
     testErrorMessage(ComErrc::kServiceInstanceAlreadyOffered, "Service instance is already offered");
 }
+DISABLE_WARNING_POP
 
 TEST_F(ComErrorMessageForFixture, MessageForCouldNotRestartProxy)
 {

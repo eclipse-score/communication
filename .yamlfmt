@@ -1,0 +1,8 @@
+# Keep blank lines and folded-scalar text as written; only normalize indentation.
+formatter:
+  type: basic
+  line_width: 120
+  retain_line_breaks_single: true
+  scan_folded_as_literal: true
+  include_document_start: false
+  trim_trailing_whitespace: true

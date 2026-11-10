@@ -55,12 +55,16 @@ OfferedStateMachine::State StopOfferedState::Offer()
 
 OfferedStateMachine::State StopOfferedState::StopOffer()
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(0);
+    // Reachable in principle, but must not be reached in production: StopOffer() can be called while in
+    // StopOfferedState. The Skeleton must not call StopOffer() twice without an Offer() in between in production.
+    SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
 }
 
 OfferedStateMachine::State ReOfferedState::Offer()
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(0);
+    // Reachable in principle, but must not be reached in production: Offer() can be called while in ReOfferedState. The
+    // Skeleton must not call Offer() twice without a StopOffer() in between in production.
+    SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
 }
 
 OfferedStateMachine::State ReOfferedState::StopOffer()

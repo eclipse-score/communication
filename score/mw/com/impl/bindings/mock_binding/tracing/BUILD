@@ -12,14 +12,12 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "tracing_runtime",
     testonly = True,
     srcs = ["tracing_runtime.cpp"],
     hdrs = ["tracing_runtime.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__pkg__",
         "//score/mw/com/impl/bindings/lola:__subpackages__",

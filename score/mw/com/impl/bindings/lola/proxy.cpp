@@ -83,24 +83,6 @@ namespace
 
 constexpr LolaMethodInstanceDeployment::QueueSize kFieldMethodQueueSize{1U};
 
-// Suppress "AUTOSAR C++14 A16-0-1" rule findings. This rule stated: "The pre-processor shall only be used for
-// unconditional and conditional file inclusion and include guards, and using the following directives: (1) #ifndef,
-// #ifdef, (3) #if, (4) #if defined, (5) #elif, (6) #else, (7) #define, (8) #endif, (9) #include.".
-// Checks whether we run over QNX or linux to choose the appropriate path.
-// coverity[autosar_cpp14_a16_0_1_violation]
-#ifdef __QNXNTO__
-// Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-// constant-initialized.".
-// score::filesystem::Path is not literal class as it has std::vector data member.
-// coverity[autosar_cpp14_a3_3_2_violation]
-const filesystem::Path kShmPathPrefix{"/dev/shmem"};
-// coverity[autosar_cpp14_a16_0_1_violation]
-#else
-// coverity[autosar_cpp14_a3_3_2_violation]
-const filesystem::Path kShmPathPrefix{"/dev/shm"};
-// coverity[autosar_cpp14_a16_0_1_violation]
-#endif
-
 using memory::DataTypeSizeInfo;
 
 /// \brief Tries to place a shared flock on the given service instance usage marker file
@@ -237,7 +219,7 @@ score::Result<void> ExecutePartialRestartLogic(const QualityType quality_type,
     TransactionLogRollbackExecutor transaction_log_rollback_executor{service_data_control,
                                                                      skeleton_instance_identifier,
                                                                      quality_type,
-                                                                     service_data_storage.skeleton_pid_,
+                                                                     service_data_storage.GetSkeletonPid(),
                                                                      transaction_log_id};
     const auto rollback_result = transaction_log_rollback_executor.RollbackTransactionLogs();
     if (!rollback_result.has_value())
@@ -630,51 +612,15 @@ const EventDataStorage& Proxy::GetEventDataStorage(const ElementFqId element_fq_
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         data_ != nullptr, "Proxy::GetEventDataStorage: Managed memory data pointer is Null");
     auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
-    auto* const event_entry = service_data_storage.events_.find(element_fq_id);
-    if (event_entry == service_data_storage.events_.end())
-    {
-        score::mw::log::LogFatal("lola") << __func__ << __LINE__
-                                         << "Unable to find data storage for given event instance. Terminating.";
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(false,
-                                                          "Unable to find data storage for given event instance.");
-    }
-    // Suppress "AUTOSAR C++14 A5-3-2" rule finding. This rule declares: "Null pointers shall not be dereferenced.".
-    // The "event_entry" variable is an iterator of interprocess map returned by the "find" method.
-    // A check is made that the iterator is not equal to map.end(). Therefore, the call to "event_entry->"
-    // does not return nullptr.
-    // coverity[autosar_cpp14_a5_3_2_violation]
-    const auto* event_data_storage_ptr = event_entry->second.get();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_storage_ptr != nullptr,
-                                                "Could not get EventDataStorage from OffsetPtr");
-    return *event_data_storage_ptr;
+    return service_data_storage.GetEventDataStorage(element_fq_id);
 }
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
-// value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
-// exception.
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 const EventMetaInfo& Proxy::GetEventMetaInfo(const ElementFqId element_fq_id) const
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(data_ != nullptr,
                                                       "Proxy::GetEventMetaInfo: Managed memory data pointer is Null");
     auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
-    auto* const event_meta_info_entry = service_data_storage.events_metainfo_.find(element_fq_id);
-    if (event_meta_info_entry == service_data_storage.events_metainfo_.end())
-    {
-        score::mw::log::LogFatal("lola") << __func__ << __LINE__
-                                         << "Unable to find meta info for given event instance. Terminating.";
-        std::terminate();
-    }
-    // Suppress "AUTOSAR C++14 A5-3-2" rule finding. This rule declares: "Null pointers shall not be dereferenced.".
-    // The "event_meta_info_entry" variable is an iterator of interprocess map returned by the "find" method.
-    // A check is made that the iterator is not equal to map.end(). Therefore, the call to "event_meta_info_entry->"
-    // does not return nullptr.
-    // Suppress "AUTOSAR C++14 A3-8-1" rule finding: "An object shall not be accessed outside of its lifetime.".
-    // Despite the returned object reference, the object's lifetime is still valid until this class is destroyed.
-    // coverity[autosar_cpp14_a5_3_2_violation]
-    // coverity[autosar_cpp14_a3_8_1_violation]
-    return event_meta_info_entry->second;
+    return service_data_storage.GetEventMetaInfo(element_fq_id);
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -695,6 +641,13 @@ bool Proxy::IsEventProvided(const std::string_view event_name) const
 
 score::Result<void> Proxy::SetupMethods(const std::size_t additional_shm_size_bytes)
 {
+    // path variables are made static to not have to construct them on every call
+#ifdef __QNXNTO__
+    static const filesystem::Path kShmPathPrefix{"/dev/shmem"};
+#else
+    static const filesystem::Path kShmPathPrefix{"/dev/shm"};
+#endif
+
     auto enabled_method_data = GetMethodIdAndQueueSizeForEnabledMethods();
 
     if (enabled_method_data.empty())
@@ -810,7 +763,7 @@ memory::shared::SharedMemoryFactory::UserPermissions Proxy::GetSkeletonShmPermis
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(data_ != nullptr,
                                                       "Proxy::GetSourcePid: Managed memory data pointer is Null");
     const auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
-    const auto skeleton_uid = service_data_storage.skeleton_uid_;
+    const auto skeleton_uid = service_data_storage.GetSkeletonUid();
 
     const memory::shared::SharedMemoryFactory::UserPermissionsMap permissions_map{
         {os::Acl::Permission::kRead, {skeleton_uid}}, {os::Acl::Permission::kWrite, {skeleton_uid}}};
@@ -943,7 +896,7 @@ pid_t Proxy::GetSourcePid() const noexcept
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(data_ != nullptr,
                                                       "Proxy::GetSourcePid: Managed memory data pointer is Null");
     auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
-    return service_data_storage.skeleton_pid_;
+    return service_data_storage.GetSkeletonPid();
 }
 
 void Proxy::RegisterEvent(const std::string_view service_element_name, ProxyEvent& proxy_event) noexcept

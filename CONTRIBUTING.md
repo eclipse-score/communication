@@ -22,14 +22,18 @@ To ensure a smooth contribution process, please follow the steps below:
    ```
 3. **Write clean and modular code**, adhering to:
    - **C++17 standard**
+   - **MISRA C++:2023 Guidelines for the use of C++17 in critical systems**
    - **Google C++ Style Guide**
 4. **Add tests** for any new functionality.
 5. **Ensure all tests pass** before submitting:
    ```bash
    bazel test //...
    ```
-6. **Open a Pull Request** from your feature branch to the `main` branch of the upstream repository.
-   - Provide a clear title and description of your changes.
+6. **Open a Pull Request (PR)** from your feature branch to the `main` branch of the upstream repository.
+   - Provide a clear PR title and PR description of your changes.
+   - Think if providing multiple commits in the same PR with meaninful commit titles and commit descriptions would make review process easier.
+   - Think if providing multiple PRs would make review process easier.
+   - Make sure you PR does not contain merge commits.
    - Reference any related issues.
 
 ## Development Setup
@@ -67,7 +71,7 @@ git clone --depth=1 https://github.com/eclipse-score/cicd-actions
 after which you can run
 
 ```bash
-bash <path to cicd-actions repository>/unblock_user_namespace_for_linux_sandbox/action_callable.sh
+bash <path to cicd-actions repository>/unblock-user-namespace-for-linux-sandbox/action_callable.sh
 ```
 
 Note. To take this into effect force, a bazel restart by shutting it down 1st

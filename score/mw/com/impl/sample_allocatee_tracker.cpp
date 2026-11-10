@@ -28,7 +28,9 @@ SampleAllocateeTracker::~SampleAllocateeTracker() noexcept
     {
         score::mw::log::LogFatal("lola") << "SampleAllocateeTracker destroyed while still holding" << num_allocated
                                          << "outstanding SampleAllocateePtr instance(s), terminating.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        // Reachable in principle, but must not be reached in production: A SampleAllocateePtr can outlive its owner. In
+        // production all SampleAllocateePtr instances must be released before the tracker is destroyed.
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
     }
 }
 
@@ -46,7 +48,9 @@ std::size_t SampleAllocateeTracker::GetNumAllocated() const
 void SampleAllocateeTracker::Deallocate()
 {
     const std::size_t previous = allocated_count_.fetch_sub(1U);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(previous > 0U, "Deallocating more samples than were allocated.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(  // COV_JUSTIFIED sample-allocatee-tracker-deallocate-underflow-assert
+        previous > 0U,
+        "Deallocating more samples than were allocated.");
 }
 
 }  // namespace score::mw::com::impl

@@ -1,3 +1,16 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+
 #include "score/mw/com/impl/bindings/lola/messaging/client_quality_type.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_instance.h"
@@ -149,14 +162,13 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
         return *this;
     }
 
-    void ExpectReplyContainsSkeletonAlreadyDestroyed()
+    void ExpectReplyContainsSkeletonAlreadyDestroyed(score::cpp::expected_blank<score::os::Error> reply_send_result)
     {
-        EXPECT_CALL(server_connection_mock_, Reply(_))
-            .WillOnce(Invoke([this](auto reply_buffer) -> score::cpp::expected_blank<score::os::Error> {
-                const auto reply_result = DeserializeMethodReplyMessage(reply_buffer);
-                EXPECT_THAT(reply_result, ContainsError(MethodErrc::kSkeletonAlreadyDestroyed));
-                return score::cpp::make_unexpected(os::Error::createFromErrno());
-            }));
+        EXPECT_CALL(server_connection_mock_, Reply(_)).WillOnce(Invoke([this, reply_send_result](auto reply_buffer) {
+            const auto reply_result = DeserializeMethodReplyMessage(reply_buffer);
+            EXPECT_THAT(reply_result, ContainsError(MethodErrc::kSkeletonAlreadyDestroyed));
+            return reply_send_result;
+        }));
     }
 
     MessagePassingServiceInstanceMethodsFixture& WithARegisteredSubscribeMethodHandler(
@@ -819,7 +831,7 @@ TEST_F(MessagePassingServiceInstanceHandleMessageWithReplyTest,
     unit_.reset();
 
     // Expecting that a reply will be attempted and fail
-    this->ExpectReplyContainsSkeletonAlreadyDestroyed();
+    this->ExpectReplyContainsSkeletonAlreadyDestroyed(score::cpp::make_unexpected(os::Error::createFromErrno()));
 
     // When a valid MessageWithReply message is received
     const auto result =
@@ -838,12 +850,31 @@ TEST_F(MessagePassingServiceInstanceHandleMessageWithReplyTest,
     // and given that the service instance is destroyed, expiring the callback scope
     unit_.reset();
 
-    // Expecting that a reply will be attempted containing a skeleton already destroyed error
-    this->ExpectReplyContainsSkeletonAlreadyDestroyed();
+    // Expecting that a reply will be sent containing a skeleton already destroyed error
+    this->ExpectReplyContainsSkeletonAlreadyDestroyed(score::cpp::expected_blank<score::os::Error>{});
 
     // When a valid MessageWithReply message is received
     score::cpp::ignore =
         received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
+}
+
+TEST_F(MessagePassingServiceInstanceHandleMessageWithReplyTest,
+       ReturnsSuccessWhenMessageCallbackWithReplyScopeExpiredAndReplySucceeds)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInDifferentProcess();
+
+    // and given that the service instance is destroyed, expiring the callback scope
+    unit_.reset();
+
+    // Expecting that a reply will be sent containing a skeleton already destroyed error
+    this->ExpectReplyContainsSkeletonAlreadyDestroyed(score::cpp::expected_blank<score::os::Error>{});
+
+    // When a valid MessageWithReply message is received
+    const auto result =
+        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
+
+    // Then success is returned since the client was informed by the reply and the connection is kept
+    EXPECT_TRUE(result.has_value());
 }
 
 using MessagePassingServiceInstanceHandleCallMethodMessageTest = MessagePassingServiceInstanceMethodsFixture;

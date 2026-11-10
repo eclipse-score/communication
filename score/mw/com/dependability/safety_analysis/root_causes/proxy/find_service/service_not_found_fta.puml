@@ -1,5 +1,5 @@
 ' *******************************************************************************
-' Copyright (c) {year} Contributors to the Eclipse Foundation
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
 '
 ' See the NOTICE file(s) distributed with this work for additional
 ' information regarding copyright ownership.
@@ -20,6 +20,6 @@ $FailureMode("Service not found", "Communication.ServiceNotFound")
 $OrGate("Gate1", "Communication.ServiceNotFound")
 $RootCause("Wrong service discovery marker file searched for", "WrongServiceDiscoveryMarkerFileSearchedFor", "Gate1")
 $IntermediateEvent("Skeleton Not offered", "Event1", "Gate1")
-$TransferInGate("Transfer1", "Event1")
+$TransferInGate("Communication.ServiceNotOffered", "Event1")
 
 @enduml

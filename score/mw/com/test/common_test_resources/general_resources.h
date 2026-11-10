@@ -89,6 +89,23 @@ bool WaitForChildProcessToTerminate(std::string_view message_prefix,
                                     score::mw::com::test::ChildProcessGuard& child_process_guard,
                                     std::chrono::milliseconds max_wait_time) noexcept;
 
+/// \brief Controller side: safely kills a child, which communicates with the controller via check_point_control.
+///
+/// The notifications in CheckPointControl are based on non-robust process-shared pthread mutexes. If a child is
+/// SIGKILLed while it is blocked inside such a notification (e.g. in WaitForChildProceed()), it may still own an
+/// internal mutex, which leaves the CheckPointControl unusable (deadlock on the next notify/wait). Therefore the
+/// child is first told to leave the notification and to idle (see IdleUntilKilled()) and is only killed after it has
+/// confirmed that.
+/// \return true, if the child has been killed.
+bool KillChildAfterItLeftNotification(std::string_view message_prefix,
+                                      CheckPointControl& check_point_control,
+                                      ChildProcessGuard& child_process_guard,
+                                      std::chrono::milliseconds max_wait_time) noexcept;
+
+/// \brief Child side counterpart of KillChildAfterItLeftNotification(): to be called after WaitForChildProceed()
+///        returned ProceedInstruction::WAIT_FOR_KILL. Signals the controller and never returns.
+[[noreturn]] void IdleUntilKilled(CheckPointControl& check_point_control) noexcept;
+
 }  // namespace score::mw::com::test
 
 #endif  // SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_GENERAL_RESOURCES_H

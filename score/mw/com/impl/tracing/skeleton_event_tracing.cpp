@@ -88,7 +88,7 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
         std::terminate();
     }();
 
-    const auto& service_instance_map = [&lola_service_instance_deployment]() constexpr {
+    const auto& service_instance_map = [&lola_service_instance_deployment]() {
         // Deviation from equivalent Rules A7-1-8 and  M6-4-1:
         // - A non-type specifier shall be placed before a type specifier in a declaration.
         // - An if ( condition ) construct shall be followed by a compound statement.
@@ -110,7 +110,10 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
         // EVENT or FIELD (we have a static_assert at the start of this function).
         else
         {
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(0);
+            // Reachable in principle, but must not be reached in production: The else branch is compiled out for every
+            // valid service_element_type (static_assert at the start of the function). It can only be reached by an
+            // invalid template argument, which must not be used in production.
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
         }
     }();
 
@@ -302,9 +305,9 @@ SkeletonEventTracingData GenerateSkeletonTracingStructFromFieldConfig(const Inst
 auto CreateTracingSendCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
                                memory::DataTypeSizeInfo skeleton_event_size_info,
                                const SkeletonEventBinding& skeleton_event_binding)
-    -> std::optional<typename SkeletonEventBinding::SendTraceCallback>
+    -> std::optional<SkeletonEventBinding::SendTraceCallback>
 {
-    std::optional<typename SkeletonEventBinding::SendTraceCallback> tracing_handler{};
+    std::optional<SkeletonEventBinding::SendTraceCallback> tracing_handler{};
     if (skeleton_event_tracing_data.enable_send)
     {
         tracing_handler = [&skeleton_event_tracing_data, skeleton_event_size_info, &skeleton_event_binding](
@@ -318,9 +321,9 @@ auto CreateTracingSendCallback(SkeletonEventTracingData& skeleton_event_tracing_
 auto CreateTracingSendWithAllocateCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
                                            memory::DataTypeSizeInfo skeleton_event_size_info,
                                            const SkeletonEventBinding& skeleton_event_binding)
-    -> std::optional<typename SkeletonEventBinding::SendTraceCallback>
+    -> std::optional<SkeletonEventBinding::SendTraceCallback>
 {
-    std::optional<typename SkeletonEventBinding::SendTraceCallback> tracing_handler{};
+    std::optional<SkeletonEventBinding::SendTraceCallback> tracing_handler{};
     if (skeleton_event_tracing_data.enable_send_with_allocate)
     {
         tracing_handler = [&skeleton_event_tracing_data, skeleton_event_size_info, &skeleton_event_binding](
@@ -354,10 +357,12 @@ void TraceSend(SkeletonEventTracingData& skeleton_event_tracing_data,
         }
         else
         {
+            // Reachable in principle, but must not be reached in production: Other ServiceElementType values exist, but
+            // skeleton events and fields are the only callers. Callers must pass EVENT or FIELD in production.
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Service element type must be EVENT or FIELD");
         }
 
         const auto tracing_data = ExtractBindingTracingData(sample_data_ptr, skeleton_event_size_info);
@@ -399,10 +404,12 @@ void TraceSendWithAllocate(SkeletonEventTracingData& skeleton_event_tracing_data
         }
         else
         {
+            // Reachable in principle, but must not be reached in production: Other ServiceElementType values exist, but
+            // skeleton events and fields are the only callers. Callers must pass EVENT or FIELD in production.
             // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
             // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Service element type must be EVENT or FIELD");
         }
 
         const auto tracing_data = ExtractBindingTracingData(sample_data_ptr, skeleton_event_size_info);

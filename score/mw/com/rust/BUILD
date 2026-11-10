@@ -18,9 +18,7 @@ rust_library(
     name = "score_com",
     srcs = ["score_com.rs"],
     crate_name = "score_com",
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         "//score/mw/com/impl/rust/com-api/com-api-runtime-lola",
         "//score/mw/com/rust/score_com_concept",

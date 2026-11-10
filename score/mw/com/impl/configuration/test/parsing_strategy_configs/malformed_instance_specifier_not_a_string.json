@@ -1,0 +1,23 @@
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/test/service",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "bindings": []
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": 123,
+            "serviceTypeName": "/test/service",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "instances": []
+        }
+    ]
+}
