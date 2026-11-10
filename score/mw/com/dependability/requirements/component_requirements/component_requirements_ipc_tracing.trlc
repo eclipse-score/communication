@@ -369,7 +369,7 @@ section "com" {
 
                     Before the call to {{GenericTraceAPI::Trace()}} with a {{ShmDataChunkList}}, {{mw::com}}/{{LoLa}} shall mark the data referenced by the {{ShmDataChunkList}} as being "in use", so that this data doesn't get overriden before {{IPC Tracing}} has reported via "trace done" callback, that the tracing has been finished.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
                     version = 1
                 }
 
@@ -397,7 +397,7 @@ section "com" {
 
                     If the {{TraceContextId}} in the callback is unknown to {{mw::com}}/{{LoLa}} or has already been received and the unmarking was already done, {{mw::com}}/{{LoLa}} shall log a message with severity {{warning}}, that it has received an invalid {{TraceContextId}}.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
                     version = 1
                 }
 
@@ -475,7 +475,7 @@ section "com" {
 
                     * member {{size\_}} of type {{std::size\_t}}: Shall be set to the size of the data slot. I.e. the size of the related event or field data type.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
                     version = 1
                 }
 
@@ -507,7 +507,7 @@ section "com" {
 
                     The expected data types to be traced within a {{LocalDataChunk}} in these case of Trace Point Types shall be determined from the {{content}} column of the `Trace Point Type definition list <broken_link_g/swh/ddad\_platform/tree/master/aas/analysis/tracing/library/design#logtrace-points>`\_ .'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
                     version = 1
                 }
 
@@ -565,7 +565,7 @@ section "com" {
 
                     * {{PROXY\_METHOD\_CALL\_RESULT\_ERROR}}'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
                     version = 1
                 }
 

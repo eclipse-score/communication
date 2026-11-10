@@ -33,7 +33,7 @@ section "com" {
 
                     Note: It is up to the {{mw::com}} implementation, whether it defines/generates different/explicit classes for each {{SkeletonField}} or whether it uses a class template for {{SkeletonField}} class and uses the field data type ({{FieldType}}) as a template argument.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_CommunicationInterfaces@1]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1, Communication.FEAT_CommunicationInterfaces@1]
                     version = 1
                 }
 
@@ -60,7 +60,7 @@ section "com" {
 
                     {{{using FieldType = <data type>;}}}'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_CommunicationInterfaces@1]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1, Communication.FEAT_CommunicationInterfaces@1]
                     version = 1
                 }
 

@@ -176,7 +176,7 @@ section "com" {
 
                 *  or, if any of the {{SkeletonField}} instances are defined with {{hasSetter=true}} and no SetHandler has been registered yet, then the errorcode {{ComErrc::kSetHandlerNotSet}} shall be returned.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_ServiceDiscovery@1]
+                derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1, Communication.FEAT_ServiceDiscovery@1]
                 version = 1
             }
 
@@ -187,7 +187,7 @@ section "com" {
 
                 Behaviour: is described in Behaviour of StopOfferService.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_ServiceDiscovery@1]
+                derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1, Communication.FEAT_ServiceDiscovery@1]
                 version = 1
             }
             }

@@ -15,10 +15,7 @@ package Communication
 import ScoreReq
 
 ScoreReq.AssumedSystemReq ASR_ErrorHandling {
-    description = """(C++) exceptions shall not be used for error handling.
-The best way to deal with errors is to try to resolve those component internally. If not possible the caller of the function shall be notified of the error.
-For (error) returns there is a specific library to be used in S-CORE, it is the score::Result library which is part of
-the Base Libraries feature."""
+    description = """(C++) exceptions shall not be used for error handling."""
     safety = ScoreReq.Asil.B
     rationale = "Exceptions will be directly leading to an abort and thus reducing availability of the S-CORE platform."
     version = 1
@@ -38,15 +35,15 @@ ScoreReq.AssumedSystemReq ASR_IntraProcessCommunication {
     version = 1
 }
 
-ScoreReq.AssumedSystemReq ASR_ExtensibleExternalCommunication {
-    description = "The platform shall support external communication via well established protocols e.g. Zenoh, DDS, SOME/IP."
-    safety = ScoreReq.Asil.B
-    rationale = "ECUs need to interact with each other. There are multiple protocols today and more to come in the future. The platform shall be able to be extended for future protocols."
+ScoreReq.AssumedSystemReq ASR_ExternalCommunicationSomeip {
+    description = "The platform shall support external communication via SOME/IP protocol."
+    safety = ScoreReq.Asil.QM
+    rationale = "ECU to ECU communication shall be implemented via the SOME/IP protocol."
     version = 1
 }
 
 ScoreReq.AssumedSystemReq ASR_SafeCommunication {
-    description = "The platform shall support safe communication in terms of ISO 26262. I.e. it shall provide mechanisms to avoid communication errors defined by the ISO 26262."
+    description = "The platform shall support safe communication in terms of ISO 26262. I.e. it shall provide mechanisms to detect communication errors."
     safety = ScoreReq.Asil.B
     rationale = "Distributed safe systems often require communication to be safe."
     version = 1
@@ -59,17 +56,17 @@ ScoreReq.AssumedSystemReq ASR_SecureCommunication{
     version = 1
 }
 
-ScoreReq.AssumedSystemReq ASR_SupportForTimeBasedArchitectures {
-    description = "The platform shall support a deterministic, time-based application execution model that triggers logic based on predefined schedules or polling intervals."
+ScoreReq.AssumedSystemReq ASR_SupportForPollingBasedArchitectures {
+    description = "The platform shall support a deterministic, polling-based application execution model that triggers logic based on predefined intervals."
     safety = ScoreReq.Asil.B
-    rationale = "The communication middleware will provide a polling mechanism to receive new data. Thus, it will require the user to dimension underlying storage adequately to avoid data loss. This requires, that the platform provides a time-based execution model to allow the user to implement a polling mechanism."
+    rationale = "The communication middleware will provide a polling mechanism to receive new data."
     version = 1
 }
 
 ScoreReq.AssumedSystemReq ASR_SupportForDataDrivenArchitecture {
-    description = "The platform shall support an event-driven, high-throughput application architecture where execution is triggered by data changes."
+    description = "The platform shall support an event-driven application architecture where execution is triggered by data changes."
     safety = ScoreReq.Asil.QM
-    rationale = "Not all data can be provided in a time-based manner. Some data is only available on-demand. Thus, the platform shall support an event-driven architecture to allow applications to react to data changes."
+    rationale = "The platform shall support an event-driven architecture to allow applications to react to data changes."
     version = 1
 }
 
@@ -80,9 +77,8 @@ ScoreReq.AssumedSystemReq ASR_SupportForRequestDrivenArchitecture {
     version = 1
 }
 
-
 ScoreReq.AssumedSystemReq ASR_ProgrammingLanguagesForApplicationDevelopment {
-    description = "The platform shall support implementation of applications in the following programming languages up to the highest ASIL level as defined in automotive_safety: C++, Rust."
+    description = "The platform shall support implementation of applications in the following programming languages up to the ASIL-B level: C++, Rust."
     safety = ScoreReq.Asil.B
     rationale = "There are several programming languages available for safety related application development. The platform shall support communication between applications implemented in these languages."
     version = 1
@@ -99,12 +95,5 @@ ScoreReq.AssumedSystemReq ASR_AvailabilityOfCommunicationPartners {
     description = "The platform shall provide a mechanism to detect the availability of communication partners for internal and external communication systems and provide the required information to communicate with them."
     safety = ScoreReq.Asil.QM
     rationale = "Applications do have independent lifecycles and thus may not be available at all times. The platform shall provide a mechanism to detect the availability of communication partners and provide the required information to communicate with them."
-    version = 1
-}
-
-ScoreReq.AssumedSystemReq ASR_StablePublicApi {
-    description = "The platform shall provide a stable API for the communication middleware."
-    safety = ScoreReq.Asil.QM
-    rationale = "A stable API helps to ensure that applications can be developed and maintained over time without being affected by changes in the underlying platform."
     version = 1
 }
