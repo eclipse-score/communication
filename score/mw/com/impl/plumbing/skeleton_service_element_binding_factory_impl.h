@@ -76,6 +76,14 @@ inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
     const bool is_field_with_subscription_semantics = !is_event && field_tags_store->HasNotifier();
     if (is_field_with_subscription_semantics || is_event)
     {
+        if (number_of_slots == 0U)
+        {
+            score::mw::log::LogFatal("lola") << "Could not create SkeletonEventProperties from "
+                                                "ServiceElementInstanceDeployment. Number of sample slots must be "
+                                                "at least 1. Terminating.";
+            std::terminate();
+        }
+
         if (!lola_event_instance_deployment.max_subscribers_.has_value())
         {
             score::mw::log::LogFatal("lola") << "Could not create SkeletonEventProperties from "
