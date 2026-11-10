@@ -15,8 +15,13 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "architectural_d
 architectural_design(
     name = "software_architectural_design",
     dynamic = [],
-    static = [
-        "static_design/overall.puml",
+    maturity = "development",
+    public_api = [
+        # "//score/memory/shared/dependability:public_api.puml",  # rejected by the rules_score PlantUML parser
     ],
+    static = [
+        # "static_design/overall.puml",  # rejected by the rules_score PlantUML parser
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/memory/shared/dependability:__subpackages__"],
 )

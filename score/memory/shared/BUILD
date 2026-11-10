@@ -12,6 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
@@ -441,6 +442,73 @@ cc_library(
     visibility = ["//score/memory/shared:__pkg__"],
     deps = [
         "@score_baselibs//score/result",
+    ],
+)
+
+unit(
+    name = "pointer_arithmetic",
+    maturity = "development",
+    scope = [
+        "//score/memory/shared:__subpackages__",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    unit_design = ["//score/memory/shared/pointer_arithmetic/dependability:pointer_arithmetic_unit_design"],
+    visibility = ["//score/memory/shared/dependability:__pkg__"],
+    implementation = [
+        ":pointer_arithmetic_util",
+    ],
+)
+
+unit(
+    name = "allocator_pointer",
+    maturity = "development",
+    scope = [
+        "//score/memory/shared:__subpackages__",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    unit_design = ["//score/memory/shared/allocator_pointer/dependability:allocator_pointer_unit_design"],
+    visibility = ["//score/memory/shared/dependability:__pkg__"],
+    implementation = [
+        ":map",
+        ":offset_ptr",
+        ":offset_ptr_bounds_check",
+        ":offset_ref",
+        ":polymorphic_offset_ptr_allocator",
+        ":string",
+        ":vector",
+    ],
+)
+
+unit(
+    name = "factory_resources",
+    maturity = "development",
+    scope = [
+        "//score/memory/shared:__subpackages__",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    unit_design = ["//score/memory/shared/factory_resources/dependability:factory_resources_unit_design"],
+    visibility = ["//score/memory/shared/dependability:__pkg__"],
+    implementation = [
+        ":i_shared_memory_factory",
+        ":i_shared_memory_resource",
+        ":lock_file",
+        ":managed_memory_resource",
+        ":memory_region_bounds",
+        ":memory_region_map",
+        ":memory_resource_proxy",
+        ":memory_resource_registry",
+        ":new_delete_delegate_resource",
+        ":shared_memory_error",
+        ":shared_memory_factory",
+        ":shared_memory_factory_impl",
+        ":shared_memory_resource",
+        ":user_permission",
+        "//score/memory/shared/sealedshm/sealedshm_wrapper:sealedshm",
+        "//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
+        "//score/memory/shared/typedshm/utils:typed_memory_utils",
     ],
 )
 
