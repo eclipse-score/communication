@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 #include <unistd.h>
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <optional>
 #include <string>
@@ -82,6 +83,8 @@ TEST_P(ServiceDiscoveryClientSearchReplacementFixture, NewSearchDoesNotReceiveRe
     std::promise<void> process_removal{};
     auto process_removal_future = process_removal.get_future();
     std::promise<void> removal_processed{};
+    std::promise<void> read_reoffer{};
+    auto read_reoffer_future = read_reoffer.get_future();
 
     EXPECT_CALL(inotify_instance_mock_, Read())
         .WillOnce([this, &read_removal_future, &removal_read, &process_removal_future] {
@@ -91,8 +94,9 @@ TEST_P(ServiceDiscoveryClientSearchReplacementFixture, NewSearchDoesNotReceiveRe
             process_removal_future.wait();
             return events;
         })
-        .WillOnce([this, &removal_processed] {
+        .WillOnce([this, &removal_processed, &read_reoffer_future] {
             removal_processed.set_value();
+            read_reoffer_future.wait();
             return inotify_instance_->Read();
         })
         .WillRepeatedly(DoDefault());
@@ -101,6 +105,7 @@ TEST_P(ServiceDiscoveryClientSearchReplacementFixture, NewSearchDoesNotReceiveRe
     WhichContainsAServiceDiscoveryClient().WithAnOfferedService(kConfigStoreQm1.GetInstanceIdentifier());
     const auto old_search = make_FindServiceHandle(1U);
     std::atomic<std::size_t> unavailable_notifications{0U};
+    std::promise<void> unavailable{};
     const auto replace_search = [&] {
         EXPECT_TRUE(service_discovery_client_->StopFindService(old_search).has_value());
         EXPECT_TRUE(service_discovery_client_
@@ -112,10 +117,13 @@ TEST_P(ServiceDiscoveryClientSearchReplacementFixture, NewSearchDoesNotReceiveRe
         EXPECT_TRUE(service_discovery_client_->OfferService(kConfigStoreQm1.GetInstanceIdentifier()).has_value());
         WithAnActiveStartFindService(kConfigStoreQm1.GetInstanceIdentifier(),
                                      make_FindServiceHandle(2U),
-                                     [&unavailable_notifications](auto handles, auto) {
+                                     [&unavailable_notifications, &unavailable](auto handles, auto) {
                                          if (handles.empty())
                                          {
-                                             ++unavailable_notifications;
+                                             if (unavailable_notifications.fetch_add(1U) == 0U)
+                                             {
+                                                 unavailable.set_value();
+                                             }
                                          }
                                      });
         process_removal.set_value();
@@ -133,11 +141,76 @@ TEST_P(ServiceDiscoveryClientSearchReplacementFixture, NewSearchDoesNotReceiveRe
         replace_search();
     }
     removal_processed.get_future().wait();
-    service_discovery_client_.reset();
     EXPECT_EQ(unavailable_notifications.load(), 0U);
+    EXPECT_TRUE(
+        service_discovery_client_
+            ->StopOfferService(kConfigStoreQm1.GetInstanceIdentifier(), IServiceDiscovery::QualityTypeSelector::kBoth)
+            .has_value());
+    read_reoffer.set_value();
+    EXPECT_EQ(unavailable.get_future().wait_for(std::chrono::seconds{5}), std::future_status::ready);
+    std::atomic<std::size_t> stale_availability{0U};
+    WithAnActiveStartFindService(
+        kConfigStoreQm1.GetInstanceIdentifier(), make_FindServiceHandle(3U), [&stale_availability](auto handles, auto) {
+            if (!handles.empty())
+            {
+                ++stale_availability;
+            }
+        });
+    service_discovery_client_.reset();
+    EXPECT_EQ(unavailable_notifications.load(), 1U);
+    EXPECT_EQ(stale_availability.load(), 0U);
 }
 
 INSTANTIATE_TEST_SUITE_P(ExternalAndReentrant, ServiceDiscoveryClientSearchReplacementFixture, Values(false, true));
+
+TEST_F(ServiceDiscoveryClientFixture, ExistingSearchReceivesWithdrawalBeforeReoffer)
+{
+    RecordProperty("given", "an ongoing search with an unread withdrawal event");
+    RecordProperty("when", "the service is reoffered before the withdrawal is processed");
+    RecordProperty("then", "the existing search is notified of the withdrawal");
+
+    std::promise<void> read_removal{};
+    auto read_removal_future = read_removal.get_future();
+    std::promise<void> removal_read{};
+    std::promise<void> process_removal{};
+    auto process_removal_future = process_removal.get_future();
+    std::promise<void> removal_processed{};
+    EXPECT_CALL(inotify_instance_mock_, Read())
+        .WillOnce([this, &read_removal_future, &removal_read, &process_removal_future] {
+            read_removal_future.wait();
+            auto events = inotify_instance_->Read();
+            removal_read.set_value();
+            process_removal_future.wait();
+            return events;
+        })
+        .WillOnce([this, &removal_processed] {
+            removal_processed.set_value();
+            return inotify_instance_->Read();
+        })
+        .WillRepeatedly(DoDefault());
+
+    WhichContainsAServiceDiscoveryClient().WithAnOfferedService(kConfigStoreQm1.GetInstanceIdentifier());
+    std::atomic<std::size_t> unavailable_notifications{0U};
+    WithAnActiveStartFindService(kConfigStoreQm1.GetInstanceIdentifier(),
+                                 make_FindServiceHandle(1U),
+                                 [&unavailable_notifications](auto handles, auto) {
+                                     if (handles.empty())
+                                     {
+                                         ++unavailable_notifications;
+                                     }
+                                 });
+    ASSERT_TRUE(
+        service_discovery_client_
+            ->StopOfferService(kConfigStoreQm1.GetInstanceIdentifier(), IServiceDiscovery::QualityTypeSelector::kBoth)
+            .has_value());
+    read_removal.set_value();
+    removal_read.get_future().wait();
+    ASSERT_TRUE(service_discovery_client_->OfferService(kConfigStoreQm1.GetInstanceIdentifier()).has_value());
+    process_removal.set_value();
+    removal_processed.get_future().wait();
+    service_discovery_client_.reset();
+    EXPECT_EQ(unavailable_notifications.load(), 1U);
+}
 
 TEST_F(ServiceDiscoveryClientFixture, StartingSearchFromHandlerDoesNotDestroyExecutingHandler)
 {

@@ -31,6 +31,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
@@ -95,6 +96,9 @@ class ServiceDiscoveryClient final : public IServiceDiscoveryClient
         EnrichedInstanceIdentifier enriched_instance_identifier;
         // coverity[autosar_cpp14_m11_0_1_violation]
         std::unordered_set<FindServiceHandle> find_service_handles;
+        // A logical replacement snapshots offer filenames without removing the underlying OS watch.
+        // coverity[autosar_cpp14_m11_0_1_violation : FALSE]
+        std::optional<std::unordered_set<std::string>> flag_file_names;
     };
 
     class IdentifierWatches
@@ -134,9 +138,11 @@ class ServiceDiscoveryClient final : public IServiceDiscoveryClient
     using Disambiguator = std::uint64_t;
 
     void CallHandlers(const std::unordered_set<FindServiceHandle>& search_keys);
+    bool HasActiveSearch(const Watch& watch) const;
 
     WatchesContainer::iterator StoreWatch(const os::InotifyWatchDescriptor& watch_descriptor,
-                                          const EnrichedInstanceIdentifier& enriched_instance_identifier);
+                                          const EnrichedInstanceIdentifier& enriched_instance_identifier,
+                                          QualityAwareContainer<KnownInstancesContainer>& known_instances);
 
     void EraseWatch(const WatchesContainer::iterator& watch_iterator);
 
@@ -175,8 +181,8 @@ class ServiceDiscoveryClient final : public IServiceDiscoveryClient
     /**
      * Search requests, watches, and the known-instance cache are protected by worker_mutex_. StopFindService marks
      * requests as obsolete; the worker retires them under this lock before processing events. Replacement searches
-     * reuse existing watches, and delayed removals are checked against the current offer state. Handler invocations
-     * retain shared ownership so retirement cannot destroy an executing callback.
+     * reuse OS watches but refresh logically retired watches and their offer snapshots. Handler invocations retain
+     * shared ownership so retirement cannot destroy an executing callback.
      *
      * It is imperative that worker_mutex_ stays a recursive lock to not end up in deadlocks when the user calls
      * StartFindService() or StopFindService() from within the FindServiceHandler.
