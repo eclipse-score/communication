@@ -578,6 +578,7 @@ TEST_F(ProxyBaseFindServiceMultipleBindingsFixture, DISABLED_FindServiceShouldRe
 class MyProxy : public ProxyBase
 {
   public:
+    using ProxyBase::Deinitialize;
     using ProxyBase::ProxyBase;
 
     const ProxyBase::ProxyEvents& GetEvents()
@@ -691,6 +692,39 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, RegisteringServiceElementStores
     EXPECT_EQ(&methods.at(method_name_1_).get().Get(), &method_1_);
 }
 
+TEST_F(ProxyBaseServiceElementReferencesFixture, RegisteringEventWithAlreadyRegisteredNameTerminates)
+{
+    // Given a valid MyProxy object on which an Event was registered
+    ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_0_.GetReferenceToMoveable());
+
+    // When registering another Event with the same name
+    // Then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_1_.GetReferenceToMoveable()));
+}
+
+TEST_F(ProxyBaseServiceElementReferencesFixture, RegisteringFieldWithAlreadyRegisteredNameTerminates)
+{
+    // Given a valid MyProxy object on which a Field was registered
+    ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_0_.GetReferenceToMoveable());
+
+    // When registering another Field with the same name
+    // Then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_1_.GetReferenceToMoveable()));
+}
+
+TEST_F(ProxyBaseServiceElementReferencesFixture, RegisteringMethodWithAlreadyRegisteredNameTerminates)
+{
+    // Given a valid MyProxy object on which a Method was registered
+    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_.GetReferenceToMoveable());
+
+    // When registering another Method with the same name
+    // Then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_1_.GetReferenceToMoveable()));
+}
+
 TEST_F(ProxyBaseServiceElementReferencesFixture, MoveConstructingUpdatesReferencesToServiceElements)
 {
     RecordProperty("Verifies", "SCR-17432438");
@@ -799,6 +833,32 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningToItselfDoesNotDoA
     // branch can be taken without crash.
 }
 
+using ProxyBaseMovedFromFixture = ProxyBaseServiceElementReferencesFixture;
+TEST_F(ProxyBaseMovedFromFixture, GettingBindingFromMovedFromProxyTerminates)
+{
+    // Given a MyProxy object which was moved into another MyProxy object
+    MyProxy moved_to_proxy{std::move(proxy_)};
+
+    // When getting the binding from the moved-from proxy
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = ProxyBaseView{proxy_}.GetBinding(), ".*");
+}
+
+TEST_F(ProxyBaseMovedFromFixture, DeinitializingMovedFromProxyDoesNotDispatchToBinding)
+{
+    // Given a MyProxy object which was moved into another MyProxy object
+    MyProxy moved_to_proxy{std::move(proxy_)};
+
+    // Expecting that neither PrepareDeinitialize nor FinalizeDeinitialize is called on the proxy binding
+    EXPECT_CALL(proxy_binding_mock_, PrepareDeinitialize()).Times(0);
+    EXPECT_CALL(proxy_binding_mock_, FinalizeDeinitialize()).Times(0);
+
+    // When deinitializing the moved-from proxy
+    proxy_.Deinitialize();
+
+    // Then no call is dispatched to the proxy binding (verified by the expectations above)
+}
+
 // Attorney class which allows us to call the protected SetupMethods method of ProxyBase in the tests.
 class ProxyBaseSetupMethodsAttorney : public ProxyBase
 {
@@ -884,6 +944,19 @@ TEST_F(ProxyBaseAreBindingsValidFixture, AreBindingsValidReturnsTrueIfAllBinding
 
     // Then the result is true
     EXPECT_TRUE(are_bindings_valid);
+}
+
+TEST_F(ProxyBaseAreBindingsValidFixture, AreBindingsValidReturnsFalseIfProxyBindingIsNullptr)
+{
+    // Given a ProxyBase with a valid binding which was moved into another ProxyBase, leaving its binding as nullptr
+    GivenAProxyBaseWithValidBinding();
+    ProxyBaseSetupMethodsAttorney moved_to_proxy_base{std::move(*proxy_base_)};
+
+    // When calling AreBindingsValid on the moved-from ProxyBase
+    const bool are_bindings_valid = ProxyBaseView{*proxy_base_}.AreBindingsValid();
+
+    // Then the result is false
+    EXPECT_FALSE(are_bindings_valid);
 }
 
 TEST_F(ProxyBaseAreBindingsValidFixture, AreBindingsValidReturnsFalseIfRegisteredEventBindingConstructedWithError)
