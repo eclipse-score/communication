@@ -122,15 +122,21 @@ class ProxyFieldImpl : public ProxyFieldBase
         // corresponding tag is in the pack.
         if constexpr (kHasNotifier)
         {
+            // COV_JUSTIFIED_START proxy-field-dispatch-nonnull-assert
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_event_dispatch_ != nullptr);
+            // COV_JUSTIFIED_STOP
         }
         if constexpr (kHasSetter)
         {
+            // COV_JUSTIFIED_START proxy-field-dispatch-nonnull-assert
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_method_set_dispatch_ != nullptr);
+            // COV_JUSTIFIED_STOP
         }
         if constexpr (kHasGetter)
         {
+            // COV_JUSTIFIED_START proxy-field-dispatch-nonnull-assert
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_method_get_dispatch_ != nullptr);
+            // COV_JUSTIFIED_STOP
         }
         ProxyBaseView proxy_base_view{proxy_base};
         proxy_base_view.RegisterField(field_name, GetReferenceToMoveable());
