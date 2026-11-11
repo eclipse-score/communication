@@ -33,11 +33,11 @@
         },
         {
           "title": "ClientConnection - sending without a reply",
-          "caption_targets": ["#client-connection-queue-admission", "#client-connection-queue-arming"]
+          "caption_targets": ["#client-connection-queue-admission"]
         },
         {
           "title": "ClientConnection - sending with a reply callback",
-          "caption_targets": ["#client-connection-queue-admission", "#client-connection-queue-arming"]
+          "caption_targets": ["#client-connection-queue-admission"]
         },
         {
           "title": "ClientConnection - sending and waiting for a reply",
@@ -45,7 +45,7 @@
         },
         {
           "title": "ClientConnection - queued message admission",
-          "caption_targets": []
+          "caption_targets": ["#client-connection-queue-arming"]
         },
         {
           "title": "ClientConnection - arming queued send dispatch",

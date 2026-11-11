@@ -101,6 +101,7 @@ bool ClientConnection::TryQueueMessage(score::cpp::span<const std::uint8_t> mess
     send_command.message.assign(message.begin(), message.end());
     send_command.callback = std::move(callback);
     send_queue_.push_back(send_command);
+    ArmSendQueueIfNeeded();
     return true;
 }
 
@@ -120,27 +121,13 @@ score::cpp::expected_blank<score::os::Error> ClientConnection::Send(
         return engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::SEND), message);
     }
     std::lock_guard<std::mutex> guard{send_mutex_};
-    if (!waiting_for_reply_.has_value())
+    if (!client_config_.truly_async && !waiting_for_reply_.has_value())
     {
-        if (client_config_.truly_async)
-        {
-            if (!TryQueueMessage(message, ReplyCallback{}))
-            {
-                return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOBUFS));
-            }
-            ArmSendQueueUnderLock();
-        }
-        else
-        {
-            return engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::SEND), message);
-        }
+        return engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::SEND), message);
     }
-    else
+    if (!TryQueueMessage(message, ReplyCallback{}))
     {
-        if (!TryQueueMessage(message, ReplyCallback{}))
-        {
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOBUFS));
-        }
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOBUFS));
     }
     return {};
 }
@@ -210,16 +197,8 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Cli
         lock.lock();
         if (!expected.has_value())
         {
-            if (send_queue_.empty())
-            {
-                // no one managed to get into queue while we were blocking it
-                waiting_for_reply_.reset();
-            }
-            else
-            {
-                // unblock the queue
-                ArmSendQueueUnderLock();
-            }
+            waiting_for_reply_.reset();
+            ArmSendQueueIfNeeded();
             return score::cpp::make_unexpected(expected.error());
         }
     }
@@ -242,7 +221,7 @@ score::cpp::expected_blank<score::os::Error> ClientConnection::SendWithCallback(
         return score::cpp::make_unexpected(score::os::Error::createFromErrno(EINVAL));
     }
     std::lock_guard<std::mutex> guard(send_mutex_);
-    if (waiting_for_reply_.has_value())
+    if (client_config_.truly_async || waiting_for_reply_.has_value())
     {
         if (!TryQueueMessage(message, std::move(callback)))
         {
@@ -250,24 +229,13 @@ score::cpp::expected_blank<score::os::Error> ClientConnection::SendWithCallback(
         }
         return {};
     }
-    if (client_config_.truly_async)
+    const auto expected =
+        engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::REQUEST), message);
+    if (!expected.has_value())
     {
-        if (!TryQueueMessage(message, std::move(callback)))
-        {
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOBUFS));
-        }
-        ArmSendQueueUnderLock();
+        return score::cpp::make_unexpected(expected.error());
     }
-    else
-    {
-        const auto expected =
-            engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::REQUEST), message);
-        if (!expected.has_value())
-        {
-            return score::cpp::make_unexpected(expected.error());
-        }
-        waiting_for_reply_ = std::move(callback);
-    }
+    waiting_for_reply_ = std::move(callback);
     return {};
 }
 
@@ -369,7 +337,20 @@ void ClientConnection::TryConnect() noexcept
             if (TrySetStopReason(stop_reason))
             {
                 ProcessStateChange(State::kStopping);
-                SwitchToStopState();
+                if (IsInCallback())
+                {
+                    SwitchToStopState();
+                }
+                else
+                {
+                    engine_->EnqueueCommand(
+                        disconnection_command_,
+                        ISharedResourceEngine::TimePoint{},
+                        [this](auto) noexcept {
+                            SwitchToStopState();
+                        },
+                        this);
+                }
             }
             return;
         }
@@ -509,12 +490,20 @@ IClientConnection::StopReason ClientConnection::ProcessInputEvent() noexcept
     return StopReason::kNone;
 }
 
-void ClientConnection::ArmSendQueueUnderLock() noexcept
+void ClientConnection::ArmSendQueueIfNeeded() noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(!waiting_for_reply_.has_value());
+    // send_queue_ contains pending IPC messages, not engine commands.
+    if (send_queue_.empty())
+    {
+        return;
+    }
+    if (waiting_for_reply_.has_value())
+    {
+        // An existing drain or request owns progress; do not schedule another drain.
+        return;
+    }
 
-    // here we are temporarily blocking async_send_command_ from attempts to push it several times into the
-    // queue; waiting_for_reply_ will be released in ProcessSendQueueUnderLock()
+    // Reserve draining before enqueueing async_send_command_ in the engine's client-thread command queue.
     waiting_for_reply_ = ReplyCallback{};
     engine_->EnqueueCommand(
         async_send_command_,

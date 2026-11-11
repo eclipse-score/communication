@@ -84,6 +84,17 @@ an underlying variant directly can bypass the forwarding target's platform
 constraint. SDK setup and host prerequisites belong in the
 [contribution guide](../../../../CONTRIBUTING.md) and repository toolchain setup.
 
+`StateCallback` in [IClientConnection](../../i_client_connection.h) uses fixed-capacity
+`score::cpp::callback` storage. An oversized test capture failed to compile with
+`Configured capacity too small` during the 2026-11-06 lifecycle-test work.
+`StoppedStateCallbackKeepsOwnedCaptureAliveDuringDestruction` in the
+[client tests](../../client_connection_test.cpp) retains an owned `shared_ptr`
+and one reference to a stack helper instead of capturing all helper inputs
+directly. Keep that helper alive through callback execution; do not enlarge
+production callback storage merely to fit a test. Retain an observable owned
+capture in lifetime regressions: reference-only captures do not establish
+callback-owned lifetime.
+
 ## Requirements and Architecture
 
 For the documentation-check pilot, the existing unit check, fast rendering,

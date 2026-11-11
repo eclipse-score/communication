@@ -10,7 +10,7 @@ Evidence checked: 2026-11-09; source inspection and existing input test review
 
 The reply input branch checks whether `waiting_for_reply_` is engaged. It does
 not check whether the contained callback is non-empty before moving and invoking
-it. `ArmSendQueueUnderLock` engages that same optional with an empty callback
+it. `ArmSendQueueIfNeeded` engages that same optional with an empty callback
 as a queue-draining marker, not as a pending request's completion callback.
 
 An input reply processed while that marker is present therefore satisfies the
@@ -25,7 +25,7 @@ callback invocation, and the expected containment behavior remain unqualified.
 
 ## Evidence
 
-The owning paths are `ArmSendQueueUnderLock` and the `REPLY` branch of
+The owning paths are `ArmSendQueueIfNeeded` and the `REPLY` branch of
 `ProcessInputEvent` in [ClientConnection](../../../client_connection.cpp).
 The [arming view](../../../dependability/software_unit_design/client_connection_arm_send_queue_activity.puml)
 distinguishes the empty marker from a request callback, while the

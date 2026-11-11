@@ -27,7 +27,7 @@ namespace score::message_passing {
             - waiting_for_reply_ : std::optional<ReplyCallback>
             --
             - TryConnect() noexcept : void
-            - ArmSendQueueUnderLock() noexcept : void
+            - ArmSendQueueIfNeeded() noexcept : void
             - ProcessSendQueueUnderLock(lock : std::unique_lock<std::mutex>&) noexcept : void
             - SwitchToStopState() noexcept : void
             - ProcessStateChangeToStopped() noexcept : void

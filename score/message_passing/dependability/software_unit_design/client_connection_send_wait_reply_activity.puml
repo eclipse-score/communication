@@ -49,15 +49,12 @@ else (no)
     :SendProtocolMessage(client_fd_, REQUEST, message);
     :Relock send_mutex_;
     if (Transport failed?) then (yes)
-        if (send_queue_ is empty?) then (yes)
-            :Reset waiting_for_reply_;
-        else (no)
-            :ArmSendQueueUnderLock();
-            note right
-                This is the existing direct-error recovery call.
-                Its reply-slot precondition is a queue-design review gap.
-            end note
-        endif
+        :Reset waiting_for_reply_;
+        :ArmSendQueueIfNeeded();
+        note right
+            Guarded arming does nothing for an empty queue.
+            Ownership across overlapping stop/restart remains unqualified.
+        end note
         :Unlock send_mutex_;
         :Return the transport error without waiting for completion;
         stop
