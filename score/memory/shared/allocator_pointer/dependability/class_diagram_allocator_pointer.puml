@@ -12,8 +12,6 @@
 ' *******************************************************************************
 
 @startuml class_diagram_allocator_pointer
-allowmixing
-skinparam usecaseBorderType dashed
 skinparam linetype ortho
 
 namespace score::memory::shared {
@@ -21,25 +19,28 @@ namespace score::memory::shared {
     class "OffsetPtr<PointedType>" as OffsetPtr {
       + OffsetPtr(ptr: pointer)
       + OffsetPtr(other: const OffsetPtr<PointedType>&)
+      + OffsetPtr<OtherPointedType>(other: const OffsetPtr<OtherPointedType>&)
       + operator=(ptr: pointer): OffsetPtr&
       + operator=(other: const OffsetPtr&): OffsetPtr&
-      + {static} pointer_to(ref: std::add_lvalue_reference_t<T>): OffsetPtr
-      + {static} pointer_to(r: void* const): OffsetPtr
+      + operator=<OtherPointedType>(other: const OffsetPtr<OtherPointedType>&): OffsetPtr&
+      + {static} pointer_to(ref: PointedType&): OffsetPtr
+      + {static} pointer_to(r: void*): OffsetPtr
+      + {static} pointer_to(r: const void*): OffsetPtr
       + operator*(): reference
       + operator[](idx: difference_type): reference
       + operator+=(offset: difference_type): OffsetPtr&
       + operator-=(offset: difference_type): OffsetPtr&
       + operator++(): OffsetPtr&
-      + operator++(T: std::int32_t): OffsetPtr
+      + operator++(std::int32_t): OffsetPtr
       + operator--(): OffsetPtr&
-      + operator--(T: std::int32_t): OffsetPtr
+      + operator--(std::int32_t): OffsetPtr
       + get(): pointer
       + get(explicit_pointed_type_size: const std::size_t): pointer
       + operator pointer(): pointer
       + operator->(): pointer
       + operator bool(): bool
       + operator!(): bool
-      - {static} CopyFrom(source_offset_ptr: const OffsetPtr<OtherPointedType>&, target_offset_ptr: OffsetPtr<PointedType>&): std::pair<difference_type, MemoryRegionBounds>
+      - {static} CopyFrom<OtherPointedType>(source_offset_ptr: const OffsetPtr<OtherPointedType>&, target_offset_ptr: OffsetPtr<PointedType>&): std::pair<difference_type, MemoryRegionBounds>
       - {static} GetPointerWithBoundsCheck(offset_ptr_address: const void* const, offset: const difference_type, offset_ptr_memory_bounds_when_not_in_shm: const MemoryRegionBounds&, pointed_type_size: const std::size_t): pointer
       - {static} GetPointerWithoutBoundsCheck(offset_ptr_address: const void* const, offset: const difference_type): pointer
       - IncrementOffset(multiple_of_pointed_type_to_increment: const std::size_t): void
@@ -50,38 +51,70 @@ namespace score::memory::shared {
       - memory_bounds_: MemoryRegionBounds
     }
 
+    note right of OffsetPtr
+      OffsetPtr() constructs a null pointer.
+      pointer_to(ref) only for non-void PointedType;
+      pointer_to(void*) / pointer_to(const void*) only for PointedType = void.
+      operator pointer() is implicit, operator bool() is explicit.
+    end note
+
     class OffsetPtrBoundsCheck <<utility>> {
       + {static} DoesOffsetPtrInSharedMemoryPassBoundsChecks(offset_ptr_address: const void* const, offset: const std::ptrdiff_t, offset_ptr_memory_bounds: const MemoryRegionBounds&, pointed_type_size: const std::size_t, offset_ptr_size: const std::size_t): bool
       + {static} DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(offset_ptr_address: const void* const, offset: const std::ptrdiff_t, offset_ptr_memory_bounds: const MemoryRegionBounds&, pointed_type_size: const std::size_t, offset_ptr_size: const std::size_t): bool
     }
 
-    class "PolymorphicOffsetPtrAllocator<T>" as PolymorphicOffsetPtrAllocator {
+    note right of OffsetPtrBoundsCheck
+      Not a class: represents the free functions
+      in offset_ptr_bounds_check.h
+    end note
+
+    class OffsetPtrFunctions <<utility>> {
+      + {static} EnableOffsetPtrBoundsChecking(enable: bool): bool
+      ~ {static} IsBoundsCheckingEnabled(): bool
+      ~ {static} AssertOffsetBoundsCheck(address: const void*, offset: difference_type, memory_bounds_when_not_in_shm: const MemoryRegionBounds&, pointed_type_size: std::size_t, own_size: std::size_t): void
+      - bounds_checking_enabled: bool
+    }
+
+    note right of OffsetPtrFunctions
+      Not a class: represents the free functions
+      in offset_ptr.h / offset_ptr.cpp
+    end note
+
+    class "PolymorphicOffsetPtrAllocator<T = std::uint8_t>" as PolymorphicOffsetPtrAllocator {
       + using value_type = T
       + using pointer = OffsetPtr<T>
       + using size_type = std::size_t
-      + PolymorphicOffsetPtrAllocator()
       + PolymorphicOffsetPtrAllocator(resource: ManagedMemoryResource&)
-      + PolymorphicOffsetPtrAllocator(rhs: const PolymorphicOffsetPtrAllocator<U>&)
+      + PolymorphicOffsetPtrAllocator<U>(rhs: const PolymorphicOffsetPtrAllocator<U>&)
       + allocate(size: size_type): pointer
       + deallocate(p: pointer, size: size_type): void
       + getMemoryResourceProxy(): OffsetPtr<const MemoryResourceProxy>
       - proxy_: OffsetPtr<const MemoryResourceProxy>
     }
 
+    note right of PolymorphicOffsetPtrAllocator
+      Default ctor: no memory resource (proxy_ == nullptr),
+      allocate/deallocate fall back to std::malloc/std::free.
+    end note
+
     OffsetPtr ..> OffsetPtrBoundsCheck : uses
+    OffsetPtr ..> OffsetPtrFunctions : uses
     PolymorphicOffsetPtrAllocator *-- "1" OffsetPtr : proxy_
     PolymorphicOffsetPtrAllocator ..> OffsetPtr : creates
 
 }
 
-package "class diagram for factory and resources" {
+package factory_resources {
     class MemoryRegionBounds
     class MemoryResourceProxy
     class ManagedMemoryResource
+    class MemoryResourceRegistry
 }
 
 OffsetPtr *-- "1" MemoryRegionBounds : memory_bounds_
-PolymorphicOffsetPtrAllocator ..> MemoryResourceProxy : references
+PolymorphicOffsetPtrAllocator --> "0..1" MemoryResourceProxy : proxy_
 PolymorphicOffsetPtrAllocator ..> ManagedMemoryResource : constructed from
+OffsetPtr ..> MemoryResourceRegistry : uses
+OffsetPtrFunctions ..> MemoryResourceRegistry : uses
 
 @enduml

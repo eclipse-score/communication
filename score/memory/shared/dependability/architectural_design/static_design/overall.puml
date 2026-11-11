@@ -10,10 +10,10 @@
 '
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
-@startuml safety_sentinel_memory_shared_design
+@startuml overall
 title "memory_shared_static_architecture"
 skinparam nodesep 120
-skinparam ranksep 50
+skinparam ranksep 200
 
 ' Public API provided/required by unit "factory_resources" (see
 ' score/memory/shared/dependability/public_api.puml for the full class diagram).
@@ -41,7 +41,7 @@ interface "PolymorphicOffsetPtrAllocator<T>" as PolymorphicOffsetPtrAllocator
 ' single interface for the same reason as in public_api.puml.
 interface PointerArithmeticUtil
 
-component safety_software_seooc_memory_shared <<SEooC>>  {
+component dependable_element_memory_shared <<SEooC>>  {
 
    component memory_shared <<component>> {
       component pointer_arithmetic <<unit>>
@@ -66,25 +66,27 @@ component safety_software_seooc_memory_shared <<SEooC>>  {
       allocator_pointer )-u- OffsetPtr
       allocator_pointer )-u- PolymorphicOffsetPtrAllocator
       allocator_pointer -r-( PointerArithmeticUtil
+      allocator_pointer -u-( MemoryResourceProxy
+      allocator_pointer -u-( ManagedMemoryResource
   }
 }
 
 ' SEooC boundary relations (not drawn; the interfaces/classes above cross the boundary, see
 ' score-architecture skill / component_public_api validator: a public API interface must be
 ' both declared top-level here and connected (any relation) from the SEooC itself).
-safety_software_seooc_memory_shared -[hidden]- ManagedMemoryResource
-safety_software_seooc_memory_shared -[hidden]- ISharedMemoryResource
-safety_software_seooc_memory_shared -[hidden]- AccessControl
-safety_software_seooc_memory_shared -[hidden]- ISharedMemoryFactory
-safety_software_seooc_memory_shared -[hidden]- SharedMemoryFactory
-safety_software_seooc_memory_shared -[hidden]- MemoryResourceProxy
-safety_software_seooc_memory_shared -[hidden]- TypedMemory
-safety_software_seooc_memory_shared -[hidden]- InitializeCallback
-safety_software_seooc_memory_shared -[hidden]- UserPermissions
-safety_software_seooc_memory_shared -[hidden]- PermissionMap
-safety_software_seooc_memory_shared -[hidden]- FileDescriptor
-safety_software_seooc_memory_shared -[hidden]- OffsetPtr
-safety_software_seooc_memory_shared -[hidden]- PolymorphicOffsetPtrAllocator
-safety_software_seooc_memory_shared -[hidden]- PointerArithmeticUtil
+dependable_element_memory_shared -[hidden]- ManagedMemoryResource
+dependable_element_memory_shared -[hidden]- ISharedMemoryResource
+dependable_element_memory_shared -[hidden]- AccessControl
+dependable_element_memory_shared -[hidden]- ISharedMemoryFactory
+dependable_element_memory_shared -[hidden]- SharedMemoryFactory
+dependable_element_memory_shared -[hidden]- MemoryResourceProxy
+dependable_element_memory_shared -[hidden]- TypedMemory
+dependable_element_memory_shared -[hidden]- InitializeCallback
+dependable_element_memory_shared -[hidden]- UserPermissions
+dependable_element_memory_shared -[hidden]- PermissionMap
+dependable_element_memory_shared -[hidden]- FileDescriptor
+dependable_element_memory_shared -[hidden]- OffsetPtr
+dependable_element_memory_shared -[hidden]- PolymorphicOffsetPtrAllocator
+dependable_element_memory_shared -[hidden]- PointerArithmeticUtil
 
 @enduml
