@@ -46,7 +46,7 @@ Frame MakeFrame(const std::uint8_t payload_value)
     return frame;
 }
 
-TEST(SomeIpE2EEventProtectionTest, ProtectedFrame_Check_IntegrityAndSequenceOk)
+TEST(SomeIpE2EEventProtectionTest, ProtectedFrameCheckIntegrityAndSequenceOk)
 {
     // Given a protector and a checker for the same event
     E2EEventProtector protector{kDeployment};
@@ -62,7 +62,7 @@ TEST(SomeIpE2EEventProtectionTest, ProtectedFrame_Check_IntegrityAndSequenceOk)
     EXPECT_EQ(outcome.sequence, SequenceStatus::kOk);
 }
 
-TEST(SomeIpE2EEventProtectionTest, ConsecutiveFrames_Check_SequenceOkForEachFrame)
+TEST(SomeIpE2EEventProtectionTest, ConsecutiveFramesCheckSequenceOkForEachFrame)
 {
     // Given a protector and a checker for the same event
     E2EEventProtector protector{kDeployment};
@@ -81,7 +81,7 @@ TEST(SomeIpE2EEventProtectionTest, ConsecutiveFrames_Check_SequenceOkForEachFram
     }
 }
 
-TEST(SomeIpE2EEventProtectionTest, PayloadCorruptedAfterProtect_Check_IntegrityErrorAndSequenceSkipped)
+TEST(SomeIpE2EEventProtectionTest, PayloadCorruptedAfterProtectCheckIntegrityErrorAndSequenceSkipped)
 {
     // Given a protected frame
     E2EEventProtector protector{kDeployment};
@@ -98,7 +98,7 @@ TEST(SomeIpE2EEventProtectionTest, PayloadCorruptedAfterProtect_Check_IntegrityE
     EXPECT_EQ(outcome.sequence, SequenceStatus::kSkipped);
 }
 
-TEST(SomeIpE2EEventProtectionTest, CheckerWithOtherDataId_Check_IntegrityError)
+TEST(SomeIpE2EEventProtectionTest, CheckerWithOtherDataIdCheckIntegrityError)
 {
     // Given a frame protected with one data ID
     E2EEventProtector protector{kDeployment};
@@ -114,7 +114,7 @@ TEST(SomeIpE2EEventProtectionTest, CheckerWithOtherDataId_Check_IntegrityError)
     EXPECT_EQ(outcome.sequence, SequenceStatus::kSkipped);
 }
 
-TEST(SomeIpE2EEventProtectionTest, HeaderOnlyFrame_ProtectAndCheck_IntegrityOk)
+TEST(SomeIpE2EEventProtectionTest, HeaderOnlyFrameProtectAndCheckIntegrityOk)
 {
     // Given a frame without payload
     E2EEventProtector protector{kDeployment};
@@ -130,7 +130,7 @@ TEST(SomeIpE2EEventProtectionTest, HeaderOnlyFrame_ProtectAndCheck_IntegrityOk)
     EXPECT_EQ(outcome.sequence, SequenceStatus::kOk);
 }
 
-TEST(SomeIpE2EEventProtectionTest, FrameShorterThanHeader_Protect_ReturnsFalseAndLeavesFrameUntouched)
+TEST(SomeIpE2EEventProtectionTest, FrameShorterThanHeaderProtectReturnsFalseAndLeavesFrameUntouched)
 {
     // Given a frame that cannot hold the header
     E2EEventProtector protector{kDeployment};
@@ -146,7 +146,7 @@ TEST(SomeIpE2EEventProtectionTest, FrameShorterThanHeader_Protect_ReturnsFalseAn
     EXPECT_EQ(frame, original_frame);
 }
 
-TEST(SomeIpE2EEventProtectionTest, FrameShorterThanHeader_Check_IntegrityErrorAndSequenceSkipped)
+TEST(SomeIpE2EEventProtectionTest, FrameShorterThanHeaderCheckIntegrityErrorAndSequenceSkipped)
 {
     // Given a received frame that cannot hold the header
     E2EEventChecker checker{kDeployment};
@@ -160,7 +160,7 @@ TEST(SomeIpE2EEventProtectionTest, FrameShorterThanHeader_Check_IntegrityErrorAn
     EXPECT_EQ(outcome.sequence, SequenceStatus::kSkipped);
 }
 
-TEST(SomeIpE2EEventProtectionTest, EventWithE2EDeployment_Create_ReturnsProtectorAndCheckerUsingIt)
+TEST(SomeIpE2EEventProtectionTest, EventWithE2EDeploymentCreateReturnsProtectorAndCheckerUsingIt)
 {
     // Given a type deployment with E2E configured for one event
     const SomeIpServiceTypeDeployment type_deployment{
@@ -178,7 +178,7 @@ TEST(SomeIpE2EEventProtectionTest, EventWithE2EDeployment_Create_ReturnsProtecto
     EXPECT_EQ(checker->Check(frame).data_integrity, DataIntegrityStatus::kOk);
 }
 
-TEST(SomeIpE2EEventProtectionTest, OnlyOtherEventHasE2EDeployment_Create_ReturnsNullopt)
+TEST(SomeIpE2EEventProtectionTest, OnlyOtherEventHasE2EDeploymentCreateReturnsNullopt)
 {
     // Given a type deployment with two events, of which only the other one has E2E configured
     const SomeIpServiceTypeDeployment type_deployment{
