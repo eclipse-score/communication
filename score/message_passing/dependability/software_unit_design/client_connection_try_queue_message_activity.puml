@@ -17,14 +17,16 @@ endif
 :Copy message bytes into command.message;
 :Move callback into command.callback;
 :Append the command to the back of send_queue_;
+:ArmSendQueueIfNeeded();
 :Return true with the caller's lock still held;
 stop
 
 legend
     send_storage_ retains ownership of the command and its message storage.
     Intrusive membership moves from the free pool to the FIFO send queue.
-    Admission does not send, claim the reply slot, or arm queue dispatch.
-    The caller turns false into ENOBUFS and decides whether to schedule work.
+    Admission attempts guarded arming, preserving an occupied reply/drain slot.
+    A free slot permits reserving and scheduling dispatch, not immediate transport.
+    The API caller validates size/state and turns false into ENOBUFS.
     Empty versus non-empty callback selects SEND versus REQUEST at dispatch.
 endlegend
 

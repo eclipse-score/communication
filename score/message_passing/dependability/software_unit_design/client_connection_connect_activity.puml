@@ -50,7 +50,15 @@ while (TryOpenClientConnection(identifier_) fails?) is (yes)
         :Select kPermission for EACCES, otherwise kIoError;
         if (TrySetStopReason(selected reason) succeeds?) then (yes)
             :ProcessStateChange(kStopping);
-            :SwitchToStopState();
+            if (IsInCallback()?) then (yes)
+                :SwitchToStopState();
+            else (no)
+                :Enqueue disconnection_command_ at TimePoint{}, owner = this;
+                note right
+                    Engine execution invokes SwitchToStopState().
+                    Cleanup may complete before or after the caller returns.
+                end note
+            endif
         else (no)
             :Preserve the already selected stop reason;
         endif

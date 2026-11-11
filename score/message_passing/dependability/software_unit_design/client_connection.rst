@@ -91,9 +91,15 @@ engine-scheduled invocations, not a blocking retry loop inside ``TryConnect``.
   method.
 * ``EACCES`` selects ``kPermission``. Every other non-retry open error selects
   ``kIoError``. If ``TrySetStopReason`` accepts the reason, the method publishes
-  ``kStopping`` and calls ``SwitchToStopState``; otherwise it preserves the
-  reason already selected by another stop path. Neither branch schedules
-  another retry. A later explicit ``Restart`` is distinct from automatic retry.
+  ``kStopping`` and dispatches finalization like ``Stop``: ``SwitchToStopState``
+  runs directly in callback context, otherwise ``disconnection_command_`` is
+  queued at ``TimePoint{}`` with owner ``this``. A synchronous first-open failure
+  therefore does not run the shared finalizer on its user thread. The engine
+  may complete cleanup before or after ``Start`` returns; observing
+  ``kStopping`` at that return is not guaranteed. If another stop path already
+  selected a reason, the failure path preserves it without duplicate cleanup.
+  Neither outcome schedules another retry. A later explicit ``Restart`` is
+  distinct from automatic retry.
 * A successful open stores the descriptor and initializes the embedded endpoint
   with its owner, receive-size bound, and callbacks. Registration is immediate
   on the engine callback thread; otherwise registration itself is queued using
@@ -115,7 +121,7 @@ Sending Without a Reply
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. uml:: client_connection_send_activity.puml
-  :caption: Queue helpers: :ref:`client-connection-queue-admission` and :ref:`client-connection-queue-arming`.
+  :caption: Queued admission and guarded scheduling: :ref:`client-connection-queue-admission`.
 
 ``Send`` checks message size before readiness, returning ``EMSGSIZE`` or
 ``EINVAL`` respectively. When neither ``fully_ordered`` nor ``truly_async`` is
@@ -123,12 +129,12 @@ configured, it calls transport directly without taking ``send_mutex_`` or
 inspecting the shared reply/drain slot. A pending request therefore does not
 force this default one-way path into the library queue.
 
-The other paths take ``send_mutex_``. An engaged ``waiting_for_reply_`` causes
-queued admission. With a free slot, ``truly_async`` still queues and calls
-``ArmSendQueueUnderLock``; otherwise the ordered send calls transport while
-holding the mutex. Queued admission returns ``ENOBUFS`` when the combined send
-pool has no free command. Successful queued admission copies the message into
-connection-owned storage and returns before later transport dispatch.
+The other paths take ``send_mutex_``. A non-``truly_async`` send with a free
+reply/drain slot calls transport under the mutex. Otherwise ``TryQueueMessage``
+owns queued admission and the guarded scheduling attempt. It returns ``false``
+when the combined send pool has no free command; the API reports ``ENOBUFS``.
+Successful admission copies the message into connection-owned storage and
+returns before later transport dispatch.
 
 Both direct paths return the transport result. Queued success reports local
 acceptance, not peer receipt; later one-way transport errors have no reply
@@ -145,12 +151,12 @@ Sending With a Reply Callback
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. uml:: client_connection_send_with_callback_activity.puml
-  :caption: Queued requests: :ref:`client-connection-queue-admission` and :ref:`client-connection-queue-arming`.
+  :caption: Queued requests and guarded scheduling: :ref:`client-connection-queue-admission`.
 
 ``SendWithCallback`` checks message size and readiness in the same order as
-``Send``, then takes ``send_mutex_``. An engaged reply/drain slot causes queued
-admission. With a free slot, ``truly_async`` selects queuing and arms dispatch;
-otherwise the method sends ``REQUEST`` directly under the mutex and installs
+``Send``, then takes ``send_mutex_``. ``truly_async`` or an engaged reply/drain
+slot selects ``TryQueueMessage``, including its guarded scheduling attempt.
+Otherwise the method sends ``REQUEST`` directly under the mutex and installs
 the reply callback in ``waiting_for_reply_`` only after successful transport.
 ``fully_ordered`` does not select a different request admission path.
 
@@ -180,12 +186,14 @@ choice is independent of ``truly_async`` and ``fully_ordered``. Other callers
 can admit queued work while transport is in progress because the slot remains
 engaged even though the mutex is released.
 
-If direct transport fails, an empty send queue causes the slot to be reset;
-otherwise the implementation calls ``ArmSendQueueUnderLock`` to request queue
-progress. The method returns the transport error without waiting. The nonempty-
-queue branch reaches that helper without clearing the reply slot at this call
-site; its consistency with the helper's free-slot debug precondition remains a
-queue-design review gap, not a runtime fix in this increment.
+If direct transport fails, the method resets the reply slot under the reacquired
+mutex, then calls ``ArmSendQueueIfNeeded``. That helper only schedules progress
+for a nonempty queue with a free slot. The method returns the transport error
+without waiting; its local completion callback need not be invoked for that
+direct error. This release-before-schedule sequence resolves the former
+free-slot precondition mismatch. It does not identify request/lifecycle
+ownership if stop/restart overlaps the unlocked transport call; that case
+remains an explicit review limit.
 
 After successful direct transport or queued admission, the method releases the
 mutex and waits on the local future's ready predicate. A callback result that
@@ -210,6 +218,7 @@ Queue Admission
 ~~~~~~~~~~~~~~~
 
 .. uml:: client_connection_try_queue_message_activity.puml
+  :caption: Guarded scheduling after admission: :ref:`client-connection-queue-arming`.
 
 ``TryQueueMessage`` is called with ``send_mutex_`` already held. With no free
 command it returns ``false``; the API caller reports ``ENOBUFS``. Otherwise it
@@ -217,11 +226,13 @@ removes the free-pool front, copies the message into that command's storage,
 moves the callback, and appends the command to the send-queue tail. The storage
 remains owned by ``send_storage_`` throughout this intrusive-list transfer.
 
-The helper does not validate state or message size, occupy the reply slot, send
-the message, or schedule dispatch. Its caller owns those decisions. It stores
-the supplied callback without a non-empty check; the dispatcher selects
-``REQUEST`` for a non-empty callback and ``SEND`` for an empty one. This is the
-observed dispatch discriminator, not an additional callback API guarantee.
+Successful admission then calls ``ArmSendQueueIfNeeded`` with the same lock
+held. An occupied reply/drain slot is preserved; a free slot permits reserving
+and scheduling queue progress. The helper does not validate lifecycle or
+message size and does not send the message immediately. It stores the supplied
+callback without a non-empty check; the dispatcher selects ``REQUEST`` for a
+non-empty callback and ``SEND`` for an empty one. This is the observed dispatch
+discriminator, not an additional callback API guarantee.
 
 .. _client-connection-queue-arming:
 
@@ -231,12 +242,27 @@ Arming Queued Dispatch
 .. uml:: client_connection_arm_send_queue_activity.puml
   :caption: Engine callback dispatch: :ref:`client-connection-send-queue-dispatch`.
 
-``ArmSendQueueUnderLock`` expects the caller's send lock to be held and asserts
-a disengaged reply slot in debug builds. It installs an empty callback marker
-inside the optional slot, then enqueues the embedded ``async_send_command_`` at
-``TimePoint{}`` with owner ``this``. The marker is a dispatch reservation, not a
-request already sent to the peer. Other admission paths seeing the engaged slot
-queue without attempting another arming of the same command entry.
+``ArmSendQueueIfNeeded`` requires ``send_mutex_`` to be held and does not release
+it. The name describes deterministic conditional scheduling, not successful
+arming on every return. Its two early returns have different meanings:
+
+* ``send_queue_`` is empty: there are no pending IPC messages to send, so no
+  engine command is added.
+* ``waiting_for_reply_`` is engaged: an existing drain or request already owns
+  progress. An empty callback marker represents a queued drain command or active
+  queue processing; a non-empty callback belongs to a request's completion. The
+  helper preserves either state without scheduling another drain.
+
+The two queues are distinct. ``send_queue_`` is the connection's FIFO of pending
+IPC messages and callbacks. The engine's client-thread command queue schedules
+execution of ``async_send_command_``, whose callback processes that FIFO. Slot
+engagement is not a direct test of engine command-queue membership.
+
+Only a nonempty message queue with a free slot causes the helper to install an
+empty callback marker, then enqueue ``async_send_command_`` at ``TimePoint{}``
+with owner ``this``. The marker reserves queue processing, not a reply callback.
+Repeated admission cannot overwrite a pending callback or schedule another drain
+while an existing drain or request owns progress.
 
 When the engine invokes the stored command callback, that callback acquires
 ``send_mutex_`` with a unique lock and calls
@@ -244,11 +270,11 @@ When the engine invokes the stored command callback, that callback acquires
 without executing that continuation and without releasing the caller's lock.
 Stopping removes connection-owned engine work through the shared finalizer.
 
-Ordinary asynchronous admission reaches arming only after observing a free slot
-and queuing a command. The ``SendWaitReply`` direct-error recovery path instead
-reaches it while its completion callback remains installed at the call site.
-The existing precondition mismatch is still open; this design does not add a
-reset or relax the assertion to hide it.
+``TryQueueMessage`` attempts arming after every successful admission, and
+``SendWaitReply`` direct-error recovery attempts it after releasing its slot.
+The helper decides whether work is needed rather than relying on duplicated
+caller branches. Its guards do not establish ownership of a callback removed
+by another path during a lifecycle overlap.
 
 .. _client-connection-send-queue-dispatch:
 
@@ -591,9 +617,9 @@ coverage percentage, release acceptance, or proof of every interleaving.
    * - ``SendWaitReply``
      - :ref:`client-connection-send-wait-reply`: callback-thread rejection, request admission, completion wait/copy.
    * - ``TryQueueMessage``
-     - :ref:`client-connection-queue-admission`: free-pool reservation and FIFO admission.
-   * - ``ArmSendQueueUnderLock``
-     - :ref:`client-connection-queue-arming`: empty marker and scheduled dispatch continuation.
+     - :ref:`client-connection-queue-admission`: free-pool reservation, FIFO admission, and guarded scheduling attempt.
+   * - ``ArmSendQueueIfNeeded``
+     - :ref:`client-connection-queue-arming`: distinguish no messages from owned progress, then conditionally schedule a client-thread drain command.
    * - ``ProcessSendQueueUnderLock``
      - :ref:`client-connection-send-queue-dispatch`: transport, recycling, slot transitions, and error callbacks.
    * - ``ProcessInputEvent``
@@ -616,7 +642,7 @@ coverage percentage, release acceptance, or proof of every interleaving.
    * - ``connection_timer_`` registration callback
      - Engine-scheduled endpoint registration after a direct successful open; establishment view.
    * - ``disconnection_command_``
-     - Engine-scheduled shared finalization after an off-callback-thread API stop.
+     - Engine-scheduled shared finalization after an off-callback-thread API stop or terminal open failure.
    * - ``async_send_command_``
      - Acquire a unique send lock and drain the queue; arming and dispatch views.
    * - Endpoint ``input``
@@ -670,8 +696,10 @@ state callbacks suppress invocation, not publication. ``GetState`` and
 ``GetStopReason`` are separate observations and do not produce a combined
 snapshot; these descriptions do not claim lock-free atomics.
 
-An API stop may finish cleanup inline on callback context or return after
-queuing it elsewhere. The common engine interface explicitly describes
+API stopping and terminal-open failure may finish cleanup inline on callback
+context or queue it elsewhere. Queued cleanup can finish before or after the
+initiating call returns; completion and callback order are stronger evidence
+than a transient ``kStopping`` snapshot. The common engine interface explicitly describes
 ``CleanUpOwner`` as blocking; mutex acquisition, transport, and the synchronous
 reply wait also have dependency or scheduling latency. No diagram turn order
 creates a whole-path non-blocking guarantee or a finite completion deadline.
@@ -684,8 +712,8 @@ notification callback, its owned captures, or a continuation using the destroyed
 connection. Those composition questions remain open, not new lifetime permissions.
 
 The inventory closes the missing-operation and registered-entry descriptions
-for the current dynamic baseline. The known establishment-stop, direct-error
-rearming, empty-marker reply, and nested callback-lifetime findings remain
+for the current dynamic baseline. The known establishment-stop, late-send
+recovery ownership, empty-marker reply, and nested callback-lifetime findings remain
 explicit review limits. Description completeness must not be read as their
 resolution or as acceptance of the selected static class view.
 
@@ -707,6 +735,14 @@ checks the non-stopped restart guard. These tests do not assert the exact retry
 delay sequence. The focused cases above add selected callback-reentrancy and
 competing-stop evidence, but do not qualify every lifecycle interleaving.
 
+``TryingToSyncConnectOnceStoppingOnHardError`` checks terminal errors with queued
+cleanup and ordered starting/stopping/stopped callbacks. It observes final
+completion after executing the captured engine command, not ``kStopping``
+immediately after ``Start``. ``SyncConnectFailureMayFinalizeBeforeStartReturns``
+runs that command on a worker thread before ``Start`` returns and checks engine
+context, cleanup, and the same callback sequence. Both pass with debug assertions
+enabled; they do not remove the separate establishment-cancellation findings.
+
 Existing send cases exercise size/readiness rejection, direct and ordered
 one-way paths, truly asynchronous admission, and pool exhaustion. The
 ``SendWithCallback`` and ``SendWaitReply`` cases exercise direct errors, queued
@@ -716,9 +752,14 @@ combination or concurrent send/reply/stop ordering.
 
 Focused queue cases exercise repeated one-way draining, request transport-error
 callbacks, command reservation during an unlocked send, direct-error rearming,
-and stop/restart pool reuse. They support selected queue paths, not every
-reentrant transport-error callback or assertion-enabled configuration. The
-known rearm-precondition mismatch remains a separate finding.
+and stop/restart pool reuse. ``QueuedAdmissionsArmOnceAndPreservePendingReply``
+checks that admissions behind a scheduled drain or pending request do not
+schedule another command or overwrite its callback, and that idle admission
+can arm again after draining. Direct-error empty-queue, one-way queue, and
+queued-request callback controls also pass with Futurecpp debug assertions
+explicitly enabled. These are selected paths, not every reentrant callback or
+lifecycle interleaving. The disabled late-send stop/restart diagnostic retains
+the separate unresolved ownership question rather than passing coverage.
 
 Existing input cases exercise spurious ``EAGAIN``, peer closure, other receive
 errors, unknown codes, a reply with a disengaged slot, notification delivery or
@@ -749,8 +790,9 @@ queue admission/arming/dispatch, explicit stopping, and shared finalization,
 plus input classification and endpoint reply/notify/ping/failure continuations.
 They are not automatic behavioral comparisons with C++. The remaining
 establishment and callback-combination gaps still need completeness review.
-The direct-error rearm precondition and engagement-only reply guard remain
-explicitly open.
+Late-send recovery across stop/restart and the engagement-only reply guard
+remain explicitly open; the direct-error rearm precondition is resolved by
+guarded scheduling and release-before-schedule recovery.
 Development maturity permits findings, including incomplete C++ extraction, so
 a successful build alone is not design acceptance. Native QNX implementation
 analysis remains subject to the existing tooling limitation; the compatibility

@@ -94,10 +94,12 @@ with caption references from the API views. The
 and [endpoint callbacks](../../dependability/software_unit_design/client_connection_endpoint_callbacks_activity.puml)
 cover reply/notify delivery, receive failures, ping, and disconnect dispatch.
 They link queue progress and shared finalization without duplicating either.
+Queue admission now owns a guarded arming attempt; direct-error recovery
+releases its slot before requesting progress. The views reflect the
+[direct-error rearm resolution](issues/functionality-client-direct-error-rearm-precondition.md).
 The [reply/drain-marker guard](issues/functionality-client-reply-during-drain-marker.md)
-and the
-[direct-error rearm precondition](issues/functionality-client-direct-error-rearm-precondition.md)
-remain review gaps rather than runtime fixes in the design work.
+and [late-send recovery ownership](issues/functionality-client-late-send-recovery.md)
+remain separate review gaps.
 The [nested callback-lifetime question](issues/functionality-client-nested-stop-callback-lifetime.md)
 also remains separate from the supported stopped-callback destruction case.
 Four focused tests exercise competing stop requests, ready-callback stopping, and stopped-

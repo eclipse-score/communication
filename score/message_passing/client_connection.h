@@ -68,7 +68,8 @@ class ClientConnection final : public IClientConnection
     // The lock shall be already taken.
     // The function may release it, call a user callback, and then lock it again.
     void ProcessSendQueueUnderLock(std::unique_lock<std::mutex>& lock) noexcept;
-    void ArmSendQueueUnderLock() noexcept;
+    // Requires send_mutex_ to be held; does not release it.
+    void ArmSendQueueIfNeeded() noexcept;
 
     bool TrySetStopReason(const StopReason stop_reason) noexcept;
 
