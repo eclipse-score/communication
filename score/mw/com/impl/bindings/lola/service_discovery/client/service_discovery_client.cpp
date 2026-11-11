@@ -715,9 +715,6 @@ Result<void> ServiceDiscoveryClient::StartFindService(const FindServiceHandle fi
     // coverity[autosar_cpp14_a8_5_3_violation : FALSE]
     const std::lock_guard worker_lock{worker_mutex_};
 
-    // Retire stopped watches before reusing the cache, so new searches cannot inherit events from an earlier offer.
-    TransferObsoleteSearchRequests();
-
     mw::log::LogDebug("lola") << "LoLa SD: Starting service discovery for"
                               << GetSearchPathForIdentifier(enriched_instance_identifier) << "with FindServiceHandle"
                               << FindServiceHandleView{find_service_handle}.getUid();
@@ -872,6 +869,12 @@ void ServiceDiscoveryClient::OnInstanceFlagFileRemoved(const WatchesContainer::i
     const auto& enriched_instance_identifier = watch_iterator->second.enriched_instance_identifier;
 
     const auto event_quality_type = FlagFileCrawler::ParseQualityTypeFromString(name);
+    // A removal from an earlier offer can arrive after the service has already been reoffered.
+    if (event_quality_type != QualityType::kInvalid &&
+        FlagFile::Exists(EnrichedInstanceIdentifier{enriched_instance_identifier, event_quality_type}))
+    {
+        return;
+    }
     // Suppress "AUTOSAR C++14 M6-4-3" rule finding. This rule declares: "A switch statement shall be
     // a well-formed switch statement".
     // We don't need a break statement at the kInvalid case as we use fallthrough.

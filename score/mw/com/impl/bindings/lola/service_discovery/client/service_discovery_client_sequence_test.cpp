@@ -96,6 +96,7 @@ TEST_P(ServiceDiscoveryClientSearchReplacementFixture, NewSearchDoesNotReceiveRe
             return inotify_instance_->Read();
         })
         .WillRepeatedly(DoDefault());
+    EXPECT_CALL(inotify_instance_mock_, RemoveWatch(_)).Times(0);
 
     WhichContainsAServiceDiscoveryClient().WithAnOfferedService(kConfigStoreQm1.GetInstanceIdentifier());
     const auto old_search = make_FindServiceHandle(1U);

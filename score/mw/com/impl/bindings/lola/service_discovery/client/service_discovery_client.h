@@ -174,9 +174,9 @@ class ServiceDiscoveryClient final : public IServiceDiscoveryClient
 
     /**
      * Search requests, watches, and the known-instance cache are protected by worker_mutex_. StopFindService marks
-     * requests as obsolete; the worker and StartFindService retire them under this lock before processing events or
-     * reusing cached state. Handler invocations retain shared ownership so reentrant retirement cannot destroy an
-     * executing callback.
+     * requests as obsolete; the worker retires them under this lock before processing events. Replacement searches
+     * reuse existing watches, and delayed removals are checked against the current offer state. Handler invocations
+     * retain shared ownership so retirement cannot destroy an executing callback.
      *
      * It is imperative that worker_mutex_ stays a recursive lock to not end up in deadlocks when the user calls
      * StartFindService() or StopFindService() from within the FindServiceHandler.
