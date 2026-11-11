@@ -50,3 +50,11 @@ filegroup(
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
+
+filegroup(
+    name = "sends_sample_n_times_fta",
+    srcs = [
+        "sends_sample_n_times_fta.puml",
+    ],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
