@@ -1607,6 +1607,9 @@ cc_unit_test(
     srcs = ["proxy_event_binding_test.cpp"],
     deps = [
         ":proxy_event_binding",
+        ":sample_reference_tracker",
+        "//score/mw/com/impl/e2e:e2e_result",
+        "//score/mw/com/impl/plumbing:sample_ptr",
     ],
 )
 

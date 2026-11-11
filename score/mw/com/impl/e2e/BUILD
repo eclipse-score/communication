@@ -15,6 +15,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
     name = "e2e_result",
+    srcs = ["e2e_result.cpp"],
     hdrs = ["e2e_result.h"],
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
