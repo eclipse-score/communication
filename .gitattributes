@@ -1,3 +1,6 @@
 # Mark bundled GitHub Action dist files as generated so GitHub collapses them
 # in pull request diffs by default.
 .github/actions/**/dist/** linguist-generated=true
+
+# Vendored third-party sources keep their upstream formatting (skipped by format_test).
+score/lg-someip/third_party/** rules-lint-ignored=true
