@@ -98,6 +98,11 @@ void ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier, co
     {
         FailTest(failure_message_prefix, " Consumer: StartFindService() failed to get handle");
     }
+    const typename Proxy::HandleType handle{*handle_};
+    // The find service handler is invoked by service discovery while it holds its internal lock and the handler locks
+    // proxy_creation_mutex_. StopFindService() and Proxy::Create() take that same service discovery lock, so they must
+    // not be called while holding proxy_creation_mutex_ to avoid a lock-order inversion.
+    proxy_creation_lock.unlock();
 
     auto stop_find_service_result = Proxy::StopFindService(start_find_service_result.value());
     if (!stop_find_service_result.has_value())
@@ -105,8 +110,7 @@ void ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier, co
         FailTest(failure_message_prefix, " Consumer: StopFindService() failed: ", stop_find_service_result.error());
     }
 
-    auto proxy_result = Proxy::Create(*handle_);
-    proxy_creation_lock.unlock();
+    auto proxy_result = Proxy::Create(handle);
     if (!proxy_result.has_value())
     {
         FailTest(failure_message_prefix, " Consumer: Unable to construct proxy: ", proxy_result.error());
