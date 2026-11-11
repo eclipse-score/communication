@@ -12,9 +12,15 @@
 ' *******************************************************************************
 
 @startuml class_diagram_factory_resources
-allowmixing
-skinparam usecaseBorderType dashed
 skinparam linetype ortho
+
+namespace score::cpp::pmr {
+    abstract class memory_resource
+}
+
+namespace score::result {
+    abstract class ErrorDomain
+}
 
 namespace score::memory::shared {
 
@@ -28,6 +34,8 @@ namespace score::memory::shared {
       + destruct<T>(t: T&): void
       - {abstract} getEndAddress(): const void*
     }
+
+    ManagedMemoryResource --|> score::cpp::pmr::memory_resource
 
     class ISharedMemoryResource <<abstract>> {
       + using WorldReadable = permission::WorldReadable
@@ -76,7 +84,9 @@ namespace score::memory::shared {
       + {static} CreateOrOpen(path: std::string, take_ownership: bool): std::optional<LockFile>
       + {static} Open(path: std::string): std::optional<LockFile>
       + TakeOwnership(): void
+      + ~LockFile()
       + LockFile(other: LockFile&&)
+      + operator=(other: LockFile&&): LockFile&
       - LockFile(path: std::string, file_descriptor: const std::int32_t, owns_file: bool)
       - CleanupFile(): void
       - lock_file_path_: std::string
@@ -104,7 +114,7 @@ namespace score::memory::shared {
           + RemoveKnownRegion(memory_range_start: const std::uintptr_t): void
           + ClearKnownRegions(): void
           + GetSize(): std::size_t
-          - {static} AcquireLatestRegionVersionForRead(): std::optional<AcquiredRefcountIndex>
+          - AcquireLatestRegionVersionForRead(): std::optional<AcquiredRefcountIndex>
           - AcquireRegionVersionForOverwrite(): std::optional<std::uint8_t>
           - known_regions_versions_: std::array<std::map<std::uintptr_t, std::uintptr_t>, VERSION_COUNT>
           - known_regions_versions_refcounts_: std::array<std::atomic<RegionVersionRefCountType>, VERSION_COUNT>
@@ -113,6 +123,8 @@ namespace score::memory::shared {
 
         class "MemoryRegionMapImpl::AcquiredRefcountIndex" as AcquiredRefcountIndex {
           + AcquiredRefcountIndex(refcount_index: const std::uint8_t, ref_count: std::atomic<RegionVersionRefCountType>&)
+          + ~AcquiredRefcountIndex()
+          + AcquiredRefcountIndex(other: AcquiredRefcountIndex&&)
           + GetIndex(): std::uint8_t
           - index_: std::uint8_t
           - ref_count_: std::reference_wrapper<std::atomic<RegionVersionRefCountType>>
@@ -126,8 +138,8 @@ namespace score::memory::shared {
 
     class MemoryResourceProxy {
       + MemoryResourceProxy(identifier: const std::uint64_t)
-      + allocate(size: const std::size_t, alignment: const std::size_t): void*
-      + deallocate(p: void* const, size: const std::size_t): void
+      + allocate(bytes: const std::size_t, alignment: const std::size_t): void*
+      + deallocate(memory: void* const, byte: const std::size_t): void
       + {static} EnableBoundsChecking(enable: const bool): bool
       - PerformBoundsCheck(memory_identifier: const std::uint64_t): void
       - memory_identifier_: const std::uint64_t
@@ -145,7 +157,6 @@ namespace score::memory::shared {
       + GetBoundsFromAddress(pointer: const void* const): std::optional<MemoryRegionBounds>
       + GetBoundsFromAddressAsInteger(pointer_as_integer: const std::uintptr_t): std::optional<MemoryRegionBounds>
       + GetBoundsFromIdentifier(identifier: const MemoryResourceIdentifier): score::Result<MemoryRegionBounds>
-      - MemoryResourceRegistry()
       - {static} CheckResourceInput(resource: ManagedMemoryResource* const): void
       - mutex_: std::shared_timed_mutex
       - registry_: std::unordered_map<MemoryResourceIdentifier, ManagedMemoryResource*>
@@ -154,6 +165,9 @@ namespace score::memory::shared {
 
     MemoryResourceRegistry --> "*" ManagedMemoryResource : registry_
     MemoryResourceRegistry *-- "1" detail.MemoryRegionMapImpl : region_map_
+    MemoryResourceProxy ..> MemoryResourceRegistry : uses
+    MemoryResourceProxy ..> ManagedMemoryResource : delegates to
+    MemoryResourceRegistry ..> MemoryRegionBounds : returns
 
     enum SharedMemoryErrorCode {
       UnknownSharedMemoryIdentifier
@@ -167,8 +181,15 @@ namespace score::memory::shared {
       + {static} MakeError(code: const SharedMemoryErrorCode, message: const std::string_view): score::result::Error
     }
 
+    note right of SharedMemoryErrorUtils
+      Not a class: represents the free function
+      in shared_memory_error.h
+    end note
+
     SharedMemoryErrorUtils ..> SharedMemoryErrorDomain : uses
     SharedMemoryErrorDomain ..> SharedMemoryErrorCode : uses
+    SharedMemoryErrorDomain --|> score::result::ErrorDomain
+    MemoryResourceRegistry ..> SharedMemoryErrorCode : uses
 
     class SharedMemoryFactory {
       + using InitializeCallback = ISharedMemoryFactory::InitializeCallback
@@ -193,6 +214,8 @@ namespace score::memory::shared {
     }
 
     SharedMemoryFactory ..> ISharedMemoryFactory : delegates to
+    SharedMemoryFactory --> "0..1" ISharedMemoryFactory : mock_
+    SharedMemoryFactory ..> SharedMemoryFactoryImpl : dispatch to default singleton instance
 
     class SharedMemoryFactoryImpl {
       + Open(path: const std::string&, is_read_write: const bool, allowedProviders: const std::optional<score::cpp::span<const uid_t>>&): std::shared_ptr<ISharedMemoryResource>
@@ -212,9 +235,10 @@ namespace score::memory::shared {
     }
 
     SharedMemoryFactoryImpl --|> ISharedMemoryFactory
-    SharedMemoryFactoryImpl o-- "0..*" SharedMemoryResource : resources_
+    SharedMemoryFactoryImpl --> "0..*" SharedMemoryResource : resources_
 
     class SharedMemoryResource {
+      + ~SharedMemoryResource()
       + getMemoryResourceProxy(): const MemoryResourceProxy*
       + getBaseAddress(): void*
       + getUsableBaseAddress(): void*
@@ -224,12 +248,13 @@ namespace score::memory::shared {
       + GetIdentifier(): std::string_view
       + GetFileDescriptor(): FileDescriptor
       + IsShmInTypedMemory(): bool
-      + {static} Create(input_path: std::string, user_space_to_reserve: const std::size_t, initialize_callback: InitializeCallback, permissions: const UserPermissions&, acl_factory: AccessControlListFactory, typed_memory_ptr: std::shared_ptr<TypedMemory>): score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error>
-      + {static} CreateAnonymous(shared_memory_resource_id: std::uint64_t, user_space_to_reserve: const std::size_t, initialize_callback: InitializeCallback, permissions: const UserPermissions&, acl_factory: AccessControlListFactory, typed_memory_ptr: std::shared_ptr<TypedMemory>): score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error>
-      + {static} CreateOrOpen(input_path: std::string, user_space_to_reserve: const std::size_t, initialize_callback: InitializeCallback, permissions: const UserPermissions&, acl_factory: AccessControlListFactory, typed_memory_ptr: std::shared_ptr<TypedMemory>): score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error>
-      + {static} Open(input_path: std::string, is_read_write: const bool, acl_factory: AccessControlListFactory, typed_memory_ptr: std::shared_ptr<TypedMemory>): score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error>
+      - {static} Create(input_path: std::string, user_space_to_reserve: const std::size_t, initialize_callback: InitializeCallback, permissions: const UserPermissions&, acl_factory: AccessControlListFactory, typed_memory_ptr: std::shared_ptr<TypedMemory>): score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error>
+      - {static} CreateAnonymous(shared_memory_resource_id: std::uint64_t, user_space_to_reserve: const std::size_t, initialize_callback: InitializeCallback, permissions: const UserPermissions&, acl_factory: AccessControlListFactory, typed_memory_ptr: std::shared_ptr<TypedMemory>): score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error>
+      - {static} CreateOrOpen(input_path: std::string, user_space_to_reserve: const std::size_t, initialize_callback: InitializeCallback, permissions: const UserPermissions&, acl_factory: AccessControlListFactory, typed_memory_ptr: std::shared_ptr<TypedMemory>): score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error>
+      - {static} Open(input_path: std::string, is_read_write: const bool, acl_factory: AccessControlListFactory, typed_memory_ptr: std::shared_ptr<TypedMemory>): score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error>
       # SharedMemoryResource(input_path: std::string, acl_factory: AccessControlListFactory, typed_memory_ptr: std::shared_ptr<TypedMemory>)
       # SharedMemoryResource(shared_memory_resource_id: std::uint64_t, acl_factory: AccessControlListFactory, typed_memory_ptr: std::shared_ptr<TypedMemory>)
+      # SharedMemoryResource(identifier: std::variant<std::string, std::uint64_t>, acl_factory: AccessControlListFactory, typed_memory_ptr: std::shared_ptr<TypedMemory>)
       - {static} GetNeededManagementSpace(): std::size_t
       - getEndAddress(): const void*
       - acquireLockFile(): std::optional<LockFile>
@@ -246,6 +271,8 @@ namespace score::memory::shared {
       - lock_file_path_: std::optional<std::string>
       - virtual_address_space_to_reserve_: std::size_t
       - typed_memory_ptr_: std::shared_ptr<TypedMemory>
+      - opening_mode_: score::os::Fcntl::Open
+      - map_mode_: score::os::Mman::Protection
       - base_address_: void*
       - control_block_: ControlBlock*
       - acl_factory_: AccessControlListFactory
@@ -262,11 +289,18 @@ namespace score::memory::shared {
       + memoryResourceProxy: MemoryResourceProxy
     }
 
+    note right of ControlBlock
+      Placed at the start of the shared memory region:
+      created once by the creating process, never destroyed,
+      shared by all processes mapping the region.
+    end note
+
     SharedMemoryResource +-- ControlBlock
     SharedMemoryResource --|> ISharedMemoryResource
-    SharedMemoryResource *-- "1" ControlBlock : control_block_
+    SharedMemoryResource --> "1" ControlBlock : control_block_
     ControlBlock *-- "1" MemoryResourceProxy : memoryResourceProxy
     SharedMemoryResource ..> LockFile : uses
+    SharedMemoryResource ..> MemoryResourceRegistry : uses
     SharedMemoryFactoryImpl ..> SharedMemoryResource : creates
 
     namespace permission {

@@ -11,8 +11,6 @@
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
 @startuml public_api
-allowmixing
-skinparam usecaseBorderType dashed
 skinparam linetype ortho
 
 ' This diagram shows the public API of the memory_shared component, i.e. the set of classes,
@@ -56,8 +54,8 @@ namespace score::memory::shared {
       + GetUserAllocatedBytes() : UnsignedInteger
       + IsOffsetPtrBoundsCheckBypassingEnabled() : Boolean
       + getMemoryResourceProxy() : MemoryResourceProxy
-      + Construct(arguments : ArgumentList) : T
-      + Destruct(instance : T)
+      + construct<T>(arguments : ArgumentList) : T
+      + destruct<T>(instance : T)
     }
 
     interface ISharedMemoryResource {
@@ -115,8 +113,8 @@ namespace score::memory::shared {
 
     class MemoryResourceProxy {
       + MemoryResourceProxy(identifier : UnsignedInteger)
-      + Allocate(size : UnsignedInteger, alignment : UnsignedInteger) : Pointer
-      + Deallocate(pointer : Pointer, size : UnsignedInteger)
+      + allocate(size : UnsignedInteger, alignment : UnsignedInteger) : Pointer
+      + deallocate(pointer : Pointer, size : UnsignedInteger)
       + {static} EnableBoundsChecking(enable : Boolean) : Boolean
     }
 
@@ -146,7 +144,7 @@ namespace score::memory::shared {
     TypedMemory ..> UserPermissions : uses
 
     class InitializeCallback <<callback>> {
-      .. invoked with the newly created/opened resource once it is ready for use ..
+      .. invoked only for a newly created resource, once it is ready for use ..
     }
 
     ISharedMemoryFactory ..> InitializeCallback : uses
@@ -174,7 +172,7 @@ namespace score::memory::shared {
     permission.WorldReadable --|> UserPermissions
     permission.WorldWritable --|> UserPermissions
 
-    AccessControl *-- "1" UserPermissions : permissions
+    AccessControl --> "1" UserPermissions : permissions
     ISharedMemoryFactory ..> UserPermissions : uses
     SharedMemoryFactory ..> UserPermissions : uses
 
@@ -184,7 +182,7 @@ namespace score::memory::shared {
 
     class "OffsetPtr<T>" as OffsetPtr {
       + OffsetPtr(pointer : T [0..1])
-      + OffsetPtr(other : OffsetPtr<T>)
+      + OffsetPtr<U>(other : OffsetPtr<U>)
       + {static} pointer_to(reference : T) : OffsetPtr<T>
       + operator*() : T
       + operator[](index : Integer) : T
@@ -193,23 +191,26 @@ namespace score::memory::shared {
       + operator++() : OffsetPtr<T>
       + operator--() : OffsetPtr<T>
       + get() : T [0..1]
+      + operator pointer() : T [0..1]
       + operator->() : T [0..1]
       + {query} operator bool() : Boolean
       + {query} operator!() : Boolean
+      + {static} EnableOffsetPtrBoundsChecking(enable : Boolean) : Boolean
     }
 
     note bottom of OffsetPtr
       OffsetPtr<T> is a smart, offset-based pointer usable across process boundaries (e.g. in
       shared memory) that otherwise behaves like a raw T*; it participates in pointer bounds
-      checking. When T = void, additional type-erasure overloads of get()/operator->() exist to
+      checking. When T = void, additional type-erasure overloads of get() exist to
       reinterpret the pointed-to memory as an explicit type; omitted here for brevity. See
       class_diagram_allocator_pointer.puml for the full, non-abstracted signature set.
+      EnableOffsetPtrBoundsChecking is a free function in offset_ptr.h, shown here as {static}.
     end note
 
     class "PolymorphicOffsetPtrAllocator<T>" as PolymorphicOffsetPtrAllocator {
       + PolymorphicOffsetPtrAllocator()
       + PolymorphicOffsetPtrAllocator(resource : ManagedMemoryResource)
-      + PolymorphicOffsetPtrAllocator(other : PolymorphicOffsetPtrAllocator<U>)
+      + PolymorphicOffsetPtrAllocator<U>(other : PolymorphicOffsetPtrAllocator<U>)
       + allocate(size : UnsignedInteger) : OffsetPtr<T>
       + deallocate(pointer : OffsetPtr<T>, size : UnsignedInteger)
       + getMemoryResourceProxy() : OffsetPtr<MemoryResourceProxy>
@@ -229,7 +230,6 @@ namespace score::memory::shared {
       + {static} CalculateAlignedSizeOfSequence(dataTypeInfos : DataTypeSizeInfo [0..*]) : UnsignedInteger
       + {static} CastPointerToInteger(pointer : Pointer) : UnsignedInteger
       + {static} CastIntegerToPointer<PointerType>(integer : UnsignedInteger) : PointerType
-      + {static} AddOffsetToPointer<PointerType>(pointer : PointerType, offset : UnsignedInteger) : PointerType
       + {static} AddOffsetToPointer<PointerType>(pointer : PointerType, offset : Integer) : PointerType
       + {static} PointerToLogValue(pointer : Pointer) : String
       + {static} SubtractPointersBytes(first : Pointer, second : Pointer) : Integer
@@ -256,6 +256,7 @@ namespace score::memory::shared {
   ' Cross-unit relations: both factory_resources and allocator_pointer internally use
   ' pointer_arithmetic's utility functions (e.g. for offset/alignment calculations).
   ManagedMemoryResource ..> PointerArithmeticUtil : uses
+  MemoryResourceProxy ..> PointerArithmeticUtil : uses
   OffsetPtr ..> PointerArithmeticUtil : uses
 
 }

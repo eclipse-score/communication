@@ -12,8 +12,6 @@
 ' *******************************************************************************
 
 @startuml class_diagram_pointer_arithmetic
-allowmixing
-skinparam usecaseBorderType dashed
 skinparam linetype ortho
 
 namespace score::memory::shared {
@@ -36,11 +34,21 @@ namespace score::memory::shared {
       + {static} SubtractUnsignedFromSigned<SignedInteger>(signed_value: SignedInteger, unsigned_value: std::make_unsigned_t<SignedInteger>): SignedInteger
     }
 
+    note bottom of PointerArithmeticUtil
+      Not a class: represents the free functions
+      in pointer_arithmetic_util.h
+    end note
+
     namespace detail {
         class PointerArithmeticTraits <<utility>> {
-          + {static} is_signed_integer_v<T>: constexpr bool
-          + {static} is_unsigned_integer_v<T>: constexpr bool
+          + {static} is_signed_integer_v<T>(): bool
+          + {static} is_unsigned_integer_v<T>(): bool
         }
+
+        note right of PointerArithmeticTraits
+          Not a class: represents the constexpr bool
+          variable templates, shown as operations
+        end note
     }
 
     PointerArithmeticUtil ..> detail.PointerArithmeticTraits : uses
