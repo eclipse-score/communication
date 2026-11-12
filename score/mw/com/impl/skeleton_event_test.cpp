@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/skeleton_event.h"
 
+#include "score/mw/com/impl/mocking/skeleton_event_mock.h"
 #include "score/mw/com/impl/mocking/test_type_utilities.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
@@ -22,6 +23,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <cstdint>
 #include <memory>
 #include <string_view>
 #include <utility>
@@ -612,6 +614,45 @@ TEST(SkeletonEventSendWithCopyTest, CallingSendAfterPrepareOfferWhenBindingFails
     EXPECT_EQ(send_result.error(), ComErrc::kBindingFailure);
 }
 
+TEST(SkeletonEventSendWithCopyTest, CallingCopySendAfterPrepareOfferWhenInternalAllocateFailsReturnsError)
+{
+    const TestSampleType test_value{42};
+
+    RuntimeMockGuard runtime_mock_guard{};
+    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
+
+    // Expecting that a SkeletonEvent binding is created
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
+    auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
+    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
+        .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
+
+    // and that PrepareOffer() is called once on the event binding
+    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer(_));
+
+    // and that Allocate() is called once on the event binding within the send with copy call which returns an error
+    EXPECT_CALL(skeleton_event_binding_mock, Allocate(_))
+        .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kInvalidConfiguration))));
+
+    // and that Send() is never called on the event binding
+    EXPECT_CALL(skeleton_event_binding_mock, Send(An<SampleAllocateePtr<void>>(), _)).Times(0);
+
+    // Given a skeleton which has a mock skeleton-binding
+    MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // when PrepareOffer() is called on the event
+    std::ignore = unit.my_dummy_event_.PrepareOffer();
+
+    // and when calling Send with copy on the event
+    const auto send_result = unit.my_dummy_event_.Send(test_value);
+
+    // Then the result contains an error that the binding failed
+    ASSERT_FALSE(send_result.has_value());
+    EXPECT_EQ(send_result.error(), ComErrc::kBindingFailure);
+}
+
 TEST(SkeletonEventTest, SkeletonEventsRegisterThemselvesWithSkeleton)
 {
     RuntimeMockGuard runtime_mock_guard{};
@@ -719,6 +760,24 @@ TEST(SkeletonEventTest, MovingAssigningSkeletonUpdatesEventMapReference)
     EXPECT_EQ(&event.Get(), &unit2.my_dummy_event_);
 }
 
+TEST(SkeletonEventTest, ConstructingWithNullBindingFromFactoryDoesNotCreateBinding)
+{
+    RuntimeMockGuard runtime_mock_guard{};
+    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard{};
+
+    // Expecting that the binding factory is unable to create a binding
+    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, kEventName, kTestSampleTypeSizeInfo))
+        .WillOnce(Return(ByMove(std::unique_ptr<SkeletonEventBinding>{})));
+
+    // When constructing a skeleton with an event
+    MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // Then the event has no binding
+    EXPECT_EQ(SkeletonEventView<TestSampleType>{unit.my_dummy_event_}.GetBinding(), nullptr);
+}
+
 TEST(SkeletonEventGetLatestSampleTest, CallingGetLatestSampleDispatchesToBinding)
 {
     RuntimeMockGuard runtime_mock_guard{};
@@ -777,6 +836,94 @@ TEST(SkeletonEventGetLatestSampleTest, GetLatestSamplePropagatesErrorFromBinding
     // Then the result contains an error that the binding failed
     ASSERT_FALSE(latest_sample_result.has_value());
     EXPECT_EQ(latest_sample_result.error(), ComErrc::kBindingFailure);
+}
+
+TEST(SkeletonEventTest, ConstructingWithNullBindingCreatesEventWithoutBinding)
+{
+    RuntimeMockGuard runtime_mock_guard{};
+    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+
+    // Given a skeleton which has a mock skeleton-binding
+    SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // When constructing an event with an injected null binding
+    SkeletonEvent<TestSampleType> unit{skeleton, kEventName, nullptr};
+
+    // Then the event has no binding
+    EXPECT_EQ(SkeletonEventView<TestSampleType>{unit}.GetBinding(), nullptr);
+}
+
+TEST(SkeletonEventTest, PrepareOfferProvidesSampleInitializer)
+{
+    RuntimeMockGuard runtime_mock_guard{};
+    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+
+    auto binding_ptr = std::make_unique<mock_binding::SkeletonEvent>();
+    auto& binding_mock = *binding_ptr;
+
+    // Expecting that PrepareOffer() receives an initialize-sample callback which is invoked on storage that
+    // initially holds a non-default value.
+    EXPECT_CALL(binding_mock, PrepareOffer(_)).WillOnce([](const auto& initialize_sample_callback) {
+        EXPECT_TRUE(initialize_sample_callback.has_value());
+        if (initialize_sample_callback.has_value())
+        {
+            TestSampleType storage{static_cast<TestSampleType>(0xFF)};
+
+            (*initialize_sample_callback)(&storage);
+
+            EXPECT_EQ(storage, TestSampleType{});
+        }
+        return Result<void>{};
+    });
+
+    // Given a skeleton which has a mock skeleton-binding and an event with an injected binding
+    SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+    SkeletonEvent<TestSampleType> unit{skeleton, kEventName, std::move(binding_ptr)};
+
+    // When offering the event
+    const auto prepare_offer_result = unit.PrepareOffer();
+
+    // Then the offer succeeds
+    EXPECT_TRUE(prepare_offer_result.has_value());
+}
+
+TEST(SkeletonEventTest, InjectedMockReceivesSendAndAllocateCalls)
+{
+    const TestSampleType expected_value{static_cast<TestSampleType>(42)};
+    TestSampleType sample_buffer{};
+    StrictMock<SkeletonEventMock<TestSampleType>> skeleton_event_mock{};
+
+    RuntimeMockGuard runtime_mock_guard{};
+    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+
+    auto binding_ptr = std::make_unique<mock_binding::SkeletonEvent>();
+    auto& binding_mock = *binding_ptr;
+
+    // Expecting that the binding is never used
+    EXPECT_CALL(binding_mock, Allocate(_)).Times(0);
+    EXPECT_CALL(binding_mock, Send(An<SampleAllocateePtr<void>>(), _)).Times(0);
+
+    // and that all calls are dispatched to the injected mock instead
+    EXPECT_CALL(skeleton_event_mock, Send(An<const TestSampleType&>())).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(skeleton_event_mock, Send(An<SampleAllocateePtr<TestSampleType>>())).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(skeleton_event_mock, Allocate())
+        .WillOnce(
+            Return(ByMove(Result<SampleAllocateePtr<TestSampleType>>{MakeFakeSampleAllocateePtr(&sample_buffer)})));
+
+    // Given a skeleton which has a mock skeleton-binding and an event with an injected mock
+    SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+    SkeletonEvent<TestSampleType> unit{skeleton, kEventName, std::move(binding_ptr)};
+    unit.InjectMock(skeleton_event_mock);
+
+    // When calling Send() with a copy, Allocate() and Send() with the allocated slot
+    const auto send_copy_result = unit.Send(expected_value);
+    auto allocate_result = unit.Allocate();
+    ASSERT_TRUE(allocate_result.has_value());
+    const auto send_zero_copy_result = unit.Send(std::move(allocate_result).value());
+
+    // Then all calls succeed
+    EXPECT_TRUE(send_copy_result.has_value());
+    EXPECT_TRUE(send_zero_copy_result.has_value());
 }
 
 }  // namespace
