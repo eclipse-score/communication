@@ -1391,6 +1391,7 @@ cc_unit_test(
     deps = [
         ":linear_search_map",
         "//score/memory/shared:new_delete_delegate_resource",
+        "//score/memory/shared:polymorphic_offset_ptr_allocator",
         "@score_baselibs//score/mw/log",
     ],
 )
