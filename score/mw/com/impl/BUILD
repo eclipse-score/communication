@@ -1540,6 +1540,7 @@ cc_unit_test(
         "//score/mw/com:types",
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:proxy_resources",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
 
@@ -1647,6 +1648,7 @@ cc_unit_test(
         ":runtime_mock",
         ":skeleton_event",
         "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/mocking:skeleton_event_mock",
         "//score/mw/com/impl/mocking:test_type_utilities",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
