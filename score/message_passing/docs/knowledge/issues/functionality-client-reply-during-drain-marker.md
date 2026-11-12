@@ -1,51 +1,53 @@
 # Reply Arrival During an Empty Drain Marker
 
-Status: open
+Status: resolved
 Area: functionality
 Scope: common ClientConnection reply-slot engagement and input dispatch
 Owner: unassigned
-Evidence checked: 2026-11-09; source inspection and existing input test review
+Evidence checked: 2026-11-11; deterministic common-client regression, normal/debug suites
 
-## Finding
+## Original Finding
 
-The reply input branch checks whether `waiting_for_reply_` is engaged. It does
-not check whether the contained callback is non-empty before moving and invoking
-it. `ArmSendQueueIfNeeded` engages that same optional with an empty callback
-as a queue-draining marker, not as a pending request's completion callback.
+The reply input branch formerly checked only optional engagement.
+`ArmSendQueueIfNeeded` uses that optional with an empty callback as a draining
+marker, not a pending request's completion. A reply could therefore move and
+invoke an empty callback after draining queued sends.
 
-An input reply processed while that marker is present therefore satisfies the
-slot guard. The method moves the empty callback locally, resets the slot,
-drains queued sends, then invokes the local callback without an empty check.
-The input design retains those source-level steps rather than adding a guard
-or choosing an unreviewed protocol-error policy.
+This was a source-level guard distinction, not a reproduced crash or qualified
+backend ordering. Unlocked direct ordered sends now also reserve empty markers,
+so input must distinguish reservations from valid request callbacks.
 
-This is a guard distinction, not a reproduced crash or established backend
-scheduling scenario. The reachability of this ordering, the result of an empty
-callback invocation, and the expected containment behavior remain unqualified.
+## Resolution
+
+`ClientSendQueue::HandleReply` requires both optional engagement and a non-empty callback
+for `REPLY`. An empty marker follows the existing unsolicited-reply `kIoError`
+stopping policy, without draining sends or invoking the empty callback. Valid
+reply processing clears the active sender owner when taking completion, then
+retains queue-before-callback ordering.
 
 ## Evidence
 
 The owning paths are `ArmSendQueueIfNeeded` and the `REPLY` branch of
 `ProcessInputEvent` in [ClientConnection](../../../client_connection.cpp).
-The [arming view](../../../dependability/software_unit_design/client_connection_arm_send_queue_activity.puml)
+The [arming view](../../../dependability/software_unit_design/client_send_queue_arm_activity.puml)
 distinguishes the empty marker from a request callback, while the
 [input view](../../../dependability/software_unit_design/client_connection_process_input_event_activity.puml)
-preserves the engagement-only guard and queue-before-callback order.
+shows the non-empty guard and preserves queue-before-callback order for valid requests.
 
 In [the existing client tests](../../../client_connection_test.cpp),
 `ConnectedStopsIfReceivesReplyWithoutSend` supplies an unexpected reply with a
 disengaged slot and checks `kIoError` stopping. It does not arm a queue command
-first and does not qualify the engaged-empty-marker case. Existing reply-buffer
-tests exercise a non-empty completion callback, not this distinction.
+first. `ReplyDuringDrainMarkerStopsWithoutInvokingEmptyCallback` explicitly arms
+a queued one-way send, leaves the command pending, and delivers a reply. It
+checks `kIoError` stopping without transport dispatch or empty invocation.
+The case passes in the normal and debug common-client suites.
 
-## Next Check
+## Remaining Qualification
 
-Determine whether the supported engine scheduling contract permits input
-processing before an armed queue command has replaced or cleared its marker.
-A focused mock-engine case can leave that command pending and deliver a reply
-to trace the slot and callback behavior explicitly, without sleep-based timing.
+On 2026-11-12 the guard moved into the queue helper; the facade maps its rejected
+reply result to the same `kIoError` stopping policy. The existing marker
+regression still passes through the facade.
 
-Agree the expected response to a reply with no valid request callback before
-changing runtime guards or a public contract. Keep that work separate from
-dynamic design completion and do not treat the current input tests as coverage
-of every marker/callback state.
+Native backend scheduling and peer-fault scenarios remain unqualified. The
+common guard no longer depends on those orderings being impossible; the test
+does not establish a general scheduling or safety-containment argument.

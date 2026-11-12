@@ -14,13 +14,12 @@ py_library(
 py_binary(
     name = "html_integrity_check",
     srcs = ["html_integrity.py"],
-    visibility = ["//visibility:public"],
+    main = "html_integrity.py",
 )
 
 py_binary(
     name = "plantuml_render_runner",
     srcs = ["plantuml_render_runner.py"],
-    visibility = ["//visibility:public"],
 )
 
 py_library(

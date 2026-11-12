@@ -67,7 +67,7 @@ while (TryOpenClientConnection(identifier_) fails?) is (yes)
     endif
 endwhile (no)
 
-:Store client_fd_ and initialize posix_endpoint_;
+:Store lifetime_.descriptor_ and initialize posix_endpoint_;
 if (IsInCallback()?) then (yes)
     :RegisterPosixEndpoint(posix_endpoint_);
 else (no)

@@ -27,8 +27,14 @@ libraries from `unit()` wrappers. The wrappers feed the SEooC structure in
 | Library | Role |
 | --- | --- |
 | `:message_passing_client_connection` | Common client implementation; selected by the client unit and client tests. |
+| `ClientSendQueue` / `ClientConnectionLifetime` | Helper classes in that same library and unit; each has a dedicated actor-based compilation-unit test target. |
 | `:message_passing_timed_command_queue` | Shared engine queue implementation; selected by engine libraries, engine unit implementation inputs, and queue tests. |
 | `:common_headers` | Shared interfaces, queue-entry type, and protocol enums. |
+
+The include-only [client lifetime translation unit](../../client_connection_lifetime.cpp)
+is a source of the client library. Its single header include checks
+[header self-containment](../../client_connection_lifetime.h) during Linux and
+QNX compilation, without relying on preceding includes from another source.
 
 Both backend client factories depend on the connection library. Their engines
 depend on the queue library, not the connection implementation. The QNX engine
@@ -44,6 +50,8 @@ claiming coverage from a wrapper build or Linux documentation build.
 Use the narrowest relevant target first:
 
 ```sh
+bazel test //score/message_passing:client_connection_lifetime_test
+bazel test //score/message_passing:client_send_queue_test
 bazel test //score/message_passing:client_connection_test
 bazel test //score/message_passing:timed_command_queue_test
 bazel test //score/message_passing:unix_domain_test
@@ -56,9 +64,20 @@ For the Linux aggregate:
 bazel test //score/message_passing:unit_tests
 ```
 
-The aggregate includes common client, queue, Unix Domain, resource-path, logging,
+The aggregate includes common client, both helper suites, timed queue, Unix Domain, resource-path, logging,
 and non-allocating-future tests. It currently excludes `:qnx_dispatch_test`.
 Passing it is not evidence that native QNX dispatch tests ran.
+
+The helper suites are implementation-level GoogleTests, not new SEooC `unit()`
+targets. They use Given/When/Then comments and no `lobster-tracing` properties.
+They do not contribute requirement-coverage claims. The client suite retains
+facade/engine integration and its existing requirement annotations.
+
+For helper-test compilation with the QNX toolchain, without executing tests:
+
+```sh
+bazel build --config=qnx //score/message_passing:client_connection_lifetime_test //score/message_passing:client_send_queue_test
+```
 
 With the configured QNX SDK, toolchain, and QNX test-runner/QEMU prerequisites:
 

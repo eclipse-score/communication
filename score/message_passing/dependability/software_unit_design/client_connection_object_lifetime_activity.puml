@@ -3,14 +3,22 @@ title ClientConnection - object lifetime
 
 start
 if (Entry is construction?) then (yes)
-    :Retain shared engine ownership and copy configuration;
-    :Copy the service identifier using the engine memory resource;
+    :Retain shared engine ownership in engine_;
+    :Copy identifier_ using the engine memory resource;
     :Set max_receive_size_ to max(max_reply_size, max_notify_size);
-    :Initialize client_fd_ = -1, state_ = kStopped, stop_reason_ = kInit;
-    :Create CallbackContext and initialize callbacks, slot, and entries;
+    :Copy client_config_;
+    :Initialize state_ = kStopped, stop_reason_ = kInit;
+    :Create callback_context_ with an empty state callback;
+    :Initialize notify_callback_ as empty;
+    :Set connect_retry_ms_ to 50 ms;
+    :Construct lifetime_ with descriptor_ = -1 and the retirement actor;
+    :Construct sends_ with transport and drain scheduling actors;
     :Allocate max_queued_sends + max_async_replies SendCommand objects;
+    :Initialize waiting_for_reply_ empty and reply_slot_owner_ = nullptr;
     :Reserve max_send_size bytes in each command's message storage;
-    :Assign all commands to send_pool_;
+    :Assign all commands to pool_;
+    :Initialize connection_timer_, disconnection_command_, and async_send_command_;
+    :Initialize posix_endpoint_;
     :Return the constructed object without starting engine work;
     stop
 else (destruction)
@@ -35,7 +43,7 @@ else (destruction)
             It has no overall stop-completion deadline.
         end note
     endif
-    :Clear send_pool_ intrusive membership;
+    :Destroy ClientSendQueue: clear pool_ intrusive membership;
     :Destroy members and release this object's resource ownership;
 endif
 stop

@@ -9,42 +9,32 @@ note right
     and execution on the engine callback thread.
     A caller has already claimed the stop transition.
 end note
-:Disable the endpoint disconnect callback;
-:CleanUpOwner(this);
-if (client_fd_ != -1?) then (yes)
-    :CloseClientConnection(client_fd_);
-    :Set client_fd_ = -1;
+if (lifetime_.RetirementPending()?) then (yes)
+    :Initial cancellation is already complete;
+else (no)
+    :Begin the initial cancellation phase;
+    :Disable the endpoint disconnect callback;
+    :CleanUpOwner(this);
+    :sends_.CancelPending();
+    if (lifetime_.CancellationFinished()?) then (yes)
+        :No operation remains after cancellation;
+    else (no)
+        :Return in kStopping without closing the descriptor;
+        note right
+            The last Operation destructor schedules
+            disconnection_command_ to reenter this procedure.
+            There is no polling or wait inside Restart().
+        end note
+        stop
+    endif
+endif
+:FinishStopState();
+:lifetime_.RetireDescriptor();
+if (The detached descriptor is valid?) then (yes)
+    :CloseClientConnection(detached descriptor) without lifetime_.mutex_;
 else (no)
     :No descriptor to close;
 endif
-
-:Lock send_mutex_;
-if (waiting_for_reply_ is engaged?) then (yes)
-    :Move pending callback and reset waiting_for_reply_;
-    :Unlock send_mutex_;
-    if (pending callback is non-empty?) then (yes)
-        :Invoke pending callback with EPIPE;
-    else (no)
-        :Discard the empty queue-draining marker;
-    endif
-    :Relock send_mutex_;
-else (no)
-    :No pending reply slot;
-endif
-
-while (send_queue_ is non-empty?) is (yes)
-    :Move callback from the front command;
-    :Remove command from send_queue_;
-    :Return command to send_pool_;
-    if (queued callback is non-empty?) then (yes)
-        :Unlock send_mutex_;
-        :Invoke queued callback with EPIPE;
-        :Relock send_mutex_;
-    else (no)
-        :No reply callback to invoke;
-    endif
-endwhile (no)
-:Unlock send_mutex_;
 
 if (state_callback is empty?) then (yes)
     :Publish kStopped;
@@ -70,6 +60,10 @@ legend
     establishment, and endpoint-disconnect dispatch.
     This procedure does not select or reset the stop reason.
     The caller's gate owns stopping for the current lifecycle.
+    Cancellation runs once; a deferred entry skips that initial phase.
+    Cancellation and retirement belong to separate helpers, not facade locks.
+    Descriptor closure follows all registered send termination bookkeeping.
+    Close itself may block: no finite QNX IPC termination bound is assumed.
 endlegend
 
 @enduml
