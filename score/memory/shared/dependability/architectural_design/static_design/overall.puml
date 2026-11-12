@@ -45,17 +45,17 @@ component dependable_element_memory_shared <<SEooC>>  {
 
    component memory_shared <<component>> {
       component pointer_arithmetic <<unit>>
-      pointer_arithmetic )-r- PointerArithmeticUtil
+      pointer_arithmetic -r- PointerArithmeticUtil
 
       component factory_resources <<unit>>
-      factory_resources )-u- ManagedMemoryResource
-      factory_resources )-u- ISharedMemoryResource
-      factory_resources )-u- AccessControl
-      factory_resources )-u- ISharedMemoryFactory
-      factory_resources )-u- SharedMemoryFactory
-      factory_resources )-u- MemoryResourceProxy
-      factory_resources )-u- UserPermissions
-      factory_resources )-u- PermissionMap
+      factory_resources -u- ManagedMemoryResource
+      factory_resources -u- ISharedMemoryResource
+      factory_resources -u- AccessControl
+      factory_resources -u- ISharedMemoryFactory
+      factory_resources -u- SharedMemoryFactory
+      factory_resources -u- MemoryResourceProxy
+      factory_resources -u- UserPermissions
+      factory_resources -u- PermissionMap
       factory_resources -d-( TypedMemory
       factory_resources -d-( InitializeCallback
       factory_resources -d-( FileDescriptor
@@ -63,8 +63,8 @@ component dependable_element_memory_shared <<SEooC>>  {
       PointerArithmeticUtil -[hidden]r- TypedMemory
 
       component allocator_pointer <<unit>>
-      allocator_pointer )-u- OffsetPtr
-      allocator_pointer )-u- PolymorphicOffsetPtrAllocator
+      allocator_pointer -u- OffsetPtr
+      allocator_pointer -u- PolymorphicOffsetPtrAllocator
       allocator_pointer -r-( PointerArithmeticUtil
       allocator_pointer -u-( MemoryResourceProxy
       allocator_pointer -u-( ManagedMemoryResource
