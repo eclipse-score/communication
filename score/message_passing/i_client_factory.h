@@ -57,7 +57,7 @@ class IClientFactory
         bool truly_async;  ///< true if Send and SendWithCallback calls always use background thread
                            ///< for IPC (requires nonzero max_queued_sends)
         // coverity[autosar_cpp14_a9_6_1_violation : FALSE]
-        bool sync_first_connect;  ///< true if the first connection attempt uses the thread on which Start() is called
+        bool sync_first_connect;  ///< true if the first attempt uses the thread on which Start() or Restart() is called
                                   ///< (can lead to deadlocks if the connection is established from within a callback)
     };
 

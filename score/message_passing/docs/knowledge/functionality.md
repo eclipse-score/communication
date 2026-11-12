@@ -17,6 +17,8 @@ Read when changing C++ behavior, an API contract, callbacks, or resource ownersh
 Scope: common client implementation, QNX dispatch, and Linux Unix Domain IPC.
 Evidence: source inspection on 2026-11-04; queue-cleanup contract updated and
 tested on 2026-11-06; client send-node recycling source-rechecked on 2026-11-10.
+Client admission, retirement, and the non-empty reply guard were tested on 2026-11-11.
+The two-helper extraction and lifetime-only transaction hook were tested on 2026-11-12.
 
 ## Start at the Owning Abstraction
 
@@ -24,6 +26,8 @@ tested on 2026-11-06; client send-node recycling source-rechecked on 2026-11-10.
 | --- | --- |
 | Client operations, state, callbacks | [IClientConnection](../../i_client_connection.h) |
 | Client behavior and reconnect/send queues | [ClientConnection](../../client_connection.cpp) |
+| Send ordering, storage, replies, and cancellation | [ClientSendQueue](../../client_send_queue.cpp) |
+| Admission, scoped operations, and descriptor retirement | [ClientConnectionLifetime](../../client_connection_lifetime.h) |
 | Client configuration and creation | [IClientFactory](../../i_client_factory.h) |
 | Server listening and callbacks | [IServer](../../i_server.h), [callback types and UserData](../../server_types.h) |
 | Reply, notification, identity, disconnect | [IServerConnection](../../i_server_connection.h) |
@@ -78,8 +82,22 @@ Read the [nested callback-lifetime question](issues/functionality-client-nested-
 before combining callback stop/destruction permissions; the independent cases
 do not establish the safety of their nested composition.
 For transport calls overlapping stop/restart, read the
-[late-send recovery ownership finding](issues/functionality-client-late-send-recovery.md).
-A send lock protects accesses, not request ownership across unlocked transport.
+[send admission and descriptor-retirement record](issues/functionality-client-late-send-recovery.md).
+`ClientSendQueue` owns ordering, command storage, and reply reservations;
+`ClientConnectionLifetime` owns their shared mutex, admission, and retirement.
+All direct and queued transport sends release that mutex; stop-reason selection
+shares it with admission. Scoped operations keep the descriptor alive
+through transport, queue recycling, callback handling, and blocking-request
+termination. Initial stop cleanup delegates reply cancellation to the queue,
+while the last operation
+schedules deferred finalization through the existing disconnection command.
+Finalization exchanges the descriptor with `-1` under the mutex, closes outside
+it, then publishes stopped. Restart during stopping is ignored, not polled.
+This does not interrupt stuck QNX IPC or establish a stopping deadline.
+Outside the engine's background thread, `Stop` requests stopping without waiting
+for completion; an accepted stop invokes the stopping-state callback during the
+call. Cleanup may run synchronously on that background thread. Public interface
+comments describe this caller-visible distinction, not the retirement mechanics.
 
 - `Send()` sends without a reply, but still has an error result and bounded
   resource/configuration constraints. Avoid implying unlimited buffering.
@@ -94,14 +112,18 @@ For request/reply queue changes, read the [direct-error rearm precondition](issu
 and [reply/drain-marker guard](issues/functionality-client-reply-during-drain-marker.md).
 An engaged `waiting_for_reply_` slot is not necessarily a non-empty request callback.
 Successful `TryQueueMessage` admission now owns the guarded scheduling attempt.
-`ArmSendQueueIfNeeded` requires the send lock. It does nothing when the pending
-IPC-message FIFO is empty, or when a drain/request already owns progress through
-an engaged slot. The engine's client-thread command queue schedules the drain
+`ClientSendQueue::ArmIfNeeded` requires the lifetime lock. It does nothing when the pending
+IPC-message FIFO is empty, stopping has been selected, or a drain/request already owns progress through
+an engaged slot. A direct ordered one-way send also reserves an empty marker.
+The engine's client-thread command queue schedules the drain
 callback; it is not `send_queue_`. An empty slot marker can mean queued or active
 draining, while a non-empty callback belongs to a request. Admission cannot
-overwrite either state or schedule another drain. Direct-error recovery releases its slot before
-requesting progress; that resolves the rearm precondition, not the separate
-late-send lifecycle-ownership finding.
+overwrite either state or schedule another drain. Direct-error recovery releases
+only its own slot before requesting progress. A live local token identifies
+that sender independently of callback moves; input and stop clear the owner
+when taking completion. A reply
+requires both an engaged slot and a non-empty callback. Empty markers follow
+the existing unsolicited-reply `kIoError` policy, without empty invocation.
 
 `ClientConnection::TryConnect()` retries `EAGAIN`, `ECONNREFUSED`, and `ENOENT`
 using bounded backoff. `EACCES` stops with `kPermission`; other non-retry errors

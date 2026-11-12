@@ -79,6 +79,8 @@ class IClientConnection
     ///          send are queued on the client side (ClientConfig::maxQueuedSends is not 0).
     ///          Note: if the server receives the message but dies or disconnects before the reply arrives to the
     ///          client, the error will be passed to the callback; the method itself will not return an error.
+    ///          The callback may be called before this method returns.
+    ///          If this method returns an error, the callback will not be called.
     /// \param message The memory span containing the message to send
     /// \param callback The callback to call on reply
     /// \return error if fails
@@ -152,11 +154,16 @@ class IClientConnection
     ///          reference) needs to end not earlier than after the connection has returned into the Stop state
     virtual void Start(StateCallback state_callback, NotifyCallback notify_callback) noexcept = 0;
 
-    /// \brief Stop the existing connection
+    /// \brief Request stopping the existing connection
+    /// \details Outside the engine's background thread, the call is non-blocking: it requests stopping without waiting
+    ///          for completion. From the engine's background thread, cleanup may run synchronously.
+    ///          Stopping is complete when the connection reaches State::kStopped; only then may it be restarted or
+    ///          destroyed.
     virtual void Stop() noexcept = 0;
 
     /// \brief Try to restart a stopped connection
     /// \details For some stop reasons (such as kPermission) it is highly unlikely to have a successful restart.
+    ///          The call has no effect unless the connection is in State::kStopped.
     virtual void Restart() noexcept = 0;
 
   protected:

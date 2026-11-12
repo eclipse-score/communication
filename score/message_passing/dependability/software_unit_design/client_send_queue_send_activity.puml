@@ -1,0 +1,50 @@
+@startuml client_send_queue_send_activity
+title ClientSendQueue - sending without a reply
+
+start
+:Send(message);
+if (message.size() > max_send_size_?) then (yes)
+    :Return EMSGSIZE;
+    stop
+else (no)
+    :Lock lifetime_.mutex_;
+endif
+:Create ClientConnectionLifetime::Operation;
+if (Operation rejected admission?) then (yes)
+    :End rejected operation scope and unlock;
+    :Return EINVAL;
+    stop
+else (no)
+    :Retain the admitted operation;
+endif
+if (truly_async or (fully_ordered and reply slot engaged)?) then (yes)
+    :TryQueue(message, empty callback);
+    :Select acceptance or ENOBUFS from admission;
+else (direct)
+    :Create a live local ReplySlotToken;
+    if (fully_ordered?) then (yes)
+        :Reserve waiting_for_reply_ and identify this marker as owner;
+    else (no)
+        :Leave reply sequencing independent of this send;
+    endif
+    :SendTransport(operation, SEND, message);
+    if (This sender still owns the marker?) then (yes)
+        :Reset the reply slot and its owner;
+        :ArmIfNeeded();
+    else (no)
+        :Preserve another path's reservation;
+    endif
+    :Select the transport result;
+endif
+:End Operation scope and unlock;
+:Return the selected result;
+stop
+
+legend
+    Transport delegates to Operation::Execute and runs outside the mutex.
+    A direct ordered marker lets concurrent admission queue during IPC.
+    Default unordered one-way sends do not wait behind a pending reply.
+    Local queue acceptance is not confirmation of peer receipt.
+endlegend
+
+@enduml

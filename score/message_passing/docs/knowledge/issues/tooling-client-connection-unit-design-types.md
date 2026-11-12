@@ -3,15 +3,23 @@
 Status: open
 Area: tooling
 Scope: common-client class comparison; tooling pin 3.0.2
-Evidence checked: 2026-11-05; focused unit build and generated validation report
+Evidence checked: 2026-11-13; focused unit build and generated validation report
 
 ## Finding
 
 The [class view](../../../dependability/software_unit_design/client_connection_class_diagram.puml)
-uses declaration-level C++ type names. The unit's class validator reports 11
+uses declaration-level C++ type names. The unit's class validator reports 12
 type-representation differences, while its build succeeds with explicit
 development maturity. Before this pilot the same wrapper built successfully
 but reported `SKIPPED` because there were no design-class inputs.
+The earlier baseline had 11 findings. The original `const ReplyCallback*` owner
+added one callback-alias expansion difference. The owner is now
+`const ReplySlotToken*`, independent of callback moves; its remaining difference
+is qualification of the nested token type during C++ extraction. Its pointee
+const remains meaningful; this is not permission to remove it.
+The two-helper extraction retains 12 representation findings. Queue fields and
+the owner pointer are now declared on `ClientSendQueue`; descriptor retirement
+is declared on `ClientConnectionLifetime`. The unit remains in development maturity.
 
 The initial view also modeled `TimedCommandQueue` because both classes shared
 the original compilation target, and produced 16 findings. That queue belongs
@@ -38,7 +46,7 @@ bazel build //score/message_passing:client_connection
 cat bazel-bin/score/message_passing/client_connection/validation.log
 ```
 
-The checked report begins `FAILED (11 error(s))`; development maturity makes
+The checked report begins `FAILED (12 error(s))`; development maturity makes
 these findings non-blocking without hiding the report. `unit()` defaults to
 release maturity, independently of the enclosing DE's development setting.
 Do not assume that a successful `unit_design` target build alone runs the
@@ -48,9 +56,11 @@ implementation comparison; the owning unit does that.
 
 | Count | Surface | Observed difference |
 | --- | --- | --- |
-| 11 | Field types | Unqualified nested types become qualified; callback aliases expand to `move_only_function`; PMR vector spellings become `vector`. |
+| 12 | Field types | Unqualified nested types, including the reply-slot token, become qualified; callback aliases expand to `move_only_function`; PMR vector spellings become `vector`. |
 
-The declaration anchors are [ClientConnection](../../../client_connection.h)
+The declaration anchors are [ClientConnection](../../../client_connection.h),
+[ClientSendQueue](../../../client_send_queue.h), and
+[ClientConnectionLifetime](../../../client_connection_lifetime.h)
 and the callback aliases in [IClientConnection](../../../i_client_connection.h).
 
 ## Earlier Queue Findings

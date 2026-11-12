@@ -15,13 +15,13 @@
 #include "score/message_passing/client_server_communication.h"
 #include "score/message_passing/log/log.h"
 #include "score/message_passing/log/log_on_timeout.h"
-#include "score/message_passing/non_allocating_future/non_allocating_future.h"
 
 #include <score/utility.hpp>
 
 #include <cstddef>
 #include <cstdint>
 #include <thread>
+#include <utility>
 
 namespace score::message_passing::detail
 {
@@ -41,34 +41,33 @@ ClientConnection::ClientConnection(std::shared_ptr<ISharedResourceEngine> engine
     : IClientConnection{},
       engine_{std::move(engine)},
       identifier_{protocol_config.identifier.data(), protocol_config.identifier.size(), engine_->GetMemoryResource()},
-      max_send_size_{protocol_config.max_send_size},
       max_receive_size_{std::max(protocol_config.max_reply_size, protocol_config.max_notify_size)},
       client_config_{client_config},
-      client_fd_{-1},
       state_{State::kStopped},
       stop_reason_{StopReason::kInit},
       callback_context_{score::cpp::pmr::make_shared<CallbackContext>(engine_->GetMemoryResource())},
       notify_callback_{},
       connect_retry_ms_{kConnectRetryMsStart},
-      send_mutex_{},
-      send_condition_{},
-      send_storage_{static_cast<std::size_t>(client_config.max_queued_sends) +
-                        static_cast<std::size_t>(client_config.max_async_replies),
-                    score::cpp::pmr::polymorphic_allocator<>(engine_->GetMemoryResource())},
-      send_pool_{},
-      send_queue_{},
-      waiting_for_reply_{},
+      lifetime_{state_,
+                stop_reason_,
+                [this]() noexcept {
+                    ScheduleStopFinalization();
+                }},
+      sends_{lifetime_,
+             engine_->GetMemoryResource(),
+             client_config,
+             protocol_config.max_send_size,
+             [this](std::int32_t descriptor, std::uint8_t code, ClientSendQueue::Message message) noexcept {
+                 return engine_->SendProtocolMessage(descriptor, code, message);
+             },
+             [this]() noexcept {
+                 ScheduleSendDrain();
+             }},
       connection_timer_{},
       disconnection_command_{},
       async_send_command_{},
       posix_endpoint_{}
 {
-    // TODO: separate max_queued_sends, max_async_replies, and maybe queued SendWaitReply
-    for (auto& send_command : send_storage_)
-    {
-        send_command.message.reserve(static_cast<std::size_t>(max_send_size_));
-    }
-    send_pool_.assign(send_storage_.begin(), send_storage_.end());
 }
 
 ClientConnection::~ClientConnection() noexcept
@@ -87,49 +86,12 @@ ClientConnection::~ClientConnection() noexcept
         }
         std::lock_guard<std::recursive_mutex> guard{callback_context_->finalize_mutex};
     }
-    send_pool_.clear();
-}
-
-bool ClientConnection::TryQueueMessage(score::cpp::span<const std::uint8_t> message, ReplyCallback callback) noexcept
-{
-    if (send_pool_.empty())
-    {
-        return false;
-    }
-    auto& send_command = send_pool_.front();
-    send_pool_.pop_front();
-    send_command.message.assign(message.begin(), message.end());
-    send_command.callback = std::move(callback);
-    send_queue_.push_back(send_command);
-    ArmSendQueueIfNeeded();
-    return true;
 }
 
 score::cpp::expected_blank<score::os::Error> ClientConnection::Send(
     score::cpp::span<const std::uint8_t> message) noexcept
 {
-    if (message.size() > max_send_size_)
-    {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE));
-    }
-    if (state_ != State::kReady)
-    {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EINVAL));
-    }
-    if (!client_config_.fully_ordered && !client_config_.truly_async)
-    {
-        return engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::SEND), message);
-    }
-    std::lock_guard<std::mutex> guard{send_mutex_};
-    if (!client_config_.truly_async && !waiting_for_reply_.has_value())
-    {
-        return engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::SEND), message);
-    }
-    if (!TryQueueMessage(message, ReplyCallback{}))
-    {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOBUFS));
-    }
-    return {};
+    return sends_.Send(message);
 }
 
 score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> ClientConnection::SendWaitReply(
@@ -140,103 +102,14 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Cli
     {
         return score::cpp::make_unexpected(score::os::Error::createFromErrno(EAGAIN));
     }
-    if (message.size() > max_send_size_)
-    {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE));
-    }
-    if (state_ != State::kReady)
-    {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EINVAL));
-    }
-
-    score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> result{};
-    NonAllocatingFuture future(send_mutex_, send_condition_, result);
-
-    auto callback = [&reply, &future](
-                        score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> message_expected) {
-        if (!message_expected.has_value())
-        {
-            future.UpdateValueMarkReady(score::cpp::make_unexpected(message_expected.error()));
-            return;
-        }
-        const auto reply_message = message_expected.value();
-        if (reply_message.size() > reply.size())
-        {
-            future.UpdateValueMarkReady(score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE)));
-            return;
-        }
-        // NOLINTBEGIN(bugprone-suspicious-stringview-data-usage) `reply`'s buffer size got checked above
-        // NOLINTNEXTLINE(score-banned-function) copying byte buffer
-        score::cpp::ignore = std::memcpy(reply.data(), reply_message.data(), reply_message.size());
-        future.UpdateValueMarkReady(score::cpp::span<const std::uint8_t>{reply.data(), reply_message.size()});
-        // NOLINTEND(bugprone-suspicious-stringview-data-usage)
-    };
-
-    std::unique_lock<std::mutex> lock(send_mutex_);
-    if (waiting_for_reply_.has_value())
-    {
-        // TODO: avoid copying the message
-
-        // Suppress "AUTOSAR C++14 A5-1-4" rule finding: "A lambda expression object shall not outlive any of its
-        // reference-captured objects.".
-        // Either the callback is destructed inside the TryQueueMessage call, or it is queued and then fired only once
-        // unblocking the send_condition_ while holding send_mutex_. We don't access the referenced values after
-        // the send_condition_ is unblocked and we don't leave the SendWaitReply function scope before it's unblocked.
-        // coverity[autosar_cpp14_a5_1_4_violation]
-        if (!TryQueueMessage(message, std::move(callback)))
-        {
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOBUFS));
-        }
-    }
-    else
-    {
-        waiting_for_reply_ = std::move(callback);
-        lock.unlock();
-        const auto expected =
-            engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::REQUEST), message);
-        lock.lock();
-        if (!expected.has_value())
-        {
-            waiting_for_reply_.reset();
-            ArmSendQueueIfNeeded();
-            return score::cpp::make_unexpected(expected.error());
-        }
-    }
-    lock.unlock();
-
-    future.Wait();
-    return result;
+    return sends_.SendWaitReply(message, reply);
 }
 
 score::cpp::expected_blank<score::os::Error> ClientConnection::SendWithCallback(
     score::cpp::span<const std::uint8_t> message,
     ReplyCallback callback) noexcept
 {
-    if (message.size() > max_send_size_)
-    {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE));
-    }
-    if (state_ != State::kReady)
-    {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EINVAL));
-    }
-    std::lock_guard<std::mutex> guard(send_mutex_);
-    if (client_config_.truly_async || waiting_for_reply_.has_value())
-    {
-        if (!TryQueueMessage(message, std::move(callback)))
-        {
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOBUFS));
-        }
-        return {};
-    }
-    const auto expected =
-        engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::REQUEST), message);
-    if (!expected.has_value())
-    {
-        return score::cpp::make_unexpected(expected.error());
-    }
-    waiting_for_reply_ = std::move(callback);
-    return {};
+    return sends_.SendWithCallback(message, std::move(callback));
 }
 
 IClientConnection::State ClientConnection::GetState() const noexcept
@@ -390,9 +263,9 @@ void ClientConnection::TryConnect() noexcept
             this);
         return;
     }
-    client_fd_ = fd_expected.value();
+    lifetime_.InstallDescriptor(fd_expected.value());
     posix_endpoint_.owner = this;
-    posix_endpoint_.fd = client_fd_;
+    posix_endpoint_.fd = fd_expected.value();
     posix_endpoint_.max_receive_size = max_receive_size_;
     posix_endpoint_.input = [this]() noexcept {
         StopReason stop_reason = ProcessInputEvent();
@@ -433,7 +306,7 @@ void ClientConnection::TryConnect() noexcept
 IClientConnection::StopReason ClientConnection::ProcessInputEvent() noexcept
 {
     std::uint8_t code{};
-    auto message_expected = engine_->ReceiveProtocolMessage(client_fd_, code);
+    auto message_expected = engine_->ReceiveProtocolMessage(posix_endpoint_.fd, code);
     if (!message_expected.has_value())
     {
         auto os_code = message_expected.error().GetOsDependentErrorCode();
@@ -455,16 +328,7 @@ IClientConnection::StopReason ClientConnection::ProcessInputEvent() noexcept
         // Deviation of MISRA RULE-7-0-5: codeql::misra_deviation_next_line(switch-enum-underlying-type-discriminant)
         case score::cpp::to_underlying(ServerToClient::REPLY):
         {
-            std::unique_lock<std::mutex> lock{send_mutex_};
-            if (waiting_for_reply_.has_value())
-            {
-                ReplyCallback callback = std::move(*waiting_for_reply_);
-                waiting_for_reply_.reset();
-                ProcessSendQueueUnderLock(lock);
-                lock.unlock();
-                callback(message);
-            }
-            else
+            if (!sends_.HandleReply(message))
             {
                 return StopReason::kIoError;
             }
@@ -490,78 +354,15 @@ IClientConnection::StopReason ClientConnection::ProcessInputEvent() noexcept
     return StopReason::kNone;
 }
 
-void ClientConnection::ArmSendQueueIfNeeded() noexcept
+void ClientConnection::ScheduleSendDrain() noexcept
 {
-    // send_queue_ contains pending IPC messages, not engine commands.
-    if (send_queue_.empty())
-    {
-        return;
-    }
-    if (waiting_for_reply_.has_value())
-    {
-        // An existing drain or request owns progress; do not schedule another drain.
-        return;
-    }
-
-    // Reserve draining before enqueueing async_send_command_ in the engine's client-thread command queue.
-    waiting_for_reply_ = ReplyCallback{};
     engine_->EnqueueCommand(
         async_send_command_,
         ISharedResourceEngine::TimePoint{},
         [this](auto) noexcept {
-            std::unique_lock<std::mutex> lock(send_mutex_);
-            ProcessSendQueueUnderLock(lock);
+            sends_.Drain();
         },
         this);
-}
-
-void ClientConnection::ProcessSendQueueUnderLock(std::unique_lock<std::mutex>& lock) noexcept
-{
-    while (!send_queue_.empty())
-    {
-        SendCommand& send = send_queue_.front();
-        send_queue_.pop_front();
-        // below, we will need to return the SendCommand to the send_pool_ under lock
-        // (LIFO for better cache locality) right after we use its buffer to send the message
-        if (!send.callback.empty())
-        {
-            waiting_for_reply_ = std::move(send.callback);
-            // waiting_for_reply_ is now guaranteed to be occupied. This forces other potential fully_ordered or
-            // truly_async senders to push their messages into the send_queue_. We neeed to unlock that queue
-            // temporarily, as the other side of SendProtocolMessage is not under our control and it may cause
-            // indefinite delay.
-            lock.unlock();
-            const auto expected = engine_->SendProtocolMessage(
-                client_fd_, score::cpp::to_underlying(ClientToServer::REQUEST), send.message);
-            lock.lock();
-            send_pool_.push_front(send);
-            if (expected.has_value())
-            {
-                break;
-            }
-            auto callback = std::move(*waiting_for_reply_);
-            // We are not releasing waiting_for_reply_ yet. This makes our life easier if the callback and/or some
-            // competing thread wants to queue another message - they will just add it to the send_queue_ and we will
-            // process it in the next iteration.
-            lock.unlock();
-            callback(score::cpp::make_unexpected(expected.error()));
-            lock.lock();
-            waiting_for_reply_.reset();
-        }
-        else
-        {
-            // Temporarily make waiting_for_reply_ occupied to activate send_queue_ for fully_ordered or truly_async
-            // senders and release the queue lock for the duration of SendProtocolMessage.
-            waiting_for_reply_ = ReplyCallback{};
-            lock.unlock();
-            // nowhere to return the potential error
-            score::cpp::ignore =
-                engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::SEND), send.message);
-            lock.lock();
-            send_pool_.push_front(send);
-            waiting_for_reply_.reset();
-        }
-    }
 }
 
 void ClientConnection::SwitchToStopState() noexcept
@@ -569,39 +370,38 @@ void ClientConnection::SwitchToStopState() noexcept
     SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(state_ == State::kStopping);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(stop_reason_ != StopReason::kNone);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(IsInCallback());
+    if (lifetime_.RetirementPending())
+    {
+        FinishStopState();
+        return;
+    }
     posix_endpoint_.disconnect = {};  // no need to trigger the cleanup once more
     engine_->CleanUpOwner(this);
-    if (client_fd_ != -1)
+    sends_.CancelPending();
+    if (lifetime_.CancellationFinished())
     {
-        engine_->CloseClientConnection(client_fd_);
-        client_fd_ = -1;
+        FinishStopState();
     }
-    std::unique_lock<std::mutex> lock{send_mutex_};
-    if (waiting_for_reply_)
+}
+
+void ClientConnection::ScheduleStopFinalization() noexcept
+{
+    engine_->EnqueueCommand(
+        disconnection_command_,
+        ISharedResourceEngine::TimePoint{},
+        [this](auto) noexcept {
+            SwitchToStopState();
+        },
+        this);
+}
+
+void ClientConnection::FinishStopState() noexcept
+{
+    const auto fd = lifetime_.RetireDescriptor();
+    if (fd != -1)
     {
-        auto callback = std::move(*waiting_for_reply_);
-        waiting_for_reply_.reset();
-        lock.unlock();
-        if (!callback.empty())
-        {
-            callback(score::cpp::make_unexpected(score::os::Error::createFromErrno(EPIPE)));
-        }
-        lock.lock();
+        engine_->CloseClientConnection(fd);
     }
-    while (!send_queue_.empty())
-    {
-        SendCommand& send = send_queue_.front();
-        auto callback = std::move(send.callback);
-        send_queue_.pop_front();
-        send_pool_.push_front(send);
-        if (!callback.empty())
-        {
-            lock.unlock();
-            callback(score::cpp::make_unexpected(score::os::Error::createFromErrno(EPIPE)));
-            lock.lock();
-        }
-    }
-    lock.unlock();
     ProcessStateChange(State::kStopped);
 }
 
@@ -609,14 +409,7 @@ bool ClientConnection::TrySetStopReason(const StopReason stop_reason) noexcept
 {
     LogInfo(engine_->GetLogger(), "TrySetStopReason ", score::cpp::to_underlying(stop_reason));
 
-    // can happen via 2 paths: from callback thread and from Stop() call; if happens concurrently, the later attempt
-    // needs to be ignored and its consequent attempt to switch to stop state needs to be suppressed
-    StopReason old_stop_reason = stop_reason_.load();
-    if (old_stop_reason != StopReason::kNone)
-    {
-        return false;
-    }
-    return stop_reason_.compare_exchange_strong(old_stop_reason, stop_reason);
+    return lifetime_.TrySetStopReason(stop_reason);
 }
 
 void ClientConnection::ProcessStateChangeToStopped() noexcept

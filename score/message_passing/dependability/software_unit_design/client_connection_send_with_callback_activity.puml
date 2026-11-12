@@ -3,51 +3,13 @@ title ClientConnection - sending with a reply callback
 
 start
 :SendWithCallback(message, callback);
-if (message.size() > max_send_size_?) then (yes)
-    :Return EMSGSIZE;
-    stop
-else (no)
-    :Message size is admissible;
-endif
-if (state_ != kReady?) then (yes)
-    :Return EINVAL;
-    stop
-else (no)
-    :Connection is ready at the admission check;
-endif
-
-:Lock send_mutex_;
-if (truly_async or waiting_for_reply_ is engaged?) then (yes)
-    :TryQueueMessage(message, move(callback));
-    if (Message admitted to send_queue_?) then (yes)
-        :Admission handles guarded queue arming;
-    else (no)
-        :Unlock send_mutex_;
-        :Return ENOBUFS: no free send command;
-        stop
-    endif
-else (no)
-    :SendProtocolMessage(client_fd_, REQUEST, message) under send_mutex_;
-    if (Transport failed?) then (yes)
-        :Unlock send_mutex_;
-        :Return the transport error;
-        stop
-    else (no)
-        :Move callback into waiting_for_reply_;
-    endif
-endif
-
-:Unlock send_mutex_;
-:Return local acceptance;
+:sends_.SendWithCallback(message, move(callback));
+:Return the helper result unchanged;
 stop
 
 legend
-    fully_ordered does not select request admission behavior.
-    An engaged slot may be a pending reply or a queue-draining marker.
-    Direct transport runs before installing this reply callback,
-    while send_mutex_ protects the slot from concurrent reply processing.
-    Local rejection or direct-send failure does not invoke the callback.
-    After acceptance, reply/error delivery is a separate continuation.
+    ClientSendQueue owns admission and reply/cancellation ownership.
+    The facade transfers the callback without duplicating helper synchronization.
 endlegend
 
 @enduml

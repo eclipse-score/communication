@@ -36,7 +36,9 @@ _QNX_DISPATCH_OS_DEPS = [
 test_suite(
     name = "unit_tests",
     tests = [
+        ":client_connection_lifetime_test",
         ":client_connection_test",
+        ":client_send_queue_test",
         # Enable once the dependable_element can deal with QNX only unit tests
         #":qnx_dispatch_test",
         ":qnx_resource_path_test",
@@ -101,9 +103,13 @@ cc_library(
     name = "message_passing_client_connection",
     srcs = [
         "client_connection.cpp",
+        "client_connection_lifetime.cpp",
+        "client_send_queue.cpp",
     ],
     hdrs = [
         "client_connection.h",
+        "client_connection_lifetime.h",
+        "client_send_queue.h",
     ],
     tags = ["FFI"],
     visibility = [
@@ -428,6 +434,18 @@ cc_unit_test(
         ":message_passing_client_connection",
         ":mock",
     ],
+)
+
+cc_unit_test(
+    name = "client_connection_lifetime_test",
+    srcs = ["client_connection_lifetime_test.cpp"],
+    deps = [":message_passing_client_connection"],
+)
+
+cc_unit_test(
+    name = "client_send_queue_test",
+    srcs = ["client_send_queue_test.cpp"],
+    deps = [":message_passing_client_connection"],
 )
 
 cc_unit_test(

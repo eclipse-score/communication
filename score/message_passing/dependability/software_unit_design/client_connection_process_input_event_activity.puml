@@ -3,7 +3,7 @@ title ClientConnection - processing received input
 
 start
 :ProcessInputEvent();
-:ReceiveProtocolMessage(client_fd_, code);
+:ReceiveProtocolMessage(posix_endpoint_.fd, code);
 if (Receive failed?) then (yes)
     if (errno == EAGAIN?) then (yes)
         :Log a spurious wake-up;
@@ -23,18 +23,12 @@ else (no)
 endif
 
 if (code == REPLY?) then (yes)
-    :Lock send_mutex_;
-    if (waiting_for_reply_ is engaged?) then (yes)
-        :Move its callback into a local ReplyCallback;
-        :Reset waiting_for_reply_;
-        :ProcessSendQueueUnderLock(lock);
-        :Unlock send_mutex_;
-        :Invoke the local callback with the received span;
+    :sends_.HandleReply(message);
+    if (Helper accepted the reply?) then (yes)
         :Return kNone;
         stop
     else (no)
-        :Unlock send_mutex_;
-        :Return kIoError: reply with no occupied slot;
+        :Return kIoError: reply without a pending request callback;
         stop
     endif
 else (no)
@@ -57,10 +51,8 @@ stop
 legend
     Returned stop reasons are consumed by the endpoint input callback.
     This procedure does not itself claim stopping or unregister the endpoint.
-    Reply processing drains queued sends before invoking the completed callback.
-    Queue dispatch can therefore replace the free slot with a new pending reply.
-    The reply guard checks optional engagement, not callback non-emptiness.
-    An empty drain marker passes that guard; invocation has no empty check here.
+    Reply reservation and queue progress are owned by ClientSendQueue.
+    Reply synchronization is elaborated in the helper activity.
     Notifications are ignored when no callback is installed, without stopping.
     Receive-size enforcement belongs to the engine; caller reply-buffer bounds
     are handled by the SendWaitReply completion callback.

@@ -1,13 +1,13 @@
-@startuml client_connection_arm_send_queue_activity
-title ClientConnection - arming queued send dispatch
+@startuml client_send_queue_arm_activity
+title ClientSendQueue - arming queued send dispatch
 
 start
-:ArmSendQueueIfNeeded();
+:ArmIfNeeded();
 note right
-    Entry: the caller holds send_mutex_.
+    Entry: the caller holds lifetime_.mutex_.
 end note
-if (send_queue_ is empty?) then (yes)
-    :No pending IPC messages to send;
+if (queue_ is empty or !lifetime_.IsAccepting()?) then (yes)
+    :No pending IPC messages, or stopping has closed admission;
     :Return without scheduling a client-thread command;
     stop
 else (no)
@@ -17,7 +17,8 @@ if (waiting_for_reply_ is engaged?) then (yes)
     :An existing drain or request already owns progress;
     note right
         Empty callback marker: a drain command is queued in the
-        engine's client-thread command queue, or queue processing is active.
+        engine's client-thread command queue, queue processing is active,
+        or a direct ordered one-way sender owns progress.
         Non-empty callback: a request owns the next reply completion.
         Neither case needs another drain command here.
     end note
@@ -27,24 +28,24 @@ else (no)
     :No request or drain owns progress;
 endif
 :Set waiting_for_reply_ to an empty ReplyCallback marker;
-:Enqueue async_send_command_ in the engine's client-thread command queue\nat TimePoint{}, owner = this;
+:Invoke schedule_drain_();
 note right
     When the engine executes the queued callback:
-    acquire send_mutex_ with a unique lock,
-    then call ProcessSendQueueUnderLock(lock).
+    acquire lifetime_.mutex_ with a unique lock,
+    then call DrainUnderLock(lock).
     This continuation is separate from the arming call.
 end note
 :Return with the caller's lock still held;
 stop
 
 legend
-    send_queue_ is the FIFO of pending IPC messages and their reply callbacks.
+    queue_ is the FIFO of pending IPC messages and their reply callbacks.
     The engine command queue schedules execution of async_send_command_, not each message.
     The marker engages the optional slot without registering a reply callback.
     Slot engagement is not a direct test of engine command-queue membership.
     A pending request callback is never overwritten by this helper.
     Direct-error recovery releases its slot before requesting queue progress.
-    The command entry is embedded; connection ownership permits stop cleanup.
+    The facade actor enqueues its embedded command with connection ownership.
     Dispatch decides when to reset the marker or replace it with a reply callback.
 endlegend
 

@@ -77,13 +77,16 @@ point an unfiltered debug run aborted in
 `TryingToSyncConnectOnceStoppingOnHardError`, in `SwitchToStopState` reached
 from synchronous startup. On 2026-11-11 that separate path was fixed by
 [sequencing terminal-failure finalization](../decisions/2026-11-11-client-stop-finalization-dispatch.md),
-without relaxing the finalizer's assertion. The full debug client suite now
-passes all 50 enabled cases; the separate late-send diagnostic remains disabled.
+without relaxing the finalizer's assertion. The full debug suite then passed
+50 enabled cases while the late-send diagnostic was still disabled. The later
+[send-retirement resolution](functionality-client-late-send-recovery.md) replaces
+that diagnostic with positive regressions; all 58 current client cases pass in
+normal and debug builds, with no disabled cases.
 
 The [blocking request activity](../../../dependability/software_unit_design/client_connection_send_wait_reply_activity.puml)
 and [unit rationale](../../../dependability/software_unit_design/client_connection.rst)
-describe release-before-schedule recovery. The [admission activity](../../../dependability/software_unit_design/client_connection_try_queue_message_activity.puml)
-and [arming activity](../../../dependability/software_unit_design/client_connection_arm_send_queue_activity.puml)
+describe release-before-schedule recovery. The [admission activity](../../../dependability/software_unit_design/client_send_queue_try_queue_activity.puml)
+and [arming activity](../../../dependability/software_unit_design/client_send_queue_arm_activity.puml)
 show the centralized scheduling attempt and its queue/slot guards.
 
 ## Resolution
@@ -94,15 +97,16 @@ changes when the queue is empty or the reply/drain slot is engaged; otherwise
 it reserves and schedules one drain command. `Send` and `SendWithCallback` no
 longer duplicate the scheduling decision.
 
-Direct-error recovery resets its slot under `send_mutex_`, then requests queue
+Direct-error recovery resets its own slot under `send_mutex_`, then requests queue
 progress through the same guarded helper. The assertion-enabled empty-queue,
 queued one-way, and queued-request callback controls pass. This resolves the
-precondition mismatch, not ownership across overlapping stop/restart. That
-separate diagnostic remains disabled pending its contract decision and fix.
+precondition mismatch; the scheduling refactor alone did not establish ownership
+across overlapping stop/restart. The later send-retirement fence and sender-owner
+checks resolve that separate common-client issue, without qualifying QNX IPC interruption.
 
 The helper was briefly named `MaybeArmSendQueueUnderLock`, then renamed to
 `ArmSendQueueIfNeeded` on 2026-11-11 to make its deterministic conditional
 behavior explicit. The send-lock precondition remains documented on the
-declaration. Its separate no-work and owned-progress guards distinguish the
+declaration. Its no-work/stopping and owned-progress guards distinguish the
 pending IPC-message FIFO from the engine command queue. The original finding
 and debugger backtrace retain `ArmSendQueueUnderLock`.

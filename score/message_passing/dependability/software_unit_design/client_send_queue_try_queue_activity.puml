@@ -1,28 +1,28 @@
-@startuml client_connection_try_queue_message_activity
-title ClientConnection - queued message admission
+@startuml client_send_queue_try_queue_activity
+title ClientSendQueue - queued message admission
 
 start
-:TryQueueMessage(message, callback);
+:TryQueue(message, callback);
 note right
-    Entry: the caller holds send_mutex_.
+    Entry: the caller holds lifetime_.mutex_.
     Message-size and lifecycle checks belong to the API caller.
 end note
-if (send_pool_ is empty?) then (yes)
+if (pool_ is empty?) then (yes)
     :Return false without reserving a command;
     stop
 else (no)
     :Take the front free command;
 endif
-:Remove the command from send_pool_;
+:Remove the command from pool_;
 :Copy message bytes into command.message;
 :Move callback into command.callback;
-:Append the command to the back of send_queue_;
-:ArmSendQueueIfNeeded();
+:Append the command to the back of queue_;
+:ArmIfNeeded();
 :Return true with the caller's lock still held;
 stop
 
 legend
-    send_storage_ retains ownership of the command and its message storage.
+    storage_ retains ownership of the command and its message storage.
     Intrusive membership moves from the free pool to the FIFO send queue.
     Admission attempts guarded arming, preserving an occupied reply/drain slot.
     A free slot permits reserving and scheduling dispatch, not immediate transport.
