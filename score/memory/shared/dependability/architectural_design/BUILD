@@ -16,6 +16,7 @@ architectural_design(
     name = "software_architectural_design",
     dynamic = [],
     maturity = "development",
+    # package = "memory_shared_api",
     public_api = [
         # "//score/memory/shared/dependability:public_api.puml",  # rejected by the rules_score PlantUML parser
     ],

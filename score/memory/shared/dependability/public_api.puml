@@ -58,8 +58,12 @@ namespace score::memory::shared {
       + destruct<T>(instance : T)
     }
 
+    note right of ManagedMemoryResource
+      Allocation beyond the available memory terminates the process.
+    end note
+
     interface ISharedMemoryResource {
-      + getPath() : String
+      + getPath() : String [0..1]
       + UnlinkFilesystemEntry()
       + GetFileDescriptor() : FileDescriptor
       + IsShmInTypedMemory() : Boolean
@@ -75,11 +79,17 @@ namespace score::memory::shared {
 
     ISharedMemoryResource +-- AccessControl
 
+    note right of AccessControl
+      allowedProviders (also in Open): absent = no provider check;
+      present = the creator UID of the resource must be the own UID or in the list
+      (empty list = only the own UID is accepted).
+    end note
+
     interface ISharedMemoryFactory {
-      + Open(path : String, isReadWrite : Boolean, allowedProviders : UserId [0..*]) : ISharedMemoryResource
-      + Create(path : String, initializer : InitializeCallback, reservedSize : UnsignedInteger, permissions : UserPermissions, preferTypedMemory : Boolean) : ISharedMemoryResource
-      + CreateAnonymous(resourceId : UnsignedInteger, initializer : InitializeCallback, reservedSize : UnsignedInteger, permissions : UserPermissions, preferTypedMemory : Boolean) : ISharedMemoryResource
-      + CreateOrOpen(path : String, initializer : InitializeCallback, reservedSize : UnsignedInteger, accessControl : AccessControl, preferTypedMemory : Boolean) : ISharedMemoryResource
+      + Open(path : String, isReadWrite : Boolean, allowedProviders : UserId [0..*]) : ISharedMemoryResource [0..1]
+      + Create(path : String, initializer : InitializeCallback, reservedSize : UnsignedInteger, permissions : UserPermissions, preferTypedMemory : Boolean) : ISharedMemoryResource [0..1]
+      + CreateAnonymous(resourceId : UnsignedInteger, initializer : InitializeCallback, reservedSize : UnsignedInteger, permissions : UserPermissions, preferTypedMemory : Boolean) : ISharedMemoryResource [0..1]
+      + CreateOrOpen(path : String, initializer : InitializeCallback, reservedSize : UnsignedInteger, accessControl : AccessControl, preferTypedMemory : Boolean) : ISharedMemoryResource [0..1]
       + Remove(path : String)
       + RemoveStaleArtefacts(path : String)
       + SetTypedMemoryProvider(provider : TypedMemory)
@@ -88,11 +98,17 @@ namespace score::memory::shared {
       + Clear()
     }
 
+    note right of ISharedMemoryFactory
+      Failure reaction of Open/Create/CreateAnonymous/CreateOrOpen: expected errors
+      (e.g. object missing or already existing, provider not allowed) return no resource;
+      unexpected OS errors (e.g. sizing, mapping, lock-file timeout) terminate the process.
+    end note
+
     class SharedMemoryFactory {
-      + {static} Open(path : String, isReadWrite : Boolean, allowedProviders : UserId [0..*]) : ISharedMemoryResource
-      + {static} Create(path : String, initializer : InitializeCallback, reservedSize : UnsignedInteger, permissions : UserPermissions, preferTypedMemory : Boolean) : ISharedMemoryResource
-      + {static} CreateAnonymous(resourceId : UnsignedInteger, initializer : InitializeCallback, reservedSize : UnsignedInteger, permissions : UserPermissions, preferTypedMemory : Boolean) : ISharedMemoryResource
-      + {static} CreateOrOpen(path : String, initializer : InitializeCallback, reservedSize : UnsignedInteger, accessControl : AccessControl, preferTypedMemory : Boolean) : ISharedMemoryResource
+      + {static} Open(path : String, isReadWrite : Boolean, allowedProviders : UserId [0..*]) : ISharedMemoryResource [0..1]
+      + {static} Create(path : String, initializer : InitializeCallback, reservedSize : UnsignedInteger, permissions : UserPermissions, preferTypedMemory : Boolean) : ISharedMemoryResource [0..1]
+      + {static} CreateAnonymous(resourceId : UnsignedInteger, initializer : InitializeCallback, reservedSize : UnsignedInteger, permissions : UserPermissions, preferTypedMemory : Boolean) : ISharedMemoryResource [0..1]
+      + {static} CreateOrOpen(path : String, initializer : InitializeCallback, reservedSize : UnsignedInteger, accessControl : AccessControl, preferTypedMemory : Boolean) : ISharedMemoryResource [0..1]
       + {static} Remove(path : String)
       + {static} RemoveStaleArtefacts(path : String)
       + {static} SetTypedMemoryProvider(provider : TypedMemory)
@@ -205,6 +221,7 @@ namespace score::memory::shared {
       reinterpret the pointed-to memory as an explicit type; omitted here for brevity. See
       class_diagram_allocator_pointer.puml for the full, non-abstracted signature set.
       EnableOffsetPtrBoundsChecking is a free function in offset_ptr.h, shown here as {static}.
+      Bounds-check violations terminate the process.
     end note
 
     class "PolymorphicOffsetPtrAllocator<T>" as PolymorphicOffsetPtrAllocator {
