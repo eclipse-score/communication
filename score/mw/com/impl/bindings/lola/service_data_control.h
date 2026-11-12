@@ -23,6 +23,8 @@
 #include <score/span.hpp>
 
 #include <cstddef>
+#include <functional>
+#include <utility>
 
 namespace score::mw::com::impl::lola
 {
@@ -44,7 +46,7 @@ class ServiceDataControl
 
     explicit ServiceDataControl(const std::size_t number_of_events_and_fields,
                                 score::memory::shared::ManagedMemoryResource& resource)
-        : event_controls_(number_of_events_and_fields, resource),
+        : event_controls_(number_of_events_and_fields, {}, decltype(event_controls_)::allocator_type{resource}),
           application_id_pid_mapping_(kMaxApplicationIdPidMappings, resource)
     {
     }
@@ -60,7 +62,11 @@ class ServiceDataControl
     // be private.". There are no class invariants to maintain which could be violated by directly accessing member
     // variables.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    LinearSearchMap<ElementFqId, EventControl> event_controls_;
+    LinearSearchMap<ElementFqId,
+                    EventControl,
+                    std::equal_to<ElementFqId>,
+                    score::memory::shared::PolymorphicOffsetPtrAllocator<std::pair<ElementFqId, EventControl>>>
+        event_controls_;
 
     /// \brief mapping of a proxy's application identifier to its process ID (pid).
     /// \details Every proxy instance for this service shall register itself in this mapping. The identifier used is

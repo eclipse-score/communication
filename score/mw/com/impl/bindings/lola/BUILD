@@ -284,8 +284,6 @@ cc_library(
         "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
     ],
     deps = [
-        "//score/memory/shared:managed_memory_resource",
-        "//score/memory/shared:polymorphic_offset_ptr_allocator",
         "@score_baselibs//score/containers:non_relocatable_vector",
     ],
 )
