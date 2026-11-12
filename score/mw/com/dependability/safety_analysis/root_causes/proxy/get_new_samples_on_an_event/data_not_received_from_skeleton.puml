@@ -15,99 +15,98 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("Data not received from skeleton although SkeletonEvent::Send() returned success", "mw_com.DataNotReceivedFromSkeletonAlthoughSendSucceeded")
-$OrGate("OrGate1", "mw_com.DataNotReceivedFromSkeletonAlthoughSendSucceeded")
+$FailureMode("GetNewSamples receiver callback not called with SamplePtr pointing to value sent by a successful call to SkeletonEvent::Send()", "mw_com.CallbackNotCalledAlthoughSkeletonSendSucceeded")
+$OrGate("OrGate1", "mw_com.CallbackNotCalledAlthoughSkeletonSendSucceeded")
 
-$IntermediateEvent("Could not confirm that sample is ready for reading in control shared memory", "SampleNotMarkedReadyForReading", "OrGate1")
-$OrGate("OrGate29", "SampleNotMarkedReadyForReading")
-$IntermediateEvent("Sample control value is not equal to ready for reading", "SampleControlValueNotEqualToReadyForReading", "OrGate29")
-$OrGate("OrGate27", "SampleControlValueNotEqualToReadyForReading")
+$RootCause("Receiver callback not called although sample found", "ReceiverCallbackNotCalled", "OrGate1")
+$IntermediateEvent("ProxyEvent could not find slot index in EventDataControl with valid status corresponding\nto slot index in EventDataStorage containing value sent by SkeletonEvent", "SkeletonSendSucceeded", "OrGate1")
+$OrGate("OrGate100", "SkeletonSendSucceeded")
+
+$IntermediateEvent("SkeletonEvent did not write sample to shared memory because could not allocate slot", "SkeletonCouldNotAllocateSlot", "OrGate100")
+' $IntermediateEvent("Could not find slot ready for reading pointing to value sent by SkeletonEvent", "SlotNotFound", "OrGate100")
+' $IntermediateEvent("Could not find slot with new timestamp pointing to value sent by SkeletonEvent", "SlotWithNewTimestampNotFound", "OrGate100")
+
+$IntermediateEvent("Correct EventDataControl not used\nby ProxyEvent or SkeletonEvent", "WrongEventDataControlUsed", "OrGate100")
+$OrGate("OrGate101", "WrongEventDataControlUsed")
+$IntermediateEvent("Could not open control shared memory", "CouldNotOpenControlSharedMemory", "OrGate101")
+$TransferInGate("mw_com.data_not_received_from_skeleton_could_not_open_shared_memory.CannotOpenSharedMemory", "CouldNotOpenControlSharedMemory")
+$RootCause("SkeletonEvent inserted EventDataControl\ninto ServiceDataControl with wrong EventFqId", "InvalidServiceDataControlKey", "OrGate101")
+$RootCause("ProxyEvent found EventDataControl\nin ServiceDataControl with wrong EventFqId", "ProxyEventFoundWrongServiceDataControlKey", "OrGate101")
+$RootCause("SkeletonEvent found EventDataControl\nin ServiceDataControl with wrong EventFqId", "SkeletonEventFoundWrongServiceDataControlKey", "OrGate101")
+
+$IntermediateEvent("Correct EventDataStorage not used\nby ProxyEvent or SkeletonEvent", "WrongEventDataStorageUsed", "OrGate100")
+$OrGate("OrGate102", "WrongEventDataStorageUsed")
+$IntermediateEvent("Could not open data shared memory", "CouldNotOpenDataSharedMemory", "OrGate102")
+$TransferInGate("mw_com.data_not_received_from_skeleton_could_not_open_shared_memory.CannotOpenSharedMemory", "CouldNotOpenDataSharedMemory")
+$RootCause("SkeletonEvent inserted EventDataStorage\ninto ServiceDataStorage with wrong EventFqId", "InvalidServiceDataStorageKey", "OrGate102")
+$RootCause("ProxyEvent found EventDataStorage\nin ServiceDataStorage with wrong EventFqId", "ProxyEventFoundWrongServiceDataStorageKey", "OrGate102")
+$RootCause("SkeletonEvent found EventDataStorage\nin ServiceDataStorage with wrong EventFqId", "SkeletonEventFoundWrongServiceDataStorageKey", "OrGate102")
+
+
+$IntermediateEvent("Control slot value corresponding to data slot\ncontaining send value not ready for reading", "ControlSlotNotReadyForReading", "OrGate100")
+$OrGate("OrGate27", "ControlSlotNotReadyForReading")
 $RootCause("Skeleton did not mark sample ready for reading during Send", "SkeletonDidNotMarkSampleReadyForReadingDuringSend", "OrGate27")
+$RootCause("Update of slot status is not yet visible to ProxyEvent (atomic memory order)", "UpdateOfSlotNotYetVisibleToProxyEvent", "OrGate27")
 $IntermediateEvent("Control shared memory corrupted by other process", "ControlSharedMemoryCorruptedByOtherProcess", "OrGate27")
 $OrGate("OrGate28", "ControlSharedMemoryCorruptedByOtherProcess")
 $RootCause("QM process corrupted control shared memory", "LowerASILLeverProcessAccessedSharedMemory", "OrGate28")
 $RootCause("Asil-B process corrupted control shared memory", "SameOrHigherASILLeverProcessAccessedSharedMemory", "OrGate28")
 $RootCause("Process which is neither QM nor Asil-B corrupted control shared memory", "OtherProcessAccessedSharedMemory", "OrGate28")
 
-$IntermediateEvent("Could not open control shared memory", "CouldNotOpenControlSharedMemory", "OrGate29")
-' gtodo: add transferingate but the root causes that are referenced would have to be duplicated with a different id because we would need a different requirement
-'  / test. i.e. both trees have "incorrect path", but the control and data paths are obv different so need different requirements / tests.
-' - also need to reference shm not initialized correctly and data shm corrupted
+$IntermediateEvent("Control slot value corresponding to data slot\ncontaining send value has old timestamp", "ControlSlotHasOldTimestamp", "OrGate100")
+$OrGate("OrGate26", "ControlSlotHasOldTimestamp")
+$RootCause("Skeleton did set correct timestamp during Send", "SkeletonDidSetCorrectTimestampDuringSend", "OrGate26")
+$RootCause("Update of slot timestamp is not yet visible to ProxyEvent (atomic memory order)", "UpdateOfSlotTimestampNotYetVisibleToProxyEvent", "OrGate26")
+$RootCause("Last seen timestamp incorrectly stored in ProxyEvent", "LastSeenTimestampIncorrectlyStoredInProxyEvent", "OrGate26")
+$IntermediateEvent("Control shared memory corrupted by other process", "ControlSharedMemoryTimestampCorruptedByOtherProcess", "OrGate26")
+' $TransferInGate("ControlSharedMemoryCorruptedByOtherProcess", "ControlSharedMemoryTimestampCorruptedByOtherProcess")
 
-$IntermediateEvent("Could not read sample from data shared memory", "CouldNotReadDataFromSharedMemory", "OrGate1")
-$OrGate("OrGate30", "CouldNotReadDataFromSharedMemory")
-
-
-' Now coming from score/mw/com/dependability/safety_analysis/root_causes/proxy/get_new_samples_on_an_event/data_not_received_from_skeleton_read_sample_different_to_sent_sample.puml
-$TransferInGate("mw_com.SampleInSharedMemoryNotEqualToSentSample", "OrGate30")
-' $IntermediateEvent("Sample in shared memory does not have the same value as sample provided to SkeletonEvent::Send()", "SampleInSharedMemoryNotEqualToSentSample", "OrGate30")
-' $OrGate("OrGate41", "SampleInSharedMemoryNotEqualToSentSample")
-
-' $IntermediateEvent("Sample read from wrong location in shared memory by ProxyEvent", "SampleReadFromWrongLocationInSharedMemory", "OrGate41")
-' $OrGate("OrGate42", "SampleReadFromWrongLocationInSharedMemory")
-
-' $IntermediateEvent("Sample value in the expected location does not match expected value", "SampleValueDoesNotMatchExpectedValue", "OrGate41")
-' $OrGate("OrGate43", "SampleValueDoesNotMatchExpectedValue")
-' ' $IntermediateEvent("Sample written to wrong location in shared memory by SkeletonEvent", "SampleWrittenToWrongLocationInSharedMemory", "OrGate41")
-
-' $RootCause("Sent sample not written to data shared memory although marked ready for reading", "SendSampleNotWrittenToDataSharedMemory", "OrGate43")
-' $RootCause("SkeletonEvent wrote to this location with the wrong value", "SkeletonEventWroteWrongValue", "OrGate43")
-' $RootCause("Unrelated actor wrote to this location with the wrong value", "UnrelatedActorWroteWrongValue", "OrGate43")
-
-' $IntermediateEvent("Data shared memory corrupted by other process", "DataSharedMemoryCorruptedByOtherProcess", "SampleInSharedMemoryNotEqualToSentSample")
-' $OrGate("OrGate58", "DataSharedMemoryCorruptedByOtherProcess")
-' $RootCause("Lower ASIL level process corrupted data shared memory", "LowerASILLeverProcessCorruptedDataSharedMemory", "OrGate58")
-' $RootCause("Same or higher ASIL level process corrupted data shared memory", "SameOrHigherASILLeverProcessCorruptedDataSharedMemory", "OrGate58")
-
-' $IntermediateEvent("Shared memory not initialized correctly", "SharedMemoryNotInitializedCorrectly", "SampleInSharedMemoryNotEqualToSentSample")
-' $OrGate("OrGate31", "SharedMemoryNotInitializedCorrectly")
-
-' $RootCause("Shared memory not initialized by skeleton", "SharedMemoryNotInitializedBySkeleton", "OrGate31")
-
-' $IntermediateEvent("Uninitialized shared memory opened instead of created by skeleton on reoffer", "UninitializedSharedMemoryOpened", "OrGate31")
-' $AndGate("AndGate1", "UninitializedSharedMemoryOpened")
-' ' $IntermediateEvent("Skeleton erroneously thought proxies connected on restart", "SharedMemoryNotCreatedBySkeleton", "AndGate1")
-' $RootCause("Previous skeleton crashed while initializing shared memory", "PreviousSkeletonCrashed", "AndGate1")
-' $IntermediateEvent("Skeleton could not exclusively lock usage marker file although no Proxies are connected", "SkeletonCouldNotLockUsageMarkerFile", "AndGate1")
-' $OrGate("OrGate59", "SkeletonCouldNotLockUsageMarkerFile")
-' $RootCause("Unrelated actor locked usage marker file", "UnrelatedActorLockedUsageMarkerFile", "OrGate59")
-' $RootCause("Flock OS error", "FlockOSError", "OrGate59")
-
-$IntermediateEvent("Could not open shared memory created by skeleton", "CannotOpenSharedMemory", "OrGate30")
-$OrGate("OrGate20", "CannotOpenSharedMemory")
-$IntermediateEvent("Opened wrong shared memory", "OpenedWrongSharedMemory", "OrGate20")
-
-$OrGate("OrGate21", "OpenedWrongSharedMemory")
+$IntermediateEvent("Data slot value does not equal the value\nprovided to SkeletonEvent::Send()", "SampleInSharedMemoryNotEqualToSentSample", "OrGate100")
+' we might already have a subtree in score/mw/com/dependability/safety_analysis/root_causes/proxy/get_new_samples_on_an_event/data_not_received_from_skeleton_read_sample_different_to_sent_sample.puml
 
 
-$IntermediateEvent("Looking for shared memory in wrong path", "LookingForSharedMemoryInWrongPath", "OrGate21")
-$OrGate("OrGate4", "LookingForSharedMemoryInWrongPath")
-$RootCause("Not searching for shared memory in path derived from Handle", "NotSearchingForSharedMemoryInPathDerivedFromHandle", "OrGate4")
-$RootCause("Handle contains wrong values", "HandleContainsWrongValues", "OrGate4")
-$TransferInGate("mw_com.InMemoryConfigurationWrong", "HandleContainsWrongValues")
+' $IntermediateEvent("Could not open control shared memory", "CouldNotOpenControlSharedMemory", "OrGate29")
+' ' gtodo: add transferingate but the root causes that are referenced would have to be duplicated with a different id because we would need a different requirement
+' '  / test. i.e. both trees have "incorrect path", but the control and data paths are obv different so need different requirements / tests.
+' ' - also need to reference shm not initialized correctly and data shm corrupted
 
-$IntermediateEvent("Currently mapped shared memory no longer written to by skeleton (Skeleton unlinked old region and recreated region)", "CurrentlyMappedSharedMemoryNoLongerWrittenToBySkeleton", "OrGate21")
-$AndGate("AndGate22", "CurrentlyMappedSharedMemoryNoLongerWrittenToBySkeleton")
-$RootCause("Previous skeleton crashed or stop offered while proxies were connected and reoffered while proxies are still connected", "SkeletonRecreatedSharedMemoryRegion", "AndGate22")
-$IntermediateEvent("Skeleton exclusively locked usage marker file while share locked by Proxy", "SkeletonDidNotInitializeSharedMemoryOnRestart", "AndGate22")
-$RootCause("Flock OS error", "FlockOSError", "SkeletonDidNotInitializeSharedMemoryOnRestart")
-
-$IntermediateEvent("Proxy UID not in ACL list", "ProxyUidNotInAclList", "OrGate20")
-$IntermediateEvent("Skeleton created shm with ACLs different to allowed consumers in configuration", "ShmAclsDifferentToAllowedConsumers", "ProxyUidNotInAclList")
-$IntermediateEvent("Allowed consumer list in memory is wrong", "AllowedConsumersInMemoryConfigurationIsWrong", "ShmAclsDifferentToAllowedConsumers")
-$TransferInGate("mw_com.InMemoryConfigurationWrong", "AllowedConsumersInMemoryConfigurationIsWrong")
+' $IntermediateEvent("Could not read sample from data shared memory", "CouldNotReadDataFromSharedMemory", "OrGate1")
+' $OrGate("OrGate30", "CouldNotReadDataFromSharedMemory")
 
 
-$IntermediateEvent("UID of shared memory creator not in proxies allowed provider list", "UidOfSharedMemoryCreatorNotInProxiesAllowedProviderList", "OrGate20")
-$IntermediateEvent("Allowed provider list in memory is wrong", "AllowedProvidersInMemoryConfigurationIsWrong", "UidOfSharedMemoryCreatorNotInProxiesAllowedProviderList")
-$TransferInGate("mw_com.InMemoryConfigurationWrong", "AllowedProvidersInMemoryConfigurationIsWrong")
+' ' Now coming from score/mw/com/dependability/safety_analysis/root_causes/proxy/get_new_samples_on_an_event/data_not_received_from_skeleton_read_sample_different_to_sent_sample.puml
+' $TransferInGate("mw_com.SampleInSharedMemoryNotEqualToSentSample", "OrGate30")
+' ' $IntermediateEvent("Sample in shared memory does not have the same value as sample provided to SkeletonEvent::Send()", "SampleInSharedMemoryNotEqualToSentSample", "OrGate30")
+' ' $OrGate("OrGate41", "SampleInSharedMemoryNotEqualToSentSample")
 
-$RootCause("Shm open os error", "ShmOpenOSError", "OrGate20")
+' ' $IntermediateEvent("Sample read from wrong location in shared memory by ProxyEvent", "SampleReadFromWrongLocationInSharedMemory", "OrGate41")
+' ' $OrGate("OrGate42", "SampleReadFromWrongLocationInSharedMemory")
 
-$IntermediateEvent("Shared Memory Object was created by skeleton in the wrong path", "SharedMemoryObjectCreatedInWrongPath", "OrGate20")
-$OrGate("OrGate5", "SharedMemoryObjectCreatedInWrongPath")
-$RootCause("Not creating shared memory in path derived from Instance Identifier", "NotCreatingSharedMemoryInPathDerivedFromInstanceIdentifier", "OrGate5")
-$IntermediateEvent("InstanceIdentifier contains wrong data", "InstanceIdentifierContainsWrongData", "OrGate5")
-$TransferInGate("mw_com.InMemoryConfigurationWrong", "InstanceIdentifierContainsWrongData")
+' ' $IntermediateEvent("Sample value in the expected location does not match expected value", "SampleValueDoesNotMatchExpectedValue", "OrGate41")
+' ' $OrGate("OrGate43", "SampleValueDoesNotMatchExpectedValue")
+' ' ' $IntermediateEvent("Sample written to wrong location in shared memory by SkeletonEvent", "SampleWrittenToWrongLocationInSharedMemory", "OrGate41")
+
+' ' $RootCause("Sent sample not written to data shared memory although marked ready for reading", "SendSampleNotWrittenToDataSharedMemory", "OrGate43")
+' ' $RootCause("SkeletonEvent wrote to this location with the wrong value", "SkeletonEventWroteWrongValue", "OrGate43")
+' ' $RootCause("Unrelated actor wrote to this location with the wrong value", "UnrelatedActorWroteWrongValue", "OrGate43")
+
+' ' $IntermediateEvent("Data shared memory corrupted by other process", "DataSharedMemoryCorruptedByOtherProcess", "SampleInSharedMemoryNotEqualToSentSample")
+' ' $OrGate("OrGate58", "DataSharedMemoryCorruptedByOtherProcess")
+' ' $RootCause("Lower ASIL level process corrupted data shared memory", "LowerASILLeverProcessCorruptedDataSharedMemory", "OrGate58")
+' ' $RootCause("Same or higher ASIL level process corrupted data shared memory", "SameOrHigherASILLeverProcessCorruptedDataSharedMemory", "OrGate58")
+
+' ' $IntermediateEvent("Shared memory not initialized correctly", "SharedMemoryNotInitializedCorrectly", "SampleInSharedMemoryNotEqualToSentSample")
+' ' $OrGate("OrGate31", "SharedMemoryNotInitializedCorrectly")
+
+' ' $RootCause("Shared memory not initialized by skeleton", "SharedMemoryNotInitializedBySkeleton", "OrGate31")
+
+' ' $IntermediateEvent("Uninitialized shared memory opened instead of created by skeleton on reoffer", "UninitializedSharedMemoryOpened", "OrGate31")
+' ' $AndGate("AndGate1", "UninitializedSharedMemoryOpened")
+' ' ' $IntermediateEvent("Skeleton erroneously thought proxies connected on restart", "SharedMemoryNotCreatedBySkeleton", "AndGate1")
+' ' $RootCause("Previous skeleton crashed while initializing shared memory", "PreviousSkeletonCrashed", "AndGate1")
+' ' $IntermediateEvent("Skeleton could not exclusively lock usage marker file although no Proxies are connected", "SkeletonCouldNotLockUsageMarkerFile", "AndGate1")
+' ' $OrGate("OrGate59", "SkeletonCouldNotLockUsageMarkerFile")
+' ' $RootCause("Unrelated actor locked usage marker file", "UnrelatedActorLockedUsageMarkerFile", "OrGate59")
+' ' $RootCause("Flock OS error", "FlockOSError", "OrGate59")
 
 @enduml

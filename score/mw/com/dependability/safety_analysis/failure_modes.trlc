@@ -681,19 +681,22 @@ section "LoLa" {
 //  - Subscribe can be called any number of times with the same max_sample_count. If calling Subscribe again (without having called Unsubscribe) 
 //    with a different max_sample_count, ComErrc::kMaxSampleCountNotRealizable will be returned.
 
-// Contracts: 
+// Contracts:
 //  - GetNewSamples will return an error ComErrc::kNotSubscribed if there hasn't been a successful Subscribe() or there was an Unsubscribe() since then
 //  - The number of times the provided receiver is called can not be more than the minimum of:
 //    - max_num_samples provided to GetNewSamples 
 //    - the number of available SamplePtrs (The max_sample_count provided to the last successful call to Subscribe (which has not been unsubscribed) 
 //      minus the number of currently held SamplePtrs from this ProxyEvent instance).
 //  - The data pointed to by the SamplePtrs provided to receiver have the same values as the samples sent by SkeletonEvent::Send()
-//  - The SamplePtrs provided to receiver will only point to samples received from SkeletonEvent::Send() since the last time GetNewSamples() was called.
+//  - The SamplePtrs provided to receiver will only point to samples received from SkeletonEvent::Send() since the last time successful call to GetNewSamples().
+//  - The SamplePtrs provided to receiver will only point to samples sent by SkeletonEvent::Send() since the last time the service was succesfully offered.
+//  - The SamplePtrs provided to receiver will always point to the latest samples sent by SkeletonEvent::Send()
 //  - Returns the number of times the receiver was called
 //  - Either calls the receiver with all available samples or returns an error (i.e. could call receiver but still return an error)
 //
 // Intended behaviour:
-//  - All samples which have been sent by a successful SkeletonEvent::Send are provided to a call of GetNewSamples receiver (while still adhering to the preceding contracts e.g. regarding number of times receiver is called, must be subscribed etc).
+//  - All samples which have been sent by a successful SkeletonEvent::Send are provided to a call of GetNewSamples receiver (while still adhering to the preceding 
+//    contracts e.g. regarding number of times receiver is called, must be subscribed etc).
 
         section "GetNewSamples for an Event" {
 
@@ -735,17 +738,26 @@ section "LoLa" {
 
             ScoreReq.FailureMode SamplePtrReturnedWhichWasReceivedBeforeLastGetNewSamples {
                 guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "Receiver called with SamplePtr pointing to old sample which was received from SkeletonEvent::Send before the last call to GetNewSamples which may have already been provided to a previous call to GetNewSamples."
-                failureeffect = "Unknowingly receiving stale samples or samples that were already processed"
+                description = "Receiver called with SamplePtr pointing to old sample which was received from SkeletonEvent::Send before the last successful call to GetNewSamples which may have already been provided to a previous call to GetNewSamples."
+                failureeffect = "Insertion of information / Repetition of information"
+                version = 1
+                safety = ScoreReq.Asil.B
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
+            }
+
+            ScoreReq.FailureMode SamplePtrReturnedWhichWasSentBeforeLatestOfferService {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "Receiver called with SamplePtr pointing to old sample which was sent by SkeletonEvent::Send before the last successful call to Skeleton::OfferService."
+                failureeffect = "Insertion of information"
                 version = 1
                 safety = ScoreReq.Asil.B
 		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
             }
             
-            ScoreReq.FailureMode DataNotReceivedFromSkeletonAlthoughSendSucceeded {
+          // delete  ScoreReq.FailureMode CallbackNotCalledWithSampleDataNotReceivedFromSkeletonAlthoughSendSucceeded {
                 guidewords = [ ScoreReq.Guideword.LossOfFunction ]
                 description = "Skeleton has sent samples via SkeletonEvent::Send which returned success but they were never received on proxy side."
-                failureeffect = "Data is not received"
+                failureeffect = "Deletion of information"
                 version = 1
                 safety = ScoreReq.Asil.B
                 // rationale = "The wrong values are systematic faults wich are prevented using a correct slot allocation strategy. The overwrite of shared memory data was already built into the original design and can only happen if processes are started using wrong users, which is avoided using our AoU."
@@ -753,7 +765,7 @@ section "LoLa" {
             }
 
             // CallbackNotInvokedDespiteSamplesAvailable
-            ScoreReq.FailureMode CallbackNotCalledAlthoughSampleReceivedFromSkeleton {
+            ScoreReq.FailureMode CallbackNotCalledAlthoughSkeletonSendSucceeded {
                 guidewords = [ ScoreReq.Guideword.LossOfFunction ]
                 description = "Receiver is not called the expected number of times although new samples were received from SkeletonEvent::Send and the number of currently available samples has not exceeded the maximum allowed (See ReceiverIsCalledMoreTimesThanAllowed)"
                 failureeffect = "Data is not received"

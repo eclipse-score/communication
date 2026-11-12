@@ -15,14 +15,8 @@
 
 !include fta_metamodel.puml
 
-' gtodo: Check with Jochen whether this AND gate and TransferInGate are correctly used here: Here it seems that the root cause is 
-' essentially restating the failure mode (which is just a "contract violation") and in the end we will have a requirement which says
-' that if the receiver is not called the correct number of times, an error should be returned. Do we really need to break this down 
-' further e.g. with the AND gate or do we even need the FTA?
-$FailureMode("Returns success although did not call receiver correct number of times", "Communication.ReturnsSuccessAlthoughDidNotCallReceiverCorrectNumberOfTimes")
-$AndGate("AndGate1", "Communication.ReturnsSuccessAlthoughDidNotCallReceiverCorrectNumberOfTimes")
-$IntermediateEvent("Did not call receiver correct number of times", "DidNotCallReceiverCorrectNumberOfTimes", "AndGate1")
-$TransferInGate("CallbackNotCalledWithSamplesReceivedFromSkeleton", "DidNotCallReceiverCorrectNumberOfTimes")
-$RootCause("Did not return an error", "DidNotReturnAnError", "AndGate1")
+$FailureMode("Returns success although did not call receiver correct number of times", "mw_com.ReturnsSuccessAlthoughDidNotCallReceiverCorrectNumberOfTimes")
+' The root cause cannot be broken down further so we intentionally link the root cause directly to the failure mode.
+$RootCause("Returns success although did not call receiver correct number of times", "ReturnsSuccessAlthoughDidNotCallReceiverCorrectNumberOfTimesRootCause", "mw_com.ReturnsSuccessAlthoughDidNotCallReceiverCorrectNumberOfTimes")
 
 @enduml
