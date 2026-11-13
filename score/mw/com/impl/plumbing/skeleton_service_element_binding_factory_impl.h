@@ -68,7 +68,8 @@ inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
                                             "was not specified in the configuration. Terminating.";
         std::terminate();
     }
-    const auto number_of_slots = lola_event_instance_deployment.GetNumberOfSampleSlotsExcludingTracingSlot().value();
+    const auto number_of_slots =
+        static_cast<std::size_t>(lola_event_instance_deployment.GetNumberOfSampleSlotsExcludingTracingSlot().value());
 
     // If we are creating SkeletonEventProperties for an event of for a field with a notifier, then the user must
     // provide the number of slots and number of subscribers in the configuration.
@@ -84,7 +85,7 @@ inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
             std::terminate();
         }
 
-        max_subscribers = lola_event_instance_deployment.max_subscribers_.value();
+        max_subscribers = static_cast<std::size_t>(lola_event_instance_deployment.max_subscribers_.value());
     }
     else
     {
@@ -95,16 +96,18 @@ inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
     }
 
     const bool is_getter_enabled = !is_event && field_tags_store->HasGetter();
-    const auto number_of_field_getter_slots = is_getter_enabled ? lola::kMaxConcurrentFieldGetterSamplePtrs : 0U;
+    const auto number_of_field_getter_slots =
+        static_cast<std::size_t>(is_getter_enabled ? lola::kMaxConcurrentFieldGetterSamplePtrs : 0U);
 
     const bool is_setter_enabled = !is_event && field_tags_store->HasSetter();
 
-    return lola::SkeletonEventProperties{number_of_slots,
-                                         lola_event_instance_deployment.GetNumberOfTracingSlots(),
-                                         number_of_field_getter_slots,
-                                         is_setter_enabled,
-                                         max_subscribers,
-                                         lola_event_instance_deployment.enforce_max_samples_};
+    return lola::SkeletonEventProperties{
+        number_of_slots,
+        static_cast<std::size_t>(lola_event_instance_deployment.GetNumberOfTracingSlots()),
+        number_of_field_getter_slots,
+        is_setter_enabled,
+        max_subscribers,
+        lola_event_instance_deployment.enforce_max_samples_};
 }
 
 inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
@@ -135,7 +138,8 @@ inline someip::SkeletonEventProperties CreateSomeIpSkeletonEventProperties(
                                               "was not specified in the configuration. Terminating.";
         std::terminate();
     }
-    const auto number_of_slots = someip_event_instance_deployment.GetNumberOfSampleSlots().value();
+    const auto number_of_slots =
+        static_cast<std::size_t>(someip_event_instance_deployment.GetNumberOfSampleSlots().value());
 
     const bool is_event = !field_tags_store.has_value();
     const bool is_field_with_subscription_semantics = !is_event && field_tags_store->HasNotifier();
@@ -148,7 +152,7 @@ inline someip::SkeletonEventProperties CreateSomeIpSkeletonEventProperties(
                                                   "not specified in the configuration. Terminating.";
             std::terminate();
         }
-        max_subscribers = someip_event_instance_deployment.max_subscribers_.value();
+        max_subscribers = static_cast<std::size_t>(someip_event_instance_deployment.max_subscribers_.value());
     }
     else if (someip_event_instance_deployment.max_subscribers_.has_value())
     {
