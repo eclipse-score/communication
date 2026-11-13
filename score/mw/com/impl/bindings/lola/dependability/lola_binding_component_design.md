@@ -70,7 +70,7 @@ the following proxy/skeleton notification/interaction use cases:
 
 - `lola::ProxyEvent` subscribes at `lola::SkeletonEvent` (Not true currently! `Subscribe` is now done directly by the
   `lola::ProxyEvent` updating a variable of type `EventSubscriptionControl` located in shared-memory. This brought up
-  issue Ticket-174759, which eventually will bring us back to use `message_passing` (in a revised form) for subscribe
+  issue Ticket-174759, which might bring us back to use `message_passing` (in a revised form) for subscribe
   again.
 - `lola::ProxyEvent` unsubscribes at `lola::SkeletonEvent` (Not true currently, see above!)
 - `lola::ProxyEvent` registers a notification on event update.
@@ -78,7 +78,7 @@ the following proxy/skeleton notification/interaction use cases:
 - `lola::SkeletonEvent` notifies registered event notification.
 
 The first interaction is more complex as it is an `RPC` like interaction and not a simple uni-directional message.
-Our new `message_passing 2.0` under `aas/lib/message_passing` does support RPC style communication, which we will use,
+Our new `message_passing 2.0` under `score/message_passing` does support RPC style communication, which we might use,
 once we resort back to sideband channel communication for `Subscribe` and `Unsubscribe`.
 
 We encapsulate the low-level mechanisms provided by `score::mw::com::message_passing` via
@@ -90,5 +90,5 @@ class `lola::MessagePassingFacade`, which is shown in the following class model:
 
 Event subscription is technically rather an RPC as already mentioned [here](#notifications-between-skeleton-and-proxy),
 because the caller needs a feedback. As outlined above, we are currently **not** using message-passing for `subscribe`/
-`unsubscribe`, but this will change **soon** (Ticket-174759). In this case this chapter will get updated accordingly.
+`unsubscribe`, but this might change **soon** (Ticket-174759). In this case this chapter will get updated accordingly.
 
