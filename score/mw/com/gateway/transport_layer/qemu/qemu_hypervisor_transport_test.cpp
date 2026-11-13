@@ -16,6 +16,8 @@
 #include "score/mw/com/gateway/transport_layer/qemu/ivshmem/ivshmem_typed_memory_provider_mock.h"
 #include "score/mw/com/gateway/transport_layer/sample/bidirectional_transport_mock.h"
 #include "score/mw/com/gateway/transport_layer/transport_error.h"
+#include "score/mw/com/impl/test/dummy_instance_identifier_builder.h"
+#include "score/mw/com/impl/test/runtime_mock_guard.h"
 
 #include "score/mw/log/recorder_mock.h"
 
@@ -135,6 +137,11 @@ class QemuHypervisorTransportTest : public ::testing::Test
         ivshmem_provider_mock_ = std::make_shared<qemu::ivshmem::IvshmemTypedMemoryProviderMock>();
         ivshmem_provider_raw_ =
             std::static_pointer_cast<qemu::ivshmem::IvshmemTypedMemoryProviderMock>(ivshmem_provider_mock_).get();
+        // ResolveInterVmShmPaths (the default ShmPathResolver) resolves the specifier via Runtime::getInstance();
+        // without this, an unmocked Runtime would fatally abort trying to auto-load a default config file.
+        ON_CALL(runtime_mock_guard_.runtime_mock_, resolve(::testing::_))
+            .WillByDefault(::testing::Return(std::vector<impl::InstanceIdentifier>{
+                dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifier()}));
     }
 
     void TearDown() override {}
@@ -146,6 +153,8 @@ class QemuHypervisorTransportTest : public ::testing::Test
     qemu::ivshmem::IvshmemTypedMemoryProviderMock* ivshmem_provider_raw_{nullptr};
     GatewayCoreMock gateway_core_mock_;
     IBidirectionalTransport::MessageHandler captured_handler_;
+    impl::RuntimeMockGuard runtime_mock_guard_{};
+    impl::DummyInstanceIdentifierBuilder dummy_instance_identifier_builder_{};
 };
 
 TEST_F(QemuHypervisorTransportTest, CanBeConstructedWithValidParameters)
@@ -309,9 +318,11 @@ TEST_F(QemuHypervisorTransportTest,
 
     auto request = CreateMessageOfType(MessageType::kProvideServiceRequest);
 
-    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("/ctrl")))
+    EXPECT_CALL(*ivshmem_provider_raw_,
+                LookupOffsetInDirectory(::testing::HasSubstr("/intervm-shared-shmem/lola-ctl-0000000000000000-00066")))
         .WillOnce(::testing::Return(std::optional<std::uint64_t>{0U}));
-    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("/data")))
+    EXPECT_CALL(*ivshmem_provider_raw_,
+                LookupOffsetInDirectory(::testing::HasSubstr("/intervm-shared-shmem/lola-data-0000000000000000-00066")))
         .WillOnce(::testing::Return(std::optional<std::uint64_t>{4096U}));
     EXPECT_CALL(*ivshmem_provider_raw_, AllocateNamedTypedMemoryAtOffset(::testing::_, ::testing::_, 0U, ::testing::_))
         .WillOnce(::testing::Return(score::cpp::expected_blank<score::os::Error>{}));
@@ -503,9 +514,9 @@ TEST_F(QemuHypervisorTransportTest, PreCreateInterVmSharedMemoryBindsCtrlAndData
     this->WithAQemuHypervisorTransport().WithARegisteredOnSetupCallback();
 
     // LookupOffsetInDirectory returns valid offsets for both CTRL and DATA
-    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("/ctrl")))
+    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("lola-ctl-")))
         .WillOnce(::testing::Return(std::optional<std::uint64_t>{0U}));
-    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("/data")))
+    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("lola-data-")))
         .WillOnce(::testing::Return(std::optional<std::uint64_t>{4096U}));
 
     // AllocateNamedTypedMemoryAtOffset succeeds for both
@@ -528,9 +539,9 @@ TEST_F(QemuHypervisorTransportTest, PreCreateInterVmSharedMemoryReturnsEarlyWhen
     this->WithAQemuHypervisorTransport().WithARegisteredOnSetupCallback();
 
     // Both lookups happen before any allocation
-    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("/ctrl")))
+    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("lola-ctl-")))
         .WillOnce(::testing::Return(std::optional<std::uint64_t>{0U}));
-    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("/data")))
+    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("lola-data-")))
         .WillOnce(::testing::Return(std::optional<std::uint64_t>{4096U}));
 
     // CTRL allocation fails — PreCreateInterVmSharedMemory returns early, DATA allocation not attempted
@@ -548,9 +559,9 @@ TEST_F(QemuHypervisorTransportTest, PreCreateInterVmSharedMemoryReturnsEarlyWhen
 {
     this->WithAQemuHypervisorTransport().WithARegisteredOnSetupCallback();
 
-    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("/ctrl")))
+    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("lola-ctl-")))
         .WillOnce(::testing::Return(std::optional<std::uint64_t>{0U}));
-    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("/data")))
+    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("lola-data-")))
         .WillOnce(::testing::Return(std::optional<std::uint64_t>{4096U}));
 
     // CTRL succeeds
@@ -595,10 +606,11 @@ TEST_F(QemuHypervisorTransportTest, PreCreateInterVmSharedMemorySkipsCtrlBindWhe
     auto request = std::make_unique<ProvideServiceRequest>(specifier, std::vector<impl::EventInfo>{}, 0U, 4096U);
 
     // CTRL offset not found, but size is 0 — no warning logged
-    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("/ctrl")))
+    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("lola-ctl-")))
         .WillOnce(::testing::Return(std::nullopt));
     // DATA offset is present, so the nonzero DATA region can be bound.
-    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("/data")))
+    EXPECT_CALL(*ivshmem_provider_raw_,
+                LookupOffsetInDirectory(::testing::HasSubstr("/intervm-shared-shmem/lola-data-0000000000000000-00066")))
         .WillOnce(::testing::Return(std::optional<std::uint64_t>{4096U}));
     EXPECT_CALL(*ivshmem_provider_raw_,
                 AllocateNamedTypedMemoryAtOffset(::testing::_, ::testing::_, 4096U, ::testing::_))
@@ -620,12 +632,14 @@ TEST_F(QemuHypervisorTransportTest, PreCreateInterVmSharedMemorySkipsDataBindWhe
     auto request = std::make_unique<ProvideServiceRequest>(specifier, std::vector<impl::EventInfo>{}, 1024U, 0U);
 
     // CTRL offset not found, size non-zero — warning
-    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("/ctrl")))
+    EXPECT_CALL(*ivshmem_provider_raw_,
+                LookupOffsetInDirectory(::testing::HasSubstr("/intervm-shared-shmem/lola-ctl-0000000000000000-00066")))
         .WillOnce(::testing::Return(std::optional<std::uint64_t>{0U}));
     EXPECT_CALL(*ivshmem_provider_raw_, AllocateNamedTypedMemoryAtOffset(::testing::_, ::testing::_, 0U, ::testing::_))
         .WillOnce(::testing::Return(score::cpp::expected_blank<score::os::Error>{}));
     // DATA offset not found, but size is 0 — no binding is needed.
-    EXPECT_CALL(*ivshmem_provider_raw_, LookupOffsetInDirectory(::testing::HasSubstr("/data")))
+    EXPECT_CALL(*ivshmem_provider_raw_,
+                LookupOffsetInDirectory(::testing::HasSubstr("/intervm-shared-shmem/lola-data-0000000000000000-00066")))
         .WillOnce(::testing::Return(std::nullopt));
 
     EXPECT_CALL(gateway_core_mock_, ProvideService(::testing::_, ::testing::_))
@@ -647,15 +661,6 @@ TEST_F(QemuHypervisorTransportTest, PreCreateInterVmSharedMemoryLogsErrorAndRetu
 
     auto request = CreateMessageOfType(MessageType::kProvideServiceRequest);
     captured_handler_(std::move(request));
-}
-
-TEST_F(QemuHypervisorTransportTest, ResolveInterVmShmPathsReturnsPathsWithInterVmPrefix)
-{
-    const auto specifier = CreateValidInstanceSpecifier();
-    const auto paths = ResolveInterVmShmPaths(specifier);
-
-    EXPECT_EQ(paths.control, "/intervm-shared-shmem/SpeedService/Instance42/ctrl");
-    EXPECT_EQ(paths.data, "/intervm-shared-shmem/SpeedService/Instance42/data");
 }
 
 #if !defined(__QNXNTO__)
