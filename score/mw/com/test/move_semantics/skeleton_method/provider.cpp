@@ -64,6 +64,19 @@ void OfferSkeletonOrFail(Skeleton& skeleton, const char* error_msg)
     }
 }
 
+/// \brief Re-registers a method handler on an already offered Skeleton.
+/// \details impl::SkeletonMethod::RegisterHandler() must not be called while the enclosing Skeleton instance is
+/// currently offered (see impl::SkeletonBase::OfferService()/StopOfferService()). Therefore, to replace a handler
+/// at runtime, the service has to be stop-offered first, the new handler registered, and the service offered again
+/// afterwards.
+template <typename Skeleton, typename Method, typename Handler>
+void ReRegisterHandlerWhileOfferedOrFail(Skeleton& skeleton, Method& method, Handler handler, const char* error_msg)
+{
+    skeleton.StopOfferService();
+    RegisterHandlerOrFail(method, std::move(handler), error_msg);
+    OfferSkeletonOrFail(skeleton, "Provider: Re-OfferService failed: ");
+}
+
 void WaitOrFail(concurrency::Notification& notification,
                 const score::cpp::stop_token& stop_token,
                 const char* error_msg)
@@ -109,10 +122,12 @@ void RunProviderMoveConstructBeforeOffered(const score::cpp::stop_token& stop_to
     std::cout << "\nProvider: Step 6 - Wait for Handler A to be called" << std::endl;
     WaitOrFail(handler_a_called, stop_token, "Provider: Notification wait (Handler A) timed out");
 
-    // Step 7. Register Handler B on Skeleton C. Its body notifies handler_b_called when called.
-    std::cout << "\nProvider: Step 7 - Register Handler B (a * b) on Skeleton C" << std::endl;
+    // Step 7. Stop-offer Skeleton C, register Handler B (a * b, notifies handler_b_called when called), and
+    //         re-offer Skeleton C. RegisterHandler() must not be called while the service is offered.
+    std::cout << "\nProvider: Step 7 - Stop-offer, register Handler B (a * b), re-offer Skeleton C" << std::endl;
     concurrency::Notification handler_b_called{};
-    RegisterHandlerOrFail(
+    ReRegisterHandlerWhileOfferedOrFail(
+        skeleton_c,
         skeleton_c.moved_method_,
         [&handler_b_called](std::int32_t& result, const std::int32_t& a, const std::int32_t& b) {
             result = a * b;
@@ -163,10 +178,12 @@ void RunProviderMoveConstructAfterOffered(const score::cpp::stop_token& stop_tok
     std::cout << "\nProvider: Step 6 - Move construct Skeleton B = std::move(Skeleton A)" << std::endl;
     auto skeleton_b = std::move(skeleton_a);
 
-    // Step 7. Register Handler B on Skeleton B. Its body notifies handler_b_called when called.
-    std::cout << "\nProvider: Step 7 - Register Handler B (a * b) on Skeleton B" << std::endl;
+    // Step 7. Stop-offer Skeleton B, register Handler B (a * b, notifies handler_b_called when called), and
+    //         re-offer Skeleton B. RegisterHandler() must not be called while the service is offered.
+    std::cout << "\nProvider: Step 7 - Stop-offer, register Handler B (a * b), re-offer Skeleton B" << std::endl;
     concurrency::Notification handler_b_called{};
-    RegisterHandlerOrFail(
+    ReRegisterHandlerWhileOfferedOrFail(
+        skeleton_b,
         skeleton_b.moved_method_,
         [&handler_b_called](std::int32_t& result, const std::int32_t& a, const std::int32_t& b) {
             result = a * b;
@@ -227,11 +244,12 @@ void RunProviderMoveAssignBeforeOffered(const score::cpp::stop_token& stop_token
     std::cout << "\nProvider: Step 7 - Wait for Handler A to be called" << std::endl;
     WaitOrFail(handler_a_called, stop_token, "Provider: Notification wait (Handler A) timed out");
 
-    // Step 8. Register Handler C (a * b) on Skeleton C. Its body notifies
-    //         handler_c_called when called.
-    std::cout << "\nProvider: Step 8 - Register Handler C (a * b) on Skeleton C" << std::endl;
+    // Step 8. Stop-offer Skeleton C, register Handler C (a * b, notifies handler_c_called when called), and
+    //         re-offer Skeleton C. RegisterHandler() must not be called while the service is offered.
+    std::cout << "\nProvider: Step 8 - Stop-offer, register Handler C (a * b), re-offer Skeleton C" << std::endl;
     concurrency::Notification handler_c_called{};
-    RegisterHandlerOrFail(
+    ReRegisterHandlerWhileOfferedOrFail(
+        skeleton_c,
         skeleton_c.moved_method_,
         [&handler_c_called](std::int32_t& result, const std::int32_t& a, const std::int32_t& b) {
             result = a * b;
@@ -293,11 +311,12 @@ void RunProviderMoveAssignAfterOffered(const score::cpp::stop_token& stop_token)
     std::cout << "\nProvider: Step 6 - Move-assign Skeleton B = std::move(Skeleton A)" << std::endl;
     skeleton_b = std::move(skeleton_a);
 
-    // Step 7. Register Handler C (a * b) on Skeleton B. Its body notifies
-    //         handler_c_called when called.
-    std::cout << "\nProvider: Step 7 - Register Handler C (a * b) on Skeleton B" << std::endl;
+    // Step 7. Stop-offer Skeleton B, register Handler C (a * b, notifies handler_c_called when called), and
+    //         re-offer Skeleton B. RegisterHandler() must not be called while the service is offered.
+    std::cout << "\nProvider: Step 7 - Stop-offer, register Handler C (a * b), re-offer Skeleton B" << std::endl;
     concurrency::Notification handler_c_called{};
-    RegisterHandlerOrFail(
+    ReRegisterHandlerWhileOfferedOrFail(
+        skeleton_b,
         skeleton_b.moved_method_,
         [&handler_c_called](std::int32_t& result, const std::int32_t& a, const std::int32_t& b) {
             result = a * b;

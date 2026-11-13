@@ -190,6 +190,7 @@ cc_library(
     deps = [
         ":skeleton_method_binding",
         "//score/mw/com/impl:enable_reference_to_moveable_from_this",
+        "//score/mw/com/impl:flag_owner",
         "//score/mw/com/impl:method_type",
         "//score/mw/com/impl/util:type_erased_storage",
     ],
@@ -206,6 +207,7 @@ cc_library(
     deps = [
         ":method_traits_checker",
         ":skeleton_method_binding",
+        "//score/mw/com/impl:error",
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:skeleton_base",
         "//score/mw/com/impl/plumbing:skeleton_method_binding_factory",
