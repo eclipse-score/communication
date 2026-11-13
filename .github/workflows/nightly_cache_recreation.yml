@@ -166,6 +166,30 @@ jobs:
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
+  build-host-flag-group-b:
+    needs: fetch-codeql
+    uses: ./.github/workflows/_build_and_test_gcc15.yml
+    with:
+      cache-mode: "recreate-update"
+      flag-group: flag_group_b
+    permissions:
+      contents: read
+      actions: write
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+  build-asan-flag-group-b:
+    needs: fetch-codeql
+    uses: ./.github/workflows/_address_sanitizer.yml
+    with:
+      cache-mode: "recreate-update"
+      flag-group: flag_group_b
+    permissions:
+      contents: read
+      actions: write
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
   build-linters:
     needs: fetch-codeql
     uses: ./.github/workflows/_linter.yml

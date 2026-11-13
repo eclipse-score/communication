@@ -24,6 +24,10 @@ on:
         description: "When true, runs --nobuild to fetch dependencies only."
         type: string
         default: "false"
+      flag-group:
+        description: "Feature flag group (bazelrc config) to build and test with: 'flag_group_a' or 'flag_group_b'."
+        type: string
+        default: "flag_group_a"
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL:
         required: false
@@ -35,36 +39,41 @@ jobs:
     permissions:
       contents: read
       actions: write
+    env:
+      FLAG_GROUP: ${{ inputs.flag-group }}
+      # flag_group_a keeps the unsuffixed cache/artifact names, since it is equal to the defaults
+      FLAG_GROUP_SUFFIX: ${{ inputs.flag-group != 'flag_group_a' && format('-{0}', inputs.flag-group) || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
         with:
-          disk-cache: ${{ inputs.fetch-only != 'true' && 'build_and_test_host' || '' }}
+          disk-cache: ${{ inputs.fetch-only != 'true' && format('build_and_test_host{0}', env.FLAG_GROUP_SUFFIX) || '' }}
           cache-mode: ${{ inputs.cache-mode }}
           ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
       - name: Build all targets
         if: inputs.fetch-only != 'true'
-        run: bazel build --config=ci //...
+        run: bazel build --config=ci --config="${FLAG_GROUP}" //...
 
       - name: Run all tests
         if: inputs.fetch-only != 'true'
         id: run-tests
-        run: bazel test --config=ci //... --build_tests_only
+        run: bazel test --config=ci --config="${FLAG_GROUP}" //... --build_tests_only
 
       - name: Upload failed Bazel test logs
         if: inputs.fetch-only != 'true' && failure() && steps.run-tests.outcome == 'failure'
         uses: ./.github/actions/00_infrastructure/upload_bazel_testlogs_on_failure
         with:
-          artifact-name: bazel-testlogs-gcc15
+          artifact-name: bazel-testlogs-gcc15${{ env.FLAG_GROUP_SUFFIX }}
 
+      # module_integration_test is a separate Bazel module and is not affected by the flag group
       - name: Build module_integration_test
-        if: inputs.fetch-only != 'true'
+        if: inputs.fetch-only != 'true' && inputs.flag-group == 'flag_group_a'
         run: cd module_integration_test && bazel build //... && bazel mod deps --lockfile_mode=update
 
       - name: Fetch dependencies (--nobuild)
         if: inputs.fetch-only == 'true'
         run: |-
-          bazel build --nobuild --config=ci //...
+          bazel build --nobuild --config=ci --config="${FLAG_GROUP}" //...
           cd module_integration_test && bazel build --nobuild //...

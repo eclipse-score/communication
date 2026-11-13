@@ -60,6 +60,22 @@ jobs:
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
+  # Group based testing of feature flags (see CI.md#feature-flags-and-flag-groups): GCC15 and ASan/UBSan/LSan run
+  # additionally with flag_group_b. All other jobs run with the defaults, which are equal to flag_group_a.
+  # Dependencies do not differ between flag groups, so there is nothing additional to fetch in fetch-only mode.
+  build_and_test_host_flag_group_b:
+    name: GCC15 (flag group B)
+    if: inputs.fetch-only != 'true'
+    uses: ./.github/workflows/_build_and_test_gcc15.yml
+    with:
+      cache-mode: ${{ inputs.cache-mode }}
+      flag-group: flag_group_b
+    permissions:
+      contents: read
+      actions: write
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
   build_and_test_tsan:
     name: Thread Sanitizer
     uses: ./.github/workflows/_thread_sanitizer.yml
@@ -78,6 +94,19 @@ jobs:
     with:
       cache-mode: ${{ inputs.cache-mode }}
       fetch-only: ${{ inputs.fetch-only }}
+    permissions:
+      contents: read
+      actions: write
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+  build_and_test_asan_ubsan_lsan_flag_group_b:
+    name: Address & Undefined Behavior Sanitizer (flag group B)
+    if: inputs.fetch-only != 'true'
+    uses: ./.github/workflows/_address_sanitizer.yml
+    with:
+      cache-mode: ${{ inputs.cache-mode }}
+      flag-group: flag_group_b
     permissions:
       contents: read
       actions: write
