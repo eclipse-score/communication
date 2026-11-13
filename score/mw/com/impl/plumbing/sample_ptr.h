@@ -167,7 +167,7 @@ class SamplePtr final
     }
 
     /// \brief Returns the E2E result associated with this received sample.
-    e2e::E2EResult GetE2EResult() const
+    [[nodiscard]] e2e::E2EResult GetE2EResult() const
     {
         return e2e_result_;
     }

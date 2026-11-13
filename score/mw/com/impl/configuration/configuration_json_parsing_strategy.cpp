@@ -919,7 +919,7 @@ auto ParseE2EEventTypeDeployment(const score::json::Object& event_object) -> std
         "Configuration corrupted, check with json schema");
 
     const auto profile_casted = profile->second.As<std::string>();
-    const auto data_id_casted = data_id->second.As<std::uint8_t>();
+    const auto data_id_casted = data_id->second.As<std::uint32_t>();
     const auto max_delta_counter_casted = max_delta_counter->second.As<std::uint8_t>();
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         profile_casted.has_value() && data_id_casted.has_value() && max_delta_counter_casted.has_value(),

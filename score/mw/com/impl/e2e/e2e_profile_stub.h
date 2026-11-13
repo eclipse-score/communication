@@ -26,7 +26,7 @@ namespace score::mw::com::impl::e2e
 /// \brief Static profile inputs required by the POC stub.
 struct ProfileConfiguration
 {
-    std::uint8_t data_id;
+    std::uint32_t data_id;
     std::uint8_t max_delta_counter;
 };
 
@@ -48,23 +48,25 @@ struct CheckContext
 constexpr std::size_t kProfileStubHeaderSize{4U};
 
 /// \brief Adds deterministic POC metadata to a fixed-size header.
-/// \details The header contains a data ID, an eight-bit counter,
-///          and a checksum calculated over those fields and the protected payload.
+/// \details The header contains the low byte of the data ID, an eight-bit counter, and a checksum calculated over the
+///          full 32-bit data ID, the counter and the protected payload.
 /// \return False when header does not have exactly kProfileStubHeaderSize bytes.
-bool ProtectMessage(score::cpp::span<std::byte> header,
-                    score::cpp::span<const std::byte> payload,
-                    ProfileConfiguration configuration,
-                    ProtectContext& protect_context) noexcept;
+[[nodiscard]] bool ProtectMessage(score::cpp::span<std::byte> header,
+                                  score::cpp::span<const std::byte> payload,
+                                  ProfileConfiguration configuration,
+                                  ProtectContext& protect_context) noexcept;
 
 /// \brief Verifies one POC header and updates the receiver-local sequence state for valid headers.
 /// \details An invalid header or checksum produces kError, reports the sequence check as kSkipped and does not update
 ///          check_context. The counter delta is taken modulo 256, so a counter that goes back by n appears as a
 ///          gap of 256 - n.
 ///          The first valid header only seeds the sequence state and reports kOk, as there is no previous counter.
-RawCheckOutcome CheckMessage(score::cpp::span<const std::byte> header,
-                             score::cpp::span<const std::byte> payload,
-                             ProfileConfiguration configuration,
-                             CheckContext& check_context) noexcept;
+///          Every other valid header becomes the new reference, also when the sequence check fails, so the receiver
+///          re-syncs after a sender restart or a large loss (AUTOSAR PRS_E2E "Do Checks" step).
+[[nodiscard]] RawCheckOutcome CheckMessage(score::cpp::span<const std::byte> header,
+                                           score::cpp::span<const std::byte> payload,
+                                           ProfileConfiguration configuration,
+                                           CheckContext& check_context) noexcept;
 
 }  // namespace score::mw::com::impl::e2e
 

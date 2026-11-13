@@ -36,11 +36,17 @@ std::uint8_t CounterDelta(const std::uint8_t current, const std::uint8_t last) n
     return static_cast<std::uint8_t>(static_cast<std::uint32_t>(current) - static_cast<std::uint32_t>(last));
 }
 
-std::uint16_t CalculateChecksum(const std::uint8_t data_id,
+std::uint8_t DataIdLowByte(const std::uint32_t data_id) noexcept
+{
+    return static_cast<std::uint8_t>(data_id & 0xFFU);
+}
+
+std::uint16_t CalculateChecksum(const std::uint32_t data_id,
                                 const std::uint8_t counter,
                                 const score::cpp::span<const std::byte> payload) noexcept
 {
-    std::uint32_t checksum{static_cast<std::uint32_t>(data_id) + static_cast<std::uint32_t>(counter)};
+    std::uint32_t checksum{(data_id & 0xFFU) + ((data_id >> 8U) & 0xFFU) + ((data_id >> 16U) & 0xFFU) +
+                           ((data_id >> 24U) & 0xFFU) + static_cast<std::uint32_t>(counter)};
     for (const auto payload_byte : payload)
     {
         checksum += static_cast<std::uint32_t>(ToUint8(payload_byte));
@@ -74,7 +80,7 @@ bool ProtectMessage(const score::cpp::span<std::byte> header,
     }
 
     const auto counter = protect_context.next_counter;
-    header[kDataIdOffset] = static_cast<std::byte>(configuration.data_id);
+    header[kDataIdOffset] = static_cast<std::byte>(DataIdLowByte(configuration.data_id));
     header[kCounterOffset] = static_cast<std::byte>(counter);
     WriteChecksum(header, CalculateChecksum(configuration.data_id, counter, payload));
     protect_context.next_counter = static_cast<std::uint8_t>(counter + 1U);
@@ -94,7 +100,8 @@ RawCheckOutcome CheckMessage(const score::cpp::span<const std::byte> header,
     const auto counter = ToUint8(header[kCounterOffset]);
     const auto received_checksum = ReadChecksum(header);
     const auto expected_checksum = CalculateChecksum(configuration.data_id, counter, payload);
-    if ((ToUint8(header[kDataIdOffset]) != configuration.data_id) || (received_checksum != expected_checksum))
+    if ((ToUint8(header[kDataIdOffset]) != DataIdLowByte(configuration.data_id)) ||
+        (received_checksum != expected_checksum))
     {
         return {DataIntegrityStatus::kError, SequenceStatus::kSkipped};
     }
@@ -107,6 +114,7 @@ RawCheckOutcome CheckMessage(const score::cpp::span<const std::byte> header,
     }
 
     const auto delta = CounterDelta(counter, check_context.last_counter);
+    // Re-sync also on a sequence error, otherwise a sender restart would be rejected until the counter wraps.
     check_context.last_counter = counter;
 
     SequenceStatus sequence{SequenceStatus::kDisabled};

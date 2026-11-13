@@ -28,7 +28,7 @@ enum class E2EProfile : std::uint8_t
 struct E2EEventTypeDeployment
 {
     E2EProfile profile_;
-    std::uint8_t data_id_;
+    std::uint32_t data_id_;
     std::uint8_t max_delta_counter_;
 };
 

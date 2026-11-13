@@ -106,7 +106,7 @@
                                                         "type": "integer",
                                                         "title": "E2E Data Id",
                                                         "minimum": 0,
-                                                        "maximum": 255
+                                                        "maximum": 4294967295
                                                     },
                                                     "maxDeltaCounter": {
                                                         "type": "integer",

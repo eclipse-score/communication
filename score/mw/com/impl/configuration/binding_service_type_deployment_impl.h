@@ -123,7 +123,7 @@ inline auto ConvertJsonToE2EEventMap(const json::Object& json_object)
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_result.has_value(), "Invalid serialized E2E event");
         const auto& event_json = event_result.value().get();
         const auto profile = GetValueFromJson<std::uint8_t>(event_json, kProfileKey);
-        const auto data_id = GetValueFromJson<std::uint8_t>(event_json, kDataIdKey);
+        const auto data_id = GetValueFromJson<std::uint32_t>(event_json, kDataIdKey);
         const auto max_delta_counter = GetValueFromJson<std::uint8_t>(event_json, kMaxDeltaCounterKey);
         const auto event_name_view = e2e_event.first.GetAsStringView();
         const std::string event_name{event_name_view.data(), event_name_view.size()};

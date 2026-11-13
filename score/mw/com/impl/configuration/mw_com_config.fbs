@@ -115,9 +115,9 @@ table E2EEventConfig {
     profile: E2EProfile = null;
     /// @title: E2E Data Id
     /// @min: 0
-    /// @max: 255
+    /// @max: 4294967295
     /// @required
-    dataId: ubyte = null;
+    dataId: uint = null;
     /// @title: E2E Max Delta Counter
     /// @min: 0
     /// @max: 255

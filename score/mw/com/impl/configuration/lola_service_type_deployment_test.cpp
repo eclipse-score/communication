@@ -53,14 +53,15 @@ TEST(LolaServiceTypeDeploymentTest, SerializesAndDeserializesE2EEventDeployment)
                                          {{kDummyEventName, kDummyLolaEventId}},
                                          {},
                                          {},
-                                         {{kDummyEventName, E2EEventTypeDeployment{E2EProfile::kP4, 0x3AU, 2U}}}};
+                                         {{kDummyEventName, E2EEventTypeDeployment{E2EProfile::kP4, 0x1234563AU, 2U}}}};
 
     // When serializing and reconstructing it
     const LolaServiceTypeDeployment reconstructed_unit{unit.Serialize()};
 
     // Then the E2E event deployment survives the round trip unchanged
     ASSERT_EQ(reconstructed_unit.e2e_events_.size(), 1U);
-    EXPECT_EQ(reconstructed_unit.e2e_events_.at(kDummyEventName), (E2EEventTypeDeployment{E2EProfile::kP4, 0x3AU, 2U}));
+    EXPECT_EQ(reconstructed_unit.e2e_events_.at(kDummyEventName),
+              (E2EEventTypeDeployment{E2EProfile::kP4, 0x1234563AU, 2U}));
 }
 
 using LolaServiceTypeDeploymentGetServiceElementFixture = ConfigurationStructsFixture;
