@@ -18,6 +18,7 @@ filegroup(
         "dummy_root_cause_fta.puml",
         "function_called_from_multiple_threads_fta.puml",
         "misused_apis_fta.puml",
+        "shared_memory_corrupted_by_other_process.puml",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
