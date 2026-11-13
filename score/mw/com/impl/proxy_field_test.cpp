@@ -243,7 +243,7 @@ TEST(ProxyFieldTest, ProxyFieldContainsPublicFieldType)
                   "Incorrect FieldType.");
 }
 
-TEST(ProxyFieldTest, FieldWithAllTagsConstructedWithoutMethodBindingsDispatchesToEventBinding)
+TEST(ProxyFieldTest, GetSubscriptionStateOnFieldWithAllTagsConstructedWithoutMethodBindingsDispatchesToEventBinding)
 {
     // Given a ProxyField with a getter, setter and notifier which is constructed via the testing ctor with only an
     // event binding (the testing ctor accepts nullptr for the optional set / get method bindings)
@@ -468,6 +468,24 @@ TEST_F(ProxyFieldGetFixture, GetPropagatesErrorStoredInMethodReturnValue)
     EXPECT_EQ(result.error(), ComErrc::kCommunicationLinkError);
 }
 
+TEST_F(ProxyFieldGetFixture, GetDispatchesToGetMethodBindingWhenFieldAlsoHasSetter)
+{
+    // Given a ProxyField with a getter, setter and notifier which is constructed with both method bindings
+    auto field = CreateFieldWithGetAndSet();
+    getter_return_storage_ = kDummyFieldValue;
+
+    // Expecting that only the get method binding is called
+    EXPECT_CALL(get_method_binding_mock_, DoCall(0U));
+    EXPECT_CALL(set_method_binding_mock_, DoCall(_)).Times(0);
+
+    // When calling Get()
+    const auto get_result = field.Get();
+
+    // Then the call succeeds and returns the value from the get method return buffer
+    ASSERT_TRUE(get_result.has_value());
+    EXPECT_EQ(*get_result.value(), kDummyFieldValue);
+}
+
 using ProxyFieldSetFixture = ProxyFieldGetSetFixture;
 TEST_F(ProxyFieldSetFixture, SetCallsMethodWithProvidedValueAsInArg)
 {
@@ -535,25 +553,20 @@ TEST_F(ProxyFieldSetFixture, SetPropagatesErrorStoredInMethodReturnValue)
     EXPECT_EQ(result.error(), ComErrc::kCommunicationLinkError);
 }
 
-using ProxyFieldGetAndSetFixture = ProxyFieldGetSetFixture;
-TEST_F(ProxyFieldGetAndSetFixture, GetAndSetDispatchToTheirRespectiveMethodBindings)
+TEST_F(ProxyFieldSetFixture, SetDispatchesToSetMethodBindingWhenFieldAlsoHasGetter)
 {
     // Given a ProxyField with a getter, setter and notifier which is constructed with both method bindings
     auto field = CreateFieldWithGetAndSet();
-    getter_return_storage_ = kDummyFieldValue;
     setter_return_storage_ = kDummyFieldReturnValue;
 
-    // Expecting that each method binding is called exactly once
-    EXPECT_CALL(get_method_binding_mock_, DoCall(0U));
+    // Expecting that only the set method binding is called
     EXPECT_CALL(set_method_binding_mock_, DoCall(0U));
+    EXPECT_CALL(get_method_binding_mock_, DoCall(_)).Times(0);
 
-    // When calling Get() and Set()
-    const auto get_result = field.Get();
+    // When calling Set()
     const auto set_result = field.Set(kDummyFieldValue);
 
-    // Then both calls succeed and return the values from their respective method return buffers
-    ASSERT_TRUE(get_result.has_value());
-    EXPECT_EQ(*get_result.value(), kDummyFieldValue);
+    // Then the call succeeds and returns the value from the set method return buffer
     ASSERT_TRUE(set_result.has_value());
     EXPECT_EQ(*set_result.value(), kDummyFieldReturnValue);
 }
