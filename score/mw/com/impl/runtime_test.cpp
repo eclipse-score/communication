@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
 #include "score/mw/com/impl/configuration/configuration.h"
 #include "score/mw/com/impl/configuration/global_configuration.h"
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/tracing_configuration.h"
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/tracing/configuration/proxy_event_trace_point_type.h"
@@ -105,6 +106,14 @@ class RuntimeFixture : public ::testing::Test
         return *this;
     }
 
+    RuntimeFixture& WithARegisteredSomeIpServiceTypeDeployment() noexcept
+    {
+        EXPECT_NE(configuration_, nullptr);
+        configuration_->AddServiceTypeDeployment(make_ServiceIdentifierType("dummySomeIpTypeName", 0, 0),
+                                                 ServiceTypeDeployment{SomeIpServiceTypeDeployment{42U}});
+        return *this;
+    }
+
     bool IsTracingEnabled() const noexcept
     {
         auto* const tracing_runtime = runtime_->GetTracingRuntime();
@@ -142,6 +151,18 @@ TEST_F(RuntimeFixture, CtorWillCreateBindingRuntimes)
 
     // Then a binding runtime will be created
     EXPECT_NE(runtime_->GetBindingRuntime(BindingType::kLoLa), nullptr);
+}
+
+TEST_F(RuntimeFixture, GetBindingRuntimeReturnsNullptrForUnconfiguredBinding)
+{
+    // Given a Runtime object which only has a LoLa binding runtime
+    WithAnEmptyConfiguration().WithARegisteredServiceTypeDeployment().CreateRuntime();
+
+    // When retrieving the binding runtime of a binding which is not configured
+    const auto* const binding_runtime = runtime_->GetBindingRuntime(BindingType::kFake);
+
+    // Then no binding runtime is returned
+    EXPECT_EQ(binding_runtime, nullptr);
 }
 
 TEST_F(RuntimeFixture, CanInjectMock)
@@ -489,6 +510,25 @@ TEST_F(RuntimeTracingConfigTest, CreatingRuntimeNotCreateTracingRuntimeIfNoTrace
     // and will contain a valid LoLa specific runtime, but NO Lola specific tracing runtime.
     ASSERT_NE(runtime_->GetBindingRuntime(BindingType::kLoLa), nullptr);
     EXPECT_EQ(runtime_->GetBindingRuntime(BindingType::kLoLa)->GetTracingRuntime(), nullptr);
+}
+
+using RuntimeTracingConfigDeathTest = RuntimeTracingConfigTest;
+TEST_F(RuntimeTracingConfigDeathTest, CreatingRuntimeTerminatesIfTracingEnabledAndBindingRuntimeHasNoTracingRuntime)
+{
+    // Given a configuration containing only a SOME/IP service (whose binding runtime provides no tracing runtime),
+    // where tracing is enabled and a TracingFilterConfig is provided
+    tracing::TracingFilterConfig tracing_filter_config{};
+    TracingConfiguration tracing_configuration{};
+    tracing_configuration.SetTracingEnabled(true);
+
+    WithAConfigurationContaining(std::move(tracing_configuration))
+        .WithARegisteredSomeIpServiceTypeDeployment()
+        .WithATracingFilterConfig(std::move(tracing_filter_config));
+
+    // When creating a Runtime
+    // Then the process terminates, because a binding runtime without a tracing runtime violates the tracing
+    // precondition
+    EXPECT_DEATH(CreateRuntime(), ".*");
 }
 
 TEST_F(RuntimeTracingConfigTest, GetTracingFilterConfigWillReturnConfigPassedToConstructor)
