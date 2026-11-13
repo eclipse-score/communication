@@ -53,6 +53,7 @@ component_requirements(
     name = "message_passing_safety_measures",
     srcs = ["safetymeasures.trlc"],
     target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//score/message_passing/dependability:__pkg__"],
     deps = ["//score/message_passing/dependability/requirements:feature_requirements"],
 )
 
