@@ -298,7 +298,7 @@ class ServiceElementMessage : public TransportMessage
         return GetSerializeMembersImpl(*this);
     }
 
-  private:
+  protected:
     std::string instance_specifier_;
     impl::ServiceElementType element_type_{impl::ServiceElementType::INVALID};
     std::string element_name_;
@@ -342,17 +342,52 @@ class UnregisterNotificationRequest final : public ServiceElementMessage
 /// \details Sent from the source gateway to the destination gateway when a subscribed service element has new data.
 class UpdateNotification final : public ServiceElementMessage
 {
+    template <typename Self>
+    static auto GetSerializeMembersImpl(Self& self)
+    {
+        using SelfNoRef = std::remove_reference_t<Self>;
+        using StringType = std::conditional_t<std::is_const_v<SelfNoRef>, const std::string, std::string>;
+        using TypeType =
+            std::conditional_t<std::is_const_v<SelfNoRef>, const impl::ServiceElementType, impl::ServiceElementType>;
+        using DataType =
+            std::conditional_t<std::is_const_v<SelfNoRef>, const std::vector<std::uint8_t>, std::vector<std::uint8_t>>;
+        return std::tuple<StringType&, TypeType&, StringType&, DataType&>(
+            self.instance_specifier_, self.element_type_, self.element_name_, self.data_);
+    }
+
   public:
     UpdateNotification() : ServiceElementMessage(MessageType::kUpdateNotification) {}
     UpdateNotification(const score::mw::com::InstanceSpecifier& service_instance_specifier,
                        impl::ServiceElementType element_type,
-                       std::string element_name)
+                       std::string element_name,
+                       std::vector<std::uint8_t> data = {})
         : ServiceElementMessage(MessageType::kUpdateNotification,
                                 service_instance_specifier,
                                 element_type,
-                                std::move(element_name))
+                                std::move(element_name)),
+          data_(std::move(data))
     {
     }
+
+    std::size_t Serialize(score::cpp::span<std::uint8_t> buffer) const override;
+    bool Deserialize(score::cpp::span<const std::uint8_t> data) override;
+
+    const std::vector<std::uint8_t>& GetData() const
+    {
+        return data_;
+    }
+
+    auto GetSerializeMembers() const
+    {
+        return GetSerializeMembersImpl(*this);
+    }
+    auto GetSerializeMembers()
+    {
+        return GetSerializeMembersImpl(*this);
+    }
+
+  private:
+    std::vector<std::uint8_t> data_;
 };
 
 }  // namespace score::mw::com::gateway
