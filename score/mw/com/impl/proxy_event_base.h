@@ -14,6 +14,7 @@
 #ifndef SCORE_MW_COM_IMPL_PROXY_EVENT_BASE_H
 #define SCORE_MW_COM_IMPL_PROXY_EVENT_BASE_H
 
+#include "score/mw/com/impl/e2e/e2e_summary.h"
 #include "score/mw/com/impl/enable_reference_to_moveable_from_this.h"
 #include "score/mw/com/impl/event_receive_handler.h"
 #include "score/mw/com/impl/flag_owner.h"
@@ -25,11 +26,13 @@
 #include "score/mw/com/impl/tracing/proxy_event_tracing_data.h"
 
 #include "score/mw/com/impl/mocking/i_proxy_event.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 
 #include "score/language/safecpp/scoped_function/scope.h"
 #include "score/result/result.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 
 namespace score::mw::com::impl
@@ -172,6 +175,26 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     }
 
   protected:
+    /**
+     * \brief Completes the E2E result of a sample delivered by this event's binding.
+     * \details The binding only provides data_integrity and sequence. This adds historical health and summary. Call
+     *          exactly once per sample, as every call updates the historical health.
+     */
+    template <typename SampleType>
+    void AttachE2EResult(SamplePtr<SampleType>& sample)
+    {
+        const auto raw_result = sample.GetE2EResult();
+        sample.SetE2EResult(
+            e2e::BuildE2EResult(e2e::RawCheckOutcome{raw_result.data_integrity, raw_result.sequence}, health_tracker_));
+    }
+
+    /// \brief Configures the historical health tracking and clears its history.
+    /// \details Disabled until called. Terminates if an enabled configuration is inconsistent.
+    void SetHealthTrackerConfiguration(const e2e::HealthTrackerConfiguration& configuration) noexcept
+    {
+        health_tracker_ = e2e::HealthTracker{configuration};
+    }
+
     void InjectMock(IProxyEventBase& proxy_event_base_mock)
     {
         proxy_event_base_mock_ = &proxy_event_base_mock;
@@ -198,6 +221,10 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     IProxyEventBase* proxy_event_base_mock_;
 
   private:
+    /// \brief Historical E2E health. Reset on user (re)subscribe, but not when the provider restarts while subscribed,
+    ///        so a constantly breaking channel keeps a bad health.
+    e2e::HealthTracker health_tracker_{e2e::HealthTrackerConfiguration{}};
+
     /// \brief Expires the #receive_handler_scope_ in case not being called in the context of an EventReceiveHandler
     ///        (because trying to expire the scope in which we are running, would lead to a deadlock)
     void ExpireReceiveHandlerScopeIfNotInHandler();

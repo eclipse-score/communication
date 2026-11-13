@@ -61,6 +61,16 @@ class ProxyEvent : public ProxyEventBinding
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
 
+    /// \brief Health tracker configuration of the mock. Not a gmock method, so StrictMock tests need no expectation.
+    e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const noexcept override
+    {
+        return health_tracker_configuration_;
+    }
+    void SetHealthTrackerConfiguration(const e2e::HealthTrackerConfiguration& configuration) noexcept
+    {
+        health_tracker_configuration_ = configuration;
+    }
+
     /// \brief Add a sample to the internal queue of fake events.
     ///
     /// On a call to GetNewSamples(), these samples will be forwarded to the provided callable in case there is no
@@ -81,6 +91,7 @@ class ProxyEvent : public ProxyEventBinding
   private:
     using FakeSamples = std::vector<SamplePtr>;
     FakeSamples fake_samples_;
+    e2e::HealthTrackerConfiguration health_tracker_configuration_{};
 
     Result<std::size_t> GetNewFakeSamples(ProxyEventBinding::Callback&& callable, TrackerGuardFactory& tracker);
 };
@@ -136,6 +147,10 @@ class ProxyEventFacade : public ProxyEventBinding
     BindingType GetBindingType() const noexcept override
     {
         return proxy_event_.GetBindingType();
+    }
+    e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const noexcept override
+    {
+        return proxy_event_.GetHealthTrackerConfiguration();
     }
 
   private:
