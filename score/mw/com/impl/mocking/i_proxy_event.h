@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_MOCKING_I_PROXY_EVENT_H
 #define SCORE_MW_COM_IMPL_MOCKING_I_PROXY_EVENT_H
 
+#include "score/mw/com/impl/e2e/e2e_result.h"
 #include "score/mw/com/impl/event_receive_handler.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/subscription_state.h"
@@ -22,6 +23,7 @@
 
 #include <score/callback.hpp>
 
+#include <chrono>
 #include <cstdint>
 
 namespace score::mw::com::impl
@@ -38,6 +40,7 @@ class IProxyEventBase
     virtual SubscriptionState GetSubscriptionState() const = 0;
     virtual std::size_t GetFreeSampleCount() const = 0;
     virtual Result<std::size_t> GetNumNewSamplesAvailable() = 0;
+    virtual e2e::HistoricalHealthStatus EvaluateE2EHealth(std::chrono::steady_clock::time_point) = 0;
     virtual Result<void> SetReceiveHandler(EventReceiveHandler) = 0;
     virtual Result<void> UnsetReceiveHandler() = 0;
     virtual Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) = 0;
