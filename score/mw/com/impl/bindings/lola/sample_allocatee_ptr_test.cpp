@@ -41,7 +41,7 @@ class SampleAllocateePtrFixture : public ::testing::Test
     EventDataControl control_block_{kMaxSlots, memory_};
     ProviderEventDataControlLocalView<> provider_event_data_control_local_{control_block_};
     ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{control_block_};
-    EventDataControlComposite<> control_composite_{provider_event_data_control_local_, nullptr};
+    EventDataControlComposite<> control_composite_{control_block_, nullptr};
 };
 
 TEST_F(SampleAllocateePtrFixture, MarksSlotAsInvalidOnDestruction)

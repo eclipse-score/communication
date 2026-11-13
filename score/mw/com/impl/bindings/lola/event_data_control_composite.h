@@ -15,12 +15,13 @@
 
 #include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 
 #include "score/concurrency/atomic_indirector.h"
 
-#include <functional>
+#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -32,8 +33,8 @@ class EventDataControlCompositeAttorney;
 /// \details Due to the fact that we have multiple EventDataControl instances (one for ASIL, one for QM) we need to
 /// operate the control information on both instances. In order to be scalable and not clutter this information in the
 /// whole codebase, we implemented this composite which takes care of setting the status correctly in all underlying
-/// control structures. Please be aware that the control structures will live in different shared memory segments, thus
-/// it is not possible to store them by value, but rather as pointer.
+/// control structures. The composite owns the ProviderEventDataControlLocalView(s) it operates on (constructed
+/// in-place from the given EventDataControl(s)).
 template <template <class> class AtomicIndirectorType = concurrency::AtomicIndirectorReal>
 class EventDataControlComposite
 {
@@ -57,12 +58,10 @@ class EventDataControlComposite
     };
 
     /// \brief Constructs a composite which will only manage a single QM control (no ASIL use-case)
-    explicit EventDataControlComposite(ProviderEventDataControlLocalView<AtomicIndirectorType>& asil_qm_control_local);
+    explicit EventDataControlComposite(EventDataControl& asil_qm_control);
 
     /// \brief Constructs a composite which will manage QM and ASIL control at the same time
-    explicit EventDataControlComposite(
-        ProviderEventDataControlLocalView<AtomicIndirectorType>& asil_qm_control_local,
-        ProviderEventDataControlLocalView<AtomicIndirectorType>* const asil_b_control_local);
+    explicit EventDataControlComposite(EventDataControl& asil_qm_control, EventDataControl* const asil_b_control);
     /// \brief SampleAllocateePtr stores a raw pointer to this object, so any copy or move would silently invalidate
     /// that pointer, causing undefined behaviour.
     EventDataControlComposite(const EventDataControlComposite&) = delete;
@@ -100,7 +99,7 @@ class EventDataControlComposite
     bool IsQmControlDisconnected() const noexcept;
 
     /// \brief Returns the (mandatory) ProviderEventDataControlLocalView for QM.
-    ProviderEventDataControlLocalView<AtomicIndirectorType>& GetQmEventDataControlLocal() const& noexcept;
+    ProviderEventDataControlLocalView<AtomicIndirectorType>& GetQmEventDataControlLocal() noexcept;
 
     /// \brief Returns a pointer to ProviderEventDataControlLocalView for ASIL-B
     /// \return a nullptr if no ASIL-B support, otherwise, a valid pointer to the ASIL-B EventDataControl.
@@ -120,8 +119,10 @@ class EventDataControlComposite
     EventSlotStatus::EventTimeStamp GetLatestTimestamp() const noexcept;
 
   private:
-    std::reference_wrapper<ProviderEventDataControlLocalView<AtomicIndirectorType>> asil_qm_control_local_;
-    ProviderEventDataControlLocalView<AtomicIndirectorType>* asil_b_control_local_;
+    ProviderEventDataControlLocalView<AtomicIndirectorType> asil_qm_control_local_;
+
+    /// \brief Owns the ASIL-B ProviderEventDataControlLocalView, if any (empty for a QM-only composite).
+    std::optional<ProviderEventDataControlLocalView<AtomicIndirectorType>> asil_b_control_local_;
 
     /// \brief flag indicating, whether qm_control part shall be ignored in any public API (AllocateNextSlot(),
     /// EventReady(), Discard()()

@@ -55,7 +55,7 @@ class SampleAllocateePtrFixture : public ::testing::Test
     lola::EventDataControl event_data_ctrl_qm_{0, fake_memory_resource_};
     lola::ProviderEventDataControlLocalView<> provider_event_data_ctrl_qm_local_{event_data_ctrl_qm_};
     lola::ConsumerEventDataControlLocalView<> consumer_event_data_ctrl_qm_local_{event_data_ctrl_qm_};
-    lola::EventDataControlComposite<> event_data_ctrl_{provider_event_data_ctrl_qm_local_, nullptr};
+    lola::EventDataControlComposite<> event_data_ctrl_{event_data_ctrl_qm_, nullptr};
     lola::SlotIndexType event_data_slot_index_{std::numeric_limits<lola::SlotIndexType>::max()};
     lola::SampleAllocateePtr lola_allocatee_ptr_{&value_,
                                                  event_data_ctrl_,
@@ -535,7 +535,7 @@ TEST_F(SampleAllocateePtrFixture, UnderlyingLolaPtrIsFreedOnDestruction)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given a SampleAllocateePtr with an underlying lola SampleAllocateePtr
-    lola::EventDataControlComposite<> event_data_ctrl{provider_event_data_ctrl_qm_local_, nullptr};
+    lola::EventDataControlComposite<> event_data_ctrl{event_data_ctrl_qm_, nullptr};
 
     bool is_destructed{false};
     ObjectDestructionNotifier object_destruction_notifier(is_destructed);
