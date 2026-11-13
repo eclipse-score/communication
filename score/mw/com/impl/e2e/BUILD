@@ -15,6 +15,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
     name = "e2e_result",
+    srcs = ["e2e_result.cpp"],
     hdrs = ["e2e_result.h"],
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
@@ -45,5 +46,19 @@ cc_library(
     deps = [
         ":e2e_health_tracker",
         ":e2e_result",
+    ],
+)
+
+cc_library(
+    name = "e2e_profile_stub",
+    srcs = ["e2e_profile_stub.cpp"],
+    hdrs = [
+        "e2e_profile_stub.h",
+    ],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        ":e2e_result",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )

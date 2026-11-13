@@ -267,6 +267,14 @@ void ConfigurationStructsFixture::ExpectLolaServiceTypeDeploymentObjectsEqual(
         EXPECT_EQ(lhs_it.second, rhs_it->second);
     }
 
+    ASSERT_EQ(lhs.e2e_events_.size(), rhs.e2e_events_.size());
+    for (const auto& lhs_e2e_event : lhs.e2e_events_)
+    {
+        const auto rhs_it = rhs.e2e_events_.find(lhs_e2e_event.first);
+        ASSERT_NE(rhs_it, rhs.e2e_events_.end());
+        EXPECT_EQ(lhs_e2e_event.second, rhs_it->second);
+    }
+
     ASSERT_EQ(lhs.fields_.size(), rhs.fields_.size());
     for (const auto& lhs_it : lhs.fields_)
     {
