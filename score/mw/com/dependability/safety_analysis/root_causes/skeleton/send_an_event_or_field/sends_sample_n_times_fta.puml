@@ -17,6 +17,6 @@
 
 $FailureMode("Same sample is sent N times", "Communication.SendingAnEventOrFieldSendsSameSampleNtimes")
 
-$RootCause("Copy on Send allocates multiple SampleAllocateePtrs", "Communication.CopyOnSendAllocatesMultipleSampleAllocateePtrs", "Communication.SendingAnEventOrFieldSendsSameSampleNtimes")
+$RootCause("Copy on Send allocates multiple SampleAllocateePtrs", "CopyOnSendAllocatesMultipleSampleAllocateePtrs", "Communication.SendingAnEventOrFieldSendsSameSampleNtimes")
 
 @enduml

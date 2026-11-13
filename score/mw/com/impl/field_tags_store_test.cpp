@@ -14,6 +14,10 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
+#include <cstddef>
+#include <tuple>
+
 namespace score::mw::com::impl
 {
 namespace
@@ -73,6 +77,38 @@ TEST(FieldTagsStoreTest, CreatingWithNotifierAndGetterAndSetterReturnsTrueForAll
     EXPECT_TRUE(store.HasSetter());
     EXPECT_TRUE(store.HasGetter());
 }
+
+// All 2^3 possible combinations of the notifier, getter and setter tags. Every combination is distinct.
+const std::array<FieldTagsStore, 8> kAllTagCombinations{FieldTagsStore::Create<>(),
+                                                        FieldTagsStore::Create<WithNotifier>(),
+                                                        FieldTagsStore::Create<WithGetter>(),
+                                                        FieldTagsStore::Create<WithSetter>(),
+                                                        FieldTagsStore::Create<WithNotifier, WithGetter>(),
+                                                        FieldTagsStore::Create<WithNotifier, WithSetter>(),
+                                                        FieldTagsStore::Create<WithGetter, WithSetter>(),
+                                                        FieldTagsStore::Create<WithNotifier, WithGetter, WithSetter>()};
+
+class FieldTagsStoreEqualityFixture : public ::testing::TestWithParam<std::tuple<std::size_t, std::size_t>>
+{
+};
+
+TEST_P(FieldTagsStoreEqualityFixture, StoresAreEqualIfAndOnlyIfTheyHaveTheSameTags)
+{
+    const auto [lhs_index, rhs_index] = GetParam();
+
+    // Given two FieldTagsStores created from any combination of tags
+    const auto& lhs = kAllTagCombinations.at(lhs_index);
+    const auto& rhs = kAllTagCombinations.at(rhs_index);
+
+    // When comparing them
+    // Then they are equal only if both were created from the same combination of tags
+    EXPECT_EQ(lhs == rhs, lhs_index == rhs_index);
+}
+
+INSTANTIATE_TEST_SUITE_P(FieldTagsStoreEqualityFixture,
+                         FieldTagsStoreEqualityFixture,
+                         ::testing::Combine(::testing::Range<std::size_t>(0U, kAllTagCombinations.size()),
+                                            ::testing::Range<std::size_t>(0U, kAllTagCombinations.size())));
 
 }  // namespace
 }  // namespace score::mw::com::impl

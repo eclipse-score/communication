@@ -26,6 +26,7 @@ component(
     ],
     requirements = [
         "//score/message_passing/dependability/requirements:component_requirements",
+        "//score/message_passing/dependability/safety_analysis:message_passing_safety_measures",
     ],
     tags = ["manual"],
     target_compatible_with = ["@platforms//os:linux"],

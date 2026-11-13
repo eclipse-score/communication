@@ -35,6 +35,7 @@ filegroup(
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/send_an_event_or_field:data_only_partially_sent_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/send_an_event_or_field:does_not_free_resources_after_usage_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/send_an_event_or_field:only_partially_notifies_user_fta",
+        "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/send_an_event_or_field:sends_sample_n_times_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/send_an_event_or_field:sends_to_wrong_consumer_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/stop_offer_a_service:offer_not_stopped_in_sd_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/stop_offer_a_service:offer_stopped_for_wrong_instance_in_sd_fta",

@@ -1648,6 +1648,7 @@ cc_unit_test(
         ":runtime_mock",
         ":skeleton_event",
         "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/mocking:skeleton_event_mock",
         "//score/mw/com/impl/mocking:test_type_utilities",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
