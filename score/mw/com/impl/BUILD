@@ -1583,15 +1583,10 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_event_base_test",
     srcs = ["proxy_event_base_test.cpp"],
-    features = [
-        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
-        "-aborts_upon_exception",
-    ],
     deps = [
         ":impl",
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:proxy_resources",
-        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
 

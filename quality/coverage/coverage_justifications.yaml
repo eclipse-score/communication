@@ -187,6 +187,7 @@ justifications:
       In the production ProxyFieldImpl ctor, each Make*IfEnabled helper whose tag is in the pack returns the result
       of std::make_unique, which never returns nullptr (it throws std::bad_alloc on allocation failure). So every
       dispatch checked by these asserts is always non-null and the assert-failure paths are unreachable.
+
   - id: subscribe-state-exhaustive
     category: defensive_programming
     platforms: [linux, qnx]

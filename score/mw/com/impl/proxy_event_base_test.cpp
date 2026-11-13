@@ -23,7 +23,6 @@
 #include "score/mw/com/impl/test/proxy_resources.h"
 
 #include <score/assert.hpp>
-#include <score/assert_support.hpp>
 #include <score/blank.hpp>
 #include <score/utility.hpp>
 
@@ -125,9 +124,9 @@ template <typename T>
 using ProxyEventBaseSubscribeFixture = ProxyEventBaseFixture<T>;
 TYPED_TEST_SUITE(ProxyEventBaseSubscribeFixture, MyTypes, );
 
-// ProxyField::Subscribe is noexcept, so contract violations in ProxyEventBase::Subscribe can only be caught via a
-// ProxyEvent.
-using ProxyEventBaseSubscribeContractFixture = ProxyEventBaseFixture<ProxyEventStruct>;
+template <typename T>
+using ProxyEventBaseSubscribeDeathTest = ProxyEventBaseFixture<T>;
+TYPED_TEST_SUITE(ProxyEventBaseSubscribeDeathTest, MyTypes, );
 
 template <typename T>
 using ProxyEventBaseGetSubscriptionStatefixture = ProxyEventBaseFixture<T>;
@@ -912,25 +911,27 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeWhileBindingReturnsIn
     EXPECT_TRUE(subscribe_result.has_value());
 }
 
-TEST_F(ProxyEventBaseSubscribeContractFixture,
-       CallingSubscribeWhileSubscribedWithoutMaxSampleCountInBindingViolatesContract)
+TYPED_TEST(ProxyEventBaseSubscribeDeathTest, CallingSubscribeWhileSubscribedWithoutMaxSampleCountInBindingTerminates)
 {
-    const std::uint8_t max_sample_count{7U};
+    const auto CallSubscribeWhileSubscribedWithoutMaxSampleCount = [this]() {
+        const std::uint8_t max_sample_count{7U};
 
-    // Given a Service Element, that is connected to a mock binding
-    this->CreateServiceElement();
+        // Given a Service Element, that is connected to a mock binding
+        this->CreateServiceElement();
 
-    // and given that the binding reports being subscribed
-    EXPECT_CALL(*this->mock_service_element_binding_, GetSubscriptionState())
-        .WillOnce(Return(SubscriptionState::kSubscribed));
+        // and given that the binding reports being subscribed
+        EXPECT_CALL(*this->mock_service_element_binding_, GetSubscriptionState())
+            .WillOnce(Return(SubscriptionState::kSubscribed));
 
-    // but that the binding has no current max sample count set
-    EXPECT_CALL(*this->mock_service_element_binding_, GetMaxSampleCount()).WillOnce(Return(std::nullopt));
+        // but that the binding has no current max sample count set
+        EXPECT_CALL(*this->mock_service_element_binding_, GetMaxSampleCount()).WillOnce(Return(std::nullopt));
 
-    // When Subscribe is called on the Service Element
-    // Then a contract violation occurs since a max sample count must be set when subscribed
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(std::ignore =
-                                                          this->service_element_->Subscribe(max_sample_count));
+        // When Subscribe is called on the Service Element
+        std::ignore = this->service_element_->Subscribe(max_sample_count);
+    };
+
+    // Then the program terminates since a max sample count must be set when subscribed
+    EXPECT_DEATH(CallSubscribeWhileSubscribedWithoutMaxSampleCount(), ".*");
 }
 
 TYPED_TEST(ProxyEventBaseGetSubscriptionStatefixture, GetSubscriptionStateDispatchesToBinding)
