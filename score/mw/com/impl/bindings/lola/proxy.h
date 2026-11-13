@@ -227,6 +227,12 @@ class Proxy : public ProxyBinding
             enabled_method_data) const;
     std::string GetMethodChannelShmName() const;
 
+    /// Declared before the shared memory resources so that they are destroyed after them: the shared lock on the
+    /// usage marker file must be held until our mappings are released. Otherwise a Skeleton in this process can see
+    /// the marker free while the shm is still open and treat it as stale.
+    std::optional<memory::shared::LockFile> service_instance_usage_marker_file_;
+    std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
+        service_instance_usage_flock_mutex_and_lock_;
     std::shared_ptr<memory::shared::ManagedMemoryResource> control_;
     std::shared_ptr<memory::shared::ManagedMemoryResource> data_;
     std::shared_ptr<memory::shared::ManagedMemoryResource> method_shm_resource_;
@@ -241,9 +247,6 @@ class Proxy : public ProxyBinding
     /// currently registered Proxy service elements.
     std::mutex proxy_event_registration_mutex_;
     bool is_service_instance_available_;
-    std::optional<memory::shared::LockFile> service_instance_usage_marker_file_;
-    std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
-        service_instance_usage_flock_mutex_and_lock_;
     /// Mutex which synchronises registration of Proxy methods via Proxy::RegisterMethod with the
     /// FindServiceHandler in find_service_guard_ which will call ServiceAvailabilityChangeHandler iterating over
     /// proxy_methods_.
