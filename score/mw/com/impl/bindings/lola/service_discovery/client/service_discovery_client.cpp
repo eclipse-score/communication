@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2025, 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -23,6 +23,8 @@
 #include <score/expected.hpp>
 #include <score/utility.hpp>
 
+#include <algorithm>
+#include <array>
 #include <cstdint>
 #include <exception>
 #include <mutex>
@@ -299,22 +301,25 @@ auto ServiceDiscoveryClient::TransferNewSearchRequest(NewSearchRequest search_re
     std::unordered_set<os::InotifyWatchDescriptor> watch_descriptor_placeholder{};
     watch_descriptor_placeholder.reserve(watch_descriptors.size());
 
-    const auto added_search_request = search_requests_.emplace(find_service_handle,
-                                                               SearchRequest{std::move(watch_descriptor_placeholder),
-                                                                             std::move(on_service_found_callback),
-                                                                             instance_identifier,
-                                                                             previous_handles});
+    const auto added_search_request = search_requests_.emplace(
+        find_service_handle,
+        SearchRequest{std::move(watch_descriptor_placeholder),
+                      std::make_shared<FindServiceHandler<HandleType>>(std::move(on_service_found_callback)),
+                      instance_identifier,
+                      previous_handles});
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         added_search_request.second, "The FindServiceHandle should be unique for every call to StartFindService");
 
     for (const auto& watch_descriptor : watch_descriptors)
     {
-        const auto watch_iterator = StoreWatch(watch_descriptor.first, watch_descriptor.second);
+        const auto watch_iterator = StoreWatch(watch_descriptor.first, watch_descriptor.second, known_instances);
         LinkWatchWithSearchRequest(watch_iterator, added_search_request.first);
     }
 
     known_instances_.asil_b.Merge(std::move(known_instances.asil_b));
     known_instances_.asil_qm.Merge(std::move(known_instances.asil_qm));
+    const auto handles = GetKnownHandles(instance_identifier, known_instances_);
+    added_search_request.first->second.handles = std::unordered_set<HandleType>{handles.cbegin(), handles.cend()};
 
     return *(added_search_request.first);
 }
@@ -460,12 +465,19 @@ auto ServiceDiscoveryClient::HandleDeletionEvents(const std::vector<os::InotifyE
 
         const bool file_was_deleted = ReadMaskSet(event, os::InotifyEvent::ReadMask::kInDelete);
 
-        const auto& [enriched_instance_identifier, search_keys] = watch_iterator->second;
+        auto& [enriched_instance_identifier, search_keys, flag_file_names] = watch_iterator->second;
         if (file_was_deleted)
         {
             if (enriched_instance_identifier.GetBindingSpecificInstanceId<LolaServiceInstanceId>().has_value())
             {
                 const auto event_name = event.GetName();
+                // Ignore removals predating this watch's logical replacement, not later provider withdrawals.
+                if (flag_file_names.has_value() &&
+                    FlagFileCrawler::ParseQualityTypeFromString(event_name) != QualityType::kInvalid &&
+                    flag_file_names->erase(std::string{event_name}) == 0U)
+                {
+                    continue;
+                }
                 OnInstanceFlagFileRemoved(watch_iterator, event_name);
                 impacted_searches.insert(search_keys.cbegin(), search_keys.cend());
             }
@@ -497,7 +509,7 @@ auto ServiceDiscoveryClient::HandleCreationEvents(const std::vector<os::InotifyE
             continue;
         }
 
-        const auto& [enriched_instance_identifier, search_keys] = watch_iterator->second;
+        const auto& [enriched_instance_identifier, search_keys, flag_file_names] = watch_iterator->second;
         const auto event_name = event.GetName();
         if (enriched_instance_identifier.GetBindingSpecificInstanceId<LolaServiceInstanceId>().has_value())
         {
@@ -584,25 +596,59 @@ auto ServiceDiscoveryClient::CallHandlers(const std::unordered_set<FindServiceHa
 
         previous_handles = new_handles;
 
-        const auto& handler = search_iterator->second.find_service_handler;
+        // A reentrant StartFindService may retire this search, but must not destroy the executing callback.
+        const auto handler = search_iterator->second.find_service_handler;
         // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "I a function is declared to be
         // noexcept, noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception"
         // we can't add noexcept to score::cpp::callback signature.
         // coverity[autosar_cpp14_a15_4_2_violation]
-        handler(std::move(known_handles), search_key);
+        (*handler)(std::move(known_handles), search_key);
 
         mw::log::LogDebug("lola") << "LoLa SD: Asynchronous call to handler for FindServiceHandle"
                                   << FindServiceHandleView{search_key}.getUid() << "finished";
     }
 }
 
+bool ServiceDiscoveryClient::HasActiveSearch(const Watch& watch) const
+{
+    return std::any_of(
+        watch.find_service_handles.cbegin(), watch.find_service_handles.cend(), [this](const auto handle) {
+            return obsolete_search_requests_.find(handle) == obsolete_search_requests_.cend();
+        });
+}
+
 auto ServiceDiscoveryClient::StoreWatch(const os::InotifyWatchDescriptor& watch_descriptor,
-                                        const EnrichedInstanceIdentifier& enriched_instance_identifier)
+                                        const EnrichedInstanceIdentifier& enriched_instance_identifier,
+                                        QualityAwareContainer<KnownInstancesContainer>& known_instances)
     -> WatchesContainer::iterator
 {
     const auto watch_result = watches_.emplace(
-        watch_descriptor, Watch{enriched_instance_identifier, std::unordered_set<FindServiceHandle>{}});
+        watch_descriptor, Watch{enriched_instance_identifier, std::unordered_set<FindServiceHandle>{}, std::nullopt});
     const auto identifier = LolaServiceInstanceIdentifier{enriched_instance_identifier};
+    if (!watch_result.second && !HasActiveSearch(watch_result.first->second) && identifier.GetInstanceId().has_value())
+    {
+        auto& watch = watch_result.first->second;
+        watch.flag_file_names.emplace();
+        known_instances_.asil_b.Remove(enriched_instance_identifier);
+        known_instances_.asil_qm.Remove(enriched_instance_identifier);
+        known_instances.asil_b.Remove(enriched_instance_identifier);
+        known_instances.asil_qm.Remove(enriched_instance_identifier);
+        constexpr std::array<QualityType, 2> qualities{QualityType::kASIL_B, QualityType::kASIL_QM};
+        for (const auto quality : qualities)
+        {
+            const EnrichedInstanceIdentifier quality_identifier{enriched_instance_identifier, quality};
+            const auto paths = FlagFile::GetMatchingPaths(quality_identifier);
+            if (!paths.empty())
+            {
+                auto& instances = quality == QualityType::kASIL_B ? known_instances.asil_b : known_instances.asil_qm;
+                score::cpp::ignore = instances.Insert(quality_identifier);
+            }
+            for (const auto& path : paths)
+            {
+                score::cpp::ignore = watch.flag_file_names->emplace(path.Filename().Native());
+            }
+        }
+    }
 
     score::cpp::ignore = watched_identifiers_.emplace(
         identifier, IdentifierWatches{watch_descriptor, std::unordered_set<os::InotifyWatchDescriptor>{}});
@@ -724,7 +770,8 @@ Result<void> ServiceDiscoveryClient::StartFindService(const FindServiceHandle fi
     // reuse cache data.
     const auto identifier = LolaServiceInstanceIdentifier(enriched_instance_identifier);
     const auto watched_identifier = watched_identifiers_.find(identifier);
-    if (watched_identifier != watched_identifiers_.end() && watched_identifier->second.watch_descriptor.has_value())
+    if (watched_identifier != watched_identifiers_.end() && watched_identifier->second.watch_descriptor.has_value() &&
+        HasActiveSearch(watches_.at(watched_identifier->second.watch_descriptor.value())))
     {
         known_handles = GetKnownHandles(enriched_instance_identifier, known_instances_);
 
@@ -763,13 +810,14 @@ Result<void> ServiceDiscoveryClient::StartFindService(const FindServiceHandle fi
                                   std::move(handler),
                                   std::move(known_instances),
                                   std::unordered_set<HandleType>{known_handles.cbegin(), known_handles.cend()}});
+    known_handles = GetKnownHandles(enriched_instance_identifier, known_instances_);
 
     if (!(known_handles.empty()))
     {
         mw::log::LogDebug("lola") << "LoLa SD: Synchronously calling handler for FindServiceHandle"
                                   << FindServiceHandleView{find_service_handle}.getUid();
-        const auto& stored_handler = stored_search_request.second.find_service_handler;
-        stored_handler(known_handles, find_service_handle);
+        const auto stored_handler = stored_search_request.second.find_service_handler;
+        (*stored_handler)(known_handles, find_service_handle);
         mw::log::LogDebug("lola") << "LoLa SD: Synchronous call to handler for FindServiceHandle"
                                   << FindServiceHandleView{find_service_handle}.getUid() << "finished";
     }
@@ -784,7 +832,7 @@ Result<void> ServiceDiscoveryClient::StartFindService(const FindServiceHandle fi
 auto ServiceDiscoveryClient::OnInstanceDirectoryCreated(const WatchesContainer::iterator& watch_iterator,
                                                         std::string_view name) -> void
 {
-    const auto& [enriched_instance_identifier, search_keys] = watch_iterator->second;
+    const auto& [enriched_instance_identifier, search_keys, flag_file_names] = watch_iterator->second;
 
     const auto expected_instance_id = FlagFileCrawler::ConvertFromStringToInstanceId(name);
     if (!(expected_instance_id.has_value()))
@@ -805,7 +853,7 @@ auto ServiceDiscoveryClient::OnInstanceDirectoryCreated(const WatchesContainer::
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(watch_descriptors.size() == 1U,
                                                 "Outside tampering. Must contain one watch descriptor.");
 
-    auto watch = StoreWatch(watch_descriptors.begin()->first, watch_descriptors.begin()->second);
+    auto watch = StoreWatch(watch_descriptors.begin()->first, watch_descriptors.begin()->second, known_instances);
     for (const auto& search_key : search_keys)
     {
         const auto search_iterator = search_requests_.find(search_key);
@@ -820,8 +868,22 @@ void ServiceDiscoveryClient::OnInstanceFlagFileCreated(const WatchesContainer::i
                                                        const std::string_view name)
 {
     const auto& enriched_instance_identifier = watch_iterator->second.enriched_instance_identifier;
+    auto& flag_file_names = watch_iterator->second.flag_file_names;
 
     const auto event_quality_type = FlagFileCrawler::ParseQualityTypeFromString(name);
+    if (flag_file_names.has_value() && event_quality_type != QualityType::kInvalid)
+    {
+        const auto paths =
+            FlagFile::GetMatchingPaths(EnrichedInstanceIdentifier{enriched_instance_identifier, event_quality_type});
+        const auto flag_exists = std::any_of(paths.cbegin(), paths.cend(), [name](const auto& path) {
+            return path.Filename().Native() == name;
+        });
+        if (!flag_exists)
+        {
+            return;
+        }
+        score::cpp::ignore = flag_file_names->emplace(name);
+    }
 
     // Suppress "AUTOSAR C++14 M6-4-3" rule finding. This rule declares: "A switch statement shall be
     // a well-formed switch statement".

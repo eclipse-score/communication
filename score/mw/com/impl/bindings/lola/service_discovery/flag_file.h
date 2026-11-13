@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2025, 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -20,6 +20,7 @@
 
 #include <chrono>
 #include <string_view>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
@@ -60,6 +61,10 @@ class FlagFile
     /// in the instance directory, this function will always return false if the InstanceIdentifier does not contain an
     /// Instance ID.
     static auto Exists(const EnrichedInstanceIdentifier& enriched_instance_identifier) -> bool;
+
+    /// Returns the regular flag files matching the instance and quality.
+    static auto GetMatchingPaths(const EnrichedInstanceIdentifier& enriched_instance_identifier)
+        -> std::vector<filesystem::Path>;
 
     /// \brief Creates each directory in the search path (found using GetSearchPathForIdentifier()) for an
     /// InstanceIdentifier in the filesystem.
