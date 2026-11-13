@@ -12,34 +12,33 @@
 # *******************************************************************************
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
-    "architectural_design",
+    "component",
     "dependable_element",
-    "unit_design",
 )
 
-# Class diagrams are passed through directly to Sphinx (sphinxcontrib-plantuml
-# renders them at doc-build time). The RST wrapper references the .puml file
-# via '.. uml::' so both must be listed together in 'static'.
-unit_design(
-    name = "unit_design",
-    static = ["public_api.puml"],
+exports_files(
+    ["public_api.puml"],
+    visibility = ["//score/memory/shared/dependability/architectural_design:__pkg__"],
 )
 
-# TODO: remove this separate architectural_design target once unit_design
-# supports public_api directly.
-architectural_design(
-    name = "memory_shared_architectural_design",
-    package = "memory_shared_api",
-    public_api = ["public_api.puml"],
-    visibility = ["//score/memory/shared/dependability:__subpackages__"],
+component(
+    name = "memory_shared",
+    components = [
+        "//score/memory/shared:allocator_pointer",
+        "//score/memory/shared:factory_resources",
+        "//score/memory/shared:pointer_arithmetic",
+    ],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
 )
 
 # Step 0 (tutorial) setup: requirements and assumptions_of_use are filled in
 # by later stories.
 dependable_element(
     name = "dependable_element_memory_shared",
-    architectural_design = [":memory_shared_architectural_design"],
-    components = [],
+    architectural_design = ["//score/memory/shared/dependability/architectural_design:software_architectural_design"],
+    components = [":memory_shared"],
     dependability_analysis = ["//score/memory/shared/dependability/safety_analysis:memory_shared_dependability_analysis"],
     integrity_level = "B",
     maturity = "development",
