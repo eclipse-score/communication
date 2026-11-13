@@ -194,6 +194,36 @@
       "signature": "using SubscriptionState = ::score::mw::com::impl::SubscriptionState"
     },
     {
+      "name": "E2EResult",
+      "qualified_name": "score::mw::com::E2EResult",
+      "kind": "type_alias",
+      "signature": "using E2EResult = impl::e2e::E2EResult"
+    },
+    {
+      "name": "DataIntegrityStatus",
+      "qualified_name": "score::mw::com::DataIntegrityStatus",
+      "kind": "type_alias",
+      "signature": "using DataIntegrityStatus = impl::e2e::DataIntegrityStatus"
+    },
+    {
+      "name": "SequenceStatus",
+      "qualified_name": "score::mw::com::SequenceStatus",
+      "kind": "type_alias",
+      "signature": "using SequenceStatus = impl::e2e::SequenceStatus"
+    },
+    {
+      "name": "HistoricalHealthStatus",
+      "qualified_name": "score::mw::com::HistoricalHealthStatus",
+      "kind": "type_alias",
+      "signature": "using HistoricalHealthStatus = impl::e2e::HistoricalHealthStatus"
+    },
+    {
+      "name": "E2ESummary",
+      "qualified_name": "score::mw::com::E2ESummary",
+      "kind": "type_alias",
+      "signature": "using E2ESummary = impl::e2e::Summary"
+    },
+    {
       "name": "MethodReturnTypePtr",
       "qualified_name": "score::mw::com::MethodReturnTypePtr",
       "kind": "template_type_alias",
@@ -802,6 +832,12 @@
       "signature": "Get : pointer () const noexcept"
     },
     {
+      "name": "GetE2EResult",
+      "qualified_name": "score::mw::com::SamplePtr::GetE2EResult",
+      "kind": "method",
+      "signature": "GetE2EResult : e2e::E2EResult () const [[nodiscard]]"
+    },
+    {
       "name": "Reset",
       "qualified_name": "score::mw::com::SamplePtr::Reset",
       "kind": "method",
@@ -896,6 +932,126 @@
       "qualified_name": "score::mw::com::SamplePtr::~SamplePtr<SampleType>",
       "kind": "destructor",
       "signature": "~SamplePtr<SampleType> : void () noexcept"
+    },
+    {
+      "name": "data_integrity",
+      "qualified_name": "score::mw::com::E2EResult::data_integrity",
+      "kind": "field",
+      "signature": "data_integrity : DataIntegrityStatus"
+    },
+    {
+      "name": "historical_health",
+      "qualified_name": "score::mw::com::E2EResult::historical_health",
+      "kind": "field",
+      "signature": "historical_health : HistoricalHealthStatus"
+    },
+    {
+      "name": "sequence",
+      "qualified_name": "score::mw::com::E2EResult::sequence",
+      "kind": "field",
+      "signature": "sequence : SequenceStatus"
+    },
+    {
+      "name": "summary",
+      "qualified_name": "score::mw::com::E2EResult::summary",
+      "kind": "field",
+      "signature": "summary : Summary"
+    },
+    {
+      "name": "kDisabled",
+      "qualified_name": "score::mw::com::DataIntegrityStatus::kDisabled",
+      "kind": "enum_value",
+      "signature": "kDisabled"
+    },
+    {
+      "name": "kError",
+      "qualified_name": "score::mw::com::DataIntegrityStatus::kError",
+      "kind": "enum_value",
+      "signature": "kError"
+    },
+    {
+      "name": "kOk",
+      "qualified_name": "score::mw::com::DataIntegrityStatus::kOk",
+      "kind": "enum_value",
+      "signature": "kOk"
+    },
+    {
+      "name": "kDisabled",
+      "qualified_name": "score::mw::com::SequenceStatus::kDisabled",
+      "kind": "enum_value",
+      "signature": "kDisabled"
+    },
+    {
+      "name": "kErrorGapExceedsThreshold",
+      "qualified_name": "score::mw::com::SequenceStatus::kErrorGapExceedsThreshold",
+      "kind": "enum_value",
+      "signature": "kErrorGapExceedsThreshold"
+    },
+    {
+      "name": "kErrorRepeated",
+      "qualified_name": "score::mw::com::SequenceStatus::kErrorRepeated",
+      "kind": "enum_value",
+      "signature": "kErrorRepeated"
+    },
+    {
+      "name": "kOk",
+      "qualified_name": "score::mw::com::SequenceStatus::kOk",
+      "kind": "enum_value",
+      "signature": "kOk"
+    },
+    {
+      "name": "kOkGapWithinThreshold",
+      "qualified_name": "score::mw::com::SequenceStatus::kOkGapWithinThreshold",
+      "kind": "enum_value",
+      "signature": "kOkGapWithinThreshold"
+    },
+    {
+      "name": "kSkipped",
+      "qualified_name": "score::mw::com::SequenceStatus::kSkipped",
+      "kind": "enum_value",
+      "signature": "kSkipped"
+    },
+    {
+      "name": "kDisabled",
+      "qualified_name": "score::mw::com::HistoricalHealthStatus::kDisabled",
+      "kind": "enum_value",
+      "signature": "kDisabled"
+    },
+    {
+      "name": "kError",
+      "qualified_name": "score::mw::com::HistoricalHealthStatus::kError",
+      "kind": "enum_value",
+      "signature": "kError"
+    },
+    {
+      "name": "kOk",
+      "qualified_name": "score::mw::com::HistoricalHealthStatus::kOk",
+      "kind": "enum_value",
+      "signature": "kOk"
+    },
+    {
+      "name": "kDisabled",
+      "qualified_name": "score::mw::com::E2ESummary::kDisabled",
+      "kind": "enum_value",
+      "signature": "kDisabled"
+    },
+    {
+      "name": "kError",
+      "qualified_name": "score::mw::com::E2ESummary::kError",
+      "kind": "enum_value",
+      "signature": "kError"
+    },
+    {
+      "name": "kOk",
+      "qualified_name": "score::mw::com::E2ESummary::kOk",
+      "kind": "enum_value",
+      "signature": "kOk"
+    },
+    {
+      "name": "kOkWithDisabledChecks",
+      "qualified_name": "score::mw::com::E2ESummary::kOkWithDisabledChecks",
+      "kind": "enum_value",
+      "signature": "kOkWithDisabledChecks"
     },
     {
       "name": "SampleAllocateePtr",
@@ -1010,6 +1166,12 @@
       "qualified_name": "score::mw::com::GenericProxy::~ProxyBase",
       "kind": "destructor",
       "signature": "~ProxyBase : void () noexcept"
+    },
+    {
+      "name": "AttachE2EResult",
+      "qualified_name": "score::mw::com::GenericProxyEvent::AttachE2EResult",
+      "kind": "template_function",
+      "signature": "AttachE2EResult : void (SamplePtr<SampleType> &) const"
     },
     {
       "name": "EnableReferenceToMoveableFromThis<T>",
