@@ -172,5 +172,62 @@ TEST(TimedCommandQueueTest, CleanUpOwner)
     EXPECT_FALSE(owner3);
 }
 
+TEST(TimedCommandQueueTest, GivenOwnedAndOwnerlessEntries_WhenNullOwnerCleanedUp_ExpectOnlyOwnerlessEntriesRemoved)
+{
+    Queue queue{};
+    bool owner_key{};
+    bool ownerless_capture_cleaned{};
+    bool ownerless_timed_capture_cleaned{};
+    bool owned_capture_cleaned{};
+    bool immediate_called{};
+    bool ownerless_timed_called{};
+    bool timed_called{};
+    Entry immediate_entry{};
+    Entry ownerless_timed_entry{};
+    Entry timed_entry{};
+
+    queue.RegisterImmediateEntry(
+        immediate_entry, [event = CleanUpEvent{ownerless_capture_cleaned}, &immediate_called](TimePoint time) noexcept {
+            EXPECT_EQ(time, TimePoint{});
+            immediate_called = true;
+            event.Abandon();
+        });
+    queue.RegisterTimedEntry(
+        ownerless_timed_entry,
+        TimePoint{2s},
+        [event = CleanUpEvent{ownerless_timed_capture_cleaned}, &ownerless_timed_called](TimePoint time) noexcept {
+            EXPECT_EQ(time, TimePoint{2s});
+            ownerless_timed_called = true;
+            event.Abandon();
+        },
+        nullptr);
+    queue.RegisterTimedEntry(
+        timed_entry,
+        TimePoint{1s},
+        [event = CleanUpEvent{owned_capture_cleaned}, &timed_called](TimePoint time) noexcept {
+            EXPECT_EQ(time, TimePoint{1s});
+            timed_called = true;
+            event.Abandon();
+        },
+        &owner_key);
+
+    queue.CleanUpOwner(nullptr);
+    EXPECT_TRUE(ownerless_capture_cleaned);
+    EXPECT_TRUE(ownerless_timed_capture_cleaned);
+    EXPECT_FALSE(owned_capture_cleaned);
+    EXPECT_FALSE(immediate_called);
+    EXPECT_FALSE(ownerless_timed_called);
+    EXPECT_FALSE(timed_called);
+
+    EXPECT_EQ(queue.ProcessQueue(TimePoint{}), TimePoint{1s});
+    EXPECT_FALSE(timed_called);
+    EXPECT_EQ(queue.ProcessQueue(TimePoint{1s}), TimePoint{});
+    EXPECT_TRUE(timed_called);
+    EXPECT_EQ(queue.ProcessQueue(TimePoint{2s}), TimePoint{});
+    EXPECT_FALSE(immediate_called);
+    EXPECT_FALSE(ownerless_timed_called);
+    EXPECT_FALSE(owned_capture_cleaned);
+}
+
 }  // namespace
 }  // namespace score::message_passing

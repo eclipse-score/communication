@@ -1,0 +1,58 @@
+@startuml client_connection_lifetime_retirement_activity
+title ClientConnectionLifetime - admission and descriptor retirement
+
+start
+if (Entry is TrySetStopReason(reason)?) then (yes)
+    :Lock mutex_;
+    :Compare/exchange stop_reason_ from kNone to reason;
+    :Unlock mutex_;
+    :Return whether this caller selected stopping;
+    stop
+else (other)
+    :Inspect descriptor-management entry;
+endif
+
+if (Entry is InstallDescriptor(descriptor)?) then (yes)
+    :Lock mutex_;
+    :Assert active_operations_ == 0;
+    :Store descriptor_;
+    :Unlock mutex_;
+    :Return;
+    stop
+else (retirement)
+    :Inspect retirement entry;
+endif
+
+:Lock mutex_;
+if (Entry is RetirementPending()?) then (yes)
+    :Read retirement_pending_;
+    :Unlock mutex_;
+    :Return the pending flag;
+    stop
+else (other)
+    :Continue the retirement protocol;
+endif
+if (Entry is CancellationFinished()?) then (yes)
+    :Set retirement_pending_ = true;
+    :Observe whether active_operations_ == 0;
+    :Unlock mutex_;
+    :Return whether the facade may finalize immediately;
+    stop
+else (RetireDescriptor)
+    :Assert retirement_pending_ and active_operations_ == 0;
+    :Clear retirement_pending_;
+    :Exchange descriptor_ with -1;
+    :Unlock mutex_;
+    :Return the detached descriptor;
+endif
+stop
+
+legend
+    IsAccepting reads the existing atomic state and stop reason.
+    Stop selection and Operation admission serialize under the same mutex.
+    RetireDescriptor never closes the descriptor or publishes public state.
+    The facade closes the detached descriptor outside this mutex.
+    Finite QNX transport or close latency is not established here.
+endlegend
+
+@enduml

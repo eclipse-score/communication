@@ -1,0 +1,41 @@
+@startuml client_send_queue_cancel_activity
+title ClientSendQueue - cancelling pending work
+
+start
+:CancelPending();
+:Lock lifetime_.mutex_;
+if (waiting_for_reply_ engaged?) then (yes)
+    :Move the callback, reset the slot, and clear its owner;
+    :Unlock lifetime_.mutex_;
+    if (Callback non-empty?) then (yes)
+        :Invoke callback with EPIPE;
+    else (no)
+        :Discard the empty reservation;
+    endif
+    :Relock lifetime_.mutex_;
+else (no)
+    :No pending reply reservation;
+endif
+while (queue_ non-empty?) is (yes)
+    :Move callback from the front command;
+    :Remove the command from queue_;
+    :Return the command to pool_;
+    if (Callback non-empty?) then (yes)
+        :Unlock lifetime_.mutex_;
+        :Invoke callback with EPIPE;
+        :Relock lifetime_.mutex_;
+    else (no)
+        :No callback to invoke;
+    endif
+endwhile (no)
+:Unlock lifetime_.mutex_ and return;
+stop
+
+legend
+    The facade has already selected stopping and closed send admission.
+    Cancellation never closes the descriptor or publishes stopped.
+    A detached active command remains reserved until its transport returns.
+    The facade marks lifetime cancellation complete after this method returns.
+endlegend
+
+@enduml

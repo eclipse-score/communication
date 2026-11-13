@@ -15,7 +15,10 @@
 
 Read when changing C++ behavior, an API contract, callbacks, or resource ownership.
 Scope: common client implementation, QNX dispatch, and Linux Unix Domain IPC.
-Evidence: source inspection on 2026-11-04; not a new runtime test result.
+Evidence: source inspection on 2026-11-04; queue-cleanup contract updated and
+tested on 2026-11-06; client send-node recycling source-rechecked on 2026-11-10.
+Client admission, retirement, and the non-empty reply guard were tested on 2026-11-11.
+The two-helper extraction and lifetime-only transaction hook were tested on 2026-11-12.
 
 ## Start at the Owning Abstraction
 
@@ -23,6 +26,8 @@ Evidence: source inspection on 2026-11-04; not a new runtime test result.
 | --- | --- |
 | Client operations, state, callbacks | [IClientConnection](../../i_client_connection.h) |
 | Client behavior and reconnect/send queues | [ClientConnection](../../client_connection.cpp) |
+| Send ordering, storage, replies, and cancellation | [ClientSendQueue](../../client_send_queue.cpp) |
+| Admission, scoped operations, and descriptor retirement | [ClientConnectionLifetime](../../client_connection_lifetime.h) |
 | Client configuration and creation | [IClientFactory](../../i_client_factory.h) |
 | Server listening and callbacks | [IServer](../../i_server.h), [callback types and UserData](../../server_types.h) |
 | Reply, notification, identity, disconnect | [IServerConnection](../../i_server_connection.h) |
@@ -46,10 +51,53 @@ existing stopped connection. Follow the public lifetime contract: callback
 captures and the connection must remain valid while callbacks can still run.
 The destructor's cleanup code is not permission to ignore those preconditions.
 
+`TrySetStopReason` is the [stop-transition ownership gate](decisions/2026-11-06-client-stop-transition-ownership.md)
+between API stopping and engine input-failure handling. A stop is rejected when
+no lifecycle is active or another path has already claimed stopping; the winner
+owns cleanup for that cycle. This is not an open-descriptor check: an active
+`kStarting` cycle can be stopped before a descriptor is acquired. Keep the
+single-finalization intent distinct from the remaining concurrency review gaps.
+
+Terminal open failure uses the same finalization dispatch as API `Stop`: inline
+in the permitted callback context, otherwise queued to the engine. A synchronous
+first attempt still opens on the calling thread, but its failed-open cleanup
+does not run there. The queued cleanup may finish before or after `Start`
+returns; use completion and callback order rather than requiring a transient
+`kStopping` snapshot. See the
+[finalization dispatch decision](decisions/2026-11-11-client-stop-finalization-dispatch.md).
+
 Callbacks are not uniformly dispatched on a background thread. In particular,
 the starting-state callback runs synchronously during start/restart. Other
 ordering and thread guarantees are documented on `StateCallback`. Do not infer
 cross-thread ordering from the vertical order in a sequence diagram.
+
+The [client unit design](../../dependability/software_unit_design/client_connection.rst)
+has focused common-client tests for competing stop requests, ready-callback
+stopping, and stopped-callback restart/destruction. These are not complete
+reentrancy qualification. Read [establishment-stop review gaps](issues/functionality-client-stop-during-establishment.md)
+before treating stopping from the starting callback or during an open attempt
+as verified by those isolated callback cases.
+
+Read the [nested callback-lifetime question](issues/functionality-client-nested-stop-callback-lifetime.md)
+before combining callback stop/destruction permissions; the independent cases
+do not establish the safety of their nested composition.
+For transport calls overlapping stop/restart, read the
+[send admission and descriptor-retirement record](issues/functionality-client-late-send-recovery.md).
+`ClientSendQueue` owns ordering, command storage, and reply reservations;
+`ClientConnectionLifetime` owns their shared mutex, admission, and retirement.
+All direct and queued transport sends release that mutex; stop-reason selection
+shares it with admission. Scoped operations keep the descriptor alive
+through transport, queue recycling, callback handling, and blocking-request
+termination. Initial stop cleanup delegates reply cancellation to the queue,
+while the last operation
+schedules deferred finalization through the existing disconnection command.
+Finalization exchanges the descriptor with `-1` under the mutex, closes outside
+it, then publishes stopped. Restart during stopping is ignored, not polled.
+This does not interrupt stuck QNX IPC or establish a stopping deadline.
+Outside the engine's background thread, `Stop` requests stopping without waiting
+for completion; an accepted stop invokes the stopping-state callback during the
+call. Cleanup may run synchronously on that background thread. Public interface
+comments describe this caller-visible distinction, not the retirement mechanics.
 
 - `Send()` sends without a reply, but still has an error result and bounded
   resource/configuration constraints. Avoid implying unlimited buffering.
@@ -59,6 +107,23 @@ cross-thread ordering from the vertical order in a sequence diagram.
   error through the callback. Local acceptance is not delivery confirmation.
 - The send paths check message size and readiness; queued sends can fail with
   `ENOBUFS`. Inspect `fully_ordered` and `truly_async` before changing ordering.
+
+For request/reply queue changes, read the [direct-error rearm precondition](issues/functionality-client-direct-error-rearm-precondition.md)
+and [reply/drain-marker guard](issues/functionality-client-reply-during-drain-marker.md).
+An engaged `waiting_for_reply_` slot is not necessarily a non-empty request callback.
+Successful `TryQueueMessage` admission now owns the guarded scheduling attempt.
+`ClientSendQueue::ArmIfNeeded` requires the lifetime lock. It does nothing when the pending
+IPC-message FIFO is empty, stopping has been selected, or a drain/request already owns progress through
+an engaged slot. A direct ordered one-way send also reserves an empty marker.
+The engine's client-thread command queue schedules the drain
+callback; it is not `send_queue_`. An empty slot marker can mean queued or active
+draining, while a non-empty callback belongs to a request. Admission cannot
+overwrite either state or schedule another drain. Direct-error recovery releases
+only its own slot before requesting progress. A live local token identifies
+that sender independently of callback moves; input and stop clear the owner
+when taking completion. A reply
+requires both an engaged slot and a non-empty callback. Empty markers follow
+the existing unsolicited-reply `kIoError` policy, without empty invocation.
 
 `ClientConnection::TryConnect()` retries `EAGAIN`, `ECONNREFUSED`, and `ENOENT`
 using bounded backoff. `EACCES` stops with `kPermission`; other non-retry errors
@@ -78,6 +143,14 @@ server implementation interface. Each backend's server uses its concrete
 engine: [QnxDispatchServer](../../qnx_dispatch/qnx_dispatch_server.h) or
 [UnixDomainServer](../../unix_domain/unix_domain_server.h).
 
+[TimedCommandQueue](../../timed_command_queue.h) cleans entries by owner-key
+equality. Its `CleanUpOwner(nullptr)` intentionally selects all null-owner
+entries, including default-owner registrations, and destroys their callback
+captures without invoking them. That group can span multiple users of a shared
+queue. This queue utility operation is distinct from `CleanUpOwner` on
+`QnxDispatchEngine` and `UnixDomainEngine`, which still return immediately for
+a null owner; their cleanup contracts are unchanged.
+
 Factories expose engine sharing through their constructor and `GetEngine()`;
 see the [QNX client factory](../../qnx_dispatch/qnx_dispatch_client_factory.h)
 and [server factory](../../qnx_dispatch/qnx_dispatch_server_factory.h).
@@ -94,6 +167,13 @@ distinct. Ground ASIL-B behavior in QNX dispatch source, not a superficially
 similar Linux path. A testing-only backend path is not a certified transport claim.
 
 ## Memory and Configuration
+
+Queued `SendCommand` nodes share one intrusive-list hook between `send_queue_`
+and `send_pool_`. In `SwitchToStopState`, call `send_queue_.pop_front()` before
+`send_pool_.push_front(send)`; the node must not be linked into both lists at
+once. Preserve cancellation and stop/restart capacity restoration, covered by
+`GivenQueuedSends_WhenStoppedAndRestarted_ExpectSendCapacityRestored` in the
+[client tests](../../client_connection_test.cpp).
 
 PMR injection, shared ownership, and configured size/count bounds are important
 design properties, but they do not prove every allocation is preallocated or

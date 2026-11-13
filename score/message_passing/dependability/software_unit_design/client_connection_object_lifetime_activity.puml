@@ -1,0 +1,59 @@
+@startuml client_connection_object_lifetime_activity
+title ClientConnection - object lifetime
+
+start
+if (Entry is construction?) then (yes)
+    :Retain shared engine ownership in engine_;
+    :Copy identifier_ using the engine memory resource;
+    :Set max_receive_size_ to max(max_reply_size, max_notify_size);
+    :Copy client_config_;
+    :Initialize state_ = kStopped, stop_reason_ = kInit;
+    :Create callback_context_ with an empty state callback;
+    :Initialize notify_callback_ as empty;
+    :Set connect_retry_ms_ to 50 ms;
+    :Construct lifetime_ with descriptor_ = -1 and the retirement actor;
+    :Construct sends_ with transport and drain scheduling actors;
+    :Allocate max_queued_sends + max_async_replies SendCommand objects;
+    :Initialize waiting_for_reply_ empty and reply_slot_owner_ = nullptr;
+    :Reserve max_send_size bytes in each command's message storage;
+    :Assign all commands to pool_;
+    :Initialize connection_timer_, disconnection_command_, and async_send_command_;
+    :Initialize posix_endpoint_;
+    :Return the constructed object without starting engine work;
+    stop
+else (destruction)
+    :~ClientConnection();
+    note right
+        Public lifetime contract: destroy only in kStopped.
+        Destruction from a connection callback is supported
+        only from StateCallback(kStopped).
+    end note
+    if (state_ == kStopped?) then (yes)
+        :Lock callback_context_.finalize_mutex;
+        :Release the finalization lock;
+    else (no)
+        :Call Stop();
+        while (state_ != kStopped?) is (yes)
+            :Observed fallback: sleep_for(10 ms);
+        endwhile (no)
+        :Lock callback_context_.finalize_mutex;
+        :Release the finalization lock;
+        note right
+            This fallback does not relax the public precondition.
+            It has no overall stop-completion deadline.
+        end note
+    endif
+    :Destroy ClientSendQueue: clear pool_ intrusive membership;
+    :Destroy members and release this object's resource ownership;
+endif
+stop
+
+legend
+    Constructor allocation-failure handling remains unqualified by this design.
+    The send/reply limits feed one combined pool, not independent pools.
+    The recursive finalization lock synchronizes with stopped-state callbacks.
+    Shared finalization keeps callback state alive during supported destruction.
+    Destroying this connection does not destroy an engine still owned elsewhere.
+endlegend
+
+@enduml

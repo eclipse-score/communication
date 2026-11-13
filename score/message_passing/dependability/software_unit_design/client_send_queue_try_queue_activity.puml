@@ -1,0 +1,33 @@
+@startuml client_send_queue_try_queue_activity
+title ClientSendQueue - queued message admission
+
+start
+:TryQueue(message, callback);
+note right
+    Entry: the caller holds lifetime_.mutex_.
+    Message-size and lifecycle checks belong to the API caller.
+end note
+if (pool_ is empty?) then (yes)
+    :Return false without reserving a command;
+    stop
+else (no)
+    :Take the front free command;
+endif
+:Remove the command from pool_;
+:Copy message bytes into command.message;
+:Move callback into command.callback;
+:Append the command to the back of queue_;
+:ArmIfNeeded();
+:Return true with the caller's lock still held;
+stop
+
+legend
+    storage_ retains ownership of the command and its message storage.
+    Intrusive membership moves from the free pool to the FIFO send queue.
+    Admission attempts guarded arming, preserving an occupied reply/drain slot.
+    A free slot permits reserving and scheduling dispatch, not immediate transport.
+    The API caller validates size/state and turns false into ENOBUFS.
+    Empty versus non-empty callback selects SEND versus REQUEST at dispatch.
+endlegend
+
+@enduml

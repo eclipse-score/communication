@@ -1,0 +1,15 @@
+@startuml client_connection_send_with_callback_activity
+title ClientConnection - sending with a reply callback
+
+start
+:SendWithCallback(message, callback);
+:sends_.SendWithCallback(message, move(callback));
+:Return the helper result unchanged;
+stop
+
+legend
+    ClientSendQueue owns admission and reply/cancellation ownership.
+    The facade transfers the callback without duplicating helper synchronization.
+endlegend
+
+@enduml

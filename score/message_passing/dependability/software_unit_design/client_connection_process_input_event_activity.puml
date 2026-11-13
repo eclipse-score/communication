@@ -1,0 +1,61 @@
+@startuml client_connection_process_input_event_activity
+title ClientConnection - processing received input
+
+start
+:ProcessInputEvent();
+:ReceiveProtocolMessage(posix_endpoint_.fd, code);
+if (Receive failed?) then (yes)
+    if (errno == EAGAIN?) then (yes)
+        :Log a spurious wake-up;
+        :Return kNone;
+        stop
+    else (no)
+        :Receive failure is not a spurious wake-up;
+        if (errno == EPIPE?) then (yes)
+            :Return kClosedByPeer;
+        else (no)
+            :Return kIoError;
+        endif
+        stop
+    endif
+else (no)
+    :Use the received message span;
+endif
+
+if (code == REPLY?) then (yes)
+    :sends_.HandleReply(message);
+    if (Helper accepted the reply?) then (yes)
+        :Return kNone;
+        stop
+    else (no)
+        :Return kIoError: reply without a pending request callback;
+        stop
+    endif
+else (no)
+    :The code is not REPLY;
+    if (code == NOTIFY?) then (yes)
+        if (notify_callback_ is non-empty?) then (yes)
+            :Invoke notify_callback_ with the received span;
+        else (no)
+            :Ignore this notification;
+        endif
+    else (no)
+        :Return kIoError: unrecognized message code;
+        stop
+    endif
+endif
+
+:Return kNone;
+stop
+
+legend
+    Returned stop reasons are consumed by the endpoint input callback.
+    This procedure does not itself claim stopping or unregister the endpoint.
+    Reply reservation and queue progress are owned by ClientSendQueue.
+    Reply synchronization is elaborated in the helper activity.
+    Notifications are ignored when no callback is installed, without stopping.
+    Receive-size enforcement belongs to the engine; caller reply-buffer bounds
+    are handled by the SendWaitReply completion callback.
+endlegend
+
+@enduml
