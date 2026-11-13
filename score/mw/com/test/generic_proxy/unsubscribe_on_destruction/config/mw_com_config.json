@@ -1,0 +1,66 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/test/generic_proxy/unsubscribe_on_destruction/TestEvents",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6434,
+          "events": [
+            {
+              "eventName": "test_event",
+              "eventId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "test/generic_proxy/unsubscribe_on_destruction/TestEvents",
+      "serviceTypeName": "/test/generic_proxy/unsubscribe_on_destruction/TestEvents",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "test_event",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 1
+            }
+          ],
+          "allowedConsumer": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "QM"
+  }
+}

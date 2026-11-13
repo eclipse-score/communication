@@ -62,8 +62,7 @@ class EventSenderReceiver
                    const std::optional<std::chrono::milliseconds> cycle_time,
                    const std::size_t num_cycles,
                    const score::cpp::stop_token& stop_token,
-                   bool try_writing_to_data_segment = false,
-                   bool unsubscribe_before_exit = true);
+                   bool try_writing_to_data_segment = false);
 
     /**
      * Setup a proxy and register a callback using SetReceiveHandler(). Returns successfully if the proxy stops
