@@ -15,7 +15,12 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("GetNewSamples succeeds despite an error", "Communication.GetNewSamplesSucceedsDespiteAnError")
-$RootCause("Root Cause GetNewSamples succeeds despite an error", "RootCauseGetNewSamplesSucceedsDespiteAnError", "Communication.GetNewSamplesSucceedsDespiteAnError")
+$FailureMode("OfferService succeeded without initial field values", "Communication.OfferServiceSucceededWithoutInitialFieldValue")
+
+$OrGate("OrGate1", "Communication.OfferServiceSucceededWithoutInitialFieldValue")
+$RootCause("OfferService did not check if user provided initial field value", "OfferCallDidNotCheckIfUserProvidedFieldValues", "OrGate1")
+
+$IntermediateEvent("Update functionality did not work", "UpdateFunctionalityDidNotWork", "OrGate1")
+' gtodo: reference update failed
 
 @enduml

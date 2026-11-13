@@ -1,0 +1,34 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("OfferService failed but service is available to consumers", "Communication.OfferServiceFailedButServiceIsAvailableToConsumers")
+
+$OrGate("OrGate1", "Communication.OfferServiceFailedButServiceIsAvailableToConsumers")
+
+$IntermediateEvent("Service discovery flag file exists after OfferService fails", "FlagFileExistsAfterOfferServiceFails", "OrGate1")
+$AndGate("AndGate1", "FlagFileExistsAfterOfferServiceFails")
+$RootCause("Service discovery flag file created regardless of success of OfferService", "FlagFileCreatedBeforeAllOtherOfferServiceFunctionalitySucceeds", "AndGate1")
+$RootCause("Service discovery flag file is not removed when OfferService fails", "FlagFileNotRemovedAfterOfferServiceFails", "AndGate1")
+
+$IntermediateEvent("Other skeleton created service discovery flag file for this service", "OtherSkeletonCreatedFlagFileForThisService", "OrGate1")
+
+$IntermediateEvent("Other skeleton's service discovery flag file was not created in correct place", "OtherSkeletonFlagFileNotCreatedInCorrectPlace", "OtherSkeletonCreatedFlagFileForThisService")
+$TransferInGate("FlagFileNotCreatedInCorrectPlace", "OtherSkeletonFlagFileNotCreatedInCorrectPlace")
+
+$RootCause("Unrelated actor created the service discovery flag file for this service", "UnrelatedActorCreatedFlagFileForThisService", "OrGate1")
+
+@enduml

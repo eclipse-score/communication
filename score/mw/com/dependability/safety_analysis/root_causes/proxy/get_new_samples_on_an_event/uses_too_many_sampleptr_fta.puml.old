@@ -15,10 +15,8 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("Skeleton is offered without initial field values", "Communication.ServiceOfferedWithoutInitialFieldValue")
+$FailureMode("User already holds max sample count, but another SamplePtr is handed out", "Communication.UsesTooManySampleptr")
 
-$OrGate("Gate1", "Communication.ServiceOfferedWithoutInitialFieldValue")
-$RootCause("Offer call did not check, if user provided field values", "OfferCallDidNotCheckIfUserProvidedFieldValues", "Gate1")
-$IntermediateEvent("Update functionality did not work", "Event2", "Gate1")
+$RootCause("Reference counting facility for SamplePtr is broken", "ReferenceCountingFacilityForSampleptrIsBroken", "Communication.UsesTooManySampleptr")
 
 @enduml

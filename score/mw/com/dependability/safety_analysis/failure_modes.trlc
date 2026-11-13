@@ -27,17 +27,6 @@ section "LoLa" {
         // potentialcause = "e.g. - Blocked mutex (e.g. dead-lock) - Wrong synchronization algorithm - endless loop - crashed services"
     }
 
-    // ID: 6366726
-    ScoreReq.FailureMode InMemoryConfigurationWrong {
-        guidewords = [ ScoreReq.Guideword.LossOfFunction ]
-        description = "The in-memory (cpp representation) does not match the on file-system JSON configuration."
-        failureeffect = "Other functionality relies on a correct configuration. Without that, multiple functions can not operate normally which could lead to the violation of a safety goal."
-        version = 1
-        safety = ScoreReq.Asil.B
-        rationale = "The wrong user-configuration which could cause an abnormal behavior of the mw-implementation is covered via four AoUs. The broken file is ensured via a safety-certified file system. The broken JSON is covered via a safety-certified JSON-Parser implementation. The read-in-logic to our in-memory is covered via a specific preventive measure."
-        // interface = "mw.com.Runtime.Initialize"
-    }
-
     // ID: 6370893
     ScoreReq.FailureMode FunctionCalledFromMultipleThreads {
         guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
@@ -49,17 +38,6 @@ section "LoLa" {
         // potentialcause = "- static methods are thread-safe - API calls on different instances are thread-safe - API calls on one instance are not thread-safe."
     }
 
-    // ID: 6370898
-    ScoreReq.FailureMode CodeDoesNotMatchConfiguration {
-        guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-        description = "Definitions of service-interfaces may not match the given mw::com configuration."
-        failureeffect = "A faulty configuration which does not lead to compile issues could lead to safety issues according to analysis."
-        version = 1
-        safety = ScoreReq.Asil.B
-        rationale = "Add an AoU that all code artifacts and configurations should be reviewed before use in a safety context."
-        // interface = "score.mw.com.runtime.InitializeRuntime"
-    }
-
     // ID: 6370915
     ScoreReq.FailureMode MisusedApis {
         guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
@@ -69,6 +47,114 @@ section "LoLa" {
         safety = ScoreReq.Asil.B
         rationale = "Each potential cause is covered with a custom AoU."
         // potentialcause = "Potential causes are: - calling APIs of implementation namespace (aka implementation details, thus avoiding public contracts) - Invoking APIs from static context (aka static lifetime) -> can cause issues with static initialization - Using a different operating system as design for (different underlying AoUs and safety measures) - Throwing callbacks could lead to untested code-paths."
+    }
+
+    section "Runtime" {
+
+        // ID: 6366726
+        ScoreReq.FailureMode InMemoryConfigurationWrong {
+            guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+            description = "The in-memory (cpp representation) does not match the on file-system JSON configuration."
+            failureeffect = "Other functionality relies on a correct configuration. Without that, multiple functions can not operate normally which could lead to the violation of a safety goal."
+            version = 1
+            safety = ScoreReq.Asil.B
+            rationale = "The wrong user-configuration which could cause an abnormal behavior of the mw-implementation is covered via four AoUs. The broken file is ensured via a safety-certified file system. The broken JSON is covered via a safety-certified JSON-Parser implementation. The read-in-logic to our in-memory is covered via a specific preventive measure."
+            // interface = "mw.com.Runtime.Initialize"
+        }
+        
+        ScoreReq.FailureMode InstanceSpecifierResolvesToWrongInstanceIdentifier {
+            guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+            description = "An InstanceSpecifier resolves to an InstanceIdentifier for a different service instance or binding than specified by the configuration."
+            failureeffect = "Skeletons and proxies created from the InstanceIdentifier will correspond to the incorrect service / binding. This will result in incorrect data being transferred or being transferred in the wrong way."
+            version = 1
+            safety = ScoreReq.Asil.B
+            rationale = ""
+            interface = "score.mw.com.runtime.ResolveInstanceIDs"
+        }
+
+        ScoreReq.FailureMode InstanceSpecifierResolvesToSubsetOfInstanceIdentifier {
+            guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+            description = "An InstanceSpecifier resolves to a subset of InstanceIdentifiers although it should resolve to one InstanceIdentifier per supported binding."
+            failureeffect = "If an InstanceSpecifier resolves to a subset of InstanceIdentifiers then not communication will not be possible across all bindings."
+            version = 1
+            safety = ScoreReq.Asil.B
+            rationale = ""
+            interface = "score.mw.com.runtime.ResolveInstanceIDs"
+        }
+
+        ScoreReq.FailureMode ResolvedInstanceIdentifierContainsWrongData {
+            guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+            description = "An InstanceIdentifier returned by ResolveInstanceIDs contains data that does not correctly represent the configured service instance or binding."
+            failureeffect = "The corrupted data will prevent correct functioning of skeletons and proxies which will prevent finding the correct service. This will mean no communication is possible for these skeletons / proxies or they will communicate with the wrong partner."
+            version = 1
+            safety = ScoreReq.Asil.B
+            rationale = ""
+            interface = "score.mw.com.runtime.ResolveInstanceIDs"
+        }
+
+    }
+
+    section "Service Instance Identifiers"
+
+        section "InstanceSpecifier" {
+
+            ScoreReq.FailureMode InstanceSpecifierCreatedWithInvalidPath {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "The InstanceSpecifier is created with an invalid path which does not match the required string format (i.e. shortname path)."
+                failureeffect = "The InstanceSpecifier will not be able to be resolved to a valid InstanceIdentifier so no Skeletons / Proxies can be created and communication is impossible."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = ""
+                interface = "score.mw.com.InstanceSpecifier.Create"
+            }
+
+// Contract is that the string returned by ToString uniquely realates to the string provided to Create. i.e. different strings provided to Create will produce different strings from ToString
+            ScoreReq.FailureMode ToStringCalledOnInstanceSpecifiersCreatedFromDifferentStringsReturnSameStringRepresentations {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "ToString returns a string which does not correctly represent the InstanceSpecifier itself."
+                failureeffect = "The stringified format could be incorrect which could violate safety goals if it's used to meet a safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = ""
+                interface = "score.mw.com.InstanceSpecifier.ToString"
+            }
+
+      ScoreReq.FailureMode ToStringCalledOnInstanceSpecifiersCreatedFromSameStringsReturnDifferentStringRepresentations {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "ToString returns a string which does not correctly represent the InstanceSpecifier itself."
+                failureeffect = "The stringified format could be incorrect which could violate safety goals if it's used to meet a safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = ""
+                interface = "score.mw.com.InstanceSpecifier.ToString"
+            }
+        }
+
+        section "InstanceIdentifier" {
+
+// contract is same 1 to 1 assurance
+            ScoreReq.FailureMode ToStringCalledOnInstanceIdentifiersCreatedFromDifferentConfigurationsReturnSameStringRepresentations {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "ToString returns a string which does not correctly represent the InstanceIdentifier itself."
+                failureeffect = "The stringified format could be incorrect which could violate safety goals if it's used to meet a safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = ""
+                interface = "score.mw.com.InstanceIdentifier.ToString"
+            }
+
+            ScoreReq.FailureMode ToStringCalledOnInstanceIdentifiersCreatedFromSameConfigurationsReturnDifferentStringRepresentations {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "ToString returns a string which does not correctly represent the InstanceIdentifier itself."
+                failureeffect = "The stringified format could be incorrect which could violate safety goals if it's used to meet a safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = ""
+                interface = "score.mw.com.InstanceIdentifier.ToString"
+            }
+
+        }
+
     }
 
     section "Skeleton" {
@@ -85,12 +171,39 @@ section "LoLa" {
                 rationale = "We added an AoU that no Safety-goal shall be harmed, if a service is not offered. Thus, this failure cannot have any safety-related bad effect."
                 // interface = "mw.com.Skeleton.Create"
             }
+
+            ScoreReq.FailureMode CreatingAlreadyCreatedService {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "A skeleton is created for a service for which there is already a succesfully created skeleton."
+                failureeffect = "If the duplicate skeleton were to be offered, the existing communication could break up. Or data could be overwritten while transmitted. In any case this could cause potential garbage data, which could cause a complete malfunction of the system."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = ""
+                interface = "mw.com.Skeleton.Create"
+            }
+
+
+            ' SkeletonEventCannotBeCreated - event name in c++ interface is in configuration
+
+            ' SkeletonFieldCannotBeCreated
+
+            ' SkeletonMethodCannotBeCreated
         }
 
+        // Note. IsAvailableToConsumers means that if the proxy does everything correctly on its side, the service can be found. It doesn't consider issues in proxy side service discovery (i.e. in FindService or StartFindService).
         section "OfferAService" {
 
-            // ID: 31544607
-            ScoreReq.FailureMode ServiceOfferedWithoutInitialFieldValue {
+            ScoreReq.FailureMode OfferServiceFailedButServiceCanBeFoundToConsumers {
+                guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+                description = "OfferService failed but the service is still visible to proxies and can be found via service discovery."
+                failureeffect = "A proxy which has been created after finding a service expects that it can communicate with / receive data from the connected skeleton. If the service was not succesfully offered, but the proxy finds it anyway, the proxy communication semantics are affected and thus can affect any safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "By explicitly requesting this case in our requirements and testing the requirement we make sure that the error case is tackled. The not working update functionality is covered already by other FMEA elements in Section SendAnEventOrField"
+                interface = "mw.com.Skeleton.OfferService"
+            }
+
+            ScoreReq.FailureMode OfferServiceSucceededWithoutInitialFieldValue {
                 guidewords = [ ScoreReq.Guideword.LossOfFunction ]
                 description = "A service is offered, although at least one of its field has no initial value set by the provider."
                 failureeffect = "A user expects after seeing a service offered, in a call to GetNewSamples(), that he would at least get one new sample. This could hinder the expected semantics on user side, and thus affect any safety goal."
@@ -100,55 +213,20 @@ section "LoLa" {
                 // interface = "mw.com.Skeleton.OfferService"
             }
 
-            // ID: 6156955
-            ScoreReq.FailureMode ServiceNotOffered {
+            ScoreReq.FailureMode OfferServiceSucceededButServiceCannotBeFoundByConsumers {
                 guidewords = [ ScoreReq.Guideword.LossOfFunction ]
-                description = "A skeleton service is offering a service, but the service is silently not offered. Note: offered in this case means, that it is also connectable"
-                failureeffect = "No communication between process will happen, thus no information can be exchanged, thus any overall system functionality can stop."
+                description = "A skeleton service is offering a service, but the service is silently not offered."
+                failureeffect = "A proxy cannot be created so no communication will happen, thus no information can be exchanged, thus any overall system functionality can stop."
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "We added an AoU that no Safety-goal shall be harmed, if a service is not offered. Thus, this failure cannot have any safety-related bad effect."
                 // interface = "mw.com.Skeleton.OfferService"
             }
 
-            // ID: 6164063
-            ScoreReq.FailureMode ServiceOfferedOnWrongBinding {
-                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "A skeleton is offering a service on the wrong binding. Meaning, the service is not offered on the intended binding, but on an unintended one."
-                failureeffect = "No communication between processes will happen, thus, no information can be exchanged, thus, any overall system functionality can malfunction. The point that a service is offered on another binding should not have any effect, since no consumer will expect the service on this binding."
-                version = 1
-                safety = ScoreReq.Asil.B
-                rationale = "If a service is offered on the wrong binding, then it will not be visible on the expected binding. Thus, we can handle this part as if the service would not be offered at all. For the wrong binding, where the service is offered, no consumer expects the service, thus, no bad influence can happen."
-                // interface = "mw.com.Skeleton.OfferService"
-            }
-
-            // ID: 6164070
-            ScoreReq.FailureMode ServiceOfferedUnderWrongIds {
-                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "A skeleton is offering a service with wrong identifiers. This can include a service id, a instance id or also the service version."
-                failureeffect = "The actual intended communication will not happen, thus potential causing a complete loss of system functionality. In the worst case, the wrong identifiers are used by another service. In that case a wrong consumer could think that he found the right service, leading to a case where garbage data is transmitted, causing any potential issues in the whole system functionality (e.g. violating the top level safety goal)."
-                version = 1
-                safety = ScoreReq.Asil.B
-                rationale = "If a service is offered on a wrong binding, then the initial service is not offered. Covered by our AoU (\"No guarantee in availability of services\"). It looks different if we overwrite this way another service. This is prevented with explicit preventive measures for each root cause. The Service Discovery Marker files are already handled in the failure mode \"ServiceNotOffered\""
-                // interface = "mw.com.Skeleton.OfferService"
-            }
-
-            // ID: 6164082
-            ScoreReq.FailureMode OffersAlreadyOfferedService {
-                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "A skeleton offers a service that was already offered. Either by another process or by itself."
-                failureeffect = "Already existing communication could break up. Or data could be overwritten while transmitted. In any case this could cause potential garbage data, which could cause a complete malfunction of the system."
-                version = 1
-                safety = ScoreReq.Asil.B
-                rationale = "We avoid to overwrite shared memory segments of different processes by having ownership by a single UID which is assigned to a process. (This was in place before the FMEA) In addition we support partial restart, which is implemented and traced according to ASIL-B which enables to re-offer a previously offered service in a sane manner. To identify already offered services, control measures via marker files have been introduced."
-                // interface = "mw.com.Skeleton.OfferService"
-            }
-
-            // ID: 6164086
-            ScoreReq.FailureMode ServiceOnlyPartiallyOffered {
+            ScoreReq.FailureMode OfferServiceSucceededButServiceIsOnlyAvailableToSubsetOfConsumers {
                 guidewords = [ ScoreReq.Guideword.PartialFunction ]
-                description = "A skeleton offers a service, which is not visible to all consumers, but only to parts of them."
-                failureeffect = "This is equal to the case service not offered, thus no information can be exchanged, thus any overall system functionality can stop."
+                description = "A skeleton offers a service, which is not visible to all consumers, but only to a subset of them."
+                failureeffect = "This is equal to the case OfferServiceSucceededButServiceIsNotAvailableToConsumers, thus for the consumers which cannot find the service no information can be exchanged, thus any overall system functionality can stop."
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "Since both sub-trees (config is wrong, no ASIL level) are captured via different fault trees, we only need to ensure that all events are actually always registered. This is ensured via an preventive measure."
@@ -426,10 +504,11 @@ section "LoLa" {
             }
         }
 
+        // Note. IsCurrentlyOffered means that the skeleton did everything correctly when setting up / offering the service. It doesn't consider issues when the skeleton offers the service.
         section "Find Service" {
 
             // ID: 6166029
-            ScoreReq.FailureMode ServiceNotFound {
+            ScoreReq.FailureMode ServiceNotFoundButIsCurrentlyOffered {
                 guidewords = [ ScoreReq.Guideword.LossOfFunction ]
                 description = "A proxy does not find a service instance, even though it was offered by a skeleton."
                 failureeffect = "No communication between process will happen, thus no information can be exchanged, thus any overall system functionality can stop."
@@ -451,7 +530,7 @@ section "LoLa" {
             }
 
             // ID: 6166060
-            ScoreReq.FailureMode ServiceIsFoundButDoesNotExist {
+            ScoreReq.FailureMode ServiceIsFoundButIsNotCurrentlyOffered {
                 guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
                 description = "Finding a service, returns a service, even though no service instance was offered."
                 failureeffect = "No communication between process will happen, thus no information can be exchanged, thus any overall system functionality can stop."
@@ -473,6 +552,19 @@ section "LoLa" {
                 rationale = ""
                 // interface = "mw.com.Proxy.Create"
             }
+
+            ' Proxy is created with different binding to skeleton
+
+            ' ProxyEventCannotBeCreated 
+            '     -> event name in interface must exist in configuration
+            '     -> what happens if the configuration is different to the skeleton's configuration. 
+            '            -> the event id doesn't exist in skeleton's configuration. i.e. the event id is different to the event id of the skeleton's config for the same event name
+            '            -> the event id does exist but corresponds to a different event name. what happens if event id for a given name is wrong and matches to a different event name. It will then open the other event's EventDataSTorage but will access it with the wrong type
+            '          measure for this would be to store the hash of the event name in event storage in shm to check that the event name / event id match. That way we can remove the existing AOU: Add an AoU that all code artifacts and configurations should be reviewed before use in a safety context.
+
+            ' ProxyFieldCannotBeCreated
+
+            ' ProxyMethodCannotBeCreated
 
         }
 
@@ -585,60 +677,139 @@ section "LoLa" {
             }
         }
 
+// Contract Subscribe:
+//  - Subscribe can be called any number of times with the same max_sample_count. If calling Subscribe again (without having called Unsubscribe) 
+//    with a different max_sample_count, ComErrc::kMaxSampleCountNotRealizable will be returned.
+
+// Contracts:
+//  - GetNewSamples will return an error ComErrc::kNotSubscribed if there hasn't been a successful Subscribe() or there was an Unsubscribe() since then
+//  - The number of times the provided receiver is called can not be more than the minimum of:
+//    - max_num_samples provided to GetNewSamples 
+//    - the number of available SamplePtrs (The max_sample_count provided to the last successful call to Subscribe (which has not been unsubscribed) 
+//      minus the number of currently held SamplePtrs from this ProxyEvent instance).
+//  - The data pointed to by the SamplePtrs provided to receiver have the same values as the samples sent by SkeletonEvent::Send()
+//  - The SamplePtrs provided to receiver will only point to samples received from SkeletonEvent::Send() since the last time successful call to GetNewSamples().
+//  - The SamplePtrs provided to receiver will only point to samples sent by SkeletonEvent::Send() since the last time the service was succesfully offered.
+//  - The SamplePtrs provided to receiver will always point to the latest samples sent by SkeletonEvent::Send()
+//  - Returns the number of times the receiver was called
+//  - Either calls the receiver with all available samples or returns an error (i.e. could call receiver but still return an error)
+//
+// Intended behaviour:
+//  - All samples which have been sent by a successful SkeletonEvent::Send are provided to a call of GetNewSamples receiver (while still adhering to the preceding 
+//    contracts e.g. regarding number of times receiver is called, must be subscribed etc).
+
         section "GetNewSamples for an Event" {
 
-            // ID: 6166331
-            ScoreReq.FailureMode CallbackNotInvokedDespiteSamplesAvailable {
-                guidewords = [ ScoreReq.Guideword.LossOfFunction ]
-                description = "GetNewSamples() gets called on an event with a callback F, but the callback gets called not at all, although at least one new sample is available."
-                failureeffect = "data is not received, causing any possible safety goal violation."
+            ScoreReq.FailureMode ReturnsSuccessAlthoughNotInActiveSubscription {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "Subscribe was not called successfully or Unsubscribe has been called since a successful subscription and GetNewSamples does not return ComErrc::kNotSubscribed."
+                failureeffect = "Getting samples without an active subscription could affect the ability of other ProxyEvents to receive samples which could lead to data availability issues."
                 version = 1
                 safety = ScoreReq.Asil.B
-                rationale = "The wrong values are systematic faults wich are prevented using a correct slot allocation strategy. The overwrite of shared memory data was already built into the original design and can only happen if processes are started using wrong users, which is avoided using our AoU."
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
             }
 
-            // ID: 6166345
-            ScoreReq.FailureMode CallbackInvokedWithWrongData {
-                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "A proxy receives a sample pointer via callback F(), but the data does not contain the expected one."
-                failureeffect = "processing of invalid data can cause any safety violation (e.g. violation of the top level safety goal)"
+            ScoreReq.FailureMode ReturnsNotSubscribedErrorAthoughInActiveSubscription {
+                guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+                description = "Subscribe was called successfully and Unsubscribe has not been called since and GetNewSamples returns ComErrc::kNotSubscribed"
+                failureeffect = "Cannot receive data although data may be available"
                 version = 1
                 safety = ScoreReq.Asil.B
-                rationale = "All possible faults, have either assigned a preventive measure or respective AoUs."
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
+            }
+
+            ScoreReq.FailureMode ReturnsSuccessAlthoughDidNotCallReceiverCorrectNumberOfTimes {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "Receiver is not called the expected number of times (See ReceiverIsCalledMoreTimesThanAllowed and CallbackNotCalledWithSamplesReceivedFromSkeleton) but no error was returned"
+                failureeffect = "Contract violation"
+                version = 1
+                safety = ScoreReq.Asil.B
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
+            }
+
+            ScoreReq.FailureMode ReturnsAnErrorAlthoughCalledReceiverCorrectNumberOfTimes {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "Receiver is called the expected number of times (See ReceiverIsCalledMoreTimesThanAllowed and CallbackNotCalledWithSamplesReceivedFromSkeleton) but an error was returned"
+                failureeffect = "Contract violation"
+                version = 1
+                safety = ScoreReq.Asil.B
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
+            }
+
+            ScoreReq.FailureMode SamplePtrReturnedWhichWasReceivedBeforeLastGetNewSamples {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "Receiver called with SamplePtr pointing to old sample which was received from SkeletonEvent::Send before the last successful call to GetNewSamples which may have already been provided to a previous call to GetNewSamples."
+                failureeffect = "Insertion of information / Repetition of information"
+                version = 1
+                safety = ScoreReq.Asil.B
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
+            }
+
+            ScoreReq.FailureMode SamplePtrReturnedWhichWasSentBeforeLatestOfferService {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "Receiver called with SamplePtr pointing to old sample which was sent by SkeletonEvent::Send before the last successful call to Skeleton::OfferService."
+                failureeffect = "Insertion of information"
+                version = 1
+                safety = ScoreReq.Asil.B
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
+            }
+            
+          // delete  ScoreReq.FailureMode CallbackNotCalledWithSampleDataNotReceivedFromSkeletonAlthoughSendSucceeded {
+                guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+                description = "Skeleton has sent samples via SkeletonEvent::Send which returned success but they were never received on proxy side."
+                failureeffect = "Deletion of information"
+                version = 1
+                safety = ScoreReq.Asil.B
+                // rationale = "The wrong values are systematic faults wich are prevented using a correct slot allocation strategy. The overwrite of shared memory data was already built into the original design and can only happen if processes are started using wrong users, which is avoided using our AoU."
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
+            }
+
+            // CallbackNotInvokedDespiteSamplesAvailable
+            ScoreReq.FailureMode CallbackNotCalledAlthoughSkeletonSendSucceeded {
+                guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+                description = "Receiver is not called the expected number of times although new samples were received from SkeletonEvent::Send and the number of currently available samples has not exceeded the maximum allowed (See ReceiverIsCalledMoreTimesThanAllowed)"
+                failureeffect = "Data is not received"
+                version = 1
+                safety = ScoreReq.Asil.B
+                // rationale = "The wrong values are systematic faults wich are prevented using a correct slot allocation strategy. The overwrite of shared memory data was already built into the original design and can only happen if processes are started using wrong users, which is avoided using our AoU."
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
+            }
+
+            // CallbackInvokedWithWrongData
+            ScoreReq.FailureMode DataPointedToBySamplePtrHasDifferentValueToSampleSentBySkeleton {
+                guidewords = [ ScoreReq.Guideword.Corrupted ]
+                description = "Receiver called with SamplePtr pointing to a sample whose value is different to the value sent via SkeletonEvent::Send"
+                failureeffect = "Data is corrupted"
+                version = 1
+                safety = ScoreReq.Asil.B
+                // rationale = "All possible faults, have either assigned a preventive measure or respective AoUs."
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
             }
 
             // ID: 6166350
-            ScoreReq.FailureMode UsesTooManySampleptr {
+              // UsesTooManySampleptr
+            ScoreReq.FailureMode ReceiverIsCalledMoreTimesThanAllowed {
                 guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
-                description = "User is already max. sample count SamplePtr, but we are still handing out SamplePtrs in callback F()."
-                failureeffect = "Synchronization algorithm can no longer hold guarantees, which can cause an exceeding of resources. In worst case another proxy might fail to get updated samples (messages lost without full queues aka not detectable)."
+                description = "Receiver is called more than the allowed number of times. This number is the minimum of: 
+		    (1) max number of samples provided to GetNewSamples. 
+		    (2) the number of available SamplePtrs (The max_sample_count provided to the last successful call to Subscribe (which has not been unsubscribed) minus the number of currently held SamplePtrs from this ProxyEvent instance)."
+                failureeffect = "Could allow a user to hold more SamplePrs than allowed which could affect the ability of other ProxyEvents to receive samples which could lead to data availability issues."
                 version = 1
                 safety = ScoreReq.Asil.B
-                rationale = "The only possibility for this failure mode is actively covered by our preventive measure."
-                // potentialcause = "Reference Counting facility for SamplePtr is broken. Either: - storage or current count - increment logic - decrement logic"
+                // rationale = "The only possibility for this failure mode is actively covered by our preventive measure."
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
             }
 
             // ID: 6166353
-            ScoreReq.FailureMode ReturnsWrongSampleCount {
+            // ReturnsWrongSampleCount
+            ScoreReq.FailureMode ReturnedCallCountDifferentToNumberOfTimesReceiverCalled {
                 guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "Value returned by GetNewSample() does not match with the number of calls to callback F()."
-                failureeffect = "Potential Data loss with unknown effect on safety goals."
+                description = "Value returned by GetNewSample() does not match with the number of calls to the receiver"
+                failureeffect = "Contract violation"
                 version = 1
                 safety = ScoreReq.Asil.B
                 rationale = "Single systematic failure is covered by single preventive measure."
-                // potentialcause = "The counter of invoked callbacks is wrong."
-            }
-
-            // ID: 6166357
-            ScoreReq.FailureMode GetNewSamplesSucceedsDespiteAnError {
-                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "A user calls GetNewSamples() on a proxy instance and receives a sample count, even though he should have received an error."
-                failureeffect = "Receive a sample count instead of an error, implies that the sample count is wrong. Receiving an error instead of a sample count, implies that the sample count is wrong."
-                version = 1
-                safety = ScoreReq.Asil.B
-                rationale = "Same as [ISSUE:FailureMode ReturnsWrongSampleCount]"
-                // potentialcause = "Same as [ISSUE:FailureMode ReturnsWrongSampleCount]"
-                // interface = "mw.com.Event.GetNewSamples"
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
             }
         }
 
@@ -655,6 +826,16 @@ section "LoLa" {
                 // potentialcause = "Internal counter of free and used samples broken."
             }
         }
+
+
+
+• Repetition of information: A message is sent multiple times due to a stuck transmission buffer.
+• Deletion of information: A message is dropped or lost in transit.
+• Insertion of information: Rogue data, noise, or unassigned messages are injected into the bus.
+• Incorrect sequence / Out-of-order: Messages arrive in the wrong order, causing outdated state inputs.
+• Corruption of information: Bits are flipped during transmission due to Electromagnetic Interference (EMI) or hardware defects.
+• Delay of information: A message is delayed beyond its maximum allowed transmission time (violating the fault tolerant time interval).
+• Masquerading / Incorrect addressing: A component falsely identifies itself as a different sender, or a message is routed to the wrong node.
 
         section "Unsubscribe for an Event" {
 

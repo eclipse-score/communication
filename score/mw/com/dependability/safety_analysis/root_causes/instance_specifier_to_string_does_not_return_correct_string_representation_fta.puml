@@ -15,11 +15,6 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("Service not found", "Communication.ServiceNotFound")
-
-$OrGate("Gate1", "Communication.ServiceNotFound")
-$RootCause("Wrong service discovery marker file searched for", "WrongServiceDiscoveryMarkerFileSearchedFor", "Gate1")
-$IntermediateEvent("Skeleton Not offered", "Event1", "Gate1")
-$TransferInGate("Communication.ServiceNotOffered", "Event1")
+$FailureMode("ToString returns an incorrect string representation of InstanceSpecifier", "Communication.ToStringDoesNotReturnCorrectStringRepresentationOfInstanceSpecifier")
 
 @enduml

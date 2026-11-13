@@ -15,11 +15,7 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("Offers already offered service", "Communication.OffersAlreadyOfferedService")
-
-$OrGate("Gate1", "Communication.OffersAlreadyOfferedService")
-$RootCause("Service was offered by another process", "ServiceWasOfferedByAnotherProcess", "Gate1")
-$RootCause("Service was already offered by our process", "ServiceWasAlreadyOfferedByOurProcess", "Gate1")
-$RootCause("Service was already offered by previous died process", "ServiceWasAlreadyOfferedByPreviousDiedProcess", "Gate1")
+$FailureMode("GetNewSamples succeeds despite an error", "Communication.GetNewSamplesSucceedsDespiteAnError")
+$RootCause("Root Cause GetNewSamples succeeds despite an error", "RootCauseGetNewSamplesSucceedsDespiteAnError", "Communication.GetNewSamplesSucceedsDespiteAnError")
 
 @enduml
