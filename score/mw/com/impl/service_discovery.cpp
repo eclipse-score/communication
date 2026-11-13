@@ -96,8 +96,10 @@ auto ServiceDiscovery::StartFindService(FindServiceHandler<HandleType> handler,
     std::unique_lock lock{container_mutex_};
     auto handler_weak_ptr = StoreUserCallback(find_service_handle, std::move(handler));
 
+    // COV_JUSTIFIED_START service-discovery-find-service-handle-unique
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(handle_to_instances_.count(find_service_handle) == 0U,
                                                 "FindServiceHandle is not unique!");
+    // COV_JUSTIFIED_STOP
     for (const auto& enriched_instance_identifier : enriched_instance_identifiers)
     {
         StoreInstanceIdentifier(find_service_handle, enriched_instance_identifier);
@@ -224,14 +226,15 @@ void ServiceDiscovery::RemoveUnusedInstanceIdentifiers(
     std::vector<EnrichedInstanceIdentifier>::const_iterator container_end)
 {
     const bool all_identifiers_processed{last_used_iterator == container_end};
-    // GCOV_EXCL_START : This is a never true. Defensive programming: This function is only called by StartFindService.
+    // This is never true. Defensive programming: This function is only called by StartFindService.
     // Within StartFindService, we check that last_used_iterator is not equal to container_end and only call this
     // function if that's not the case.
+    // COV_JUSTIFIED_START service-discovery-remove-unused-all-identifiers-processed
     if (all_identifiers_processed)
     {
         return;
     }
-    // GCOV_EXCL_STOP
+    // COV_JUSTIFIED_STOP
     last_used_iterator++;
     const auto unused_identifiers = std::make_pair(last_used_iterator, container_end);
 
