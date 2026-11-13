@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_doc_test", "rust_library")
 load("//quality/unit_testing:unit_testing.bzl", "rust_unit_test")
 
 rust_library(
@@ -71,4 +71,28 @@ rust_unit_test(
         "//score/mw/com/impl/plumbing/rust/test_support:test_utils_rs",
         "@score_communication_crate_index//:libc",
     ],
+)
+
+rust_library(
+    name = "method_in_arg_ptr_rs",
+    srcs = ["method_in_arg_ptr.rs"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [],
+)
+
+rust_unit_test(
+    name = "method_in_arg_ptr_test_rs",
+    srcs = ["method_in_arg_ptr.rs"],
+    features = ["link_std_cpp_lib"],
+    deps = [
+        "//score/mw/com/impl/plumbing/rust/test_support:test_helper_size_ffi_rs",
+        "//score/mw/com/impl/plumbing/rust/test_support:test_utils_rs",
+    ],
+)
+
+rust_doc_test(
+    name = "method_in_arg_ptr_doc_test",
+    crate = ":method_in_arg_ptr_rs",
 )
