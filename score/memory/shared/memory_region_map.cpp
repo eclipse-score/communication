@@ -166,7 +166,7 @@ bool MemoryRegionMapImpl<AtomicIndirectorType>::UpdateKnownRegion(const std::uin
     else
     {
         mw::log::LogFatal("shm") << "Couldn't acquire free region version for writing! Configured VERSION_COUNT ("
-                                 << VERSION_COUNT << ") might be too small";
+                                 << static_cast<std::uint32_t>(VERSION_COUNT) << ") might be too small";
         std::terminate();
     }
 }
@@ -200,7 +200,7 @@ void MemoryRegionMapImpl<AtomicIndirectorType>::RemoveKnownRegion(const std::uin
     else
     {
         mw::log::LogFatal("shm") << "Couldn't acquire free region version for writing! Configured VERSION_COUNT ("
-                                 << VERSION_COUNT << ") might be too small";
+                                 << static_cast<std::uint32_t>(VERSION_COUNT) << ") might be too small";
         std::terminate();
     }
 }
@@ -226,7 +226,7 @@ void MemoryRegionMapImpl<AtomicIndirectorType>::ClearKnownRegions() noexcept
     else
     {
         mw::log::LogFatal("shm") << "Couldn't acquire free region version for writing! Configured VERSION_COUNT ("
-                                 << VERSION_COUNT << ") might be too small";
+                                 << static_cast<std::uint32_t>(VERSION_COUNT) << ") might be too small";
         std::terminate();
     }
 }
@@ -346,10 +346,12 @@ std::optional<std::uint8_t> MemoryRegionMapImpl<AtomicIndirectorType>::AcquireRe
         // Iterate over version indices starting with the version directly after the current
         // latest_known_region_version_. That way we are checking the oldest version first, to have the lowest
         // probability of clashes with readers.
-        for (std::uint32_t loop_idx = 1U; loop_idx < VERSION_COUNT; loop_idx++)
+        for (std::uint8_t loop_idx = 1U; loop_idx < VERSION_COUNT; loop_idx++)
         {
-            const std::uint32_t current_version = latest_known_region_version_.load(std::memory_order_relaxed);
-            const auto version_idx = static_cast<std::uint8_t>((loop_idx + current_version) % VERSION_COUNT);
+            const auto current_version = latest_known_region_version_.load(std::memory_order_relaxed);
+            const auto version_idx = static_cast<std::uint8_t>(
+                (static_cast<std::uint32_t>(loop_idx) + static_cast<std::uint32_t>(current_version)) %
+                static_cast<std::uint32_t>(VERSION_COUNT));
             RegionVersionRefCountType cur_ref_count =
                 known_regions_versions_refcounts_.at(static_cast<size_t>(version_idx)).load();
             if (cur_ref_count == 0U)

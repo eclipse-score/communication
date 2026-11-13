@@ -101,12 +101,15 @@ class MockMemoryRegionMapTest : public MemoryRegionMapTest
 
     void ExpectAcquireRegionVersionForOverwriteCannotAcquireRegion(bool is_death_test = false)
     {
-        const std::uint8_t max_retries = 10U;
+        constexpr std::uint8_t max_retries = 10U;
 
         // When iterating over the versions to find one available for writing, we skip the current latest know version.
         // If the update of a version's ref count fails, then we try the next version. Therefore, if the update fails
         // every time, we could only ever attempt to update (VERSION_COUNT - 1) versions per try.
-        const std::uint16_t total_calls = (MemoryRegionMapAttorney::VERSION_COUNT - 1) * max_retries;
+        static_assert(MemoryRegionMapAttorney::VERSION_COUNT > 0U);
+        constexpr auto total_calls =
+            static_cast<std::uint16_t>((static_cast<std::uint32_t>(MemoryRegionMapAttorney::VERSION_COUNT) - 1U) *
+                                       static_cast<std::uint32_t>(max_retries));
 
         // Given that the operation to update the chosen version's ref count to indicate that it is being currently
         // written to fails every time (because a reader incremented its ref count between the writer thread loading the
