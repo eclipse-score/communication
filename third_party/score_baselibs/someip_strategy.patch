@@ -1,0 +1,960 @@
+From efcabab01465970efc5ea33baf6a122a12728668 Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Tue, 6 Oct 2026 11:30:22 +0200
+Subject: [PATCH 1/8] serialization: save fields index
+
+save field index
+---
+ score/serialization/details/serialization_visitor.h | 5 +++++
+ score/serialization/details/visit.h                 | 1 +
+ score/serialization/meta_information.h              | 5 +++++
+ 3 files changed, 11 insertions(+)
+
+diff --git a/score/serialization/details/serialization_visitor.h b/score/serialization/details/serialization_visitor.h
+index 3b1e6cb9d..10d5bbb33 100644
+--- a/score/serialization/details/serialization_visitor.h
++++ b/score/serialization/details/serialization_visitor.h
+@@ -69,6 +69,11 @@ class CommonVisitorLogic
+         return meta_;
+     }
+ 
++    void SetFieldIndex(std::size_t field_index)
++    {
++        meta_.field_index_ = field_index;
++    }
++
+   private:
+     MetaInformation meta_{};
+ };
+diff --git a/score/serialization/details/visit.h b/score/serialization/details/visit.h
+index c4cc6119b..7cfd225fa 100644
+--- a/score/serialization/details/visit.h
++++ b/score/serialization/details/visit.h
+@@ -41,6 +41,7 @@ template <typename Structure>
+ void MarkMetaInformationAboutElement(CommonVisitorLogic& visitor, std::size_t counter)
+ {
+     using visitable = ::score::common::visitor::struct_visitable<Structure>;
++    visitor.SetFieldIndex(counter);
+     if (counter == static_cast<std::size_t>(0U))
+     {
+         visitor.MarkAsFirstElementInStruct();
+diff --git a/score/serialization/meta_information.h b/score/serialization/meta_information.h
+index 0c6caad57..c028ccc2a 100644
+--- a/score/serialization/meta_information.h
++++ b/score/serialization/meta_information.h
+@@ -14,6 +14,7 @@
+ #ifndef SCORE_SERIALIZATION_META_INFORMATION_H
+ #define SCORE_SERIALIZATION_META_INFORMATION_H
+ 
++#include <cstddef>
+ namespace score
+ {
+ namespace serialization
+@@ -31,6 +32,10 @@ struct MetaInformation
+     bool is_first_element_in_struct_{false};
+     // coverity[autosar_cpp14_m11_0_1_violation]
+     bool is_last_element_in_struct_{false};
++    // Zero-based index of the current element within its struct. Lets a format apply per-element configuration
++    // (e.g. SOME/IP byte order / alignment) supplied out-of-band, without decorating the user's data type.
++    // coverity[autosar_cpp14_m11_0_1_violation]
++    std::size_t field_index_{0U};
+ };
+ 
+ }  // namespace serialization
+-- 
+2.43.0
+
+
+From d22733fbbdebf0e7967e111f4a25e08cf2b5c652 Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Thu, 22 Oct 2026 11:51:10 +0200
+Subject: [PATCH 2/8] score/serialization: allow latching a result on
+ DeSerializeIterator
+
+---
+ score/serialization/serialize_iterator.h        |  7 +++++++
+ score/serialization/serialize_iterator_test.cpp | 17 ++++++++++++++++-
+ 2 files changed, 23 insertions(+), 1 deletion(-)
+
+diff --git a/score/serialization/serialize_iterator.h b/score/serialization/serialize_iterator.h
+index 2b5badae8..db3ccd8c6 100644
+--- a/score/serialization/serialize_iterator.h
++++ b/score/serialization/serialize_iterator.h
+@@ -212,6 +212,13 @@ class DeSerializeIterator
+         return *iterator_;
+     }
+ 
++    /// @brief Latches a deserialization error detected by the caller (e.g. a declared length that cannot be read).
++    /// Surfaced through GetResult().
++    void SetError(const SerializationError error)
++    {
++        *result_ = MakeUnexpected(error);
++    }
++
+     /// @brief Move iterator to next position (but not past end())
+     DeSerializeIterator<Container>& operator++()
+     {
+diff --git a/score/serialization/serialize_iterator_test.cpp b/score/serialization/serialize_iterator_test.cpp
+index c2a54d43f..38b17df43 100644
+--- a/score/serialization/serialize_iterator_test.cpp
++++ b/score/serialization/serialize_iterator_test.cpp
+@@ -207,6 +207,20 @@ TYPED_TEST_P(DeSerializeIteratorFixture, CheckBufferNotEmpty)
+     EXPECT_TRUE(iterator != iterator.End());
+ }
+ 
++TYPED_TEST_P(DeSerializeIteratorFixture, SetErrorIsReportedThroughGetResult)
++{
++    // Given a deserialization iterator
++    auto iterator = DeSerializeIterator<TypeParam>(this->buffer);
++
++    // When the caller sets an error
++    iterator.SetError(SerializationError::kStringTooBig);
++
++    // Then the error is reported
++    const auto result = iterator.GetResult();
++    ASSERT_FALSE(result.has_value());
++    EXPECT_EQ(result.error(), SerializationError::kStringTooBig);
++}
++
+ TYPED_TEST_P(DeSerializeIteratorFixtureEmptyBuffer, CheckBufferEmpty)
+ {
+     // Given a deserialization iterator for a buffer that contains 0 elements
+@@ -227,7 +241,8 @@ REGISTER_TYPED_TEST_SUITE_P(DeSerializeIteratorFixture,
+                             DoesNotAdvanceOverEndPostfix,
+                             PostfixIncrementReturnsPreviousPosition,
+                             CanGetEndFromIterator,
+-                            CheckBufferNotEmpty);
++                            CheckBufferNotEmpty,
++                            SetErrorIsReportedThroughGetResult);
+ 
+ REGISTER_TYPED_TEST_SUITE_P(DeSerializeIteratorFixtureEmptyBuffer, CheckBufferEmpty);
+ 
+-- 
+2.43.0
+
+
+From 1eea61337402f9f8439d1f4f4334a22258758e30 Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Thu, 22 Oct 2026 11:25:51 +0200
+Subject: [PATCH 3/8] score/serialization: add error for deserialized count
+ exceeding capacity
+
+---
+ score/serialization/error/serialization_error.cpp | 3 +++
+ score/serialization/error/serialization_error.h   | 3 ++-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/score/serialization/error/serialization_error.cpp b/score/serialization/error/serialization_error.cpp
+index 6c3bccd6c..58ab72da4 100644
+--- a/score/serialization/error/serialization_error.cpp
++++ b/score/serialization/error/serialization_error.cpp
+@@ -48,6 +48,9 @@ class SerializationErrorDomain final : public score::result::ErrorDomain
+             case SerializationError::kNotAllDataDeserialized:
+                 return "Some data still left in input buffer after deserialization!";
+             // coverity[autosar_cpp14_m6_4_5_violation]
++            case SerializationError::kDeserializedCountExceedsCapacity:
++                return "Deserialized element count exceeds the container's fixed capacity!";
++            // coverity[autosar_cpp14_m6_4_5_violation]
+             default:
+                 return "Unknown Error!";
+         }
+diff --git a/score/serialization/error/serialization_error.h b/score/serialization/error/serialization_error.h
+index 8f458d30a..2246a4396 100644
+--- a/score/serialization/error/serialization_error.h
++++ b/score/serialization/error/serialization_error.h
+@@ -31,7 +31,8 @@ enum class SerializationError : score::result::ErrorCode
+ {
+     kOutOfBoundsWrite,
+     kStringTooBig,
+-    kNotAllDataDeserialized
++    kNotAllDataDeserialized,
++    kDeserializedCountExceedsCapacity
+ };
+ 
+ /// @brief ADL overload to fulfill design requirements from lib/result
+-- 
+2.43.0
+
+
+From a514918c30ab2abee168109d2bb8112daaddb41b Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Thu, 22 Oct 2026 15:04:16 +0200
+Subject: [PATCH 4/8] score/serialization: track field path during struct
+ visitation
+
+Add a bounded field-index stack to CommonVisitorLogic and push/pop it
+around each field in both visit_as_struct overloads. No strategy consumes
+it yet, so behaviour is unchanged; it enables depth-aware layout lookup.
+---
+ .../details/serialization_visitor.h           | 34 +++++++++++++++++++
+ score/serialization/details/visit.h           | 20 ++++++-----
+ 2 files changed, 46 insertions(+), 8 deletions(-)
+
+diff --git a/score/serialization/details/serialization_visitor.h b/score/serialization/details/serialization_visitor.h
+index 10d5bbb33..5a0f21dde 100644
+--- a/score/serialization/details/serialization_visitor.h
++++ b/score/serialization/details/serialization_visitor.h
+@@ -22,6 +22,9 @@
+ #include <score/assert.hpp>
+ #include <score/type_traits.hpp>
+ 
++#include <array>
++#include <cstddef>
++
+ namespace score
+ {
+ namespace serialization
+@@ -74,8 +77,39 @@ class CommonVisitorLogic
+         meta_.field_index_ = field_index;
+     }
+ 
++    /// @brief Maximum supported struct/array nesting depth for the field path below.
++    static constexpr std::size_t kMaxNestingDepth{16U};
++
++    /// @brief Records that traversal descended into the field at the given index of the current struct. Together with
++    /// PopField this maintains the full index path from the root to the element currently visited, letting a format
++    /// resolve per-level configuration for arbitrarily nested types.
++    void PushField(const std::size_t field_index)
++    {
++        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(field_depth_ < kMaxNestingDepth);
++        field_path_[field_depth_] = field_index;
++        ++field_depth_;
++    }
++
++    void PopField()
++    {
++        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(field_depth_ > 0U);
++        --field_depth_;
++    }
++
++    const std::size_t* FieldPathData() const
++    {
++        return field_path_.data();
++    }
++
++    std::size_t FieldDepth() const
++    {
++        return field_depth_;
++    }
++
+   private:
+     MetaInformation meta_{};
++    std::array<std::size_t, kMaxNestingDepth> field_path_{};
++    std::size_t field_depth_{0U};
+ };
+ 
+ /// @brief Provides context for serialization but is not user
+diff --git a/score/serialization/details/visit.h b/score/serialization/details/visit.h
+index 7cfd225fa..055b68b7e 100644
+--- a/score/serialization/details/visit.h
++++ b/score/serialization/details/visit.h
+@@ -113,11 +113,13 @@ inline void visit_as_struct(SerializationVisitor<Container, Strategy>& visitor,
+     // coverity[autosar_cpp14_a6_2_2_violation]
+     // coverity[autosar_cpp14_m5_2_10_violation]
+     score::cpp::ignore = (expander{(helper::MarkMetaInformationAboutElement<Structure>(visitor, counter),
+-                                    ::score::common::visitor::visit(visitor, std::forward<Args>(fields)),
+-                                    // Suppress "AUTOSAR C++14 M0-1-9" rule violations. The rule states "There shall be
+-                                    // no dead code.". This is expander expression and is not dead code.
+-                                    // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
+-                                    ++counter)...});
++                             visitor.PushField(counter),
++                             ::score::common::visitor::visit(visitor, std::forward<Args>(fields)),
++                             visitor.PopField(),
++                             // Suppress "AUTOSAR C++14 M0-1-9" rule violations. The rule states "There shall be no dead
++                             // code.". This is expander expression and is not dead code.
++                             // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
++                             ++counter)...});
+ 
+     visitor.MarkAsElementInStruct();  // neither first / nor last
+ }
+@@ -148,9 +150,11 @@ inline void visit_as_struct(DeSerializationVisitor<Container, Strategy>& visitor
+     // coverity[autosar_cpp14_m5_2_10_violation]
+     // Route each field through Next() so the visitor's latched-error guard stops traversal after the first failure.
+     score::cpp::ignore = (expander{(helper::MarkMetaInformationAboutElement<Structure>(visitor, counter),
+-                                    visitor.Next(std::forward<Args>(fields)),
+-                                    // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
+-                                    ++counter)...});
++                             visitor.PushField(counter),
++                             visitor.Next(std::forward<Args>(fields)),
++                             visitor.PopField(),
++                             // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
++                             ++counter)...});
+ 
+     visitor.MarkAsElementInStruct();  // neither first / nor last
+ }
+-- 
+2.43.0
+
+
+From 8a0df6aeb733dc15761892ff553a5e6019bb4358 Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Mon, 2 Nov 2026 11:19:24 +0100
+Subject: [PATCH 5/8] score/serialization: track last-in-struct per nesting
+ level
+
+Record, per nesting level, whether a field is the last of its
+struct via a new is_last parameter on PushField, a last_path_
+array and LastPathData() accessor. Generic visitor infrastructure
+enabling formats to tell whether anything follows an element across all nesting levels.
+---
+ score/serialization/details/serialization_visitor.h | 12 ++++++++++--
+ score/serialization/details/visit.h                 | 10 ++++++++--
+ 2 files changed, 18 insertions(+), 4 deletions(-)
+
+diff --git a/score/serialization/details/serialization_visitor.h b/score/serialization/details/serialization_visitor.h
+index 5a0f21dde..6b1a1ec4e 100644
+--- a/score/serialization/details/serialization_visitor.h
++++ b/score/serialization/details/serialization_visitor.h
+@@ -82,11 +82,13 @@ class CommonVisitorLogic
+ 
+     /// @brief Records that traversal descended into the field at the given index of the current struct. Together with
+     /// PopField this maintains the full index path from the root to the element currently visited, letting a format
+-    /// resolve per-level configuration for arbitrarily nested types.
+-    void PushField(const std::size_t field_index)
++    /// resolve per-level configuration for arbitrarily nested types. is_last records whether this field is the last one
++    /// of its struct, so a format can tell whether anything follows the element across all nesting levels.
++    void PushField(const std::size_t field_index, const bool is_last)
+     {
+         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(field_depth_ < kMaxNestingDepth);
+         field_path_[field_depth_] = field_index;
++        last_path_[field_depth_] = is_last;
+         ++field_depth_;
+     }
+ 
+@@ -101,6 +103,11 @@ class CommonVisitorLogic
+         return field_path_.data();
+     }
+ 
++    const bool* LastPathData() const
++    {
++        return last_path_.data();
++    }
++
+     std::size_t FieldDepth() const
+     {
+         return field_depth_;
+@@ -109,6 +116,7 @@ class CommonVisitorLogic
+   private:
+     MetaInformation meta_{};
+     std::array<std::size_t, kMaxNestingDepth> field_path_{};
++    std::array<bool, kMaxNestingDepth> last_path_{};
+     std::size_t field_depth_{0U};
+ };
+ 
+diff --git a/score/serialization/details/visit.h b/score/serialization/details/visit.h
+index 055b68b7e..6315971b8 100644
+--- a/score/serialization/details/visit.h
++++ b/score/serialization/details/visit.h
+@@ -113,7 +113,10 @@ inline void visit_as_struct(SerializationVisitor<Container, Strategy>& visitor,
+     // coverity[autosar_cpp14_a6_2_2_violation]
+     // coverity[autosar_cpp14_m5_2_10_violation]
+     score::cpp::ignore = (expander{(helper::MarkMetaInformationAboutElement<Structure>(visitor, counter),
+-                             visitor.PushField(counter),
++                             visitor.PushField(
++                                 counter,
++                                 (counter + static_cast<std::size_t>(1U)) ==
++                                     ::score::common::visitor::struct_visitable<Structure>::fields),
+                              ::score::common::visitor::visit(visitor, std::forward<Args>(fields)),
+                              visitor.PopField(),
+                              // Suppress "AUTOSAR C++14 M0-1-9" rule violations. The rule states "There shall be no dead
+@@ -150,7 +153,10 @@ inline void visit_as_struct(DeSerializationVisitor<Container, Strategy>& visitor
+     // coverity[autosar_cpp14_m5_2_10_violation]
+     // Route each field through Next() so the visitor's latched-error guard stops traversal after the first failure.
+     score::cpp::ignore = (expander{(helper::MarkMetaInformationAboutElement<Structure>(visitor, counter),
+-                             visitor.PushField(counter),
++                             visitor.PushField(
++                                 counter,
++                                 (counter + static_cast<std::size_t>(1U)) ==
++                                     ::score::common::visitor::struct_visitable<Structure>::fields),
+                              visitor.Next(std::forward<Args>(fields)),
+                              visitor.PopField(),
+                              // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
+-- 
+2.43.0
+
+
+From af2f7066cf9536f4ad320d661c552861b64fdf60 Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Mon, 2 Nov 2026 11:19:40 +0100
+Subject: [PATCH 6/8] score/serialization: mark array-element descent in the
+ field path
+
+Add a distinct kArrayElementMarker sentinel and PushArrayElement()
+so the field path can tell array nesting apart from struct nesting.
+Generic visitor infrastructure; lets a format resolve per-level configuration for array elements.
+
+Use bounds-safe std::array::at() in PushField and mark const getters
+[[nodiscard]].
+---
+ .../details/serialization_visitor.h           | 26 ++++++++----
+ score/serialization/details/visit.h           | 40 +++++++++----------
+ 2 files changed, 39 insertions(+), 27 deletions(-)
+
+diff --git a/score/serialization/details/serialization_visitor.h b/score/serialization/details/serialization_visitor.h
+index 6b1a1ec4e..fef0212af 100644
+--- a/score/serialization/details/serialization_visitor.h
++++ b/score/serialization/details/serialization_visitor.h
+@@ -24,6 +24,7 @@
+ 
+ #include <array>
+ #include <cstddef>
++#include <limits>
+ 
+ namespace score
+ {
+@@ -80,6 +81,10 @@ class CommonVisitorLogic
+     /// @brief Maximum supported struct/array nesting depth for the field path below.
+     static constexpr std::size_t kMaxNestingDepth{16U};
+ 
++    /// @brief Path marker standing for "descended into an array element" rather than a struct field index. Lets a
++    /// format tell array nesting apart from struct nesting when resolving per-level configuration.
++    static constexpr std::size_t kArrayElementMarker{std::numeric_limits<std::size_t>::max()};
++
+     /// @brief Records that traversal descended into the field at the given index of the current struct. Together with
+     /// PopField this maintains the full index path from the root to the element currently visited, letting a format
+     /// resolve per-level configuration for arbitrarily nested types. is_last records whether this field is the last one
+@@ -87,8 +92,8 @@ class CommonVisitorLogic
+     void PushField(const std::size_t field_index, const bool is_last)
+     {
+         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(field_depth_ < kMaxNestingDepth);
+-        field_path_[field_depth_] = field_index;
+-        last_path_[field_depth_] = is_last;
++        field_path_.at(field_depth_) = field_index;
++        last_path_.at(field_depth_) = is_last;
+         ++field_depth_;
+     }
+ 
+@@ -98,17 +103,24 @@ class CommonVisitorLogic
+         --field_depth_;
+     }
+ 
+-    const std::size_t* FieldPathData() const
++    /// @brief Records that traversal descended into an array element (as opposed to a struct field). is_last marks
++    /// whether this is the array's last element, so trailing padding behind variable-length elements is correct.
++    void PushArrayElement(const bool is_last)
++    {
++        PushField(kArrayElementMarker, is_last);
++    }
++
++    [[nodiscard]] const std::size_t* FieldPathData() const
+     {
+         return field_path_.data();
+     }
+ 
+-    const bool* LastPathData() const
++    [[nodiscard]] const bool* LastPathData() const
+     {
+         return last_path_.data();
+     }
+ 
+-    std::size_t FieldDepth() const
++    [[nodiscard]] std::size_t FieldDepth() const
+     {
+         return field_depth_;
+     }
+@@ -142,7 +154,7 @@ class SerializationVisitor : public CommonVisitorLogic
+         strategy_.Serialize(*this, iterator_, value);
+     }
+ 
+-    Result<std::size_t> GetResult() const
++    [[nodiscard]] Result<std::size_t> GetResult() const
+     {
+         return iterator_.GetResult();
+     }
+@@ -192,7 +204,7 @@ class DeSerializationVisitor : public CommonVisitorLogic
+         }
+     }
+ 
+-    Result<std::size_t> GetResult() const
++    [[nodiscard]] Result<std::size_t> GetResult() const
+     {
+         if (not result_.has_value())
+         {
+diff --git a/score/serialization/details/visit.h b/score/serialization/details/visit.h
+index 6315971b8..4e1d2b82d 100644
+--- a/score/serialization/details/visit.h
++++ b/score/serialization/details/visit.h
+@@ -112,17 +112,17 @@ inline void visit_as_struct(SerializationVisitor<Container, Strategy>& visitor,
+     // fold expression iteration over a parameter pack.
+     // coverity[autosar_cpp14_a6_2_2_violation]
+     // coverity[autosar_cpp14_m5_2_10_violation]
+-    score::cpp::ignore = (expander{(helper::MarkMetaInformationAboutElement<Structure>(visitor, counter),
+-                             visitor.PushField(
+-                                 counter,
+-                                 (counter + static_cast<std::size_t>(1U)) ==
+-                                     ::score::common::visitor::struct_visitable<Structure>::fields),
+-                             ::score::common::visitor::visit(visitor, std::forward<Args>(fields)),
+-                             visitor.PopField(),
+-                             // Suppress "AUTOSAR C++14 M0-1-9" rule violations. The rule states "There shall be no dead
+-                             // code.". This is expander expression and is not dead code.
+-                             // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
+-                             ++counter)...});
++    score::cpp::ignore =
++        (expander{(helper::MarkMetaInformationAboutElement<Structure>(visitor, counter),
++                   visitor.PushField(counter,
++                                     (counter + static_cast<std::size_t>(1U)) ==
++                                         ::score::common::visitor::struct_visitable<Structure>::fields),
++                   ::score::common::visitor::visit(visitor, std::forward<Args>(fields)),
++                   visitor.PopField(),
++                   // Suppress "AUTOSAR C++14 M0-1-9" rule violations. The rule states "There shall be no dead
++                   // code.". This is expander expression and is not dead code.
++                   // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
++                   ++counter)...});
+ 
+     visitor.MarkAsElementInStruct();  // neither first / nor last
+ }
+@@ -152,15 +152,15 @@ inline void visit_as_struct(DeSerializationVisitor<Container, Strategy>& visitor
+     // coverity[autosar_cpp14_a6_2_2_violation]
+     // coverity[autosar_cpp14_m5_2_10_violation]
+     // Route each field through Next() so the visitor's latched-error guard stops traversal after the first failure.
+-    score::cpp::ignore = (expander{(helper::MarkMetaInformationAboutElement<Structure>(visitor, counter),
+-                             visitor.PushField(
+-                                 counter,
+-                                 (counter + static_cast<std::size_t>(1U)) ==
+-                                     ::score::common::visitor::struct_visitable<Structure>::fields),
+-                             visitor.Next(std::forward<Args>(fields)),
+-                             visitor.PopField(),
+-                             // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
+-                             ++counter)...});
++    score::cpp::ignore =
++        (expander{(helper::MarkMetaInformationAboutElement<Structure>(visitor, counter),
++                   visitor.PushField(counter,
++                                     (counter + static_cast<std::size_t>(1U)) ==
++                                         ::score::common::visitor::struct_visitable<Structure>::fields),
++                   visitor.Next(std::forward<Args>(fields)),
++                   visitor.PopField(),
++                   // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
++                   ++counter)...});
+ 
+     visitor.MarkAsElementInStruct();  // neither first / nor last
+ }
+-- 
+2.43.0
+
+
+From 2073c14d8c30f79ebae45539ff4327cb13a2d775 Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Wed, 4 Nov 2026 14:07:33 +0100
+Subject: [PATCH 7/8] makes target visible so that it could be reused
+
+---
+ score/memory/BUILD                            |   9 +-
+ score/serialization/BUILD                     |   1 +
+ score/serialization/details/BUILD             |  19 ++-
+ .../details/serialization_visitor.h           |   9 +-
+ .../details/serialization_visitor_test.cpp    | 143 ++++++++++++++++++
+ score/serialization/strategies/BUILD          |   3 +-
+ 6 files changed, 170 insertions(+), 14 deletions(-)
+ create mode 100644 score/serialization/details/serialization_visitor_test.cpp
+
+diff --git a/score/memory/BUILD b/score/memory/BUILD
+index 398fc4021..0ef9f15e6 100644
+--- a/score/memory/BUILD
++++ b/score/memory/BUILD
+@@ -27,14 +27,7 @@ cc_library(
+     hdrs = ["endianness.h"],
+     features = COMPILER_WARNING_FEATURES,
+     tags = ["FFI"],
+-    visibility = [
+-        # Coverage scope root (//tools/coverage, eclipse-score/baselibs#512):
+-        # endianness is a dependency-forest root; everything else in this
+-        # package is reached transitively or keeps the package default.
+-        "//tools/coverage:__pkg__",
+-        "@score_baselibs//score/memory:__subpackages__",
+-        "@score_baselibs//score/serialization:__subpackages__",
+-    ],
++    visibility = ["//visibility:public"],
+     deps = ["@score_baselibs//score/language/futurecpp"],
+ )
+ 
+diff --git a/score/serialization/BUILD b/score/serialization/BUILD
+index fdff47588..6976040ad 100644
+--- a/score/serialization/BUILD
++++ b/score/serialization/BUILD
+@@ -90,6 +90,7 @@ test_suite(
+     name = "unit_tests",
+     tests = [
+         ":unit_test",
++        "//score/serialization/details:unit_test",
+         "//score/serialization/error:unit_test",
+         "//score/serialization/strategies:unit_test",
+         "//score/serialization/strategies:unit_test_hex_string_to_bytes",
+diff --git a/score/serialization/details/BUILD b/score/serialization/details/BUILD
+index 6ef895914..b8294c44a 100644
+--- a/score/serialization/details/BUILD
++++ b/score/serialization/details/BUILD
+@@ -11,7 +11,7 @@
+ # SPDX-License-Identifier: Apache-2.0
+ # *******************************************************************************
+ 
+-load("@rules_cc//cc:defs.bzl", "cc_library")
++load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+ 
+ cc_library(
+     name = "type_traits",
+@@ -50,3 +50,20 @@ cc_library(
+         "//score/static_reflection_with_serialization/visitor",
+     ],
+ )
++
++cc_test(
++    name = "unit_test",
++    srcs = ["serialization_visitor_test.cpp"],
++    features = [
++        "aborts_upon_exception",
++        "treat_warnings_as_errors",
++        "strict_warnings",
++        "additional_warnings",
++    ],
++    tags = ["unit"],
++    visibility = ["//score/serialization:__pkg__"],
++    deps = [
++        ":details",
++        "@googletest//:gtest_main",
++    ],
++)
+diff --git a/score/serialization/details/serialization_visitor.h b/score/serialization/details/serialization_visitor.h
+index fef0212af..b3a697ae2 100644
+--- a/score/serialization/details/serialization_visitor.h
++++ b/score/serialization/details/serialization_visitor.h
+@@ -20,6 +20,7 @@
+ #include "static_reflection_with_serialization/visitor/visit.h"
+ 
+ #include <score/assert.hpp>
++#include <score/span.hpp>
+ #include <score/type_traits.hpp>
+ 
+ #include <array>
+@@ -110,14 +111,14 @@ class CommonVisitorLogic
+         PushField(kArrayElementMarker, is_last);
+     }
+ 
+-    [[nodiscard]] const std::size_t* FieldPathData() const
++    [[nodiscard]] score::cpp::span<const std::size_t> FieldPath() const
+     {
+-        return field_path_.data();
++        return {field_path_.data(), field_depth_};
+     }
+ 
+-    [[nodiscard]] const bool* LastPathData() const
++    [[nodiscard]] score::cpp::span<const bool> LastPath() const
+     {
+-        return last_path_.data();
++        return {last_path_.data(), field_depth_};
+     }
+ 
+     [[nodiscard]] std::size_t FieldDepth() const
+diff --git a/score/serialization/details/serialization_visitor_test.cpp b/score/serialization/details/serialization_visitor_test.cpp
+new file mode 100644
+index 000000000..28ae50e24
+--- /dev/null
++++ b/score/serialization/details/serialization_visitor_test.cpp
+@@ -0,0 +1,143 @@
++/********************************************************************************
++ * Copyright (c) 2026 Contributors to the Eclipse Foundation
++ *
++ * See the NOTICE file(s) distributed with this work for additional
++ * information regarding copyright ownership.
++ *
++ * This program and the accompanying materials are made available under the
++ * terms of the Apache License Version 2.0 which is available at
++ * https://www.apache.org/licenses/LICENSE-2.0
++ *
++ * SPDX-License-Identifier: Apache-2.0
++ ********************************************************************************/
++
++#include "score/serialization/details/serialization_visitor.h"
++
++#include <gtest/gtest.h>
++
++#include <cstddef>
++#include <limits>
++
++namespace score
++{
++namespace serialization
++{
++namespace
++{
++
++TEST(CommonVisitorLogicTest, DefaultsToNeitherFirstNorLastElement)
++{
++    CommonVisitorLogic logic{};
++    const auto& meta = logic.GetMetaInformation();
++    EXPECT_FALSE(meta.is_first_element_in_struct_);
++    EXPECT_FALSE(meta.is_last_element_in_struct_);
++    EXPECT_EQ(meta.field_index_, 0U);
++}
++
++TEST(CommonVisitorLogicTest, MarkAsFirstElementSetsFirstFlagOnly)
++{
++    CommonVisitorLogic logic{};
++    logic.MarkAsLastElementInStruct();
++    logic.MarkAsFirstElementInStruct();
++    const auto& meta = logic.GetMetaInformation();
++    EXPECT_TRUE(meta.is_first_element_in_struct_);
++    EXPECT_FALSE(meta.is_last_element_in_struct_);
++}
++
++TEST(CommonVisitorLogicTest, MarkAsElementClearsBothFlags)
++{
++    CommonVisitorLogic logic{};
++    logic.MarkAsFirstElementInStruct();
++    logic.MarkAsElementInStruct();
++    const auto& meta = logic.GetMetaInformation();
++    EXPECT_FALSE(meta.is_first_element_in_struct_);
++    EXPECT_FALSE(meta.is_last_element_in_struct_);
++}
++
++TEST(CommonVisitorLogicTest, MarkAsLastElementSetsLastFlagOnly)
++{
++    CommonVisitorLogic logic{};
++    logic.MarkAsFirstElementInStruct();
++    logic.MarkAsLastElementInStruct();
++    const auto& meta = logic.GetMetaInformation();
++    EXPECT_FALSE(meta.is_first_element_in_struct_);
++    EXPECT_TRUE(meta.is_last_element_in_struct_);
++}
++
++TEST(CommonVisitorLogicTest, SetFieldIndexIsReflectedInMetaInformation)
++{
++    CommonVisitorLogic logic{};
++    logic.SetFieldIndex(7U);
++    EXPECT_EQ(logic.GetMetaInformation().field_index_, 7U);
++}
++
++TEST(CommonVisitorLogicTest, FieldDepthStartsAtZeroWithEmptyPaths)
++{
++    CommonVisitorLogic logic{};
++    EXPECT_EQ(logic.FieldDepth(), 0U);
++    EXPECT_EQ(logic.FieldPath().size(), 0);
++    EXPECT_EQ(logic.LastPath().size(), 0);
++}
++
++TEST(CommonVisitorLogicTest, PushFieldRecordsIndexAndLastFlag)
++{
++    CommonVisitorLogic logic{};
++    logic.PushField(3U, false);
++    logic.PushField(5U, true);
++
++    ASSERT_EQ(logic.FieldDepth(), 2U);
++
++    const auto field_path = logic.FieldPath();
++    ASSERT_EQ(field_path.size(), 2);
++    EXPECT_EQ(field_path[0], 3U);
++    EXPECT_EQ(field_path[1], 5U);
++
++    const auto last_path = logic.LastPath();
++    ASSERT_EQ(last_path.size(), 2);
++    EXPECT_FALSE(last_path[0]);
++    EXPECT_TRUE(last_path[1]);
++}
++
++TEST(CommonVisitorLogicTest, PopFieldRemovesMostRecentEntry)
++{
++    CommonVisitorLogic logic{};
++    logic.PushField(3U, true);
++    logic.PushField(5U, false);
++    logic.PopField();
++
++    ASSERT_EQ(logic.FieldDepth(), 1U);
++    const auto field_path = logic.FieldPath();
++    ASSERT_EQ(field_path.size(), 1);
++    EXPECT_EQ(field_path[0], 3U);
++    EXPECT_TRUE(logic.LastPath()[0]);
++}
++
++TEST(CommonVisitorLogicTest, PushArrayElementUsesArrayElementMarker)
++{
++    CommonVisitorLogic logic{};
++    logic.PushArrayElement(true);
++
++    ASSERT_EQ(logic.FieldDepth(), 1U);
++    EXPECT_EQ(logic.FieldPath()[0], CommonVisitorLogic::kArrayElementMarker);
++    EXPECT_EQ(CommonVisitorLogic::kArrayElementMarker, std::numeric_limits<std::size_t>::max());
++    EXPECT_TRUE(logic.LastPath()[0]);
++}
++
++TEST(CommonVisitorLogicTest, PathsExposeOnlyValidDepth)
++{
++    CommonVisitorLogic logic{};
++    for (std::size_t i = 0U; i < CommonVisitorLogic::kMaxNestingDepth; ++i)
++    {
++        logic.PushField(i, false);
++    }
++    EXPECT_EQ(logic.FieldDepth(), CommonVisitorLogic::kMaxNestingDepth);
++    EXPECT_EQ(logic.FieldPath().size(), static_cast<std::ptrdiff_t>(CommonVisitorLogic::kMaxNestingDepth));
++    EXPECT_EQ(logic.LastPath().size(), static_cast<std::ptrdiff_t>(CommonVisitorLogic::kMaxNestingDepth));
++
++    logic.PopField();
++    EXPECT_EQ(logic.FieldPath().size(), static_cast<std::ptrdiff_t>(CommonVisitorLogic::kMaxNestingDepth - 1U));
++}
++
++}  // namespace
++}  // namespace serialization
++}  // namespace score
+diff --git a/score/serialization/strategies/BUILD b/score/serialization/strategies/BUILD
+index 620219047..60512b042 100644
+--- a/score/serialization/strategies/BUILD
++++ b/score/serialization/strategies/BUILD
+@@ -71,6 +71,7 @@ cc_library(
+ 
+ cc_library(
+     name = "uds_strategy_serialization_test_helper",
++    testonly = True,
+     srcs = ["uds_strategy_serialization_test_helper.cpp"],
+     hdrs = ["uds_strategy_serialization_test_helper.h"],
+     features = [
+@@ -78,7 +79,7 @@ cc_library(
+         "strict_warnings",
+         "additional_warnings",
+     ],
+-    visibility = ["//score:__subpackages__"],
++    visibility = ["//visibility:public"],  # platform_only
+     deps = [
+         ":hex_string_to_bytes",
+         ":uds_strategy",
+-- 
+2.43.0
+
+
+From ec9e78f52ea31eceb340736d44fd0a3bab09da8e Mon Sep 17 00:00:00 2001
+From: Muhammad Wahaj Sethi <muhammad-wahaj.sethi@bmw.de>
+Date: Thu, 5 Nov 2026 15:56:29 +0100
+Subject: [PATCH 8/8] score/serialization: add SerializeIterator::WriteAt for
+ back-patching
+
+SOME/IP requires the length prefix of a dynamic-length array to hold the
+byte length of the serialized array data, not the element count. That byte
+length is only known after the elements are written, so the prefix is
+written as a placeholder and patched afterwards.
+---
+ score/serialization/serialize_iterator.h      | 20 ++++++
+ .../serialization/serialize_iterator_test.cpp | 66 ++++++++++++++++++-
+ 2 files changed, 85 insertions(+), 1 deletion(-)
+
+diff --git a/score/serialization/serialize_iterator.h b/score/serialization/serialize_iterator.h
+index db3ccd8c6..9f0a51c40 100644
+--- a/score/serialization/serialize_iterator.h
++++ b/score/serialization/serialize_iterator.h
+@@ -161,6 +161,26 @@ class SerializeIterator
+         return *this;
+     }
+ 
++    /// @brief Overwrites an already-written element at the given offset (counted from the start of this iterator).
++    /// @details Needed because SOME/IP requires the length prefix of a dynamic-length array to hold the byte length of
++    /// the serialized array data, not the element count; that byte length is only known after the
++    /// elements are written, so the prefix is written as a placeholder and patched afterwards. Offsets not yet written
++    /// latch kOutOfBoundsWrite.
++    SerializeIterator<Container>& WriteAt(const std::size_t offset, const typename Container::value_type& value) &
++    {
++        if (not result_->has_value())
++        {
++            return *this;  // keep the first latched error
++        }
++        if (offset >= result_->value())
++        {
++            *result_ = MakeUnexpected(SerializationError::kOutOfBoundsWrite);
++            return *this;
++        }
++        *std::next(container_.begin(), static_cast<difference_type>(offset)) = value;
++        return *this;
++    }
++
+     [[nodiscard]] Result<std::size_t> GetResult() const
+     {
+         return *result_;
+diff --git a/score/serialization/serialize_iterator_test.cpp b/score/serialization/serialize_iterator_test.cpp
+index 38b17df43..793c2c322 100644
+--- a/score/serialization/serialize_iterator_test.cpp
++++ b/score/serialization/serialize_iterator_test.cpp
+@@ -18,6 +18,7 @@
+ #include <gtest/gtest.h>
+ 
+ #include <array>
++#include <cstddef>
+ #include <cstdint>
+ #include <vector>
+ 
+@@ -125,6 +126,66 @@ TYPED_TEST_P(SerializeIteratorFixture, CanIndicateError)
+     ASSERT_FALSE(result.has_value());
+ }
+ 
++constexpr std::uint8_t kPlaceholder{0x00U};
++constexpr std::uint8_t kPatchedValue{0x01U};
++constexpr std::uint8_t kPayload{0x02U};
++constexpr std::size_t kPlaceholderOffset{0U};
++
++TYPED_TEST_P(SerializeIteratorFixture, WriteAtOverwritesAlreadyWrittenElement)
++{
++    // Given a serialization iterator with a placeholder followed by payload
++    auto iterator = SerializeInto(this->buffer);
++    iterator = kPlaceholder;
++    iterator = kPayload;
++    const auto written_before_patch = iterator.GetResult();
++    ASSERT_TRUE(written_before_patch.has_value());
++
++    // When back-patching the placeholder
++    iterator.WriteAt(kPlaceholderOffset, kPatchedValue);
++
++    // Then the placeholder is replaced, the payload is kept and the written count is unchanged
++    auto data = this->buffer.begin();
++    EXPECT_EQ(*data++, kPatchedValue);
++    EXPECT_EQ(*data++, kPayload);
++    const auto result = iterator.GetResult();
++    ASSERT_TRUE(result.has_value());
++    EXPECT_EQ(result.value(), written_before_patch.value());
++}
++
++TYPED_TEST_P(SerializeIteratorFixture, WriteAtBeyondWrittenElementsIndicatesError)
++{
++    // Given a serialization iterator with one written element
++    auto iterator = SerializeInto(this->buffer);
++    iterator = kPayload;
++    const auto first_unwritten_offset = iterator.GetResult();
++    ASSERT_TRUE(first_unwritten_offset.has_value());
++
++    // When writing at an offset that has not been written yet
++    iterator.WriteAt(first_unwritten_offset.value(), kPatchedValue);
++
++    // Then an out-of-bounds error is reported
++    const auto result = iterator.GetResult();
++    ASSERT_FALSE(result.has_value());
++    EXPECT_EQ(result.error(), SerializationError::kOutOfBoundsWrite);
++}
++
++TYPED_TEST_P(SerializeIteratorFixture, WriteAtAfterErrorKeepsError)
++{
++    // Given a serialization iterator with a latched error
++    auto iterator = SerializeInto(this->buffer);
++    iterator = kPlaceholder;
++    iterator = MakeUnexpected(SerializationError::kStringTooBig);
++
++    // When back-patching
++    iterator.WriteAt(kPlaceholderOffset, kPatchedValue);
++
++    // Then the buffer is untouched and the original error is preserved
++    EXPECT_EQ(*this->buffer.begin(), kPlaceholder);
++    const auto result = iterator.GetResult();
++    ASSERT_FALSE(result.has_value());
++    EXPECT_EQ(result.error(), SerializationError::kStringTooBig);
++}
++
+ TYPED_TEST_P(DeSerializeIteratorFixture, CanIncrement)
+ {
+     // Given a deserialization iterator for a buffer that contains three data elements
+@@ -233,7 +294,10 @@ TYPED_TEST_P(DeSerializeIteratorFixtureEmptyBuffer, CheckBufferEmpty)
+ REGISTER_TYPED_TEST_SUITE_P(SerializeIteratorFixture,
+                             WriteMultipleDataElementsViaIterator,
+                             CanGetNumberOfWrittenElements,
+-                            CanIndicateError);
++                            CanIndicateError,
++                            WriteAtOverwritesAlreadyWrittenElement,
++                            WriteAtBeyondWrittenElementsIndicatesError,
++                            WriteAtAfterErrorKeepsError);
+ 
+ REGISTER_TYPED_TEST_SUITE_P(DeSerializeIteratorFixture,
+                             CanIncrement,
+-- 
+2.43.0
+

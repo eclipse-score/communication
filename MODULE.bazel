@@ -37,7 +37,15 @@ single_version_override(
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
     # See https://github.com/eclipse-score/bazel_cpp_toolchains/issues/68
-    patches = ["//third_party/score_baselibs:restore_qnx8_poll_workaround.patch"],
+    # Also widen the visibility of the endianness target so it can be consumed
+    # by the SOME/IP serialization strategy in this module.
+    patches = [
+        "//third_party/score_baselibs:restore_qnx8_poll_workaround.patch",
+        # TODO: Remove once a baselibs release > 0.2.17 includes eclipse-score/baselibs#741 (f796d30..4c87dd5).
+        "//third_party/score_baselibs:serialization_bounds_safety.patch",
+        # TODO: Remove once a baselibs release > 0.2.17 includes eclipse-score/baselibs#775 (efcabab..ec9e78f).
+        "//third_party/score_baselibs:someip_strategy.patch",
+    ],
 )
 
 bazel_dep(name = "score_bazel_platforms", version = "1.1.0")
