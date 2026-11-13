@@ -17,7 +17,7 @@
 // We keep the tag based mechanism as of now and can revisit it later if required.
 // 2. `subscribe` takes the consumer field by value, so the generated `get_{name}()` and
 // `set_{name}()` wrappers (which borrow the whole consumer) cannot be used after a field has
-// been moved by `subscribe`. See TODO_implementation_time_decisions.md.
+// been moved by `subscribe`. See "TODOs and Improvements" in design_document_field.md.
 
 // Note: We are using the event related trait as a base trait for where ever we have same common
 // APIs or functionality, as of now there are derived from concept crate but

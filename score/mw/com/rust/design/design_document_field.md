@@ -448,6 +448,25 @@ Note: `subscribe()` consumes the `FieldSubscriber` struct field by value. The `{
 
 All `LolaFieldSubscriber`, `LolaFieldSubscription`, `LolaFieldPublisher`, `LolaFieldGetCaller`, and `LolaFieldSetCaller` methods in `com-api-runtime-lola` are currently `todo!()` placeholders. The FFI bindings to the underlying C++ middleware for field subscribe/notify, get, set, and update are not yet implemented. This blocks all end-to-end field tests.
 
+Until implemented, an interface containing a Field type panics at consumer creation with the Mock and LoLa runtimes. Keep such interfaces out of the default example binary.
+
+### Public `FieldPublisher::register_get_handler`
+
+C++ `SkeletonField` has no public user get handler. `RegisterGetHandler()` is private and answers with the latest value. A custom Rust handler can return a value that differs from what subscribers received through `update()`. The get handler is also sync (`Fn() -> T`) while the set handler is async, which is asymmetric. To be decided at LoLa field producer implementation time.
+
+### `subscribe(self)` versus the `get_x(&self)` and `set_x(&self)` wrappers
+
+`subscribe` takes the field consumer by value. The generated wrappers borrow the whole consumer, so they cannot be used once a field has been moved by `subscribe`. Only the raw `{name}_get` and `{name}_set` callers survive the partial move. The mixed example carries a `TODO: Ordering workaround`. C++ `ProxyField::Subscribe()` does not consume the field. To be decided at LoLa field consumer implementation time.
+
+### Set handler semantics
+
+The C++ handler is `void(FieldType&)`. It edits the value in place, runs under a per-field mutex, and the middleware then calls `Send()` and can return an error to the proxy. The Rust handler is `Fn(T) -> Fut<Output = T>`. To be decided at LoLa field producer implementation time:
+
+- Error path so that a handler can reject a value. The result type becomes `Result<T>` and maps to `score::Result` and `MethodErrc` (see the error items in the method design document).
+- Serialization of set calls per field, as in C++ (one slot, no extra allocation). The runtime must keep this guarantee even if the engine later dispatches concurrently.
+- Document that the returned value is published to subscribers (the C++ `Send`).
+- Executor hook. LoLa invokes handlers synchronously on the message passing thread, so a `block_on` fallback can deadlock if the future needs an executor on that thread. The signature of the `spawn(future)` hook is still TBD.
+
 ### Mandatory get handler if required by the underlying communication
 
 The get handler is currently optional because the C++ `SkeletonField` installs an internal default that returns the latest value. If the underlying communication layer needs a user-provided get handler for correct operation, `register_get_handler_{name}` must be kept mandatory. In that case the type-state validator must again track a get-handler state for every `WithGetter` field, and `offer()` must only be available once it is `HandlerSet`.

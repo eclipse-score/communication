@@ -519,6 +519,16 @@ All `LolaMethodCaller` and `LolaMethodHandler` methods in `com-api-runtime-lola/
 
 See: <https://github.com/eclipse-score/communication/issues/782>
 
+Until implemented, an interface containing a Method type panics at consumer creation with the Mock and LoLa runtimes. Keep such interfaces out of the default example binary.
+
+### TBD: Method handler return path
+
+The C++ handler is `void(ReturnType&, const Args&...)` and writes straight into the reply buffer. The Rust handler returns the value from a `'static` future, which costs an extra copy on the producer side and prevents borrowing the arguments inside the async body. To be decided at LoLa method handler implementation time.
+
+### TBD: Zero-copy argument safety
+
+`assume_init()` on an unwritten argument slot is undefined behavior once real shared memory backs it. To be decided at LoLa method caller implementation time, when argument pointers refer to shared memory.
+
 ### Issue #781 — Implement RAII lifecycle on `MethodInArgPtr<T>` concrete types
 
 `MethodInArgPtr<T>` is now a trait (not a struct). Each runtime has its own concrete type (`LolaMethodInArgPtr<T>`, `MockMethodInArgPtr<T>`) that currently holds only `PhantomData`. Once shared-memory layout is added, these types need to store a real FFI slot pointer and implement `Drop` to release the slot if `invoke_zero_copy` is never called — analogous to `AllocateePtrWrapper` / `LolaBinding` in the event design.
@@ -537,7 +547,7 @@ Handlers return a plain `Return` value (wrapped in a future) and have no way to 
 - Define how it maps to the C++ side (`score::Result` and its error codes).
 - Both languages must agree on the wire representation (layout, tag values, error code space).
 
-The same applies to the field set handler, since fields reuse the method machinery.
+The same applies to the field set handler, since fields reuse the method machinery. End-to-end protection also affects the error model and must be considered together with this item and the handler return path.
 
 ### TBD: Consumer-side error cases
 
