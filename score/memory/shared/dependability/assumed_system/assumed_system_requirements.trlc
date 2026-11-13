@@ -1,0 +1,85 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package MemoryShared
+
+import ScoreReq
+
+ScoreReq.AssumedSystemReq ASR_InterProcessDataSharing {
+    description = "The platform shall provide a mechanism that allows different processes to exchange data without copying it between them."
+    safety = ScoreReq.Asil.B
+    rationale = """Processes may exchange large amounts of data under real-time constraints, where copying is neither feasible nor desired.
+    The mechanism provides shared access to the data; protection of the data content against corruption and communication faults
+    such as loss, repetition or delay is not part of it.
+    ASIL-B because safety-related applications exchange their data through this mechanism."""
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_AccessControl {
+    description = """The platform shall ensure that only software elements that have been explicitly granted access can read or write data
+    exchanged via the inter-process data sharing mechanism."""
+    safety = ScoreReq.Asil.B
+    rationale = """Software elements of different ASIL, including QM, may exchange data via the same mechanism.
+    Read/write access by a software element that has not been granted access is a form of interference that has to be prevented.
+    This addresses faulty software elements; protection against malicious access is a security topic and out of scope.
+    ASIL-B because a QM software element must not be able to corrupt data of an ASIL-B software element."""
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_NoOutOfBoundsAccess {
+    description = """The platform shall provide a means to store references between items of data exchanged via the inter-process data sharing mechanism,
+    such that a corrupted reference does not lead a software element to read or write memory outside the exchanged data."""
+    safety = ScoreReq.Asil.B
+    rationale = """A software element with write access, e.g. a QM element, may corrupt references stored in the exchanged data.
+    This includes positions the mechanism itself stores in the exchanged data, e.g. the position of the next allocation.
+    An ASIL-B element must not be led by such a reference to read or write memory outside the exchanged data.
+    This addresses faulty software elements; protection against malicious access is a security topic and out of scope.
+    ASIL-B because a QM software element must not be able to cause an ASIL-B software element to access memory it does not own."""
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_CreatorVerification {
+    description = """The platform shall allow a software element accessing data exchanged via the inter-process data sharing mechanism to verify
+    that the data was created by an expected software element."""
+    safety = ScoreReq.Asil.B
+    rationale = """Shared data is located by name; without verification, data created by a faulty software element using the same name could be taken for valid data.
+    ASIL-B because an ASIL-B software element must not process data of an unexpected creator as valid data."""
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_SafeState {
+    description = "The Safe State of the system shall be *safe-silent*."
+    safety = ScoreReq.Asil.B
+    rationale = """Only fail-safe systems are in scope; a software element that detects an unrecoverable error of the inter-process data sharing mechanism
+    stops instead of continuing with possibly corrupted data, as continuing is more critical than losing the function.
+    ASIL-B because ASIL-B software elements rely on this reaction."""
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_NoAccessBeforeInitialization {
+    description = """The platform shall ensure that a software element cannot access data exchanged via the inter-process data sharing mechanism
+    before the creator of that data has completed its initialization."""
+    safety = ScoreReq.Asil.B
+    rationale = """Software elements start independently; accessing partially initialized data would lead to processing inconsistent data.
+    ASIL-B because inconsistent data must not be processed by an ASIL-B software element."""
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_FixedMemoryBudget {
+    description = """The platform shall ensure that the memory used for data exchanged via the inter-process data sharing mechanism
+    does not grow beyond a maximum size defined when the exchange is set up."""
+    safety = ScoreReq.Asil.B
+    rationale = """Memory growing during operation could exhaust system memory and cause loss of function of other software elements.
+    The maximum size is given by the user or integrator; the memory may grow up to this size, e.g. to support dynamic data types.
+    ASIL-B because exhaustion would affect ASIL-B software elements."""
+    version = 1
+}
