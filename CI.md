@@ -249,6 +249,29 @@ Reviewers must acknowledge that they have performed the actions in the checklist
 During merge to the base branch, the acknowledgements are stored in the git history as evidence.
 The checklists are defined in the [review checklist configuration document](./.github/review_checklists.yml).
 
+#### PR state labelling
+
+Gives an overview of whose action is required on each open pull request. Every non-draft PR carries exactly one label:
+
+- `state:needs-author`: merge conflicts, failing required check, or changes requested without a later author action (DCO/ECA are required checks).
+- `state:needs-maintainer`: awaiting a review or a reaction to new author activity.
+- `state:ready-to-merge`: approved, required checks green, no conflicts, review checklists satisfied.
+
+The label is updated on every PR-related event and by an hourly sweep that catches missed events such as check results.
+It uses the same two-stage unprivileged trigger / privileged `workflow_run` pattern as the [review checklists](#review-checklists), so that PRs from forks are supported.
+Maintainers and contributors use saved searches such as `is:pr is:open label:state:needs-maintainer` as work queues.
+The labels are only written once the repository variable `PR_STATE_ENABLED` is `true`; before that, the workflows only log what they would change.
+The implementation is in [`tools/pr-state`](./tools/pr-state/README.md).
+
+#### Stale pull requests
+
+Runs daily. PRs labelled `state:needs-author` (and unlabelled ones, e.g. drafts) are marked stale after 14 days without activity and closed 7 days later.
+PRs labelled `state:needs-maintainer` are never closed automatically; after 7 days they are labelled `needs-maintainer-overdue` and highlighted in the digest.
+
+#### PR overview digest
+
+Runs on weekdays and updates a single pinned issue listing the `state:needs-maintainer` PRs by age and the `state:needs-author` PRs close to becoming stale.
+
 ## Post-mortem analysis and follow-up actions
 
 It is acknowledged that this design is not perfect, and experience will teach us that this design will have to be adapted.

@@ -1,0 +1,93 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Privileged apply stage of the PR state labelling, see tools/pr-state.
+#
+# Runs via `workflow_run` (always with the permissions of the base
+# repository), hourly as a sweep over all open pull requests, or manually.
+# The script always comes from the default branch; no pull request code is
+# checked out or executed.
+#
+# Labels are only written if the repository variable PR_STATE_ENABLED is
+# 'true' (or on manual runs with dry_run=false). Otherwise the intended
+# changes are only logged (dry run).
+
+name: PR State (Apply)
+
+on:
+  workflow_run:
+    workflows: ["PR State (Trigger)"]
+    types: [completed]
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only log the intended label changes"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+  pull-requests: write
+
+# Serialize all runs so that label updates of one pull request cannot race.
+concurrency:
+  group: pr-state-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: Update PR state labels
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Download PR number
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        continue-on-error: true
+        with:
+          name: pr-number
+          path: pr-number
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Update labels
+        env:
+          REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          DRY_RUN_INPUT: ${{ inputs.dry_run }}
+          ENABLED: ${{ vars.PR_STATE_ENABLED }}
+        run: |
+          args=(--repo "${REPO}")
+          if [ "${EVENT_NAME}" = "workflow_dispatch" ]; then
+            [ "${DRY_RUN_INPUT}" = "true" ] && args+=(--dry-run)
+          else
+            [ "${ENABLED}" = "true" ] || args+=(--dry-run)
+          fi
+          if [ "${EVENT_NAME}" = "workflow_run" ]; then
+            pr_number="$(cat pr-number/pr-number.txt 2>/dev/null || true)"
+            if [[ "${pr_number}" =~ ^[0-9]+$ ]]; then
+              args+=(--pr "${pr_number}")
+            else
+              echo "No PR number available, sweeping all open pull requests."
+            fi
+          fi
+          python3 tools/pr-state/pr_state.py "${args[@]}"
