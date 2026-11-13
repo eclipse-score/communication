@@ -130,8 +130,10 @@ void ProxyEventBase::Unsubscribe()
         return;
     }
 
+    // COV_JUSTIFIED_START unsubscribe-binding-nonnull-assert
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ != nullptr,
                                                 "binding_ must be set if Subscribe completed successfully.");
+    // COV_JUSTIFIED_STOP
 
     tracing::TraceUnsubscribe(tracing_data_, *binding_);
 
