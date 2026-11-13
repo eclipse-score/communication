@@ -1,0 +1,7 @@
+{
+  "appId": "APIID",
+  "appDesc": "api_idempotency",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole"
+}
