@@ -261,7 +261,7 @@ The label is updated on every PR-related event and by an hourly sweep that catch
 It uses the same two-stage unprivileged trigger / privileged `workflow_run` pattern as the [review checklists](#review-checklists), so that PRs from forks are supported.
 Maintainers and contributors use saved searches such as `is:pr is:open label:state:needs-maintainer` as work queues.
 The labels are only written once the repository variable `PR_STATE_ENABLED` is `true`; before that, the workflows only log what they would change.
-The implementation is in [`tools/pr-state`](./tools/pr-state/README.md), the design in the [PR ball-in-court design](./docs/superpowers/specs/2026-11-13-pr-ball-in-court-design.md).
+The implementation is in [`tools/pr-state`](./tools/pr-state/README.md).
 
 #### Stale pull requests
 
