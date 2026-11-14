@@ -23,6 +23,7 @@ filegroup(
         "//score/mw/com/doc/tutorial/rust/chapter_5:doc_files",
         "//score/mw/com/doc/tutorial/rust/chapter_6:doc_files",
         "//score/mw/com/doc/tutorial/rust/chapter_7:doc_files",
+        "//score/mw/com/doc/tutorial/rust/chapter_8:doc_files",
     ],
     visibility = ["//score/mw/com/doc/tutorial:__pkg__"],
 )
