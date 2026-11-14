@@ -76,6 +76,10 @@ void WaitOrFail(concurrency::Notification& notification,
 
 void RunProviderMoveConstructBeforeOffered(const score::cpp::stop_token& stop_token)
 {
+    // Captured notifications must outlive the skeletons and their in-flight handlers.
+    concurrency::Notification handler_a_called{};
+    concurrency::Notification handler_b_called{};
+
     // Step 1. Create Skeleton A
     std::cout << "\nProvider: Step 1 - Create Skeleton A" << std::endl;
     SkeletonContainer<SkeletonMethodMoveSkeleton> skeleton_container{};
@@ -88,7 +92,6 @@ void RunProviderMoveConstructBeforeOffered(const score::cpp::stop_token& stop_to
 
     // Step 3. Register Handler A on Skeleton B. Its body notifies handler_a_called when called.
     std::cout << "\nProvider: Step 3 - Register Handler A (a + b) on Skeleton B" << std::endl;
-    concurrency::Notification handler_a_called{};
     RegisterHandlerOrFail(
         skeleton_b.moved_method_,
         [&handler_a_called](std::int32_t& result, const std::int32_t& a, const std::int32_t& b) {
@@ -111,7 +114,6 @@ void RunProviderMoveConstructBeforeOffered(const score::cpp::stop_token& stop_to
 
     // Step 7. Register Handler B on Skeleton C. Its body notifies handler_b_called when called.
     std::cout << "\nProvider: Step 7 - Register Handler B (a * b) on Skeleton C" << std::endl;
-    concurrency::Notification handler_b_called{};
     RegisterHandlerOrFail(
         skeleton_c.moved_method_,
         [&handler_b_called](std::int32_t& result, const std::int32_t& a, const std::int32_t& b) {
@@ -130,6 +132,9 @@ void RunProviderMoveConstructBeforeOffered(const score::cpp::stop_token& stop_to
 
 void RunProviderMoveConstructAfterOffered(const score::cpp::stop_token& stop_token)
 {
+    concurrency::Notification handler_a_called{};
+    concurrency::Notification handler_b_called{};
+
     // Step 1. Create Skeleton A
     std::cout << "\nProvider: Step 1 - Create Skeleton A" << std::endl;
     SkeletonContainer<SkeletonMethodMoveSkeleton> skeleton_container{};
@@ -138,7 +143,6 @@ void RunProviderMoveConstructAfterOffered(const score::cpp::stop_token& stop_tok
 
     // Step 2. Register Handler A on Skeleton A. Its body notifies handler_a_called when called.
     std::cout << "\nProvider: Step 2 - Register Handler A (a + b)" << std::endl;
-    concurrency::Notification handler_a_called{};
     RegisterHandlerOrFail(
         skeleton_a.moved_method_,
         [&handler_a_called](std::int32_t& result, const std::int32_t& a, const std::int32_t& b) {
@@ -165,7 +169,6 @@ void RunProviderMoveConstructAfterOffered(const score::cpp::stop_token& stop_tok
 
     // Step 7. Register Handler B on Skeleton B. Its body notifies handler_b_called when called.
     std::cout << "\nProvider: Step 7 - Register Handler B (a * b) on Skeleton B" << std::endl;
-    concurrency::Notification handler_b_called{};
     RegisterHandlerOrFail(
         skeleton_b.moved_method_,
         [&handler_b_called](std::int32_t& result, const std::int32_t& a, const std::int32_t& b) {
@@ -184,6 +187,9 @@ void RunProviderMoveConstructAfterOffered(const score::cpp::stop_token& stop_tok
 
 void RunProviderMoveAssignBeforeOffered(const score::cpp::stop_token& stop_token)
 {
+    concurrency::Notification handler_a_called{};
+    concurrency::Notification handler_c_called{};
+
     // Step 1. Create Skeleton A  and Skeleton B.
     std::cout << "\nProvider: Step 1 - Create Skeleton A and placeholder Skeleton B" << std::endl;
     SkeletonContainer<SkeletonMethodMoveSkeleton> skeleton_a_container{};
@@ -200,7 +206,6 @@ void RunProviderMoveAssignBeforeOffered(const score::cpp::stop_token& stop_token
 
     // Step 3. Register Handler A on Skeleton B. Its body notifies handler_a_called when called.
     std::cout << "\nProvider: Step 3 - Register Handler A (a + b) on Skeleton B" << std::endl;
-    concurrency::Notification handler_a_called{};
     RegisterHandlerOrFail(
         skeleton_b.moved_method_,
         [&handler_a_called](std::int32_t& result, const std::int32_t& a, const std::int32_t& b) {
@@ -230,7 +235,6 @@ void RunProviderMoveAssignBeforeOffered(const score::cpp::stop_token& stop_token
     // Step 8. Register Handler C (a * b) on Skeleton C. Its body notifies
     //         handler_c_called when called.
     std::cout << "\nProvider: Step 8 - Register Handler C (a * b) on Skeleton C" << std::endl;
-    concurrency::Notification handler_c_called{};
     RegisterHandlerOrFail(
         skeleton_c.moved_method_,
         [&handler_c_called](std::int32_t& result, const std::int32_t& a, const std::int32_t& b) {
@@ -249,6 +253,9 @@ void RunProviderMoveAssignBeforeOffered(const score::cpp::stop_token& stop_token
 
 void RunProviderMoveAssignAfterOffered(const score::cpp::stop_token& stop_token)
 {
+    concurrency::Notification handler_a_called{};
+    concurrency::Notification handler_c_called{};
+
     // Step 1. Create Skeleton A and Skeleton B.
     std::cout << "\nProvider: Step 1 - Create Skeleton A and placeholder Skeleton B" << std::endl;
     SkeletonContainer<SkeletonMethodMoveSkeleton> skeleton_a_container{};
@@ -262,7 +269,6 @@ void RunProviderMoveAssignAfterOffered(const score::cpp::stop_token& stop_token)
     // Step 2. Register Handler A on Skeleton A. Its body notifies notification_a when called.
     //         Register the placeholder handler on Skeleton B.
     std::cout << "\nProvider: Step 2 - Register Handler A (a + b) on Skeleton A" << std::endl;
-    concurrency::Notification handler_a_called{};
     RegisterHandlerOrFail(
         skeleton_a.moved_method_,
         [&handler_a_called](std::int32_t& result, const std::int32_t& a, const std::int32_t& b) {
@@ -296,7 +302,6 @@ void RunProviderMoveAssignAfterOffered(const score::cpp::stop_token& stop_token)
     // Step 7. Register Handler C (a * b) on Skeleton B. Its body notifies
     //         handler_c_called when called.
     std::cout << "\nProvider: Step 7 - Register Handler C (a * b) on Skeleton B" << std::endl;
-    concurrency::Notification handler_c_called{};
     RegisterHandlerOrFail(
         skeleton_b.moved_method_,
         [&handler_c_called](std::int32_t& result, const std::int32_t& a, const std::int32_t& b) {

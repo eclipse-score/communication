@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2025, 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -34,6 +34,8 @@
 #include <score/assert_support.hpp>
 
 #include <gtest/gtest.h>
+
+#include <future>
 
 namespace score::mw::com::impl::lola
 {
@@ -153,6 +155,138 @@ class SkeletonMethodFixture : public SkeletonMockedMemoryFixture
     safecpp::Scope<> method_call_handler_scope_{};
     safecpp::Scope<> method_call_registration_guard_scope_{};
 };
+
+TEST_F(SkeletonMethodFixture, ReplacingHandlerKeepsInFlightHandlerAlive)
+{
+    RecordProperty("given", "a subscribed method executing a registered handler");
+    RecordProperty("when", "another thread replaces that handler before it returns");
+    RecordProperty("then", "the old handler stays alive and subsequent calls use the replacement");
+
+    struct Context
+    {
+        std::promise<void> entered;
+        std::promise<void> resume;
+        std::future<void> resume_future{resume.get_future()};
+    } context;
+    auto lifetime = std::make_shared<int>(0);
+    const std::weak_ptr<int> handler_lifetime{lifetime};
+
+    GivenASkeletonMethod().WhichCapturesRegisteredMethodCallHandler();
+    ASSERT_TRUE(unit_
+                    ->RegisterHandler([&context, lifetime = std::move(lifetime)](auto, auto, auto) {
+                        auto& invocation_context = context;
+                        invocation_context.entered.set_value();
+                        invocation_context.resume_future.wait();
+                    })
+                    .has_value());
+    ASSERT_TRUE(unit_
+                    ->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithNoInArgsOrReturn,
+                                                     kEmptyInArgStorage,
+                                                     kEmptyReturnStorage,
+                                                     proxy_method_instance_identifier_,
+                                                     method_call_handler_scope_,
+                                                     kAllowedProxyUid,
+                                                     kAllowedProxyPid,
+                                                     kAsilLevel)
+                    .has_value());
+
+    auto invocation = std::async(std::launch::async, [this] {
+        return std::invoke(captured_method_call_handler_.value(), kDummyQueuePosition);
+    });
+    context.entered.get_future().wait();
+    bool replacement_called{false};
+    EXPECT_TRUE(unit_
+                    ->RegisterHandler([&replacement_called](auto, auto, auto) {
+                        replacement_called = true;
+                    })
+                    .has_value());
+    EXPECT_FALSE(handler_lifetime.expired());
+    context.resume.set_value();
+    EXPECT_TRUE(invocation.get().has_value());
+    EXPECT_TRUE(handler_lifetime.expired());
+    EXPECT_FALSE(replacement_called);
+    EXPECT_TRUE(std::invoke(captured_method_call_handler_.value(), kDummyQueuePosition).has_value());
+    EXPECT_TRUE(replacement_called);
+}
+
+TEST_F(SkeletonMethodFixture, ReplacingHandlerPreservesInFlightNotificationTarget)
+{
+    RecordProperty("given", "a handler paused before notifying its caller");
+    RecordProperty("when", "a replacement handler captures a different notification target");
+    RecordProperty("then", "the in-flight handler still notifies its original target");
+
+    struct Context
+    {
+        std::promise<void> entered;
+        std::promise<void> resume;
+        std::future<void> resume_future{resume.get_future()};
+    } context;
+    bool first_notified{false};
+    bool second_notified{false};
+    auto make_handler = [&context](bool& notified) {
+        return [&context, &notified](auto, auto, auto) {
+            auto& invocation_context = context;
+            invocation_context.entered.set_value();
+            invocation_context.resume_future.wait();
+            notified = true;
+        };
+    };
+
+    GivenASkeletonMethod().WhichCapturesRegisteredMethodCallHandler();
+    ASSERT_TRUE(unit_->RegisterHandler(make_handler(first_notified)).has_value());
+    ASSERT_TRUE(unit_
+                    ->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithNoInArgsOrReturn,
+                                                     kEmptyInArgStorage,
+                                                     kEmptyReturnStorage,
+                                                     proxy_method_instance_identifier_,
+                                                     method_call_handler_scope_,
+                                                     kAllowedProxyUid,
+                                                     kAllowedProxyPid,
+                                                     kAsilLevel)
+                    .has_value());
+    auto invocation = std::async(std::launch::async, [this] {
+        return std::invoke(captured_method_call_handler_.value(), kDummyQueuePosition);
+    });
+    context.entered.get_future().wait();
+    EXPECT_TRUE(unit_->RegisterHandler(make_handler(second_notified)).has_value());
+    context.resume.set_value();
+    EXPECT_TRUE(invocation.get().has_value());
+    EXPECT_TRUE(first_notified);
+    EXPECT_FALSE(second_notified);
+}
+
+TEST_F(SkeletonMethodFixture, HandlerCanReplaceItself)
+{
+    RecordProperty("given", "a subscribed method with a registered handler");
+    RecordProperty("when", "the handler registers its own replacement");
+    RecordProperty("then", "registration does not deadlock and the next call uses the replacement");
+
+    GivenASkeletonMethod().WhichCapturesRegisteredMethodCallHandler();
+    std::size_t calls{0U};
+    ASSERT_TRUE(unit_
+                    ->RegisterHandler([this, &calls](auto, auto, auto) {
+                        ++calls;
+                        EXPECT_TRUE(unit_
+                                        ->RegisterHandler([&calls](auto, auto, auto) {
+                                            calls += 10U;
+                                        })
+                                        .has_value());
+                    })
+                    .has_value());
+    ASSERT_TRUE(unit_
+                    ->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithNoInArgsOrReturn,
+                                                     kEmptyInArgStorage,
+                                                     kEmptyReturnStorage,
+                                                     proxy_method_instance_identifier_,
+                                                     method_call_handler_scope_,
+                                                     kAllowedProxyUid,
+                                                     kAllowedProxyPid,
+                                                     kAsilLevel)
+                    .has_value());
+    EXPECT_TRUE(std::invoke(captured_method_call_handler_.value(), kDummyQueuePosition).has_value());
+    EXPECT_TRUE(std::invoke(captured_method_call_handler_.value(), kDummyQueuePosition).has_value());
+    EXPECT_EQ(calls, 11U);
+}
 
 using SkeletonMethodOnProxyMethodSubscribedFixture = SkeletonMethodFixture;
 TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingWithoutRegisteringCallbackTerminates)
