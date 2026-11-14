@@ -1,8 +1,0 @@
-{
-    "ecuId": "com-api",
-    "appId": "EAPP",
-    "appDesc": "Example_Application",
-    "logMode": "kConsole",
-    "logLevel": "kInfo",
-    "logLevelThresholdConsole": "kInfo"
-}
