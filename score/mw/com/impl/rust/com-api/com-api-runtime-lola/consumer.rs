@@ -1071,7 +1071,7 @@ impl<I: Interface, B: FFIBridge> ConsumerBuilder<I, LolaRuntimeImpl<B>> for Lola
 
 impl<I: Interface, B: FFIBridge> Builder<I::Consumer<LolaRuntimeImpl<B>>> for LolaConsumerBuilder<I, B> {
     fn build(self) -> Result<I::Consumer<LolaRuntimeImpl<B>>> {
-        Ok(Consumer::new(self.instance_info))
+        Consumer::new(self.instance_info)
     }
 }
 
