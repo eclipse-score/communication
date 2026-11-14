@@ -284,8 +284,6 @@ cc_library(
         "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
     ],
     deps = [
-        "//score/memory/shared:managed_memory_resource",
-        "//score/memory/shared:polymorphic_offset_ptr_allocator",
         "@score_baselibs//score/containers:non_relocatable_vector",
     ],
 )
@@ -1393,6 +1391,7 @@ cc_unit_test(
     deps = [
         ":linear_search_map",
         "//score/memory/shared:new_delete_delegate_resource",
+        "//score/memory/shared:polymorphic_offset_ptr_allocator",
         "@score_baselibs//score/mw/log",
     ],
 )

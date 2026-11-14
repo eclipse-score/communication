@@ -21,7 +21,6 @@
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
 #include <cstddef>
-#include <scoped_allocator>
 #include <utility>
 
 namespace score::mw::com::impl::lola
@@ -40,9 +39,9 @@ class MethodData
     // be private.". There are no class invariants to maintain which could be violated by directly accessing member
     // variables.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    containers::NonRelocatableVector<std::pair<UniqueMethodIdentifier, TypeErasedCallQueue>,
-                                     std::scoped_allocator_adaptor<memory::shared::PolymorphicOffsetPtrAllocator<
-                                         std::pair<UniqueMethodIdentifier, TypeErasedCallQueue>>>>
+    containers::NonRelocatableVector<
+        std::pair<UniqueMethodIdentifier, TypeErasedCallQueue>,
+        memory::shared::PolymorphicOffsetPtrAllocator<std::pair<UniqueMethodIdentifier, TypeErasedCallQueue>>>
         method_call_queues_;
 };
 
