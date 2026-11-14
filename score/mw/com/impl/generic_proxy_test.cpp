@@ -78,6 +78,7 @@ using ::testing::AtMost;
 using ::testing::ByMove;
 using ::testing::InvokeWithoutArgs;
 using ::testing::Return;
+using ::testing::ReturnPointee;
 using ::testing::ReturnRef;
 using ::testing::StrictMock;
 
@@ -492,6 +493,38 @@ TEST_F(GenericProxyFixture, MovingGenericProxyLeavesEventMapIntact)
     // and that the moved-to GenericProxy also contains the events.
     auto events_from_moved_proxy = moved_generic_proxy.value().GetEvents();
     EXPECT_TRUE(events_from_moved_proxy.find(kEventName1) != events_from_moved_proxy.cend());
+}
+
+TEST_F(GenericProxyFixture, DestroyingGenericProxyUnsubscribesSubscribedEvents)
+{
+    // Given a handle containing a single event
+    CreateAHandle({kEventName1});
+
+    // and given a GenericProxyEvent binding which reports being subscribed once Subscribe is called
+    SubscriptionState subscription_state{SubscriptionState::kNotSubscribed};
+    auto event_binding = std::make_unique<mock_binding::GenericProxyEvent>();
+    auto& event_binding_mock = *event_binding;
+    ON_CALL(event_binding_mock, GetSubscriptionState()).WillByDefault(ReturnPointee(&subscription_state));
+    ON_CALL(event_binding_mock, Subscribe(_)).WillByDefault([&subscription_state](std::size_t) {
+        subscription_state = SubscriptionState::kSubscribed;
+        return score::Result<void>{};
+    });
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_,
+                Create(_, _, std::string_view{kEventName1}, ServiceElementType::EVENT))
+        .WillOnce(Return(ByMove(std::move(event_binding))));
+
+    // Expecting that the event binding is unsubscribed exactly once when the GenericProxy is destroyed
+    EXPECT_CALL(event_binding_mock, Unsubscribe()).Times(1);
+
+    {
+        // and given a GenericProxy with a subscribed event
+        auto generic_proxy_result = GenericProxy::Create(*handle_);
+        ASSERT_TRUE(generic_proxy_result.has_value());
+        auto events = generic_proxy_result.value().GetEvents();
+        ASSERT_TRUE(events.find(kEventName1)->second.Subscribe(1U).has_value());
+
+        // When destroying the GenericProxy without explicitly unsubscribing
+    }
 }
 
 using GenericProxyDeathTest = GenericProxyFixture;
