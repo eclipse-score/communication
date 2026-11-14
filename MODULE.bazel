@@ -42,7 +42,7 @@ single_version_override(
 
 bazel_dep(name = "score_bazel_platforms", version = "1.1.0")
 bazel_dep(name = "score_cpp_policies", version = "0.1.2")
-bazel_dep(name = "score_crates", version = "0.0.13", repo_name = "score_communication_crate_index")
+bazel_dep(name = "score_crates", version = "0.0.15", repo_name = "score_communication_crate_index")
 
 download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
 
