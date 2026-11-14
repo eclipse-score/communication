@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_BASE_H
 
 #include "score/mw/com/impl/enable_reference_to_moveable_from_this.h"
+#include "score/mw/com/impl/flag_owner.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 
@@ -51,10 +52,34 @@ class SkeletonMethodBase : public EnableReferenceToMoveableFromThis<SkeletonMeth
     SkeletonMethodBase(SkeletonMethodBase&&) noexcept = default;
     SkeletonMethodBase& operator=(SkeletonMethodBase&&) & noexcept = default;
 
+    /// \brief Notifies this method whether the enclosing Skeleton instance is currently offered or not.
+    /// \details Called by SkeletonBase whenever its offer-state changes (i.e. on a successful OfferService() and on
+    /// StopOfferService()). While the enclosing Skeleton instance is offered, RegisterHandler() shall be rejected in
+    /// order to avoid races between an in-flight call being dispatched to an "old" handler and a concurrently
+    /// re-registered "new" handler.
+    void SetServiceOffered(const bool is_offered) noexcept
+    {
+        if (is_offered)
+        {
+            service_offered_flag_.Set();
+        }
+        else
+        {
+            service_offered_flag_.Clear();
+        }
+    }
+
+    /// \brief Returns whether the enclosing Skeleton instance is currently offered.
+    bool IsServiceOffered() const noexcept
+    {
+        return service_offered_flag_.IsSet();
+    }
+
   protected:
     std::string_view method_name_;
     MethodType method_type_;
     std::unique_ptr<SkeletonMethodBinding> binding_;
+    FlagOwner service_offered_flag_;
 };
 
 class SkeletonMethodBaseView

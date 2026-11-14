@@ -65,6 +65,7 @@ enum class ComErrc : score::result::ErrorCode
     kCallQueueFull,
     kServiceElementAlreadyExists,
     kMethodBindingDisabled,
+    kRegisterHandlerNotAllowedWhileOffered,
     kNumEnumElements
 };
 
@@ -177,6 +178,9 @@ class ComErrorDomain final : public score::result::ErrorDomain
                 return "A service element (event, field, method) with the same name already exists.";
             case static_cast<score::result::ErrorCode>(ComErrc::kMethodBindingDisabled):
                 return "Method binding is not initialized (disabled).";
+            case static_cast<score::result::ErrorCode>(ComErrc::kRegisterHandlerNotAllowedWhileOffered):
+                return "RegisterHandler() must not be called while the enclosing service instance is currently "
+                       "offered. Call StopOfferService() before (re-)registering a handler.";
             case static_cast<score::result::ErrorCode>(ComErrc::kInvalid):
             case static_cast<score::result::ErrorCode>(ComErrc::kNumEnumElements):
                 SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE(

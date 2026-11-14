@@ -477,5 +477,57 @@ TEST_F(SkeletonMethodVoidVoidFixture, DataTransferBetweenTypedAndTypeErasedCallb
     typeerased_callback_.value()(QualityType{}, {}, {});
 }
 
+using SkeletonMethodRegisterHandlerWhileOfferedFixture = SkeletonMethodFixture<void()>;
+TEST_F(SkeletonMethodRegisterHandlerWhileOfferedFixture, RegisterHandlerFailsWhileServiceIsOffered)
+{
+    // Given a SkeletonMethod with a mock method binding
+    GivenASkeletonMethod();
+
+    // and given that the enclosing Skeleton instance is currently offered
+    method_->SetServiceOffered(true);
+
+    // Expecting that the register call is not dispatched to the binding
+    EXPECT_CALL(mock_method_binding_, RegisterHandler(_)).Times(0);
+
+    // When a Register call is issued while the service is offered
+    const auto result = method_->RegisterHandler([]() {});
+
+    // Then an error is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kRegisterHandlerNotAllowedWhileOffered);
+}
+
+TEST_F(SkeletonMethodRegisterHandlerWhileOfferedFixture, RegisterHandlerSucceedsAfterServiceIsStopOffered)
+{
+    // Given a SkeletonMethod with a mock method binding which was offered and then stop-offered again
+    GivenASkeletonMethod();
+    method_->SetServiceOffered(true);
+    method_->SetServiceOffered(false);
+
+    // Expecting that the register call is dispatched to the binding
+    EXPECT_CALL(mock_method_binding_, RegisterHandler(_));
+
+    // When a Register call is issued after the service is no longer offered
+    const auto result = method_->RegisterHandler([]() {});
+
+    // Then no error is returned
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(SkeletonMethodRegisterHandlerWhileOfferedFixture, RegisterHandlerSucceedsBeforeServiceIsOffered)
+{
+    // Given a SkeletonMethod with a mock method binding which has never been offered
+    GivenASkeletonMethod();
+
+    // Expecting that the register call is dispatched to the binding
+    EXPECT_CALL(mock_method_binding_, RegisterHandler(_));
+
+    // When a Register call is issued
+    const auto result = method_->RegisterHandler([]() {});
+
+    // Then no error is returned
+    EXPECT_TRUE(result.has_value());
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl
