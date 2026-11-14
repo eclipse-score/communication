@@ -15,15 +15,11 @@
 filegroup(
     name = "doc_files",
     srcs = [
+        "README.rst",
         "//score/mw/com/doc/tutorial/rust/common:doc_files",
-        "//score/mw/com/doc/tutorial/rust/chapter_1:doc_files",
-        "//score/mw/com/doc/tutorial/rust/chapter_2:doc_files",
-        "//score/mw/com/doc/tutorial/rust/chapter_3:doc_files",
-        "//score/mw/com/doc/tutorial/rust/chapter_4:doc_files",
-        "//score/mw/com/doc/tutorial/rust/chapter_5:doc_files",
-        "//score/mw/com/doc/tutorial/rust/chapter_6:doc_files",
-        "//score/mw/com/doc/tutorial/rust/chapter_7:doc_files",
-        "//score/mw/com/doc/tutorial/rust/chapter_8:doc_files",
+    ] + [
+        "//score/mw/com/doc/tutorial/rust/chapter_%d:doc_files" % i
+        for i in range(1, 9)
     ],
     visibility = ["//score/mw/com/doc/tutorial:__pkg__"],
 )
