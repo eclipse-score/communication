@@ -82,3 +82,9 @@
 //score/mw/service:proxy_future
 //score/mw/service:service
 //score/mw/service:single_instance_holder
+//score/someip/dependability:someip
+//score/someip/dependability:someip.serve
+//score/someip/dependability:someip_doc
+//score/someip/dependability:someip_doc_needs
+//score/someip/dependability:someip_index
+//score/someip/dependability:someip_rst

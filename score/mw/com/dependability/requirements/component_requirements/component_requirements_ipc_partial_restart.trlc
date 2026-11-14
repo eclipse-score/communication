@@ -32,7 +32,7 @@ section "com" {
 
                 This includes that all previously registered handlers (e.g. event update handler) shall still be valid.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+                derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
                 version = 1
             }
 
@@ -42,7 +42,7 @@ section "com" {
 
                 while the old POSIX PID, belonging to the execution of the same executable, is no longer valid.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+                derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
                 version = 1
             }
 
@@ -60,7 +60,7 @@ section "com" {
 
                 This shall be true for all proxies within an application.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_ServiceDiscovery@1]
+                derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1, Communication.FEAT_ServiceDiscovery@1]
                 version = 1
             }
 
@@ -76,7 +76,7 @@ section "com" {
             ScoreReq.CompReq NoImpairmentOfCommunicationOfOtherApplications {
                 description = '''A restarting {{Proxy}}, must not acquire additional resources (Definition of resource needs) on the provider side in a way, that other consumer applications might be negatively affected'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                 version = 1
             }
 
@@ -84,7 +84,7 @@ section "com" {
             ScoreReq.CompReq ErrorOnUnsuccessfulRestart {
                 description = '''If a successful restart on the consumer side cannot be guaranteed, an {{bmw::result::Error}} containing the value {{ComErrc::kBindingFailure}} error shall be forwarded to the user in the call to {{Proxy::Create()}}.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                 version = 1
             }
 

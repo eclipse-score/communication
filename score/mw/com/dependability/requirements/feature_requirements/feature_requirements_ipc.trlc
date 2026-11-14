@@ -14,10 +14,10 @@ package Communication
 
 import ScoreReq
 
-ScoreReq.FeatReq FEAT_SupportForTimeBasedArchitecture {
+ScoreReq.FeatReq FEAT_SupportForPollingBasedArchitecture {
     description = "The communication framework shall provide API to support a time-based architecture."
     safety = ScoreReq.Asil.B
-    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForTimeBasedArchitectures@1, Communication.ASR_SafeCommunication@1 ]
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForPollingBasedArchitectures@1, Communication.ASR_SafeCommunication@1 ]
     version = 1
 }
 
@@ -38,21 +38,21 @@ ScoreReq.FeatReq FEAT_SupportForRequestDrivenArchitecture {
 ScoreReq.FeatReq FEAT_CommunicationInterfaces {
     description = "The communication framework shall support communication interfaces composed of any number of the following elements: Events, Methods, Fields, Signals."
     safety = ScoreReq.Asil.B
-    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForDataDrivenArchitecture@1, Communication.ASR_SupportForTimeBasedArchitectures@1, Communication.ASR_SafeCommunication@1, Communication.ASR_SupportForRequestDrivenArchitecture@1 ]
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForDataDrivenArchitecture@1, Communication.ASR_SupportForPollingBasedArchitectures@1, Communication.ASR_SafeCommunication@1, Communication.ASR_SupportForRequestDrivenArchitecture@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_EventTypeStructure {
     description = "An event-type shall be a named element of a communication interface with an associated data type."
     safety = ScoreReq.Asil.B
-    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForTimeBasedArchitectures@1 ]
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForPollingBasedArchitectures@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_EventAccess {
     description = "An event-type shall allow its producer to assign a value and its consumers to either subscribe to value-changed events or poll unseen, cached events."
     safety = ScoreReq.Asil.B
-    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForTimeBasedArchitectures@1 ]
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForPollingBasedArchitectures@1 ]
     version = 1
 }
 
@@ -101,7 +101,7 @@ ScoreReq.FeatReq FEAT_SignalAccess {
 ScoreReq.FeatReq FEAT_ProducerConsumerPattern {
     description = "Communication shall be cached based on the producer-consumer pattern."
     safety = ScoreReq.Asil.B
-    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForTimeBasedArchitectures@1, Communication.ASR_SafeCommunication@1 ]
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SupportForPollingBasedArchitectures@1, Communication.ASR_SafeCommunication@1 ]
     version = 1
 }
 

@@ -28,7 +28,7 @@ section "com" {
 
                 Note: Generated types (e.g. types depending on the individual service interface definition described by an IDL) are excluded here!'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                 version = 1
             }
 
@@ -100,7 +100,7 @@ section "com" {
 
                 The type chosen for {{SubscriptionStateChangeHandler}} by the {{mw::com}} provider shall allow construction from any callable, with the given signature.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_EventAccess@1]
+                derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1, Communication.FEAT_EventAccess@1]
                 version = 1
             }
 
@@ -132,7 +132,7 @@ section "com" {
 
                 Since the {{mw::com/LoLa}} is responsible for creation of handles and the application just uses instances of it, the constructor signature is not part of the {{HandleType}} specification, but the constructor shall not be public.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                 version = 1
             }
 
@@ -268,7 +268,7 @@ section "com" {
 
                     *  a {{bmw::Result::Error}} containing the value {{ComErrc::kInvalidMetaModel}} Shortnamewhen {{shortname\_path}} doesn't adhere to the specifications described in Shortname path.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                     version = 1
                 }
 
@@ -281,7 +281,7 @@ section "com" {
 
                     Therefore the signature of the constructor of {{InstanceSpecifier}} is implementation defined.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                     version = 1
                 }
 
@@ -329,7 +329,7 @@ section "com" {
 
                     Return value: {{true}} if the underlying string of the first {{InstanceSpecifier}} is lexically smaller than underlying string of the second one. Otherwise,{{false}}.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                     version = 1
                 }
 
@@ -337,7 +337,7 @@ section "com" {
                 ScoreReq.CompReq InstanceSpecifierHashOperator {
                     description = '''An overload for {{std::hash}} for {{InstanceSpecifier}} which allows hashing an {{InstanceSpecifier}} shall be provided. An {{InstanceSpecifier}} shall be able to be used as a key in STL containers such as {{std::map}}.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                     version = 1
                 }
 
@@ -349,7 +349,7 @@ section "com" {
 
                     Return value: a stringified form of {{InstanceSpecifier}}. {{amp::string\_view}}{{InstanceSpecifier}}The lifetime of the underlying string of the returned  is guaranteed for the lifetime of the '''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                     version = 1
                 }
 
@@ -373,7 +373,7 @@ section "com" {
                 ScoreReq.CompReq InstanceSpecifierResolutionCannotRetrieveWrongInstanceIdentifier {
                     description = "It shall be ensured that the InstanceSpecifier resolution can not retrieve a wrong InstanceIdentifier."
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
                     version = 1
                 }
             }
@@ -394,7 +394,7 @@ section "com" {
 
                     *  a {{bmw::Result::Error}} containing the value {{ComErrc::kInvalidInstanceIdentifierString}}. when the format of the {{serialized\_format}} is corrupted'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                     version = 1
                 }
 
@@ -407,7 +407,7 @@ section "com" {
 
                     Therefore the signature of the constructor of {{InstanceIdentifier}}is implementation defined. '''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                     version = 1
                 }
 
@@ -457,7 +457,7 @@ section "com" {
 
                     Return value: {{true}} if the underlying string of the first {{InstanceIdentifier}} is lexically smaller than underlying string of the second one. Otherwise,{{false}}.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                     version = 1
                 }
 
@@ -469,7 +469,7 @@ section "com" {
 
                     Return value: a stringified form of {{InstanceIdentifier}}. The lifetime of the underlying string of the returned {{amp::string\_view}} is guaranteed for the lifetime of the {{InstanceIdentifier}}.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                     version = 1
                 }
 
@@ -496,7 +496,7 @@ section "com" {
                 {{InstanceIdentifierContainer}} must adhere to the named requirements of a sequence container requirements according to [C++ named requirements: SequenceContainer|https://en.cppreference.com/w/cpp/named\_req/SequenceContainer]
                 A {{std::vector}} for example fulfills these requirements.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                 version = 1
             }
 
@@ -546,7 +546,7 @@ section "com" {
 
                 The type chosen for {{FindServiceHandler}} by the {{mw::com}} provider shall allow construction from any callable, with the given signature.'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                 version = 1
             }
             }
@@ -558,7 +558,7 @@ section "com" {
                 * {{score::memory::DataTypeSizeInfo}} data_type_meta_info: the size and alignment information of the event/field data type.'''
 
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                 version = 1
             }
 
@@ -568,7 +568,7 @@ section "com" {
                 * {{{score::cpp::span<const EventInfo>}}} events: holding the event information of a {{GenericSkeleton}}.'''
 
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+                derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
                 version = 1
 
             }
@@ -784,7 +784,7 @@ section "com" {
 
             * Each destruction or {{nullptr\_t}} assignment of a SamplePtr instance created from this Event class instance shall lead to a increment of count of free samples.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
             version = 1
         }
 
@@ -814,7 +814,7 @@ section "com" {
 
             Note. The concept and definition of a shortname path is based on AUTOSAR shortname paths and the naming convention is .derived from the rule for C++ Identifiers'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
             version = 1
         }
 
@@ -879,7 +879,7 @@ section "com" {
 
             * the client had issued a subscription to an event or field and the related SubscriptionState was already in state {{kSubscriptionPending}} or {{kSubscribed}}, but then the provider side decided to refuse/abort/withdraw the subscription for at least the remaining lifetime of the providing side service instance.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
             version = 1
         }
 
@@ -891,7 +891,7 @@ section "com" {
 
             * the client is subscribed to an event or field and {{mw::com}} implementation has detected, that the server instance is currently not available (due to restart, network problem or other reasons)'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
             version = 1
         }
 
@@ -903,7 +903,7 @@ section "com" {
 
             * the client is subscribed to an event or field and the actual subscription is re-established again after being temporarily unavailable (due to restart, network problem or other reasons)'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
             version = 1
         }
 
@@ -911,7 +911,7 @@ section "com" {
             description = '''In case the user provided handler returns true, the {{SubscriptionStateChangeHandler}} will be kept registered and will be called on the next {{SubscriptionState}} change again.
             In case the user provided handler returns false, the {{SubscriptionStateChangeHandler}} will be unregistered and won't be called on the next {{SubscriptionState}} change again.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
             version = 1
         }
 
@@ -929,7 +929,7 @@ section "com" {
         ScoreReq.CompReq BehaviourOfAllocate {
             description = '''The {{Allocate}} method of the specific class allows the binding to allocate memory and provide a {{SampleAllocateePtr}} (See SampleAllocateePtr) which can be filled by the user.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
             version = 1
         }
 
@@ -959,7 +959,7 @@ section "com" {
         ScoreReq.CompReq BehaviourOfSettingFieldInitialValue {
             description = '''If SkeletonField class Update or SkeletonField class Zero-copy Update are called multiple times before Skeleton OfferService, then the value from the latest {{Update}} call will be used to set the initial value of the field.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
             version = 1
         }
 
@@ -997,7 +997,7 @@ section "com" {
 
             This includes that one process (one adaptive Application) shall be able to use ara::com and LoLa in parallel.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@2]
             version = 1
         }
 
@@ -1009,7 +1009,7 @@ section "com" {
 
             In order to operate LoLa in parallel to any adaptive AUTOSAR Stack, we need to ensure, that there are no type clashes and therefore we use a distinct/separate namespace.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1020,7 +1020,7 @@ section "com" {
             Note:
             Only this way we can ensure zero-copy capabilities.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1032,7 +1032,7 @@ section "com" {
 
             This way no blocking communication needs to be implemented via Shared Memory. Easing FFI argumentation.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1040,7 +1040,7 @@ section "com" {
         ScoreReq.CompReq UserDataShallBeProvidedInASeparateReadOnlySharedMemorySegment {
             description = '''User data (see User data shall be exchanged via Shared Memory) shall be provided in a separate read-only shared memory segment.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1048,7 +1048,7 @@ section "com" {
         ScoreReq.CompReq OneSharedMemorySegmentPerASILLevelForControlData {
             description = '''For each communication channel a different shared memory segment shall be used per ASIL.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1061,7 +1061,7 @@ section "com" {
             Note:
             It might be necessary to add some further meta information of the shared memory segment  into it. So this does not indicate that the whole shared memory segment is split only into slots.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1069,7 +1069,7 @@ section "com" {
         ScoreReq.CompReq TheNumberOfSlotsShallBeConfigurable {
             description = '''The number of available slots (defined here: The shared memory segments shall be divided into slots) shall be configurable.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1080,7 +1080,7 @@ section "com" {
             Note:
             A maximum limit of elements needs to be given and a data structure must not reallocate during sample assembly. Otherwise we might run out of memory due to fragmentation, even with more advanced allocation schemes.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1088,7 +1088,7 @@ section "com" {
         ScoreReq.CompReq LolaSharedMemorySegmentsUsedByMwComShallStartWithPrefixLola {
             description = '''Shared Memory segments used by mw::com (aka LoLa) shall start with prefix `lola`'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1098,7 +1098,7 @@ section "com" {
 
             Underlying files shall only be finally removed from the file-system once no consumer access them anymore.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1110,7 +1110,7 @@ section "com" {
 
             This name might be subject to calculation by deployment variables. e.g. a service id or instance id'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1118,7 +1118,7 @@ section "com" {
         ScoreReq.CompReq ThereShallBeOneTripletOfSharedMemorySegmentsPerServiceInstance {
             description = '''The shared memory segments described in The shared memory segments shall be divided into slots and One shared memory segment per ASIL level for control data shall exist per service instance.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1126,7 +1126,7 @@ section "com" {
         ScoreReq.CompReq SharedMemoryShallBeAllocatedAccordingToCpuArchitectureAlignment {
             description = '''SharedMemoryResource shall allocate memory in accordance to the alignment of that CPU architecture.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1134,7 +1134,7 @@ section "com" {
         ScoreReq.CompReq SharedMemorySegmentsShallNotBeMappedToAFixedVirtualAddress {
             description = '''Shared Memory segments shall not be mapped to a fixed virtual address.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1142,7 +1142,7 @@ section "com" {
         ScoreReq.CompReq OnlyOffsetPointerWithinSharedMemorySegments {
             description = '''There shall be no usage of any other pointer type then offset pointer (aka fancy pointer, aka relative pointer) within a shared memory segment.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1150,7 +1150,7 @@ section "com" {
         ScoreReq.CompReq OnlyConfiguredUidsShallHaveAccessToTheLoLaSharedMemorySegments {
             description = '''It shall be configurable which user ids have access to data and control shared memory segments.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1174,7 +1174,7 @@ section "com" {
 
             Active bound checking referes to an active check, that the calculated target pointer is within the bounds of the mapped shared memory segment.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1182,7 +1182,7 @@ section "com" {
         ScoreReq.CompReq SychronizingSharedMemoryRegionsShallEnsureWaitFreedom {
             description = '''The synchronization between data and control segments shall ensure wait-freedom.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1190,7 +1190,7 @@ section "com" {
         ScoreReq.CompReq SubscriptionHandlingShallBeImplementedViaMessagePassing {
             description = '''Subscription handling shall be implemented via Message Passing'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1198,7 +1198,7 @@ section "com" {
         ScoreReq.CompReq EventNotificationsShallBeImplementedViaMessagePassing {
             description = '''Event Notifications shall be implemented via Message Passing'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1206,7 +1206,7 @@ section "com" {
         ScoreReq.CompReq OneMessagePassingReceivePortPerASILLevelPerProcess {
             description = '''There shall exist one message passing receive port for LoLa communication per ASIL per process'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1214,7 +1214,7 @@ section "com" {
         ScoreReq.CompReq EachMessagePassingPortShallUseACustomThread {
             description = '''Each message passing port (see One message passing receive port per ASIL-Level per process) shall use a custom thread.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1222,7 +1222,7 @@ section "com" {
         ScoreReq.CompReq RegisterACallbackForAllExchangeMessages {
             description = '''It shall be possible for all notifications (exchanged via message passing) to register a callback.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1230,7 +1230,7 @@ section "com" {
         ScoreReq.CompReq RegisteredCallbacksForMessagesShallBeInvokedOfTheRespectiveWaitingThread {
             description = '''A user shall be able to register callbacks that are invoked on the reception of messages. These callbacks shall be invoked in the respective waiting thread.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1238,7 +1238,7 @@ section "com" {
         ScoreReq.CompReq AControlSlotShallContainAllNecessaryDataInformationForSynchronizingDataAccess {
             description = '''A control slot shall contain all necessary data information for synchronizing data access'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1246,7 +1246,7 @@ section "com" {
         ScoreReq.CompReq AProducerShallAlwaysBeAbleToStoreNewData {
             description = '''A producer shall always be able to store new data'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1286,7 +1286,7 @@ section "com" {
 
             This rule is designed in a way to assure, that all consumers can hold up to their used "maxSampleCount" in subscription for an arbitrary timespan in parallel!'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
 
@@ -1352,7 +1352,7 @@ section "com" {
         ScoreReq.CompReq SampleAvailabilityAfterEventReceivedHandlerCalled {
             description = '''{{mw::com}} shall assure, that the next call to {{GetNewSamples}} (ProxyEvent GetNewSamples or GenericProxyEvent GetNewSamples or ProxyField GetNewSamples) – after an Event Receive Handler has been called for a given event or field instance – will lead to at least one call to callback F with a new sample.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1]
+            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
             version = 1
         }
     }

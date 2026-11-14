@@ -1,0 +1,275 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package RoutingModule
+
+import ScoreReq
+
+ScoreReq.CompReq CR_RoutingModule_IoSockModule {
+    description = "The router shall execute notification transport inside a QNX io-sock module."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_UdpTransport {
+    description = "The router shall transport SOME/IP notifications over IPv4 UDP."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_NoServiceDiscoveryPayload {
+    description = "The router shall exclude SOME/IP-SD messages from its notification data path."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipDiscoverySeparation@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_ControlInterface {
+    description = "The router shall change its routing state only in response to routing commands received from the external controller through score::message_passing."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipDiscoverySeparation@1, RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_AddRemoteRoute {
+    description = "The router shall install valid remote-service receive routes supplied by the controller."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_RemoveRemoteRoute {
+    description = "The router shall stop RX delivery through a remote-service receive route when the controller removes it."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_LocalSubscriptions {
+    description = "The router shall publish a received event notification to LoLa only while a local subscription for that event is active."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    note = "The controller adds and removes local subscriptions; one subscription covers a single event or all events of a service instance."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_AddProvidedService {
+    description = "The router shall start sending a local service's event notifications to the network when the controller registers that service as provided."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_RemoveProvidedService {
+    description = "The router shall stop new TX for a provided service when the controller removes it."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    note = "Packets already submitted to the network stack may still complete."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_RemoteSubscribers {
+    description = "The router shall send an event notification only to remote endpoints that are currently subscribed to that event."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    note = "The controller adds and removes remote subscribers."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_SubscriptionRenewal {
+    description = "The router shall treat repeated additions of an existing subscription as idempotent."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    note = "A renewal neither duplicates TX recipients nor triggers initial-field replay."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_ControlOrdering {
+    description = "The router shall apply queued routing updates in arrival order before forwarding subsequent samples."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_ControlBackpressure {
+    description = "The router shall apply producer backpressure when its bounded routing-command queue is full."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    note = "Backpressure waits for queue capacity rather than dropping accepted commands."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_LolaMapping {
+    description = "The router shall map notifications to configured LoLa service-instance events in both RX and TX directions."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    note = "RX publishes through GenericSkeleton; TX consumes through GenericProxy."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_ReceiveRouteMatch {
+    description = "The router shall match RX notifications by service ID, event ID, local UDP port, and remote IPv4 endpoint."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1, RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    note = "An endpoint contains an IPv4 address and UDP port; unmatched notifications are not delivered."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_UniqueReceiveRoute {
+    description = "The router shall reject a routing command that would let one received notification match more than one local service instance."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    note = "A receive route maps a remote service instance (service ID, remote endpoint, local UDP port) to a local LoLa service instance. Wildcard overlaps count as matches; the previous routing state is kept."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_PayloadPreservation {
+    description = "The router shall forward the SOME/IP payload, i.e. all bytes after the 16-byte SOME/IP header, unchanged between the network and LoLa."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    note = "Payloads remain serialized; the router does not interpret application data."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_DirectReceiveCopy {
+    description = "The router shall copy each accepted RX payload directly from network packet storage into its allocated LoLa sample."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    note = "One module-level payload copy, without an intermediate datagram or payload buffer."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_TransmitAttachment {
+    description = "The router shall attach LoLa payload storage to network packets without a module-level payload copy."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    note = "Separate header storage is permitted; NIC/DMA zero-copy is not implied."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_TransmitSampleLifetime {
+    description = "The router shall keep a transmitted LoLa sample allocated until the network stack has finished every send that uses it and no cached field value refers to it."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    note = "Includes every fan-out recipient and failed-send cleanup; network release is not hardware transmit completion."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_TransmitProxyLifetime {
+    description = "The router shall retain a TX sample's LoLa proxy until that sample is released."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_FieldCacheRelease {
+    description = "The router shall release its cached field values when their provided service is removed."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1, RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    note = "In-flight network references remain valid until released."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_NotificationFanout {
+    description = "For each local LoLa event sample, the router shall send a SOME/IP event notification to every active remote subscriber configured for that event."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    note = "A failed submission to one recipient does not prevent attempts to the others."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_InitialFieldValue {
+    description = "The router shall replay the latest cached field value to a newly added remote subscriber when a cached value exists."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_TransmitHeader {
+    description = "The router shall generate valid SOME/IP notification headers for transmitted payloads."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    note = "Use configured service/event IDs and interface version, protocol version 1, notification type, zero client ID and return code, and length equal to payload size plus eight."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_ReceiveMetadata {
+    description = "The router shall preserve received notification length, session ID, interface version, and message type in its LoLa sample metadata."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    note = "The session ID is the lower 16 bits of the SOME/IP Request ID field (bytes 10-11 of the 16-byte header). Length denotes payload bytes, not the SOME/IP length field."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_ConcatenatedMessages {
+    description = "The router shall process complete concatenated SOME/IP notifications in a UDP datagram."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    note = "Notifications may span multiple buffers in the network packet chain."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_EmptyPayload {
+    description = "The router shall accept empty notification payloads in both RX and TX directions."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1, RoutingModule.FEAT_SomeipPayloadCapacity@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_PayloadCapacity {
+    description = "The router shall forward payloads in both RX and TX directions of varying size."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipPayloadCapacity@1 ]
+    note = "Payloads may vary in size up to the maximum supported by the platform."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_OversizedPayload {
+    description = "The router shall reject notification payloads in both RX and TX directions whose size exceeds the payload buffer size of the LoLa event sample used for that event."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipPayloadCapacity@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_InvalidFraming {
+    description = "The router shall reject malformed SOME/IP notification framing."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    note = "Reject incomplete headers, lengths below eight or beyond remaining datagram bytes, and protocol versions other than 1; stop parsing at an invalid length."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_NotificationOnly {
+    description = "The router shall exclude non-notification SOME/IP message types from its data path."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1, RoutingModule.FEAT_SomeipDiscoverySeparation@1 ]
+    note = "Requests, responses, errors, and SOME/IP-TP messages are outside this router's scope."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_InvalidControl {
+    description = "The router shall reject invalid routing commands without changing routing state."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    note = "Invalidity includes unsupported control versions/opcodes, malformed lengths/counts, absent referenced services/events, deployment mismatches, and ambiguous RX routing."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_ReceiveSlotExhaustion {
+    description = "The router shall drop a received notification when no LoLa sample slot is available."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    note = "Do not create an intermediate payload-copy queue."
+    version = 1
+}

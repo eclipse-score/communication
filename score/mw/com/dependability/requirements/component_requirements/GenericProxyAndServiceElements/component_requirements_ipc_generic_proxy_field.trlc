@@ -103,7 +103,7 @@ section "com" {
 
                     Behaviour: is described in Behaviour of SetSubscriptionStateChangeHandler.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_FieldAccess@1, Communication.FEAT_ProducerConsumerPattern@1]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1, Communication.FEAT_FieldAccess@1, Communication.FEAT_ProducerConsumerPattern@1]
                     version = 1
                 }
 
@@ -115,7 +115,7 @@ section "com" {
 
                     Behaviour: is described in Behaviour of UnsetSubscriptionStateChangeHandler.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_SupportForTimeBasedArchitecture@1, Communication.FEAT_FieldAccess@1, Communication.FEAT_ProducerConsumerPattern@1]
+                    derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1, Communication.FEAT_FieldAccess@1, Communication.FEAT_ProducerConsumerPattern@1]
                     version = 1
                 }
 
