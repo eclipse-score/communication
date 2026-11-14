@@ -326,7 +326,7 @@ Note: For event-only interfaces, `producer.offer()` can be called directly. For 
 
 ## Producer Side API Usage
 
-The following example is drawn from [`com-api-example/src/field_producer.rs`](../../example/com-api-example/src/field_producer.rs).
+The following example is drawn from [`chapter_6/field_producer.rs`](../../doc/tutorial/rust/chapter_6/field_producer.rs).
 
 ```rust
 use score_com::{Builder, FieldPublisher, InstanceSpecifier, Interface, Producer, Runtime};
@@ -395,7 +395,7 @@ fn offered_producer_process<R: Runtime>(offered_producer: VehicleFieldOfferedPro
 
 ## Consumer Side API Usage
 
-The following examples are drawn from [`com-api-example/src/field_consumer.rs`](../../example/com-api-example/src/field_consumer.rs).
+The following examples are drawn from [`chapter_6/field_consumer.rs`](../../doc/tutorial/rust/chapter_6/field_consumer.rs).
 
 ### Async get - read the current field value
 

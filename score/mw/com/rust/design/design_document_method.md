@@ -405,7 +405,7 @@ Note: For event-only interfaces, `producer.offer()` can be called directly. For 
 
 ## Producer Side API Usage
 
-The following example is drawn from [`com-api-example/src/method_producer.rs`](../../example/com-api-example/src/method_producer.rs).
+The following example is drawn from [`chapter_7/method_producer.rs`](../../doc/tutorial/rust/chapter_7/method_producer.rs).
 
 ```rust
 use score_com::{Builder, InstanceSpecifier, Interface, Producer, Runtime};
@@ -452,7 +452,7 @@ Key points:
 
 ## Consumer Side API Usage
 
-The following examples are drawn from [`com-api-example/src/method_consumer.rs`](../../example/com-api-example/src/method_consumer.rs).
+The following examples are drawn from [`chapter_7/method_consumer.rs`](../../doc/tutorial/rust/chapter_7/method_consumer.rs).
 
 All method calls return `impl Future<Output = Result<R::MethodReturnSample<T>>>` and must be `.await`ed.
 The returned sample implements `Deref<Target = T>`.
