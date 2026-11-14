@@ -16,6 +16,7 @@ filegroup(
     name = "doc_files",
     srcs = [
         "//score/mw/com/doc/tutorial/rust/common:doc_files",
+        "//score/mw/com/doc/tutorial/rust/chapter_1:doc_files",
     ],
     visibility = ["//score/mw/com/doc/tutorial:__pkg__"],
 )
