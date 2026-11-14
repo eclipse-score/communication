@@ -1,0 +1,74 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * <https://www.apache.org/licenses/LICENSE-2.0>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *******************************************************************************/
+
+use com_api_gen::{Tire, VehicleInterface};
+use score_com::{
+    Builder, InstanceSpecifier, OfferedProducer, Producer, Publisher, Result, Runtime, SampleMaybeUninit, SampleMut,
+};
+use std::thread;
+use std::time::Duration;
+use tutorial_common::VehicleOfferedProducer;
+
+use score_log as log;
+
+// Delay between sample data sending in the producer loop.
+const PRODUCER_SEND_INTERVAL_MS: u64 = 1000;
+
+// Example struct demonstrating composition with VehicleConsumer
+pub struct VehicleMonitorProducer<R: Runtime> {
+    producer: VehicleOfferedProducer<R>,
+}
+
+impl<R: Runtime> VehicleMonitorProducer<R> {
+    // [rust-producer-offer-start]
+    /// Create a new VehicleMonitorProducer
+    pub fn new(runtime: &R, service_id: InstanceSpecifier) -> Result<Self> {
+        let producer_builder = runtime.producer_builder::<VehicleInterface>(service_id);
+        let producer = producer_builder.build().expect("Failed to build producer instance");
+        let producer = producer.offer().expect("Failed to offer producer instance");
+        Ok(Self { producer })
+    }
+    // [rust-producer-offer-end]
+
+    // [rust-producer-publish-start]
+    /// Publish tire data using the producer
+    pub fn publish_tire_data(&self, tire: Tire) -> Result<()> {
+        let uninit_sample = self.producer.left_tire.allocate()?;
+        let sample = uninit_sample.write(tire);
+        sample.send()?;
+        log::info!("Tire data sent");
+        Ok(())
+    }
+    // [rust-producer-publish-end]
+
+    /// Publish tire data in a loop, incrementing pressure each iteration
+    pub fn run_publish_loop(&self, initial_pressure: f32, count: usize) {
+        for i in 0..count {
+            match self.publish_tire_data(Tire {
+                pressure: initial_pressure + i as f32,
+            }) {
+                Ok(_) => (),
+                Err(e) => log::error!("Failed to publish tire data: {:?}", e),
+            }
+            thread::sleep(Duration::from_millis(PRODUCER_SEND_INTERVAL_MS));
+        }
+    }
+
+    /// Stop offering the service and release the producer.
+    pub fn unoffer(self) {
+        match self.producer.unoffer() {
+            Ok(_) => log::info!("Successfully unoffered the service"),
+            Err(e) => log::error!("Failed to unoffer: {:?}", e),
+        }
+    }
+}
