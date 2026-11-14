@@ -73,6 +73,14 @@ impl<B: FFIBridge> LolaConsumerInfo<B> {
     pub fn get_handle(&self) -> Option<&HandleType> {
         self.handle_container.get(self.handle_index)
     }
+
+    pub(crate) fn interface_id(&self) -> &'static str {
+        self.interface_id
+    }
+
+    pub(crate) fn bridge(&self) -> &B {
+        &self.bridge
+    }
 }
 
 //TODO: Ticket-238828 this type should be merge with Sample<T>
@@ -236,6 +244,11 @@ impl<B: FFIBridge> std::fmt::Debug for NativeProxyBase<B> {
 }
 
 impl<B: FFIBridge> NativeProxyBase<B> {
+    /// Valid while `self` is alive.
+    pub(crate) fn as_ptr(&self) -> *mut ProxyBase {
+        self.proxy.as_ptr()
+    }
+
     pub fn new(bridge: &B, interface_id: &str, handle: &HandleType) -> Result<Self> {
         //SAFETY: It is safe to create the proxy because interface_id and handle are valid
         //Handle received at the time of get_avaible_instances called with correct interface_id

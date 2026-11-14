@@ -72,7 +72,8 @@
 
 use bridge_ffi_rs::{
     FatPtr, FindServiceCallable, FindServiceHandle, HandleContainer, HandleType, InstanceSpecifier,
-    NativeInstanceSpecifier, ProxyBase, ProxyEventBase, SkeletonBase, SkeletonEventBase, TypeOperationsManager,
+    NativeInstanceSpecifier, ProxyBase, ProxyEventBase, ProxyMethodBinding, SkeletonBase, SkeletonEventBase,
+    SkeletonMethodBinding, TypeOperationsManager,
 };
 use mockall::mock;
 
@@ -199,6 +200,41 @@ mock! {
         fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ()>;
 
         fn initialize<'a>(&self, manifest_location: Option<&'a std::path::Path>);
+
+        // --- Method FFI.
+        unsafe fn get_method_from_proxy(
+            &self,
+            proxy_ptr: *mut ProxyBase,
+            interface_id: &str,
+            method_id: &str,
+        ) -> *mut ProxyMethodBinding;
+
+        unsafe fn get_method_from_skeleton(
+            &self,
+            skeleton_ptr: *mut SkeletonBase,
+            interface_id: &str,
+            method_id: &str,
+        ) -> *mut SkeletonMethodBinding;
+
+        unsafe fn proxy_method_get_in_args_buffer(
+            &self,
+            binding: *mut ProxyMethodBinding,
+            queue_position: usize,
+        ) -> Option<(*mut u8, usize)>;
+
+        unsafe fn proxy_method_get_return_value_buffer(
+            &self,
+            binding: *mut ProxyMethodBinding,
+            queue_position: usize,
+        ) -> Option<(*mut u8, usize)>;
+
+        unsafe fn proxy_method_do_call(&self, binding: *mut ProxyMethodBinding, queue_position: usize) -> bool;
+
+        unsafe fn skeleton_method_register_handler(
+            &self,
+            binding: *mut SkeletonMethodBinding,
+            handler: &FatPtr,
+        ) -> bool;
 }
 }
 
@@ -414,6 +450,61 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
 
     fn initialize(&self, manifest_location: Option<&'_ std::path::Path>) {
         self.locked().initialize(manifest_location)
+    }
+
+    // --- Method FFI.
+    unsafe fn get_method_from_proxy(
+        &self,
+        proxy_ptr: *mut ProxyBase,
+        interface_id: &str,
+        method_id: &str,
+    ) -> *mut ProxyMethodBinding {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe { self.locked().get_method_from_proxy(proxy_ptr, interface_id, method_id) }
+    }
+
+    unsafe fn get_method_from_skeleton(
+        &self,
+        skeleton_ptr: *mut SkeletonBase,
+        interface_id: &str,
+        method_id: &str,
+    ) -> *mut SkeletonMethodBinding {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.locked()
+                .get_method_from_skeleton(skeleton_ptr, interface_id, method_id)
+        }
+    }
+
+    unsafe fn proxy_method_get_in_args_buffer(
+        &self,
+        binding: *mut ProxyMethodBinding,
+        queue_position: usize,
+    ) -> Option<(*mut u8, usize)> {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe { self.locked().proxy_method_get_in_args_buffer(binding, queue_position) }
+    }
+
+    unsafe fn proxy_method_get_return_value_buffer(
+        &self,
+        binding: *mut ProxyMethodBinding,
+        queue_position: usize,
+    ) -> Option<(*mut u8, usize)> {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.locked()
+                .proxy_method_get_return_value_buffer(binding, queue_position)
+        }
+    }
+
+    unsafe fn proxy_method_do_call(&self, binding: *mut ProxyMethodBinding, queue_position: usize) -> bool {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe { self.locked().proxy_method_do_call(binding, queue_position) }
+    }
+
+    unsafe fn skeleton_method_register_handler(&self, binding: *mut SkeletonMethodBinding, handler: &FatPtr) -> bool {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe { self.locked().skeleton_method_register_handler(binding, handler) }
     }
 }
 

@@ -38,8 +38,9 @@ impl<B: FFIBridge> Runtime for LolaRuntimeImpl<B> {
     type Publisher<T: CommData + Debug> = LolaPublisher<T, B>;
     type MethodInArgAllocator = LolaMethodInArgAllocator;
     type MethodReturnSample<T: CommData> = LolaMethodReturnSample<T>;
-    type MethodCaller<Args: MethodArgs, Return: CommData> = LolaMethodCaller<Args, Return, Self>;
-    type MethodHandler<Args: MethodArgs, Return: CommData> = LolaMethodHandler<Args, Return, Self>;
+    // Over `B`: the caller and handler need the bridge and `LolaConsumerInfo<B>` / `LolaProviderInfo<B>`.
+    type MethodCaller<Args: MethodArgs, Return: CommData> = LolaMethodCaller<Args, Return, B>;
+    type MethodHandler<Args: MethodArgs, Return: CommData> = LolaMethodHandler<Args, Return, B>;
     type FieldPublisher<T: CommData + Debug> = LolaFieldPublisher<T, B>;
     type FieldSubscriber<T: CommData + Debug> = LolaFieldSubscriber<T, B>;
     type FieldGetCaller<T: CommData + Debug> = LolaFieldGetCaller<T, Self>;
