@@ -93,6 +93,22 @@ class ProxyEventBinding
     /// \brief Remove any receive handler registered via SetSubscriptionStateChangeHandler()
     virtual Result<void> UnsetSubscriptionStateChangeHandler() noexcept = 0;
 
+    /// \brief Optional hook (default no-op) to install a callback invoked on every subscription state change, for
+    /// tracing only.
+    virtual void SetSubscriptionStateChangeTracingCallback(
+        score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept
+    {
+        (void)callback;
+    }
+
+    /// \brief Optional hook (default no-op) to install a callback invoked before the user's subscription state change
+    /// handler is called, for tracing only.
+    virtual void SetSubscriptionStateChangeHandlerTracingCallback(
+        score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept
+    {
+        (void)callback;
+    }
+
     /// \brief Returns the number of new samples a call to GetNewSamples() would currently provide if the
     /// max_sample_count set in the Subscribe call and GetNewSamples call were both infinitely high.
     /// \see ProxyEvent::GetNumNewSamplesAvailable()

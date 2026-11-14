@@ -91,6 +91,12 @@ Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count)
     if (current_state == SubscriptionState::kNotSubscribed)
     {
         tracker_->Reset(max_sample_count);
+        // Install before Subscribe() so the first state transition is traced; the state machine persists across cycles.
+        if (!subscription_state_change_tracing_setup_done_)
+        {
+            tracing::SetupSubscriptionStateChangeTracing(tracing_data_, *binding_);
+            subscription_state_change_tracing_setup_done_ = true;
+        }
         const auto subscribe_result = binding_->Subscribe(max_sample_count);
         if (!subscribe_result.has_value())
         {
@@ -153,11 +159,26 @@ void ProxyEventBase::Unsubscribe()
 
 Result<void> ProxyEventBase::SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept
 {
+    if (proxy_event_base_mock_ != nullptr)
+    {
+        return proxy_event_base_mock_->SetSubscriptionStateChangeHandler(std::move(handler));
+    }
+
+    tracing::TraceSetSubscriptionStateChangeHandler(tracing_data_, *binding_);
+    tracing::SetupSubscriptionStateChangeHandlerTracing(tracing_data_, *binding_);
+
     return binding_->SetSubscriptionStateChangeHandler(std::move(handler));
 }
 
 Result<void> ProxyEventBase::UnsetSubscriptionStateChangeHandler() noexcept
 {
+    if (proxy_event_base_mock_ != nullptr)
+    {
+        return proxy_event_base_mock_->UnsetSubscriptionStateChangeHandler();
+    }
+
+    tracing::TraceUnsetSubscriptionStateChangeHandler(tracing_data_, *binding_);
+
     return binding_->UnsetSubscriptionStateChangeHandler();
 }
 
