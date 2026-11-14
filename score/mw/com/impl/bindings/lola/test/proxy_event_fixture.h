@@ -100,10 +100,12 @@ std::shared_ptr<ScopedEventReceiveHandler> FromMockFunction(safecpp::Scope<>& ev
 class LolaProxyEventFixture : public LolaProxyEventResources
 {
   public:
-    LolaProxyEventFixture& GivenAProxyEvent(const ElementFqId element_fq_id, const std::string& event_name)
+    LolaProxyEventFixture& GivenAProxyEvent(const ElementFqId element_fq_id,
+                                            const std::string& event_name,
+                                            const CoherencyType coherency = CoherencyType::kNonCoherent)
     {
         test_proxy_event_ = std::make_unique<ProxyEvent>(
-            *proxy_, element_fq_id, event_name, CreateDataTypeSizeInfoFromTypes<TestSampleType>());
+            *proxy_, element_fq_id, event_name, CreateDataTypeSizeInfoFromTypes<TestSampleType>(), coherency);
         return *this;
     }
 
@@ -131,6 +133,30 @@ class LolaProxyEventFixture : public LolaProxyEventResources
         for (const auto& datum : data)
         {
             score::cpp::ignore = this->PutData(datum.first, datum.second);
+        }
+        return *this;
+    }
+
+    /// \brief Analogous to WithSkeletonEventData(), but publishes via PutDataCoherent() (i.e. for a
+    /// CoherencyType::kCoherent skeleton-side event).
+    LolaProxyEventFixture& WithSkeletonEventDataCoherent(
+        const std::vector<std::pair<TestSampleType, EventSlotStatus::EventTimeStamp>> data)
+    {
+        for (const auto& datum : data)
+        {
+            score::cpp::ignore = this->PutDataCoherent(datum.first, datum.second);
+        }
+        return *this;
+    }
+
+    /// \brief Analogous to WithSkeletonEventData(), but publishes via PutDataMixed() (i.e. for a
+    /// CoherencyType::kMixed skeleton-side event).
+    LolaProxyEventFixture& WithSkeletonEventDataMixed(
+        const std::vector<std::pair<TestSampleType, EventSlotStatus::EventTimeStamp>> data)
+    {
+        for (const auto& datum : data)
+        {
+            score::cpp::ignore = this->PutDataMixed(datum.first, datum.second);
         }
         return *this;
     }

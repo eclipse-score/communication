@@ -13,6 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_CONFIGURATION_LOLA_EVENT_INSTANCE_DEPLOYMENT_H
 #define SCORE_MW_COM_IMPL_CONFIGURATION_LOLA_EVENT_INSTANCE_DEPLOYMENT_H
 
+#include "score/mw/com/impl/configuration/coherency_type.h"
+
 #include "score/json/json_parser.h"
 
 #include <cstdint>
@@ -33,7 +35,8 @@ class LolaEventInstanceDeployment
                                          std::optional<SubscriberCountType> max_subscribers,
                                          std::optional<std::uint8_t> max_concurrent_allocations,
                                          const bool enforce_max_samples,
-                                         const TracingSlotSizeType number_of_tracing_slots) noexcept;
+                                         const TracingSlotSizeType number_of_tracing_slots,
+                                         const CoherencyType coherency = CoherencyType::kNonCoherent) noexcept;
 
     explicit LolaEventInstanceDeployment(const score::json::Object& json_object);
 
@@ -47,6 +50,10 @@ class LolaEventInstanceDeployment
     [[nodiscard]] std::optional<SampleSlotCountType> GetNumberOfSampleSlotsExcludingTracingSlot() const noexcept;
 
     [[nodiscard]] TracingSlotSizeType GetNumberOfTracingSlots() const noexcept;
+
+    /// \brief Returns which CONTROL segment data structure / synchronization strategy is configured for this event
+    ///        (or field). Defaults to CoherencyType::kNonCoherent if not explicitly configured.
+    [[nodiscard]] CoherencyType GetCoherency() const noexcept;
 
     /// \brief max subscribers slots is only relevant/required on skeleton side. On the proxy side it is irrelevant.
     ///         Therefore, it is optional!
@@ -73,6 +80,11 @@ class LolaEventInstanceDeployment
     // Non-zero values greater than one for this parameter only make sense on the skeleton side. For the proxy it is
     // just important if the tracing is enabled or not, i.e., if this variable is zero or non-zero.
     TracingSlotSizeType number_of_tracing_slots_;
+
+    /// \brief Which CONTROL segment data structure / synchronization strategy is used for this event (or field).
+    ///        CoherencyType::kMixed is only valid on the provider/skeleton side; a proxy-side deployment with
+    ///        CoherencyType::kMixed is invalid.
+    CoherencyType coherency_;
 };
 
 bool operator==(const LolaEventInstanceDeployment& lhs, const LolaEventInstanceDeployment& rhs) noexcept;

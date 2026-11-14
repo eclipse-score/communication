@@ -41,7 +41,8 @@ class SkeletonEventFixture : public SkeletonMockedMemoryFixture
                                  bool enforce_max_samples = true,
                                  const QualityType quality_type = QualityType::kASIL_QM,
                                  impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {},
-                                 bool field_getter_enabled = false);
+                                 bool field_getter_enabled = false,
+                                 CoherencyType coherency = CoherencyType::kNonCoherent);
 
     InstanceIdentifier GetValidInstanceIdentifier(QualityType quality_type);
 

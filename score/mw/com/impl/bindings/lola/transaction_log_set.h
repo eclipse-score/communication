@@ -225,6 +225,22 @@ class TransactionLogSet
         const TransactionLogId& transaction_log_id,
         ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view);
 
+    /// \brief Creates a new transaction log in the DynamicArray of transaction logs, for a CoherencyType::kCoherent
+    ///        service element.
+    ///
+    /// \param transaction_log_id The TransactionLogId corresponding to the ProxyEvent which is registering the
+    ///        TransactionLog.
+    /// \return Returns TransactionLogRegistrationGuard which holds the index of the registered transaction log and
+    ///         will call TransactionLogSet::Unregister() on destruction.
+    ///
+    /// \details Unlike the overload above, there is no ConsumerEventDataControlLocalView parameter: a
+    /// CoherencyType::kCoherent consumer never references/dereferences any CONTROL-segment slot, so no cached
+    /// TransactionLogLocalView needs to be injected anywhere for reference-count transaction logging. Only
+    /// Subscribe/Unsubscribe transaction logging is required/provided.
+    ///
+    /// Will terminate if transaction_log_id already exists within the DynamicArray of transaction logs.
+    score::Result<TransactionLogRegistrationGuard> RegisterProxyElement(const TransactionLogId& transaction_log_id);
+
     /// \brief Creates a new skeleton tracing transaction log
     ///
     /// \param consumer_event_data_control_local_view The ConsumerEventDataControlLocalView used by the SkeletonEvent

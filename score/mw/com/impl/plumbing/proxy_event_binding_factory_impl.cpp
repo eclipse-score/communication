@@ -65,8 +65,10 @@ Result<std::unique_ptr<lola::ProxyEvent>> CreateLolaProxyEvent(const HandleType&
 
     const auto element_fq_id =
         GetElementFqId(parent_handle, lola_type_deployment, std::string{event_or_field_name}, service_element_type);
+    const auto coherency = GetServiceElementCoherency(parent_handle, event_or_field_name, service_element_type);
 
-    return std::make_unique<lola::ProxyEvent>(*lola_proxy, element_fq_id, event_or_field_name, data_type_size_info);
+    return std::make_unique<lola::ProxyEvent>(
+        *lola_proxy, element_fq_id, event_or_field_name, data_type_size_info, coherency);
 }
 
 /// \brief Creates a someip::ProxyEvent for the given deployment/handle/binding combination.

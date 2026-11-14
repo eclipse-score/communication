@@ -17,6 +17,9 @@
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
+#include "score/mw/com/impl/configuration/coherency_type.h"
+#include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_field_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
@@ -320,7 +323,146 @@ TEST_F(ProxyCreationDeathTest, GettingEventDataControlWithoutInitialisedEventDat
     // Then trying to get the event data control for an event that was not registered in the ServiceDataStorage
     // Will terminate
     const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
-    EXPECT_DEATH(proxy_->GetConsumerEventDataControlLocalView(uninitialised_element_fq_id), ".*");
+    EXPECT_DEATH(proxy_->GetEventDataControl(uninitialised_element_fq_id), ".*");
+}
+
+TEST_F(ProxyCreationDeathTest, GettingCoherentEventDataControlWithoutInitialisedEventDataControlTerminates)
+{
+    // Given a fake Skeleton which creates an empty ServiceDataControl
+
+    // When creating a proxy
+    InitialiseProxyWithConstructor(identifier_);
+    EXPECT_NE(proxy_, nullptr);
+
+    // Then trying to get the coherent event data control / subscription control for an event that was not registered
+    // in event_controls_coherent_ will terminate
+    const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
+    EXPECT_DEATH(score::cpp::ignore = proxy_->GetEventDataControlCoherentOrMixed(uninitialised_element_fq_id), ".*");
+    EXPECT_DEATH(proxy_->GetEventSubscriptionControlCoherent(uninitialised_element_fq_id), ".*");
+}
+
+TEST_F(ProxyCreationFixture, GetEventDataControlCoherentReturnsControlForRegisteredCoherentEvent)
+{
+    // Given a fake Skeleton which registers a CoherencyType::kCoherent event
+    InitialiseDummySkeletonEventCoherent(kDummyElementFqId,
+                                         SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
+
+    // When creating a proxy
+    InitialiseProxyWithConstructor(identifier_);
+    EXPECT_NE(proxy_, nullptr);
+
+    // Then the coherent event data control / subscription control can be looked up without terminating
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventDataControlCoherentOrMixed(kDummyElementFqId));
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventSubscriptionControlCoherent(kDummyElementFqId));
+}
+
+TEST_F(ProxyCreationFixture, GetEventDataControlFallsBackToMixedEventControlsForRegisteredMixedEvent)
+{
+    // Given a fake Skeleton which registers a CoherencyType::kMixed event (i.e. only in event_controls_mixed_, not
+    // in event_controls_)
+    InitialiseDummySkeletonEventMixed(kDummyElementFqId,
+                                      SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
+
+    // When creating a proxy
+    InitialiseProxyWithConstructor(identifier_);
+    EXPECT_NE(proxy_, nullptr);
+
+    // Then a CoherencyType::kNonCoherent proxy-side lookup for that event (GetEventDataControl(),
+    // GetEventSubscriptionControl(), GetTransactionLogSet()) succeeds by falling back to event_controls_mixed_,
+    // without terminating
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventDataControl(kDummyElementFqId));
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventSubscriptionControl(kDummyElementFqId));
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetTransactionLogSet(kDummyElementFqId));
+}
+
+TEST_F(ProxyCreationFixture, GetEventDataControlCoherentOrMixedReturnsCoherentAlternativeForRegisteredCoherentEvent)
+{
+    // Given a fake Skeleton which registers a CoherencyType::kCoherent event
+    InitialiseDummySkeletonEventCoherent(kDummyElementFqId,
+                                         SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
+
+    // When creating a proxy
+    InitialiseProxyWithConstructor(identifier_);
+    EXPECT_NE(proxy_, nullptr);
+
+    // Then a CoherencyType::kCoherent proxy-side lookup for that event via GetEventDataControlCoherentOrMixed()
+    // succeeds and holds the EventDataControlCoherent alternative
+    const auto event_data_control = proxy_->GetEventDataControlCoherentOrMixed(kDummyElementFqId);
+    EXPECT_TRUE(std::holds_alternative<std::reference_wrapper<EventDataControlCoherent>>(event_data_control));
+}
+
+TEST_F(ProxyCreationFixture, GetEventDataControlCoherentOrMixedFallsBackToMixedEventControlsForRegisteredMixedEvent)
+{
+    // Given a fake Skeleton which registers a CoherencyType::kMixed event (i.e. only in event_controls_mixed_, not
+    // in event_controls_coherent_)
+    InitialiseDummySkeletonEventMixed(kDummyElementFqId,
+                                      SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
+
+    // When creating a proxy
+    InitialiseProxyWithConstructor(identifier_);
+    EXPECT_NE(proxy_, nullptr);
+
+    // Then a CoherencyType::kCoherent proxy-side lookup for that event (GetEventDataControlCoherentOrMixed(),
+    // GetEventSubscriptionControlCoherent(), GetTransactionLogSetCoherent()) succeeds by falling back to
+    // event_controls_mixed_, without terminating, and GetEventDataControlCoherentOrMixed() holds the
+    // EventDataControlMixed alternative
+    const auto event_data_control = proxy_->GetEventDataControlCoherentOrMixed(kDummyElementFqId);
+    EXPECT_TRUE(std::holds_alternative<std::reference_wrapper<EventDataControlMixed>>(event_data_control));
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetEventSubscriptionControlCoherent(kDummyElementFqId));
+    EXPECT_NO_FATAL_FAILURE(score::cpp::ignore = proxy_->GetTransactionLogSetCoherent(kDummyElementFqId));
+}
+
+TEST_F(ProxyCreationDeathTest, GetEventDataControlCoherentOrMixedWithoutInitialisedEventDataControlTerminates)
+{
+    // Given a fake Skeleton which creates an empty ServiceDataControl
+
+    // When creating a proxy
+    InitialiseProxyWithConstructor(identifier_);
+    EXPECT_NE(proxy_, nullptr);
+
+    // Then trying to get the coherent-or-mixed event data control for an event that was not registered in either
+    // event_controls_coherent_ or event_controls_mixed_ will terminate
+    const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
+    EXPECT_DEATH(score::cpp::ignore = proxy_->GetEventDataControlCoherentOrMixed(uninitialised_element_fq_id), ".*");
+}
+
+TEST_F(ProxyCreationFixture, ProxyCreationFailsWhenEventIsConfiguredWithMixedCoherencyOnProxySide)
+{
+    // Given a deployment which contains an event configured with CoherencyType::kMixed
+    LolaServiceInstanceDeployment lola_service_instance_deployment{LolaServiceInstanceId{kLolaServiceInstanceId}};
+    lola_service_instance_deployment.events_.emplace(
+        kDummyEventName,
+        LolaEventInstanceDeployment{kMaxNumSlots, kMaxSubscribers, {}, false, 0U, CoherencyType::kMixed});
+    const ServiceInstanceDeployment service_instance_deployment{
+        service, lola_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
+    const auto identifier = make_InstanceIdentifier(service_instance_deployment, kServiceTypeDeployment);
+
+    // When creating a proxy
+    const auto proxy = Proxy::Create(make_HandleType(identifier, ServiceInstanceId{kLolaServiceInstanceId}));
+
+    // Then the proxy creation fails
+    EXPECT_EQ(proxy, nullptr);
+}
+
+TEST_F(ProxyCreationFixture, ProxyCreationFailsWhenFieldIsConfiguredWithMixedCoherencyOnProxySide)
+{
+    // Given a deployment which contains a field configured with CoherencyType::kMixed
+    LolaServiceInstanceDeployment lola_service_instance_deployment{LolaServiceInstanceId{kLolaServiceInstanceId}};
+    lola_service_instance_deployment.fields_.emplace(
+        kDummyEventName,
+        LolaFieldInstanceDeployment{
+            LolaEventInstanceDeployment{kMaxNumSlots, kMaxSubscribers, {}, false, 0U, CoherencyType::kMixed},
+            true,
+            true});
+    const ServiceInstanceDeployment service_instance_deployment{
+        service, lola_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
+    const auto identifier = make_InstanceIdentifier(service_instance_deployment, kServiceTypeDeployment);
+
+    // When creating a proxy
+    const auto proxy = Proxy::Create(make_HandleType(identifier, ServiceInstanceId{kLolaServiceInstanceId}));
+
+    // Then the proxy creation fails
+    EXPECT_EQ(proxy, nullptr);
 }
 
 TEST_F(ProxyCreationFixture, ProxyCreationOpensSharedMemoryWithEmptyProvidersWhenStrictAndNoAllowedProviderConfigured)
@@ -435,7 +577,11 @@ TEST_F(ProxyAutoReconnectFixture, ProxyEventCreationWhenProviderNotExistsLeadsTo
     EXPECT_NE(proxy_, nullptr);
 
     // and a ProxyEvent registers itself with the Proxy
-    ProxyEvent proxy_event{*proxy_, kDummyElementFqId, kDummyEventName, CreateDataTypeSizeInfoFromTypes<SampleType>()};
+    ProxyEvent proxy_event{*proxy_,
+                           kDummyElementFqId,
+                           kDummyEventName,
+                           CreateDataTypeSizeInfoFromTypes<SampleType>(),
+                           CoherencyType::kNonCoherent};
     score::cpp::ignore = proxy_event.Subscribe(kMaxNumSlots);
 
     // Then the Proxy notified the event during registration that the provider service instance is not available,
@@ -466,7 +612,11 @@ TEST_F(ProxyAutoReconnectFixture, ProxyEventCreationWhenProviderExistsLeadsToSub
     EXPECT_NE(proxy_, nullptr);
 
     // and a ProxyEvent registers itself with the Proxy
-    ProxyEvent proxy_event{*proxy_, kDummyElementFqId, kDummyEventName, CreateDataTypeSizeInfoFromTypes<SampleType>()};
+    ProxyEvent proxy_event{*proxy_,
+                           kDummyElementFqId,
+                           kDummyEventName,
+                           CreateDataTypeSizeInfoFromTypes<SampleType>(),
+                           CoherencyType::kNonCoherent};
     score::cpp::ignore = proxy_event.Subscribe(kMaxNumSlots);
 
     // Then the Proxy notified the event during registration that the provider service instance is available, so the
@@ -504,8 +654,11 @@ TEST_F(ProxyAutoReconnectFixture, ProxyEventSubscriptionStateReflectsLatestState
     EXPECT_NE(proxy_, nullptr);
 
     // and the first ProxyEvent registers itself with the Proxy while the provider service instance is available
-    ProxyEvent proxy_event_0{
-        *proxy_, kDummyElementFqId, kDummyEventName, CreateDataTypeSizeInfoFromTypes<SampleType>()};
+    ProxyEvent proxy_event_0{*proxy_,
+                             kDummyElementFqId,
+                             kDummyEventName,
+                             CreateDataTypeSizeInfoFromTypes<SampleType>(),
+                             CoherencyType::kNonCoherent};
     score::cpp::ignore = proxy_event_0.Subscribe(kMaxNumSlots);
     ASSERT_EQ(proxy_event_0.GetSubscriptionState(), SubscriptionState::kSubscribed);
 
@@ -517,7 +670,11 @@ TEST_F(ProxyAutoReconnectFixture, ProxyEventSubscriptionStateReflectsLatestState
     EXPECT_EQ(proxy_event_0.GetSubscriptionState(), SubscriptionState::kSubscriptionPending);
 
     // and the second ProxyEvent registers itself with the Proxy while the provider service instance is unavailable
-    ProxyEvent proxy_event_1{*proxy_, element_fq_id_1, event_name_1, CreateDataTypeSizeInfoFromTypes<SampleType>()};
+    ProxyEvent proxy_event_1{*proxy_,
+                             element_fq_id_1,
+                             event_name_1,
+                             CreateDataTypeSizeInfoFromTypes<SampleType>(),
+                             CoherencyType::kNonCoherent};
     score::cpp::ignore = proxy_event_1.Subscribe(kMaxNumSlots);
 
     // Then the second ProxyEvent is notified during registration that the provider service instance is not available

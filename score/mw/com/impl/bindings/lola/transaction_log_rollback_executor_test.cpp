@@ -55,9 +55,11 @@ const SkeletonInstanceIdentifier kSkeletonInstanceIdentifier{kDummyElementFqId.s
 
 constexpr std::size_t kNumberOfSlots{20U};
 constexpr std::size_t kMaxSubscribers{20U};
-// The test registers a single event (see WithTransactionLogRollbackExecutor), hence a capacity of one is sufficient
-// for the fixed-capacity event_controls_ container within ServiceDataControl.
-constexpr std::size_t kNumberOfServiceElements{1U};
+// The test registers a single non-coherent/coherent event (see WithTransactionLogRollbackExecutor/
+// WithTransactionLogRollbackExecutorCoherent), hence a capacity of one is sufficient for the respective
+// fixed-capacity event_controls_/event_controls_coherent_ container within ServiceDataControl.
+constexpr std::size_t kNonCoherentNumberOfServiceElements{1U};
+constexpr std::size_t kCoherentNumberOfServiceElements{1U};
 const SkeletonEventProperties kDummySkeletonEventProperties{kNumberOfSlots, 0U, 0U, false, kMaxSubscribers, true};
 
 class TransactionLogRollbackExecutorFixture : public ::testing::Test
@@ -74,8 +76,24 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
 
     TransactionLogRollbackExecutorFixture& WithTransactionLogRollbackExecutor()
     {
-        service_data_control_ = std::make_unique<ServiceDataControl>(kNumberOfServiceElements, memory_resource_mock_);
+        service_data_control_ =
+            std::make_unique<ServiceDataControl>(kNonCoherentNumberOfServiceElements, 0U, 0U, memory_resource_mock_);
         AddEvent(kDummyElementFqId, kDummySkeletonEventProperties);
+
+        unit_ = std::make_unique<TransactionLogRollbackExecutor>(*service_data_control_,
+                                                                 kSkeletonInstanceIdentifier,
+                                                                 kDummyQualityType,
+                                                                 kDummyProviderPid,
+                                                                 kDummyTransactionLogId);
+
+        return *this;
+    }
+
+    TransactionLogRollbackExecutorFixture& WithTransactionLogRollbackExecutorCoherent()
+    {
+        service_data_control_ =
+            std::make_unique<ServiceDataControl>(0U, kCoherentNumberOfServiceElements, 0U, memory_resource_mock_);
+        AddEventCoherent(kDummyElementFqId, kDummySkeletonEventProperties);
 
         unit_ = std::make_unique<TransactionLogRollbackExecutor>(*service_data_control_,
                                                                  kSkeletonInstanceIdentifier,
@@ -89,6 +107,19 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
     void AddEvent(const ElementFqId element_fq_id, const SkeletonEventProperties skeleton_event_properties) noexcept
     {
         const auto emplace_result = service_data_control_->event_controls_.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(element_fq_id),
+            std::forward_as_tuple(skeleton_event_properties.GetTotalNumberOfSlots(),
+                                  skeleton_event_properties.max_subscribers,
+                                  skeleton_event_properties.enforce_max_samples,
+                                  memory_resource_mock_));
+        ASSERT_TRUE(emplace_result.second);
+    }
+
+    void AddEventCoherent(const ElementFqId element_fq_id,
+                          const SkeletonEventProperties skeleton_event_properties) noexcept
+    {
+        const auto emplace_result = service_data_control_->event_controls_coherent_.emplace(
             std::piecewise_construct,
             std::forward_as_tuple(element_fq_id),
             std::forward_as_tuple(skeleton_event_properties.GetTotalNumberOfSlots(),
@@ -119,6 +150,13 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
         return find_result->second.transaction_log_set_;
     }
 
+    TransactionLogSet& GetTransactionLogSetCoherent(const ElementFqId element_fq_id) noexcept
+    {
+        auto find_result = service_data_control_->event_controls_coherent_.find(element_fq_id);
+        EXPECT_NE(find_result, service_data_control_->event_controls_coherent_.cend());
+        return find_result->second.transaction_log_set_;
+    }
+
     void InsertServiceDataControl() noexcept
     {
         auto& entry = rollback_synchronization_.GetEntry(kSkeletonInstanceIdentifier);
@@ -135,6 +173,27 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
         auto& transaction_log_set = GetTransactionLogSet(element_fq_id);
         transaction_log_registration_guards_.push_back(
             transaction_log_set.RegisterProxyElement(transaction_log_id, consumer_event_data_control_local).value());
+        const auto transaction_log_index = transaction_log_registration_guards_.back().GetTransactionLogIndex();
+
+        auto& transaction_logs = TransactionLogSetAttorney{transaction_log_set}.GetProxyTransactionLogs();
+        auto& transaction_log_node = transaction_logs.at(transaction_log_index);
+
+        EXPECT_TRUE(transaction_log_node.IsActive());
+        EXPECT_FALSE(transaction_log_node.NeedsRollback());
+
+        return transaction_log_node;
+    }
+
+    TransactionLogSet::TransactionLogNode& RegisterCoherentProxyElementWithTransactionLogSet(
+        const ElementFqId& element_fq_id,
+        const TransactionLogId& transaction_log_id) noexcept
+    {
+        // CoherencyType::kCoherent registration does not take a ConsumerEventDataControlLocalView (unlike the
+        // CoherencyType::kNonCoherent overload above), as there is no per-slot reference-counting to inject a cached
+        // TransactionLogLocalView for (see TransactionLogSet::RegisterProxyElement(const TransactionLogId&)).
+        auto& transaction_log_set = GetTransactionLogSetCoherent(element_fq_id);
+        transaction_log_registration_guards_.push_back(
+            transaction_log_set.RegisterProxyElement(transaction_log_id).value());
         const auto transaction_log_index = transaction_log_registration_guards_.back().GetTransactionLogIndex();
 
         auto& transaction_logs = TransactionLogSetAttorney{transaction_log_set}.GetProxyTransactionLogs();
@@ -232,6 +291,25 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillNotNotifyProviderO
     // when RollbackTransactionLogs() is called.
     auto result = unit_->RollbackTransactionLogs();
     EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, RollsBackCoherentEventTransactionLogsTooAsNonCoherentOnes)
+{
+    // Given a unit under test for a CoherencyType::kCoherent event (registered in event_controls_coherent_, not
+    // event_controls_) with one active (never unsubscribed, e.g. due to a crash) proxy transaction log
+    WithTransactionLogRollbackExecutorCoherent();
+    auto& transaction_log_node =
+        RegisterCoherentProxyElementWithTransactionLogSet(kDummyElementFqId, kDummyTransactionLogId);
+
+    // When calling RollbackTransactionLogs()
+    const auto result = unit_->RollbackTransactionLogs();
+
+    // Then it succeeds
+    EXPECT_TRUE(result.has_value());
+    // and the coherent event's transaction log has been rolled back (freed up) just like a CoherencyType::kNonCoherent
+    // event's would be (see TransactionLogRollbackExecutor::RollbackTransactionLogs())
+    EXPECT_FALSE(transaction_log_node.IsActive());
+    EXPECT_FALSE(transaction_log_node.NeedsRollback());
 }
 
 TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, RollbackTransactionLogsCanBeCalledMultiThreaded)

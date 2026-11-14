@@ -289,6 +289,70 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenAllocateFails)
     std::ignore = SendValueByCopy(*skeleton_event_, sample_data, std::move(tracing_handler));
 }
 
+using SkeletonEventTracingCoherencyDeathTest = SkeletonEventTracingFixture;
+TEST_F(SkeletonEventTracingCoherencyDeathTest, ConstructingCoherentEventWithSendTracingEnabledTerminates)
+{
+    // Given a SEND trace point enabled via tracing data
+    impl::tracing::SkeletonEventTracingData enabled_send_trace_point{};
+    enabled_send_trace_point.enable_send = true;
+
+    // When constructing a CoherencyType::kCoherent SkeletonEvent with that tracing data
+    // Then the program terminates, since CoherencyType::kCoherent does not support IPC-Tracing
+    EXPECT_DEATH(InitialiseSkeletonEvent(fake_element_fq_id_,
+                                         fake_event_name_,
+                                         max_samples_,
+                                         max_subscribers_,
+                                         kEnforceMaxSamples,
+                                         QualityType::kASIL_QM,
+                                         enabled_send_trace_point,
+                                         false,
+                                         CoherencyType::kCoherent),
+                 ".*");
+}
+
+TEST_F(SkeletonEventTracingCoherencyDeathTest, ConstructingCoherentEventWithSendWithAllocateTracingEnabledTerminates)
+{
+    // Given a SEND_WITH_ALLOCATE trace point enabled via tracing data
+    impl::tracing::SkeletonEventTracingData enabled_send_with_allocate_trace_point{};
+    enabled_send_with_allocate_trace_point.enable_send_with_allocate = true;
+
+    // When constructing a CoherencyType::kCoherent SkeletonEvent with that tracing data
+    // Then the program terminates, since CoherencyType::kCoherent does not support IPC-Tracing
+    EXPECT_DEATH(InitialiseSkeletonEvent(fake_element_fq_id_,
+                                         fake_event_name_,
+                                         max_samples_,
+                                         max_subscribers_,
+                                         kEnforceMaxSamples,
+                                         QualityType::kASIL_QM,
+                                         enabled_send_with_allocate_trace_point,
+                                         false,
+                                         CoherencyType::kCoherent),
+                 ".*");
+}
+
+TEST_F(SkeletonEventTracingCoherencyDeathTest, SettingSendTracingDataOnAlreadyConstructedCoherentEventTerminates)
+{
+    // Given a CoherencyType::kCoherent SkeletonEvent constructed without tracing enabled
+    InitialiseSkeletonEvent(fake_element_fq_id_,
+                            fake_event_name_,
+                            max_samples_,
+                            max_subscribers_,
+                            kEnforceMaxSamples,
+                            QualityType::kASIL_QM,
+                            impl::tracing::SkeletonEventTracingData{},
+                            false,
+                            CoherencyType::kCoherent);
+
+    // When later enabling the SEND trace point via SetSkeletonEventTracingData() (mirroring the real production
+    // sequence, where the binding is first constructed with blank tracing data and the real tracing data - resolved
+    // from the tracing filter config - is applied afterwards)
+    impl::tracing::SkeletonEventTracingData enabled_send_trace_point{};
+    enabled_send_trace_point.enable_send = true;
+
+    // Then the program terminates
+    EXPECT_DEATH(skeleton_event_->SetSkeletonEventTracingData(enabled_send_trace_point), ".*");
+}
+
 using SkeletonEventTracingSendWithAllocateFixture = SkeletonEventTracingFixture;
 TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendWithAllocateCallsAreTracedWhenEnabled)
 {

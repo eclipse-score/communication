@@ -147,6 +147,7 @@ void ConfigurationStructsFixture::ExpectLolaEventInstanceDeploymentObjectsEqual(
     EXPECT_EQ(lhs.max_concurrent_allocations_, rhs.max_concurrent_allocations_);
     EXPECT_EQ(lhs.enforce_max_samples_, rhs.enforce_max_samples_);
     EXPECT_EQ(lhs.GetNumberOfSampleSlotsExcludingTracingSlot(), rhs.GetNumberOfSampleSlotsExcludingTracingSlot());
+    EXPECT_EQ(lhs.GetCoherency(), rhs.GetCoherency());
 }
 
 void ConfigurationStructsFixture::ExpectLolaFieldInstanceDeploymentObjectsEqual(

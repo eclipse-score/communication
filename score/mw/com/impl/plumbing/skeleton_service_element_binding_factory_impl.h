@@ -55,6 +55,8 @@ namespace detail
 ///
 /// For an event, the number of slots and max subscribers comes purely from the configuration. For a field, we also take
 /// into account the field tags when calculating the number of slots that are needed.
+///
+/// \details Logs FATAL log message and terminates, in case the configuration is invalid.
 inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
     const LolaEventInstanceDeployment& lola_event_instance_deployment,
     const std::optional<FieldTagsStore> field_tags_store)
@@ -99,12 +101,35 @@ inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
 
     const bool is_setter_enabled = !is_event && field_tags_store->HasSetter();
 
+    const auto coherency = lola_event_instance_deployment.GetCoherency();
+    if (coherency == CoherencyType::kCoherent)
+    {
+        if (is_getter_enabled || is_setter_enabled)
+        {
+            score::mw::log::LogFatal("lola")
+                << "Could not create SkeletonEventProperties: CoherencyType::kCoherent is not supported for a field "
+                   "with Getter or Setter enabled (field Get()/Set() calls are conceptually non-coherent accesses). "
+                   "Configure CoherencyType::kNonCoherent or CoherencyType::kMixed instead. Terminating.";
+            std::terminate();
+        }
+        if (lola_event_instance_deployment.GetNumberOfTracingSlots() > 0U)
+        {
+            score::mw::log::LogFatal("lola")
+                << "Could not create SkeletonEventProperties: CoherencyType::kCoherent is not supported together with "
+                   "IPC-Tracing (numberOfIpcTracingSlots > 0), since the tracing subsystem accesses the CONTROL "
+                   "segment the same way a non-coherent consumer would. Configure CoherencyType::kNonCoherent or "
+                   "CoherencyType::kMixed instead. Terminating.";
+            std::terminate();
+        }
+    }
+
     return lola::SkeletonEventProperties{number_of_slots,
                                          lola_event_instance_deployment.GetNumberOfTracingSlots(),
                                          number_of_field_getter_slots,
                                          is_setter_enabled,
                                          max_subscribers,
-                                         lola_event_instance_deployment.enforce_max_samples_};
+                                         lola_event_instance_deployment.enforce_max_samples_,
+                                         coherency};
 }
 
 inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
@@ -229,7 +254,7 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, service_element_name_str);
 
-            const lola::SkeletonEventProperties skeleton_event_properties =
+            const auto skeleton_event_properties =
                 detail::CreateSkeletonEventProperties(lola_service_element_instance_deployment, field_tags_store);
 
             const auto lola_service_element_id =
@@ -322,7 +347,7 @@ auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
                 lola_service_instance_deployment, std::string{service_element_name});
 
             // TODO: Pass in the FieldAbilities when GenericSkeletonFields are implemented.
-            const lola::SkeletonEventProperties skeleton_event_properties = detail::CreateSkeletonEventProperties(
+            const auto skeleton_event_properties = detail::CreateSkeletonEventProperties(
                 lola_service_element_instance_deployment, std::optional<FieldTagsStore>{});
 
             const auto lola_service_element_id =

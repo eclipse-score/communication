@@ -43,6 +43,11 @@ void MarkTransactionLogsNeedRollback(ServiceDataControl& service_data_control,
         auto& transaction_log_set = element.second.transaction_log_set_;
         transaction_log_set.MarkTransactionLogsNeedRollback(transaction_log_id);
     }
+    for (auto& element : service_data_control.event_controls_coherent_)
+    {
+        auto& transaction_log_set = element.second.transaction_log_set_;
+        transaction_log_set.MarkTransactionLogsNeedRollback(transaction_log_id);
+    }
 }
 
 }  // namespace
@@ -129,6 +134,27 @@ Result<void> TransactionLogRollbackExecutor::RollbackTransactionLogs() noexcept
             },
             [&event_control](const TransactionLog::MaxSampleCountType subscription_max_sample_count) noexcept {
                 event_control.subscription_control.Unsubscribe(subscription_max_sample_count);
+            });
+        if (!rollback_result.has_value())
+        {
+            return rollback_result;
+        }
+    }
+
+    for (auto& element : service_data_control_.event_controls_coherent_)
+    {
+        auto& event_control_coherent = element.second;
+        auto& transaction_log_set = event_control_coherent.transaction_log_set_;
+        const auto rollback_result = transaction_log_set.RollbackProxyTransactions(
+            transaction_log_id_,
+            [](const TransactionLog::SlotIndexType) noexcept {
+                // CoherencyType::kCoherent consumers never reference/dereference any CONTROL-segment slot (see
+                // EventDataControlCoherent), so there is nothing to undo here. This callback will never actually be
+                // invoked anyway, since the per-slot reference_count_slots_ array of a CoherencyType::kCoherent
+                // event's TransactionLog is always empty (see EventControlCoherent).
+            },
+            [&event_control_coherent](const TransactionLog::MaxSampleCountType subscription_max_sample_count) noexcept {
+                event_control_coherent.subscription_control.Unsubscribe(subscription_max_sample_count);
             });
         if (!rollback_result.has_value())
         {

@@ -22,6 +22,7 @@
 
 #include "score/mw/com/impl/configuration/config_validate.h"
 
+#include "score/mw/com/impl/configuration/coherency_type.h"
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
@@ -202,6 +203,24 @@ auto ParseStrictPermissions(fbs::PermissionChecks permission_checks) -> bool
     }
 }
 
+auto ParseCoherency(fbs::Coherency coherency) -> CoherencyType
+{
+    switch (coherency)
+    {
+        case fbs::Coherency::NON_COHERENT:
+            return CoherencyType::kNonCoherent;
+        case fbs::Coherency::COHERENT:
+            return CoherencyType::kCoherent;
+        case fbs::Coherency::MIXED:
+            return CoherencyType::kMixed;
+        default:
+            score::mw::log::LogFatal("lola") << "Unknown coherency value. Terminating.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+            return CoherencyType::kNonCoherent;  // LCOV_EXCL_LINE defensive programming:
+                                                 // SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD never returns
+    }
+}
+
 auto ParseAllowedUser(const ::flatbuffers::Vector<std::uint32_t>* qm_ids,
                       const ::flatbuffers::Vector<std::uint32_t>* b_ids)
     -> std::unordered_map<QualityType, std::vector<uid_t>>
@@ -285,12 +304,14 @@ auto ParseLolaEventInstanceDeployment(const fbs::ServiceInstanceBinding& deploym
             ToOptional(event->maxSubscribers()), "maxSubscribers");
         const auto number_of_tracing_slots =
             NarrowOrFatal<NumberOfIpcTracingSlots_t>(event->numberOfIpcTracingSlots(), "numberOfIpcTracingSlots");
+        const auto coherency = ParseCoherency(event->coherency());
 
         auto event_deployment = LolaEventInstanceDeployment(number_of_sample_slots,
                                                             max_subscribers,
                                                             static_cast<std::uint8_t>(1U),
                                                             event->enforceMaxSamples(),
-                                                            number_of_tracing_slots);
+                                                            number_of_tracing_slots,
+                                                            coherency);
 
         EmplaceOrFatal(service.events_, std::move(event_name), event_deployment, "An event instance");
     }
@@ -315,12 +336,14 @@ auto ParseLolaFieldInstanceDeployment(const fbs::ServiceInstanceBinding& deploym
             ToOptional(field->maxSubscribers()), "maxSubscribers");
         const auto number_of_tracing_slots =
             NarrowOrFatal<NumberOfIpcTracingSlots_t>(field->numberOfIpcTracingSlots(), "numberOfIpcTracingSlots");
+        const auto coherency = ParseCoherency(field->coherency());
 
         auto field_deployment = LolaFieldInstanceDeployment(LolaEventInstanceDeployment(number_of_sample_slots,
                                                                                         max_subscribers,
                                                                                         static_cast<std::uint8_t>(1U),
                                                                                         field->enforceMaxSamples(),
-                                                                                        number_of_tracing_slots),
+                                                                                        number_of_tracing_slots,
+                                                                                        coherency),
                                                             field->useGetIfAvailable(),
                                                             field->useSetIfAvailable());
         EmplaceOrFatal(service.fields_, std::move(field_name), field_deployment, "A field instance");

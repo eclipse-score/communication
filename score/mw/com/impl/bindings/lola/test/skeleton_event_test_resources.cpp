@@ -37,7 +37,8 @@ void SkeletonEventFixture::InitialiseSkeletonEvent(const ElementFqId element_fq_
                                                    const bool enforce_max_samples,
                                                    const QualityType quality_type,
                                                    impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data,
-                                                   const bool field_getter_enabled)
+                                                   const bool field_getter_enabled,
+                                                   const CoherencyType coherency)
 {
     // We defer initialization of the Skeleton to InitialiseSkeletonEvent to allow test fixtures to set any mocked
     // expectations before creating the skeleton.
@@ -60,7 +61,7 @@ void SkeletonEventFixture::InitialiseSkeletonEvent(const ElementFqId element_fq_
         service_element_name,
         test::kEventSampleTypeSizeInfo,
         SkeletonEventProperties{
-            max_samples, 0U, number_of_field_getter_slots, false, max_subscribers, enforce_max_samples},
+            max_samples, 0U, number_of_field_getter_slots, false, max_subscribers, enforce_max_samples, coherency},
         skeleton_event_tracing_data);
 }
 

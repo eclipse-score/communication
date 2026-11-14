@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/configuration/configuration_flatbuffer_parsing_strategy.h"
 #include "score/mw/com/impl/configuration/configuration_json_parsing_strategy.h"
 
+#include "score/mw/com/impl/configuration/coherency_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
@@ -792,6 +793,64 @@ TEST_P(ConfigurationParsingStrategyTest, LolaFieldOptionalEnforceMaxSamples)
     EXPECT_EQ(
         deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").lola_event_instance_deployment_.enforce_max_samples_,
         false);
+}
+
+TEST_P(ConfigurationParsingStrategyTest, LolaEventWithoutCoherencyDefaultsToNonCoherent)
+{
+    // Given a JSON without the optional `coherency` attribute for an event
+    const auto config = Parse(GetParam(), "event_enforce_max_samples_false");
+
+    const auto& deployment =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
+
+    // Then the event defaults to CoherencyType::kNonCoherent
+    const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+    EXPECT_EQ(deploymentInfo.events_.at("CurrentPressureFrontLeft").GetCoherency(), CoherencyType::kNonCoherent);
+}
+
+TEST_P(ConfigurationParsingStrategyTest, LolaEventOptionalCoherencyCoherent)
+{
+    // Given a JSON with optional attribute `coherency` set to COHERENT for an event
+    const auto config = Parse(GetParam(), "event_coherency_coherent");
+
+    const auto& deployment =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
+
+    const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+    EXPECT_EQ(deploymentInfo.events_.at("CurrentPressureFrontLeft").GetCoherency(), CoherencyType::kCoherent);
+}
+
+TEST_P(ConfigurationParsingStrategyTest, LolaEventOptionalCoherencyMixed)
+{
+    // Given a JSON with optional attribute `coherency` set to MIXED for an event
+    const auto config = Parse(GetParam(), "event_coherency_mixed");
+
+    const auto& deployment =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
+
+    const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+    EXPECT_EQ(deploymentInfo.events_.at("CurrentPressureFrontLeft").GetCoherency(), CoherencyType::kMixed);
+}
+
+TEST_P(ConfigurationParsingStrategyTest, LolaFieldOptionalCoherencyCoherent)
+{
+    // Given a JSON with optional attribute `coherency` set to COHERENT for a field
+    const auto config = Parse(GetParam(), "field_coherency_coherent");
+
+    const auto& deployment =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
+
+    const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").lola_event_instance_deployment_.GetCoherency(),
+              CoherencyType::kCoherent);
 }
 
 TEST_P(ConfigurationParsingStrategyTest, LolaFieldUseGetIfAvailableSetToFalse)

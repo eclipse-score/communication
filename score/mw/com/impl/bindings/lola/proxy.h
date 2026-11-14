@@ -15,6 +15,8 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_control.h"
+#include "score/mw/com/impl/bindings/lola/event_control_coherent.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control_mixed.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/event_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
@@ -56,6 +58,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 namespace score::mw::com::impl::lola
@@ -70,6 +73,15 @@ namespace detail_proxy
 ServiceDataStorage& GetServiceDataStorage(const memory::shared::ManagedMemoryResource& data) noexcept;
 
 }
+
+/// \brief Variant holding a reference to whichever EventDataControl flavour the skeleton-side counterpart of a
+/// CoherencyType::kCoherent proxy-side event is actually configured with: EventDataControlCoherent (if the
+/// skeleton-side event is also configured with CoherencyType::kCoherent) or EventDataControlMixed (if the
+/// skeleton-side event is configured with CoherencyType::kMixed).
+///
+/// \details See Proxy::GetEventDataControlCoherentOrMixed(), whose return type this is.
+using EventDataControlCoherentOrMixed =
+    std::variant<std::reference_wrapper<EventDataControlCoherent>, std::reference_wrapper<EventDataControlMixed>>;
 
 /// \brief Proxy binding implementation for all Lola proxies.
 class Proxy : public ProxyBinding
@@ -128,20 +140,60 @@ class Proxy : public ProxyBinding
           score::filesystem::Filesystem filesystem,
           ProxyInstanceIdentifier::ProxyInstanceCounter proxy_instance_counter);
 
-    /// Returns the address of the control structure, for the given event ID.
+    /// Returns the EventDataControl for the given event ID, which must be configured with either
+    /// CoherencyType::kNonCoherent or CoherencyType::kMixed (the embedded EventDataControl of the latter's
+    /// EventDataControlMixed is returned, as a CoherencyType::kNonCoherent consumer accesses a CoherencyType::kMixed
+    /// event's CONTROL segment exactly as for CoherencyType::kNonCoherent, see EventDataControlMixed).
     ///
     /// Terminates if the event control structure cannot be found.
-    ConsumerEventDataControlLocalView<> GetConsumerEventDataControlLocalView(const ElementFqId element_fq_id);
+    ///
+    /// \details Callers that need a ConsumerEventDataControlLocalView can construct one directly from the returned
+    /// reference, e.g. in-place via std::optional::emplace()/in_place construction, to avoid moving a non-movable
+    /// view.
+    EventDataControl& GetEventDataControl(const ElementFqId element_fq_id);
 
-    /// Returns the EventSubscriptionControl for the given event ID.
+    /// Returns the EventDataControlCoherent or EventDataControlMixed for the given CoherencyType::kCoherent
+    /// proxy-side event ID, depending on how the skeleton-side counterpart is actually configured: a
+    /// CoherencyType::kCoherent proxy-side event is compatible with a skeleton-side event configured with either
+    /// CoherencyType::kCoherent or CoherencyType::kMixed (see EventDataControlMixed for the rationale).
+    ///
+    /// Terminates if the event control structure cannot be found in either flavour.
+    ///
+    /// \details The caller (ProxyEvent) uses the returned variant to determine whether to construct a
+    /// ConsumerEventDataControlCoherentLocalView or a ConsumerEventDataControlMixedCoherentLocalView.
+    EventDataControlCoherentOrMixed GetEventDataControlCoherentOrMixed(const ElementFqId element_fq_id);
+
+    /// Returns the EventSubscriptionControl for the given event ID, which must be configured with either
+    /// CoherencyType::kNonCoherent or CoherencyType::kMixed (see GetEventDataControl() for the rationale of also
+    /// covering CoherencyType::kMixed events).
     ///
     /// Terminates if the event control structure cannot be found.
     EventSubscriptionControl<>& GetEventSubscriptionControl(const ElementFqId element_fq_id);
 
-    /// Returns the TransactionLogSet for the given event ID.
+    /// Returns the EventSubscriptionControl for the given CoherencyType::kCoherent event ID, which must be
+    /// configured with either CoherencyType::kCoherent or CoherencyType::kMixed (see
+    /// GetEventDataControlCoherentOrMixed() for the rationale of also covering CoherencyType::kMixed events).
+    ///
+    /// Terminates if the event control structure cannot be found.
+    EventSubscriptionControl<>& GetEventSubscriptionControlCoherent(const ElementFqId element_fq_id);
+
+    /// Returns the TransactionLogSet for the given event ID, which must be configured with either
+    /// CoherencyType::kNonCoherent or CoherencyType::kMixed (see GetEventDataControl() for the rationale of also
+    /// covering CoherencyType::kMixed events).
     ///
     /// Terminates if the event control structure cannot be found.
     TransactionLogSet& GetTransactionLogSet(const ElementFqId element_fq_id);
+
+    /// Returns the TransactionLogSet for the given CoherencyType::kCoherent event ID, which must be configured with
+    /// either CoherencyType::kCoherent or CoherencyType::kMixed (see GetEventDataControlCoherentOrMixed() for the
+    /// rationale of also covering CoherencyType::kMixed events).
+    ///
+    /// Terminates if the event control structure cannot be found.
+    ///
+    /// \details EventControlCoherent's and EventControlMixed's transaction_log_set_ are still needed (unlike
+    /// per-slot reference-counting transactions) for crash-recovery of the subscribe/unsubscribe transaction - see
+    /// EventControlCoherent / EventControlMixed.
+    TransactionLogSet& GetTransactionLogSetCoherent(const ElementFqId element_fq_id);
 
     /// Retrieves a reference to the event data storage area for a given ElementFqId.
     const EventDataStorage& GetEventDataStorage(const ElementFqId element_fq_id) const;

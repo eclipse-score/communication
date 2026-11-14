@@ -14,6 +14,10 @@
 
 #include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control_coherent.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control_mixed.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control_mixed_composite.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 
@@ -275,5 +279,66 @@ TEST_F(SamplePtrTest, LessThanReturnsFalseWhenRightSampleIsInvalid)
 
     EXPECT_FALSE(result);
 }
+
+/// \brief Test fixture for the CoherencyType::kCoherent SamplePtr ctor overload (no SlotDecrementer involved).
+class SamplePtrCoherentTest : public ::testing::Test
+{
+  protected:
+    FakeMemoryResource memory_{};
+    EventDataControlCoherent event_data_control_{kMaxSlots, memory_};
+    ConsumerEventDataControlCoherentLocalView consumer_event_data_control_local_{event_data_control_};
+    ProviderEventDataControlCoherentLocalView provider_event_data_control_local_{event_data_control_};
+};
+
+TEST_F(SamplePtrCoherentTest, ConstructsValidSamplePtrWithoutAlteringControlSegmentState)
+{
+    constexpr CoherentEventSlotStatus::EventTimeStamp kTimestamp{17U};
+    const auto slot_index = provider_event_data_control_local_.AllocateNextSlot();
+    provider_event_data_control_local_.EventReady(slot_index, kTimestamp);
+
+    uint8_t dummy_val{};
+    SamplePtr sample_ptr{&dummy_val, consumer_event_data_control_local_, slot_index};
+
+    // The SamplePtr is valid and reports the sample's timestamp ...
+    EXPECT_TRUE(sample_ptr);
+    EXPECT_EQ(consumer_event_data_control_local_[slot_index].GetTimeStamp(), kTimestamp);
+
+    // ... and destroying it (no SlotDecrementer for kCoherent) leaves the slot's timestamp untouched (unlike the
+    // kNonCoherent case, where destruction decrements a reference count).
+    sample_ptr = nullptr;
+    EXPECT_EQ(consumer_event_data_control_local_[slot_index].GetTimeStamp(), kTimestamp);
+}
+
+/// \brief Test fixture for the CoherencyType::kCoherent-proxy-reading-a-kMixed-skeleton-event SamplePtr ctor overload
+/// (no SlotDecrementer involved, just like the kCoherent ctor overload).
+class SamplePtrMixedCoherentTest : public ::testing::Test
+{
+  protected:
+    FakeMemoryResource memory_{};
+    EventDataControlMixed event_data_control_mixed_{kMaxSlots, memory_};
+    EventDataControlMixedComposite provider_event_data_control_local_{event_data_control_mixed_};
+    ConsumerEventDataControlMixedCoherentLocalView consumer_event_data_control_local_{event_data_control_mixed_};
+};
+
+TEST_F(SamplePtrMixedCoherentTest, ConstructsValidSamplePtrWithoutAlteringControlSegmentState)
+{
+    constexpr EventSlotStatus::EventTimeStamp kTimestamp{17U};
+    const auto allocation_result = provider_event_data_control_local_.GetComposite().AllocateNextSlot();
+    ASSERT_TRUE(allocation_result.allocated_slot_index.has_value());
+    const auto slot_index = allocation_result.allocated_slot_index.value();
+    provider_event_data_control_local_.EventReady(slot_index, kTimestamp);
+
+    uint8_t dummy_val{};
+    SamplePtr sample_ptr{&dummy_val, consumer_event_data_control_local_, slot_index};
+
+    // The SamplePtr is valid and reports the sample's timestamp ...
+    EXPECT_TRUE(sample_ptr);
+    EXPECT_EQ(consumer_event_data_control_local_[slot_index].GetTimeStamp(), kTimestamp);
+
+    // ... and destroying it (no SlotDecrementer, just like the kCoherent case) leaves the slot's timestamp untouched.
+    sample_ptr = nullptr;
+    EXPECT_EQ(consumer_event_data_control_local_[slot_index].GetTimeStamp(), kTimestamp);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola

@@ -13,6 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_PROPERTIES_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_PROPERTIES_H
 
+#include "score/mw/com/impl/configuration/coherency_type.h"
+
 #include <cstddef>
 
 namespace score::mw::com::impl::lola
@@ -26,9 +28,11 @@ class SkeletonEventProperties
                             std::size_t number_of_field_getter_slots,
                             bool is_setter_enabled,
                             std::size_t max_subscribers_in,
-                            bool enforce_max_samples_in)
+                            bool enforce_max_samples_in,
+                            CoherencyType coherency_in = CoherencyType::kNonCoherent)
         : max_subscribers(max_subscribers_in),
           enforce_max_samples(enforce_max_samples_in),
+          coherency(coherency_in),
           number_of_slots_(number_of_slots),
           number_of_tracing_slots_(number_of_tracing_slots),
           number_of_field_getter_slots_(number_of_field_getter_slots),
@@ -65,6 +69,10 @@ class SkeletonEventProperties
     // individually.
     // coverity[autosar_cpp14_a9_6_1_violation : FALSE]
     bool enforce_max_samples;
+
+    /// \brief Which CONTROL segment data structure / synchronization strategy is used for this event (or field) on
+    /// the provider/skeleton side.
+    CoherencyType coherency;
 
   private:
     /// \brief The number of slots configured by the user for the event (or field) via numberOfSampleSlots configuration

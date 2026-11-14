@@ -339,7 +339,11 @@ cc_library(
         ":application_id_pid_mapping_entry",
         ":element_fq_id",
         ":event_control",
+        ":event_control_coherent",
+        ":event_control_mixed",
         ":event_data_control",
+        ":event_data_control_coherent",
+        ":event_data_control_mixed",
         ":linear_search_map",
         ":transaction_log",
         ":transaction_log_set",
@@ -441,8 +445,10 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola/test:__pkg__"],
     deps = [
+        ":consumer_event_data_control_coherent_local_view",
         ":event",
         ":event_control",
+        ":event_control_coherent",
         ":event_data_storage_local_view",
         ":event_subscription_control",
         ":proxy_instance_identifier",
@@ -508,7 +514,9 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":consumer_event_data_control_coherent_local_view",
         ":consumer_event_data_control_local_view",
+        ":consumer_event_data_control_mixed_coherent_local_view",
         ":slot_decrementer",
     ],
 )
@@ -549,7 +557,9 @@ cc_library(
     ],
     tags = ["FFI"],
     deps = [
+        ":consumer_event_data_control_coherent_local_view",
         ":consumer_event_data_control_local_view",
+        ":consumer_event_data_control_mixed_coherent_local_view",
         ":event_subscription_control",
         ":i_runtime",
         ":slot_collector",
@@ -571,7 +581,9 @@ cc_library(
     hdrs = ["slot_collector.h"],
     tags = ["FFI"],
     deps = [
+        ":consumer_event_data_control_coherent_local_view",
         ":consumer_event_data_control_local_view",
+        ":consumer_event_data_control_mixed_coherent_local_view",
         ":event_slot_status",
     ],
 )
@@ -614,6 +626,16 @@ cc_library(
 )
 
 cc_library(
+    name = "coherent_event_slot_status",
+    srcs = ["coherent_event_slot_status.cpp"],
+    hdrs = ["coherent_event_slot_status.h"],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+)
+
+cc_library(
     name = "event_data_control",
     srcs = ["event_data_control.cpp"],
     hdrs = ["event_data_control.h"],
@@ -623,6 +645,31 @@ cc_library(
         ":control_slot_types",
         "//score/memory/shared:polymorphic_offset_ptr_allocator",
         "@score_baselibs//score/containers:dynamic_array",
+    ],
+)
+
+cc_library(
+    name = "event_data_control_coherent",
+    srcs = ["event_data_control_coherent.cpp"],
+    hdrs = ["event_data_control_coherent.h"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        ":control_slot_types",
+        "//score/memory/shared:polymorphic_offset_ptr_allocator",
+        "@score_baselibs//score/containers:dynamic_array",
+    ],
+)
+
+cc_library(
+    name = "event_data_control_mixed",
+    srcs = ["event_data_control_mixed.cpp"],
+    hdrs = ["event_data_control_mixed.h"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        ":control_slot_types",
+        ":event_data_control",
     ],
 )
 
@@ -642,6 +689,36 @@ cc_library(
 )
 
 cc_library(
+    name = "provider_event_data_control_coherent_local_view",
+    srcs = ["provider_event_data_control_coherent_local_view.cpp"],
+    hdrs = ["provider_event_data_control_coherent_local_view.h"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        ":coherent_event_slot_status",
+        ":control_slot_types",
+        ":event_data_control_coherent",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "event_data_control_coherent_composite",
+    srcs = ["event_data_control_coherent_composite.cpp"],
+    hdrs = ["event_data_control_coherent_composite.h"],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":coherent_event_slot_status",
+        ":control_slot_types",
+        ":event_data_control_coherent",
+        ":provider_event_data_control_coherent_local_view",
+    ],
+)
+
+cc_library(
     name = "consumer_event_data_control_local_view",
     srcs = ["consumer_event_data_control_local_view.cpp"],
     hdrs = ["consumer_event_data_control_local_view.h"],
@@ -657,6 +734,20 @@ cc_library(
 )
 
 cc_library(
+    name = "consumer_event_data_control_coherent_local_view",
+    srcs = ["consumer_event_data_control_coherent_local_view.cpp"],
+    hdrs = ["consumer_event_data_control_coherent_local_view.h"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        ":coherent_event_slot_status",
+        ":control_slot_types",
+        ":event_data_control_coherent",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
     name = "control_slot_types",
     srcs = ["control_slot_types.cpp"],
     hdrs = ["control_slot_types.h"],
@@ -665,7 +756,22 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":coherent_event_slot_status",
         ":event_slot_status",
+    ],
+)
+
+cc_library(
+    name = "consumer_event_data_control_mixed_coherent_local_view",
+    srcs = ["consumer_event_data_control_mixed_coherent_local_view.cpp"],
+    hdrs = ["consumer_event_data_control_mixed_coherent_local_view.h"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        ":control_slot_types",
+        ":event_data_control_mixed",
+        ":event_slot_status",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -678,6 +784,34 @@ cc_library(
     deps = [
         ":control_slot_types",
         ":event_data_control",
+        ":event_subscription_control",
+        ":transaction_log_set",
+    ],
+)
+
+cc_library(
+    name = "event_control_coherent",
+    srcs = ["event_control_coherent.cpp"],
+    hdrs = ["event_control_coherent.h"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        ":control_slot_types",
+        ":event_data_control_coherent",
+        ":event_subscription_control",
+        ":transaction_log_set",
+    ],
+)
+
+cc_library(
+    name = "event_control_mixed",
+    srcs = ["event_control_mixed.cpp"],
+    hdrs = ["event_control_mixed.h"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        ":control_slot_types",
+        ":event_data_control_mixed",
         ":event_subscription_control",
         ":transaction_log_set",
     ],
@@ -724,6 +858,22 @@ cc_library(
         ":event_slot_status",
         ":provider_event_data_control_local_view",
         "@score_baselibs//score/concurrency:atomic_indirector",
+    ],
+)
+
+cc_library(
+    name = "event_data_control_mixed_composite",
+    srcs = ["event_data_control_mixed_composite.cpp"],
+    hdrs = ["event_data_control_mixed_composite.h"],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":control_slot_types",
+        ":event_data_control_composite",
+        ":event_data_control_mixed",
+        ":event_slot_status",
     ],
 )
 
@@ -775,7 +925,9 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":consumer_event_data_control_local_view",
         ":control_slot_types",
+        ":event_data_control_coherent_composite",
         ":event_data_control_composite",
         "@score_baselibs//score/language/safecpp/safe_math",
     ],
@@ -792,11 +944,16 @@ cc_library(
     ],
     deps = [
         ":event_control",
+        ":event_control_coherent",
         ":event_data_control",
+        ":event_data_control_coherent",
+        ":event_data_control_coherent_composite",
         ":event_data_control_composite",
+        ":event_data_control_mixed_composite",
         ":event_data_storage",
         ":event_slot_status",
         ":event_subscription_control",
+        ":provider_event_data_control_coherent_local_view",
         ":sample_allocatee_ptr",
         ":sample_ptr",
     ],
@@ -1047,6 +1204,61 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "coherent_event_slot_status_test",
+    srcs = ["coherent_event_slot_status_test.cpp"],
+    deps = [
+        ":coherent_event_slot_status",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "event_data_control_coherent_test",
+    srcs = ["event_data_control_coherent_test.cpp"],
+    deps = [
+        ":coherent_event_slot_status",
+        ":event_data_control_coherent",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "@score_baselibs//score/containers:dynamic_array",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "event_data_control_mixed_test",
+    srcs = ["event_data_control_mixed_test.cpp"],
+    deps = [
+        ":control_slot_types",
+        ":event_data_control",
+        ":event_data_control_mixed",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "event_control_coherent_test",
+    srcs = ["event_control_coherent_test.cpp"],
+    deps = [
+        ":event_control_coherent",
+        ":transaction_log_id",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "event_control_mixed_test",
+    srcs = ["event_control_mixed_test.cpp"],
+    deps = [
+        ":event_control_mixed",
+        ":transaction_log_id",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
     name = "provider_event_data_control_local_view_test",
     srcs = [
         "provider_event_data_control_local_view_test.cpp",
@@ -1060,6 +1272,46 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/lola:event_slot_status",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@score_baselibs//score/concurrency:atomic_indirector_mock_binding",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "provider_event_data_control_coherent_local_view_test",
+    srcs = [
+        "provider_event_data_control_coherent_local_view_test.cpp",
+    ],
+    deps = [
+        ":event_data_control_coherent",
+        ":provider_event_data_control_coherent_local_view",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "event_data_control_coherent_composite_test",
+    srcs = [
+        "event_data_control_coherent_composite_test.cpp",
+    ],
+    deps = [
+        ":event_data_control_coherent",
+        ":event_data_control_coherent_composite",
+        ":provider_event_data_control_coherent_local_view",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "event_data_control_mixed_composite_test",
+    srcs = [
+        "event_data_control_mixed_composite_test.cpp",
+    ],
+    deps = [
+        ":event_data_control_mixed",
+        ":event_data_control_mixed_composite",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -1081,6 +1333,34 @@ cc_unit_test(
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/concurrency:atomic_indirector_mock_binding",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "consumer_event_data_control_coherent_local_view_test",
+    srcs = [
+        "consumer_event_data_control_coherent_local_view_test.cpp",
+    ],
+    deps = [
+        ":consumer_event_data_control_coherent_local_view",
+        ":event_data_control_coherent",
+        ":provider_event_data_control_coherent_local_view",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test(
+    name = "consumer_event_data_control_mixed_coherent_local_view_test",
+    srcs = [
+        "consumer_event_data_control_mixed_coherent_local_view_test.cpp",
+    ],
+    deps = [
+        ":consumer_event_data_control_mixed_coherent_local_view",
+        ":event_data_control_mixed",
+        ":event_data_control_mixed_composite",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -1214,6 +1494,18 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/safecpp/scoped_function:scope",
+    ],
+)
+
+cc_unit_test(
+    name = "proxy_event_coherency_test",
+    srcs = ["proxy_event_coherency_test.cpp"],
+    deps = [
+        ":proxy",
+        "//score/mw/com/impl:sample_reference_tracker",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_fixture",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -1379,6 +1671,8 @@ cc_unit_test(
     deps = [
         ":element_fq_id",
         ":event_control",
+        ":event_control_coherent",
+        ":event_control_mixed",
         ":service_data_control",
         "//score/memory/shared:new_delete_delegate_resource",
         "//score/mw/com/impl:service_element_type",
@@ -1431,6 +1725,8 @@ cc_unit_test(
     ],
     deps = [
         ":consumer_event_data_control_local_view",
+        ":event_data_control_coherent",
+        ":provider_event_data_control_coherent_local_view",
         ":provider_event_data_control_local_view",
         ":slot_collector",
         "//score/mw/com/impl/bindings/lola/test_doubles",
@@ -1456,6 +1752,38 @@ cc_unit_test(
         ":subscription_state_machine",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
+    ],
+)
+
+cc_unit_test(
+    name = "subscription_state_machine_coherent_test",
+    srcs = [
+        "subscription_state_machine_coherent_test.cpp",
+    ],
+    deps = [
+        ":event_data_control_coherent",
+        ":event_subscription_control",
+        ":subscription_state_machine",
+        ":transaction_log_id",
+        ":transaction_log_set",
+        "//score/mw/com/impl/bindings/lola/test_doubles",
+        "//score/mw/com/impl/configuration:quality_type",
+    ],
+)
+
+cc_unit_test(
+    name = "subscription_state_machine_mixed_coherent_test",
+    srcs = [
+        "subscription_state_machine_mixed_coherent_test.cpp",
+    ],
+    deps = [
+        ":event_data_control_mixed",
+        ":event_subscription_control",
+        ":subscription_state_machine",
+        ":transaction_log_id",
+        ":transaction_log_set",
+        "//score/mw/com/impl/bindings/lola/test_doubles",
+        "//score/mw/com/impl/configuration:quality_type",
     ],
 )
 

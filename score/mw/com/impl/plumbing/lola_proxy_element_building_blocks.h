@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_PLUMBING_LOLA_PROXY_ELEMENT_BUILDING_BLOCKS_H
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/configuration/coherency_type.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/service_element_type.h"
@@ -27,6 +28,15 @@ lola::ElementFqId GetElementFqId(const HandleType& handle,
                                  const LolaServiceTypeDeployment& lola_type_deployment,
                                  const std::string_view service_element_name,
                                  const ServiceElementType element_type);
+
+/// \brief Returns the configured CoherencyType of the given event/field, as looked up from the (proxy-side) instance
+/// deployment contained in handle.
+///
+/// Terminates if handle's deployment is not a lola deployment, or if no event/field with the given name is
+/// contained in it.
+CoherencyType GetServiceElementCoherency(const HandleType& handle,
+                                         const std::string_view service_element_name,
+                                         const ServiceElementType element_type);
 
 }  // namespace score::mw::com::impl
 

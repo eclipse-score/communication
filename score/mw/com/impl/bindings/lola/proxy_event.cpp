@@ -25,7 +25,8 @@ namespace score::mw::com::impl::lola
 ProxyEvent::ProxyEvent(Proxy& parent,
                        const ElementFqId element_fq_id,
                        const std::string_view event_name,
-                       const memory::DataTypeSizeInfo data_type_size_info)
+                       const memory::DataTypeSizeInfo data_type_size_info,
+                       const CoherencyType coherency)
     : GenericProxyEventBinding{},
       meta_info_{data_type_size_info},
       event_data_storage_local_{parent.GetEventDataStorage(element_fq_id), meta_info_.data_type_info_},
@@ -35,16 +36,40 @@ ProxyEvent::ProxyEvent(Proxy& parent,
       event_name_{event_name},
       // The transaction log is identified by the application's unique identifier.
       transaction_log_id_{GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetApplicationId()},
-      event_data_control_local_{parent_.GetConsumerEventDataControlLocalView(event_fq_id_)},
-      subscription_control_{parent_.GetEventSubscriptionControl(event_fq_id_)},
-      transaction_log_set_{parent_.GetTransactionLogSet(event_fq_id_)},
-      subscription_event_state_machine_{parent_.GetQualityType(),
-                                        event_fq_id_,
-                                        parent_.GetSourcePid(),
-                                        event_data_control_local_,
-                                        subscription_control_.get(),
-                                        transaction_log_set_.get(),
-                                        transaction_log_id_}
+      coherency_{coherency},
+      event_data_control_local_{[this]() -> EventDataControlLocalView {
+          if (coherency_ != CoherencyType::kCoherent)
+          {
+              return EventDataControlLocalView{std::in_place_type<ConsumerEventDataControlLocalView<>>,
+                                               parent_.GetEventDataControl(event_fq_id_)};
+          }
+          auto event_data_control = parent_.GetEventDataControlCoherentOrMixed(event_fq_id_);
+          if (auto* const coherent_data_control =
+                  std::get_if<std::reference_wrapper<EventDataControlCoherent>>(&event_data_control))
+          {
+              return EventDataControlLocalView{std::in_place_type<ConsumerEventDataControlCoherentLocalView>,
+                                               coherent_data_control->get()};
+          }
+          return EventDataControlLocalView{
+              std::in_place_type<ConsumerEventDataControlMixedCoherentLocalView>,
+              std::get<std::reference_wrapper<EventDataControlMixed>>(event_data_control).get()};
+      }()},
+      subscription_control_{coherency_ == CoherencyType::kCoherent
+                                ? parent_.GetEventSubscriptionControlCoherent(event_fq_id_)
+                                : parent_.GetEventSubscriptionControl(event_fq_id_)},
+      transaction_log_set_{coherency_ == CoherencyType::kCoherent ? parent_.GetTransactionLogSetCoherent(event_fq_id_)
+                                                                  : parent_.GetTransactionLogSet(event_fq_id_)},
+      subscription_event_state_machine_{std::visit(
+          [this](auto& local_view) -> SubscriptionStateMachine {
+              return SubscriptionStateMachine{parent_.GetQualityType(),
+                                              event_fq_id_,
+                                              parent_.GetSourcePid(),
+                                              local_view,
+                                              subscription_control_.get(),
+                                              transaction_log_set_.get(),
+                                              transaction_log_id_};
+          },
+          event_data_control_local_)}
 {
     parent.RegisterEvent(event_name, *this);
 }
@@ -108,10 +133,14 @@ inline Result<std::size_t> ProxyEvent::GetNewSamples(Callback&& receiver, Tracke
     {
         const void* type_erased_sample_ptr = event_data_storage_local_.GetTypeErasedDataSlot(*slot_index_it);
 
-        const EventSlotStatus event_slot_status{event_data_control_local_[*slot_index_it]};
-        const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
-
-        SamplePtr sample{type_erased_sample_ptr, event_data_control_local_, *slot_index_it};
+        EventSlotStatus::EventTimeStamp sample_timestamp{};
+        SamplePtr sample{};
+        std::visit(
+            [type_erased_sample_ptr, slot_index = *slot_index_it, &sample_timestamp, &sample](auto& local_view) {
+                sample_timestamp = local_view[slot_index].GetTimeStamp();
+                sample = SamplePtr{type_erased_sample_ptr, local_view, slot_index};
+            },
+            event_data_control_local_);
 
         auto guard = std::move(*tracker.TakeGuard());
         auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard));

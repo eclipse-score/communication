@@ -15,9 +15,13 @@
 
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/event_control_mixed.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control_coherent_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control_mixed_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage_local_view.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
@@ -38,6 +42,7 @@
 #include <score/utility.hpp>
 
 #include <atomic>
+#include <functional>
 #include <optional>
 #include <string_view>
 #include <utility>
@@ -121,10 +126,38 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     void SetQmNotificationsRegistered(bool value);
     void SetAsilBNotificationsRegistered(bool value);
     void ResetGuards() noexcept;
+
+    /// \brief Terminates if the given tracing_data enables a trace point (SEND / SEND_WITH_ALLOCATE) that is
+    /// incompatible with a CoherencyType::kCoherent event/field (see SetSkeletonEventTracingData()).
+    void ValidateCoherencyTracingCompatibility(
+        const impl::tracing::SkeletonEventTracingData& tracing_data) const noexcept;
+
+    /// \brief Returns a pointer to the EventDataControlComposite<> shared by CoherencyType::kNonCoherent (held
+    /// directly in event_data_control_composite_) and CoherencyType::kMixed (held inside
+    /// event_data_control_mixed_composite_), or nullptr if it hasn't been populated (yet) by PrepareOffer().
+    /// \pre event_properties_.coherency != CoherencyType::kCoherent
+    EventDataControlComposite<>* GetNonCoherentLikeEventDataControlComposite() noexcept
+    {
+        if (event_properties_.coherency == CoherencyType::kMixed)
+        {
+            return event_data_control_mixed_composite_.has_value()
+                       ? &event_data_control_mixed_composite_.value().GetComposite()
+                       : nullptr;
+        }
+        return event_data_control_composite_.has_value() ? &event_data_control_composite_.value() : nullptr;
+    }
+
     EventDataControlComposite<>& GetEventDataControlComposite()
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_composite_.has_value());
-        return event_data_control_composite_.value();
+        auto* const composite = GetNonCoherentLikeEventDataControlComposite();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(composite != nullptr);
+        return *composite;
+    }
+
+    EventDataControlCoherentComposite& GetEventDataControlCoherentComposite()
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_coherent_composite_.has_value());
+        return event_data_control_coherent_composite_.value();
     }
 
     ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView(QualityType quality_type)
@@ -142,6 +175,18 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     ///        receive-handler registration flags are set.
     Result<void> NotifyConsumersIfHandlersRegistered();
 
+    /// \brief Populates the kNonCoherent-style consumer local views, transaction log registration and tracing guard
+    /// shared by CoherencyType::kNonCoherent and CoherencyType::kMixed events.
+    /// \details CoherencyType::kMixed events are, from a non-coherent consumer's point of view, indistinguishable
+    /// from CoherencyType::kNonCoherent events (same per-slot EventSlotStatus, same per-slot transaction-log based
+    /// crash-recovery). \p EventControlPairType is either SkeletonMemoryManager::EventControlNonCoherentPair or
+    /// SkeletonMemoryManager::EventControlMixedPair.
+    /// \details The provider-side composite (event_data_control_composite_ / event_data_control_mixed_composite_)
+    /// is NOT populated here, since its construction and ownership differ between CoherencyType::kNonCoherent and
+    /// CoherencyType::kMixed; see PrepareOffer().
+    template <typename EventControlPairType>
+    void InitializeNonCoherentLikeControlViews(EventControlPairType& event_control_pair);
+
     Skeleton& parent_;
     std::string_view event_name_;
     ElementFqId element_fq_id_;
@@ -149,11 +194,29 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     memory::DataTypeSizeInfo event_sample_size_info_;
     SkeletonEventProperties event_properties_;
 
-    std::optional<ProviderEventDataControlLocalView<>> provider_control_local_view_qm_;
-    std::optional<ProviderEventDataControlLocalView<>> provider_control_local_view_asil_b_;
+    // All of the local views/composites below are populated by PrepareOffer() / cleared by PrepareStopOffer(),
+    // depending on event_properties_.coherency.
+
+    /// \brief Consumer local views for a CoherencyType::kNonCoherent (or kMixed) event's QM and (if the Skeleton is
+    /// of ASIL-B quality type) ASIL-B control data, and the composite used by the provider to write to both QM and
+    /// (if present) ASIL-B control data at once. The composite owns its own provider-side local view(s) internally.
     std::optional<ConsumerEventDataControlLocalView<>> consumer_control_local_view_qm_;
     std::optional<ConsumerEventDataControlLocalView<>> consumer_control_local_view_asil_b_;
     std::optional<EventDataControlComposite<>> event_data_control_composite_;
+
+    /// \brief The composite used by the provider to write to a CoherencyType::kCoherent event's QM and (if the
+    /// Skeleton is of ASIL-B quality type) ASIL-B control data at once (see EventDataControlCoherentComposite for
+    /// the rationale: just like for kNonCoherent, QM and ASIL-B control sections must remain strictly isolated). It
+    /// owns its own provider-side local view(s) internally. No consumer-side local view is needed here since
+    /// CoherencyType::kCoherent supports neither IPC-Tracing nor field Getter/Setter semantics.
+    std::optional<EventDataControlCoherentComposite> event_data_control_coherent_composite_;
+
+    /// \brief The composite used by the provider to write to a CoherencyType::kMixed event's QM and (if the
+    /// Skeleton is of ASIL-B quality type) ASIL-B control data at once, and to update newest_index_ after
+    /// EventReady() (see EventDataControlMixedComposite). The kNonCoherent-like consumer local views / transaction
+    /// logs shared with CoherencyType::kNonCoherent (see InitializeNonCoherentLikeControlViews()) are still held in
+    /// consumer_control_local_view_qm_/_asil_b_ above.
+    std::optional<EventDataControlMixedComposite> event_data_control_mixed_composite_;
 
     EventSlotStatus::EventTimeStamp current_timestamp_;
     impl::tracing::SkeletonEventTracingData tracing_data_;

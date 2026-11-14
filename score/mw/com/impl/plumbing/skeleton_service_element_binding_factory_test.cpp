@@ -286,5 +286,74 @@ TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
         ".*");
 }
 
+TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
+       ConstructingCoherentServiceElementWithGetterOrSetterEnabledTerminates)
+{
+    // Given a SkeletonBase which contains a valid lola Skeleton binding
+    const auto& instance_identifier = kConfigStoreAsilQM.GetInstanceIdentifier();
+    InitialiseSkeleton(instance_identifier);
+
+    // and given an InstanceIdentifier containing event / field instance deployments configured with
+    // CoherencyType::kCoherent (which CreateServiceElementBinding() always creates with WithGetter enabled for a
+    // field (we still parameterise the test over both element types for symmetry with the other death tests above)
+    const LolaServiceInstanceDeployment lola_service_instance_deployment_with_coherent_getter{
+        LolaServiceInstanceId{kInstanceId},
+        {{kDummyEventName, LolaEventInstanceDeployment{{1U}, {3U}, 1U, true, 0U, CoherencyType::kCoherent}}},
+        {{kDummyFieldName,
+          LolaFieldInstanceDeployment{
+              LolaEventInstanceDeployment{{1U}, {3U}, 1U, true, 0U, CoherencyType::kCoherent}, false, false}}}};
+
+    ConfigurationStore config_store_with_coherent_getter{
+        kInstanceSpecifier,
+        make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
+        QualityType::kASIL_QM,
+        kConfigStoreAsilQM.lola_service_type_deployment_,
+        lola_service_instance_deployment_with_coherent_getter};
+    const auto instance_identifier_with_coherent_getter = config_store_with_coherent_getter.GetInstanceIdentifier();
+
+    if (service_element_type_ == ServiceElementType::FIELD)
+    {
+        // When creating the service element binding for the field with Getter enabled
+        // Then the program terminates, since CoherencyType::kCoherent is not supported together with Getter/Setter
+        EXPECT_DEATH(
+            score::cpp::ignore = CreateServiceElementBinding(instance_identifier_with_coherent_getter, *skeleton_),
+            ".*");
+    }
+}
+
+TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
+       ConstructingCoherentServiceElementWithIpcTracingEnabledTerminates)
+{
+    // Given a SkeletonBase which contains a valid lola Skeleton binding
+    const auto& instance_identifier = kConfigStoreAsilQM.GetInstanceIdentifier();
+    InitialiseSkeleton(instance_identifier);
+
+    // and given an InstanceIdentifier containing event / field instance deployments configured with
+    // CoherencyType::kCoherent and a non-zero number of IPC-Tracing slots
+    constexpr LolaEventInstanceDeployment::TracingSlotSizeType kNumberOfTracingSlots{1U};
+    const LolaServiceInstanceDeployment lola_service_instance_deployment_with_coherent_tracing{
+        LolaServiceInstanceId{kInstanceId},
+        {{kDummyEventName,
+          LolaEventInstanceDeployment{{1U}, {3U}, 1U, true, kNumberOfTracingSlots, CoherencyType::kCoherent}}},
+        {{kDummyFieldName,
+          LolaFieldInstanceDeployment{
+              LolaEventInstanceDeployment{{1U}, {3U}, 1U, true, kNumberOfTracingSlots, CoherencyType::kCoherent},
+              false,
+              false}}}};
+
+    ConfigurationStore config_store_with_coherent_tracing{
+        kInstanceSpecifier,
+        make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
+        QualityType::kASIL_QM,
+        kConfigStoreAsilQM.lola_service_type_deployment_,
+        lola_service_instance_deployment_with_coherent_tracing};
+    const auto instance_identifier_with_coherent_tracing = config_store_with_coherent_tracing.GetInstanceIdentifier();
+
+    // When creating the service element binding
+    // Then the program terminates, since CoherencyType::kCoherent is not supported together with IPC-Tracing
+    EXPECT_DEATH(
+        score::cpp::ignore = CreateServiceElementBinding(instance_identifier_with_coherent_tracing, *skeleton_), ".*");
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl

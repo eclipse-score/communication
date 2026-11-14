@@ -143,6 +143,24 @@ score::Result<TransactionLogRegistrationGuard> TransactionLogSet::RegisterProxyE
         *this, next_available_slot_result.value().second, consumer_event_data_control_local_view};
 }
 
+score::Result<TransactionLogRegistrationGuard> TransactionLogSet::RegisterProxyElement(
+    const TransactionLogId& transaction_log_id)
+{
+    const auto next_available_slot_result = AcquireNextAvailableSlot(transaction_log_id);
+    if (!next_available_slot_result.has_value())
+    {
+        return MakeUnexpected(
+            ComErrc::kMaxSubscribersExceeded,
+            "Could not register with TransactionLogId as there are no available slots in the "
+            "TransactionLogSet. This is likely because the number of subscribers has exceeded the configuration "
+            "value of max_subscribers.");
+    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        !next_available_slot_result.value().first->GetTransactionLogLocalView().ContainsTransactions(),
+        "Cannot reuse TransactionLog as it still contains some old transactions.");
+    return TransactionLogRegistrationGuard{*this, next_available_slot_result.value().second};
+}
+
 TransactionLogRegistrationGuard TransactionLogSet::RegisterSkeletonTransactionLog(
     ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view)
 {

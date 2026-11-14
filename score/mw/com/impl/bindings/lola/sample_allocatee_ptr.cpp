@@ -25,7 +25,8 @@ SampleAllocateePtr::SampleAllocateePtr(std::nullptr_t /* ptr */) noexcept
     : managed_object_{nullptr},
       event_slot_index_{kUninitialisedEventSlotIndex},
       event_data_control_ptr_{nullptr},
-      consumer_event_data_control_local_view_{nullptr}
+      consumer_event_data_control_local_view_{nullptr},
+      event_data_control_coherent_ptr_{nullptr}
 {
 }
 
@@ -36,7 +37,19 @@ SampleAllocateePtr::SampleAllocateePtr(pointer ptr,
     : managed_object_{ptr},
       event_slot_index_{slot_index},
       event_data_control_ptr_{&event_data_ctrl},
-      consumer_event_data_control_local_view_{&consumer_event_data_control_local_view}
+      consumer_event_data_control_local_view_{&consumer_event_data_control_local_view},
+      event_data_control_coherent_ptr_{nullptr}
+{
+}
+
+SampleAllocateePtr::SampleAllocateePtr(pointer ptr,
+                                       EventDataControlCoherentComposite& event_data_control_coherent,
+                                       const SlotIndexType slot_index) noexcept
+    : managed_object_{ptr},
+      event_slot_index_{slot_index},
+      event_data_control_ptr_{nullptr},
+      consumer_event_data_control_local_view_{nullptr},
+      event_data_control_coherent_ptr_{&event_data_control_coherent}
 {
 }
 
@@ -64,6 +77,7 @@ void SampleAllocateePtr::swap(SampleAllocateePtr& other) noexcept
     swap(this->event_slot_index_, other.event_slot_index_);
     swap(this->event_data_control_ptr_, other.event_data_control_ptr_);
     swap(this->consumer_event_data_control_local_view_, other.consumer_event_data_control_local_view_);
+    swap(this->event_data_control_coherent_ptr_, other.event_data_control_coherent_ptr_);
 }
 
 SampleAllocateePtr& SampleAllocateePtr::operator=(std::nullptr_t /* ptr */) & noexcept
@@ -83,12 +97,20 @@ void SampleAllocateePtr::internal_delete()
     managed_object_ = nullptr;
     if (safe_math::CmpLess(event_slot_index_, kUninitialisedEventSlotIndex))
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-            event_data_control_ptr_ != nullptr,
-            "The only time that event_data_control_ptr_ is nullptr is if the SampleAllocateePtr is default "
-            "initialised or initialised with a nullptr. In both these, cases event_slot_index_ == "
-            "kUninitialisedEventSlotIndex so we will never enter this branch.");
-        event_data_control_ptr_->Discard(event_slot_index_);
+        if (event_data_control_coherent_ptr_ != nullptr)
+        {
+            event_data_control_coherent_ptr_->Discard(event_slot_index_);
+        }
+        else
+        {
+            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+                event_data_control_ptr_ != nullptr,
+                "The only time that event_data_control_ptr_ is nullptr (while "
+                "event_data_control_coherent_ptr_ is also nullptr) is if the SampleAllocateePtr is default "
+                "initialised or initialised with a nullptr. In both these cases event_slot_index_ == "
+                "kUninitialisedEventSlotIndex so we will never enter this branch.");
+            event_data_control_ptr_->Discard(event_slot_index_);
+        }
         event_slot_index_ = kUninitialisedEventSlotIndex;
     }
 }

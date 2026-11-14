@@ -59,6 +59,17 @@ class TransactionLogRegistrationGuard
                                     const TransactionLogIndex transaction_log_index,
                                     ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view);
 
+    /// \brief Constructs a TransactionLogRegistrationGuard for a CoherencyType::kCoherent service element.
+    ///
+    /// \details Unlike the overload above, this does not inject/clear a cached TransactionLogLocalView into any
+    /// ConsumerEventDataControlLocalView: CoherencyType::kCoherent consumers never reference/dereference any
+    /// CONTROL-segment slot (see EventDataControlCoherent / ConsumerEventDataControlCoherentLocalView), so there is
+    /// no reference-count related transaction logging to perform. Only Subscribe/Unsubscribe transaction logging
+    /// (crash-recovery of the subscriber count) is needed, which this guard still provides via the registered
+    /// TransactionLog (see TransactionLogSet::RegisterProxyElement()).
+    TransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set,
+                                    const TransactionLogIndex transaction_log_index);
+
     [[nodiscard]] TransactionLogIndex GetTransactionLogIndex() const;
 
   private:

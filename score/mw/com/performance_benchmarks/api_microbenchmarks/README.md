@@ -24,13 +24,45 @@ Currently, the following microbenchmarks are available:
 
 1. **`lola_public_api_benchmarks`** - Benchmarks `InstanceSpecifier::Create()` API
 2. **`lola_get_num_new_samples_available_benchmark`** - Benchmarks the `GetNumNewSamplesAvailable()` API
+3. **`lola_get_new_samples_benchmark`** - Benchmarks the `GetNewSamples()` API
+4. **`lola_allocate_send_benchmark`** - Benchmarks the `Allocate()`/`Send()` APIs
 
 > [!NOTE]
 > Additional microbenchmarks for other COM API operations will be added in future updates.
 
+## Configuration
+
+Two config files are provided in `config/`: `mw_com_config_qm.json` (ASIL-QM) and `mw_com_config_asil_b.json`
+(ASIL-B). Each defines three `serviceInstances` entries (sharing the same physical shared-memory region),
+differing only in their event's `coherency` setting:
+
+- `test/lolabenchmark_non_coherent` - `coherency` not set, defaults to `NON_COHERENT`
+- `test/lolabenchmark_coherent` - `coherency` set to `COHERENT`
+- `test/lolabenchmark_mixed_coherent` - `coherency` set to `MIXED` (only valid on the provider/skeleton side)
+
+`lola_get_num_new_samples_available_benchmark` and `lola_get_new_samples_benchmark` create both a skeleton
+and a proxy, so e.g. a `MIXED` provider can be combined with a `COHERENT` or `NON_COHERENT` consumer by
+passing different instance specifiers for each side (see command-line arguments below).
+
 ## How-to-use
 
 Build is supported in both host and QNX target environments.
+
+### Command-line arguments
+
+`lola_get_num_new_samples_available_benchmark`, `lola_get_new_samples_benchmark`, and
+`lola_allocate_send_benchmark` accept the following custom command-line arguments (in addition to the usual
+`--benchmark_*` flags understood by Google Benchmark):
+
+- `--config=<path/to/mw_com_config_{qm,asil_b}.json>` - mandatory, path of the config file to load.
+- `--skeleton-instance-specifier=<specifier>` - optional, instance specifier used by the skeleton
+  (provider side). Defaults to `test/lolabenchmark_non_coherent`.
+- `--proxy-instance-specifier=<specifier>` - optional, instance specifier used by the proxy (consumer side).
+  Only parsed by `lola_get_num_new_samples_available_benchmark` and `lola_get_new_samples_benchmark`.
+  Defaults to `test/lolabenchmark_non_coherent`.
+
+`lola_public_api_benchmarks` does not accept these arguments; it only initializes the runtime with
+`mw_com_config_asil_b.json`.
 
 ### Running on the host
 
@@ -47,9 +79,17 @@ The following command can be used to run the benchmark on the host:
 bazel run --config=spp_host_clang //score/mw/com/performance_benchmarks/api_microbenchmarks:lola_public_api_benchmarks --nocache_test_results --compilation_mode=opt --cxxopt=-O3
 ```
 
+To run one of the benchmarks that accept command-line arguments (e.g. with a `MIXED` provider and a
+`COHERENT` consumer):
+
+```bash
+bazel run --config=spp_host_clang //score/mw/com/performance_benchmarks/api_microbenchmarks:lola_get_new_samples_benchmark --nocache_test_results --compilation_mode=opt --cxxopt=-O3 -- \
+  --config=$(pwd)/score/mw/com/performance_benchmarks/api_microbenchmarks/config/mw_com_config_qm.json \
+  --skeleton-instance-specifier=test/lolabenchmark_mixed_coherent \
+  --proxy-instance-specifier=test/lolabenchmark_coherent
+```
+
 ### Running on QNX target
-> [!TIP]
-> Before building, update the config file path in the C++ source to use just `mw_com_config.json` instead of an absolute path for easier deployment.
 
 **Step 1: Build for QNX**
 ```bash
@@ -67,7 +107,7 @@ scp bazel-bin/score/mw/com/performance_benchmarks/api_microbenchmarks/lola_publi
   root@ipnext:/tmp/
 
 # Copy configuration file to QNX device
-scp score/mw/com/performance_benchmarks/api_microbenchmarks/config/mw_com_config.json \
+scp score/mw/com/performance_benchmarks/api_microbenchmarks/config/mw_com_config_asil_b.json \
   root@ipnext:/tmp/
 ```
 

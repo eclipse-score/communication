@@ -166,6 +166,32 @@ void ProxyMockedMemoryFixture::InitialiseDummySkeletonEvent(const ElementFqId el
     provider_event_data_control_local_.emplace(event_control_->data_control);
 }
 
+void ProxyMockedMemoryFixture::InitialiseDummySkeletonEventCoherent(
+    const ElementFqId element_fq_id,
+    const SkeletonEventProperties& skeleton_event_properties)
+{
+    std::tie(event_control_coherent_, event_data_storage_) =
+        fake_data_->AddEventCoherent<SampleType>(element_fq_id, skeleton_event_properties);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(event_control_coherent_ != nullptr);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(event_data_storage_ != nullptr);
+    event_data_storage_local_view_.emplace(*event_data_storage_,
+                                           memory::DataTypeSizeInfo{sizeof(SampleType), alignof(SampleType)});
+    consumer_event_data_control_coherent_local_.emplace(event_control_coherent_->data_control);
+}
+
+void ProxyMockedMemoryFixture::InitialiseDummySkeletonEventMixed(
+    const ElementFqId element_fq_id,
+    const SkeletonEventProperties& skeleton_event_properties)
+{
+    std::tie(event_control_mixed_, event_data_storage_) =
+        fake_data_->AddEventMixed<SampleType>(element_fq_id, skeleton_event_properties);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(event_control_mixed_ != nullptr);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(event_data_storage_ != nullptr);
+    event_data_storage_local_view_.emplace(*event_data_storage_,
+                                           memory::DataTypeSizeInfo{sizeof(SampleType), alignof(SampleType)});
+    consumer_event_data_control_local_.emplace(event_control_mixed_->data_control.data_control_);
+}
+
 LolaProxyEventResources::LolaProxyEventResources() : ProxyMockedMemoryFixture{}
 {
     InitialiseDummySkeletonEvent(element_fq_id_,
@@ -228,6 +254,36 @@ SlotIndexType LolaProxyEventResources::PutData(const std::uint32_t value,
     auto* storage_slot = event_data_storage_local_view_->GetTypeErasedDataSlot(slot_index);
     memcpy(storage_slot, &value, sizeof(value));
     provider_event_data_control_local_->EventReady(slot_index, timestamp);
+    return slot_index;
+}
+
+SlotIndexType LolaProxyEventResources::PutDataCoherent(const std::uint32_t value,
+                                                       const EventSlotStatus::EventTimeStamp timestamp)
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(event_control_coherent_ != nullptr);
+    ProviderEventDataControlCoherentLocalView provider_view{event_control_coherent_->data_control};
+    const auto slot_index = provider_view.AllocateNextSlot();
+    auto* storage_slot = event_data_storage_local_view_->GetTypeErasedDataSlot(slot_index);
+    memcpy(storage_slot, &value, sizeof(value));
+    provider_view.EventReady(slot_index, timestamp);
+    return slot_index;
+}
+
+SlotIndexType LolaProxyEventResources::PutDataMixed(const std::uint32_t value,
+                                                    const EventSlotStatus::EventTimeStamp timestamp)
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(event_control_mixed_ != nullptr);
+    ProviderEventDataControlLocalView<> provider_view{event_control_mixed_->data_control.data_control_};
+    auto slot_result = provider_view.AllocateNextSlot();
+    EXPECT_TRUE(slot_result.has_value());
+    const auto slot_index = slot_result.value();
+    auto* storage_slot = event_data_storage_local_view_->GetTypeErasedDataSlot(slot_index);
+    memcpy(storage_slot, &value, sizeof(value));
+    provider_view.EventReady(slot_index, timestamp);
+    // Mirror EventDataControlMixedComposite::EventReady()'s additional responsibility of advancing newest_index_,
+    // which coherent consumers of a CoherencyType::kMixed event rely on (see
+    // ConsumerEventDataControlMixedCoherentLocalView).
+    event_control_mixed_->data_control.newest_index_ = slot_index;
     return slot_index;
 }
 

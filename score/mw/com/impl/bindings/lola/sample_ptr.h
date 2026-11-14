@@ -13,7 +13,9 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SAMPLE_PTR_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SAMPLE_PTR_H
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_mixed_coherent_local_view.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/slot_decrementer.h"
 
@@ -54,6 +56,36 @@ class SamplePtr final
         : SamplePtr{ptr,
                     std::make_optional<SlotDecrementer>(event_data_ctrl_local, slot_index),
                     (event_data_ctrl_local)[slot_index].GetTimeStamp()}
+    {
+    }
+
+    /// \brief ctor creates valid SamplePtr for a CoherencyType::kCoherent event/field from its members.
+    /// \param ptr pointer to managed object
+    /// \param event_data_ctrl_local EventDataControlCoherent local view managing the underlying event/sample in shmem.
+    /// \param slot_index index of event slot
+    /// \details Unlike the CoherencyType::kNonCoherent ctor above, no SlotDecrementer is created: a kCoherent consumer
+    /// never references/dereferences slots (no read-ownership/reference-counting exists for kCoherent events), so
+    /// destroying this SamplePtr has nothing to do/undo.
+    SamplePtr(pointer ptr,
+              const ConsumerEventDataControlCoherentLocalView& event_data_ctrl_local,
+              const SlotIndexType slot_index) noexcept
+        : SamplePtr{ptr, std::nullopt, event_data_ctrl_local[slot_index].GetTimeStamp()}
+    {
+    }
+
+    /// \brief ctor creates valid SamplePtr for a CoherencyType::kCoherent proxy-side event, which found its
+    /// skeleton-side event to be configured with CoherencyType::kMixed, from its members.
+    /// \param ptr pointer to managed object
+    /// \param event_data_ctrl_local ConsumerEventDataControlMixedCoherentLocalView managing the underlying
+    /// event/sample in shmem.
+    /// \param slot_index index of event slot
+    /// \details Just like the CoherencyType::kCoherent ctor above, no SlotDecrementer is created: a kCoherent
+    /// consumer never references/dereferences slots, regardless of whether its skeleton-side counterpart is
+    /// configured with kCoherent or kMixed.
+    SamplePtr(pointer ptr,
+              const ConsumerEventDataControlMixedCoherentLocalView& event_data_ctrl_local,
+              const SlotIndexType slot_index) noexcept
+        : SamplePtr{ptr, std::nullopt, event_data_ctrl_local[slot_index].GetTimeStamp()}
     {
     }
 

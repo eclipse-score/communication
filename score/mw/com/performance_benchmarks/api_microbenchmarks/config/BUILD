@@ -11,14 +11,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 filegroup(
-    name = "basic_config",
-    srcs = ["mw_com_config.json"],
+    name = "config_asil_b",
+    srcs = ["mw_com_config_asil_b.json"],
     visibility = ["//score/mw/com/performance_benchmarks/api_microbenchmarks:__subpackages__"],
 )
 
 filegroup(
-    name = "config_qm_high_frequency_send_large_data",
-    srcs = ["mw_com_config_qm_high_frequency_send_large_data.json"],
+    name = "config_qm",
+    srcs = ["mw_com_config_qm.json"],
     visibility = ["//score/mw/com/performance_benchmarks/api_microbenchmarks:__subpackages__"],
 )
 

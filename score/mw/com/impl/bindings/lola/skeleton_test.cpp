@@ -929,21 +929,14 @@ class SkeletonRegisterParamaterisedFixture : public SkeletonTestMockedSharedMemo
     EventDataControlComposite<> GetEventDataControlCompositeFromRegistrationResult(
         const Skeleton::RegistrationResult& registration_result)
     {
-        event_control_qm_local_view_.emplace(registration_result.event_control_qm.data_control);
+        const auto* const non_coherent_pair =
+            std::get_if<SkeletonMemoryManager::EventControlNonCoherentPair>(&registration_result.event_controls);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(non_coherent_pair != nullptr);
 
-        if (registration_result.event_control_asil_b != nullptr)
-        {
-            event_control_asil_b_local_view_.emplace(registration_result.event_control_asil_b->data_control);
-        }
-
-        ProviderEventDataControlLocalView<>* event_control_asil_b_local_view =
-            registration_result.event_control_asil_b != nullptr ? &event_control_asil_b_local_view_.value() : nullptr;
-        return EventDataControlComposite<>{event_control_qm_local_view_.value(), event_control_asil_b_local_view};
+        EventDataControl* const asil_b_control =
+            (non_coherent_pair->asil_b != nullptr) ? &non_coherent_pair->asil_b->data_control : nullptr;
+        return EventDataControlComposite<>{non_coherent_pair->qm.get().data_control, asil_b_control};
     }
-
-  private:
-    std::optional<ProviderEventDataControlLocalView<>> event_control_qm_local_view_{};
-    std::optional<ProviderEventDataControlLocalView<>> event_control_asil_b_local_view_{};
 };
 
 TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillCreateEventDataIfShmRegionWasCreated)
@@ -1010,11 +1003,14 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillOpenEventDataIfShmRegio
         GetEventStorageFromServiceDataStorage(test::kDummyElementFqId, existing_service_data_storage_);
 
     ProviderEventDataControlLocalView<> opened_event_control_local_qm{
-        registration_result.event_control_qm.data_control};
+        std::get<SkeletonMemoryManager::EventControlNonCoherentPair>(registration_result.event_controls)
+            .qm.get()
+            .data_control};
 
-    ASSERT_TRUE(registration_result.event_control_asil_b != nullptr);
-    ProviderEventDataControlLocalView<> opened_event_control_local_asil_b{
-        registration_result.event_control_asil_b->data_control};
+    const auto& non_coherent_pair =
+        std::get<SkeletonMemoryManager::EventControlNonCoherentPair>(registration_result.event_controls);
+    ASSERT_TRUE(non_coherent_pair.asil_b != nullptr);
+    ProviderEventDataControlLocalView<> opened_event_control_local_asil_b{non_coherent_pair.asil_b->data_control};
 
     EXPECT_EQ(existing_event_control_qm.data_control.state_slots_[0], 0U);
     EXPECT_EQ(existing_event_control_asil_b.data_control.state_slots_[0], 0U);
@@ -1497,7 +1493,10 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillOpenEventDataForGateway
                                             memory::DataTypeSizeInfo{sizeof(std::uint8_t), alignof(std::uint8_t)});
 
     // Then it returns valid pointer for the ASIL-B control.
-    EXPECT_NE(result.event_control_asil_b, nullptr);
+    const auto* const non_coherent_pair =
+        std::get_if<SkeletonMemoryManager::EventControlNonCoherentPair>(&result.event_controls);
+    ASSERT_NE(non_coherent_pair, nullptr);
+    EXPECT_NE(non_coherent_pair->asil_b, nullptr);
 }
 
 TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillOpenEventDataForReopenedSkeleton)
@@ -1527,7 +1526,10 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillOpenEventDataForReopene
                                             memory::DataTypeSizeInfo{sizeof(std::uint8_t), alignof(std::uint8_t)});
 
     // Then it returns valid pointer to the opened (not newly created) SHM ASIL-B event control
-    EXPECT_NE(result.event_control_asil_b, nullptr);
+    const auto* const non_coherent_pair =
+        std::get_if<SkeletonMemoryManager::EventControlNonCoherentPair>(&result.event_controls);
+    ASSERT_NE(non_coherent_pair, nullptr);
+    EXPECT_NE(non_coherent_pair->asil_b, nullptr);
 }
 
 INSTANTIATE_TEST_SUITE_P(SkeletonRegisterParamaterisedFixture,
