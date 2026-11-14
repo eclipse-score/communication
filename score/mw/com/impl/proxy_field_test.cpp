@@ -243,6 +243,25 @@ TEST(ProxyFieldTest, ProxyFieldContainsPublicFieldType)
                   "Incorrect FieldType.");
 }
 
+TEST(ProxyFieldTest, GetSubscriptionStateOnFieldWithAllTagsConstructedWithoutMethodBindingsDispatchesToEventBinding)
+{
+    // Given a ProxyField with a getter, setter and notifier which is constructed via the testing ctor with only an
+    // event binding (the testing ctor accepts nullptr for the optional set / get method bindings)
+    auto mock_event_binding_ptr = std::make_unique<mock_binding::ProxyEvent>();
+    auto& mock_event_binding = *mock_event_binding_ptr;
+    ProxyField<TestSampleType, WithGetter, WithSetter, WithNotifier> field{kFieldName,
+                                                                           std::move(mock_event_binding_ptr)};
+
+    // Expecting that GetSubscriptionState is dispatched to the event binding
+    EXPECT_CALL(mock_event_binding, GetSubscriptionState()).WillOnce(Return(SubscriptionState::kSubscribed));
+
+    // When calling GetSubscriptionState
+    const auto subscription_state = field.GetSubscriptionState();
+
+    // Then the state returned by the event binding is returned
+    EXPECT_EQ(subscription_state, SubscriptionState::kSubscribed);
+}
+
 TEST(ProxyFieldNotifierGatingTest, NotifierApiExistsWhenWithNotifierTagIsPresent)
 {
     // Given a ProxyField with the WithNotifier tag
@@ -377,6 +396,15 @@ class ProxyFieldGetSetFixture : public ::testing::Test
             std::make_unique<mock_binding::ProxyMethodFacade>(set_method_binding_mock_)};
     }
 
+    ProxyField<TestSampleType, WithGetter, WithSetter, WithNotifier> CreateFieldWithGetAndSet()
+    {
+        return ProxyField<TestSampleType, WithGetter, WithSetter, WithNotifier>{
+            kFieldName,
+            std::make_unique<mock_binding::ProxyEvent>(),
+            std::make_unique<mock_binding::ProxyMethodFacade>(set_method_binding_mock_),
+            std::make_unique<mock_binding::ProxyMethodFacade>(get_method_binding_mock_)};
+    }
+
     score::Result<TestSampleType> getter_return_storage_{};
 
     TestSampleType setter_in_arg_storage_{};
@@ -438,6 +466,24 @@ TEST_F(ProxyFieldGetFixture, GetPropagatesErrorStoredInMethodReturnValue)
     // Then the error from the method return value is propagated back to the caller
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), ComErrc::kCommunicationLinkError);
+}
+
+TEST_F(ProxyFieldGetFixture, GetDispatchesToGetMethodBindingWhenFieldAlsoHasSetter)
+{
+    // Given a ProxyField with a getter, setter and notifier which is constructed with both method bindings
+    auto field = CreateFieldWithGetAndSet();
+    getter_return_storage_ = kDummyFieldValue;
+
+    // Expecting that only the get method binding is called
+    EXPECT_CALL(get_method_binding_mock_, DoCall(0U));
+    EXPECT_CALL(set_method_binding_mock_, DoCall(_)).Times(0);
+
+    // When calling Get()
+    const auto get_result = field.Get();
+
+    // Then the call succeeds and returns the value from the get method return buffer
+    ASSERT_TRUE(get_result.has_value());
+    EXPECT_EQ(*get_result.value(), kDummyFieldValue);
 }
 
 using ProxyFieldSetFixture = ProxyFieldGetSetFixture;
@@ -505,6 +551,24 @@ TEST_F(ProxyFieldSetFixture, SetPropagatesErrorStoredInMethodReturnValue)
     // Then the error from the method return value is propagated back to the caller
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), ComErrc::kCommunicationLinkError);
+}
+
+TEST_F(ProxyFieldSetFixture, SetDispatchesToSetMethodBindingWhenFieldAlsoHasGetter)
+{
+    // Given a ProxyField with a getter, setter and notifier which is constructed with both method bindings
+    auto field = CreateFieldWithGetAndSet();
+    setter_return_storage_ = kDummyFieldReturnValue;
+
+    // Expecting that only the set method binding is called
+    EXPECT_CALL(set_method_binding_mock_, DoCall(0U));
+    EXPECT_CALL(get_method_binding_mock_, DoCall(_)).Times(0);
+
+    // When calling Set()
+    const auto set_result = field.Set(kDummyFieldValue);
+
+    // Then the call succeeds and returns the value from the set method return buffer
+    ASSERT_TRUE(set_result.has_value());
+    EXPECT_EQ(*set_result.value(), kDummyFieldReturnValue);
 }
 
 }  // namespace
