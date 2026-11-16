@@ -23,11 +23,9 @@ $RootCause("Direct access to data", "DirectAccessToDataViaCopy", "Event2")
 $IntermediateEvent("Send via AllocateePtr", "Event1", "Gate1")
 $OrGate("Gate2", "Event1")
 $RootCause("Generic TraceAPI changes data", "GenericTraceapiChangesData", "Gate2")
-$IntermediateEvent("Wrongly allocated memory", "Event5", "Gate2")
-$TransferInGate("Communication.MemoryAllocatedInWrongSection", "Event5")
+$TransferInGate("Wrongly allocated memory", "Communication.MemoryAllocatedInWrongSection", "Event5", "Gate2")
 $IntermediateEvent("Same slot is written via different send call", "Event4", "Gate2")
-$IntermediateEvent("Slot allocation logic broken", "Event8", "Event4")
-$TransferInGate("Communication.TooFewMemoryAllocated", "Event8")
+$TransferInGate("Slot allocation logic broken", "Communication.TooFewMemoryAllocated", "Event8", "Event4")
 $RootCause("Direct access to data", "DirectAccessToDataViaAllocateePtr", "Gate2")
 
 @enduml
