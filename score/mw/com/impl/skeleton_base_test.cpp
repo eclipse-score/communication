@@ -1019,6 +1019,11 @@ class DummyField : public SkeletonFieldBase
     {
         return {};
     }
+
+    void NotifySetMethodServiceOffered(const bool is_offered) noexcept override
+    {
+        std::ignore = is_offered;
+    }
 };
 const auto kServiceIdentifier = make_ServiceIdentifierType("foo", 13, 37);
 const LolaServiceInstanceId kLolaInstanceId{23U};

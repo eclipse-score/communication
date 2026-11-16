@@ -140,11 +140,18 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     /// \brief Registers a handler invoked by the middleware whenever a proxy calls the field setter.
     /// \details Only available when the tag pack includes WithSetter (SFINAE-gated).
     ///
+    /// A set handler needs to be registered before the service is offered for the first time (i.e. before the first
+    /// call to SkeletonBase::OfferService()). A previously registered set handler may only be updated (i.e. replaced
+    /// by a new call to RegisterSetHandler()) while the service is currently not being offered, e.g. after
+    /// SkeletonBase::StopOfferService() has been called and before the service is offered again.
+    ///
     /// \tparam CallableType Any callable (std::function, score::cpp::callback, lambda, ...) with the signature
     ///         void(FieldType& new_value), where new_value is the proxy-requested value at entry and the
     ///         accepted value at exit.
     /// \param handler User callback to install.
-    /// \return void on success otherwise the error code reported by the binding.
+    /// \return void on success otherwise the error code reported by the binding. In particular,
+    /// ComErrc::kRegisterHandlerNotAllowedWhileOffered is returned if this method is called while the service is
+    /// currently offered.
     template <typename CallableType,
               typename U = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<U, SampleDataType, WithSetter, Tags...>::value>>
@@ -225,6 +232,18 @@ class SkeletonFieldImpl : public SkeletonFieldBase
             return false;
         }
         return !is_set_handler_registered_;
+    }
+
+    void NotifySetMethodServiceOffered(const bool is_offered) noexcept override
+    {
+        if constexpr (kHasSetter)
+        {
+            set_method_->SetServiceOffered(is_offered);
+        }
+        else
+        {
+            std::ignore = is_offered;
+        }
     }
 
     static constexpr bool kHasGetter = contains_type<WithGetter, Tags...>::value;

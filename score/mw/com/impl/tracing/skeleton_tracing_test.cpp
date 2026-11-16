@@ -34,6 +34,7 @@
 #include <map>
 #include <memory>
 #include <string_view>
+#include <tuple>
 #include <utility>
 
 namespace score::mw::com::impl::tracing
@@ -85,6 +86,11 @@ class MyDummyField : public SkeletonFieldBase
     Result<void> RegisterGetHandler() override
     {
         return {};
+    }
+
+    void NotifySetMethodServiceOffered(const bool is_offered) noexcept override
+    {
+        std::ignore = is_offered;
     }
 };
 

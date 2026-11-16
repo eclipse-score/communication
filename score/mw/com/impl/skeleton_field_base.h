@@ -92,14 +92,25 @@ class SkeletonFieldBase : public EnableReferenceToMoveableFromThis<SkeletonField
             if (update_field_result.has_value())
             {
                 was_prepare_offer_called_ = true;
+                // Notify the set-method (if any) that the field is now offered, so that RegisterSetHandler() calls
+                // on it are rejected until PrepareStopOffer() is called.
+                NotifySetMethodServiceOffered(true);
             }
             return update_field_result;
         }
-        return skeleton_event_dispatch_->PrepareOffer();
+        const auto prepare_offer_result = skeleton_event_dispatch_->PrepareOffer();
+        if (prepare_offer_result.has_value())
+        {
+            NotifySetMethodServiceOffered(true);
+        }
+        return prepare_offer_result;
     }
 
     void PrepareStopOffer() noexcept
     {
+        // Notify the set-method (if any) that the field is no longer offered, so that RegisterSetHandler() calls on
+        // it are allowed again.
+        NotifySetMethodServiceOffered(false);
         skeleton_event_dispatch_->PrepareStopOffer();
     }
 
@@ -127,6 +138,15 @@ class SkeletonFieldBase : public EnableReferenceToMoveableFromThis<SkeletonField
     [[nodiscard]] virtual bool IsSetHandlerMissing() const noexcept = 0;
 
     [[nodiscard]] virtual Result<void> RegisterGetHandler() = 0;
+
+    /// \brief Notifies the set-method dispatch (if a setter is enabled for this field) whether the field is
+    /// currently offered or not.
+    /// \details Called whenever this field's offered-state changes (i.e. on a successful PrepareOffer() and on
+    /// PrepareStopOffer()), mirroring the notification mechanism SkeletonBase uses for plain methods. While the
+    /// field is offered, RegisterSetHandler() shall be rejected in order to avoid races between an in-flight call
+    /// being dispatched to an "old" set handler and a concurrently re-registered "new" one. If the field has no
+    /// setter, this shall be a no-op.
+    virtual void NotifySetMethodServiceOffered(const bool is_offered) noexcept = 0;
 
     /// \brief Sets the initial value of the field.
     ///
