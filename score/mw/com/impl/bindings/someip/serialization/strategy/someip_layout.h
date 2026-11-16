@@ -97,7 +97,7 @@ struct ElementLayout
     std::uint8_t length_field_bytes{
         kDefaultLengthFieldBytes};  // width of the on-wire length prefix for dynamic members (string/vector)
     // Layout for this element's own sub-structure: a nested struct's fields, or an array's element type. Null means
-    // that subtree uses the SOME/IP default ElementLayout.
+    // that subtree uses the configured fallback ElementLayout.
     const SomeIpLayout* nested{nullptr};
 };
 
@@ -110,27 +110,46 @@ struct SomeIpLayout
     std::size_t per_field_count{0U};
 };
 
+/// @brief Layout used wherever layout metadata is missing.
+struct FallbackLayout
+{
+    ByteOrder byte_order{ByteOrder::kBigEndian};
+    std::uint16_t alignment_bits{kDefaultAlignmentBits};
+    std::uint8_t length_field_bytes{kDefaultLengthFieldBytes};
+};
+
 namespace someip_detail
 {
 
 /// @brief Position in the layout tree while descending into nested elements. Shared by the strategy and GetMaxSize so
-/// both resolve identical layouts. A null layout anywhere yields the SOME/IP default ElementLayout.
+/// both resolve identical layouts. A null layout anywhere yields the configured fallback ElementLayout.
 struct LayoutCursor
 {
     const SomeIpLayout* struct_layout{nullptr};  // layout whose fields the next field step indexes
     ElementLayout leaf{};                        // layout of the current element
+    ElementLayout fallback{};                    // carried down unchanged; used wherever layout metadata is absent
 };
 
-inline LayoutCursor RootCursor(const SomeIpLayout& layout)
+inline LayoutCursor RootCursor(const SomeIpLayout* const layout, const FallbackLayout& default_layout = {})
 {
-    return {&layout, layout.default_};
+    const ElementLayout fallback{
+        default_layout.byte_order, default_layout.alignment_bits, default_layout.length_field_bytes, nullptr};
+    const ElementLayout leaf = (layout != nullptr) ? layout->default_ : fallback;
+    return {layout, leaf, fallback};
 }
 
-inline ElementLayout ElementAt(const SomeIpLayout* const layout, const std::size_t field_index)
+inline LayoutCursor RootCursor(const SomeIpLayout& layout, const FallbackLayout& default_layout = {})
+{
+    return RootCursor(&layout, default_layout);
+}
+
+inline ElementLayout ElementAt(const SomeIpLayout* const layout,
+                               const std::size_t field_index,
+                               const ElementLayout& default_layout = {})
 {
     if (layout == nullptr)
     {
-        return ElementLayout{};
+        return default_layout;
     }
     return ((layout->per_field != nullptr) && (field_index < layout->per_field_count)) ? layout->per_field[field_index]
                                                                                        : layout->default_;
@@ -138,14 +157,15 @@ inline ElementLayout ElementAt(const SomeIpLayout* const layout, const std::size
 
 inline LayoutCursor EnterField(const LayoutCursor& cursor, const std::size_t field_index)
 {
-    const ElementLayout leaf = ElementAt(cursor.struct_layout, field_index);
-    return {leaf.nested, leaf};
+    const ElementLayout leaf = ElementAt(cursor.struct_layout, field_index, cursor.fallback);
+    return {leaf.nested, leaf, cursor.fallback};
 }
 
 inline LayoutCursor EnterArrayElement(const LayoutCursor& cursor)
 {
     const SomeIpLayout* const nested = cursor.leaf.nested;
-    return {nested, (nested != nullptr) ? nested->default_ : ElementLayout{}};
+    const ElementLayout leaf = (nested != nullptr) ? nested->default_ : cursor.fallback;
+    return {nested, leaf, cursor.fallback};
 }
 
 }  // namespace someip_detail

@@ -110,10 +110,21 @@ std::size_t GetMaxSize()
 }
 
 /// @brief Layout-aware overload: includes worst-case SOME/IP alignment padding for the given datatype layout.
+/// default_layout is used wherever the layout tree has no nested layout.
 template <typename T>
-std::size_t GetMaxSize(const SomeIpLayout& layout)
+std::size_t GetMaxSize(const SomeIpLayout& layout, const FallbackLayout& default_layout = {})
 {
-    someip_detail::MaxSizeSink sink{0U, someip_detail::RootCursor(layout)};
+    someip_detail::MaxSizeSink sink{0U, someip_detail::RootCursor(layout, default_layout)};
+    T instance{};
+    ::score::common::visitor::visit(sink, instance);
+    return sink.bytes;
+}
+
+/// @brief Returns the worst-case size using a configurable layout when no layout tree is supplied.
+template <typename T>
+std::size_t GetMaxSize(const FallbackLayout& default_layout)
+{
+    someip_detail::MaxSizeSink sink{0U, someip_detail::RootCursor(nullptr, default_layout)};
     T instance{};
     ::score::common::visitor::visit(sink, instance);
     return sink.bytes;

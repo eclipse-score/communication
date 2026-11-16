@@ -24,6 +24,49 @@ namespace serialization
 namespace
 {
 
+struct DeepLeaf
+{
+    std::uint16_t id{};
+    std::uint8_t flag{};
+};
+SCORE_STRUCT_VISITABLE(DeepLeaf, id, flag)
+
+struct DeepMiddle
+{
+    std::uint32_t value{};
+    DeepLeaf leaf{};
+};
+SCORE_STRUCT_VISITABLE(DeepMiddle, value, leaf)
+
+struct DeepOuter
+{
+    std::uint32_t value{};
+    DeepMiddle middle{};
+};
+SCORE_STRUCT_VISITABLE(DeepOuter, value, middle)
+
+constexpr ElementLayout WithNestedLayout(const ElementLayout layout, const SomeIpLayout* const nested)
+{
+    return {layout.byte_order, layout.alignment_bits, layout.length_field_bytes, nested};
+}
+
+DeepOuter MakeDeepOuter()
+{
+    DeepOuter value{};
+    value.value = 0x01020304U;
+    value.middle.value = 0x05060708U;
+    value.middle.leaf.id = 0xAABB;
+    value.middle.leaf.flag = 0x01;
+    return value;
+}
+
+void ExpectEqual(const DeepMiddle& actual, const DeepMiddle& expected)
+{
+    EXPECT_EQ(actual.value, expected.value);
+    EXPECT_EQ(actual.leaf.id, expected.leaf.id);
+    EXPECT_EQ(actual.leaf.flag, expected.leaf.flag);
+}
+
 TEST_F(SomeIpStrategyFixture, NestedStructIsBigEndianAndPacked)
 {
     // Given a nested struct ...
@@ -42,6 +85,124 @@ TEST_F(SomeIpStrategyFixture, NestedStructIsBigEndianAndPacked)
     EXPECT_EQ(*it++, 0xAA);  // Inner::id (big-endian)
     EXPECT_EQ(*it++, 0xBB);
     EXPECT_EQ(*it++, 0x01);  // Inner::flag
+}
+
+TEST_F(SomeIpStrategyFixture, NestedStructUsesOneCustomLayoutAcrossTwoLevels)
+{
+    // Given one custom layout shared by all fields across two nested struct levels ...
+    static constexpr ElementLayout kCustomFieldLayout{ByteOrder::kLittleEndian, kAlign8Bits};
+    static constexpr SomeIpLayout kLeafLayout{kCustomFieldLayout, nullptr, 0U};
+    static constexpr ElementLayout kMiddleFields[] = {
+        kCustomFieldLayout,
+        WithNestedLayout(kCustomFieldLayout, &kLeafLayout),
+    };
+    const SomeIpLayout layout{kCustomFieldLayout, kMiddleFields, 2U};
+    const Serializer<SomeIpStrategy> unit{SomeIpStrategy{layout}};
+    std::vector<std::uint8_t> buffer{};
+    const DeepMiddle value = MakeDeepOuter().middle;
+
+    // ... when the struct is serialized ...
+    auto result = unit.Serialize(value, buffer);
+    ASSERT_TRUE(result.has_value());
+
+    // ... then the custom little-endian layout is used at both levels ...
+    const std::vector<std::uint8_t> expected{0x08, 0x07, 0x06, 0x05, 0xBB, 0xAA, 0x01};
+    EXPECT_EQ(buffer, expected);
+
+    // ... and it deserializes back to the original value.
+    DeepMiddle decoded{};
+    result = unit.DeSerialize(buffer, decoded);
+    ASSERT_TRUE(result.has_value());
+    ExpectEqual(decoded, value);
+    EXPECT_EQ(GetMaxSize<DeepMiddle>(layout), 7U);
+}
+
+TEST_F(SomeIpStrategyFixture, NestedStructUsesOneCustomLayoutAcrossThreeLevels)
+{
+    // Given one custom layout shared by all fields across three nested struct levels ...
+    static constexpr ElementLayout kCustomFieldLayout{ByteOrder::kLittleEndian, kAlign8Bits};
+    static constexpr SomeIpLayout kLeafLayout{kCustomFieldLayout, nullptr, 0U};
+    static constexpr ElementLayout kMiddleFields[] = {
+        kCustomFieldLayout,
+        WithNestedLayout(kCustomFieldLayout, &kLeafLayout),
+    };
+    static constexpr SomeIpLayout kMiddleLayout{kCustomFieldLayout, kMiddleFields, 2U};
+    static constexpr ElementLayout kOuterFields[] = {
+        kCustomFieldLayout,
+        WithNestedLayout(kCustomFieldLayout, &kMiddleLayout),
+    };
+    const SomeIpLayout layout{kCustomFieldLayout, kOuterFields, 2U};
+    const Serializer<SomeIpStrategy> unit{SomeIpStrategy{layout}};
+    std::vector<std::uint8_t> buffer{};
+    const DeepOuter value = MakeDeepOuter();
+
+    // ... when the struct is serialized ...
+    auto result = unit.Serialize(value, buffer);
+    ASSERT_TRUE(result.has_value());
+
+    // ... then the custom little-endian layout is used at all three levels ...
+    const std::vector<std::uint8_t> expected{0x04, 0x03, 0x02, 0x01, 0x08, 0x07, 0x06, 0x05, 0xBB, 0xAA, 0x01};
+    EXPECT_EQ(buffer, expected);
+
+    // ... and it deserializes back to the original value.
+    DeepOuter decoded{};
+    result = unit.DeSerialize(buffer, decoded);
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(decoded.value, value.value);
+    ExpectEqual(decoded.middle, value.middle);
+    EXPECT_EQ(GetMaxSize<DeepOuter>(layout), 11U);
+}
+
+TEST_F(SomeIpStrategyFixture, NestedStructUsesConfigurableDefaultWhenLayoutIsMissing)
+{
+    // Given no layout tree, only a little-endian fallback ...
+    const FallbackLayout default_layout{ByteOrder::kLittleEndian, kAlign8Bits};
+    const Serializer<SomeIpStrategy> unit{SomeIpStrategy{default_layout}};
+    std::vector<std::uint8_t> buffer{};
+    const DeepOuter value = MakeDeepOuter();
+
+    // ... when a three-level nested struct is serialized ...
+    auto result = unit.Serialize(value, buffer);
+    ASSERT_TRUE(result.has_value());
+
+    // ... then every level uses the fallback ...
+    const std::vector<std::uint8_t> expected{0x04, 0x03, 0x02, 0x01, 0x08, 0x07, 0x06, 0x05, 0xBB, 0xAA, 0x01};
+    EXPECT_EQ(buffer, expected);
+
+    // ... and it deserializes back to the original value.
+    DeepOuter decoded{};
+    result = unit.DeSerialize(buffer, decoded);
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(decoded.value, value.value);
+    ExpectEqual(decoded.middle, value.middle);
+    EXPECT_EQ(GetMaxSize<DeepOuter>(default_layout), 11U);
+}
+
+TEST_F(SomeIpStrategyFixture, MissingNestedLayoutUsesConfigurableDefault)
+{
+    // Given a big-endian layout whose nested struct field has no nested layout, plus a little-endian fallback ...
+    static constexpr ElementLayout kBigEndian{ByteOrder::kBigEndian, kAlign8Bits};
+    static constexpr ElementLayout kMiddleFields[] = {kBigEndian, kBigEndian};
+    const SomeIpLayout layout{kBigEndian, kMiddleFields, 2U};
+    const FallbackLayout default_layout{ByteOrder::kLittleEndian, kAlign8Bits};
+    const Serializer<SomeIpStrategy> unit{SomeIpStrategy{layout, default_layout}};
+    std::vector<std::uint8_t> buffer{};
+    const DeepMiddle value = MakeDeepOuter().middle;
+
+    // ... when the struct is serialized ...
+    auto result = unit.Serialize(value, buffer);
+    ASSERT_TRUE(result.has_value());
+
+    // ... then explicit fields are big-endian and the unlayouted sub-struct uses the fallback ...
+    const std::vector<std::uint8_t> expected{0x05, 0x06, 0x07, 0x08, 0xBB, 0xAA, 0x01};
+    EXPECT_EQ(buffer, expected);
+
+    // ... and it deserializes back to the original value.
+    DeepMiddle decoded{};
+    result = unit.DeSerialize(buffer, decoded);
+    ASSERT_TRUE(result.has_value());
+    ExpectEqual(decoded, value);
+    EXPECT_EQ(GetMaxSize<DeepMiddle>(layout, default_layout), 7U);
 }
 
 TEST_F(SomeIpStrategyFixture, PerElementLayoutByteOrder)

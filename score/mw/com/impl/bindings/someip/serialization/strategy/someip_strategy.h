@@ -28,6 +28,7 @@
 #include <score/string.hpp>
 
 #include <cstddef>
+#include <optional>
 #include <type_traits>
 
 namespace score
@@ -64,8 +65,8 @@ namespace serialization
 ///
 /// Nested layout resolution: the layout is a tree -- each ElementLayout may carry a `nested` SomeIpLayout -- and the
 /// element currently visited is resolved by replaying the visitor's field path from the root (see
-/// ResolveElementLayout, shared with GetMaxSize). A null nested layout means the SOME/IP default ElementLayout for that
-/// subtree. The cases handled, and how:
+/// ResolveElementLayout, shared with GetMaxSize). A null nested layout means the configured default ElementLayout for
+/// that subtree. The cases handled, and how:
 /// * Flat struct: each field uses layout.per_field[field_index] (or layout.default_). This is the original behaviour.
 /// * Nested struct (arbitrary depth): on descending into field i, the field's `nested` layout becomes the layout for
 ///   that sub-struct's fields; with no `nested` the sub-struct's fields use the defaults.
@@ -87,7 +88,13 @@ class SomeIpStrategy final
 {
   public:
     SomeIpStrategy() noexcept = default;
-    explicit SomeIpStrategy(const SomeIpLayout& layout) noexcept : layout_{layout} {}
+    explicit SomeIpStrategy(const FallbackLayout& default_layout) noexcept : default_layout_{default_layout} {}
+    explicit SomeIpStrategy(const SomeIpLayout& layout, const FallbackLayout& default_layout = {}) noexcept
+        : layout_{layout}, default_layout_{default_layout}
+    {
+    }
+    // Exact match for SomeIpStrategy{{}}, which would otherwise be ambiguous between the layout constructors.
+    SomeIpStrategy(std::nullptr_t) = delete;
 
     /// @brief Fixed-width integers (signed/unsigned), enums, and floating point.
     template <typename Visitor,
@@ -191,7 +198,8 @@ class SomeIpStrategy final
     ElementLayout ResolveElementLayout(const score::cpp::span<const std::size_t> path,
                                        const std::size_t array_marker) const
     {
-        someip_detail::LayoutCursor cursor = someip_detail::RootCursor(layout_);
+        someip_detail::LayoutCursor cursor =
+            someip_detail::RootCursor(layout_.has_value() ? &*layout_ : nullptr, default_layout_);
         for (const std::size_t step : path)
         {
             cursor = (step == array_marker) ? someip_detail::EnterArrayElement(cursor)
@@ -221,9 +229,9 @@ class SomeIpStrategy final
         return false;
     }
 
-    // Per-datatype wire layout (byte order + alignment). A default-constructed layout is uniform big-endian / packed,
-    // reproducing the SOME/IP default without any per-field overrides.
-    SomeIpLayout layout_{};
+    // Per-datatype wire layout (byte order + alignment), with a configurable fallback for missing metadata.
+    std::optional<SomeIpLayout> layout_{};
+    FallbackLayout default_layout_{};
 };
 
 }  // namespace serialization
