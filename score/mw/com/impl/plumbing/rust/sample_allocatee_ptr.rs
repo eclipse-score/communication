@@ -17,10 +17,7 @@
 use core::fmt::Debug;
 use std::mem::ManuallyDrop;
 
-use common_rs::{
-    BlankBinding, ConsumerEventDataControlLocalView, CustomDeleter, CxxOptional, ProviderEventDataControlLocalView,
-    SlotIndexType,
-};
+use common_rs::{BlankBinding, ConsumerEventDataControlLocalView, CustomDeleter, CxxOptional, SlotIndexType};
 
 #[repr(C)]
 struct SampleAllocateeTracker {
@@ -43,10 +40,17 @@ union MockBindingVariant<T> {
     _variant: ManuallyDrop<MockBinding<T>>,
 }
 
+/// Opaque, correctly sized/aligned mirror of `lola::ProviderEventDataControlLocalView<>`, which is now stored
+/// by value inside `lola::EventDataControlComposite` (instead of being referenced through a pointer).
+#[repr(C, align(8))]
+struct ProviderEventDataControlLocalViewStorage {
+    _bytes: [u8; 16],
+}
+
 #[repr(C)]
 struct EventDataControlComposite {
-    _asil_qm_control_local_: *mut ProviderEventDataControlLocalView,
-    _asil_b_control_local_: *mut ProviderEventDataControlLocalView,
+    _asil_qm_control_local_: ProviderEventDataControlLocalViewStorage,
+    _asil_b_control_local_: CxxOptional<ProviderEventDataControlLocalViewStorage>,
     _ignore_qm_control_: bool,
 }
 
