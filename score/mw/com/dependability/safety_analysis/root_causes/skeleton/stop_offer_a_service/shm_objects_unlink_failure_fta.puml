@@ -18,8 +18,8 @@
 $FailureMode("StopOffer unlinks wrong SHM objects", "Communication.StopOfferUnlinkWrongSHMObjects")
 $OrGate("Gate1", "Communication.StopOfferUnlinkWrongSHMObjects")
 $RootCause("Wrong SHM path created", "SHMObjectWrongPath", "Gate1")
-$IntermediateEvent("Unlinked while used", "Communication.SHMObjectUnlinkedWhileUsed", "Gate1")
-$OrGate("Gate3", "Communication.SHMObjectUnlinkedWhileUsed")
+$IntermediateEvent("Unlinked while used", "SHMObjectUnlinkedWhileUsed", "Gate1")
+$OrGate("Gate3", "SHMObjectUnlinkedWhileUsed")
 $RootCause("Service instance usage not checked", "ServiceInstanceUsageNotChecked", "Gate3")
 $RootCause("Service instance usage lock mechanism failed", "ServiceInstanceUsageLockMechanismFailed", "Gate3")
 
