@@ -57,7 +57,7 @@ jobs:
       - name: Run coverage
         if: inputs.fetch-only != 'true'
         id: run-coverage
-        run: bazel coverage --config=ci //... --build_tests_only
+        run: bazel coverage --config=ci //...
 
       - name: Generate coverage report
         if: inputs.fetch-only != 'true' && steps.run-coverage.outcome == 'success'
@@ -124,7 +124,7 @@ jobs:
         env:
           SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
           SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
-        run: bazel coverage --config=ci --config=qnx //score/... --build_tests_only
+        run: bazel coverage --config=ci --config=qnx //score/... //quality/coverage:coverage_scope
 
       - name: Generate coverage report (QNX)
         if: steps.run-coverage-qnx.outcome == 'success'

@@ -260,7 +260,7 @@ The report is written to `coverage_<platform>/index.html`. Open it with:
 xdg-open coverage_linux/index.html
 ```
 
-QNX on target (C++ only): `bazel coverage --config=qnx //score/... --build_tests_only`, then the same command with `--platform qnx`.
+QNX on target (C++ only): `bazel coverage --config=qnx //score/... //quality/coverage:coverage_scope`, then the same command with `--platform qnx`.
 
 ### Coverage Justifications
 

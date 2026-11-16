@@ -143,6 +143,15 @@ use_repo(
 )
 
 bazel_dep(name = "score_coverage", version = "0.4.2", dev_dependency = True)
+
+# VALIDATION ONLY: eclipse-score/coverage_tool#68 (scope built in the tests'
+# configuration). Replace by the registry release that contains it.
+git_override(
+    module_name = "score_coverage",
+    commit = "7d9810af7a400b7d926ef0e63f7f0fa95610f440",
+    remote = "https://github.com/eclipse-score/coverage_tool.git",
+)
+
 bazel_dep(name = "score_itf", version = "0.7.0", dev_dependency = True)
 bazel_dep(name = "score_rules_imagefs", version = "0.1.0", dev_dependency = True)
 

@@ -12,6 +12,12 @@
 # *******************************************************************************
 load("@score_coverage//:defs.bzl", "score_coverage_reporter", "score_coverage_scope")
 
+# The scope is NOT a dependency of the reporters (Bazel analyses those in the
+# exec configuration, where select()s resolve for the host). Build it in the
+# same invocation as the tests, so it is analysed in their configuration:
+#   bazel coverage --config=qnx <tests> //quality/coverage:coverage_scope
+# --build_tests_only would skip it, leaving stale outputs from an earlier build.
+#
 # Coverage scope: the dependable elements of the module. The aspect walks the
 # component / unit hierarchy into the implementation libraries and their
 # transitive in-workspace deps; everything else (tests, mocks, external
@@ -26,19 +32,6 @@ SCOPE_DEPS = [
 score_coverage_scope(
     name = "coverage_scope",
     testonly = True,
-    visibility = ["//quality/coverage:__subpackages__"],
-    deps = SCOPE_DEPS,
-)
-
-# Same roots, evaluated for the QNX target platform. Without `platform` Bazel
-# resolves select()s of the scope for the host, which would list Linux-only
-# files at 0 % and miss the QNX-only ones. Manual: its toolchains are only
-# registered under --config=qnx.
-score_coverage_scope(
-    name = "coverage_scope_qnx",
-    testonly = True,
-    platform = "@score_bazel_platforms//:x86_64-qnx-sdp_8.0.0-posix",
-    tags = ["manual"],
     visibility = ["//quality/coverage:__subpackages__"],
     deps = SCOPE_DEPS,
 )
@@ -64,7 +57,7 @@ score_coverage_reporter(
     name = "gcov_reporter_wrapper",
     testonly = True,
     backend = "gcov",
-    coverage_scope = ":coverage_scope_qnx",
+    coverage_scope = ":coverage_scope",
     gcov = "@score_qcc_x86_64_toolchain_pkg//:gcov",
     tags = ["manual"],
 )

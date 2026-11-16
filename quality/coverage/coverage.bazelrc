@@ -14,8 +14,8 @@
 # Coverage configuration for the score_coverage pipeline
 # (https://eclipse-score.github.io/coverage_tool/main/).
 #
-#   Linux, LLVM backend (C++ + Rust):  bazel coverage //... --build_tests_only
-#   QNX x86_64, gcov backend (C++):    bazel coverage --config=qnx //score/... --build_tests_only
+#   Linux, LLVM backend (C++ + Rust):  bazel coverage //...
+#   QNX x86_64, gcov backend (C++):    bazel coverage --config=qnx //score/... //quality/coverage:coverage_scope
 #   Report + gate, both:               bazel run @score_coverage//:generate_coverage_html -- [--platform qnx] ...
 #
 # The default `coverage` command is the LLVM backend; --config=qnx resets the
@@ -52,6 +52,11 @@ coverage --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferr
 
 coverage --coverage_output_generator=@score_coverage//:merger
 coverage --coverage_report_generator=//quality/coverage:reporter_wrapper
+
+# The report generator reads the scope built by the same invocation (in the
+# configuration of the tests); that output is no input of the generator action,
+# so it must not run sandboxed.
+coverage --strategy=CoverageReport=local
 
 coverage --test_env=GENERATE_LLVM_LCOV=0
 coverage --test_env=COVERAGE_GCOV_PATH=/usr/bin/true
