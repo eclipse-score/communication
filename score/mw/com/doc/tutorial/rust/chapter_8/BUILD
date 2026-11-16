@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -11,48 +11,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
-
-rust_library(
-    name = "com-api-example-lib",
-    srcs = glob(["src/**/*.rs"]),
-    crate_name = "com_api_example",
-    features = ["link_std_cpp_lib"],
-    deps = [
-        "//score/mw/com/example/com-api-example/com-api-gen",
-        "//score/mw/com/rust:score_com",
-        "@score_baselibs//score/log_rust/score_log",
-        "@score_communication_crate_index//:clap",
-        "@score_communication_crate_index//:futures",
-    ],
-)
-
-rust_binary(
-    name = "com-api-example",
-    srcs = ["main.rs"],
-    data = [
-        "etc/logging.json",
-        "etc/mw_com_config.json",
-    ],
-    env = {
-        "MW_LOG_CONFIG_FILE": "score/mw/com/example/com-api-example/etc/logging.json",
-    },
-    features = ["link_std_cpp_lib"],
-    deps = [
-        ":com-api-example-lib",
-        "//score/mw/com/example/com-api-example/com-api-gen",
-        "//score/mw/com/rust:score_com",
-        "@score_baselibs//score/log_rust/score_log",
-        "@score_baselibs//score/log_rust/stdout_logger",
-        "@score_communication_crate_index//:clap",
-        "@score_communication_crate_index//:futures",
-    ],
-)
+load("@rules_rust//rust:defs.bzl", "rust_test")
 
 rust_test(
-    name = "com-api-example-tokio-integration-test",
-    srcs = ["tests_using_tokio_runtime.rs"],
-    data = ["etc/mw_com_config.json"],
+    name = "tokio-usage",
+    srcs = ["tokio_usage.rs"],
+    data = ["//score/mw/com/doc/tutorial/rust/common:config"],
     features = ["link_std_cpp_lib"],
     # https://github.com/eclipse-score/communication/issues/794
     # Linux only, and disabled under sanitizers, until the findings in the Tokio multi-thread runtime are resolved.
@@ -66,9 +30,20 @@ rust_test(
         "//conditions:default": [],
     }),
     deps = [
-        "//score/mw/com/example/com-api-example/com-api-gen",
+        "//score/mw/com/doc/tutorial/rust/common/com-api-gen",
         "//score/mw/com/rust:score_com",
+        # [rust-tokio-deps-start]
         "@score_communication_crate_index//:futures",
         "@score_communication_crate_index//:tokio",
+        # [rust-tokio-deps-end]
     ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = glob([
+        "*.rst",
+        "*.rs",
+    ]) + ["BUILD"],
+    visibility = ["//score/mw/com/doc/tutorial/rust:__pkg__"],
 )

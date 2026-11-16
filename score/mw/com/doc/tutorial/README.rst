@@ -77,6 +77,28 @@ additional bindings!
    always/only uses the `LoLa` binding and a specific central `score::mw::com` application – the gateway app –
    then relays traffic from/to the network.
 
+Rust APIs
+---------
+
+Besides the C++ API, `score::mw::com` offers a Rust API, the crate `score_com`. It follows the same service-oriented
+concepts, with these differences in naming and usage:
+
+- A proxy is called *consumer* and a skeleton is called *producer*.
+- The service interface (events, fields and methods) is declared once and the consumer and producer types are
+  generated from it.
+- The runtime (for example LoLa) is a parameter of the API, so application code does not depend on a concrete binding.
+- Service discovery and sample reception are available as `async` functions and streams. They work with any executor,
+  for example `futures` or Tokio.
+- Missing steps such as an unset field value or an unregistered method handler are compile errors, because the producer
+  uses the type state pattern.
+
+The Rust APIs Tutorial at the end of the chapter list uses the same Vehicle Monitor scenario and the same one
+directory per chapter layout.
+
+.. note::
+
+   The field and method APIs are shown for demonstration only, because the runtime support is not available yet.
+
 Tutorial chapters
 -----------------
 
@@ -100,3 +122,4 @@ dedicated `README.md` with the chapter text. Follow them in order – later chap
    Chapter 11: Direct use of an InstanceIdentifier <chapter_11/README>
    Chapter 12: Unit testing <chapter_12/README>
    Chapter 13: Heap-free mw::com for ASIL-B and FFI applications <chapter_13/README>
+   Rust APIs Tutorial <rust/README>

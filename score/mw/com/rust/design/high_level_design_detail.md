@@ -171,7 +171,7 @@ All event data transmitted via IPC must implement the `CommData` trait using der
 When extending the COM API:
 1. **Generic Features**: Add to `score_com_concept` for implementation-agnostic traits
 2. **LoLa Implementation**: Add to `com-api-runtime-lola` for concrete implementation of `score_com_concept` using the MW::COM (LoLa) backend
-3. **Examples**: Update or add to `com-api-example` directory for demonstration code
+3. **Examples**: Update or add to `score/mw/com/doc/tutorial/rust` directory for demonstration code
 
 ### Naming Conventions
 All naming in the COM-API adheres to [Rust Naming Guidelines](https://rust-lang.github.io/api-guidelines/naming.html):

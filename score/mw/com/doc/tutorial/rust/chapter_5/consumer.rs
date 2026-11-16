@@ -9,7 +9,10 @@
  * <https://www.apache.org/licenses/LICENSE-2.0>
  *
  * SPDX-License-Identifier: Apache-2.0
- *******************************************************************************/
+ ******************************************************************************/
+
+//! Consumer using the asynchronous parts of the API: async discovery, async receive,
+//! cancellable receive and streams.
 
 use com_api_gen::{Exhaust, Tire, VehicleInterface};
 use futures::channel::oneshot;
@@ -26,8 +29,6 @@ use score_log as log;
 
 /// Timeout used when performing a cancellable async receive.
 const RECEIVE_TIMEOUT_MS: u64 = 500;
-/// Polling interval between iterations in synchronous receive loops.
-const SYNC_RECEIVE_POLL_INTERVAL_MS: u64 = 1000;
 
 pub struct VehicleMonitorConsumer<R: Runtime> {
     tire_subscriber: <<R as Runtime>::Subscriber<Tire> as Subscriber<Tire, R>>::Subscription,
@@ -35,7 +36,7 @@ pub struct VehicleMonitorConsumer<R: Runtime> {
 }
 
 impl<R: Runtime> VehicleMonitorConsumer<R> {
-    /// Shared constructor logic: picks the first available service instance and subscribes.
+    /// Picks the first available service instance and subscribes to its events.
     fn from_service_instances<B>(instances: impl IntoIterator<Item = B>) -> Result<Self>
     where
         B: ConsumerBuilder<VehicleInterface, R>,
@@ -71,14 +72,7 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
         }
     }
 
-    /// Finds available service instances and constructs a VehicleMonitorConsumer.
-    /// It will return immediately regardless of whether any instances are available or not.
-    pub fn find_available_instances(runtime: &R, service_id: InstanceSpecifier) -> Result<Self> {
-        let consumer_discovery = runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
-        let instances = consumer_discovery.get_available_instances()?;
-        Self::from_service_instances(instances)
-    }
-
+    // [rust-consumer-async-discovery-start]
     /// Finds available service instances asynchronously and constructs a VehicleMonitorConsumer.
     /// It will wait for the service availability and return once an instance is found.
     pub async fn find_available_instances_async(runtime: &R, service_id: InstanceSpecifier) -> Result<Self> {
@@ -86,20 +80,10 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
         let instances = consumer_discovery.get_available_instances_async().await?;
         Self::from_service_instances(instances)
     }
+    // [rust-consumer-async-discovery-end]
 
-    /// Reads tire data synchronously, returning a Result with the number of samples received.
-    pub fn read_tire_data(&self, count: usize) -> Result<String> {
-        let mut sample_buf = SampleContainer::new(3);
-        for _ in 0..count {
-            let ret = self.tire_subscriber.try_receive(&mut sample_buf, 1);
-            self.processing_data(ret, &mut sample_buf);
-            // Sleep for a while before the next synchronous receive attempt
-            thread::sleep(Duration::from_millis(SYNC_RECEIVE_POLL_INTERVAL_MS));
-        }
-        Ok("All tire data read successfully".to_string())
-    }
-
-    /// Reads tire data asynchronously without a timeout, returning a Result with the number of samples received.
+    // [rust-consumer-async-receive-start]
+    /// Reads tire data asynchronously without a timeout.
     pub async fn read_tire_data_async_without_timeout(&self, count: usize) -> Result<String> {
         log::info!("Performing asynchronous receive without timeout");
         let mut sample_buf = SampleContainer::new(3);
@@ -110,8 +94,10 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
         }
         Ok("All tire data read asynchronously".to_string())
     }
+    // [rust-consumer-async-receive-end]
 
-    /// Reads tire data asynchronously with a timeout, returning a Result with the number of samples received.
+    // [rust-consumer-cancellable-receive-start]
+    /// Reads tire data asynchronously with a timeout.
     pub async fn read_tire_data_async_with_timeout(&self, count: usize) -> Result<String> {
         log::info!("Performing asynchronous receive with timeout");
         let mut sample_buf = SampleContainer::new(3);
@@ -141,8 +127,10 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
         }
         Ok("All tire data read asynchronously with timeout".to_string())
     }
+    // [rust-consumer-cancellable-receive-end]
 
-    /// Reads tire data as a stream, returning a Result with the number of samples received.
+    // [rust-consumer-stream-start]
+    /// Reads tire data as a stream.
     pub async fn read_tire_data_stream(&mut self, count: usize) {
         let mut stream = self.tire_subscriber.to_stream();
         for _ in 0..count {
@@ -156,6 +144,7 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
             }
         }
     }
+    // [rust-consumer-stream-end]
 
     /// Unsubscribe from all events and release the consumer.
     pub fn unsubscribe(self) {

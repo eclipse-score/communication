@@ -23,7 +23,7 @@
 //!
 //! To run these tests:
 //! ```bash
-//! bazel test //score/mw/com/example/com-api-example:com-api-example-tokio-integration-test
+//! bazel test //score/mw/com/doc/tutorial/rust/chapter_8:tokio-usage
 //! ```
 //!
 //! Note: These tests are tagged as 'manual' and use a shared runtime instance
@@ -41,7 +41,7 @@ mod test {
     use futures::stream::StreamExt;
     use std::sync::OnceLock;
 
-    const TEST_CONFIG_PATH: &str = "./score/mw/com/example/com-api-example/etc/mw_com_config.json";
+    const TEST_CONFIG_PATH: &str = "./score/mw/com/doc/tutorial/rust/common/etc/mw_com_config.json";
     const INITIAL_TIRE_PRESSURE: f32 = 1.0;
     const SAMPLE_COUNT: usize = 5;
     const SAMPLE_INTERVAL_MS: u64 = 1000;
@@ -103,6 +103,7 @@ mod test {
         consumer_builder.build().expect("Failed to build consumer instance")
     }
 
+    // [rust-tokio-sender-start]
     //sender will send data in each 1 second
     async fn async_data_sender_fn<R: Runtime>(
         offered_producer: VehicleOfferedProducer<R>,
@@ -127,7 +128,9 @@ mod test {
         }
         offered_producer
     }
+    // [rust-tokio-sender-end]
 
+    // [rust-tokio-receiver-start]
     //receiver function which use async receive to get data, it waits for new data and process it once it arrives,
     //it will receive data 10 times and print the received samples
     async fn async_data_processor_fn<R: Runtime>(subscribed: impl Subscription<Tire, R>, is_timeout: bool) {
@@ -151,6 +154,7 @@ mod test {
             buffer = buf;
         }
     }
+    // [rust-tokio-receiver-end]
 
     async fn stream_processor_fn<R: Runtime>(mut subscribed: impl Subscription<Tire, R>) {
         let mut stream = subscribed.to_stream();
@@ -190,6 +194,7 @@ mod test {
         //Producer create
         let producer_runtime = get_test_runtime();
         let producer = create_producer(producer_runtime, service_id_clone);
+        // [rust-tokio-spawn-start]
         // Spawn async data sender
         let sender_join_handle = tokio::spawn(async_data_sender_fn(producer));
         // Await consumer creation and subscribe to events
@@ -200,6 +205,7 @@ mod test {
         let processor_join_handle = tokio::spawn(async_data_processor_fn(subscribed, false));
         processor_join_handle.await.expect("Error returned from task");
         let producer = sender_join_handle.await.expect("Error returned from task");
+        // [rust-tokio-spawn-end]
 
         match producer.unoffer() {
             Ok(_) => println!("Successfully unoffered the service"),

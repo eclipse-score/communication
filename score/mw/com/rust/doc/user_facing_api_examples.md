@@ -580,7 +580,7 @@ fn process_samples_batch(
 
 ## Example
 
-See [com-api-example](../../../example/com-api-example/) for a complete working example demonstrating:
+See [com-api-example](../../doc/tutorial/rust/) for a complete working example demonstrating:
 - Service interface definition
 - Producer offering and publishing events
 - Consumer discovering and receiving events

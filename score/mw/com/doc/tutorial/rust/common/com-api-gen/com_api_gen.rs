@@ -14,6 +14,7 @@
 use score_com::{interface, CommData, FieldPublisher, ProviderInfo, Publisher, Reloc, Subscriber};
 use score_log::ScoreDebug;
 
+// [rust-data-types-start]
 #[derive(Debug, Reloc, CommData, ScoreDebug)]
 #[repr(C)]
 #[comm_data(id = "Tire")]
@@ -25,6 +26,7 @@ pub struct Tire {
 #[repr(C)]
 // No explicit ID provided, so it will be auto-generated as "com_api_gen::Exhaust"
 pub struct Exhaust {}
+// [rust-data-types-end]
 
 #[derive(Debug, Reloc, CommData, ScoreDebug)]
 #[repr(C)]
@@ -49,6 +51,7 @@ pub struct PressureImbalance {
 //   "exhaust" events.
 // - VehicleOfferedProducer<R> struct that implements OfferedProducer trait for offering
 //   "left_tire" and "exhaust" events.
+// [rust-vehicle-interface-start]
 interface!(
     interface Vehicle {
         Id = "VehicleInterface",
@@ -56,6 +59,7 @@ interface!(
         exhaust: Event<Exhaust>,
      }
 );
+// [rust-vehicle-interface-end]
 
 // Example interface definition using the interface macro with a custom UID for the interface.
 // This will generate the following types and trait implementations:
@@ -69,6 +73,7 @@ interface!(
 // Methods use the `Method(...)` syntax, symmetric with `Event<T>` and `Field<T, ...>`:
 // method_name: Method(ArgType0, ArgType1, ...) -> score_com::Result<R::MethodReturnSample<ReturnType>>.
 // For void return, -> () is required so the macro can identify the member as a method.
+// [rust-methods-interface-start]
 interface!(
     interface VehicleMethods {
         Id = "VehicleMethodsInterface",
@@ -76,12 +81,14 @@ interface!(
         calculate_pressure_imbalance: Method(Tire, Tire) -> PressureImbalance,
     }
 );
+// [rust-methods-interface-end]
 
 // Field-based interface with compile-time initialization safety.
 // All fields must be explicitly initialized via the Type State pattern before offering.
 // The Type State pattern ensures that you cannot call offer() until all fields have been updated.
 // This separate field-only interface is intentionally kept for demonstration purposes.
 // Mixed event and field interfaces are already supported, as shown by VehicleMonitor below.
+// [rust-field-interface-start]
 interface!(
     interface VehicleField {
         Id = "VehicleFieldInterface",
@@ -89,6 +96,7 @@ interface!(
         exhaust: Field<Exhaust, WithGetter + WithSetter + WithNotifier>,
      }
 );
+// [rust-field-interface-end]
 
 // We can also define mix of event , field and method in one interface.
 interface!(

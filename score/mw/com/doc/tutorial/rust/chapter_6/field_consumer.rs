@@ -56,6 +56,7 @@ fn create_consumer_field<R: Runtime>(runtime: &R, service_id: InstanceSpecifier)
 //
 // Because subscribe() takes `left_tire` by value, extract the callers before subscribing
 // if both are needed in the same async context.
+// [rust-field-consumer-start]
 #[allow(dead_code)]
 async fn consumer_processing_field<R: Runtime>(consumer: VehicleFieldConsumer<R>) {
     // Async get via the generated get_left_tire() wrapper.
@@ -90,3 +91,4 @@ async fn consumer_processing_field<R: Runtime>(consumer: VehicleFieldConsumer<R>
 
     // subscription is automatically unsubscribed when dropped
 }
+// [rust-field-consumer-end]

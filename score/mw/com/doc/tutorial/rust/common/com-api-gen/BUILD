@@ -38,3 +38,9 @@ cc_library(
     ],
     alwayslink = True,
 )
+
+filegroup(
+    name = "doc_files",
+    srcs = ["com_api_gen.rs"],
+    visibility = ["//score/mw/com/doc/tutorial/rust/common:__pkg__"],
+)

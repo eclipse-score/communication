@@ -38,6 +38,7 @@ type VehicleMethodOfferedProducer<R> =
 // as the offer method will require all method handlers to be registered before offering the producer instance.
 // Here assumption of use is user must call`init()` and register all method handlers ,
 // direct call to `offer()` API will panic.
+// [rust-method-producer-start]
 #[allow(dead_code)]
 fn create_producer_method<R: Runtime>(runtime: &R, service_id: InstanceSpecifier) -> VehicleMethodOfferedProducer<R> {
     let producer_builder = runtime.producer_builder::<VehicleMethodsInterface>(service_id);
@@ -57,6 +58,7 @@ fn create_producer_method<R: Runtime>(runtime: &R, service_id: InstanceSpecifier
         .offer()
         .expect("Failed to offer producer instance")
 }
+// [rust-method-producer-end]
 
 #[allow(dead_code)]
 fn process_pressure_imbalance(tire1: &Tire, tire2: &Tire) -> std::future::Ready<PressureImbalance> {

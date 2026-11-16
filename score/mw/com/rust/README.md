@@ -73,7 +73,7 @@ Publish events                      Subscribe and receive samples
 
 ### Example Application
 
-See [Sample app](../example/com-api-example/) for a complete working example demonstrating the producer/consumer workflow.
+See [Sample app](../doc/tutorial/rust/) for a complete working example demonstrating the producer/consumer workflow.
 
 ## Further Reading
 

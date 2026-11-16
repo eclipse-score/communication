@@ -11,13 +11,13 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-use crate::VehicleOfferedProducer;
 use com_api_gen::{Tire, VehicleInterface};
 use score_com::{
     Builder, InstanceSpecifier, OfferedProducer, Producer, Publisher, Result, Runtime, SampleMaybeUninit, SampleMut,
 };
 use std::thread;
 use std::time::Duration;
+use tutorial_common::VehicleOfferedProducer;
 
 use score_log as log;
 
@@ -30,6 +30,7 @@ pub struct VehicleMonitorProducer<R: Runtime> {
 }
 
 impl<R: Runtime> VehicleMonitorProducer<R> {
+    // [rust-producer-offer-start]
     /// Create a new VehicleMonitorProducer
     pub fn new(runtime: &R, service_id: InstanceSpecifier) -> Result<Self> {
         let producer_builder = runtime.producer_builder::<VehicleInterface>(service_id);
@@ -37,7 +38,9 @@ impl<R: Runtime> VehicleMonitorProducer<R> {
         let producer = producer.offer().expect("Failed to offer producer instance");
         Ok(Self { producer })
     }
+    // [rust-producer-offer-end]
 
+    // [rust-producer-publish-start]
     /// Publish tire data using the producer
     pub fn publish_tire_data(&self, tire: Tire) -> Result<()> {
         let uninit_sample = self.producer.left_tire.allocate()?;
@@ -46,6 +49,7 @@ impl<R: Runtime> VehicleMonitorProducer<R> {
         log::info!("Tire data sent");
         Ok(())
     }
+    // [rust-producer-publish-end]
 
     /// Publish tire data in a loop, incrementing pressure each iteration
     pub fn run_publish_loop(&self, initial_pressure: f32, count: usize) {
