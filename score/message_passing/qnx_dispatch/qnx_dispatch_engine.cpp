@@ -610,11 +610,19 @@ void QnxDispatchEngine::StopServer(ResourceManagerServer& server) noexcept
 {
     if (server.resmgr_id_ != -1)
     {
-        // QNX defect PR# 2561573: resmgr_attach/message_attach calls are not thread-safe for the same dispatch_pointer
-        std::lock_guard guard(server_runner_.GetMutex());
-        score::cpp::ignore = os_resources_.dispatch->resmgr_detach(
-            server_runner_.GetDispatchPointer(), server.resmgr_id_, static_cast<std::uint32_t>(_RESMGR_DETACH_CLOSE));
-        server.resmgr_id_ = -1;
+        {
+            // QNX defect PR# 2561573: resmgr_attach/message_attach calls are not thread-safe for the same
+            // dispatch_pointer
+            std::lock_guard guard(server_runner_.GetMutex());
+            score::cpp::ignore =
+                os_resources_.dispatch->resmgr_detach(server_runner_.GetDispatchPointer(),
+                                                      server.resmgr_id_,
+                                                      static_cast<std::uint32_t>(_RESMGR_DETACH_CLOSE));
+            server.resmgr_id_ = -1;
+        }
+
+        // A handler that was already dispatched may still be running on the server thread and using `server`.
+        server_runner_.WaitForCurrentHandler();
     }
 }
 
