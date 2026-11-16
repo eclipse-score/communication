@@ -660,6 +660,7 @@ cc_library(
     hdrs = [
         "binding_service_type_deployment.h",
         "binding_service_type_deployment_impl.h",
+        "e2e_event_type_deployment.h",
     ],
     tags = ["FFI"],
     deps = [

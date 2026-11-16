@@ -46,6 +46,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl:event_receive_handler",
+        "//score/mw/com/impl/e2e:e2e_result",
     ],
 )
 

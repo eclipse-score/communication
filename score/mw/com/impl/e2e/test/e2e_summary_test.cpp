@@ -129,6 +129,17 @@ TEST(E2eSummaryTest, DataIntegrityErrorReportsError)
     EXPECT_EQ(summary, Summary::kError);
 }
 
+TEST(E2eSummaryTest, DataIntegrityErrorWithSkippedSequenceReportsError)
+{
+    // Given data integrity reports an error, which makes the sequence check skip, and historical health is passing
+    // When computing the summary
+    const auto summary =
+        ComputeSummary(DataIntegrityStatus::kError, SequenceStatus::kSkipped, HistoricalHealthStatus::kOk);
+
+    // Then the summary is kError
+    EXPECT_EQ(summary, Summary::kError);
+}
+
 TEST(E2eSummaryTest, SequenceRepeatedErrorReportsError)
 {
     // Given the sequence reports a repeated error while data integrity and historical health are passing
