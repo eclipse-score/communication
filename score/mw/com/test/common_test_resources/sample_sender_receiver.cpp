@@ -963,10 +963,17 @@ int EventSenderReceiver::RunAsProxyReceiveHandlerOnly(const score::mw::com::Inst
     auto& bigdata = proxy_result.value();
 
     std::atomic<bool> callback_called{false};
-    const auto set_receive_handler_result = bigdata.map_api_lanes_stamped_.SetReceiveHandler([&callback_called]() {
-        callback_called = true;
-        std::cout << "Callback called\n";
-    });
+    std::atomic<bool> unsubscribe_returned{false};
+    std::atomic<bool> callback_called_after_unsubscribe{false};
+    const auto set_receive_handler_result = bigdata.map_api_lanes_stamped_.SetReceiveHandler(
+        [&callback_called, &unsubscribe_returned, &callback_called_after_unsubscribe]() {
+            callback_called = true;
+            if (unsubscribe_returned)
+            {
+                callback_called_after_unsubscribe = true;
+            }
+            std::cout << "Callback called\n";
+        });
     if (!set_receive_handler_result.has_value())
     {
         std::cerr << "Unable to set receive handler: " << set_receive_handler_result.error() << ", bailing!\n";
@@ -993,14 +1000,14 @@ int EventSenderReceiver::RunAsProxyReceiveHandlerOnly(const score::mw::com::Inst
         }
     }
 
-    // Reset the callback flag and unsubscribe within the mutex that prevents the skeleton sending any events. This is
-    // to ensure that we don't get any events published (and subsequently callbacks called) between clearing the
-    // callback-called flag and calling unsubscribe.
+    // Unsubscribe within the mutex that prevents the skeleton from sending any events, so the subsequent event is known
+    // to have been published after Unsubscribe. Unsubscribe synchronizes with an in-flight receive handler, so only
+    // callbacks that begin after Unsubscribe returns should fail the test.
     {
         std::lock_guard<std::mutex> lock{event_sending_mutex_};
-        callback_called = false;
         event_published_ = false;
         bigdata.map_api_lanes_stamped_.Unsubscribe();
+        unsubscribe_returned = true;
     }
 
     // Wait until the skeleton has finished publishing all events.
@@ -1012,7 +1019,7 @@ int EventSenderReceiver::RunAsProxyReceiveHandlerOnly(const score::mw::com::Inst
         std::cerr << "No event was published after Unsubscribe(), test is invalid. Terminating!\n";
         return EXIT_FAILURE;
     }
-    if (callback_called)
+    if (callback_called_after_unsubscribe)
     {
         std::cerr << "Callback was called after Unsubscribe(), terminating!\n";
         return EXIT_FAILURE;
