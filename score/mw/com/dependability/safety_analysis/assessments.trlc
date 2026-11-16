@@ -15,10 +15,3 @@ package Communication
 import ScoreReq
 import mw_com_fta
 
-ScoreReq.RootCauseAssessment DummyAssessment {
-    root_causes = [mw_com_fta.ActivelyManipulateByProgrammParts]
-    measures    = []
-    safety      = ScoreReq.Asil.B
-    rationale   = "Dummy placeholder. No assessment performed."
-    version     = 1
-}
