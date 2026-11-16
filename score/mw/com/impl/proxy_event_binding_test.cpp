@@ -56,6 +56,10 @@ class DummyProxyEventBinding final : public ProxyEventBinding
     {
         return {};
     }
+    e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const noexcept override
+    {
+        return {};
+    }
     BindingType GetBindingType() const noexcept override
     {
         return BindingType::kFake;

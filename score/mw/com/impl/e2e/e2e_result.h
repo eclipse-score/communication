@@ -34,6 +34,7 @@ enum class SequenceStatus : std::uint8_t
     kOkGapWithinThreshold,
     kErrorRepeated,
     kErrorGapExceedsThreshold,
+    kSkipped,
 };
 
 // A sample failed the data-integrity check. Everything except kDisabled and kOk counts as a failure.
@@ -42,11 +43,12 @@ constexpr bool IsFailure(const DataIntegrityStatus status) noexcept
     return (status != DataIntegrityStatus::kDisabled) && (status != DataIntegrityStatus::kOk);
 }
 
-// A sample failed the sequence check. Everything except kDisabled, kOk and kOkGapWithinThreshold counts as a failure.
+// A sample failed the sequence check. Everything except kDisabled, kSkipped, kOk and kOkGapWithinThreshold counts as a
+// failure.
 constexpr bool IsFailure(const SequenceStatus status) noexcept
 {
-    return (status != SequenceStatus::kDisabled) && (status != SequenceStatus::kOk) &&
-           (status != SequenceStatus::kOkGapWithinThreshold);
+    return (status != SequenceStatus::kDisabled) && (status != SequenceStatus::kSkipped) &&
+           (status != SequenceStatus::kOk) && (status != SequenceStatus::kOkGapWithinThreshold);
 }
 
 // Per-sample outcome of the binding's own E2E check. Only this pair crosses the binding boundary; the

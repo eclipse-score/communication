@@ -20,6 +20,12 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "e2e_reception_timeout_monitor_test",
+    srcs = ["e2e_reception_timeout_monitor_test.cpp"],
+    deps = ["//score/mw/com/impl/e2e:e2e_reception_timeout_monitor"],
+)
+
+cc_unit_test(
     name = "e2e_summary_test",
     srcs = ["e2e_summary_test.cpp"],
     deps = ["//score/mw/com/impl/e2e:e2e_summary"],

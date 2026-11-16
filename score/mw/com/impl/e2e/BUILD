@@ -35,6 +35,19 @@ cc_library(
 )
 
 cc_library(
+    name = "e2e_reception_timeout_monitor",
+    srcs = ["e2e_reception_timeout_monitor.cpp"],
+    hdrs = [
+        "e2e_reception_timeout_monitor.h",
+    ],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        ":e2e_health_tracker",
+    ],
+)
+
+cc_library(
     name = "e2e_summary",
     srcs = ["e2e_summary.cpp"],
     hdrs = [

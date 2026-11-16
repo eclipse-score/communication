@@ -14,6 +14,8 @@
 #ifndef SCORE_MW_COM_IMPL_PROXY_EVENT_BASE_H
 #define SCORE_MW_COM_IMPL_PROXY_EVENT_BASE_H
 
+#include "score/mw/com/impl/e2e/e2e_reception_timeout_monitor.h"
+#include "score/mw/com/impl/e2e/e2e_summary.h"
 #include "score/mw/com/impl/enable_reference_to_moveable_from_this.h"
 #include "score/mw/com/impl/event_receive_handler.h"
 #include "score/mw/com/impl/flag_owner.h"
@@ -25,11 +27,14 @@
 #include "score/mw/com/impl/tracing/proxy_event_tracing_data.h"
 
 #include "score/mw/com/impl/mocking/i_proxy_event.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 
 #include "score/language/safecpp/scoped_function/scope.h"
 #include "score/result/result.h"
 
+#include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 
 namespace score::mw::com::impl
@@ -143,6 +148,18 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
 
     /**
      * \api
+     * \brief Supervises the reception of new samples and returns the historical E2E health of this event.
+     * \details Call cyclically from the thread that calls GetNewSamples(). Every configured reception_timeout period
+     *          without new data counts as one neutral slot of the health window, which never counts as a failure.
+     *          Too few passed samples in a full window switch to kError. Supervision starts with the first new data
+     *          after Subscribe().
+     * \param now Current time of the caller.
+     * \return kDisabled if historical health is disabled, otherwise kOk or kError.
+     */
+    e2e::HistoricalHealthStatus EvaluateE2EHealth(std::chrono::steady_clock::time_point now);
+
+    /**
+     * \api
      * \brief Sets the handler to be called, whenever a new event-sample has been received.
      * \details Generally a ReceiveHandler has no restrictions on what mw::com API it is allowed to call.
      *          It is especially allowed to call all public APIs of the Event instance on which it had been
@@ -172,6 +189,30 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     }
 
   protected:
+    /**
+     * \brief Completes the E2E result of a sample delivered by this event's binding.
+     * \details The binding only provides data_integrity and sequence. This adds historical health and summary. Call
+     *          exactly once per sample, as every call updates the historical health.
+     */
+    template <typename SampleType>
+    void AttachE2EResult(SamplePtr<SampleType>& sample)
+    {
+        const auto raw_result = sample.GetE2EResult();
+        sample.SetE2EResult(
+            e2e::BuildE2EResult(e2e::RawCheckOutcome{raw_result.data_integrity, raw_result.sequence}, health_tracker_));
+        sample_received_since_evaluation_ = true;
+    }
+
+    /// \brief Configures the historical health tracking and clears its history.
+    /// \details Disabled until called. Terminates if an enabled configuration is inconsistent.
+    void SetHealthTrackerConfiguration(const e2e::HealthTrackerConfiguration& configuration) noexcept
+    {
+        health_tracker_ = e2e::HealthTracker{configuration};
+        reception_timeout_monitor_ = e2e::ReceptionTimeoutMonitor{
+            configuration.enabled ? configuration.reception_timeout : std::chrono::milliseconds{0}};
+        sample_received_since_evaluation_ = false;
+    }
+
     void InjectMock(IProxyEventBase& proxy_event_base_mock)
     {
         proxy_event_base_mock_ = &proxy_event_base_mock;
@@ -198,6 +239,16 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     IProxyEventBase* proxy_event_base_mock_;
 
   private:
+    /// \brief Historical E2E health. Reset on user (re)subscribe, but not when the provider restarts while subscribed,
+    ///        so a constantly breaking channel keeps a bad health.
+    e2e::HealthTracker health_tracker_{e2e::HealthTrackerConfiguration{}};
+
+    /// \brief Turns elapsed reception_timeout periods without new data into neutral slots of #health_tracker_.
+    e2e::ReceptionTimeoutMonitor reception_timeout_monitor_{};
+
+    /// \brief Set by AttachE2EResult() and consumed by EvaluateE2EHealth().
+    bool sample_received_since_evaluation_{false};
+
     /// \brief Expires the #receive_handler_scope_ in case not being called in the context of an EventReceiveHandler
     ///        (because trying to expire the scope in which we are running, would lead to a deadlock)
     void ExpireReceiveHandlerScopeIfNotInHandler();
