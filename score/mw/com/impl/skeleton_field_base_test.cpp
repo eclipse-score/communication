@@ -23,7 +23,9 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include <memory>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -90,6 +92,11 @@ class MyDummyField : public SkeletonFieldBase
     Result<void> RegisterGetHandler() override
     {
         return {};
+    }
+
+    void NotifySetMethodServiceOffered(const bool is_offered) noexcept override
+    {
+        std::ignore = is_offered;
     }
 
     bool was_deferred_update_called_{false};
