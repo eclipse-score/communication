@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2025, 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -240,20 +240,69 @@ TEST_F(FlagFileTest, CreateSearchPathReturnsPathIfAlreadyExists)
     ASSERT_TRUE(filesystem_factory_fake_.GetStandard()
                     .Permissions(flag_file_path1.ParentPath(), kAllPerms, filesystem::PermOptions::kReplace)
                     .has_value());
+    EXPECT_CALL(filesystem_factory_fake_.GetStandard(), Permissions(_, _, _)).Times(0);
 
     const auto path = FlagFile::CreateSearchPath(kEnrichedInstanceIdentifier1, filesystem_);
     ASSERT_TRUE(path.has_value());
     EXPECT_EQ(path.value(), flag_file_path1.ParentPath());
 }
 
-TEST_F(FlagFileTest, CreateSearchPathFailsIfAlreadyExistsWithWrongPermissions)
+TEST_F(FlagFileTest, CreateSearchPathCompletesPermissionsAfterInterruptedCreation)
 {
-    ASSERT_TRUE(filesystem_factory_fake_.GetUtils()
-                    .CreateDirectories(flag_file_path1.ParentPath(), kUserWriteRestRead)
+    const auto search_path = flag_file_path1.ParentPath();
+    ASSERT_TRUE(filesystem_factory_fake_.GetStandard().CreateDirectories(search_path).has_value());
+    const auto incomplete_permissions = filesystem::Perms::kReadWriteExecUser | filesystem::Perms::kReadGroup |
+                                        filesystem::Perms::kExecGroup | filesystem::Perms::kReadOthers |
+                                        filesystem::Perms::kExecOthers;
+    ASSERT_TRUE(filesystem_factory_fake_.GetStandard()
+                    .Permissions(search_path, incomplete_permissions, filesystem::PermOptions::kReplace)
                     .has_value());
+    EXPECT_CALL(filesystem_factory_fake_.GetStandard(),
+                Permissions(search_path, kAllPerms, filesystem::PermOptions::kReplace))
+        .WillOnce(DoDefault());
+    EXPECT_CALL(
+        filesystem_factory_fake_.GetStandard(),
+        Permissions(search_path, kAllPerms, filesystem::PermOptions::kReplace | filesystem::PermOptions::kNoFollow))
+        .WillOnce(InvokeWithoutArgs([this, &search_path]() {
+            // The fake does not implement kNoFollow; the entry above is a directory, not a symlink.
+            return filesystem_factory_fake_.GetStandard().Permissions(
+                search_path, kAllPerms, filesystem::PermOptions::kReplace);
+        }));
+
+    const auto path = FlagFile::CreateSearchPath(kEnrichedInstanceIdentifier1, filesystem_);
+    ASSERT_TRUE(path.has_value());
+    EXPECT_EQ(path.value(), search_path);
+    const auto status = filesystem_factory_fake_.GetStandard().Status(search_path);
+    ASSERT_TRUE(status.has_value());
+    EXPECT_EQ(status->Permissions(), kAllPerms);
+}
+
+TEST_F(FlagFileTest, CreateSearchPathFailsIfCannotCompletePermissions)
+{
+    const auto search_path = flag_file_path1.ParentPath();
+    ASSERT_TRUE(filesystem_factory_fake_.GetUtils().CreateDirectories(search_path, kUserWriteRestRead).has_value());
+    EXPECT_CALL(filesystem_factory_fake_.GetStandard(), Permissions(search_path, kAllPerms, _))
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(Return(MakeUnexpected(filesystem::ErrorCode::kCouldNotSetPermissions)));
 
     const auto path = FlagFile::CreateSearchPath(kEnrichedInstanceIdentifier1, filesystem_);
     ASSERT_FALSE(path.has_value());
+    EXPECT_EQ(path.error(), ComErrc::kBindingFailure);
+    const auto status = filesystem_factory_fake_.GetStandard().Status(search_path);
+    ASSERT_TRUE(status.has_value());
+    EXPECT_EQ(status->Permissions(), kUserWriteRestRead);
+}
+
+TEST_F(FlagFileTest, CreateSearchPathDoesNotChangeExistingRegularFile)
+{
+    const auto search_path = flag_file_path1.ParentPath();
+    ASSERT_TRUE(filesystem_factory_fake_.GetStandard().CreateDirectories(search_path.ParentPath()).has_value());
+    ASSERT_TRUE(filesystem_factory_fake_.GetStreams().Open(search_path, std::ios_base::out).has_value());
+    EXPECT_CALL(filesystem_factory_fake_.GetStandard(), Permissions(search_path, _, _)).Times(0);
+
+    const auto path = FlagFile::CreateSearchPath(kEnrichedInstanceIdentifier1, filesystem_);
+    ASSERT_FALSE(path.has_value());
+    EXPECT_EQ(path.error(), ComErrc::kBindingFailure);
 }
 
 TEST_F(FlagFileTest, CreateSearchPathReturnsErrorIfCannotCreateDirectoryRepeatedly)

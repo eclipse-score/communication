@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2025, 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -250,11 +250,25 @@ auto FlagFile::CreateSearchPath(const EnrichedInstanceIdentifier& enriched_insta
         const Result<filesystem::FileStatus> status = filesystem.standard->Status(path);
         if (status.has_value())
         {
-            if ((status.value().Type() == filesystem::FileType::kDirectory) &&
-                (status.value().Permissions() == ALL_PERMISSIONS))
+            if (status.value().Type() == filesystem::FileType::kDirectory)
             {
-                result = Result<void>{};
-                break;
+                if (status.value().Permissions() == ALL_PERMISSIONS)
+                {
+                    result = Result<void>{};
+                    break;
+                }
+
+                // A creator may have died after mkdir applied its umask but before setting the required permissions.
+                const auto permission_result = filesystem.standard->Permissions(
+                    path, ALL_PERMISSIONS, filesystem::PermOptions::kReplace | filesystem::PermOptions::kNoFollow);
+                if (permission_result.has_value())
+                {
+                    mw::log::LogInfo("lola") << "Completed permissions on existing offer path" << path;
+                    result = Result<void>{};
+                    break;
+                }
+                mw::log::LogError("lola")
+                    << "Failed to complete permissions on offer path" << path << ":" << permission_result.error();
             }
         }
 
