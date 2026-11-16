@@ -213,6 +213,13 @@ auto SkeletonBase::OfferService() -> Result<void>
 
     service_offered_flag_.Set();
 
+    // Notify all registered methods that the service is now offered, so that RegisterHandler() calls on them are
+    // rejected until StopOfferService() has been called.
+    for (auto& method : methods_)
+    {
+        method.second.get().Get().SetServiceOffered(true);
+    }
+
     // Since the service has been successfully offered, we release the offer guards so that they do not call
     // PrepareStopOffer() when they go out of scope.
     binding_offer_guard.Release();
@@ -238,6 +245,10 @@ auto SkeletonBase::StopOfferService() -> void
     {
         StopOfferServiceInServiceDiscovery(instance_id_);
 
+        for (auto& method : methods_)
+        {
+            method.second.get().Get().SetServiceOffered(false);
+        }
         for (auto& event : events_)
         {
             event.second.get().Get().PrepareStopOffer();

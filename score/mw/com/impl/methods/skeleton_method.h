@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
 #define SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
 
+#include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/method_traits_checker.h"
@@ -143,7 +144,14 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     /// - If `ReturnType` is `void` and there are no in arguments:
     ///   `void()`
     ///
-    /// \return score::cpp::blank on success and ComErrc code specified by the binding on failure
+    /// A handler needs to be registered before the service is offered for the first time (i.e. before the first call
+    /// to SkeletonBase::OfferService()). A previously registered handler may only be updated (i.e. replaced by a new
+    /// call to RegisterHandler()) while the service is currently not being offered, e.g. after
+    /// SkeletonBase::StopOfferService() has been called and before the service is offered again.
+    ///
+    /// \return score::cpp::blank on success and ComErrc code specified by the binding on failure. In particular,
+    /// ComErrc::kRegisterHandlerNotAllowedWhileOffered is returned if this method is called while the service is
+    /// currently offered.
     template <typename Callable>
     Result<void> RegisterHandler(Callable&& callback);
 
@@ -206,6 +214,14 @@ template <WithQuality WithQuality, typename Callable>
 Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandlerImpl(Callable&& user_callback)
 {
     AssertMethodCallableIsNotStdBind<FailureMode::kCompileTime, Callable>();
+
+    // RegisterHandler() (and thus RegisterHandlerImpl()) must not be called while the enclosing Skeleton instance is
+    // currently offered. Otherwise, re-registering a handler while a call is in-flight to the "old" handler could
+    // race with the destruction of that "old" handler.
+    if (IsServiceOffered())
+    {
+        return MakeUnexpected(ComErrc::kRegisterHandlerNotAllowedWhileOffered);
+    }
 
     // Since user_callback can be an lvalue reference or an rvalue reference, we ideally would store it as a universal
     // reference in the type_erased_handler. However, in C++17, this is not supported. Instead, we create an callable

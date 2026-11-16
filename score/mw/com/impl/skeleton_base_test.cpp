@@ -373,6 +373,28 @@ TEST_F(SkeletonBaseOfferFixture, SecondOfferServiceCallWorks)
     ASSERT_TRUE(offer_result_2.has_value());
 }
 
+TEST_F(SkeletonBaseOfferFixture, OfferServiceNotifiesRegisteredMethodsThatServiceIsOffered)
+{
+    // Given a constructed Skeleton with a valid identifier and a method registered directly on it
+    CreateMinimalSkeleton(GetInstanceIdentifierWithValidBinding());
+    const std::string method_name{"dummy_method"};
+    SkeletonMethodBase method{method_name, std::make_unique<mock_binding::SkeletonMethod>(), MethodType::kMethod};
+    SkeletonBaseView{*simple_skeleton_}.RegisterMethod(method_name, method.GetReferenceToMoveable());
+
+    // Expecting that the method is not yet offered
+    ASSERT_FALSE(method.IsServiceOffered());
+
+    // Expecting that PrepareOffer gets called on the skeleton binding and the event
+    ExpectMinimalOfferService();
+
+    // When offering a Service
+    const auto offer_result = simple_skeleton_->OfferService();
+
+    // Then no error is returned and the registered method is notified that the service is now offered
+    ASSERT_TRUE(offer_result.has_value());
+    EXPECT_TRUE(method.IsServiceOffered());
+}
+
 TEST_F(SkeletonBaseOfferFixture, OfferServiceFailsIfAllMethodsHaveNotBeenRegistered)
 {
     // Given a constructed Skeleton with a valid identifier with two events and a field registered with the skeleton
@@ -655,6 +677,30 @@ TEST_F(SkeletonBaseStopOfferFixture, PrepareStopOffer)
 
     // When stop offering a Service
     skeleton_->StopOfferService();
+}
+
+TEST_F(SkeletonBaseStopOfferFixture, StopOfferServiceNotifiesRegisteredMethodsThatServiceIsNoLongerOffered)
+{
+    // Given a constructed Skeleton with a valid identifier and a method registered directly on it
+    CreateMinimalSkeleton(GetInstanceIdentifierWithValidBinding());
+    const std::string method_name{"dummy_method"};
+    SkeletonMethodBase method{method_name, std::make_unique<mock_binding::SkeletonMethod>(), MethodType::kMethod};
+    SkeletonBaseView{*simple_skeleton_}.RegisterMethod(method_name, method.GetReferenceToMoveable());
+
+    // Expecting that PrepareOffer and PrepareStopOffer get called on the skeleton binding and the event
+    ExpectMinimalOfferService();
+    ExpectMinimalStopOfferService();
+
+    // When offering a Service
+    const auto offer_result = simple_skeleton_->OfferService();
+    ASSERT_TRUE(offer_result.has_value());
+    ASSERT_TRUE(method.IsServiceOffered());
+
+    // When stop offering the Service
+    simple_skeleton_->StopOfferService();
+
+    // Then the registered method is notified that the service is no longer offered
+    EXPECT_FALSE(method.IsServiceOffered());
 }
 
 TEST_F(SkeletonBaseStopOfferFixture, SecondStopOfferServiceCallWorks)

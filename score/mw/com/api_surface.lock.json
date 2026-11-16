@@ -580,6 +580,12 @@
       "signature": "kPeerIsUnreachable"
     },
     {
+      "name": "kRegisterHandlerNotAllowedWhileOffered",
+      "qualified_name": "score::mw::com::ComErrc::kRegisterHandlerNotAllowedWhileOffered",
+      "kind": "enum_value",
+      "signature": "kRegisterHandlerNotAllowedWhileOffered"
+    },
+    {
       "name": "kSampleAllocationFailure",
       "qualified_name": "score::mw::com::ComErrc::kSampleAllocationFailure",
       "kind": "enum_value",
