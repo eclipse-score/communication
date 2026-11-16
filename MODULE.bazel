@@ -390,22 +390,20 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 # (@codeql_coding_standards_compiled). These two must always come from the same
 # release, so their version is defined once here and both derive their download
 # URL from it.
-CODING_STANDARDS_VERSION = "2.62.0"
+CODING_STANDARDS_VERSION = "2.63.0"
 
 # The version of this tool needs to be deduced by the mentioned compatible version of the codeql_coding_standards release!
 http_archive(
     name = "codeql_bundle",
     build_file = "//third_party/codeql:codeql.BUILD",
-    sha256 = "a94f674bb3c23ea5e9a2ad06b64847dd0277b15014d2517ecd9c41c88e6caa65",
-    url = "https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.21.4/codeql-bundle-linux64.tar.gz",
+    sha256 = "0e3045fecbc325ebca368fc5536b04dc4f9b0cebf83bc412e4c8a78bc0a9fc43",
+    url = "https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.23.9/codeql-bundle-linux64.tar.gz",
 )
 
 http_archive(
     name = "codeql_coding_standards",
     build_file = "//third_party/codeql:codeql_coding_standards.BUILD",
-    patch_args = ["-p1"],
-    patches = ["//third_party/codeql:codeql_coding_standards_misra.patch"],
-    sha256 = "2aa4f4c3efd87eb24fe33bbef7f982b616a6653ae4f2a67ece268ef50cdd1ff3",
+    sha256 = "e45361023f305bd4065526dd430c2619f7f190fda9a324dafbfb070e8c3c146b",
     strip_prefix = "codeql-coding-standards-{version}".format(version = CODING_STANDARDS_VERSION),
     urls = ["https://github.com/github/codeql-coding-standards/archive/refs/tags/v{version}.tar.gz".format(version = CODING_STANDARDS_VERSION)],
 )
@@ -422,7 +420,7 @@ codeql_release_pack = use_repo_rule(
 codeql_release_pack(
     name = "codeql_coding_standards_compiled",
     pack_tarball = "misra-cpp-coding-standards.tgz",
-    sha256 = "775e34cb36e522c30f3c4381c0758a7fbe29e6c9a5428eb6c9ad67ebd145cb0b",
+    sha256 = "897f8bfb5a13683ad611fcdd07e4cd2cd96ab3973253c439ea6fc8882b32c8cc",
     urls = ["https://github.com/github/codeql-coding-standards/releases/download/v{version}/coding-standards-codeql-packs.zip".format(version = CODING_STANDARDS_VERSION)],
 )
 
