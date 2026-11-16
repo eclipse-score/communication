@@ -222,7 +222,13 @@ FlagFile::FlagFile(FlagFile&& other) noexcept
 
 auto FlagFile::Exists(const EnrichedInstanceIdentifier& enriched_instance_identifier) -> bool
 {
-    return !GetMatchingFlagFilePaths(enriched_instance_identifier).empty();
+    return !GetMatchingPaths(enriched_instance_identifier).empty();
+}
+
+auto FlagFile::GetMatchingPaths(const EnrichedInstanceIdentifier& enriched_instance_identifier)
+    -> std::vector<filesystem::Path>
+{
+    return GetMatchingFlagFilePaths(enriched_instance_identifier);
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
