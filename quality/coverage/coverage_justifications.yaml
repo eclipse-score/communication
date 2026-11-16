@@ -175,7 +175,15 @@ justifications:
   - id: sample-reference-tracker-available-samples-assert
     category: defensive_programming
     platforms: [linux, qnx]
-    reason: >-
+    reason: >
       Available_samples_ starts at max_num_samples_ and every deallocation only gives back
       samples that were previously taken out, so it can never grow above max_num_samples_.
       The assert-failure path is therefore unreachable.
+
+  - id: proxy-field-dispatch-nonnull-assert
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >-
+      In the production ProxyFieldImpl ctor, each Make*IfEnabled helper whose tag is in the pack returns the result
+      of std::make_unique, which never returns nullptr (it throws std::bad_alloc on allocation failure). So every
+      dispatch checked by these asserts is always non-null and the assert-failure paths are unreachable.
