@@ -78,6 +78,11 @@ build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=overloaded-virtua
 build --per_file_copt=external/.*flatbuffers.*@-Wno-error=deprecated
 build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=deprecated
 
+# score_baselibs (v0.2.18 number.cpp compares floats with ==)
+# TODO: Remove once fixed in baselibs: https://github.com/eclipse-score/baselibs/issues/828
+build --per_file_copt=external/.*score_baselibs.*@-Wno-error=float-equal
+build --host_per_file_copt=external/.*score_baselibs.*@-Wno-error=float-equal
+
 # googletest
 build --per_file_copt=external/.*googletest.*@-Wno-error=switch-enum
 build --host_per_file_copt=external/.*googletest.*@-Wno-error=switch-enum
