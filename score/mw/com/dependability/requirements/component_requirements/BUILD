@@ -43,7 +43,7 @@ component_requirements(
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
     deps = [
-        "//score/mw/com/dependability/assumed_system:assumed_system_requirements",
+        "//score/dependability/assumed_system:assumed_system_requirements",
         "//score/mw/com/dependability/requirements/feature_requirements:feature_requirements_ipc",
     ],
 )

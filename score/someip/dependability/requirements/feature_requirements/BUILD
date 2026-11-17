@@ -17,10 +17,23 @@ load(
 )
 
 feature_requirements(
-    name = "feature_requirements",
-    srcs = ["feature_requirements.trlc"],
+    name = "feature_requirements_routing_module",
+    srcs = ["feature_requirements_routing_module.trlc"],
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = [
         "//score/someip/dependability:__subpackages__",
+        "//score/someip/routing_module:__subpackages__",
     ],
-    deps = ["//score/mw/com/dependability/assumed_system:assumed_system_requirements"],
+    deps = ["//score/dependability/assumed_system:assumed_system_requirements"],
+)
+
+feature_requirements(
+    name = "feature_requirements_sd_daemon",
+    srcs = ["feature_requirements_sd_daemon.trlc"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//score/someip/dependability:__subpackages__",
+        "//score/someip/sd_daemon:__subpackages__",
+    ],
+    deps = ["//score/dependability/assumed_system:assumed_system_requirements"],
 )

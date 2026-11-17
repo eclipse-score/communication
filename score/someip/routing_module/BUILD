@@ -11,18 +11,35 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "unit")
+
+component(
+    name = "routing_module",
+    components = [
+        ":event_handler",
+        ":routing_manager",
+    ],
+    design_name = "RoutingModule",
+    requirements = [
+        "//score/someip/routing_module/requirements/component_requirements:component_requirements",
+        "//score/someip/dependability/requirements/feature_requirements:feature_requirements_routing_module",
+    ],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    visibility = ["//score/someip/dependability:__pkg__"],
+)
 
 unit(
     name = "event_handler",
     design_name = "EventHandler",
     maturity = "development",
     scope = [],
+    test_specs = [],
     tests = [],
     unit_design = [],
     visibility = ["//score/someip/dependability:__subpackages__"],
     implementation = [],
-    # test_specs = [], introduced in score-tooling 3.0.2
 )
 
 unit(
@@ -30,9 +47,9 @@ unit(
     design_name = "RoutingManager",
     maturity = "development",
     scope = [],
+    test_specs = [],
     tests = [],
     unit_design = [],
     visibility = ["//score/someip/dependability:__subpackages__"],
     implementation = [],
-    # test_specs = [], introduced in score-tooling 3.0.2
 )

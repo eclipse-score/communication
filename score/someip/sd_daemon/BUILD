@@ -11,18 +11,36 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "unit")
+
+component(
+    name = "sd_daemon",
+    components = [
+        ":sd_facade",
+        ":sd_only_router",
+        ":service_manager",
+    ],
+    design_name = "SDDaemon",
+    requirements = [
+        "//score/someip/sd_daemon/requirements/component_requirements:component_requirements",
+        "//score/someip/dependability/requirements/feature_requirements:feature_requirements_sd_daemon",
+    ],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    visibility = ["//score/someip/dependability:__pkg__"],
+)
 
 unit(
     name = "sd_facade",
     design_name = "SDFacade",
     maturity = "development",
     scope = [],
+    test_specs = [],
     tests = [],
     unit_design = [],
     visibility = ["//score/someip/dependability:__subpackages__"],
     implementation = [],
-    # test_specs = [], introduced in score-tooling 3.0.2
 )
 
 unit(
@@ -30,11 +48,11 @@ unit(
     design_name = "ServiceManager",
     maturity = "development",
     scope = [],
+    test_specs = [],
     tests = [],
     unit_design = [],
     visibility = ["//score/someip/dependability:__subpackages__"],
     implementation = [],
-    # test_specs = [], introduced in score-tooling 3.0.2
 )
 
 unit(
@@ -42,9 +60,9 @@ unit(
     design_name = "SDOnlyRouter",
     maturity = "development",
     scope = [],
+    test_specs = [],
     tests = [],
     unit_design = [],
     visibility = ["//score/someip/dependability:__subpackages__"],
     implementation = [],
-    # test_specs = [], introduced in score-tooling 3.0.2
 )

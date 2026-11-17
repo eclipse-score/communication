@@ -19,8 +19,9 @@ load(
 component_requirements(
     name = "component_requirements",
     srcs = ["component_requirements.trlc"],
-    visibility = ["//score/someip/dependability:__subpackages__"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//score/someip/routing_module:__pkg__"],
     deps = [
-        "//score/someip/dependability/requirements/routing_module/feature_requirements",
+        "//score/someip/dependability/requirements/feature_requirements:feature_requirements_routing_module",
     ],
 )

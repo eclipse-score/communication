@@ -13,12 +13,15 @@
 
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
-    "feature_requirements",
+    "component_requirements",
 )
 
-feature_requirements(
-    name = "feature_requirements",
-    srcs = ["feature_requirements.trlc"],
-    visibility = ["//score/someip/dependability:__subpackages__"],
-    deps = ["//score/mw/com/dependability/assumed_system:assumed_system_requirements"],
+component_requirements(
+    name = "component_requirements",
+    srcs = ["component_requirements.trlc"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//score/someip/sd_daemon:__pkg__"],
+    deps = [
+        "//score/someip/dependability/requirements/feature_requirements:feature_requirements_sd_daemon",
+    ],
 )
