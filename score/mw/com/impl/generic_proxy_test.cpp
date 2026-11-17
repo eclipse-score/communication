@@ -78,7 +78,6 @@ using ::testing::AtMost;
 using ::testing::ByMove;
 using ::testing::InvokeWithoutArgs;
 using ::testing::Return;
-using ::testing::ReturnPointee;
 using ::testing::ReturnRef;
 using ::testing::StrictMock;
 
@@ -501,14 +500,12 @@ TEST_F(GenericProxyFixture, DestroyingGenericProxyUnsubscribesSubscribedEvents)
     CreateAHandle({kEventName1});
 
     // and given a GenericProxyEvent binding which reports being subscribed once Subscribe is called
-    SubscriptionState subscription_state{SubscriptionState::kNotSubscribed};
     auto event_binding = std::make_unique<mock_binding::GenericProxyEvent>();
     auto& event_binding_mock = *event_binding;
-    ON_CALL(event_binding_mock, GetSubscriptionState()).WillByDefault(ReturnPointee(&subscription_state));
-    ON_CALL(event_binding_mock, Subscribe(_)).WillByDefault([&subscription_state](std::size_t) {
-        subscription_state = SubscriptionState::kSubscribed;
-        return score::Result<void>{};
-    });
+    EXPECT_CALL(event_binding_mock, GetSubscriptionState())
+        .WillOnce(Return(SubscriptionState::kNotSubscribed))
+        .WillRepeatedly(Return(SubscriptionState::kSubscribed));
+    ON_CALL(event_binding_mock, Subscribe(_)).WillByDefault(Return(score::Result<void>{}));
     EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_,
                 Create(_, _, std::string_view{kEventName1}, ServiceElementType::EVENT))
         .WillOnce(Return(ByMove(std::move(event_binding))));

@@ -37,8 +37,7 @@ def consumer(target, **kwargs):
 def test_unsubscribe_on_destruction_different_processes_test(target):
     """Test that a GenericProxy unsubscribes its events on destruction, provider and consumer in different processes.
 
-    The first process creates a Skeleton instance with an event, offers it and sends samples
-    once the consumer has subscribed.
+    The first process creates a Skeleton instance with an event, offers it and sends samples.
 
     The second process creates a GenericProxy, subscribes to the event, receives the samples
     and then destroys the GenericProxy without calling Unsubscribe(). Both processes must exit

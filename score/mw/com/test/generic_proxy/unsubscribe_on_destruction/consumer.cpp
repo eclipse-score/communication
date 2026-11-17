@@ -16,24 +16,19 @@
 #include "score/mw/com/test/common_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/common_test_resources/proxy_container.h"
 #include "score/mw/com/test/common_test_resources/proxy_event_receiver.h"
+#include "score/mw/com/test/common_test_resources/proxy_event_state_change_notifier.h"
 #include "score/mw/com/test/generic_proxy/unsubscribe_on_destruction/test_event_datatype.h"
+#include "score/mw/com/test/generic_proxy/unsubscribe_on_destruction/test_parameters.h"
 #include "score/mw/com/types.h"
 
 #include <score/stop_token.hpp>
 
-#include <cstdint>
-#include <cstdlib>
 #include <iostream>
 
 namespace score::mw::com::test
 {
 namespace
 {
-
-const std::string kInterprocessNotificationShmPath{"/generic_proxy_unsub_on_destruction_notification"};
-
-const InstanceSpecifier kInstanceSpecifier =
-    InstanceSpecifier::Create(std::string{"test/generic_proxy/unsubscribe_on_destruction/TestEvents"}).value();
 
 GenericProxyEvent& GetTestEvent(GenericProxy& generic_proxy)
 {
@@ -71,41 +66,28 @@ void run_consumer(const score::cpp::stop_token& stop_token)
         proxy_container.CreateProxy(kInstanceSpecifier, "unsubscribe_on_destruction");
         auto& test_event = GetTestEvent(proxy_container.GetProxy());
 
-        // Step 2. Register receive handler
+        // Step 2. Register receive handler and subscription state change handler
         std::cout << "\nConsumer: Step 2" << std::endl;
         ProxyEventReceiver proxy_event_receiver{test_event};
+        ProxyEventStateChangeNotifier subscription_notifier{test_event};
 
-        // Step 3. Subscribe to event and notify provider
+        // Step 3. Subscribe to event and wait until the subscription is established
         std::cout << "\nConsumer: Step 3" << std::endl;
-        const auto subscribe_result = test_event.Subscribe(kNumberOfSamples);
+        const auto subscribe_result = test_event.Subscribe(kExpectedSamples.size());
         if (!subscribe_result.has_value())
         {
             FailTest("Consumer: Subscribe failed: ", subscribe_result.error());
         }
-        if (test_event.GetSubscriptionState() != SubscriptionState::kSubscribed)
+        if (!subscription_notifier.WaitForStateChange(stop_token, SubscriptionState::kSubscribed))
         {
-            FailTest("Consumer: Event is not in state kSubscribed after Subscribe");
+            FailTest("Consumer: Event subscription did not reach kSubscribed");
         }
-        process_synchronizer_result->Notify();
 
         // Step 4. Receive samples
         std::cout << "\nConsumer: Step 4" << std::endl;
-        std::uint32_t expected_value{1U};
-        auto check_sample = [&expected_value](SamplePtr<void> sample) {
-            if (!sample)
-            {
-                FailTest("Consumer: Received null sample");
-            }
-            const auto received_value = *static_cast<const std::uint32_t*>(sample.get());
-            if (received_value != expected_value)
-            {
-                FailTest("Consumer: Received value ", received_value, " but expected ", expected_value);
-            }
-            ++expected_value;
-        };
-        if (!proxy_event_receiver.WaitForSamples(stop_token, kNumberOfSamples, check_sample))
+        if (!proxy_event_receiver.WaitForSamples(stop_token, kExpectedSamples))
         {
-            FailTest("Consumer: WaitForSamples was interrupted by stop_token");
+            FailTest("Consumer: Did not receive all expected samples");
         }
 
         // Step 5. Destroy GenericProxy without unsubscribing

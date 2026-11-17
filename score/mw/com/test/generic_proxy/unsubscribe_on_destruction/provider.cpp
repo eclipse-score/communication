@@ -16,12 +16,11 @@
 #include "score/mw/com/test/common_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/common_test_resources/skeleton_container.h"
 #include "score/mw/com/test/generic_proxy/unsubscribe_on_destruction/test_event_datatype.h"
+#include "score/mw/com/test/generic_proxy/unsubscribe_on_destruction/test_parameters.h"
 #include "score/mw/com/types.h"
 
 #include <score/stop_token.hpp>
 
-#include <cstdint>
-#include <cstdlib>
 #include <iostream>
 
 namespace score::mw::com::test
@@ -29,14 +28,9 @@ namespace score::mw::com::test
 namespace
 {
 
-const std::string kInterprocessNotificationShmPath{"/generic_proxy_unsub_on_destruction_notification"};
-
-const InstanceSpecifier kInstanceSpecifier =
-    InstanceSpecifier::Create(std::string{"test/generic_proxy/unsubscribe_on_destruction/TestEvents"}).value();
-
 void SendSamples(TestEventSkeleton& skeleton)
 {
-    for (std::uint32_t value = 1U; value <= kNumberOfSamples; ++value)
+    for (const auto value : kExpectedSamples)
     {
         const auto send_result = skeleton.test_event.Send(value);
         if (!send_result.has_value())
@@ -44,7 +38,7 @@ void SendSamples(TestEventSkeleton& skeleton)
             FailTest("Provider: Send failed: ", send_result.error());
         }
     }
-    std::cout << "Provider: Sent " << kNumberOfSamples << " samples" << std::endl;
+    std::cout << "Provider: Sent " << kExpectedSamples.size() << " samples" << std::endl;
 }
 
 }  // namespace
@@ -67,22 +61,12 @@ void run_provider(const score::cpp::stop_token& stop_token)
     std::cout << "\nProvider: Step 2" << std::endl;
     skeleton_container.OfferService("unsubscribe_on_destruction");
 
-    // Step 3. Wait for consumer to subscribe
+    // Step 3. Send samples. The consumer receives them even if it subscribes only afterwards.
     std::cout << "\nProvider: Step 3" << std::endl;
-    if (!process_synchronizer_result->WaitWithAbort(stop_token))
-    {
-        FailTest(
-            "GenericProxy unsubscribe_on_destruction provider failed: WaitForConsumerToSubscribe was stopped by "
-            "stop_token instead of notification");
-    }
-    process_synchronizer_result->Reset();
-
-    // Step 4. Send samples
-    std::cout << "\nProvider: Step 4" << std::endl;
     SendSamples(skeleton);
 
-    // Step 5. Wait for consumer to destroy its GenericProxy and finish
-    std::cout << "\nProvider: Step 5" << std::endl;
+    // Step 4. Wait for consumer to destroy its GenericProxy and finish
+    std::cout << "\nProvider: Step 4" << std::endl;
     if (!process_synchronizer_result->WaitWithAbort(stop_token))
     {
         FailTest(

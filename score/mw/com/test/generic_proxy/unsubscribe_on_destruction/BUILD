@@ -32,16 +32,26 @@ cc_library(
 )
 
 cc_library(
+    name = "test_parameters",
+    hdrs = ["test_parameters.h"],
+    deps = [
+        "//score/mw/com",
+    ],
+)
+
+cc_library(
     name = "consumer",
     srcs = ["consumer.cpp"],
     hdrs = ["consumer.h"],
     implementation_deps = [
         ":test_event_datatype",
+        ":test_parameters",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:fail_test",
         "//score/mw/com/test/common_test_resources:process_synchronizer",
         "//score/mw/com/test/common_test_resources:proxy_container",
         "//score/mw/com/test/common_test_resources:proxy_event_receiver",
+        "//score/mw/com/test/common_test_resources:proxy_event_state_change_notifier",
     ],
     deps = [
         "@score_baselibs//score/language/futurecpp",
@@ -54,6 +64,7 @@ cc_library(
     hdrs = ["provider.h"],
     implementation_deps = [
         ":test_event_datatype",
+        ":test_parameters",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:fail_test",
         "//score/mw/com/test/common_test_resources:process_synchronizer",

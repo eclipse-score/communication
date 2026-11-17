@@ -21,7 +21,9 @@
 
 #include <functional>
 #include <iostream>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace score::mw::com::test
 {
@@ -111,6 +113,9 @@ class ProxyEventReceiver
 
     /// \brief Wait for a certain set of events to be received in the expected order.
     ///
+    /// Also works for a GenericProxyEvent, whose samples are type-erased (SamplePtr<void>). In that case, each sample
+    /// is interpreted as SampleType, i.e. the type of the expected samples.
+    ///
     /// \return true if the expected samples were received, false if the wait was interrupted by the
     /// stop_token.
     template <typename SampleType>
@@ -121,7 +126,7 @@ class ProxyEventReceiver
         std::size_t sample_idx{0U};
         auto get_new_samples_callback =
             [&expected_samples, &sample_idx, number_of_expected_samples](const auto& sample_ptr) {
-                const auto& received_value = *sample_ptr;
+                const auto& received_value = ProxyEventReceiver::template ReadSampleValue<SampleType>(sample_ptr);
                 if (sample_idx >= expected_samples.size())
                 {
                     FailTest("ProxyEventReceiver: Received more samples than expected. Expected: ",
@@ -145,6 +150,22 @@ class ProxyEventReceiver
     }
 
   private:
+    /// \brief Returns a reference to the value referenced by sample_ptr. A type-erased sample (as delivered by a
+    /// GenericProxyEvent) is interpreted as SampleType. A typed sample is returned as is.
+    template <typename SampleType, typename SamplePtrType>
+    static decltype(auto) ReadSampleValue(const SamplePtrType& sample_ptr)
+    {
+        using ElementType = typename SamplePtrType::element_type;
+        if constexpr (std::is_void_v<ElementType>)
+        {
+            return *static_cast<const SampleType*>(sample_ptr.get());
+        }
+        else
+        {
+            return *sample_ptr;
+        }
+    }
+
     score::concurrency::Notification received_sample_notification_;
     ProxyOrFieldType& proxy_event_or_field_;
 };

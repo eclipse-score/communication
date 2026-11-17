@@ -15,7 +15,6 @@
 
 #include "score/mw/com/types.h"
 
-#include <cstddef>
 #include <cstdint>
 #include <string_view>
 
@@ -23,9 +22,6 @@ namespace score::mw::com::test
 {
 
 constexpr std::string_view kTestEventName{"test_event"};
-
-/// \brief Number of samples the provider sends and the consumer waits for before destroying its GenericProxy
-constexpr std::size_t kNumberOfSamples{5U};
 
 /// \brief Test interface template following the mw::com traits pattern
 /// \tparam T Either ProxyTrait or SkeletonTrait

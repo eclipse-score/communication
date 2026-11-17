@@ -27,7 +27,7 @@ def test_unsubscribe_on_destruction_same_process_test(target):
     """Test that a GenericProxy unsubscribes its events on destruction, provider and consumer in the same process.
 
     The test starts a single process with two threads. The first thread creates a Skeleton
-    instance with an event, offers it and sends samples once the consumer has subscribed.
+    instance with an event, offers it and sends samples.
     The second thread creates a GenericProxy, subscribes to the event, receives the samples
     and then destroys the GenericProxy without calling Unsubscribe(). The process must exit
     successfully, i.e. the GenericProxy has to clean up its subscription on destruction.
