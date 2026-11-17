@@ -13,6 +13,7 @@
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
     "architectural_design",
+    "component",
     "dependable_element",
     "unit_design",
 )
@@ -34,16 +35,29 @@ architectural_design(
     visibility = ["//score/memory/shared/dependability:__subpackages__"],
 )
 
-# Step 0 (tutorial) setup: requirements and assumptions_of_use are filled in
-# by later stories.
+# Single component carrying the component requirements until the architecture phase defines the real split.
+component(
+    name = "component_memory_shared",
+    requirements = [
+        "//score/memory/shared/dependability/requirements:component_requirements",
+        "//score/memory/shared/dependability/requirements:feature_requirements",
+    ],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+# Step 0 (tutorial) setup: assumptions_of_use are filled in by later stories.
 dependable_element(
     name = "dependable_element_memory_shared",
     architectural_design = [":memory_shared_architectural_design"],
-    components = [],
+    components = [":component_memory_shared"],
     dependability_analysis = ["//score/memory/shared/dependability/safety_analysis:memory_shared_dependability_analysis"],
     integrity_level = "B",
     maturity = "development",
-    requirements = [],
+    requirements = [
+        "//score/memory/shared/dependability/requirements:feature_requirements",
+        "//score/memory/shared/dependability/assumed_system:assumed_system_requirements",
+    ],
     tags = ["manual"],
     target_compatible_with = ["@platforms//os:linux"],
     tests = [],
