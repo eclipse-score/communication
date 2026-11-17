@@ -30,7 +30,7 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = "//score/mw/com/test/move_semantics/skeleton_method:main_consumer_and_provider-pkg",
-    # Disabled for thread sanitizer because of detected race (https://github.com/eclipse-score/communication/issues/1636)
+    # FIXME: Disabled for thread sanitizer because of detected race (https://github.com/eclipse-score/communication/issues/1636)
     target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )
 
@@ -50,7 +50,7 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = "//score/mw/com/test/move_semantics/skeleton_method:main_consumer_and_provider-pkg",
-    # Disabled for thread sanitizer because of detected race (https://github.com/eclipse-score/communication/issues/1636)
+    # FIXME: Disabled for thread sanitizer because of detected race (https://github.com/eclipse-score/communication/issues/1636)
     target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )
 
