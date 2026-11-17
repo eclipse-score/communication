@@ -1,0 +1,52 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+@startuml SomeIp_StaticDesign
+
+package someip <<SEooC>> {
+
+  component SDControlProtocol <<unit>>
+  component RouterControlProtocol <<unit>>
+
+
+  interface sd_protocol
+  interface router_control_protocol
+
+  RouterControlProtocol -u- router_control_protocol
+  SDControlProtocol -d- sd_protocol
+
+  component SDDaemon <<component>> {
+    component ServiceManager <<unit>>
+    component SDFacade <<unit>>
+    component SDOnlyRouter <<unit>>
+
+    interface OnMessage
+    interface ServiceRouterApi
+
+    SDFacade --( OnMessage
+    ServiceManager -u- OnMessage
+    SDFacade --( ServiceRouterApi
+    ServiceManager -l-( ServiceRouterApi
+    SDOnlyRouter -r- ServiceRouterApi
+    SDOnlyRouter --( router_control_protocol
+    SDFacade -l-( sd_protocol
+  }
+
+  component RoutingModule <<component>> {
+    component EventHandler <<unit>>
+    component RoutingManager <<unit>>
+
+    RoutingManager --( router_control_protocol
+  }
+}
+
+@enduml

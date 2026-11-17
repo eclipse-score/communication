@@ -1,0 +1,45 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package RoutingModule
+
+import ScoreReq
+import Communication
+
+ScoreReq.FeatReq FEAT_SomeipNotificationDataExchange {
+    description = "The platform shall send and receive SOME/IP event notifications between the network and local applications without modifying their payload."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ Communication.ASR_ExternalCommunicationSomeip@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_SomeipDiscoverySeparation {
+    description = "The platform shall handle SOME/IP service discovery in a separate component from the one that forwards SOME/IP event notifications."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ Communication.ASR_ExternalCommunicationSomeip@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_SomeipRoutingLifecycle {
+    description = "The platform shall forward notifications of a SOME/IP event to a consumer only while the consumer is subscribed to that event and the service instance providing the event is offered."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ Communication.ASR_ExternalCommunicationSomeip@1 ]
+    note = "A consumer is a local application subscribed to an event of a remote service, or a remote endpoint subscribed to an event of a local service. Offers and subscriptions are managed by SOME/IP service discovery."
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_SomeipPayloadCapacity {
+    description = "The platform shall support SOME/IP event-notification payloads up to the maximum capacity specified for each deployment."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ Communication.ASR_ExternalCommunicationSomeip@1 ]
+    version = 1
+}
