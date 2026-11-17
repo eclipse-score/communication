@@ -15,6 +15,7 @@
 namespace score::mw::com::impl::lola
 {
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 std::string MessageForSubscriptionState(const SubscriptionStateMachineState& state) noexcept
 {
     using State = SubscriptionStateMachineState;

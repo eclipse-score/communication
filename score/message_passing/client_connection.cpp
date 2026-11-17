@@ -35,6 +35,7 @@ constexpr std::int32_t kConnectRetryMsMax = 5000;
 constexpr std::chrono::milliseconds kConnectIpcWarningDelay{20};
 }  // namespace
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 ClientConnection::ClientConnection(std::shared_ptr<ISharedResourceEngine> engine,
                                    const ServiceProtocolConfig& protocol_config,
                                    const IClientFactory::ClientConfig& client_config) noexcept

@@ -65,6 +65,7 @@ auto ServiceIdentifierType::ToString() const noexcept -> std::string_view
     return serviceTypeName_;
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 auto ServiceIdentifierType::Serialize() const noexcept -> score::json::Object
 {
     json::Object json_object{};

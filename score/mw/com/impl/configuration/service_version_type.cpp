@@ -59,6 +59,7 @@ auto ServiceVersionType::ToString() const noexcept -> std::string_view
     return serialized_string_;
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 auto ServiceVersionType::Serialize() const noexcept -> score::json::Object
 {
     json::Object json_object{};

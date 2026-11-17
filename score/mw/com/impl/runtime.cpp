@@ -287,6 +287,7 @@ std::vector<InstanceIdentifier> Runtime::resolve(const InstanceSpecifier& specif
     return result;
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 Result<void> Runtime::MergeAdditionalConfiguration(const Configuration& additional_configuration) noexcept
 {
     const auto merge_result = configuration_.MergeServiceEntries(std::move(additional_configuration));

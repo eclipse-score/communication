@@ -56,6 +56,7 @@ LolaServiceInstanceId::LolaServiceInstanceId(const score::json::Object& json_obj
     }
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 score::json::Object LolaServiceInstanceId::Serialize() const noexcept
 {
     score::json::Object json_object{};

@@ -27,6 +27,7 @@
 namespace score::message_passing::detail
 {
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 QnxDispatchServer::ServerConnection::ServerConnection(ClientIdentity client_identity,
                                                       const QnxDispatchServer& server) noexcept
     : IServerConnection{},
@@ -146,6 +147,7 @@ void QnxDispatchServer::ServerConnection::RequestDisconnect() noexcept
 // guaranteeing the variant contains the correct type. No std::bad_variant_access can be thrown.
 // The exception handling rule is satisfied as no actual exception can occur in this context.
 // coverity[autosar_cpp14_a15_5_3_violation]
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 bool QnxDispatchServer::ServerConnection::ProcessInput(const std::uint8_t code,
                                                        const score::cpp::span<const std::uint8_t> message) noexcept
 {
@@ -279,6 +281,7 @@ void QnxDispatchServer::ServerConnection::ProcessDisconnect() noexcept
 // The exception handling rule is satisfied as no actual exception can occur in this context.
 // coverity[autosar_cpp14_a15_5_1_violation]
 // coverity[autosar_cpp14_a15_5_3_violation]
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 QnxDispatchServer::ServerConnection::~ServerConnection() noexcept
 {
     auto& server = GetQnxDispatchServer();
@@ -300,6 +303,7 @@ QnxDispatchServer::ServerConnection::~ServerConnection() noexcept
     notify_pool_.clear();
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 QnxDispatchServer::QnxDispatchServer(std::shared_ptr<QnxDispatchEngine> engine,
                                      const ServiceProtocolConfig& protocol_config,
                                      const IServerFactory::ServerConfig& server_config) noexcept

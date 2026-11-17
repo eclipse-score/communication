@@ -48,6 +48,7 @@ std::string_view GetOrInsertStringInSet(const std::string_view key,
     return *insert_result.first;
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 void InsertTracePointIntoMap(
     const TracePointKey& trace_point_key,
     InstanceSpecifierView instance_specifier,
@@ -95,6 +96,7 @@ void AddTracePointToMap(std::string_view service_type,
 }
 
 template <typename TracePointType>
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 bool IsTracePointEnabledInMap(
     std::string_view service_type,
     std::string_view service_element_name,

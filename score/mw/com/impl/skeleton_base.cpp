@@ -101,6 +101,7 @@ SkeletonBase::SkeletonBase(std::unique_ptr<SkeletonBinding> skeleton_binding, In
         "Skeleton binding should be checked in SkeletonWrapperClass::Create() before constructing the SkeletonBase.");
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 score::Result<std::vector<utils::ScopeExit<>>> SkeletonBase::OfferServiceEvents() const noexcept
 {
     std::vector<utils::ScopeExit<>> offer_guards{};
@@ -123,6 +124,7 @@ score::Result<std::vector<utils::ScopeExit<>>> SkeletonBase::OfferServiceEvents(
     return {std::move(offer_guards)};
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 score::Result<std::vector<utils::ScopeExit<>>> SkeletonBase::OfferServiceFields() const noexcept
 {
     std::vector<utils::ScopeExit<>> offer_guards{};

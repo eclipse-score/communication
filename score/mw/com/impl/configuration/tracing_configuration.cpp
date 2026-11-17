@@ -67,6 +67,7 @@ void TracingConfiguration::SetTracingTraceFilterConfigPath(std::string trace_fil
     tracing_config_.trace_filter_config_path = std::move(trace_filter_config_path);
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 void TracingConfiguration::SetServiceElementTracingEnabled(tracing::ServiceElementIdentifier service_element_identifier,
                                                            InstanceSpecifier instance_specifier) noexcept
 {

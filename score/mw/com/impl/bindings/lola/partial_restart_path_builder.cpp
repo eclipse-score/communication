@@ -60,6 +60,7 @@ void EmitServiceInstanceUsageMarkerFileName(std::ostream& out,
 
 }  // namespace
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 std::string PartialRestartPathBuilder::GetServiceInstanceExistenceMarkerFilePath(
     const LolaServiceInstanceId::InstanceId instance_id) const noexcept
 {
@@ -69,6 +70,7 @@ std::string PartialRestartPathBuilder::GetServiceInstanceExistenceMarkerFilePath
                           });
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 std::string PartialRestartPathBuilder::GetServiceInstanceUsageMarkerFilePath(
     const LolaServiceInstanceId::InstanceId instance_id) const noexcept
 {
@@ -78,6 +80,7 @@ std::string PartialRestartPathBuilder::GetServiceInstanceUsageMarkerFilePath(
                           });
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 std::string PartialRestartPathBuilder::GetLolaPartialRestartDirectoryPath() const noexcept
 {
     return std::string{kTmpPathPrefix} + std::string{kLoLaDir} + std::string{kPartialRestartDir};

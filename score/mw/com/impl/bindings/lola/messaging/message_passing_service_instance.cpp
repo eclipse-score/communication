@@ -209,6 +209,7 @@ bool IsMethodErrorRecoverable(const score::result::Error error)
 
 }  // namespace
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 MessagePassingServiceInstance::MessagePassingServiceInstance(
     const ClientQualityType asil_level,
     const AsilSpecificCfg& /*config*/,
@@ -884,6 +885,7 @@ Result<void> MessagePassingServiceInstance::CallServiceMethodRemotely(
 // This is a false positive: .at() could throw if the index is outside of the range of the container but the function
 // CopyNodeIdentifiers will only return a value which is in range of the array. Otherwise CopyNodeIdentifiers will break
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 void MessagePassingServiceInstance::NotifyEventRemote(const ElementFqId event_id) noexcept
 {
     NodeIdTmpBufferType nodeIdentifiersTmp;
@@ -1049,6 +1051,7 @@ void MessagePassingServiceInstance::NotifyEvent(const ElementFqId event_id) noex
     }
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 IMessagePassingService::HandlerRegistrationNoType MessagePassingServiceInstance::RegisterEventNotification(
     const ElementFqId event_id,
     std::weak_ptr<ScopedEventReceiveHandler> callback,
@@ -1477,6 +1480,7 @@ void MessagePassingServiceInstance::SendRegisterEventNotificationMessage(const E
     }
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 void MessagePassingServiceInstance::RegisterEventNotificationExistenceChangedCallback(
     const ElementFqId event_id,
     IMessagePassingService::HandlerStatusChangeCallback callback) noexcept

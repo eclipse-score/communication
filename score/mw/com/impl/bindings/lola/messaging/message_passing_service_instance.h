@@ -275,6 +275,7 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     // checked before accessing the dest_buffer that the function will break as soon as the index is equal to the
     // buffersize. So an access out of the range and consequently a call to std::terminate() is not possible.
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+    // Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
     static std::pair<std::uint32_t, bool> CopyNodeIdentifiers(ElementFqId event_id,
                                                               MapType& src_map,
                                                               std::shared_mutex& src_map_mutex,

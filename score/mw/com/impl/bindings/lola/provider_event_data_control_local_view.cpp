@@ -43,6 +43,7 @@ template <template <class> class AtomicIndirectorType>
 // have a value but as we check before with 'has_value()' so no way for throwing std::bad_optional_access which leds
 // to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 auto ProviderEventDataControlLocalView<AtomicIndirectorType>::AllocateNextSlot() noexcept
     -> std::optional<SlotIndexType>
 {

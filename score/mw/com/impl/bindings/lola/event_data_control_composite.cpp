@@ -103,6 +103,7 @@ template <template <class> class AtomicIndirectorType>
 // have a value but as we check before with 'has_value()' so no way for throwing std::bad_optional_access which leds
 // to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextMultiSlot() noexcept -> std::optional<SlotIndexType>
 {
     // \todo we should also monitor retry counts in the multi-slot/EventDataControlComposite case, like we are doing in
@@ -205,6 +206,7 @@ EventDataControlComposite<AtomicIndirectorType>::GetQmEventDataControlLocal() no
 
 template <template <class> class AtomicIndirectorType>
 ProviderEventDataControlLocalView<AtomicIndirectorType>*
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 EventDataControlComposite<AtomicIndirectorType>::GetAsilBEventDataControlLocal() noexcept
 {
     return asil_b_control_local_.has_value() ? &(asil_b_control_local_.value()) : nullptr;

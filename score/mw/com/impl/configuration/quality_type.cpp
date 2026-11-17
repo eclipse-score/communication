@@ -26,6 +26,7 @@ constexpr auto kAsilBString = "kASIL_B";
 
 }  // namespace
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 std::string ToString(QualityType quality_type) noexcept
 {
     // Suppress "AUTOSAR C++14 M6-4-5" and "AUTOSAR C++14 M6-4-3", The rule states: An unconditional throw or break

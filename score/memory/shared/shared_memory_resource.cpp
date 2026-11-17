@@ -678,6 +678,7 @@ auto SharedMemoryResource::getOwnerUid() const noexcept -> uid_t
 // without it safe execution cannot continued
 // coverity[autosar_cpp14_a15_5_3_violation] see above
 // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used in constructor
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 auto SharedMemoryResource::GetLockFilePath(const std::string& input_path) noexcept -> std::string
 {
     return std::string{kTmpPathPrefix} + input_path + "_lock";

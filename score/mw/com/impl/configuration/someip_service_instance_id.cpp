@@ -55,6 +55,7 @@ SomeIpServiceInstanceId::SomeIpServiceInstanceId(const score::json::Object& json
     }
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 score::json::Object SomeIpServiceInstanceId::Serialize() const noexcept
 {
     score::json::Object json_object{};

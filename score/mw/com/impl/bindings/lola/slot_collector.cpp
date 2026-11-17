@@ -19,6 +19,7 @@
 namespace score::mw::com::impl::lola
 {
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 SlotCollector::SlotCollector(ConsumerEventDataControlLocalView<>& event_data_control_local,
                              const std::size_t max_slots) noexcept
     : event_data_control_local_{event_data_control_local}, last_ts_{0U}, collected_slots_(max_slots)
@@ -52,6 +53,7 @@ SlotCollector::SlotIndices SlotCollector::GetNewSamplesSlotIndices(const std::si
     return {std::make_reverse_iterator(collected_slots_end_const_iterator), collected_slots_.crend()};
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlots(const std::size_t max_count) noexcept
 {
     EventSlotStatus::EventTimeStamp current_highest = EventSlotStatus::TIMESTAMP_MAX;

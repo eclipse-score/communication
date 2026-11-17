@@ -60,6 +60,7 @@ impl::tracing::ServiceElementInstanceIdentifierView ConvertServiceElementInstanc
 
 }  // namespace
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 TracingRuntime::TracingRuntime(const SamplePointerIndex number_of_needed_tracing_slots,
                                const Configuration& configuration) noexcept
     : impl::tracing::IBindingTracingRuntime{},
@@ -79,6 +80,7 @@ TracingRuntime::TracingRuntime(const SamplePointerIndex number_of_needed_tracing
 // mapped element.
 // The service elements is loaded into configuration during initialization.
 // coverity[autosar_cpp14_a15_5_3_violation]
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 bool TracingRuntime::RegisterWithGenericTraceApi() noexcept
 {
     const auto app_instance_identifier = configuration_.GetTracingConfiguration().GetApplicationInstanceID();

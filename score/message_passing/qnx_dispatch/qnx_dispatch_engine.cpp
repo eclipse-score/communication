@@ -300,6 +300,7 @@ void QnxDispatchEngine::CloseClientConnection(std::int32_t client_fd) noexcept
 }
 
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 void QnxDispatchEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(IsOnCallbackThread());

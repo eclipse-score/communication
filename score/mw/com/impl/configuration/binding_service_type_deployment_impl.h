@@ -89,6 +89,7 @@ auto ConvertJsonToServiceElementIdMap(const json::Object& json_object, const std
     return service_element_map;
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 inline json::Object ConvertE2EEventMapToJson(
     const std::unordered_map<std::string, E2EEventTypeDeployment>& e2e_events) noexcept
 {
@@ -198,6 +199,7 @@ template <typename EventIdType,
           typename ServiceIdType,
           BindingType binding_type>
 json::Object
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::Serialize()
     const noexcept
 {

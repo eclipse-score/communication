@@ -134,6 +134,7 @@ template <template <class> class AtomicIndirectorType>
 // process will terminate if an invalid index is provided and do not rely on any stack unwinding in case of an implicit
 // terminate.
 // coverity[autosar_cpp14_a15_5_3_violation]
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 bool MemoryRegionMapImpl<AtomicIndirectorType>::UpdateKnownRegion(const std::uintptr_t memory_range_start,
                                                                   const std::uintptr_t memory_range_end) noexcept
 {
@@ -173,6 +174,7 @@ bool MemoryRegionMapImpl<AtomicIndirectorType>::UpdateKnownRegion(const std::uin
 
 template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation] See rationale for std::array:at() autosar_cpp14_a15_5_3_violation above
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 void MemoryRegionMapImpl<AtomicIndirectorType>::RemoveKnownRegion(const std::uintptr_t memory_range_start) noexcept
 {
     // acquire a version slot, which is unused to copy the current (latest) version into it
@@ -207,6 +209,7 @@ void MemoryRegionMapImpl<AtomicIndirectorType>::RemoveKnownRegion(const std::uin
 
 template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation] See rationale for std::array:at() autosar_cpp14_a15_5_3_violation above
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 void MemoryRegionMapImpl<AtomicIndirectorType>::ClearKnownRegions() noexcept
 {
     auto new_version_idx = AcquireRegionVersionForOverwrite();
@@ -233,6 +236,7 @@ void MemoryRegionMapImpl<AtomicIndirectorType>::ClearKnownRegions() noexcept
 
 template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation] See rationale for std::array:at() autosar_cpp14_a15_5_3_violation above
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 auto MemoryRegionMapImpl<AtomicIndirectorType>::GetBoundsFromAddress(const std::uintptr_t pointer) const noexcept
     -> std::optional<MemoryRegionBounds>
 {
@@ -279,6 +283,7 @@ auto MemoryRegionMapImpl<AtomicIndirectorType>::GetBoundsFromAddress(const std::
 
 template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation] See rationale for std::array:at() autosar_cpp14_a15_5_3_violation above
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 size_t MemoryRegionMapImpl<AtomicIndirectorType>::GetSize() const noexcept
 {
     auto latest_regions_version_index = AcquireLatestRegionVersionForRead();
@@ -296,6 +301,7 @@ size_t MemoryRegionMapImpl<AtomicIndirectorType>::GetSize() const noexcept
 
 template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation] See rationale for std::array:at() autosar_cpp14_a15_5_3_violation above
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 auto MemoryRegionMapImpl<AtomicIndirectorType>::AcquireLatestRegionVersionForRead() const noexcept
     -> std::optional<typename MemoryRegionMapImpl<AtomicIndirectorType>::AcquiredRefcountIndex>
 {
@@ -336,6 +342,7 @@ auto MemoryRegionMapImpl<AtomicIndirectorType>::AcquireLatestRegionVersionForRea
 
 template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation] See rationale for std::array:at() autosar_cpp14_a15_5_3_violation above
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 std::optional<std::uint8_t> MemoryRegionMapImpl<AtomicIndirectorType>::AcquireRegionVersionForOverwrite() noexcept
 {
     // Arbitrary retry value here. It is expected, that when checking all known regions versions, the writer

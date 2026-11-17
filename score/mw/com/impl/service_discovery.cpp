@@ -267,6 +267,7 @@ FindServiceHandle ServiceDiscovery::GetNextFreeFindServiceHandle() noexcept
     return make_FindServiceHandle(free_uid);
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 auto ServiceDiscovery::StoreUserCallback(const FindServiceHandle& find_service_handle,
                                          FindServiceHandler<HandleType> handler) noexcept
     -> std::weak_ptr<FindServiceHandler<HandleType>>
@@ -278,6 +279,7 @@ auto ServiceDiscovery::StoreUserCallback(const FindServiceHandle& find_service_h
     return entry.first->second;
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 auto ServiceDiscovery::StoreInstanceIdentifier(const FindServiceHandle& find_service_handle,
                                                const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
     -> void

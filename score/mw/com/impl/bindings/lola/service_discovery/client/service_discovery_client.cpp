@@ -88,6 +88,7 @@ ServiceDiscoveryClient::ServiceDiscoveryClient(concurrency::Executor& long_runni
 {
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 ServiceDiscoveryClient::ServiceDiscoveryClient(concurrency::Executor& long_running_threads,
                                                std::unique_ptr<os::InotifyInstance> inotify_instance,
                                                std::unique_ptr<os::Unistd> unistd,

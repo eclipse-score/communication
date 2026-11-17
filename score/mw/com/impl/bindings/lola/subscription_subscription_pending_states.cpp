@@ -64,6 +64,7 @@ void SubscriptionPendingState::UnsubscribeEvent()
     state_machine_.TransitionToState(SubscriptionStateMachineState::NOT_SUBSCRIBED_STATE);
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 void SubscriptionPendingState::StopOfferEvent() noexcept
 {
     ::score::mw::log::LogFatal("lola") << CreateLoggingString(

@@ -80,6 +80,7 @@ std::unordered_map<QualityType, std::vector<uid_t>> ConvertJsonToUidMap(const js
     return uid_map;
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 json::Object ConvertUidMapToJson(const std::unordered_map<QualityType, std::vector<uid_t>>& input_map) noexcept
 {
     json::Object json_object{};

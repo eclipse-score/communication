@@ -33,6 +33,7 @@ ElementFqId::ElementFqId(const ServiceId service_id,
 {
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 std::string ElementFqId::ToString() const noexcept
 {
     const std::string result = std::string("ElementFqId{S:") + std::to_string(static_cast<std::uint32_t>(service_id_)) +

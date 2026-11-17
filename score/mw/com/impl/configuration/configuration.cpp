@@ -73,6 +73,7 @@ void InsertServiceElementNames(const BindingServiceTypeDeploymentType& service_d
 
 }  // namespace
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 Configuration::Configuration(ServiceTypeDeployments service_types,
                              ServiceInstanceDeployments service_instances,
                              GlobalConfiguration global_configuration,
@@ -156,6 +157,7 @@ ServiceInstanceDeployment* Configuration::AddServiceInstanceDeployments(
     std::terminate();
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 Result<void> Configuration::MergeServiceEntries(const Configuration& additional_configuration) noexcept
 {
     std::lock_guard<std::mutex> lock(merge_mutex_);
@@ -344,6 +346,7 @@ score::Result<bool> Configuration::HasLolaServiceDeployment() const
     return false;
 }
 
+// Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(noexcept-function-terminate-on-failure)
 score::Result<bool> Configuration::HasSomeIpServiceDeployment() const noexcept
 {
     auto deployment_info_visitor = score::cpp::overload(
