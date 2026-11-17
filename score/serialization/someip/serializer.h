@@ -73,25 +73,4 @@ class ISerializer
 
 }  // namespace score::serialization::someip
 
-extern "C" {
-
-// Every generated library additionally exports one factory function per serializer variant, resolved
-// by mw::com via dlsym. The symbol name encodes the structural hash of the datatype and the hash of the
-// attributes fixed at compile time of the serializer:
-//
-//   ISerializer* CreateSerializer_<structural-hash>_<attribute-hash>(<other-attributes>) noexcept;
-//
-// <other-attributes> are the attributes configured at runtime. The factory returns a heap-allocated
-// ISerializer, or nullptr if construction fails. The caller owns the returned pointer and releases it
-// with DestroySerializer.
-//
-// The declaration below shows the API with dummy hash values. It is illustrative only: real hashes
-// are chosen by the generator and the definitions live in the generated library.
-score::serialization::someip::ISerializer* CreateSerializer_0123456789abcdef_fedcba9876543210() noexcept;
-
-/// \brief Destroys a serializer previously obtained from a CreateSerializer_* factory function.
-void DestroySerializer(score::serialization::someip::ISerializer* serializer) noexcept;
-
-}  // extern "C"
-
 #endif  // SCORE_SERIALIZATION_SOMEIP_SERIALIZER_H
