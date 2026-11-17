@@ -15,7 +15,7 @@
 # error type, factory signatures and shared serialization helpers) lives in the parent package; the
 # datatype, its serializer and the factory below illustrate what the serializer generator emits.
 
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -45,12 +45,14 @@ cc_library(
     ],
 )
 
-# Generated SOME/IP serialization library loaded by mw::com via dlopen. The serializer translation unit
-# provides the extern "C" CreateSerializer_* / DestroySerializer entry points resolved with dlsym.
-cc_binary(
-    name = "libmwcom_serializer_someip.so",
+# Generated SOME/IP serialization library loaded by mw::com via dlopen. The version script restricts the
+# exported symbols to the factory functions resolved with dlsym (CreateSerializer_*, DestroySerializer).
+cc_shared_library(
+    name = "mwcom_serializer_someip",
+    additional_linker_inputs = ["serializer_exports.lds"],
     features = COMPILER_WARNING_FEATURES,
-    linkshared = True,
+    shared_lib_name = "libmwcom_serializer_someip.so",
+    user_link_flags = ["-Wl,--version-script=$(location :serializer_exports.lds)"],
     deps = [
         ":speed_rpm_serializer",
         "//score/serialization/someip:serializer",
@@ -74,7 +76,7 @@ cc_test(
     size = "small",
     timeout = "short",
     srcs = ["speed_rpm_serializer_integration_test.cpp"],
-    data = [":libmwcom_serializer_someip.so"],
+    data = [":mwcom_serializer_someip"],
     features = COMPILER_WARNING_FEATURES,
     linkopts = ["-ldl"],
     deps = [
