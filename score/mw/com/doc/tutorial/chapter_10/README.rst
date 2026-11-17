@@ -215,9 +215,14 @@ shared-memory objects (via ``allowedConsumer``), and the consumer accepts the pr
 
 Now try the **mismatching** cases and observe how access control kicks in:
 
-- Start the **consumer under a different uid** than 778 (e.g. under your own user, or under ``provider777``). The
-  provider's ``allowedConsumer`` ACL does not grant this ``uid`` access to the shared-memory objects, so the consumer is
-  **not** able to open/map them and therefore **cannot create a proxy** to interact with the service instance.
+- Start the **consumer under a different uid** than 778 (e.g. under your own user, but **not** under ``provider777``).
+  We also explicitly exclude ``provider777`` here, since the provider/creator of the shm-objects will always have access
+  to it!
+  I.e. even if the ``uid`` of the provider/creator has not been added to the ``allowedConsumer`` list, it will still be
+  able to access the shared-memory objects. In all other cases, where the ``uid`` is not in the ``allowedConsumer``
+  list, the provider's ``allowedConsumer`` ACL does not grant this ``uid`` access to the shared-memory objects, so the
+  consumer is **not** able to open/map them and therefore **cannot create a proxy** to interact with the service
+  instance.
 - Start the **provider under a different uid** than 777 (e.g. under your own user, or under ``consumer778``). Now the
   shared-memory objects are owned by an unexpected ``uid``. The consumer – because it configured ``allowedProvider`` =
   ``[777]`` – detects that the objects are **not** owned by one of its accepted providers and refuses to use them, so

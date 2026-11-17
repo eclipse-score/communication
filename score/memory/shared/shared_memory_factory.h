@@ -61,8 +61,8 @@ class SharedMemoryFactory
     /// \details for safety-related reasons, when accessing the memory region potentially created by another
     ///          process (Open and CreateOrOpen calls), one can specify the list of UIDs (allowedProviders) that can be
     ///          the creators of the memory region. If the actual creator is not from the list, the call returns
-    ///          nullptr. The caller's UID is automatically whitelisted (allowed) for consistency with creation;
-    ///          an empty optional (i.e. no value) means no restriction at all; if the optional has a value, but the
+    ///          nullptr.
+    ///          An empty optional (i.e. no value) means no restriction at all; if the optional has a value, but the
     ///          value is an empty list/span the call returns a nullptr. Otherwise the UIDs in the spawn are checked
     ///          against the UID of the creator. If there is NO match a nullptr is returned.
     ///          The restrictions apply on per call basis; multiple calls for the same

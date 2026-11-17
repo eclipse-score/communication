@@ -67,10 +67,6 @@ std::unique_ptr<score::os::IAccessControlList> CreateAccessControlList(
 
 bool checkUidMatch(const uid_t providerUid, const score::cpp::span<const uid_t> allowedProviders) noexcept
 {
-    if (providerUid == score::os::Unistd::instance().getuid())
-    {
-        return true;
-    }
     return std::find(allowedProviders.begin(), allowedProviders.end(), providerUid) != allowedProviders.end();
 }
 

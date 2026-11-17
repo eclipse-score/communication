@@ -563,7 +563,7 @@ TEST_F(SharedMemoryFactoryTest, AllowsAccessToMatchingProvidersPreventsNonMatchi
     EXPECT_EQ(non_matching_create_or_open, nullptr);
 }
 
-TEST_F(SharedMemoryFactoryTest, AllowsAccessToOwnResourceWithNonMatchingProvidersList)
+TEST_F(SharedMemoryFactoryTest, DisallowsAccessToOwnResourceWithNonMatchingProvidersList)
 {
     InSequence sequence{};
     constexpr bool is_read_write = false;
@@ -577,8 +577,8 @@ TEST_F(SharedMemoryFactoryTest, AllowsAccessToOwnResourceWithNonMatchingProvider
     std::shared_ptr<ManagedMemoryResource> opened_resource =
         SharedMemoryFactory::Open(TestValues::sharedMemorySegmentPath, false, kNonMatchingProviders);
 
-    // We still get the resource
-    EXPECT_NE(opened_resource, nullptr);
+    // We do not get the resource
+    EXPECT_EQ(opened_resource, nullptr);
 }
 
 TEST_F(SharedMemoryFactoryTest, DisallowsAccessToResourceWithEmptyProvidersList)

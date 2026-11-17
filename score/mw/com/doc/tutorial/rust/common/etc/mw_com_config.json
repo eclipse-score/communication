@@ -38,18 +38,6 @@
       "instances": [
         {
           "instanceId": 1,
-          "allowedConsumer": {
-            "QM": [
-              4002,
-              0
-            ]
-          },
-          "allowedProvider": {
-            "QM": [
-              4001,
-              0
-            ]
-          },
           "asil-level": "QM",
           "binding": "SHM",
           "events": [
@@ -77,18 +65,6 @@
       "instances": [
         {
           "instanceId": 2,
-          "allowedConsumer": {
-            "QM": [
-              4002,
-              0
-            ]
-          },
-          "allowedProvider": {
-            "QM": [
-              4001,
-              0
-            ]
-          },
           "asil-level": "QM",
           "binding": "SHM",
           "events": [
@@ -116,18 +92,6 @@
       "instances": [
         {
           "instanceId": 3,
-          "allowedConsumer": {
-            "QM": [
-              4002,
-              0
-            ]
-          },
-          "allowedProvider": {
-            "QM": [
-              4001,
-              0
-            ]
-          },
           "asil-level": "QM",
           "binding": "SHM",
           "events": [
