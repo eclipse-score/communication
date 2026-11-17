@@ -73,6 +73,31 @@ section "LoLa" {
             // interface = "score.mw.com.runtime.InitializeRuntime"
         }
 
+        // Contract ResolveInstanceIDs: 
+        //      - An InstanceSpecifier will be resolved to one InstanceIdentifier for each instance listed in the mw_com configuration file 
+        //        corresponding to that InstanceSpecifier. For the single binding case, exactly one InstanceIdentifier will be returned for an 
+        //        InstanceSpecifier which exists in the configuration file. For the multi binding case, one InstanceIdentifier will be returned 
+        //        for each binding instance corresponding to than InstanceSpecifier if it exists in the configuration file.
+        //      - Each returned InstanceIdentifier should contain values specified within the configuration file corresponding to the provided
+        //        InstanceSpecifier.
+        ScoreReq.FailureMode InstanceSpecifierResolvesToWrongInstanceIdentifier {
+            guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+            description = "An InstanceSpecifier resolves to an InstanceIdentifier for a different service instance than specified in the configuration."
+            version = 1
+            safety = ScoreReq.Asil.B
+            interface = "score.mw.com.runtime.ResolveInstanceIDs"
+        }
+
+        // TODO: Enable once multi-bindings is supported. For now, there are no code paths to return more than one InstanceIdentifier.
+        // ScoreReq.FailureMode InstanceSpecifierResolvesToSubsetOfInstanceIdentifiers {
+        //    guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+        //    description = "An InstanceSpecifier resolves to a subset of InstanceIdentifiers although it should resolve to one InstanceIdentifier per binding specified in the configuration."
+        //    version = 1
+        //    safety = ScoreReq.Asil.B
+        //    interface = "score.mw.com.runtime.ResolveInstanceIDs"
+        //}
+
+    }
 
     section "Service Instance Identifiers"
 
