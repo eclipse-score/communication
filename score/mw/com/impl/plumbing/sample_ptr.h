@@ -51,10 +51,12 @@ class SamplePtr final
     /// \tparam BindingSamplePtrType The type of the sample pointer. Needs to be one of the types listed in the variant
     ///                              holding the actual pointer.
     /// \param binding_sample_ptr The binding-specific sample pointer.
-    /// \param reference_guard Reference counting guard managing the count of SamplePtrs that are alive.
-    /// \param raw_check_outcome Per-sample outcome of the binding's own E2E check. The binding cannot set the summary
-    ///                          or historical health; ProxyEventBase completes the E2EResult before the sample reaches
-    ///                          the application.
+    /// \param reference_guard Releases one allocated sample in the SampleReferenceTracker when it is destroyed.
+    /// \param raw_check_outcome Outcome of the E2E check performed by the binding on the sample pointed to by this
+    ///                          SamplePtr. The binding only knows about this single sample, so it cannot provide the
+    ///                          historical health or the summary and therefore no full E2EResult. It supplies just this
+    ///                          raw outcome; the binding-independent layer (ProxyEventBase) sets the full E2EResult
+    ///                          before the sample reaches the application.
     template <typename BindingSamplePtrType>
     SamplePtr(BindingSamplePtrType&& binding_sample_ptr,
               SampleReferenceGuard reference_guard,

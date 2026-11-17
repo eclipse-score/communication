@@ -48,13 +48,11 @@ ProxyEventBase::ProxyEventBase(std::string_view event_name,
       tracker_{std::make_unique<SampleReferenceTracker>()},
       tracing_data_{},
       proxy_event_base_mock_{nullptr},
+      health_tracker_{(binding_ != nullptr) ? binding_->GetHealthTrackerConfiguration()
+                                            : e2e::HealthTrackerConfiguration{/* enabled */ false}},
       is_subscribed_flag_{false},
       receive_handler_scope_{}
 {
-    if (binding_ != nullptr)
-    {
-        health_tracker_ = e2e::HealthTracker{binding_->GetHealthTrackerConfiguration()};
-    }
 }
 
 ProxyEventBase::~ProxyEventBase() noexcept

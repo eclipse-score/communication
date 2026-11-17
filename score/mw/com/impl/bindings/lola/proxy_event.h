@@ -84,7 +84,8 @@ class ProxyEvent final : public GenericProxyEventBinding
     /// \brief LoLa has no historical E2E health configuration yet, so tracking is explicitly disabled.
     e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const noexcept override
     {
-        return e2e::HealthTrackerConfiguration{};
+        const bool is_tracking_enabled{false};
+        return e2e::HealthTrackerConfiguration{is_tracking_enabled};
     }
     BindingType GetBindingType() const noexcept override
     {

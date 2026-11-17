@@ -308,7 +308,7 @@ TEST(ProxyEventE2EConfigurationTest, HealthTrackerConfigurationIsTakenFromBindin
     configuration.error_threshold = 2U;
     configuration.recovery_threshold = 2U;
     configuration.window_size = 3U;
-    mock_proxy_event.SetHealthTrackerConfiguration(configuration);
+    ON_CALL(mock_proxy_event, GetHealthTrackerConfiguration()).WillByDefault(::testing::Return(configuration));
     ON_CALL(mock_proxy_event, GetSubscriptionState())
         .WillByDefault(::testing::Return(SubscriptionState::kNotSubscribed));
     ON_CALL(mock_proxy_event, Subscribe(::testing::_)).WillByDefault(::testing::Return(Result<void>{}));

@@ -39,6 +39,8 @@ class ProxyEvent : public ProxyEventBinding
     {
         ON_CALL(*this, GetNewSamples(::testing::_, ::testing::_))
             .WillByDefault(::testing::WithArgs<0, 1>(::testing::Invoke(this, &ProxyEvent::GetNewFakeSamples)));
+        ON_CALL(*this, GetHealthTrackerConfiguration())
+            .WillByDefault(::testing::Return(e2e::HealthTrackerConfiguration{/* enabled */ false}));
     }
 
     ~ProxyEvent() override = default;
@@ -60,16 +62,8 @@ class ProxyEvent : public ProxyEventBinding
     MOCK_METHOD(Result<void>, UnsetSubscriptionStateChangeHandler, (), (noexcept, override));
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
-
-    /// \brief Health tracker configuration of the mock. Not a gmock method, so StrictMock tests need no expectation.
-    e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const noexcept override
-    {
-        return health_tracker_configuration_;
-    }
-    void SetHealthTrackerConfiguration(const e2e::HealthTrackerConfiguration& configuration) noexcept
-    {
-        health_tracker_configuration_ = configuration;
-    }
+    /// \brief By default historical health tracking is disabled, unless stated otherwise with ON_CALL/EXPECT_CALL.
+    MOCK_METHOD(e2e::HealthTrackerConfiguration, GetHealthTrackerConfiguration, (), (const, noexcept, override));
 
     /// \brief Add a sample to the internal queue of fake events.
     ///
@@ -91,7 +85,6 @@ class ProxyEvent : public ProxyEventBinding
   private:
     using FakeSamples = std::vector<SamplePtr>;
     FakeSamples fake_samples_;
-    e2e::HealthTrackerConfiguration health_tracker_configuration_{};
 
     Result<std::size_t> GetNewFakeSamples(ProxyEventBinding::Callback&& callable, TrackerGuardFactory& tracker);
 };
