@@ -930,6 +930,8 @@ inline ::score::mw::com::impl::rust::TypeOperationImpl<T>& get_type_operations()
 /// \param method_member Method member name in Proxy and Skeleton classes (e.g., get_tire_pressure)
 /// \note Example usage: EXPORT_MW_COM_METHOD(get_tire_pressure)
 #define EXPORT_MW_COM_METHOD(method_member)                                                                \
+    namespace                                                                                              \
+    {                                                                                                      \
     struct method_member##_MethodRegistrationHelper                                                        \
     {                                                                                                      \
         method_member##_MethodRegistrationHelper()                                                         \
@@ -945,7 +947,8 @@ inline ::score::mw::com::impl::rust::TypeOperationImpl<T>& get_type_operations()
         }                                                                                                  \
     };                                                                                                     \
                                                                                                            \
-    static method_member##_MethodRegistrationHelper method_member##_method_reg_instance;
+    method_member##_MethodRegistrationHelper method_member##_method_reg_instance;                          \
+    } /* namespace */
 
 #define END_EXPORT_MW_COM_INTERFACE() }  // namespace id##_detail
 

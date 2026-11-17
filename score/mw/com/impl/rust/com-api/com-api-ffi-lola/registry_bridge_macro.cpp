@@ -437,8 +437,9 @@ bool mw_com_proxy_method_get_in_args_buffer(ProxyMethodBinding* binding,
     {
         return false;
     }
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): reinterpreting a type-erased std::byte buffer as
-    // std::uint8_t bytes for the FFI boundary, both are 1-byte object types with no representation difference.
+    // Reinterpreting a type-erased std::byte buffer as std::uint8_t bytes for the FFI boundary: both are 1-byte object
+    // types with no representation difference.
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): see above.
     *out_data = reinterpret_cast<std::uint8_t*>(result.value().data());
     *out_len = result.value().size();
     return true;
@@ -508,13 +509,13 @@ bool mw_com_skeleton_method_register_handler(SkeletonMethodBinding* binding, con
         [handler_ptr](QualityType quality_type,
                       std::optional<score::cpp::span<std::byte>> in_args,
                       std::optional<score::cpp::span<std::byte>> return_value) mutable {
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): std::byte* -> std::uint8_t*, safe for the
-            // same reason as mw_com_proxy_method_get_in_args_buffer above.
+            // std::byte* -> std::uint8_t*, safe for the same reason as mw_com_proxy_method_get_in_args_buffer above.
             std::uint8_t* const in_args_data =
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): see above.
                 in_args.has_value() ? reinterpret_cast<std::uint8_t*>(in_args->data()) : nullptr;
             const std::size_t in_args_len = in_args.has_value() ? in_args->size() : 0U;
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): see above.
             std::uint8_t* const return_data =
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): see above.
                 return_value.has_value() ? reinterpret_cast<std::uint8_t*>(return_value->data()) : nullptr;
             const std::size_t return_len = return_value.has_value() ? return_value->size() : 0U;
             mw_com_impl_call_method_handler(&handler_ptr,
