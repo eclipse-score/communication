@@ -228,6 +228,7 @@ cc_library(
         "@score_baselibs//score/language/futurecpp",
     ],
     tags = ["FFI"],
+    visibility = ["//score/memory/shared:__subpackages__"],
 )
 
 cc_library(
@@ -240,7 +241,7 @@ cc_library(
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
-    visibility = ["//visibility:public"],
+    visibility = ["//visibility:public"],  # only for tests and lola runtime to touch static dependency.
     deps = [
         ":managed_memory_resource",
         ":memory_region_bounds",

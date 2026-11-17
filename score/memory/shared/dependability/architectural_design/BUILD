@@ -14,11 +14,17 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "architectural_d
 
 architectural_design(
     name = "software_architectural_design",
-    dynamic = [],
+    dynamic = [
+        "dynamic_design/create_resource_and_allocate.puml",
+        "dynamic_design/dereference_offset_ptr.puml",
+    ],
+    internal_api = [
+        #"internal_api.puml",
+    ],
     maturity = "development",
     # package = "memory_shared_api",
     public_api = [
-        # "//score/memory/shared/dependability:public_api.puml",  # rejected by the rules_score PlantUML parser
+        #"public_api.puml",  # rejected by the rules_score PlantUML parser
     ],
     static = [
         # "static_design/overall.puml",  # rejected by the rules_score PlantUML parser

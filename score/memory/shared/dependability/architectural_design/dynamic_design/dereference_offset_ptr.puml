@@ -1,0 +1,31 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor "User" as Process
+participant "allocator_pointer" as allocator_pointer
+participant "factory_resources" as factory_resources
+participant "pointer_arithmetic" as pointer_arithmetic
+
+activate Process
+
+Process -> allocator_pointer : OffsetPtr::get()
+activate allocator_pointer
+allocator_pointer -> factory_resources : MemoryResourceRegistry::getInstance().GetBoundsFromAddress(address)
+allocator_pointer <-- factory_resources : return : MemoryRegionBounds [0..1]
+allocator_pointer -> pointer_arithmetic : PointerArithmeticUtil::CastPointerToInteger(offset_ptr_address)
+activate pointer_arithmetic
+allocator_pointer <-- pointer_arithmetic : return : uintptr_t
+deactivate pointer_arithmetic
+allocator_pointer -> pointer_arithmetic : PointerArithmeticUtil::AddOffsetToPointerAsInteger(offset_ptr_address_as_integer, offset_ptr_size)
+activate pointer_arithmetic
+allocator_pointer <-- pointer_arithmetic : return : uintptr_t
+deactivate pointer_arithmetic
+allocator_pointer -> pointer_arithmetic : PointerArithmeticUtil::AddSignedOffsetToPointerAsInteger(offset_ptr_address_as_integer, offset)
+activate pointer_arithmetic
+allocator_pointer <-- pointer_arithmetic : return : uintptr_t
+deactivate pointer_arithmetic
+Process <-- allocator_pointer : return : pointer
+
+@enduml

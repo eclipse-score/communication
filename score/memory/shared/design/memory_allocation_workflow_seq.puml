@@ -14,27 +14,35 @@
 @startuml memory_allocation_workflow_seq
 ' Sequence diagram for memory allocation workflow
 
-participant InstanceP1 as Instance
-participant SharedMemoryFactoryP1 as Factory
-participant PolymorphicOffsetAllocator as Allocator
+actor User as User
+participant "SharedMemoryFactory::singleton" as Factory
+participant "PolymorphicOffsetPtrAllocator::instance" as Allocator
 participant MemoryResourceProxy as Proxy
-participant SharedMemoryResourceP1 as Resource
-participant FooSharedMemoryObject as FooObject
+participant "SharedMemoryResource::class" as ResourceStatic
+participant "SharedMemoryResource::foo" as Resource
+participant "OS_SharedMemoryObject::foo" as FooObject
 participant MemoryResourceRegistryP1 as Registry
 
 
-activate Instance
+activate User
+User -> Factory: Open("/foo", read_write, allowedProviders)
 activate Factory
-Instance -> Factory: open("/foo")
-Factory -> Factory: Check if instances was already opened
+Factory -> Factory: Check if SharedMemoryResource "foo" was already opened
 
 
-alt Open new instance
-    Factory -> Resource: instantiate
+alt Open shared memory object
+    Factory -> ResourceStatic: Open("/foo", read_write)
+    activate ResourceStatic
+    create Resource
+    ResourceStatic -> Resource : Create("/foo")
+    ResourceStatic -> Resource: OpenImpl(read_write)
     activate Resource
+    Resource -> Resource: acquireLockFile()
     Resource -> FooObject: shm_open(open)
 
     Resource -> Resource: GetOwnerUid()
+
+    Resource -> FooObject: mmap()
 
     Resource -> Registry: insert_resource(uniqueID, this)
     activate Registry
@@ -46,9 +54,12 @@ alt Open new instance
     FooObject --> Resource
     deactivate FooObject
 
-    Resource -> Proxy: reinterprete(shared state)
+    Resource -> Resource: reinterprete(shared state)
+    Resource --> ResourceStatic
+    deactivate Resource
 
-    Resource --> Factory
+    ResourceStatic --> Factory : shared_ptr<SharedMemoryResource::foo>
+    deactivate ResourceStatic
 
     Factory -> Factory: InsertResourceIntoMap
 
@@ -60,17 +71,20 @@ deactivate Registry
 
 alt AllowedProviderCheck
     Factory-> Resource: getowneruid()
+    activate Resource
     Resource --> Factory
+    deactivate Resource
 
 end
 deactivate Resource
 
-Factory --> Instance: instance
+Factory --> User: User
 
-Instance -> Allocator: instantiate(Resource)
+create Allocator
+User -> Allocator: instantiate(Resource)
 activate Allocator
 activate Allocator
-Instance -> Allocator: allocate(Bytes)
+User -> Allocator: allocate(Bytes)
 Allocator -> Proxy: allocate(Bytes)
 activate Proxy
 Proxy -> Registry: at(unique)
@@ -90,7 +104,7 @@ deactivate Resource
 Proxy --> Allocator: void*
 deactivate Proxy
 
-Allocator --> Instance: offsetPtr<void>
+Allocator --> User: offsetPtr<void>
 deactivate Allocator
 
 
@@ -98,5 +112,5 @@ deactivate Allocator
 
 
 deactivate Factory
-deactivate Instance
+deactivate User
 @enduml
