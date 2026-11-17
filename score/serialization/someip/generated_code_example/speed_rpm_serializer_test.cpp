@@ -35,7 +35,9 @@ TEST(SpeedRpmSerializer, RoundTripWithSamplesRestoresValues)
     original.speed_samples = {100.0F, 125.0F, 150.75F};
 
     std::vector<std::uint8_t> buffer(serializer.GetMaxSerializedSize().value());
-    ASSERT_TRUE(serializer.Serialize(&original, buffer).has_value());
+    const auto written = serializer.Serialize(&original, buffer);
+    ASSERT_TRUE(written.has_value());
+    EXPECT_EQ(written.value(), 10U + original.speed_samples.size() * sizeof(float));
 
     SpeedRpm decoded{};
     ASSERT_TRUE(serializer.Deserialize(buffer, &decoded).has_value());

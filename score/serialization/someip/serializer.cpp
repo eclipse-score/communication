@@ -31,8 +31,6 @@ class SerializerErrorDomain final : public score::result::ErrorDomain
                 return "Input buffer larger than expected.";
             case static_cast<score::result::ErrorCode>(SerializerErrc::kDeserializationFailed):
                 return "Deserialization failed; buffer is malformed.";
-            case static_cast<score::result::ErrorCode>(SerializerErrc::kUnknownDatatypeHash):
-                return "Datatype hash not known to this serializer library.";
             case static_cast<score::result::ErrorCode>(SerializerErrc::kCreationFailed):
                 return "Serializer could not be created.";
             case static_cast<score::result::ErrorCode>(SerializerErrc::kInvalidArgument):

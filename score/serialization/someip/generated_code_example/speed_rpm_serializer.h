@@ -34,7 +34,7 @@ namespace score::serialization::someip
 class SpeedRpmSerializer final : public ISerializer
 {
   public:
-    score::Result<void> Serialize(const void* sample, score::cpp::span<std::uint8_t> buffer) const noexcept override;
+    score::Result<std::size_t> Serialize(const void* sample, score::cpp::span<std::uint8_t> buffer) const noexcept override;
     score::Result<void> Deserialize(score::cpp::span<const std::uint8_t> buffer, void* sample) const noexcept override;
     score::Result<std::size_t> GetMaxSerializedSize() const noexcept override;
 

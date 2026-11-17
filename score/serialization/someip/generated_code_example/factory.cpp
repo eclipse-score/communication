@@ -16,21 +16,22 @@
 
 #include <new>
 
+namespace
+{
+using score::serialization::someip::SpeedRpm;
+
+// The exported symbol name must spell out the hashes as literals, so pin them to the datatype constants.
+static_assert(SpeedRpm::kStructuralHash == 0x2c5f8d1aULL, "Symbol name does not match structural hash");
+static_assert(SpeedRpm::kAttributeHash == 0x7e3a91c4ULL, "Symbol name does not match attribute hash");
+}  // namespace
+
 extern "C" {
 
-score::serialization::someip::ISerializer* CreateSerializer(std::uint64_t datatype_hash) noexcept
+// Symbol pattern: CreateSerializer_<structural-hash>_<attribute-hash>(<other-attributes>).
+// This variant has no attributes configured at runtime.
+score::serialization::someip::ISerializer* CreateSerializer_2c5f8d1a_7e3a91c4() noexcept
 {
-    // A switch over the constexpr kHashId values makes every case a distinct compile-time constant.
-    // If two datatypes ever hashed to the same kHashId, the duplicate case labels would be rejected
-    // by the compiler, so a hash collision is caught at build time instead of silently returning the
-    // wrong serializer at runtime.
-    switch (datatype_hash)
-    {
-        case score::serialization::someip::SpeedRpm::kHashId:
-            return new (std::nothrow) score::serialization::someip::SpeedRpmSerializer{};
-        default:
-            return nullptr;
-    }
+    return new (std::nothrow) score::serialization::someip::SpeedRpmSerializer{};
 }
 
 void DestroySerializer(score::serialization::someip::ISerializer* serializer) noexcept

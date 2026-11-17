@@ -30,7 +30,6 @@ enum class SerializerErrc : score::result::ErrorCode
     kBufferTooSmall = 1,
     kBufferTooLarge,
     kDeserializationFailed,
-    kUnknownDatatypeHash,
     kCreationFailed,
     kInvalidArgument,
     kInternalError,
@@ -54,7 +53,8 @@ class ISerializer
     virtual ~ISerializer() noexcept = default;
 
     /// \brief Encodes sample into buffer using the SOME/IP wire format.
-    virtual score::Result<void> Serialize(const void* sample, score::cpp::span<std::uint8_t> buffer) const noexcept = 0;
+    /// \return The number of bytes written to buffer, or an error.
+    virtual score::Result<std::size_t> Serialize(const void* sample, score::cpp::span<std::uint8_t> buffer) const noexcept = 0;
 
     /// \brief Decodes a SOME/IP encoded buffer into sample.
     virtual score::Result<void> Deserialize(score::cpp::span<const std::uint8_t> buffer,
@@ -75,14 +75,17 @@ class ISerializer
 
 extern "C" {
 
-/// \brief Creates a serializer for the datatype identified by datatype_hash.
-///
-/// Resolved by mw::com via dlsym. Returns a heap-allocated ISerializer on success, or nullptr when
-/// the datatype is unknown or allocation fails. The caller owns the returned pointer and releases it
-/// with DestroySerializer.
-score::serialization::someip::ISerializer* CreateSerializer(std::uint64_t datatype_hash) noexcept;
+// Every generated library additionally exports one factory function per serializer variant, resolved
+// by mw::com via dlsym. The symbol name encodes the structural hash of the datatype and the hash of the
+// attributes fixed at compile time of the serializer:
+//
+//   ISerializer* CreateSerializer_<structural-hash>_<attribute-hash>(<other-attributes>) noexcept;
+//
+// <other-attributes> are the attributes configured at runtime. The factory returns a heap-allocated
+// ISerializer, or nullptr if construction fails. The caller owns the returned pointer and releases it
+// with DestroySerializer.
 
-/// \brief Destroys a serializer previously obtained from CreateSerializer.
+/// \brief Destroys a serializer previously obtained from a CreateSerializer_* factory function.
 void DestroySerializer(score::serialization::someip::ISerializer* serializer) noexcept;
 
 }  // extern "C"

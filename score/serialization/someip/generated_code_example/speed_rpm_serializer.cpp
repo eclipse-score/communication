@@ -18,7 +18,7 @@
 namespace score::serialization::someip
 {
 
-score::Result<void> SpeedRpmSerializer::Serialize(const void* sample,
+score::Result<std::size_t> SpeedRpmSerializer::Serialize(const void* sample,
                                                   score::cpp::span<std::uint8_t> buffer) const noexcept
 {
     if (sample == nullptr)
@@ -43,7 +43,7 @@ score::Result<void> SpeedRpmSerializer::Serialize(const void* sample,
     WriteUint32(static_cast<std::uint32_t>(event.speed_samples.size()), buffer.subspan(6, sizeof(std::uint32_t)));
     WriteFloats(event.speed_samples, buffer.subspan(kFixedFieldsSize));
 
-    return {};
+    return required;
 }
 
 score::Result<void> SpeedRpmSerializer::Deserialize(score::cpp::span<const std::uint8_t> buffer,
