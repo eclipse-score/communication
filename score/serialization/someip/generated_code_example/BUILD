@@ -33,6 +33,8 @@ cc_library(
     name = "speed_rpm_serializer",
     srcs = ["speed_rpm_serializer.cpp"],
     hdrs = ["speed_rpm_serializer.h"],
+    # The extern "C" factory symbols are not referenced by the library itself; keep them in the .so.
+    alwayslink = True,
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":speed_rpm",
@@ -43,11 +45,10 @@ cc_library(
     ],
 )
 
-# Generated SOME/IP serialization library loaded by mw::com via dlopen. The factory translation unit
-# provides the extern "C" CreateSerializer / DestroySerializer entry points resolved with dlsym.
+# Generated SOME/IP serialization library loaded by mw::com via dlopen. The serializer translation unit
+# provides the extern "C" CreateSerializer_* / DestroySerializer entry points resolved with dlsym.
 cc_binary(
     name = "libmwcom_serializer_someip.so",
-    srcs = ["factory.cpp"],
     features = COMPILER_WARNING_FEATURES,
     linkshared = True,
     deps = [
