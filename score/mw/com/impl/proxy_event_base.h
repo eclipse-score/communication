@@ -181,15 +181,17 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
      *          exactly once per sample, as every call updates the historical health.
      */
     template <typename SampleType>
-    void AttachE2EResult(SamplePtr<SampleType>& sample)
+    void AttachE2EResultToSamplePtr(SamplePtr<SampleType>& sample)
     {
         const auto raw_result = sample.GetE2EResult();
         sample.SetE2EResult(
             e2e::BuildE2EResult(e2e::RawCheckOutcome{raw_result.data_integrity, raw_result.sequence}, health_tracker_));
     }
 
-    /// \brief Configures the historical health tracking and clears its history.
-    /// \details Disabled until called. Terminates if an enabled configuration is inconsistent.
+    /// \brief Replaces the historical health tracking configuration and clears its history.
+    /// \details Not part of the application API (protected). In production the configuration is read once from the
+    ///          binding in the constructor and never changed. This only exists so that tests can inject a
+    ///          configuration via ProxyEventBaseAttorney. Terminates if an enabled configuration is inconsistent.
     void SetHealthTrackerConfiguration(const e2e::HealthTrackerConfiguration& configuration) noexcept
     {
         health_tracker_ = e2e::HealthTracker{configuration};
@@ -222,13 +224,14 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     IProxyEventBase* proxy_event_base_mock_;
 
   private:
-    /// \brief Historical E2E health. Reset on user (re)subscribe, but not when the provider restarts while subscribed,
-    ///        so a constantly breaking channel keeps a bad health.
-    e2e::HealthTracker health_tracker_{e2e::HealthTrackerConfiguration{}};
-
     /// \brief Expires the #receive_handler_scope_ in case not being called in the context of an EventReceiveHandler
     ///        (because trying to expire the scope in which we are running, would lead to a deadlock)
     void ExpireReceiveHandlerScopeIfNotInHandler();
+
+    /// \brief Historical E2E health. Reset on user (re)subscribe, but not when the provider restarts while subscribed,
+    ///        so a constantly breaking channel keeps a bad health.
+    /// \details Initialized in the constructor from the binding's configuration (disabled without a valid binding).
+    e2e::HealthTracker health_tracker_;
 
     FlagOwner is_subscribed_flag_;
     safecpp::Scope<> receive_handler_scope_;

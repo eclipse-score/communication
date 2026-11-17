@@ -1104,6 +1104,7 @@ TEST(ProxyEventBaseTest, MoveConstructingProxyEventDoesNotCrash)
 {
     auto mock_proxy_event_binding_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent>>();
     auto& mock_proxy_event_binding = *mock_proxy_event_binding_ptr;
+    EXPECT_CALL(mock_proxy_event_binding, GetHealthTrackerConfiguration());
 
     // Given a Service Element, that is connected to a mock binding
     ProxyEventBase dummy_event{kEventName, std::move(mock_proxy_event_binding_ptr)};
@@ -1126,12 +1127,15 @@ TEST(ProxyEventBaseTest, MoveAssigningProxyEventDoesNotCrash)
 {
     auto mock_proxy_event_binding_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent>>();
     auto& mock_proxy_event_binding = *mock_proxy_event_binding_ptr;
+    EXPECT_CALL(mock_proxy_event_binding, GetHealthTrackerConfiguration());
 
     // Given a Service Element, that is connected to a mock binding
     ProxyEventBase dummy_event{kEventName, std::move(mock_proxy_event_binding_ptr)};
 
     // And a new Service Element is created and move assigned
-    ProxyEventBase dummy_event_2{kEventName2, std::make_unique<StrictMock<mock_binding::ProxyEvent>>()};
+    auto mock_proxy_event_binding_2_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent>>();
+    EXPECT_CALL(*mock_proxy_event_binding_2_ptr, GetHealthTrackerConfiguration());
+    ProxyEventBase dummy_event_2{kEventName2, std::move(mock_proxy_event_binding_2_ptr)};
     dummy_event_2 = std::move(dummy_event);
 
     // Expect that Subscribe is called on the binding only once
@@ -1149,6 +1153,7 @@ TEST(ProxyEventBaseTest, SetSubscriptionStateChangeHandlerWorks)
 {
     auto mock_proxy_event_binding_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent>>();
     auto& mock_proxy_event_binding = *mock_proxy_event_binding_ptr;
+    EXPECT_CALL(mock_proxy_event_binding, GetHealthTrackerConfiguration());
 
     // Given a Service Element, that is connected to a mock binding
     ProxyEventBase dummy_event{kEventName, std::move(mock_proxy_event_binding_ptr)};
@@ -1167,6 +1172,7 @@ TEST(ProxyEventBaseTest, UnsetSubscriptionStateChangeHandlerWorks)
 {
     auto mock_proxy_event_binding_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent>>();
     auto& mock_proxy_event_binding = *mock_proxy_event_binding_ptr;
+    EXPECT_CALL(mock_proxy_event_binding, GetHealthTrackerConfiguration());
 
     // Given a Service Element, that is connected to a mock binding
     ProxyEventBase dummy_event{kEventName, std::move(mock_proxy_event_binding_ptr)};

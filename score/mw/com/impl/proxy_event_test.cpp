@@ -471,6 +471,7 @@ TEST(ProxyEventTest, SamplePtrsToSlotDataAreConst)
 
     auto mock_proxy_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent>>();
     auto& mock_proxy = *mock_proxy_ptr;
+    EXPECT_CALL(mock_proxy, GetHealthTrackerConfiguration());
     ProxyEvent<SampleType> proxy{kEventName, std::unique_ptr<ProxyEventBinding>{std::move(mock_proxy_ptr)}};
 
     EXPECT_CALL(mock_proxy, Subscribe(max_num_samples));
@@ -501,6 +502,7 @@ TEST(ProxyEventDeathTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
 
     auto mock_proxy_ptr = std::make_unique<StrictMock<mock_binding::ProxyEvent>>();
     auto& mock_proxy = *mock_proxy_ptr;
+    EXPECT_CALL(mock_proxy, GetHealthTrackerConfiguration());
     auto proxy = std::make_unique<ProxyEvent<SampleType>>(
         kEventName, std::unique_ptr<ProxyEventBinding>{std::move(mock_proxy_ptr)});
 
@@ -561,6 +563,7 @@ TEST_F(ProxyEventMoveAssignmentTest, MoveAssignmentTransfersBindingFromSourceToD
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     StrictMock<mock_binding::ProxyEvent> second_binding_mock{};
+    EXPECT_CALL(second_binding_mock, GetHealthTrackerConfiguration());
     auto second_binding_facade = std::make_unique<mock_binding::ProxyEventFacade>(second_binding_mock);
 
     // Given two ProxyEvents, each with their own binding mock

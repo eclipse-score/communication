@@ -212,7 +212,7 @@ Result<std::size_t> ProxyEvent<SampleType>::GetNewSamples(F&& receiver, std::siz
     // The e2e_receiver wraps the user provided receiver and completes the E2E result the binding attached to the
     // sample before forwarding it.
     auto e2e_receiver = [this, receiver = std::forward<F>(receiver)](SamplePtr<SampleType> sample_ptr) {
-        AttachE2EResult(sample_ptr);
+        AttachE2EResultToSamplePtr(sample_ptr);
         receiver(std::move(sample_ptr));
     };
 

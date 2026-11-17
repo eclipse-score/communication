@@ -96,7 +96,7 @@ Result<std::size_t> GenericProxyEvent::GetNewSamples(F&& receiver, std::size_t m
     }
 
     auto e2e_receiver = [this, receiver = std::forward<F>(receiver)](SamplePtr<void> sample_ptr) {
-        AttachE2EResult(sample_ptr);
+        AttachE2EResultToSamplePtr(sample_ptr);
         receiver(std::move(sample_ptr));
     };
 
