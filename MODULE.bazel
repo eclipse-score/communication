@@ -268,7 +268,7 @@ gcc_ferrocene = use_extension(
     dev_dependency = True,
 )
 gcc_ferrocene.toolchain(
-    name = "ferrocene_x86_64_unknown_linux_gnu_llvm",
+    name = "communication_ferrocene_x86_64_unknown_linux_gnu",
     coverage_tools_sha256 = "9cf5d76b2e505bf2a8b2b47c60f191ac1273f87851ed387e53080b8e5d14dedf",
     coverage_tools_strip_prefix = "779fbed05ae9e9fe2a04137929d99cc9b3d516fd/x86_64-unknown-linux-gnu",
     coverage_tools_url = "{url}releases/download/{version}/coverage-tools-{commit}-x86_64-unknown-linux-gnu.tar.gz".format(
@@ -279,7 +279,6 @@ gcc_ferrocene.toolchain(
     exec_triple = "x86_64-unknown-linux-gnu",
     extra_rustc_flags = [
         "-Clink-arg=-Wl,--no-as-needed",
-        "-Clink-arg=-lc++",
         "-Clink-arg=-lm",
         "-Clink-arg=-lc",
     ],
@@ -297,7 +296,7 @@ gcc_ferrocene.toolchain(
 )
 use_repo(
     gcc_ferrocene,
-    "ferrocene_x86_64_unknown_linux_gnu_llvm",
+    "communication_ferrocene_x86_64_unknown_linux_gnu",
 )
 
 # We use here a pre-compiled fully static and hermetic clang_format binary
