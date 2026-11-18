@@ -37,6 +37,8 @@ class SerializerErrorDomain final : public score::result::ErrorDomain
                 return "Invalid argument passed to serializer.";
             case static_cast<score::result::ErrorCode>(SerializerErrc::kInternalError):
                 return "Internal serializer error.";
+            case static_cast<score::result::ErrorCode>(SerializerErrc::kIncompatibleLibrary):
+                return "Serializer library is incompatible with this build.";
             default:
                 return "unknown serializer error";
         }

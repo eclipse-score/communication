@@ -33,6 +33,8 @@ enum class SerializerErrc : score::result::ErrorCode
     kCreationFailed,
     kInvalidArgument,
     kInternalError,
+    /// Reported by mw::com when a loaded library does not match this build; never returned by a library.
+    kIncompatibleLibrary,
 };
 
 score::result::Error MakeError(const SerializerErrc code, const std::string_view message = "");
@@ -42,7 +44,12 @@ score::result::Error MakeError(const SerializerErrc code, const std::string_view
 /// The generated serialization library (libmwcom_serializer_someip.so) is loaded by mw::com via
 /// dlopen and provides one implementation of this interface per datatype. Because this interface is
 /// the ABI boundary between mw::com and the library, its layout must remain fixed: all methods are
-/// noexcept and report failures through score::Result instead of throwing.
+/// noexcept and report failures through score::Result instead of throwing. Failures must be reported as
+/// SerializerErrc values; the error domain of a library cannot be referenced by mw::com, so
+/// SerializerLibrary translates them into its own domain.
+///
+/// Every change that alters the binary layout of this interface requires a bump of kSerializerAbiVersion
+/// (see serializer_abi.h), which makes mw::com refuse libraries built against the previous layout.
 ///
 /// \note Only big-endian encoding is implemented right now. Little-endian
 ///       is not supported yet.

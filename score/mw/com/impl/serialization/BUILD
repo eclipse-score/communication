@@ -40,11 +40,35 @@ cc_library(
     ],
 )
 
+# Loads a generated serialization library with dlopen after verifying its descriptor.
+# The link options for dlopen come from the toolchains (see the score_communication_dynamic_loading feature
+# in //quality/compiler_warnings).
+cc_library(
+    name = "serializer_library",
+    srcs = ["serializer_library.cpp"],
+    hdrs = ["serializer_library.h"],
+    deps = [
+        ":serializer",
+        ":serializer_abi",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/result",
+    ],
+)
+
 cc_unit_test(
     name = "serializer_abi_test",
     srcs = ["serializer_abi_test.cpp"],
     deps = [
         ":serializer_abi",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_unit_test(
+    name = "serializer_library_test",
+    srcs = ["serializer_library_test.cpp"],
+    deps = [
+        ":serializer_library",
         "@score_baselibs//score/result",
     ],
 )
