@@ -90,15 +90,6 @@ score::Result<std::size_t> SpeedRpmSerializer::GetMaxSerializedSize() const noex
 
 }  // namespace score::serialization::someip
 
-namespace
-{
-using score::serialization::someip::SpeedRpm;
-
-// The exported symbol name must spell out the hashes as literals, so pin them to the datatype constants.
-static_assert(SpeedRpm::kStructuralHash == 0x2c5f8d1aULL, "Symbol name does not match structural hash");
-static_assert(SpeedRpm::kAttributeHash == 0x7e3a91c4ULL, "Symbol name does not match attribute hash");
-}  // namespace
-
 extern "C" {
 
 // Every generated library exports one factory function per serializer variant, resolved by mw::com via

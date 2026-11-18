@@ -21,15 +21,10 @@ namespace score::serialization::someip
 
 /// \brief Motor telemetry sample carrying the current speed, engine RPM and a speed history.
 ///
-/// This is the datatype generator output for the ExampleService::SpeedRpm event: the SampleType plus
-/// its structural hash. Producer, consumer and mw::com all include this header, so all three observe
-/// the same hashes.
+/// This is the datatype generator output for the ExampleService::SpeedRpm event: the SampleType.
+/// Producer, consumer and mw::com all include this header, so all three observe the same definition.
 struct SpeedRpm
 {
-    static constexpr std::uint64_t kStructuralHash = 0x2c5f8d1aULL;
-    // Hash of the attributes fixed at compile time in the serializer (here: big-endian, packed).
-    static constexpr std::uint64_t kAttributeHash = 0x7e3a91c4ULL;
-
     float speed_kmh;
     std::uint16_t rpm;
     std::vector<float> speed_samples;
