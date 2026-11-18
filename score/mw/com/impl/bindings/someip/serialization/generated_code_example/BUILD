@@ -12,8 +12,9 @@
 # *******************************************************************************
 
 # Example of generator output for the SOME/IP binding. The hand-written ABI (ISerializer interface,
-# error type, factory signatures and shared serialization helpers) lives in //score/mw/com/impl/serialization;
-# the datatype, its serializer and the factory below illustrate what the serializer generator emits.
+# error type and factory signatures) lives in //score/mw/com/impl/serialization; the datatype, its
+# serializer and the factory below illustrate what the serializer generator emits. The serializer is
+# built on the SomeIpStrategy, which encodes the datatype field by field.
 
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
@@ -25,6 +26,10 @@ package(
 cc_library(
     name = "speed_rpm",
     hdrs = ["speed_rpm.h"],
+    deps = [
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/static_reflection_with_serialization/visitor",
+    ],
 )
 
 cc_library(
@@ -35,10 +40,12 @@ cc_library(
     alwayslink = True,
     deps = [
         ":speed_rpm",
-        "//score/mw/com/impl/serialization:serialization_helpers",
+        "//score/mw/com/impl/bindings/someip/serialization/strategy:someip_strategy",
         "//score/mw/com/impl/serialization:serializer",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
+        "@score_baselibs//score/serialization",
+        "@score_baselibs//score/serialization/error",
     ],
 )
 

@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
@@ -85,7 +86,7 @@ TEST(SpeedRpmSerializer, WritesBigEndianWireLayout)
         0x00U,
         0x00U,
         0x00U,
-        0x01U,  // sample count
+        0x04U,  // length of the sample data in bytes (one float)
         0x42U,
         0x48U,
         0x00U,
@@ -133,21 +134,91 @@ TEST(SpeedRpmSerializer, DeserializeRejectsTruncatedHeader)
     EXPECT_EQ(*result.error(), static_cast<score::result::ErrorCode>(SerializerErrc::kDeserializationFailed));
 }
 
-TEST(SpeedRpmSerializer, DeserializeRejectsOutOfRangeSampleCount)
+TEST(SpeedRpmSerializer, DeserializeRejectsLengthExceedingBuffer)
 {
     const SpeedRpmSerializer serializer{};
 
     std::array<std::uint8_t, 12U> buffer{};
-    buffer[6] = 0x00U;
-    buffer[7] = 0x00U;
-    buffer[8] = 0x00U;
-    buffer[9] = 0x65U;  // 101 samples, exceeds the maximum
+    buffer[9] = 0x08U;  // declares two floats, but only two bytes follow the length field
 
     SpeedRpm decoded{};
     const auto result = serializer.Deserialize(buffer, &decoded);
 
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(*result.error(), static_cast<score::result::ErrorCode>(SerializerErrc::kDeserializationFailed));
+}
+
+TEST(SpeedRpmSerializer, DeserializeRejectsMoreSamplesThanCapacity)
+{
+    const SpeedRpmSerializer serializer{};
+
+    constexpr std::size_t kHeaderSize = 10U;
+    std::vector<std::uint8_t> buffer(kHeaderSize + ((SpeedRpm::kMaxSpeedSamples + 1U) * sizeof(float)));
+    buffer[8] = 0x01U;
+    buffer[9] = 0x94U;  // 404 bytes = 101 floats, one more than fits into speed_samples
+
+    SpeedRpm decoded{};
+    const auto result = serializer.Deserialize(buffer, &decoded);
+
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(*result.error(), static_cast<score::result::ErrorCode>(SerializerErrc::kDeserializationFailed));
+    EXPECT_EQ(result.error().UserMessage(), "speed_samples length out of range");
+}
+
+TEST(SpeedRpmSerializer, DeserializeReplacesExistingSamples)
+{
+    const SpeedRpmSerializer serializer{};
+
+    SpeedRpm original{};
+    original.speed_samples = {1.0F, 2.0F};
+
+    std::vector<std::uint8_t> buffer(serializer.GetMaxSerializedSize().value());
+    ASSERT_TRUE(serializer.Serialize(&original, buffer).has_value());
+
+    SpeedRpm decoded{};
+    decoded.speed_samples = {9.0F, 9.0F, 9.0F};
+    ASSERT_TRUE(serializer.Deserialize(buffer, &decoded).has_value());
+
+    EXPECT_EQ(decoded.speed_samples, original.speed_samples);
+}
+
+TEST(SpeedRpmSerializer, DeserializeLeavesSampleUntouchedOnFailure)
+{
+    const SpeedRpmSerializer serializer{};
+
+    std::array<std::uint8_t, 8U> truncated{};
+    SpeedRpm decoded{};
+    decoded.speed_kmh = 7.0F;
+    decoded.rpm = 8U;
+    decoded.speed_samples = {1.0F};
+
+    ASSERT_FALSE(serializer.Deserialize(truncated, &decoded).has_value());
+
+    EXPECT_FLOAT_EQ(decoded.speed_kmh, 7.0F);
+    EXPECT_EQ(decoded.rpm, 8U);
+    EXPECT_EQ(decoded.speed_samples.size(), 1U);
+}
+
+TEST(SpeedRpmSerializer, FullSampleArraySerializesToMaxSerializedSize)
+{
+    const SpeedRpmSerializer serializer{};
+
+    SpeedRpm original{};
+    original.speed_kmh = 1.0F;
+    original.rpm = 2U;
+    for (std::size_t i = 0U; i < SpeedRpm::kMaxSpeedSamples; ++i)
+    {
+        original.speed_samples.push_back(static_cast<float>(i));
+    }
+
+    std::vector<std::uint8_t> buffer(serializer.GetMaxSerializedSize().value());
+    const auto written = serializer.Serialize(&original, buffer);
+    ASSERT_TRUE(written.has_value());
+    EXPECT_EQ(written.value(), buffer.size());
+
+    SpeedRpm decoded{};
+    ASSERT_TRUE(serializer.Deserialize(buffer, &decoded).has_value());
+    EXPECT_EQ(decoded.speed_samples, original.speed_samples);
 }
 
 }  // namespace

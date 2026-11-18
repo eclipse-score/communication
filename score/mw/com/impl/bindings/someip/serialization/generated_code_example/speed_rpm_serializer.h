@@ -14,7 +14,10 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SERIALIZATION_GENERATED_CODE_EXAMPLE_SPEED_RPM_SERIALIZER_H
 
 #include "score/mw/com/impl/bindings/someip/serialization/generated_code_example/speed_rpm.h"
+#include "score/mw/com/impl/bindings/someip/serialization/strategy/someip_strategy.h"
 #include "score/mw/com/impl/serialization/serializer.h"
+
+#include "score/serialization/serializer.h"
 
 #include <score/span.hpp>
 
@@ -24,13 +27,17 @@
 namespace score::serialization::someip
 {
 
-/// \brief ISerializer implementation for the SpeedRpm datatype.
+/// \brief ISerializer implementation for the SpeedRpm datatype, built on the SomeIpStrategy.
 ///
-/// Wire layout (big-endian, SOME/IP):
+/// The strategy runs with its default layout: big-endian, packed (no alignment padding) and 4 byte
+/// length fields. These are the attributes fixed at compile time, which the attribute hash in the name of
+/// the exported factory function stands for.
+///
+/// Wire layout:
 ///   [0..3]   speed_kmh          (float)
 ///   [4..5]   rpm                (uint16)
-///   [6..9]   speed_samples size (uint32 length prefix)
-///   [10..]   speed_samples data (size * float)
+///   [6..9]   speed_samples size (uint32 length field, counting the bytes of speed_samples data)
+///   [10..]   speed_samples data (size / sizeof(float) floats)
 class SpeedRpmSerializer final : public ISerializer
 {
   public:
@@ -39,10 +46,7 @@ class SpeedRpmSerializer final : public ISerializer
     score::Result<std::size_t> GetMaxSerializedSize() const noexcept override;
 
   private:
-    // speed_kmh (4) + rpm (2) + length prefix (4).
-    static constexpr std::size_t kFixedFieldsSize = 10U;
-    static constexpr std::uint32_t kMaxSpeedSamples = 100U;
-    static constexpr std::size_t kMaxSerializedSize = kFixedFieldsSize + (kMaxSpeedSamples * sizeof(float));
+    Serializer<SomeIpStrategy> serializer_{SomeIpStrategy{}};
 };
 
 }  // namespace score::serialization::someip

@@ -13,8 +13,12 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SERIALIZATION_GENERATED_CODE_EXAMPLE_SPEED_RPM_H
 #define SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SERIALIZATION_GENERATED_CODE_EXAMPLE_SPEED_RPM_H
 
+#include "static_reflection_with_serialization/visitor/visit_as_struct.h"
+
+#include <score/static_vector.hpp>
+
+#include <cstddef>
 #include <cstdint>
-#include <vector>
 
 namespace score::serialization::someip
 {
@@ -23,12 +27,19 @@ namespace score::serialization::someip
 ///
 /// This is the datatype generator output for the ExampleService::SpeedRpm event: the SampleType.
 /// Producer, consumer and mw::com all include this header, so all three observe the same definition.
+///
+/// The datatype is made visitable, which lets the SomeIpStrategy serialize it field by field. Every
+/// dynamic member is capacity-bounded, which bounds the serialized size (see GetMaxSize).
 struct SpeedRpm
 {
+    static constexpr std::size_t kMaxSpeedSamples = 100U;
+
     float speed_kmh;
     std::uint16_t rpm;
-    std::vector<float> speed_samples;
+    score::cpp::static_vector<float, kMaxSpeedSamples> speed_samples;
 };
+
+SCORE_STRUCT_VISITABLE(SpeedRpm, speed_kmh, rpm, speed_samples)
 
 }  // namespace score::serialization::someip
 

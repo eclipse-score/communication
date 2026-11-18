@@ -13,9 +13,12 @@
 #include "score/mw/com/impl/bindings/someip/serialization/generated_code_example/speed_rpm_serializer.h"
 
 #include "score/mw/com/impl/bindings/someip/serialization/generated_code_example/speed_rpm.h"
-#include "score/mw/com/impl/serialization/serialization_helpers.h"
+#include "score/mw/com/impl/bindings/someip/serialization/strategy/someip_max_size.h"
+
+#include "score/serialization/error/serialization_error.h"
 
 #include <new>
+#include <utility>
 
 namespace score::serialization::someip
 {
@@ -28,24 +31,20 @@ score::Result<std::size_t> SpeedRpmSerializer::Serialize(const void* sample,
         return MakeUnexpected(SerializerErrc::kInvalidArgument);
     }
 
-    const auto& event = *static_cast<const SpeedRpm*>(sample);
-    if (event.speed_samples.size() > kMaxSpeedSamples)
+    const auto written = serializer_.Serialize(*static_cast<const SpeedRpm*>(sample), buffer);
+    if (!written.has_value())
     {
-        return MakeUnexpected(SerializerErrc::kInternalError, "speed_samples exceeds maximum length");
+        // The error domain of the serialization library must not cross the library boundary, so every
+        // failure is reported as SerializerErrc. The strategy writes the buffer front to back and reports an
+        // out-of-bounds write once it runs out of space.
+        if (written.error() == MakeError(SerializationError::kOutOfBoundsWrite))
+        {
+            return MakeUnexpected(SerializerErrc::kBufferTooSmall);
+        }
+        return MakeUnexpected(SerializerErrc::kInternalError, "serialization failed");
     }
 
-    const std::size_t required = kFixedFieldsSize + (event.speed_samples.size() * sizeof(float));
-    if (buffer.size() < required)
-    {
-        return MakeUnexpected(SerializerErrc::kBufferTooSmall);
-    }
-
-    WriteFloat(event.speed_kmh, buffer.subspan(0, sizeof(float)));
-    WriteUint16(event.rpm, buffer.subspan(4, sizeof(std::uint16_t)));
-    WriteUint32(static_cast<std::uint32_t>(event.speed_samples.size()), buffer.subspan(6, sizeof(std::uint32_t)));
-    WriteFloats(event.speed_samples, buffer.subspan(kFixedFieldsSize));
-
-    return required;
+    return written.value();
 }
 
 score::Result<void> SpeedRpmSerializer::Deserialize(score::cpp::span<const std::uint8_t> buffer,
@@ -56,36 +55,26 @@ score::Result<void> SpeedRpmSerializer::Deserialize(score::cpp::span<const std::
         return MakeUnexpected(SerializerErrc::kInvalidArgument);
     }
 
-    if (buffer.size() < kFixedFieldsSize)
+    // The strategy appends to bounded containers, so decode into a fresh object. This also leaves the caller's
+    // sample untouched when decoding fails.
+    SpeedRpm decoded{};
+    const auto read = serializer_.DeSerialize(buffer, decoded);
+    if (!read.has_value())
     {
-        return MakeUnexpected(SerializerErrc::kDeserializationFailed, "buffer smaller than fixed fields");
+        if (read.error() == MakeError(SerializationError::kDeserializedCountExceedsCapacity))
+        {
+            return MakeUnexpected(SerializerErrc::kDeserializationFailed, "speed_samples length out of range");
+        }
+        return MakeUnexpected(SerializerErrc::kDeserializationFailed, "buffer truncated or malformed");
     }
 
-    const std::uint32_t sample_count = ReadUint32(buffer.subspan(6, sizeof(std::uint32_t)));
-    if (sample_count > kMaxSpeedSamples)
-    {
-        return MakeUnexpected(SerializerErrc::kDeserializationFailed, "speed_samples length out of range");
-    }
-
-    const std::size_t required = kFixedFieldsSize + (sample_count * sizeof(float));
-    if (buffer.size() < required)
-    {
-        return MakeUnexpected(SerializerErrc::kDeserializationFailed, "buffer truncated");
-    }
-
-    auto& event = *static_cast<SpeedRpm*>(sample);
-    event.speed_kmh = ReadFloat(buffer.subspan(0, sizeof(float)));
-    event.rpm = ReadUint16(buffer.subspan(4, sizeof(std::uint16_t)));
-
-    event.speed_samples.resize(sample_count);
-    ReadFloats(buffer.subspan(kFixedFieldsSize), event.speed_samples);
-
+    *static_cast<SpeedRpm*>(sample) = std::move(decoded);
     return {};
 }
 
 score::Result<std::size_t> SpeedRpmSerializer::GetMaxSerializedSize() const noexcept
 {
-    return kMaxSerializedSize;
+    return GetMaxSize<SpeedRpm>();
 }
 
 }  // namespace score::serialization::someip
