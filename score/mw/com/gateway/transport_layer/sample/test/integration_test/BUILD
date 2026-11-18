@@ -20,6 +20,8 @@ integration_test(
         "test_bidirectional_transport_communication.py",
     ],
     filesystem = "//score/mw/com/gateway/transport_layer/sample/test:application-pkg",
+    # FIXME: Disabled for thread sanitizer because of detected race (https://github.com/eclipse-score/communication/issues/1639)
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )
 
 integration_test(
@@ -29,4 +31,6 @@ integration_test(
         "test_bidirectional_transport_reconnect.py",
     ],
     filesystem = "//score/mw/com/gateway/transport_layer/sample/test:application-pkg",
+    # FIXME: Disabled for thread sanitizer because of detected race (https://github.com/eclipse-score/communication/issues/1639)
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )

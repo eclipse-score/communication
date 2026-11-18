@@ -19,4 +19,6 @@ integration_test(
         "com_api_async_api_test.py",
     ],
     filesystem = "//score/mw/com/test/basic_rust_api/consumer_async_apis:bigdata-com-api-async-pkg",
+    # FIXME: Disabled for thread sanitizer because of detected race (https://github.com/eclipse-score/communication/issues/1640)
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )

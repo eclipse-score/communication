@@ -134,13 +134,6 @@ def integration_test(name, srcs, filesystem, **kwargs):
     if "timeout" not in kwargs:
         kwargs["timeout"] = "short"
 
-    # FIXME: Integration tests are highly flaky with TSAN. (https://github.com/eclipse-score/communication/issues/1608)
-    _extend_list_in_kwargs_without_duplicates(
-        kwargs,
-        "target_compatible_with",
-        ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
-    )
-
     # Tag as integration test so flaky-detection and other tooling can select
     # these via --test_tag_filters=integration-test.
     _extend_list_in_kwargs_without_duplicates(
