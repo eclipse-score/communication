@@ -32,6 +32,21 @@
 
 namespace score::mw::com::impl::lola
 {
+
+class SkeletonEventAttorney
+{
+  public:
+    explicit SkeletonEventAttorney(SkeletonEvent& skeleton_event) noexcept : skeleton_event_{skeleton_event} {}
+
+    void SetQmDisconnect(const bool qm_disconnect_value)
+    {
+        skeleton_event_.qm_disconnect_ = qm_disconnect_value;
+    }
+
+  private:
+    SkeletonEvent& skeleton_event_;
+};
+
 namespace
 {
 
@@ -223,6 +238,55 @@ TEST_F(SkeletonEventPrepareOfferFixture, RegisterEventNotificationExistenceChang
             RegisterEventNotificationExistenceChangedCallback(impl::QualityType::kASIL_B, fake_element_fq_id_, _))
             .Times(1);
     }
+
+    // When offering a skeleton event
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
+}
+
+TEST_F(SkeletonEventPrepareOfferFixture, RegisterEventDataExistsCallback)
+{
+    constexpr bool enforce_max_samples{true};
+    constexpr std::size_t max_samples{5U};
+
+    // Given a valid ASIL-B skeleton event
+    InitialiseSkeletonEvent(fake_element_fq_id_,
+                            fake_event_name_,
+                            max_samples,
+                            max_subscribers_,
+                            enforce_max_samples,
+                            QualityType::kASIL_B);
+
+    // Expect, that it registers a data exists callback for QM
+    EXPECT_CALL(message_passing_mock_,
+                RegisterEventDataExistsCallback(impl::QualityType::kASIL_QM, fake_element_fq_id_, _))
+        .Times(1);
+
+    // and for ASIL-B
+    EXPECT_CALL(message_passing_mock_,
+                RegisterEventDataExistsCallback(impl::QualityType::kASIL_B, fake_element_fq_id_, _))
+        .Times(1);
+
+    // When offering a skeleton event
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
+}
+
+TEST_F(SkeletonEventPrepareOfferFixture, QmEventRegistersNoAsilBDataExistsCallback)
+{
+    // Given a valid QM skeleton event
+    InitialiseSkeletonEvent(fake_element_fq_id_,
+                            fake_event_name_,
+                            max_samples_,
+                            max_subscribers_,
+                            kEnforceMaxSamples,
+                            QualityType::kASIL_QM);
+
+    // Expect, that it registers a data exists callback for QM only
+    EXPECT_CALL(message_passing_mock_,
+                RegisterEventDataExistsCallback(impl::QualityType::kASIL_QM, fake_element_fq_id_, _))
+        .Times(1);
+    EXPECT_CALL(message_passing_mock_,
+                RegisterEventDataExistsCallback(impl::QualityType::kASIL_B, fake_element_fq_id_, _))
+        .Times(0);
 
     // When offering a skeleton event
     std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
@@ -738,6 +802,140 @@ TEST_F(SkeletonEventQmGetLatestSampleFixture, GetLatestSampleTerminateWhenAsilBI
 }
 
 using SkeletonEventTimestampFixture = SkeletonEventFixture;
+TEST_F(SkeletonEventTimestampFixture, DataExistsCallbackReportsWhetherASampleWasSent)
+{
+    // Given a skeleton event whose data exists callback is captured when it is offered
+    InitialiseSkeletonEvent(fake_element_fq_id_,
+                            fake_event_name_,
+                            max_samples_,
+                            max_subscribers_,
+                            kEnforceMaxSamples,
+                            QualityType::kASIL_QM,
+                            kDisabledTracingData);
+
+    std::optional<IMessagePassingService::EventDataExistsCallback> data_exists_callback{};
+    EXPECT_CALL(message_passing_mock_, RegisterEventDataExistsCallback(QualityType::kASIL_QM, fake_element_fq_id_, _))
+        .WillOnce([&data_exists_callback](
+                      QualityType, ElementFqId, IMessagePassingService::EventDataExistsCallback callback) {
+            data_exists_callback = std::move(callback);
+        });
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
+    ASSERT_TRUE(data_exists_callback.has_value());
+
+    // Then no data exists before the first Send()
+    EXPECT_FALSE((*data_exists_callback)());
+
+    // When a sample is allocated and sent
+    auto allocated_slot_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
+    ASSERT_TRUE(allocated_slot_result.has_value());
+    auto send_result = skeleton_event_->Send(std::move(allocated_slot_result).value(), std::nullopt);
+    ASSERT_TRUE(send_result.has_value());
+
+    // Then data exists
+    EXPECT_TRUE((*data_exists_callback)());
+
+    // and after the offer is stopped no data is reported anymore
+    skeleton_event_->PrepareStopOffer();
+    EXPECT_FALSE((*data_exists_callback)());
+}
+
+TEST_F(SkeletonEventTimestampFixture, QmDataExistsCallbackReportsNoDataAfterQmDisconnectWhileAsilBStillDoes)
+{
+    // Given an offered ASIL-B skeleton event, whose data exists callbacks are captured
+    InitialiseSkeletonEvent(fake_element_fq_id_,
+                            fake_event_name_,
+                            max_samples_,
+                            max_subscribers_,
+                            kEnforceMaxSamples,
+                            QualityType::kASIL_B,
+                            kDisabledTracingData);
+
+    std::optional<IMessagePassingService::EventDataExistsCallback> qm_callback{};
+    std::optional<IMessagePassingService::EventDataExistsCallback> asil_b_callback{};
+    EXPECT_CALL(message_passing_mock_, RegisterEventDataExistsCallback(QualityType::kASIL_QM, fake_element_fq_id_, _))
+        .WillOnce([&qm_callback](QualityType, ElementFqId, IMessagePassingService::EventDataExistsCallback callback) {
+            qm_callback = std::move(callback);
+        });
+    EXPECT_CALL(message_passing_mock_, RegisterEventDataExistsCallback(QualityType::kASIL_B, fake_element_fq_id_, _))
+        .WillOnce(
+            [&asil_b_callback](QualityType, ElementFqId, IMessagePassingService::EventDataExistsCallback callback) {
+                asil_b_callback = std::move(callback);
+            });
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
+    ASSERT_TRUE(qm_callback.has_value());
+    ASSERT_TRUE(asil_b_callback.has_value());
+
+    // and a sample has been sent
+    auto allocated_slot_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
+    ASSERT_TRUE(allocated_slot_result.has_value());
+    ASSERT_TRUE(skeleton_event_->Send(std::move(allocated_slot_result).value(), std::nullopt).has_value());
+    ASSERT_TRUE((*qm_callback)());
+    ASSERT_TRUE((*asil_b_callback)());
+
+    // When the QM consumers are disconnected
+    SkeletonEventAttorney{*skeleton_event_}.SetQmDisconnect(true);
+
+    // Then no catch-up is requested for QM consumers
+    EXPECT_FALSE((*qm_callback)());
+
+    // but ASIL-B consumers are still served
+    EXPECT_TRUE((*asil_b_callback)());
+}
+
+// Documents the split of responsibilities for eclipse-score/communication#1488: a Send() that happens before the
+// consumer's registration is processed is not announced by SkeletonEvent itself. The messaging layer announces it
+// afterwards by asking the data exists callback.
+using SkeletonEventNotificationFixture = SkeletonEventFixture;
+TEST_F(SkeletonEventNotificationFixture, SampleSentBeforeHandlerRegistrationIsReportedByDataExistsCallback)
+{
+    // Given an offered QM skeleton event, keeping the callbacks that PrepareOffer registers
+    InitialiseSkeletonEvent(fake_element_fq_id_,
+                            fake_event_name_,
+                            max_samples_,
+                            max_subscribers_,
+                            kEnforceMaxSamples,
+                            QualityType::kASIL_QM,
+                            kDisabledTracingData);
+
+    IMessagePassingService::HandlerStatusChangeCallback registration_changed{};
+    EXPECT_CALL(message_passing_mock_,
+                RegisterEventNotificationExistenceChangedCallback(QualityType::kASIL_QM, fake_element_fq_id_, _))
+        .WillOnce([&registration_changed](
+                      QualityType, ElementFqId, IMessagePassingService::HandlerStatusChangeCallback callback) {
+            registration_changed = std::move(callback);
+        });
+    std::optional<IMessagePassingService::EventDataExistsCallback> data_exists_callback{};
+    EXPECT_CALL(message_passing_mock_, RegisterEventDataExistsCallback(QualityType::kASIL_QM, fake_element_fq_id_, _))
+        .WillOnce([&data_exists_callback](
+                      QualityType, ElementFqId, IMessagePassingService::EventDataExistsCallback callback) {
+            data_exists_callback = std::move(callback);
+        });
+    ASSERT_TRUE(skeleton_event_->PrepareOffer(std::nullopt).has_value());
+    ASSERT_TRUE(data_exists_callback.has_value());
+
+    auto send_one_sample = [this]() {
+        auto allocated = skeleton_event_->Allocate(SampleAllocateeGuard{});
+        ASSERT_TRUE(allocated.has_value());
+        ASSERT_TRUE(skeleton_event_->Send(std::move(allocated).value(), std::nullopt).has_value());
+    };
+
+    // When the provider sends before the consumer's registration has been processed
+    EXPECT_CALL(message_passing_mock_, NotifyEvent(_, _)).Times(0);
+    send_one_sample();
+
+    // and the registration is processed afterwards
+    registration_changed(true);
+
+    // Then SkeletonEvent itself does not notify
+    ::testing::Mock::VerifyAndClearExpectations(&message_passing_mock_);
+
+    // but the data exists callback tells messaging to send the catch-up
+    EXPECT_TRUE((*data_exists_callback)());
+
+    // and with the handler now known, the next Send() does notify
+    EXPECT_CALL(message_passing_mock_, NotifyEvent(QualityType::kASIL_QM, fake_element_fq_id_)).Times(1);
+    send_one_sample();
+}
 TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
 {
     // GIVEN a skeleton event that is offered

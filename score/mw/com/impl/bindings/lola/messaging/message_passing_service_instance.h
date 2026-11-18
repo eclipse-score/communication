@@ -36,6 +36,7 @@
 #include <cstdint>
 #include <iterator>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <shared_mutex>
 #include <unordered_map>
@@ -116,9 +117,19 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
         const ElementFqId event_id,
         IMessagePassingService::HandlerStatusChangeCallback callback) noexcept override;
 
+    /// \brief Registers a callback which tells whether a sample already exists for the event.
+    /// \details If the callback returns true while a remote node registers for event notifications, the new node
+    ///          receives one catch-up kNotifyEvent message. The callback is removed together with the callback of
+    ///          RegisterEventNotificationExistenceChangedCallback.
+    /// \param event_id The event the callback belongs to.
+    /// \param callback Returns true if a sample already exists.
+    void RegisterEventDataExistsCallback(const ElementFqId event_id,
+                                         IMessagePassingService::EventDataExistsCallback callback) noexcept override;
+
     /// \brief Unregisters the callback for event notification existence changes.
     /// \details After unregistration, no further callbacks will be invoked for event notification
-    ///          existence changes of this event.
+    ///          existence changes of this event. A callback registered with RegisterEventDataExistsCallback is
+    ///          removed as well.
     /// \param event_id The event to stop monitoring.
     void UnregisterEventNotificationExistenceChangedCallback(const ElementFqId event_id) noexcept override;
 
@@ -204,6 +215,9 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
                                        const pid_t sender_node_id) noexcept;
     void HandleUnregisterNotificationMsg(const score::cpp::span<const std::uint8_t> payload,
                                          const pid_t sender_node_id) noexcept;
+    bool EventDataExists(const ElementFqId event_id) noexcept;
+    void PostCatchUpNotificationIfDataExists(const ElementFqId event_id, const pid_t target_node_id) noexcept;
+    void SendCatchUpNotificationIfDataExists(const ElementFqId event_id, const pid_t target_node_id) noexcept;
     void HandleOutdatedNodeIdMsg(const score::cpp::span<const std::uint8_t> payload,
                                  const pid_t sender_node_id) noexcept;
     score::Result<void> HandleSubscribeServiceMethodMsg(const score::cpp::span<const std::uint8_t> payload,
@@ -335,6 +349,10 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     std::unordered_map<ElementFqId, IMessagePassingService::HandlerStatusChangeCallback>
         handler_status_change_callbacks_;
 
+    /// \brief map holding per event_id a callback telling whether a sample already exists for the event.
+    /// \note guarded by handler_status_change_callbacks_mutex_, so that unregistering waits for a running query.
+    std::unordered_map<ElementFqId, IMessagePassingService::EventDataExistsCallback> event_data_exists_callbacks_;
+
     std::shared_mutex handler_status_change_callbacks_mutex_;
 
     /// \brief map holding per event_id a list of remote LoLa nodes, which need to be informed, when the event with
@@ -377,6 +395,17 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     /// \detail local update notification leads to a user provided receive handler callout, whose
     ///         runtime is unknown, so we decouple with worker threads.
     score::concurrency::Executor& executor_;
+
+    /// \brief Creates catch_up_pool_ on first use.
+    std::once_flag catch_up_pool_created_;
+
+    /// \brief Worker for catch-up notifications of late-registering remote consumers.
+    /// \details A catch-up send may wait for the first connection to the consumer (up to the connect timeout), so it
+    ///          must neither run on the message passing engine thread nor occupy the threads of executor_, which
+    ///          run user receive handlers. The single thread is only created when the first
+    ///          RegisterEventDataExistsCallback call is made. Declared before message_callback_scope_, so queued
+    ///          tasks are already invalidated when the pool is destroyed.
+    std::unique_ptr<score::concurrency::ThreadPool> catch_up_pool_;
 
     /// \brief Scope controlling the lifetime of message_callback_scoped_function_
     /// \details When the scope is reset when object is destroyed, the scoped function becomes invalid

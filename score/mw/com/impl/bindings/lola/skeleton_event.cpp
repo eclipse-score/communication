@@ -216,6 +216,22 @@ Result<void> SkeletonEvent::PrepareOffer(const std::optional<InitializeSampleCal
     // Separate callbacks for QM and ASIL-B update their respective atomic flags for lock-free access.
     // If a callback for receive handler registration changes has been set, like it is done for the gateway
     // use case, it will also be called.
+    // The DataExists callback lets messaging send a catch-up notification to a consumer, which registered after
+    // a sample has been sent. It is removed together with the callbacks below in PrepareStopOffer().
+    GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
+        .GetLolaMessaging()
+        .RegisterEventDataExistsCallback(QualityType::kASIL_QM, element_fq_id_, [this]() noexcept {
+            // Same rule as Send(): disconnected QM consumers are not notified.
+            return !qm_disconnect_ && DataExists();
+        });
+    if (parent_.GetInstanceQualityType() == QualityType::kASIL_B)
+    {
+        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
+            .GetLolaMessaging()
+            .RegisterEventDataExistsCallback(QualityType::kASIL_B, element_fq_id_, [this]() noexcept {
+                return DataExists();
+            });
+    }
     GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
         .GetLolaMessaging()
         .RegisterEventNotificationExistenceChangedCallback(
@@ -301,6 +317,16 @@ void SkeletonEvent::ResetGuards() noexcept
         transaction_log_registration_guard_asil_b_.reset();
         transaction_log_registration_guard_qm_.reset();
     }
+}
+
+bool SkeletonEvent::DataExists() const noexcept
+{
+    // Send() stores the slot and then loads the registration flag, both seq_cst. The messaging thread stores the flag
+    // and then reads the slot with acquire only, so this fence is needed to keep that store before the load.
+    // Together, a concurrent Send() and registration cannot both miss each other.
+    std::atomic_thread_fence(std::memory_order_seq_cst);
+    return event_data_control_composite_.has_value() &&
+           (event_data_control_composite_.value().GetLatestTimestamp() != EventSlotStatus::INVALID_TIMESTAMP);
 }
 
 Result<void> SkeletonEvent::NotifyConsumersIfHandlersRegistered()

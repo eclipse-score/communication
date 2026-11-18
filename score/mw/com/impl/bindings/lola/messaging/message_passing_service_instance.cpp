@@ -232,6 +232,8 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(
       call_method_handlers_{},
       call_method_handlers_mutex_{},
       executor_{local_event_executor},
+      catch_up_pool_created_{},
+      catch_up_pool_{},
       message_callback_scope_{},
       self_pid_{os::Unistd::instance().getpid()},
       self_uid_{os::Unistd::instance().getuid()}
@@ -530,6 +532,74 @@ void MessagePassingServiceInstance::HandleRegisterNotificationMsg(const score::c
         {
             callback_search->second(true);  // Now has handlers
         }
+    }
+
+    // The consumer registered asynchronously. A sample sent before this registration was handled has not been
+    // announced to it, so announce it now. This must stay after the node insertion and the callback above.
+    if (!already_registered)
+    {
+        PostCatchUpNotificationIfDataExists(elementFqId, sender_node_id);
+    }
+}
+
+bool MessagePassingServiceInstance::EventDataExists(const ElementFqId event_id) noexcept
+{
+    std::shared_lock<std::shared_mutex> callback_read_lock(handler_status_change_callbacks_mutex_);
+    const auto callback_search = event_data_exists_callbacks_.find(event_id);
+    return (callback_search != event_data_exists_callbacks_.end()) && callback_search->second();
+}
+
+void MessagePassingServiceInstance::PostCatchUpNotificationIfDataExists(const ElementFqId event_id,
+                                                                        const pid_t target_node_id) noexcept
+{
+    if (!EventDataExists(event_id))
+    {
+        return;
+    }
+
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(catch_up_pool_ != nullptr,
+                                                "Catch-up pool must exist once a data exists callback is registered");
+
+    // Sending on the engine thread would block it while it must also establish the consumer connection.
+    // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "If a function is declared to be noexcept,
+    // noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception.". the function Post
+    // throws on allocation failure but this throw directly leads to a termination based on a compiler hook.
+    // and the whole function scope doesn't lead to any exception.
+    // coverity[autosar_cpp14_a15_4_2_violation]
+    catch_up_pool_->Post(score::safecpp::MoveOnlyScopedFunction<void(const score::cpp::stop_token&)>{
+        message_callback_scope_, [this, event_id, target_node_id](const score::cpp::stop_token& /*token*/) noexcept {
+            this->SendCatchUpNotificationIfDataExists(event_id, target_node_id);
+        }});
+}
+
+void MessagePassingServiceInstance::SendCatchUpNotificationIfDataExists(const ElementFqId event_id,
+                                                                        const pid_t target_node_id) noexcept
+{
+    // The state may have changed since the task was posted.
+    bool node_registered{false};
+    {
+        std::shared_lock<std::shared_mutex> nodes_read_lock(event_update_interested_nodes_mutex_);
+        const auto nodes_search = event_update_interested_nodes_.find(event_id);
+        node_registered = (nodes_search != event_update_interested_nodes_.end()) &&
+                          (nodes_search->second.find(target_node_id) != nodes_search->second.end());
+    }
+
+    if (!node_registered || !EventDataExists(event_id))
+    {
+        return;
+    }
+
+    const auto message = SerializeToMessage(score::cpp::to_underlying(MessageType::kNotifyEvent), event_id);
+    // Suppress "AUTOSAR C++14 A18-5-8" rule finding. This rule states: "Objects that do not outlive a function
+    // shall have automatic storage duration". The object is a shared_ptr which is allocated in the heap.
+    // coverity[autosar_cpp14_a18_5_8_violation]
+    auto sender = client_cache_.GetMessagePassingClient(target_node_id);
+    const auto result = sender->Send(message);
+    if (!result.has_value())
+    {
+        score::mw::log::LogError("lola")
+            << "MessagePassingService: Sending catch-up NotifyEventUpdateMessage to node_id " << target_node_id
+            << " failed with error: " << result.error();
     }
 }
 
@@ -1518,11 +1588,29 @@ void MessagePassingServiceInstance::RegisterEventNotificationExistenceChangedCal
     }
 }
 
+void MessagePassingServiceInstance::RegisterEventDataExistsCallback(
+    const ElementFqId event_id,
+    IMessagePassingService::EventDataExistsCallback callback) noexcept
+{
+    // The pool must exist before the callback becomes visible to the message handlers.
+    // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "If a function is declared to be noexcept,
+    // noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception.". The allocation or
+    // thread creation throws only on resource exhaustion and this throw directly leads to a termination.
+    // coverity[autosar_cpp14_a15_4_2_violation]
+    std::call_once(catch_up_pool_created_, [this]() noexcept {
+        catch_up_pool_ = std::make_unique<score::concurrency::ThreadPool>(1U, "mwcom_catchup");
+    });
+
+    std::unique_lock<std::shared_mutex> write_lock(handler_status_change_callbacks_mutex_);
+    event_data_exists_callbacks_[event_id] = std::move(callback);
+}
+
 void MessagePassingServiceInstance::UnregisterEventNotificationExistenceChangedCallback(
     const ElementFqId event_id) noexcept
 {
     std::unique_lock<std::shared_mutex> write_lock(handler_status_change_callbacks_mutex_);
     std::size_t erased_count = handler_status_change_callbacks_.erase(event_id);
+    score::cpp::ignore = event_data_exists_callbacks_.erase(event_id);
     write_lock.unlock();
 
     if (erased_count == 0U)

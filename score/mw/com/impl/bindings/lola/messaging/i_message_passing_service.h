@@ -60,6 +60,11 @@ class IMessagePassingService
     ///          The callback is invoked synchronously during handler registration/unregistration.
     using HandlerStatusChangeCallback = score::cpp::callback<void(bool)>;
 
+    /// \brief Callback type used to query whether the provider already holds a sample for an event.
+    /// \details Returns true if at least one sample has been sent for the event. It is called from the message
+    ///          passing thread, so it must be thread-safe with respect to Send().
+    using EventDataExistsCallback = score::cpp::callback<bool()>;
+
     /// \brief Handler which will be called when the proxy process sends a message that it has subscribed to a service
     /// method.
     ///
@@ -287,9 +292,22 @@ class IMessagePassingService
                                                                    const ElementFqId event_id,
                                                                    HandlerStatusChangeCallback callback) noexcept = 0;
 
+    /// \brief Registers a callback which tells whether a sample already exists for the event.
+    /// \details When a remote node registers for event notifications and the callback returns true, the registering
+    ///          node receives one catch-up NotifyEvent message. This closes the window in which a sample sent before
+    ///          the (asynchronous) registration was handled would never be announced. It is removed by
+    ///          UnregisterEventNotificationExistenceChangedCallback.
+    /// \param asil_level ASIL level of event.
+    /// \param event_id The event the callback belongs to.
+    /// \param callback Returns true if a sample already exists.
+    virtual void RegisterEventDataExistsCallback(const QualityType asil_level,
+                                                 const ElementFqId event_id,
+                                                 EventDataExistsCallback callback) noexcept = 0;
+
     /// \brief Unregisters the callback for event notification existence changes.
     /// \details After unregistration, no further callbacks will be invoked for event notification
-    ///          existence changes of this event. It is safe to call this method even if no callback
+    ///          existence changes of this event. The callback registered with RegisterEventDataExistsCallback is
+    ///          removed as well. It is safe to call this method even if no callback
     ///          is currently registered.
     /// \param asil_level ASIL level of event.
     /// \param event_id The event to stop monitoring.
