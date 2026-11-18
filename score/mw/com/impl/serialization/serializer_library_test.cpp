@@ -52,19 +52,24 @@ constexpr std::array<SerializerErrc, 5U> kCodesOfALibrary{SerializerErrc::kBuffe
 
 TEST(SerializerLibraryTest, ErrorOfAnotherDomainIsNeverEqualToTheErrorOfTheHost)
 {
-    // This is what makes the translation necessary.
+    // Given each code that a library may report, carried by an error of the error domain of the library
     for (const auto code : kCodesOfALibrary)
     {
+        // When comparing it with the error of the host that has the same code
+        // Then they differ, which is what makes the translation necessary
         EXPECT_NE(ForeignError(ToCode(code)), MakeError(code));
     }
 }
 
 TEST(SerializerLibraryTest, TranslatingAnErrorOfALibraryYieldsTheErrorOfTheHost)
 {
+    // Given each code that a library may report, carried by an error of the error domain of the library
     for (const auto code : kCodesOfALibrary)
     {
+        // When translating the error
         const auto translated = detail::TranslateLibraryError(ForeignError(ToCode(code)));
 
+        // Then it is the error of the host with the same code and without the user message of the library
         EXPECT_EQ(translated, MakeError(code));
         EXPECT_TRUE(translated.UserMessage().empty());
     }
@@ -72,20 +77,26 @@ TEST(SerializerLibraryTest, TranslatingAnErrorOfALibraryYieldsTheErrorOfTheHost)
 
 TEST(SerializerLibraryTest, CodesOutsideOfTheContractOfALibraryBecomeInternalErrors)
 {
+    // Given codes that a library must not report: codes of errors that only the host raises and an unknown code
     constexpr score::result::ErrorCode kUnknownCode{4711};
     const std::array<score::result::ErrorCode, 3U> codes{
         ToCode(SerializerErrc::kCreationFailed), ToCode(SerializerErrc::kIncompatibleLibrary), kUnknownCode};
 
     for (const auto code : codes)
     {
+        // When translating an error of the library that carries the code
+        // Then it becomes an internal error of the host
         EXPECT_EQ(detail::TranslateLibraryError(ForeignError(code)), MakeError(SerializerErrc::kInternalError));
     }
 }
 
 TEST(SerializerLibraryTest, OpeningAMissingLibraryFails)
 {
+    // Given the path of a library that does not exist
+    // When opening the library
     const auto library = SerializerLibrary::Open("/nonexistent/libmwcom_serializer_missing.so");
 
+    // Then opening fails with a creation failed error
     ASSERT_FALSE(library.has_value());
     EXPECT_EQ(library.error(), MakeError(SerializerErrc::kCreationFailed));
 }
