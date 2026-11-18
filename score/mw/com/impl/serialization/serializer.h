@@ -54,7 +54,8 @@ class ISerializer
 
     /// \brief Encodes sample into buffer using the SOME/IP wire format.
     /// \return The number of bytes written to buffer, or an error.
-    virtual score::Result<std::size_t> Serialize(const void* sample, score::cpp::span<std::uint8_t> buffer) const noexcept = 0;
+    virtual score::Result<std::size_t> Serialize(const void* sample,
+                                                 score::cpp::span<std::uint8_t> buffer) const noexcept = 0;
 
     /// \brief Decodes a SOME/IP encoded buffer into sample.
     virtual score::Result<void> Deserialize(score::cpp::span<const std::uint8_t> buffer,
