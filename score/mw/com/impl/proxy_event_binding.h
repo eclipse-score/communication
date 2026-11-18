@@ -115,7 +115,7 @@ class ProxyEventBinding
 
     /// \brief Returns the historical E2E health tracking configuration, read by the event on construction.
     /// \return Default constructed configuration (tracking disabled) for bindings without E2E health configuration.
-    virtual e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const noexcept = 0;
+    virtual e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const = 0;
 
     /// \brief Gets the binding type of the binding
     virtual BindingType GetBindingType() const noexcept = 0;

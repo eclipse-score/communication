@@ -37,10 +37,9 @@ class ProxyEvent final : public ProxyEventBinding
     Result<std::size_t> GetNumNewSamplesAvailable() const override;
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;
     /// \brief SOME/IP has no historical E2E health configuration yet, so tracking is explicitly disabled.
-    e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const noexcept override
+    e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const override
     {
-        const bool is_tracking_enabled{false};
-        return e2e::HealthTrackerConfiguration{is_tracking_enabled};
+        return e2e::HealthTrackerConfiguration::CreateDisabled();
     }
     BindingType GetBindingType() const noexcept override;
     Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) override;

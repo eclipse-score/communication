@@ -62,7 +62,7 @@ class DummyProxyEventBinding final : public ProxyEventBinding
     {
         return {};
     }
-    e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const noexcept override
+    e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const override
     {
         return {};
     }

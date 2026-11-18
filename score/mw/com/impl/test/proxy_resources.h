@@ -70,9 +70,12 @@ class ProxyEventBaseAttorney
         return proxy_event_base_.tracing_data_;
     }
 
+    /// \brief Test-only: replaces the proxy event's health tracker with a freshly constructed one using the given
+    ///        configuration. Sets the private #health_tracker_ member directly since this attorney already is a
+    ///        friend of ProxyEventBase.
     void SetHealthTrackerConfiguration(const e2e::HealthTrackerConfiguration& configuration) noexcept
     {
-        proxy_event_base_.SetHealthTrackerConfiguration(configuration);
+        proxy_event_base_.health_tracker_ = e2e::HealthTracker{configuration};
     }
 
   private:
