@@ -24,7 +24,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace score::serialization::someip
+namespace score::mw::com::impl::someip::serialization
 {
 
 /// \brief ISerializer implementation for the SpeedRpm datatype, built on the SomeIpStrategy.
@@ -38,17 +38,19 @@ namespace score::serialization::someip
 ///   [4..5]   rpm                (uint16)
 ///   [6..9]   speed_samples size (uint32 length field, counting the bytes of speed_samples data)
 ///   [10..]   speed_samples data (size / sizeof(float) floats)
-class SpeedRpmSerializer final : public ISerializer
+class SpeedRpmSerializer final : public impl::serialization::ISerializer
 {
   public:
-    score::Result<std::size_t> Serialize(const void* sample, score::cpp::span<std::uint8_t> buffer) const noexcept override;
+    score::Result<std::size_t> Serialize(const void* sample,
+                                         score::cpp::span<std::uint8_t> buffer) const noexcept override;
     score::Result<void> Deserialize(score::cpp::span<const std::uint8_t> buffer, void* sample) const noexcept override;
     score::Result<std::size_t> GetMaxSerializedSize() const noexcept override;
 
   private:
-    Serializer<SomeIpStrategy> serializer_{SomeIpStrategy{}};
+    score::serialization::Serializer<score::serialization::SomeIpStrategy> serializer_{
+        score::serialization::SomeIpStrategy{}};
 };
 
-}  // namespace score::serialization::someip
+}  // namespace score::mw::com::impl::someip::serialization
 
 #endif  // SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SERIALIZATION_GENERATED_CODE_EXAMPLE_SPEED_RPM_SERIALIZER_H

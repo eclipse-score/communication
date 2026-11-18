@@ -37,7 +37,7 @@
 ///   - at load time, by the SerializerAbiInfo descriptor, which the library exports and mw::com compares against
 ///     the values of its own build before it calls anything in the library (see SerializerLibrary::Open).
 
-namespace score::serialization::someip
+namespace score::mw::com::impl::serialization
 {
 
 /// \brief Signature of the factory exported by a library as CreateSerializer_<suffix>.
@@ -205,6 +205,6 @@ ISerializer* CreateSerializerOf() noexcept
     return new (std::nothrow) Impl{};
 }
 
-}  // namespace score::serialization::someip
+}  // namespace score::mw::com::impl::serialization
 
 #endif  // SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZER_ABI_H

@@ -17,7 +17,7 @@
 #include <array>
 #include <string_view>
 
-namespace score::serialization::someip
+namespace score::mw::com::impl::serialization
 {
 namespace
 {
@@ -102,4 +102,4 @@ TEST(SerializerLibraryTest, OpeningAMissingLibraryFails)
 }
 
 }  // namespace
-}  // namespace score::serialization::someip
+}  // namespace score::mw::com::impl::serialization

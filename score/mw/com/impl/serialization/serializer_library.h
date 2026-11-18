@@ -27,7 +27,7 @@
 #include <string_view>
 #include <utility>
 
-namespace score::serialization::someip
+namespace score::mw::com::impl::serialization
 {
 
 namespace detail
@@ -158,6 +158,6 @@ class SerializerLibrary final
     DestroySerializerFn destroy_;
 };
 
-}  // namespace score::serialization::someip
+}  // namespace score::mw::com::impl::serialization
 
 #endif  // SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZER_LIBRARY_H

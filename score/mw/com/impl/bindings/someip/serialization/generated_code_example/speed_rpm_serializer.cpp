@@ -21,11 +21,14 @@
 #include <type_traits>
 #include <utility>
 
-namespace score::serialization::someip
+namespace score::mw::com::impl::someip::serialization
 {
 
+using impl::serialization::SerializerErrc;
+using score::serialization::SerializationError;
+
 score::Result<std::size_t> SpeedRpmSerializer::Serialize(const void* sample,
-                                                  score::cpp::span<std::uint8_t> buffer) const noexcept
+                                                         score::cpp::span<std::uint8_t> buffer) const noexcept
 {
     if (sample == nullptr)
     {
@@ -75,16 +78,16 @@ score::Result<void> SpeedRpmSerializer::Deserialize(score::cpp::span<const std::
 
 score::Result<std::size_t> SpeedRpmSerializer::GetMaxSerializedSize() const noexcept
 {
-    return GetMaxSize<SpeedRpm>();
+    return score::serialization::GetMaxSize<SpeedRpm>();
 }
 
-}  // namespace score::serialization::someip
+}  // namespace score::mw::com::impl::someip::serialization
 
 // Every generated library exports the descriptor of the environment it was built in. mw::com compares it with
 // its own before it resolves or calls anything else in the library. A single declaration is used because only
 // then the constexpr variable gets external linkage.
-extern "C" constexpr score::serialization::someip::SerializerAbiInfo mwcom_serializer_abi_info =
-    score::serialization::someip::MakeSerializerAbiInfo();
+extern "C" constexpr score::mw::com::impl::serialization::SerializerAbiInfo mwcom_serializer_abi_info =
+    score::mw::com::impl::serialization::MakeSerializerAbiInfo();
 
 extern "C" {
 
@@ -95,12 +98,13 @@ extern "C" {
 // <other-attributes> are the attributes configured at runtime (none for this variant). The factory
 // returns a heap-allocated ISerializer, or nullptr if construction fails. The caller owns it and
 // releases it with DestroySerializer, so allocation and deallocation happen on the same side.
-score::serialization::someip::ISerializer* CreateSerializer_2c5f8d1a_7e3a91c4() noexcept
+score::mw::com::impl::serialization::ISerializer* CreateSerializer_2c5f8d1a_7e3a91c4() noexcept
 {
-    return score::serialization::someip::CreateSerializerOf<score::serialization::someip::SpeedRpmSerializer>();
+    return score::mw::com::impl::serialization::CreateSerializerOf<
+        score::mw::com::impl::someip::serialization::SpeedRpmSerializer>();
 }
 
-void DestroySerializer(score::serialization::someip::ISerializer* serializer) noexcept
+void DestroySerializer(score::mw::com::impl::serialization::ISerializer* serializer) noexcept
 {
     delete serializer;
 }
@@ -109,8 +113,8 @@ void DestroySerializer(score::serialization::someip::ISerializer* serializer) no
 
 // mw::com resolves the entry points with the function types of the ABI header. Asserting them here makes a
 // signature that drifts from the contract a compile error instead of undefined behaviour at runtime.
-static_assert(
-    std::is_same_v<decltype(&CreateSerializer_2c5f8d1a_7e3a91c4), score::serialization::someip::CreateSerializerFn>,
-    "CreateSerializer_<suffix> does not match the factory signature of the ABI.");
-static_assert(std::is_same_v<decltype(&DestroySerializer), score::serialization::someip::DestroySerializerFn>,
+static_assert(std::is_same_v<decltype(&CreateSerializer_2c5f8d1a_7e3a91c4),
+                             score::mw::com::impl::serialization::CreateSerializerFn>,
+              "CreateSerializer_<suffix> does not match the factory signature of the ABI.");
+static_assert(std::is_same_v<decltype(&DestroySerializer), score::mw::com::impl::serialization::DestroySerializerFn>,
               "DestroySerializer does not match the destroy signature of the ABI.");

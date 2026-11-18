@@ -19,7 +19,7 @@
 #include <cstring>
 #include <string_view>
 
-namespace score::serialization::someip
+namespace score::mw::com::impl::serialization
 {
 namespace
 {
@@ -138,4 +138,4 @@ TEST(SerializerAbiTest, VersionAndSizeStayAtTheFirstTwoOffsets)
 }
 
 }  // namespace
-}  // namespace score::serialization::someip
+}  // namespace score::mw::com::impl::serialization

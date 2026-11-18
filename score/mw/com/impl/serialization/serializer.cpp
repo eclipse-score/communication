@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/serialization/serializer.h"
 
-namespace score::serialization::someip
+namespace score::mw::com::impl::serialization
 {
 
 namespace
@@ -54,4 +54,4 @@ score::result::Error MakeError(const SerializerErrc code, const std::string_view
     return {static_cast<score::result::ErrorCode>(code), g_serializer_error_domain, message};
 }
 
-}  // namespace score::serialization::someip
+}  // namespace score::mw::com::impl::serialization

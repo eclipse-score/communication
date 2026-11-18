@@ -19,7 +19,7 @@
 #include <tuple>
 #include <type_traits>
 
-namespace score::serialization::someip
+namespace score::mw::com::impl::serialization
 {
 
 namespace
@@ -122,4 +122,4 @@ score::Result<detail::SerializerPtr> SerializerLibrary::CreateSerializer(
     return detail::SerializerPtr{serializer, detail::SerializerDeleter{handle_, destroy_}};
 }
 
-}  // namespace score::serialization::someip
+}  // namespace score::mw::com::impl::serialization

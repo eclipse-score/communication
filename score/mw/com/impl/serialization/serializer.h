@@ -21,7 +21,7 @@
 #include <cstdint>
 #include <string_view>
 
-namespace score::serialization::someip
+namespace score::mw::com::impl::serialization
 {
 
 /// \brief Error codes returned by SOME/IP serializer operations.
@@ -79,6 +79,6 @@ class ISerializer
     ISerializer& operator=(ISerializer&&) noexcept = default;
 };
 
-}  // namespace score::serialization::someip
+}  // namespace score::mw::com::impl::serialization
 
 #endif  // SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZER_H

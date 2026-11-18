@@ -21,10 +21,12 @@
 #include <cstdint>
 #include <vector>
 
-namespace score::serialization::someip
+namespace score::mw::com::impl::someip::serialization
 {
 namespace
 {
+
+using impl::serialization::SerializerErrc;
 
 SpeedRpm MakeSpeedRpmWithThreeSpeedSamples()
 {
@@ -300,4 +302,4 @@ TEST(SpeedRpmSerializer, RoundTripWithFullSampleArrayRestoresSpeedSamples)
 }
 
 }  // namespace
-}  // namespace score::serialization::someip
+}  // namespace score::mw::com::impl::someip::serialization

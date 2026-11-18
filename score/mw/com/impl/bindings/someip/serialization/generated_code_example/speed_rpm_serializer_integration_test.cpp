@@ -38,12 +38,17 @@
 #include <string_view>
 #include <vector>
 
-namespace score::serialization::someip
+namespace score::mw::com::impl::someip::serialization
 {
 namespace
 {
 
 using bazel::tools::cpp::runfiles::Runfiles;
+using impl::serialization::MakeSerializerAbiInfo;
+using impl::serialization::SerializerAbiInfo;
+using impl::serialization::SerializerErrc;
+using impl::serialization::SerializerLibrary;
+using impl::serialization::TypedSerializer;
 
 constexpr std::string_view kLibrary{"libmwcom_serializer_someip.so"};
 constexpr std::string_view kLibraryWithoutDescriptor{"libmwcom_serializer_without_descriptor.so"};
@@ -221,4 +226,4 @@ TEST_F(SpeedRpmSerializerIntegrationTest, DeserializationErrorOfTheLibraryIsRepo
 }
 
 }  // namespace
-}  // namespace score::serialization::someip
+}  // namespace score::mw::com::impl::someip::serialization

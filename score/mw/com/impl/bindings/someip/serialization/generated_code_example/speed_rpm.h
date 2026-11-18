@@ -20,7 +20,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace score::serialization::someip
+namespace score::mw::com::impl::someip::serialization
 {
 
 /// \brief Motor telemetry sample carrying the current speed, engine RPM and a speed history.
@@ -41,6 +41,6 @@ struct SpeedRpm
 
 SCORE_STRUCT_VISITABLE(SpeedRpm, speed_kmh, rpm, speed_samples)
 
-}  // namespace score::serialization::someip
+}  // namespace score::mw::com::impl::someip::serialization
 
 #endif  // SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SERIALIZATION_GENERATED_CODE_EXAMPLE_SPEED_RPM_H
