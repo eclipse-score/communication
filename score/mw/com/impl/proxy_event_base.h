@@ -188,15 +188,6 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
             e2e::BuildE2EResult(e2e::RawCheckOutcome{raw_result.data_integrity, raw_result.sequence}, health_tracker_));
     }
 
-    /// \brief Replaces the historical health tracking configuration and clears its history.
-    /// \details Not part of the application API (protected). In production the configuration is read once from the
-    ///          binding in the constructor and never changed. This only exists so that tests can inject a
-    ///          configuration via ProxyEventBaseAttorney. Terminates if an enabled configuration is inconsistent.
-    void SetHealthTrackerConfiguration(const e2e::HealthTrackerConfiguration& configuration) noexcept
-    {
-        health_tracker_ = e2e::HealthTracker{configuration};
-    }
-
     void InjectMock(IProxyEventBase& proxy_event_base_mock)
     {
         proxy_event_base_mock_ = &proxy_event_base_mock;
@@ -227,8 +218,15 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     ///        (because trying to expire the scope in which we are running, would lead to a deadlock)
     void ExpireReceiveHandlerScopeIfNotInHandler();
 
-    /// \brief Historical E2E health. Reset on user (re)subscribe, but not when the provider restarts while subscribed,
-    ///        so a constantly breaking channel keeps a bad health.
+    /// \brief Historical E2E health of this event (see e2e::HealthTracker for what this is and why a short history is
+    ///        kept instead of reacting to a single sample).
+    /// \details Reset on an explicit user (re)subscribe (see #Subscribe), since that starts a new logical
+    ///          communication context in which older results are no longer relevant. Deliberately NOT reset when the
+    ///          provider restarts while the subscription stays active: from the consumer's perspective it is still
+    ///          the same logical session, so a channel that keeps failing across provider restarts should keep
+    ///          reporting as unhealthy until it shows sustained recovery, rather than appearing healthy again after
+    ///          every restart.
+    ///          Background: https://github.com/eclipse-score/communication/pull/1148
     /// \details Initialized in the constructor from the binding's configuration (disabled without a valid binding).
     e2e::HealthTracker health_tracker_;
 

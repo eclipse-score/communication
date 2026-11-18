@@ -15,7 +15,6 @@
 #include "score/mw/com/impl/bindings/mock_binding/sample_ptr.h"
 #include "score/mw/com/impl/generic_proxy_event.h"
 #include "score/mw/com/impl/proxy_event.h"
-#include "score/mw/com/impl/test/proxy_resources.h"
 
 #include <gtest/gtest.h>
 
@@ -35,14 +34,25 @@ constexpr auto kEventName{"DummyE2EEvent"};
 class ProxyEventE2EAttachFixture : public ::testing::Test
 {
   protected:
-    ProxyEventE2EAttachFixture()
-        : mock_proxy_event_ptr_{std::make_unique<::testing::NiceMock<mock_binding::ProxyEvent>>()},
+    /// \param configuration Health tracker configuration the binding reports. Must be set on the mock before
+    ///                       ProxyEventBase is constructed, since the constructor reads it exactly once.
+    explicit ProxyEventE2EAttachFixture(
+        const e2e::HealthTrackerConfiguration& configuration = e2e::HealthTrackerConfiguration::CreateDisabled())
+        : mock_proxy_event_ptr_{CreateMockProxyEvent(configuration)},
           mock_proxy_event_{*mock_proxy_event_ptr_},
           proxy_event_{kEventName, std::move(mock_proxy_event_ptr_)}
     {
-        ON_CALL(mock_proxy_event_, GetSubscriptionState())
+    }
+
+    static std::unique_ptr<::testing::NiceMock<mock_binding::ProxyEvent>> CreateMockProxyEvent(
+        const e2e::HealthTrackerConfiguration& configuration)
+    {
+        auto mock_proxy_event_ptr = std::make_unique<::testing::NiceMock<mock_binding::ProxyEvent>>();
+        ON_CALL(*mock_proxy_event_ptr, GetHealthTrackerConfiguration()).WillByDefault(::testing::Return(configuration));
+        ON_CALL(*mock_proxy_event_ptr, GetSubscriptionState())
             .WillByDefault(::testing::Return(SubscriptionState::kNotSubscribed));
-        ON_CALL(mock_proxy_event_, Subscribe(::testing::_)).WillByDefault(::testing::Return(Result<void>{}));
+        ON_CALL(*mock_proxy_event_ptr, Subscribe(::testing::_)).WillByDefault(::testing::Return(Result<void>{}));
+        return mock_proxy_event_ptr;
     }
 
     std::unique_ptr<::testing::NiceMock<mock_binding::ProxyEvent>> mock_proxy_event_ptr_;
@@ -152,13 +162,8 @@ class ProxyEventE2EHealthFixture : public ProxyEventE2EAttachFixture
 {
   protected:
     ProxyEventE2EHealthFixture()
+        : ProxyEventE2EAttachFixture{e2e::HealthTrackerConfiguration::CreateEnabled(2U, 2U, 3U)}
     {
-        e2e::HealthTrackerConfiguration configuration{};
-        configuration.enabled = true;
-        configuration.error_threshold = 2U;
-        configuration.recovery_threshold = 2U;
-        configuration.window_size = 3U;
-        ProxyEventBaseAttorney{proxy_event_}.SetHealthTrackerConfiguration(configuration);
     }
 
     static constexpr std::size_t kMaxSamples{4U};
@@ -303,11 +308,7 @@ TEST(ProxyEventE2EConfigurationTest, HealthTrackerConfigurationIsTakenFromBindin
     // Given a binding with an enabled health tracker configuration
     auto mock_proxy_event_ptr = std::make_unique<::testing::NiceMock<mock_binding::ProxyEvent>>();
     auto& mock_proxy_event = *mock_proxy_event_ptr;
-    e2e::HealthTrackerConfiguration configuration{};
-    configuration.enabled = true;
-    configuration.error_threshold = 2U;
-    configuration.recovery_threshold = 2U;
-    configuration.window_size = 3U;
+    e2e::HealthTrackerConfiguration configuration{e2e::HealthTrackerConfiguration::CreateEnabled(2U, 2U, 3U)};
     ON_CALL(mock_proxy_event, GetHealthTrackerConfiguration()).WillByDefault(::testing::Return(configuration));
     ON_CALL(mock_proxy_event, GetSubscriptionState())
         .WillByDefault(::testing::Return(SubscriptionState::kNotSubscribed));
@@ -346,14 +347,25 @@ TEST(ProxyEventE2EConfigurationTest, HealthTrackerConfigurationIsTakenFromBindin
 class GenericProxyEventE2EAttachFixture : public ::testing::Test
 {
   protected:
-    GenericProxyEventE2EAttachFixture()
-        : mock_proxy_event_ptr_{std::make_unique<::testing::NiceMock<mock_binding::GenericProxyEvent>>()},
+    /// \param configuration Health tracker configuration the binding reports. Must be set on the mock before
+    ///                       the proxy event is constructed, since the constructor reads it exactly once.
+    explicit GenericProxyEventE2EAttachFixture(
+        const e2e::HealthTrackerConfiguration& configuration = e2e::HealthTrackerConfiguration::CreateDisabled())
+        : mock_proxy_event_ptr_{CreateMockProxyEvent(configuration)},
           mock_proxy_event_{*mock_proxy_event_ptr_},
           proxy_event_{kEventName, std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr_)}}
     {
-        ON_CALL(mock_proxy_event_, GetSubscriptionState())
+    }
+
+    static std::unique_ptr<::testing::NiceMock<mock_binding::GenericProxyEvent>> CreateMockProxyEvent(
+        const e2e::HealthTrackerConfiguration& configuration)
+    {
+        auto mock_proxy_event_ptr = std::make_unique<::testing::NiceMock<mock_binding::GenericProxyEvent>>();
+        ON_CALL(*mock_proxy_event_ptr, GetHealthTrackerConfiguration()).WillByDefault(::testing::Return(configuration));
+        ON_CALL(*mock_proxy_event_ptr, GetSubscriptionState())
             .WillByDefault(::testing::Return(SubscriptionState::kNotSubscribed));
-        ON_CALL(mock_proxy_event_, Subscribe(::testing::_)).WillByDefault(::testing::Return(Result<void>{}));
+        ON_CALL(*mock_proxy_event_ptr, Subscribe(::testing::_)).WillByDefault(::testing::Return(Result<void>{}));
+        return mock_proxy_event_ptr;
     }
 
     void DeliverSamplesWithBindingResults(std::vector<e2e::RawCheckOutcome> binding_outcomes)
@@ -444,15 +456,18 @@ TEST_F(GenericProxyEventE2EAttachFixture, DeliveredSampleSummaryIsErrorForBindin
     EXPECT_EQ(delivered_result.summary, e2e::Summary::kError);
 }
 
-TEST_F(GenericProxyEventE2EAttachFixture, HistoricalHealthIsTrackedWhenEnabled)
+class GenericProxyEventE2EHealthFixture : public GenericProxyEventE2EAttachFixture
+{
+  protected:
+    GenericProxyEventE2EHealthFixture()
+        : GenericProxyEventE2EAttachFixture{e2e::HealthTrackerConfiguration::CreateEnabled(2U, 2U, 3U)}
+    {
+    }
+};
+
+TEST_F(GenericProxyEventE2EHealthFixture, HistoricalHealthIsTrackedWhenEnabled)
 {
     // Given an enabled health tracker and two failed samples
-    e2e::HealthTrackerConfiguration configuration{};
-    configuration.enabled = true;
-    configuration.error_threshold = 2U;
-    configuration.recovery_threshold = 2U;
-    configuration.window_size = 3U;
-    ProxyEventBaseAttorney{proxy_event_}.SetHealthTrackerConfiguration(configuration);
     const e2e::RawCheckOutcome failed{e2e::DataIntegrityStatus::kError, e2e::SequenceStatus::kOk};
     DeliverSamplesWithBindingResults({failed, failed});
 

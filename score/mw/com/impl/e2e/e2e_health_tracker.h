@@ -25,28 +25,79 @@ constexpr std::uint32_t kMaxHealthWindowSize{64U};
 
 // Looks at the last window_size samples. In kOk, error_threshold failed samples switch to kError.
 // In kError, recovery_threshold passed samples switch back to kOk.
-// The thresholds and the window size are only validated and used when enabled is true.
-struct HealthTrackerConfiguration
+// The thresholds and the window size are only read and validated when enabled.
+//
+// A default-constructed (or CreateDisabled()) instance is always well-formed. CreateEnabled() validates its
+// arguments and terminates immediately if they are inconsistent, instead of deferring that validation to
+// HealthTracker's constructor.
+class HealthTrackerConfiguration
 {
-    bool enabled{false};
+  public:
+    // Historical health tracking is off; Update() always returns HistoricalHealthStatus::kDisabled.
+    static HealthTrackerConfiguration CreateDisabled() noexcept;
 
-    // Failed samples in the window needed to switch to kError. Must be >= 1.
-    std::uint32_t error_threshold{1U};
+    // Terminates if the combination is inconsistent:
+    // - error_threshold and recovery_threshold must each be >= 1
+    // - window_size must be >= both thresholds and <= kMaxHealthWindowSize
+    // - error_threshold + recovery_threshold must exceed window_size, otherwise the state could oscillate between
+    //   kOk and kError
+    static HealthTrackerConfiguration CreateEnabled(std::uint8_t error_threshold,
+                                                    std::uint8_t recovery_threshold,
+                                                    std::uint8_t window_size) noexcept;
 
-    // Passed samples in the window needed to switch back to kOk. Must be >= 1.
-    std::uint32_t recovery_threshold{1U};
+    // Equivalent to CreateDisabled().
+    constexpr HealthTrackerConfiguration() noexcept = default;
 
-    // Number of most recent samples considered. Must be >= both thresholds and <= kMaxHealthWindowSize.
-    // Must also be < error_threshold + recovery_threshold, otherwise the state could oscillate between kOk and kError.
-    std::uint32_t window_size{1U};
+    constexpr bool IsEnabled() const noexcept
+    {
+        return enabled_;
+    }
+
+    constexpr std::uint8_t GetErrorThreshold() const noexcept
+    {
+        return error_threshold_;
+    }
+
+    constexpr std::uint8_t GetRecoveryThreshold() const noexcept
+    {
+        return recovery_threshold_;
+    }
+
+    constexpr std::uint8_t GetWindowSize() const noexcept
+    {
+        return window_size_;
+    }
+
+  private:
+    constexpr HealthTrackerConfiguration(const bool enabled,
+                                         const std::uint8_t error_threshold,
+                                         const std::uint8_t recovery_threshold,
+                                         const std::uint8_t window_size) noexcept
+        : enabled_{enabled},
+          error_threshold_{error_threshold},
+          recovery_threshold_{recovery_threshold},
+          window_size_{window_size}
+    {
+    }
+
+    bool enabled_{false};
+    std::uint8_t error_threshold_{1U};
+    std::uint8_t recovery_threshold_{1U};
+    std::uint8_t window_size_{1U};
 };
 
-// Tracks the historical health of one consumer. Each instance owns its own sample window.
-// The sample history is kept when the state flips; samples only leave the window by aging out.
+// Tracks the historical health of one consumer: whether its E2E-checked samples have recently been failing or
+// passing, as opposed to the pass/fail status of a single sample.
+//
+// A single failed (or recovered) sample does not flip the status by itself: the channel only becomes unhealthy
+// (kError) once error_threshold of the last window_size samples failed, and only becomes healthy again (kOk) once
+// recovery_threshold subsequent samples passed (see HealthTrackerConfiguration). This avoids flipping to unhealthy on
+// a transient glitch, and avoids flipping back to healthy on a single lucky sample while mostly still failing.
+//
+// Each instance owns its own sample window; samples only leave the window by aging out.
 class HealthTracker
 {
   public:
-    // Terminates if the configuration is inconsistent.
     explicit HealthTracker(const HealthTrackerConfiguration& config) noexcept;
 
     // Records one checked sample and returns the resulting status (kDisabled if the tracker is disabled).

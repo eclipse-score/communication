@@ -49,7 +49,7 @@ ProxyEventBase::ProxyEventBase(std::string_view event_name,
       tracing_data_{},
       proxy_event_base_mock_{nullptr},
       health_tracker_{(binding_ != nullptr) ? binding_->GetHealthTrackerConfiguration()
-                                            : e2e::HealthTrackerConfiguration{/* enabled */ false}},
+                                            : e2e::HealthTrackerConfiguration::CreateDisabled()},
       is_subscribed_flag_{false},
       receive_handler_scope_{}
 {
