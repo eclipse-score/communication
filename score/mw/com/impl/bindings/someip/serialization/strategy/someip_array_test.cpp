@@ -21,12 +21,13 @@
 #include <cstdint>
 #include <vector>
 
-namespace score
-{
-namespace serialization
+namespace score::mw::com::impl::someip::serialization
 {
 namespace
 {
+
+using score::serialization::LengthPrefixedVector;
+using score::serialization::Serializer;
 
 TEST_F(SomeIpStrategyFixture, LengthPrefixedVectorIsCompact)
 {
@@ -308,5 +309,4 @@ TEST_F(SomeIpStrategyFixture, LengthPrefixedVectorRejectsByteLengthBeyondInput)
 }
 
 }  // namespace
-}  // namespace serialization
-}  // namespace score
+}  // namespace score::mw::com::impl::someip::serialization

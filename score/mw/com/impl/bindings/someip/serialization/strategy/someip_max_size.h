@@ -26,9 +26,7 @@
 #include <initializer_list>
 #include <type_traits>
 
-namespace score
-{
-namespace serialization
+namespace score::mw::com::impl::someip::serialization
 {
 
 // -----------------------------------------------------------------------------
@@ -130,7 +128,6 @@ std::size_t GetMaxSize(const FallbackLayout& default_layout)
     return sink.bytes;
 }
 
-}  // namespace serialization
-}  // namespace score
+}  // namespace score::mw::com::impl::someip::serialization
 
 #endif  // SCORE_SERIALIZATION_STRATEGIES_SOMEIP_MAX_SIZE_H

@@ -78,7 +78,7 @@ score::Result<void> SpeedRpmSerializer::Deserialize(score::cpp::span<const std::
 
 score::Result<std::size_t> SpeedRpmSerializer::GetMaxSerializedSize() const noexcept
 {
-    return score::serialization::GetMaxSize<SpeedRpm>();
+    return GetMaxSize<SpeedRpm>();
 }
 
 }  // namespace score::mw::com::impl::someip::serialization

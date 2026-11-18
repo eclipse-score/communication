@@ -19,9 +19,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace score
-{
-namespace serialization
+namespace score::mw::com::impl::someip::serialization
 {
 
 /// @brief Number of bits in a byte; used to convert between byte- and bit-oriented quantities.
@@ -170,7 +168,6 @@ inline LayoutCursor EnterArrayElement(const LayoutCursor& cursor)
 
 }  // namespace someip_detail
 
-}  // namespace serialization
-}  // namespace score
+}  // namespace score::mw::com::impl::someip::serialization
 
 #endif  // SCORE_SERIALIZATION_STRATEGIES_SOMEIP_LAYOUT_H

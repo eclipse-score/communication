@@ -47,8 +47,7 @@ class SpeedRpmSerializer final : public impl::serialization::ISerializer
     score::Result<std::size_t> GetMaxSerializedSize() const noexcept override;
 
   private:
-    score::serialization::Serializer<score::serialization::SomeIpStrategy> serializer_{
-        score::serialization::SomeIpStrategy{}};
+    score::serialization::Serializer<SomeIpStrategy> serializer_{SomeIpStrategy{}};
 };
 
 }  // namespace score::mw::com::impl::someip::serialization

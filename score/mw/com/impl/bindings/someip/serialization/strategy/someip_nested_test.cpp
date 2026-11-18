@@ -19,12 +19,12 @@
 #include <cstdint>
 #include <vector>
 
-namespace score
-{
-namespace serialization
+namespace score::mw::com::impl::someip::serialization
 {
 namespace
 {
+
+using score::serialization::Serializer;
 
 TEST_F(SomeIpStrategyFixture, NestedStructResolvesPerLevelByteOrder)
 {
@@ -223,5 +223,4 @@ TEST_F(SomeIpStrategyFixture, NullNestedLayoutUsesDefaultsInSerializerAndGetMaxS
 }
 
 }  // namespace
-}  // namespace serialization
-}  // namespace score
+}  // namespace score::mw::com::impl::someip::serialization
