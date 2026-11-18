@@ -42,6 +42,15 @@ common --config=linux_x64_gcc_15
 
 common --extra_toolchains=//bazel/toolchains:score_communication_libclang_toolchain
 
+# Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
+common:linux_x64_clang_22 --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+# Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
+common:clang --config=linux_x64_clang_22
+
+# Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
+common:linux_arm64_clang_22 --extra_toolchains=@llvm_toolchain//:cc-toolchain-aarch64-linux
+common:linux_arm64_clang_22 --platforms=@score_bazel_platforms//:aarch64-linux
+
 build --incompatible_strict_action_env
 test --test_output=errors
 build --experimental_retain_test_configuration_across_testonly #https://github.com/bazelbuild/bazel/issues/6842
