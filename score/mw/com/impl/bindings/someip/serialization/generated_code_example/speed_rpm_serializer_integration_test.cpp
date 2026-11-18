@@ -125,30 +125,39 @@ class SpeedRpmSerializerIntegrationTest : public ::testing::Test
 
 TEST_F(SpeedRpmSerializerIntegrationTest, RoundTripThroughLoadedLibrary)
 {
+    // Given the generated library
     const auto library = SerializerLibrary::Open(PathOf(kLibrary));
     ASSERT_TRUE(library.has_value()) << library.error();
 
+    // When creating the serializer of SpeedRpm
     const auto serializer = library.value().Create<SpeedRpm>(kSpeedRpmSuffix);
     ASSERT_TRUE(serializer.has_value()) << serializer.error();
 
+    // Then a sample survives the round trip through the serializer
     ExpectRoundTrip(serializer.value());
 }
 
 TEST_F(SpeedRpmSerializerIntegrationTest, SerializerKeepsTheLibraryLoadedAfterTheLibraryObjectIsGone)
 {
+    // Given a serializer created from the generated library, whose SerializerLibrary object has gone out of scope
     const auto serializer = CreateSerializerAndDropLibrary();
     ASSERT_TRUE(serializer.has_value()) << serializer.error();
 
+    // When using the serializer
+    // Then it still works
     ExpectRoundTrip(serializer.value());
 }
 
 TEST_F(SpeedRpmSerializerIntegrationTest, LibraryBuiltForAnotherAbiIsRejected)
 {
+    // Given an expected ABI descriptor with another ABI version than the one of the library
     SerializerAbiInfo expected = MakeSerializerAbiInfo();
     expected.abi_version += 1U;
 
+    // When opening the library with the expected descriptor
     const auto library = SerializerLibrary::Open(PathOf(kLibrary), expected);
 
+    // Then the library is rejected as incompatible and the user message names the mismatching field
     ASSERT_FALSE(library.has_value());
     EXPECT_EQ(library.error(), MakeError(SerializerErrc::kIncompatibleLibrary));
     EXPECT_EQ(library.error().UserMessage(), "abi_version");
@@ -156,36 +165,56 @@ TEST_F(SpeedRpmSerializerIntegrationTest, LibraryBuiltForAnotherAbiIsRejected)
 
 TEST_F(SpeedRpmSerializerIntegrationTest, LibraryWithoutAbiDescriptorIsRejected)
 {
+    // Given a library that does not export an ABI descriptor
+    // When opening the library
     const auto library = SerializerLibrary::Open(PathOf(kLibraryWithoutDescriptor));
 
+    // Then the library is rejected as incompatible
     ASSERT_FALSE(library.has_value());
     EXPECT_EQ(library.error(), MakeError(SerializerErrc::kIncompatibleLibrary));
 }
 
 TEST_F(SpeedRpmSerializerIntegrationTest, FactoryThatTheLibraryDoesNotExportIsReported)
 {
+    // Given the generated library
     const auto library = SerializerLibrary::Open(PathOf(kLibrary));
     ASSERT_TRUE(library.has_value()) << library.error();
 
+    // When creating a serializer with a suffix for which the library exports no factory
     const auto serializer = library.value().Create<SpeedRpm>("0000000_00000000");
 
+    // Then creating the serializer fails with a creation failed error
     ASSERT_FALSE(serializer.has_value());
     EXPECT_EQ(serializer.error(), MakeError(SerializerErrc::kCreationFailed));
 }
 
-TEST_F(SpeedRpmSerializerIntegrationTest, ErrorsOfTheLibraryAreReportedInTheErrorDomainOfTheHost)
+TEST_F(SpeedRpmSerializerIntegrationTest, SerializationErrorOfTheLibraryIsReportedInTheErrorDomainOfTheHost)
 {
+    // Given a serializer created from the generated library
     const auto serializer = CreateSerializerAndDropLibrary();
     ASSERT_TRUE(serializer.has_value()) << serializer.error();
 
+    // When serializing a sample into a buffer that is too small
     std::array<std::uint8_t, 4U> too_small{};
     const auto written = serializer.value().Serialize(MakeSample(), too_small);
+
+    // Then the error is the buffer too small error of the host
     ASSERT_FALSE(written.has_value());
     EXPECT_EQ(written.error(), MakeError(SerializerErrc::kBufferTooSmall));
+}
 
+TEST_F(SpeedRpmSerializerIntegrationTest, DeserializationErrorOfTheLibraryIsReportedInTheErrorDomainOfTheHost)
+{
+    // Given a serializer created from the generated library
+    const auto serializer = CreateSerializerAndDropLibrary();
+    ASSERT_TRUE(serializer.has_value()) << serializer.error();
+
+    // When deserializing a truncated buffer
     SpeedRpm decoded{};
     const std::array<std::uint8_t, 3U> truncated{};
     const auto read = serializer.value().Deserialize(truncated, decoded);
+
+    // Then the error is the deserialization failed error of the host, without the user message of the library
     ASSERT_FALSE(read.has_value());
     EXPECT_EQ(read.error(), MakeError(SerializerErrc::kDeserializationFailed));
     EXPECT_TRUE(read.error().UserMessage().empty());
