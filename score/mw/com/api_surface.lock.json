@@ -1159,7 +1159,7 @@
       "name": "operator=",
       "qualified_name": "score::mw::com::GenericProxy::operator=",
       "kind": "method",
-      "signature": "operator= : GenericProxy &(GenericProxy &&) noexcept"
+      "signature": "operator= : GenericProxy &(GenericProxy &&) & noexcept"
     },
     {
       "name": "~GenericProxy",
