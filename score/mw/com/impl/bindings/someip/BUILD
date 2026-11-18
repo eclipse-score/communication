@@ -18,9 +18,7 @@ cc_library(
     srcs = ["e2e_event_protection.cpp"],
     hdrs = ["e2e_event_protection.h"],
     tags = ["FFI"],
-    visibility = [
-        "//score/mw/com/impl:__subpackages__",
-    ],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/e2e:e2e_profile_stub",

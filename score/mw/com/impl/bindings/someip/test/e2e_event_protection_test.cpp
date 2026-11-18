@@ -26,8 +26,12 @@ namespace
 using e2e::DataIntegrityStatus;
 using e2e::SequenceStatus;
 
-constexpr E2EEventTypeDeployment kDeployment{E2EProfile::kP4, 0x42U, 2U};
+constexpr std::uint32_t kDataId{0x42U};
+constexpr std::uint32_t kOtherDataId{0x43U};
+constexpr std::uint8_t kMaxDeltaCounter{2U};
+constexpr E2EEventTypeDeployment kDeployment{E2EProfile::kP4, kDataId, kMaxDeltaCounter};
 constexpr std::size_t kPayloadSize{4U};
+constexpr std::uint8_t kNumberOfFrames{3U};
 constexpr SomeIpServiceId kServiceId{0x1234U};
 constexpr std::string_view kE2EEventName{"E2EEvent"};
 constexpr std::string_view kPlainEventName{"PlainEvent"};
@@ -68,7 +72,7 @@ TEST(SomeIpE2EEventProtectionTest, ConsecutiveFramesCheckSequenceOkForEachFrame)
     E2EEventProtector protector{kDeployment};
     E2EEventChecker checker{kDeployment};
 
-    for (std::uint8_t value = 0U; value < 3U; ++value)
+    for (std::uint8_t value = 0U; value < kNumberOfFrames; ++value)
     {
         // When protecting and checking frames one after another
         auto frame = MakeFrame(value);
@@ -102,7 +106,7 @@ TEST(SomeIpE2EEventProtectionTest, CheckerWithOtherDataIdCheckIntegrityError)
 {
     // Given a frame protected with one data ID
     E2EEventProtector protector{kDeployment};
-    E2EEventChecker checker{E2EEventTypeDeployment{E2EProfile::kP4, 0x43U, 2U}};
+    E2EEventChecker checker{E2EEventTypeDeployment{E2EProfile::kP4, kOtherDataId, kMaxDeltaCounter}};
     auto frame = MakeFrame(0x11U);
     ASSERT_TRUE(protector.Protect(frame));
 

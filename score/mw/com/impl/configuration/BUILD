@@ -663,16 +663,24 @@ cc_library(
     hdrs = [
         "binding_service_type_deployment.h",
         "binding_service_type_deployment_impl.h",
-        "e2e_event_type_deployment.h",
     ],
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
+        ":e2e_event_type_deployment",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:service_element_type",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/safecpp/safe_math",
     ],
+)
+
+cc_library(
+    name = "e2e_event_type_deployment",
+    srcs = ["e2e_event_type_deployment.cpp"],
+    hdrs = ["e2e_event_type_deployment.h"],
+    tags = ["FFI"],
+    deps = ["@score_baselibs//score/language/safecpp/safe_math"],
 )
 
 cc_library(

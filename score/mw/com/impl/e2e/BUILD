@@ -24,9 +24,7 @@ cc_library(
 cc_library(
     name = "e2e_health_tracker",
     srcs = ["e2e_health_tracker.cpp"],
-    hdrs = [
-        "e2e_health_tracker.h",
-    ],
+    hdrs = ["e2e_health_tracker.h"],
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
@@ -38,9 +36,7 @@ cc_library(
 cc_library(
     name = "e2e_summary",
     srcs = ["e2e_summary.cpp"],
-    hdrs = [
-        "e2e_summary.h",
-    ],
+    hdrs = ["e2e_summary.h"],
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
@@ -52,9 +48,7 @@ cc_library(
 cc_library(
     name = "e2e_profile_stub",
     srcs = ["e2e_profile_stub.cpp"],
-    hdrs = [
-        "e2e_profile_stub.h",
-    ],
+    hdrs = ["e2e_profile_stub.h"],
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
