@@ -142,9 +142,9 @@ class SampleReferenceGuard final
   public:
     SampleReferenceGuard() = default;
     SampleReferenceGuard(const SampleReferenceGuard&) = delete;
-    SampleReferenceGuard& operator=(const SampleReferenceGuard&) = delete;
+    SampleReferenceGuard& operator=(const SampleReferenceGuard&) & = delete;
     SampleReferenceGuard(SampleReferenceGuard&&) noexcept;
-    SampleReferenceGuard& operator=(SampleReferenceGuard&&) noexcept;
+    SampleReferenceGuard& operator=(SampleReferenceGuard&&) & noexcept;
     ~SampleReferenceGuard() noexcept;
 
   private:

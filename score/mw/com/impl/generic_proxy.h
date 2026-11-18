@@ -73,7 +73,7 @@ class GenericProxy : public ProxyBase
     GenericProxy& operator=(const GenericProxy&) = delete;
 
     GenericProxy(GenericProxy&& other) noexcept;
-    GenericProxy& operator=(GenericProxy&& other) noexcept;
+    GenericProxy& operator=(GenericProxy&& other) & noexcept;
 
     /**
      * \api

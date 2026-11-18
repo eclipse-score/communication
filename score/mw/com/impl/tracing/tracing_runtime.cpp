@@ -206,7 +206,7 @@ TracingRuntimeAtomicState::TracingRuntimeAtomicState(TracingRuntimeAtomicState&&
 {
 }
 
-TracingRuntimeAtomicState& TracingRuntimeAtomicState::operator=(TracingRuntimeAtomicState&& other) noexcept
+TracingRuntimeAtomicState& TracingRuntimeAtomicState::operator=(TracingRuntimeAtomicState&& other) & noexcept
 {
     // Suppress "AUTOSAR C++14 A12-8-4", The rule states: "Move constructor shall not initialize its class
     // members and base classes using copy semantics".

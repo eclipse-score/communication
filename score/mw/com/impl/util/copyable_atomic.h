@@ -44,7 +44,7 @@ class CopyableAtomic
     // defaulted move-ctor will be defined as deleted and not take place in overload resolution!
     // \see https://en.cppreference.com/w/cpp/language/move_constructor -> Deleted move constructor
     CopyableAtomic(CopyableAtomic&& other) noexcept = default;
-    CopyableAtomic& operator=(const CopyableAtomic& rhs) noexcept
+    CopyableAtomic& operator=(const CopyableAtomic& rhs) & noexcept
     {
         if (this == &rhs)
         {
@@ -55,7 +55,7 @@ class CopyableAtomic
     }
 
     // Same as move-ctor above!
-    CopyableAtomic& operator=(CopyableAtomic&& rhs) noexcept = default;
+    CopyableAtomic& operator=(CopyableAtomic&& rhs) & noexcept = default;
 
     ~CopyableAtomic() = default;
 

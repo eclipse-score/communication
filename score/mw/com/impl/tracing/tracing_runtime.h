@@ -40,8 +40,8 @@ class TracingRuntimeAtomicState
     TracingRuntimeAtomicState(const TracingRuntimeAtomicState&) = delete;
     TracingRuntimeAtomicState(TracingRuntimeAtomicState&& other) noexcept;
     ~TracingRuntimeAtomicState() noexcept = default;
-    TracingRuntimeAtomicState& operator=(const TracingRuntimeAtomicState&) = delete;
-    TracingRuntimeAtomicState& operator=(TracingRuntimeAtomicState&& other) noexcept;
+    TracingRuntimeAtomicState& operator=(const TracingRuntimeAtomicState&) & = delete;
+    TracingRuntimeAtomicState& operator=(TracingRuntimeAtomicState&& other) & noexcept;
 
     /// \brief consecutive trace-call failure counter, gets initialized to 0 on construction
     // Suppress "AUTOSAR C++14 M11-0-1" rule finding. This rule states: "Member data in non-POD class types shall be

@@ -259,7 +259,7 @@ class SkeletonWrapperClass : public Interface<SkeletonTrait>
     }
 
     SkeletonWrapperClass(const SkeletonWrapperClass&) = delete;
-    SkeletonWrapperClass& operator=(const SkeletonWrapperClass&) = delete;
+    SkeletonWrapperClass& operator=(const SkeletonWrapperClass&) & = delete;
 
     SkeletonWrapperClass(SkeletonWrapperClass&& other) noexcept
         : Interface<SkeletonTrait>{std::move(static_cast<Interface<SkeletonTrait>&&>(other))},
@@ -267,7 +267,7 @@ class SkeletonWrapperClass : public Interface<SkeletonTrait>
     {
     }
 
-    SkeletonWrapperClass& operator=(SkeletonWrapperClass&& other) noexcept
+    SkeletonWrapperClass& operator=(SkeletonWrapperClass&& other) & noexcept
     {
         if (&other != this)
         {
@@ -358,7 +358,7 @@ class ProxyWrapperClass : public Interface<ProxyTrait>
     }
 
     ProxyWrapperClass(const ProxyWrapperClass&) = delete;
-    ProxyWrapperClass& operator=(const ProxyWrapperClass&) = delete;
+    ProxyWrapperClass& operator=(const ProxyWrapperClass&) & = delete;
 
     ProxyWrapperClass(ProxyWrapperClass&& other) noexcept
         : Interface<ProxyTrait>{std::move(static_cast<Interface<ProxyTrait>&&>(other))},
@@ -366,7 +366,7 @@ class ProxyWrapperClass : public Interface<ProxyTrait>
     {
     }
 
-    ProxyWrapperClass& operator=(ProxyWrapperClass&& other) noexcept
+    ProxyWrapperClass& operator=(ProxyWrapperClass&& other) & noexcept
     {
         if (&other != this)
         {
