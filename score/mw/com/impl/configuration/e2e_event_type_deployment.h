@@ -13,6 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_CONFIGURATION_E2E_EVENT_TYPE_DEPLOYMENT_H
 #define SCORE_MW_COM_IMPL_CONFIGURATION_E2E_EVENT_TYPE_DEPLOYMENT_H
 
+#include "score/language/safecpp/safe_math/safe_math.h"
+
 #include <cstdint>
 
 namespace score::mw::com::impl
@@ -35,7 +37,7 @@ struct E2EEventTypeDeployment
 constexpr bool operator==(const E2EEventTypeDeployment& lhs, const E2EEventTypeDeployment& rhs) noexcept
 {
     return (lhs.profile_ == rhs.profile_) && (lhs.data_id_ == rhs.data_id_) &&
-           (lhs.max_delta_counter_ == rhs.max_delta_counter_);
+           safe_math::CmpEqual(lhs.max_delta_counter_, rhs.max_delta_counter_);
 }
 
 }  // namespace score::mw::com::impl

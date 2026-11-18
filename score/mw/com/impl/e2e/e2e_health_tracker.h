@@ -21,7 +21,7 @@ namespace score::mw::com::impl::e2e
 {
 
 // Largest supported window size (one bit per sample).
-constexpr std::uint8_t kMaxHealthWindowSize{64U};
+constexpr std::uint32_t kMaxHealthWindowSize{64U};
 
 // Looks at the last window_size samples. In kOk, error_threshold failed samples switch to kError.
 // In kError, recovery_threshold passed samples switch back to kOk.
@@ -31,14 +31,14 @@ struct HealthTrackerConfiguration
     bool enabled{false};
 
     // Failed samples in the window needed to switch to kError. Must be >= 1.
-    std::uint8_t error_threshold{1U};
+    std::uint32_t error_threshold{1U};
 
     // Passed samples in the window needed to switch back to kOk. Must be >= 1.
-    std::uint8_t recovery_threshold{1U};
+    std::uint32_t recovery_threshold{1U};
 
     // Number of most recent samples considered. Must be >= both thresholds and <= kMaxHealthWindowSize.
     // Must also be < error_threshold + recovery_threshold, otherwise the state could oscillate between kOk and kError.
-    std::uint8_t window_size{1U};
+    std::uint32_t window_size{1U};
 };
 
 // Tracks the historical health of one consumer. Each instance owns its own sample window.
@@ -63,7 +63,7 @@ class HealthTracker
     std::uint64_t failed_samples_;
 
     // Number of valid samples in the window (<= window_size).
-    std::uint8_t samples_in_window_;
+    std::uint32_t samples_in_window_;
 
     // false = kOk, true = kError.
     bool is_currently_error_;
