@@ -10,9 +10,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/serialization/someip/generated_code_example/speed_rpm_serializer.h"
+#include "score/mw/com/impl/bindings/someip/serialization/generated_code_example/speed_rpm_serializer.h"
 
-#include "score/serialization/someip/generated_code_example/speed_rpm.h"
+#include "score/mw/com/impl/bindings/someip/serialization/generated_code_example/speed_rpm.h"
 
 #include <gtest/gtest.h>
 

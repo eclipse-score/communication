@@ -18,8 +18,8 @@
 /// and DestroySerializer factory symbols with dlsym, serializes a SpeedRpm sample, deserializes it back
 /// and asserts the round-trip preserves the data, exactly as mw::com uses the library at runtime.
 
-#include "score/serialization/someip/generated_code_example/speed_rpm.h"
-#include "score/serialization/someip/serializer.h"
+#include "score/mw/com/impl/bindings/someip/serialization/generated_code_example/speed_rpm.h"
+#include "score/mw/com/impl/serialization/serializer.h"
 
 #include "tools/cpp/runfiles/runfiles.h"
 
@@ -45,7 +45,8 @@ using CreateSerializerFn = ISerializer* (*)() noexcept;
 using DestroySerializerFn = void (*)(ISerializer*) noexcept;
 
 constexpr const char* kLibraryRunfile =
-    "score_communication/score/serialization/someip/generated_code_example/libmwcom_serializer_someip.so";
+    "score_communication/score/mw/com/impl/bindings/someip/serialization/generated_code_example/"
+    "libmwcom_serializer_someip.so";
 
 TEST(SpeedRpmSerializerIntegration, RoundTripThroughDlopenedLibrary)
 {

@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_SERIALIZATION_SOMEIP_SERIALIZER_H
-#define SCORE_SERIALIZATION_SOMEIP_SERIALIZER_H
+#ifndef SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZER_H
+#define SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZER_H
 
 #include "score/result/result.h"
 
@@ -73,4 +73,4 @@ class ISerializer
 
 }  // namespace score::serialization::someip
 
-#endif  // SCORE_SERIALIZATION_SOMEIP_SERIALIZER_H
+#endif  // SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZER_H

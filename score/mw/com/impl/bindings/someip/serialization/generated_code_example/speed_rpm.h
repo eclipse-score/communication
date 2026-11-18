@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_SERIALIZATION_SOMEIP_SPEED_RPM_H
-#define SCORE_SERIALIZATION_SOMEIP_SPEED_RPM_H
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SERIALIZATION_GENERATED_CODE_EXAMPLE_SPEED_RPM_H
+#define SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SERIALIZATION_GENERATED_CODE_EXAMPLE_SPEED_RPM_H
 
 #include <cstdint>
 #include <vector>
@@ -37,4 +37,4 @@ struct SpeedRpm
 
 }  // namespace score::serialization::someip
 
-#endif  // SCORE_SERIALIZATION_SOMEIP_SPEED_RPM_H
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SERIALIZATION_GENERATED_CODE_EXAMPLE_SPEED_RPM_H

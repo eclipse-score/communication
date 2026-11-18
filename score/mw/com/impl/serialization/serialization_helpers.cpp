@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/serialization/someip/serialization_helpers.h"
+#include "score/mw/com/impl/serialization/serialization_helpers.h"
 
 #include <cstddef>
 #include <cstring>

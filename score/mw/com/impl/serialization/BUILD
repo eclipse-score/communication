@@ -21,10 +21,6 @@ cc_library(
     name = "serializer",
     srcs = ["serializer.cpp"],
     hdrs = ["serializer.h"],
-    visibility = [
-        "//score/mw/com:__subpackages__",
-        "//score/serialization:__subpackages__",
-    ],
     deps = [
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
@@ -35,6 +31,6 @@ cc_library(
     name = "serialization_helpers",
     srcs = ["serialization_helpers.cpp"],
     hdrs = ["serialization_helpers.h"],
-    visibility = ["//score/serialization:__subpackages__"],
+    visibility = ["//score/mw/com/impl/bindings/someip/serialization:__subpackages__"],
     deps = ["@score_baselibs//score/language/futurecpp"],
 )

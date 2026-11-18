@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/serialization/someip/serializer.h"
+#include "score/mw/com/impl/serialization/serializer.h"
 
 namespace score::serialization::someip
 {

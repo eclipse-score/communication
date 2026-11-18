@@ -12,8 +12,8 @@
 # *******************************************************************************
 
 # Example of generator output for the SOME/IP binding. The hand-written ABI (ISerializer interface,
-# error type, factory signatures and shared serialization helpers) lives in the parent package; the
-# datatype, its serializer and the factory below illustrate what the serializer generator emits.
+# error type, factory signatures and shared serialization helpers) lives in //score/mw/com/impl/serialization;
+# the datatype, its serializer and the factory below illustrate what the serializer generator emits.
 
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
@@ -35,8 +35,8 @@ cc_library(
     alwayslink = True,
     deps = [
         ":speed_rpm",
-        "//score/serialization/someip:serialization_helpers",
-        "//score/serialization/someip:serializer",
+        "//score/mw/com/impl/serialization:serialization_helpers",
+        "//score/mw/com/impl/serialization:serializer",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
     ],
@@ -51,7 +51,7 @@ cc_shared_library(
     user_link_flags = ["-Wl,--version-script=$(location :serializer_exports.lds)"],
     deps = [
         ":speed_rpm_serializer",
-        "//score/serialization/someip:serializer",
+        "//score/mw/com/impl/serialization:serializer",
     ],
 )
 
@@ -75,7 +75,7 @@ cc_test(
     linkopts = ["-ldl"],
     deps = [
         ":speed_rpm",
-        "//score/serialization/someip:serializer",
+        "//score/mw/com/impl/serialization:serializer",
         "@bazel_tools//tools/cpp/runfiles",
         "@googletest//:gtest_main",
         "@score_baselibs//score/result",

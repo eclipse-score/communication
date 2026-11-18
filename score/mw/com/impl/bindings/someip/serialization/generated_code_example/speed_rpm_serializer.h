@@ -10,11 +10,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_SERIALIZATION_SOMEIP_SPEED_RPM_SERIALIZER_H
-#define SCORE_SERIALIZATION_SOMEIP_SPEED_RPM_SERIALIZER_H
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SERIALIZATION_GENERATED_CODE_EXAMPLE_SPEED_RPM_SERIALIZER_H
+#define SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SERIALIZATION_GENERATED_CODE_EXAMPLE_SPEED_RPM_SERIALIZER_H
 
-#include "score/serialization/someip/generated_code_example/speed_rpm.h"
-#include "score/serialization/someip/serializer.h"
+#include "score/mw/com/impl/bindings/someip/serialization/generated_code_example/speed_rpm.h"
+#include "score/mw/com/impl/serialization/serializer.h"
 
 #include <score/span.hpp>
 
@@ -47,4 +47,4 @@ class SpeedRpmSerializer final : public ISerializer
 
 }  // namespace score::serialization::someip
 
-#endif  // SCORE_SERIALIZATION_SOMEIP_SPEED_RPM_SERIALIZER_H
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_SERIALIZATION_GENERATED_CODE_EXAMPLE_SPEED_RPM_SERIALIZER_H

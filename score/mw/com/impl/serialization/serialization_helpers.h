@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_SERIALIZATION_SOMEIP_SERIALIZATION_HELPERS_H
-#define SCORE_SERIALIZATION_SOMEIP_SERIALIZATION_HELPERS_H
+#ifndef SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZATION_HELPERS_H
+#define SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZATION_HELPERS_H
 
 #include <score/span.hpp>
 
@@ -46,4 +46,4 @@ void ReadFloats(score::cpp::span<const std::uint8_t> in, score::cpp::span<float>
 
 }  // namespace score::serialization::someip
 
-#endif  // SCORE_SERIALIZATION_SOMEIP_SERIALIZATION_HELPERS_H
+#endif  // SCORE_MW_COM_IMPL_SERIALIZATION_SERIALIZATION_HELPERS_H
