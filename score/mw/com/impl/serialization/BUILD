@@ -36,6 +36,7 @@ cc_library(
     deps = [
         ":serializer",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/safecpp/string_view:zstring_view",
         "@score_baselibs//score/result",
     ],
 )
@@ -51,6 +52,7 @@ cc_library(
         ":serializer",
         ":serializer_abi",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/safecpp/string_view:zstring_view",
         "@score_baselibs//score/result",
     ],
 )

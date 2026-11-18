@@ -45,12 +45,12 @@ namespace
 
 using bazel::tools::cpp::runfiles::Runfiles;
 
-constexpr const char* kLibrary = "libmwcom_serializer_someip.so";
-constexpr const char* kLibraryWithoutDescriptor = "libmwcom_serializer_without_descriptor.so";
+constexpr std::string_view kLibrary{"libmwcom_serializer_someip.so"};
+constexpr std::string_view kLibraryWithoutDescriptor{"libmwcom_serializer_without_descriptor.so"};
 
 #ifndef __QNX__
-constexpr const char* kRunfilesDirectory =
-    "score_communication/score/mw/com/impl/bindings/someip/serialization/generated_code_example/";
+constexpr std::string_view kRunfilesDirectory{
+    "score_communication/score/mw/com/impl/bindings/someip/serialization/generated_code_example/"};
 #endif
 
 constexpr std::string_view kSpeedRpmSuffix{"2c5f8d1a_7e3a91c4"};
@@ -98,12 +98,12 @@ class SpeedRpmSerializerIntegrationTest : public ::testing::Test
 
     // Bazel provides the libraries as runfiles. The QNX test runner has no runfiles for shared libraries; it puts them
     // on LD_LIBRARY_PATH, where dlopen finds them by name.
-    std::string PathOf(const std::string& library) const
+    std::string PathOf(const std::string_view library) const
     {
 #ifdef __QNX__
-        return library;
+        return std::string{library};
 #else
-        return runfiles_->Rlocation(kRunfilesDirectory + library);
+        return runfiles_->Rlocation(std::string{kRunfilesDirectory}.append(library));
 #endif
     }
 

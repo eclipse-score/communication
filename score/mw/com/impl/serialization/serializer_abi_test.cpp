@@ -44,8 +44,7 @@ constexpr std::array<FieldCase, 9U> kAllFields{{
 
 std::string_view MismatchOf(const SerializerAbiInfo& library, const SerializerAbiInfo& host)
 {
-    const char* const mismatch = FindAbiMismatch(library, host);
-    return mismatch == nullptr ? std::string_view{"<compatible>"} : std::string_view{mismatch};
+    return FindAbiMismatch(library, host).value_or("<compatible>");
 }
 
 TEST(SerializerAbiTest, DescriptorOfTheSameBuildMatches)
@@ -55,7 +54,7 @@ TEST(SerializerAbiTest, DescriptorOfTheSameBuildMatches)
 
     // When comparing the descriptor with itself
     // Then no mismatch is found
-    EXPECT_EQ(FindAbiMismatch(host, host), nullptr);
+    EXPECT_FALSE(FindAbiMismatch(host, host).has_value());
 }
 
 TEST(SerializerAbiTest, DescriptorDescribesTheBuild)

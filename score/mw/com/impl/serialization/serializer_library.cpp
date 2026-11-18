@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/serialization/serializer_library.h"
 
+#include "score/language/safecpp/string_view/zstring_view.h"
+
 #include <dlfcn.h>
 
 #include <tuple>
@@ -28,8 +30,14 @@ void CloseLibrary(void* const handle) noexcept
     std::ignore = dlclose(handle);
 }
 
+// dlsym requires a null-terminated name, which safecpp::zstring_view guarantees and std::string_view does not.
+void* ResolveSymbol(void* const library, const safecpp::zstring_view symbol) noexcept
+{
+    return dlsym(library, symbol.c_str());
+}
+
 template <typename FunctionPointer>
-FunctionPointer ResolveFunction(void* const library, const char* const symbol) noexcept
+FunctionPointer ResolveFunction(void* const library, const safecpp::zstring_view symbol) noexcept
 {
     static_assert(std::is_pointer_v<FunctionPointer> && std::is_function_v<std::remove_pointer_t<FunctionPointer>>,
                   "Only function pointers are resolved this way.");
@@ -37,7 +45,7 @@ FunctionPointer ResolveFunction(void* const library, const char* const symbol) n
     // work, which is why ISO C++ makes it conditionally supported. The type is checked by the library with a
     // static_assert on its side of the boundary.
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): see above
-    return reinterpret_cast<FunctionPointer>(dlsym(library, symbol));
+    return reinterpret_cast<FunctionPointer>(ResolveSymbol(library, symbol));
 }
 
 }  // namespace
@@ -77,14 +85,15 @@ score::Result<SerializerLibrary> SerializerLibrary::Open(const std::string& path
     // From here on, every return unloads the library again.
     std::shared_ptr<void> handle{raw_handle, &CloseLibrary};
 
-    const auto* const library_info = static_cast<const SerializerAbiInfo*>(dlsym(raw_handle, kSerializerAbiInfoSymbol));
+    const auto* const library_info =
+        static_cast<const SerializerAbiInfo*>(ResolveSymbol(raw_handle, kSerializerAbiInfoSymbol));
     if (library_info == nullptr)
     {
         return MakeUnexpected(SerializerErrc::kIncompatibleLibrary, "library exports no ABI descriptor");
     }
-    if (const char* const mismatch = FindAbiMismatch(*library_info, expected); mismatch != nullptr)
+    if (const auto mismatch = FindAbiMismatch(*library_info, expected); mismatch.has_value())
     {
-        return MakeUnexpected(SerializerErrc::kIncompatibleLibrary, mismatch);
+        return MakeUnexpected(SerializerErrc::kIncompatibleLibrary, *mismatch);
     }
 
     const auto destroy = ResolveFunction<DestroySerializerFn>(raw_handle, kDestroySerializerSymbol);
@@ -99,7 +108,7 @@ score::Result<detail::SerializerPtr> SerializerLibrary::CreateSerializer(
     const std::string_view symbol_suffix) const noexcept
 {
     const std::string symbol = std::string{kCreateSerializerSymbolPrefix}.append(symbol_suffix);
-    const auto create = ResolveFunction<CreateSerializerFn>(handle_.get(), symbol.c_str());
+    const auto create = ResolveFunction<CreateSerializerFn>(handle_.get(), symbol);
     if (create == nullptr)
     {
         return MakeUnexpected(SerializerErrc::kCreationFailed, "library has no factory for this datatype");

@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/serialization/serializer.h"
 
+#include "score/language/safecpp/string_view/zstring_view.h"
 #include "score/result/result.h"
 
 #include <score/span.hpp>
@@ -22,6 +23,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <new>
+#include <optional>
+#include <string_view>
 #include <type_traits>
 
 /// \file
@@ -45,9 +48,11 @@ using CreateSerializerFn = ISerializer* (*)() noexcept;
 /// \brief Signature of the DestroySerializer function exported by a library.
 using DestroySerializerFn = void (*)(ISerializer*) noexcept;
 
-inline constexpr const char* kCreateSerializerSymbolPrefix{"CreateSerializer_"};
-inline constexpr const char* kDestroySerializerSymbol{"DestroySerializer"};
-inline constexpr const char* kSerializerAbiInfoSymbol{"mwcom_serializer_abi_info"};
+inline constexpr std::string_view kCreateSerializerSymbolPrefix{"CreateSerializer_"};
+
+// The names that are passed to dlsym as they are must be null-terminated.
+inline constexpr safecpp::zstring_view kDestroySerializerSymbol{"DestroySerializer"};
+inline constexpr safecpp::zstring_view kSerializerAbiInfoSymbol{"mwcom_serializer_abi_info"};
 
 /// \brief Version of the binary contract. Must be incremented by hand whenever the contract changes.
 /// \details This covers everything the descriptor cannot measure: the virtual functions of ISerializer, their
@@ -141,13 +146,14 @@ constexpr SerializerAbiInfo MakeSerializerAbiInfo() noexcept
 }
 
 /// \brief Compares the descriptor of a library with the one of the host.
-/// \return The name of the first field that differs, or nullptr if the library is compatible. The name is a
-///         string literal and can be used as the user message of an error.
+/// \return The name of the first field that differs, or std::nullopt if the library is compatible. The name refers
+///         to a string literal, so it stays valid and can be used as the user message of an error.
 /// \details The fields at the fixed offsets are compared first. Only if they match, the library's descriptor
 ///          has the layout of the host's and the remaining fields are read, so a descriptor of a different
 ///          revision is never read beyond its end.
-constexpr const char* FindAbiMismatch(const SerializerAbiInfo& library,
-                                      const SerializerAbiInfo& host = MakeSerializerAbiInfo()) noexcept
+constexpr std::optional<std::string_view> FindAbiMismatch(
+    const SerializerAbiInfo& library,
+    const SerializerAbiInfo& host = MakeSerializerAbiInfo()) noexcept
 {
     if (library.abi_version != host.abi_version)
     {
@@ -185,7 +191,7 @@ constexpr const char* FindAbiMismatch(const SerializerAbiInfo& library,
     {
         return "size_of_error";
     }
-    return nullptr;
+    return std::nullopt;
 }
 
 /// \brief Creates the serializer for a factory function of a library.
