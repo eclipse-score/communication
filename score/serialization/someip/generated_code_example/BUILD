@@ -17,7 +17,6 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(
     default_visibility = ["//score/mw/com:__subpackages__"],
@@ -26,7 +25,6 @@ package(
 cc_library(
     name = "speed_rpm",
     hdrs = ["speed_rpm.h"],
-    features = COMPILER_WARNING_FEATURES,
 )
 
 cc_library(
@@ -35,7 +33,6 @@ cc_library(
     hdrs = ["speed_rpm_serializer.h"],
     # The extern "C" factory symbols are not referenced by the library itself; keep them in the .so.
     alwayslink = True,
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":speed_rpm",
         "//score/serialization/someip:serialization_helpers",
@@ -50,7 +47,6 @@ cc_library(
 cc_shared_library(
     name = "mwcom_serializer_someip",
     additional_linker_inputs = ["serializer_exports.lds"],
-    features = COMPILER_WARNING_FEATURES,
     shared_lib_name = "libmwcom_serializer_someip.so",
     user_link_flags = ["-Wl,--version-script=$(location :serializer_exports.lds)"],
     deps = [
@@ -62,7 +58,6 @@ cc_shared_library(
 cc_unit_test(
     name = "speed_rpm_serializer_test",
     srcs = ["speed_rpm_serializer_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":speed_rpm_serializer",
         "@score_baselibs//score/result",
@@ -77,7 +72,6 @@ cc_test(
     timeout = "short",
     srcs = ["speed_rpm_serializer_integration_test.cpp"],
     data = [":mwcom_serializer_someip"],
-    features = COMPILER_WARNING_FEATURES,
     linkopts = ["-ldl"],
     deps = [
         ":speed_rpm",

@@ -12,7 +12,6 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(
     default_visibility = ["//score/mw/com:__subpackages__"],
@@ -22,7 +21,6 @@ cc_library(
     name = "serializer",
     srcs = ["serializer.cpp"],
     hdrs = ["serializer.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com:__subpackages__",
         "//score/serialization:__subpackages__",
@@ -37,7 +35,6 @@ cc_library(
     name = "serialization_helpers",
     srcs = ["serialization_helpers.cpp"],
     hdrs = ["serialization_helpers.h"],
-    features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/serialization:__subpackages__"],
     deps = ["@score_baselibs//score/language/futurecpp"],
 )
