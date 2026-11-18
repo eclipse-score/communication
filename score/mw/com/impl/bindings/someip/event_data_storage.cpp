@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/someip/event_data_storage.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
+
 #include <score/assert.hpp>
 
 #include <limits>
@@ -60,7 +62,7 @@ EventDataStorage::~EventDataStorage()
 
 void EventDataStorage::InitializeSlots(const InitializeSampleCallback& callback)
 {
-    for (SlotIndexType slot_index = 0U; slot_index < number_of_slots_; ++slot_index)
+    for (SlotIndexType slot_index = 0U; safe_math::CmpLess(slot_index, number_of_slots_); ++slot_index)
     {
         callback(GetTypeErasedDataSlot(slot_index, sample_size_info_.Size()));
     }
@@ -68,7 +70,7 @@ void EventDataStorage::InitializeSlots(const InitializeSampleCallback& callback)
 
 void* EventDataStorage::GetTypeErasedDataSlot(const SlotIndexType index, const std::size_t data_size) const
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(index < number_of_slots_);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(safe_math::CmpLess(index, number_of_slots_));
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(data_size == sample_size_info_.Size());
 
     const auto element_offset = data_size * index;
