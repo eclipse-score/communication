@@ -12,6 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 package(
     default_visibility = ["//score/mw/com:__subpackages__"],
@@ -23,6 +24,27 @@ cc_library(
     hdrs = ["serializer.h"],
     deps = [
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/result",
+    ],
+)
+
+# Binary contract between mw::com and a generated serialization library. Both sides depend on it: the library
+# to export its descriptor and entry points, mw::com to verify them.
+cc_library(
+    name = "serializer_abi",
+    hdrs = ["serializer_abi.h"],
+    deps = [
+        ":serializer",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_unit_test(
+    name = "serializer_abi_test",
+    srcs = ["serializer_abi_test.cpp"],
+    deps = [
+        ":serializer_abi",
         "@score_baselibs//score/result",
     ],
 )
