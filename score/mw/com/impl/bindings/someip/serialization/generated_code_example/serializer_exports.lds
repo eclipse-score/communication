@@ -11,11 +11,12 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-/* Only the FFI entry points resolved by mw::com via dlsym are part of the library ABI:
- * CreateSerializer_<structural-hash>_<attribute-hash> and DestroySerializer.
+/* Only the FFI entry points resolved by mw::com via dlsym are part of the library ABI: the ABI descriptor
+ * mwcom_serializer_abi_info, CreateSerializer_<structural-hash>_<attribute-hash> and DestroySerializer.
  * Everything else (C++ symbols, helpers) stays hidden. */
 {
   global:
+    mwcom_serializer_abi_info;
     CreateSerializer_*;
     DestroySerializer;
   local:

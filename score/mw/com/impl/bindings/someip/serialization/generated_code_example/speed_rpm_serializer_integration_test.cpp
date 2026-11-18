@@ -14,12 +14,16 @@
 /// \file
 /// \brief Integration test that exercises the generated SOME/IP serialization library end to end.
 ///
-/// The test loads libmwcom_serializer_someip.so with dlopen, resolves the CreateSerializer_<structural-hash>_<attribute-hash>
-/// and DestroySerializer factory symbols with dlsym, serializes a SpeedRpm sample, deserializes it back
-/// and asserts the round-trip preserves the data, exactly as mw::com uses the library at runtime.
+/// The test loads libmwcom_serializer_someip.so with SerializerLibrary, exactly as mw::com does at runtime. The
+/// loader verifies the ABI descriptor of the library, resolves the CreateSerializer_<structural-hash>_<attribute-hash>
+/// and DestroySerializer entry points and hands out a serializer that is typed for SpeedRpm.
 
 #include "score/mw/com/impl/bindings/someip/serialization/generated_code_example/speed_rpm.h"
 #include "score/mw/com/impl/serialization/serializer.h"
+#include "score/mw/com/impl/serialization/serializer_abi.h"
+#include "score/mw/com/impl/serialization/serializer_library.h"
+
+#include "score/result/result.h"
 
 #include "tools/cpp/runfiles/runfiles.h"
 
@@ -27,11 +31,11 @@
 
 #include <gtest/gtest.h>
 
-#include <dlfcn.h>
-
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace score::serialization::someip
@@ -41,57 +45,150 @@ namespace
 
 using bazel::tools::cpp::runfiles::Runfiles;
 
-using CreateSerializerFn = ISerializer* (*)() noexcept;
-using DestroySerializerFn = void (*)(ISerializer*) noexcept;
+constexpr const char* kLibrary = "libmwcom_serializer_someip.so";
+constexpr const char* kLibraryWithoutDescriptor = "libmwcom_serializer_without_descriptor.so";
 
-constexpr const char* kLibraryRunfile =
-    "score_communication/score/mw/com/impl/bindings/someip/serialization/generated_code_example/"
-    "libmwcom_serializer_someip.so";
+#ifndef __QNX__
+constexpr const char* kRunfilesDirectory =
+    "score_communication/score/mw/com/impl/bindings/someip/serialization/generated_code_example/";
+#endif
 
-TEST(SpeedRpmSerializerIntegration, RoundTripThroughDlopenedLibrary)
+constexpr std::string_view kSpeedRpmSuffix{"2c5f8d1a_7e3a91c4"};
+
+SpeedRpm MakeSample()
 {
-    std::string runfiles_error{};
-    const std::unique_ptr<Runfiles> runfiles{Runfiles::CreateForTest(&runfiles_error)};
-    ASSERT_NE(runfiles, nullptr) << runfiles_error;
+    SpeedRpm sample{};
+    sample.speed_kmh = 150.75F;
+    sample.rpm = 5000U;
+    sample.speed_samples = {100.0F, 125.0F, 150.75F};
+    return sample;
+}
 
-    const std::string library_path = runfiles->Rlocation(kLibraryRunfile);
-    ASSERT_FALSE(library_path.empty());
+void ExpectRoundTrip(const TypedSerializer<SpeedRpm>& serializer)
+{
+    const SpeedRpm original = MakeSample();
 
-    // Open the generated serialization library exactly as mw::com would.
-    void* const library = dlopen(library_path.c_str(), RTLD_NOW | RTLD_LOCAL);
-    ASSERT_NE(library, nullptr) << dlerror();
-
-    // Resolve the factory symbols with dlsym.
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): required for dlsym results.
-    const auto create = reinterpret_cast<CreateSerializerFn>(dlsym(library, "CreateSerializer_2c5f8d1a_7e3a91c4"));
-    ASSERT_NE(create, nullptr) << dlerror();
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): required for dlsym results.
-    const auto destroy = reinterpret_cast<DestroySerializerFn>(dlsym(library, "DestroySerializer"));
-    ASSERT_NE(destroy, nullptr) << dlerror();
-
-    ISerializer* const serializer = create();
-    ASSERT_NE(serializer, nullptr);
-
-    SpeedRpm original{};
-    original.speed_kmh = 150.75F;
-    original.rpm = 5000U;
-    original.speed_samples = {100.0F, 125.0F, 150.75F};
-
-    std::vector<std::uint8_t> buffer(serializer->GetMaxSerializedSize().value());
-    const auto written = serializer->Serialize(&original, buffer);
+    const auto max_size = serializer.GetMaxSerializedSize();
+    ASSERT_TRUE(max_size.has_value());
+    std::vector<std::uint8_t> buffer(max_size.value());
+    const auto written = serializer.Serialize(original, buffer);
     ASSERT_TRUE(written.has_value());
     ASSERT_LE(written.value(), buffer.size());
 
     SpeedRpm decoded{};
-    ASSERT_TRUE(serializer->Deserialize(score::cpp::span<const std::uint8_t>{buffer.data(), written.value()}, &decoded).has_value());
+    ASSERT_TRUE(serializer.Deserialize(score::cpp::span<const std::uint8_t>{buffer.data(), written.value()}, decoded)
+                    .has_value());
 
     EXPECT_FLOAT_EQ(decoded.speed_kmh, original.speed_kmh);
     EXPECT_EQ(decoded.rpm, original.rpm);
     EXPECT_EQ(decoded.speed_samples, original.speed_samples);
+}
 
-    destroy(serializer);
+class SpeedRpmSerializerIntegrationTest : public ::testing::Test
+{
+  protected:
+    void SetUp() override
+    {
+#ifndef __QNX__
+        std::string error{};
+        runfiles_.reset(Runfiles::CreateForTest(&error));
+        ASSERT_NE(runfiles_, nullptr) << error;
+#endif
+    }
 
-    ASSERT_EQ(dlclose(library), 0) << dlerror();
+    // Bazel provides the libraries as runfiles. The QNX test runner has no runfiles for shared libraries; it puts them
+    // on LD_LIBRARY_PATH, where dlopen finds them by name.
+    std::string PathOf(const std::string& library) const
+    {
+#ifdef __QNX__
+        return library;
+#else
+        return runfiles_->Rlocation(kRunfilesDirectory + library);
+#endif
+    }
+
+    // The SerializerLibrary object goes out of scope on return; only the serializer keeps the library loaded.
+    score::Result<TypedSerializer<SpeedRpm>> CreateSerializerAndDropLibrary() const
+    {
+        const auto library = SerializerLibrary::Open(PathOf(kLibrary));
+        if (!library.has_value())
+        {
+            return MakeUnexpected<TypedSerializer<SpeedRpm>>(library.error());
+        }
+        return library.value().Create<SpeedRpm>(kSpeedRpmSuffix);
+    }
+
+#ifndef __QNX__
+    std::unique_ptr<Runfiles> runfiles_;
+#endif
+};
+
+TEST_F(SpeedRpmSerializerIntegrationTest, RoundTripThroughLoadedLibrary)
+{
+    const auto library = SerializerLibrary::Open(PathOf(kLibrary));
+    ASSERT_TRUE(library.has_value()) << library.error();
+
+    const auto serializer = library.value().Create<SpeedRpm>(kSpeedRpmSuffix);
+    ASSERT_TRUE(serializer.has_value()) << serializer.error();
+
+    ExpectRoundTrip(serializer.value());
+}
+
+TEST_F(SpeedRpmSerializerIntegrationTest, SerializerKeepsTheLibraryLoadedAfterTheLibraryObjectIsGone)
+{
+    const auto serializer = CreateSerializerAndDropLibrary();
+    ASSERT_TRUE(serializer.has_value()) << serializer.error();
+
+    ExpectRoundTrip(serializer.value());
+}
+
+TEST_F(SpeedRpmSerializerIntegrationTest, LibraryBuiltForAnotherAbiIsRejected)
+{
+    SerializerAbiInfo expected = MakeSerializerAbiInfo();
+    expected.abi_version += 1U;
+
+    const auto library = SerializerLibrary::Open(PathOf(kLibrary), expected);
+
+    ASSERT_FALSE(library.has_value());
+    EXPECT_EQ(library.error(), MakeError(SerializerErrc::kIncompatibleLibrary));
+    EXPECT_EQ(library.error().UserMessage(), "abi_version");
+}
+
+TEST_F(SpeedRpmSerializerIntegrationTest, LibraryWithoutAbiDescriptorIsRejected)
+{
+    const auto library = SerializerLibrary::Open(PathOf(kLibraryWithoutDescriptor));
+
+    ASSERT_FALSE(library.has_value());
+    EXPECT_EQ(library.error(), MakeError(SerializerErrc::kIncompatibleLibrary));
+}
+
+TEST_F(SpeedRpmSerializerIntegrationTest, FactoryThatTheLibraryDoesNotExportIsReported)
+{
+    const auto library = SerializerLibrary::Open(PathOf(kLibrary));
+    ASSERT_TRUE(library.has_value()) << library.error();
+
+    const auto serializer = library.value().Create<SpeedRpm>("0000000_00000000");
+
+    ASSERT_FALSE(serializer.has_value());
+    EXPECT_EQ(serializer.error(), MakeError(SerializerErrc::kCreationFailed));
+}
+
+TEST_F(SpeedRpmSerializerIntegrationTest, ErrorsOfTheLibraryAreReportedInTheErrorDomainOfTheHost)
+{
+    const auto serializer = CreateSerializerAndDropLibrary();
+    ASSERT_TRUE(serializer.has_value()) << serializer.error();
+
+    std::array<std::uint8_t, 4U> too_small{};
+    const auto written = serializer.value().Serialize(MakeSample(), too_small);
+    ASSERT_FALSE(written.has_value());
+    EXPECT_EQ(written.error(), MakeError(SerializerErrc::kBufferTooSmall));
+
+    SpeedRpm decoded{};
+    const std::array<std::uint8_t, 3U> truncated{};
+    const auto read = serializer.value().Deserialize(truncated, decoded);
+    ASSERT_FALSE(read.has_value());
+    EXPECT_EQ(read.error(), MakeError(SerializerErrc::kDeserializationFailed));
+    EXPECT_TRUE(read.error().UserMessage().empty());
 }
 
 }  // namespace

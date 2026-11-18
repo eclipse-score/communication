@@ -14,10 +14,11 @@
 
 #include "score/mw/com/impl/bindings/someip/serialization/generated_code_example/speed_rpm.h"
 #include "score/mw/com/impl/bindings/someip/serialization/strategy/someip_max_size.h"
+#include "score/mw/com/impl/serialization/serializer_abi.h"
 
 #include "score/serialization/error/serialization_error.h"
 
-#include <new>
+#include <type_traits>
 #include <utility>
 
 namespace score::serialization::someip
@@ -79,6 +80,12 @@ score::Result<std::size_t> SpeedRpmSerializer::GetMaxSerializedSize() const noex
 
 }  // namespace score::serialization::someip
 
+// Every generated library exports the descriptor of the environment it was built in. mw::com compares it with
+// its own before it resolves or calls anything else in the library. A single declaration is used because only
+// then the constexpr variable gets external linkage.
+extern "C" constexpr score::serialization::someip::SerializerAbiInfo mwcom_serializer_abi_info =
+    score::serialization::someip::MakeSerializerAbiInfo();
+
 extern "C" {
 
 // Every generated library exports one factory function per serializer variant, resolved by mw::com via
@@ -90,7 +97,7 @@ extern "C" {
 // releases it with DestroySerializer, so allocation and deallocation happen on the same side.
 score::serialization::someip::ISerializer* CreateSerializer_2c5f8d1a_7e3a91c4() noexcept
 {
-    return new (std::nothrow) score::serialization::someip::SpeedRpmSerializer{};
+    return score::serialization::someip::CreateSerializerOf<score::serialization::someip::SpeedRpmSerializer>();
 }
 
 void DestroySerializer(score::serialization::someip::ISerializer* serializer) noexcept
@@ -99,3 +106,11 @@ void DestroySerializer(score::serialization::someip::ISerializer* serializer) no
 }
 
 }  // extern "C"
+
+// mw::com resolves the entry points with the function types of the ABI header. Asserting them here makes a
+// signature that drifts from the contract a compile error instead of undefined behaviour at runtime.
+static_assert(
+    std::is_same_v<decltype(&CreateSerializer_2c5f8d1a_7e3a91c4), score::serialization::someip::CreateSerializerFn>,
+    "CreateSerializer_<suffix> does not match the factory signature of the ABI.");
+static_assert(std::is_same_v<decltype(&DestroySerializer), score::serialization::someip::DestroySerializerFn>,
+              "DestroySerializer does not match the destroy signature of the ABI.");

@@ -16,7 +16,7 @@
 # serializer and the factory below illustrate what the serializer generator emits. The serializer is
 # built on the SomeIpStrategy, which encodes the datatype field by field.
 
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 package(
@@ -42,6 +42,7 @@ cc_library(
         ":speed_rpm",
         "//score/mw/com/impl/bindings/someip/serialization/strategy:someip_strategy",
         "//score/mw/com/impl/serialization:serializer",
+        "//score/mw/com/impl/serialization:serializer_abi",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
         "@score_baselibs//score/serialization",
@@ -50,7 +51,8 @@ cc_library(
 )
 
 # Generated SOME/IP serialization library loaded by mw::com via dlopen. The version script restricts the
-# exported symbols to the factory functions resolved with dlsym (CreateSerializer_*, DestroySerializer).
+# exported symbols to the ABI descriptor and the factory functions resolved with dlsym (mwcom_serializer_abi_info,
+# CreateSerializer_*, DestroySerializer).
 cc_shared_library(
     name = "mwcom_serializer_someip",
     additional_linker_inputs = ["serializer_exports.lds"],
@@ -71,20 +73,46 @@ cc_unit_test(
     ],
 )
 
-# Integration test: loads the generated shared library with dlopen, resolves the factory symbols with
-# dlsym and validates a serialize/deserialize round trip, mirroring how mw::com uses the library.
-cc_test(
+# Integration test: loads the generated shared library with the SerializerLibrary loader, which verifies the ABI
+# descriptor and resolves the factory symbols, and validates a serialize/deserialize round trip, mirroring how
+# mw::com uses the library.
+cc_unit_test(
     name = "speed_rpm_serializer_integration_test",
-    size = "small",
-    timeout = "short",
     srcs = ["speed_rpm_serializer_integration_test.cpp"],
-    data = [":mwcom_serializer_someip"],
-    linkopts = ["-ldl"],
+    data = [":loadable_serializer_libraries"],
     deps = [
         ":speed_rpm",
         "//score/mw/com/impl/serialization:serializer",
+        "//score/mw/com/impl/serialization:serializer_abi",
+        "//score/mw/com/impl/serialization:serializer_library",
         "@bazel_tools//tools/cpp/runfiles",
-        "@googletest//:gtest_main",
         "@score_baselibs//score/result",
     ],
+)
+
+# Test fixture for the integration test: a library without the ABI descriptor, which the loader must reject.
+cc_library(
+    name = "library_without_descriptor",
+    testonly = True,
+    srcs = ["library_without_descriptor.cpp"],
+    alwayslink = True,
+)
+
+cc_shared_library(
+    name = "mwcom_serializer_without_descriptor",
+    testonly = True,
+    shared_lib_name = "libmwcom_serializer_without_descriptor.so",
+    deps = [":library_without_descriptor"],
+)
+
+# The libraries the integration test loads, as plain files. The runfiles of a cc_shared_library also contain its
+# symlink in _solib, which collides with the library itself in the flat library directory of the QNX test runner.
+filegroup(
+    name = "loadable_serializer_libraries",
+    testonly = True,
+    srcs = [
+        ":mwcom_serializer_someip",
+        ":mwcom_serializer_without_descriptor",
+    ],
+    output_group = "main_shared_library_output",
 )
