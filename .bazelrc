@@ -37,13 +37,18 @@ common --extra_toolchains=//bazel/toolchains:score_communication_libclang_toolch
 
 # Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
 common:linux_x64_gcc_15 --extra_toolchains=@gcc_toolchain_x86_64//:cc_toolchain
+common:linux_x64_gcc_15 --platforms=@score_bazel_platforms//:x86_64-linux
+
 # Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
 common:linux_x64 --config=linux_x64_gcc_15
+
 # Default required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
 common --config=linux_x64_gcc_15
 
 # Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
 common:linux_x64_clang_22 --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+common:linux_x64_clang_22 --platforms=@score_bazel_platforms//:x86_64-linux
+
 # Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
 common:clang --config=linux_x64_clang_22
 
