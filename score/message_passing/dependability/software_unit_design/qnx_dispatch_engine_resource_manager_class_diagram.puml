@@ -1,0 +1,61 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_engine_resource_manager_class_diagram
+title QNX dispatch engine - resource-manager adapters
+hide empty members
+skinparam classAttributeIconSize 0
+
+namespace score::message_passing {
+    class "QnxDispatchEngine" as Engine
+
+    abstract class "QnxDispatchEngine::ResourceManagerServer" as Server {
+        + Start(path : const QnxResourcePath&) noexcept : score::cpp::expected_blank<score::os::Error>
+        + Stop() noexcept : void
+        --
+        # engine_ : std::shared_ptr<QnxDispatchEngine>
+        - resmgr_id_ : std::int32_t
+        --
+        # {abstract} ProcessConnect(ctp : resmgr_context_t*, msg : io_open_t*) noexcept : std::int32_t
+    }
+
+    abstract class "QnxDispatchEngine::ResourceManagerConnection" as Connection {
+        + GetServer() : ResourceManagerServer&
+        --
+        # rcvid_ : rcvid_t
+        # select_event_ : sigevent
+        # ping_event_ : sigevent
+        --
+        - {abstract} ProcessInput(code : std::uint8_t, message : score::cpp::span<const std::uint8_t>) noexcept : bool
+        - {abstract} ProcessDisconnect() noexcept : void
+        - {abstract} HasSomethingToRead() noexcept : bool
+        - {abstract} ProcessReadRequest(ctp : resmgr_context_t*) noexcept : std::int32_t
+    }
+}
+
+Server --> Engine : retains shared engine_
+
+note bottom of Server
+    Private extended_dev_attr_t base embeds native server attributes.
+    Start/Stop delegate attachment to the engine.
+    The concrete QnxDispatchServer supplies ProcessConnect.
+end note
+
+note bottom of Connection
+    Private iofunc_ocb_t base provides the native OCB binding.
+    GetServer follows that binding, without another shared engine pointer.
+    Concrete ServerConnection supplies the private virtual callbacks.
+    It owns reply/notification storage outside the engine unit.
+end note
+
+@enduml

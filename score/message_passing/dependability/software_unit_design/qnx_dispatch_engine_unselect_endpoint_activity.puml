@@ -1,0 +1,48 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_engine_unselect_endpoint_activity
+title QnxDispatchEngine - client endpoint removal
+
+start
+:Enter UnselectEndpoint(endpoint);
+:Find a poll slot holding this endpoint pointer;
+if (A matching slot exists?) then (yes)
+    :Save its index and nonce\nSet the slot endpoint to nullptr;
+    :Iterate the new-data and ping signal values;
+    while (Another signal?) is (yes)
+        :Rebuild the event from the saved index/nonce,\nsignal, client side channel and kSelectPulseCode;
+        :MsgUnregisterEvent(event)\nIgnore its result;
+    endwhile (no)
+else (not found)
+    :Skip native event unregistration;
+endif
+if (endpoint.disconnect is non-empty?) then (yes)
+    :Invoke endpoint.disconnect() in this caller's context;
+else (empty)
+    :Skip the disconnect callback;
+endif
+:Return from the helper;
+stop
+
+legend
+    Public UnregisterPosixEndpoint asserts engine callback context,
+    erases the intrusive-list entry, then invokes this helper.
+    ProcessCleanup also invokes this helper for matching-owner entries.
+    List removal belongs to those callers, not this helper.
+    The nonce is retained on removal and incremented on slot reuse.
+    A missing poll slot does not suppress a non-empty disconnect callback.
+    Any descriptor closure belongs to consumer/callback policy.
+endlegend
+
+@enduml

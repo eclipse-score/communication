@@ -86,6 +86,14 @@ bazel test --config=qnx //score/message_passing:client_connection_test
 bazel test --config=qnx //score/message_passing:qnx_dispatch_test
 ```
 
+The public forwarding targets build a guest image and start the QNX VM
+automatically; no separate manual VM launch is needed. On 2026-11-17 the
+VM-backed dispatch suite passed all 54 cases, and the timed-queue/resource-path
+suites passed 6/4 cases. The guest log and XML establish the executed cases;
+the dispatch suite mixes OSAL-mocked and backend integration tests. This is
+runtime evidence, not QNX `unit()` C++ analysis or complete scheduling
+qualification.
+
 For a QNX compilation-only check of the public library, without invoking the
 unsupported QNX unit-analysis wrappers:
 
@@ -133,6 +141,24 @@ tests do not run it. Rendering and HTML contracts do not clear the unit's known
 class-comparison findings or establish behavioral/safety acceptance. See
 [documentation checks](../../../../tools/documentation/README.md) for generic
 target usage and checker limits.
+The [client verification inventory](client-connection-verification.md) keeps
+the pilot's case scopes, historical normal/debug runs and remaining reviews.
+
+The QNX engine design has the same separate checks:
+
+```sh
+bazel build //score/message_passing:qnx_dispatch_engine
+bazel build //score/message_passing/dependability/software_unit_design:qnx_dispatch_engine_render
+bazel test //score/message_passing/dependability/software_unit_design:qnx_dispatch_engine_html_test
+```
+
+The host wrapper consumes parser outputs for the selected ownership/adapter
+class views and activities, but selects no QNX implementation. Its successful
+build cannot establish class/implementation agreement. The manual HTML test checks the
+[engine page contract](../../dependability/software_unit_design/qnx_dispatch_engine_html_expectations.json);
+it does not execute runtime tests or clear the pending QNX analysis dependency.
+The [engine verification inventory](qnx-dispatch-engine-verification.md) owns
+the dated native runs, test scopes and observed skipped implementation check.
 
 ```sh
 bazel test //score/message_passing/dependability/assumed_system/... //score/message_passing/dependability/requirements/...

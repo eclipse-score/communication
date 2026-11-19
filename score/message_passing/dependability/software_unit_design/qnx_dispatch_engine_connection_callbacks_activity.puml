@@ -1,0 +1,60 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_engine_connection_callbacks_activity
+title QnxDispatchEngine - native connection callbacks
+
+start
+:Server dispatch_handler invokes io_open or io_close_ocb\non the server runner's background thread;
+if (Entry is io_open?) then (yes)
+    :ResmgrHandleToServer(handle)\nRecover the server and its shared engine;
+    :Lock the server's native attributes;
+    :iofunc_open(ctp, msg, server attributes);
+    if (Native open verification fails?) then (yes)
+        :Unlock server attributes;
+        :Return the native verification error;
+        stop
+    else (verified)
+        :Invoke server.ProcessConnect(ctp, msg);
+        note right
+            Concrete server policy supplies this callback.
+            It can call AttachConnection, which forwards
+            the supplied server and connection OCB
+            to iofunc_ocb_attach.
+        end note
+    endif
+    :Unlock server attributes;
+    :Return the ProcessConnect result to native dispatch;
+    stop
+else (io_close_ocb)
+    :OcbToServer and OcbToConnection\nRecover the bound adapters and engine;
+endif
+
+:Attempt to deliver the stored select event;
+:Lock the OCB's server attributes;
+:iofunc_ocb_detach(ctp, ocb);
+:Unlock server attributes;
+:Invoke connection.ProcessDisconnect();
+:Return EOK to native dispatch;
+stop
+
+legend
+    Native requests use the server dispatch context's receive workspace.
+    This native request path runs on the server worker,
+    separately from the Start/Stop interface caller.
+    Attribute-lock/unlock, event-delivery and detach results are unchecked.
+    Other I/O callbacks and their guards are described in the callback table.
+    Connection allocation and application policy belong to the server unit.
+endlegend
+
+@enduml

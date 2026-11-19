@@ -77,6 +77,8 @@ The [object-lifetime activity](../../dependability/software_unit_design/client_c
 and the unit's operation/context inventory close the dynamic baseline's missing
 constructor/destructor, query, helper, and registered-continuation descriptions.
 This is descriptive coverage, not concurrency proof or release acceptance.
+The [client verification inventory](client-connection-verification.md) owns
+test history, focused case scopes and outstanding review limits.
 The unit now contains `ClientConnectionLifetime` and `ClientSendQueue` as helper
 classes, not additional Bazel units. The first owns admission and descriptor
 retirement; the second owns sequencing, fixed storage, and reply reservations.
@@ -128,6 +130,22 @@ Its unit wrapper explicitly uses development maturity; the DE's maturity does
 not propagate to units. See [the pilot's type-comparison findings](issues/tooling-client-connection-unit-design-types.md)
 before treating its successful build as zero-finding design acceptance.
 
+The [QNX dispatch engine unit design](../../dependability/software_unit_design/qnx_dispatch_engine.rst)
+adds selected ownership and resource-manager adapter class views, separate
+caller-side runner lifecycle and background-dispatch activities, native
+connection callbacks, client registration/removal and pulse dispatch,
+transport behavior, command/timer processing, and owner cleanup.
+`DispatchThreadRunner` and `TimedCommandQueue` remain implementation classes,
+not new architectural units. The [engine behavior guide](qnx-dispatch-engine.md)
+routes buffer-ownership, endpoint/pulse, native adapter and callback questions
+to owning code. The operation/context inventory covers both paths descriptively;
+the [engine verification inventory](qnx-dispatch-engine-verification.md) owns
+dated runs, test scopes and pending qualification.
+Native runtime evidence does not supply the missing QNX class/implementation comparison.
+The host wrapper consumes parser outputs but still selects no implementation.
+Use its render and manual HTML checks in [build and test](build-and-test.md);
+do not remove QNX analysis guards or infer acceptance from the wrapper exit code.
+
 ## Integration Sequences and Limitations
 
 [The asynchronous integration pilot](../../dependability/software_architectural_design/client_server_async_integration.puml)
@@ -135,7 +153,7 @@ shows API-object lifelines and external application actors. It complements,
 rather than replaces, platform implementation sequences. Its `IPC:` messages
 are transport interactions, not invented C++ methods.
 
-[The validation proposals](../../dependability/software_architectural_design/sequence_validation_proposals.md)
+[The validation research](integration-sequence-validation-research.md)
 explain unsupported distinctions and reproduction. Do not merge two external
 actors under a reused alias, add them as implementation units, or bypass method
 checking to make a public interaction look validated. Historical finding counts

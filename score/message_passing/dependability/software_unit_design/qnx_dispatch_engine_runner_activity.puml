@@ -1,0 +1,61 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_engine_runner_activity
+title DispatchThreadRunner - caller-side startup and stopping
+
+start
+if (Entry is Start(init)?) then (yes)
+    :Lock thread_mutex_;
+    if (dispatch_pointer_ is non-null?) then (yes)
+        :Unlock and return without duplicate initialization;
+        stop
+    else (not started)
+        :StartPreInit()\ncreate dispatch handle, connect side channel,\nattach QuitPulseCallback;
+    endif
+    :Invoke init() in the caller under thread_mutex_;
+    :StartPostInit()\nallocate dispatch context;
+    note right
+        Checked dispatch setup errors log and terminate.
+        SIGTERM setup calls below have unchecked results.
+    end note
+    :Save the caller signal mask and block SIGTERM;
+    :Create worker thread and assign thread_\nThe separate worker activity starts independently;
+    :Restore the caller signal mask;
+    :Unlock thread_mutex_ and return;
+    stop
+else (Stop)
+    :Inspect dispatch_pointer_;
+endif
+
+if (dispatch_pointer_ is null?) then (yes)
+    :Return without teardown;
+    stop
+else (started)
+    :SendQuitPulse()\nMsgSendPulse result is unchecked;
+endif
+:Join thread_\nWait for the separate worker activity to finish;
+:Detach side channel, destroy dispatch handle,\nand free dispatch context\nOSAL results are unchecked;
+:Set dispatch_pointer_ to nullptr;
+stop
+
+legend
+    Every action here runs in the Start/Stop caller, not the worker.
+    Start returns without waiting for dispatch work.
+    The worker receives the quit pulse and leaves its own loop.
+    Only after joining does this caller free the dispatch context.
+    Stop does not acquire thread_mutex_ or impose a join timeout.
+    Concurrent stopping and restart after Stop are not qualified here.
+endlegend
+
+@enduml

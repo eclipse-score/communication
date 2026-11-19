@@ -33,6 +33,18 @@ process default memory resource. Those fixtures alone cannot distinguish correct
 injection from fallback to that same resource. No containment proof was located
 in the inspected component tests/helpers; repository-wide absence is not claimed.
 
+## Retained Research Context
+
+The [historical memory investigation](../memory-and-size-limits-research.md)
+contains the original rough formulas and proposed allocator-injection checks.
+Its type/member spellings and test-absence claims are not a fresh baseline.
+
+The fault-sequence annotations also quoted [the client/server design](../../client-server.md):
+the QNX design expected OS allocation limits to be reported through `ENOMEM`
+rather than all system resources being preallocated. That expresses the
+original resource-boundary intent; it is not proof of C++ allocator containment,
+uniform error reporting, or a completed safety argument.
+
 ## Next Check
 
 Consider an injected counting resource and a failing default resource, with
