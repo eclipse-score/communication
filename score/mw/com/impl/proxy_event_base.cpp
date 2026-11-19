@@ -108,6 +108,10 @@ Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count)
             return MakeUnexpected(ComErrc::kMaxSampleCountNotRealizable);
         }
     }
+    else
+    {
+        // Subscription state is not subscribable or re-subscribable: nothing to do.
+    }
     is_subscribed_flag_.Set();
     return {};
 }

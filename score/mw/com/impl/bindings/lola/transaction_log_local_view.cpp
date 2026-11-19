@@ -234,6 +234,10 @@ Result<void> TransactionLogLocalView::RollbackIncrementTransactions(
                    "decrementing a control slot.";
             return MakeUnexpected(ComErrc::kCouldNotRestartProxy);
         }
+        else
+        {
+            // Slot is not in use and no transaction was interrupted: nothing to roll back.
+        }
     }
     return {};
 }
@@ -263,6 +267,10 @@ Result<void> TransactionLogLocalView::RollbackSubscribeTransactions(const Unsubs
         score::mw::log::LogError("lola")
             << "Could not rollback transaction log as previous service element crashed while calling Unsubscribe.";
         return MakeUnexpected(ComErrc::kCouldNotRestartProxy);
+    }
+    else
+    {
+        // No subscribe transaction was recorded: nothing to roll back.
     }
     return {};
 }

@@ -164,6 +164,10 @@ OpenSharedMemory(const LolaServiceInstanceDeployment& instance_deployment,
         // no provider is accepted. Without strict, an absent allowedProvider means no restriction (nullopt).
         providers = std::make_optional(score::cpp::span<const uid_t>{});
     }
+    else
+    {
+        // No restriction on providers: providers stays std::nullopt.
+    }
 
     ShmPathBuilder shm_path_builder{lola_service_deployment.service_id_};
     const auto control_shm = shm_path_builder.GetControlChannelShmName(lola_service_instance_id.GetId(), quality_type);
@@ -534,6 +538,10 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
                 proxy_method.second.get().MarkSubscribed();
             }
         }
+    }
+    else
+    {
+        // Other states require no action on the ProxyMethods.
     }
 }
 

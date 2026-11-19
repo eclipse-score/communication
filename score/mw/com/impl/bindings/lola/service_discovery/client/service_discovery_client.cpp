@@ -473,8 +473,8 @@ auto ServiceDiscoveryClient::HandleDeletionEvents(const std::vector<os::InotifyE
                 const auto event_name = event.GetName();
                 // Ignore removals predating this watch's logical replacement, not later provider withdrawals.
                 if (flag_file_names.has_value() &&
-                    FlagFileCrawler::ParseQualityTypeFromString(event_name) != QualityType::kInvalid &&
-                    flag_file_names->erase(std::string{event_name}) == 0U)
+                    (FlagFileCrawler::ParseQualityTypeFromString(event_name) != QualityType::kInvalid) &&
+                    (flag_file_names->erase(std::string{event_name}) == 0U))
                 {
                     continue;
                 }
@@ -640,7 +640,7 @@ auto ServiceDiscoveryClient::StoreWatch(const os::InotifyWatchDescriptor& watch_
             const auto paths = FlagFile::GetMatchingPaths(quality_identifier);
             if (!paths.empty())
             {
-                auto& instances = quality == QualityType::kASIL_B ? known_instances.asil_b : known_instances.asil_qm;
+                auto& instances = (quality == QualityType::kASIL_B) ? known_instances.asil_b : known_instances.asil_qm;
                 score::cpp::ignore = instances.Insert(quality_identifier);
             }
             for (const auto& path : paths)
@@ -871,7 +871,7 @@ void ServiceDiscoveryClient::OnInstanceFlagFileCreated(const WatchesContainer::i
     auto& flag_file_names = watch_iterator->second.flag_file_names;
 
     const auto event_quality_type = FlagFileCrawler::ParseQualityTypeFromString(name);
-    if (flag_file_names.has_value() && event_quality_type != QualityType::kInvalid)
+    if (flag_file_names.has_value() && (event_quality_type != QualityType::kInvalid))
     {
         const auto paths =
             FlagFile::GetMatchingPaths(EnrichedInstanceIdentifier{enriched_instance_identifier, event_quality_type});
