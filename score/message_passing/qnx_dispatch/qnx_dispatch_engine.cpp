@@ -257,8 +257,8 @@ int QnxDispatchEngine::CoidDeathPulseCallback(message_context_t* ctp,
         return 0;
     }
 
-    const auto found =
-        std::find_if(self.poll_endpoints_.begin(), self.poll_endpoints_.end(), [coid](const PollEndpoint& poll) noexcept {
+    const auto found = std::find_if(
+        self.poll_endpoints_.begin(), self.poll_endpoints_.end(), [coid](const PollEndpoint& poll) noexcept {
             return (poll.endpoint != nullptr) && (poll.endpoint->fd == coid);
         });
     if (found != self.poll_endpoints_.end())
@@ -313,9 +313,10 @@ void QnxDispatchEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noex
     posix_endpoint_list_.push_back(endpoint);
 
     std::size_t index = poll_endpoints_.size();
-    const auto found = std::find_if(poll_endpoints_.begin(), poll_endpoints_.end(), [](const PollEndpoint& poll) noexcept {
-        return poll.endpoint == nullptr;
-    });
+    const auto found =
+        std::find_if(poll_endpoints_.begin(), poll_endpoints_.end(), [](const PollEndpoint& poll) noexcept {
+            return poll.endpoint == nullptr;
+        });
     if (found != poll_endpoints_.end())
     {
         index = static_cast<std::size_t>(std::distance(poll_endpoints_.begin(), found));
