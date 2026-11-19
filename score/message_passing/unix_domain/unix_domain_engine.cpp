@@ -68,7 +68,8 @@ UnixDomainEngine::~UnixDomainEngine() noexcept
 score::cpp::expected<std::int32_t, score::os::Error> UnixDomainEngine::TryOpenClientConnection(
     std::string_view identifier) noexcept
 {
-    const auto fd_expected = os_resources_.socket->socket(score::os::Socket::Domain::kUnix, SOCK_STREAM, 0);
+    const auto fd_expected =
+        os_resources_.socket->socket(score::os::Socket::Domain::kUnix, SOCK_STREAM | SOCK_CLOEXEC, 0);
     if (!fd_expected.has_value())
     {
         return score::cpp::make_unexpected(fd_expected.error());

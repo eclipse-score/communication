@@ -468,7 +468,7 @@ SharedMemoryResource::SharedMemoryResource(std::variant<std::string, std::uint64
                           : std::nullopt},
       virtual_address_space_to_reserve_{},
       typed_memory_ptr_{std::move(typed_memory_ptr)},
-      opening_mode_{::score::os::Fcntl::Open::kReadOnly},
+      opening_mode_{::score::os::Fcntl::Open::kReadOnly | ::score::os::Fcntl::Open::kCloseOnExec},
       map_mode_{::score::os::Mman::Protection::kRead},
       base_address_{nullptr},
       control_block_{nullptr},
@@ -500,9 +500,9 @@ score::cpp::expected_blank<Error> SharedMemoryResource::CreateImpl(const std::si
                                                                    const InitializeCallback initialize_callback,
                                                                    const UserPermissions& permissions)
 {
-    this->opening_mode_ = Fcntl::Open::kReadWrite;
+    this->opening_mode_ = Fcntl::Open::kReadWrite | Fcntl::Open::kCloseOnExec;
     this->map_mode_ = ::score::os::Mman::Protection::kRead | ::score::os::Mman::Protection::kWrite;
-    auto flags = Fcntl::Open::kReadWrite | Fcntl::Open::kCreate | Fcntl::Open::kExclusive;
+    auto flags = Fcntl::Open::kReadWrite | Fcntl::Open::kCreate | Fcntl::Open::kExclusive | Fcntl::Open::kCloseOnExec;
     this->virtual_address_space_to_reserve_ = safe_math::Add(user_space_to_reserve, GetNeededManagementSpace()).value();
 
     std::optional<LockFile> lock_file{};
@@ -556,7 +556,7 @@ score::cpp::expected_blank<Error> SharedMemoryResource::CreateOrOpenImpl(const s
 {
     const auto* const path = std::get_if<std::string>(&shared_memory_resource_identifier_);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(path != nullptr, "shm-object file path is not set.");
-    this->opening_mode_ = Fcntl::Open::kReadWrite;
+    this->opening_mode_ = Fcntl::Open::kReadWrite | Fcntl::Open::kCloseOnExec;
     this->map_mode_ = ::score::os::Mman::Protection::kRead | ::score::os::Mman::Protection::kWrite;
     constexpr bool open_read_write{true};
     const auto open_result = OpenImpl(open_read_write);
@@ -603,7 +603,7 @@ score::cpp::expected_blank<Error> SharedMemoryResource::OpenImpl(const bool is_r
 {
     if (is_read_write)
     {
-        this->opening_mode_ = Fcntl::Open::kReadWrite;
+        this->opening_mode_ = Fcntl::Open::kReadWrite | Fcntl::Open::kCloseOnExec;
         this->map_mode_ = ::score::os::Mman::Protection::kRead | ::score::os::Mman::Protection::kWrite;
     }
     // Note: acquireLockAndOpenSharedMemory() creates a temporary lock file to synchronize with concurrent CreateImpl
@@ -1041,7 +1041,7 @@ void SharedMemoryResource::AllocateInTypedMemory(const UserPermissions& permissi
         {
             score::mw::log::LogDebug("shm") << __func__ << "Shm is in TypedMemory. Set file open flags";
             is_shm_in_typed_memory_ = true;
-            flags = Fcntl::Open::kReadWrite | Fcntl::Open::kExclusive;
+            flags = Fcntl::Open::kReadWrite | Fcntl::Open::kExclusive | Fcntl::Open::kCloseOnExec;
         }
         else
         {

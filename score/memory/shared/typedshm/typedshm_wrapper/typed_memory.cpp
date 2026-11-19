@@ -100,7 +100,7 @@ score::cpp::expected<int, score::os::Error> TypedMemoryImpl::AllocateAndOpenAnon
     {
         return score::cpp::make_unexpected(allocate_anonymous_typed_memory_result.error());
     }
-    const auto shm_open_result = mman_->shm_open_handle(shm_handle, O_RDWR);
+    const auto shm_open_result = mman_->shm_open_handle(shm_handle, O_RDWR | O_CLOEXEC);
     if (!shm_open_result.has_value())
     {
         return score::cpp::make_unexpected(shm_open_result.error());

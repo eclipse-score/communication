@@ -1137,14 +1137,15 @@ INSTANTIATE_TEST_SUITE_P(SharedMemoryFactoryDeathTests, SharedMemoryFactoryDeath
 TEST_P(SharedMemoryFactoryDeathTest, CreatingSharedMemoryTerminate)
 {
     InSequence sequence{};
-    auto oflags =
-        score::os::Fcntl::Open::kReadWrite | score::os::Fcntl::Open::kCreate | score::os::Fcntl::Open::kExclusive;
+    auto oflags = score::os::Fcntl::Open::kReadWrite | score::os::Fcntl::Open::kCreate |
+                  score::os::Fcntl::Open::kExclusive | score::os::Fcntl::Open::kCloseOnExec;
     score::cpp::expected<std::int32_t, Error> ret_value = score::cpp::make_unexpected(Error::createFromErrno(EBADF));
     const bool typed_memory_parameter = GetParam();
 
     if (typed_memory_parameter == true)
     {
-        oflags = score::os::Fcntl::Open::kReadWrite | score::os::Fcntl::Open::kExclusive;
+        oflags = score::os::Fcntl::Open::kReadWrite | score::os::Fcntl::Open::kExclusive |
+                 score::os::Fcntl::Open::kCloseOnExec;
 
         const score::cpp::expected_blank<score::os::Error> memory_is_allocated_in_typed_memory{};
 
@@ -1303,7 +1304,8 @@ TEST_F(SharedMemoryFactoryTest, CreateWithInterVmPathSucceedsWhenProviderIsSet)
     // And shared memory can be created successfully using the InterVM provider
     std::array<std::uint8_t, kSharedMemorySize> dataRegion{};
     const bool prefer_typed_memory = false;
-    const auto oflags = score::os::Fcntl::Open::kReadWrite | score::os::Fcntl::Open::kExclusive;
+    const auto oflags =
+        score::os::Fcntl::Open::kReadWrite | score::os::Fcntl::Open::kExclusive | score::os::Fcntl::Open::kCloseOnExec;
     expectCreateLockFileReturns(lock_file_path, kLockFileDescriptor);
     EXPECT_CALL(*intervm_mock, AllocateNamedTypedMemory(_, inter_vm_path, _)).WillOnce(Return(score::cpp::blank{}));
     EXPECT_CALL(*mman_mock_, shm_open(StrEq(inter_vm_path), oflags, _)).WillOnce(Return(kFileDescriptor));
@@ -1344,7 +1346,8 @@ TEST_F(SharedMemoryFactoryTest, CreateOrOpenWithInterVmPathSucceedsWhenProviderI
     // And shared memory can be created successfully (CreateOrOpen tries Create after Open fails)
     std::array<std::uint8_t, kSharedMemorySize> dataRegion{};
     const bool prefer_typed_memory = false;
-    const auto oflags = score::os::Fcntl::Open::kReadWrite | score::os::Fcntl::Open::kExclusive;
+    const auto oflags =
+        score::os::Fcntl::Open::kReadWrite | score::os::Fcntl::Open::kExclusive | score::os::Fcntl::Open::kCloseOnExec;
 
     // CreateOrOpen will first try to Open (which fails), then Create
     constexpr std::int32_t open_lock_file_descriptor = 10;
