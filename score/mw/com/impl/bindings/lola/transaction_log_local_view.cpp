@@ -30,7 +30,7 @@ namespace
 // Handles race condition between concurrent SamplePtr destruction and creation for the same slot.
 // Thread A may be suspended between decrementing refcount and clearing the transaction-END bit.
 // This allows Thread A to complete its dereference transaction before proceeding.
-void WaitForTransactionEndToBecomeFalse(TransactionLogSlot& slot) noexcept
+void WaitForTransactionEndToBecomeFalse(const TransactionLogSlot& slot) noexcept
 {
     constexpr std::uint32_t kRetryCount = 10U;
     constexpr std::chrono::milliseconds kRetryInterval(10);

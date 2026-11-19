@@ -258,7 +258,7 @@ int QnxDispatchEngine::CoidDeathPulseCallback(message_context_t* ctp,
     }
 
     const auto found =
-        std::find_if(self.poll_endpoints_.begin(), self.poll_endpoints_.end(), [coid](PollEndpoint& poll) noexcept {
+        std::find_if(self.poll_endpoints_.begin(), self.poll_endpoints_.end(), [coid](const PollEndpoint& poll) noexcept {
             return (poll.endpoint != nullptr) && (poll.endpoint->fd == coid);
         });
     if (found != self.poll_endpoints_.end())
@@ -313,7 +313,7 @@ void QnxDispatchEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noex
     posix_endpoint_list_.push_back(endpoint);
 
     std::size_t index = poll_endpoints_.size();
-    const auto found = std::find_if(poll_endpoints_.begin(), poll_endpoints_.end(), [](PollEndpoint& poll) noexcept {
+    const auto found = std::find_if(poll_endpoints_.begin(), poll_endpoints_.end(), [](const PollEndpoint& poll) noexcept {
         return poll.endpoint == nullptr;
     });
     if (found != poll_endpoints_.end())
@@ -396,7 +396,7 @@ void QnxDispatchEngine::UnregisterPosixEndpoint(PosixEndpointEntry& endpoint) no
 void QnxDispatchEngine::UnselectEndpoint(PosixEndpointEntry& endpoint) noexcept
 {
     const auto found =
-        std::find_if(poll_endpoints_.begin(), poll_endpoints_.end(), [&endpoint](PollEndpoint& poll) noexcept {
+        std::find_if(poll_endpoints_.begin(), poll_endpoints_.end(), [&endpoint](const PollEndpoint& poll) noexcept {
             return poll.endpoint == &endpoint;
         });
     if (found != poll_endpoints_.end())  // LCOV_EXCL_BR_LINE for unrealisting condition of insertion failure
