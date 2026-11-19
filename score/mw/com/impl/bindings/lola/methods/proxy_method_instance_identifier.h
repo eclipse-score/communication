@@ -19,6 +19,7 @@
 #include "score/mw/log/logging.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <ostream>
 
@@ -54,8 +55,8 @@ class hash<score::mw::com::impl::lola::ProxyMethodInstanceIdentifier>
         using ProxyInstanceIdentifier = score::mw::com::impl::lola::ProxyInstanceIdentifier;
 
         static constexpr std::size_t kGoldenRatioConstant = 0x9e3779b9U;
-        static constexpr unsigned int kLeftShiftBits = 6U;
-        static constexpr unsigned int kRightShiftBits = 2U;
+        static constexpr std::uint32_t kLeftShiftBits = 6U;
+        static constexpr std::uint32_t kRightShiftBits = 2U;
 
         // The previous implementation packed all fields into a single uint64_t, but with the addition of
         // MethodType to UniqueMethodIdentifier, the total bit width (72 bits) exceeds 64 bits.
