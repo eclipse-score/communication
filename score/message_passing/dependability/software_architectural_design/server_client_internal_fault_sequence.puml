@@ -40,7 +40,7 @@ participant unix_domain_server
 participant qnx_dispatch_server
 participant "ExternalServer" as ExternalServer
 
-note over client_connection, qnx_dispatch_server : Companion to the happy-path (server_client_sequence_*.puml) and\nunderlying-layer fault (server_client_os_fault_sequence_*.puml) diagrams.\nThis diagram covers deterministic, library-internal rejections -\nbounded resources and configured limits that the library checks\nitself, before any OS/transport call is attempted. These are not\nOS-layer faults and not user contract misuse (see\nresearch/backlog.md for the latter, tracked as candidate AoUs).
+note over client_connection, qnx_dispatch_server : This view covers deterministic, library-side size and\ncapacity rejections before an OS/transport call.\nOS transport faults and caller-contract misuse are\noutside this view.
 
 ' -----------------------------------------------------------------
 == Message Exceeds Configured Size Limit (max_send_size / max_reply_size / max_notify_size) ==

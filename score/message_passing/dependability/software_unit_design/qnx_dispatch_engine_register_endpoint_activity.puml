@@ -1,0 +1,63 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_engine_register_endpoint_activity
+title QnxDispatchEngine - client endpoint registration
+
+start
+:Enter RegisterPosixEndpoint(endpoint)\nAssert IsOnCallbackThread();
+:Grow the client receive buffer if needed\nto endpoint.max_receive_size + 1;
+:Append the borrowed endpoint to posix_endpoint_list_;
+:Find the first poll slot whose endpoint is nullptr;
+if (A free slot exists?) then (reuse)
+    :Store the endpoint pointer in that slot\nand increment its nonce;
+else (append)
+    :Use poll_endpoints_.size() as the new index;
+    if (Index equals UINT32_MAX?) then (yes)
+        :Return without a poll slot or native registration\nThe intrusive endpoint membership remains;
+        stop
+    else (available index)
+        :Append a poll slot with this endpoint and nonce 0;
+    endif
+endif
+
+:Build the private sticky-select request\nwith new-data and ping events;
+:Iterate the two local signal/event pairs;
+while (Another event pair?) is (yes)
+    :Pack index, signal and nonce into the pulse value;
+    :Initialize the event for the client side channel\nwith kSelectPulseCode;
+    :MsgRegisterEvent(event, endpoint.fd);
+    if (Registration fails?) then (yes)
+        :Log the MsgRegisterEvent error;
+    else (registered)
+        :Continue without an error log;
+    endif
+endwhile (no)
+:MsgSend the request containing both events to endpoint.fd;
+if (MsgSend fails?) then (yes)
+    :Log the MsgSend error;
+else (sent)
+    :Continue without an error log;
+endif
+:Return without a status or registration rollback;
+stop
+
+legend
+    The context assertion accepts either engine worker, not arbitrary callers.
+    Registration does not reschedule itself or close the descriptor.
+    The engine borrows endpoint storage and owns only list/slot membership.
+    Event-registration failures are logged, but both events and MsgSend
+    are still attempted and local registration state is retained.
+endlegend
+
+@enduml

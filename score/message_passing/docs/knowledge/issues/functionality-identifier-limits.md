@@ -35,6 +35,9 @@ do not infer a shared limit or validation policy.
 
 Earlier small-string-optimization suggestions were allocator/library-specific
 advice, not an agreed identifier contract.
+The [historical size-limit investigation](../memory-and-size-limits-research.md)
+retains those suggestions and their original context, not a current portable
+SSO or memory-sizing guarantee.
 
 ## Next Check
 

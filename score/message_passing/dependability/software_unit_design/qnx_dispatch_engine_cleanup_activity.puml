@@ -1,0 +1,69 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_engine_cleanup_activity
+title QnxDispatchEngine - owner cleanup
+
+start
+if (Entry is ProcessCleanup(owner)?) then (yes)
+    :Remove matching-owner endpoints from posix_endpoint_list_\nFor each, call UnselectEndpoint();
+    note right
+        UnselectEndpoint invalidates a found poll slot,
+        unregisters its select/ping events and invokes
+        the disconnect callback if present.
+    end note
+    :TimedCommandQueue::CleanUpOwner(owner)\nlock the queue mutex;
+    while (Another matching-owner queue entry?) is (yes)
+        :Unlink the matching entry;
+        :Unlock the queue mutex;
+        :Reset its callback, destroying captures without invocation;
+        :Relock the queue mutex;
+    endwhile (no)
+    :Unlock and return from ProcessCleanup;
+    stop
+else (CleanUpOwner)
+    :Inspect the owner argument;
+endif
+
+if (owner is nullptr?) then (yes)
+    :Return without touching endpoints or commands;
+    stop
+else (non-null)
+    :Determine IsOnCallbackThread();
+endif
+if (Caller is on either engine dispatch thread?) then (yes)
+    :Invoke the ProcessCleanup(owner) procedure inline;
+    :Return to the callback-thread caller;
+    stop
+else (other thread)
+    :Create a stack cleanup entry and NonAllocatingFuture\nusing the client runner mutex and cleanup_ready_condition_;
+endif
+:RegisterImmediateEntry with TimePoint{} and this owner\nContinuation calls ProcessCleanup(owner), then future.MarkReady();
+:WakeUpTimerQueue() to request client-thread dispatch;
+:future.Wait()\ncheck readiness under the client runner mutex\nWait on the condition variable while not ready;
+note right
+    Waiting releases the mutex.
+    MarkReady sets readiness and notifies under the same mutex.
+    Readiness may already be set before Wait starts.
+end note
+:Return after the cleanup continuation acknowledges completion;
+stop
+
+legend
+    No timeout is supplied for cleanup acknowledgement.
+    The engine rejects null owners, whereas the queue helper treats
+    nullptr as an ordinary matching key.
+    This is not a barrier against concurrent or reentrant submissions.
+endlegend
+
+@enduml

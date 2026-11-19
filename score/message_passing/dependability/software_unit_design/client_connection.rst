@@ -4,7 +4,7 @@ Client Connection Unit Design
 Scope and Responsibility
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-This pilot elaborates the existing ``client_connection`` unit without changing
+This design elaborates the existing ``client_connection`` unit without changing
 its architectural boundaries or public API. ``ClientConnection`` is built in
 ``message_passing_client_connection`` and resides in
 ``score::message_passing::detail``.
@@ -93,8 +93,8 @@ Lifecycle and Connection Establishment
   :caption: Terminal-error cleanup: :ref:`client-connection-switch-to-stop-state`.
 
 The terminal-error branch references
-:ref:`client-connection-switch-to-stop-state`; its caller context and the
-establishment review gaps below remain distinct from that shared procedure.
+:ref:`client-connection-switch-to-stop-state` rather than duplicating the shared
+finalization procedure.
 
 Construction leaves the connection in ``kStopped`` with stop reason ``kInit``
 and descriptor ``-1``. ``Start`` installs the state and notification callbacks,
@@ -458,8 +458,7 @@ the completion callback described above.
 
 The guard checks both engagement and callback non-emptiness. An empty drain or
 ordered-send marker is not a valid pending request; its reply follows the same
-IO-error stopping policy as a reply with a disengaged slot. The deterministic
-marker test qualifies this common guard, not native backend scheduling.
+IO-error stopping policy as a reply with a disengaged slot.
 
 .. _client-send-queue-cancellation:
 
@@ -567,8 +566,6 @@ Shared Stop Finalization
 ``SwitchToStopState`` expects ``kStopping``, a selected non-``kNone`` stop reason,
 and engine callback context; the implementation asserts these conditions in
 debug builds. The procedure itself neither selects nor resets the reason.
-These entry conditions do not establish that every caller interleaving satisfies
-them, including the existing establishment review gaps.
 
 On its initial entry, ``SwitchToStopState`` disables the endpoint's disconnect
 callback and cleans up engine registrations owned by the connection, with the
@@ -632,8 +629,8 @@ including with ``sync_first_connect``.
 This is a descriptor-safety fence, not an IPC interruption mechanism. QNX
 transport or ``close`` can remain blocked; signal or ``SIGEV_UNBLOCK`` handling
 is not implemented or qualified here. A stuck operation can keep the connection
-in ``kStopping`` indefinitely. The establishment-stop and nested outer-callback
-lifetime findings are separate from the admitted-send retirement boundary.
+in ``kStopping`` indefinitely. Establishment cancellation and outer-callback
+lifetimes are separate from the admitted-send retirement boundary.
 
 .. _client-connection-lifetime-retirement:
 
@@ -647,8 +644,6 @@ This helper view separates stop-reason selection, descriptor installation,
 retirement readiness, cancellation completion, and quiescent detachment.
 Each method owns its mutex boundary. The facade receives a detached descriptor
 only after the mutex is released, then closes it before publishing stopped.
-The include-only ``client_connection_lifetime.cpp`` compiles the header without
-preceding includes in the client library on both supported toolchains.
 
 .. _client-connection-lifetime-transaction:
 
@@ -673,41 +668,23 @@ state and dispatches cleanup. While the stop reason remains non-``kNone``,
 additional ``Stop`` calls do neither. ``Restart`` resets that reason for a new
 connection cycle; the selection argument must not be extended across restart.
 
-``ConcurrentStopRequestsFinalizeOnce`` releases two application threads through
-a shared start gate before any queued cleanup runs. After both threads return,
-the connection is ``kStopping`` with ``kUserRequested``, one stopping callback,
-and one queued cleanup. Executing that cleanup produces one stopped callback;
-further ``Stop`` calls do not repeat either callback or cleanup. This is focused
-evidence for competing user stop requests, not proof of all stop/failure/restart
-interleavings or arbitrary concurrent API use.
-
 When the ready-state callback runs on the engine callback thread and calls
-``Stop``, cleanup executes inline. ``ReadyStateCallbackCanStopConnection``
-observes callback entries in the order ``kStarting``, ``kReady``, ``kStopping``,
-``kStopped`` and confirms that ``Stop`` has reached ``kStopped`` before returning
-to the ready callback. The stopping and stopped callbacks are therefore nested
-within the ready callback, not deferred until it returns. This must not be
-generalized to a ready callback running outside engine callback context.
+``Stop``, cleanup executes inline. Stopping and stopped callbacks can therefore
+be nested within the ready callback, rather than deferred until it returns.
+This inline path does not apply to a ready callback running outside engine
+callback context.
 
-``StoppedStateCallbackCanRestartConnection`` exercises ``Restart`` from the
-first stopped-state callback. It enters ``kStarting`` and clears the stop reason
-before that callback returns, then connects again and stops a second time.
+``Restart`` from a stopped-state callback enters ``kStarting`` and clears the
+stop reason before that callback returns.
 The old finalizer still holds its local context reference and recursive mutex
 while the nested restart invokes the starting callback. ``kStopped`` need not
 remain observable after a stopped-state callback that immediately restarts.
 
-``StoppedStateCallbackKeepsOwnedCaptureAliveDuringDestruction`` destroys the
-connection from a stopped-state callback. A weak observer confirms that an
-owned callback capture remains alive after connection destruction, then expires
-after the callback returns and the finalizer releases its context reference.
-The test keeps the callback within the library's fixed capture capacity; this
-is not a guarantee of unrestricted callback capture size.
-
-These cases do not qualify ``Stop`` from a starting-state callback, stopping
-while an open attempt is in progress, or every combination of nested stopping,
-restart, and destruction. In particular, proving destruction from a stopped
-callback does not by itself establish capture lifetime for an outer callback
-that triggered stopping. Those combinations remain review and test gaps.
+The stopped finalizer's local context reference retains its callback and owned
+captures through invocation, including when that callback destroys the
+connection under the public destruction preconditions. This local reference
+does not extend the lifetime of an outer callback that triggered stopping or
+grant additional permissions for nested callback combinations.
 
 Ownership and Resource Bounds
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -729,7 +706,9 @@ Ownership and Resource Bounds
 * The lists are disjoint, but a command removed for dispatch temporarily
   belongs to neither list and remains in use until the transport call finishes.
   Queue draining then returns it to the free pool; stopping returns commands
-  after removing them from the queue. A command can become free before its
+  after removing them from the queue. Both lists share one intrusive hook,
+  so a command must be unlinked before insertion in the other list.
+  A command can become free before its
   reply arrives, because the pending reply callback is held separately in
   ``waiting_for_reply_``.
 * ``waiting_for_reply_`` serializes request/reply progress. An engaged optional
@@ -741,9 +720,8 @@ Ownership and Resource Bounds
   ``CleanUpOwner(this)`` before closing the descriptor and publishing
   ``kStopped``.
 
-Preallocated send storage does not establish that construction, callback
-captures, or every subsequent operation is allocation-free. Allocation failure
-handling and whole-path memory bounds are not qualified by this pilot.
+Preallocated send storage does not make construction, callback captures, or
+every subsequent operation allocation-free.
 
 Synchronization and Callback Lifetime
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -800,7 +778,7 @@ This inventory accounts for the facade and extracted helpers in the existing
 ``client_connection`` unit, together with the registered continuations
 below. Deleted copy/move constructors and assignments have no execution paths.
 Coverage here means an explicit activity or behavioral description, not a test
-coverage percentage, release acceptance, or proof of every interleaving.
+coverage percentage.
 
 .. list-table:: Implemented Operations
    :header-rows: 1
@@ -948,8 +926,8 @@ snapshot; these descriptions do not claim lock-free atomics.
 
 API stopping and terminal-open failure may finish cleanup inline on callback
 context or queue it elsewhere. Queued cleanup can finish before or after the
-initiating call returns; completion and callback order are stronger evidence
-than a transient ``kStopping`` snapshot. The common engine interface explicitly describes
+initiating call returns; a transient ``kStopping`` snapshot does not define
+completion. The common engine interface explicitly describes
 ``CleanUpOwner`` as blocking; mutex acquisition, transport, and the synchronous
 reply wait also have dependency or scheduling latency. No diagram turn order
 creates a whole-path non-blocking guarantee or a finite completion deadline.
@@ -961,119 +939,6 @@ stopped context does not by itself qualify lifetime of an outer state or
 notification callback, its owned captures, or a continuation using the destroyed
 connection. Those composition questions remain open, not new lifetime permissions.
 
-The inventory closes the missing-operation and registered-entry descriptions
-for the current dynamic baseline. The known establishment-stop and nested
-callback-lifetime findings remain explicit review limits. Send retirement and
-the non-empty reply guard now have focused common-client regressions, not
-complete native scheduling or liveness qualification. Description completeness
-is not acceptance of the selected static class view.
-
-Evidence and Review Gaps
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-The design is grounded in ``client_connection.h``, ``client_connection.cpp``,
-``client_connection_lifetime.h``, ``client_send_queue.h``, ``client_send_queue.cpp``,
-and ``i_client_connection.h``. Existing ``client_connection_test`` cases exercise
-the connection through ``SharedResourceEngineMock``. The four focused callback
-and competing-stop tests trace to ``ClientConnectionMaintainsStateMachine`` and
-``ClientConnectionStateCallbackInvocation``. These are partial test links, not
-a complete requirement-coverage claim or native QNX qualification.
-The helper-only cases have moved out of that facade fixture into dedicated
-``client_connection_lifetime_test`` and ``client_send_queue_test`` targets.
-The former has 8 actor-driven cases for admission, first-stop ownership,
-descriptor propagation, successful/failed retirement, nested operation release,
-and descriptor reuse after quiescence. The latter has 14 cases for validation,
-direct transport, FIFO copying and reuse, ordered reply progress, local/queued
-errors, empty markers, cancellation reentrancy, blocking replies and buffer
-bounds, cancellation during delayed transport, and native-style transaction
-bypass without consuming the ordinary reply. These implementation tests use
-Given/When/Then comments, not Lobster IDs or additional SEooC units. All 22
-helper cases and the 58 facade cases pass in normal and debug builds. QNX test
-sources compile, but native execution and engine transactions remain unqualified.
-
-Existing lifecycle cases cover initial state, stopping during an open attempt,
-retryable and terminal open errors, eventual success after repeated retries,
-and synchronous versus queued first connection. The explicit-stop cases cover
-direct callback-thread cleanup and queued cleanup. ``ConnectedRestartdDoesNothing``
-checks the non-stopped restart guard. These tests do not assert the exact retry
-delay sequence. The focused cases above add selected callback-reentrancy and
-competing-stop evidence, but do not qualify every lifecycle interleaving.
-
-``TryingToSyncConnectOnceStoppingOnHardError`` checks terminal errors with queued
-cleanup and ordered starting/stopping/stopped callbacks. It observes final
-completion after executing the captured engine command, not ``kStopping``
-immediately after ``Start``. ``SyncConnectFailureMayFinalizeBeforeStartReturns``
-runs that command on a worker thread before ``Start`` returns and checks engine
-context, cleanup, and the same callback sequence. Both pass with debug assertions
-enabled; they do not remove the separate establishment-cancellation findings.
-
-Existing send cases exercise size/readiness rejection, direct and ordered
-one-way paths, truly asynchronous admission, and pool exhaustion. The
-``SendWithCallback`` and ``SendWaitReply`` cases exercise direct errors, queued
-admission/errors, cancellation, callback-thread rejection, and reply-buffer
-bounds. They support selected paths in the send views, not every configuration
-combination or concurrent send/reply/stop ordering.
-
-Focused queue cases exercise repeated one-way draining, request transport-error
-callbacks, command reservation during an unlocked send, direct-error rearming,
-and stop/restart pool reuse. ``QueuedAdmissionsArmOnceAndPreservePendingReply``
-checks that admissions behind a scheduled drain or pending request do not
-schedule another command or overwrite its callback, and that idle admission
-can arm again after draining. Direct-error empty-queue, one-way queue, and
-queued-request callback controls also pass with Futurecpp debug assertions
-explicitly enabled. These are selected paths, not every reentrant callback or
-lifecycle interleaving. ``SendWaitReplyStopDefersCloseAndRestartUntilTransportReturns``
-checks the direct-request fence and synchronous-first restart rejection.
-``SendStopDefersCloseUntilTransportReturns`` covers both direct one-way modes.
-``DirectSendsAllowQueuedAdmissionWhileTransportIsDelayed`` holds direct ordered
-and callback IPC behind explicit promises and checks that another thread can
-admit queued work before release. ``SendWithCallbackStopCompletesOnceBeforeTransportReturns``
-covers successful and failed late transport returns after cancellation.
-``QueuedRequestStopPreservesActiveSendBufferAndPoolCapacity`` checks detached
-storage lifetime and stop/restart reuse. ``SendWithCallbackEarlyReplyPreservesLaterRequestOnLateTransportError``
-checks callback-owned capture survival and exactly-once later cancellation.
-``CloseRunsOutsideSendMutexAndBeforeStoppedPublication`` checks responsive
-admission rejection during close and publication only afterward. The obsolete
-disabled restart-during-active-transport diagnostic has been replaced by these
-positive assertions; no disabled client cases remain.
-
-Existing input cases exercise spurious ``EAGAIN``, peer closure, other receive
-errors, unknown codes, a reply with a disengaged slot, notification delivery or
-ignore behavior, and ping delivery or ignore behavior. The reply-buffer case
-also exercises a non-empty completion callback. These are selected input paths,
-not every queue-before-callback ordering or all API-stop/input-failure races.
-``ReplyDuringDrainMarkerStopsWithoutInvokingEmptyCallback`` explicitly leaves
-the armed command pending and qualifies the engaged-empty marker's IO-error
-stopping behavior without invoking an empty callback.
-
-With tooling 3.0.2, the unit build succeeds and class validation runs, reporting
-12 type-representation findings, including expansion of the new sender-owner
-callback pointer in addition to the previous 11. The view retains declaration-level names;
-extraction expands or qualifies some field types differently. These findings are
-non-blocking under the unit's development maturity, not zero-finding acceptance.
-
-``SwitchToStopState`` removes each command from ``queue_`` before
-returning it to ``pool_``. These lists share a single intrusive hook, so
-inserting a still-linked command into the pool aborts. A client regression
-fills the combined pool with messages and a queued reply callback, checks
-``ENOBUFS`` at the bound, and verifies exactly-once ``EPIPE`` cancellation on
-stop. After ``Restart``, it fills and stops the same pool again, checking that
-queued capacity was restored.
-
-This focused case does not establish all possible concurrent stop/restart
-interleavings or whole-path memory guarantees.
-
-Class consistency checks cover only the selected declarations. The dynamic
-activity views elaborate connection establishment, the three send API paths,
-queue admission/arming/dispatch, explicit stopping, and shared finalization,
-plus input classification and endpoint reply/notify/ping/failure continuations.
-They are not automatic behavioral comparisons with C++. The remaining
-establishment and callback-combination gaps still need completeness review.
-The admitted-send retirement fence and non-empty reply guard have focused
-regressions; the direct-error rearm precondition is resolved by guarded
-scheduling and owner-aware release-before-schedule recovery. Native QNX IPC
-interruption and finite stopping latency remain unqualified.
-Development maturity permits findings, including incomplete C++ extraction, so
-a successful build alone is not design acceptance. Native QNX implementation
-analysis remains subject to the existing tooling limitation; the compatibility
-guards are unchanged.
+The inventory enumerates implemented operations and stored continuations.
+It does not extend public callback-lifetime or concurrency permissions, add
+native transport interruption, or impose a finite stopping deadline.
