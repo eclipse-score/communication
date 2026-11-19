@@ -34,7 +34,7 @@ IRuntime* RuntimeMockHolder::runtime_mock_{nullptr};
 
 score::Result<InstanceIdentifierContainer> ResolveInstanceIDs(const impl::InstanceSpecifier& model_name)
 {
-    if (auto* const runtime_mock_holder = detail::RuntimeMockHolder::GetRuntimeMock())
+    if (auto* const runtime_mock_holder = detail::RuntimeMockHolder::GetRuntimeMock(); runtime_mock_holder != nullptr)
     {
         return runtime_mock_holder->ResolveInstanceIDs(model_name);
     }
@@ -50,7 +50,7 @@ score::Result<InstanceIdentifierContainer> ResolveInstanceIDs(const impl::Instan
 
 void InitializeRuntime(const cpp::span<const safecpp::zstring_view> command_line_arguments)
 {
-    if (auto* const runtime_mock_holder = detail::RuntimeMockHolder::GetRuntimeMock())
+    if (auto* const runtime_mock_holder = detail::RuntimeMockHolder::GetRuntimeMock(); runtime_mock_holder != nullptr)
     {
         runtime_mock_holder->InitializeRuntime(command_line_arguments);
         return;
@@ -62,7 +62,7 @@ void InitializeRuntime(const cpp::span<const safecpp::zstring_view> command_line
 
 void InitializeRuntime(const RuntimeConfiguration& runtime_configuration)
 {
-    if (auto* const runtime_mock_holder = detail::RuntimeMockHolder::GetRuntimeMock())
+    if (auto* const runtime_mock_holder = detail::RuntimeMockHolder::GetRuntimeMock(); runtime_mock_holder != nullptr)
     {
         runtime_mock_holder->InitializeRuntime(runtime_configuration);
         return;

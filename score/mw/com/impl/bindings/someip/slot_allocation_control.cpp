@@ -29,7 +29,7 @@ std::optional<SlotIndexType> SlotAllocationControl::AllocateSlot() noexcept
 {
     for (std::size_t slot_index = 0U; slot_index < slot_in_use_.size(); ++slot_index)
     {
-        if (!slot_in_use_[slot_index])
+        if (!static_cast<bool>(slot_in_use_[slot_index]))
         {
             slot_in_use_[slot_index] = true;
             return static_cast<SlotIndexType>(slot_index);
