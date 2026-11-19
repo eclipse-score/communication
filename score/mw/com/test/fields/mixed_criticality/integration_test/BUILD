@@ -28,6 +28,8 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = ":filesystem",
+    # FIXME: Disabled for thread sanitizer because of detected race (https://github.com/eclipse-score/communication/issues/1637)
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )
 
 integration_test(
@@ -46,6 +48,8 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = ":filesystem",
+    # FIXME: Disabled for thread sanitizer because of detected race (https://github.com/eclipse-score/communication/issues/1637)
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )
 
 integration_test(

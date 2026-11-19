@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2025, 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -24,6 +24,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
+#include <atomic>
+#include <chrono>
 #include <memory>
 #include <optional>
 #include <string>
@@ -63,6 +65,176 @@ HandleType kHandleFindAnyQm1{
     kConfigStoreFindAny.GetHandle(ServiceInstanceId{kConfigStoreQm1.lola_instance_id_.value()})};
 HandleType kHandleFindAnyQm2{
     kConfigStoreFindAny.GetHandle(ServiceInstanceId{kConfigStoreQm2.lola_instance_id_.value()})};
+
+class ServiceDiscoveryClientSearchReplacementFixture : public ServiceDiscoveryClientFixture,
+                                                       public WithParamInterface<bool>
+{
+};
+
+TEST_P(ServiceDiscoveryClientSearchReplacementFixture, NewSearchDoesNotReceiveRemovalQueuedForStoppedSearch)
+{
+    RecordProperty("given", "a stopped search with an unread removal event and a reoffered service");
+    RecordProperty("when", "a new search starts before the worker processes the old removal");
+    RecordProperty("then", "the new search does not report the reoffered service as unavailable");
+
+    std::promise<void> read_removal{};
+    auto read_removal_future = read_removal.get_future();
+    std::promise<void> removal_read{};
+    std::promise<void> process_removal{};
+    auto process_removal_future = process_removal.get_future();
+    std::promise<void> removal_processed{};
+    std::promise<void> read_reoffer{};
+    auto read_reoffer_future = read_reoffer.get_future();
+
+    EXPECT_CALL(inotify_instance_mock_, Read())
+        .WillOnce([this, &read_removal_future, &removal_read, &process_removal_future] {
+            read_removal_future.wait();
+            auto events = inotify_instance_->Read();
+            removal_read.set_value();
+            process_removal_future.wait();
+            return events;
+        })
+        .WillOnce([this, &removal_processed, &read_reoffer_future] {
+            removal_processed.set_value();
+            read_reoffer_future.wait();
+            return inotify_instance_->Read();
+        })
+        .WillRepeatedly(DoDefault());
+    EXPECT_CALL(inotify_instance_mock_, RemoveWatch(_)).Times(0);
+
+    WhichContainsAServiceDiscoveryClient().WithAnOfferedService(kConfigStoreQm1.GetInstanceIdentifier());
+    const auto old_search = make_FindServiceHandle(1U);
+    std::atomic<std::size_t> unavailable_notifications{0U};
+    std::promise<void> unavailable{};
+    const auto replace_search = [&] {
+        EXPECT_TRUE(service_discovery_client_->StopFindService(old_search).has_value());
+        EXPECT_TRUE(service_discovery_client_
+                        ->StopOfferService(kConfigStoreQm1.GetInstanceIdentifier(),
+                                           IServiceDiscovery::QualityTypeSelector::kBoth)
+                        .has_value());
+        read_removal.set_value();
+        removal_read.get_future().wait();
+        EXPECT_TRUE(service_discovery_client_->OfferService(kConfigStoreQm1.GetInstanceIdentifier()).has_value());
+        WithAnActiveStartFindService(kConfigStoreQm1.GetInstanceIdentifier(),
+                                     make_FindServiceHandle(2U),
+                                     [&unavailable_notifications, &unavailable](auto handles, auto) {
+                                         if (handles.empty())
+                                         {
+                                             if (unavailable_notifications.fetch_add(1U) == 0U)
+                                             {
+                                                 unavailable.set_value();
+                                             }
+                                         }
+                                     });
+        process_removal.set_value();
+    };
+    if (GetParam())
+    {
+        WithAnActiveStartFindService(
+            kConfigStoreQm1.GetInstanceIdentifier(), old_search, [&replace_search](auto, auto) {
+                replace_search();
+            });
+    }
+    else
+    {
+        WithAnActiveStartFindService(kConfigStoreQm1.GetInstanceIdentifier(), old_search);
+        replace_search();
+    }
+    removal_processed.get_future().wait();
+    EXPECT_EQ(unavailable_notifications.load(), 0U);
+    EXPECT_TRUE(
+        service_discovery_client_
+            ->StopOfferService(kConfigStoreQm1.GetInstanceIdentifier(), IServiceDiscovery::QualityTypeSelector::kBoth)
+            .has_value());
+    read_reoffer.set_value();
+    EXPECT_EQ(unavailable.get_future().wait_for(std::chrono::seconds{5}), std::future_status::ready);
+    std::atomic<std::size_t> stale_availability{0U};
+    WithAnActiveStartFindService(
+        kConfigStoreQm1.GetInstanceIdentifier(), make_FindServiceHandle(3U), [&stale_availability](auto handles, auto) {
+            if (!handles.empty())
+            {
+                ++stale_availability;
+            }
+        });
+    service_discovery_client_.reset();
+    EXPECT_EQ(unavailable_notifications.load(), 1U);
+    EXPECT_EQ(stale_availability.load(), 0U);
+}
+
+INSTANTIATE_TEST_SUITE_P(ExternalAndReentrant, ServiceDiscoveryClientSearchReplacementFixture, Values(false, true));
+
+TEST_F(ServiceDiscoveryClientFixture, ExistingSearchReceivesWithdrawalBeforeReoffer)
+{
+    RecordProperty("given", "an ongoing search with an unread withdrawal event");
+    RecordProperty("when", "the service is reoffered before the withdrawal is processed");
+    RecordProperty("then", "the existing search is notified of the withdrawal");
+
+    std::promise<void> read_removal{};
+    auto read_removal_future = read_removal.get_future();
+    std::promise<void> removal_read{};
+    std::promise<void> process_removal{};
+    auto process_removal_future = process_removal.get_future();
+    std::promise<void> removal_processed{};
+    EXPECT_CALL(inotify_instance_mock_, Read())
+        .WillOnce([this, &read_removal_future, &removal_read, &process_removal_future] {
+            read_removal_future.wait();
+            auto events = inotify_instance_->Read();
+            removal_read.set_value();
+            process_removal_future.wait();
+            return events;
+        })
+        .WillOnce([this, &removal_processed] {
+            removal_processed.set_value();
+            return inotify_instance_->Read();
+        })
+        .WillRepeatedly(DoDefault());
+
+    WhichContainsAServiceDiscoveryClient().WithAnOfferedService(kConfigStoreQm1.GetInstanceIdentifier());
+    std::atomic<std::size_t> unavailable_notifications{0U};
+    WithAnActiveStartFindService(kConfigStoreQm1.GetInstanceIdentifier(),
+                                 make_FindServiceHandle(1U),
+                                 [&unavailable_notifications](auto handles, auto) {
+                                     if (handles.empty())
+                                     {
+                                         ++unavailable_notifications;
+                                     }
+                                 });
+    ASSERT_TRUE(
+        service_discovery_client_
+            ->StopOfferService(kConfigStoreQm1.GetInstanceIdentifier(), IServiceDiscovery::QualityTypeSelector::kBoth)
+            .has_value());
+    read_removal.set_value();
+    removal_read.get_future().wait();
+    ASSERT_TRUE(service_discovery_client_->OfferService(kConfigStoreQm1.GetInstanceIdentifier()).has_value());
+    process_removal.set_value();
+    removal_processed.get_future().wait();
+    service_discovery_client_.reset();
+    EXPECT_EQ(unavailable_notifications.load(), 1U);
+}
+
+TEST_F(ServiceDiscoveryClientFixture, StartingSearchFromHandlerDoesNotDestroyExecutingHandler)
+{
+    RecordProperty("given", "a handler that stops its own search");
+    RecordProperty("when", "the handler starts another search before returning");
+    RecordProperty("then", "the executing handler remains alive until it returns");
+
+    WhichContainsAServiceDiscoveryClient().WithAnOfferedService(kConfigStoreQm1.GetInstanceIdentifier());
+    auto lifetime = std::make_shared<int>(0);
+    const std::pair<ServiceDiscoveryClient*, std::weak_ptr<int>> context{service_discovery_client_.get(), lifetime};
+    WithAnActiveStartFindService(
+        kConfigStoreQm1.GetInstanceIdentifier(),
+        make_FindServiceHandle(1U),
+        [lifetime = std::move(lifetime), &context](auto, auto handle) {
+            EXPECT_TRUE(context.first->StopFindService(handle).has_value());
+            EXPECT_TRUE(context.first
+                            ->StartFindService(
+                                make_FindServiceHandle(2U),
+                                [](auto, auto) {},
+                                EnrichedInstanceIdentifier{kConfigStoreQm1.GetInstanceIdentifier()})
+                            .has_value());
+            EXPECT_FALSE(context.second.expired());
+        });
+}
 
 TEST_F(ServiceDiscoveryClientFixture, CorrectlyAssociatesSubsearchWithCorrectDirectory)
 {

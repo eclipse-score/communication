@@ -29,12 +29,20 @@ namespace
 
 constexpr auto kMethodCallInterval = std::chrono::milliseconds{2};
 
-std::int32_t CallMethodOrFail(SkeletonMethodMoveProxy& proxy)
+/// \brief Overall bound for how long the consumer tolerates method call failures before giving up.
+/// \details The provider may transiently stop offering the service while re-registering a method handler, since
+/// impl::SkeletonMethod::RegisterHandler() must not be called while the service is offered. During that short
+/// window, method calls are expected to fail; such failures are treated as transient and retried. The
+/// stop-offer/RegisterHandler/offer sequence itself is a fast, local, synchronous operation, so a generous but
+/// bounded margin of a couple of seconds is sufficient to absorb scheduling jitter without masking real failures.
+constexpr auto kMaxTransientFailureDuration = std::chrono::seconds{2};
+
+std::optional<std::int32_t> TryCallMethod(SkeletonMethodMoveProxy& proxy)
 {
     auto result = proxy.moved_method_(kTestArgA, kTestArgB);
     if (!result.has_value())
     {
-        FailTest("Consumer: moved_method_ call failed: ", result.error());
+        return std::nullopt;
     }
     return *(result.value());
 }
@@ -53,14 +61,29 @@ void RunConsumer()
     //         "before offered" scenarios the first call is always Handler A. For "after offered"
     //         (fuzzy) scenarios the move may already have happened, so any call may return either
     //         handler's result — each call is just checked against the two known-valid results.
+    //         Calls may transiently fail while the provider stop-offers and re-offers the service in order to
+    //         (re-)register a handler; such failures are retried until kMaxTransientFailureDuration elapses.
     std::cout << "\nConsumer: Step 2 - Loop calling until second handler is detected" << std::endl;
     std::size_t call_count = 0U;
     std::optional<std::int32_t> actual_method_return_value{};
+    const auto transient_failure_deadline = std::chrono::steady_clock::now() + kMaxTransientFailureDuration;
     while (!actual_method_return_value.has_value() ||
            actual_method_return_value.value() != kSecondHandlerExpectedResult)
     {
-        actual_method_return_value = CallMethodOrFail(proxy_moved_to);
+        const auto call_result = TryCallMethod(proxy_moved_to);
         ++call_count;
+
+        if (!call_result.has_value())
+        {
+            if (std::chrono::steady_clock::now() > transient_failure_deadline)
+            {
+                FailTest(
+                    "Consumer: method calls kept failing for more than ", kMaxTransientFailureDuration.count(), "s");
+            }
+            std::this_thread::sleep_for(kMethodCallInterval);
+            continue;
+        }
+        actual_method_return_value = call_result;
 
         // If the first handler is still registered, then we continue calling the method.
         if (actual_method_return_value == kFirstHandlerExpectedResult)

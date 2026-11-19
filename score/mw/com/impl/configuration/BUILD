@@ -515,7 +515,10 @@ cc_library(
     name = "someip_service_instance_id",
     srcs = ["someip_service_instance_id.cpp"],
     hdrs = ["someip_service_instance_id.h"],
-    implementation_deps = [":configuration_common_resources"],
+    implementation_deps = [
+        ":configuration_common_resources",
+        "@score_baselibs//score/language/safecpp/safe_math",
+    ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/someip:__pkg__"],
     deps = ["@score_baselibs//score/json"],
@@ -660,6 +663,7 @@ cc_library(
     hdrs = [
         "binding_service_type_deployment.h",
         "binding_service_type_deployment_impl.h",
+        "e2e_event_type_deployment.h",
     ],
     tags = ["FFI"],
     deps = [

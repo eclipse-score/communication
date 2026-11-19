@@ -109,9 +109,13 @@ void SemiDynamicProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_sp
     {
         FailTest(failure_message_prefix, " Consumer: StartFindService() failed to get handle");
     }
-
-    auto proxy_result = impl::ProxyWithSemiDynamicMethodFactory<Proxy>::Create(*handle_, additional_shm_size_bytes);
+    const typename Proxy::HandleType handle{*handle_};
+    // The find service handler is invoked by service discovery while it holds its internal lock and the handler locks
+    // proxy_creation_mutex_. Proxy creation takes that same service discovery lock, so it must not be called while
+    // holding proxy_creation_mutex_ to avoid a lock-order inversion.
     proxy_creation_lock.unlock();
+
+    auto proxy_result = impl::ProxyWithSemiDynamicMethodFactory<Proxy>::Create(handle, additional_shm_size_bytes);
     if (!proxy_result.has_value())
     {
         FailTest(failure_message_prefix, " Consumer: Unable to construct proxy: ", proxy_result.error());

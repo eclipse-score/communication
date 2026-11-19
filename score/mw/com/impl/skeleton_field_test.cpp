@@ -1237,6 +1237,54 @@ TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsWithoutHandlerWhenWithSe
     EXPECT_TRUE(result.has_value());
 }
 
+TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerFailsWhileFieldIsOffered)
+{
+    GivenAFieldWithSetterAndGetterEnabled();
+
+    // Given a set handler is registered and the field is offered
+    ASSERT_TRUE(unit_->my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {}).has_value());
+    ASSERT_TRUE(unit_->my_setter_field_.Update(kDummyInitialValue).has_value());
+    ASSERT_TRUE(unit_->my_setter_field_.PrepareOffer().has_value());
+
+    // When RegisterSetHandler is called again while the field is still offered
+    const auto result = unit_->my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {});
+
+    // Then it fails with kRegisterHandlerNotAllowedWhileOffered
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kRegisterHandlerNotAllowedWhileOffered);
+}
+
+TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerSucceedsAfterPrepareStopOffer)
+{
+    GivenAFieldWithSetterAndGetterEnabled();
+
+    // Given a set handler is registered and the field is offered
+    ASSERT_TRUE(unit_->my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {}).has_value());
+    ASSERT_TRUE(unit_->my_setter_field_.Update(kDummyInitialValue).has_value());
+    ASSERT_TRUE(unit_->my_setter_field_.PrepareOffer().has_value());
+
+    // When the field is stop-offered
+    unit_->my_setter_field_.PrepareStopOffer();
+
+    // Then RegisterSetHandler can be called again successfully
+    const auto result = unit_->my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {});
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerSucceedsBeforeFieldIsEverOffered)
+{
+    GivenAFieldWithSetterAndGetterEnabled();
+
+    // Given a set handler is registered without the field ever having been offered
+    ASSERT_TRUE(unit_->my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {}).has_value());
+
+    // When RegisterSetHandler is called again
+    const auto result = unit_->my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {});
+
+    // Then it still succeeds since the field was never offered
+    EXPECT_TRUE(result.has_value());
+}
+
 TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerAcceptsStdFunction)
 {
     GivenAFieldWithSetterAndGetterEnabled();

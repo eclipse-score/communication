@@ -17,6 +17,9 @@ cc_library(
     name = "element_fq_id",
     srcs = ["element_fq_id.cpp"],
     hdrs = ["element_fq_id.h"],
+    implementation_deps = [
+        "@score_baselibs//score/language/safecpp/safe_math",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -31,6 +34,9 @@ cc_library(
     name = "event_data_storage",
     srcs = ["event_data_storage.cpp"],
     hdrs = ["event_data_storage.h"],
+    implementation_deps = [
+        "@score_baselibs//score/language/safecpp/safe_math",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -66,6 +72,9 @@ cc_library(
     name = "sample_allocatee_ptr",
     srcs = ["sample_allocatee_ptr.cpp"],
     hdrs = ["sample_allocatee_ptr.h"],
+    implementation_deps = [
+        "@score_baselibs//score/language/safecpp/safe_math",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
