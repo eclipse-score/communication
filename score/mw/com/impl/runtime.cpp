@@ -159,7 +159,7 @@ Result<void> Runtime::HandleAddonConfiguration(const Configuration& config)
                                     "Please remove global configuration from add-on configuration.";
     }
 
-    const auto merge_result = Runtime::getInstanceInternal().MergeAdditionalConfiguration(std::move(config));
+    const auto merge_result = Runtime::getInstanceInternal().MergeAdditionalConfiguration(config);
     if (!merge_result.has_value())
     {
         mw::log::LogError("lola") << merge_result.error();
@@ -289,7 +289,7 @@ std::vector<InstanceIdentifier> Runtime::resolve(const InstanceSpecifier& specif
 
 Result<void> Runtime::MergeAdditionalConfiguration(const Configuration& additional_configuration) noexcept
 {
-    const auto merge_result = configuration_.MergeServiceEntries(std::move(additional_configuration));
+    const auto merge_result = configuration_.MergeServiceEntries(additional_configuration);
     if (!merge_result.has_value())
     {
         return merge_result;
