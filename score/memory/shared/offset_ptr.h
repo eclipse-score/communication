@@ -180,7 +180,7 @@ class OffsetPtr
 
     OffsetPtr(const OffsetPtr<PointedType>& other);
     OffsetPtr& operator=(pointer ptr);
-    OffsetPtr& operator=(const OffsetPtr& other);
+    OffsetPtr& operator=(const OffsetPtr& other) &;
 
     // Suppress "AUTOSAR C++14 A12-1-4" rule finding: "All constructors that are callable with a single argument of
     // fundamental type shall be declared explicit.
@@ -448,7 +448,7 @@ auto OffsetPtr<PointedType>::operator=(pointer ptr) -> OffsetPtr&
 
 template <typename PointedType>
 // coverity[autosar_cpp14_a6_2_1_violation]: See rationale for copy constructor autosar_cpp14_a12_8_1_violation above
-auto OffsetPtr<PointedType>::operator=(const OffsetPtr& other) -> OffsetPtr&
+auto OffsetPtr<PointedType>::operator=(const OffsetPtr& other) & -> OffsetPtr&
 {
     if (this == &other)
     {

@@ -46,7 +46,7 @@ SlotDecrementer::SlotDecrementer(SlotDecrementer&& other) noexcept
 // decisions, SlotDecrementer must perform a cleanup and update references to itself in its events and fields.
 // Therefore, side effects are required.
 // coverity[autosar_cpp14_a6_2_1_violation]
-SlotDecrementer& SlotDecrementer::operator=(SlotDecrementer&& other) noexcept
+SlotDecrementer& SlotDecrementer::operator=(SlotDecrementer&& other) & noexcept
 {
     if (this != &other)
     {

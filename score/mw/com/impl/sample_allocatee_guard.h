@@ -33,9 +33,9 @@ class SampleAllocateeGuard final
     SampleAllocateeGuard() = default;
 
     SampleAllocateeGuard(SampleAllocateeGuard&&) noexcept;
-    SampleAllocateeGuard& operator=(SampleAllocateeGuard&&) noexcept;
+    SampleAllocateeGuard& operator=(SampleAllocateeGuard&&) & noexcept;
     SampleAllocateeGuard(const SampleAllocateeGuard&) = delete;
-    SampleAllocateeGuard& operator=(const SampleAllocateeGuard&) = delete;
+    SampleAllocateeGuard& operator=(const SampleAllocateeGuard&) & = delete;
 
     /// \brief Decrements the outstanding-allocation count in the associated tracker, if this guard owns a tracked
     /// allocation.

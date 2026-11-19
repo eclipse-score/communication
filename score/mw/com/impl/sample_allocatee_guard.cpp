@@ -30,7 +30,7 @@ SampleAllocateeGuard::SampleAllocateeGuard(SampleAllocateeGuard&& other) noexcep
     other.tracker_ = nullptr;
 }
 
-SampleAllocateeGuard& SampleAllocateeGuard::operator=(SampleAllocateeGuard&& other) noexcept
+SampleAllocateeGuard& SampleAllocateeGuard::operator=(SampleAllocateeGuard&& other) & noexcept
 {
     if (this != &other)
     {

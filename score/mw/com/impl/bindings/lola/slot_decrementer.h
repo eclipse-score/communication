@@ -29,7 +29,7 @@ class SlotDecrementer
     SlotDecrementer(const SlotDecrementer&) = delete;
     SlotDecrementer& operator=(const SlotDecrementer&) = delete;
     SlotDecrementer(SlotDecrementer&& other) noexcept;
-    SlotDecrementer& operator=(SlotDecrementer&& other) noexcept;
+    SlotDecrementer& operator=(SlotDecrementer&& other) & noexcept;
 
   private:
     void internal_delete() noexcept;

@@ -133,7 +133,7 @@ GenericProxy::GenericProxy(GenericProxy&& other) noexcept
 }
 
 // Deviation of MISRA RULE-18-5-1: codeql::misra_deviation_next_line(move-assignment-contract-violation-terminate)
-GenericProxy& GenericProxy::operator=(GenericProxy&& other) noexcept
+GenericProxy& GenericProxy::operator=(GenericProxy&& other) & noexcept
 {
     if (&other != this)
     {

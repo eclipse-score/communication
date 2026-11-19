@@ -33,6 +33,11 @@ class Proxy final : public ProxyBinding
   public:
     static std::unique_ptr<Proxy> Create(const HandleType& handle);
 
+    Proxy() = default;
+    Proxy(const Proxy&) = delete;
+    Proxy(Proxy&&) noexcept = delete;
+    Proxy& operator=(const Proxy&) & = delete;
+    Proxy& operator=(Proxy&&) & noexcept = delete;
     ~Proxy() noexcept override = default;
 
     bool IsEventProvided(std::string_view event_name) const override;

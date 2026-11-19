@@ -46,7 +46,7 @@ SampleReferenceGuard::SampleReferenceGuard(SampleReferenceGuard&& other) noexcep
     other.tracker_ = nullptr;
 }
 
-SampleReferenceGuard& SampleReferenceGuard::operator=(SampleReferenceGuard&& other) noexcept
+SampleReferenceGuard& SampleReferenceGuard::operator=(SampleReferenceGuard&& other) & noexcept
 {
     if (this != &other)
     {
