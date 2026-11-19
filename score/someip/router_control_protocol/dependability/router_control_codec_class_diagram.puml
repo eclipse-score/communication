@@ -1,0 +1,52 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml router_control_codec_class_diagram
+
+namespace score.someip.router_control_protocol {
+
+    enum Opcode {
+        kAddRemoteService = 1
+        kRemoveRemoteService = 2
+        kAddLocalSubscription = 3
+        kRemoveLocalSubscription = 4
+        kAddLocalService = 5
+        kRemoveLocalService = 6
+        kAddRemoteSubscription = 7
+        kRemoveRemoteSubscription = 8
+    }
+
+    enum ErrorCode {
+        kBufferTooSmall = 1
+        kInvalidSize = 2
+        kUnsupportedVersion = 3
+        kUnknownOpcode = 4
+        kReservedNotZero = 5
+        kTooManyEvents = 6
+        kUnexpectedParameter = 7
+        kFieldNotInEvents = 8
+    }
+
+    ' remote_ip, events and fields are omitted: score_tooling cannot match template-typed members yet.
+    struct Message {
+        + opcode : score::someip::router_control_protocol::Opcode
+        + service : uint16_t
+        + instance : uint16_t
+        + event : uint16_t
+        + local_port : uint16_t
+        + remote_port : uint16_t
+        + major : uint8_t
+    }
+}
+
+@enduml

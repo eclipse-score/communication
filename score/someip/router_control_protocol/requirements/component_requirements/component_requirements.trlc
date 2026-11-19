@@ -1,0 +1,82 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package RouterControlProtocol
+
+import ScoreReq
+import RoutingModule
+
+ScoreReq.CompReq CR_RouterControlProtocol_RoutingCommands {
+    description = "The router control protocol shall provide routing commands to add and remove a remote service, a local subscription to a remote service, a local service, and a remote subscription to a local service."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipDiscoverySeparation@1, RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RouterControlProtocol_WireFormat {
+    description = "The router control protocol shall encode every routing command in a fixed little-endian wire layout that starts with the protocol version and the opcode."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipDiscoverySeparation@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RouterControlProtocol_Versioning {
+    description = "The router control protocol shall reject a received routing command whose protocol version differs from the supported version."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipDiscoverySeparation@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RouterControlProtocol_Lossless {
+    description = "The router control protocol shall decode an encoded routing command into a routing command equal to the encoded one."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RouterControlProtocol_BoundedSize {
+    description = "The router control protocol shall limit each routing command to at most 64 event identifiers and at most 64 field identifiers."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    note = "The bound gives a fixed maximum message size, so encoding and decoding need no dynamic memory."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RouterControlProtocol_RejectMalformed {
+    description = "The router control protocol shall reject a received routing command whose size, opcode, reserved byte or identifier counts do not match the wire layout."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RouterControlProtocol_CommandConsistency {
+    description = "The router control protocol shall reject a routing command that sets a parameter not used by its opcode or that lists a field identifier which is not one of its event identifiers."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    note = "Applies to encoding and decoding."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RouterControlProtocol_BufferBounds {
+    description = "The router control protocol shall report an error instead of writing an encoded routing command into a buffer that is too small for it."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RouterControlProtocol_RobustDecoding {
+    description = "The router control protocol shall return either a valid routing command or an error for any received byte sequence."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    note = "Encoding and decoding neither throw exceptions nor terminate the process."
+    version = 1
+}

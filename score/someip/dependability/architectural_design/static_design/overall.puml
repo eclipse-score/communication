@@ -15,7 +15,9 @@
 package someip <<SEooC>> {
 
   component SDControlProtocol <<unit>>
-  component RouterControlProtocol <<unit>>
+  component RouterControlProtocol <<component>> {
+    component RouterControlCodec <<unit>>
+  }
 
 
   interface sd_protocol
