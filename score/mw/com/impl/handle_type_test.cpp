@@ -112,6 +112,51 @@ TEST(HandleTypeWithInstanceIdFromConfigTest, CopyAssignmentOperatorCopiesHandleT
     ASSERT_EQ(unit1, unit2);
 }
 
+TEST(HandleTypeWithInstanceIdFromConfigTest, MoveAssignmentTransfersIdentifierAndInstanceId)
+{
+    RecordProperty("Verifies", "SCR-14116410");
+    RecordProperty("Description", "Checks that the MoveAssignment operator transfers identifier and instance id");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a target handle with an instance id from the configuration
+    const auto target_identifier = make_InstanceIdentifier(kServiceInstanceDeployment1, kTestTypeDeployment);
+    auto target = make_HandleType(target_identifier);
+
+    // And a source handle with an instance id from the configuration
+    const auto source_identifier = make_InstanceIdentifier(kServiceInstanceDeployment2, kTestTypeDeployment2);
+    auto source = make_HandleType(source_identifier);
+    const auto expected = source;
+    ASSERT_FALSE(target == expected);
+
+    // When move assigning the source to the target
+    target = std::move(source);
+
+    // Then the target equals the original source
+    EXPECT_EQ(target, expected);
+}
+
+TEST(HandleTypeWithInstanceIdFromConfigTest, MoveConstructionTransfersIdentifierAndInstanceId)
+{
+    RecordProperty("Verifies", "SCR-14116410");
+    RecordProperty("Description", "Checks that the MoveConstructor transfers identifier and instance id");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a handle with an instance id from the configuration
+    const auto identifier = make_InstanceIdentifier(kServiceInstanceDeployment1, kTestTypeDeployment);
+    auto source = make_HandleType(identifier);
+    const auto expected = source;
+
+    // When move constructing a new handle from it
+    const HandleType target{std::move(source)};
+
+    // Then the new handle equals the original source
+    EXPECT_EQ(target, expected);
+}
+
 TEST(HandleTypeWithProvidedInstanceIdTest, LessCompareable)
 {
     RecordProperty("Verifies", "SCR-14116410");
