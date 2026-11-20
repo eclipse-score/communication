@@ -16,46 +16,66 @@ title "Sequence Message Passing Init"
 hide footbox
 
 participant "<u>:score::com::impl::Runtime</u>" as Runtime
-participant "<u>singleInstancePerProc:lola::MessagePassing</u>" as MessagePassing
-participant "<u>QM:messagepassing::Receiver</u>" as QMReceiver
-participant "<u>ASIL:messagepassing::Receiver</u>" as ASILReceiver
+participant "<u>singleInstancePerProc:lola::MessagePassingService</u>" as MessagePassing
+participant "<u>QM:messagepassing::MessagePassingServiceInstance</u>" as QMMessagePassingServiceInstance
+participant "<u>ASIL:messagepassing::MessagePassingServiceInstance</u>" as ASILMessagePassingServiceInstance
 
 activate Runtime
 Runtime -> Runtime: check Configuration, whether\nASIL_B service deployment exists
-Runtime -> MessagePassing: Initialize(ASIL_B_deployment)
+create MessagePassing
+Runtime -> MessagePassing: MessagePassingService(AsilSpecificCfg, std::optional<AsilSpecificCfg>, std::unique_ptr<IMessagePassingServiceInstanceFactory>)
 activate MessagePassing
 Runtime -[#white]> Runtime
 deactivate Runtime
 
-create QMReceiver
-MessagePassing -> QMReceiver: Create("LoLa_<PID>_QM")
-activate QMReceiver
+create QMMessagePassingServiceInstance
+MessagePassing -> QMMessagePassingServiceInstance: Create("LoLa_2_<PID>_QM")
+activate QMMessagePassingServiceInstance
 
-MessagePassing -> QMReceiver: Register(SUBSCRIBE_EVENT,\nthis->HandleSubscribeEventMsgQM)
-QMReceiver --> MessagePassing: return
+MessagePassing -> QMMessagePassingServiceInstance: RegisterEventNotification(ElementFqId, Callback, pid_t)
+QMMessagePassingServiceInstance --> MessagePassing: return
 
-MessagePassing -> QMReceiver: Register(SUBSCRIBE_EVENT_RESULT,\nthis->HandleSubscribeEventResultMsgQM)
-QMReceiver --> MessagePassing: return
+MessagePassing -> QMMessagePassingServiceInstance: UnregisterEventNotification(ElementFqId, HandlerRegistrationNoType, pid_t)
+QMMessagePassingServiceInstance --> MessagePassing: return
 
-MessagePassing -> QMReceiver: Register(UNSUBSCRIBE_EVENT,\nthis->HandleUnsubscribeEventMsgQM)
-QMReceiver --> MessagePassing: return
+MessagePassing -> QMMessagePassingServiceInstance: ReregisterEventNotification(ElementFqId, pid_t)
+QMMessagePassingServiceInstance --> MessagePassing: return
 
-MessagePassing -> QMReceiver: Register(REGISTER_EVENT_NOTIFIER,\nthis->HandleRegisterEventNotifMsgQM)
-QMReceiver --> MessagePassing: return
+MessagePassing -> QMMessagePassingServiceInstance: RegisterOnServiceMethodSubscribedHandler(SkeletonInstanceIdentifier,ServiceMethodSubscribedHandler, AllowedConsumerUids)
+QMMessagePassingServiceInstance --> MessagePassing: return
 
-MessagePassing -> QMReceiver: Register(UNEGISTER_EVENT_NOTIFIER,\nthis->HandleUnregisterEventNotifMsgQM)
-QMReceiver --> MessagePassing: return
+MessagePassing -> QMMessagePassingServiceInstance: RegisterOnServiceMethodUnsubscribedHandler(SkeletonInstanceIdentifier,ServiceMethodUnsubscribedHandler)
+QMMessagePassingServiceInstance --> MessagePassing: return
 
-MessagePassing -> QMReceiver: Register(NOTIFY_EVENT,\nthis->HandleEventNotificationQM)
-QMReceiver --> MessagePassing: return
-deactivate QMReceiver
+MessagePassing -> QMMessagePassingServiceInstance: UnregisterOnServiceMethodSubscribedHandler(SkeletonInstanceIdentifier)
+QMMessagePassingServiceInstance --> MessagePassing: return
+
+MessagePassing -> QMMessagePassingServiceInstance: UnregisterOnServiceMethodUnsubscribedHandler(SkeletonInstanceIdentifier)
+QMMessagePassingServiceInstance --> MessagePassing: return
+
+MessagePassing -> QMMessagePassingServiceInstance: UnregisterMethodCallHandler(ProxyMethodInstanceIdentifier)
+QMMessagePassingServiceInstance --> MessagePassing: return
+
+MessagePassing -> QMMessagePassingServiceInstance: RegisterEventNotificationExistenceChangedCallback(ElementFqId, HandlerStatusChangeCallback)
+QMMessagePassingServiceInstance --> MessagePassing: return
+
+MessagePassing -> QMMessagePassingServiceInstance: UnregisterEventNotificationExistenceChangedCallback(ElementFqId)
+QMMessagePassingServiceInstance --> MessagePassing: return
+
+MessagePassing -> QMMessagePassingServiceInstance: SubscribeServiceMethod(SkeletonInstanceIdentifier&, ProxyInstanceIdentifier&, pid_t)
+QMMessagePassingServiceInstance --> MessagePassing: return
+
+MessagePassing -> QMMessagePassingServiceInstance: UnsubscribeServiceMethod(SkeletonInstanceIdentifier&, ProxyInstanceIdentifier&, pid_t)
+QMMessagePassingServiceInstance --> MessagePassing: return
+
+deactivate QMMessagePassingServiceInstance
 
 opt if (ASIL_B_deployment)
-    create ASILReceiver
-    MessagePassing -> ASILReceiver: Create("LoLa_<PID>_ASIL")
+    create ASILMessagePassingServiceInstance
+    MessagePassing -> ASILMessagePassingServiceInstance: Create("LoLa_2_<PID>_ASIL_B")
 
     group repeat
-        note over MessagePassing, ASILReceiver: Registration of Msg-Handlers this time for ASIL handlers
+        note over MessagePassing, ASILMessagePassingServiceInstance: Registration of Msg-Handlers this time for ASIL handlers
     end
     deactivate MessagePassing
 end

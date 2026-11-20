@@ -12,104 +12,157 @@
 ' *******************************************************************************
 
 @startuml lola_msg_pass_event_notify
+!pragma teoz true
 title "Sequence Message Passing Event Notify"
 hide footbox
 
 participant "mw::com::impl::ProxyEvent" as ProxyEvent
 participant "lola::ProxyEvent" as LolaProxyEvent
 participant "<u>singleton_Proc1:lola::MessagePassing</u>" as MessagePassingProc1
-participant "<u><ASILType>:messagepassing::Receiver</u>" as ReceiverProc1
-participant "<u>:RegisterEventNotifierMsg</u>" as RegisterEventNotifierMsg
-participant "<u>:messagepassing::Sender</u>" as SenderProc1
-participant "<u><ASILType>:messagepassing::Sender</u>" as SenderProc2
-participant "<u><ASILType>:messagepassing::Receiver</u>" as ReceiverProc2
-participant "<u>:NotifyEventMsg</u>" as NotifyEventMsg
+participant "<u><ASILType>:messagepassing::MessagePassingServiceInstance</u>" as MessagePassingServiceInstanceProc1
+participant "<u><ASILType>:messagepassing::Server</u>" as ServerProc1
+participant "<u><ASILType>:messagepassing::MessagePassingClientCache</u>" as ClientCacheProc1
+participant "<u>:messagepassing::ClientConnection</u>" as ClientConnectionProc1
+
+
+participant "<u><ASILType>:messagepassing::Server</u>" as ServerProc2
+participant "<u><ASILType>:messagepassing::MessagePassingClientCache</u>" as ClientCacheProc2
+participant "<u><ASILType>:messagepassing::ClientConnection</u>" as ClientConnectionProc2
+participant "<u><ASILType>:messagepassing::MessagePassingServiceInstance</u>" as MessagePassingServiceInstanceProc2
 participant "<u>singleton_Proc2:lola::MessagePassing</u>" as MessagePassingProc2
 participant "<u>:lola::SkeletonEvent</u>" as SkeletonEvent
 
 group Initialization: lola_msg_pass_initialize
     |||
-    create ReceiverProc1
-    MessagePassingProc1 -[#white]> ReceiverProc1
+    MessagePassingProc1 -[#white]> MessagePassingServiceInstanceProc1 **
+    & MessagePassingServiceInstanceProc1 -[#white]> ServerProc1 **
+    & MessagePassingServiceInstanceProc1 -[#white]> ClientCacheProc1 **
 end
 
-activate MessagePassingProc2
+
 group Initialization: lola_msg_pass_initialize
     |||
-    create ReceiverProc2
-    MessagePassingProc2 -[#white]> ReceiverProc2
+    MessagePassingProc2 -[#white]> MessagePassingServiceInstanceProc2 **
+    & MessagePassingServiceInstanceProc2 -[#white]> ClientCacheProc2 **
+    & MessagePassingServiceInstanceProc2 -[#white]> ServerProc2 **
 end
-deactivate MessagePassingProc2
+
+group SkeletonEvent's callback registration
+    |||
+    activate MessagePassingProc2
+    activate SkeletonEvent
+    SkeletonEvent -> MessagePassingProc2 : RegisterEventNotificationExistenceChangedCallback(ASILType, ElementFqId, Callback)
+
+    activate MessagePassingServiceInstanceProc2
+    MessagePassingProc2 -> MessagePassingServiceInstanceProc2 : RegisterEventNotificationExistenceChangedCallback(ElementFqId, Callback)
+    deactivate MessagePassingServiceInstanceProc2
+
+    deactivate MessagePassingProc2
+    deactivate SkeletonEvent
+end
+
 
 activate ProxyEvent
 ProxyEvent -> LolaProxyEvent : SetReceiveHandler(callback)
 activate LolaProxyEvent
 LolaProxyEvent -> MessagePassingProc1 : RegisterEventNotification(\nASILType, ElementFqId, callback, PID_Proc2)
 activate MessagePassingProc1
-opt if eventNotificationHandlers[ElementFqId].empty()\nwe only send a RegisterEventNotifierMsg to the other side, if this is the 1st registration for this ElementFqId
-    opt if not yet Sender to PID_Proc2 for ASILType exists
-        create SenderProc1
-        MessagePassingProc1 -> SenderProc1 : create("LoLa_<PID_Proc2>_<ASILType>")
+
+
+activate MessagePassingServiceInstanceProc1
+MessagePassingProc1 -> MessagePassingServiceInstanceProc1 : RegisterEventNotification()
+
+MessagePassingServiceInstanceProc1 -> MessagePassingServiceInstanceProc1 : event_update_handlers_[ElementFqId].push_back(callback)
+
+opt if EventUpdateRegistrationCountMapType[ElementFqId].empty()\nwe only send a request for event notifications to the other side, if this is the 1st registration for this ElementFqId
+    activate ClientCacheProc1
+    MessagePassingServiceInstanceProc1 -> ClientCacheProc1 : GetMessagePassingClient()
+
+    opt if not yet ClientConnection to PID_Proc2 for ASILType exists
+        create ClientConnectionProc1
+        ClientCacheProc1 -> ClientConnectionProc1 : CreateNewClient() - named "LoLa_2_<PID_Proc2>_<ASILType>"
     end
-    create RegisterEventNotifierMsg
-    MessagePassingProc1 -> RegisterEventNotifierMsg : Create(ElementFqId)
-    MessagePassingProc1 -> SenderProc1 : Send(lola::RegisterEventNotifierMsg)
-    activate SenderProc1
-    SenderProc1 -> ReceiverProc2 : OS specific IPC (QNX pulse, Posix MQ)
-    activate ReceiverProc2
-    SenderProc1 --> MessagePassingProc1 : return
-    deactivate SenderProc1
-    ReceiverProc2 -> ReceiverProc2 : find registered handler
-    ReceiverProc2 -> MessagePassingProc2 : HandleRegisterEventNotifMsgQM<ASILType>(msg_payload)
+    ClientCacheProc1 -> MessagePassingServiceInstanceProc1 : return
+    deactivate ClientCacheProc1
+    MessagePassingServiceInstanceProc1 -> ClientConnectionProc1 : Send(message)
+    activate ClientConnectionProc1
+    ClientConnectionProc1 -> ServerProc2 : OS specific IPC (QNX pulse, Posix MQ)
+    activate ServerProc2
+    ClientConnectionProc1 --> MessagePassingServiceInstanceProc1 : return
+    MessagePassingServiceInstanceProc1 --> MessagePassingProc1 : return
+    deactivate ClientConnectionProc1
+    ServerProc2 -> ServerProc2 : find registered handler
+    activate MessagePassingServiceInstanceProc2
+    ServerProc2 -> MessagePassingServiceInstanceProc2 : HandleRegisterNotificationMsg(msg_payload, sender_pid)
     activate MessagePassingProc2
-    deactivate ReceiverProc2
-    MessagePassingProc2 -> MessagePassingProc2 : eventNotifications[msg_payload.ElementFqId].\npush_back(PID_Proc1)
+    deactivate ServerProc2
+    MessagePassingServiceInstanceProc2 -> MessagePassingServiceInstanceProc2: event_update_interested_nodes_[ElementFqId].push_back(PID_Proc1)
+    MessagePassingServiceInstanceProc2 -> MessagePassingServiceInstanceProc2: handler_status_change_callbacks_[ElementFqId] = true
+    MessagePassingServiceInstanceProc2 --> MessagePassingProc2: update via callback
+
+    activate SkeletonEvent
+
+    MessagePassingProc2 --> SkeletonEvent: update via callback
+
+    deactivate SkeletonEvent
+
+    deactivate MessagePassingServiceInstanceProc2
     MessagePassingProc2 -[#white]> MessagePassingProc2
     |||
     deactivate MessagePassingProc2
 end
 
-MessagePassingProc1 -> MessagePassingProc1 : eventNotificationHandlers[ElementFqId].push_back(callback)
-
 MessagePassingProc1 --> LolaProxyEvent : return
 deactivate MessagePassingProc1
 LolaProxyEvent --> ProxyEvent : return
 deactivate LolaProxyEvent
-'TODO extend life line of ProxyEvent
 deactivate ProxyEvent
 
 activate SkeletonEvent
 SkeletonEvent -> MessagePassingProc2 : NotifyEvent(<ASILType>, ElementFqId)
 activate MessagePassingProc2
-MessagePassingProc2 -> MessagePassingProc2 : PID_Proc1 =\neventNotifications[ElementFqId].front
-opt if Sender for PID_Proc1 for ASILType not yet exists
-    MessagePassingProc2 -> SenderProc2 : Create
-end
-create NotifyEventMsg
-MessagePassingProc2 -> NotifyEventMsg : Create(ElementFqId)
-MessagePassingProc2 -> SenderProc2 : Send(lola::NotifyEventMsg)
-activate SenderProc2
+MessagePassingProc2 -> MessagePassingServiceInstanceProc2: NotifyEvent(ElementFqId)
+activate MessagePassingServiceInstanceProc2
 
-SenderProc2 -> ReceiverProc1 : OS specific IPC (QNX pulse, Posix MQ)
-activate ReceiverProc1
-SenderProc2 --> MessagePassingProc2 : return
-deactivate SenderProc2
+MessagePassingServiceInstanceProc2 -> ClientCacheProc2: GetMessagePassingClient(pid_t)
+activate ClientCacheProc2
+
+opt if ClientConnectionProc2 for PID_Proc1 for ASILType not yet exists
+    create ClientConnectionProc2
+    ClientCacheProc2 -> ClientConnectionProc2 : CreateNewClient() - named "LoLa_2_<PID_Proc1>_<ASILType>"
+end
+ClientCacheProc2 -> MessagePassingServiceInstanceProc2: return
+deactivate ClientCacheProc2
+
+
+MessagePassingServiceInstanceProc2 -> ClientConnectionProc2: Send(message)
+activate ClientConnectionProc2
+
+ClientConnectionProc2 -> ServerProc1 : OS specific IPC (QNX pulse, Posix MQ)
+activate ServerProc1
+ClientConnectionProc2 --> MessagePassingServiceInstanceProc2 : return
+deactivate ClientConnectionProc2
+MessagePassingServiceInstanceProc2 --> MessagePassingProc2 : return
 MessagePassingProc2 --> SkeletonEvent : return
 deactivate MessagePassingProc2
 
-ReceiverProc1 -> MessagePassingProc1 : HandleEventNotification<ASILType>(NotifyEventMsg)
-deactivate SkeletonEvent
-activate MessagePassingProc1
-MessagePassingProc1 -> MessagePassingProc1 : callback = eventNotificationHandlers[ElementFqId].front()
-deactivate ReceiverProc1
+ServerProc1 -> MessagePassingServiceInstanceProc1 : MessageCallback(sender_pid, message)
+MessagePassingServiceInstanceProc1 -> MessagePassingServiceInstanceProc1 : callback = event_update_handlers_[ElementFqId].front()
 
-MessagePassingProc1 -> LolaProxyEvent : callback()
+deactivate MessagePassingServiceInstanceProc2
+deactivate SkeletonEvent
+deactivate ServerProc1
+
+MessagePassingServiceInstanceProc1 -> LolaProxyEvent : callback()
 activate LolaProxyEvent
-deactivate MessagePassingProc1
+
 
 LolaProxyEvent -> ProxyEvent : callback()
 activate ProxyEvent
 ProxyEvent --> LolaProxyEvent : return
+LolaProxyEvent --> MessagePassingServiceInstanceProc1 : return
 deactivate ProxyEvent
+deactivate LolaProxyEvent
+deactivate MessagePassingServiceInstanceProc1
 
 @enduml

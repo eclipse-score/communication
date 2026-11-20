@@ -16,231 +16,315 @@ title "Structural View_MessagePassing"
 
 class "mw::com::impl::IBindingRuntime" {
   +GetBindingType() : BindingType
+  +GetServiceDiscoveryClient() : IServiceDiscoveryClient&
+  +GetTracingRuntime() : tracing::IBindingTracingRuntime*
 }
 
 class "mw::com::impl::lola::IRuntime" {
   +GetLolaMessaging() : lola::IMessagePassingService&
   +HasAsilBSupport() : bool
+  +GetShmSizeCalculationMode() : ShmSizeCalculationMode
+  +GetRollbackSynchronization() : RollbackSynchronization&
+  +GetPid() : pid_t
+  +GetApplicationId() : GlobalConfiguration::ApplicationId
 }
 
-interface "messaging::IMessagePassingService" {
+interface "mw::com::impl::lola::IMessagePassingService" {
   +using HandlerRegistrationNoType std::uint32_t
-  +using EventSubscriptionNoType std::uint32_t
+  +using HandlerStatusChangeCallback score::cpp::callback<void(bool)>
+  +using ServiceMethodSubscribedHandler safecpp::CopyableScopedFunction<Result<void>(ProxyInstanceIdentifier, uid_t, pid_t)>
+  +using ServiceMethodUnsubscribedHandler safecpp::CopyableScopedFunction<Result<void>(ProxyInstanceIdentifier)>
+  +using MethodCallHandler safecpp::CopyableScopedFunction<void(std::size_t)>
+  +using AllowedConsumerUids std::optional<std::set<uid_t>>
   --
-  {abstract} +RegisterEventNotification(QualityType, ElementFqId, std::weak_ptr<ScopedEventReceiveHandler>, pid_t): HandlerRegistrationNoType
-  {abstract} +ReregisterEventNotification(QualityType, ElementFqId, pid_t)
-  {abstract} +UnregisterEventNotification(QualityType, HandlerRegistrationNoType): void
   {abstract} +NotifyEvent(QualityType, ElementFqId): void
+  {abstract} +RegisterEventNotification(QualityType, ElementFqId, std::weak_ptr<ScopedEventReceiveHandler>, pid_t): HandlerRegistrationNoType
+  {abstract} +ReregisterEventNotification(QualityType, ElementFqId, pid_t): void
+  {abstract} +UnregisterEventNotification(QualityType, ElementFqId, HandlerRegistrationNoType, pid_t): void
+  {abstract} +RegisterEventNotificationExistenceChangedCallback(QualityType, ElementFqId, HandlerStatusChangeCallback): void
+  {abstract} +UnregisterEventNotificationExistenceChangedCallback(QualityType, ElementFqId): void
   {abstract} +NotifyOutdatedNodeId(QualityType asil_level, pid_t outdated_node_id, pid_t target_node_id): void
+  {abstract} +RegisterOnServiceMethodSubscribedHandler(QualityType, SkeletonInstanceIdentifier, ServiceMethodSubscribedHandler, AllowedConsumerUids): Result<MethodSubscriptionRegistrationGuard>
+  {abstract} +RegisterOnServiceMethodUnsubscribedHandler(QualityType, SkeletonInstanceIdentifier, ServiceMethodUnsubscribedHandler): Result<MethodUnsubscriptionRegistrationGuard>
+  {abstract} +RegisterMethodCallHandler(QualityType, ProxyMethodInstanceIdentifier, MethodCallHandler, uid_t): Result<MethodCallRegistrationGuard>
+  {abstract} +SubscribeServiceMethod(QualityType, SkeletonInstanceIdentifier&, ProxyInstanceIdentifier&, pid_t): Result<void>
+  {abstract} +UnsubscribeServiceMethod(QualityType, SkeletonInstanceIdentifier&, ProxyInstanceIdentifier&, pid_t): Result<void>
+  {abstract} +CallMethod(QualityType, ProxyMethodInstanceIdentifier&, std::size_t, pid_t): Result<void>
 }
 
-enum "lola::ASILType" {
-  INVALID
-  ASIL_QM
-  ASIL_B
+enum "lola::ClientQualityType" {
+  kASIL_QM
+  kASIL_QMfromB
+  kASIL_B
 }
 
-class "MessageReceiveCtrl" {
-  +receiver: std::unique_ptr<IReceiver>
-  +threadPool: std::unique_ptr<concurrency::ThreadPool>
+enum "mw::com::impl::QualityType" {
+  kInvalid
+  kASIL_QM
+  kASIL_B
 }
 
-class "lola::messaging::MessagePassingFacade" {
-  -msg_receiver_asil_b_: MessageReceiveCtrl
-  -msg_receiver_qm_: MessageReceiveCtrl
-  -notify_event_handler_ : NotifyEventHandler
-  -message_passing_ctrl_ : IMessagePassingControl&
-  +MessagePassingFacade(IMessagePassingControl& msgpass_ctrl, const AsilSpecificCfg config_asil_qm, const std::optional<AsilSpecificCfg> config_asil_b)
-  +RegisterEventNotification(ASILType, ElementFqId, std::weak_ptr<ScopedEventReceiveHandler>, pid_t): RegistrationHandle
-  +ReregisterEventNotification(QualityType, ElementFqId, pid_t)
-  +UnregisterEventNotification(ASILType, RegistrationHandle) : void
-  +NotifyEvent(ASILType, ElementFqId): void
+class "lola::AsilSpecificCfg" <<struct>> {
+  +message_queue_rx_size_ : std::int32_t
+  +allowed_user_ids_ : std::vector<uid_t>
+}
+
+interface "lola::IMessagePassingServiceInstance" {
+  {abstract} +NotifyEvent(ElementFqId): void
+  {abstract} +RegisterEventNotification(ElementFqId, std::weak_ptr<ScopedEventReceiveHandler>, pid_t): IMessagePassingService::HandlerRegistrationNoType
+  {abstract} +ReregisterEventNotification(ElementFqId, pid_t): void
+  {abstract} +UnregisterEventNotification(ElementFqId, IMessagePassingService::HandlerRegistrationNoType, pid_t): void
+  {abstract} +RegisterEventNotificationExistenceChangedCallback(ElementFqId, IMessagePassingService::HandlerStatusChangeCallback): void
+  {abstract} +UnregisterEventNotificationExistenceChangedCallback(ElementFqId): void
+  {abstract} +NotifyOutdatedNodeId(pid_t outdated_node_id, pid_t target_node_id): void
+  {abstract} +RegisterOnServiceMethodSubscribedHandler(SkeletonInstanceIdentifier, IMessagePassingService::ServiceMethodSubscribedHandler, IMessagePassingService::AllowedConsumerUids): Result<void>
+  {abstract} +RegisterOnServiceMethodUnsubscribedHandler(SkeletonInstanceIdentifier, IMessagePassingService::ServiceMethodUnsubscribedHandler): Result<void>
+  {abstract} +RegisterMethodCallHandler(ProxyMethodInstanceIdentifier, IMessagePassingService::MethodCallHandler, uid_t): Result<void>
+  {abstract} +UnregisterOnServiceMethodSubscribedHandler(SkeletonInstanceIdentifier): void
+  {abstract} +UnregisterOnServiceMethodUnsubscribedHandler(SkeletonInstanceIdentifier): void
+  {abstract} +UnregisterMethodCallHandler(ProxyMethodInstanceIdentifier): void
+  {abstract} +SubscribeServiceMethod(SkeletonInstanceIdentifier&, ProxyInstanceIdentifier&, pid_t): Result<void>
+  {abstract} +UnsubscribeServiceMethod(SkeletonInstanceIdentifier&, ProxyInstanceIdentifier&, pid_t): Result<void>
+  {abstract} +CallMethod(ProxyMethodInstanceIdentifier&, std::size_t, pid_t): Result<void>
+}
+
+class "lola::MessagePassingServiceInstance" {
+  -server_ : score::cpp::pmr::unique_ptr<message_passing::IServer>
+  -cur_registration_no_ : std::atomic<IMessagePassingService::HandlerRegistrationNoType>
+  -asil_level_ : ClientQualityType
+  -client_cache_ : MessagePassingClientCache
+  -event_update_handlers_ : std::unordered_map<ElementFqId, std::vector<RegisteredNotificationHandler>>
+  -handler_status_change_callbacks_ : std::unordered_map<ElementFqId, IMessagePassingService::HandlerStatusChangeCallback>
+  -event_update_interested_nodes_ : std::unordered_map<ElementFqId, std::set<pid_t>>
+  -event_update_remote_registrations_ : std::unordered_map<ElementFqId, NodeCounter>
+  -subscribe_service_method_handlers_ : std::unordered_map<SkeletonInstanceIdentifier, std::pair<ServiceMethodSubscribedHandler, AllowedConsumerUids>>
+  -unsubscribe_service_method_handlers_ : std::unordered_map<SkeletonInstanceIdentifier, ServiceMethodUnsubscribedHandler>
+  -call_method_handlers_ : std::unordered_map<ProxyMethodInstanceIdentifier, std::pair<MethodCallHandler, uid_t>>
+  -executor_ : score::concurrency::Executor&
+  -message_callback_scope_ : safecpp::Scope<>
+  -self_pid_ : pid_t
+  -self_uid_ : uid_t
+  __
+  -enum MessageType { kRegisterEventNotifier, kUnregisterEventNotifier, kNotifyEvent, kOutdatedNodeId }
+  -enum MessageWithReplyType { kSubscribeServiceMethod, kCallMethod, kUnsubscribeServiceMethod }
+  __
+  +MessagePassingServiceInstance(ClientQualityType, const AsilSpecificCfg&, message_passing::IServerFactory&, message_passing::IClientFactory&, score::concurrency::Executor&)
+  +NotifyEvent(ElementFqId): void
+  +RegisterEventNotification(ElementFqId, std::weak_ptr<ScopedEventReceiveHandler>, pid_t): IMessagePassingService::HandlerRegistrationNoType
+  +ReregisterEventNotification(ElementFqId, pid_t): void
+  +UnregisterEventNotification(ElementFqId, IMessagePassingService::HandlerRegistrationNoType, pid_t): void
+  +RegisterOnServiceMethodSubscribedHandler(SkeletonInstanceIdentifier, ServiceMethodSubscribedHandler, AllowedConsumerUids): Result<void>
+  +RegisterOnServiceMethodUnsubscribedHandler(SkeletonInstanceIdentifier, ServiceMethodUnsubscribedHandler): Result<void>
+  +RegisterMethodCallHandler(ProxyMethodInstanceIdentifier, MethodCallHandler, uid_t): Result<void>
+  +UnregisterOnServiceMethodSubscribedHandler(SkeletonInstanceIdentifier): void
+  +UnregisterOnServiceMethodUnsubscribedHandler(SkeletonInstanceIdentifier): void
+  +UnregisterMethodCallHandler(ProxyMethodInstanceIdentifier): void
+  +NotifyOutdatedNodeId(pid_t outdated_node_id, pid_t target_node_id): void
+  +RegisterEventNotificationExistenceChangedCallback(ElementFqId, HandlerStatusChangeCallback): void
+  +UnregisterEventNotificationExistenceChangedCallback(ElementFqId): void
+  +SubscribeServiceMethod(SkeletonInstanceIdentifier&, ProxyInstanceIdentifier&, pid_t): Result<void>
+  +UnsubscribeServiceMethod(SkeletonInstanceIdentifier&, ProxyInstanceIdentifier&, pid_t): Result<void>
+  +CallMethod(ProxyMethodInstanceIdentifier&, std::size_t, pid_t): Result<void>
+}
+
+interface "lola::IMessagePassingServiceInstanceFactory" {
+  {abstract} +Create(ClientQualityType, AsilSpecificCfg, message_passing::IServerFactory&, message_passing::IClientFactory&, score::concurrency::Executor&) : std::unique_ptr<IMessagePassingServiceInstance>
+}
+
+class "lola::MessagePassingServiceInstanceFactory" {
+  +Create(ClientQualityType, AsilSpecificCfg, message_passing::IServerFactory&, message_passing::IClientFactory&, score::concurrency::Executor&) : std::unique_ptr<IMessagePassingServiceInstance>
+}
+
+class "lola::MessagePassingClientCache" {
+  -asil_level_ : const ClientQualityType
+  -client_factory_ : message_passing::IClientFactory&
+  -clients_ : std::unordered_map<pid_t, std::shared_ptr<message_passing::IClientConnection>>
+  -mutex_ : std::mutex
+  +MessagePassingClientCache(ClientQualityType, message_passing::IClientFactory&)
+  +GetCachedMessagePassingClient(pid_t target_node_id) : std::shared_ptr<message_passing::IClientConnection>
+  +GetMessagePassingClient(pid_t target_node_id) : std::shared_ptr<message_passing::IClientConnection>
+  +RemoveMessagePassingClient(pid_t target_node_id) : void
+  {static} +CreateMessagePassingName(ClientQualityType, pid_t node_id) : std::string
+}
+
+class "lola::MessagePassingService" {
+  -client_factory_ : ClientFactory
+  -local_event_thread_pool_ : score::concurrency::ThreadPool
+  -qm_ : std::unique_ptr<IMessagePassingServiceInstance>
+  -asil_b_ : std::unique_ptr<IMessagePassingServiceInstance>
+  -registration_guards_scope_ : safecpp::Scope<>
+  +MessagePassingService(const AsilSpecificCfg& config_asil_qm, const std::optional<AsilSpecificCfg>& config_asil_b, const std::unique_ptr<IMessagePassingServiceInstanceFactory>& factory)
+  +NotifyEvent(QualityType, ElementFqId): void
+  +RegisterEventNotification(QualityType, ElementFqId, std::weak_ptr<ScopedEventReceiveHandler>, pid_t): HandlerRegistrationNoType
+  +ReregisterEventNotification(QualityType, ElementFqId, pid_t): void
+  +UnregisterEventNotification(QualityType, ElementFqId, HandlerRegistrationNoType, pid_t): void
+  +RegisterEventNotificationExistenceChangedCallback(QualityType, ElementFqId, HandlerStatusChangeCallback): void
+  +UnregisterEventNotificationExistenceChangedCallback(QualityType, ElementFqId): void
   +NotifyOutdatedNodeId(QualityType asil_level, pid_t outdated_node_id, pid_t target_node_id) : void
+  +RegisterOnServiceMethodSubscribedHandler(QualityType, SkeletonInstanceIdentifier, ServiceMethodSubscribedHandler, AllowedConsumerUids): Result<MethodSubscriptionRegistrationGuard>
+  +RegisterOnServiceMethodUnsubscribedHandler(QualityType, SkeletonInstanceIdentifier, ServiceMethodUnsubscribedHandler): Result<MethodUnsubscriptionRegistrationGuard>
+  +RegisterMethodCallHandler(QualityType, ProxyMethodInstanceIdentifier, MethodCallHandler, uid_t): Result<MethodCallRegistrationGuard>
+  +SubscribeServiceMethod(QualityType, SkeletonInstanceIdentifier&, ProxyInstanceIdentifier&, pid_t): Result<void>
+  +UnsubscribeServiceMethod(QualityType, SkeletonInstanceIdentifier&, ProxyInstanceIdentifier&, pid_t): Result<void>
+  +CallMethod(QualityType, ProxyMethodInstanceIdentifier&, std::size_t, pid_t): Result<void>
 }
 
 class "lola::ElementFqId" {
-  +serviceId_ : uint16_t
-  +instanceId_ : uint16_t
-  +elementId_ : uint16_t
+  +using ServiceId LolaServiceId
+  +using ElementId LolaServiceElementId
+  +using InstanceId LolaServiceInstanceId::InstanceId
+  --
+  +service_id_ : std::uint16_t
+  +element_id_ : std::uint16_t
+  +instance_id_ : std::uint16_t
   +element_type_ : ServiceElementType
-  +ElementFqId(service_id : const std::uint16_t, event_id : const std::uint8_t, instance_id : const std::uint16_t)
+  +ElementFqId()
+  +ElementFqId(service_id : const ServiceId, element_id : const ElementId, instance_id : const InstanceId, element_type : const std::uint8_t)
+  +ElementFqId(service_id : const ServiceId, element_id : const ElementId, instance_id : const InstanceId, element_type : const ServiceElementType)
   +ToString() : std::string
   ..
   <u>Notes</u>
   Full qualified event ID within a LoLa process.\nAt least WITHIN one LoLa enabled process the\nnamespace provided by those types should be enough.
 }
 
-interface "mw::com::message_passing::ISender" {
-  {abstract} +Send(ShortMessage) : score::cpp::expected<Error>
-  {abstract} +Send(MediumMessage) : score::cpp::expected<Error>
-  {abstract} +HasNonBlockingGuarantee() : bool
+interface "message_passing::IClientConnection" {
+  {abstract} +Send(score::cpp::span<const std::uint8_t>) : score::cpp::expected_blank<os::Error>
+  {abstract} +SendWaitReply(score::cpp::span<const std::uint8_t>, score::cpp::span<std::uint8_t>) : score::cpp::expected<span<std::uint8_t>, os::Error>
+  {abstract} +SendWithCallback(score::cpp::span<const std::uint8_t>, ReplyCallback) : score::cpp::expected_blank<os::Error>
+  {abstract} +GetState() : State
+  {abstract} +Start(StateCallback, NotifyCallback) : void
+  {abstract} +Stop() : void
+  {abstract} +Restart() : void
   ..
   <u>Notes</u>
-  Opens an OS specific underlying communication\nchannel and transmits the specified message.
+  Client side of an asynchronous client-server IPC\nconnection. Opens an OS specific underlying\ncommunication channel and transmits binary messages.
 }
 
-interface "mw::com::message_passing::IReceiver" {
-  {abstract} +Register(MessageId, score::cpp::callback<void(ShortMessagePayload), pid_t>) : bool
-  {abstract} +Register(MessageId, score::cpp::callback<void(MediumMessagePayload, pid_t)>) : bool
-  {abstract} +StartListening() : score::cpp::expected<Error>
+interface "message_passing::IServer" {
+  {abstract} +StartListening(ConnectCallback, DisconnectCallback, MessageCallback, MessageCallback) : score::cpp::expected_blank<os::Error>
+  {abstract} +StopListening() : void
   ..
   <u>Notes</u>
-  Creates/Opens an OS specific underlying communication channel\nand receives specified messages.\nIf a handler has been registered for a specific message, it is invoked.
+  Server side of an asynchronous client-server IPC\nconnection. Creates/Opens an OS specific underlying\ncommunication channel and receives binary messages\nfrom (potentially multiple) client connections.
 }
 
-enum "lola::MessageIds" {
-  SUBSCRIBE_EVENT
-  SUBSCRIBE_EVENT_RESULT
-  UNSUBSCRIBE_EVENT
-  UNSUBSCRIBE_EVENT_ACK
-  REGISTER_EVENT_NOTIFIER
-  UNREGISTER_EVENT_NOTIFIER
-  NOTIFY_EVENT
-  DISCONNECT_EVENT
-}
-
-class "lola::SubscribeEventMessage" {
-  +element_fq_id_ : ElementFqId
-  +max_samples_: std::uint8_t
-  +call_seq_count_: CallSeqCounterType
-  +sender_node_id_: pid_t
-  +DeserializeToSubscribeEventMessage(const MediumMessage&, pid_t sender_node_id): SubscribeEventMessage
-  +SubscribeEventMsg(ElementFqId, uint8_t max_samples_, CallSeqCounterType, pid_t sender_node_id)
-  +SerializeToMediumMessage() : MediumMessage
-}
-
-class "lola::CallSeqCounterType" <<typedef>> {
-  using std::uint16_t
-}
-
-class "mw::com::message_passing::MediumMessage" {
-}
-
-class "lola::messaging::SubscribeEventResultMessage" {
-  +subscribeSuccess: bool
-  +call_seq_count_: CallSeqCounterType
-  +sender_node_id_: pid_t
-  +SerializeToShortMessage() : ShortMessage const
-  +DeserializeToSubscribeEventResultMessage(ShortMessage, pid_t sender_node_id): SubscribeEventResultMessage
-  +SubscribeEventResultMsg(bool subscribeSuccess, CallSeqCounterType, pid_t sender_node_id)
-}
-
-class "mw::com::message_passing::ShortMessage" {
-}
-
-class "lola::messaging::UnsubscribeEventMessage" {
-  +element_fq_id_ : ElementFqId
-  +max_samples_: std::uint8_t
-  +call_seq_count_: CallSeqCounterType
-  +sender_node_id_: pid_t
-  +DeserializeToUnsubscribeEventMessage(const MediumMessage&, pid_t sender_node_id): UnsubscribeEventMessage
-  +UnsubscribeEventMsg(ElementFqId, uint8_t max_samples_, CallSeqCounterType, pid_t sender_node_id)
-  +SerializeToMediumMessage() : MediumMessage
-}
-
-class "RegisterEventNotifierMsg" {
-}
-
-class "<u>score::com::impl::lola::Runtime</u>" {
-  +Runtime(config : const Configuration&)
+class "<u>mw::com::impl::lola::Runtime</u>" {
+  -configuration_ : const Configuration&
+  -long_running_threads_ : concurrency::Executor&
+  -lola_messaging_stop_source_ : score::cpp::stop_source
+  -lola_messaging_service_ : MessagePassingService
+  -service_discovery_client_ : ServiceDiscoveryClient
+  -tracing_runtime_ : std::unique_ptr<lola::tracing::TracingRuntime>
+  -rollback_data_ : RollbackSynchronization
+  -pid_ : pid_t
+  -application_id_ : std::uint32_t
+  +Runtime(config : const Configuration&, long_running_threads : concurrency::Executor&, lola_tracing_runtime : std::unique_ptr<lola::tracing::TracingRuntime>)
   +GetBindingType() : BindingType
   +GetLolaMessaging() : lola::IMessagePassingService&
   +HasAsilBSupport() : bool
-  +GetMessagePassingCfg(asil_level : const QualityType) : MessagePassingFacade::AsilSpecificCfg
+  +GetTracingRuntime() : impl::tracing::IBindingTracingRuntime*
+  +GetMessagePassingCfg(asil_level : const QualityType) : MessagePassingService::AsilSpecificCfg
+  +GetShmSizeCalculationMode() : ShmSizeCalculationMode
+  +GetServiceDiscoveryClient() : IServiceDiscoveryClient&
+  +GetRollbackSynchronization() : RollbackSynchronization&
+  +GetPid() : pid_t
+  +GetApplicationId() : GlobalConfiguration::ApplicationId
 }
 
-class "lola::messaging::NotifyEventHandler" {
-  +NotifyEventHandler(IMessagePassingControl&, bool asilBCapability, const score::cpp::stop_token&)
-  +RegisterMessageReceivedCallbacks(QualityType, message_passing::IReceiver&) : void
-  +NotifyEvent(QualityType, ElementFqId) : void
-  +RegisterEventNotification(QualityType, ElementFqId, IMessagePassingService::EventUpdateNotificationHandler, pid_t) : IMessagePassingService::HandlerRegistrationNoType
-  +RegisterEventNotification(ASILType, ElementFqId, std::weak_ptr<ScopedEventReceiveHandler>, pid_t): RegistrationHandle
-  +UnregisterEventNotification(QualityType, ElementFqId, IMessagePassingService::HandlerRegistrationNoType, pid_t) : void
-  +NotifyOutdatedNodeId(QualityType asil_level, pid_t outdated_node_id, pid_t target_node_id) : void
+interface "message_passing::IClientFactory" {
+  {abstract} +Create(ServiceProtocolConfig, ClientConfig) : score::cpp::pmr::unique_ptr<IClientConnection>
 }
 
-interface "lola::messaging::IMessagePassingControl" {
-  {abstract} +GetMessagePassingSender(QualityType, pid_t targetNodeId): message_passing::ISender*
-  {abstract} +CreateMessagePassingName(QualityType, pid_t): std::string
-  {abstract} +GetNodeIdentifier(): pid_t
+interface "message_passing::IServerFactory" {
+  {abstract} +Create(ServiceProtocolConfig, ServerConfig) : score::cpp::pmr::unique_ptr<IServer>
 }
 
-class "lola::messaging::MessagePassingControl" {
-  -senders_qm_ : std::unordered_map<pid_t, std::unique_ptr<ISender>>
-  -senders_asil_ : std::unordered_map<pid_t, std::unique_ptr<ISender>>
-  +MessagePassingCtrl(asil_b_capability : const bool, sender_queue_size : const std::int32_t)
-  +GetMessagePassingSender(QualityType, pid_t targetNodeId) : message_passing::ISender
-  +GetNodeIdentifier(): pid_t
-  +CreateMessagePassingName(QualityType, pid_t targetNodeId): std::string
+class "message_passing::ClientFactory" <<platform-specific alias>> {
+  +GetEngine() : Engine&
+  ..
+  <u>Notes</u>
+  Platform-specific concrete implementation, e.g.\nUnixDomainClientFactory or QnxDispatchClientFactory.
 }
 
-class "mw::com::message_passing::SenderFactory" {
-  {static} +Create(std::string identifier, score::cpp::stop_token const&, std::int32_t maxNumbersOfRetry = 5) : std::unique_ptr<ISender>
+class "message_passing::ServerFactory" <<platform-specific alias>> {
+  +ServerFactory(Engine&)
+  ..
+  <u>Notes</u>
+  Platform-specific concrete implementation, e.g.\nUnixDomainServerFactory or QnxDispatchServerFactory.
 }
 
-class "mw::com::message_passing::ReceiverFactory" {
-  {static} +Create(std::string identifier, concurrency::Executor&, std::vector<uid_t> allowedUserIds, std::int32_t maxNumberMessageInQueue = 10) : std::unique_ptr<IReceiver>
+together {
+    class "lola::MethodCallRegistrationGuard" <<typedef>> {
+      using utils::ScopeExit<safecpp::MoveOnlyScopedFunction<void()>>
+    }
+
+    class "lola::MethodCallRegistrationGuardFactory" {
+      {static} +Create(IMessagePassingService&, QualityType, ProxyMethodInstanceIdentifier, const safecpp::Scope<>&) : MethodCallRegistrationGuard
+    }
+
+    class "lola::MethodSubscriptionRegistrationGuard" <<typedef>> {
+      using utils::ScopeExit<safecpp::MoveOnlyScopedFunction<void()>>
+    }
+
+    class "lola::MethodSubscriptionRegistrationGuardFactory" {
+      {static} +Create(IMessagePassingService&, QualityType, SkeletonInstanceIdentifier, const safecpp::Scope<>&) : MethodSubscriptionRegistrationGuard
+    }
+
+    class "lola::MethodUnsubscriptionRegistrationGuard" <<typedef>> {
+      using utils::ScopeExit<safecpp::MoveOnlyScopedFunction<void()>>
+    }
+
+    class "lola::MethodUnsubscriptionRegistrationGuardFactory" {
+      {static} +Create(IMessagePassingService&, QualityType, SkeletonInstanceIdentifier, const safecpp::Scope<>&) : MethodUnsubscriptionRegistrationGuard
+    }
+
 }
 
-abstract "lola::messaging::HandlerBase" {
-  #mp_control_: IMessagePassingControl&
-  #asil_b_capability_: bool
-  +HandlerBase(mp_control : IMessagePassingControl&, asil_b_capability : const bool)
-  {abstract} +RegisterMessageReceivedCallbacks(QualityType, message_passing::IReceiver& receiver): void
-}
 
-class "NotifyEventMsg" {
-}
 
-class "lola::messaging::ElementFqIdMessage<id>" {
-  +element_fq_id_ : ElementFqId
-  +sender_node_id_: pid_t
-  +DeserializeToElementFqIdMessage(message_payload : ShortMessagePayload, sender_node_id : pid_t): ElementFqIdMessage
-  +ElementFqIdMessage(ElementFqId, pid_t sender_node_id)
-  +SerializeToShortMessage() : ShortMessage
-}
-
-class "lola::messaging::UnsubscribeEventAckMessage" {
-  +call_seq_count_: CallSeqCounterType
-  +sender_node_id_: pid_t
-  +DeserializeToUnsubscribeEventAckMessage(ShortMessage, pid_t sender_node_id): UnsubscribeEventAckMessage
-  +UnsubscribeEventAckMessage(CallSeqCounterType, pid_t sender_node_id)
-  +SerializeToShortMessage() : ShortMessage const
-}
-
-class "UnregisterEventNotifierMsg" {
-}
-
-class "DisconnectEventMessage" {
-}
 
 ' Relationships
-"mw::com::impl::lola::IRuntime" <|-- "<u>score::com::impl::lola::Runtime</u>"
+"lola::MethodCallRegistrationGuard" -[hidden]--> "lola::MethodSubscriptionRegistrationGuard"
+"lola::MethodSubscriptionRegistrationGuard" -[hidden]--> "lola::MethodUnsubscriptionRegistrationGuard"
+
+"mw::com::impl::lola::IRuntime" <|-- "<u>mw::com::impl::lola::Runtime</u>"
 "mw::com::impl::IBindingRuntime" <|-- "mw::com::impl::lola::IRuntime"
-"messaging::IMessagePassingService" ..> "lola::ASILType"
-"<u>score::com::impl::lola::Runtime</u>" *-- "lola::messaging::MessagePassingFacade" : 1
-"lola::messaging::MessagePassingFacade" *-- "MessageReceiveCtrl"
-"lola::messaging::MessagePassingFacade" --|> "messaging::IMessagePassingService"
-"lola::messaging::MessagePassingFacade" *-- "mw::com::message_passing::IReceiver" : 1..2
-"lola::messaging::MessagePassingFacade" o-- "lola::messaging::NotifyEventHandler"
-"lola::messaging::MessagePassingFacade" ..> "mw::com::message_passing::ReceiverFactory" : uses
-"lola::messaging::MessagePassingControl" --o "lola::messaging::MessagePassingFacade"
-"lola::messaging::IMessagePassingControl" <|-- "lola::messaging::MessagePassingControl"
-"lola::messaging::MessagePassingControl" ..> "mw::com::message_passing::SenderFactory" : uses
-"mw::com::message_passing::SenderFactory" ..> "mw::com::message_passing::ISender" : creates
-"mw::com::message_passing::ReceiverFactory" ..> "mw::com::message_passing::IReceiver" : creates
+"mw::com::impl::lola::IMessagePassingService" ..> "mw::com::impl::QualityType"
+"<u>mw::com::impl::lola::Runtime</u>" *-- "mw::com::impl::lola::IMessagePassingService" : 1
+"lola::MessagePassingService" --|> "mw::com::impl::lola::IMessagePassingService"
+"lola::MessagePassingService" *-- "lola::IMessagePassingServiceInstance" : qm_/asil_b_ 1..2
+"lola::MessagePassingService" ..> "lola::IMessagePassingServiceInstanceFactory" : uses
+"lola::MessagePassingService" *-- "message_passing::ClientFactory" : 1
+"lola::MessagePassingService" ..> "message_passing::ServerFactory" : creates
+"message_passing::ClientFactory" ..|> "message_passing::IClientFactory"
+"message_passing::ServerFactory" ..|> "message_passing::IServerFactory"
 
-"lola::messaging::NotifyEventHandler" --|> "lola::messaging::HandlerBase"
-"lola::messaging::NotifyEventHandler" ..> "lola::messaging::IMessagePassingControl" : uses
+"lola::IMessagePassingServiceInstanceFactory" <|.. "lola::MessagePassingServiceInstanceFactory"
+"lola::MessagePassingServiceInstanceFactory" ..> "lola::MessagePassingServiceInstance" : creates
+"lola::MessagePassingServiceInstanceFactory" ..> "message_passing::IServerFactory" : uses
+"lola::MessagePassingServiceInstanceFactory" ..> "message_passing::IClientFactory" : uses
 
-"lola::SubscribeEventMessage" .up.> "mw::com::message_passing::MediumMessage" : uses
-"lola::messaging::UnsubscribeEventMessage" .up.> "mw::com::message_passing::MediumMessage" : uses
-"lola::messaging::SubscribeEventResultMessage" .up.> "mw::com::message_passing::ShortMessage" : uses
-"lola::messaging::UnsubscribeEventAckMessage" .up.> "mw::com::message_passing::ShortMessage" : uses
+"lola::MessagePassingServiceInstance" ..|> "lola::IMessagePassingServiceInstance"
+"lola::MessagePassingServiceInstance" *-- "message_passing::IServer" : 1
+"lola::MessagePassingServiceInstance" *-- "lola::MessagePassingClientCache" : 1
+"lola::MessagePassingServiceInstance" ..> "lola::AsilSpecificCfg" : uses
+"lola::MessagePassingServiceInstance" ..> "lola::ClientQualityType" : uses
 
-"lola::messaging::ElementFqIdMessage<id>" <|.. "NotifyEventMsg" : <<bind>>\n<id -> kNotifyEvent>
-"lola::messaging::ElementFqIdMessage<id>" <|.. "RegisterEventNotifierMsg" : <<bind>>\n<id -> kRegisterEventNotifier>
-"lola::messaging::ElementFqIdMessage<id>" <|.. "UnregisterEventNotifierMsg" : <<bind>>\n<id -> kUnregisterEventNotifier>
-"lola::messaging::ElementFqIdMessage<id>" <|.. "DisconnectEventMessage" : <<bind>>\n<id -> kDisconnectEvent>
+"lola::MessagePassingClientCache" ..> "message_passing::IClientFactory" : uses
+"lola::MessagePassingClientCache" o-- "message_passing::IClientConnection" : caches 0..*
+"lola::MessagePassingClientCache" ..> "lola::ClientQualityType" : uses
+
+"message_passing::IClientFactory" ..> "message_passing::IClientConnection" : creates
+"message_passing::IServerFactory" ..> "message_passing::IServer" : creates
+
+"mw::com::impl::lola::IMessagePassingService" ..> "lola::MethodCallRegistrationGuard" : returns
+"mw::com::impl::lola::IMessagePassingService" ..> "lola::MethodSubscriptionRegistrationGuard" : returns
+"mw::com::impl::lola::IMessagePassingService" ..> "lola::MethodUnsubscriptionRegistrationGuard" : returns
+"lola::MethodCallRegistrationGuardFactory" ..> "lola::MethodCallRegistrationGuard" : creates
+"lola::MethodCallRegistrationGuardFactory" ..> "mw::com::impl::lola::IMessagePassingService" : uses
+"lola::MethodSubscriptionRegistrationGuardFactory" ..> "lola::MethodSubscriptionRegistrationGuard" : creates
+"lola::MethodSubscriptionRegistrationGuardFactory" ..> "mw::com::impl::lola::IMessagePassingService" : uses
+"lola::MethodUnsubscriptionRegistrationGuardFactory" ..> "lola::MethodUnsubscriptionRegistrationGuard" : creates
+"lola::MethodUnsubscriptionRegistrationGuardFactory" ..> "mw::com::impl::lola::IMessagePassingService" : uses
 
 @enduml
