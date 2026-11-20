@@ -293,7 +293,7 @@ def save_history(path: pathlib.Path, history: list[dict]) -> None:
 # ── HTML rendering ────────────────────────────────────────────────────────────
 
 
-def render_dashboard(cov_summary, cov_files, clang_tidy, clippy, codeql, history, timestamp) -> str:
+def render_dashboard(cov_summary, cov_files, clang_tidy, clippy, codeql, history, timestamp, cov_qnx=None) -> str:
     env = Environment(loader=FileSystemLoader(str(_TEMPLATE_DIR)), autoescape=True)
     env.globals["cov_colour"] = _cov_colour
     env.globals["delta"] = _delta_badge
@@ -304,6 +304,7 @@ def render_dashboard(cov_summary, cov_files, clang_tidy, clippy, codeql, history
         timestamp=timestamp,
         cov=cov_summary or None,
         cov_files=cov_files,
+        cov_qnx=cov_qnx or None,
         clang_tidy=clang_tidy,
         clippy=clippy,
         codeql=codeql,
@@ -315,7 +316,7 @@ def render_dashboard(cov_summary, cov_files, clang_tidy, clippy, codeql, history
 # ── GitHub Actions step summary ───────────────────────────────────────────────
 
 
-def write_github_summary(cov_summary, clang_tidy, clippy, codeql, history, summary_path) -> None:
+def write_github_summary(cov_summary, clang_tidy, clippy, codeql, history, summary_path, cov_qnx=None) -> None:
     lines = ["## Quality Dashboard\n"]
 
     lines.append("### Coverage\n")
@@ -329,6 +330,18 @@ def write_github_summary(cov_summary, clang_tidy, clippy, codeql, history, summa
         ]
     else:
         lines.append("Coverage data not available.\n")
+
+    lines.append("\n### Coverage (QNX)\n")
+    if cov_qnx:
+        lines += [
+            "| Metric | Value |",
+            "|--------|-------|",
+            f"| Lines     | {cov_qnx['line_pct']:.1f}% ({cov_qnx['lines']}) |",
+            f"| Functions | {cov_qnx['func_pct']:.1f}% ({cov_qnx['funcs']}) |",
+            f"| Branches  | {cov_qnx['branch_pct']:.1f}% ({cov_qnx['branches']}) |",
+        ]
+    else:
+        lines.append("QNX coverage data not available.\n")
 
     lines.append("\n### Clang-Tidy\n")
     if clang_tidy:
@@ -382,6 +395,9 @@ def write_github_summary(cov_summary, clang_tidy, clippy, codeql, history, summa
             ("Line coverage %", "line_cov", True),
             ("Function coverage %", "func_cov", True),
             ("Branch coverage %", "branch_cov", True),
+            ("QNX line coverage %", "qnx_line_cov", True),
+            ("QNX function coverage %", "qnx_func_cov", True),
+            ("QNX branch coverage %", "qnx_branch_cov", True),
             ("Clang-Tidy errors", "ct_errors", False),
             ("Clang-Tidy warnings", "ct_warnings", False),
             ("Clippy errors", "clippy_errors", False),
@@ -413,6 +429,12 @@ def main() -> int:
         "--lcov",
         default="",
         help="Path to LCOV .dat coverage data file",
+    )
+    parser.add_argument(
+        "--lcov-qnx",
+        default="",
+        dest="lcov_qnx",
+        help="Path to QNX LCOV .dat coverage data file (optional)",
     )
     parser.add_argument(
         "--clang-tidy",
@@ -458,6 +480,8 @@ def main() -> int:
     html_path.parent.mkdir(parents=True, exist_ok=True)
 
     cov_summary, cov_files = load_lcov(lcov_path)
+    lcov_qnx_path = pathlib.Path(args.lcov_qnx) if args.lcov_qnx else pathlib.Path("")
+    cov_qnx, _ = load_lcov(lcov_qnx_path)
     clang_tidy = load_linter_findings(ct_path)
     clippy = load_linter_findings(clippy_path)
     codeql = load_codeql_sarif(codeql_path)
@@ -470,6 +494,9 @@ def main() -> int:
             "line_cov": cov_summary.get("line_pct") if cov_summary else None,
             "func_cov": cov_summary.get("func_pct") if cov_summary else None,
             "branch_cov": cov_summary.get("branch_pct") if cov_summary else None,
+            "qnx_line_cov": cov_qnx.get("line_pct") if cov_qnx else None,
+            "qnx_func_cov": cov_qnx.get("func_pct") if cov_qnx else None,
+            "qnx_branch_cov": cov_qnx.get("branch_pct") if cov_qnx else None,
             "ct_errors": clang_tidy["errors"] if clang_tidy else None,
             "ct_warnings": clang_tidy["warnings"] if clang_tidy else None,
             "clippy_errors": clippy["errors"] if clippy else None,
@@ -485,7 +512,7 @@ def main() -> int:
         save_history(hist_path, history)
 
     html_path.write_text(
-        render_dashboard(cov_summary, cov_files, clang_tidy, clippy, codeql, history, timestamp),
+        render_dashboard(cov_summary, cov_files, clang_tidy, clippy, codeql, history, timestamp, cov_qnx),
         encoding="utf-8",
     )
 
@@ -496,6 +523,12 @@ def main() -> int:
         print(f"  Branches:  {cov_summary['branch_pct']:.1f}% ({cov_summary['branches']})")
     else:
         print("  Coverage:  N/A")
+    if cov_qnx:
+        print(
+            f"  QNX Lines: {cov_qnx['line_pct']:.1f}%  Functions: {cov_qnx['func_pct']:.1f}%  Branches: {cov_qnx['branch_pct']:.1f}%"
+        )
+    else:
+        print("  QNX Coverage: N/A")
     if clang_tidy:
         print(f"  Clang-Tidy errors: {clang_tidy['errors']}  warnings: {clang_tidy['warnings']}")
     else:
@@ -519,6 +552,7 @@ def main() -> int:
             codeql,
             history,
             os.environ.get("GITHUB_STEP_SUMMARY", "/dev/null"),
+            cov_qnx,
         )
 
     return 0
