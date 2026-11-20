@@ -226,7 +226,7 @@ namespace score::memory::shared {
 
     class "PolymorphicOffsetPtrAllocator<T>" as PolymorphicOffsetPtrAllocator {
       + PolymorphicOffsetPtrAllocator()
-      + PolymorphicOffsetPtrAllocator(resource : ManagedMemoryResource)
+      + PolymorphicOffsetPtrAllocator(resource : ManagedMemoryResource) : PolymorphicOffsetPtrAllocator<T>
       + PolymorphicOffsetPtrAllocator<U>(other : PolymorphicOffsetPtrAllocator<U>)
       + allocate(size : UnsignedInteger) : OffsetPtr<T>
       + deallocate(pointer : OffsetPtr<T>, size : UnsignedInteger)

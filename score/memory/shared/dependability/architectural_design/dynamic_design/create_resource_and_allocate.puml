@@ -1,0 +1,39 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor "User" as Process
+participant "factory_resources" as factory_resources
+participant "allocator_pointer" as allocator_pointer
+participant "pointer_arithmetic" as pointer_arithmetic
+
+activate Process
+
+Process -> factory_resources : SharedMemoryFactory::Create(path, initializer, reservedSize, permissions, preferTypedMemory)
+activate factory_resources
+Process <-- factory_resources : return : Result<ManagedMemoryResource>
+deactivate factory_resources
+
+Process -> allocator_pointer : PolymorphicOffsetPtrAllocator::PolymorphicOffsetPtrAllocator(ManagedMemoryResource)
+activate allocator_pointer
+Process <-- allocator_pointer : return : PolymorphicOffsetPtrAllocator<T>
+deactivate allocator_pointer
+
+Process -> allocator_pointer : PolymorphicOffsetPtrAllocator::allocate(size)
+activate allocator_pointer
+allocator_pointer -> factory_resources : ManagedMemoryResource::allocate(size, alignment)
+activate factory_resources
+factory_resources -> pointer_arithmetic : PointerArithmeticUtil::AddOffsetToPointer(baseAddress, alreadyAllocatedSize)
+activate pointer_arithmetic
+factory_resources <-- pointer_arithmetic : return : Address
+deactivate pointer_arithmetic
+factory_resources -> pointer_arithmetic : PointerArithmeticUtil::SubtractPointersBytes(new_address_aligned, allocation_start_address)
+activate pointer_arithmetic
+factory_resources <-- pointer_arithmetic : return : Address
+deactivate pointer_arithmetic
+allocator_pointer <-- factory_resources : return : Address
+Process <-- allocator_pointer : return : OffsetPtr<T>
+deactivate allocator_pointer
+
+@enduml

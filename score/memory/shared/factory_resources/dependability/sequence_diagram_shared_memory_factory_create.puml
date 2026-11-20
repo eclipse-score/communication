@@ -1,0 +1,80 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml shared_memory_factory_create_seq
+' Sequence diagram for creation of a shared memory object
+
+actor User as User
+participant "SharedMemoryFactory::singleton" as Factory
+participant "SharedMemoryResource::class" as ResourceStatic
+participant "SharedMemoryResource::foo" as Resource
+participant "OS_SharedMemoryObject::foo" as FooObject
+participant MemoryResourceRegistryP1 as Registry
+
+
+activate User
+User -> Factory: Create("/foo", initialize_callback, user_space, permissions)
+activate Factory
+Factory -> Factory: Check if SharedMemoryResource "foo" was already opened in process
+
+alt SharedMemoryResource "foo" does not exist
+    Factory -> ResourceStatic: Create("/foo", initialize_callback, user_space, permissions, acl_factory)
+    activate ResourceStatic
+    create Resource
+    ResourceStatic -> Resource : Create("/foo", acl_factory)
+    ResourceStatic -> Resource: CreateImpl(user_space, initialize_callback, permissions)
+    activate Resource
+    Resource -> Resource: CreateLockFileForNamedSharedMemory()
+    Resource -> Resource: GetNeededManagementSpace()
+    create FooObject
+    Resource -> FooObject: shm_open("/foo", kCreate | kReadWrite | kExclusive)
+
+    Resource -> Resource: GetOwnerUid()
+
+    opt permissions == WorldWritable -> compensate umask
+        Resource -> FooObject: fchmod(file_descriptor_, readWriteAccessForEveryBody)
+    end
+
+    Resource -> FooObject: ApplyPermissions (apply ACL settings)
+    Resource -> FooObject: ftruncate(file_descriptor_, needed_management_space + user_space)
+
+    Resource -> FooObject: mmap()
+
+    Resource -> Resource: initializeControlBlock()
+
+    Resource -> User: initialize_callback(shared_from_this())
+    User --> Resource
+
+    Resource -> Registry: insert_resource(uniqueID, this)
+    activate Registry
+    Registry --> Resource
+    deactivate Registry
+
+    Resource --> ResourceStatic
+    deactivate Resource
+
+    ResourceStatic --> Factory : shared_ptr<SharedMemoryResource::foo>
+    deactivate ResourceStatic
+
+    Factory -> Factory: InsertResourceIntoMap
+    Factory --> User: SharedMemoryResource
+
+else SharedMemoryResource "foo" already exists
+    Factory --> User: nullptr
+    deactivate Factory
+end
+
+deactivate Resource
+
+deactivate User
+@enduml

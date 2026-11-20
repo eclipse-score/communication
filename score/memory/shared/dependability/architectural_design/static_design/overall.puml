@@ -12,7 +12,7 @@
 ' *******************************************************************************
 @startuml overall
 title "memory_shared_static_architecture"
-skinparam nodesep 120
+skinparam nodesep 180
 skinparam ranksep 200
 
 ' Public API provided/required by unit "factory_resources" (see
@@ -48,26 +48,41 @@ component dependable_element_memory_shared <<SEooC>>  {
       pointer_arithmetic -r- PointerArithmeticUtil
 
       component factory_resources <<unit>>
-      factory_resources -u- ManagedMemoryResource
-      factory_resources -u- ISharedMemoryResource
-      factory_resources -u- AccessControl
-      factory_resources -u- ISharedMemoryFactory
-      factory_resources -u- SharedMemoryFactory
-      factory_resources -u- MemoryResourceProxy
-      factory_resources -u- UserPermissions
-      factory_resources -u- PermissionMap
+      factory_resources )-u- ManagedMemoryResource
+      factory_resources )-u- ISharedMemoryResource
+      factory_resources )-u- AccessControl
+      factory_resources )-u- ISharedMemoryFactory
+      factory_resources )-u- SharedMemoryFactory
+      factory_resources )-d- MemoryResourceProxy
+      factory_resources )-u- UserPermissions
+      factory_resources )-u- PermissionMap
       factory_resources -d-( TypedMemory
       factory_resources -d-( InitializeCallback
       factory_resources -d-( FileDescriptor
       factory_resources -r-( PointerArithmeticUtil
       PointerArithmeticUtil -[hidden]r- TypedMemory
 
+      ' Internal API: provided by "factory_resources", used only by "allocator_pointer" within
+      ' memory_shared (see score/memory/shared/BUILD, target "memory_resource_registry"); not
+      ' part of the public API (not in public_api.puml), so it is nested here rather than
+      ' declared top-level and is not connected to the SEooC boundary below.
+      interface MemoryResourceRegistry
+      factory_resources )-r- MemoryResourceRegistry
+
+      ' Internal API: provided by "factory_resources", used only by "allocator_pointer" within
+      ' memory_shared (see score/memory/shared/BUILD, target "memory_region_bounds"); not part
+      ' of the public API (not in public_api.puml), so it is nested here rather than declared
+      ' top-level and is not connected to the SEooC boundary below.
+      interface MemoryRegionBounds
+      factory_resources )-r- MemoryRegionBounds
+
       component allocator_pointer <<unit>>
       allocator_pointer -u- OffsetPtr
       allocator_pointer -u- PolymorphicOffsetPtrAllocator
       allocator_pointer -r-( PointerArithmeticUtil
-      allocator_pointer -u-( MemoryResourceProxy
-      allocator_pointer -u-( ManagedMemoryResource
+      allocator_pointer -r-( MemoryResourceProxy
+      allocator_pointer -r-( MemoryResourceRegistry
+      allocator_pointer -r-( MemoryRegionBounds
   }
 }
 

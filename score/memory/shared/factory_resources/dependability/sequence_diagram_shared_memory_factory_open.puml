@@ -1,0 +1,84 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml memory_allocation_workflow_seq
+' Sequence diagram for memory allocation workflow
+
+actor User as User
+participant "SharedMemoryFactory::singleton" as Factory
+participant "SharedMemoryResource::class" as ResourceStatic
+participant "SharedMemoryResource::foo" as Resource
+participant "OS_SharedMemoryObject::foo" as FooObject
+participant MemoryResourceRegistryP1 as Registry
+
+
+activate User
+User -> Factory: Open("/foo", read_write, allowedProviders)
+activate Factory
+Factory -> Factory: Check if SharedMemoryResource "foo" was already opened
+
+
+alt Open shared memory object
+    Factory -> ResourceStatic: Open("/foo", read_write)
+    activate ResourceStatic
+    create Resource
+    ResourceStatic -> Resource : Create("/foo")
+    ResourceStatic -> Resource: OpenImpl(read_write)
+    activate Resource
+    Resource -> Resource: acquireLockFile()
+    Resource -> FooObject: shm_open(open)
+
+    Resource -> Resource: GetOwnerUid()
+
+    Resource -> FooObject: mmap()
+
+    Resource -> Registry: insert_resource(uniqueID, this)
+    activate Registry
+    Registry --> Resource
+
+
+    Resource -> FooObject: read(shared state)
+    activate FooObject
+    FooObject --> Resource
+    deactivate FooObject
+
+    Resource -> Resource: reinterprete(shared state)
+    Resource --> ResourceStatic
+    deactivate Resource
+
+    ResourceStatic --> Factory : shared_ptr<SharedMemoryResource::foo>
+    deactivate ResourceStatic
+
+    Factory -> Factory: InsertResourceIntoMap
+
+end
+
+
+deactivate Registry
+
+
+alt AllowedProviderCheck
+    Factory-> Resource: getowneruid()
+    activate Resource
+    Resource --> Factory
+    deactivate Resource
+
+end
+deactivate Resource
+
+Factory --> User: User
+
+
+deactivate Factory
+deactivate User
+@enduml

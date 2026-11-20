@@ -1,0 +1,70 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+@startuml internal_api
+skinparam linetype ortho
+
+' This diagram shows the internal API of the memory_shared component, i.e. the set of classes,
+' interfaces and supporting types that are used internally between the units:
+' - factory_resources
+' - allocator_pointer
+' - pointer_arithmetic
+' and which are not publically exposed. Operations are expressed in abstract UML
+' operation syntax (OMG UML 2.5.1), not as a 1:1 copy of the C++ signatures: smart-pointer wrappers
+' are dropped (an operation "returns" an instance of the interface/class), std::optional is
+' expressed via multiplicity "[0..1]", collections via "[0..*]", and primitive C++ types are mapped
+' to their conceptual UML counterpart (std::string -> String, std::size_t / std::uint64_t ->
+' UnsignedInteger, bool -> Boolean, void* -> Pointer).
+'
+' Operations that can report an error at runtime (C++ return type score::cpp::expected<T,
+' score::os::Error> / score::cpp::expected_blank<score::os::Error>) are shown wrapped in the
+' abstracted datatype Result<T> (or the bare Result for the "blank"/no-success-value case) rather
+' than being abstracted away, since the ability to report an error is safety-relevant and needed
+' for the per-operation failure-mode analysis. Result<T>/Result does not model the concrete error
+' type; it merely flags "this operation can fail and reports that failure to the caller" - see the
+' note attached to Result.
+'
+
+namespace score::memory::shared {
+
+  class "Result<T>" as Result <<datatype>>
+
+  package "internal API of unit factory_resources" {
+
+    class MemoryResourceRegistry <<singleton>>{
+      + at() : ManageMemoryResource [0..1]
+      + insert_resource(MemoryResourceIdentifier, ManagedMemoryResource) : boolean
+      + remove_resource(MemoryResourceIdentifier) : void
+      + clear() : void
+      + GetBoundsFromAddress(Address) : MemoryRegionBounds [0..1]
+      + GetBoundsFromAddressAsInteger(integer) : MemoryRegionBounds [0..1]
+      + GetBoundsFromIdentifier(MemoryResourceIdentifier) : Result<MemoryRegionBounds>
+    }
+
+    class MemoryRegionBounds {
+      + MemoryRegionBounds(start_address : Address, end_address : Address)
+      + Set(start_address : Address, end_address : Address) : void
+      + Reset() : void
+      + GetStartAddress() : Address
+      + GetEndAddress() : Address
+    }
+
+
+  }
+
+
+
+}
+
+
+
+@enduml
