@@ -10,13 +10,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/someip/router_control_protocol/router_control_protocol.h"
+#include "score/someip/routing_control_protocol/routing_control_protocol.h"
 
-#include "score/someip/router_control_protocol/wire_format.h"
+#include "score/someip/routing_control_protocol/wire_format.h"
 
 #include <algorithm>
 
-namespace score::someip::router_control_protocol
+namespace score::someip::routing_control_protocol
 {
 namespace
 {
@@ -223,4 +223,4 @@ score::cpp::expected<Message, ErrorCode> Decode(const score::cpp::span<const std
     return message;
 }
 
-}  // namespace score::someip::router_control_protocol
+}  // namespace score::someip::routing_control_protocol

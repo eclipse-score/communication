@@ -14,11 +14,11 @@
 @startuml routing_command_handler_class
 
 abstract class IRoutingCommandHandler {
-    + {abstract} AddRemoteService(command : const router_control_protocol::Message&) noexcept : score::someip::routing_module::CommandResult
+    + {abstract} AddRemoteService(command : const routing_control_protocol::Message&) noexcept : score::someip::routing_module::CommandResult
     + {abstract} RemoveRemoteService(service_instance : ServiceInstance) noexcept : score::someip::routing_module::CommandResult
     + {abstract} AddLocalSubscription(service_instance : ServiceInstance, event : uint16_t) noexcept : score::someip::routing_module::CommandResult
     + {abstract} RemoveLocalSubscription(service_instance : ServiceInstance, event : uint16_t) noexcept : score::someip::routing_module::CommandResult
-    + {abstract} AddLocalService(command : const router_control_protocol::Message&) noexcept : score::someip::routing_module::CommandResult
+    + {abstract} AddLocalService(command : const routing_control_protocol::Message&) noexcept : score::someip::routing_module::CommandResult
     + {abstract} RemoveLocalService(service_instance : ServiceInstance) noexcept : score::someip::routing_module::CommandResult
     + {abstract} AddRemoteSubscription(service_instance : ServiceInstance, event : uint16_t, subscriber : Endpoint) noexcept : score::someip::routing_module::CommandResult
     + {abstract} RemoveRemoteSubscription(service_instance : ServiceInstance, event : uint16_t, subscriber : Endpoint) noexcept : score::someip::routing_module::CommandResult

@@ -19,7 +19,7 @@ cc_library(
     name = "i_routing_command_handler",
     hdrs = ["i_routing_command_handler.h"],
     visibility = ["//score/someip/routing_module:__subpackages__"],
-    deps = ["//score/someip/router_control_protocol"],
+    deps = ["//score/someip/routing_control_protocol"],
 )
 
 cc_library(
@@ -41,7 +41,7 @@ cc_library(
     deps = [
         ":i_routing_command_handler",
         "//score/message_passing",
-        "//score/someip/router_control_protocol",
+        "//score/someip/routing_control_protocol",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/os:errno",

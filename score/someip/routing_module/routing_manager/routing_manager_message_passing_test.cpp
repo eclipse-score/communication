@@ -32,8 +32,8 @@ namespace score::someip::routing_module
 namespace
 {
 
-using router_control_protocol::Message;
-using router_control_protocol::Opcode;
+using routing_control_protocol::Message;
+using routing_control_protocol::Opcode;
 using score::message_passing::IClientConnection;
 using ::testing::Field;
 using ::testing::InSequence;
@@ -84,8 +84,8 @@ bool WaitUntilReady(const IClientConnection& client)
 
 bool SendCommand(IClientConnection& client, const Message& command)
 {
-    std::array<std::uint8_t, router_control_protocol::kMaxMessageSize> buffer{};
-    const auto size = router_control_protocol::Encode(command, buffer);
+    std::array<std::uint8_t, routing_control_protocol::kMaxMessageSize> buffer{};
+    const auto size = routing_control_protocol::Encode(command, buffer);
     return size.has_value() &&
            client.Send(score::cpp::span<const std::uint8_t>{buffer.data(), size.value()}).has_value();
 }
@@ -97,7 +97,7 @@ Message AddRemoteService(const std::uint16_t service)
     message.service = service;
     message.instance = 0x0001U;
     message.local_port = 30501U;
-    message.remote_ip = router_control_protocol::Ipv4Address{10U, 0U, 3U, 2U};
+    message.remote_ip = routing_control_protocol::Ipv4Address{10U, 0U, 3U, 2U};
     message.remote_port = 30502U;
     return message;
 }
@@ -127,7 +127,7 @@ TEST(RoutingManagerMessagePassingTest, AppliesCommandsReceivedOverMessagePassing
 
     score::message_passing::ClientFactory client_factory{};
     const score::message_passing::ServiceProtocolConfig protocol{
-        router_control_protocol::kServiceIdentifier, router_control_protocol::kMaxMessageSize, 0U, 0U};
+        routing_control_protocol::kServiceIdentifier, routing_control_protocol::kMaxMessageSize, 0U, 0U};
     auto client = client_factory.Create(
         protocol, score::message_passing::IClientFactory::ClientConfig{0U, 8U, false, false, true});
     ASSERT_NE(client, nullptr);

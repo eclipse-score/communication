@@ -23,11 +23,11 @@ namespace score::someip::routing_module
 class RoutingCommandHandlerMock : public IRoutingCommandHandler
 {
   public:
-    MOCK_METHOD(CommandResult, AddRemoteService, (const router_control_protocol::Message&), (noexcept, override));
+    MOCK_METHOD(CommandResult, AddRemoteService, (const routing_control_protocol::Message&), (noexcept, override));
     MOCK_METHOD(CommandResult, RemoveRemoteService, (ServiceInstance), (noexcept, override));
     MOCK_METHOD(CommandResult, AddLocalSubscription, (ServiceInstance, std::uint16_t), (noexcept, override));
     MOCK_METHOD(CommandResult, RemoveLocalSubscription, (ServiceInstance, std::uint16_t), (noexcept, override));
-    MOCK_METHOD(CommandResult, AddLocalService, (const router_control_protocol::Message&), (noexcept, override));
+    MOCK_METHOD(CommandResult, AddLocalService, (const routing_control_protocol::Message&), (noexcept, override));
     MOCK_METHOD(CommandResult, RemoveLocalService, (ServiceInstance), (noexcept, override));
     MOCK_METHOD(CommandResult, AddRemoteSubscription, (ServiceInstance, std::uint16_t, Endpoint), (noexcept, override));
     MOCK_METHOD(CommandResult,

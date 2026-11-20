@@ -22,7 +22,7 @@ feature_requirements(
     target_compatible_with = ["@platforms//os:linux"],
     visibility = [
         "//score/someip/dependability:__subpackages__",
-        "//score/someip/router_control_protocol:__subpackages__",
+        "//score/someip/routing_control_protocol:__subpackages__",
         "//score/someip/routing_module:__subpackages__",
     ],
     deps = ["//score/dependability/assumed_system:assumed_system_requirements"],

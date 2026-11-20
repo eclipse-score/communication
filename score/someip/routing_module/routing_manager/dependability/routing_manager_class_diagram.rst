@@ -16,7 +16,7 @@ Routing Manager Class Design
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``RoutingManager`` receives the routing commands of the SD daemon via ``score::message_passing`` (service
-identifier ``someip_routing_module``, see the router control protocol) and applies them to the data path
+identifier ``someip_routing_module``, see the routing control protocol) and applies them to the data path
 through the ``IRoutingCommandHandler`` interface, which ``EventHandler`` implements. The interface decouples the
 control path from the data path, so that ``RoutingManager`` is tested without network or LoLa.
 

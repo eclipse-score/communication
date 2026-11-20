@@ -18,7 +18,7 @@ dependable_element(
     components = [
         "//score/someip/sd_daemon:sd_daemon",
         "//score/someip/routing_module:routing_module",
-        "//score/someip/router_control_protocol:router_control",
+        "//score/someip/routing_control_protocol:routing_control",
         "//score/someip:sd_control_protocol",
     ],
     dependability_analysis = [],

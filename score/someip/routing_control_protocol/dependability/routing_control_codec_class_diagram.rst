@@ -12,16 +12,16 @@
    # SPDX-License-Identifier: Apache-2.0
    # *******************************************************************************
 
-Router Control Codec Class Design
+Routing Control Codec Class Design
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``RouterControlCodec`` encodes and decodes the routing commands that the SD daemon sends to the routing
+``RoutingControlCodec`` encodes and decodes the routing commands that the SD daemon sends to the routing
 module over ``score::message_passing`` (service identifier ``someip_routing_module``). Commands flow in this
 direction only; the protocol has no replies.
 
-.. uml:: router_control_codec_class_diagram.puml
+.. uml:: routing_control_codec_class_diagram.puml
    :align: center
-   :alt: Router Control Codec Class Diagram
+   :alt: Routing Control Codec Class Diagram
    :width: 100%
 
 ``Message`` additionally holds ``remote_ip`` (``Ipv4Address``, four bytes in network byte order) and
@@ -30,7 +30,7 @@ direction only; the protocol has no replies.
 Functions
 """""""""
 
-The public API (``router_control_protocol.h``) consists of ``Encode`` and ``Decode``. Both are ``noexcept``,
+The public API (``routing_control_protocol.h``) consists of ``Encode`` and ``Decode``. Both are ``noexcept``,
 ``[[nodiscard]]`` and allocate no memory; ``Message`` holds at most ``kMaxEvents`` (64) event and field
 identifiers each. The wire layout constants live in the internal header ``wire_format.h``.
 

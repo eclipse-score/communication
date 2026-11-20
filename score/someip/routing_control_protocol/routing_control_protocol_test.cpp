@@ -10,9 +10,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/someip/router_control_protocol/router_control_protocol.h"
+#include "score/someip/routing_control_protocol/routing_control_protocol.h"
 
-#include "score/someip/router_control_protocol/wire_format.h"
+#include "score/someip/routing_control_protocol/wire_format.h"
 
 #include <gtest/gtest.h>
 
@@ -24,7 +24,7 @@
 #include <utility>
 #include <vector>
 
-namespace score::someip::router_control_protocol
+namespace score::someip::routing_control_protocol
 {
 namespace
 {
@@ -140,11 +140,11 @@ score::cpp::expected<Message, ErrorCode> DecodeVector(const std::vector<std::uin
     return Decode(score::cpp::span<const std::uint8_t>{data.data(), data.size()});
 }
 
-TEST(RouterControlProtocolTest, EveryRoutingCommandRoundTrips)
+TEST(RoutingControlProtocolTest, EveryRoutingCommandRoundTrips)
 {
     Trace(
-        "RouterControlProtocol.CR_RouterControlProtocol_RoutingCommands,"
-        "RouterControlProtocol.CR_RouterControlProtocol_Lossless",
+        "RoutingControlProtocol.CR_RoutingControlProtocol_RoutingCommands,"
+        "RoutingControlProtocol.CR_RoutingControlProtocol_Lossless",
         "a valid routing command for each opcode",
         "the command is encoded and the result is decoded",
         "the decoded command equals the encoded one");
@@ -158,9 +158,9 @@ TEST(RouterControlProtocolTest, EveryRoutingCommandRoundTrips)
     }
 }
 
-TEST(RouterControlProtocolTest, AddRemoteServiceIsEncodedInWireLayout)
+TEST(RoutingControlProtocolTest, AddRemoteServiceIsEncodedInWireLayout)
 {
-    Trace("RouterControlProtocol.CR_RouterControlProtocol_WireFormat",
+    Trace("RoutingControlProtocol.CR_RoutingControlProtocol_WireFormat",
           "an add-remote-service command with two events",
           "the command is encoded",
           "the bytes match the little-endian wire layout starting with version and opcode");
@@ -172,9 +172,9 @@ TEST(RouterControlProtocolTest, AddRemoteServiceIsEncodedInWireLayout)
     EXPECT_EQ(EncodeToVector(AddRemoteService()), expected);
 }
 
-TEST(RouterControlProtocolTest, LocalServiceIsEncodedInWireLayout)
+TEST(RoutingControlProtocolTest, LocalServiceIsEncodedInWireLayout)
 {
-    Trace("RouterControlProtocol.CR_RouterControlProtocol_WireFormat",
+    Trace("RoutingControlProtocol.CR_RoutingControlProtocol_WireFormat",
           "an add-local-service command with three events, one of them a field",
           "the command is encoded",
           "major version, counts and identifiers are at their wire layout positions");
@@ -189,9 +189,9 @@ TEST(RouterControlProtocolTest, LocalServiceIsEncodedInWireLayout)
     EXPECT_EQ(bytes[kHeaderSize + 7U], 0x80U);
 }
 
-TEST(RouterControlProtocolTest, DecodeRejectsOtherVersion)
+TEST(RoutingControlProtocolTest, DecodeRejectsOtherVersion)
 {
-    Trace("RouterControlProtocol.CR_RouterControlProtocol_Versioning",
+    Trace("RoutingControlProtocol.CR_RoutingControlProtocol_Versioning",
           "an encoded routing command whose version byte differs from the supported version",
           "the command is decoded",
           "decoding fails with an unsupported-version error");
@@ -209,11 +209,11 @@ TEST(RouterControlProtocolTest, DecodeRejectsOtherVersion)
     }
 }
 
-TEST(RouterControlProtocolTest, MaximumCommandFitsMaximumMessageSize)
+TEST(RoutingControlProtocolTest, MaximumCommandFitsMaximumMessageSize)
 {
     Trace(
-        "RouterControlProtocol.CR_RouterControlProtocol_BoundedSize,"
-        "RouterControlProtocol.CR_RouterControlProtocol_Lossless",
+        "RoutingControlProtocol.CR_RoutingControlProtocol_BoundedSize,"
+        "RoutingControlProtocol.CR_RoutingControlProtocol_Lossless",
         "an add-local-service command with 64 events that are all fields",
         "the command is encoded and decoded",
         "the encoded size equals the maximum message size and the command round-trips");
@@ -235,11 +235,11 @@ TEST(RouterControlProtocolTest, MaximumCommandFitsMaximumMessageSize)
     ExpectEqual(decoded.value(), message);
 }
 
-TEST(RouterControlProtocolTest, DecodeRejectsTooManyIdentifiers)
+TEST(RoutingControlProtocolTest, DecodeRejectsTooManyIdentifiers)
 {
     Trace(
-        "RouterControlProtocol.CR_RouterControlProtocol_BoundedSize,"
-        "RouterControlProtocol.CR_RouterControlProtocol_RejectMalformed",
+        "RoutingControlProtocol.CR_RoutingControlProtocol_BoundedSize,"
+        "RoutingControlProtocol.CR_RoutingControlProtocol_RejectMalformed",
         "an encoded routing command announcing 65 event or 65 field identifiers",
         "the command is decoded",
         "decoding fails with a too-many-events error");
@@ -257,9 +257,9 @@ TEST(RouterControlProtocolTest, DecodeRejectsTooManyIdentifiers)
     }
 }
 
-TEST(RouterControlProtocolTest, DecodeRejectsWrongSize)
+TEST(RoutingControlProtocolTest, DecodeRejectsWrongSize)
 {
-    Trace("RouterControlProtocol.CR_RouterControlProtocol_RejectMalformed",
+    Trace("RoutingControlProtocol.CR_RoutingControlProtocol_RejectMalformed",
           "an encoded add-remote-service command that is empty, shorter than the header, one byte short or one byte "
           "too long",
           "the command is decoded",
@@ -282,9 +282,9 @@ TEST(RouterControlProtocolTest, DecodeRejectsWrongSize)
     }
 }
 
-TEST(RouterControlProtocolTest, DecodeRejectsUnknownOpcode)
+TEST(RoutingControlProtocolTest, DecodeRejectsUnknownOpcode)
 {
-    Trace("RouterControlProtocol.CR_RouterControlProtocol_RejectMalformed",
+    Trace("RoutingControlProtocol.CR_RoutingControlProtocol_RejectMalformed",
           "an encoded routing command with opcode 0x00, 0x0A or 0x81",
           "the command is decoded",
           "decoding fails with an unknown-opcode error");
@@ -301,9 +301,9 @@ TEST(RouterControlProtocolTest, DecodeRejectsUnknownOpcode)
     }
 }
 
-TEST(RouterControlProtocolTest, DecodeRejectsNonZeroReservedByte)
+TEST(RoutingControlProtocolTest, DecodeRejectsNonZeroReservedByte)
 {
-    Trace("RouterControlProtocol.CR_RouterControlProtocol_RejectMalformed",
+    Trace("RoutingControlProtocol.CR_RoutingControlProtocol_RejectMalformed",
           "an encoded routing command with a non-zero reserved byte",
           "the command is decoded",
           "decoding fails with a reserved-not-zero error");
@@ -317,9 +317,9 @@ TEST(RouterControlProtocolTest, DecodeRejectsNonZeroReservedByte)
     EXPECT_EQ(decoded.error(), ErrorCode::kReservedNotZero);
 }
 
-TEST(RouterControlProtocolTest, EncodeRejectsParameterNotUsedByOpcode)
+TEST(RoutingControlProtocolTest, EncodeRejectsParameterNotUsedByOpcode)
 {
-    Trace("RouterControlProtocol.CR_RouterControlProtocol_CommandConsistency",
+    Trace("RoutingControlProtocol.CR_RoutingControlProtocol_CommandConsistency",
           "routing commands that each set one parameter their opcode does not use",
           "the commands are encoded",
           "encoding fails with an unexpected-parameter error and the buffer is unchanged");
@@ -358,9 +358,9 @@ TEST(RouterControlProtocolTest, EncodeRejectsParameterNotUsedByOpcode)
     }
 }
 
-TEST(RouterControlProtocolTest, DecodeRejectsParameterNotUsedByOpcode)
+TEST(RoutingControlProtocolTest, DecodeRejectsParameterNotUsedByOpcode)
 {
-    Trace("RouterControlProtocol.CR_RouterControlProtocol_CommandConsistency",
+    Trace("RoutingControlProtocol.CR_RoutingControlProtocol_CommandConsistency",
           "an encoded remove-remote-service command with a non-zero local port",
           "the command is decoded",
           "decoding fails with an unexpected-parameter error");
@@ -374,9 +374,9 @@ TEST(RouterControlProtocolTest, DecodeRejectsParameterNotUsedByOpcode)
     EXPECT_EQ(decoded.error(), ErrorCode::kUnexpectedParameter);
 }
 
-TEST(RouterControlProtocolTest, FieldMustBeOneOfTheEvents)
+TEST(RoutingControlProtocolTest, FieldMustBeOneOfTheEvents)
 {
-    Trace("RouterControlProtocol.CR_RouterControlProtocol_CommandConsistency",
+    Trace("RoutingControlProtocol.CR_RoutingControlProtocol_CommandConsistency",
           "an add-local-service command whose field identifier is not one of its events",
           "the command is encoded, and its valid encoding is altered and decoded",
           "both fail with a field-not-in-events error");
@@ -397,9 +397,9 @@ TEST(RouterControlProtocolTest, FieldMustBeOneOfTheEvents)
     EXPECT_EQ(decoded.error(), ErrorCode::kFieldNotInEvents);
 }
 
-TEST(RouterControlProtocolTest, EncodeRejectsUnknownOpcode)
+TEST(RoutingControlProtocolTest, EncodeRejectsUnknownOpcode)
 {
-    Trace("RouterControlProtocol.CR_RouterControlProtocol_RoutingCommands",
+    Trace("RoutingControlProtocol.CR_RoutingControlProtocol_RoutingCommands",
           "a routing command with an opcode value outside the defined opcodes",
           "the command is encoded",
           "encoding fails with an unknown-opcode error");
@@ -414,9 +414,9 @@ TEST(RouterControlProtocolTest, EncodeRejectsUnknownOpcode)
     EXPECT_EQ(size.error(), ErrorCode::kUnknownOpcode);
 }
 
-TEST(RouterControlProtocolTest, EncodeRejectsTooSmallBuffer)
+TEST(RoutingControlProtocolTest, EncodeRejectsTooSmallBuffer)
 {
-    Trace("RouterControlProtocol.CR_RouterControlProtocol_BufferBounds",
+    Trace("RoutingControlProtocol.CR_RoutingControlProtocol_BufferBounds",
           "an add-remote-service command and a buffer one byte smaller than its encoding",
           "the command is encoded into the buffer",
           "encoding fails with a buffer-too-small error and the buffer is unchanged");
@@ -431,9 +431,9 @@ TEST(RouterControlProtocolTest, EncodeRejectsTooSmallBuffer)
     EXPECT_EQ(buffer, std::vector<std::uint8_t>(required - 1U, 0xAAU));
 }
 
-TEST(RouterControlProtocolTest, EncodeFitsExactBuffer)
+TEST(RoutingControlProtocolTest, EncodeFitsExactBuffer)
 {
-    Trace("RouterControlProtocol.CR_RouterControlProtocol_BufferBounds",
+    Trace("RoutingControlProtocol.CR_RoutingControlProtocol_BufferBounds",
           "an add-remote-service command and a buffer exactly as large as its encoding",
           "the command is encoded into the buffer",
           "encoding succeeds and reports the buffer size");
@@ -456,9 +456,9 @@ void ExpectRejectedOrCanonical(const std::vector<std::uint8_t>& data)
     }
 }
 
-TEST(RouterControlProtocolTest, DecodeHandlesEverySingleByteCorruption)
+TEST(RoutingControlProtocolTest, DecodeHandlesEverySingleByteCorruption)
 {
-    Trace("RouterControlProtocol.CR_RouterControlProtocol_RobustDecoding",
+    Trace("RoutingControlProtocol.CR_RoutingControlProtocol_RobustDecoding",
           "every valid routing command with any single byte replaced by any value",
           "each corrupted command is decoded",
           "decoding returns an error or a command that encodes back to the same bytes");
@@ -478,9 +478,9 @@ TEST(RouterControlProtocolTest, DecodeHandlesEverySingleByteCorruption)
     }
 }
 
-TEST(RouterControlProtocolTest, DecodeHandlesRandomInput)
+TEST(RoutingControlProtocolTest, DecodeHandlesRandomInput)
 {
-    Trace("RouterControlProtocol.CR_RouterControlProtocol_RobustDecoding",
+    Trace("RoutingControlProtocol.CR_RoutingControlProtocol_RobustDecoding",
           "random byte sequences of 0 to kMaxMessageSize + 2 bytes, half of them with a valid version, opcode and "
           "reserved byte",
           "each sequence is decoded",
@@ -508,4 +508,4 @@ TEST(RouterControlProtocolTest, DecodeHandlesRandomInput)
 }
 
 }  // namespace
-}  // namespace score::someip::router_control_protocol
+}  // namespace score::someip::routing_control_protocol

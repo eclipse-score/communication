@@ -22,9 +22,9 @@ cc_library(
 )
 
 cc_library(
-    name = "router_control_protocol",
-    srcs = ["router_control_protocol.cpp"],
-    hdrs = ["router_control_protocol.h"],
+    name = "routing_control_protocol",
+    srcs = ["routing_control_protocol.cpp"],
+    hdrs = ["routing_control_protocol.h"],
     visibility = ["//score/someip:__subpackages__"],
     deps = [
         ":wire_format",
@@ -33,34 +33,34 @@ cc_library(
 )
 
 cc_unit_test(
-    name = "router_control_protocol_test",
-    srcs = ["router_control_protocol_test.cpp"],
+    name = "routing_control_protocol_test",
+    srcs = ["routing_control_protocol_test.cpp"],
     visibility = ["//score/someip:__subpackages__"],
     deps = [
-        ":router_control_protocol",
+        ":routing_control_protocol",
         ":wire_format",
     ],
 )
 
 unit(
-    name = "router_control_codec",
-    design_name = "RouterControlCodec",
+    name = "routing_control_codec",
+    design_name = "RoutingControlCodec",
     maturity = "development",
-    scope = ["//score/someip/router_control_protocol:__subpackages__"],
+    scope = ["//score/someip/routing_control_protocol:__subpackages__"],
     target_compatible_with = ["@platforms//os:linux"],
     test_specs = [],
-    tests = [":router_control_protocol_test_linux"],
-    unit_design = ["//score/someip/router_control_protocol/dependability:router_control_codec_unit_design"],
+    tests = [":routing_control_protocol_test_linux"],
+    unit_design = ["//score/someip/routing_control_protocol/dependability:routing_control_codec_unit_design"],
     visibility = ["//score/someip/dependability:__subpackages__"],
-    implementation = [":router_control_protocol"],
+    implementation = [":routing_control_protocol"],
 )
 
 component(
-    name = "router_control",
-    components = [":router_control_codec"],
-    design_name = "RouterControlProtocol",
+    name = "routing_control",
+    components = [":routing_control_codec"],
+    design_name = "RoutingControlProtocol",
     requirements = [
-        "//score/someip/router_control_protocol/requirements/component_requirements:component_requirements",
+        "//score/someip/routing_control_protocol/requirements/component_requirements:component_requirements",
         "//score/someip/dependability/requirements/feature_requirements:feature_requirements_routing_module",
     ],
     tags = ["manual"],

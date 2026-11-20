@@ -13,10 +13,10 @@
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit_design")
 
 unit_design(
-    name = "router_control_codec_unit_design",
+    name = "routing_control_codec_unit_design",
     static = [
-        "router_control_codec_class_diagram.puml",
-        "router_control_codec_class_diagram.rst",
+        "routing_control_codec_class_diagram.puml",
+        "routing_control_codec_class_diagram.rst",
     ],
-    visibility = ["//score/someip/router_control_protocol:__pkg__"],
+    visibility = ["//score/someip/routing_control_protocol:__pkg__"],
 )

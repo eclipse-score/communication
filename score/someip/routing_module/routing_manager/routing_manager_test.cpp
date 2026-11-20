@@ -32,8 +32,8 @@ namespace score::someip::routing_module
 namespace
 {
 
-using router_control_protocol::Message;
-using router_control_protocol::Opcode;
+using routing_control_protocol::Message;
+using routing_control_protocol::Opcode;
 using score::message_passing::ClientIdentity;
 using score::message_passing::ConnectCallback;
 using score::message_passing::DisconnectCallback;
@@ -63,7 +63,7 @@ auto IsServiceInstance(const std::uint16_t service, const std::uint16_t instance
     return AllOf(Field(&ServiceInstance::service, service), Field(&ServiceInstance::instance, instance));
 }
 
-auto IsEndpoint(const router_control_protocol::Ipv4Address address, const std::uint16_t port)
+auto IsEndpoint(const routing_control_protocol::Ipv4Address address, const std::uint16_t port)
 {
     return AllOf(Field(&Endpoint::address, address), Field(&Endpoint::port, port));
 }
@@ -87,7 +87,7 @@ Message WithEvent(const Opcode opcode, const std::uint16_t service, const std::u
 Message RemoteSubscription(const Opcode opcode)
 {
     Message message = WithEvent(opcode, 0x3000U, 0x8003U);
-    message.remote_ip = router_control_protocol::Ipv4Address{192U, 168U, 0U, 7U};
+    message.remote_ip = routing_control_protocol::Ipv4Address{192U, 168U, 0U, 7U};
     message.remote_port = 30721U;
     return message;
 }
@@ -96,9 +96,9 @@ Message AddRemoteService(const std::uint16_t service)
 {
     Message message = WithServiceInstance(Opcode::kAddRemoteService, service);
     message.local_port = 30501U;
-    message.remote_ip = router_control_protocol::Ipv4Address{10U, 0U, 3U, 2U};
+    message.remote_ip = routing_control_protocol::Ipv4Address{10U, 0U, 3U, 2U};
     message.remote_port = 30502U;
-    message.events = router_control_protocol::EventIds{0x8001U};
+    message.events = routing_control_protocol::EventIds{0x8001U};
     return message;
 }
 
@@ -107,8 +107,8 @@ Message AddLocalService()
     Message message = WithServiceInstance(Opcode::kAddLocalService, 0x2000U);
     message.local_port = 30720U;
     message.major = 1U;
-    message.events = router_control_protocol::EventIds{0x8002U};
-    message.fields = router_control_protocol::EventIds{0x8002U};
+    message.events = routing_control_protocol::EventIds{0x8002U};
+    message.fields = routing_control_protocol::EventIds{0x8002U};
     return message;
 }
 
@@ -151,8 +151,8 @@ class RoutingManagerTest : public ::testing::Test
 
     void Send(const Message& message)
     {
-        std::array<std::uint8_t, router_control_protocol::kMaxMessageSize> buffer{};
-        const auto size = router_control_protocol::Encode(message, buffer);
+        std::array<std::uint8_t, routing_control_protocol::kMaxMessageSize> buffer{};
+        const auto size = routing_control_protocol::Encode(message, buffer);
         ASSERT_TRUE(size.has_value());
         EXPECT_TRUE(command_(daemon_, score::cpp::span<const std::uint8_t>{buffer.data(), size.value()}).has_value());
     }
@@ -185,13 +185,13 @@ TEST_F(RoutingManagerTest, StartsRoutingCommandServer)
     Trace("RoutingModule.CR_RoutingModule_ControlInterface",
           "a routing manager",
           "it is started",
-          "it listens on the router control protocol service identifier for routing commands");
+          "it listens on the routing control protocol service identifier for routing commands");
 
     EXPECT_CALL(server_factory_,
                 Create(AllOf(Field(&score::message_passing::ServiceProtocolConfig::identifier,
-                                   router_control_protocol::kServiceIdentifier),
+                                   routing_control_protocol::kServiceIdentifier),
                              Field(&score::message_passing::ServiceProtocolConfig::max_send_size,
-                                   router_control_protocol::kMaxMessageSize)),
+                                   routing_control_protocol::kMaxMessageSize)),
                        _));
     EXPECT_CALL(*server_mock_, StartListening(_, _, _, _));
 
@@ -234,7 +234,7 @@ TEST_F(RoutingManagerTest, DispatchesEveryRoutingCommandToTheHandler)
           "it sends one routing command of each opcode and the pending commands are processed",
           "each command is passed with its parameters to the matching routing command handler operation");
     StartAndConnectDaemon();
-    const router_control_protocol::Ipv4Address subscriber{192U, 168U, 0U, 7U};
+    const routing_control_protocol::Ipv4Address subscriber{192U, 168U, 0U, 7U};
 
     {
         InSequence sequence{};
@@ -246,7 +246,7 @@ TEST_F(RoutingManagerTest, DispatchesEveryRoutingCommandToTheHandler)
             .WillOnce(Return(CommandResult::kApplied));
         EXPECT_CALL(handler_, RemoveLocalSubscription(IsServiceInstance(0x1000U, 0x0001U), 0x8001U))
             .WillOnce(Return(CommandResult::kApplied));
-        EXPECT_CALL(handler_, AddLocalService(Field(&Message::fields, router_control_protocol::EventIds{0x8002U})))
+        EXPECT_CALL(handler_, AddLocalService(Field(&Message::fields, routing_control_protocol::EventIds{0x8002U})))
             .WillOnce(Return(CommandResult::kApplied));
         EXPECT_CALL(handler_, RemoveLocalService(IsServiceInstance(0x2000U, 0x0001U)))
             .WillOnce(Return(CommandResult::kApplied));
@@ -480,8 +480,8 @@ TEST_F(RoutingManagerTest, RejectsCommandsThatRequestAReply)
           "it sends a valid routing command as a request with reply",
           "the request is rejected and no command is applied");
     StartAndConnectDaemon();
-    std::array<std::uint8_t, router_control_protocol::kMaxMessageSize> buffer{};
-    const auto size = router_control_protocol::Encode(AddRemoteService(0x1000U), buffer);
+    std::array<std::uint8_t, routing_control_protocol::kMaxMessageSize> buffer{};
+    const auto size = routing_control_protocol::Encode(AddRemoteService(0x1000U), buffer);
     ASSERT_TRUE(size.has_value());
 
     const auto result = request_(daemon_, score::cpp::span<const std::uint8_t>{buffer.data(), size.value()});

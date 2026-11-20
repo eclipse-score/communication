@@ -20,7 +20,7 @@ component_requirements(
     name = "component_requirements",
     srcs = ["component_requirements.trlc"],
     target_compatible_with = ["@platforms//os:linux"],
-    visibility = ["//score/someip/router_control_protocol:__pkg__"],
+    visibility = ["//score/someip/routing_control_protocol:__pkg__"],
     deps = [
         "//score/someip/dependability/requirements/feature_requirements:feature_requirements_routing_module",
     ],

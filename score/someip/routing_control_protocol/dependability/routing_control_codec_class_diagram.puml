@@ -11,9 +11,9 @@
 ' SPDX-License-Identifier: Apache-2.0
 ' *******************************************************************************
 
-@startuml router_control_codec_class_diagram
+@startuml routing_control_codec_class_diagram
 
-namespace score.someip.router_control_protocol {
+namespace score.someip.routing_control_protocol {
 
     enum Opcode {
         kAddRemoteService = 1
@@ -40,7 +40,7 @@ namespace score.someip.router_control_protocol {
 
     ' remote_ip, events and fields are omitted: score_tooling cannot match template-typed members yet.
     struct Message {
-        + opcode : score::someip::router_control_protocol::Opcode
+        + opcode : score::someip::routing_control_protocol::Opcode
         + service : uint16_t
         + instance : uint16_t
         + event : uint16_t

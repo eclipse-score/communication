@@ -13,7 +13,7 @@
 #ifndef SCORE_SOMEIP_ROUTING_MODULE_ROUTING_MANAGER_I_ROUTING_COMMAND_HANDLER_H
 #define SCORE_SOMEIP_ROUTING_MODULE_ROUTING_MANAGER_I_ROUTING_COMMAND_HANDLER_H
 
-#include "score/someip/router_control_protocol/router_control_protocol.h"
+#include "score/someip/routing_control_protocol/routing_control_protocol.h"
 
 #include <cstdint>
 
@@ -35,7 +35,7 @@ struct ServiceInstance
 
 struct Endpoint
 {
-    router_control_protocol::Ipv4Address address;
+    routing_control_protocol::Ipv4Address address;
     std::uint16_t port;
 };
 
@@ -50,11 +50,11 @@ class IRoutingCommandHandler
     IRoutingCommandHandler& operator=(const IRoutingCommandHandler&) = delete;
     IRoutingCommandHandler& operator=(IRoutingCommandHandler&&) = delete;
 
-    virtual CommandResult AddRemoteService(const router_control_protocol::Message& command) noexcept = 0;
+    virtual CommandResult AddRemoteService(const routing_control_protocol::Message& command) noexcept = 0;
     virtual CommandResult RemoveRemoteService(ServiceInstance service_instance) noexcept = 0;
     virtual CommandResult AddLocalSubscription(ServiceInstance service_instance, std::uint16_t event) noexcept = 0;
     virtual CommandResult RemoveLocalSubscription(ServiceInstance service_instance, std::uint16_t event) noexcept = 0;
-    virtual CommandResult AddLocalService(const router_control_protocol::Message& command) noexcept = 0;
+    virtual CommandResult AddLocalService(const routing_control_protocol::Message& command) noexcept = 0;
     virtual CommandResult RemoveLocalService(ServiceInstance service_instance) noexcept = 0;
     virtual CommandResult AddRemoteSubscription(ServiceInstance service_instance,
                                                 std::uint16_t event,

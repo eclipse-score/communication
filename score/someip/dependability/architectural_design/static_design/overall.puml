@@ -15,15 +15,15 @@
 package someip <<SEooC>> {
 
   component SDControlProtocol <<unit>>
-  component RouterControlProtocol <<component>> {
-    component RouterControlCodec <<unit>>
+  component RoutingControlProtocol <<component>> {
+    component RoutingControlCodec <<unit>>
   }
 
 
   interface sd_protocol
-  interface router_control_protocol
+  interface routing_control_protocol
 
-  RouterControlProtocol -u- router_control_protocol
+  RoutingControlProtocol -u- routing_control_protocol
   SDControlProtocol -d- sd_protocol
 
   component SDDaemon <<component>> {
@@ -39,7 +39,7 @@ package someip <<SEooC>> {
     SDFacade --( ServiceRouterApi
     ServiceManager -l-( ServiceRouterApi
     SDOnlyRouter -r- ServiceRouterApi
-    SDOnlyRouter --( router_control_protocol
+    SDOnlyRouter --( routing_control_protocol
     SDFacade -l-( sd_protocol
   }
 
@@ -51,7 +51,7 @@ package someip <<SEooC>> {
 
     EventHandler -u- RoutingCommands
     RoutingManager --( RoutingCommands
-    RoutingManager --( router_control_protocol
+    RoutingManager --( routing_control_protocol
   }
 }
 

@@ -10,10 +10,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_SOMEIP_ROUTER_CONTROL_PROTOCOL_ROUTER_CONTROL_PROTOCOL_H
-#define SCORE_SOMEIP_ROUTER_CONTROL_PROTOCOL_ROUTER_CONTROL_PROTOCOL_H
+#ifndef SCORE_SOMEIP_ROUTING_CONTROL_PROTOCOL_ROUTER_CONTROL_PROTOCOL_H
+#define SCORE_SOMEIP_ROUTING_CONTROL_PROTOCOL_ROUTER_CONTROL_PROTOCOL_H
 
-#include "score/someip/router_control_protocol/wire_format.h"
+#include "score/someip/routing_control_protocol/wire_format.h"
 
 #include <score/expected.hpp>
 #include <score/inplace_vector.hpp>
@@ -27,7 +27,7 @@
 /// Routing commands sent by the SD daemon to the routing module over score::message_passing (one direction,
 /// no replies). The SD daemon runs SOME/IP-SD; the routing module only moves notifications, driven by these
 /// commands.
-namespace score::someip::router_control_protocol
+namespace score::someip::routing_control_protocol
 {
 
 /// score::message_passing service identifier of the routing module.
@@ -105,6 +105,6 @@ struct Message
 
 [[nodiscard]] score::cpp::expected<Message, ErrorCode> Decode(score::cpp::span<const std::uint8_t> data) noexcept;
 
-}  // namespace score::someip::router_control_protocol
+}  // namespace score::someip::routing_control_protocol
 
-#endif  // SCORE_SOMEIP_ROUTER_CONTROL_PROTOCOL_ROUTER_CONTROL_PROTOCOL_H
+#endif  // SCORE_SOMEIP_ROUTING_CONTROL_PROTOCOL_ROUTER_CONTROL_PROTOCOL_H

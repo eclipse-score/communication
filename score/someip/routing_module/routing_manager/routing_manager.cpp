@@ -23,14 +23,14 @@ namespace score::someip::routing_module
 namespace
 {
 
-using router_control_protocol::Message;
-using router_control_protocol::Opcode;
+using routing_control_protocol::Message;
+using routing_control_protocol::Opcode;
 
 constexpr auto kLogContext{"SRTM"};
 constexpr std::uintptr_t kAcceptedConnection{1U};
 
-const score::message_passing::ServiceProtocolConfig kProtocolConfig{router_control_protocol::kServiceIdentifier,
-                                                                    router_control_protocol::kMaxMessageSize,
+const score::message_passing::ServiceProtocolConfig kProtocolConfig{routing_control_protocol::kServiceIdentifier,
+                                                                    routing_control_protocol::kMaxMessageSize,
                                                                     0U,
                                                                     0U};
 // Two preallocated connections, so that a second client can be rejected without allocating.
@@ -159,7 +159,7 @@ void RoutingManager::OnDisconnect(score::message_passing::IServerConnection& con
 score::cpp::expected_blank<score::os::Error> RoutingManager::OnCommand(
     const score::cpp::span<const std::uint8_t> data) noexcept
 {
-    const auto command = router_control_protocol::Decode(data);
+    const auto command = routing_control_protocol::Decode(data);
     if (!command.has_value())
     {
         score::mw::log::LogWarn(kLogContext)

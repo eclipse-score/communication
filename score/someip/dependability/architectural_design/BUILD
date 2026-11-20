@@ -15,6 +15,9 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "architectural_d
 architectural_design(
     name = "software_architectural_design",
     dynamic = [],
+    internal_api = [],
+    maturity = "development",
+    public_api = [],
     static = [
         "static_design/overall.puml",
     ],

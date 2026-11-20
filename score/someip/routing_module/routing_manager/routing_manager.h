@@ -13,7 +13,7 @@
 #ifndef SCORE_SOMEIP_ROUTING_MODULE_ROUTING_MANAGER_ROUTING_MANAGER_H
 #define SCORE_SOMEIP_ROUTING_MODULE_ROUTING_MANAGER_ROUTING_MANAGER_H
 
-#include "score/someip/router_control_protocol/router_control_protocol.h"
+#include "score/someip/routing_control_protocol/routing_control_protocol.h"
 #include "score/someip/routing_module/routing_manager/i_routing_command_handler.h"
 
 #include "score/message_passing/i_server.h"
@@ -72,16 +72,16 @@ class RoutingManager final
             kRemoveAll,
         };
         Kind kind;
-        router_control_protocol::Message command;
+        routing_control_protocol::Message command;
     };
 
     score::cpp::expected<score::message_passing::UserData, score::os::Error> OnConnect(
         score::message_passing::IServerConnection& connection) noexcept;
     void OnDisconnect(score::message_passing::IServerConnection& connection) noexcept;
     score::cpp::expected_blank<score::os::Error> OnCommand(score::cpp::span<const std::uint8_t> data) noexcept;
-    void Enqueue(const router_control_protocol::Message& command) noexcept;
+    void Enqueue(const routing_control_protocol::Message& command) noexcept;
     std::optional<QueueEntry> PopEntry() noexcept;
-    void Dispatch(const router_control_protocol::Message& command) noexcept;
+    void Dispatch(const routing_control_protocol::Message& command) noexcept;
 
     score::message_passing::IServerFactory& server_factory_;
     IRoutingCommandHandler& handler_;
