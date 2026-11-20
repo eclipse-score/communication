@@ -75,8 +75,10 @@
   needs to be detected at runtime.
 
   **Where this lives in the codebase:** `GetE2EResult()`/`SetE2EResult()` are
-  an extension to the existing `SamplePtr<T>` type (`ProxyEventBase` is the
-  only friend allowed to populate the result). No new top-level component is
+  an extension to the existing `SamplePtr<T>` type. The binding's own
+  `data_integrity`/`sequence` (`RawCheckOutcome`) enter through the `SamplePtr`
+  constructor; `ProxyEventBase` is the only friend allowed to complete the
+  result with `historical_health` and `summary`. No new top-level component is
   introduced — a developer receiving samples through a proxy event already has
   access to this API without any extra wiring.
 
@@ -88,9 +90,9 @@
   If `data_integrity == kError`, the sequence check is bypassed (the counter
   of a corrupted sample is not trustworthy) and the data-integrity error is
   fed directly into historical-health tracking. `sequence` is then reported
-  as the existing `kDisabled` value, so
-  `E2EResult` always carries a concrete value. The failed sample is still
-  flagged through `data_integrity == kError` and `summary == kError`.
+  as `kSkipped`, which keeps a bypassed check distinguishable from a disabled
+  one (`kDisabled`). `kSkipped` is not a failure on its own; the failed sample
+  is flagged through `data_integrity == kError` and `summary == kError`.
 
   ## 3. Design rationale
 
@@ -144,7 +146,7 @@
   | Case | `data_integrity` | `sequence` | `historical_health` | `summary` | Action |
   |---|---|---|---|---|---|
   | Both checks + historical health enabled | computed | computed | computed | `kOk` / `kError` | Accept only if `summary == kOk` |
-  | Both checks + historical health enabled, `data_integrity == kError` (bypass) | `kError` | `kDisabled` (skipped) | computed (error fed from `data_integrity` only) | `kError` | Reject — sequence check skipped |
+  | Both checks + historical health enabled, `data_integrity == kError` (bypass) | `kError` | `kSkipped` | computed (error fed from `data_integrity` only) | `kError` | Reject — sequence check skipped |
   | Both checks enabled, historical health disabled | computed | computed | `kDisabled` | `kOkWithDisabledChecks` / `kError` | Decide from `data_integrity`/`sequence` |
   | Only data-integrity + historical health enabled | computed | `kDisabled` | computed (from `data_integrity` only) | `kOkWithDisabledChecks` / `kError` | Decide from `data_integrity`/`historical_health` |
   | Only data-integrity enabled | computed | `kDisabled` | `kDisabled` | `kOkWithDisabledChecks` / `kError` | Decide from `data_integrity` alone |
@@ -184,28 +186,42 @@ without one, there never was a header. `summary == kDisabled` never means
 
   ### 5.1 Enums and types
 
+  The types live in `score::mw::com::impl::e2e` and are exposed to applications
+  through `score/mw/com/types.h`:
+
   ```cpp
-  enum class DataIntegrityStatus {
+  namespace score::mw::com {
+  using E2EResult = impl::e2e::E2EResult;
+  using DataIntegrityStatus = impl::e2e::DataIntegrityStatus;
+  using SequenceStatus = impl::e2e::SequenceStatus;
+  using HistoricalHealthStatus = impl::e2e::HistoricalHealthStatus;
+  using E2ESummary = impl::e2e::Summary;
+  }
+  ```
+
+  ```cpp
+  enum class DataIntegrityStatus : std::uint8_t {
     kDisabled, // Check was disabled
     kOk,       // Metadata (incl. Data ID) and CRC match expectations — data is trustworthy
     kError,    // Metadata (incl. Data ID) or CRC differ from expectations — data is corrupted or forged
 };
 
-enum class SequenceStatus {
-    kDisabled,                 // Check was disabled (also reported when skipped after data_integrity == kError)
+enum class SequenceStatus : std::uint8_t {
+    kDisabled,                 // Check was disabled
     kOk,                       // In order, no loss (or this is the first sample)
     kOkGapWithinThreshold,     // Some loss, but within the allowed gap
     kErrorRepeated,            // Same counter as the previous sample
     kErrorGapExceedsThreshold, // Gap too large — too much loss/reorder
+    kSkipped,                  // Not evaluated because data_integrity == kError; not a failure on its own
 };
 
-enum class HistoricalHealthStatus {
+enum class HistoricalHealthStatus : std::uint8_t {
     kDisabled, // Check was disabled
-    kOk,       // Error counter at/below recovery threshold — channel healthy
-    kError,    // Error counter at/above error threshold — channel unhealthy (hysteresis applies)
+    kOk,       // Initial state; re-entered once recovery_threshold passes are in the window
+    kError,    // error_threshold failures are in the window — channel unhealthy (hysteresis applies)
 };
 
-enum class Summary {
+enum class Summary : std::uint8_t {  // public name: E2ESummary
     kDisabled,             // Nothing was checked (E2E fully disabled)
     kOk,                   // All checks were enabled and all of them passed
     kOkWithDisabledChecks, // Enabled checks passed, but some checks were off
@@ -213,10 +229,10 @@ enum class Summary {
 };
 
 struct E2EResult {
-      DataIntegrityStatus data_integrity;
-      SequenceStatus sequence;
-      HistoricalHealthStatus historical_health;
-      Summary summary;
+      DataIntegrityStatus data_integrity{DataIntegrityStatus::kDisabled};
+      SequenceStatus sequence{SequenceStatus::kDisabled};
+      HistoricalHealthStatus historical_health{HistoricalHealthStatus::kDisabled};
+      Summary summary{Summary::kDisabled};
   };
   ```
 
@@ -226,15 +242,20 @@ struct E2EResult {
   template <typename T>
   class SamplePtr final {
     public:
+    // The binding's RawCheckOutcome is stored at construction (via ProxyEventBinding::MakeSamplePtr()).
+    template <typename BindingSamplePtrType>
+    SamplePtr(BindingSamplePtrType&& binding_sample_ptr,
+              SampleReferenceGuard reference_guard,
+              const RawCheckOutcome raw_check_outcome = {});
     // Returns the E2E result attached to this sample; always has a concrete value.
-    E2EResult GetE2EResult() const { return e2e_result_; }
+    [[nodiscard]] E2EResult GetE2EResult() const { return e2e_result_; }
   private:
-    // Only ProxyEventBase (binding-independent E2E manager) may attach the result.
+    // Only ProxyEventBase (binding-independent E2E manager) may complete the result.
     friend class ProxyEventBase;
     // Called internally once the E2E check has run for this sample.
     void SetE2EResult(E2EResult result) { e2e_result_ = result; }
     // Stores the E2E result for this sample.
-    E2EResult e2e_result_;
+    E2EResult e2e_result_{};
 };
 ```
 
@@ -247,16 +268,16 @@ struct E2EResult {
 
   ```cpp
   void SimpleConsumer::OnSampleReceived(SamplePtr sample) {
-      const auto e2e_result = sample->GetE2EResult();  // always present
+      const auto e2e_result = sample.GetE2EResult();  // always present
 
-    if (e2e_result.summary == Summary::kDisabled) {
+    if (e2e_result.summary == E2ESummary::kDisabled) {
         log_info("E2E fully disabled for this sample");
         process_sample(*sample);
-    } else if (e2e_result.summary == Summary::kOkWithDisabledChecks) {
+    } else if (e2e_result.summary == E2ESummary::kOkWithDisabledChecks) {
         log_info("E2E partial verification: data_integrity=" + to_string(e2e_result.data_integrity) +
                   ", sequence=" + to_string(e2e_result.sequence));
         process_sample(*sample);
-    } else if (e2e_result.summary == Summary::kOk) {
+    } else if (e2e_result.summary == E2ESummary::kOk) {
         log_info("E2E result trusted: all checks passed");
         process_sample(*sample);
     } else {
@@ -283,12 +304,12 @@ recorded sample for later forensic/offline analysis:
 
   ```cpp
   void DiagnosticConsumer::OnSampleReceived(SamplePtr sample) {
-      const auto e2e_result = sample->GetE2EResult();  // always present
+      const auto e2e_result = sample.GetE2EResult();  // always present
 
       // Persist every field regardless of summary — nothing is discarded.
       persist_sample_with_metadata(*sample, e2e_result);
 
-      if (e2e_result.summary == Summary::kError) {
+      if (e2e_result.summary == E2ESummary::kError) {
           log_warn("Recorded sample failed E2E verification");
       }
   }
