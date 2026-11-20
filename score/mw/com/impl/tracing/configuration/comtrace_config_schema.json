@@ -85,19 +85,15 @@
                   "$ref": "#/$defs/trace_unsubscribe_received"
                 },
                 "trace_subscription_state_changed": {
-                  "_lola_support" : false,
                   "$ref": "#/$defs/trace_subscription_state_changed"
                 },
                 "trace_subscription_state_change_handler_registered": {
-                  "_lola_support" : false,
                   "$ref": "#/$defs/trace_subscription_state_change_handler_registered"
                 },
                 "trace_subscription_state_change_handler_deregistered": {
-                  "_lola_support" : false,
                   "$ref": "#/$defs/trace_subscription_state_change_handler_deregistered"
                 },
                 "trace_subscription_state_change_handler_callback": {
-                  "_lola_support" : false,
                   "$ref": "#/$defs/trace_subscription_state_change_handler_callback"
                 },
                 "trace_send": {
@@ -179,19 +175,15 @@
                       "$ref": "#/$defs/trace_unsubscribe_received"
                     },
                     "trace_subscription_state_changed": {
-                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_subscription_state_changed"
                     },
                     "trace_subscription_state_change_handler_registered": {
-                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_subscription_state_change_handler_registered"
                     },
                     "trace_subscription_state_change_handler_deregistered": {
-                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_subscription_state_change_handler_deregistered"
                     },
                     "trace_subscription_state_change_handler_callback": {
-                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_subscription_state_change_handler_callback"
                     },
                     "trace_update": {
