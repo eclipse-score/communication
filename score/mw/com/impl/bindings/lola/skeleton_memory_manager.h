@@ -133,12 +133,19 @@ class SkeletonMemoryManager final
     /// \brief Remove the control and data shared memory regions
     void RemoveSharedMemory();
 
+    /// \brief Releases the skeleton's shared_ptrs to the control and data SharedMemoryResources without unlinking
+    ///        the shared memory regions or removing them from the process's map of currently opened regions in
+    ///        SharedMemoryFactory. This allows the regions to be reopened if a proxy is still connected when
+    ///        re-offering, or destroyed and recreated if no connected proxies remain.
+    void ReleaseSharedMemory();
+
     /// \brief Removes stale shared memory artefacts from the filesystem in case a process crashed while creating a
     ///        SharedMemoryResource.
     void RemoveStaleSharedMemoryArtefacts() const;
 
     /// \brief Cleans up all allocated slots for this SkeletonEvent of any previous running instance
-    /// \details Note: Only invoke _after_ a crash was detected!
+    /// \details Note: Only invoke after reopening a shm region that proxies still use, i.e. after a crash or after a
+    ///          StopOffer while proxies were subscribed!
     void CleanupSharedMemoryAfterCrash();
 
     /// \brief Resets internal state of SkeletonMemoryManager.
