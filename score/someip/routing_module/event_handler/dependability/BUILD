@@ -14,6 +14,9 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit_design")
 
 unit_design(
     name = "event_handler_unit_design",
+    dynamic = [
+        "someip_datagram_parser_sequence.puml",
+    ],
     static = [
         "someip_message_header_parser_class.puml",
         "someip_message_header_parser_class.rst",

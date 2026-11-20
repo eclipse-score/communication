@@ -33,6 +33,7 @@ enum class SomeipHeaderParseError : std::uint8_t
     kUnsupportedProtocolVersion = 2U,
     kLengthTooShort = 3U,
     kMessageExceedsDatagram = 4U,
+    kPacketReadFailed = 5U,
 };
 
 struct SomeipMessageHeader
