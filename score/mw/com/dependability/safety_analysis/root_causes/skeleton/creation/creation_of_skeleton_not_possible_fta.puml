@@ -25,4 +25,7 @@ $RootCause("Instance Specifier resolution logic broken", "InstanceSpecifierResol
 $IntermediateEvent("Configuration broken", "Event3", "Gate2")
 $TransferInGate("Communication.InMemoryConfigurationWrong", "Event3")
 
+' Not all bindings are valid -> will return error
+' Created with wrong binding?? Maybe this is a separate failure mode?
+
 @enduml
