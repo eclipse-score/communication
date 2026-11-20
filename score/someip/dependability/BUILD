@@ -18,13 +18,15 @@ dependable_element(
     components = [
         "//score/someip/sd_daemon:sd_daemon",
         "//score/someip/routing_module:routing_module",
-        "//score/someip:router_control_protocol",
+        "//score/someip/routing_control_protocol:routing_control",
         "//score/someip:sd_control_protocol",
     ],
     dependability_analysis = [],
     integrity_level = "QM",
     maturity = "development",
     requirements = [
+        "//score/someip/dependability/requirements/feature_requirements:feature_requirements_routing_module",
+        "//score/someip/dependability/requirements/feature_requirements:feature_requirements_sd_daemon",
         "//score/dependability/assumed_system:assumed_system_requirements",
     ],
     target_compatible_with = ["@platforms//os:linux"],

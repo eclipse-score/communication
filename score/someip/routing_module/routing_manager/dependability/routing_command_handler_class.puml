@@ -1,0 +1,42 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml routing_command_handler_class
+
+abstract class IRoutingCommandHandler {
+    + {abstract} AddRemoteService(command : const routing_control_protocol::Message&) noexcept : score::someip::routing_module::CommandResult
+    + {abstract} RemoveRemoteService(service_instance : ServiceInstance) noexcept : score::someip::routing_module::CommandResult
+    + {abstract} AddLocalSubscription(service_instance : ServiceInstance, event : uint16_t) noexcept : score::someip::routing_module::CommandResult
+    + {abstract} RemoveLocalSubscription(service_instance : ServiceInstance, event : uint16_t) noexcept : score::someip::routing_module::CommandResult
+    + {abstract} AddLocalService(command : const routing_control_protocol::Message&) noexcept : score::someip::routing_module::CommandResult
+    + {abstract} RemoveLocalService(service_instance : ServiceInstance) noexcept : score::someip::routing_module::CommandResult
+    + {abstract} AddRemoteSubscription(service_instance : ServiceInstance, event : uint16_t, subscriber : Endpoint) noexcept : score::someip::routing_module::CommandResult
+    + {abstract} RemoveRemoteSubscription(service_instance : ServiceInstance, event : uint16_t, subscriber : Endpoint) noexcept : score::someip::routing_module::CommandResult
+    + {abstract} RemoveAll() noexcept : void
+}
+
+enum CommandResult {
+    kApplied = 0
+    kRejected = 1
+}
+
+struct ServiceInstance {
+    + service : uint16_t
+    + instance : uint16_t
+}
+
+struct Endpoint {
+    + port : uint16_t
+}
+
+@enduml

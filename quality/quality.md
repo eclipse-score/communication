@@ -228,7 +228,7 @@ The following markdown files are automatically created in `bazel-out/analysis_re
 
 ## Coverage
 
-Code coverage is generated using LLVM's source-based coverage instrumentation. The instrumentation filter is configured in [`quality/coverage/coverage.bazelrc`](coverage/coverage.bazelrc) to cover `//score/message_passing` and `//score/mw/com` while excluding test and benchmark code.
+Code coverage is generated using LLVM's source-based coverage instrumentation. The report scope includes `//score/message_passing`, `//score/mw/com` and `//score/someip` while excluding test and benchmark code.
 
 HTML reports are generated directly by `llvm-cov show`.
 

@@ -1,0 +1,51 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml routing_manager_command_sequence
+
+participant ExternalEndpoint
+participant RoutingManager
+participant IRoutingCommandHandler
+
+note over ExternalEndpoint, RoutingManager
+  message_passing thread: a routing command arrives.
+  RoutingManager decodes it, appends it to the queue
+  (or discards and logs it if the queue is full)
+  and calls the wakeup callback.
+end note
+
+ExternalEndpoint -> RoutingManager : ProcessPendingCommands()
+activate RoutingManager
+note left of RoutingManager : data path thread
+
+loop for each queued entry, in arrival order
+    alt command
+        RoutingManager -> IRoutingCommandHandler : AddRemoteService(command)
+        activate IRoutingCommandHandler
+        note right of IRoutingCommandHandler : or the operation matching the opcode
+        IRoutingCommandHandler --> RoutingManager : CommandResult
+        deactivate IRoutingCommandHandler
+        opt kRejected
+            note over RoutingManager : log the rejected command
+        end
+    else removal of all routing state
+        RoutingManager -> IRoutingCommandHandler : RemoveAll()
+        activate IRoutingCommandHandler
+        deactivate IRoutingCommandHandler
+    end
+end
+
+RoutingManager --> ExternalEndpoint
+deactivate RoutingManager
+
+@enduml
