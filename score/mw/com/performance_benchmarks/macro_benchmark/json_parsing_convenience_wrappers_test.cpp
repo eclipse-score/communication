@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/performance_benchmarks/macro_benchmark/json_parsing_convenience_wrappers.h"
-#include "score/json/internal/model/any.h"
+#include "score/json/any.h"
 #include "score/json/json_parser.h"
 
 #include <score/stop_token.hpp>
