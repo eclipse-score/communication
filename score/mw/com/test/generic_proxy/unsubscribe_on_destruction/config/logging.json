@@ -1,0 +1,7 @@
+{
+  "appId": "GPUD",
+  "appDesc": "generic_proxy_unsubscribe_on_destruction",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole"
+}
