@@ -1,0 +1,6 @@
+{
+    "host": "192.168.2.10",
+    "ssh_port": 22,
+    "username": "root",
+    "password": ""
+}

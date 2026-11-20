@@ -1,0 +1,124 @@
+{
+    "unicast": "160.48.201.101",
+    "iptype": "IPv4",
+    "logging": {
+        "level": "warning",
+        "console": "true"
+    },
+    "applications": [
+        {
+            "name": "bench_sender",
+            "id": "0x0111"
+        }
+    ],
+    "services": [
+        {
+            "service": "0x0103",
+            "instance": "0x0091",
+            "major_version": "0x02",
+            "minor_version": "0x01",
+            "is-provider": "true",
+            "reliable": {
+                "port": "30505",
+                "enable-magic-cookies": "false"
+            },
+            "events": [
+                {
+                    "event": "0x8065",
+                    "is_field": "false"
+                },
+                {
+                    "event": "0x8066",
+                    "is_field": "false"
+                },
+                {
+                    "event": "0x8078",
+                    "is_field": "false"
+                },
+                {
+                    "event": "0x8079",
+                    "is_field": "false"
+                },
+                {
+                    "event": "0x807A",
+                    "is_field": "false"
+                },
+                {
+                    "event": "0x807B",
+                    "is_field": "false"
+                },
+                {
+                    "event": "0x807C",
+                    "is_field": "false"
+                },
+                {
+                    "event": "0x807D",
+                    "is_field": "false"
+                },
+                {
+                    "event": "0x807E",
+                    "is_field": "false"
+                },
+                {
+                    "event": "0x807F",
+                    "is_field": "false"
+                },
+                {
+                    "event": "0x8080",
+                    "is_field": "false"
+                },
+                {
+                    "event": "0x8081",
+                    "is_field": "false"
+                },
+                {
+                    "event": "0x8082",
+                    "is_field": "false"
+                },
+                {
+                    "event": "0x8083",
+                    "is_field": "false"
+                },
+                {
+                    "event": "0x8084",
+                    "is_field": "false"
+                }
+            ],
+            "eventgroups": [
+                {
+                    "eventgroup": "0x0005",
+                    "events": [
+                        "0x8065",
+                        "0x8066",
+                        "0x8078",
+                        "0x8079",
+                        "0x807A",
+                        "0x807B",
+                        "0x807C",
+                        "0x807D",
+                        "0x807E",
+                        "0x807F",
+                        "0x8080",
+                        "0x8081",
+                        "0x8082",
+                        "0x8083",
+                        "0x8084"
+                    ]
+                }
+            ]
+        }
+    ],
+    "service-discovery": {
+        "enable": "true",
+        "multicast": "224.224.224.245",
+        "port": "30490",
+        "protocol": "udp",
+        "initial_delay_min": "10",
+        "initial_delay_max": "10",
+        "repetitions_base_delay": "30",
+        "repetitions_max": "3",
+        "ttl": "10",
+        "cyclic_offer_delay": "1000",
+        "request_response_delay": "10"
+    }
+}

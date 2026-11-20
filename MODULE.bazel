@@ -139,6 +139,16 @@ use_repo(
 )
 
 bazel_dep(name = "score_itf", version = "0.6.0", dev_dependency = True)
+
+# TODO: remove once the hardware target plugin is merged upstream. The fork branch piotrkorkus_hw_plugin is upstream
+# main plus that plugin, which the SOME/IP benchmarks in //score/lg-someip/tests/benchmark run on a board with.
+archive_override(
+    module_name = "score_itf",
+    integrity = "sha256-qNxFadk5KCdlK+slOy+POd3L0RvnqXsBkHnIJlmY8Sw=",
+    strip_prefix = "itf-2ec6227f9d3a519f09bf1c0436a3630a39739053",
+    urls = ["https://github.com/qorix-group/itf/archive/2ec6227f9d3a519f09bf1c0436a3630a39739053.tar.gz"],
+)
+
 bazel_dep(name = "score_rules_imagefs", version = "0.1.0", dev_dependency = True)
 
 imagefs = use_extension("@score_rules_imagefs//extensions:imagefs.bzl", "imagefs", dev_dependency = True)

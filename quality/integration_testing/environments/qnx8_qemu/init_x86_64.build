@@ -136,6 +136,7 @@ libqcrypto.so.1.0                        # QNX cryptographic library
 libqh.so.1                               # QNX helper library
 libqnxnoexcept.so=${QNXNOEXCEPT_LIBRARY}
 libregex.so.1                            # Regular expression library
+librpc.so.2                              # RPC library (needed by tcpdump)
 libsecpol.so.1                           # Security policy library
 libslog2.so.1                            # System logging library (slog2_* functions)
 libslog2parse.so.1                       # System log parsing library
@@ -292,6 +293,7 @@ slog2info                                # System log viewer - displays logged m
 slogger2                                 # System logging daemon - collects and manages log messages
 sshd                                     # SSH daemon (ITF test harness communicates via SSH)
 sysctl                                   # View/modify kernel parameters
+tcpdump                                  # Packet capture (T_wire of the SOME/IP benchmarks)
 dumper                                   # Core dump daemon configuration and crash dump collection
 
 /usr/lib/ssh/sftp-server=${QNX_TARGET}/${PROCESSOR}/usr/libexec/sftp-server  # SFTP server (file transfer for ITF)
