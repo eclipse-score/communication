@@ -621,7 +621,6 @@
     "https://bcr.bazel.build/modules/rules_robolectric/4.14.1.2/MODULE.bazel": "d44fec647d0aeb67b9f3b980cf68ba634976f3ae7ccd6c07d790b59b87a4f251",
     "https://bcr.bazel.build/modules/rules_robolectric/4.14.1.2/source.json": "37c10335f2361c337c5c1f34ed36d2da70534c23088062b33a8bdaab68aa9dea",
     "https://bcr.bazel.build/modules/rules_rust/0.51.0/MODULE.bazel": "2b6d1617ac8503bfdcc0e4520c20539d4bba3a691100bee01afe193ceb0310f9",
-    "https://bcr.bazel.build/modules/rules_rust/0.56.0/MODULE.bazel": "3295b00757db397122092322fe1e920be7f5c9fbfb8619138977e820f2cbbbae",
     "https://bcr.bazel.build/modules/rules_rust/0.61.0/MODULE.bazel": "0318a95777b9114c8740f34b60d6d68f9cfef61e2f4b52424ca626213d33787b",
     "https://bcr.bazel.build/modules/rules_rust/0.65.0/MODULE.bazel": "1b53caef82fd1c89a2fb15cfa3a15a8e98fe12f4904806b409f5a0183e73f547",
     "https://bcr.bazel.build/modules/rules_rust/0.67.0/MODULE.bazel": "87c3816c4321352dcfd9e9e26b58e84efc5b21351ae3ef8fb5d0d57bde7237f5",
@@ -1175,7 +1174,6 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_python_gazelle_plugin/1.5.1/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_robolectric/4.14.1.2/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_rust/0.51.0/MODULE.bazel": "not found",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_rust/0.56.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_rust/0.61.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_rust/0.65.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_rust/0.67.0/MODULE.bazel": "not found",
@@ -1198,7 +1196,6 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_baselibs/0.2.19/source.json": "ba61c17f849100224c40476db1d07c28764dd3e7f806d3220d3fc8bded4809a0",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_cpp_toolchains/1.0.5/MODULE.bazel": "a86f620eabc8f04d4c63da454ad0c2e68ab409b2e709ce5268197a4020f71535",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_cpp_toolchains/1.0.5/source.json": "79e3a0677af0b807efe48e4b9e847c14d51ab03ddad5b40b4f9b32b58bac4b49",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/0.0.3/MODULE.bazel": "14c96e378c08705a46abe0799d6236fe3095c342c34f83f8d1b3f6046ce00651",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/0.1.1/MODULE.bazel": "236e5bdff6f2d6de6f96cc4f5f4b1bf2cd6137547ce279668a2dd4c54cd4236c",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/0.1.2/MODULE.bazel": "d1889bf36241521c5d5c401aaf1e98242a60f9cab9d223f8190e5d7087956e83",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/1.1.0/MODULE.bazel": "e5c656abcad121a89cbabad3550bb20167a6865de219ef6e1c68ca30567e1c32",
@@ -1272,8 +1269,8 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_rust_policies/0.0.5/MODULE.bazel": "7de02547bdf121d3dedf5141b97f0fd9a545bd255ff5c7b699056b35816ffad9",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_rust_policies/0.0.5/source.json": "22c8bf0a5cbf7c7b06f774f3f66498e0bc14346a8b2208f7427a8fbb78a42547",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_starpls_lsp/0.1.0/MODULE.bazel": "b2f8c4c8d8e851706255ff9002b448bff6e040b8f0c6adedbde2a09375aa16cc",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_toolchains_rust/0.10.0/MODULE.bazel": "535296e6cdef55a506c580ca2ce541aa9ddefb354de1a24ab2bd4addc939282b",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_toolchains_rust/0.10.0/source.json": "8bda773be264da16d2a82a03ebb737421dd4a35855f1e9a5d03d9722d84c1df5",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_toolchains_rust/0.10.1/MODULE.bazel": "9a428f8aa45ca017cc921ac73e88b23f7bd4fef05e8b0514a2d89830eec9e2ac",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_toolchains_rust/0.10.1/source.json": "dff51141d8c3b2c8affc71cbdfde16f52761740941ecc3e2ef48734052b37d00",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/1.0.2/MODULE.bazel": "e70f396375b9d612b4f41ebceff7f18f68ab423b14625c138a354cc01bc62a10",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/1.1.2/MODULE.bazel": "56d08309931cfad67c2b6691207bb5f761a3946830d620c630d2436630e6b499",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_tooling/1.3.1/MODULE.bazel": "4ce18de0fdfb447ba750b98febb24e12471862cbbd5d08f5f683f27886767367",
@@ -5224,8 +5221,8 @@
     },
     "@@score_toolchains_rust+//extensions:ferrocene_toolchain_ext.bzl%ferrocene_rules_rust_miri_toolchain_ext": {
       "general": {
-        "bzlTransitiveDigest": "9k8SLwP4ec9xXjFivq0Kn0FradTQhcEA+j/WsLxfVPM=",
-        "usagesDigest": "1G+0hoRkZx33aQUiAxx8GdGErOPGCHHQXn5lO7fZxgI=",
+        "bzlTransitiveDigest": "c4l1Guf+m2vzVvfP7Q1drD9rd3iUhmLDG1YDckphLdg=",
+        "usagesDigest": "WUinfR8fWFz1kFFI/jLhXnnBRPBipe3hzrBTP6yb1t8=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "ferrocene_x86_64_unknown_linux_gnu_rules_rust_miri": {
@@ -5297,8 +5294,8 @@
     },
     "@@score_toolchains_rust+//extensions:ferrocene_toolchain_ext.bzl%ferrocene_toolchain_ext": {
       "general": {
-        "bzlTransitiveDigest": "9k8SLwP4ec9xXjFivq0Kn0FradTQhcEA+j/WsLxfVPM=",
-        "usagesDigest": "ZtUxT4M8o2fQPjvqvKd8oXF72ShQ/D+ZrPn11lpGmSM=",
+        "bzlTransitiveDigest": "c4l1Guf+m2vzVvfP7Q1drD9rd3iUhmLDG1YDckphLdg=",
+        "usagesDigest": "9ib1/ALbTlZqQCzm3/nlpmrCQG8MVNJXQQFA8nySIWE=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "ferrocene_x86_64_unknown_linux_gnu_llvm": {
