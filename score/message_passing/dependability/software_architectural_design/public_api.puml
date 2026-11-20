@@ -20,7 +20,7 @@ namespace score::message_passing {
     }
 
     interface IClientFactory {
-        +Create()
+        +Create(protocol_config: ServiceProtocolConfig, client_config: ClientConfig)
     }
 
     class ClientFactory {
@@ -55,7 +55,7 @@ namespace score::message_passing {
     }
 
     interface IServerFactory {
-        +Create()
+        +Create(protocol_config: ServiceProtocolConfig, server_config: ServerConfig)
     }
 
     class ServerFactory {
