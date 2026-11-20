@@ -21,7 +21,7 @@
 #include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 
-#include "score/json/internal/model/any.h"
+#include "score/json/any.h"
 #include "score/json/json_writer.h"
 
 #include <score/overload.hpp>
