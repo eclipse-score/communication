@@ -256,6 +256,68 @@ TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
 }
 
 TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
+       ConstructingWithZeroNumberOfSampleSlotsInServiceInstanceDeploymentTerminates)
+{
+    // Given a SkeletonBase which contains a valid lola Skeleton binding
+    const auto& instance_identifier = kConfigStoreAsilQM.GetInstanceIdentifier();
+    InitialiseSkeleton(instance_identifier);
+
+    // and given an InstanceIdentifier containing event / field instance deployments with 0 sample slots, where the
+    // only slot would be an IPC tracing slot
+    const LolaServiceInstanceDeployment lola_service_instance_deployment_with_zero_sample_slots{
+        LolaServiceInstanceId{kInstanceId},
+        {{kDummyEventName, LolaEventInstanceDeployment{{0U}, {3U}, 1U, true, 1U}}},
+        {{kDummyFieldName,
+          LolaFieldInstanceDeployment{LolaEventInstanceDeployment{{0U}, {3U}, 1U, true, 1U}, false, false}}}};
+
+    ConfigurationStore config_store_with_zero_sample_slots{
+        kInstanceSpecifier,
+        make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
+        QualityType::kASIL_QM,
+        kConfigStoreAsilQM.lola_service_type_deployment_,
+        lola_service_instance_deployment_with_zero_sample_slots};
+    const auto instance_identifier_zero_sample_slots = config_store_with_zero_sample_slots.GetInstanceIdentifier();
+
+    // When creating the service element binding
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = CreateServiceElementBinding(instance_identifier_zero_sample_slots, *skeleton_),
+                 ".*");
+}
+
+using SkeletonFieldBindingFactoryZeroSampleSlotsFixture = lola::SkeletonMockedMemoryFixture;
+TEST_F(SkeletonFieldBindingFactoryZeroSampleSlotsFixture, CanConstructFieldWithoutNotifierWithZeroNumberOfSampleSlots)
+{
+    // Given a SkeletonBase which contains a valid lola Skeleton binding
+    const auto& instance_identifier = kConfigStoreAsilQM.GetInstanceIdentifier();
+    InitialiseSkeleton(instance_identifier);
+
+    // and given an InstanceIdentifier containing a field instance deployment with 0 sample slots
+    const LolaServiceInstanceDeployment lola_service_instance_deployment_with_zero_sample_slots{
+        LolaServiceInstanceId{kInstanceId},
+        {{kDummyEventName, LolaEventInstanceDeployment{{1U}, {3U}, 1U, true, 0U}}},
+        {{kDummyFieldName,
+          LolaFieldInstanceDeployment{LolaEventInstanceDeployment{{0U}, {}, 1U, true, 0U}, false, false}}}};
+
+    ConfigurationStore config_store_with_zero_sample_slots{
+        kInstanceSpecifier,
+        make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
+        QualityType::kASIL_QM,
+        kConfigStoreAsilQM.lola_service_type_deployment_,
+        lola_service_instance_deployment_with_zero_sample_slots};
+    const auto instance_identifier_zero_sample_slots = config_store_with_zero_sample_slots.GetInstanceIdentifier();
+
+    // When creating the binding for a field without notifier
+    const auto unit = SkeletonFieldBindingFactory::CreateEventBinding(instance_identifier_zero_sample_slots,
+                                                                      *skeleton_,
+                                                                      kDummyFieldName,
+                                                                      kTestSampleTypeSizeInfo,
+                                                                      FieldTagsStore::Create<WithGetter>());
+
+    // Then a valid binding is created, since such a field does not need sample slots
+    EXPECT_NE(unit, nullptr);
+}
+
+TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
        ConstructingWithoutMaxSubscribersInServiceInstanceDeploymentTerminatestes)
 {
     // Given a SkeletonBase which contains a valid lola Skeleton binding
