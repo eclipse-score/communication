@@ -14,14 +14,16 @@
 
 #include <gtest/gtest.h>
 
+#include <optional>
+
 namespace score::mw::com::impl::e2e
 {
 namespace
 {
 
-const HealthTrackerConfiguration kEnabledConfiguration{HealthTrackerConfiguration::CreateEnabled(3U, 5U, 7U)};
+const HealthTrackerConfiguration kEnabledConfiguration{3U, 5U, 7U};
 
-const HealthTrackerConfiguration kDisabledConfiguration{HealthTrackerConfiguration::CreateDisabled()};
+const std::optional<HealthTrackerConfiguration> kDisabledConfiguration{std::nullopt};
 
 // --- ComputeSummary --------------------------------------------------------
 

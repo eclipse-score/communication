@@ -227,7 +227,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     ///          the same logical session, so a channel that keeps failing across provider restarts should keep
     ///          reporting as unhealthy until it shows sustained recovery, rather than appearing healthy again after
     ///          every restart.
-    ///          Background: https://github.com/eclipse-score/communication/pull/1148
+    ///          Background: score/mw/com/design/e2e_protection/mw_com_e2e_binding.md, section "E2E Context Lifecycle"
     /// \details Initialized in the constructor from the binding's configuration (disabled without a valid binding).
     e2e::HealthTracker health_tracker_;
 

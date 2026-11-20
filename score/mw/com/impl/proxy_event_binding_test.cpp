@@ -62,9 +62,9 @@ class DummyProxyEventBinding final : public ProxyEventBinding
     {
         return {};
     }
-    e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const override
+    std::optional<e2e::HealthTrackerConfiguration> GetHealthTrackerConfiguration() const override
     {
-        return {};
+        return std::nullopt;
     }
     BindingType GetBindingType() const noexcept override
     {

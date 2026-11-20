@@ -277,6 +277,12 @@ class SamplePtr final
     ///          summary is derived from both - neither is available to the binding at construction time. So the
     ///          result can only be completed afterwards, via this setter, once the SamplePtr has been handed back to
     ///          ProxyEventBase.
+    // TODO (Ticket-TBD): SetE2EResult() overwrites the DataIntegrityStatus/SequenceStatus already stored in
+    // e2e_result_ even though it only needs to set historical_health/summary. Introduce a dedicated binding-
+    // independent outcome struct (e.g. containing only historical_health and summary) and change this setter to
+    // take that instead of a full E2EResult, so it can no longer clobber fields it doesn't own.  The E2EResult type
+    // itself must stay unchanged (already approved design, see
+    // score/mw/com/design/e2e_protection/mw_com_e2e_binding.md).
     void SetE2EResult(const e2e::E2EResult result)
     {
         e2e_result_ = result;

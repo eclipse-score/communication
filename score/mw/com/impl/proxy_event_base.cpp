@@ -26,6 +26,7 @@
 
 #include <exception>
 #include <memory>
+#include <optional>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -48,8 +49,7 @@ ProxyEventBase::ProxyEventBase(std::string_view event_name,
       tracker_{std::make_unique<SampleReferenceTracker>()},
       tracing_data_{},
       proxy_event_base_mock_{nullptr},
-      health_tracker_{(binding_ != nullptr) ? binding_->GetHealthTrackerConfiguration()
-                                            : e2e::HealthTrackerConfiguration::CreateDisabled()},
+      health_tracker_{(binding_ != nullptr) ? binding_->GetHealthTrackerConfiguration() : std::nullopt},
       is_subscribed_flag_{false},
       receive_handler_scope_{}
 {

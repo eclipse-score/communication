@@ -14,14 +14,16 @@
 
 #include <gtest/gtest.h>
 
+#include <optional>
+
 namespace score::mw::com::impl::e2e
 {
 namespace
 {
 
-const HealthTrackerConfiguration kEnabledConfiguration{HealthTrackerConfiguration::CreateEnabled(3U, 5U, 7U)};
+const HealthTrackerConfiguration kEnabledConfiguration{3U, 5U, 7U};
 
-const HealthTrackerConfiguration kDisabledConfiguration{HealthTrackerConfiguration::CreateDisabled()};
+const std::optional<HealthTrackerConfiguration> kDisabledConfiguration{std::nullopt};
 
 HistoricalHealthStatus UpdateWithFailedSample(HealthTracker& tracker)
 {
@@ -249,7 +251,7 @@ TEST(E2eHealthTrackerTest, SwitchingBackToOkDoesNotImmediatelyReturnToError)
 TEST(E2eHealthTrackerTest, ThresholdsAreRelativeToWindowAndCanDifferFromEachOther)
 {
     // Given a configuration with an error threshold of 5, a recovery threshold of 10 and a window of 10 samples
-    const HealthTrackerConfiguration kConfiguration{HealthTrackerConfiguration::CreateEnabled(5U, 10U, 10U)};
+    const HealthTrackerConfiguration kConfiguration{5U, 10U, 10U};
     HealthTracker tracker{kConfiguration};
 
     // When updating the historical health with 4 failed samples
@@ -272,8 +274,7 @@ TEST(E2eHealthTrackerTest, ThresholdsAreRelativeToWindowAndCanDifferFromEachOthe
 TEST(E2eHealthTrackerTest, MaximumWindowSizeSwitchesToErrorAndBackToOk)
 {
     // Given a configuration whose window uses all bits of the sample history
-    const HealthTrackerConfiguration kConfiguration{
-        HealthTrackerConfiguration::CreateEnabled(33U, 32U, kMaxHealthWindowSize)};
+    const HealthTrackerConfiguration kConfiguration{33U, 32U, kMaxHealthWindowSize};
     HealthTracker tracker{kConfiguration};
 
     // When updating the historical health with one failed sample less than the error threshold
@@ -334,32 +335,6 @@ TEST(E2eHealthTrackerTest, ResetKeepsDisabledTrackerDisabled)
     EXPECT_EQ(UpdateWithFailedSample(tracker), HistoricalHealthStatus::kDisabled);
 }
 
-TEST(E2eHealthTrackerTest, DefaultConfigurationIsDisabledAndWellFormed)
-{
-    // Given a default-constructed configuration
-    constexpr HealthTrackerConfiguration kConfiguration{};
-
-    // When constructing a health tracker from it and updating it with a failing sample
-    HealthTracker tracker{kConfiguration};
-    const auto status = tracker.Update(DataIntegrityStatus::kError, SequenceStatus::kErrorRepeated);
-
-    // Then construction does not terminate and the status is kDisabled
-    EXPECT_EQ(status, HistoricalHealthStatus::kDisabled);
-}
-
-TEST(E2eHealthTrackerTest, DisabledConfigurationIsNotValidated)
-{
-    // Given a configuration created via CreateDisabled()
-    const HealthTrackerConfiguration kConfiguration{HealthTrackerConfiguration::CreateDisabled()};
-
-    // When constructing a health tracker from it and updating it with a failing sample
-    HealthTracker tracker{kConfiguration};
-    const auto status = tracker.Update(DataIntegrityStatus::kError, SequenceStatus::kErrorRepeated);
-
-    // Then construction does not terminate and the status is kDisabled
-    EXPECT_EQ(status, HistoricalHealthStatus::kDisabled);
-}
-
 TEST(E2eHealthTrackerTest, ConstructionAcceptsWellFormedConfiguration)
 {
     // Given well-formed enabled and disabled health tracker configurations
@@ -374,50 +349,50 @@ TEST(E2eHealthTrackerTest, ConstructionAcceptsWellFormedConfiguration)
 TEST(E2eHealthTrackerDeathTest, ConstructionRejectsZeroErrorThreshold)
 {
     // Given a health tracker configuration with an error threshold of zero
-    // When creating an enabled configuration from it
+    // When creating a configuration from it
     // Then the program terminates
-    EXPECT_DEATH(HealthTrackerConfiguration::CreateEnabled(0U, 5U, 8U), ".*");
+    EXPECT_DEATH(HealthTrackerConfiguration(0U, 5U, 8U), ".*");
 }
 
 TEST(E2eHealthTrackerDeathTest, ConstructionRejectsZeroRecoveryThreshold)
 {
     // Given a health tracker configuration with a recovery threshold of zero
-    // When creating an enabled configuration from it
+    // When creating a configuration from it
     // Then the program terminates
-    EXPECT_DEATH(HealthTrackerConfiguration::CreateEnabled(3U, 0U, 8U), ".*");
+    EXPECT_DEATH(HealthTrackerConfiguration(3U, 0U, 8U), ".*");
 }
 
 TEST(E2eHealthTrackerDeathTest, ConstructionRejectsWindowSmallerThanErrorThreshold)
 {
     // Given a health tracker configuration whose window is smaller than the error threshold
-    // When creating an enabled configuration from it
+    // When creating a configuration from it
     // Then the program terminates
-    EXPECT_DEATH(HealthTrackerConfiguration::CreateEnabled(6U, 5U, 5U), ".*");
+    EXPECT_DEATH(HealthTrackerConfiguration(6U, 5U, 5U), ".*");
 }
 
 TEST(E2eHealthTrackerDeathTest, ConstructionRejectsWindowSmallerThanRecoveryThreshold)
 {
     // Given a health tracker configuration whose window is smaller than the recovery threshold
-    // When creating an enabled configuration from it
+    // When creating a configuration from it
     // Then the program terminates
-    EXPECT_DEATH(HealthTrackerConfiguration::CreateEnabled(3U, 6U, 5U), ".*");
+    EXPECT_DEATH(HealthTrackerConfiguration(3U, 6U, 5U), ".*");
 }
 
 TEST(E2eHealthTrackerDeathTest, ConstructionRejectsWindowLargerThanMaximum)
 {
     // Given a health tracker configuration whose window exceeds the maximum supported window size
-    // When creating an enabled configuration from it
+    // When creating a configuration from it
     // Then the program terminates
-    EXPECT_DEATH(HealthTrackerConfiguration::CreateEnabled(40U, 30U, kMaxHealthWindowSize + 1U), ".*");
+    EXPECT_DEATH(HealthTrackerConfiguration(40U, 30U, kMaxHealthWindowSize + 1U), ".*");
 }
 
 TEST(E2eHealthTrackerDeathTest, ConstructionRejectsThresholdsWhichAllowOscillation)
 {
     // Given a health tracker configuration whose thresholds add up to exactly the window size, so that the state
     // could oscillate between kOk and kError
-    // When creating an enabled configuration from it
+    // When creating a configuration from it
     // Then the program terminates
-    EXPECT_DEATH(HealthTrackerConfiguration::CreateEnabled(3U, 5U, 8U), ".*");
+    EXPECT_DEATH(HealthTrackerConfiguration(3U, 5U, 8U), ".*");
 }
 
 }  // namespace

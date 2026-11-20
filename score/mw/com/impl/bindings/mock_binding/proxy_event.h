@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -39,8 +40,7 @@ class ProxyEvent : public ProxyEventBinding
     {
         ON_CALL(*this, GetNewSamples(::testing::_, ::testing::_))
             .WillByDefault(::testing::WithArgs<0, 1>(::testing::Invoke(this, &ProxyEvent::GetNewFakeSamples)));
-        ON_CALL(*this, GetHealthTrackerConfiguration())
-            .WillByDefault(::testing::Return(e2e::HealthTrackerConfiguration::CreateDisabled()));
+        ON_CALL(*this, GetHealthTrackerConfiguration()).WillByDefault(::testing::Return(std::nullopt));
     }
 
     ~ProxyEvent() override = default;
@@ -63,7 +63,7 @@ class ProxyEvent : public ProxyEventBinding
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     /// \brief By default historical health tracking is disabled, unless stated otherwise with ON_CALL/EXPECT_CALL.
-    MOCK_METHOD(e2e::HealthTrackerConfiguration, GetHealthTrackerConfiguration, (), (const, override));
+    MOCK_METHOD(std::optional<e2e::HealthTrackerConfiguration>, GetHealthTrackerConfiguration, (), (const, override));
 
     /// \brief Add a sample to the internal queue of fake events.
     ///
@@ -141,7 +141,7 @@ class ProxyEventFacade : public ProxyEventBinding
     {
         return proxy_event_.GetBindingType();
     }
-    e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const override
+    std::optional<e2e::HealthTrackerConfiguration> GetHealthTrackerConfiguration() const override
     {
         return proxy_event_.GetHealthTrackerConfiguration();
     }

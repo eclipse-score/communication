@@ -82,9 +82,9 @@ class ProxyEvent final : public GenericProxyEventBinding
     Result<void> UnsetSubscriptionStateChangeHandler() noexcept override;
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;
     /// \brief LoLa has no historical E2E health configuration yet, so tracking is explicitly disabled.
-    e2e::HealthTrackerConfiguration GetHealthTrackerConfiguration() const override
+    std::optional<e2e::HealthTrackerConfiguration> GetHealthTrackerConfiguration() const override
     {
-        return e2e::HealthTrackerConfiguration::CreateDisabled();
+        return std::nullopt;
     }
     BindingType GetBindingType() const noexcept override
     {

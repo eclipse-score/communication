@@ -20,6 +20,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -37,7 +38,7 @@ class ProxyEventE2EAttachFixture : public ::testing::Test
     /// \param configuration Health tracker configuration the binding reports. Must be set on the mock before
     ///                       ProxyEventBase is constructed, since the constructor reads it exactly once.
     explicit ProxyEventE2EAttachFixture(
-        const e2e::HealthTrackerConfiguration& configuration = e2e::HealthTrackerConfiguration::CreateDisabled())
+        const std::optional<e2e::HealthTrackerConfiguration>& configuration = std::nullopt)
         : mock_proxy_event_ptr_{CreateMockProxyEvent(configuration)},
           mock_proxy_event_{*mock_proxy_event_ptr_},
           proxy_event_{kEventName, std::move(mock_proxy_event_ptr_)}
@@ -45,7 +46,7 @@ class ProxyEventE2EAttachFixture : public ::testing::Test
     }
 
     static std::unique_ptr<::testing::NiceMock<mock_binding::ProxyEvent>> CreateMockProxyEvent(
-        const e2e::HealthTrackerConfiguration& configuration)
+        const std::optional<e2e::HealthTrackerConfiguration>& configuration)
     {
         auto mock_proxy_event_ptr = std::make_unique<::testing::NiceMock<mock_binding::ProxyEvent>>();
         ON_CALL(*mock_proxy_event_ptr, GetHealthTrackerConfiguration()).WillByDefault(::testing::Return(configuration));
@@ -161,10 +162,7 @@ TEST_F(ProxyEventE2EAttachFixture, DeliveredSampleStaysDisabledWhenBindingDidNot
 class ProxyEventE2EHealthFixture : public ProxyEventE2EAttachFixture
 {
   protected:
-    ProxyEventE2EHealthFixture()
-        : ProxyEventE2EAttachFixture{e2e::HealthTrackerConfiguration::CreateEnabled(2U, 2U, 3U)}
-    {
-    }
+    ProxyEventE2EHealthFixture() : ProxyEventE2EAttachFixture{e2e::HealthTrackerConfiguration{2U, 2U, 3U}} {}
 
     static constexpr std::size_t kMaxSamples{4U};
 
@@ -308,7 +306,7 @@ TEST(ProxyEventE2EConfigurationTest, HealthTrackerConfigurationIsTakenFromBindin
     // Given a binding with an enabled health tracker configuration
     auto mock_proxy_event_ptr = std::make_unique<::testing::NiceMock<mock_binding::ProxyEvent>>();
     auto& mock_proxy_event = *mock_proxy_event_ptr;
-    e2e::HealthTrackerConfiguration configuration{e2e::HealthTrackerConfiguration::CreateEnabled(2U, 2U, 3U)};
+    e2e::HealthTrackerConfiguration configuration{2U, 2U, 3U};
     ON_CALL(mock_proxy_event, GetHealthTrackerConfiguration()).WillByDefault(::testing::Return(configuration));
     ON_CALL(mock_proxy_event, GetSubscriptionState())
         .WillByDefault(::testing::Return(SubscriptionState::kNotSubscribed));
@@ -350,7 +348,7 @@ class GenericProxyEventE2EAttachFixture : public ::testing::Test
     /// \param configuration Health tracker configuration the binding reports. Must be set on the mock before
     ///                       the proxy event is constructed, since the constructor reads it exactly once.
     explicit GenericProxyEventE2EAttachFixture(
-        const e2e::HealthTrackerConfiguration& configuration = e2e::HealthTrackerConfiguration::CreateDisabled())
+        const std::optional<e2e::HealthTrackerConfiguration>& configuration = std::nullopt)
         : mock_proxy_event_ptr_{CreateMockProxyEvent(configuration)},
           mock_proxy_event_{*mock_proxy_event_ptr_},
           proxy_event_{kEventName, std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr_)}}
@@ -358,7 +356,7 @@ class GenericProxyEventE2EAttachFixture : public ::testing::Test
     }
 
     static std::unique_ptr<::testing::NiceMock<mock_binding::GenericProxyEvent>> CreateMockProxyEvent(
-        const e2e::HealthTrackerConfiguration& configuration)
+        const std::optional<e2e::HealthTrackerConfiguration>& configuration)
     {
         auto mock_proxy_event_ptr = std::make_unique<::testing::NiceMock<mock_binding::GenericProxyEvent>>();
         ON_CALL(*mock_proxy_event_ptr, GetHealthTrackerConfiguration()).WillByDefault(::testing::Return(configuration));
@@ -459,8 +457,7 @@ TEST_F(GenericProxyEventE2EAttachFixture, DeliveredSampleSummaryIsErrorForBindin
 class GenericProxyEventE2EHealthFixture : public GenericProxyEventE2EAttachFixture
 {
   protected:
-    GenericProxyEventE2EHealthFixture()
-        : GenericProxyEventE2EAttachFixture{e2e::HealthTrackerConfiguration::CreateEnabled(2U, 2U, 3U)}
+    GenericProxyEventE2EHealthFixture() : GenericProxyEventE2EAttachFixture{e2e::HealthTrackerConfiguration{2U, 2U, 3U}}
     {
     }
 };
