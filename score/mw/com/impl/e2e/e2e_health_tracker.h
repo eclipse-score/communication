@@ -32,6 +32,7 @@ constexpr std::uint32_t kMaxHealthWindowSize{64U};
 // HealthTracker's constructor.
 class HealthTrackerConfiguration
 {
+
   public:
     // Historical health tracking is off; Update() always returns HistoricalHealthStatus::kDisabled.
     static HealthTrackerConfiguration CreateDisabled() noexcept;
@@ -46,7 +47,7 @@ class HealthTrackerConfiguration
                                                     std::uint8_t window_size) noexcept;
 
     // Equivalent to CreateDisabled().
-    constexpr HealthTrackerConfiguration() noexcept = default;
+    constexpr HealthTrackerConfiguration() noexcept : HealthTrackerConfiguration{false, 1U, 1U, 1U} {}
 
     constexpr bool IsEnabled() const noexcept
     {
@@ -80,10 +81,10 @@ class HealthTrackerConfiguration
     {
     }
 
-    bool enabled_{false};
-    std::uint8_t error_threshold_{1U};
-    std::uint8_t recovery_threshold_{1U};
-    std::uint8_t window_size_{1U};
+    bool enabled_;
+    std::uint8_t error_threshold_;
+    std::uint8_t recovery_threshold_;
+    std::uint8_t window_size_;
 };
 
 // Tracks the historical health of one consumer: whether its E2E-checked samples have recently been failing or
