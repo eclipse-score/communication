@@ -14,18 +14,6 @@
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 
 unit(
-    name = "router_control_protocol",
-    design_name = "RouterControlProtocol",
-    maturity = "development",
-    scope = [],
-    test_specs = [],
-    tests = [],
-    unit_design = [],
-    visibility = ["//score/someip/dependability:__subpackages__"],
-    implementation = [],
-)
-
-unit(
     name = "sd_control_protocol",
     design_name = "SDControlProtocol",
     maturity = "development",
