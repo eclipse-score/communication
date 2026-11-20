@@ -15,14 +15,31 @@
 
 Read when choosing a build, runtime test, or SEooC validation command.
 Scope: message-passing targets; run commands from the communication repository root.
-Evidence: BUILD/macro inspection on 2026-11-04; recipes are not new passing results.
+Evidence: BUILD/macro inspection on 2026-11-05; recipes are not new passing results.
 
 ## Implementation Versus SEooC Targets
 
 [The component BUILD](../../BUILD) distinguishes runtime libraries such as
-`:message_passing`, `:message_passing_common`, and backend libraries from
-`unit()` wrappers. The wrappers feed the SEooC structure in
+`:message_passing`, the ownership-specific libraries below, and backend
+libraries from `unit()` wrappers. The wrappers feed the SEooC structure in
 [dependability/BUILD](../../dependability/BUILD).
+
+| Library | Role |
+| --- | --- |
+| `:message_passing_client_connection` | Common client implementation; selected by the client unit and client tests. |
+| `ClientSendQueue` / `ClientConnectionLifetime` | Helper classes in that same library and unit; each has a dedicated actor-based compilation-unit test target. |
+| `:message_passing_timed_command_queue` | Shared engine queue implementation; selected by engine libraries, engine unit implementation inputs, and queue tests. |
+| `:common_headers` | Shared interfaces, queue-entry type, and protocol enums. |
+
+The include-only [client lifetime translation unit](../../client_connection_lifetime.cpp)
+is a source of the client library. Its single header include checks
+[header self-containment](../../client_connection_lifetime.h) during Linux and
+QNX compilation, without relying on preceding includes from another source.
+
+Both backend client factories depend on the connection library. Their engines
+depend on the queue library, not the connection implementation. The QNX engine
+also declares its own `NonAllocatingFuture` dependency. Existing SEooC names,
+nesting, and temporary QNX analysis guards are unchanged.
 
 Runtime libraries, runtime tests, and `unit()` analysis are separate evidence.
 Consult [QNX unit-analysis readiness](issues/tooling-qnx-unit-analysis.md) before
@@ -33,6 +50,8 @@ claiming coverage from a wrapper build or Linux documentation build.
 Use the narrowest relevant target first:
 
 ```sh
+bazel test //score/message_passing:client_connection_lifetime_test
+bazel test //score/message_passing:client_send_queue_test
 bazel test //score/message_passing:client_connection_test
 bazel test //score/message_passing:timed_command_queue_test
 bazel test //score/message_passing:unix_domain_test
@@ -45,9 +64,20 @@ For the Linux aggregate:
 bazel test //score/message_passing:unit_tests
 ```
 
-The aggregate includes common client, queue, Unix Domain, resource-path, logging,
+The aggregate includes common client, both helper suites, timed queue, Unix Domain, resource-path, logging,
 and non-allocating-future tests. It currently excludes `:qnx_dispatch_test`.
 Passing it is not evidence that native QNX dispatch tests ran.
+
+The helper suites are implementation-level GoogleTests, not new SEooC `unit()`
+targets. They use Given/When/Then comments and no `lobster-tracing` properties.
+They do not contribute requirement-coverage claims. The client suite retains
+facade/engine integration and its existing requirement annotations.
+
+For helper-test compilation with the QNX toolchain, without executing tests:
+
+```sh
+bazel build --config=qnx //score/message_passing:client_connection_lifetime_test //score/message_passing:client_send_queue_test
+```
 
 With the configured QNX SDK, toolchain, and QNX test-runner/QEMU prerequisites:
 
@@ -56,6 +86,16 @@ bazel test --config=qnx //score/message_passing:client_connection_test
 bazel test --config=qnx //score/message_passing:qnx_dispatch_test
 ```
 
+For a QNX compilation-only check of the public library, without invoking the
+unsupported QNX unit-analysis wrappers:
+
+```sh
+bazel build --config=qnx //score/message_passing:message_passing
+```
+
+This compiles the native backend and both shared implementation libraries; it
+does not execute QNX runtime tests or establish QNX unit-design analysis.
+
 [cc_unit_test](../../../../quality/unit_testing/unit_testing.bzl) generates
 `_linux` and `_qnx` targets plus a public forwarding target. Prefer that public
 target: it selects the platform runner and forwards required QNX files. Calling
@@ -63,7 +103,36 @@ an underlying variant directly can bypass the forwarding target's platform
 constraint. SDK setup and host prerequisites belong in the
 [contribution guide](../../../../CONTRIBUTING.md) and repository toolchain setup.
 
+`StateCallback` in [IClientConnection](../../i_client_connection.h) uses fixed-capacity
+`score::cpp::callback` storage. An oversized test capture failed to compile with
+`Configured capacity too small` during the 2026-11-06 lifecycle-test work.
+`StoppedStateCallbackKeepsOwnedCaptureAliveDuringDestruction` in the
+[client tests](../../client_connection_test.cpp) retains an owned `shared_ptr`
+and one reference to a stack helper instead of capturing all helper inputs
+directly. Keep that helper alive through callback execution; do not enlarge
+production callback storage merely to fit a test. Retain an observable owned
+capture in lifetime regressions: reference-only captures do not establish
+callback-owned lifetime.
+
 ## Requirements and Architecture
+
+For the documentation-check pilot, the existing unit check, fast rendering,
+and published HTML integrity are distinct targets:
+
+```sh
+bazel build //score/message_passing:client_connection
+bazel build //score/message_passing/dependability/software_unit_design:client_connection_render
+bazel test //score/message_passing/dependability/software_unit_design:client_connection_html_test
+```
+
+The render target uses declared pinned tools, fonts, and include inputs rather
+than a personal cache path. The HTML test consumes the existing Sphinx output
+and [client page contract](../../dependability/software_unit_design/client_connection_html_expectations.json).
+It is manually tagged and must be requested explicitly; recursive wildcard
+tests do not run it. Rendering and HTML contracts do not clear the unit's known
+class-comparison findings or establish behavioral/safety acceptance. See
+[documentation checks](../../../../tools/documentation/README.md) for generic
+target usage and checker limits.
 
 ```sh
 bazel test //score/message_passing/dependability/assumed_system/... //score/message_passing/dependability/requirements/...

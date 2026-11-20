@@ -18,7 +18,9 @@
 #include "score/message_passing/mock/shared_resource_engine_mock.h"
 
 #include <future>
+#include <memory>
 #include <thread>
+#include <vector>
 
 namespace score::message_passing
 {
@@ -292,7 +294,20 @@ class ClientConnectionTest : public ::testing::Test
 
         ExpectCleanUpOwner(connection);
         ExpectCloseFd();
+        EXPECT_CALL(*engine_, EnqueueCommand(_, ISharedResourceEngine::TimePoint{}, _, &connection))
+            .Times(AtMost(1))
+            .WillOnce([&](auto&, auto, ISharedResourceEngine::CommandCallback callback, auto) {
+                disconnect_command_callback_ = std::move(callback);
+            });
         InvokeDisconnectCommand();
+        if (background_thread_.joinable())
+        {
+            background_thread_.join();
+        }
+        if (!disconnect_command_callback_.empty())
+        {
+            InvokeDisconnectCommand();
+        }
         EXPECT_EQ(connection.GetState(), State::kStopped);
         EXPECT_EQ(connection.GetStopReason(), StopReason::kUserRequested);
     }
@@ -406,6 +421,10 @@ TEST_F(ClientConnectionTest, TryingToConnectOnceStoppingOnHardError)
 
 TEST_F(ClientConnectionTest, TryingToSyncConnectOnceStoppingOnHardError)
 {
+    ::testing::Test::RecordProperty(
+        "lobster-tracing",
+        "MessagePassing.ClientConnectionMaintainsStateMachine MessagePassing.ClientConnectionStateCallbackInvocation");
+    ::testing::Test::RecordProperty("given", "a synchronous first connection attempt fails with a terminal open error");
     client_config_.sync_first_connect = true;
 
     const auto error_list_to_test = {std::make_pair(EACCES, StopReason::kPermission),
@@ -414,14 +433,80 @@ TEST_F(ClientConnectionTest, TryingToSyncConnectOnceStoppingOnHardError)
     for (auto entry : error_list_to_test)
     {
         detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+        std::vector<State> callback_states;
 
         AtTryOpenCall_Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(entry.first)));
+        CatchDisconnectCommand();
         ExpectCleanUpOwner(connection);
 
-        connection.Start(IClientConnection::StateCallback(), IClientConnection::NotifyCallback());
+        ::testing::Test::RecordProperty("when", "Start schedules finalization and the engine executes that command");
+        connection.Start(
+            [this, &callback_states](State state) noexcept {
+                callback_states.push_back(state);
+                if (state == State::kStopped)
+                {
+                    EXPECT_TRUE(on_callback_thread_.load());
+                }
+            },
+            {});
+        EXPECT_EQ(connection.GetStopReason(), entry.second);
+        InvokeDisconnectCommand();
+
+        ::testing::Test::RecordProperty(
+            "then", "one engine-context cleanup completes the ordered starting, stopping, and stopped callbacks");
+        const std::vector<State> expected_states{State::kStarting, State::kStopping, State::kStopped};
+        EXPECT_EQ(callback_states, expected_states);
         EXPECT_EQ(connection.GetState(), State::kStopped);
         EXPECT_EQ(connection.GetStopReason(), entry.second);
     }
+}
+
+TEST_F(ClientConnectionTest, SyncConnectFailureMayFinalizeBeforeStartReturns)
+{
+    ::testing::Test::RecordProperty(
+        "lobster-tracing",
+        "MessagePassing.ClientConnectionMaintainsStateMachine MessagePassing.ClientConnectionStateCallbackInvocation");
+    ::testing::Test::RecordProperty("given", "synchronous connection failure with immediately executed engine cleanup");
+    client_config_.sync_first_connect = true;
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    std::vector<State> callback_states;
+    const auto caller_thread = std::this_thread::get_id();
+    std::thread::id cleanup_thread;
+
+    AtTryOpenCall_Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(EACCES)));
+    EXPECT_CALL(*engine_, CleanUpOwner(&connection)).WillOnce([&](auto) {
+        cleanup_thread = std::this_thread::get_id();
+        EXPECT_NE(cleanup_thread, caller_thread);
+        EXPECT_TRUE(on_callback_thread_.load());
+    });
+    EXPECT_CALL(*engine_, EnqueueCommand(_, ISharedResourceEngine::TimePoint{}, _, &connection))
+        .WillOnce([this](auto&, auto, ISharedResourceEngine::CommandCallback callback, auto) {
+            std::thread callback_thread([this, callback = std::move(callback)]() mutable {
+                on_callback_thread_ = true;
+                callback(ISharedResourceEngine::Clock::now());
+                on_callback_thread_ = false;
+            });
+            callback_thread.join();
+        });
+
+    ::testing::Test::RecordProperty("when", "the engine finishes queued cleanup before Start returns");
+    connection.Start(
+        [this, &callback_states](State state) noexcept {
+            callback_states.push_back(state);
+            if (state == State::kStopped)
+            {
+                EXPECT_TRUE(on_callback_thread_.load());
+            }
+        },
+        {});
+
+    ::testing::Test::RecordProperty("then",
+                                    "ordered callbacks and cleanup complete without requiring a stopping snapshot");
+    const std::vector<State> expected_states{State::kStarting, State::kStopping, State::kStopped};
+    EXPECT_EQ(callback_states, expected_states);
+    EXPECT_NE(cleanup_thread, std::thread::id{});
+    EXPECT_EQ(connection.GetState(), State::kStopped);
+    EXPECT_EQ(connection.GetStopReason(), StopReason::kPermission);
 }
 
 TEST_F(ClientConnectionTest, TryingToConnectMultipleTimesStoppingOnPermissionError)
@@ -567,6 +652,174 @@ TEST_F(ClientConnectionTest, SuccessfullySyncConnectingAtFirstAttemptThenExplici
     MakeSuccessfulConnection(connection);
 
     StopCurrentConnectionAsIfInCallback(connection);
+}
+
+TEST_F(ClientConnectionTest, ReadyStateCallbackCanStopConnection)
+{
+    ::testing::Test::RecordProperty(
+        "lobster-tracing",
+        "MessagePassing.ClientConnectionMaintainsStateMachine MessagePassing.ClientConnectionStateCallbackInvocation");
+    ::testing::Test::RecordProperty("given", "connection whose ready-state callback requests Stop");
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    std::vector<State> callback_states;
+
+    CatchImmediateConnectCommand();
+    connection.Start(
+        [&](State state) noexcept {
+            callback_states.push_back(state);
+            EXPECT_EQ(connection.GetState(), state);
+            if (state == State::kReady)
+            {
+                connection.Stop();
+                EXPECT_EQ(connection.GetState(), State::kStopped);
+            }
+        },
+        {});
+
+    ::testing::Test::RecordProperty("when",
+                                    "the engine establishes the connection and invokes the ready-state callback");
+    AtTryOpenCall_Return(kValidFd);
+    CatchPosixEndpointRegistration();
+    ExpectCleanUpOwner(connection);
+    ExpectCloseFd();
+    InvokeConnectCommand();
+
+    ::testing::Test::RecordProperty("then",
+                                    "stopping and stopped callbacks complete before the ready-state callback returns");
+    const std::vector<State> expected_states{State::kStarting, State::kReady, State::kStopping, State::kStopped};
+    EXPECT_EQ(callback_states, expected_states);
+    EXPECT_EQ(connection.GetState(), State::kStopped);
+    EXPECT_EQ(connection.GetStopReason(), StopReason::kUserRequested);
+}
+
+TEST_F(ClientConnectionTest, StoppedStateCallbackCanRestartConnection)
+{
+    ::testing::Test::RecordProperty(
+        "lobster-tracing",
+        "MessagePassing.ClientConnectionMaintainsStateMachine MessagePassing.ClientConnectionStateCallbackInvocation");
+    ::testing::Test::RecordProperty("given", "ready connection whose first stopped-state callback requests Restart");
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    std::uint32_t stopped_callback_count{0};
+    MakeSuccessfulConnection(connection, [&](State state) noexcept {
+        if (state == State::kStopped)
+        {
+            ++stopped_callback_count;
+            if (stopped_callback_count == 1U)
+            {
+                connection.Restart();
+                EXPECT_EQ(connection.GetState(), State::kStarting);
+            }
+        }
+    });
+
+    ::testing::Test::RecordProperty("when", "queued stop cleanup invokes the stopped-state callback");
+    CatchDisconnectCommand();
+    connection.Stop();
+    ExpectCleanUpOwner(connection);
+    ExpectCloseFd();
+    CatchImmediateConnectCommand();
+    InvokeDisconnectCommand();
+
+    ::testing::Test::RecordProperty(
+        "then", "restart enters Starting before the stopped-state callback returns and can reconnect");
+    EXPECT_EQ(stopped_callback_count, 1U);
+    EXPECT_EQ(connection.GetState(), State::kStarting);
+    EXPECT_EQ(connection.GetStopReason(), StopReason::kNone);
+    AtTryOpenCall_Return(kValidFd);
+    CatchPosixEndpointRegistration();
+    InvokeConnectCommand();
+    EXPECT_EQ(connection.GetState(), State::kReady);
+    StopCurrentConnection(connection);
+    EXPECT_EQ(stopped_callback_count, 2U);
+}
+
+TEST_F(ClientConnectionTest, StoppedStateCallbackKeepsOwnedCaptureAliveDuringDestruction)
+{
+    ::testing::Test::RecordProperty(
+        "lobster-tracing",
+        "MessagePassing.ClientConnectionMaintainsStateMachine MessagePassing.ClientConnectionStateCallbackInvocation");
+    ::testing::Test::RecordProperty("given", "stopped-state callback owning a capture and destroying its connection");
+    auto connection = std::make_unique<detail::ClientConnection>(engine_, protocol_config_, client_config_);
+    auto captured_value = std::make_shared<std::uint32_t>(42U);
+    const std::weak_ptr<std::uint32_t> capture_lifetime{captured_value};
+    const auto destroy_connection = [&]() noexcept {
+        connection.reset();
+        EXPECT_FALSE(capture_lifetime.expired());
+    };
+    MakeSuccessfulConnection(*connection,
+                             [&destroy_connection, captured_value = std::move(captured_value)](State state) noexcept {
+                                 if (state == State::kStopped)
+                                 {
+                                     destroy_connection();
+                                     EXPECT_EQ(*captured_value, 42U);
+                                 }
+                             });
+
+    ::testing::Test::RecordProperty("when", "queued stop cleanup invokes the stopped-state callback");
+    CatchDisconnectCommand();
+    connection->Stop();
+    ExpectCleanUpOwner(*connection);
+    ExpectCloseFd();
+    InvokeDisconnectCommand();
+
+    ::testing::Test::RecordProperty(
+        "then", "the connection is destroyed but its callback capture survives until callback return");
+    EXPECT_FALSE(connection);
+    EXPECT_TRUE(capture_lifetime.expired());
+}
+
+TEST_F(ClientConnectionTest, ConcurrentStopRequestsFinalizeOnce)
+{
+    ::testing::Test::RecordProperty(
+        "lobster-tracing",
+        "MessagePassing.ClientConnectionMaintainsStateMachine MessagePassing.ClientConnectionStateCallbackInvocation");
+    ::testing::Test::RecordProperty("given", "ready connection with registered state callbacks");
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    std::atomic<std::uint32_t> stopping_callback_count{0};
+    std::atomic<std::uint32_t> stopped_callback_count{0};
+    MakeSuccessfulConnection(connection, [&](State state) noexcept {
+        if (state == State::kStopping)
+        {
+            ++stopping_callback_count;
+        }
+        else if (state == State::kStopped)
+        {
+            ++stopped_callback_count;
+        }
+    });
+
+    ::testing::Test::RecordProperty("when", "two application threads request Stop before queued cleanup executes");
+    CatchDisconnectCommand();
+    std::promise<void> release_stops;
+    const auto start_stops = release_stops.get_future().share();
+    std::thread first_stop([&]() {
+        start_stops.wait();
+        connection.Stop();
+    });
+    std::thread second_stop([&]() {
+        start_stops.wait();
+        connection.Stop();
+    });
+    release_stops.set_value();
+    first_stop.join();
+    second_stop.join();
+    connection.Stop();
+
+    EXPECT_EQ(connection.GetState(), State::kStopping);
+    EXPECT_EQ(connection.GetStopReason(), StopReason::kUserRequested);
+    EXPECT_EQ(stopping_callback_count.load(), 1U);
+    EXPECT_EQ(stopped_callback_count.load(), 0U);
+
+    ::testing::Test::RecordProperty(
+        "then", "one cleanup and one stopped-state callback occur, and further Stop calls are no-ops");
+    ExpectCleanUpOwner(connection);
+    ExpectCloseFd();
+    InvokeDisconnectCommand();
+    connection.Stop();
+    EXPECT_EQ(connection.GetState(), State::kStopped);
+    EXPECT_EQ(connection.GetStopReason(), StopReason::kUserRequested);
+    EXPECT_EQ(stopping_callback_count.load(), 1U);
+    EXPECT_EQ(stopped_callback_count.load(), 1U);
 }
 
 TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptThenFirstReadDisconnected)
@@ -732,6 +985,54 @@ TEST_F(ClientConnectionTest, GivenTrulyAsyncWhenSendIsCalledItIsQueued)
     StopCurrentConnection(connection);
 }
 
+TEST_F(ClientConnectionTest, GivenQueuedSends_WhenStoppedAndRestarted_ExpectSendCapacityRestored)
+{
+    client_config_.max_queued_sends = 2;
+    client_config_.max_async_replies = 1;
+    client_config_.truly_async = true;
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+
+    std::array<std::uint8_t, kMaxSendSize> send_buffer{};
+    std::uint32_t reply_callback_count{0};
+    for (std::uint32_t cycle = 0; cycle < 2; ++cycle)
+    {
+        if (cycle != 0)
+        {
+            CatchImmediateConnectCommand();
+            connection.Restart();
+            EXPECT_EQ(connection.GetState(), State::kStarting);
+
+            AtTryOpenCall_Return(kValidFd);
+            CatchPosixEndpointRegistration();
+            InvokeConnectCommand();
+            EXPECT_EQ(connection.GetState(), State::kReady);
+        }
+
+        CatchSendQueueCommand();
+        EXPECT_TRUE(connection.Send(send_buffer));
+        EXPECT_TRUE(connection.SendWithCallback(send_buffer, [&](auto message_expected) noexcept {
+            EXPECT_FALSE(message_expected);
+            if (!message_expected)
+            {
+                EXPECT_EQ(message_expected.error().GetOsDependentErrorCode(), EPIPE);
+            }
+            ++reply_callback_count;
+        }));
+        EXPECT_TRUE(connection.Send(send_buffer));
+
+        const auto send_result = connection.Send(send_buffer);
+        EXPECT_FALSE(send_result);
+        if (!send_result)
+        {
+            EXPECT_EQ(send_result.error().GetOsDependentErrorCode(), ENOBUFS);
+        }
+
+        StopCurrentConnection(connection);
+        EXPECT_EQ(reply_callback_count, cycle + 1);
+    }
+}
+
 TEST_F(ClientConnectionTest, SendIsNotQueuedIfTrulyAsyncButNoSlots)
 {
     ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.BE_SendQueueExhausted");
@@ -830,6 +1131,415 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsDirectlyButUnblocksQueue)
     StopCurrentConnection(connection);
 }
 
+TEST_F(ClientConnectionTest, QueuedAdmissionsArmOnceAndPreservePendingReply)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "a truly asynchronous connection with room for two queued messages");
+    client_config_.truly_async = true;
+    client_config_.max_queued_sends = 2;
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+
+    std::array<std::uint8_t, kMaxSendSize> send_buffer{};
+    std::array<std::uint8_t, kMaxReplySize> reply_buffer{};
+    std::uint32_t callback_count{0};
+
+    CatchSendQueueCommand();
+    EXPECT_TRUE(connection.SendWithCallback(send_buffer, [&callback_count](auto message_expected) noexcept {
+        ++callback_count;
+        EXPECT_TRUE(message_expected.has_value());
+    }));
+    EXPECT_TRUE(connection.Send(send_buffer));
+
+    ::testing::Test::RecordProperty("when",
+                                    "messages queue behind the scheduled drain and then behind its pending request");
+    EXPECT_CALL(*engine_, SendProtocolMessage(kValidFd, score::cpp::to_underlying(detail::ClientToServer::REQUEST), _))
+        .WillOnce(Return(score::cpp::blank{}));
+    InvokeSendQueueCommand();
+    EXPECT_TRUE(connection.Send(send_buffer));
+    EXPECT_EQ(callback_count, 0U);
+
+    EXPECT_CALL(*engine_, SendProtocolMessage(kValidFd, score::cpp::to_underlying(detail::ClientToServer::SEND), _))
+        .Times(2)
+        .WillRepeatedly(Return(score::cpp::blank{}));
+    AtProtocolReceive_Return(score::cpp::to_underlying(detail::ServerToClient::REPLY), reply_buffer);
+    InvokeEndpointInput();
+    EXPECT_EQ(callback_count, 1U);
+
+    ::testing::Test::RecordProperty(
+        "then", "queued messages share one drain command, the reply completes once, and idle admission can arm again");
+    CatchSendQueueCommand();
+    EXPECT_TRUE(connection.Send(send_buffer));
+    EXPECT_CALL(*engine_, SendProtocolMessage(kValidFd, score::cpp::to_underlying(detail::ClientToServer::SEND), _))
+        .WillOnce(Return(score::cpp::blank{}));
+    InvokeSendQueueCommand();
+    StopCurrentConnection(connection);
+    EXPECT_EQ(callback_count, 1U);
+}
+
+TEST_F(ClientConnectionTest, SendWaitReplyDirectErrorPreservesQueuedRequestCallback)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given",
+                                    "a request is queued while a direct SendWaitReply transport is in progress");
+    client_config_.truly_async = true;
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+
+    std::array<std::uint8_t, kMaxSendSize> send_buffer{};
+    std::array<std::uint8_t, kMaxReplySize> reply_buffer{};
+    std::uint32_t callback_count{0};
+
+    EXPECT_CALL(*engine_, SendProtocolMessage).WillOnce([&](auto&&...) {
+        auto send_result = connection.SendWithCallback(send_buffer, [&callback_count](auto message_expected) noexcept {
+            ++callback_count;
+            EXPECT_TRUE(message_expected.has_value());
+        });
+        EXPECT_TRUE(send_result);
+        EXPECT_EQ(callback_count, 0U);
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EPIPE));
+    });
+    CatchSendQueueCommand();
+
+    ::testing::Test::RecordProperty(
+        "when", "the direct transport fails with EPIPE and the queued request later receives a reply");
+    auto send_wait_reply_result = connection.SendWaitReply(send_buffer, reply_buffer);
+    EXPECT_FALSE(send_wait_reply_result);
+    EXPECT_EQ(send_wait_reply_result.error().GetOsDependentErrorCode(), EPIPE);
+    EXPECT_EQ(callback_count, 0U);
+
+    EXPECT_CALL(*engine_, SendProtocolMessage(kValidFd, score::cpp::to_underlying(detail::ClientToServer::REQUEST), _))
+        .WillOnce(Return(score::cpp::blank{}));
+    InvokeSendQueueCommand();
+    EXPECT_EQ(callback_count, 0U);
+
+    AtProtocolReceive_Return(score::cpp::to_underlying(detail::ServerToClient::REPLY), reply_buffer);
+    InvokeEndpointInput();
+
+    ::testing::Test::RecordProperty("then",
+                                    "the queued request callback completes exactly once and is not cancelled on stop");
+    EXPECT_EQ(callback_count, 1U);
+    StopCurrentConnection(connection);
+    EXPECT_EQ(callback_count, 1U);
+}
+
+TEST_F(ClientConnectionTest, SendWaitReplyStopDefersCloseAndRestartUntilTransportReturns)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "a synchronous-first connection with a direct request in transport");
+    client_config_.sync_first_connect = true;
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+
+    std::array<std::uint8_t, kMaxSendSize> send_buffer{};
+    std::array<std::uint8_t, kMaxReplySize> reply_buffer{};
+    EXPECT_CALL(*engine_, SendProtocolMessage).WillOnce([&](auto&&...) {
+        CatchDisconnectCommand();
+        connection.Stop();
+        ExpectCleanUpOwner(connection);
+        InvokeDisconnectCommand();
+        EXPECT_EQ(connection.GetState(), State::kStopping);
+
+        if (connection.GetState() == State::kStopping)
+        {
+            connection.Restart();
+            EXPECT_EQ(connection.GetState(), State::kStopping);
+            EXPECT_FALSE(connection.Send(send_buffer));
+            EXPECT_FALSE(connection.SendWithCallback(send_buffer, [](auto) noexcept {}));
+            EXPECT_FALSE(connection.SendWaitReply(send_buffer, reply_buffer));
+            CatchDisconnectCommand();
+        }
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EPIPE));
+    });
+
+    ::testing::Test::RecordProperty("when",
+                                    "stopping and restarting are requested before the old transport returns EPIPE");
+    auto result = connection.SendWaitReply(send_buffer, reply_buffer);
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error().GetOsDependentErrorCode(), EPIPE);
+
+    ::testing::Test::RecordProperty("then", "closure and restart are deferred until old send termination completes");
+    if (!disconnect_command_callback_.empty())
+    {
+        ExpectCloseFd();
+        InvokeDisconnectCommand();
+    }
+    EXPECT_EQ(connection.GetState(), State::kStopped);
+
+    AtTryOpenCall_Return(kValidFd);
+    CatchEndpointRegistrationCommand();
+    connection.Restart();
+    CatchPosixEndpointRegistration();
+    InvokeEndpointRegistrationCommand();
+    EXPECT_EQ(connection.GetState(), State::kReady);
+    StopCurrentConnection(connection);
+}
+
+TEST_F(ClientConnectionTest, DirectSendsAllowQueuedAdmissionWhileTransportIsDelayed)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "a fully ordered direct send paused in transport");
+    for (const bool with_reply : {false, true})
+    {
+        client_config_.fully_ordered = true;
+        detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+        MakeSuccessfulConnection(connection);
+        std::array<std::uint8_t, kMaxSendSize> send_buffer{};
+        std::array<std::uint8_t, kMaxReplySize> reply_buffer{};
+        std::promise<void> entered;
+        std::promise<void> release;
+        auto released = release.get_future();
+        std::uint32_t callback_count{0};
+        EXPECT_CALL(*engine_, SendProtocolMessage).WillOnce([&](auto&&...) {
+            entered.set_value();
+            released.wait();
+            return score::cpp::blank{};
+        });
+        auto sending = std::async(std::launch::async, [&]() {
+            if (with_reply)
+            {
+                return connection.SendWithCallback(send_buffer, [&](auto message_expected) {
+                    EXPECT_TRUE(message_expected.has_value());
+                    ++callback_count;
+                });
+            }
+            return connection.Send(send_buffer);
+        });
+        entered.get_future().wait();
+
+        ::testing::Test::RecordProperty("when",
+                                        "another thread submits a send before the direct transport is released");
+        auto queued = std::async(std::launch::async, [&]() {
+            return connection.Send(send_buffer);
+        });
+        EXPECT_EQ(queued.wait_for(std::chrono::seconds{5}), std::future_status::ready);
+        if (!with_reply)
+        {
+            CatchSendQueueCommand();
+        }
+        release.set_value();
+        EXPECT_TRUE(sending.get());
+        EXPECT_TRUE(queued.get());
+
+        ::testing::Test::RecordProperty("then", "queue admission completes during IPC and ordered dispatch follows it");
+        EXPECT_CALL(*engine_, SendProtocolMessage(kValidFd, score::cpp::to_underlying(detail::ClientToServer::SEND), _))
+            .WillOnce(Return(score::cpp::blank{}));
+        if (with_reply)
+        {
+            AtProtocolReceive_Return(score::cpp::to_underlying(detail::ServerToClient::REPLY), reply_buffer);
+            InvokeEndpointInput();
+            EXPECT_EQ(callback_count, 1U);
+        }
+        else
+        {
+            InvokeSendQueueCommand();
+        }
+        StopCurrentConnection(connection);
+    }
+}
+
+TEST_F(ClientConnectionTest, SendStopDefersCloseUntilTransportReturns)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "a direct one-way send in transport");
+    for (const bool fully_ordered : {false, true})
+    {
+        client_config_.fully_ordered = fully_ordered;
+        detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+        MakeSuccessfulConnection(connection);
+        std::array<std::uint8_t, kMaxSendSize> send_buffer{};
+        EXPECT_CALL(*engine_, SendProtocolMessage).WillOnce([&](auto&&...) {
+            CatchDisconnectCommand();
+            connection.Stop();
+            ExpectCleanUpOwner(connection);
+            InvokeDisconnectCommand();
+            EXPECT_EQ(connection.GetState(), State::kStopping);
+            EXPECT_FALSE(connection.Send(send_buffer));
+            CatchDisconnectCommand();
+            return score::cpp::blank{};
+        });
+
+        ::testing::Test::RecordProperty("when", "stop cleanup executes before the one-way transport returns");
+        EXPECT_TRUE(connection.Send(send_buffer));
+        EXPECT_EQ(connection.GetState(), State::kStopping);
+        ExpectCloseFd();
+        InvokeDisconnectCommand();
+        ::testing::Test::RecordProperty("then", "the descriptor closes exactly once after the admitted send completes");
+        EXPECT_EQ(connection.GetState(), State::kStopped);
+    }
+}
+
+TEST_F(ClientConnectionTest, SendWithCallbackStopCompletesOnceBeforeTransportReturns)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "a direct callback request in transport");
+    for (const bool transport_succeeds : {false, true})
+    {
+        detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+        MakeSuccessfulConnection(connection);
+        std::array<std::uint8_t, kMaxSendSize> send_buffer{};
+        std::uint32_t callback_count{0};
+        EXPECT_CALL(*engine_, SendProtocolMessage).WillOnce([&](auto&&...) {
+            CatchDisconnectCommand();
+            connection.Stop();
+            ExpectCleanUpOwner(connection);
+            InvokeDisconnectCommand();
+            EXPECT_EQ(connection.GetState(), State::kStopping);
+            EXPECT_EQ(callback_count, 1U);
+            CatchDisconnectCommand();
+            return transport_succeeds ? score::cpp::expected_blank<score::os::Error>{}
+                                      : score::cpp::make_unexpected(score::os::Error::createFromErrno(EPIPE));
+        });
+
+        ::testing::Test::RecordProperty("when",
+                                        "stop cancels the callback before a successful or failed transport return");
+        EXPECT_TRUE(connection.SendWithCallback(send_buffer, [&](auto message_expected) {
+            ++callback_count;
+            ASSERT_FALSE(message_expected.has_value());
+            EXPECT_EQ(message_expected.error().GetOsDependentErrorCode(), EPIPE);
+        }));
+        ExpectCloseFd();
+        InvokeDisconnectCommand();
+        ::testing::Test::RecordProperty("then",
+                                        "the accepted request receives one cancellation and no late slot change");
+        EXPECT_EQ(connection.GetState(), State::kStopped);
+        EXPECT_EQ(callback_count, 1U);
+    }
+}
+
+TEST_F(ClientConnectionTest, QueuedRequestStopPreservesActiveSendBufferAndPoolCapacity)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given",
+                                    "a queued request borrowing a send node while another send remains queued");
+    client_config_.truly_async = true;
+    client_config_.max_async_replies = 1;
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+    std::array<std::uint8_t, kMaxSendSize> request_buffer{42U};
+    std::array<std::uint8_t, kMaxSendSize> send_buffer{7U};
+    std::uint32_t callback_count{0};
+    CatchSendQueueCommand();
+    EXPECT_TRUE(connection.SendWithCallback(request_buffer, [&](auto message_expected) {
+        ++callback_count;
+        ASSERT_FALSE(message_expected.has_value());
+        EXPECT_EQ(message_expected.error().GetOsDependentErrorCode(), EPIPE);
+    }));
+    EXPECT_TRUE(connection.Send(send_buffer));
+    EXPECT_CALL(*engine_, SendProtocolMessage).WillOnce([&](auto, auto, score::cpp::span<const std::uint8_t> message) {
+        EXPECT_EQ(message.front(), 42U);
+        ExpectCleanUpOwner(connection);
+        connection.Stop();
+        EXPECT_EQ(connection.GetState(), State::kStopping);
+        EXPECT_EQ(callback_count, 1U);
+        EXPECT_EQ(message.front(), 42U);
+        CatchDisconnectCommand();
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EPIPE));
+    });
+
+    ::testing::Test::RecordProperty("when", "stop cancels pending callbacks during queued request IPC");
+    InvokeSendQueueCommand();
+    ExpectCloseFd();
+    InvokeDisconnectCommand();
+    EXPECT_EQ(callback_count, 1U);
+
+    CatchImmediateConnectCommand();
+    connection.Restart();
+    AtTryOpenCall_Return(kValidFd);
+    CatchPosixEndpointRegistration();
+    InvokeConnectCommand();
+    CatchSendQueueCommand();
+    EXPECT_TRUE(connection.Send(send_buffer));
+    EXPECT_TRUE(connection.Send(send_buffer));
+    EXPECT_FALSE(connection.Send(send_buffer));
+    ::testing::Test::RecordProperty("then", "active data stays valid and both preallocated send nodes are reusable");
+    StopCurrentConnection(connection);
+}
+
+TEST_F(ClientConnectionTest, SendWithCallbackEarlyReplyPreservesLaterRequestOnLateTransportError)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "a direct request whose reply arrives before transport returns");
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+    std::array<std::uint8_t, kMaxSendSize> send_buffer{};
+    std::array<std::uint8_t, kMaxReplySize> reply_buffer{};
+    struct ReplyContext
+    {
+        detail::ClientConnection& connection;
+        const std::array<std::uint8_t, kMaxSendSize>& message;
+        std::uint32_t first_count{0};
+        std::uint32_t second_count{0};
+        std::weak_ptr<std::uint32_t> callback_lifetime{};
+    } context{connection, send_buffer};
+    EXPECT_CALL(*engine_, SendProtocolMessage).WillOnce([&](auto&&...) {
+        EXPECT_CALL(*engine_,
+                    SendProtocolMessage(kValidFd, score::cpp::to_underlying(detail::ClientToServer::REQUEST), _))
+            .WillOnce(Return(score::cpp::blank{}));
+        AtProtocolReceive_Return(score::cpp::to_underlying(detail::ServerToClient::REPLY), reply_buffer);
+        InvokeEndpointInput();
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EPIPE));
+    });
+
+    ::testing::Test::RecordProperty("when",
+                                    "the reply starts a later request and the old transport then reports EPIPE");
+    EXPECT_TRUE(connection.SendWithCallback(send_buffer, [&context](auto message_expected) {
+        EXPECT_TRUE(message_expected.has_value());
+        ++context.first_count;
+        auto captured_value = std::make_shared<std::uint32_t>(42U);
+        context.callback_lifetime = captured_value;
+        EXPECT_TRUE(context.connection.SendWithCallback(
+            context.message,
+            [&context, captured_value = std::move(captured_value)](auto next_message_expected) noexcept {
+                ++context.second_count;
+                EXPECT_EQ(*captured_value, 42U);
+                ASSERT_FALSE(next_message_expected.has_value());
+                EXPECT_EQ(next_message_expected.error().GetOsDependentErrorCode(), EPIPE);
+            }));
+    }));
+    EXPECT_EQ(context.first_count, 1U);
+    EXPECT_EQ(context.second_count, 0U);
+    EXPECT_FALSE(context.callback_lifetime.expired());
+    StopCurrentConnection(connection);
+    ::testing::Test::RecordProperty("then",
+                                    "old recovery preserves the later callback and its exactly-once completion");
+    EXPECT_EQ(context.first_count, 1U);
+    EXPECT_EQ(context.second_count, 1U);
+    EXPECT_TRUE(context.callback_lifetime.expired());
+}
+
+TEST_F(ClientConnectionTest, CloseRunsOutsideSendMutexAndBeforeStoppedPublication)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "a ready connection with a close operation that calls back into its API");
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    bool closed{false};
+    MakeSuccessfulConnection(connection, [&](State state) {
+        if (state == State::kStopped)
+        {
+            EXPECT_TRUE(closed);
+        }
+    });
+    std::array<std::uint8_t, kMaxSendSize> send_buffer{};
+    CatchDisconnectCommand();
+    connection.Stop();
+    ExpectCleanUpOwner(connection);
+    EXPECT_CALL(*engine_, CloseClientConnection(kValidFd)).WillOnce([&](auto) {
+        EXPECT_EQ(connection.GetState(), State::kStopping);
+        EXPECT_FALSE(connection.Send(send_buffer));
+        EXPECT_FALSE(connection.SendWithCallback(send_buffer, [](auto) noexcept {}));
+        connection.Restart();
+        EXPECT_EQ(connection.GetState(), State::kStopping);
+        closed = true;
+    });
+
+    ::testing::Test::RecordProperty("when", "stop reaches descriptor closure");
+    InvokeDisconnectCommand();
+    ::testing::Test::RecordProperty("then", "send admission remains responsive and stopped is published after close");
+    EXPECT_EQ(connection.GetState(), State::kStopped);
+    EXPECT_TRUE(closed);
+}
+
 TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenCannotQueueMessage)
 {
     ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.BE_SendQueueExhausted");
@@ -899,7 +1609,6 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenQueuedMessageCancels)
     // close connection without replying to SendWaitReply
     StopCurrentConnection(connection);
     ::testing::Test::RecordProperty("then", "``SendWaitReply`` returns ``EPIPE``");
-    background_thread_.join();
 }
 
 TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenReceiveTooLong)
@@ -928,7 +1637,6 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenReceiveTooLong)
 
     StopCurrentConnection(connection);
 }
-
 TEST_F(ClientConnectionTest, SendWithCallbackFailsWhenCannotSendMessageDirectly)
 {
     ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
@@ -1118,7 +1826,6 @@ TEST_F(ClientConnectionTest, QueuedSendsCancelIfConnectionClosed)
     ::testing::Test::RecordProperty("when", "connection is stopped before any reply is received");
     StopCurrentConnection(connection);
     ::testing::Test::RecordProperty("then", "all pending callbacks and ``SendWaitReply`` receive ``EPIPE``");
-    background_thread_.join();
 }
 
 TEST_F(ClientConnectionTest, ConnectedStopsIfReceivesIoError)
@@ -1171,6 +1878,29 @@ TEST_F(ClientConnectionTest, ConnectedStopsIfReceivesReplyWithoutSend)
     ExpectCloseFd();
     InvokeEndpointInput();
     ::testing::Test::RecordProperty("then", "connection stops with reason ``kIoError``");
+    EXPECT_EQ(connection.GetState(), State::kStopped);
+    EXPECT_EQ(connection.GetStopReason(), StopReason::kIoError);
+}
+
+TEST_F(ClientConnectionTest, ReplyDuringDrainMarkerStopsWithoutInvokingEmptyCallback)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "an armed queue command with an empty reply-slot drain marker");
+    client_config_.truly_async = true;
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+    std::array<std::uint8_t, kMaxSendSize> send_buffer{};
+    std::array<std::uint8_t, kMaxReplySize> reply_buffer{};
+    CatchSendQueueCommand();
+    EXPECT_TRUE(connection.Send(send_buffer));
+    AtProtocolReceive_Return(score::cpp::to_underlying(detail::ServerToClient::REPLY), reply_buffer);
+    AtPosixEndpointUnregistration_InvokeDisconnect();
+    ExpectCleanUpOwner(connection);
+    ExpectCloseFd();
+
+    ::testing::Test::RecordProperty("when", "a reply is delivered before the queue command runs");
+    InvokeEndpointInput();
+    ::testing::Test::RecordProperty("then", "the unexpected reply stops the connection with an IO error");
     EXPECT_EQ(connection.GetState(), State::kStopped);
     EXPECT_EQ(connection.GetStopReason(), StopReason::kIoError);
 }

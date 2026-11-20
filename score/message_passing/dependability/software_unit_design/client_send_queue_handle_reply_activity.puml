@@ -1,0 +1,27 @@
+@startuml client_send_queue_handle_reply_activity
+title ClientSendQueue - handling a reply
+
+start
+:HandleReply(message);
+:Lock lifetime_.mutex_;
+if (Reply slot is disengaged or callback empty?) then (yes)
+    :Unlock and return false;
+    stop
+else (no)
+    :Move the callback locally;
+endif
+:Reset waiting_for_reply_ and clear its sender owner;
+:DrainUnderLock(lock);
+:Unlock lifetime_.mutex_;
+:Invoke the completed callback with message;
+:Return true;
+stop
+
+legend
+    An empty drain or ordered-send marker is not a pending request callback.
+    The facade maps false to unsolicited-reply kIoError stopping.
+    Queued progress occurs before the completed callback is invoked.
+    A later request may therefore own the slot before this callback runs.
+endlegend
+
+@enduml
