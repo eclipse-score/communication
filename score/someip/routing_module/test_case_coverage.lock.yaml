@@ -117,7 +117,11 @@ requirements:
   - id: RoutingModule.CR_RoutingModule_EmptyPayload
     version: '1'
     description: The routing module shall accept empty notification payloads in both RX and TX directions.
-    test_cases: []
+    test_cases:
+      - uid: //score/someip/routing_module/SomeipMessageHeaderParserTest:AcceptsAnEmptyPayload
+        given: a complete SOME/IP notification header with the minimum length
+        when: the header is parsed
+        then: the payload size is zero and the message size is the header size
   - id: RoutingModule.CR_RoutingModule_FieldCacheRelease
     version: '1'
     description: The routing module shall release its cached field values when their local service is removed.
@@ -141,7 +145,23 @@ requirements:
   - id: RoutingModule.CR_RoutingModule_InvalidFraming
     version: '1'
     description: The routing module shall reject malformed SOME/IP notification framing.
-    test_cases: []
+    test_cases:
+      - uid: //score/someip/routing_module/SomeipMessageHeaderParserTest:RejectsALengthBelowTheSOMEIPMinimum
+        given: a complete SOME/IP message with a length below eight
+        when: the header is parsed
+        then: parsing fails with a length-too-short error
+      - uid: //score/someip/routing_module/SomeipMessageHeaderParserTest:RejectsAMessageThatExceedsTheDatagram
+        given: a SOME/IP message whose declared length exceeds the bytes remaining in the UDP datagram
+        when: the header is parsed
+        then: parsing fails with a message-exceeds-datagram error
+      - uid: //score/someip/routing_module/SomeipMessageHeaderParserTest:RejectsAnIncompleteHeader
+        given: fewer than 16 bytes remain in a UDP datagram
+        when: a SOME/IP header is parsed
+        then: parsing fails with an invalid-header-size error
+      - uid: //score/someip/routing_module/SomeipMessageHeaderParserTest:RejectsAnUnsupportedProtocolVersion
+        given: a complete SOME/IP message whose protocol version is not one
+        when: the header is parsed
+        then: parsing fails with an unsupported-protocol-version error
   - id: RoutingModule.CR_RoutingModule_IoSockModule
     version: '1'
     description: The routing module shall execute notification transport inside a QNX io-sock module.
@@ -165,7 +185,11 @@ requirements:
   - id: RoutingModule.CR_RoutingModule_NotificationOnly
     version: '1'
     description: The routing module shall exclude non-notification SOME/IP message types from its data path.
-    test_cases: []
+    test_cases:
+      - uid: //score/someip/routing_module/SomeipMessageHeaderParserTest:LeavesMessageTypeFilteringToTheCaller
+        given: a complete SOME/IP response header
+        when: the header is parsed
+        then: the parsed message type is available to the caller for filtering
   - id: RoutingModule.CR_RoutingModule_OversizedPayload
     version: '1'
     description: The routing module shall reject notification payloads in both RX and TX directions whose size exceeds the payload buffer size of the LoLa event sample used for that event.
@@ -181,7 +205,11 @@ requirements:
   - id: RoutingModule.CR_RoutingModule_ReceiveMetadata
     version: '1'
     description: The routing module shall preserve received notification length, session ID, interface version, and message type in its LoLa sample metadata.
-    test_cases: []
+    test_cases:
+      - uid: //score/someip/routing_module/SomeipMessageHeaderParserTest:ParsesHeaderFieldsAndPayloadSize
+        given: a complete SOME/IP notification header with a four-byte payload
+        when: the header is parsed
+        then: service, event, client, session, versions, type, return code and payload size are decoded
   - id: RoutingModule.CR_RoutingModule_ReceiveRouteMatch
     version: '1'
     description: The routing module shall match RX notifications by service ID, event ID, local UDP port, and remote IPv4 endpoint.

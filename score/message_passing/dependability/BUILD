@@ -91,5 +91,6 @@ dependable_element(
         "//third_party/score_baselibs:containers",
         "//third_party/score_baselibs:futurecpp",
         "//third_party/score_baselibs:os",
+        "//third_party/score_baselibs:utils",
     ],
 )
