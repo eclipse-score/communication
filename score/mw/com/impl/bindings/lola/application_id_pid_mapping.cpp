@@ -38,7 +38,7 @@ std::optional<pid_t> TryUpdatePidForExistingId(
     // the DynamicArray always provides valid iterators from begin() / end().
     // coverity[autosar_cpp14_a8_4_10_violation]
     score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
-    score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,
+    score::containers::DynamicArray<ApplicationIdPidMappingEntry>::const_iterator entries_end,
     const std::uint32_t application_id,
     const pid_t pid)
 {

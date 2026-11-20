@@ -78,7 +78,8 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
     const auto instance_identifier_view = InstanceIdentifierView(instance_identifier);
     const auto& service_instance_deployment = instance_identifier_view.GetServiceInstanceDeployment();
     const auto& lola_service_instance_deployment = [&service_instance_deployment]() {
-        if (const auto* val = std::get_if<LolaServiceInstanceDeployment>(&service_instance_deployment.bindingInfo_))
+        if (const auto* val = std::get_if<LolaServiceInstanceDeployment>(&service_instance_deployment.bindingInfo_);
+            val != nullptr)
         {
             return *val;
         }
