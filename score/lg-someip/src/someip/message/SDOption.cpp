@@ -109,6 +109,7 @@ std::uint32_t SDOption::deserialize(std::uint8_t* data, std::uint32_t data_lengt
 
         case SOMEIP_SD_OPTION::IP4::TYPEID:
         case SOMEIP_SD_OPTION::IP4MULTI::TYPEID:
+        case SOMEIP_SD_OPTION::IP4SD::TYPEID:
             option_length_ = option_length;
             type_ = type;
             if (option_length != 0x09)
@@ -126,6 +127,7 @@ std::uint32_t SDOption::deserialize(std::uint8_t* data, std::uint32_t data_lengt
 
         case SOMEIP_SD_OPTION::IP6::TYPEID:
         case SOMEIP_SD_OPTION::IP6MULTI::TYPEID:
+        case SOMEIP_SD_OPTION::IP6SD::TYPEID:
             if (option_length != 0x15)
             {  // static value
                 return 0;
@@ -142,8 +144,13 @@ std::uint32_t SDOption::deserialize(std::uint8_t* data, std::uint32_t data_lengt
             break;
 
         default:
-            LGSOMEIP_LOG_ERROR << "SDOption::deserialize / type : " << type << " is wrong";
-            return 0;
+            // Unknown option types are skipped by their length. The option is kept as a placeholder so that the
+            // option indexes referenced by the SD entries stay valid.
+            LGSOMEIP_LOG_WARN << "SDOption::deserialize / skipping unknown option type : "
+                              << static_cast<std::uint32_t>(type);
+            option_length_ = option_length;
+            type_ = type;
+            break;
     }
 
     return serialized_length;
@@ -187,6 +194,7 @@ std::uint32_t SDOption::serialize(std::uint8_t* data)
 
         case SOMEIP_SD_OPTION::IP4::TYPEID:
         case SOMEIP_SD_OPTION::IP4MULTI::TYPEID:
+        case SOMEIP_SD_OPTION::IP4SD::TYPEID:
             set_byte_stream(data + SOMEIP_SD_OPTION::IP4::POS::PROTOCOL, &protocol_);
             set_byte_stream(data + SOMEIP_SD_OPTION::IP4::POS::PORT, &port_);
 
@@ -200,6 +208,7 @@ std::uint32_t SDOption::serialize(std::uint8_t* data)
 
         case SOMEIP_SD_OPTION::IP6::TYPEID:
         case SOMEIP_SD_OPTION::IP6MULTI::TYPEID:
+        case SOMEIP_SD_OPTION::IP6SD::TYPEID:
             set_byte_stream(data + SOMEIP_SD_OPTION::IP6::POS::PROTOCOL, &protocol_);
             set_byte_stream(data + SOMEIP_SD_OPTION::IP6::POS::PORT, &port_);
 
@@ -292,6 +301,7 @@ std::shared_ptr<lgsomeip::osabstraction::Address> SDOption::get_address_option()
     {
         case SOMEIP_SD_OPTION::IP4::TYPEID:
         case SOMEIP_SD_OPTION::IP4MULTI::TYPEID:
+        case SOMEIP_SD_OPTION::IP4SD::TYPEID:
         {
             struct sockaddr_in sockaddr;
             sockaddr.sin_addr.s_addr = *reinterpret_cast<std::uint32_t*>(address_bytes_);
@@ -307,6 +317,7 @@ std::shared_ptr<lgsomeip::osabstraction::Address> SDOption::get_address_option()
 
         case SOMEIP_SD_OPTION::IP6::TYPEID:
         case SOMEIP_SD_OPTION::IP6MULTI::TYPEID:
+        case SOMEIP_SD_OPTION::IP6SD::TYPEID:
             char ipv6_address_string[40];
             inet_ntop(AF_INET6, (void*)&address_bytes_, ipv6_address_string, sizeof(ipv6_address_string));
 
@@ -431,10 +442,12 @@ bool operator==(const SDOption& lhs, const SDOption& rhs)
     {
         case SOMEIP_SD_OPTION::IP4::TYPEID:
         case SOMEIP_SD_OPTION::IP4MULTI::TYPEID:
+        case SOMEIP_SD_OPTION::IP4SD::TYPEID:
             address_matches = memcmp(lhs.address_bytes_, rhs.address_bytes_, 4);
             return (lhs.port_ == rhs.port_) && (lhs.protocol_ == rhs.protocol_) && address_matches == 0;
         case SOMEIP_SD_OPTION::IP6::TYPEID:
         case SOMEIP_SD_OPTION::IP6MULTI::TYPEID:
+        case SOMEIP_SD_OPTION::IP6SD::TYPEID:
             address_matches = memcmp(lhs.address_bytes_, rhs.address_bytes_, 16);
             return (lhs.port_ == rhs.port_) && (lhs.protocol_ == rhs.protocol_) && address_matches == 0;
 

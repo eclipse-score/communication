@@ -292,6 +292,34 @@ const std::uint32_t PROTOCOL = 21;
 const std::uint32_t PORT = 22;
 }  // namespace POS
 }  // namespace IP6MULTI
+
+namespace IP4SD
+{
+const std::uint32_t SIZE = 12;
+const std::uint16_t TYPEID = 0x24;  // IPv4 SD ENDPOINT 0x24
+namespace POS
+{
+const std::uint32_t LENGTH = 0;  // STATIC VALUE = 0x09
+const std::uint32_t TYPE = 2;
+const std::uint32_t ADDRESS = 4;
+const std::uint32_t PROTOCOL = 9;
+const std::uint32_t PORT = 10;
+}  // namespace POS
+}  // namespace IP4SD
+
+namespace IP6SD
+{
+const std::uint32_t SIZE = 24;
+const std::uint16_t TYPEID = 0x26;  // IPv6 SD ENDPOINT 0x26
+namespace POS
+{
+const std::uint32_t LENGTH = 0;  // STATIC VALUE = 0x15
+const std::uint32_t TYPE = 2;
+const std::uint32_t ADDRESS = 4;
+const std::uint32_t PROTOCOL = 21;
+const std::uint32_t PORT = 22;
+}  // namespace POS
+}  // namespace IP6SD
 }  // namespace SOMEIP_SD_OPTION
 
 }  // namespace lgsomeip

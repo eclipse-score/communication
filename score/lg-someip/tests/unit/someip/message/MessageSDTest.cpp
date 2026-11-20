@@ -113,3 +113,26 @@ TEST(MessageSD, rejects_option_section_outside_message)
 
     EXPECT_FALSE(message.deserialize(buffer, sizeof(buffer)));
 }
+
+TEST(MessageSD, keeps_option_indexes_when_skipping_unknown_and_sd_endpoint_options)
+{
+    const std::uint8_t options[] = {0x00, 0x09, 0x24, 0x00, 0xc0, 0xa8, 0x01, 0x0a, 0x00, 0x11, 0x77, 0x1a,
+                                    0x00, 0x03, 0x7e, 0x00, 0xaa, 0xbb,
+                                    0x00, 0x09, 0x04, 0x00, 0x0a, 0x00, 0x00, 0x01, 0x00, 0x06, 0x75, 0x30};
+    std::vector<std::uint8_t> buffer(SOMEIP_HEADER::SIZE + SOMEIP_SD_HEADER::SIZE + 8 + sizeof(options), 0);
+    buffer[0] = 0xff;
+    buffer[1] = 0xff;
+    buffer[2] = 0x81;
+    buffer[3] = 0x00;
+    buffer[7] = static_cast<std::uint8_t>(8 + SOMEIP_SD_HEADER::SIZE + 8 + sizeof(options));
+    buffer[buffer.size() - sizeof(options) - 1] = static_cast<std::uint8_t>(sizeof(options));
+    std::copy(std::begin(options), std::end(options), buffer.end() - sizeof(options));
+
+    MessageSD message;
+    ASSERT_TRUE(message.deserialize(buffer.data(), static_cast<std::uint32_t>(buffer.size())));
+    ASSERT_EQ(message.options().size(), 3U);
+    EXPECT_EQ(message.option(0).get_type(), SOMEIP_SD_OPTION::IP4SD::TYPEID);
+    EXPECT_EQ(message.option(1).get_type(), 0x7e);
+    EXPECT_EQ(message.option(2).get_type(), SOMEIP_SD_OPTION::IP4::TYPEID);
+    EXPECT_EQ(message.option(2).get_address_option()->get_port_address(), 30000);
+}

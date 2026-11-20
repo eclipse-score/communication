@@ -156,3 +156,38 @@ TEST(SDOption, ipv6_address_round_trip)
     EXPECT_EQ(decoded_address->get_port_address(), 30490);
     EXPECT_TRUE(decoded_address->get_reliable());
 }
+
+TEST(SDOption, parses_ipv4_sd_endpoint_option)
+{
+    std::uint8_t payload[] = {0x00, 0x09, 0x24, 0x00, 0xc0, 0xa8, 0x01, 0x0a, 0x00, 0x11, 0x77, 0x1a};
+    SDOption option;
+
+    ASSERT_EQ(option.deserialize(payload, sizeof(payload)), sizeof(payload));
+    EXPECT_EQ(option.get_type(), SOMEIP_SD_OPTION::IP4SD::TYPEID);
+    auto address = option.get_address_option();
+    ASSERT_NE(address, nullptr);
+    EXPECT_EQ(address->get_ip_address(), "192.168.1.10");
+    EXPECT_EQ(address->get_port_address(), 30490);
+
+    std::uint8_t buffer[sizeof(payload)] = {};
+    EXPECT_EQ(option.serialize(buffer), sizeof(payload));
+    EXPECT_EQ(memcmp(payload, buffer, sizeof(payload)), 0);
+}
+
+TEST(SDOption, rejects_ipv4_sd_endpoint_option_with_wrong_length)
+{
+    std::uint8_t payload[] = {0x00, 0x05, 0x24, 0x00, 0xc0, 0xa8, 0x01, 0x0a};
+    SDOption option;
+
+    EXPECT_EQ(option.deserialize(payload, sizeof(payload)), 0U);
+}
+
+TEST(SDOption, skips_unknown_option_type_by_length)
+{
+    std::uint8_t payload[] = {0x00, 0x05, 0x7e, 0x00, 0x01, 0x02, 0x03, 0x04};
+    SDOption option;
+
+    EXPECT_EQ(option.deserialize(payload, sizeof(payload)), sizeof(payload));
+    EXPECT_EQ(option.get_type(), 0x7e);
+    EXPECT_EQ(option.get_address_option(), nullptr);
+}
