@@ -13,7 +13,7 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
-load("//quality/api_surface:api_surface.bzl", "api_surface_test")
+load("@score_tooling//api_surface:api_surface.bzl", "api_surface_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 # Capture README.md for Sphinx documentation.

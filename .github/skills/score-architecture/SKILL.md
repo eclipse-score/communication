@@ -305,6 +305,34 @@ namespace safety_software_seooc_example {
 - **Internal API** interfaces are modeled inside the owning element's `namespace` so their
   fully-qualified name reflects containment.
 
+
+### Sequence diagrams
+
+Full guide: `validation/core/docs/specifications/sequence_design.md`.
+
+| Write | Meaning | Checked against |
+|-------|---------|-----------------|
+| `participant unit_1 <<unit>>` | unit (or class in `unit_design`) | unit / class ids |
+| `participant comp_a` | component or SEooC as one black box | component ids; does not cover its units |
+| `actor User` | application using the SEooC | public API |
+| `participant Platform <<external>>` | platform or other SEooC (letter case of the stereotype is ignored) | not checked |
+| `[-> unit_1 : op()` | found gate: unspecified sender | method checked against the interfaces the element provides (internal or public API); counts for coverage |
+| `unit_1 ->] : op()` | lost gate: unspecified receiver | not checked; does not count for coverage |
+
+- `->` is a synchronous call, `->>` an asynchronous call (only `>>` / `<<` heads are async; `\` and `/`
+  are drawing style); `-->` / `-->>` and `return` are replies and are never validated as calls. Only
+  `A -> B ** : op()` is a create message (`!!` a delete message); a `create X` statement does not
+  change the kind of the following messages.
+- Actor to SEooC: the method shall be declared on a public API interface the element provides (`)-`).
+  Callback (any call from an SEooC element to an actor): the label shall name a public API interface
+  the element requires (`-(`) or one of its methods. Without component context the whole public API
+  is searched by name. Checked whenever a public API is declared, even without internal API diagrams.
+- A component or SEooC lifeline is a black box: it needs a shared interface with its partner (union of
+  its units' interfaces), the method shall be declared on a shared interface, and it never covers the
+  interface connection between two units inside it.
+- `actor` / `<<external>>` declared in any sequence diagram applies to that uid in all of them. Such a
+  uid shall not name a unit, component or SEooC.
+
 ---
 
 ## Element Identifiers
@@ -342,11 +370,6 @@ so the identifier matches the `static` diagram. A name that does not resolve to 
 as the component diagram is a **cross-diagram validation mismatch** (see **Active validations**,
 `component_sequence.md`).
 
-`ExternalEndpoint` is a reserved participant name for an actor outside the described architecture;
-it is emitted verbatim (no scope) so it always matches itself across diagrams.
-Declare it as `participant ExternalEndpoint` (or `participant "ExternalEndpoint" as ext`), at most
-once per diagram.
-
 **Best practices**:
 - Name every architecture-relevant element with the Bazel target / C++ name; skip the alias unless
   the name is long or qualified.
@@ -354,7 +377,7 @@ once per diagram.
   identical on both sides.
 - In sequence diagrams, write the full qualified name (`"Component::Unit"`) once nesting is
   involved; use the bare name only when the unit is top-level.
-- Use `ExternalEndpoint` verbatim for out-of-scope actors.
+- Declare out-of-scope parties as `actor` or `participant X <<external>>` (see **Sequence diagrams**).
 - Treat identifiers as derived, not authored — to change one, change the nesting or the name, not
   the identifier itself.
 
@@ -594,7 +617,8 @@ the source of truth for what is checked and which notation is valid**.
 | **Component ↔ public API** | `component_public_api.md` | top-level interfaces in `static` ↔ `public_api` class diagram; must be bound from the SEooC | sensitive |
 | **Component ↔ internal API** | `component_internal_api.md` | interfaces in `static` ↔ `internal_api` diagram | sensitive |
 | **Component ↔ sequence** | `component_sequence.md` | unit ids + interface connections in `static` ↔ `dynamic` sequence diagrams | sensitive |
-| **Sequence ↔ internal API** | `sequence_internal_api.md` | sequence method calls ↔ `internal_api` interfaces (method name, consumer/provider role, interface coverage) | sensitive |
+| **Sequence ↔ internal API** | `sequence_internal_api.md` | sequence method calls ↔ `internal_api` interfaces (method name, consumer/provider role, interface coverage, gate messages) | sensitive |
+| **Sequence ↔ public API** | `sequence_public_api.md` | actor calls and callbacks in sequence diagrams ↔ `public_api` class diagram | sensitive |
 | **Class design ↔ implementation** | `class_design_implementation.md` | `unit_design` class diagram ↔ C++ implementation (entities, methods, variables, enums, relationships, templates) | sensitive + type normalization |
 
 Additional element-level checks (see [`docs/user_guide/general.rst`](../../../bazel/rules/rules_score/docs/user_guide/general.rst)):
@@ -628,8 +652,8 @@ Traceability from a feature requirement down to implementing components runs thr
   case-insensitively, but every other validator is case-sensitive, so keep them identical.
 - Model down to the `unit` level in the static diagram; every implemented unit must appear (and no
   extra ones — missing *and* extra elements both fail).
-- Sequence diagrams are validated: participant names must equal the component-diagram unit
-  names, and every cross-unit call must correspond to an interface connection (and be declared in
+- Sequence diagrams are validated: unit participant names must equal the component-diagram unit
+  names (actors and `<<external>>` participants are exempt), and every call between two elements must correspond to an interface connection (and be declared in
   the internal API). Keep them at the unit-interaction level.
 - Unit-design class diagrams are validated against the C++ implementation — the design is the
   contract (implementation-only members are allowed, design-only members are not).
