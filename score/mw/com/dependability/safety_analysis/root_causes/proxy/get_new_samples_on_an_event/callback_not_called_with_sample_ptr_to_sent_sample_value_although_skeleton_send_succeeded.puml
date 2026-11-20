@@ -1,0 +1,106 @@
+' ********************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' ********************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("GetNewSamples receiver callback not called with SamplePtr pointing to value sent by a successful call to SkeletonEvent::Send()", "mw_com.CallbackNotCalledWithSamplePtrToSentSampleValueAlthoughSkeletonSendSucceeded")
+$OrGate("OrGate1", "mw_com.CallbackNotCalledWithSamplePtrToSentSampleValueAlthoughSkeletonSendSucceeded")
+
+$TransferInGate("No SamplePtr could be created", "NoSamplePtrCouldBeCreatedTransfer", "NoSamplePtrCouldBeCreated", "OrGate1")
+
+$RootCause("Receiver callback not called although sample found", "ReceiverCallbackNotCalled", "OrGate1")
+$IntermediateEvent("ProxyEvent could not find slot index in EventDataControl with valid status corresponding\nto slot index in EventDataStorage containing value sent by SkeletonEvent", "SkeletonSendSucceeded", "OrGate1")
+$OrGate("OrGate100", "SkeletonSendSucceeded")
+
+$IntermediateEvent("Correct EventDataControl not used\nby ProxyEvent or SkeletonEvent", "WrongEventDataControlUsed", "OrGate100")
+$OrGate("OrGate101", "WrongEventDataControlUsed")
+$TransferInGate("Could not open control shared memory", "CannotOpenSharedMemory", "CouldNotOpenControlSharedMemory", "OrGate101")
+$RootCause("SkeletonEvent inserted EventDataControl\ninto ServiceDataControl with wrong EventFqId", "InvalidServiceDataControlKey", "OrGate101")
+$RootCause("ProxyEvent found EventDataControl\nin ServiceDataControl with wrong EventFqId", "ProxyEventFoundWrongServiceDataControlKey", "OrGate101")
+$RootCause("SkeletonEvent found EventDataControl\nin ServiceDataControl with wrong EventFqId", "SkeletonEventFoundWrongServiceDataControlKey", "OrGate101")
+
+$TransferInGate("Control shared memory not initialized correctly", "SharedMemoryNotInitializedCorrectlyTransfer", "ControlSharedMemoryNotInitializedCorrectly", "OrGate101")
+$TransferOutEvent("Shared memory not initialized correctly", "SharedMemoryNotInitializedCorrectlyTransfer")
+$OrGate("OrGate31", "SharedMemoryNotInitializedCorrectlyTransfer")
+
+$RootCause("Shared memory not initialized by skeleton", "SharedMemoryNotInitializedBySkeleton", "OrGate31")
+
+$IntermediateEvent("Uninitialized shared memory opened instead of created by skeleton on reoffer", "UninitializedSharedMemoryOpened", "OrGate31")
+$AndGate("AndGate1", "UninitializedSharedMemoryOpened")
+$RootCause("Previous skeleton crashed while initializing shared memory", "PreviousSkeletonCrashed", "AndGate1")
+$IntermediateEvent("Skeleton could not exclusively lock usage marker file although no Proxies are connected", "SkeletonCouldNotLockUsageMarkerFile", "AndGate1")
+$OrGate("OrGate59", "SkeletonCouldNotLockUsageMarkerFile")
+$RootCause("Unrelated actor locked usage marker file", "UnrelatedActorLockedUsageMarkerFile", "OrGate59")
+$RootCause("Flock OS error", "FlockOSError", "OrGate59")
+
+$IntermediateEvent("Correct EventDataStorage not used\nby ProxyEvent or SkeletonEvent", "WrongEventDataStorageUsed", "OrGate100")
+$OrGate("OrGate102", "WrongEventDataStorageUsed")
+$TransferInGate("Could not open data shared memory", "CannotOpenSharedMemory", "CouldNotOpenDataSharedMemory", "OrGate102")
+$RootCause("SkeletonEvent inserted EventDataStorage\ninto ServiceDataStorage with wrong EventFqId", "InvalidServiceDataStorageKey", "OrGate102")
+$RootCause("ProxyEvent found EventDataStorage\nin ServiceDataStorage with wrong EventFqId", "ProxyEventFoundWrongServiceDataStorageKey", "OrGate102")
+$RootCause("SkeletonEvent found EventDataStorage\nin ServiceDataStorage with wrong EventFqId", "SkeletonEventFoundWrongServiceDataStorageKey", "OrGate102")
+
+$TransferInGate("Data shared memory not initialized correctly", "SharedMemoryNotInitializedCorrectlyTransfer", "DataSharedMemoryNotInitializedCorrectly", "OrGate102")
+
+$IntermediateEvent("Control slot value corresponding to data slot\ncontaining send value not ready for reading", "ControlSlotNotReadyForReading", "OrGate100")
+$OrGate("OrGate27", "ControlSlotNotReadyForReading")
+$RootCause("Skeleton did not mark sample ready for reading during Send", "SkeletonDidNotMarkSampleReadyForReadingDuringSend", "OrGate27")
+$RootCause("Update of slot status is not yet visible to ProxyEvent (atomic memory order)", "UpdateOfSlotNotYetVisibleToProxyEvent", "OrGate27")
+$RootCause("SkeletonEvent wrote sample to the wrong slot in EventDataStorage", "SkeletonEventWroteSampleToWrongSlot", "OrGate27")
+$TransferInGate("Control shared memory corrupted by other process", "SharedMemoryCorruptedByOtherProcess", "ControlSharedMemoryCorruptedByOtherProcess", "OrGate27")
+
+$IntermediateEvent("Control slot value corresponding to data slot\ncontaining send value has old timestamp", "ControlSlotHasOldTimestamp", "OrGate100")
+$OrGate("OrGate26", "ControlSlotHasOldTimestamp")
+$RootCause("Skeleton did set correct timestamp during Send", "SkeletonDidSetCorrectTimestampDuringSend", "OrGate26")
+$RootCause("Update of slot timestamp is not yet visible to ProxyEvent (atomic memory order)", "UpdateOfSlotTimestampNotYetVisibleToProxyEvent", "OrGate26")
+$RootCause("Last seen timestamp incorrectly stored in ProxyEvent", "LastSeenTimestampIncorrectlyStoredInProxyEvent", "OrGate26")
+$RootCause("SkeletonEvent wrote sample to the wrong slot in EventDataStorage", "SkeletonEventWroteSampleToWrongSlot", "OrGate26")
+$TransferInGate("Control shared memory corrupted by other process", "SharedMemoryCorruptedByOtherProcess", "ControlSharedMemoryTimestampCorruptedByOtherProcess", "OrGate26")
+
+$IntermediateEvent("Data slot value is not read as having the equal value\nthat was provided to SkeletonEvent::Send()", "SampleInSharedMemoryNotEqualToSentSample", "OrGate100")
+$OrGate("OrGate43", "SampleInSharedMemoryNotEqualToSentSample")
+$TransferInGate("Data shared memory corrupted by other process", "SharedMemoryCorruptedByOtherProcess", "DataSharedMemoryCorruptedByOtherProcess", "OrGate43")
+
+$IntermediateEvent("Wrong value was written in data slot", "SkeletonEventWroteWrongValueInDataSlot", "OrGate43")
+$OrGate("OrGate45", "SkeletonEventWroteWrongValueInDataSlot")
+$RootCause("Bytes allocated for data slot are less than size of sample", "BytesForDataSlotLessThanSizeOfSample", "OrGate45")
+$RootCause("Pointer to which sample is written is not aligned properly", "PointerToSampleNotAlignedProperly", "OrGate45")
+$RootCause("With copy SkeletonEvent::Send() did not copy value into data slot", "WithCopySkeletonEventSendDidNotCopyValueIntoDataSlot", "OrGate45")
+
+$IntermediateEvent("ProxyEvent interpreted event value in data slot wrong", "ProxyEventInterpretedValueInDataSlotWrong", "OrGate43")
+$OrGate("OrGate147", "ProxyEventInterpretedValueInDataSlotWrong")
+$RootCause("Service type interface used by\nProxy / Skeleton sides are different", "ServiceTypeInterfaceMismatch", "OrGate147")
+$RootCause("Proxy / Skeleton sides are compiled with different\npadding / alignment compiler settings", "PaddingAlignmentMismatch", "OrGate147")
+
+$IntermediateEvent("SampleAllocateePtr passed to SkeletonEvent::Send() does\nnot point into that SkeletonEvent's EventDataStorage", "SampleAllocateePtrNotInEventDataStorage", "OrGate43")
+$OrGate("OrGate48", "SampleAllocateePtrNotInEventDataStorage")
+$RootCause("SkeletonEvent::Send() called with SampleAllocateePtr\nnot originally from same SkeletonEvent", "SkeletonEventSendCalledWithWrongSampleAllocateePtr", "OrGate48")
+$IntermediateEvent("SkeletonEvent::Send() called with SampleAllocateePtr\nnot originally created by SkeletonEvent::Allocate", "SkeletonEventSendCalledWithNonAllocatedSampleAllocateePtr", "OrGate48")
+$OrGate("OrGate49", "SkeletonEventSendCalledWithNonAllocatedSampleAllocateePtr")
+$RootCause("SampleAllocateePtr is copied", "SampleAllocateePtrCopied", "OrGate49")
+$RootCause("SampleAllocateePtr is constructed by user", "SampleAllocateePtrConstructedByUser", "OrGate49")
+
+$IntermediateEvent("Data slot value has been updated\nwhile slot marked ready for reading", "DataSlotUpdatedWhileReadyForReading", "OrGate43")
+$OrGate("OrGate50", "DataSlotUpdatedWhileReadyForReading")
+$IntermediateEvent("Slot reference count went to zero while SamplePtrs to slot still exist", "SlotReferenceCountWentToZeroWhileReady", "OrGate50")
+$IntermediateEvent("Data slot value was modified by SkeletonEvent\nwhile slot was marked ready for reading", "DataSlotModifiedWhileNonZeroRefCount", "OrGate50")
+$RootCause("SkeletonEvent::Allocate() hands out SampleAllocateePtr\nto slot which was ready reading before the call to Allocate", "SampleAllocateePtrAllocatedWhileSlotNonZeroRefCount", "DataSlotModifiedWhileNonZeroRefCount")
+$OrGate("OrGate51", "SlotReferenceCountWentToZeroWhileReady")
+$RootCause("SamplePtr was copied and more than one was\ndestroyed (freeing more than the single allocated slot)", "SamplePtrCopiedAndDestroyedMultipleTimes", "OrGate51")
+$RootCause("SamplePtr was created by user pointing to slot", "SamplePtrCreatedByUserPointingToSlot", "OrGate51")
+$RootCause("Sample reference count was not incremented before handing out SamplePtr", "SampleReferenceCountNotIncremented", "OrGate51")
+$RootCause("SkeletonEvent::Send() called with SampleAllocateePtr pointing to the\nsame slot while SamplePtrs to slot still exist", "SampleAllocateePtrCreatedWhileSlotNonZeroRefCount", "OrGate51")
+
+@enduml

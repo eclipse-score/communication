@@ -1,0 +1,45 @@
+' ********************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' ********************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("Receiver is called more times than allowed", "mw_com.ReceiverIsCalledMoreTimesThanAllowed")
+$OrGate("OrGate1", "mw_com.ReceiverIsCalledMoreTimesThanAllowed")
+
+' $IntermediateEvent("Number of available SamplePtrs initialized incorrectly", "NumberOfAvailableSamplePtrsInitializedIncorrectly", "OrGate1")
+
+' $IntermediateEvent("Number of available SamplePtrs not decremented when SamplePtr created", "NumberOfAvailableSamplePtrsNotDecrementedWhenSamplePtrCreated", "OrGate1")
+$RootCause("Receiver called for the same sample more than once", "ReceiverCalledForSameSampleMoreThanOnce", "OrGate1")
+
+$IntermediateEvent("ProxyEvent called receiver although there should be no available SamplePtrs", "NumberOfAvailableSamplePtrsModifiedIncorrectly", "OrGate1")
+$OrGate("OrGate4", "NumberOfAvailableSamplePtrsModifiedIncorrectly")
+$RootCause("ProxyEvent did not use SampleReferenceTracker to\nmanage number of available SamplePtrs", "ProxyEventDidNotUseTrackerGuardFactory", "OrGate4")
+$RootCause("Number of available SamplePtrs is not\nset in SampleReferenceTracker in ProxyEvent::Subscribe\nwith max_sample_count", "NumberOfAvailableSamplePtrsNotSetInSubscribe", "OrGate4")
+$RootCause("Number of available SamplePtrs is not decremented with\nmax_num_samples in GetNewSamples with SampleReferenceTracker::Allocate()", "NumberOfAvailableSamplePtrsNotDecrementedInGetNewSamples", "OrGate4")
+$RootCause("Number of available SamplePtrs is incremented\nby reference tracking mechanism outside of SampleReferenceGuard destructor", "NumberOfAvailableSamplePtrsIncrementedOutsideDestructor", "OrGate4")
+
+
+' gtodo: Add section to forest about tracker guard factory not giving out sample ptr when it should (i.e. because number of available SamplePtrs is not incremented when )
+
+' max sample count in GetNewSamples
+
+
+' max samples in subscribe
+' $IntermediateEvent("MaxSamplesInSubscribe", "OrGate1")
+
+
+' currently existing SamplePtrs
+
+@enduml

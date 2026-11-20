@@ -15,8 +15,8 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("Returns wrong sample count", "Communication.ReturnsWrongSampleCount")
-
-$RootCause("The counter of invoked callbacks is wrong", "CounterOfInvokedCallbacksIsWrong", "Communication.ReturnsWrongSampleCount")
+$FailureMode("Returned call count different to number of times receiver called", "mw_com.ReturnedCallCountDifferentToNumberOfTimesReceiverCalled")
+' The root cause cannot be broken down further so we intentionally link the root cause directly to the failure mode.
+$RootCause("Returned call count different to number of times receiver called", "ReturnedCallCountDifferentToNumberOfTimesReceiverCalledRootCause", "mw_com.ReturnedCallCountDifferentToNumberOfTimesReceiverCalled")
 
 @enduml
