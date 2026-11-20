@@ -36,13 +36,13 @@ title Server <-> Client Sequence Diagram (QNX: QNX Dispatch)
 
 note across : The Unix Domain counterpart is in server_client_sequence_linux.puml.\nBoth platforms expose the same public API.
 
-participant "ExternalClient" as ExternalClient
+actor ExternalClient
 participant client_connection
 participant qnx_dispatch_client_factory
 participant qnx_dispatch_engine
 participant qnx_dispatch_server
 participant qnx_dispatch_server_factory
-participant "ExternalServer" as ExternalServer
+actor ExternalServer
 
 ' -----------------------------------------------------------------
 == Setup ==

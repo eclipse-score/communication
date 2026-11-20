@@ -25,11 +25,11 @@ skinparam NoteTextAlignment left
 
 title Client / Server Integration Pilot: Setup and Asynchronous Request/Reply
 
-actor ExternalClient <<external>>
+actor ExternalClient
 participant IClientConnection as client_api
 participant IServer as server_api
 participant IServerConnection as server_connection_api
-actor ExternalServer <<external>>
+actor ExternalServer
 
 note across : OS-independent public API view; IPC arrows are transport messages, not C++ method calls.\nClient/server objects have been created through IClientFactory/IServerFactory with matching protocol configuration.\nOne permitted interleaving is shown; callback completion is not guaranteed to happen after an API call returns.
 
@@ -45,7 +45,7 @@ server_api --> ExternalServer : expected_blank<Error>{} (listening)
 
 ExternalClient -> client_api : Start(state_callback, notify_callback)
 activate client_api
-client_api -> ExternalClient : state_callback(State::kStarting)
+client_api -> ExternalClient : StateCallback(State::kStarting)
 note over ExternalClient, client_api : Nested in Start(), on the calling thread.\nThe callback may call Stop(); this scenario continues without stopping.
 ExternalClient --> client_api : void
 client_api --> ExternalClient : void
@@ -54,11 +54,11 @@ deactivate client_api
 == Accept a connection ==
 
 client_api ->> server_api : IPC: connection attempt
-server_api -> ExternalServer : connect_callback(connection)
+server_api -> ExternalServer : ConnectCallback(connection)
 ExternalServer --> server_api : expected<UserData, Error>{context_ptr}
 note over server_connection_api, ExternalServer : The library owns connection; the callback receives an IServerConnection&.\nUserData is associated with the accepted connection, not returned to the client.
 server_api -->> client_api : IPC: connection accepted
-client_api -> ExternalClient : state_callback(State::kReady)
+client_api -> ExternalClient : StateCallback(State::kReady)
 ExternalClient --> client_api : void
 note over ExternalClient, client_api : Ready follows return from the Starting callback.\nReady's thread is unspecified; it may precede return from Start().
 
@@ -74,7 +74,7 @@ else Request accepted for background transmission
 
     alt Request and reply delivered successfully
         client_api ->> server_connection_api : IPC: request(message)
-        server_connection_api -> ExternalServer : sent_with_reply_callback(connection, message)
+        server_connection_api -> ExternalServer : MessageCallback(connection, message)
         activate ExternalServer
         ExternalServer -> server_connection_api : Reply(reply)
         server_connection_api --> ExternalServer : expected_blank<Error>{}
@@ -83,10 +83,10 @@ else Request accepted for background transmission
         note over server_connection_api, ExternalServer : Returning success from sent_with_reply_callback does not send a reply.\nReply() is a separate call on connection, shown inside the callback here.\nA valid-size reply and successful delivery are assumed in this branch.
 
         server_connection_api -->> client_api : IPC: reply(reply)
-        client_api -> ExternalClient : reply_callback(expected<span<const uint8_t>, Error>{reply})
+        client_api -> ExternalClient : ReplyCallback(expected<span<const uint8_t>, Error>{reply})
         ExternalClient --> client_api : void
     else Background send fails or peer disconnects before a reply
-        client_api -> ExternalClient : reply_callback(unexpected(Error))
+        client_api -> ExternalClient : ReplyCallback(unexpected(Error))
         ExternalClient --> client_api : void
         note over ExternalClient, client_api : Error is reported by reply_callback, not by the earlier successful return.\nConnection loss also produces Stopping/Stopped state callbacks (not expanded here);\na background send failure need not stop the connection.
     end
