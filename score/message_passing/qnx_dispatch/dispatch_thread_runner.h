@@ -71,6 +71,11 @@ class DispatchThreadRunner
 
     void Stop() noexcept;
 
+    /// \brief Blocks until the dispatch handler that is currently running, if any, has finished.
+    /// \details Used after detaching a resource manager, to make sure that no handler is still using the
+    ///          object the resource manager belonged to when it is destroyed.
+    void WaitForCurrentHandler() noexcept;
+
     dispatch_t* GetDispatchPointer() const noexcept
     {
         return dispatch_pointer_;
@@ -102,6 +107,8 @@ class DispatchThreadRunner
     // NOLINTNEXTLINE(score-banned-type) TODO: wait for new clarification of CB #26380215 from QNX
     std::thread thread_;
     std::mutex thread_mutex_;
+    /// \brief Held by the dispatch thread while it runs a handler.
+    std::mutex handler_mutex_;
 
     dispatch_t* dispatch_pointer_;
     dispatch_context_t* context_pointer_;

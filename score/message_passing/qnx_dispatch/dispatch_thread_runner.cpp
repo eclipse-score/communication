@@ -70,6 +70,7 @@ DispatchThreadRunner::DispatchThreadRunner(score::os::Channel& channel,
       quit_flag_{false},
       thread_{},
       thread_mutex_{},
+      handler_mutex_{},
       dispatch_pointer_{nullptr},
       context_pointer_{},
       side_channel_coid_{}
@@ -142,6 +143,15 @@ DispatchThreadRunner::~DispatchThreadRunner() noexcept
     Stop();
 }
 
+void DispatchThreadRunner::WaitForCurrentHandler() noexcept
+{
+    // A handler cannot wait for itself; it is already known to be running
+    if (!IsMyThread(std::this_thread::get_id()))
+    {
+        std::lock_guard handler_guard(handler_mutex_);
+    }
+}
+
 void DispatchThreadRunner::RunOnThread() noexcept
 {
     while (!quit_flag_)
@@ -149,6 +159,7 @@ void DispatchThreadRunner::RunOnThread() noexcept
         // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
         if (dispatch_.dispatch_block(context_pointer_))
         {
+            std::lock_guard handler_guard(handler_mutex_);
             // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
             score::cpp::ignore = dispatch_.dispatch_handler(context_pointer_);
         }
