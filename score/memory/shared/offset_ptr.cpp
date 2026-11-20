@@ -21,6 +21,7 @@ namespace
 /// \brief global (process wide) flag, whether bounds-checking shall be done.
 /// \details defaults to true (for safety reasons). Users of shared-memory/OffsetPtr infrastructure can enable/disable
 ///          it via EnableOffsetPtrBoundsChecking(bool enable)
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(process-wide-runtime-state)
 bool bounds_checking_enabled = true;
 
 }  // anonymous namespace
