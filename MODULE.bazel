@@ -442,6 +442,6 @@ http_archive(
 )
 
 register_toolchains(
-    "//bazel/toolchains:sphinx_toolchain",
+    "//bazel/toolchains/sphinx",
     dev_dependency = True,
 )

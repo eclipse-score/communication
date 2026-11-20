@@ -40,7 +40,7 @@ common:linux_x64 --config=linux_x64_gcc_15
 # Default required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
 common --config=linux_x64_gcc_15
 
-common --extra_toolchains=//bazel/toolchains:score_communication_libclang_toolchain
+common --extra_toolchains=//bazel/toolchains/clang_with_libclang
 
 build --incompatible_strict_action_env
 test --test_output=errors
