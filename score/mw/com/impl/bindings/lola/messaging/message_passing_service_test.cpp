@@ -406,6 +406,35 @@ TEST_F(MessagePassingServiceTest, UnregisterEventNotificationExistenceChangedCal
     MessagePassingService unit{asil_qm_cfg_, asil_qm_cfg_, std::move(factory_)};
     unit.UnregisterEventNotificationExistenceChangedCallback(QualityType::kASIL_QM, event_id);
 }
+
+TEST_F(MessagePassingServiceTest, RegisterEventDataExistsCallbackDispatchesToAsilBInstance)
+{
+    const ElementFqId event_id{2U, 4U, 3U, ServiceElementType::EVENT};
+
+    // Expecting a call to RegisterEventDataExistsCallback of ASIL-B mock instance only
+    EXPECT_CALL(*asil_b_message_passing_service_instance_mock_, RegisterEventDataExistsCallback(event_id, _)).Times(1);
+    EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_, RegisterEventDataExistsCallback(_, _)).Times(0);
+
+    // When calling RegisterEventDataExistsCallback
+    WithAsilBAndQmInstance();
+    MessagePassingService unit{asil_qm_cfg_, asil_qm_cfg_, std::move(factory_)};
+    unit.RegisterEventDataExistsCallback(QualityType::kASIL_B, event_id, {});
+}
+
+TEST_F(MessagePassingServiceTest, RegisterEventDataExistsCallbackDispatchesToAsilQMInstance)
+{
+    const ElementFqId event_id{2U, 4U, 3U, ServiceElementType::EVENT};
+
+    // Expecting a call to RegisterEventDataExistsCallback of ASIL-QM mock instance only
+    EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_, RegisterEventDataExistsCallback(event_id, _)).Times(1);
+    EXPECT_CALL(*asil_b_message_passing_service_instance_mock_, RegisterEventDataExistsCallback(_, _)).Times(0);
+
+    // When calling RegisterEventDataExistsCallback
+    WithAsilBAndQmInstance();
+    MessagePassingService unit{asil_qm_cfg_, asil_qm_cfg_, std::move(factory_)};
+    unit.RegisterEventDataExistsCallback(QualityType::kASIL_QM, event_id, {});
+}
+
 class MessagePassingServiceQMDelegationTest : public MessagePassingServiceTest
 {
   protected:

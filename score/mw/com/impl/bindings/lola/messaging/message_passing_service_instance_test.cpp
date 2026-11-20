@@ -24,6 +24,12 @@
 
 #include "score/os/mocklib/unistdmock.h"
 
+#include <atomic>
+#include <chrono>
+#include <future>
+#include <memory>
+#include <thread>
+
 namespace score::mw::com::impl::lola
 {
 
@@ -31,6 +37,42 @@ class MessagePassingServiceInstanceAttorney
 {
   public:
     using MessageType = MessagePassingServiceInstance::MessageType;
+
+    static bool HasCatchUpPool(const MessagePassingServiceInstance& instance)
+    {
+        return instance.catch_up_pool_ != nullptr;
+    }
+
+    /// \brief Returns once all catch-up tasks posted so far were executed (or skipped). The pool has a single thread.
+    static bool FlushCatchUpTasks(MessagePassingServiceInstance& instance)
+    {
+        auto done = std::make_shared<std::promise<void>>();
+        auto done_future = done->get_future();
+        instance.catch_up_pool_->Post([done](const score::cpp::stop_token&) {
+            done->set_value();
+        });
+        return done_future.wait_for(std::chrono::seconds(10)) == std::future_status::ready;
+    }
+
+    /// \brief Occupies the single catch-up thread until the returned flag is set or the pool is shut down.
+    static std::shared_ptr<std::atomic<bool>> BlockCatchUpPool(MessagePassingServiceInstance& instance)
+    {
+        auto release = std::make_shared<std::atomic<bool>>(false);
+        auto started = std::make_shared<std::promise<void>>();
+        auto started_future = started->get_future();
+        instance.catch_up_pool_->Post([release, started](const score::cpp::stop_token& token) {
+            started->set_value();
+            while (!release->load() && !token.stop_requested())
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+        });
+        if (started_future.wait_for(std::chrono::seconds(10)) != std::future_status::ready)
+        {
+            return nullptr;
+        }
+        return release;
+    }
     static constexpr auto max_receive_handlers_per_event = MessagePassingServiceInstance::kMaxReceiveHandlersPerEvent;
     static constexpr auto node_id_tmp_buffer_size = MessagePassingServiceInstance::NodeIdTmpBufferSize;
 };
@@ -79,6 +121,11 @@ class MessagePassingServiceInstanceTest : public ::testing::Test
         ON_CALL(executor_mock_, Enqueue(testing::_)).WillByDefault([this](auto&& task) {
             executor_task_ = std::forward<decltype(task)>(task);
         });
+    }
+
+    void WaitForCatchUpTasks(MessagePassingServiceInstance& instance)
+    {
+        ASSERT_TRUE(MessagePassingServiceInstanceAttorney::FlushCatchUpTasks(instance));
     }
 
     template <typename T>
@@ -690,6 +737,433 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteNotifiesClientsExceed
 
     // Then all clients should be notified
     EXPECT_EQ(nums_called, size);
+}
+
+// Characterizes behaviour without a DataExists callback: no catch-up notification for a late registration (issue #1488)
+TEST_F(MessagePassingServiceInstanceTest, NotifyEventDoesNotCatchUpSecondClientRegisteredAfterSend)
+{
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+
+    std::uint32_t sends{0U};
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
+        .WillRepeatedly(::testing::Invoke([&sends](auto&&...) {
+            auto mock = score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(
+                score::cpp::pmr::new_delete_resource());
+            ON_CALL(*mock, GetState()).WillByDefault(testing::Return(IClientConnection::State::kReady));
+            EXPECT_CALL(*mock, Send(::testing::_)).WillRepeatedly(::testing::Invoke([&sends]() {
+                ++sends;
+                return score::cpp::expected_blank<score::os::Error>{};
+            }));
+            return mock;
+        }));
+
+    // Given consumer A (pid 10) is registered
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+
+    // When the event is notified before consumer B (pid 20) has registered
+    instance.NotifyEvent(event_id_);
+    ASSERT_EQ(sends, 1U);
+
+    // and B's registration is processed afterwards
+    user_data_.emplace<uintptr_t>(20u);
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+
+    // Then B receives no catch-up notification
+    EXPECT_EQ(sends, 1U);
+
+    // and the next NotifyEvent() reaches both A and B
+    instance.NotifyEvent(event_id_);
+    EXPECT_EQ(sends, 3U);
+}
+
+TEST_F(MessagePassingServiceInstanceTest, RegisterMessageSendsCatchUpNotificationIfDataExists)
+{
+    // Given service instance whose event already has a sample
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+    instance.RegisterEventDataExistsCallback(event_id_, []() noexcept {
+        return true;
+    });
+
+    // Expect exactly one NotifyEvent message to the registering node
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
+        .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
+
+    // and the executor of the user receive handlers to stay untouched
+    EXPECT_CALL(executor_mock_, Enqueue(::testing::_)).Times(0);
+
+    // When the node registers for the event and the catch-up worker has finished
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+    WaitForCatchUpTasks(instance);
+}
+
+TEST_F(MessagePassingServiceInstanceTest, CatchUpWorkerIsCreatedWithTheFirstDataExistsCallback)
+{
+    // Given service instance without data exists callback
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+
+    // Expect no catch-up worker
+    EXPECT_FALSE(MessagePassingServiceInstanceAttorney::HasCatchUpPool(instance));
+
+    // When a data exists callback is registered
+    instance.RegisterEventDataExistsCallback(event_id_, []() noexcept {
+        return true;
+    });
+
+    // Then the worker exists
+    EXPECT_TRUE(MessagePassingServiceInstanceAttorney::HasCatchUpPool(instance));
+}
+
+TEST_F(MessagePassingServiceInstanceTest, RegisterMessageDefersCatchUpSendToWorker)
+{
+    // Given service instance whose event already has a sample
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+    instance.RegisterEventDataExistsCallback(event_id_, []() noexcept {
+        return true;
+    });
+
+    // and the catch-up worker being busy
+    const auto release = MessagePassingServiceInstanceAttorney::BlockCatchUpPool(instance);
+    ASSERT_NE(release, nullptr);
+
+    // Expect no connection and no send while the register message is handled, and both once the worker is free
+    ::testing::MockFunction<void(int)> checkpoint;
+    {
+        ::testing::InSequence in_sequence;
+        EXPECT_CALL(checkpoint, Call(1));
+        EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_)).Times(1);
+        EXPECT_CALL(client_connection_mock_, Send(::testing::_))
+            .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
+    }
+
+    // When the node registers for the event
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+    checkpoint.Call(1);
+
+    // and the worker becomes free
+    release->store(true);
+    WaitForCatchUpTasks(instance);
+}
+
+TEST_F(MessagePassingServiceInstanceTest, PostedCatchUpNotificationIsSkippedIfInstanceWasDestroyed)
+{
+    // Given service instance whose event already has a sample
+    auto instance = std::make_unique<MessagePassingServiceInstance>(
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_);
+    instance->RegisterEventDataExistsCallback(event_id_, []() noexcept {
+        return true;
+    });
+
+    // and a busy catch-up worker, so that the task for a registering node is still queued
+    const auto release = MessagePassingServiceInstanceAttorney::BlockCatchUpPool(*instance);
+    ASSERT_NE(release, nullptr);
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+
+    // Expect the task to neither connect nor send
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_)).Times(0);
+
+    // When the instance is destroyed before the task runs
+    instance.reset();
+}
+
+TEST_F(MessagePassingServiceInstanceTest, PostedCatchUpNotificationIsSkippedIfSampleNoLongerExists)
+{
+    // Given service instance whose event has a sample
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+    std::atomic<bool> data_exists{true};
+    instance.RegisterEventDataExistsCallback(event_id_, [&data_exists]() noexcept {
+        return data_exists.load();
+    });
+    const auto release = MessagePassingServiceInstanceAttorney::BlockCatchUpPool(instance);
+    ASSERT_NE(release, nullptr);
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+
+    // and the sample being gone before the queued task runs
+    data_exists = false;
+
+    // Expect the task to neither connect nor send
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_)).Times(0);
+    release->store(true);
+    WaitForCatchUpTasks(instance);
+}
+
+TEST_F(MessagePassingServiceInstanceTest, PostedCatchUpNotificationIsSkippedIfNodeUnregisteredMeanwhile)
+{
+    // Given service instance whose event has a sample
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+    instance.RegisterEventDataExistsCallback(event_id_, []() noexcept {
+        return true;
+    });
+    const auto release = MessagePassingServiceInstanceAttorney::BlockCatchUpPool(instance);
+    ASSERT_NE(release, nullptr);
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+
+    // and the node unregistering before the queued task runs
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kUnregisterEventNotifier));
+
+    // Expect the task to neither connect nor send
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_)).Times(0);
+    release->store(true);
+    WaitForCatchUpTasks(instance);
+}
+
+TEST_F(MessagePassingServiceInstanceTest, RegisterMessageSendsNoCatchUpNotificationIfNoDataExists)
+{
+    // Given service instance whose event has no sample yet
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+    instance.RegisterEventDataExistsCallback(event_id_, []() noexcept {
+        return false;
+    });
+
+    // Expect no message and no connection
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_)).Times(0);
+
+    // When the node registers for the event
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+    WaitForCatchUpTasks(instance);
+}
+
+TEST_F(MessagePassingServiceInstanceTest, RedundantRegisterMessageSendsNoSecondCatchUpNotification)
+{
+    // Given service instance whose event already has a sample
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+    instance.RegisterEventDataExistsCallback(event_id_, []() noexcept {
+        return true;
+    });
+
+    // Expect only one NotifyEvent message in total
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
+        .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
+
+    // When the same node registers twice
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+    WaitForCatchUpTasks(instance);
+}
+
+TEST_F(MessagePassingServiceInstanceTest, UnregisteringExistenceCallbackAlsoRemovesDataExistsCallback)
+{
+    // Given service instance with a data exists callback returning true
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+    instance.RegisterEventDataExistsCallback(event_id_, []() noexcept {
+        return true;
+    });
+
+    // When the existence callback is unregistered, as done by SkeletonEvent::PrepareStopOffer()
+    instance.UnregisterEventNotificationExistenceChangedCallback(event_id_);
+
+    // Expect no message and no connection upon a later registration
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_)).Times(0);
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+    WaitForCatchUpTasks(instance);
+}
+
+TEST_F(MessagePassingServiceInstanceTest, CatchUpNotificationReachesSecondClientRegisteredAfterSend)
+{
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+
+    std::uint32_t sends{0U};
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
+        .WillRepeatedly(::testing::Invoke([&sends](auto&&...) {
+            auto mock = score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(
+                score::cpp::pmr::new_delete_resource());
+            ON_CALL(*mock, GetState()).WillByDefault(testing::Return(IClientConnection::State::kReady));
+            EXPECT_CALL(*mock, Send(::testing::_)).WillRepeatedly(::testing::Invoke([&sends]() {
+                ++sends;
+                return score::cpp::expected_blank<score::os::Error>{};
+            }));
+            return mock;
+        }));
+
+    bool data_exists{false};
+    instance.RegisterEventDataExistsCallback(event_id_, [&data_exists]() noexcept {
+        return data_exists;
+    });
+
+    // Given consumer A (pid 10) is registered before any sample exists
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+    ASSERT_EQ(sends, 0U);
+
+    // and a sample is sent, which notifies A
+    data_exists = true;
+    instance.NotifyEvent(event_id_);
+    ASSERT_EQ(sends, 1U);
+
+    // When B (pid 20) registers afterwards and the catch-up worker has finished
+    user_data_.emplace<uintptr_t>(20U);
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+    WaitForCatchUpTasks(instance);
+
+    // Then B receives a catch-up notification
+    EXPECT_EQ(sends, 2U);
+
+    // and the next NotifyEvent() reaches both A and B
+    instance.NotifyEvent(event_id_);
+    EXPECT_EQ(sends, 4U);
+}
+
+TEST_F(MessagePassingServiceInstanceTest, CatchUpNotificationSendFailureDoesNotTerminateAndKeepsRegistration)
+{
+    // Given service instance whose event already has a sample
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+    instance.RegisterEventDataExistsCallback(event_id_, []() noexcept {
+        return true;
+    });
+
+    // Expect the catch-up Send() to fail and the following NotifyEvent() Send() to succeed
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
+        .WillOnce(testing::Return(score::cpp::make_unexpected<score::os::Error>(os::Error::createFromErrno(ENOMEM))))
+        .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
+
+    // When the node registers and the catch-up fails
+    // Expect it to not terminate
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+    WaitForCatchUpTasks(instance);
+
+    // Then the node is still registered and reached by the next NotifyEvent()
+    instance.NotifyEvent(event_id_);
+}
+
+TEST_F(MessagePassingServiceInstanceTest, CatchUpNotificationIsDecidedPerEvent)
+{
+    // Given service instance with a data exists callback returning true for one event, false for a second event
+    // and no callback for a third event
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+    ElementFqId event_id_without_data{event_id_};
+    ++event_id_without_data.element_id_;
+    ElementFqId event_id_without_callback{event_id_without_data};
+    ++event_id_without_callback.element_id_;
+    instance.RegisterEventDataExistsCallback(event_id_, []() noexcept {
+        return true;
+    });
+    instance.RegisterEventDataExistsCallback(event_id_without_data, []() noexcept {
+        return false;
+    });
+
+    // Expect exactly one connection and one message, caused by the first event only
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_)).Times(1);
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
+        .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
+
+    // When the node registers for all three events and the catch-up worker has finished
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_without_data, MessageType::kRegisterEventNotifier));
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_without_callback, MessageType::kRegisterEventNotifier));
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+    WaitForCatchUpTasks(instance);
+}
+
+TEST_F(MessagePassingServiceInstanceTest, CatchUpNotificationIsSentOnlyToTheRegisteringNode)
+{
+    // Given service instance
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+    bool data_exists{false};
+    instance.RegisterEventDataExistsCallback(event_id_, [&data_exists]() noexcept {
+        return data_exists;
+    });
+
+    // and node A (pid 10) registered before any sample exists
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+
+    // Expect a single connection (to node B) and a single message
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_)).Times(1);
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
+        .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
+
+    // When node B (pid 20) registers after a sample was sent and the catch-up worker has finished
+    data_exists = true;
+    user_data_.emplace<uintptr_t>(20U);
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+    WaitForCatchUpTasks(instance);
+}
+
+TEST_F(MessagePassingServiceInstanceTest, CatchUpNotificationIsTheSameMessageAsNotifyEventSends)
+{
+    // Given service instance whose event already has a sample
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+    instance.RegisterEventDataExistsCallback(event_id_, []() noexcept {
+        return true;
+    });
+
+    // and a client connection that records every message
+    std::vector<std::vector<std::uint8_t>> sent_messages{};
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
+        .WillRepeatedly(::testing::Invoke([&sent_messages](score::cpp::span<const std::uint8_t> message) {
+            sent_messages.emplace_back(message.begin(), message.end());
+            return score::cpp::expected_blank<score::os::Error>{};
+        }));
+
+    // When the node registers (catch-up) and the event is notified afterwards
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
+    WaitForCatchUpTasks(instance);
+    instance.NotifyEvent(event_id_);
+
+    // Then both messages are kNotifyEvent messages for the same event
+    // (compared by content, as the padding bytes of the serialized struct are not initialized)
+    ASSERT_EQ(sent_messages.size(), 2U);
+    EXPECT_EQ(sent_messages.front().front(), score::cpp::to_underlying(MessageType::kNotifyEvent));
+    EXPECT_EQ(sent_messages.front().front(), sent_messages.back().front());
+    ASSERT_EQ(sent_messages.front().size(), sent_messages.back().size());
+    ASSERT_EQ(sent_messages.front().size(), sizeof(ElementFqId) + 1U);
+    ElementFqId catch_up_event_id{};
+    ElementFqId notify_event_id{};
+    std::memcpy(&catch_up_event_id, sent_messages.front().data() + 1, sizeof(ElementFqId));
+    std::memcpy(&notify_event_id, sent_messages.back().data() + 1, sizeof(ElementFqId));
+    EXPECT_EQ(catch_up_event_id, event_id_);
+    EXPECT_EQ(notify_event_id, event_id_);
+}
+
+TEST_F(MessagePassingServiceInstanceTest, RegisteringDataExistsCallbackAgainReplacesThePreviousCallback)
+{
+    // Given service instance with a data exists callback returning true
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+    instance.RegisterEventDataExistsCallback(event_id_, []() noexcept {
+        return true;
+    });
+
+    // that is replaced by a callback returning false
+    instance.RegisterEventDataExistsCallback(event_id_, []() noexcept {
+        return false;
+    });
+
+    // Expect no message and no connection upon registration
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_)).Times(0);
+    received_send_message_callback_(*server_connection_mock_,
+                                    Serialize(event_id_, MessageType::kRegisterEventNotifier));
 }
 
 // unregister message

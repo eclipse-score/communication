@@ -45,6 +45,10 @@ class MessagePassingServiceMock : public IMessagePassingService
                 (QualityType, ElementFqId, HandlerStatusChangeCallback),
                 (noexcept, override));
     MOCK_METHOD(void,
+                RegisterEventDataExistsCallback,
+                (QualityType, ElementFqId, EventDataExistsCallback),
+                (noexcept, override));
+    MOCK_METHOD(void,
                 UnregisterEventNotificationExistenceChangedCallback,
                 (QualityType, ElementFqId),
                 (noexcept, override));

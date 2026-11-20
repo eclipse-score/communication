@@ -206,6 +206,15 @@ void MessagePassingService::RegisterEventNotificationExistenceChangedCallback(
     instance.RegisterEventNotificationExistenceChangedCallback(event_id, std::move(callback));
 }
 
+void MessagePassingService::RegisterEventDataExistsCallback(const QualityType asil_level,
+                                                            const ElementFqId event_id,
+                                                            EventDataExistsCallback callback) noexcept
+{
+    auto& instance = GetMessagePassingServiceInstance(asil_level);
+
+    instance.RegisterEventDataExistsCallback(event_id, std::move(callback));
+}
+
 void MessagePassingService::UnregisterEventNotificationExistenceChangedCallback(const QualityType asil_level,
                                                                                 const ElementFqId event_id) noexcept
 {

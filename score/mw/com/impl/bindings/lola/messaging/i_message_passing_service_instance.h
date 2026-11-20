@@ -76,6 +76,9 @@ class IMessagePassingServiceInstance
         const ElementFqId event_id,
         IMessagePassingService::HandlerStatusChangeCallback callback) noexcept = 0;
 
+    virtual void RegisterEventDataExistsCallback(const ElementFqId event_id,
+                                                 IMessagePassingService::EventDataExistsCallback callback) noexcept = 0;
+
     virtual void UnregisterEventNotificationExistenceChangedCallback(const ElementFqId event_id) noexcept = 0;
 
     virtual Result<void> SubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
