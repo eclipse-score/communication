@@ -32,15 +32,34 @@ build --@rules_python//python/config_settings:bootstrap_impl=script
 common --//score/memory/shared/flags:use_typedshmd=False
 common --@score_baselibs//score/analysis/tracing/generic_trace_library:implementation=@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation
 
+common --extra_toolchains=@communication_ferrocene_x86_64_unknown_linux_gnu//:rust_ferrocene_toolchain
+common --extra_toolchains=//bazel/toolchains:score_communication_libclang_toolchain
+
+common:rust_with_llvm_cpp_stdlib --@rules_rust//:extra_rustc_flags=-Clink-arg=-lc++
+common:rust_with_gcc_cpp_stdlib --@rules_rust//:extra_rustc_flags=-Clink-arg=-lstdc++
+
 # Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
 common:linux_x64_gcc_15 --extra_toolchains=@gcc_toolchain_x86_64//:cc_toolchain
-common:linux_x64_gcc_15 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_unknown_linux_gnu
+common:linux_x64_gcc_15 --platforms=@score_bazel_platforms//:x86_64-linux
+common:linux_x64_gcc_15 --config=rust_with_gcc_cpp_stdlib
+
 # Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
 common:linux_x64 --config=linux_x64_gcc_15
+
 # Default required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
 common --config=linux_x64_gcc_15
 
-common --extra_toolchains=//bazel/toolchains:score_communication_libclang_toolchain
+# Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
+common:linux_x64_clang_22 --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+common:linux_x64_clang_22 --platforms=@score_bazel_platforms//:x86_64-linux
+common:linux_x64_clang_22 --config=rust_with_llvm_cpp_stdlib
+
+# Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
+common:clang --config=linux_x64_clang_22
+
+# Config required by https://github.com/eclipse-score/communication/blob/main/CI.md#supported-configurations
+common:linux_arm64_clang_22 --extra_toolchains=@llvm_toolchain//:cc-toolchain-aarch64-linux
+common:linux_arm64_clang_22 --platforms=@score_bazel_platforms//:aarch64-linux
 
 build --incompatible_strict_action_env
 test --test_output=errors

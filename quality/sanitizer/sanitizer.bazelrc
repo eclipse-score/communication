@@ -16,8 +16,7 @@ build:with_debug_symbols --cxxopt -gline-tables-only
 build:with_debug_symbols --cxxopt -gcolumn-info
 build:with_debug_symbols --strip=never
 
-build:sanitizer_common --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-build:sanitizer_common --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+build:sanitizer_common --config=linux_x64_clang_22
 build:sanitizer_common --config=with_debug_symbols
 
 build:asan --config=sanitizer_common

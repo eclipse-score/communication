@@ -5298,10 +5298,10 @@
     "@@score_toolchains_rust+//extensions:ferrocene_toolchain_ext.bzl%ferrocene_toolchain_ext": {
       "general": {
         "bzlTransitiveDigest": "9k8SLwP4ec9xXjFivq0Kn0FradTQhcEA+j/WsLxfVPM=",
-        "usagesDigest": "ZtUxT4M8o2fQPjvqvKd8oXF72ShQ/D+ZrPn11lpGmSM=",
+        "usagesDigest": "E17rycjYTroZo8KrcUKJe5UkEJoUS4XiTzyAbEl7wvM=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
-          "ferrocene_x86_64_unknown_linux_gnu_llvm": {
+          "communication_ferrocene_x86_64_unknown_linux_gnu": {
             "repoRuleId": "@@score_toolchains_rust+//extensions:ferrocene_toolchain_ext.bzl%ferrocene_toolchain_repo",
             "attributes": {
               "url": "https://github.com/eclipse-score/ferrocene_toolchain_builder/releases/download/1.3.1/ferrocene-779fbed05ae9e9fe2a04137929d99cc9b3d516fd-x86_64-unknown-linux-gnu.tar.gz",
@@ -5317,7 +5317,6 @@
               "stdlib_linkflags": [],
               "extra_rustc_flags": [
                 "-Clink-arg=-Wl,--no-as-needed",
-                "-Clink-arg=-lc++",
                 "-Clink-arg=-lm",
                 "-Clink-arg=-lc"
               ],
