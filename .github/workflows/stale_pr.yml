@@ -33,6 +33,8 @@ jobs:
           days-before-issue-stale: -1
           days-before-issue-close: -1
           stale-pr-label: "stale"
+          # Never close pull requests that wait for a maintainer, see tools/pr-state.
+          exempt-pr-labels: "state:needs-maintainer,state:ready-to-merge"
           stale-pr-message: >
             This pull request has been automatically marked as stale because it
             has not had recent activity. It will be closed in 7 days if no
