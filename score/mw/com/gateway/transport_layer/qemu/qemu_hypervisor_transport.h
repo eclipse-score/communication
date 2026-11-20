@@ -25,8 +25,11 @@
 namespace score::mw::com::gateway
 {
 
-/// Resolves the inter-VM shm paths (with /intervm-shared-shmem/ prefix) for the given
-/// service instance specifier so that lib-memory routes them through the InterVM provider.
+/// Resolves the service instance specifier to the shm paths that the destination-side GenericSkeleton
+/// will actually open for a gateway-forwarded service instance (ShmReuseStrategy::kOpenGatewayForwardedShm),
+/// i.e. "/intervm-shared-shmem/lola-ctl-<service id>-<instance id>" and
+/// "/intervm-shared-shmem/lola-data-<service id>-<instance id>". Returns empty paths if the specifier
+/// cannot be resolved to exactly one configured LoLa instance.
 ShmPaths ResolveInterVmShmPaths(const impl::InstanceSpecifier& specifier);
 
 /// Opens the existing shm objects and returns their sizes.

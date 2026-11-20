@@ -29,6 +29,10 @@ cc_library(
         "//score/mw/com/gateway/transport_layer/sample:i_bidirectional_transport",
         "//score/mw/com/gateway/transport_layer/sample:sample_hypervisor_transport",
         "//score/mw/com/gateway/transport_layer/sample/messages:gateway_messages",
+        "//score/mw/com/impl:instance_identifier",
+        "//score/mw/com/impl:runtime",
+        "//score/mw/com/impl/configuration:lola_service_instance_deployment",
+        "//score/mw/com/impl/configuration:lola_service_type_deployment",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -42,6 +46,8 @@ cc_unit_test(
         "//score/mw/com/gateway/transport_layer:transport_error",
         "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_typed_memory_provider_mock",
         "//score/mw/com/gateway/transport_layer/sample:bidirectional_transport_mock",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+        "//score/mw/com/impl/test:runtime_mock_guard",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/mw/log:recorder_mock",
     ] + select({

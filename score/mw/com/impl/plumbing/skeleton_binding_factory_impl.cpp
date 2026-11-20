@@ -61,10 +61,12 @@ auto SkeletonBindingFactoryImpl::Create(const InstanceIdentifier& identifier) no
     const InstanceIdentifierView identifier_view{identifier};
 
     auto visitor = score::cpp::overload(
-        [&identifier](const LolaServiceInstanceDeployment&) -> std::unique_ptr<SkeletonBinding> {
+        [&identifier](
+            const LolaServiceInstanceDeployment& lola_service_instance_deployment) -> std::unique_ptr<SkeletonBinding> {
             score::filesystem::Filesystem filesystem = filesystem::FilesystemFactory{}.CreateInstance();
             auto shm_path_builder = std::make_unique<lola::ShmPathBuilder>(
-                GetLolaServiceTypeDeploymentFromInstanceIdentifier(identifier).service_id_);
+                GetLolaServiceTypeDeploymentFromInstanceIdentifier(identifier).service_id_,
+                lola_service_instance_deployment.inter_vm_support_);
             auto partial_restart_path_builder = std::make_unique<lola::PartialRestartPathBuilder>(
                 GetLolaServiceTypeDeploymentFromInstanceIdentifier(identifier).service_id_);
             return lola::Skeleton::Create(
