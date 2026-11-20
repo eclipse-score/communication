@@ -1,0 +1,27 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+#ifndef SCORE_MW_COM_TEST_SKELETON_REOFFER_CONSUMER_H
+#define SCORE_MW_COM_TEST_SKELETON_REOFFER_CONSUMER_H
+
+#include "score/mw/com/test/skeleton_reoffer/test_parameters.h"
+
+#include <score/stop_token.hpp>
+
+namespace score::mw::com::test::skeleton_reoffer
+{
+
+void run_consumer(Scenario scenario, const score::cpp::stop_token& stop_token);
+
+}  // namespace score::mw::com::test::skeleton_reoffer
+
+#endif  // SCORE_MW_COM_TEST_SKELETON_REOFFER_CONSUMER_H

@@ -1,0 +1,66 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/test/skeleton_reoffer/TestInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 2200,
+          "events": [
+            {
+              "eventName": "test_event",
+              "eventId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "test/skeleton_reoffer/TestService",
+      "serviceTypeName": "/test/skeleton_reoffer/TestInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "test_event",
+              "numberOfSampleSlots": 15,
+              "maxSubscribers": 1
+            }
+          ],
+          "allowedConsumer": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "QM"
+  }
+}
