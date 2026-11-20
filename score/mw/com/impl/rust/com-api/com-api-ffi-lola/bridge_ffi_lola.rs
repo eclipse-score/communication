@@ -21,6 +21,13 @@ use std::ptr::NonNull;
 /// unit struct representing the FFI bridge for Lola runtime
 pub struct LolaFFIBridge;
 
+/// Flattened FFI-callback signature for a skeleton-method handler: quality type, then optional
+/// `(ptr, len)` pairs for the in-args and return-value buffers. Mirrors
+/// `com-api-runtime-lola::method::BoxedMethodHandlerFn`'s `Box<dyn ...>` payload type — this crate
+/// only ever sees it unboxed, as the `&dyn` reconstructed from the `FatPtr` below. `Fn + Sync`, since C++
+/// may call it from several threads at once.
+type MethodHandlerCallback = dyn Fn(u8, Option<(*mut u8, usize)>, Option<(*mut u8, usize)>) + Send + Sync;
+
 /// Called by C++ (`RustBoxedCallable<void>::invoke`) to fire a Rust `FnMut()` receive handler.
 ///
 /// The pointer was originally created as `Box::into_raw(Box::new(handler) as Box<dyn FnMut() + Send + 'static>)`
@@ -123,6 +130,55 @@ unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_find_service(
             "Panic caught in mw_com_impl_call_dyn_ref_fnmut_find_service: aborting to prevent unwind across FFI boundary"
         );
         // Abort to prevent unwinding across FFI boundary
+        std::process::abort();
+    }
+}
+
+/// Called by C++ (the handler `mw_com_skeleton_method_register_handler` registers) whenever a proxy
+/// calls the method. The two `Option<(*mut u8, usize)>` arguments are the flattened in-args and
+/// return-value buffers (`std::optional<span<byte>>` on the C++ side).
+///
+/// # Safety
+/// `ptr` must point to a valid `FatPtr` whose payload is a live
+/// `Box<dyn Fn(u8, Option<(*mut u8, usize)>, Option<(*mut u8, usize)>) + Send + Sync>` created by
+/// `LolaMethodHandler::register_handler` (method.rs). The buffers must be valid for their lengths when
+/// their `_present` flag is true.
+#[unsafe(no_mangle)]
+unsafe extern "C" fn mw_com_impl_call_method_handler(
+    ptr: *const FatPtr,
+    quality_type: u8,
+    in_args_data: *mut u8,
+    in_args_len: usize,
+    in_args_present: bool,
+    return_data: *mut u8,
+    return_len: usize,
+    return_present: bool,
+) {
+    if ptr.is_null() {
+        return;
+    }
+    // SAFETY: caller guarantees ptr is valid; transmute reconstructs the fat pointer, exactly like
+    // mw_com_impl_call_dyn_fnmut above but with this method-handler-shaped callback signature. Only a
+    // shared reference is formed, as concurrent calls may share the closure.
+    let callable: &MethodHandlerCallback = unsafe { std::mem::transmute(*ptr) };
+    let in_args = if in_args_present {
+        Some((in_args_data, in_args_len))
+    } else {
+        None
+    };
+    let return_buf = if return_present {
+        Some((return_data, return_len))
+    } else {
+        None
+    };
+    // SAFETY: the box is never freed after successful registration (no unregister hook exists).
+    if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        callable(quality_type, in_args, return_buf)
+    }))
+    .is_err()
+    {
+        log::error!("Panic caught in mw_com_impl_call_method_handler: aborting to prevent unwind across FFI boundary");
+        // Abort to prevent a Rust panic from unwinding across the C++ stack boundary.
         std::process::abort();
     }
 }
@@ -400,6 +456,50 @@ unsafe extern "C" {
 
     ///This function just for validating the size of SamplePtr<T> in C++ and Rust are same.
     fn mw_com_impl_sample_ptr_get_size() -> u32;
+
+    // --- Method FFI (registry_bridge_macro.cpp).
+
+    /// Get the type-erased ProxyMethodBinding for a named method on a proxy.
+    fn mw_com_get_method_from_proxy(
+        proxy_ptr: *mut ProxyBase,
+        interface_id: StringView,
+        method_id: StringView,
+    ) -> *mut ProxyMethodBinding;
+
+    /// Get the type-erased SkeletonMethodBinding for a named method on a skeleton.
+    fn mw_com_get_method_from_skeleton(
+        skeleton_ptr: *mut SkeletonBase,
+        interface_id: StringView,
+        method_id: StringView,
+    ) -> *mut SkeletonMethodBinding;
+
+    /// Retrieve the in-arguments buffer for a proxy method call at the given queue position.
+    ///
+    /// # Returns
+    /// true and writes `*out_data`/`*out_len` on success, false otherwise (leaving `*out_data`/
+    /// `*out_len` untouched).
+    fn mw_com_proxy_method_get_in_args_buffer(
+        binding: *mut ProxyMethodBinding,
+        queue_position: usize,
+        out_data: *mut *mut u8,
+        out_len: *mut usize,
+    ) -> bool;
+
+    /// Retrieve the return-value buffer for a proxy method call at the given queue position.
+    /// See mw_com_proxy_method_get_in_args_buffer's doc comment for the out-parameter contract.
+    fn mw_com_proxy_method_get_return_value_buffer(
+        binding: *mut ProxyMethodBinding,
+        queue_position: usize,
+        out_data: *mut *mut u8,
+        out_len: *mut usize,
+    ) -> bool;
+
+    /// Perform the actual (synchronous) method call at the given queue position.
+    fn mw_com_proxy_method_do_call(binding: *mut ProxyMethodBinding, queue_position: usize) -> bool;
+
+    /// Register a Rust closure as the handler for a skeleton method. See
+    /// mw_com_impl_call_method_handler's doc comment above for the callback contract.
+    fn mw_com_skeleton_method_register_handler(binding: *mut SkeletonMethodBinding, handler: *const FatPtr) -> bool;
 }
 
 impl FFIBridge for LolaFFIBridge {
@@ -916,5 +1016,75 @@ impl FFIBridge for LolaFFIBridge {
         let mut ptrs: Vec<*const std::ffi::c_char> = options.iter().map(|s| s.as_ptr()).collect();
         // SAFETY: ptrs points to valid null-terminated C strings; len matches the vec length.
         unsafe { mw_com_impl_initialize(ptrs.as_mut_ptr(), ptrs.len() as i32) }
+    }
+
+    // --- Method FFI. Safety contracts are on bridge_ffi_rs::FFIBridge.
+
+    unsafe fn get_method_from_proxy(
+        &self,
+        proxy_ptr: *mut ProxyBase,
+        interface_id: &str,
+        method_id: &str,
+    ) -> *mut ProxyMethodBinding {
+        let c_interface_id = StringView::from(interface_id);
+        let c_method_id = StringView::from(method_id);
+        // SAFETY: proxy_ptr is guaranteed to be valid per the caller's contract.
+        unsafe { mw_com_get_method_from_proxy(proxy_ptr, c_interface_id, c_method_id) }
+    }
+
+    unsafe fn get_method_from_skeleton(
+        &self,
+        skeleton_ptr: *mut SkeletonBase,
+        interface_id: &str,
+        method_id: &str,
+    ) -> *mut SkeletonMethodBinding {
+        let c_interface_id = StringView::from(interface_id);
+        let c_method_id = StringView::from(method_id);
+        // SAFETY: skeleton_ptr is guaranteed to be valid per the caller's contract.
+        unsafe { mw_com_get_method_from_skeleton(skeleton_ptr, c_interface_id, c_method_id) }
+    }
+
+    unsafe fn proxy_method_get_in_args_buffer(
+        &self,
+        binding: *mut ProxyMethodBinding,
+        queue_position: usize,
+    ) -> Option<(*mut u8, usize)> {
+        let mut data: *mut u8 = std::ptr::null_mut();
+        let mut len: usize = 0;
+        // SAFETY: binding is guaranteed to be valid per the caller's contract; data/len are valid
+        // out-parameters on the stack of this call.
+        let ok = unsafe { mw_com_proxy_method_get_in_args_buffer(binding, queue_position, &mut data, &mut len) };
+        if ok {
+            Some((data, len))
+        } else {
+            None
+        }
+    }
+
+    unsafe fn proxy_method_get_return_value_buffer(
+        &self,
+        binding: *mut ProxyMethodBinding,
+        queue_position: usize,
+    ) -> Option<(*mut u8, usize)> {
+        let mut data: *mut u8 = std::ptr::null_mut();
+        let mut len: usize = 0;
+        // SAFETY: binding is guaranteed to be valid per the caller's contract; data/len are valid
+        // out-parameters on the stack of this call.
+        let ok = unsafe { mw_com_proxy_method_get_return_value_buffer(binding, queue_position, &mut data, &mut len) };
+        if ok {
+            Some((data, len))
+        } else {
+            None
+        }
+    }
+
+    unsafe fn proxy_method_do_call(&self, binding: *mut ProxyMethodBinding, queue_position: usize) -> bool {
+        // SAFETY: binding is guaranteed to be valid per the caller's contract.
+        unsafe { mw_com_proxy_method_do_call(binding, queue_position) }
+    }
+
+    unsafe fn skeleton_method_register_handler(&self, binding: *mut SkeletonMethodBinding, handler: &FatPtr) -> bool {
+        // SAFETY: binding and handler are guaranteed to be valid per the caller's contract.
+        unsafe { mw_com_skeleton_method_register_handler(binding, handler) }
     }
 }

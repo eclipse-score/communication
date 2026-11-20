@@ -26,18 +26,15 @@ macro_rules! interface_consumer {
             }
 
             impl<R: score_com::Runtime + ?Sized> score_com::Consumer<R> for [<$id Consumer>]<R> {
-                fn new(instance_info: R::ConsumerInfo) -> Self {
-                    [<$id Consumer>] {
+                fn new(instance_info: R::ConsumerInfo) -> score_com::Result<Self> {
+                    Ok([<$id Consumer>] {
                         $(
                             $event_name: R::Subscriber::new(
                                 stringify!($event_name),
                                 instance_info.clone()
-                            ).expect(&format!(
-                                "Failed to create subscriber for {}",
-                                stringify!($event_name)
-                            )),
+                            )?,
                         )+
-                    }
+                    })
                 }
             }
         }
@@ -85,57 +82,42 @@ macro_rules! interface_consumer_mixed {
             }
 
             impl<R: score_com::Runtime + ?Sized> score_com::Consumer<R> for [<$id Consumer>]<R> {
-                fn new(instance_info: R::ConsumerInfo) -> Self {
-                    [<$id Consumer>] {
+                fn new(instance_info: R::ConsumerInfo) -> score_com::Result<Self> {
+                    Ok([<$id Consumer>] {
                         $(
                             $ev_name: R::Subscriber::new(
                                 stringify!($ev_name),
                                 instance_info.clone()
-                            ).expect(&format!(
-                                "Failed to create subscriber for {}",
-                                stringify!($ev_name)
-                            )),
+                            )?,
                         )*
                         $(
                             $fin_name: R::FieldSubscriber::new(
                                 stringify!($fin_name),
                                 instance_info.clone()
-                            ).expect(&format!(
-                                "Failed to create field subscriber for {}",
-                                stringify!($fin_name)
-                            )),
+                            )?,
                         )*
                         $(
                             [<$fig_name _get>]: <R::FieldGetCaller<$fig_type>
                                 as score_com::MethodCaller<(), $fig_type, R>>::new(
                                     concat!(stringify!($fig_name), "_get"),
                                     instance_info.clone()
-                                ).expect(&format!(
-                                    "Failed to create field get caller for {}",
-                                    stringify!($fig_name)
-                                )),
+                                )?,
                         )*
                         $(
                             [<$fis_name _set>]: <R::FieldSetCaller<$fis_type>
                                 as score_com::MethodCaller<($fis_type,), $fis_type, R>>::new(
                                     concat!(stringify!($fis_name), "_set"),
                                     instance_info.clone()
-                                ).expect(&format!(
-                                    "Failed to create field set caller for {}",
-                                    stringify!($fis_name)
-                                )),
+                                )?,
                         )*
                         $(
                             $me_name: <R::MethodCaller<($($me_arg_ty,)*), $me_ret>
                                 as score_com::MethodCaller<($($me_arg_ty,)*), $me_ret, R>>::new(
                                     stringify!($me_name),
                                     instance_info.clone()
-                                ).expect(&format!(
-                                    "Failed to create method caller for {}",
-                                    stringify!($me_name)
-                                )),
+                                )?,
                         )*
-                    }
+                    })
                 }
             }
 

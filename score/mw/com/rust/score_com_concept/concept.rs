@@ -573,10 +573,13 @@ pub trait Consumer<R: Runtime + ?Sized> {
     /// # Parameters
     /// * `instance_info` - Runtime-specific configuration for this consumer instance
     ///
-    /// # Returns
+    /// # Errors
     ///
-    /// A new consumer instance configured with the provided instance information.
-    fn new(instance_info: R::ConsumerInfo) -> Self;
+    /// Returns an error if a member (event, field or method) cannot be set up, for example when the
+    /// provider is not ready yet or is gone.
+    fn new(instance_info: R::ConsumerInfo) -> Result<Self>
+    where
+        Self: Sized;
 }
 
 /// Builder for creating configured producer instances.

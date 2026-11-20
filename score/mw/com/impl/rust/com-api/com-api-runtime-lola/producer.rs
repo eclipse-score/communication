@@ -62,6 +62,36 @@ pub struct LolaProviderInfo<B: FFIBridge> {
     bridge: B,
 }
 
+impl<B: FFIBridge> LolaProviderInfo<B> {
+    pub(crate) fn interface_id(&self) -> &'static str {
+        self.interface_id
+    }
+
+    pub(crate) fn bridge(&self) -> &B {
+        &self.bridge
+    }
+
+    /// Valid while this `LolaProviderInfo` or a clone of it is alive.
+    pub(crate) fn skeleton_ptr(&self) -> *mut SkeletonBase {
+        self.skeleton_handle.0.handle.as_ptr()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn new_for_test(
+        instance_specifier: InstanceSpecifier,
+        interface_id: &'static str,
+        skeleton_handle: SkeletonInstanceManager<B>,
+        bridge: B,
+    ) -> Self {
+        Self {
+            instance_specifier,
+            interface_id,
+            skeleton_handle,
+            bridge,
+        }
+    }
+}
+
 impl<B: FFIBridge> ProviderInfo for LolaProviderInfo<B> {
     fn offer_service(&self) -> Result<()> {
         //SAFETY: it is safe as we are passing valid skeleton handle to offer service

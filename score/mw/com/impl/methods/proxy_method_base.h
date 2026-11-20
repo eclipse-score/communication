@@ -127,6 +127,13 @@ class ProxyMethodBaseView
         return base_.binding_construction_result_;
     }
 
+    // Used by the Rust com-api FFI registry (registry_bridge_macro.h); counterpart of
+    // SkeletonMethodBaseView::GetMethodBinding().
+    [[nodiscard]] ProxyMethodBinding* GetMethodBinding() const
+    {
+        return base_.binding_.get();
+    }
+
   private:
     const ProxyMethodBase& base_;
 };
