@@ -19,6 +19,7 @@
 
 #include <score/utility.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <thread>
@@ -178,11 +179,8 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Cli
             future.UpdateValueMarkReady(score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE)));
             return;
         }
-        // NOLINTBEGIN(bugprone-suspicious-stringview-data-usage) `reply`'s buffer size got checked above
-        // NOLINTNEXTLINE(score-banned-function) copying byte buffer
-        score::cpp::ignore = std::memcpy(reply.data(), reply_message.data(), reply_message.size());
+        std::copy(reply_message.begin(), reply_message.end(), reply.begin());
         future.UpdateValueMarkReady(score::cpp::span<const std::uint8_t>{reply.data(), reply_message.size()});
-        // NOLINTEND(bugprone-suspicious-stringview-data-usage)
     };
 
     std::unique_lock<std::mutex> lock(send_mutex_);
