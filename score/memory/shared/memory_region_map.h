@@ -122,14 +122,8 @@ class MemoryRegionMapImpl final
     static constexpr const RegionVersionRefCountType INVALID_REF_COUNT_INTERVAL_START{INVALID_REF_COUNT_INTERVAL_END /
                                                                                       2U};
     static constexpr const RegionVersionRefCountType INITIAL_REF_COUNT_VALUE{INVALID_REF_COUNT_INTERVAL_START};
-    // Suppress "AUTOSAR C++14 A0-1-1" rule finding: "A project shall not contain instances of non-volatile variables
-    // being given values that are not subsequently used.".
-    // Rationale: False positive - variable is used below.
-    // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
-    static constexpr const std::uint32_t VERSION_COUNT{10U};
-    static_assert(
-        VERSION_COUNT <= 255U,
-        "VERSION_COUNT needs to be smaller than 255 as our latest_known_region_version_ tracker is an uint8 ");
+    static constexpr const std::uint8_t VERSION_COUNT{
+        10U};  // uint8_t to keep it in sycn with latest_known_region_version_
 
     /// \brief Increases the usage refcount of the latest regions version.
     /// \return returns the index (version) of the regions version, were it successfully incremented the refcount or an
@@ -142,10 +136,12 @@ class MemoryRegionMapImpl final
     std::optional<std::uint8_t> AcquireRegionVersionForOverwrite() noexcept;
 
     /// \brief We have an array of different versions of known regions to support our lock-free CAS based read access
-    std::array<std::map<std::uintptr_t, std::uintptr_t>, VERSION_COUNT> known_regions_versions_{};
+    std::array<std::map<std::uintptr_t, std::uintptr_t>, static_cast<std::size_t>(VERSION_COUNT)>
+        known_regions_versions_{};
 
     /// \brief refcounters for the different versions of known regions in known_regions_versions_
-    mutable std::array<std::atomic<RegionVersionRefCountType>, VERSION_COUNT> known_regions_versions_refcounts_{};
+    mutable std::array<std::atomic<RegionVersionRefCountType>, static_cast<std::size_t>(VERSION_COUNT)>
+        known_regions_versions_refcounts_{};
     static_assert(VERSION_COUNT > 0U, "known_regions_versions_refcounts_ must store at least 1 version!");
 
     /// \brief index into known_regions_versions_, which represents the latest/newest version of known regions
