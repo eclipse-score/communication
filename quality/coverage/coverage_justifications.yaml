@@ -82,6 +82,21 @@ justifications:
       and stable_name is the configuration key found for exactly that (already unique) event name.
       Therefore the emplace can never fail at this point.
 
+  - id: runtime-config-parser-guarantees-service-type
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >
+      This branch is defensive only. Configuration::Validate() invokes
+      Configuration::CrossCheckServiceInstancesToTypes()
+      (score/mw/com/impl/configuration/configuration.cpp), which ensures that every
+      configured service instance references an existing service type. Therefore,
+      GetServiceTypeDeployment() finds a deployment for every matching service
+      instance in a validated configuration. Runtime::Initialize() and
+      Runtime::MergeAdditionalConfiguration() validate configurations and treat
+      validation failures as fatal. However, Runtime::getInstanceInternal() can
+      lazily parse the default configuration without calling Validate(). This check
+      is retained to protect that unvalidated path.
+
   - id: gateway-clear-nonblock-on-accepted-socket
     platforms: [linux, qnx]
     category: defensive_programming

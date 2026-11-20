@@ -13,11 +13,13 @@
 #include "score/mw/com/impl/runtime.h"
 
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
+#include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/runtime_configuration.h"
 
 #include "score/filesystem/factory/filesystem_factory.h"
+#include "score/json/json_parser.h"
 #include "score/utils/meyer_singleton/test/single_test_per_process_fixture.h"
 
 #include <score/blank.hpp>
@@ -129,6 +131,37 @@ std::vector<std::string_view> GetEventNameListFromHandle(const HandleType& handl
             return {};
         });
     return std::visit(visitor, service_type_deployment.binding_info_);
+}
+
+// All example configurations used by the tests below share the same LoLa deployment values, only the type / instance
+// names differ.
+void ExpectConfigurationContainsServiceTypeAndInstance(const RuntimeAttorney& attorney,
+                                                       const std::string& service_type_name,
+                                                       const std::string& instance_specifier)
+{
+    // Service type deployment: check that it contains expected data
+    const auto service_type_deployment = attorney.GetConfigurationAddress()->GetServiceTypeDeployment(
+        make_ServiceIdentifierType(service_type_name, 12U, 34U));
+    ASSERT_TRUE(service_type_deployment.has_value()) << "Missing service type " << service_type_name;
+    const auto* const lola_type_deployment =
+        std::get_if<LolaServiceTypeDeployment>(&service_type_deployment->get().binding_info_);
+    ASSERT_NE(lola_type_deployment, nullptr) << "Unexpected binding for service type " << service_type_name;
+    EXPECT_EQ(lola_type_deployment->service_id_, 1234U);
+    ASSERT_EQ(lola_type_deployment->events_.count("CurrentPressureFrontLeft"), 1U);
+    EXPECT_EQ(lola_type_deployment->events_.at("CurrentPressureFrontLeft"), 20U);
+    ASSERT_EQ(lola_type_deployment->fields_.count("CurrentTemperatureFrontLeft"), 1U);
+    EXPECT_EQ(lola_type_deployment->fields_.at("CurrentTemperatureFrontLeft"), 30U);
+
+    // Service instance deployment: check that it contains expected data
+    const auto service_instance_deployment = attorney.GetConfigurationAddress()->GetServiceInstanceDeployment(
+        InstanceSpecifier::Create(std::string{instance_specifier}).value());
+    ASSERT_TRUE(service_instance_deployment.has_value()) << "Missing service instance " << instance_specifier;
+    EXPECT_EQ(service_instance_deployment->get().service_.ToString(), service_type_name);
+    const auto* const lola_instance_deployment =
+        std::get_if<LolaServiceInstanceDeployment>(&service_instance_deployment->get().bindingInfo_);
+    ASSERT_NE(lola_instance_deployment, nullptr) << "Unexpected binding for service instance " << instance_specifier;
+    ASSERT_TRUE(lola_instance_deployment->instance_id_.has_value());
+    EXPECT_EQ(lola_instance_deployment->instance_id_->GetId(), 1234U);
 }
 
 void WithConfigAtDefaultPath(const std::string& source_path)
@@ -290,7 +323,38 @@ TEST_F(RuntimeInitializationTest, ConfigurationGetsMergedAndLoadedIfInitialConfi
 
         // Then both configurations are loaded and merged into the runtime's configuration
         EXPECT_TRUE(addon_init_result.has_value());
-        EXPECT_EQ(attorney.GetConfigurationAddress()->GetNumberOfServiceTypes(), 2);
+        ExpectConfigurationContainsServiceTypeAndInstance(
+            attorney, "/score/ncar/services/TirePressureService", "abc/abc/TirePressurePortOther");
+        ExpectConfigurationContainsServiceTypeAndInstance(
+            attorney, "/score/ncar/services/TirePressureExtendedService", "abc/abc/TirePressurePort");
+    });
+}
+
+TEST_F(RuntimeInitializationTest, AddConfigurationFromJsonMergesIntoLoadedConfiguration)
+{
+    TestInSeparateProcess([this]() {
+        // Given an initial complete configuration has been loaded earlier
+        const auto configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other_};
+        Runtime::Initialize(configuration);
+
+        // and an add-on configuration which is available as an already parsed json object
+        const score::json::JsonParser json_parser{};
+        auto addon_json = json_parser.FromFile(config_to_merge_);
+        ASSERT_TRUE(addon_json.has_value());
+
+        // When loading the add-on configuration with AddConfiguration(json::Any)
+        const auto addon_init_result = Runtime::AddConfiguration(std::move(addon_json).value());
+
+        auto& updated_runtime = static_cast<Runtime&>(Runtime::getInstance());
+
+        const RuntimeAttorney attorney{updated_runtime};
+
+        // Then both configurations are loaded and merged into the runtime's configuration
+        EXPECT_TRUE(addon_init_result.has_value());
+        ExpectConfigurationContainsServiceTypeAndInstance(
+            attorney, "/score/ncar/services/TirePressureService", "abc/abc/TirePressurePortOther");
+        ExpectConfigurationContainsServiceTypeAndInstance(
+            attorney, "/score/ncar/services/TirePressureExtendedService", "abc/abc/TirePressurePort");
     });
 }
 
@@ -326,7 +390,12 @@ TEST_F(RuntimeInitializationTest, ConcurrentAddonConfigurationInitializationSucc
         const RuntimeAttorney attorney{runtime};
 
         // And all three configurations (initial + 2 addons) are present
-        EXPECT_EQ(attorney.GetConfigurationAddress()->GetNumberOfServiceTypes(), 3);
+        ExpectConfigurationContainsServiceTypeAndInstance(
+            attorney, "/score/ncar/services/TirePressureService", "abc/abc/TirePressurePortOther");
+        ExpectConfigurationContainsServiceTypeAndInstance(
+            attorney, "/score/ncar/services/TirePressureExtendedService", "abc/abc/TirePressurePort");
+        ExpectConfigurationContainsServiceTypeAndInstance(
+            attorney, "/score/ncar/services/BrakePressureService", "abc/abc/BrakePressurePort");
     });
 }
 
@@ -362,6 +431,57 @@ TEST_F(RuntimeInitializationDeathTest, AddOnConfigurationInitializationFailsIfMe
             const auto add_on_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
             std::ignore = Runtime::AddConfiguration(add_on_configuration);
             // Then the process terminates via std::terminate() because there is a clash of service identifiers
+        },
+        ".*");
+}
+
+TEST_F(RuntimeInitializationDeathTest, InitializationFailsIfConfigurationValidationFails)
+{
+    // EXPECT_DEATH forks a child process and GTest only allows one stderr capturer at a time
+    tested_in_separate_process_ = true;
+
+    EXPECT_DEATH(
+        {
+            // Given a configuration which fails the validation: it contains a service instance with ASIL-B, but the
+            // process ASIL level defaults to QM since the configuration has no global section
+            const auto runtime_configuration = runtime::RuntimeConfiguration{config_to_merge_};
+            // When initializing the runtime with this configuration
+            Runtime::Initialize(runtime_configuration);
+            // Then the process terminates because the configuration validation fails
+        },
+        ".*");
+}
+
+TEST_F(RuntimeInitializationDeathTest, AddOnConfigurationInitializationFailsIfValidationOfMergedConfigurationFails)
+{
+    // EXPECT_DEATH forks a child process and GTest only allows one stderr capturer at a time
+    tested_in_separate_process_ = true;
+
+    EXPECT_DEATH(
+        {
+            // Given a valid configuration has been loaded
+            const auto runtime_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
+            Runtime::Initialize(runtime_configuration);
+            // and an add-on configuration which contains a service instance referencing a service type that is not
+            // configured
+            const score::json::JsonParser json_parser{};
+            auto add_on_json = json_parser.FromBuffer(R"({
+                "serviceTypes": [],
+                "serviceInstances": [{
+                    "instanceSpecifier": "abc/abc/UnknownServiceTypePort",
+                    "serviceTypeName": "/score/ncar/services/UnknownService",
+                    "version": {"major": 12, "minor": 34},
+                    "instances": [{
+                        "instanceId": 5678,
+                        "asil-level": "QM",
+                        "binding": "SHM"
+                    }]
+                }]
+            })");
+            ASSERT_TRUE(add_on_json.has_value());
+            // When loading the add-on configuration via AddConfiguration()
+            std::ignore = Runtime::AddConfiguration(std::move(add_on_json).value());
+            // Then the process terminates because the validation of the merged configuration fails
         },
         ".*");
 }
