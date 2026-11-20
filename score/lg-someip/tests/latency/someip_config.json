@@ -1,0 +1,291 @@
+{
+    "unicast" : "192.168.100.5",
+    "iptype" : "IPv4",
+    "logging" :
+    {
+        "level" : "debug",
+        "console" : "true",
+        "file" : { "enable" : "false", "path" : "/tmp/vsomeip.log" },
+        "dlt" : "false"
+    },
+    "applications" :
+    [
+        {
+            "name" : "response1",
+            "id" : "0x0101"
+        },
+        {
+            "name" : "response2",
+            "id" : "0x0102"
+        },
+        {
+            "name" : "response3",
+            "id" : "0x0103"
+        },
+        {
+            "name" : "response4",
+            "id" : "0x0104"
+        },
+        {
+            "name" : "response5",
+            "id" : "0x0105"
+        },
+        {
+            "name" : "response6",
+            "id" : "0x0106"
+        },
+        {
+            "name" : "response7",
+            "id" : "0x0107"
+        },
+        {
+            "name" : "response8",
+            "id" : "0x0108"
+        },
+        {
+            "name" : "response9",
+            "id" : "0x0109"
+        },
+        {
+            "name" : "response10",
+            "id" : "0x0110"
+        },
+        {
+            "name" : "response11",
+            "id" : "0x0111"
+        },
+        {
+            "name" : "response12",
+            "id" : "0x0112"
+        },
+        {
+            "name" : "response13",
+            "id" : "0x0113"
+        },
+        {
+            "name" : "response14",
+            "id" : "0x0114"
+        },
+        {
+            "name" : "response15",
+            "id" : "0x0115"
+        },
+        {
+            "name" : "response16",
+            "id" : "0x0116"
+        },
+        {
+            "name" : "response17",
+            "id" : "0x0117"
+        },
+        {
+            "name" : "response18",
+            "id" : "0x0118"
+        },
+        {
+            "name" : "response19",
+            "id" : "0x0119"
+        },
+        {
+            "name" : "response20",
+            "id" : "0x0120"
+        },
+        {
+            "name" : "request1",
+            "id" : "0x0201"
+        },
+        {
+            "name" : "request2",
+            "id" : "0x0202"
+        },
+        {
+            "name" : "request3",
+            "id" : "0x0203"
+        },
+        {
+            "name" : "request4",
+            "id" : "0x0204"
+        },
+        {
+            "name" : "request5",
+            "id" : "0x0205"
+        },
+        {
+            "name" : "request6",
+            "id" : "0x0206"
+        },
+        {
+            "name" : "request7",
+            "id" : "0x0207"
+        },
+        {
+            "name" : "request8",
+            "id" : "0x0208"
+        },
+        {
+            "name" : "request9",
+            "id" : "0x0209"
+        },
+        {
+            "name" : "request10",
+            "id" : "0x0210"
+        },
+        {
+            "name" : "request11",
+            "id" : "0x0211"
+        },
+        {
+            "name" : "request12",
+            "id" : "0x0212"
+        },
+        {
+            "name" : "request13",
+            "id" : "0x0213"
+        },
+        {
+            "name" : "request14",
+            "id" : "0x0214"
+        },
+        {
+            "name" : "request15",
+            "id" : "0x0215"
+        },
+        {
+            "name" : "request16",
+            "id" : "0x0216"
+        },
+        {
+            "name" : "request17",
+            "id" : "0x0217"
+        },
+        {
+            "name" : "request18",
+            "id" : "0x0218"
+        },
+        {
+            "name" : "request19",
+            "id" : "0x0219"
+        },
+        {
+            "name" : "request20",
+            "id" : "0x0220"
+        }
+    ],
+    "services" :
+    [
+        {
+            "service" : "0x1001",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1002",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1003",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1004",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1005",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1006",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1007",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1008",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1009",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1010",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1011",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1012",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1013",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1014",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1015",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1016",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1017",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1018",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1019",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        },
+        {
+            "service" : "0x1020",
+            "instance" : "0x0001",
+            "reliable" : { "port" : "30509", "enable-magic-cookies" : "false" }
+        }
+    ],
+    "service-discovery" :
+    {
+        "enable" : "true",
+        "multicast" : "224.224.224.245",
+        "port" : "30490",
+        "protocol" : "udp",
+        "initial_delay_min" : "10",
+        "initial_delay_max" : "100",
+        "repetitions_base_delay" : "200",
+        "repetitions_max" : "3",
+        "ttl" : "3",
+        "cyclic_offer_delay" : "2000",
+        "request_response_delay" : "1500"
+    }
+}
