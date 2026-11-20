@@ -120,8 +120,7 @@ auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextMultiSlot() no
             const auto asil_b_allocation_result = asil_b_control_local_->TryAllocateSlot(*free_multi_slot_result);
             if (!(asil_b_allocation_result.has_value()))
             {
-                asil_qm_control_local_.SetSlotValue(
-                    {free_multi_slot_result->slot_index, qm_old_slot_value_result.value()});
+                asil_qm_control_local_.SetSlotValue({free_multi_slot_result->slot_index, *qm_old_slot_value_result});
                 continue;
             }
             return free_multi_slot_result->slot_index;
@@ -205,7 +204,7 @@ template <template <class> class AtomicIndirectorType>
 ProviderEventDataControlLocalView<AtomicIndirectorType>*
 EventDataControlComposite<AtomicIndirectorType>::GetAsilBEventDataControlLocal() noexcept
 {
-    return asil_b_control_local_.has_value() ? &(asil_b_control_local_.value()) : nullptr;
+    return asil_b_control_local_.has_value() ? &(*asil_b_control_local_) : nullptr;
 }
 
 template <template <class> class AtomicIndirectorType>

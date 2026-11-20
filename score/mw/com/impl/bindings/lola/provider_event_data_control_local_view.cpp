@@ -56,10 +56,10 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::AllocateNextSlot()
             continue;
         }
 
-        if (TryAllocateSlot(oldest_unused_slot_info_result.value()).has_value())
+        if (TryAllocateSlot(*oldest_unused_slot_info_result).has_value())
         {
             LogPerformanceMetrics(retry_counter);
-            return oldest_unused_slot_info_result.value().slot_index;
+            return oldest_unused_slot_info_result->slot_index;
         }
     }
     LogPerformanceMetrics(retry_counter);

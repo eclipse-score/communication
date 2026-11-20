@@ -119,7 +119,7 @@ auto ConsumerEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent
 
         auto& candidate_slot_status_value = static_cast<EventSlotStatus::value_type&>(candidate_slot_status);
 
-        auto possible_index_value = possible_index.value();
+        auto possible_index_value = *possible_index;
         auto& slot_value = state_slots_[possible_index_value];
 
         transaction_log_local_view_->ReferenceTransactionBegin(possible_index_value);
