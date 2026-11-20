@@ -1,0 +1,26 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("ToString called on two InstanceSpecifiers created from different strings returns the same string representation.", "mw_com.ToStringCalledOnInstanceSpecifiersCreatedFromDifferentStringsReturnSameStringRepresentations")
+
+$IntermediateEvent("Internal string representation does not correctly reflect the provided string", "InternalStringRepresentationIncorrect", "mw_com.ToStringCalledOnInstanceSpecifiersCreatedFromDifferentStringsReturnSameStringRepresentations")
+$RootCause("ToString does not return a string based on the internal string representation", "ToStringNotBasedOnInternalRepresentation", "mw_com.ToStringCalledOnInstanceSpecifiersCreatedFromDifferentStringsReturnSameStringRepresentations")
+$OrGate("OrGate1", "InternalStringRepresentationIncorrect")
+$RootCause("Provided string is not stored correctly during creation", "InstanceSpecifierProvidedStringNotStoredCorrectly", "OrGate1")
+$RootCause("Internally stored stringified representation is modified after creation", "InstanceSpecifierStringifiedRepresentationModifiedAfterCreation", "OrGate1")
+
+@enduml

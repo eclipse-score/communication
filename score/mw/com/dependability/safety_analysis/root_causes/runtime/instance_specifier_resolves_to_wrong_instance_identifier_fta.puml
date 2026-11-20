@@ -1,0 +1,27 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("InstanceSpecifier resolves to the wrong InstanceIdentifier", "mw_com.InstanceSpecifierResolvesToWrongInstanceIdentifier")
+
+$OrGate("OrGate1", "mw_com.InstanceSpecifierResolvesToWrongInstanceIdentifier")
+$IntermediateEvent("Found InstanceIdentifier does not reflect the configuration", "FoundInstanceIdentifierDoesNotReflectConfiguration", "OrGate1")
+$TransferInGate("In-memory configuration is corrupted", "InMemoryConfigurationIsCorrupted", "mw_com.InMemoryConfigurationWrong", "FoundInstanceIdentifierDoesNotReflectConfiguration")
+$RootCause("Does not search for InstanceIdentifiers with provided InstanceSpecifier", "SearchesForInstanceIdentifiersWithWrongInstanceSpecifier", "OrGate1")
+$IntermediateEvent("Wrong instance deployments found in In-memory configuration", "WrongInstanceDeploymentFound", "OrGate1")
+$TransferInGate("InstanceSpecifiers created from different strings cannot be uniquely stored or looked\nup as distinct keys in a map-like data structure that handles hash collisions.", "InstanceSpecifiersCreatedFromDifferentStringsAreNotUniqueInAMapRobustToHashCollisions", "Communication.InstanceSpecifiersCreatedFromDifferentStringsAreNotUniqueInAMapRobustToHashCollisions", "WrongInstanceDeploymentFound")
+
+@enduml
