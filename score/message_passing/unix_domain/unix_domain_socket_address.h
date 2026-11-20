@@ -13,8 +13,8 @@
 #ifndef SCORE_LIB_MESSAGE_PASSING_UNIX_DOMAIN_UNIX_DOMAIN_SOCKET_ADDRESS_H
 #define SCORE_LIB_MESSAGE_PASSING_UNIX_DOMAIN_UNIX_DOMAIN_SOCKET_ADDRESS_H
 
+#include <algorithm>
 #include <string_view>
-#include <tuple>
 
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -52,10 +52,10 @@ class UnixDomainSocketAddress
 
 inline UnixDomainSocketAddress::UnixDomainSocketAddress(const std::string_view path, const bool isAbstract) noexcept
 {
-    std::ignore = std::memset(static_cast<void*>(&addr_), 0, sizeof(addr_));
+    addr_ = sockaddr_un{};
     addr_.sun_family = static_cast<sa_family_t>(AF_UNIX);
     const size_t len = std::min(sizeof(addr_.sun_path) - 1U - (isAbstract ? 1U : 0U), path.size());
-    std::ignore = std::memcpy(addr_.sun_path + (isAbstract ? 1 : 0), path.data(), len);
+    std::copy_n(path.data(), len, addr_.sun_path + (isAbstract ? 1 : 0));
 }
 
 }  // namespace score::message_passing::detail
