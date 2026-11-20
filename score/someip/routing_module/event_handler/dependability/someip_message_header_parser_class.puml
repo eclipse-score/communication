@@ -15,6 +15,9 @@
 
 namespace score.someip.routing_module {
     class SomeipMessageHeaderParser
+    class SomeipDatagramParser
+
+    note right of SomeipDatagramParser : Template parameter is a concrete packet reader
 }
 
 @enduml

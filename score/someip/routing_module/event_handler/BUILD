@@ -17,8 +17,14 @@ load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
     name = "someip_message_header_parser",
-    srcs = ["someip_message_header_parser.cpp"],
-    hdrs = ["someip_message_header_parser.h"],
+    srcs = [
+        "someip_datagram_parser.cpp",
+        "someip_message_header_parser.cpp",
+    ],
+    hdrs = [
+        "someip_datagram_parser.h",
+        "someip_message_header_parser.h",
+    ],
     visibility = ["//score/someip/routing_module/event_handler:__pkg__"],
     deps = ["@score_baselibs//score/language/futurecpp"],
 )
