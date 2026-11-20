@@ -1,0 +1,55 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor "User" as Process
+participant "factory_resources" as factory_resources
+participant OS
+participant LockFile
+participant ShmObject
+
+
+activate Process
+
+Process -> factory_resources : SharedMemoryFactory::Open(path, allowedProviders)
+activate factory_resources
+factory_resources -> factory_resources : Check if path already opened in process
+
+opt path not opened in process
+    factory_resources -> OS : Create LockFile
+    activate OS
+    create LockFile
+    OS -> LockFile : Create
+    alt LockFile creation failed
+        OS --> factory_resources : return : failure
+        deactivate OS
+        factory_resources -> Process : Return nullptr
+    else LockFile creation succeeded
+        activate LockFile
+        factory_resources -> OS : Open ShmObject (shm_open))
+        activate OS
+        OS -> ShmObject : Open
+        OS --> factory_resources : return : file descriptor ShmObject
+        deactivate OS
+        factory_resources -> ShmObject : mmap(fd, reservedSize, PROT_READ | PROT_WRITE, MAP_SHARED)
+        activate ShmObject
+        ShmObject --> factory_resources : return : baseAddress
+        deactivate ShmObject
+        destroy LockFile
+    end
+end
+
+== Provider Check ==
+
+opt allowedProviders not empty
+    factory_resources -> ShmObject : getOwnerUid()
+    activate ShmObject
+    factory_resources <-- ShmObject : return : ownerUid
+    deactivate ShmObject
+    opt ownerUid not in allowedProviders
+        factory_resources -> Process : Return nullptr
+    end
+end
+factory_resources -> Process : Return SharedMemoryResource
+@enduml

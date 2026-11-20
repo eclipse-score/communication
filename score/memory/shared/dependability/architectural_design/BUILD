@@ -26,6 +26,10 @@ architectural_design(
         "dynamic_design/offset_ptr_do_pointer_arithmetic.puml",
         "dynamic_design/offset_ptr_do_pointer_target_access.puml",
         "dynamic_design/offset_ptr_is_valid.puml",
+        "dynamic_design/allocator_allocate.puml",
+        "dynamic_design/create_shm_resource.puml",
+        "dynamic_design/open_shm_resource.puml",
+        "dynamic_design/dereference_offset_ptr.puml",
     ],
     internal_api = [
         #"internal_api.puml",
