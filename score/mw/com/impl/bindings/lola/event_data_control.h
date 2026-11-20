@@ -42,7 +42,7 @@ class EventDataControl
         containers::DynamicArray<ControlSlotType, memory::shared::PolymorphicOffsetPtrAllocator<ControlSlotType>>;
 
     EventDataControl(const SlotIndexType max_slots, score::memory::shared::ManagedMemoryResource& resource)
-        : state_slots_{max_slots, resource}
+        : state_slots_{static_cast<std::size_t>(max_slots), resource}
     {
     }
 

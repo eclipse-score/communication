@@ -127,6 +127,8 @@ class MemoryRegionMapImpl final
     // Rationale: False positive - variable is used below.
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
     static constexpr const std::uint32_t VERSION_COUNT{10U};
+    // VERSION_COUNT is deliberately a uint32_t (not uint8_t) to avoid implicit integral promotion to int in the
+    // version index arithmetic (MISRA RULE-7-0-5). Indices are stored as uint8_t, so it must still fit into that.
     static_assert(
         VERSION_COUNT <= 255U,
         "VERSION_COUNT needs to be smaller than 255 as our latest_known_region_version_ tracker is an uint8 ");

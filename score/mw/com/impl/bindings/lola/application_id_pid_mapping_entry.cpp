@@ -49,7 +49,7 @@ void ApplicationIdPidMappingEntry::SetStatusAndApplicationIdAtomic(MappingEntryS
 ApplicationIdPidMappingEntry::key_type ApplicationIdPidMappingEntry::CreateKey(MappingEntryStatus status,
                                                                                std::uint32_t application_id) noexcept
 {
-    ApplicationIdPidMappingEntry::key_type result = static_cast<std::uint16_t>(status);
+    auto result = static_cast<ApplicationIdPidMappingEntry::key_type>(status);
     result = result << 32U;
     result |= static_cast<std::uint64_t>(application_id);
     return result;
