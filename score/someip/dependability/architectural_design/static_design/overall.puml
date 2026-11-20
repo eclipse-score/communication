@@ -47,6 +47,10 @@ package someip <<SEooC>> {
     component EventHandler <<unit>>
     component RoutingManager <<unit>>
 
+    interface RoutingCommands
+
+    EventHandler -u- RoutingCommands
+    RoutingManager --( RoutingCommands
     RoutingManager --( router_control_protocol
   }
 }

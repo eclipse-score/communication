@@ -102,11 +102,33 @@ ScoreReq.CompReq CR_RoutingModule_ControlOrdering {
     version = 1
 }
 
-ScoreReq.CompReq CR_RoutingModule_ControlBackpressure {
-    description = "The router shall apply producer backpressure when its bounded routing-command queue is full."
+ScoreReq.CompReq CR_RoutingModule_ControlQueueOverflow {
+    description = "The router shall discard and log routing commands received while its bounded routing-command queue is full, without blocking the controller connection."
     safety = ScoreReq.Asil.QM
     derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
-    note = "Backpressure waits for queue capacity rather than dropping accepted commands."
+    note = "The queue capacity has to cover the controller's startup burst, see RoutingModule.AoU_RoutingModule_ControlQueueCapacity."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_SingleController {
+    description = "The router shall accept at most one controller connection at a time and reject further connection attempts."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipDiscoverySeparation@1 ]
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_ControllerLoss {
+    description = "The router shall remove its complete routing state when the controller disconnects."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
+    note = "Routing commands queued at that time are discarded; commands of a reconnected controller are applied after the removal."
+    version = 1
+}
+
+ScoreReq.CompReq CR_RoutingModule_ControllerShutdown {
+    description = "The router shall remove its complete routing state when the controller announces its shutdown, and shall log an announced shutdown differently from an unexpected disconnect."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
     version = 1
 }
 
