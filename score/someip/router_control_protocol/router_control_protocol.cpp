@@ -39,6 +39,7 @@ using detail::kServiceOffset;
 
 struct UsedParameters
 {
+    bool service_instance;
     bool event;
     bool local_port;
     bool remote_endpoint;
@@ -50,7 +51,7 @@ struct UsedParameters
 constexpr bool IsKnownOpcode(const std::uint8_t value) noexcept
 {
     return (value >= static_cast<std::uint8_t>(Opcode::kAddRemoteService)) &&
-           (value <= static_cast<std::uint8_t>(Opcode::kRemoveRemoteSubscription));
+           (value <= static_cast<std::uint8_t>(Opcode::kShutdown));
 }
 
 constexpr UsedParameters UsedParametersOf(const Opcode opcode) noexcept
@@ -58,19 +59,21 @@ constexpr UsedParameters UsedParametersOf(const Opcode opcode) noexcept
     switch (opcode)
     {
         case Opcode::kAddRemoteService:
-            return UsedParameters{false, true, true, false, true, false};
+            return UsedParameters{true, false, true, true, false, true, false};
         case Opcode::kAddLocalSubscription:
         case Opcode::kRemoveLocalSubscription:
-            return UsedParameters{true, false, false, false, false, false};
+            return UsedParameters{true, true, false, false, false, false, false};
         case Opcode::kAddLocalService:
-            return UsedParameters{false, true, false, true, true, true};
+            return UsedParameters{true, false, true, false, true, true, true};
         case Opcode::kAddRemoteSubscription:
         case Opcode::kRemoveRemoteSubscription:
-            return UsedParameters{true, false, true, false, false, false};
+            return UsedParameters{true, true, false, true, false, false, false};
         case Opcode::kRemoveRemoteService:
         case Opcode::kRemoveLocalService:
+            return UsedParameters{true, false, false, false, false, false, false};
+        case Opcode::kShutdown:
         default:
-            return UsedParameters{false, false, false, false, false, false};
+            return UsedParameters{false, false, false, false, false, false, false};
     }
 }
 
@@ -99,6 +102,7 @@ score::cpp::expected_blank<ErrorCode> Validate(const Message& message) noexcept
             return byte != 0U;
         });
     const bool unexpected =
+        ((!used.service_instance) && ((message.service != 0U) || (message.instance != 0U))) ||
         ((!used.event) && (message.event != 0U)) || ((!used.local_port) && (message.local_port != 0U)) ||
         ((!used.remote_endpoint) && remote_endpoint_set) || ((!used.major) && (message.major != 0U)) ||
         ((!used.events) && (!message.events.empty())) || ((!used.fields) && (!message.fields.empty()));

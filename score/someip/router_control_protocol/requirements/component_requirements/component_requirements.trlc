@@ -16,7 +16,7 @@ import ScoreReq
 import RoutingModule
 
 ScoreReq.CompReq CR_RouterControlProtocol_RoutingCommands {
-    description = "The router control protocol shall provide routing commands to add and remove a remote service, a local subscription to a remote service, a local service, and a remote subscription to a local service."
+    description = "The router control protocol shall provide routing commands to add and remove a remote service, a local subscription to a remote service, a local service, a remote subscription to a local service and to announce a graceful shutdown of the SD daemon."
     safety = ScoreReq.Asil.QM
     derived_from = [ RoutingModule.FEAT_SomeipDiscoverySeparation@1, RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
     version = 1

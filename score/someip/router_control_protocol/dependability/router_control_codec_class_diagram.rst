@@ -99,11 +99,16 @@ for it.
      - TX
      - the remote subscription ends or expires
      - stops sending ``event`` to that endpoint
+   * - ``kShutdown``
+     - both
+     - the SD daemon shuts down gracefully
+     - removes all remote services, local services and subscriptions
 
 Parameters per opcode
 """""""""""""""""""""
 
-``service`` and ``instance`` are used by every opcode; ``x`` marks the additional parameters.
+``service`` and ``instance`` are used by every opcode except ``kShutdown``, which carries no parameters;
+``x`` marks the additional parameters.
 
 .. list-table::
    :header-rows: 1
@@ -168,6 +173,13 @@ Parameters per opcode
      - x
      -
      - x
+     -
+     -
+     -
+   * - ``kShutdown``
+     -
+     -
+     -
      -
      -
      -

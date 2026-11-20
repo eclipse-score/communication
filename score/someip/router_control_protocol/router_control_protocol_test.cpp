@@ -107,7 +107,8 @@ std::vector<Message> AllCommands()
             AddLocalService(),
             WithServiceInstance(Opcode::kRemoveLocalService),
             WithRemoteSubscriber(Opcode::kAddRemoteSubscription),
-            WithRemoteSubscriber(Opcode::kRemoveRemoteSubscription)};
+            WithRemoteSubscriber(Opcode::kRemoveRemoteSubscription),
+            Message{Opcode::kShutdown}};
 }
 
 void ExpectEqual(const Message& actual, const Message& expected)
@@ -284,11 +285,11 @@ TEST(RouterControlProtocolTest, DecodeRejectsWrongSize)
 TEST(RouterControlProtocolTest, DecodeRejectsUnknownOpcode)
 {
     Trace("RouterControlProtocol.CR_RouterControlProtocol_RejectMalformed",
-          "an encoded routing command with opcode 0x00, 0x09 or 0x81",
+          "an encoded routing command with opcode 0x00, 0x0A or 0x81",
           "the command is decoded",
           "decoding fails with an unknown-opcode error");
 
-    for (const std::uint8_t opcode : std::array<std::uint8_t, 3U>{0x00U, 0x09U, 0x81U})
+    for (const std::uint8_t opcode : std::array<std::uint8_t, 3U>{0x00U, 0x0AU, 0x81U})
     {
         auto bytes = EncodeToVector(WithServiceInstance(Opcode::kRemoveRemoteService));
         bytes[1U] = opcode;
@@ -340,6 +341,10 @@ TEST(RouterControlProtocolTest, EncodeRejectsParameterNotUsedByOpcode)
     invalid.back().fields.push_back(0x8001U);
     invalid.push_back(WithEvent(Opcode::kRemoveLocalSubscription));
     invalid.back().remote_port = 1U;
+    invalid.push_back(Message{Opcode::kShutdown});
+    invalid.back().service = 1U;
+    invalid.push_back(Message{Opcode::kShutdown});
+    invalid.back().instance = 1U;
 
     for (const Message& message : invalid)
     {
@@ -400,7 +405,7 @@ TEST(RouterControlProtocolTest, EncodeRejectsUnknownOpcode)
           "encoding fails with an unknown-opcode error");
 
     Message message = WithServiceInstance(Opcode::kRemoveRemoteService);
-    message.opcode = static_cast<Opcode>(0x09U);
+    message.opcode = static_cast<Opcode>(0x0AU);
     Buffer buffer{};
 
     const auto size = Encode(message, buffer);
@@ -484,7 +489,7 @@ TEST(RouterControlProtocolTest, DecodeHandlesRandomInput)
     std::mt19937 generator{0x5EEDU};
     std::uniform_int_distribution<std::uint32_t> byte{0U, 0xFFU};
     std::uniform_int_distribution<std::size_t> length{0U, kMaxMessageSize + 2U};
-    std::uniform_int_distribution<std::uint32_t> opcode{1U, 8U};
+    std::uniform_int_distribution<std::uint32_t> opcode{1U, 9U};
     for (std::uint32_t iteration = 0U; iteration < 20000U; ++iteration)
     {
         std::vector<std::uint8_t> data(length(generator));

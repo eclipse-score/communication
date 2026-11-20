@@ -24,6 +24,7 @@ namespace score.someip.router_control_protocol {
         kRemoveLocalService = 6
         kAddRemoteSubscription = 7
         kRemoveRemoteSubscription = 8
+        kShutdown = 9
     }
 
     enum ErrorCode {

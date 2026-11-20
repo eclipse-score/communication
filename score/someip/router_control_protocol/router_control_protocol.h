@@ -64,6 +64,9 @@ enum class Opcode : std::uint8_t
     kAddRemoteSubscription = 0x07U,
     /// TX: undoes kAddRemoteSubscription (remote consumer unsubscribed or subscription expired).
     kRemoveRemoteSubscription = 0x08U,
+    /// The SD daemon shuts down gracefully. The routing module removes all routing state. Carries no parameters,
+    /// so service and instance are zero as well.
+    kShutdown = 0x09U,
 };
 
 enum class ErrorCode : std::uint8_t

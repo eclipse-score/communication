@@ -79,7 +79,7 @@ requirements:
         when: the command is decoded
         then: decoding fails with a too-many-events error
       - uid: //score/someip/router_control_protocol/RouterControlProtocolTest:DecodeRejectsUnknownOpcode
-        given: an encoded routing command with opcode 0x00, 0x09 or 0x81
+        given: an encoded routing command with opcode 0x00, 0x0A or 0x81
         when: the command is decoded
         then: decoding fails with an unknown-opcode error
       - uid: //score/someip/router_control_protocol/RouterControlProtocolTest:DecodeRejectsWrongSize
@@ -100,7 +100,7 @@ requirements:
         then: decoding returns an error or a command that encodes back to the same bytes
   - id: RouterControlProtocol.CR_RouterControlProtocol_RoutingCommands
     version: '1'
-    description: The router control protocol shall provide routing commands to add and remove a remote service, a local subscription to a remote service, a local service, and a remote subscription to a local service.
+    description: The router control protocol shall provide routing commands to add and remove a remote service, a local subscription to a remote service, a local service, a remote subscription to a local service and to announce a graceful shutdown of the SD daemon.
     test_cases:
       - uid: //score/someip/router_control_protocol/RouterControlProtocolTest:EncodeRejectsUnknownOpcode
         given: a routing command with an opcode value outside the defined opcodes
