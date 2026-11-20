@@ -34,6 +34,24 @@ This conflicts with `ServerPreallocatesConnectionObjects` and
 Client send-queue tests are not evidence for those server requirements. Agree
 the intended contract before changing requirements or implementation.
 
+## Retained Sequence Research
+
+The [historical memory investigation](../memory-and-size-limits-research.md)
+records the earlier queue/preallocation findings and rough memory model.
+The OS-fault sequence notes referenced its finding 4 and described ingress
+backpressure as OS-managed rather than a library ring buffer.
+Exact pressure outcomes and the notes' "EAGAIN-equivalent" wording were not
+reproduced by the documentation cleanup and are not an error/timing contract.
+
+Those notes also described a `StartListening` error as grounding the startup
+causes "Duplicate Server Name" and "Server factory queue size configured below
+the required minimum" in
+[the channel-availability FTA](../../../dependability/safety_analysis/fta_ipc_channel_unavailable.puml).
+That was an investigative mapping, not a completed assessment. In particular,
+attachment failure is not evidence that the unused queue configuration is
+validated. The FTA identifiers and formal assessments are unchanged; their
+applicability and sufficiency still need safety review.
+
 ## Next Check
 
 Review intended server queue/preallocation semantics with the functionality and

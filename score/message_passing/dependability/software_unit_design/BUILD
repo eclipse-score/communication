@@ -12,10 +12,54 @@
 # *******************************************************************************
 
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit_design")
+load("//tools/documentation:defs.bzl", "html_integrity_test", "plantuml_render")
 
 unit_design(
     name = "client_connection_unit_design",
+    dynamic = [
+        "client_connection_connect_activity.puml",
+        "client_connection_endpoint_callbacks_activity.puml",
+        "client_connection_lifetime_operation_activity.puml",
+        "client_connection_lifetime_retirement_activity.puml",
+        "client_connection_lifetime_transaction_activity.puml",
+        "client_connection_object_lifetime_activity.puml",
+        "client_connection_process_input_event_activity.puml",
+        "client_connection_send_activity.puml",
+        "client_connection_send_wait_reply_activity.puml",
+        "client_connection_send_with_callback_activity.puml",
+        "client_connection_stop_activity.puml",
+        "client_connection_switch_to_stop_state_activity.puml",
+        "client_send_queue_arm_activity.puml",
+        "client_send_queue_cancel_activity.puml",
+        "client_send_queue_drain_activity.puml",
+        "client_send_queue_handle_reply_activity.puml",
+        "client_send_queue_send_activity.puml",
+        "client_send_queue_send_wait_reply_activity.puml",
+        "client_send_queue_send_with_callback_activity.puml",
+        "client_send_queue_try_queue_activity.puml",
+    ],
+    static = [
+        "client_connection.rst",
+        "client_connection_class_diagram.puml",
+    ],
     visibility = ["//score/message_passing:__pkg__"],
+)
+
+plantuml_render(
+    name = "client_connection_render",
+    srcs = glob([
+        "client_connection*.puml",
+        "client_send_queue*.puml",
+    ]),
+)
+
+html_integrity_test(
+    name = "client_connection_html_test",
+    size = "small",
+    expectations = "client_connection_html_expectations.json",
+    site = "//docs/sphinx:sphinx_doc",
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 unit_design(
@@ -55,5 +99,35 @@ unit_design(
 
 unit_design(
     name = "qnx_dispatch_engine_unit_design",
+    dynamic = [
+        "qnx_dispatch_engine_cleanup_activity.puml",
+        "qnx_dispatch_engine_client_pulses_activity.puml",
+        "qnx_dispatch_engine_commands_activity.puml",
+        "qnx_dispatch_engine_connection_callbacks_activity.puml",
+        "qnx_dispatch_engine_dispatch_activity.puml",
+        "qnx_dispatch_engine_lifecycle_activity.puml",
+        "qnx_dispatch_engine_register_endpoint_activity.puml",
+        "qnx_dispatch_engine_runner_activity.puml",
+        "qnx_dispatch_engine_unselect_endpoint_activity.puml",
+    ],
+    static = [
+        "qnx_dispatch_engine.rst",
+        "qnx_dispatch_engine_class_diagram.puml",
+        "qnx_dispatch_engine_resource_manager_class_diagram.puml",
+    ],
     visibility = ["//score/message_passing:__pkg__"],
+)
+
+plantuml_render(
+    name = "qnx_dispatch_engine_render",
+    srcs = glob(["qnx_dispatch_engine*.puml"]),
+)
+
+html_integrity_test(
+    name = "qnx_dispatch_engine_html_test",
+    size = "small",
+    expectations = "qnx_dispatch_engine_html_expectations.json",
+    site = "//docs/sphinx:sphinx_doc",
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
 )

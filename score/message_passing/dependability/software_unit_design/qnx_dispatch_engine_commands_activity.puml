@@ -1,0 +1,58 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_engine_commands_activity
+title QnxDispatchEngine - command scheduling and timer dispatch
+
+start
+if (Entry is EnqueueCommand?) then (yes)
+    :RegisterTimedEntry()\nassign entry deadline, owner and moved callback;
+    :Lock the queue mutex;
+    :Insert before the first strictly later deadline\nor at the end if none exists;
+    :Unlock the queue mutex;
+    :WakeUpTimerQueue()\nsend kTimerPulseCode to the client side channel\nMsgSendPulse result is unchecked;
+    :Return to the submitting caller;
+    stop
+else (timer pulse)
+    :TimerPulseCallback invokes ProcessTimerQueue()\non the client dispatch thread;
+endif
+
+:Snapshot now = Clock::now();
+:ProcessQueue(now)\nlock the queue mutex;
+while (Queue is non-empty?) is (yes)
+    :Read the front entry deadline;
+    if (Deadline is later than now?) then (yes)
+        :Unlock and return that deadline as then;
+        :Compute nanoseconds(then - Clock::now()) + 1;
+        :Set a one-shot timer using that value cast to uint64_t\nTimerSettime result is unchecked;
+        stop
+    else (due)
+        :Unlink the entry and move its callback to a local;
+    endif
+    :Unlock the queue mutex;
+    :Invoke the callback with the original now snapshot;
+    :Destroy the local callback and its captures;
+    :Relock the queue mutex;
+endwhile (no)
+:Unlock and return TimePoint{};
+:Return without rearming or disarming the timer;
+stop
+
+legend
+    TimedCommandQueue::ProcessQueue is expanded in the pulse path.
+    Equal deadlines retain insertion order; TimePoint{} denotes immediate work.
+    A callback can requeue its unlinked entry while the mutex is released.
+    The view records the timer arithmetic, not a latency or deadline guarantee.
+endlegend
+
+@enduml

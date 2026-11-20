@@ -1,0 +1,132 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_engine_class_diagram
+title QNX dispatch engine - ownership
+hide empty members
+skinparam classAttributeIconSize 0
+
+namespace score::message_passing {
+    abstract class "ISharedResourceEngine" as SharedEngine
+
+    class "QnxDispatchEngine" as Engine {
+        + EnqueueCommand(entry : CommandQueueEntry&, until : TimePoint, callback : CommandCallback, owner : const void*) noexcept override : void
+        + CleanUpOwner(owner : const void*) noexcept override : void
+        + IsOnCallbackThread() const noexcept override : bool
+        --
+        - os_resources_ : OsResources
+        - server_runner_ : detail::DispatchThreadRunner
+        - client_runner_ : detail::DispatchThreadRunner
+        - cleanup_ready_condition_ : std::condition_variable
+        - timer_queue_ : detail::TimedCommandQueue
+        - poll_endpoints_ : score::cpp::pmr::vector<PollEndpoint>
+        - posix_endpoint_list_ : score::containers::intrusive_list<PosixEndpointEntry>
+        - posix_receive_buffer_ : score::cpp::pmr::vector<std::uint8_t>
+        - timer_id_ : timer_t
+        - connect_funcs_ : resmgr_connect_funcs_t
+        - io_funcs_ : resmgr_io_funcs_t
+        --
+        - InitClientThread() noexcept : void
+        - InitServerThread() noexcept : void
+        - SetupResourceManagerCallbacks() noexcept : void
+        - WakeUpTimerQueue() noexcept : void
+        - ProcessTimerQueue() noexcept : void
+        - ProcessCleanup(owner : const void*) noexcept : void
+    }
+
+    struct "QnxDispatchEngine::OsResources" as Resources {
+        + channel : score::cpp::pmr::unique_ptr<score::os::Channel>
+        + dispatch : score::cpp::pmr::unique_ptr<score::os::Dispatch>
+        + fcntl : score::cpp::pmr::unique_ptr<score::os::Fcntl>
+        + iofunc : score::cpp::pmr::unique_ptr<score::os::IoFunc>
+        + signal : score::cpp::pmr::unique_ptr<score::os::Signal>
+        + timer : score::cpp::pmr::unique_ptr<score::os::qnx::Timer>
+        + uio : score::cpp::pmr::unique_ptr<score::os::SysUio>
+        + unistd : score::cpp::pmr::unique_ptr<score::os::Unistd>
+    }
+
+    struct "QnxDispatchEngine::PollEndpoint" as PollSlot {
+        + endpoint : PosixEndpointEntry*
+        + nonce : std::uint16_t
+    }
+
+    namespace detail {
+        class "DispatchThreadRunner" as Runner {
+            + Start<typename Init>(init : Init) noexcept : void
+            + Stop() noexcept : void
+            --
+            - channel_ : score::os::Channel&
+            - dispatch_ : score::os::Dispatch&
+            - signal_ : score::os::Signal&
+            - quit_flag_ : bool
+            - thread_ : std::thread
+            - thread_mutex_ : std::mutex
+            - dispatch_pointer_ : dispatch_t*
+            - context_pointer_ : dispatch_context_t*
+            - side_channel_coid_ : std::int32_t
+            --
+            - StartPreInit() noexcept : void
+            - StartPostInit() noexcept : void
+            - RunOnThread() noexcept : void
+            - SendQuitPulse() noexcept : void
+        }
+
+        class "TimedCommandQueue" as Queue {
+            + RegisterImmediateEntry(entry : Entry&, callback : QueuedCallback, owner : const void*) noexcept : void
+            + RegisterTimedEntry(entry : Entry&, until : TimePoint, callback : QueuedCallback, owner : const void*) noexcept : void
+            + ProcessQueue(now : TimePoint) noexcept : TimePoint
+            + CleanUpOwner(owner : const void*) noexcept : void
+            --
+            - mutex_ : std::mutex
+            - queue_ : score::containers::intrusive_list<Entry, TimedCommandQueue>
+        }
+    }
+}
+
+SharedEngine <|-- Engine
+Engine *-- Resources : os_resources_
+Engine *-- Runner : client_runner_, server_runner_
+Engine *-- Queue : timer_queue_
+Engine *-- PollSlot : poll_endpoints_ slot storage
+
+note bottom of Resources
+    Owns OSAL adapters, not the caller's memory resource.
+    Native handles are tracked by the engine and its runners.
+end note
+
+note bottom of Runner
+    Two embedded instances, each with its own dispatch loop.
+    Borrows adapters owned by the engine's OsResources.
+    context_pointer_ owns a native dispatch context allocation.
+    The server runner's context contains its native receive workspace.
+end note
+
+note bottom of Queue
+    Owns list membership, not command-entry storage.
+    Callbacks run and captures are destroyed outside mutex_.
+end note
+
+note bottom of PollSlot
+    The slot borrows its endpoint pointer.
+    Removal clears the pointer but retains the nonce.
+    Reusing a free slot increments its nonce before registration.
+end note
+
+note top of Engine
+    Selected lifecycle and scheduling declarations, not the complete API.
+    The memory resource and endpoint entries are borrowed.
+    posix_receive_buffer_ is client-side protocol receive storage.
+    Resource-manager adapters have a separate class view.
+end note
+
+@enduml

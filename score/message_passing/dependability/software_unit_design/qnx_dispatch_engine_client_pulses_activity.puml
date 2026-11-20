@@ -1,0 +1,62 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_engine_client_pulses_activity
+title QnxDispatchEngine - client pulse dispatch
+
+start
+:Client worker dispatches SelectPulseCallback\nor CoidDeathPulseCallback;
+if (Entry is SelectPulseCallback?) then (yes)
+    :Unpack the pulse pointer value into index, signal and nonce;
+    if (Index out of range, nonce mismatch,\nor slot endpoint is nullptr?) then (drop)
+        :Return 0 without invoking an endpoint callback;
+        stop
+    else (valid slot)
+        :Inspect the decoded signal;
+    endif
+    if (Signal equals kSignalPing?) then (yes)
+        :Invoke endpoint.ping();
+    else (other)
+        :Invoke endpoint.input();
+    endif
+    :Return 0;
+    stop
+else (CoidDeathPulseCallback)
+    :Read the coid from the pulse integer value;
+endif
+
+:ConnectServerInfo(0, coid, nullptr);
+if (Lookup succeeds and returns the same coid?) then (yes)
+    :Log an obsolete death pulse and return 0;
+    stop
+else (error or different coid)
+    :Find a non-null poll endpoint with fd equal to coid;
+endif
+if (An endpoint is found?) then (yes)
+    :Log the crash-pulse path;
+    :Invoke endpoint.input();
+else (not found)
+    :Skip endpoint delivery;
+endif
+:Return 0;
+stop
+
+legend
+    All actions here execute on the client runner's worker.
+    Only new-data and ping values are constructed during local registration.
+    SelectPulseCallback sends every non-ping signal on its input branch.
+    A death pulse triggers input, not a direct disconnect or descriptor close.
+    Receive-error and connection-lifecycle handling belong to the consumer.
+endlegend
+
+@enduml

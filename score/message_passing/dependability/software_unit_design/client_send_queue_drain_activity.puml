@@ -1,0 +1,89 @@
+@startuml client_send_queue_drain_activity
+title ClientSendQueue - queued send dispatch
+
+start
+:DrainUnderLock(lock);
+note right
+    Entry: the caller holds lifetime_.mutex_ through lock.
+    The procedure releases it around transport and callbacks,
+    then reacquires it before changing queue or slot state.
+end note
+
+:Create ClientConnectionLifetime::Operation under the caller's lock;
+if (Operation rejected admission?) then (yes)
+    :Return with lock held: no dispatch after stopping;
+    stop
+else (no)
+    :Retain the admitted operation for the entire drain continuation;
+endif
+while (queue_ is non-empty and lifetime_.IsAccepting()?) is (yes)
+    :Take the front command and remove it from queue_;
+    :Create a live local ReplySlotToken for this dispatch;
+    :Move command.callback into a local ReplyCallback;
+    if (local callback is non-empty?) then (yes)
+        :Move the callback into waiting_for_reply_ and record this sender;
+        :SendTransport(operation, REQUEST, command.message);
+        :Return the command to the front of pool_;
+        if (Transport succeeded?) then (yes)
+            :Clear this sender owner if it still owns the pending callback;
+            :End operation scope (RAII);
+            :Return with lock held and transferred completion preserved;
+            stop
+        else (no)
+            :Check whether this sender still owns the slot;
+            if (This sender owns the slot?) then (yes)
+                :Move the reply callback locally, keeping the optional engaged;
+                :Unlock lifetime_.mutex_;
+                if (local callback is non-empty?) then (yes)
+                    :Invoke the callback with the transport error;
+                else (no)
+                    :Skip an empty callback;
+                endif
+                :Relock lifetime_.mutex_;
+                if (This sender still owns the slot?) then (yes)
+                    :Reset waiting_for_reply_ and its sender owner;
+                else (no)
+                    :Preserve another path's slot;
+                endif
+            else (no)
+                :Input or stopping already took completion;
+                :Continue to the next queue/admission check with lock held;
+            endif
+        endif
+    else (no)
+        :Reserve an empty ReplyCallback marker owned by this sender;
+        :SendTransport(operation, SEND, command.message);
+        :Ignore the transport result;
+        :Return the command to the front of pool_;
+        if (This sender still owns the marker?) then (yes)
+            :Reset waiting_for_reply_ and its sender owner;
+        else (no)
+            :Preserve another path's slot;
+        endif
+    endif
+endwhile (no)
+
+:End operation scope (RAII);
+:Return with lock held;
+stop
+
+legend
+    The queue is FIFO; recycled free commands are reused LIFO.
+    A detached command stays reserved until transport finishes.
+    The active operation covers transport, recycling, and error callback return.
+    Every transport helper releases lifetime_.mutex_ for IPC and relocks afterward.
+    The request callback moves into waiting_for_reply_ before transport.
+    Sender identity uses a live local token, independent of callback moves.
+    After transport returns, the SendCommand is recycled into pool_.
+    Its message storage can be reused independently of the pending callback.
+    A still-pending callback keeps the reply slot engaged and pauses queue dispatch.
+    Input or stopping may already have taken completion during unlocked transport.
+    Failed requests invoke their callback only if completion was not already taken.
+    The engaged slot also keeps reentrant requests queued during that callback.
+    An empty callback selects SEND, not REQUEST, in this procedure.
+    An empty queue at entry leaves the incoming reply-slot state unchanged.
+    Stopping prevents the next queued send; the last operation can schedule finalization.
+    This is local dispatch control flow, not full callback-composition proof.
+endlegend
+
+@enduml

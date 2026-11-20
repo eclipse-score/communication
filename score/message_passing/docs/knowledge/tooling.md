@@ -68,9 +68,17 @@ The renderer jar may not be materialized in a local dependency cache. Locate the
 actual renderer/toolchain before using an old command; do not publish personal
 cache paths or commit generated rendering output.
 
+## C++ Type Representation
+
+Preserve implementation constness rather than changing declarations to satisfy
+a checker. [The unit-design type record](issues/tooling-client-connection-unit-design-types.md#parameter-constness-and-pointer-qualifiers)
+explains lint-required parameter constness, known pointer-qualifier limitations,
+and pending upstream fixes. Keep these tooling explanations in developer
+knowledge rather than the published design artifacts.
+
 ## Sequence-Validation Boundary
 
-[The existing integration-validation proposals](../../dependability/software_architectural_design/sequence_validation_proposals.md)
+[The integration-validation research](integration-sequence-validation-research.md)
 record the pilot, reproducer, known gaps, and proposed upstream capabilities.
 They distinguish API-object lifelines, external actors, callable bindings,
 returns, and IPC messages from internal-unit calls.
@@ -83,6 +91,31 @@ Do not add external applications to the certified unit tree, copy public calls
 into private interfaces, or parenthesize calls merely to suppress method
 checking. An interaction that the checker skips is not a verified interaction.
 Sequence pictures do not establish C++ scheduling or resource-lifetime safety.
+
+## Activity-Conditional Parsing
+
+Tooling 3.0.2 treats an `if` immediately following `else` as an `elseif` chain,
+even when the authored nested conditional has its own `endif`. See
+[activity nested-conditional parsing](issues/tooling-activity-nested-else-if.md)
+for the reproduced failure and the behavior-preserving notation used in the
+client-connection pilot. Recheck the resolver on a tooling update rather than
+treating this as a PlantUML language restriction.
+
+## Activity Procedure Navigation
+
+Separate activity procedures are supported. Use a named Sphinx target and
+caption `:ref:` links to navigate from caller views; the current SVG-object
+renderer does not make a bare page-fragment link inside an activity image point
+to the containing unit page. See [activity procedure navigation](issues/tooling-activity-procedure-navigation.md)
+for the reproduced limitation and verified shared-finalization pattern.
+
+The [documentation-check pilot](../../../../tools/documentation/README.md)
+provides a declared-tool render target and a reusable HTML/SVG integrity test.
+The [build/test commands](build-and-test.md#requirements-and-architecture)
+replace recurring cache-path renderer calls and ad hoc HTML scripts. Its client
+contract checks diagram presence and caption navigation, not C++ operation or
+runtime test counts. Tool regression tests include SVG-object link bases,
+figure permalinks, and Bazel runfiles symlink paths.
 
 ## Historical Parser Workarounds
 

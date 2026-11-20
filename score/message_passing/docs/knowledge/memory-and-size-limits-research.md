@@ -11,9 +11,24 @@
   SPDX-License-Identifier: Apache-2.0
 ----------------------------------------------------------------------------- -->
 
-# Findings: missing count/length/memory specifications in `message_passing`
+# Historical Memory and Size-Limit Research
 
-**Status:** engineering findings / technical debt log, not yet formalized as requirements.
+Status: historical investigation; current conclusions belong to the focused records below
+Evidence: original source investigation, inspection date unspecified; not revalidated by relocation
+
+This preserves the original investigation, not a current memory model or an
+approved requirement. Member names, callback representations, SSO capacities,
+formulas and test-absence statements below describe that investigation's
+snapshot and must be rechecked before reuse.
+
+Use the current records for [identifier limits](issues/functionality-identifier-limits.md),
+[server configuration](issues/functionality-server-resource-configuration.md),
+and [allocation containment](issues/functionality-allocation-containment.md).
+They distinguish retained observations from contracts and evidence still needed.
+
+## Original Scope
+
+**Original status:** engineering findings / technical debt log, not yet formalized as requirements.
 This document intentionally does **not** introduce TRLC requirements. It records gaps discovered while
 analyzing `ServiceProtocolConfig`, `IClientFactory::ClientConfig`, and `IServerFactory::ServerConfig` for
 missing specification of argument counts, lengths, and the resulting memory footprint, so that the
@@ -59,7 +74,7 @@ Consequences / gotchas:
 
 `identifier` is stored as `score::cpp::pmr::string` (i.e.
 `std::basic_string<char, char_traits<char>, polymorphic_allocator<char>>`, see
-[string.hpp](../../../../../eclipse-score-baselibs/score/language/futurecpp/include/score/string.hpp)) in
+`score/string.hpp` in the pinned `@score_baselibs` dependency) in
 both `ClientConnection::identifier_` and `UnixDomainServer`/`QnxDispatchServer::identifier_`. Whether
 storing the identifier allocates from the supplied `memory_resource` at all depends entirely on the
 underlying standard library's short-string-optimization (SSO) capacity, which is implementation-defined:

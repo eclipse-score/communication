@@ -1,0 +1,16 @@
+@startuml client_connection_send_activity
+title ClientConnection - sending without a reply
+
+start
+:Send(message);
+:sends_.Send(message);
+:Return the helper result unchanged;
+stop
+
+legend
+    ClientSendQueue owns size checks, admission, sequencing, and transport.
+    The facade does not acquire the send mutex or inspect reply reservations.
+    The caption links to the helper activity rather than duplicating it.
+endlegend
+
+@enduml

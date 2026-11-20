@@ -1,0 +1,30 @@
+@startuml client_connection_lifetime_transaction_activity
+title ClientConnectionLifetime - lifetime-only transaction
+
+start
+:ExecuteTransaction(actor);
+:Lock mutex_;
+:Create Operation under that lock;
+if (Operation admitted?) then (yes)
+    :Execute actor(descriptor_) through Operation::Execute;
+    note right
+        The operation unlocks for actor execution and relocks afterward.
+        It remains registered through the transaction's final continuation.
+    end note
+    :Retain the expected-result actor value;
+else (no)
+    :Select EINVAL without invoking the actor;
+endif
+:End Operation scope under the mutex;
+:Unlock mutex_;
+:Return the actor result or admission error;
+stop
+
+legend
+    This helper never examines the send FIFO or ordinary reply reservation.
+    It permits future explicitly selected native request/reply transactions.
+    No native engine transaction capability or configuration option is added.
+    Descriptor retirement still waits for the operation to terminate.
+endlegend
+
+@enduml

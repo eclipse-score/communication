@@ -59,7 +59,7 @@ note left : GetStopReason() == StopReason::kPermission\nPer i_client_connection.
 
 ExternalServer -> unix_domain_server : (StartListening(...))
 note over unix_domain_server : Returns score::cpp::expected_blank<Error> (error)
-note right : IServer::StartListening() returning an error is\nthe only signal; the server never starts accepting\nconnections. Grounds the previously un-evidenced FTA\nbasic events "Duplicate Server Name" and "Server\nfactory queue size configured below the required\nminimum" (fta_ipc_channel_unavailable.puml, IE_Startup).
+note right : IServer::StartListening() reports the startup error;\nthe server does not start accepting connections.
 
 ' -----------------------------------------------------------------
 == Peer Crash / Unexpected Disconnect While Ready (StopReason::kClosedByPeer) ==
@@ -104,7 +104,7 @@ note left : Per i_client_connection.h: "if the server receives\nthe message but 
 ExternalClient -> client_connection : (Start(...) / Send(...))
 client_connection -> unix_domain_engine : TryOpenClientConnection(identifier)
 note over unix_domain_engine : Or SendProtocolMessage(); returns ENOMEM (system memory\nallocation limit reached)
-note left : Per client-server.md: "We don't expect to be able to\npreallocate all the needed system memory resources.\nWe rely on ENOMEM error for handling of system memory\nallocation limits on QNX." Not preventable by the\nlibrary; reported the same way as other transport\nerrors (kIoError or a Send()/SendWaitReply() error).
+note left : OS allocation limits are outside the supplied C++\nmemory resource. ENOMEM follows the transport/open\nerror path (kIoError or a Send()/SendWaitReply() error).
 
 ' -----------------------------------------------------------------
 == Server-Side Incoming Backpressure Delegated to the OS ==
@@ -112,6 +112,6 @@ note left : Per client-server.md: "We don't expect to be able to\npreallocate al
 
 ExternalClient -> client_connection : (Send(message) [rapid, repeated])
 client_connection -> unix_domain_engine : SendProtocolMessage(fd, code, message)
-note over unix_domain_server : Today, UnixDomainServer does not implement\nServerConfig::max_queued_sends as an internal ring buffer\n(see memory_and_size_limits_findings.md, finding 4).\nBackpressure for incoming Send/REQUEST messages is delegated\nentirely to the OS socket buffer, not to library-managed\nqueueing. If that OS-level buffer is full,\nSendProtocolMessage() itself blocks or fails (EAGAIN-equivalent)\nbefore the message is considered sent by the library - i.e. this\nis an OS-layer fault, not the library-internal, deterministic\nrejection shown for max_queued_sends/max_async_replies in\nserver_client_internal_fault_sequence.puml.
+note over unix_domain_server : Incoming Send/REQUEST backpressure uses OS socket\nbuffering, not a library ring buffer sized by\nServerConfig::max_queued_sends. Transport calls can\nblock or report OS errors; this is distinct from\nlibrary-side capacity rejection.
 
 @enduml

@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "pages": [
+    {
+      "anchor": "qnx-dispatch-engine-operation-inventory",
+      "required_anchors": [
+        "qnx-dispatch-engine-class-view",
+        "qnx-dispatch-engine-buffers",
+        "qnx-dispatch-engine-resource-manager",
+        "qnx-dispatch-engine-lifecycle",
+        "qnx-dispatch-engine-runner-lifecycle",
+        "qnx-dispatch-engine-runner-dispatch",
+        "qnx-dispatch-engine-native-callbacks",
+        "qnx-dispatch-engine-endpoint-registration",
+        "qnx-dispatch-engine-endpoint-removal",
+        "qnx-dispatch-engine-client-pulses",
+        "qnx-dispatch-engine-client-transport",
+        "qnx-dispatch-engine-scheduling",
+        "qnx-dispatch-engine-cleanup",
+        "qnx-dispatch-engine-execution-context"
+      ],
+      "diagrams": [
+        {
+          "title": "QNX dispatch engine - ownership",
+          "caption_targets": []
+        },
+        {
+          "title": "QNX dispatch engine - resource-manager adapters",
+          "caption_targets": ["#qnx-dispatch-engine-native-callbacks"]
+        },
+        {
+          "title": "QnxDispatchEngine - object lifetime",
+          "caption_targets": ["#qnx-dispatch-engine-runner-lifecycle"]
+        },
+        {
+          "title": "DispatchThreadRunner - caller-side startup and stopping",
+          "caption_targets": ["#qnx-dispatch-engine-runner-dispatch"]
+        },
+        {
+          "title": "DispatchThreadRunner - worker-thread dispatch",
+          "caption_targets": ["#qnx-dispatch-engine-runner-lifecycle", "#qnx-dispatch-engine-native-callbacks", "#qnx-dispatch-engine-client-pulses"]
+        },
+        {
+          "title": "QnxDispatchEngine - native connection callbacks",
+          "caption_targets": ["#qnx-dispatch-engine-runner-dispatch", "#qnx-dispatch-engine-resource-manager"]
+        },
+        {
+          "title": "QnxDispatchEngine - client endpoint registration",
+          "caption_targets": ["#qnx-dispatch-engine-client-pulses", "#qnx-dispatch-engine-endpoint-removal"]
+        },
+        {
+          "title": "QnxDispatchEngine - client endpoint removal",
+          "caption_targets": ["#qnx-dispatch-engine-cleanup"]
+        },
+        {
+          "title": "QnxDispatchEngine - client pulse dispatch",
+          "caption_targets": ["#qnx-dispatch-engine-endpoint-registration", "#qnx-dispatch-engine-client-transport"]
+        },
+        {
+          "title": "QnxDispatchEngine - command scheduling and timer dispatch",
+          "caption_targets": ["#qnx-dispatch-engine-cleanup"]
+        },
+        {
+          "title": "QnxDispatchEngine - owner cleanup",
+          "caption_targets": ["#qnx-dispatch-engine-scheduling", "#qnx-dispatch-engine-endpoint-removal"]
+        }
+      ]
+    }
+  ]
+}
