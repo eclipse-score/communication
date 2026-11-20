@@ -83,7 +83,7 @@ ScoreReq.CompReq RemoveStaleArtefactsRemovesCreationLock {
     description = """When RemoveStaleArtefacts is called for a shared memory object that is not contained in the process-local registry,
     the shared memory library shall request the removal of the creation lock of that name, so that, once removed, it does not block creating that name."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_RemoveSharedMemoryObject@1]
+    derived_from = [MemoryShared.FEAT_RemoveStaleArtefacts@1]
     version = 1
 }
 
@@ -91,7 +91,7 @@ ScoreReq.CompReq RemoveStaleArtefactsMakesNameUnavailable {
     description = """When RemoveStaleArtefacts is called for a shared memory object that is not contained in the process-local registry,
     the shared memory library shall request the removal of its name, so that, once removed, the name can be created again."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_RemoveSharedMemoryObject@1]
+    derived_from = [MemoryShared.FEAT_RemoveStaleArtefacts@1]
     version = 1
 }
 
@@ -99,7 +99,7 @@ ScoreReq.CompReq TerminateIfStaleArtefactsOfRegisteredObjectAreRemoved {
     description = """The shared memory library shall terminate the process if RemoveStaleArtefacts is called for a shared memory object
     that is contained in the process-local registry."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_RemoveSharedMemoryObject@1, MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1]
+    derived_from = [MemoryShared.FEAT_RemoveStaleArtefacts@1, MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1]
     version = 1
 }
 
@@ -139,7 +139,7 @@ ScoreReq.CompReq OffsetPtrIsRelative {
     description = """The shared memory library shall provide an OffsetPtr that stores the distance between its own address and its target, so that it refers
     to the same target at any address at which the shared memory object is mapped."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_BoundsCheckedPointers@1]
+    derived_from = [MemoryShared.FEAT_OffsetPointers@1]
     version = 1
 }
 
@@ -162,7 +162,15 @@ ScoreReq.CompReq AllocatorReturnsOffsetPtr {
     description = """When constructed with a memory resource, the PolymorphicOffsetPtrAllocator shall allocate memory from that memory resource
     and return the allocated memory as an OffsetPtr."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_AllocationWithinSharedMemoryObject@1, MemoryShared.FEAT_BoundsCheckedPointers@1]
+    derived_from = [MemoryShared.FEAT_OffsetPointerAllocator@1, MemoryShared.FEAT_AllocationWithinSharedMemoryObject@1]
+    version = 1
+}
+
+ScoreReq.CompReq SharedMemoryObjectIsPolymorphicMemoryResource {
+    description = """The shared memory library shall provide each shared memory object as a memory resource implementing the S-CORE polymorphic
+    memory resource interface (score::cpp::pmr::memory_resource), whose allocations are served by the allocation within that shared memory object."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_PolymorphicMemoryResource@1]
     version = 1
 }
 
@@ -249,7 +257,7 @@ ScoreReq.CompReq CreatorMapsReadWrite {
 
 ScoreReq.CompReq RejectObjectOfUnexpectedCreator {
     description = """When a list of expected creators is given on opening a shared memory object (Open, or CreateOrOpen of an existing object),
-    the shared memory library shall return an error if its creator is neither the calling user nor contained in that list."""
+    the shared memory library shall return an error if its creator is not contained in that list."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.FEAT_CreatorVerification@1, MemoryShared.FEAT_NoResultOnFailure@1]
     version = 1
@@ -284,7 +292,7 @@ ScoreReq.CompReq OffsetPtrChecksTargetWithinObject {
     and on every retrieval of a raw pointer from it, that the complete target location lies within the bounds of the shared memory object in which
     the OffsetPtr is located."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_BoundsCheckedPointers@1]
+    derived_from = [MemoryShared.FEAT_PointerBoundsChecking@1]
     version = 1
 }
 
@@ -293,7 +301,7 @@ ScoreReq.CompReq OffsetPtrCopyKeepsBounds {
     that was copied, while bounds checking was enabled, from an OffsetPtr located in a shared memory object, and on every retrieval of a raw pointer from it,
     that the complete target location lies within the bounds of the shared memory object from which the OffsetPtr was originally copied."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_BoundsCheckedPointers@1]
+    derived_from = [MemoryShared.FEAT_PointerBoundsChecking@1]
     version = 1
 }
 
@@ -301,7 +309,7 @@ ScoreReq.CompReq OffsetPtrToVoidChecksExplicitSize {
     description = """For an OffsetPtr to void, the shared memory library shall take the size of the explicitly given target type, or the explicitly given
     number of bytes, as the size of the target location in the bounds checks."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_BoundsCheckedPointers@1]
+    derived_from = [MemoryShared.FEAT_PointerBoundsChecking@1]
     version = 1
 }
 
@@ -309,7 +317,7 @@ ScoreReq.CompReq TerminateOnTargetAddressOverflow {
     description = """The shared memory library shall terminate the process if adding the stored offset of an OffsetPtr to its own address
     overflows the address range."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_BoundsCheckedPointers@1, MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1]
+    derived_from = [MemoryShared.FEAT_OffsetPointers@1, MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1]
     version = 1
 }
 
@@ -325,21 +333,21 @@ ScoreReq.CompReq ObjectBoundsFromLocalMapping {
     description = """The shared memory library shall use the address at which a shared memory object is mapped in the calling process and the mapped size
     as the bounds of that object."""
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_BoundsCheckedPointers@1, MemoryShared.FEAT_AllocationWithinSharedMemoryObject@1]
+    derived_from = [MemoryShared.FEAT_PointerBoundsChecking@1, MemoryShared.FEAT_AllocationWithinSharedMemoryObject@1]
     version = 1
 }
 
 ScoreReq.CompReq TerminateOnBoundsViolation {
     description = "The shared memory library shall terminate the process if a bounds check fails."
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_BoundsCheckedPointers@1, MemoryShared.FEAT_AllocationWithinSharedMemoryObject@1, MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1]
+    derived_from = [MemoryShared.FEAT_PointerBoundsChecking@1, MemoryShared.FEAT_AllocationWithinSharedMemoryObject@1, MemoryShared.FEAT_SafeSilentOnUnrecoverableError@1]
     version = 1
 }
 
 ScoreReq.CompReq BoundsCheckingEnabledByDefault {
     description = "The shared memory library shall enable the bounds checks of OffsetPtr and MemoryResourceProxy by default."
     safety = ScoreReq.Asil.B
-    derived_from = [MemoryShared.FEAT_BoundsCheckedPointers@1, MemoryShared.FEAT_AllocationWithinSharedMemoryObject@1]
+    derived_from = [MemoryShared.FEAT_PointerBoundsChecking@1, MemoryShared.FEAT_AllocationWithinSharedMemoryObject@1]
     version = 1
 }
 
