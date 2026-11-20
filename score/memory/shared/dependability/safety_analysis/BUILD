@@ -13,15 +13,21 @@
 
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
+    "assumptions_of_use",
     "dependability_analysis",
     "failure_modes",
     "fault_trees",
     "safety_analysis",
 )
 
-# No FailureMode records yet: wiring this empty source still activates the
-# Public API coverage check, so every public_api interface element is
-# reported as missing a failure-mode link.
+filegroup(
+    name = "fta_files",
+    srcs = [
+        "fta_object_of_unexpected_creator_provided.puml",
+    ],
+    visibility = ["//score/memory/shared/dependability:__pkg__"],
+)
+
 failure_modes(
     name = "memory_shared_failure_modes",
     srcs = ["failure_modes.trlc"],
@@ -31,14 +37,27 @@ failure_modes(
 
 fault_trees(
     name = "memory_shared_fault_trees",
+    srcs = [":fta_files"],
+    fta_package = "memory_shared_fta",
     target_compatible_with = ["@platforms//os:linux"],
     deps = [":memory_shared_failure_modes"],
 )
 
+assumptions_of_use(
+    name = "memory_shared_aous",
+    srcs = ["aous.trlc"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
 safety_analysis(
     name = "memory_shared_safety_analysis",
+    assessments = ["assessments.trlc"],
     failure_modes = [":memory_shared_failure_modes"],
     fault_trees = ":memory_shared_fault_trees",
+    safety_measures = [
+        ":memory_shared_aous",
+        "//score/memory/shared/dependability/requirements:component_requirements",
+    ],
     visibility = ["//score/memory/shared/dependability:__pkg__"],
 )
 

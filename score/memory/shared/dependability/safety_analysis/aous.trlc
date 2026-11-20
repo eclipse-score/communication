@@ -1,0 +1,39 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package MemoryShared
+
+import ScoreReq
+
+ScoreReq.AoU AoU_PassExpectedCreators {
+    description = """When opening a shared memory object (Open, or CreateOrOpen of an existing object), the user shall pass the list of expected creators,
+    containing exactly the user IDs of the software elements expected to create that object and not the user ID of the typed memory daemon."""
+    safety = ScoreReq.Asil.B
+    note = "Without a list no creator check is performed. The typed memory daemon owns every object in typed memory; listing it would accept any creator if the daemon cannot be identified."
+    version = 1
+}
+
+ScoreReq.AoU AoU_DoNotInjectMockImpl {
+    description = "The user shall not call SharedMemoryFactory::InjectMock in production software."
+    safety = ScoreReq.Asil.B
+    note = "Mock injection is only intended for testing. An injected object replaces the whole factory implementation, including the creator check."
+    version = 1
+}
+
+ScoreReq.AoU AoU_NoFactoryUseFromStaticObjects {
+    description = """The user shall not call SharedMemoryFactory from constructors or destructors of objects with static storage duration,
+    nor from functions registered with atexit."""
+    safety = ScoreReq.Asil.B
+    note = """The factory implementation is constructed and destroyed by guards in the library's own translation units only.
+    Code running before those guards are constructed or after they are destroyed accesses a factory that does not exist."""
+    version = 1
+}
