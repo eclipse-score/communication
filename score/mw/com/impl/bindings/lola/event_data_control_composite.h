@@ -99,11 +99,13 @@ class EventDataControlComposite
     bool IsQmControlDisconnected() const noexcept;
 
     /// \brief Returns the (mandatory) ProviderEventDataControlLocalView for QM.
-    ProviderEventDataControlLocalView<AtomicIndirectorType>& GetQmEventDataControlLocal() noexcept;
+    ProviderEventDataControlLocalView<AtomicIndirectorType>& GetQmEventDataControlLocal() & noexcept;
+    ProviderEventDataControlLocalView<AtomicIndirectorType>& GetQmEventDataControlLocal() && noexcept = delete;
 
     /// \brief Returns a pointer to ProviderEventDataControlLocalView for ASIL-B
     /// \return a nullptr if no ASIL-B support, otherwise, a valid pointer to the ASIL-B EventDataControl.
-    ProviderEventDataControlLocalView<AtomicIndirectorType>* GetAsilBEventDataControlLocal() noexcept;
+    ProviderEventDataControlLocalView<AtomicIndirectorType>* GetAsilBEventDataControlLocal() & noexcept;
+    ProviderEventDataControlLocalView<AtomicIndirectorType>* GetAsilBEventDataControlLocal() && noexcept = delete;
 
     /// \brief Returns the timestamp of the provided slot index
     EventSlotStatus::EventTimeStamp GetEventSlotTimestamp(const SlotIndexType slot_index) const noexcept;
