@@ -195,14 +195,14 @@ bool EventDataControlComposite<AtomicIndirectorType>::IsQmControlDisconnected() 
 
 template <template <class> class AtomicIndirectorType>
 ProviderEventDataControlLocalView<AtomicIndirectorType>&
-EventDataControlComposite<AtomicIndirectorType>::GetQmEventDataControlLocal() noexcept
+EventDataControlComposite<AtomicIndirectorType>::GetQmEventDataControlLocal() & noexcept
 {
     return asil_qm_control_local_;
 }
 
 template <template <class> class AtomicIndirectorType>
 ProviderEventDataControlLocalView<AtomicIndirectorType>*
-EventDataControlComposite<AtomicIndirectorType>::GetAsilBEventDataControlLocal() noexcept
+EventDataControlComposite<AtomicIndirectorType>::GetAsilBEventDataControlLocal() & noexcept
 {
     return asil_b_control_local_.has_value() ? &(*asil_b_control_local_) : nullptr;
 }

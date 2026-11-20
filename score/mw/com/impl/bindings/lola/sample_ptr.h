@@ -91,28 +91,30 @@ class SamplePtr final
     }
 
     /// \brief Compares two SamplePtr instances based on their timestamp
-    /// \param other SamplePtr to compare against
-    /// \return true if this instance is older than \p other, false otherwise or if any of the SamplePtr are invalid
-    bool operator<(const SamplePtr& other) const noexcept
+    /// \param lhs SamplePtr to compare
+    /// \param rhs SamplePtr to compare against
+    /// \return true if this instance is older than \p rhs, false otherwise or if any of the SamplePtr are invalid
+    friend bool operator<(const SamplePtr& lhs, const SamplePtr& rhs) noexcept
     {
-        if (!(*this) || !other)
+        if (!lhs || !rhs)
         {
             return false;
         }
 
-        return timestamp_ < other.timestamp_;
+        return lhs.timestamp_ < rhs.timestamp_;
     }
 
     /// \brief Compares two SamplePtr instances based on their timestamp
-    /// \param other SamplePtr to compare against
-    /// \return true if this instance is newer than \p other, false otherwise or if any of the SamplePtr are invalid
-    bool operator>(const SamplePtr& other) const noexcept
+    /// \param lhs SamplePtr to compare
+    /// \param rhs SamplePtr to compare against
+    /// \return true if this instance is newer than \p rhs, false otherwise or if any of the SamplePtr are invalid
+    friend bool operator>(const SamplePtr& lhs, const SamplePtr& rhs) noexcept
     {
-        if (!(*this) || !other)
+        if (!lhs || !rhs)
         {
             return false;
         }
-        return timestamp_ > other.timestamp_;
+        return lhs.timestamp_ > rhs.timestamp_;
     }
 
   private:
