@@ -75,6 +75,10 @@ std::optional<pid_t> TryUpdatePidForExistingId(
                                                 application_id);
             return pid;
         }
+        else
+        {
+            // Entry is not (being) used by our application ID: continue searching.
+        }
     }
     return {};
 }

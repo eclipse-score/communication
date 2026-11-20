@@ -45,6 +45,10 @@ void EventReceiveHandlerManager::Reregister(
         auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
         lola_runtime.GetLolaMessaging().ReregisterEventNotification(asil_level_, element_fq_id_, event_source_pid_);
     }
+    else
+    {
+        // Nothing registered and no new handler: nothing to re-register.
+    }
 }
 
 void EventReceiveHandlerManager::Unregister()
