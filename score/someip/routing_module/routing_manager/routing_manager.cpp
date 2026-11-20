@@ -102,6 +102,7 @@ void RoutingManager::Stop() noexcept
 
 void RoutingManager::ProcessPendingCommands() noexcept
 {
+    // TODO: Check in production whether processing needs a per-call command limit.
     for (auto entry = PopEntry(); entry.has_value(); entry = PopEntry())
     {
         if (entry.value().kind == QueueEntry::Kind::kRemoveAll)
