@@ -21,6 +21,12 @@ load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw/com/impl/configuration/converter:json_to_flatbuffer_rule.bzl", "json_to_flatbuffer")
 
+# Compile-time switch for the (experimental) FlatBuffers configuration path, see //score/mw/com/flags.
+_FLATBUFFERS_LOCAL_DEFINES = select({
+    "//score/mw/com/flags:flatbuffers_enabled": ["SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED"],
+    "//conditions:default": [],
+})
+
 unit(
     name = "mw_com_configuration",
     scope = [],
@@ -228,10 +234,7 @@ cc_library(
         ],
         "//conditions:default": [],
     }),
-    local_defines = select({
-        "//score/mw/com/flags:flatbuffers_enabled": ["SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED"],
-        "//conditions:default": [],
-    }),
+    local_defines = _FLATBUFFERS_LOCAL_DEFINES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -267,7 +270,11 @@ cc_library(
     hdrs = ["config_parser.h"],
     implementation_deps = [
         ":configuration_json_parsing_strategy",
-    ],
+    ] + select({
+        "//score/mw/com/flags:flatbuffers_enabled": [":configuration_flatbuffer_parsing_strategy"],
+        "//conditions:default": [],
+    }),
+    local_defines = _FLATBUFFERS_LOCAL_DEFINES,
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -720,13 +727,18 @@ cc_library(
 cc_unit_test(
     name = "config_parser_test",
     srcs = ["config_parser_test.cpp"],
-    data = ["example/mw_com_config.json"],
+    data = ["example/mw_com_config.json"] + select({
+        "//score/mw/com/flags:flatbuffers_enabled": ["//score/mw/com/impl/configuration/converter:mw_com_config"],
+        "//conditions:default": [],
+    }),
     features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
+    local_defines = _FLATBUFFERS_LOCAL_DEFINES,
     deps = [
         ":config_parser",
+        ":configuration_flatbuffer_parsing_strategy",
         ":configuration_json_parsing_strategy",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
@@ -751,10 +763,7 @@ cc_unit_test(
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
-    local_defines = select({
-        "//score/mw/com/flags:flatbuffers_enabled": ["SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED"],
-        "//conditions:default": [],
-    }),
+    local_defines = _FLATBUFFERS_LOCAL_DEFINES,
     deps = [
         ":configuration_flatbuffer_parsing_strategy",
         ":configuration_json_parsing_strategy",
