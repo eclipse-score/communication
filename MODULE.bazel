@@ -55,6 +55,15 @@ download_archive(
 
 bazel_dep(name = "score_tooling", version = "3.0.2")
 
+# TEMPORARY: score_tooling 3.0.2 does not contain @score_tooling//api_surface yet.
+# Pin the merge commit that adds it; remove this override and bump the version
+# above once a score_tooling release containing api_surface is available.
+git_override(
+    module_name = "score_tooling",
+    commit = "3c41b95187a6a0523bd4f7fd4b8f41a408fb4341",
+    remote = "https://github.com/eclipse-score/tooling.git",
+)
+
 # TRLC dependency for requirements traceability
 bazel_dep(name = "trlc", version = "3.1.1")
 
