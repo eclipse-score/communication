@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "pages": [
+    {
+      "anchor": "client-connection-dynamic-coverage",
+      "required_anchors": [
+        "client-connection-object-lifetime",
+        "client-connection-establishment",
+        "client-connection-send-one-way",
+        "client-connection-send-with-callback",
+        "client-connection-send-wait-reply",
+        "client-connection-queue-admission",
+        "client-connection-queue-arming",
+        "client-connection-send-queue-dispatch",
+        "client-connection-input-processing",
+        "client-connection-endpoint-callbacks",
+        "client-connection-stop-initiation",
+        "client-connection-switch-to-stop-state",
+        "client-send-queue-send-one-way",
+        "client-send-queue-send-with-callback",
+        "client-send-queue-send-wait-reply",
+        "client-send-queue-handle-reply",
+        "client-send-queue-cancellation",
+        "client-connection-lifetime-operation",
+        "client-connection-lifetime-retirement",
+        "client-connection-lifetime-transaction",
+        "client-connection-execution-context"
+      ],
+      "diagrams": [
+        {
+          "title": "Injected client-side engine abstraction.",
+          "caption_targets": []
+        },
+        {
+          "title": "ClientConnection - object lifetime",
+          "caption_targets": ["#client-connection-switch-to-stop-state"]
+        },
+        {
+          "title": "ClientConnection - connection establishment",
+          "caption_targets": ["#client-connection-switch-to-stop-state"]
+        },
+        {
+          "title": "ClientConnection - sending without a reply",
+          "caption_targets": ["#client-send-queue-send-one-way"]
+        },
+        {
+          "title": "ClientSendQueue - sending without a reply",
+          "caption_targets": ["#client-connection-queue-admission", "#client-connection-lifetime-operation"]
+        },
+        {
+          "title": "ClientConnection - sending with a reply callback",
+          "caption_targets": ["#client-send-queue-send-with-callback"]
+        },
+        {
+          "title": "ClientSendQueue - sending with a reply callback",
+          "caption_targets": ["#client-connection-queue-admission", "#client-connection-lifetime-operation"]
+        },
+        {
+          "title": "ClientConnection - sending and waiting for a reply",
+          "caption_targets": ["#client-send-queue-send-wait-reply"]
+        },
+        {
+          "title": "ClientSendQueue - sending and waiting for a reply",
+          "caption_targets": ["#client-connection-queue-admission", "#client-connection-queue-arming", "#client-connection-lifetime-operation"]
+        },
+        {
+          "title": "ClientSendQueue - queued message admission",
+          "caption_targets": ["#client-connection-queue-arming"]
+        },
+        {
+          "title": "ClientSendQueue - arming queued send dispatch",
+          "caption_targets": ["#client-connection-send-queue-dispatch"]
+        },
+        {
+          "title": "ClientSendQueue - queued send dispatch",
+          "caption_targets": ["#client-connection-lifetime-operation"]
+        },
+        {
+          "title": "ClientConnection - processing received input",
+          "caption_targets": ["#client-send-queue-handle-reply"]
+        },
+        {
+          "title": "ClientSendQueue - handling a reply",
+          "caption_targets": ["#client-connection-send-queue-dispatch"]
+        },
+        {
+          "title": "ClientSendQueue - cancelling pending work",
+          "caption_targets": ["#client-connection-lifetime-retirement"]
+        },
+        {
+          "title": "ClientConnection - registered endpoint callbacks",
+          "caption_targets": ["#client-connection-input-processing", "#client-connection-switch-to-stop-state"]
+        },
+        {
+          "title": "ClientConnection - user-requested stopping",
+          "caption_targets": ["#client-connection-switch-to-stop-state"]
+        },
+        {
+          "title": "ClientConnection - shared stop finalization",
+          "caption_targets": ["#client-send-queue-cancellation", "#client-connection-lifetime-retirement"]
+        },
+        {
+          "title": "ClientConnectionLifetime - operation scope",
+          "caption_targets": ["#client-connection-lifetime-retirement"]
+        },
+        {
+          "title": "ClientConnectionLifetime - admission and descriptor retirement",
+          "caption_targets": ["#client-connection-lifetime-operation"]
+        },
+        {
+          "title": "ClientConnectionLifetime - lifetime-only transaction",
+          "caption_targets": ["#client-connection-lifetime-operation"]
+        }
+      ]
+    }
+  ]
+}

@@ -70,6 +70,64 @@ implementation or a placeholder unit design cannot establish implementation
 fidelity. Consult [QNX unit-analysis readiness](issues/tooling-qnx-unit-analysis.md)
 for platform-specific coverage.
 
+The [client-connection unit-design pilot](../../dependability/software_unit_design/client_connection.rst)
+provides a class view and activities for [connection establishment](../../dependability/software_unit_design/client_connection_connect_activity.puml)
+and [explicit stopping](../../dependability/software_unit_design/client_connection_stop_activity.puml).
+The [object-lifetime activity](../../dependability/software_unit_design/client_connection_object_lifetime_activity.puml)
+and the unit's operation/context inventory close the dynamic baseline's missing
+constructor/destructor, query, helper, and registered-continuation descriptions.
+This is descriptive coverage, not concurrency proof or release acceptance.
+The unit now contains `ClientConnectionLifetime` and `ClientSendQueue` as helper
+classes, not additional Bazel units. The first owns admission and descriptor
+retirement; the second owns sequencing, fixed storage, and reply reservations.
+The queue shares the lifetime helper's private mutex, with fixed-capacity actor
+callables bridging transport and engine scheduling. A scoped operation supports
+future lifetime-only transactions without forcing queue sequencing; no native
+transaction option is implemented here.
+Helper activity bodies now live in `client_send_queue_*` and
+`client_connection_lifetime_*` views. Facade activities retain dispatch and
+result mapping, with caption links to the helper sections. The unit-page HTML
+contract covers all 21 views and their cross-procedure navigation.
+Both caller views reference [shared stop finalization](../../dependability/software_unit_design/client_connection_switch_to_stop_state_activity.puml)
+through caption links to a named unit-page target rather than duplicating
+cleanup; see [procedure navigation](issues/tooling-activity-procedure-navigation.md)
+before adding hyperlinks inside activity images. The
+[stop-transition ownership decision](decisions/2026-11-06-client-stop-transition-ownership.md)
+records the API/engine gate intent and caller-specific dispatch paths.
+The send API views cover [one-way admission](../../dependability/software_unit_design/client_connection_send_activity.puml),
+[callback requests](../../dependability/software_unit_design/client_connection_send_with_callback_activity.puml),
+and [blocking requests](../../dependability/software_unit_design/client_connection_send_wait_reply_activity.puml).
+Shared queue views cover [admission](../../dependability/software_unit_design/client_send_queue_try_queue_activity.puml),
+[arming](../../dependability/software_unit_design/client_send_queue_arm_activity.puml),
+and [dispatch](../../dependability/software_unit_design/client_send_queue_drain_activity.puml),
+with caption references from the API views. The
+[input-processing view](../../dependability/software_unit_design/client_connection_process_input_event_activity.puml)
+and [endpoint callbacks](../../dependability/software_unit_design/client_connection_endpoint_callbacks_activity.puml)
+cover reply/notify delivery, receive failures, ping, and disconnect dispatch.
+They link queue progress and shared finalization without duplicating either.
+Queue admission owns a guarded arming attempt; direct-error recovery
+releases only its own slot before requesting progress. The views reflect the
+[direct-error rearm resolution](issues/functionality-client-direct-error-rearm-precondition.md).
+The [reply/drain-marker guard](issues/functionality-client-reply-during-drain-marker.md)
+and [send retirement](issues/functionality-client-late-send-recovery.md)
+have focused common-client regressions. All transport and descriptor closure
+run outside the send mutex; registered send continuations fence closure and
+stopped publication. These guards do not qualify native QNX interruption or
+finite stopping latency.
+The [nested callback-lifetime question](issues/functionality-client-nested-stop-callback-lifetime.md)
+also remains separate from the supported stopped-callback destruction case.
+Four focused tests exercise competing stop requests, ready-callback stopping, and stopped-
+callback restart/destruction. They do not qualify stopping during establishment
+or all nested callback combinations. Its
+implementation input is `message_passing_client_connection`; engine unit inputs include
+their backend library and `message_passing_timed_command_queue`. The shared
+queue remains engine behavior, not a new SEooC unit. Library ownership is
+clearer while SEooC boundaries and names remain
+unchanged; see [the target map](build-and-test.md#implementation-versus-seooc-targets).
+Its unit wrapper explicitly uses development maturity; the DE's maturity does
+not propagate to units. See [the pilot's type-comparison findings](issues/tooling-client-connection-unit-design-types.md)
+before treating its successful build as zero-finding design acceptance.
+
 ## Integration Sequences and Limitations
 
 [The asynchronous integration pilot](../../dependability/software_architectural_design/client_server_async_integration.puml)

@@ -1,0 +1,22 @@
+@startuml client_connection_send_wait_reply_activity
+title ClientConnection - sending and waiting for a reply
+
+start
+:SendWaitReply(message, reply);
+if (IsInCallback()?) then (yes)
+    :Return EAGAIN without blocking the engine callback thread;
+    stop
+else (no)
+    :Call is outside engine callback context;
+endif
+:Delegate to ClientSendQueue::SendWaitReply(message, reply);
+:Return the helper completion result unchanged;
+stop
+
+legend
+    Callback-context rejection precedes helper validation and waiting.
+    ClientSendQueue owns the current blocking request/reply implementation.
+    A native lifetime-only transaction option remains future work.
+endlegend
+
+@enduml
