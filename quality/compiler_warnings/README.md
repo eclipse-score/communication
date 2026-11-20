@@ -38,6 +38,11 @@ Additional flags applied only when the GCC toolchain is active.
 
 Additional flags applied only when the LLVM/Clang toolchain is active.
 
+### QCC-specific flags ([`//quality/compiler_warnings/qcc:…`](../qcc/BUILD))
+
+Features that differ on QNX. QCC is GCC-based and reuses the GCC warning features,
+so only the QNX-specific differences live in this directory.
+
 ---
 
 ## Tests (`test/`)

@@ -105,6 +105,20 @@ cc_args(
 )
 
 cc_args(
+    name = "dynamic_loading_link_args",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["-ldl"],
+    visibility = ["//quality/compiler_warnings:__subpackages__"],
+)
+
+cc_feature(
+    name = "dynamic_loading",
+    args = [":dynamic_loading_link_args"],
+    feature_name = "score_communication_dynamic_loading",
+    visibility = ["//visibility:public"],
+)
+
+cc_args(
     name = "treat_warnings_as_errors_args",
     actions = [
         "@rules_cc//cc/toolchains/actions:compile_actions",

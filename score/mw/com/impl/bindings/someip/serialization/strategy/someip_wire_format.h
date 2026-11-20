@@ -26,9 +26,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace score
-{
-namespace serialization
+namespace score::mw::com::impl::someip::serialization
 {
 namespace someip_detail
 {
@@ -42,7 +40,7 @@ inline bool ReverseFor(const ByteOrder order)
 /// @brief Writes any trivially-copyable fixed-width scalar, reversing the byte order when requested (big-endian is
 /// the SOME/IP default). The object representation is treated as raw bytes.
 template <typename Container, typename T>
-void WriteScalar(SerializeIterator<Container> iterator, const T& value, const bool reverse)
+void WriteScalar(score::serialization::SerializeIterator<Container> iterator, const T& value, const bool reverse)
 {
     static_assert(std::is_trivially_copyable<T>::value, "Serialized value must be TriviallyCopyable");
     constexpr auto size = sizeof(T);
@@ -58,7 +56,7 @@ void WriteScalar(SerializeIterator<Container> iterator, const T& value, const bo
 }
 
 template <typename Container, typename T>
-void ReadScalar(DeSerializeIterator<Container>& iterator, T& value, const bool reverse)
+void ReadScalar(score::serialization::DeSerializeIterator<Container>& iterator, T& value, const bool reverse)
 {
     static_assert(std::is_trivially_copyable<T>::value, "Deserialized value must be TriviallyCopyable");
     constexpr auto size = sizeof(T);
@@ -73,7 +71,7 @@ void ReadScalar(DeSerializeIterator<Container>& iterator, T& value, const bool r
     if (remaining < size)
     {
         // Truncated input: latch an error instead of dereferencing the exhausted iterator (which would abort).
-        iterator.SetError(SerializationError::kOutOfBoundsWrite);
+        iterator.SetError(score::serialization::SerializationError::kOutOfBoundsWrite);
         return;
     }
     for (std::size_t index{0U}; index < size; ++index)
@@ -85,7 +83,8 @@ void ReadScalar(DeSerializeIterator<Container>& iterator, T& value, const bool r
 }
 
 template <typename Container>
-void EmitAlignmentPadding(SerializeIterator<Container>& iterator, const std::uint16_t alignment_bits)
+void EmitAlignmentPadding(score::serialization::SerializeIterator<Container>& iterator,
+                          const std::uint16_t alignment_bits)
 {
     const std::size_t align = static_cast<std::size_t>(alignment_bits) / kBitsPerByte;
     if (align > 1U)
@@ -101,7 +100,8 @@ void EmitAlignmentPadding(SerializeIterator<Container>& iterator, const std::uin
 }
 
 template <typename Container>
-void SkipAlignmentPadding(DeSerializeIterator<Container>& iterator, const std::uint16_t alignment_bits)
+void SkipAlignmentPadding(score::serialization::DeSerializeIterator<Container>& iterator,
+                          const std::uint16_t alignment_bits)
 {
     const std::size_t align = static_cast<std::size_t>(alignment_bits) / kBitsPerByte;
     if (align > 1U)
@@ -121,12 +121,15 @@ void SkipAlignmentPadding(DeSerializeIterator<Container>& iterator, const std::u
 /// order. Big-endian writes the most-significant byte first. No alignment padding is applied here; per SOME/IP,
 /// padding goes *after* a variable-length element (see the array/string helpers), not before its length field.
 template <typename Container>
-void WriteLengthField(SerializeIterator<Container> iterator, const std::uint64_t length, const ElementLayout& layout)
+void WriteLengthField(score::serialization::SerializeIterator<Container> iterator,
+                      const std::uint64_t length,
+                      const ElementLayout& layout)
 {
     if ((!IsValidLengthFieldBytes(layout.length_field_bytes)) ||
         ((length >> (kBitsPerByte * layout.length_field_bytes)) != 0U))
     {
-        iterator = MakeUnexpected(SerializationError::kOutOfBoundsWrite);  // length does not fit the length field
+        // length does not fit the length field
+        iterator = MakeUnexpected(score::serialization::SerializationError::kOutOfBoundsWrite);
         return;
     }
     const bool big_endian = (layout.byte_order == ByteOrder::kBigEndian);
@@ -140,7 +143,7 @@ void WriteLengthField(SerializeIterator<Container> iterator, const std::uint64_t
 
 /// @brief Overwrites a length field previously written by WriteLengthField at the given offset.
 template <typename Container>
-void PatchLengthField(SerializeIterator<Container> iterator,
+void PatchLengthField(score::serialization::SerializeIterator<Container> iterator,
                       const std::size_t offset,
                       const std::uint64_t length,
                       const ElementLayout& layout)
@@ -148,7 +151,8 @@ void PatchLengthField(SerializeIterator<Container> iterator,
     if ((!IsValidLengthFieldBytes(layout.length_field_bytes)) ||
         ((length >> (kBitsPerByte * layout.length_field_bytes)) != 0U))
     {
-        iterator = MakeUnexpected(SerializationError::kOutOfBoundsWrite);  // length does not fit the length field
+        // length does not fit the length field
+        iterator = MakeUnexpected(score::serialization::SerializationError::kOutOfBoundsWrite);
         return;
     }
     const bool big_endian = (layout.byte_order == ByteOrder::kBigEndian);
@@ -162,11 +166,12 @@ void PatchLengthField(SerializeIterator<Container> iterator,
 }
 
 template <typename Container>
-std::uint64_t ReadLengthField(DeSerializeIterator<Container>& iterator, const ElementLayout& layout)
+std::uint64_t ReadLengthField(score::serialization::DeSerializeIterator<Container>& iterator,
+                              const ElementLayout& layout)
 {
     if (!IsValidLengthFieldBytes(layout.length_field_bytes))
     {
-        iterator.SetError(SerializationError::kOutOfBoundsWrite);
+        iterator.SetError(score::serialization::SerializationError::kOutOfBoundsWrite);
         return 0U;
     }
     const bool big_endian = (layout.byte_order == ByteOrder::kBigEndian);
@@ -176,7 +181,7 @@ std::uint64_t ReadLengthField(DeSerializeIterator<Container>& iterator, const El
         if (iterator == iterator.End())
         {
             // Truncated input: latch an error instead of dereferencing the exhausted iterator (which would abort).
-            iterator.SetError(SerializationError::kOutOfBoundsWrite);
+            iterator.SetError(score::serialization::SerializationError::kOutOfBoundsWrite);
             return 0U;
         }
         const std::uint8_t byte_index =
@@ -188,7 +193,6 @@ std::uint64_t ReadLengthField(DeSerializeIterator<Container>& iterator, const El
 }
 
 }  // namespace someip_detail
-}  // namespace serialization
-}  // namespace score
+}  // namespace score::mw::com::impl::someip::serialization
 
 #endif  // SCORE_SERIALIZATION_STRATEGIES_SOMEIP_WIRE_FORMAT_H

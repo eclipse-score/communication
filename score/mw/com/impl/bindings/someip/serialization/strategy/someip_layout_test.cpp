@@ -14,9 +14,7 @@
 
 #include <gtest/gtest.h>
 
-namespace score
-{
-namespace serialization
+namespace score::mw::com::impl::someip::serialization
 {
 namespace someip_detail
 {
@@ -145,5 +143,4 @@ TEST(SomeIpLayoutCursorTest, EnterArrayElementOfNullNestedYieldsDefaultsNotParen
 
 }  // namespace
 }  // namespace someip_detail
-}  // namespace serialization
-}  // namespace score
+}  // namespace score::mw::com::impl::someip::serialization

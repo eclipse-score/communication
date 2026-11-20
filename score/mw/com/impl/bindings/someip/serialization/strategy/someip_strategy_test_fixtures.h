@@ -24,16 +24,14 @@
 #include <cstdint>
 #include <vector>
 
-namespace score
-{
-namespace serialization
+namespace score::mw::com::impl::someip::serialization
 {
 
 class SomeIpStrategyFixture : public ::testing::Test
 {
   public:
     SomeIpStrategy strategy_{};
-    Serializer<SomeIpStrategy> unit_{strategy_};
+    score::serialization::Serializer<SomeIpStrategy> unit_{strategy_};
     std::vector<std::uint8_t> buffer_{};
 
     template <typename TypeToTest>
@@ -92,7 +90,6 @@ struct Measurement
 };
 SCORE_STRUCT_VISITABLE(Measurement, a, b, c)
 
-}  // namespace serialization
-}  // namespace score
+}  // namespace score::mw::com::impl::someip::serialization
 
 #endif  // SCORE_SERIALIZATION_STRATEGIES_SOMEIP_STRATEGY_TEST_FIXTURES_H

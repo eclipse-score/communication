@@ -17,12 +17,12 @@
 #include <cstdint>
 #include <vector>
 
-namespace score
-{
-namespace serialization
+namespace score::mw::com::impl::someip::serialization
 {
 namespace
 {
+
+using score::serialization::Serializer;
 
 struct DeepLeaf
 {
@@ -312,5 +312,4 @@ TEST_F(SomeIpStrategyFixture, FixedLengthElementsAreNeverPadded)
 }
 
 }  // namespace
-}  // namespace serialization
-}  // namespace score
+}  // namespace score::mw::com::impl::someip::serialization

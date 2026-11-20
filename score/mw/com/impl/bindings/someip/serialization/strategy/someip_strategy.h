@@ -31,9 +31,7 @@
 #include <optional>
 #include <type_traits>
 
-namespace score
-{
-namespace serialization
+namespace score::mw::com::impl::someip::serialization
 {
 
 /// @brief Example SOME/IP serialization strategy.
@@ -54,7 +52,7 @@ namespace serialization
 /// * bool (single byte, 0x00 / 0x01)
 /// * structs, including nested ones (each field is routed back through the strategy by the visitor, in declaration
 ///   order, with its own per-field layout)
-/// * score::serialization::types::LengthPrefixedVector (on wire: sizeof(LengthType)-byte length field holding the byte
+/// * score::serialization::LengthPrefixedVector (on wire: sizeof(LengthType)-byte length field holding the byte
 ///   length of the elements, then the actual elements -- compact, no capacity padding)
 /// * score::cpp::static_vector (bounded array: configurable length field holding the byte length, then the elements)
 /// * score::cpp::pmr::string (UTF-8 on wire: configurable-width length field, then a UTF-8 BOM, the characters, and a
@@ -101,7 +99,7 @@ class SomeIpStrategy final
               typename Container,
               typename T,
               std::enable_if_t<someip_detail::is_fixed_width_scalar<T>::value, bool> = true>
-    void Serialize(Visitor& visitor, SerializeIterator<Container> iterator, const T& value) const
+    void Serialize(Visitor& visitor, score::serialization::SerializeIterator<Container> iterator, const T& value) const
     {
         someip_detail::SerializeScalar(iterator, value, LayoutFor(visitor));
     }
@@ -110,7 +108,9 @@ class SomeIpStrategy final
               typename Container,
               typename T,
               std::enable_if_t<someip_detail::is_fixed_width_scalar<T>::value, bool> = true>
-    Result<void> DeSerialize(Visitor& visitor, DeSerializeIterator<Container>& iterator, T& value) const
+    Result<void> DeSerialize(Visitor& visitor,
+                             score::serialization::DeSerializeIterator<Container>& iterator,
+                             T& value) const
     {
         someip_detail::DeSerializeScalar(iterator, value, LayoutFor(visitor));
         return ErrorOf(iterator);
@@ -118,13 +118,17 @@ class SomeIpStrategy final
 
     /// @brief Boolean: a single byte, FALSE = 0x00, TRUE = 0x01.
     template <typename Visitor, typename Container>
-    void Serialize(Visitor& /*visitor*/, SerializeIterator<Container> iterator, const bool& value) const
+    void Serialize(Visitor& /*visitor*/,
+                   score::serialization::SerializeIterator<Container> iterator,
+                   const bool& value) const
     {
         someip_detail::SerializeBool(iterator, value);
     }
 
     template <typename Visitor, typename Container>
-    Result<void> DeSerialize(Visitor& /*visitor*/, DeSerializeIterator<Container>& iterator, bool& value) const
+    Result<void> DeSerialize(Visitor& /*visitor*/,
+                             score::serialization::DeSerializeIterator<Container>& iterator,
+                             bool& value) const
     {
         someip_detail::DeSerializeBool(iterator, value);
         return ErrorOf(iterator);
@@ -133,8 +137,8 @@ class SomeIpStrategy final
     /// @brief Dynamic array: [length][elements], with trailing alignment padding when not the last struct element.
     template <typename Visitor, typename Container, typename UnderlyingType, typename LengthType>
     void Serialize(Visitor& visitor,
-                   SerializeIterator<Container> iterator,
-                   const LengthPrefixedVector<UnderlyingType, LengthType>& value) const
+                   score::serialization::SerializeIterator<Container> iterator,
+                   const score::serialization::LengthPrefixedVector<UnderlyingType, LengthType>& value) const
     {
         someip_detail::SerializeLengthPrefixedVector(
             visitor, iterator, value, LayoutFor(visitor), FollowedByMoreData(visitor));
@@ -142,8 +146,8 @@ class SomeIpStrategy final
 
     template <typename Visitor, typename Container, typename UnderlyingType, typename LengthType>
     Result<void> DeSerialize(Visitor& visitor,
-                             DeSerializeIterator<Container>& iterator,
-                             LengthPrefixedVector<UnderlyingType, LengthType>& value) const
+                             score::serialization::DeSerializeIterator<Container>& iterator,
+                             score::serialization::LengthPrefixedVector<UnderlyingType, LengthType>& value) const
     {
         return someip_detail::DeSerializeLengthPrefixedVector(
             visitor, iterator, value, LayoutFor(visitor), FollowedByMoreData(visitor));
@@ -151,14 +155,16 @@ class SomeIpStrategy final
 
     /// @brief SOME/IP UTF-8 string, with trailing alignment padding when not the last struct element.
     template <typename Visitor, typename Container>
-    void Serialize(Visitor& visitor, SerializeIterator<Container> iterator, const score::cpp::pmr::string& value) const
+    void Serialize(Visitor& visitor,
+                   score::serialization::SerializeIterator<Container> iterator,
+                   const score::cpp::pmr::string& value) const
     {
         someip_detail::SerializeString(iterator, value, LayoutFor(visitor), FollowedByMoreData(visitor));
     }
 
     template <typename Visitor, typename Container>
     Result<void> DeSerialize(Visitor& visitor,
-                             DeSerializeIterator<Container>& iterator,
+                             score::serialization::DeSerializeIterator<Container>& iterator,
                              score::cpp::pmr::string& value) const
     {
         return someip_detail::DeSerializeString(
@@ -168,7 +174,7 @@ class SomeIpStrategy final
     /// @brief Bounded array: [length][elements], with trailing alignment padding when not the last struct element.
     template <typename Visitor, typename Container, typename T, std::size_t N>
     void Serialize(Visitor& visitor,
-                   SerializeIterator<Container> iterator,
+                   score::serialization::SerializeIterator<Container> iterator,
                    const score::cpp::static_vector<T, N>& value) const
     {
         someip_detail::SerializeStaticVector(visitor, iterator, value, LayoutFor(visitor), FollowedByMoreData(visitor));
@@ -176,7 +182,7 @@ class SomeIpStrategy final
 
     template <typename Visitor, typename Container, typename T, std::size_t N>
     Result<void> DeSerialize(Visitor& visitor,
-                             DeSerializeIterator<Container>& iterator,
+                             score::serialization::DeSerializeIterator<Container>& iterator,
                              score::cpp::static_vector<T, N>& value) const
     {
         return someip_detail::DeSerializeStaticVector(
@@ -185,7 +191,7 @@ class SomeIpStrategy final
 
   private:
     template <typename Container>
-    static Result<void> ErrorOf(const DeSerializeIterator<Container>& iterator)
+    static Result<void> ErrorOf(const score::serialization::DeSerializeIterator<Container>& iterator)
     {
         if (iterator.HasError())
         {
@@ -234,7 +240,6 @@ class SomeIpStrategy final
     FallbackLayout default_layout_{};
 };
 
-}  // namespace serialization
-}  // namespace score
+}  // namespace score::mw::com::impl::someip::serialization
 
 #endif  // SCORE_SERIALIZATION_STRATEGIES_SOMEIP_STRATEGY_H
