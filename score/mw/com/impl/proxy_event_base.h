@@ -32,6 +32,7 @@
 #include "score/result/result.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 
 namespace score::mw::com::impl
@@ -173,23 +174,20 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
         return binding_ != nullptr;
     }
 
+  protected:
     /**
      * \brief Completes the E2E result of a sample delivered by this event's binding.
-     * \details The binding only provides data_integrity/sequence on the sample. This adds the binding-independent
-     *          verdict and stores it on the sample. Historical health tracking is not wired in yet, so it stays
-     *          kDisabled and a checked sample reports kOkWithDisabledChecks at best.
-     *          Only ProxyEventBase may set the result on a SamplePtr; see SamplePtr::SetE2EResult(). Derived,
-     *          binding-independent event classes call this from their GetNewSamples() wrapper.
+     * \details The binding only provides data_integrity and sequence. This adds historical health and summary. Call
+     *          exactly once per sample, as every call updates the historical health.
      */
     template <typename SampleType>
-    void AttachE2EResult(SamplePtr<SampleType>& sample) const
+    void AttachE2EResultToSamplePtr(SamplePtr<SampleType>& sample)
     {
-        auto result = sample.GetE2EResult();
-        result.summary = e2e::ComputeSummary(result.data_integrity, result.sequence, result.historical_health);
-        sample.SetE2EResult(result);
+        const auto raw_result = sample.GetE2EResult();
+        sample.SetE2EResult(
+            e2e::BuildE2EResult(e2e::RawCheckOutcome{raw_result.data_integrity, raw_result.sequence}, health_tracker_));
     }
 
-  protected:
     void InjectMock(IProxyEventBase& proxy_event_base_mock)
     {
         proxy_event_base_mock_ = &proxy_event_base_mock;
@@ -219,6 +217,18 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     /// \brief Expires the #receive_handler_scope_ in case not being called in the context of an EventReceiveHandler
     ///        (because trying to expire the scope in which we are running, would lead to a deadlock)
     void ExpireReceiveHandlerScopeIfNotInHandler();
+
+    /// \brief Historical E2E health of this event (see e2e::HealthTracker for what this is and why a short history is
+    ///        kept instead of reacting to a single sample).
+    /// \details Reset on an explicit user (re)subscribe (see #Subscribe), since that starts a new logical
+    ///          communication context in which older results are no longer relevant. Deliberately NOT reset when the
+    ///          provider restarts while the subscription stays active: from the consumer's perspective it is still
+    ///          the same logical session, so a channel that keeps failing across provider restarts should keep
+    ///          reporting as unhealthy until it shows sustained recovery, rather than appearing healthy again after
+    ///          every restart.
+    ///          Background: score/mw/com/design/e2e_protection/mw_com_e2e_binding.md, section "E2E Context Lifecycle"
+    /// \details Initialized in the constructor from the binding's configuration (disabled without a valid binding).
+    e2e::HealthTracker health_tracker_;
 
     FlagOwner is_subscribed_flag_;
     safecpp::Scope<> receive_handler_scope_;

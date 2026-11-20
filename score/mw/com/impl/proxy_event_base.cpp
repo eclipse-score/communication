@@ -48,6 +48,8 @@ ProxyEventBase::ProxyEventBase(std::string_view event_name,
       tracker_{std::make_unique<SampleReferenceTracker>()},
       tracing_data_{},
       proxy_event_base_mock_{nullptr},
+      health_tracker_{(binding_ != nullptr) ? binding_->GetHealthTrackerConfiguration()
+                                            : e2e::HealthTrackerConfiguration::CreateDisabled()},
       is_subscribed_flag_{false},
       receive_handler_scope_{}
 {
@@ -91,6 +93,7 @@ Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count)
     if (current_state == SubscriptionState::kNotSubscribed)
     {
         tracker_->Reset(max_sample_count);
+        health_tracker_.Reset();
         const auto subscribe_result = binding_->Subscribe(max_sample_count);
         if (!subscribe_result.has_value())
         {

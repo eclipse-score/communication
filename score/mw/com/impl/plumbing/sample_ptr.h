@@ -42,6 +42,11 @@ class ProxyEventBase;
 template <typename SampleType>
 class SamplePtr final
 {
+    // Suppress "AUTOSAR C++14 A11-3-1" rule finding.
+    // The binding-independent proxy base is the sole owner of final E2E-result attachment.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend class ProxyEventBase;
+
   public:
     using pointer = const SampleType*;
     using element_type = const SampleType;
@@ -51,10 +56,12 @@ class SamplePtr final
     /// \tparam BindingSamplePtrType The type of the sample pointer. Needs to be one of the types listed in the variant
     ///                              holding the actual pointer.
     /// \param binding_sample_ptr The binding-specific sample pointer.
-    /// \param reference_guard Reference counting guard managing the count of SamplePtrs that are alive.
-    /// \param raw_check_outcome Per-sample outcome of the binding's own E2E check. The binding cannot set the summary
-    ///                          or historical health; ProxyEventBase completes the E2EResult before the sample reaches
-    ///                          the application.
+    /// \param reference_guard Releases one allocated sample in the SampleReferenceTracker when it is destroyed.
+    /// \param raw_check_outcome Outcome of the E2E check performed by the binding on the sample pointed to by this
+    ///                          SamplePtr. The binding only knows about this single sample, so it cannot provide the
+    ///                          historical health or the summary and therefore no full E2EResult. It supplies just this
+    ///                          raw outcome; the binding-independent layer (ProxyEventBase) sets the full E2EResult
+    ///                          before the sample reaches the application via SetE2EResult.
     template <typename BindingSamplePtrType>
     SamplePtr(BindingSamplePtrType&& binding_sample_ptr,
               SampleReferenceGuard reference_guard,
@@ -167,6 +174,9 @@ class SamplePtr final
     }
 
     /// \brief Returns the E2E result associated with this received sample.
+    /// \details Complete once the sample reaches the user: data_integrity and sequence come from the
+    ///          ProxyEventBinding on construction, historical_health and summary from the binding independent
+    ///          ProxyEvent via SetE2EResult. All kDisabled if no E2E check is configured.
     [[nodiscard]] e2e::E2EResult GetE2EResult() const
     {
         return e2e_result_;
@@ -258,11 +268,15 @@ class SamplePtr final
     SampleReferenceGuard reference_guard_;
     e2e::E2EResult e2e_result_{};
 
-    // Suppress "AUTOSAR C++14 A11-3-1" rule finding.
-    // The binding-independent proxy base is the sole owner of final E2E-result attachment.
-    // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class ProxyEventBase;
-
+    /// \brief Completes the E2E result of this sample with the historical_health and summary, which are only known
+    ///        once the binding-independent layer (ProxyEventBase) has processed the sample.
+    /// \details This can't be passed to the SamplePtr constructor instead: the constructor runs inside the binding
+    ///          (see ProxyEventBinding::MakeSamplePtr), which only knows about this single sample and therefore can
+    ///          only supply the raw per-sample outcome (data_integrity, sequence). historical_health depends on the
+    ///          binding-independent #health_tracker_ state across multiple samples (see e2e::HealthTracker), and
+    ///          summary is derived from both - neither is available to the binding at construction time. So the
+    ///          result can only be completed afterwards, via this setter, once the SamplePtr has been handed back to
+    ///          ProxyEventBase.
     void SetE2EResult(const e2e::E2EResult result)
     {
         e2e_result_ = result;
