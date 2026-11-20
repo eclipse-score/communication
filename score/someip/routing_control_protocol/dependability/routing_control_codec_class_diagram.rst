@@ -12,8 +12,8 @@
    # SPDX-License-Identifier: Apache-2.0
    # *******************************************************************************
 
-Routing Control Codec Class Design
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Routing Control Codec
+^^^^^^^^^^^^^^^^^^^^^
 
 ``RoutingControlCodec`` encodes and decodes the routing commands that the SD daemon sends to the routing
 module over ``score::message_passing`` (service identifier ``someip_routing_module``). Commands flow in this

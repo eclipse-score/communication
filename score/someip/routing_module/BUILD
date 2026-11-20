@@ -11,12 +11,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "unit")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component")
 
 component(
     name = "routing_module",
     components = [
-        ":event_handler",
+        "//score/someip/routing_module/event_handler:event_handler",
         "//score/someip/routing_module/routing_manager:routing_manager_unit",
     ],
     design_name = "RoutingModule",
@@ -29,16 +29,4 @@ component(
     test_case_coverage_lock = "test_case_coverage.lock.yaml",
     tests = [],
     visibility = ["//score/someip/dependability:__pkg__"],
-)
-
-unit(
-    name = "event_handler",
-    design_name = "EventHandler",
-    maturity = "development",
-    scope = [],
-    test_specs = [],
-    tests = [],
-    unit_design = [],
-    visibility = ["//score/someip/dependability:__subpackages__"],
-    implementation = [],
 )

@@ -32,4 +32,17 @@ dependable_element(
     target_compatible_with = ["@platforms//os:linux"],
     tests = [],
     visibility = ["//visibility:public"],
+    deps = [
+        "//score/message_passing/dependability:dependable_element_message_passing",
+        "//third_party/score_baselibs:concurrency",
+        "//third_party/score_baselibs:filesystem",
+        "//third_party/score_baselibs:json",
+        "//third_party/score_baselibs:mw_log",
+        "//third_party/score_baselibs:quality",
+        "//third_party/score_baselibs:result",
+        "//third_party/score_baselibs:scope_exit",
+        "//third_party/score_baselibs:static_reflection_visitor",
+        "//third_party/score_baselibs:string_manipulation",
+        "//third_party/score_baselibs:string_view",
+    ],
 )

@@ -74,7 +74,9 @@ unit(
     name = "routing_manager_unit",
     design_name = "RoutingManager",
     maturity = "development",
-    scope = ["//score/someip/routing_module/routing_manager:__subpackages__"],
+    scope = [
+        "//score/someip/routing_module/routing_manager:__subpackages__",
+    ],
     target_compatible_with = ["@platforms//os:linux"],
     test_specs = [],
     tests = [
