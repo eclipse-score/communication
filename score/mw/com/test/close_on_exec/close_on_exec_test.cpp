@@ -160,6 +160,7 @@ bool IsBaselineDescriptor(const std::map<int, std::string>& baseline, const int 
 std::size_t CheckNoLeaks(const std::string& phase, const std::map<int, std::string>& baseline)
 {
     std::size_t failures{0U};
+    std::size_t new_descriptors{0U};
 
     std::cout << "[" << phase << "] file descriptors opened by the runtime:\n";
     for (const auto& [descriptor, target] : GetOpenFileDescriptors())
@@ -168,6 +169,7 @@ std::size_t CheckNoLeaks(const std::string& phase, const std::map<int, std::stri
         {
             continue;
         }
+        ++new_descriptors;
         const int flags = ::fcntl(descriptor, F_GETFD);
         const bool close_on_exec = (flags != -1) && ((flags & FD_CLOEXEC) != 0);
         std::cout << "  fd " << descriptor << "  FD_CLOEXEC=" << (close_on_exec ? "yes" : "NO ") << "  -> " << target
@@ -176,6 +178,15 @@ std::size_t CheckNoLeaks(const std::string& phase, const std::map<int, std::stri
         {
             ++failures;
         }
+    }
+    // Guard against checking nothing: every scenario offers the service, which keeps at least its control and data
+    // shared memory objects open while it is offered.
+    constexpr std::size_t kMinimumNewDescriptors{2U};
+    if (new_descriptors < kMinimumNewDescriptors)
+    {
+        std::cout << "  Only " << new_descriptors << " new file descriptor(s), expected at least "
+                  << kMinimumNewDescriptors << '\n';
+        ++failures;
     }
 
     std::cout << "[" << phase << "] file descriptors inherited by a child process (fork + execve):\n";
