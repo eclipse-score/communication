@@ -56,7 +56,7 @@ cc_library(
             "exclusive",
             "integration-test",
         ],
-        # Relies on /proc/self/{fd,exe} and popen(), which are not available on QNX.
+        # Relies on the Linux /proc/self/fd and /proc/self/exe entries.
         target_compatible_with = ["@platforms//os:linux"],
         deps = [
             ":test_event_datatype",

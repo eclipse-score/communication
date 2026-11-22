@@ -52,7 +52,7 @@ auto SealedShm::OpenAnonymous(const mode_t mode) noexcept -> score::cpp::expecte
     // coverity[autosar_cpp14_m5_0_21_violation]
     // coverity[autosar_cpp14_a5_2_2_violation]
     // coverity[autosar_cpp14_m5_2_9_violation]
-    return mman_->shm_open(SHM_ANON, O_RDWR | O_CREAT | O_ANON | O_CLOEXEC, mode);
+    return mman_->shm_open(SHM_ANON, O_RDWR | O_CREAT | O_ANON, mode);
 // coverity[autosar_cpp14_a16_0_1_violation] Need to limit this functionality to QNX only
 #else
     std::ignore = mode;

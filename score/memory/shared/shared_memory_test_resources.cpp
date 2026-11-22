@@ -300,13 +300,12 @@ void SharedMemoryResourceTest::expectShmOpenWithCreateFlagReturns(
     const bool prefer_typed_memory,
     const score::cpp::expected_blank<score::os::Error> typed_memory_allocation_ret_value)
 {
-    auto oflag = Fcntl::Open::kReadWrite | Fcntl::Open::kCreate | Fcntl::Open::kExclusive | Fcntl::Open::kCloseOnExec;
+    auto oflag = Fcntl::Open::kReadWrite | Fcntl::Open::kCreate | Fcntl::Open::kExclusive;
     if (prefer_typed_memory)
     {
         if (typed_memory_allocation_ret_value.has_value())
         {
-            oflag = score::os::Fcntl::Open::kReadWrite | score::os::Fcntl::Open::kExclusive |
-                    score::os::Fcntl::Open::kCloseOnExec;
+            oflag = score::os::Fcntl::Open::kReadWrite | score::os::Fcntl::Open::kExclusive;
         }
         EXPECT_CALL(*typedmemory_mock_, AllocateNamedTypedMemory(_, TestValues::sharedMemorySegmentPath, _))
             .Times(1)
@@ -330,8 +329,7 @@ void SharedMemoryResourceTest::expectShmOpenWithCreateFlagAndModeReturns(
     score::cpp::expected<std::int32_t, Error> return_value,
     bool is_death_test)
 {
-    const auto oflag =
-        Fcntl::Open::kReadWrite | Fcntl::Open::kCreate | Fcntl::Open::kExclusive | Fcntl::Open::kCloseOnExec;
+    const auto oflag = Fcntl::Open::kReadWrite | Fcntl::Open::kCreate | Fcntl::Open::kExclusive;
     if (is_death_test)
     {
         EXPECT_CALL(*mman_mock_, shm_open(StrEq(shm_path), oflag, mode))
@@ -349,7 +347,7 @@ void SharedMemoryResourceTest::expectShmOpenReturns(const std::string& shm_path,
                                                     bool is_read_write,
                                                     bool is_death_test)
 {
-    const auto oflags = (is_read_write ? Fcntl::Open::kReadWrite : Fcntl::Open::kReadOnly) | Fcntl::Open::kCloseOnExec;
+    const auto oflags = is_read_write ? Fcntl::Open::kReadWrite : Fcntl::Open::kReadOnly;
     if (is_death_test)
     {
         EXPECT_CALL(*mman_mock_, shm_open(StrEq(shm_path), oflags, _))
@@ -456,9 +454,8 @@ void SharedMemoryResourceTest::expectSharedMemorySuccessfullyCreated(
     {
         const auto oflags = (!typed_memory_allocation_return_value.has_value())
                                 ? score::os::Fcntl::Open::kReadWrite | score::os::Fcntl::Open::kCreate |
-                                      score::os::Fcntl::Open::kExclusive | score::os::Fcntl::Open::kCloseOnExec
-                                : score::os::Fcntl::Open::kReadWrite | score::os::Fcntl::Open::kExclusive |
-                                      score::os::Fcntl::Open::kCloseOnExec;
+                                      score::os::Fcntl::Open::kExclusive
+                                : score::os::Fcntl::Open::kReadWrite | score::os::Fcntl::Open::kExclusive;
 
         if (typedmemory_mock_ == nullptr)
         {

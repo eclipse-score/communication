@@ -280,7 +280,7 @@ TEST_F(SharedMemoryResourceCreateTest, CreateSharedMemoryWithAllocateNamedTypedM
 {
     using ::score::os::Stat;
     constexpr auto read_write_access_for_user = Stat::Mode::kReadUser | Stat::Mode::kWriteUser;
-    constexpr auto oflag = Fcntl::Open::kReadWrite | Fcntl::Open::kExclusive | Fcntl::Open::kCloseOnExec;
+    constexpr auto oflag = Fcntl::Open::kReadWrite | Fcntl::Open::kExclusive;
 
     os::AccessControlListMock acl_mock{};
 
