@@ -17,7 +17,9 @@
 #include "score/mw/com/types.h"
 #include "score/result/result.h"
 
+#include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace score::mw::com::gateway
@@ -88,6 +90,28 @@ class Transport
     virtual score::Result<void> NotifyUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
                                              impl::ServiceElementType updated_element_type,
                                              std::string updated_element_name) = 0;
+
+    /// \brief Informs the destination gateway that a new sample of a service element is available on the source
+    /// gateway side, handing over the sample's raw bytes.
+    /// \details Called by the source gateway instead of NotifyUpdate whenever a new sample was received. It is up to
+    /// the transport whether the sample bytes are transferred: transports without memory sharing support (e.g. TCP
+    /// based ones) shall send them along with the notification, since the destination gateway cannot read the sample
+    /// from shared memory. Transports supporting memory sharing can ignore them. The default implementation ignores
+    /// sample_data and forwards to NotifyUpdate.
+    /// \param service_instance_specifier instance specifier of the service instance owning the service element, for
+    /// which an update shall be notified.
+    /// \param updated_element_type type of the updated service element. Currently only EVENT is supported.
+    /// \param updated_element_name name of the updated service element.
+    /// \param sample_data raw bytes of the new sample. The transport may ignore them (see details).
+    /// \return result indicating success or failure.
+    virtual score::Result<void> NotifySampleUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
+                                                   impl::ServiceElementType updated_element_type,
+                                                   std::string updated_element_name,
+                                                   std::vector<std::uint8_t> /*sample_data*/)
+    {
+        return NotifyUpdate(
+            std::move(service_instance_specifier), updated_element_type, std::move(updated_element_name));
+    }
 
     /// \brief API to register for update notifications for service elements of a service instance at the source
     /// gateway side.

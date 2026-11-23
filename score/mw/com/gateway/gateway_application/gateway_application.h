@@ -63,6 +63,10 @@ class GatewayApplication : public GatewayCore
     score::Result<void> NotifyUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
                                      impl::ServiceElementType updated_element_type,
                                      std::string updated_element_name) override;
+    score::Result<void> NotifySampleUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
+                                           impl::ServiceElementType updated_element_type,
+                                           std::string updated_element_name,
+                                           std::vector<std::uint8_t> sample_data) override;
 
   private:
     using FindCallbackScopedCb =
