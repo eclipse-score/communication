@@ -1,0 +1,29 @@
+@startuml unlink_file_system_entry
+
+autonumber
+
+actor "User" as Process
+participant "factory_resources" as factory_resources
+participant "OperatingSystem" as OperatingSystem
+
+activate Process
+
+Process -> factory_resources : SharedMemoryResource::UnlinkFilesystemEntry()
+activate factory_resources
+
+alt shared memory object is not in typed memory
+    factory_resources -> OperatingSystem : shm_unlink(path)
+    activate OperatingSystem
+    factory_resources <-- OperatingSystem
+    deactivate OperatingSystem
+else shared memory object is in typed memory
+    factory_resources -> OperatingSystem : unlink path in typed memory
+    activate OperatingSystem
+    factory_resources <-- OperatingSystem
+    deactivate OperatingSystem
+    factory_resources -> factory_resources : log result
+end
+Process <-- factory_resources
+deactivate factory_resources
+
+@enduml

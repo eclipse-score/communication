@@ -1,0 +1,15 @@
+@startuml is_shm_in_typed_memory
+
+autonumber
+
+actor "User" as Process
+participant "factory_resources" as factory_resources
+
+activate Process
+
+Process -> factory_resources : SharedMemoryResource::IsShmInTypedMemory()
+activate factory_resources
+factory_resources --> Process : true if the shared memory object is in typed memory
+deactivate factory_resources
+
+@enduml
