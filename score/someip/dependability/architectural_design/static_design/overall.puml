@@ -46,6 +46,7 @@ package someip <<SEooC>> {
   component RoutingModule <<component>> {
     component EventHandler <<unit>>
     component RoutingManager <<unit>>
+    component IoSockTransport <<unit>>
 
     interface RoutingCommands
 

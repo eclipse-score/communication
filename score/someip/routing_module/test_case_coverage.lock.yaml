@@ -153,12 +153,21 @@ requirements:
   version: '1'
   description: The routing module shall copy each accepted RX payload directly from
     network packet storage into its allocated LoLa sample.
-  test_cases: []
+  test_cases:
+  - uid: //score/someip/routing_module/IoSockPacketReaderTest:CopiesARangeAcrossSegmentBoundaries
+    given: a received 20-byte packet stored in 8-byte mbuf segments
+    when: 12 bytes starting inside the first segment are copied into a destination
+    then: the destination holds exactly those packet bytes, copied by one io-sock
+      module copy
 - id: RoutingModule.CR_RoutingModule_EmptyPayload
   version: '1'
   description: The routing module shall accept empty notification payloads in both
     RX and TX directions.
   test_cases:
+  - uid: //score/someip/routing_module/IoSockPacketReaderTest:AcceptsRangesEndingAtThePacketEnd
+    given: a received 20-byte packet stored in 8-byte mbuf segments
+    when: the last four bytes and an empty range at the packet end are copied
+    then: both copies succeed and the last four packet bytes are copied
   - uid: //score/someip/routing_module/SomeipMessageHeaderParserTest:AcceptsAnEmptyPayload
     given: a complete SOME/IP notification header with the minimum length
     when: the header is parsed
@@ -191,6 +200,10 @@ requirements:
   version: '1'
   description: The routing module shall reject malformed SOME/IP notification framing.
   test_cases:
+  - uid: //score/someip/routing_module/IoSockPacketReaderTest:RejectsRangesOutsideThePacketWithoutReading
+    given: a received 20-byte packet
+    when: ranges that start beyond the packet or extend past its end are copied
+    then: each copy fails without reading the packet through the io-sock module
   - uid: //score/someip/routing_module/SomeipDatagramParserTest:RejectsTruncatedDataAfterCompleteMessages
     given: a complete notification followed by fewer than 16 trailing bytes
     when: the datagram is iterated
@@ -270,7 +283,12 @@ requirements:
   version: '1'
   description: The routing module shall forward the SOME/IP payload, i.e. all bytes
     after the 16-byte SOME/IP header, unchanged between the network and LoLa.
-  test_cases: []
+  test_cases:
+  - uid: //score/someip/routing_module/IoSockPacketReaderTest:CopiesARangeAcrossSegmentBoundaries
+    given: a received 20-byte packet stored in 8-byte mbuf segments
+    when: 12 bytes starting inside the first segment are copied into a destination
+    then: the destination holds exactly those packet bytes, copied by one io-sock
+      module copy
 - id: RoutingModule.CR_RoutingModule_ReceiveMetadata
   version: '1'
   description: The routing module shall preserve received notification length, session
