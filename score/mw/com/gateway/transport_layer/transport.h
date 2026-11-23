@@ -24,6 +24,7 @@ namespace score::mw::com::gateway
 {
 
 /// \brief Abstract base class for gateway transport layer implementations.
+// [gateway-transport-interface-start]
 class Transport
 {
   public:
@@ -115,6 +116,7 @@ class Transport
         impl::ServiceElementType element_type,
         std::string element_name) = 0;
 };
+// [gateway-transport-interface-end]
 
 }  // namespace score::mw::com::gateway
 
