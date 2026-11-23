@@ -1,0 +1,15 @@
+@startuml get_path
+
+autonumber
+
+actor "User" as Process
+participant "factory_resources" as factory_resources
+
+activate Process
+
+Process -> factory_resources : SharedMemoryResource::getPath()
+activate factory_resources
+factory_resources --> Process : path
+deactivate factory_resources
+
+@enduml

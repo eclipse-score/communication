@@ -1,0 +1,26 @@
+@startuml offset_ptr_allocate
+
+autonumber
+
+actor "User" as Process
+participant "allocator_pointer" as allocator_pointer
+participant "factory_resources" as factory_resources
+
+activate Process
+
+Process -> allocator_pointer : PolymorphicOffsetPtrAllocator::allocate(size)
+activate allocator_pointer
+allocator_pointer -> allocator_pointer : calculate number of bytes to allocate
+allocator_pointer -> factory_resources : MemoryResourceProxy::allocate(bytes, alignment)
+activate factory_resources
+opt bounds checking enabled
+    factory_resources -> factory_resources : check proxy lies within its memory resource
+end
+factory_resources -> factory_resources : look up memory resource in registry
+factory_resources -> factory_resources : ManagedMemoryResource::allocate(bytes, alignment)
+allocator_pointer <-- factory_resources : address
+deactivate factory_resources
+Process <-- allocator_pointer : OffsetPtr to allocated memory
+deactivate allocator_pointer
+
+@enduml

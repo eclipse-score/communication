@@ -1,0 +1,25 @@
+@startuml offset_ptr_do_pointer_target_access
+
+autonumber
+
+actor "User" as Process
+participant "allocator_pointer" as allocator_pointer
+participant "factory_resources" as factory_resources
+
+activate Process
+
+Process -> allocator_pointer : OffsetPtr::DoPointerTargetAccess()
+activate allocator_pointer
+note right of allocator_pointer : abstracts *, [], ->, get() and conversion to a raw pointer
+opt bounds checking enabled
+    allocator_pointer -> factory_resources : look up memory bounds of the OffsetPtr in registry
+    activate factory_resources
+    allocator_pointer <-- factory_resources : memory bounds
+    deactivate factory_resources
+    allocator_pointer -> allocator_pointer : check pointed-to object lies within memory bounds, terminate otherwise
+end
+allocator_pointer -> allocator_pointer : calculate pointer from offset
+Process <-- allocator_pointer : pointer or reference to the pointed-to object
+deactivate allocator_pointer
+
+@enduml

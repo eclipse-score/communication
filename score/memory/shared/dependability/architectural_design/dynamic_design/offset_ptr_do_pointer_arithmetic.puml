@@ -1,0 +1,20 @@
+@startuml offset_ptr_do_pointer_arithmetic
+
+autonumber
+
+actor "User" as Process
+participant "allocator_pointer" as allocator_pointer
+
+activate Process
+
+Process -> allocator_pointer : OffsetPtr::DoPointerArithmetic(operand)
+activate allocator_pointer
+note right of allocator_pointer : abstracts +, -, +=, -=, ++, -- and the difference of two pointers
+allocator_pointer -> allocator_pointer : calculate new offset or difference in number of elements
+opt calculation overflows or difference is no multiple of the element size
+    allocator_pointer -> allocator_pointer : terminate
+end
+Process <-- allocator_pointer : resulting OffsetPtr or difference
+deactivate allocator_pointer
+
+@enduml
