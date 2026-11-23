@@ -111,6 +111,12 @@ delegate to engine attachment operations under the server runner mutex.
 The base destructor does not call `Stop`. Concrete `QnxDispatchServer` supplies
 `ProcessConnect`; it is not an invented common server abstraction.
 
+The attachment mutex is not held around `dispatch_handler`, and shared engine
+ownership does not keep a concrete server alive. The
+[listener-stop quiescence record](issues/functionality-qnx-server-stop-quiescence.md)
+tracks the reported shutdown crash, native contract boundary and proposed
+per-server completion across multiple server workers.
+
 `ResourceManagerConnection` privately embeds the native OCB and stores the
 receive ID plus select/ping events. `AttachConnection` binds a supplied OCB
 to server attributes; allocation and application policy belong to the concrete
@@ -121,6 +127,10 @@ The engine is the adapters' friend and dispatches their virtual hooks:
 `ProcessConnect`, `ProcessInput`, `ProcessReadRequest`, `HasSomethingToRead`,
 and `ProcessDisconnect`. Their visibility and ownership are internal C++
 details, not new public SEooC interfaces.
+
+For the concrete admission and connection-storage implementation, use the
+[server guide](qnx-dispatch-server.md); the engine owns only the native adapter
+and dispatch boundary described here.
 
 ## Native Callback Routing
 

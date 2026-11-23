@@ -146,6 +146,16 @@ The host wrapper consumes parser outputs but still selects no implementation.
 Use its render and manual HTML checks in [build and test](build-and-test.md);
 do not remove QNX analysis guards or infer acceptance from the wrapper exit code.
 
+The [QNX dispatch server unit design](../../dependability/software_unit_design/qnx_dispatch_server.rst)
+models the listener and nested connection within the existing unit. Its two
+ownership views and seven activities cover listening, native admission, current
+UserData routing, reply/notification production, native read retirement and
+connection destruction. Engine adapters are inherited references, not new server
+workers or duplicated adapter definitions; the factory stays a separate unit.
+The [server behavior guide](qnx-dispatch-server.md) and
+[verification inventory](qnx-dispatch-server-verification.md) keep implementation
+limits, test evidence and the pending QNX comparison outside the design artifacts.
+
 ## Integration Sequences and Limitations
 
 [The asynchronous integration pilot](../../dependability/software_architectural_design/client_server_async_integration.puml)

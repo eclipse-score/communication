@@ -160,6 +160,19 @@ it does not execute runtime tests or clear the pending QNX analysis dependency.
 The [engine verification inventory](qnx-dispatch-engine-verification.md) owns
 the dated native runs, test scopes and observed skipped implementation check.
 
+The QNX server uses the same separation:
+
+```sh
+bazel build //score/message_passing:qnx_dispatch_server
+bazel build //score/message_passing/dependability/software_unit_design:qnx_dispatch_server_render
+bazel test //score/message_passing/dependability/software_unit_design:qnx_dispatch_server_html_test
+```
+
+Its manual HTML contract covers the two ownership views and seven activities.
+The [server verification inventory](qnx-dispatch-server-verification.md) records
+the existing aggregate VM test scope and source-level review limits. Its host
+wrapper still selects no QNX implementation and does not execute the native suite.
+
 ```sh
 bazel test //score/message_passing/dependability/assumed_system/... //score/message_passing/dependability/requirements/...
 bazel build //score/message_passing/dependability/software_architectural_design:message_passing_architectural_design

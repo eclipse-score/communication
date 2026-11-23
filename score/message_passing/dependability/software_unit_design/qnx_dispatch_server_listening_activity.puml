@@ -1,0 +1,39 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_server_listening_activity
+title QnxDispatchServer - caller-side listening lifecycle
+
+start
+if (Entry is StartListening?) then (yes)
+    :Move all four callback arguments into the server members;
+    :Construct QnxResourcePath from identifier_;
+    :ResourceManagerServer::Start(path)\nDelegate native attachment to the shared engine;
+    :Return the engine's expected result;
+    stop
+else (StopListening)
+    :ResourceManagerServer::Stop()\nDelegate native detachment to the shared engine;
+endif
+:Return without resetting the stored callback members;
+stop
+
+legend
+    All actions execute in the interface caller.
+    Server construction copies configuration and leaves callbacks empty.
+    The server destructor calls the same base Stop directly before member destruction.
+    IServer forbids StopListening from server callbacks; stopping may block.
+    Native request callbacks are separate from this caller-side control flow.
+    No independent listening-state flag or duplicate-start guard is added here.
+endlegend
+
+@enduml

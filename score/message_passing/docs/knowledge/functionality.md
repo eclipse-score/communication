@@ -147,6 +147,10 @@ For native thread contexts, client versus server receive storage, client
 endpoint/pulse handling, resource-manager adapters and `io_*` callback routing, read the
 [QNX dispatch engine guide](qnx-dispatch-engine.md).
 
+For listener/admission ordering, self-owned server connections, UserData routing,
+and outgoing reply/notification storage, read the
+[QNX dispatch server guide](qnx-dispatch-server.md).
+
 [TimedCommandQueue](../../timed_command_queue.h) cleans entries by owner-key
 equality. Its `CleanUpOwner(nullptr)` intentionally selects all null-owner
 entries, including default-owner registrations, and destroys their callback

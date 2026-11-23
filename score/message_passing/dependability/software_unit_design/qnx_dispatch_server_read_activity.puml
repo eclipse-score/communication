@@ -1,0 +1,45 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_server_read_activity
+title QnxDispatchServer - native read and queue retirement
+
+start
+:Enter ProcessReadRequest(ctp) from native server request dispatch;
+:Lock send_mutex_;
+if (send_queue_ is empty?) then (yes)
+    :Unlock and return EAGAIN;
+    stop
+else (queued record)
+    :Reference the front record without removing it;
+endif
+:Build two I/O vectors for the code byte and payload;
+:Compute header size + payload size\nCast to int32_t for _IO_SET_READ_NBYTES;
+:Recover server and call MsgReplyv(ctp->rcvid, ctp->status, vectors)\nIgnore its result;
+:Pop the record from send_queue_;
+if (Record code is NOTIFY?) then (yes)
+    :Push the record back to notify_pool_;
+else (REPLY)
+    :Leave the embedded reply record outside both lists;
+endif
+:Unlock and return _RESMGR_NOREPLY;
+stop
+
+legend
+    The mutex covers the native reply attempt and record retirement.
+    A record is consumed even if MsgReplyv fails; no retry is queued here.
+    This method adds no requested-read-size or int32_t-range guard.
+    HasSomethingToRead separately locks and tests whether the FIFO is non-empty.
+endlegend
+
+@enduml

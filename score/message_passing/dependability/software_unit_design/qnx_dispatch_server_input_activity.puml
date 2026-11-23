@@ -1,0 +1,53 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_server_input_activity
+title QnxDispatchServer - request and one-way input dispatch
+
+start
+:Enter accepted ServerConnection::ProcessInput(code, borrowed payload);
+:Recover the server and dereference user_data_;
+if (Code is REQUEST?) then (yes)
+    if (UserData holds a handler unique pointer?) then (handler)
+        :Invoke handler->OnMessageSentWithReply(connection, payload);
+    else (server callback)
+        :Invoke server.sent_with_reply_callback_(connection, payload);
+    endif
+    :Return the callback result's has_value();
+    stop
+else (other code)
+    :Inspect the remaining code;
+endif
+if (Code is SEND?) then (yes)
+    if (UserData holds a handler unique pointer?) then (handler)
+        :Invoke handler->OnMessageSent(connection, payload);
+    else (server callback)
+        :Invoke server.sent_callback_(connection, payload);
+    endif
+    :Return the callback result's has_value();
+    stop
+else (unknown)
+    :Return false;
+endif
+stop
+
+legend
+    Native input dispatch runs on the server worker in the shown engine path.
+    Routing uses the current variant type, not a separate stored mode.
+    No null-handler or empty-server-callback guard is added.
+    The payload remains borrowed from native request storage.
+    The engine currently discards this boolean in io_write:
+    false does not itself close the connection or send an application error.
+endlegend
+
+@enduml
