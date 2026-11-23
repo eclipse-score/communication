@@ -1,0 +1,23 @@
+@startuml offset_ptr_deallocate
+
+autonumber
+
+actor "User" as Process
+participant "allocator_pointer" as allocator_pointer
+participant "factory_resources" as factory_resources
+
+activate Process
+
+Process -> allocator_pointer : PolymorphicOffsetPtrAllocator::deallocate(pointer, size)
+activate allocator_pointer
+allocator_pointer -> allocator_pointer : calculate number of bytes to deallocate
+allocator_pointer -> factory_resources : MemoryResourceProxy::deallocate(address, bytes)
+activate factory_resources
+factory_resources -> factory_resources : look up memory resource in registry
+factory_resources -> factory_resources : ManagedMemoryResource::deallocate(address, bytes)
+allocator_pointer <-- factory_resources
+deactivate factory_resources
+Process <-- allocator_pointer
+deactivate allocator_pointer
+
+@enduml
