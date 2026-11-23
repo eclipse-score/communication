@@ -117,6 +117,18 @@ build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=float-e
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=shadow
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=shadow
 
+# rules_cc_autoconf (pulled in by score_rules_imagefs) does not compile cleanly under -Werror.
+build --per_file_copt=external/.*rules_cc_autoconf.*@-Wno-unknown-warning-option
+build --host_per_file_copt=external/.*rules_cc_autoconf.*@-Wno-unknown-warning-option
+build --per_file_copt=external/.*rules_cc_autoconf.*@-Wno-error=shadow
+build --host_per_file_copt=external/.*rules_cc_autoconf.*@-Wno-error=shadow
+build --per_file_copt=external/.*rules_cc_autoconf.*@-Wno-error=maybe-uninitialized
+build --host_per_file_copt=external/.*rules_cc_autoconf.*@-Wno-error=maybe-uninitialized
+build --per_file_copt=external/.*rules_cc_autoconf.*@-Wno-error=sign-conversion
+build --host_per_file_copt=external/.*rules_cc_autoconf.*@-Wno-error=sign-conversion
+build --per_file_copt=external/.*rules_cc_autoconf.*@-Wno-error=conversion
+build --host_per_file_copt=external/.*rules_cc_autoconf.*@-Wno-error=conversion
+
 # Enable the experimental FlatBuffers configuration path.
 build:flatbuffers --//score/mw/com/flags:experimental_enable_flatbuffers_configuration=True
 
