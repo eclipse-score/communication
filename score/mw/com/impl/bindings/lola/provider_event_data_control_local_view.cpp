@@ -105,7 +105,7 @@ template <template <class> class AtomicIndirectorType>
 void ProviderEventDataControlLocalView<AtomicIndirectorType>::SetSlotValue(const SlotInfo slot_info) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_info.slot_index) < state_slots_.size());
-    state_slots_[slot_info.slot_index].store(slot_info.slot_value, std::memory_order_release);
+    state_slots_[static_cast<std::size_t>(slot_info.slot_index)].store(slot_info.slot_value, std::memory_order_release);
 }
 
 template <template <class> class AtomicIndirectorType>
@@ -149,7 +149,10 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::TryAllocateSlot(co
 
     auto old_slot_value = slot_info.slot_value;
     const auto was_slot_allocated = AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_strong(
-        state_slots_[slot_info.slot_index], old_slot_value, in_writing_value, std::memory_order_acq_rel);
+        state_slots_[static_cast<std::size_t>(slot_info.slot_index)],
+        old_slot_value,
+        in_writing_value,
+        std::memory_order_acq_rel);
     if (!was_slot_allocated)
     {
         return {};

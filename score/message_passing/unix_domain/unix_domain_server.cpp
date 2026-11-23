@@ -269,7 +269,8 @@ void UnixDomainServer::ProcessConnect() noexcept
     {
         return;
     }
-    connection->AcceptConnection(std::move(data_expected.value()), std::move(connection));
+    auto* const connection_ptr = connection.get();
+    connection_ptr->AcceptConnection(std::move(data_expected.value()), std::move(connection));
 }
 
 }  // namespace score::message_passing::detail

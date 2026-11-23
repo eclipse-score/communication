@@ -628,7 +628,7 @@ auto ServiceDiscoveryClient::StoreWatch(const os::InotifyWatchDescriptor& watch_
     if (!watch_result.second && !HasActiveSearch(watch_result.first->second) && identifier.GetInstanceId().has_value())
     {
         auto& watch = watch_result.first->second;
-        watch.flag_file_names.emplace();
+        score::cpp::ignore = watch.flag_file_names.emplace();
         known_instances_.asil_b.Remove(enriched_instance_identifier);
         known_instances_.asil_qm.Remove(enriched_instance_identifier);
         known_instances.asil_b.Remove(enriched_instance_identifier);
