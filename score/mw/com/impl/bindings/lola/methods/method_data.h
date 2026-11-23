@@ -36,6 +36,12 @@ class MethodData
     {
     }
 
+    ~MethodData() noexcept = default;
+    MethodData(const MethodData&) = delete;
+    MethodData(MethodData&&) noexcept = delete;
+    MethodData& operator=(const MethodData&) & = delete;
+    MethodData& operator=(MethodData&&) & noexcept = delete;
+
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private.". There are no class invariants to maintain which could be violated by directly accessing member
     // variables.

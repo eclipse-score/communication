@@ -46,6 +46,12 @@ class EventDataControl
     {
     }
 
+    ~EventDataControl() noexcept = default;
+    EventDataControl(const EventDataControl&) = delete;
+    EventDataControl(EventDataControl&&) noexcept = delete;
+    EventDataControl& operator=(const EventDataControl&) & = delete;
+    EventDataControl& operator=(EventDataControl&&) & noexcept = delete;
+
     EventControlSlots state_slots_;
 };
 

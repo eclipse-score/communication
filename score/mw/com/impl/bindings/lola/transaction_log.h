@@ -45,6 +45,12 @@ class TransactionLog
 
     TransactionLog(const std::size_t number_of_slots, memory::shared::ManagedMemoryResource& resource);
 
+    ~TransactionLog() noexcept = default;
+    TransactionLog(const TransactionLog&) = default;
+    TransactionLog(TransactionLog&&) noexcept = default;
+    TransactionLog& operator=(const TransactionLog&) & = default;
+    TransactionLog& operator=(TransactionLog&&) & noexcept = default;
+
     /// \brief Vector containing one TransactionLogSlot for each slot in the corresponding control vector.
     TransactionLogSlots reference_count_slots_;
 
