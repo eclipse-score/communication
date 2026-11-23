@@ -1,0 +1,16 @@
+@startuml enable_offset_ptr_bounds_checking
+
+autonumber
+
+actor "User" as Process
+participant "allocator_pointer" as allocator_pointer
+
+activate Process
+
+Process -> allocator_pointer : EnableOffsetPtrBoundsChecking(enable)
+activate allocator_pointer
+note right of allocator_pointer : process-wide, enabled by default
+allocator_pointer --> Process : enabled_previously
+deactivate allocator_pointer
+
+@enduml
