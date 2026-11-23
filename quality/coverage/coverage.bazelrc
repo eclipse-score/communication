@@ -89,10 +89,6 @@ coverage --@rules_rust//rust/settings:extra_rustc_flags=-Cllvm-args=-runtime-cou
 # pipeline: QCC compiles with --coverage flags, tests produce .gcda/.gcno
 # files, and Bazel's default LCOV pipeline aggregates the results.
 
-coverage:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx-sdp_8.0.0-posix
-coverage:qnx_x86_64 --extra_toolchains=@score_qcc_x86_64_toolchain//:x86_64-qnx-sdp_8.0.0
-coverage:qnx_x86_64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_pc_nto_qnx800
-
 # Reset all values that were added for the default Linux coverage with llvm-cov
 coverage:qnx_x86_64 --noexperimental_generate_llvm_lcov
 coverage:qnx_x86_64 --noexperimental_use_llvm_covmap
@@ -105,9 +101,6 @@ coverage:qnx_x86_64 --test_env=LLVM_PROFILE_CONTINUOUS_MODE
 # Reset the Rust LLVM-coverage rustc flags: the QNX pipeline is gcov-based
 # and must not carry llvm covmap instrumentation options.
 coverage:qnx_x86_64 --@rules_rust//rust/settings:extra_rustc_flags=
-
-# Shorthand: --config=qnx uses qnx_x86_64 (consistent with .bazelrc).
-coverage:qnx --config=qnx_x86_64
 
 # Disable treat_warnings_as_errors for coverage builds to avoid build failures from instrumentation-related warnings
 coverage --features=-score_communication_treat_warnings_as_errors
