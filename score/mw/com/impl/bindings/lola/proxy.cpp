@@ -169,7 +169,7 @@ OpenSharedMemory(const LolaServiceInstanceDeployment& instance_deployment,
         // No restriction on providers: providers stays std::nullopt.
     }
 
-    ShmPathBuilder shm_path_builder{lola_service_deployment.service_id_};
+    ShmPathBuilder shm_path_builder{lola_service_deployment.service_id_, instance_deployment.inter_vm_support_};
     const auto control_shm = shm_path_builder.GetControlChannelShmName(lola_service_instance_id.GetId(), quality_type);
     const auto data_shm = shm_path_builder.GetDataChannelShmName(lola_service_instance_id.GetId());
 

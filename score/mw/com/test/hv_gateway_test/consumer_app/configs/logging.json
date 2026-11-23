@@ -1,0 +1,8 @@
+{
+  "appId": "RECV",
+  "appDesc": "consumer_app",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole",
+  "dynamicDatarouterIdentifiers": true
+}

@@ -13,12 +13,19 @@
 #include "score/mw/com/gateway/transport_layer/qemu/qemu_hypervisor_transport.h"
 
 #include "score/mw/com/gateway/transport_layer/sample/messages/gateway_messages.h"
+#include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
+#include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/runtime.h"
 #include "score/mw/log/logging.h"
 
 #include "score/memory/shared/shared_memory_factory.h"
 
 #include <cstdint>
+#include <iomanip>
+#include <sstream>
 #include <string>
+#include <variant>
 
 #if defined(__QNXNTO__)
 #include <fcntl.h>
@@ -30,27 +37,56 @@
 namespace score::mw::com::gateway
 {
 
+namespace
+{
+
+// Mirrors the (private, plumbing-only) score::mw::com::impl::lola::ShmPathBuilder naming scheme for
+// the QM control/data channel: "/intervm-shared-shmem/lola-ctl-<16-digit service id>-<5-digit instance id>"
+// resp. ".../lola-data-<16-digit service id>-<5-digit instance id>". Kept in sync manually with
+// score/mw/com/impl/bindings/lola/path_builder.cpp since that builder is not visible outside of
+// impl/plumbing. A gateway-forwarded service instance always has inter_vm_support_ = true (required to
+// reach ShmReuseStrategy::kOpenGatewayForwardedShm), so the destination-side GenericSkeleton always opens
+// exactly these inter-VM-prefixed paths.
+std::string BuildLolaShmName(const char* prefix, const std::uint16_t service_id, const std::uint16_t instance_id)
+{
+    std::ostringstream out;
+    out << "/intervm-shared-shmem/" << prefix << std::setfill('0') << std::setw(16) << service_id << '-' << std::setw(5)
+        << instance_id;
+    return out.str();
+}
+
+}  // namespace
+
 ShmPaths ResolveInterVmShmPaths(const impl::InstanceSpecifier& specifier)
 {
-    // Constructs the inter-VM shm paths using the well-known prefix that
-    // SharedMemoryFactory routes through the InterVM memory provider.
-    //
-    // In the full LoLa production stack, the skeleton uses ShmPathBuilder(service_id, inter_vm=true)
-    // to create paths like: /intervm-shared-shmem/lola-data-XXXX-YYYY
-    // The ShmPathBuilder is an internal LoLa binding detail (visibility restricted to
-    // impl/plumbing). The transport layer cannot access it directly.
-    //
-    // In production integration, the GatewayCore would resolve the specifier via Runtime,
-    // extract the LoLa deployment info (service_id + instance_id), and pass the resolved
-    // paths to the transport — either via an extended ProvideService API or by storing them
-    // in a transport-accessible registry. For now, we construct paths from the specifier
-    // string, which works for the integration test where paths are self-consistent.
-    // TODO: The path construction below is a temporary placeholder for integration testing.
-    // In production, GatewayCore must resolve the specifier via Runtime, extract the LoLa
-    // deployment info (service_id + instance_id), and supply the canonical ShmPathBuilder
-    // paths to the transport. Track in issue #TBD.
-    const std::string base = std::string{"/intervm-shared-shmem/"} + std::string{specifier.ToString()};
-    return ShmPaths{base + "/ctrl", base + "/data"};
+    // Resolve the specifier to its configured LoLa service/instance id, exactly like the destination-side
+    // GenericSkeleton does, so that the shm objects we bind to the ivshmem BAR here end up at the same paths
+    // the skeleton will later try to open in ShmReuseStrategy::kOpenGatewayForwardedShm.
+    const auto instance_identifiers = impl::Runtime::getInstance().resolve(specifier);
+    if (instance_identifiers.size() != static_cast<std::size_t>(1U))
+    {
+        return {};
+    }
+    const auto& identifier = instance_identifiers.front();
+
+    const auto& service_type_deployment = impl::InstanceIdentifierView{identifier}.GetServiceTypeDeployment();
+    const auto* const lola_service_type_deployment =
+        std::get_if<impl::LolaServiceTypeDeployment>(&service_type_deployment.binding_info_);
+
+    const auto& service_instance_deployment = impl::InstanceIdentifierView{identifier}.GetServiceInstanceDeployment();
+    const auto* const lola_service_instance_deployment =
+        std::get_if<impl::LolaServiceInstanceDeployment>(&service_instance_deployment.bindingInfo_);
+
+    if (lola_service_type_deployment == nullptr || lola_service_instance_deployment == nullptr ||
+        !lola_service_instance_deployment->instance_id_.has_value())
+    {
+        return {};
+    }
+
+    const auto service_id = lola_service_type_deployment->service_id_;
+    const auto instance_id = lola_service_instance_deployment->instance_id_.value().GetId();
+    return ShmPaths{BuildLolaShmName("lola-ctl-", service_id, instance_id),
+                    BuildLolaShmName("lola-data-", service_id, instance_id)};
 }
 
 #if defined(__QNXNTO__)
@@ -178,6 +214,7 @@ void QemuHypervisorTransport::OnMessageReceived(std::unique_ptr<TransportMessage
 
 void QemuHypervisorTransport::HandleProvideServiceRequest(std::unique_ptr<TransportMessage> message)
 {
+    std::cout << "Handling ProvideServiceRequest" << std::endl;
     auto* const request_ptr = dynamic_cast<ProvideServiceRequest*>(message.get());
     if (request_ptr == nullptr)
     {
