@@ -48,8 +48,8 @@ class TransactionLog
     ~TransactionLog() noexcept = default;
     TransactionLog(const TransactionLog&) = default;
     TransactionLog(TransactionLog&&) noexcept = default;
-    TransactionLog& operator=(const TransactionLog&) & = default;
-    TransactionLog& operator=(TransactionLog&&) & noexcept = default;
+    TransactionLog& operator=(const TransactionLog&) & = delete;
+    TransactionLog& operator=(TransactionLog&&) & noexcept = delete;
 
     /// \brief Vector containing one TransactionLogSlot for each slot in the corresponding control vector.
     TransactionLogSlots reference_count_slots_;
