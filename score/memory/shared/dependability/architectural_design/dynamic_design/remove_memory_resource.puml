@@ -1,0 +1,25 @@
+@startuml remove_memory_resource
+
+autonumber
+
+actor "User" as Process
+participant "factory_resources" as factory_resources
+participant "OperatingSystem" as OperatingSystem
+
+activate Process
+
+Process -> factory_resources : SharedMemoryFactory::Remove(path)
+activate factory_resources
+alt path is in the process-local registry
+    factory_resources -> factory_resources : remove resource from registry
+    factory_resources -> OperatingSystem : unlink name of the shared memory object
+    activate OperatingSystem
+    factory_resources <-- OperatingSystem
+    deactivate OperatingSystem
+else path is not in the process-local registry
+    factory_resources -> factory_resources : log warning
+end
+Process <-- factory_resources
+deactivate factory_resources
+
+@enduml
