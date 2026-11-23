@@ -86,6 +86,7 @@ sphinx_module(
         "//:contributing_md",
         "//score/mw/com:readme_md",
         "//score/mw/com/doc/tutorial:tutorial_rst",
+        "//score/mw/com/gateway/transport_layer:transport_h_doc",
     ],
     exec_compatible_with = ["@platforms//os:linux"],
     extra_opts = [

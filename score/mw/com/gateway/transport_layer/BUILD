@@ -12,10 +12,24 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 package(
     default_visibility = ["//score/mw/com/gateway:__subpackages__"],
+)
+
+# transport.h is shown via literalinclude in the tutorial (chapter 14).
+exports_files(
+    ["transport.h"],
+    visibility = ["//score/mw/com/doc/tutorial:__pkg__"],
+)
+
+sphinx_docs_library(
+    name = "transport_h_doc",
+    srcs = ["transport.h"],
+    prefix = "score/mw/com/gateway/transport_layer/",
+    visibility = ["//docs/sphinx:__pkg__"],
 )
 
 cc_library(
