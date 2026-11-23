@@ -93,7 +93,7 @@ and symmetrically on the provider side (`SkeletonEventBase` / `SkeletonFieldBase
 
 > **Note — binding maturity.** LoLa's `ProxyMethod`/`SkeletonMethod` support exists in the codebase (`impl/bindings/lola/proxy_method.h`, `skeleton_method.h`) but its public API is documented as still under development. This document treats the responsibility allocation as binding-agnostic; closing LoLa-specific method-support gaps is tracked separately with the team and is out of scope here.
 
-> **Protect/Check ownership is bidirectional for methods.** Events and fields have a fixed direction — the provider (skeleton) only ever protects, the consumer (proxy) only ever checks. A method call has no such fixed direction: each side plays both roles depending on which leg of the call it's handling. `SkeletonMethodBinding` owns an `E2ECheckContext` for the incoming request — a skeleton that receives a call with In-Args must run `CheckMessage()` itself to decide whether the request is valid enough to process, exactly as a `ProxyEvent` does for received samples — in addition to the `E2EProtectContext` it already owns for the outgoing response. Symmetrically, `ProxyMethodBinding` owns an `E2EProtectContext` for the outgoing request in addition to the `E2ECheckContext` it already owns for the incoming response. Neither side is exclusively a protector or a checker the way `SkeletonEventBinding`/`ProxyEventBinding` are.
+> **Protect/Check ownership is bidirectional for methods.** Events and fields have a fixed direction — the provider (skeleton) only ever protects, the consumer (proxy) only ever checks. A method call has no such fixed direction: each side plays both roles depending on which leg of the call it's handling. `SkeletonMethodBinding` owns a `CheckContext` for the incoming request — a skeleton that receives a call with In-Args must run `CheckMessage()` itself to decide whether the request is valid enough to process, exactly as a `ProxyEvent` does for received samples — in addition to the `ProtectContext` it already owns for the outgoing response. Symmetrically, `ProxyMethodBinding` owns a `ProtectContext` for the outgoing request in addition to the `CheckContext` it already owns for the incoming response. Neither side is exclusively a protector or a checker the way `SkeletonEventBinding`/`ProxyEventBinding` are.
 
 ---
 
@@ -117,10 +117,10 @@ The binding layer shall:
 
 - Parse the transport-specific message format
 - Locate the E2E header bytes and the protected-data view within the parsed frame
-- Invoke `CheckMessage()` on that material, using a check state (`E2ECheckContext`) it owns per subscribing consumer, only when a new sample is actually present (see [Historical Health Tracking](#historical-health-tracking))
-- Deliver the resulting raw sample (see [Proposed Contract](#proposed-contract)'s `BindingReceivedFrame`) together with the categorical `DataIntegrityStatus`/`SequenceStatus` pair to the binding-independent layer
+- Invoke `CheckMessage()` on that material, using a check state (`CheckContext`) it owns per subscribing consumer, only when a new sample is actually present (see [Historical Health Tracking](#historical-health-tracking))
+- Deliver the resulting sample handle together with the categorical `DataIntegrityStatus`/`SequenceStatus` pair (`RawCheckOutcome`, see [Proposed Contract](#proposed-contract)) to the binding-independent layer
 
-The binding layer owns `CheckState` and invokes `CheckMessage()` directly — see [Receiver-Side Check State](#receiver-side-check-state) for the full rationale and a commercial-vendor precedent built exactly this way.
+The binding layer owns `CheckContext` and invokes `CheckMessage()` directly — see [Receiver-Side Check State](#receiver-side-check-state) for the full rationale and a commercial-vendor precedent built exactly this way.
 
 #### Binding Output
 
@@ -129,51 +129,51 @@ The binding layer **does not make communication-state decisions** — it never r
 The binding owns the profile check state and invokes `CheckMessage()` itself (see [Receiver-Side Check State](#receiver-side-check-state)), reusing a shared CRC/counter algorithm library. Two independent per-message results come out of that call — a data-integrity check (CRC/Data ID) and a sequence check (counter) — kept as separate categorical values rather than merged into one, since a CRC failure and a counter jump are actionable differently by a consumer (masquerading/corruption vs. loss/reorder):
 
 ```cpp
-enum class DataIntegrityStatus {
+enum class DataIntegrityStatus : std::uint8_t {
     kDisabled, // Check was disabled
     kOk,       // Metadata (incl. Data ID) and CRC match expectations — data is trustworthy
     kError,    // Metadata (incl. Data ID) or CRC differ from expectations — data is corrupted or forged
 };
 
-enum class SequenceStatus {
+enum class SequenceStatus : std::uint8_t {
     kDisabled,                 // Check was disabled
     kOk,                       // No message lost between previous and current message (or this is the first message received)
     kOkGapWithinThreshold,     // Gap between the last and current message is within the allowed threshold
     kErrorRepeated,            // Message is a repetition of the last received message
     kErrorGapExceedsThreshold, // Gap between the last and current message exceeds the allowed threshold
+    kSkipped,                  // Not evaluated because data_integrity == kError (counter untrustworthy); not a failure on its own
 };
 ```
 
 > **Note:** the underlying profile-check algorithm computes CRC and counter validity as part of one call; this contract exposes the two outcomes separately rather than collapsing them into one merged error value, since data corruption/masquerading (`DataIntegrityStatus`) and loss/reorder (`SequenceStatus`) warrant different application-level handling.
 
-Internally, the profile check also computes the actual counter delta before collapsing it into `SequenceStatus`. That delta is not part of the app-facing contract, but the binding surfaces it in an internal companion structure alongside the categorical results, so the binding-independent layer can reuse it for the per-consumer `MaxDeltaCounter` sizing guidance in [Distinguishing Intentional Under-Sampling from Genuine Loss](#distinguishing-intentional-under-sampling-from-genuine-loss):
+The two results cross the binding boundary as one internal pair. The counter delta the profile check computes internally stays in the binding: no binding-independent consumer needs it, since [Distinguishing Intentional Under-Sampling from Genuine Loss](#distinguishing-intentional-under-sampling-from-genuine-loss) rejects any delta-based tolerance parameter:
 
 ```cpp
-// Produced by the binding's own per-message check; consumed by the binding-independent layer's
-// health tracking and MaxDeltaCounter sizing guidance — never exposed to applications
+// Produced by the binding's own per-message check; completed into an E2EResult by the binding-independent
+// layer — never exposed to applications
 struct RawCheckOutcome {
-    DataIntegrityStatus data_integrity;
-    SequenceStatus sequence;
-    std::uint16_t observed_delta;  // actual counter delta since the last processed sample
+    DataIntegrityStatus data_integrity{DataIntegrityStatus::kDisabled};
+    SequenceStatus sequence{SequenceStatus::kDisabled};
 };
 ```
 
-The binding is **not** stateless on the receive path — it owns the profile-level check state (`E2ECheckContext`) because that state (last accepted counter, CRC library context) is meaningless without the wire-format knowledge the binding already has. What stays binding-independent is the **interpretation** of the resulting sequence of categorical results over time — historical health tracking (`E2EHealthContext`) — which has no wire-format dependency at all (see [Receiver-Side Check State](#receiver-side-check-state) and [Sender-Side Protect State](#sender-side-protect-state) for the symmetric transmit-path treatment).
+The binding is **not** stateless on the receive path — it owns the profile-level check state (`CheckContext`) because that state (last accepted counter, CRC library context) is meaningless without the wire-format knowledge the binding already has. What stays binding-independent is the **interpretation** of the resulting sequence of categorical results over time — historical health tracking (`HealthTracker`) — which has no wire-format dependency at all (see [Receiver-Side Check State](#receiver-side-check-state) and [Sender-Side Protect State](#sender-side-protect-state) for the symmetric transmit-path treatment).
 
 ---
 
 ### Sender-Side Protect State
 
-The E2E protect function `ProtectMessage()` requires a **mutable protect state** (`ProtectState`) that holds the current counter value and is updated on every call. Ownership of this state must be assigned to exactly one layer.
+The E2E protect function `ProtectMessage()` requires a **mutable protect state** (`ProtectContext`) that holds the current counter value and is updated on every call. Ownership of this state must be assigned to exactly one layer.
 
 #### Options for `mw::com`
 
 **Option A — Protect state in the binding-independent layer (`SkeletonEventBase`)**
 
-An `E2EProtectContext` object (holding the counter) is owned by `SkeletonEventBase` alongside the existing binding pointer. Before calling `SkeletonEventBinding::Send()`, the binding-independent layer invokes `ProtectMessage()` to increment the counter and produce the E2E header bytes, then passes header bytes to the binding for injection.
+A `ProtectContext` object (holding the counter) is owned by `SkeletonEventBase` alongside the existing binding pointer. Before calling `SkeletonEventBinding::Send()`, the binding-independent layer invokes `ProtectMessage()` to increment the counter and produce the E2E header bytes, then passes header bytes to the binding for injection.
 
 ```text
-SkeletonEventBase (owns E2EProtectContext)         <- counter lives here
+SkeletonEventBase (owns ProtectContext)            <- counter lives here
     │  calls ProtectMessage() → header bytes
     ▼
 SkeletonEventBinding::Send(sample, e2e_header)     <- binding injects header at wire offset
@@ -185,13 +185,13 @@ SkeletonEventBinding::Send(sample, e2e_header)     <- binding injects header at 
 
 **Option B — Protect state in the binding layer (`SkeletonEventBinding`) — recommended**
 
-The binding owns `ProtectState` and calls `ProtectMessage()` internally during `Send()`, directly on the buffer/slot it already owns.
+The binding owns `ProtectContext` and calls `ProtectMessage()` internally during `Send()`, directly on the buffer/slot it already owns.
 
 ```text
 SkeletonEventBase
     │  calls Send(sample)
     ▼
-SkeletonEventBinding (owns E2EProtectContext)      <- counter lives here
+SkeletonEventBinding (owns ProtectContext)         <- counter lives here
     │  calls ProtectMessage() internally, on its own already-assembled buffer/slot
     ▼
 Transport
@@ -203,7 +203,7 @@ Transport
 
 **Option B is recommended.** The binding is the only party that has the fully-assembled wire buffer at the point `ProtectMessage()` must run, so keeping the call there avoids re-exporting transport-owned header bytes across the binding boundary just to relocate a function call. vsomeip's protector (see [Where the Header Bytes Actually Live](#where-the-header-bytes-actually-live-transmit-path-api-shape) and [Receiver-Side Check State](#receiver-side-check-state)) demonstrates the same call-site choice in an open-source SOME/IP stack — it writes header fields directly into the buffer it already owns, with no separate transport-agnostic orchestrator involved. The binding owns the counter and calls `ProtectMessage()` directly on the buffer it is already assembling; only the reusable CRC/counter *algorithm* is shared, binding-independent code. For SOME/IP specifically this is not just a convenience: several profiles fold wire-level fields the binding-independent layer has no reason to know about — Message ID, Client ID, Session ID, Protocol/Interface Version — into the CRC computation alongside the payload, so whichever party invokes `ProtectMessage()` must already have the fully-assembled SOME/IP header, not just the application payload. That rules out Option A outright for such profiles, independent of the zero-copy/testability arguments above.
 
-> **Note — periodic/mixed transmission-trigger events.** Some SOME/IP event deployments configure `update_on_change: false` (or mixed mode), meaning the provider retransmits on a fixed timer independent of the application calling `Send()` again. Since the E2E counter increments per transmitted frame, that idle retransmission must also re-invoke `ProtectMessage()` on the binding's own `E2EProtectContext`. Because that context is binding-owned, this is entirely internal to the SOME/IP binding's retransmission-timer logic — no cross-layer call is needed to keep the counter and the retransmit scheduler in step. LoLa has no equivalent: it only sends on an explicit app `Send()` call, so this does not apply there.
+> **Note — periodic/mixed transmission-trigger events.** Some SOME/IP event deployments configure `update_on_change: false` (or mixed mode), meaning the provider retransmits on a fixed timer independent of the application calling `Send()` again. Since the E2E counter increments per transmitted frame, that idle retransmission must also re-invoke `ProtectMessage()` on the binding's own `ProtectContext`. Because that context is binding-owned, this is entirely internal to the SOME/IP binding's retransmission-timer logic — no cross-layer call is needed to keep the counter and the retransmit scheduler in step. LoLa has no equivalent: it only sends on an explicit app `Send()` call, so this does not apply there.
 
 #### Where the Header Bytes Actually Live (transmit-path API shape)
 
@@ -227,9 +227,9 @@ The protect and check/state-machine contexts are not symmetric in cardinality �
 
 | Context | Cardinality | Owner |
 |---|---|---|
-| Protect state (`E2EProtectContext`, sender counter) | One per transmitted event (`SkeletonEvent`) | Binding, `SkeletonEventBinding` |
-| Check state (`E2ECheckContext`, last-accepted counter, CRC context) | One per consuming `ProxyEvent` instance that enables E2E | Binding, `ProxyEventBinding` |
-| Historical health state (`E2EHealthContext`, sliding window of recent per-message results) | One per consuming `ProxyEvent` instance that enables E2E | Binding-independent, `ProxyEventBase` |
+| Protect state (`ProtectContext`, sender counter) | One per transmitted event (`SkeletonEvent`) | Binding, `SkeletonEventBinding` |
+| Check state (`CheckContext`, last-accepted counter, CRC context) | One per consuming `ProxyEvent` instance that enables E2E | Binding, `ProxyEventBinding` |
+| Historical health state (`HealthTracker`, sliding window of recent per-message results) | One per consuming `ProxyEvent` instance that enables E2E | Binding-independent, `ProxyEventBase` |
 
 This follows the sender/receiver split: `ProtectMessage()` is sender-local and produces one wire frame per cycle; `CheckMessage()`/the binding-independent health tracker are receiver-local, and each consumer evaluates the same received frame sequence independently. Consequences:
 
@@ -251,7 +251,7 @@ Example — one provider, three consumers at different ASIL levels, all of the s
 
 | Instance | ASIL | Check/health-tracking executes | Consumes result | State owned |
 |---|---|---|---|---|
-| Provider (skeleton) | — | n/a (always protects) | n/a | One `E2EProtectContext` (counter) |
+| Provider (skeleton) | — | n/a (always protects) | n/a | One `ProtectContext` (counter) |
 | Consumer A (proxy) | ASIL_B | yes (default) | yes | Own check/historical-health state |
 | Consumer B (proxy) | ASIL_B | yes (default) | yes | Own check/historical-health state |
 | Consumer C (proxy) | QM | no — explicitly disabled via `DataIntegrityCheckEnabled`/`SequenceCheckEnabled`/`HistoricalHealthTrackingEnabled: false` | n/a — `E2EResult` reads `kDisabled` | No check/historical-health state instantiated |
@@ -262,13 +262,13 @@ If Consumer A misses a frame that Consumer B receives, only Consumer A's histori
 
 ### Receiver-Side Check State
 
-The E2E check function `CheckMessage()` requires a **mutable check state** (`CheckState`) that holds the last accepted counter (and other profile-specific reception state) and is updated on every call — the receive-side counterpart to the protect state above. Whichever layer owns this state must be the one invoking `CheckMessage()`; the two responsibilities cannot be split.
+The E2E check function `CheckMessage()` requires a **mutable check state** (`CheckContext`) that holds the last accepted counter (and other profile-specific reception state) and is updated on every call — the receive-side counterpart to the protect state above. Whichever layer owns this state must be the one invoking `CheckMessage()`; the two responsibilities cannot be split.
 
 #### Options for `mw::com`
 
 **Option A — Check state in the binding-independent layer (`ProxyEventBase`)**
 
-The binding parses the transport-specific message and extracts the protected-data view and E2E header bytes, without invoking any E2E logic, and delivers them to the binding-independent layer. The binding-independent layer owns `CheckState` and calls `CheckMessage()` itself.
+The binding parses the transport-specific message and extracts the protected-data view and E2E header bytes, without invoking any E2E logic, and delivers them to the binding-independent layer. The binding-independent layer owns `CheckContext` and calls `CheckMessage()` itself.
 
 ```text
 Transport
@@ -277,7 +277,7 @@ Transport
 Binding                                             <- parses wire format only
     │  extracts protected-data view + E2E header bytes
     ▼
-ProxyEventBase (owns E2ECheckContext)               <- check state lives here
+ProxyEventBase (owns CheckContext)                  <- check state lives here
     │  calls CheckMessage() → DataIntegrityStatus + SequenceStatus
     ▼
 E2E Manager: historical health tracking
@@ -289,13 +289,13 @@ E2E Manager: historical health tracking
 
 **Option B — Check state in the binding layer — recommended**
 
-The binding owns `CheckState` and calls `CheckMessage()` internally, on the same buffer it already parsed, returning the already-computed `DataIntegrityStatus`/`SequenceStatus` pair, optionally accompanied by the header-stripped payload (`raw_sample`, see [Proposed Contract](#proposed-contract)) — no empty-cycle case is synthesized, see [Binding Independence Assessment](#binding-independence-assessment-review-feedback).
+The binding owns `CheckContext` and calls `CheckMessage()` internally, on the same buffer it already parsed, returning the already-computed `DataIntegrityStatus`/`SequenceStatus` pair, optionally accompanied by the header-stripped payload (`raw_sample`, see [Proposed Contract](#proposed-contract)) — no empty-cycle case is synthesized, see [Binding Independence Assessment](#binding-independence-assessment-review-feedback).
 
 ```text
 Transport
     │
     ▼
-Binding (owns E2ECheckContext)                      <- check state lives here
+Binding (owns CheckContext)                         <- check state lives here
     │  parses wire format AND calls CheckMessage() internally, on its own buffer
     ▼
 [raw_sample (payload, optional)] + DataIntegrityStatus + SequenceStatus
@@ -308,7 +308,7 @@ E2E Manager (binding-independent): historical health tracking (consumes the two 
 
 *Pros:* No check material (E2E header, protected-data span) ever crosses the binding boundary — the binding already has everything `CheckMessage()` needs, because it just parsed it. Only the two small categorical enums (and, optionally, the header-stripped payload `raw_sample`) cross, and the health tracker consumes just the enums, which are trivially mockable for binding-independent health-tracking tests (see [Testing Strategy](#testing-strategy)).
 
-*Cons:* The profile-check algorithm itself must be reused as a shared library across bindings to avoid duplicating it (addressed below — the algorithm is shared as a library across bindings). The binding is no longer a purely stateless wire-format adapter — it owns `E2ECheckContext` per consumer alongside its own subscription/queue state, a natural extension of state the binding already manages per consumer (e.g. LoLa's per-consumer slot/queue bookkeeping).
+*Cons:* The profile-check algorithm itself must be reused as a shared library across bindings to avoid duplicating it (addressed below — the algorithm is shared as a library across bindings). The binding is no longer a purely stateless wire-format adapter — it owns `CheckContext` per consumer alongside its own subscription/queue state, a natural extension of state the binding already manages per consumer (e.g. LoLa's per-consumer slot/queue bookkeeping).
 
 **Option B is recommended**, matching the transmit-side decision above.
 
@@ -333,12 +333,12 @@ This includes:
 
 #### Historical Health Tracking
 
-> **Note — relationship to a companion error-handling specification.** The `HistoricalHealthStatus`/`Summary`/`E2EResult` model below mirrors a separate, in-progress companion specification containing the detailed, authoritative specification of E2E error handling. It is reproduced here for this document's own architectural completeness, not as a competing definition; the two are expected to be merged into one once both settle.
+> **Note — relationship to a companion error-handling specification.** The `HistoricalHealthStatus`/`Summary`/`E2EResult` model below mirrors the companion specification [E2E_ERROR_HANDLING_PUBLIC_API.md](E2E_ERROR_HANDLING_PUBLIC_API.md), the authoritative specification of E2E error handling. It is reproduced here for this document's own architectural completeness, not as a competing definition; the two are expected to be merged into one once both settle.
 
 `mw::com` events are consumed reactively: an application calls `GetNewSamples()` when it has reason to believe new data is available, not on a fixed periodic schedule independent of activity. If a provider stops offering the service, the proxy reconnects automatically and the tracked history is kept (see [E2E Context Lifecycle](#e2e-context-lifecycle)) — there is no need to keep feeding a "no new data" result into a health tracker on a cycle where nothing was received, and therefore no need for the dedicated warm-up/no-data states a classical periodic state machine uses to represent them. The binding-independent E2E Supervisor instead tracks a sliding window of the last `WindowSize` per-message results with hysteresis thresholds, updated only when a message is actually received and checked:
 
 ```cpp
-enum class HistoricalHealthStatus {
+enum class HistoricalHealthStatus : std::uint8_t {
     kDisabled, // Check was disabled
     kOk,       // Initial state; re-entered once RecoveryThreshold passes are in the window
     kError,    // ErrorThreshold failures are in the window; stays kError until RecoveryThreshold
@@ -346,12 +346,12 @@ enum class HistoricalHealthStatus {
 };
 ```
 
-A per-message result is a failure if `DataIntegrityStatus` is `kError` or `SequenceStatus` is an error value, and a pass otherwise (`kOkGapWithinThreshold` is a pass). Thresholds are relative counts within the window, not absolute counter values: in `kOk`, `HistoricalHealthStatus` flips to `kError` once `ErrorThreshold` failures are in the window; in `kError`, it flips back to `kOk` once `RecoveryThreshold` passes are in the window. The two thresholds are independent and may differ — e.g. `ErrorThreshold` 5 and `RecoveryThreshold` 10 means five failures to enter `kError` and ten passes to leave it. That asymmetry is the hysteresis, preventing the status from flapping on a single isolated failure or recovery. `WindowSize` must be at least both thresholds but may be larger. The window is a moving window; avoiding flapping is the user's responsibility, by choosing `WindowSize` and the thresholds so that the opposite threshold is not already met at the moment of a flip (e.g. `ErrorThreshold + RecoveryThreshold > WindowSize`, as in the 5/10/12 example in [Example Deployment Mapping](#example-deployment-mapping-illustrative)). See [Configuration](#configuration) for the parameters.
+A per-message result is a failure if `DataIntegrityStatus` is `kError` or `SequenceStatus` is an error value, and a pass otherwise (`kOkGapWithinThreshold` is a pass; `kSkipped` only occurs together with `DataIntegrityStatus::kError`, so such a frame counts as one failure). Thresholds are relative counts within the window, not absolute counter values: in `kOk`, `HistoricalHealthStatus` flips to `kError` once `ErrorThreshold` failures are in the window; in `kError`, it flips back to `kOk` once `RecoveryThreshold` passes are in the window. The two thresholds are independent and may differ — e.g. `ErrorThreshold` 5 and `RecoveryThreshold` 10 means five failures to enter `kError` and ten passes to leave it. That asymmetry is the hysteresis, preventing the status from flapping on a single isolated failure or recovery. `WindowSize` must be at least both thresholds but may be larger. The window is a moving window; avoiding flapping is the user's responsibility, by choosing `WindowSize` and the thresholds so that the opposite threshold is not already met at the moment of a flip (e.g. `ErrorThreshold + RecoveryThreshold > WindowSize`, as in the 5/10/12 example in [Example Deployment Mapping](#example-deployment-mapping-illustrative)). See [Configuration](#configuration) for the parameters.
 
 An application typically does not need `HistoricalHealthStatus` on its own — it is combined with the current message's own check outcome into a single summary value:
 
 ```cpp
-enum class Summary {
+enum class Summary : std::uint8_t {  // public name: score::mw::com::E2ESummary
     kDisabled,             // All checks were disabled (no E2E verification)
     kOk,                   // All E2E checks passed (full E2E verification)
     kOkWithDisabledChecks, // Enabled checks passed but some were disabled (partial E2E verification)
@@ -359,10 +359,10 @@ enum class Summary {
 };
 
 struct E2EResult {
-    DataIntegrityStatus data_integrity;
-    SequenceStatus sequence;
-    HistoricalHealthStatus historical_health;
-    Summary summary;
+    DataIntegrityStatus data_integrity{DataIntegrityStatus::kDisabled};
+    SequenceStatus sequence{SequenceStatus::kDisabled};
+    HistoricalHealthStatus historical_health{HistoricalHealthStatus::kDisabled};
+    Summary summary{Summary::kDisabled};
 };
 ```
 
@@ -372,13 +372,13 @@ This is the status exposed to applications.
 
 #### E2E Context Lifecycle
 
-Context ownership splits along the same line as [Context Ownership Cardinality](#context-ownership-cardinality): `E2EProtectContext` (sender) and `E2ECheckContext` (receiver) live in the binding, while `E2EHealthContext` (receiver) lives in the binding-independent layer. Each is reset by whichever layer already has direct visibility into the lifecycle event that invalidates it — no context is reset by a layer that has to be told about the event secondhand.
+Context ownership splits along the same line as [Context Ownership Cardinality](#context-ownership-cardinality): `ProtectContext` (sender) and `CheckContext` (receiver) live in the binding, while `HealthTracker` (receiver) lives in the binding-independent layer. Each is reset by whichever layer already has direct visibility into the lifecycle event that invalidates it — no context is reset by a layer that has to be told about the event secondhand.
 
-**Protect context — reset directly by the binding, on its own offer lifecycle.** The binding resets `E2EProtectContext` on its own `OfferService()`/`StopOfferService()` (or equivalent) — a direct consequence of the binding owning both the protect state and the service-offer lifecycle hooks that bound it, so destroying and recreating the protect state alongside the offer/re-offer cycle requires no signal from any other layer.
+**Protect context — reset directly by the binding, on its own offer lifecycle.** The binding resets `ProtectContext` on its own `OfferService()`/`StopOfferService()` (or equivalent) — a direct consequence of the binding owning both the protect state and the service-offer lifecycle hooks that bound it, so destroying and recreating the protect state alongside the offer/re-offer cycle requires no signal from any other layer.
 
-**Check and health contexts — reset only on user-initiated (re)subscription.** `E2ECheckContext` and `E2EHealthContext` start over only when the application itself starts a new subscription: `Unsubscribe()` followed by `Subscribe()`, or construction of a new proxy event. Both layers see that call directly, so no cross-layer signal is required: the binding resets its own `E2ECheckContext` in its `Subscribe()`/`Unsubscribe()`, and the binding-independent `ProxyEventBase` resets `E2EHealthContext` in the same user-called `Subscribe()`/`Unsubscribe()` (`impl/proxy_event_base.h`).
+**Check and health contexts — reset only on user-initiated (re)subscription.** `CheckContext` and `HealthTracker` start over only when the application itself starts a new subscription: `Unsubscribe()` followed by `Subscribe()`, or construction of a new proxy event. Both layers see that call directly, so no cross-layer signal is required: the binding resets its own `CheckContext` in its `Subscribe()`/`Unsubscribe()`, and the binding-independent `ProxyEventBase` resets `HealthTracker` in the same user-called `Subscribe()`/`Unsubscribe()` (`impl/proxy_event_base.h`).
 
-**Provider-side events reset neither.** A provider (skeleton) restart, service re-offer or service instance change reaches the proxy as `StopOfferEvent()` → `ReOfferEvent()`, and LoLa's `lola::SubscriptionStateMachine` resubscribes automatically, driven by `ServiceDiscovery` notifications forwarded through `lola::Proxy`'s `FindServiceGuard` (see `score/mw/com/design/skeleton_proxy/README.md` §"Proxy auto-reconnect functionality") — without any user action. `E2ECheckContext` and `E2EHealthContext` are kept across it. The restarted provider's `E2EProtectContext` starts a new counter sequence, and the first sample afterwards is compared with the proxy's last accepted counter only, so the discontinuity is reported by the check like any other counter jump: a jump beyond `MaxDeltaCounter` is a `SequenceStatus` error and counts as a failure in the health window, while a jump within it is a pass (`kOkGapWithinThreshold`). Example: the last accepted counter is 100 and the restarted provider sends 1 — the check reports a sequence error; the next sample carries 2, which follows the last accepted counter 1, so the check reports `kOk`, and the health tracker simply consumes both results in order. A channel with constant breakage, e.g. a crash-looping provider, therefore accumulates failures and drives `historical_health` toward `kError` instead of being hidden by a reset on every reconnect.
+**Provider-side events reset neither.** A provider (skeleton) restart, service re-offer or service instance change reaches the proxy as `StopOfferEvent()` → `ReOfferEvent()`, and LoLa's `lola::SubscriptionStateMachine` resubscribes automatically, driven by `ServiceDiscovery` notifications forwarded through `lola::Proxy`'s `FindServiceGuard` (see `score/mw/com/design/skeleton_proxy/README.md` §"Proxy auto-reconnect functionality") — without any user action. `CheckContext` and `HealthTracker` are kept across it. The restarted provider's `ProtectContext` starts a new counter sequence, and the first sample afterwards is compared with the proxy's last accepted counter only, so the discontinuity is reported by the check like any other counter jump: a jump beyond `MaxDeltaCounter` is a `SequenceStatus` error and counts as a failure in the health window, while a jump within it is a pass (`kOkGapWithinThreshold`). Example: the last accepted counter is 100 and the restarted provider sends 1 — the check reports a sequence error; the next sample carries 2, which follows the last accepted counter 1, so the check reports `kOk`, and the health tracker simply consumes both results in order. A channel with constant breakage, e.g. a crash-looping provider, therefore accumulates failures and drives `historical_health` toward `kError` instead of being hidden by a reset on every reconnect.
 
 The reset on user-initiated (re)subscription is deliberately not reported through `E2EResult`: the first sample afterwards reads `SequenceStatus::kOk`, as for any first sample (see [Historical Health Tracking](#historical-health-tracking)). An application that needs to know about every provider restart, independent of counter values, uses the proxy event's `GetSubscriptionState()`/`SetSubscriptionStateChangeHandler()` and correlates it with the received samples.
 
@@ -411,12 +411,12 @@ Configuration parsing rejects a `WindowSize` smaller than either threshold, cons
 | Parameter | Description |
 |---|---|
 | Profile ID | Which E2E profile applies |
-| Data ID | 16-bit identifier used in CRC computation |
+| Data ID | Identifier used in CRC computation; width is profile-dependent |
 | Data ID mode | How Data ID is included (all, nibble, list — profile-dependent) |
 | MaxDeltaCounter | Maximum tolerated counter gap — a gap within it reports `SequenceStatus::kOkGapWithinThreshold`, a larger one `SequenceStatus::kErrorGapExceedsThreshold` |
 | Offset | Byte offset of the E2E header within the serialized message — **SOME/IP-specific**; not applicable, and not required in configuration, when the binding is LoLa (shared-memory) — see [Where the Header Bytes Actually Live](#where-the-header-bytes-actually-live-transmit-path-api-shape) |
 
-These parameters must be sourced from the service deployment configuration (a future extension to the existing `impl/configuration/` model) and injected into the binding and the E2E Manager at construction time.
+These parameters must be sourced from the service deployment configuration (the POC adds `E2EEventTypeDeployment` to the `impl/configuration/` model, see [Example Deployment Mapping](#example-deployment-mapping-illustrative)) and injected into the binding and the E2E Manager at construction time.
 
 ### Profile Resolution Is Mandatory, Even When Checking Is Not
 
@@ -430,7 +430,7 @@ A consumer may need parameters that differ from other consumers of the same even
 
 `mw::com`'s E2E configuration is attached entirely to `ServiceInstance` (see [Example Deployment Mapping](#example-deployment-mapping-illustrative) for the resulting schema): every consuming instance declares its own self-contained E2E configuration (Profile Configuration, health-tracker tuning, check-enablement flags), rather than inheriting a shared default from the provider/service-interface level and overriding only the delta. This has four implications for the deployment model:
 
-1. Per-consumer tuning applies to Profile/Check parameters (e.g. `MaxDeltaCounter`), not only to health-tracker tuning — the illustrative example in [Example Deployment Mapping](#example-deployment-mapping-illustrative) models this for both `max_delta_counter` and `error_threshold`.
+1. Per-consumer tuning applies to Profile/Check parameters (e.g. `MaxDeltaCounter`), not only to health-tracker tuning — the illustrative example in [Example Deployment Mapping](#example-deployment-mapping-illustrative) models this for both `maxDeltaCounter` and `errorThreshold`.
 2. Each instance's full configuration is resolved once, at deployment time, from that instance's own static deployment entry (e.g. `mw_com_config.json`) — a plain read of static data at process startup, with no runtime reconfiguration mechanism.
 3. This duplicates configuration across instances that happen to share the same effective settings (e.g. every consumer using the default profile repeats that profile in its own entry) — a known, accepted tradeoff at this stage rather than an oversight; optimizing it (e.g. via inheritance or a shared default) is tracked as a separate, later ticket.
 4. The same per-instance mechanism also carries the check-enablement flags described below — a consumer's decision to disable some or all of its own E2E checking is part of that same self-contained, per-instance entry.
@@ -466,7 +466,7 @@ Whether this is even a real problem for a given event depends entirely on the tr
 
 Two proposals were considered for the last-value case and rejected:
 
-1. **A dedicated `ExpectedSampleInterval` tolerance parameter**, normalizing `observed_delta` before it reaches the hysteresis-based health accounting. Rejected: since it can never exceed `MaxDeltaCounter`, any delta it forgives already produced `kOk` from the raw profile check regardless of the parameter's existence — it adds a second name and a redundant validation path for exactly the same blanket forgiveness `MaxDeltaCounter` already provides, without adding any actual discriminating power (per the reasoning above: last-value transports leave no information for any parameter to key off of).
+1. **A dedicated `ExpectedSampleInterval` tolerance parameter**, normalizing the observed counter delta before it reaches the hysteresis-based health accounting. Rejected: since it can never exceed `MaxDeltaCounter`, any delta it forgives already produced `kOk` from the raw profile check regardless of the parameter's existence — it adds a second name and a redundant validation path for exactly the same blanket forgiveness `MaxDeltaCounter` already provides, without adding any actual discriminating power (per the reasoning above: last-value transports leave no information for any parameter to key off of).
 2. **Decoupling Check()/health-tracking invocation from the app's polling cadence**, via a background per-consumer mechanism running at wire rate so genuine loss and intentional decimation stay distinguishable regardless of transport. Rejected: for a queued transport this adds nothing, since `GetNewSamples()` already runs Check()/health-tracking once per queued sample and sizing the queue depth already gives full distinguishability. For a last-value transport it does not help either, unless the background poller reliably out-races the producer — at which point it has silently become an inefficient, jitter-fragile reimplementation of a queue, not a new capability. It would also require a new binding-independent background execution context with its own thread/scheduler and synchronization against concurrent `GetNewSamples()` calls — directly reversing the "no separate timer/scheduler needed" conclusion in [Design Rationale](#design-rationale) / [Binding Independence Assessment](#binding-independence-assessment-review-feedback) point 3, for no measurable benefit. Recorded here so it is not re-proposed without this context.
 
 The recommended guidance, replacing any dedicated tolerance parameter:
@@ -476,7 +476,7 @@ The recommended guidance, replacing any dedicated tolerance parameter:
 
 #### Assumption for the Upcoming SOME/IP Binding
 
-No SOME/IP binding exists in `mw::com` yet — `impl/bindings/` currently only contains `lola/` and `mock_binding/` — so its receive-buffering model is an open design decision, not an established fact. It is, however, not a free choice either: `mw::com`'s own `BehaviourOfGetNewSamples` requirement (`score/mw/com/dependability/requirements/component_requirements/component_requirements_ipc.trlc`) already commits every binding to FIFO-drain semantics — repeatedly fetching the next received sample from the underlying receive buffer until `maxNumberOfSamples`/`maxSampleCount` is reached or no new samples remain, and clearing that buffer on `Unsubscribe()` — mirroring the buffering behavior LoLa already implements today. A SOME/IP binding must satisfy the same requirement, just with a different underlying mechanism.
+The SOME/IP binding in `mw::com` (`impl/bindings/someip/`, [#1333](https://github.com/eclipse-score/communication/pull/1333)) has no transport yet, so its receive-buffering model is an open design decision, not an established fact. It is, however, not a free choice either: `mw::com`'s own `BehaviourOfGetNewSamples` requirement (`score/mw/com/dependability/requirements/component_requirements/component_requirements_ipc.trlc`) already commits every binding to FIFO-drain semantics — repeatedly fetching the next received sample from the underlying receive buffer until `maxNumberOfSamples`/`maxSampleCount` is reached or no new samples remain, and clearing that buffer on `Unsubscribe()` — mirroring the buffering behavior LoLa already implements today. A SOME/IP binding must satisfy the same requirement, just with a different underlying mechanism.
 
 The strongest available open-source evidence that this is achievable over SOME/IP specifically (not just required on paper) comes from vsomeip's own dispatch path (an independent open-source SOME/IP stack, cited only as architectural corroboration):
 
@@ -497,12 +497,12 @@ These are requirements this document's design places on that future integration,
 
 ### Example Deployment Mapping (Illustrative)
 
-The following sketch illustrates how the parameters above could be expressed as an extension of the **actual, existing** `mw_com_config.json` schema. The baseline structure (`serviceTypes`, `serviceInstances`, `instanceSpecifier`, `instanceId`, `asil-level`, `numberOfSampleSlots`, …) is taken directly from [`score/mw/com/impl/configuration/example/mw_com_config.json`](https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/configuration/example/mw_com_config.json); only the `"e2e"` key is new. The concrete schema for that key is still illustrative and a separate, later design/implementation task. Provider and consumer are separate applications, each with its own `mw_com_config.json` ([one file per application](../../impl/configuration/README.md#central-json-file-per-app)), so they are shown as two files.
+The following sketch illustrates how the parameters above could be expressed as an extension of the **actual, existing** `mw_com_config.json` schema. The baseline structure (`serviceTypes`, `serviceInstances`, `instanceSpecifier`, `instanceId`, `asil-level`, `numberOfSampleSlots`, …) is taken directly from [`score/mw/com/impl/configuration/example/mw_com_config.json`](https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/configuration/example/mw_com_config.json); only the `"e2e"` key is new. The concrete schema for that key is still illustrative and a separate, later design/implementation task. The POC ([#1533](https://github.com/eclipse-score/communication/pull/1533)) parses a reduced `"e2e"` object (`profile`, `dataId`, `maxDeltaCounter`) per event at `serviceTypes[].bindings[].events[]`, shared by provider and consumers; moving it to the per-instance model below is a follow-up. Provider and consumer are separate applications, each with its own `mw_com_config.json` ([one file per application](../../impl/configuration/README.md#central-json-file-per-app)), so they are shown as two files.
 
 > **Configuration model.** The E2E deployment model is defined as follows:
 >
 > 1. **E2E configuration is owned entirely by `ServiceInstance`, not `ServiceType`.** Each `serviceInstances[].instances[].events[]` entry — including the provider and every consumer — carries a self-contained `"e2e"` object with the parameters its role needs. There is no shared default at the `serviceTypes[].bindings[].events[]` level for a consumer to inherit or override. This allows each instance to use a different profile or to disable E2E independently of other instances of the same event. The resulting duplication of identical configuration is accepted for the current design; deduplication through inheritance or shared defaults is deferred to a separate follow-up item.
-> 2. **Binding-specific validity is enforced at construction time, not by a shared, all-fields-optional schema.** Parameters that apply only to one binding, such as `offset_bytes` for SOME/IP, are validated during deployment-time config parsing by binding-specific C++ configuration structs. A value that is meaningless for another binding, such as `offset_bytes` in a LoLa configuration, fails during parsing and terminates startup before the affected instance begins running, consistent with the fail-fast validation already used in `impl/configuration/` (see [Per-Consumer Check Enablement](#per-consumer-check-enablement)'s invalid-combination handling).
+> 2. **Binding-specific validity is enforced at construction time, not by a shared, all-fields-optional schema.** Parameters that apply only to one binding, such as `offsetBytes` for SOME/IP, are validated during deployment-time config parsing by binding-specific C++ configuration structs. A value that is meaningless for another binding, such as `offsetBytes` in a LoLa configuration, fails during parsing and terminates startup before the affected instance begins running, consistent with the fail-fast validation already used in `impl/configuration/` (see [Per-Consumer Check Enablement](#per-consumer-check-enablement)'s invalid-combination handling).
 >
 > Within this constraint, the distinction between binding-independent and binding-specific E2E configuration (Historical Health Configuration + check-enablement flags vs. Profile Configuration) remains valid, but it is enforced by the binding-specific C++ struct that parses the JSON, rather than by a nested `binding_independent`/`binding_specific` key inside `"e2e"`.
 
@@ -536,7 +536,7 @@ Provider application (`mw_com_config.json`):
           "events": [
             {
               "eventName": "VehicleSpeed", "numberOfSampleSlots": 20, "maxSubscribers": 4,
-              "e2e": { "profile": "P04", "offset_bytes": 8, "data_id": 4097 }
+              "e2e": { "profile": "P04", "offsetBytes": 8, "dataId": 4097 }
             }
           ]
         }
@@ -577,7 +577,7 @@ Consumer application (`mw_com_config.json`):
           "events": [
             {
               "eventName": "VehicleSpeed",
-              "e2e": { "profile": "P04", "offset_bytes": 8, "data_id": 4097, "max_delta_counter": 5, "window_size": 12, "error_threshold": 5, "recovery_threshold": 10 }
+              "e2e": { "profile": "P04", "offsetBytes": 8, "dataId": 4097, "maxDeltaCounter": 5, "windowSize": 12, "errorThreshold": 5, "recoveryThreshold": 10 }
             }
           ]
         }
@@ -594,10 +594,10 @@ Consumer application (`mw_com_config.json`):
             {
               "eventName": "VehicleSpeed",
               "e2e": {
-                "profile": "P04", "offset_bytes": 8,
-                "data_integrity_check_enabled": false,
-                "sequence_check_enabled": false,
-                "historical_health_tracking_enabled": false
+                "profile": "P04", "offsetBytes": 8,
+                "dataIntegrityCheckEnabled": false,
+                "sequenceCheckEnabled": false,
+                "historicalHealthTrackingEnabled": false
               }
             }
           ]
@@ -609,7 +609,7 @@ Consumer application (`mw_com_config.json`):
 }
 ```
 
-The provider's `"e2e"` object carries only what Protect() needs (`profile`/`offset_bytes`/`data_id`); `max_delta_counter` and the health-tracker keys are check-side and appear only in consumer entries. `BrakeControllerProxy` (ASIL_B) enables checking with its own `max_delta_counter` and health-window tuning (`window_size`, `error_threshold`, `recovery_threshold`), see [Per-Consumer Configuration Overrides](#per-consumer-configuration-overrides). `DiagnosticLoggerProxy` (QM) keeps only `profile` and `offset_bytes`, which SOME/IP needs to locate the payload (see [Profile Resolution Is Mandatory, Even When Checking Is Not](#profile-resolution-is-mandatory-even-when-checking-is-not)), and disables all three check-enablement flags, so it receives `Summary::kDisabled`. The provider and both consumers repeat the same `profile`/`offset_bytes`, illustrating the accepted duplication tradeoff noted above. Both consumer entries use the provider's `instanceId` and are separate `instanceSpecifier`s, since settings are resolved per specifier.
+The provider's `"e2e"` object carries only what Protect() needs (`profile`/`offsetBytes`/`dataId`); `maxDeltaCounter` and the health-tracker keys are check-side and appear only in consumer entries. `BrakeControllerProxy` (ASIL_B) enables checking with its own `maxDeltaCounter` and health-window tuning (`windowSize`, `errorThreshold`, `recoveryThreshold`), see [Per-Consumer Configuration Overrides](#per-consumer-configuration-overrides). `DiagnosticLoggerProxy` (QM) keeps only `profile` and `offsetBytes`, which SOME/IP needs to locate the payload (see [Profile Resolution Is Mandatory, Even When Checking Is Not](#profile-resolution-is-mandatory-even-when-checking-is-not)), and disables all three check-enablement flags, so it receives `Summary::kDisabled`. The provider and both consumers repeat the same `profile`/`offsetBytes`, illustrating the accepted duplication tradeoff noted above. Both consumer entries use the provider's `instanceId` and are separate `instanceSpecifier`s, since settings are resolved per specifier.
 
 > `DiagnosticLoggerProxy` shares the consumer file only to show two consumers with different E2E settings; as a separate QM application it would have its own `mw_com_config.json` with `global.asil-level` `QM`.
 
@@ -623,18 +623,18 @@ The interface shall allow the binding-independent layer to evaluate E2E status *
 
 ### Proposed Contract
 
-The binding owns Protect/Check state and invokes `ProtectMessage()`/`CheckMessage()` directly on the buffer/slot it already owns (see [Sender-Side Protect State](#sender-side-protect-state) and [Receiver-Side Check State](#receiver-side-check-state)). What always crosses the binding/binding-independent boundary is therefore a **plain categorical result pair**, never the check material (the E2E header or the protected-data span) — the binding-independent E2E Supervisor combines that pair with its own historical health tracking to produce the final, user-visible `E2EResult`. The header-stripped payload (`raw_sample`) may accompany the pair, but whether and how it is consumed is the frontend's decision, not the binding's (see below).
+The binding owns Protect/Check state and invokes `ProtectMessage()`/`CheckMessage()` directly on the buffer/slot it already owns (see [Sender-Side Protect State](#sender-side-protect-state) and [Receiver-Side Check State](#receiver-side-check-state)). What always crosses the binding/binding-independent boundary is therefore a **plain categorical result pair** (`RawCheckOutcome`, see [Binding Output](#binding-output)), never the check material (the E2E header or the protected-data span) — the binding-independent E2E Supervisor combines that pair with its own historical health tracking to produce the final, user-visible `E2EResult`. The header-stripped payload (`raw_sample`) travels as the binding-specific sample handle the pair is attached to, but whether and how it is consumed is the frontend's decision, not the binding's (see below).
 
 ```cpp
-// Receive path: binding has already run CheckMessage() on its own buffer before this crosses the boundary
-struct BindingReceivedFrame {
-    std::span<std::byte> raw_sample;      // non-owning view over the wire/slot bytes CheckMessage() examined; empty when the binding's own check reported kError; whether it is consumed is the frontend's decision
-    DataIntegrityStatus  data_integrity;  // already computed by the binding
-    SequenceStatus       sequence;        // already computed by the binding
-};
+// Receive path: binding has already run CheckMessage() on its own buffer before this crosses the boundary.
+// The binding attaches the outcome to the sample handle it creates (impl/proxy_event_binding.h).
+template <typename BindingSamplePtr>
+static SamplePtr<void> ProxyEventBinding::MakeSamplePtr(BindingSamplePtr&& binding_ptr,  // carries raw_sample
+                                                        SampleReferenceGuard reference_guard,
+                                                        const RawCheckOutcome raw_check_outcome = {}) noexcept;
 ```
 
-> **No longer templated on `T`.** [eclipse-score/communication#1079](https://github.com/eclipse-score/communication/pull/1079) (proxy-side type erasure — pending merge at the time of writing; `main` already carries the skeleton-side equivalent via [#897](https://github.com/eclipse-score/communication/pull/897), see [Where the Header Bytes Actually Live](#where-the-header-bytes-actually-live-transmit-path-api-shape)) makes `ProxyEventBinding` a single, non-template, type-erased interface. `BindingReceivedFrame` reflects that here: `raw_sample` is a non-owning `std::span<std::byte>` — the binding hands up exactly the bytes it just ran `CheckMessage()` on, with no dependency on `SampleType`. The actual zero-copy/reference-counted sample handle is constructed separately, by `ProxyEventBinding::MakeSamplePtr()` (also generalized to `SamplePtr<void>` by #1079), and is later rebound to the app-facing `SamplePtr<const SampleType>` by `ProxyEvent<SampleType>` — `BindingReceivedFrame` itself is only a short-lived, boundary-crossing carrier for the raw bytes plus the already-computed check results, not the sample handle itself.
+> **Type-erased binding interface.** Since [#1079](https://github.com/eclipse-score/communication/pull/1079) (proxy side) and [#897](https://github.com/eclipse-score/communication/pull/897) (skeleton side, see [Where the Header Bytes Actually Live](#where-the-header-bytes-actually-live-transmit-path-api-shape)), `ProxyEventBinding`/`SkeletonEventBinding` are single, non-template, type-erased interfaces, so `RawCheckOutcome` has no dependency on `SampleType`. `MakeSamplePtr()` stores it on the `SamplePtr<void>`, which is later rebound to the app-facing `SamplePtr<const SampleType>` by `ProxyEvent<SampleType>`. Bindings or events without E2E leave `raw_check_outcome` at its default, so every field reads `kDisabled`.
 
 **`raw_sample` is not an unconditional output, and its use is the frontend's decision.** `data_integrity`/`sequence` are produced for every checked frame; the payload is only worth handing up when the frontend has use for it, and what it does with it follows from the payload type declared in the service interface, not from anything the binding decides:
 
@@ -656,7 +656,7 @@ There is no transmit-path equivalent struct: the binding computes and writes its
 Application
     │  calls Send(sample)
     ▼
-SkeletonEventBinding                                     <- owns E2EProtectContext
+SkeletonEventBinding                                     <- owns ProtectContext
     │  calls ProtectMessage() in place, on its own buffer/slot
     │  writes Length/Counter/DataID/CRC directly into the reserved header region
     ▼
@@ -671,20 +671,20 @@ Application
     │
 ProxyEvent<SampleType> (binding-independent)              <- rebinds SamplePtr<void> to SamplePtr<const SampleType>
     ▲
-E2E Supervisor (binding-independent)                      <- owns E2EHealthContext on ProxyEventBase
+E2E Supervisor (binding-independent)                      <- ProxyEventBase::AttachE2EResult(); owns HealthTracker
     ▲  combines DataIntegrityStatus + SequenceStatus with tracked health → E2EResult
     │
-ProxyEventBinding::GetNewSamples()                        <- owns E2ECheckContext; parses wire format AND calls CheckMessage()
-    ▲  produces BindingReceivedFrame{ raw_sample (std::span<std::byte>; use is frontend's decision), data_integrity, sequence }
+ProxyEventBinding::GetNewSamples()                        <- owns CheckContext; parses wire format AND calls CheckMessage()
+    ▲  produces SamplePtr<void> via MakeSamplePtr(raw_sample handle, guard, RawCheckOutcome{data_integrity, sequence})
     │
 Wire / Transport
 ```
 
 **Delivery mechanism — result embedded in `SamplePtr<T>`.**
 
-`SamplePtr<T>` itself carries the final result via a getter (`GetE2EResult() const -> E2EResult`), leaving `ProxyEvent<SampleType>::GetNewSamples()`'s existing callback signature — `void F(SamplePtr<const SampleType>) noexcept` (`impl/proxy_event.h`) — completely unchanged. Because the type-erased `SamplePtr<void>` is constructed by the binding (`ProxyEventBinding::MakeSamplePtr()`, `impl/proxy_event_binding.h`) *before* the binding-independent layer has combined the accompanying `DataIntegrityStatus`/`SequenceStatus` pair with its own historical health tracking, the result cannot be baked in at construction time — it is attached afterward via a binding-independent-only mutator (a friend-restricted `SetE2EResult()`), and only later rebound from `SamplePtr<void>` to the app-facing `SamplePtr<const SampleType>` by `ProxyEvent<SampleType>`.
+`SamplePtr<T>` itself carries the final result via a getter (`GetE2EResult() const -> E2EResult`), leaving `ProxyEvent<SampleType>::GetNewSamples()`'s existing callback signature — `void F(SamplePtr<const SampleType>) noexcept` (`impl/proxy_event.h`) — completely unchanged. The type-erased `SamplePtr<void>` is constructed by the binding (`ProxyEventBinding::MakeSamplePtr()`, `impl/proxy_event_binding.h`), which stores the binding's `RawCheckOutcome` (`data_integrity`/`sequence`) at construction. `historical_health` and `summary` are only known after the binding-independent layer has run its own tracking, so they are completed afterward via a binding-independent-only mutator (a friend-restricted `SetE2EResult()`); the binding cannot set them. The sample is only later rebound from `SamplePtr<void>` to the app-facing `SamplePtr<const SampleType>` by `ProxyEvent<SampleType>`.
 
-The attachment point for this already exists as a pattern in the codebase: `ProxyEvent<SampleType>::GetNewSamples()` already wraps the binding's per-sample callback once, for tracing (`tracing::CreateTracingGetNewSamplesCallback()`, `impl/proxy_event.h`), before forwarding to the application's `receiver`. The E2E Supervisor adds one more such wrapping stage — intercept each `SamplePtr<T>` as it comes out of the binding, run its historical health tracking on the accompanying `DataIntegrityStatus`/`SequenceStatus` pair, call `SetE2EResult()` on that same `SamplePtr`, then forward it unchanged to the application's original callback. This reuses an established interception point rather than introducing a new one.
+The attachment point for this already exists as a pattern in the codebase: `ProxyEvent<SampleType>::GetNewSamples()` already wraps the binding's per-sample callback once, for tracing (`tracing::CreateTracingGetNewSamplesCallback()`, `impl/proxy_event.h`), before forwarding to the application's `receiver`. The E2E Supervisor adds one more such wrapping stage, `ProxyEventBase::AttachE2EResult()` — intercept each `SamplePtr<T>` as it comes out of the binding, run its historical health tracking on the `DataIntegrityStatus`/`SequenceStatus` pair it carries, complete the result via `SetE2EResult()` on that same `SamplePtr`, then forward it unchanged to the application's original callback. `ProxyEvent<SampleType>` and `GenericProxyEvent` both call it, and `ProxyField` gets it through its internal `ProxyEvent`. In the POC, historical health tracking is not wired in yet, so `historical_health` stays `kDisabled`. This reuses an established interception point rather than introducing a new one.
 
 See [API Shape Options](#api-shape-options) for the full trade-off discussion behind this delivery shape.
 
@@ -721,13 +721,17 @@ class SamplePtr final
 {
   public:
     // ... existing members unchanged ...
-    E2EResult GetE2EResult() const { return e2e_result_; }
+    // The binding's RawCheckOutcome is stored at construction (via ProxyEventBinding::MakeSamplePtr())
+    template <typename BindingSamplePtrType>
+    SamplePtr(BindingSamplePtrType&& binding_sample_ptr,
+              SampleReferenceGuard reference_guard,
+              const RawCheckOutcome raw_check_outcome = {});
+    [[nodiscard]] E2EResult GetE2EResult() const { return e2e_result_; }
 
   private:
-    friend class ProxyEventBase;  // only the binding-independent E2E Manager may set this
+    friend class ProxyEventBase;  // only the binding-independent E2E Manager may complete this
     void SetE2EResult(E2EResult result) { e2e_result_ = result; }
-    E2EResult e2e_result_ = E2EResult{DataIntegrityStatus::kDisabled, SequenceStatus::kDisabled,
-                                       HistoricalHealthStatus::kDisabled, Summary::kDisabled};
+    E2EResult e2e_result_{};  // all fields default to kDisabled
 };
 ```
 
@@ -767,7 +771,7 @@ Verify:
 - CRC verification
 - Header parsing
 - Transport-specific offsets
-- `E2EProtectContext` reset on service (re-)offer; `E2ECheckContext` reset on user-initiated (re)subscription and kept across provider-side restart/re-offer (see [E2E Context Lifecycle](#e2e-context-lifecycle))
+- `ProtectContext` reset on service (re-)offer; `CheckContext` reset on user-initiated (re)subscription and kept across provider-side restart/re-offer (see [E2E Context Lifecycle](#e2e-context-lifecycle))
 - `CheckMessage()` invoked only when `GetNewSamples()` actually delivers a new sample — no synthesized empty-cycle result is produced (see [Historical Health Tracking](#historical-health-tracking))
 - For a SOME/IP event configured with the "no deserialization" marker, `raw_sample` carries the header-stripped payload bytes directly, `ISerializer::Deserialize()` is never invoked, and `data_integrity`/`sequence` are populated identically to the auto-decoding case (see [Proposed Contract](#proposed-contract))
 
@@ -802,7 +806,7 @@ Verify:
 - Interaction between binding and historical health tracking
 - Correct user-visible result generation
 - Cross-binding consistency (LoLa vs. SOME/IP)
-- Repeated provider restart/re-offer with automatic proxy reconnect: `E2ECheckContext`/`E2EHealthContext` are kept, the counter discontinuity is reported through `SequenceStatus`, and `historical_health` reaches `kError` once `ErrorThreshold` failures are in the window
+- Repeated provider restart/re-offer with automatic proxy reconnect: `CheckContext`/`HealthTracker` are kept, the counter discontinuity is reported through `SequenceStatus`, and `historical_health` reaches `kError` once `ErrorThreshold` failures are in the window
 
 ---
 
@@ -842,8 +846,8 @@ The chosen allocation follows the `mw::com` layering principles:
 | E2E header injection (transmit)      | ✔             |                           |
 | E2E header extraction (receive)      | ✔             |                           |
 | CRC computation (`ProtectMessage`)   | ✔ (calls shared profile-algorithm library) |            |
-| Counter increment / protect state    | ✔ (owns `E2EProtectContext`) |               |
-| CRC / counter verification (`CheckMessage`) | ✔ (owns `E2ECheckContext`) |         |
+| Counter increment / protect state    | ✔ (owns `ProtectContext`) |               |
+| CRC / counter verification (`CheckMessage`) | ✔ (owns `CheckContext`) |         |
 | Raw per-message result (`DataIntegrityStatus`/`SequenceStatus`) | ✔ (produced by `CheckMessage`) | consumed by historical health tracking |
 | Payload hand-off (`raw_sample`, header-stripped) | ✔ (strips transport/E2E headers, optionally hands up payload bytes; empty on `DataIntegrityStatus::kError`) | ✔ frontend decides whether to use it, deserialize it, or pass it through raw |
 | Health-tracker config (window size, error/recovery thresholds) |               | ✔                         |

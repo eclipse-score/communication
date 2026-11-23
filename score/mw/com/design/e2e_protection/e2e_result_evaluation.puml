@@ -34,8 +34,8 @@ endif
 
 if (DataIntegrityCheckEnabled\nAND data_integrity == kError?) then (yes)
     :sequence:
-    kDisabled
-    (check skipped, no new enum value);
+    kSkipped
+    (not a failure on its own);
     note right #Yellow
         Bypass: the counter of a corrupted
         sample is not trustworthy, so the
