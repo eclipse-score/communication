@@ -44,14 +44,14 @@ package someip <<SEooC>> {
   }
 
   component RoutingModule <<component>> {
-    component EventHandler <<unit>>
+    component NotificationHandler <<unit>>
     component RoutingManager <<unit>>
     component IoSockTransport <<unit>>
     component LolaMapping <<unit>>
 
     interface RoutingCommands
 
-    EventHandler -u- RoutingCommands
+    NotificationHandler -u- RoutingCommands
     RoutingManager --( RoutingCommands
     RoutingManager --( routing_control_protocol
   }

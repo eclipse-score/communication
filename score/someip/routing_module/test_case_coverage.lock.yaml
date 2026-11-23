@@ -23,7 +23,12 @@ requirements:
   version: '1'
   description: The routing module shall install a receive path for a valid remote
     service supplied by the controller.
-  test_cases: []
+  test_cases:
+  - uid: //score/someip/routing_module/NotificationHandlerTest:OffersARemoteServiceAsLolaServiceInstance
+    given: a remote service instance whose LoLa service instance is configured
+    when: the controller adds the remote service
+    then: its local UDP port is opened and someip/<service>/<instance> is offered
+      in LoLa with one LoLa event per SOME/IP event
 - id: RoutingModule.CR_RoutingModule_ConcatenatedMessages
   version: '1'
   description: The routing module shall process complete concatenated SOME/IP notifications
@@ -115,6 +120,12 @@ requirements:
   description: The routing module shall remove its complete routing state when the
     controller disconnects.
   test_cases:
+  - uid: //score/someip/routing_module/NotificationHandlerTest:StopsTheLolaOfferOfRemovedRemoteServices
+    given: two remote service instances offered in LoLa
+    when: the controller removes one of them, adds it again, and then all routing
+      state is removed
+    then: the removed instance is not offered in LoLa until it is added again, and
+      removing all routing state stops both LoLa offers
   - uid: //score/someip/routing_module/RoutingManagerMessagePassingTest:AppliesCommandsReceivedOverMessagePassing
     given: a started routing manager and an SD daemon client using score::message_passing
     when: the client sends two routing commands, the commands are processed, and the
@@ -187,6 +198,17 @@ requirements:
   description: The routing module shall reject invalid routing commands without changing
     routing state.
   test_cases:
+  - uid: //score/someip/routing_module/NotificationHandlerTest:AcceptsLocalSubscriptionsOnlyForEventsOfLolaOfferedServices
+    given: a remote service instance offered in LoLa
+    when: local subscriptions are added twice, removed, and added for an unknown event,
+      an unknown instance and after the remote service is removed
+    then: repeated additions and the removal are applied, the other subscriptions
+      are rejected
+  - uid: //score/someip/routing_module/NotificationHandlerTest:RejectsInvalidRemoteServices
+    given: remote services with UDP port 0, without a configured LoLa service instance,
+      or whose local UDP port cannot be opened
+    when: the controller adds them
+    then: each command is rejected and no LoLa service instance is offered
   - uid: //score/someip/routing_module/RoutingManagerTest:DiscardsInvalidCommandAndKeepsTheConnection
     given: a connected SD daemon
     when: it sends a malformed routing command followed by a valid one
@@ -236,10 +258,16 @@ requirements:
     io-sock module.
   test_cases: []
 - id: RoutingModule.CR_RoutingModule_LocalSubscriptions
-  version: '1'
+  version: '2'
   description: The routing module shall publish a received event notification to LoLa
     only while a local subscription for that event is active.
-  test_cases: []
+  test_cases:
+  - uid: //score/someip/routing_module/NotificationHandlerTest:AcceptsLocalSubscriptionsOnlyForEventsOfLolaOfferedServices
+    given: a remote service instance offered in LoLa
+    when: local subscriptions are added twice, removed, and added for an unknown event,
+      an unknown instance and after the remote service is removed
+    then: repeated additions and the removal are applied, the other subscriptions
+      are rejected
 - id: RoutingModule.CR_RoutingModule_LolaMapping
   version: '1'
   description: The routing module shall map notifications to configured LoLa service-instance
@@ -254,6 +282,11 @@ requirements:
     given: SOME/IP service, instance and event IDs
     when: their LoLa instance specifier and event name are formed
     then: the IDs appear as four-digit lowercase hexadecimal numbers
+  - uid: //score/someip/routing_module/NotificationHandlerTest:OffersARemoteServiceAsLolaServiceInstance
+    given: a remote service instance whose LoLa service instance is configured
+    when: the controller adds the remote service
+    then: its local UDP port is opened and someip/<service>/<instance> is offered
+      in LoLa with one LoLa event per SOME/IP event
 - id: RoutingModule.CR_RoutingModule_NoServiceDiscoveryPayload
   version: '1'
   description: The routing module shall exclude SOME/IP-SD messages from its notification
@@ -332,7 +365,13 @@ requirements:
   version: '1'
   description: The routing module shall stop RX delivery from a remote service when
     the controller removes it.
-  test_cases: []
+  test_cases:
+  - uid: //score/someip/routing_module/NotificationHandlerTest:StopsTheLolaOfferOfRemovedRemoteServices
+    given: two remote service instances offered in LoLa
+    when: the controller removes one of them, adds it again, and then all routing
+      state is removed
+    then: the removed instance is not offered in LoLa until it is added again, and
+      removing all routing state stops both LoLa offers
 - id: RoutingModule.CR_RoutingModule_SingleController
   version: '1'
   description: The routing module shall accept at most one controller connection at
@@ -351,7 +390,13 @@ requirements:
   version: '1'
   description: The routing module shall treat repeated additions of an existing subscription
     as idempotent.
-  test_cases: []
+  test_cases:
+  - uid: //score/someip/routing_module/NotificationHandlerTest:AcceptsLocalSubscriptionsOnlyForEventsOfLolaOfferedServices
+    given: a remote service instance offered in LoLa
+    when: local subscriptions are added twice, removed, and added for an unknown event,
+      an unknown instance and after the remote service is removed
+    then: repeated additions and the removal are applied, the other subscriptions
+      are rejected
 - id: RoutingModule.CR_RoutingModule_TransmitAttachment
   version: '1'
   description: The routing module shall attach LoLa payload storage to network packets
@@ -379,7 +424,13 @@ requirements:
     UDP.
   test_cases: []
 - id: RoutingModule.CR_RoutingModule_UniqueReceiveRoute
-  version: '1'
+  version: '2'
   description: The routing module shall reject a routing command that would let one
     received notification match more than one local service instance.
-  test_cases: []
+  test_cases:
+  - uid: //score/someip/routing_module/NotificationHandlerTest:RejectsRemoteServicesWhoseUdpRouteIsUsedByAnotherInstance
+    given: an offered remote service instance received on a local UDP port from a
+      remote endpoint
+    when: another instance of the service is added for the same local UDP port and
+      remote endpoint, and then for another local UDP port
+    then: the first addition is rejected without a LoLa offer, the second one is applied

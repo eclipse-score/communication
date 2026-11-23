@@ -10,10 +10,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_SOMEIP_ROUTING_MODULE_EVENT_HANDLER_SOMEIP_DATAGRAM_PARSER_H
-#define SCORE_SOMEIP_ROUTING_MODULE_EVENT_HANDLER_SOMEIP_DATAGRAM_PARSER_H
+#ifndef SCORE_SOMEIP_ROUTING_MODULE_NOTIFICATION_HANDLER_SOMEIP_DATAGRAM_PARSER_H
+#define SCORE_SOMEIP_ROUTING_MODULE_NOTIFICATION_HANDLER_SOMEIP_DATAGRAM_PARSER_H
 
-#include "score/someip/routing_module/event_handler/someip_message_header_parser.h"
+#include "score/someip/routing_module/notification_handler/someip_message_header_parser.h"
 
 #include <score/expected.hpp>
 #include <score/span.hpp>
@@ -78,4 +78,4 @@ class SomeipDatagramParser final
 
 }  // namespace score::someip::routing_module
 
-#endif  // SCORE_SOMEIP_ROUTING_MODULE_EVENT_HANDLER_SOMEIP_DATAGRAM_PARSER_H
+#endif  // SCORE_SOMEIP_ROUTING_MODULE_NOTIFICATION_HANDLER_SOMEIP_DATAGRAM_PARSER_H

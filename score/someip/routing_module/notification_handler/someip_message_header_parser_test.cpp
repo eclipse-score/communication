@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/someip/routing_module/event_handler/someip_message_header_parser.h"
-#include "score/someip/routing_module/event_handler/someip_datagram_parser.h"
+#include "score/someip/routing_module/notification_handler/someip_message_header_parser.h"
+#include "score/someip/routing_module/notification_handler/someip_datagram_parser.h"
 
 #include <gtest/gtest.h>
 

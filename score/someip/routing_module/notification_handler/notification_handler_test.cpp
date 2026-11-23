@@ -1,0 +1,278 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+#include "score/someip/routing_module/notification_handler/notification_handler.h"
+
+#include "score/someip/routing_module/iosock_transport/iosock_transport.h"
+#include "score/someip/routing_module/lola_mapping/lola_mapping.h"
+
+#include "score/filesystem/path.h"
+#include "score/mw/com/runtime.h"
+#include "score/mw/com/types.h"
+
+#include <gtest/gtest.h>
+
+#include <unistd.h>
+
+#include <cerrno>
+#include <cstdint>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <string>
+#include <vector>
+
+namespace
+{
+
+struct FakeUdpTransport
+{
+    std::vector<unsigned short> opened_ports;
+    int open_error{0};
+};
+
+FakeUdpTransport& UdpTransport()
+{
+    static FakeUdpTransport transport{};
+    return transport;
+}
+
+}  // namespace
+
+/// Test double of the io-sock module.
+extern "C" int someip_iosock_open_udp_socket(const unsigned short port)
+{
+    if (UdpTransport().open_error != 0)
+    {
+        return UdpTransport().open_error;
+    }
+    UdpTransport().opened_ports.push_back(port);
+    return 0;
+}
+
+namespace score::someip::routing_module
+{
+namespace
+{
+
+constexpr std::uint16_t kConfiguredInstance{0x0001U};
+constexpr std::uint16_t kOtherConfiguredInstance{0x0002U};
+constexpr std::uint16_t kUnconfiguredInstance{0x0003U};
+constexpr std::uint16_t kEvent{0x8001U};
+constexpr std::uint16_t kOtherEvent{0x8002U};
+constexpr std::uint16_t kUdpLocalPort{30501U};
+constexpr std::uint16_t kUdpRemotePort{30502U};
+
+/// LoLa's shared memory and discovery paths are global, so concurrent runs of this test use distinct services.
+std::uint16_t Service()
+{
+    static const auto service = static_cast<std::uint16_t>(0x4000U | (static_cast<unsigned int>(::getpid()) & 0x3FFFU));
+    return service;
+}
+
+std::string LolaServiceInstanceJson(const std::uint16_t instance)
+{
+    return R"({"instanceSpecifier": ")" + LolaInstanceSpecifier(Service(), instance) +
+           R"(", "serviceTypeName": "/someip/service", "version": {"major": 1, "minor": 0}, "instances": [{"instanceId": )" +
+           std::to_string(instance) +
+           R"(, "asil-level": "QM", "binding": "SHM", "events": [)"
+           R"({"eventName": ")" +
+           LolaEventName(kEvent) +
+           R"(", "numberOfSampleSlots": 4, "maxSubscribers": 2}, )"
+           R"({"eventName": ")" +
+           LolaEventName(kOtherEvent) + R"(", "numberOfSampleSlots": 4, "maxSubscribers": 2}]}]})";
+}
+
+std::string WriteLolaConfig()
+{
+    const char* const test_tmpdir = std::getenv("TEST_TMPDIR");
+    const std::filesystem::path directory =
+        (test_tmpdir != nullptr) ? std::filesystem::path{test_tmpdir} : std::filesystem::temp_directory_path();
+    const std::filesystem::path path =
+        directory / ("notification_handler_test_" + std::to_string(::getpid()) + ".json");
+    std::ofstream{path}
+        << R"({"serviceTypes": [{"serviceTypeName": "/someip/service", "version": {"major": 1, "minor": 0}, )"
+           R"("bindings": [{"binding": "SHM", "serviceId": )"
+        << Service() << R"(, "events": [{"eventName": ")" << LolaEventName(kEvent)
+        << R"(", "eventId": 1}, {"eventName": ")" << LolaEventName(kOtherEvent) << R"(", "eventId": 2}]}]}], )"
+        << R"("serviceInstances": [)" << LolaServiceInstanceJson(kConfiguredInstance) << ", "
+        << LolaServiceInstanceJson(kOtherConfiguredInstance) << "]}";
+    return path.string();
+}
+
+routing_control_protocol::Message RemoteService(const std::uint16_t instance,
+                                                const std::uint16_t udp_local_port = kUdpLocalPort,
+                                                const std::uint16_t udp_remote_port = kUdpRemotePort)
+{
+    routing_control_protocol::Message message{};
+    message.opcode = routing_control_protocol::Opcode::kAddRemoteService;
+    message.service = Service();
+    message.instance = instance;
+    message.local_port = udp_local_port;
+    message.remote_port = udp_remote_port;
+    message.remote_ip = routing_control_protocol::Ipv4Address{10U, 0U, 3U, 2U};
+    message.events.push_back(kEvent);
+    message.events.push_back(kOtherEvent);
+    return message;
+}
+
+ServiceInstance Instance(const std::uint16_t instance)
+{
+    return ServiceInstance{Service(), instance};
+}
+
+/// Number of LoLa offers of the service instance that a LoLa consumer finds.
+std::size_t FindLolaOffers(const std::uint16_t instance)
+{
+    auto specifier = score::mw::com::InstanceSpecifier::Create(LolaInstanceSpecifier(Service(), instance));
+    if (!specifier.has_value())
+    {
+        return 0U;
+    }
+    const auto handles = score::mw::com::GenericProxy::FindService(specifier.value());
+    return handles.has_value() ? handles.value().size() : 0U;
+}
+
+void Trace(const char* const requirements, const char* const given, const char* const when, const char* const then)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", requirements);
+    ::testing::Test::RecordProperty("given", given);
+    ::testing::Test::RecordProperty("when", when);
+    ::testing::Test::RecordProperty("then", then);
+}
+
+class NotificationHandlerTest : public ::testing::Test
+{
+  protected:
+    static void SetUpTestSuite()
+    {
+        static const bool initialized = []() {
+            score::mw::com::runtime::InitializeRuntime(
+                score::mw::com::runtime::RuntimeConfiguration{score::filesystem::Path{WriteLolaConfig()}});
+            return true;
+        }();
+        static_cast<void>(initialized);
+    }
+
+    void SetUp() override
+    {
+        UdpTransport() = FakeUdpTransport{};
+    }
+
+    NotificationHandler handler_{};
+};
+
+TEST_F(NotificationHandlerTest, OffersARemoteServiceAsLolaServiceInstance)
+{
+    Trace("RoutingModule.CR_RoutingModule_AddRemoteService,RoutingModule.CR_RoutingModule_LolaMapping",
+          "a remote service instance whose LoLa service instance is configured",
+          "the controller adds the remote service",
+          "its local UDP port is opened and someip/<service>/<instance> is offered in LoLa with one LoLa event per "
+          "SOME/IP event");
+
+    ASSERT_EQ(handler_.AddRemoteService(RemoteService(kConfiguredInstance)), CommandResult::kApplied);
+
+    EXPECT_EQ(UdpTransport().opened_ports, (std::vector<unsigned short>{kUdpLocalPort}));
+    auto specifier = score::mw::com::InstanceSpecifier::Create(LolaInstanceSpecifier(Service(), kConfiguredInstance));
+    ASSERT_TRUE(specifier.has_value());
+    const auto handles = score::mw::com::GenericProxy::FindService(specifier.value());
+    ASSERT_TRUE(handles.has_value());
+    ASSERT_EQ(handles.value().size(), 1U);
+    auto lola_proxy = score::mw::com::GenericProxy::Create(handles.value().front());
+    ASSERT_TRUE(lola_proxy.has_value());
+    EXPECT_NE(lola_proxy.value().GetEvents().find(LolaEventName(kEvent)), lola_proxy.value().GetEvents().cend());
+    EXPECT_NE(lola_proxy.value().GetEvents().find(LolaEventName(kOtherEvent)), lola_proxy.value().GetEvents().cend());
+}
+
+TEST_F(NotificationHandlerTest, RejectsRemoteServicesWhoseUdpRouteIsUsedByAnotherInstance)
+{
+    Trace("RoutingModule.CR_RoutingModule_UniqueReceiveRoute",
+          "an offered remote service instance received on a local UDP port from a remote endpoint",
+          "another instance of the service is added for the same local UDP port and remote endpoint, and then for "
+          "another local UDP port",
+          "the first addition is rejected without a LoLa offer, the second one is applied");
+    ASSERT_EQ(handler_.AddRemoteService(RemoteService(kConfiguredInstance)), CommandResult::kApplied);
+
+    EXPECT_EQ(handler_.AddRemoteService(RemoteService(kOtherConfiguredInstance)), CommandResult::kRejected);
+    EXPECT_EQ(FindLolaOffers(kOtherConfiguredInstance), 0U);
+
+    EXPECT_EQ(handler_.AddRemoteService(RemoteService(kOtherConfiguredInstance, kUdpLocalPort + 1U)),
+              CommandResult::kApplied);
+    EXPECT_EQ(FindLolaOffers(kOtherConfiguredInstance), 1U);
+    EXPECT_EQ(handler_.AddRemoteService(RemoteService(kConfiguredInstance)), CommandResult::kApplied);
+}
+
+TEST_F(NotificationHandlerTest, StopsTheLolaOfferOfRemovedRemoteServices)
+{
+    Trace("RoutingModule.CR_RoutingModule_RemoveRemoteService,RoutingModule.CR_RoutingModule_ControllerLoss",
+          "two remote service instances offered in LoLa",
+          "the controller removes one of them, adds it again, and then all routing state is removed",
+          "the removed instance is not offered in LoLa until it is added again, and removing all routing state stops "
+          "both LoLa offers");
+    ASSERT_EQ(handler_.AddRemoteService(RemoteService(kConfiguredInstance)), CommandResult::kApplied);
+    ASSERT_EQ(handler_.AddRemoteService(RemoteService(kOtherConfiguredInstance, kUdpLocalPort + 1U)),
+              CommandResult::kApplied);
+
+    EXPECT_EQ(handler_.RemoveRemoteService(Instance(kConfiguredInstance)), CommandResult::kApplied);
+    EXPECT_EQ(FindLolaOffers(kConfiguredInstance), 0U);
+    EXPECT_EQ(FindLolaOffers(kOtherConfiguredInstance), 1U);
+
+    EXPECT_EQ(handler_.AddRemoteService(RemoteService(kConfiguredInstance)), CommandResult::kApplied);
+    EXPECT_EQ(FindLolaOffers(kConfiguredInstance), 1U);
+
+    handler_.RemoveAll();
+    EXPECT_EQ(FindLolaOffers(kConfiguredInstance), 0U);
+    EXPECT_EQ(FindLolaOffers(kOtherConfiguredInstance), 0U);
+}
+
+TEST_F(NotificationHandlerTest, RejectsInvalidRemoteServices)
+{
+    Trace("RoutingModule.CR_RoutingModule_InvalidControl",
+          "remote services with UDP port 0, without a configured LoLa service instance, or whose local UDP port "
+          "cannot be opened",
+          "the controller adds them",
+          "each command is rejected and no LoLa service instance is offered");
+
+    EXPECT_EQ(handler_.AddRemoteService(RemoteService(kConfiguredInstance, 0U)), CommandResult::kRejected);
+    EXPECT_EQ(handler_.AddRemoteService(RemoteService(kConfiguredInstance, kUdpLocalPort, 0U)),
+              CommandResult::kRejected);
+    EXPECT_EQ(handler_.AddRemoteService(RemoteService(kUnconfiguredInstance)), CommandResult::kRejected);
+    UdpTransport().open_error = EADDRINUSE;
+    EXPECT_EQ(handler_.AddRemoteService(RemoteService(kConfiguredInstance)), CommandResult::kRejected);
+
+    EXPECT_EQ(FindLolaOffers(kConfiguredInstance), 0U);
+    EXPECT_EQ(handler_.RemoveRemoteService(Instance(kConfiguredInstance)), CommandResult::kRejected);
+}
+
+TEST_F(NotificationHandlerTest, AcceptsLocalSubscriptionsOnlyForEventsOfLolaOfferedServices)
+{
+    Trace(
+        "RoutingModule.CR_RoutingModule_LocalSubscriptions,RoutingModule.CR_RoutingModule_SubscriptionRenewal,"
+        "RoutingModule.CR_RoutingModule_InvalidControl",
+        "a remote service instance offered in LoLa",
+        "local subscriptions are added twice, removed, and added for an unknown event, an unknown instance and "
+        "after the remote service is removed",
+        "repeated additions and the removal are applied, the other subscriptions are rejected");
+    ASSERT_EQ(handler_.AddRemoteService(RemoteService(kConfiguredInstance)), CommandResult::kApplied);
+
+    EXPECT_EQ(handler_.AddLocalSubscription(Instance(kConfiguredInstance), kEvent), CommandResult::kApplied);
+    EXPECT_EQ(handler_.AddLocalSubscription(Instance(kConfiguredInstance), kEvent), CommandResult::kApplied);
+    EXPECT_EQ(handler_.RemoveLocalSubscription(Instance(kConfiguredInstance), kEvent), CommandResult::kApplied);
+    EXPECT_EQ(handler_.AddLocalSubscription(Instance(kConfiguredInstance), 0x8003U), CommandResult::kRejected);
+    EXPECT_EQ(handler_.AddLocalSubscription(Instance(kOtherConfiguredInstance), kEvent), CommandResult::kRejected);
+
+    ASSERT_EQ(handler_.RemoveRemoteService(Instance(kConfiguredInstance)), CommandResult::kApplied);
+    EXPECT_EQ(handler_.AddLocalSubscription(Instance(kConfiguredInstance), kEvent), CommandResult::kRejected);
+}
+
+}  // namespace
+}  // namespace score::someip::routing_module
