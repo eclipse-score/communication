@@ -4,7 +4,7 @@ local_path_override(
     path = "..",
 )
 
-bazel_dep(name = "rules_cc", version = "0.2.25")
+bazel_dep(name = "rules_cc", version = "0.2.26")
 bazel_dep(name = "score_baselibs", version = "0.2.19")
 single_version_override(
     module_name = "score_baselibs",
