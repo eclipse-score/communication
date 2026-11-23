@@ -17,6 +17,7 @@
 #include "score/message_passing/qnx_dispatch/qnx_resource_path.h"
 
 #include <iostream>
+#include <tuple>
 
 #include <sys/siginfo.h>
 
@@ -335,7 +336,7 @@ void QnxDispatchEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noex
         }
         // LCOV_EXCL_STOP
 
-        poll_endpoints_.push_back(PollEndpoint{&endpoint, 0U});
+        poll_endpoints_.push_back(PollEndpoint{&endpoint, 0U, {}});
         // now at poll_endpoints_[index]
     }
     const auto nonce = poll_endpoints_[index].nonce;
@@ -346,8 +347,10 @@ void QnxDispatchEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noex
     select_msg.hdr.mgrid = kIomgrStickySelect;
     select_msg.hdr.subtype = 0U;
 
-    for (auto [signal, event_ptr] : {std::make_pair(kSignalNewData, &select_msg.select_event),
-                                     std::make_pair(kSignalPing, &select_msg.ping_event)})
+    auto& registered_events = poll_endpoints_[index].registered_events;
+    for (auto [signal, event_ptr, registered] :
+         {std::make_tuple(kSignalNewData, &select_msg.select_event, &registered_events[0U]),
+          std::make_tuple(kSignalPing, &select_msg.ping_event, &registered_events[1U])})
     {
         SelectPulseValue value{};
         value.index = static_cast<std::uint32_t>(index);
@@ -368,6 +371,8 @@ void QnxDispatchEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noex
                      " MsgRegisterEvent error ",
                      register_expected.error().ToString());
         }
+        registered->event = *event_ptr;
+        registered->is_registered = register_expected.has_value();
     }
 
     // NOLINTBEGIN(score-banned-function) implementing FFI wrapper
@@ -402,23 +407,25 @@ void QnxDispatchEngine::UnselectEndpoint(PosixEndpointEntry& endpoint) noexcept
         });
     if (found != poll_endpoints_.end())  // LCOV_EXCL_BR_LINE for unrealisting condition of insertion failure
     {
-        const std::size_t index = static_cast<std::size_t>(std::distance(poll_endpoints_.begin(), found));
-        const auto nonce = found->nonce;
         found->endpoint = nullptr;
 
-        sigevent event{};
-        for (auto signal : {kSignalNewData, kSignalPing})
+        for (auto& registered : found->registered_events)
         {
-            SelectPulseValue value{};
-            value.index = static_cast<std::uint32_t>(index);
-            value.signal = signal;
-            value.nonce = nonce;
-            const uintptr_t pulse_value = PackSelectPulseValue(value);
-
-            std::int32_t side_channel_coid = client_runner_.GetSideChannelCoid();
-            SIGEV_PULSE_INIT(&event, side_channel_coid, SIGEV_PULSE_PRIO_INHERIT, kSelectPulseCode, pulse_value);
+            if (!registered.is_registered)
+            {
+                continue;
+            }
+            registered.is_registered = false;
             // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
-            score::cpp::ignore = os_resources_.channel->MsgUnregisterEvent(&event);
+            const auto unregister_expected = os_resources_.channel->MsgUnregisterEvent(&registered.event);
+            if (!unregister_expected.has_value())
+            {
+                LogError(logger_,
+                         "QnxDispatchEngine::UnselectEndpoint ",
+                         this,
+                         " MsgUnregisterEvent error ",
+                         unregister_expected.error().ToString());
+            }
         }
     }
 

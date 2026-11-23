@@ -14,6 +14,9 @@
 
 #include "score/message_passing/resource_manager_fixture_base.h"
 
+#include <array>
+#include <vector>
+
 namespace score::message_passing
 {
 namespace
@@ -424,6 +427,54 @@ TEST_F(QnxDispatchEngineTestFixture, PosixEndpoint)
     done.get_future().wait();
 }
 
+TEST_F(QnxDispatchEngineTestFixture, PosixEndpointUnregistersEventsReturnedByRegistration)
+{
+    WithEngineRunning();
+
+    // like the QNX kernel, MsgRegisterEvent() turns the sigevent into a handle in place;
+    // MsgUnregisterEvent() only accepts that handle, not a sigevent rebuilt from the original values
+    constexpr std::array<unsigned, 2U> kEventHandles{0x11U, 0x22U};
+    std::size_t registered_count{0U};
+    std::vector<sigevent> unregistered_events{};
+    EXPECT_CALL(*channel_, MsgRegisterEvent)
+        .Times(2)
+        .WillRepeatedly([&kEventHandles, &registered_count](sigevent* const ev, auto) {
+            ev->sigev_notify |= SIGEV_FLAG_HANDLE;
+            ev->sigev_handle = kEventHandles.at(registered_count++);
+            return score::cpp::expected_blank<score::os::Error>{};
+        });
+    EXPECT_CALL(*channel_, MsgSend).Times(1);
+    EXPECT_CALL(*channel_, MsgUnregisterEvent).Times(2).WillRepeatedly([&unregistered_events](sigevent* const ev) {
+        unregistered_events.push_back(*ev);
+        return score::cpp::expected_blank<score::os::Error>{};
+    });
+
+    // use the engine-provided way to run the code on the requirered thread
+    ISharedResourceEngine::CommandQueueEntry command;
+    std::promise<void> done;
+    engine_->EnqueueCommand(
+        command,
+        ISharedResourceEngine::TimePoint{},
+        [this, &done](auto) noexcept {
+            ISharedResourceEngine::PosixEndpointEntry posix_endpoint{};
+            posix_endpoint.fd = kTestCoid;
+            posix_endpoint.disconnect = [&done]() {
+                done.set_value();
+            };
+            engine_->RegisterPosixEndpoint(posix_endpoint);
+            engine_->UnregisterPosixEndpoint(posix_endpoint);
+        },
+        this);
+    done.get_future().wait();
+
+    ASSERT_EQ(unregistered_events.size(), kEventHandles.size());
+    for (std::size_t i = 0U; i < kEventHandles.size(); ++i)
+    {
+        EXPECT_NE(unregistered_events[i].sigev_notify & SIGEV_FLAG_HANDLE, 0);
+        EXPECT_EQ(unregistered_events[i].sigev_handle, kEventHandles[i]);
+    }
+}
+
 TEST_F(QnxDispatchEngineTestFixture, PosixEndpointEventFailures)
 {
     std::int32_t register_error_counter{0};
@@ -449,7 +500,8 @@ TEST_F(QnxDispatchEngineTestFixture, PosixEndpointEventFailures)
 
     EXPECT_CALL(*channel_, MsgRegisterEvent).Times(2).WillRepeatedly(Return(kFakeOsError));
     EXPECT_CALL(*channel_, MsgSend).Times(1).WillOnce(Return(kFakeOsError));
-    EXPECT_CALL(*channel_, MsgUnregisterEvent).Times(2);
+    // events that failed to register are not unregistered
+    EXPECT_CALL(*channel_, MsgUnregisterEvent).Times(0);
 
     // use the engine-provided way to run the code on the requirered thread
     ISharedResourceEngine::CommandQueueEntry command;
@@ -471,6 +523,48 @@ TEST_F(QnxDispatchEngineTestFixture, PosixEndpointEventFailures)
 
     EXPECT_EQ(register_error_counter, 2);
     EXPECT_EQ(send_error_counter, 1);
+}
+
+TEST_F(QnxDispatchEngineTestFixture, PosixEndpointUnregisterEventFailures)
+{
+    std::int32_t unregister_error_counter{0};
+    LoggingCallback logger = [&unregister_error_counter](LogSeverity severity, LogItems items) -> void {
+        if ((severity == LogSeverity::kError) && (items.size() > 2U) &&
+            std::holds_alternative<std::string_view>(items[2]))
+        {
+            const auto& desc = std::get<std::string_view>(items[2]);
+            if (desc.find("MsgUnregisterEvent") != desc.npos)
+            {
+                ++unregister_error_counter;
+            }
+        }
+    };
+
+    WithEngineRunning(std::move(logger));
+
+    EXPECT_CALL(*channel_, MsgRegisterEvent).Times(2);
+    EXPECT_CALL(*channel_, MsgSend).Times(1);
+    EXPECT_CALL(*channel_, MsgUnregisterEvent).Times(2).WillRepeatedly(Return(kFakeOsError));
+
+    // use the engine-provided way to run the code on the requirered thread
+    ISharedResourceEngine::CommandQueueEntry command;
+    std::promise<void> done;
+    engine_->EnqueueCommand(
+        command,
+        ISharedResourceEngine::TimePoint{},
+        [this, &done](auto) noexcept {
+            ISharedResourceEngine::PosixEndpointEntry posix_endpoint{};
+            posix_endpoint.fd = kTestCoid;
+            posix_endpoint.disconnect = [&done]() {
+                done.set_value();
+            };
+            engine_->RegisterPosixEndpoint(posix_endpoint);
+            engine_->UnregisterPosixEndpoint(posix_endpoint);
+        },
+        this);
+    done.get_future().wait();
+
+    EXPECT_EQ(unregister_error_counter, 2);
 }
 
 TEST_F(QnxDispatchEngineTestFixture, PosixEndpointCoidDeathPulse)

@@ -17,6 +17,7 @@
 #include <score/memory.hpp>
 #include <score/span.hpp>
 #include <score/vector.hpp>
+#include <array>
 
 #include "score/message_passing/i_shared_resource_engine.h"
 #include "score/message_passing/qnx_dispatch/dispatch_thread_runner.h"
@@ -327,10 +328,18 @@ class QnxDispatchEngine final : public ISharedResourceEngine
 
     std::condition_variable cleanup_ready_condition_;
 
+    struct RegisteredEvent
+    {
+        // event as returned by MsgRegisterEvent(); MsgUnregisterEvent() needs this exact (handle-carrying) copy
+        sigevent event;
+        bool is_registered;
+    };
+
     struct PollEndpoint
     {
         PosixEndpointEntry* endpoint;
         std::uint16_t nonce;  // incremented each time the endpoint slot is reused, to filter out stale events
+        std::array<RegisteredEvent, 2U> registered_events;  // "new data" and "ping" events
     };
 
     score::cpp::pmr::vector<PollEndpoint> poll_endpoints_;
