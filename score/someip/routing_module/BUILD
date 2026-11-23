@@ -18,6 +18,7 @@ component(
     components = [
         "//score/someip/routing_module/event_handler:event_handler",
         "//score/someip/routing_module/iosock_transport:iosock_transport",
+        "//score/someip/routing_module/lola_mapping:lola_mapping_unit",
         "//score/someip/routing_module/routing_manager:routing_manager_unit",
     ],
     design_name = "RoutingModule",
