@@ -64,10 +64,10 @@ void AppendMessage(std::vector<std::uint8_t>& datagram, const Header& header, co
 class SegmentedPacketReader final
 {
   public:
-        explicit SegmentedPacketReader(const std::vector<std::uint8_t>& bytes,
-                                                                     const std::size_t segment_size = 5U,
-                                                                     const bool fail_reads = false) noexcept
-                : bytes_{bytes}, segment_size_{segment_size}, fail_reads_{fail_reads}
+    explicit SegmentedPacketReader(const std::vector<std::uint8_t>& bytes,
+                                   const std::size_t segment_size = 5U,
+                                   const bool fail_reads = false) noexcept
+        : bytes_{bytes}, segment_size_{segment_size}, fail_reads_{fail_reads}
     {
     }
 
@@ -88,7 +88,8 @@ class SegmentedPacketReader final
             const std::size_t absolute_offset = offset + copied;
             const std::size_t bytes_until_segment_end = segment_size_ - (absolute_offset % segment_size_);
             const std::size_t copy_size = std::min(destination.size() - copied, bytes_until_segment_end);
-            std::copy_n(bytes_.cbegin() + static_cast<std::ptrdiff_t>(absolute_offset), copy_size,
+            std::copy_n(bytes_.cbegin() + static_cast<std::ptrdiff_t>(absolute_offset),
+                        copy_size,
                         destination.begin() + static_cast<std::ptrdiff_t>(copied));
             copied += copy_size;
         }
@@ -227,16 +228,16 @@ TEST(SomeipDatagramParserTest, ParsesConcatenatedNotifications)
     Trace("RoutingModule.CR_RoutingModule_ConcatenatedMessages",
           "a UDP datagram with two concatenated notifications and different payload sizes",
           "the datagram is iterated",
-            "both notification headers and payload offsets are returned in order, then iteration ends");
+          "both notification headers and payload offsets are returned in order, then iteration ends");
     std::vector<std::uint8_t> datagram{};
     AppendMessage(datagram, MakeHeader(10U), {0xAAU, 0xBBU});
     AppendMessage(datagram, MakeHeader(kSomeipMinimumLength), {});
-        SegmentedPacketReader packet{datagram};
+    SegmentedPacketReader packet{datagram};
     SomeipDatagramParser parser{};
 
-    const auto first = parser.NextNotification(packet);
-    const auto second = parser.NextNotification(packet);
-    const auto end = parser.NextNotification(packet);
+    const auto first = parser.NextMessage(packet);
+    const auto second = parser.NextMessage(packet);
+    const auto end = parser.NextMessage(packet);
 
     ASSERT_TRUE(first.has_value());
     ASSERT_TRUE(first->has_value());
@@ -255,24 +256,30 @@ TEST(SomeipDatagramParserTest, ParsesConcatenatedNotifications)
     EXPECT_FALSE(end->has_value());
 }
 
-TEST(SomeipDatagramParserTest, SkipsNonNotificationMessages)
+TEST(SomeipDatagramParserTest, ReturnsNonNotificationMessagesForFilteringByTheCaller)
 {
     Trace("RoutingModule.CR_RoutingModule_NotificationOnly",
           "a UDP datagram with a response followed by a notification",
-          "the datagram is iterated for notifications",
-          "the response is skipped and only the notification is returned");
+          "the datagram is iterated",
+          "the response and the notification are returned in order with their message types, then iteration ends");
+    constexpr std::uint8_t kResponseMessageType{0x80U};
     std::vector<std::uint8_t> datagram{};
-    AppendMessage(datagram, MakeHeader(kSomeipMinimumLength, kSomeipProtocolVersion, 0x80U), {});
+    AppendMessage(datagram, MakeHeader(kSomeipMinimumLength, kSomeipProtocolVersion, kResponseMessageType), {});
     AppendMessage(datagram, MakeHeader(kSomeipMinimumLength), {});
-        SegmentedPacketReader packet{datagram};
+    SegmentedPacketReader packet{datagram};
     SomeipDatagramParser parser{};
 
-    const auto notification = parser.NextNotification(packet);
+    const auto response = parser.NextMessage(packet);
+    const auto notification = parser.NextMessage(packet);
 
+    ASSERT_TRUE(response.has_value());
+    ASSERT_TRUE(response->has_value());
+    EXPECT_EQ(response->value().header.message_type, kResponseMessageType);
     ASSERT_TRUE(notification.has_value());
     ASSERT_TRUE(notification->has_value());
     EXPECT_EQ(notification->value().header.message_type, kSomeipNotificationMessageType);
-    EXPECT_FALSE(parser.NextNotification(packet).value().has_value());
+    EXPECT_EQ(notification->value().payload_offset, kSomeipHeaderSize * 2U);
+    EXPECT_FALSE(parser.NextMessage(packet).value().has_value());
 }
 
 TEST(SomeipDatagramParserTest, RejectsTruncatedDataAfterCompleteMessages)
@@ -284,11 +291,11 @@ TEST(SomeipDatagramParserTest, RejectsTruncatedDataAfterCompleteMessages)
     std::vector<std::uint8_t> datagram{};
     AppendMessage(datagram, MakeHeader(kSomeipMinimumLength), {});
     datagram.insert(datagram.end(), {0x12U, 0x34U, 0x00U, 0x01U, 0x00U});
-        SegmentedPacketReader packet{datagram};
+    SegmentedPacketReader packet{datagram};
     SomeipDatagramParser parser{};
 
-    const auto notification = parser.NextNotification(packet);
-    const auto malformed = parser.NextNotification(packet);
+    const auto notification = parser.NextMessage(packet);
+    const auto malformed = parser.NextMessage(packet);
 
     ASSERT_TRUE(notification.has_value());
     ASSERT_TRUE(notification->has_value());
@@ -303,13 +310,13 @@ TEST(SomeipDatagramParserTest, ReportsPacketReadFailure)
           "the datagram is iterated",
           "iteration fails with a packet-read error");
     const std::vector<std::uint8_t> datagram(kSomeipHeaderSize, 0U);
-        SegmentedPacketReader packet{datagram, 5U, true};
+    SegmentedPacketReader packet{datagram, 5U, true};
     SomeipDatagramParser parser{};
 
-    const auto notification = parser.NextNotification(packet);
+    const auto message = parser.NextMessage(packet);
 
-    ASSERT_FALSE(notification.has_value());
-    EXPECT_EQ(notification.error(), SomeipHeaderParseError::kPacketReadFailed);
+    ASSERT_FALSE(message.has_value());
+    EXPECT_EQ(message.error(), SomeipHeaderParseError::kPacketReadFailed);
 }
 
 }  // namespace

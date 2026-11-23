@@ -23,11 +23,14 @@
 
 #include <unistd.h>
 
+#include <algorithm>
 #include <cerrno>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -38,6 +41,7 @@ struct FakeUdpTransport
 {
     std::vector<unsigned short> opened_ports;
     int open_error{0};
+    std::size_t packet_copies{0U};
 };
 
 FakeUdpTransport& UdpTransport()
@@ -48,7 +52,7 @@ FakeUdpTransport& UdpTransport()
 
 }  // namespace
 
-/// Test double of the io-sock module.
+/// Test doubles of the io-sock module; a received packet is a std::vector<std::uint8_t> here.
 extern "C" int someip_iosock_open_udp_socket(const unsigned short port)
 {
     if (UdpTransport().open_error != 0)
@@ -57,6 +61,16 @@ extern "C" int someip_iosock_open_udp_socket(const unsigned short port)
     }
     UdpTransport().opened_ports.push_back(port);
     return 0;
+}
+
+extern "C" void someip_iosock_copy_packet(const void* const packet,
+                                          const unsigned int offset,
+                                          const unsigned int size,
+                                          void* const destination)
+{
+    ++UdpTransport().packet_copies;
+    const auto& bytes = *static_cast<const std::vector<std::uint8_t>*>(packet);
+    std::copy_n(bytes.cbegin() + static_cast<std::ptrdiff_t>(offset), size, static_cast<std::uint8_t*>(destination));
 }
 
 namespace score::someip::routing_module
@@ -69,8 +83,11 @@ constexpr std::uint16_t kOtherConfiguredInstance{0x0002U};
 constexpr std::uint16_t kUnconfiguredInstance{0x0003U};
 constexpr std::uint16_t kEvent{0x8001U};
 constexpr std::uint16_t kOtherEvent{0x8002U};
+constexpr std::uint16_t kUnknownEvent{0x8003U};
 constexpr std::uint16_t kUdpLocalPort{30501U};
 constexpr std::uint16_t kUdpRemotePort{30502U};
+constexpr std::size_t kLolaSampleSlots{4U};
+const Endpoint kUdpSender{routing_control_protocol::Ipv4Address{10U, 0U, 3U, 2U}, kUdpRemotePort};
 
 /// LoLa's shared memory and discovery paths are global, so concurrent runs of this test use distinct services.
 std::uint16_t Service()
@@ -128,6 +145,121 @@ routing_control_protocol::Message RemoteService(const std::uint16_t instance,
 ServiceInstance Instance(const std::uint16_t instance)
 {
     return ServiceInstance{Service(), instance};
+}
+
+struct Notification
+{
+    std::uint16_t service;
+    std::uint16_t event;
+    std::vector<std::uint8_t> payload;
+    std::uint16_t session{0x1234U};
+    std::uint8_t interface_version{0x03U};
+    std::uint8_t message_type{0x02U};
+};
+
+/// Appends a SOME/IP message as received from the network to a UDP datagram.
+void Append(std::vector<std::uint8_t>& datagram, const Notification& notification)
+{
+    const auto length = static_cast<std::uint32_t>(notification.payload.size() + 8U);
+    const std::vector<std::uint8_t> header{static_cast<std::uint8_t>(notification.service >> 8U),
+                                           static_cast<std::uint8_t>(notification.service),
+                                           static_cast<std::uint8_t>(notification.event >> 8U),
+                                           static_cast<std::uint8_t>(notification.event),
+                                           static_cast<std::uint8_t>(length >> 24U),
+                                           static_cast<std::uint8_t>(length >> 16U),
+                                           static_cast<std::uint8_t>(length >> 8U),
+                                           static_cast<std::uint8_t>(length),
+                                           0x00U,
+                                           0x00U,
+                                           static_cast<std::uint8_t>(notification.session >> 8U),
+                                           static_cast<std::uint8_t>(notification.session),
+                                           0x01U,
+                                           notification.interface_version,
+                                           notification.message_type,
+                                           0x00U};
+    datagram.insert(datagram.end(), header.cbegin(), header.cend());
+    datagram.insert(datagram.end(), notification.payload.cbegin(), notification.payload.cend());
+}
+
+std::vector<std::uint8_t> Datagram(const Notification& notification)
+{
+    std::vector<std::uint8_t> datagram{};
+    Append(datagram, notification);
+    return datagram;
+}
+
+std::vector<std::uint8_t> Payload(const std::size_t size, const std::uint8_t first = 0x10U)
+{
+    std::vector<std::uint8_t> payload(size);
+    for (std::size_t index = 0U; index < size; ++index)
+    {
+        payload.at(index) = static_cast<std::uint8_t>(first + index);
+    }
+    return payload;
+}
+
+IoSockPacketReader Reader(const std::vector<std::uint8_t>& datagram)
+{
+    return IoSockPacketReader{&datagram, static_cast<unsigned int>(datagram.size())};
+}
+
+/// LoLa consumer of one event of a remote service instance; keeps received samples until they are released.
+class LolaSubscriber
+{
+  public:
+    LolaSubscriber(const std::uint16_t instance, const std::uint16_t event)
+    {
+        auto specifier = score::mw::com::InstanceSpecifier::Create(LolaInstanceSpecifier(Service(), instance));
+        EXPECT_TRUE(specifier.has_value());
+        auto handles = score::mw::com::GenericProxy::FindService(specifier.value());
+        EXPECT_TRUE(handles.has_value() && (handles.value().size() == 1U));
+        auto proxy = score::mw::com::GenericProxy::Create(handles.value().front());
+        EXPECT_TRUE(proxy.has_value());
+        lola_proxy_.emplace(std::move(proxy).value());
+        lola_event_ = &lola_proxy_->GetEvents().find(LolaEventName(event))->second;
+        EXPECT_TRUE(lola_event_->Subscribe(kLolaSampleSlots).has_value());
+    }
+
+    // GenericProxy does not unsubscribe its events on destruction; LoLa aborts if they are still subscribed.
+    ~LolaSubscriber()
+    {
+        held_samples_.clear();
+        lola_event_->Unsubscribe();
+    }
+
+    LolaSubscriber(const LolaSubscriber&) = delete;
+    LolaSubscriber& operator=(const LolaSubscriber&) = delete;
+    LolaSubscriber(LolaSubscriber&&) = delete;
+    LolaSubscriber& operator=(LolaSubscriber&&) = delete;
+
+    /// Takes the samples received since the previous call, oldest first.
+    std::vector<EventSample> Receive()
+    {
+        std::vector<EventSample> received{};
+        static_cast<void>(lola_event_->GetNewSamples(
+            [this, &received](score::mw::com::SamplePtr<void> sample) noexcept {
+                received.push_back(*static_cast<const EventSample*>(sample.Get()));
+                held_samples_.push_back(std::move(sample));
+            },
+            kLolaSampleSlots));
+        return received;
+    }
+
+    void ReleaseSamples()
+    {
+        held_samples_.clear();
+    }
+
+  private:
+    std::optional<score::mw::com::GenericProxy> lola_proxy_{};
+    score::mw::com::GenericProxyEvent* lola_event_{nullptr};
+    std::vector<score::mw::com::SamplePtr<void>> held_samples_{};
+};
+
+std::vector<std::uint8_t> PayloadOf(const EventSample& sample)
+{
+    return std::vector<std::uint8_t>(sample.payload.cbegin(),
+                                     sample.payload.cbegin() + static_cast<std::ptrdiff_t>(sample.size));
 }
 
 /// Number of LoLa offers of the service instance that a LoLa consumer finds.
@@ -272,6 +404,155 @@ TEST_F(NotificationHandlerTest, AcceptsLocalSubscriptionsOnlyForEventsOfLolaOffe
 
     ASSERT_EQ(handler_.RemoveRemoteService(Instance(kConfiguredInstance)), CommandResult::kApplied);
     EXPECT_EQ(handler_.AddLocalSubscription(Instance(kConfiguredInstance), kEvent), CommandResult::kRejected);
+}
+
+class NotificationHandlerReceiveTest : public NotificationHandlerTest
+{
+  protected:
+    void SetUp() override
+    {
+        NotificationHandlerTest::SetUp();
+        ASSERT_EQ(handler_.AddRemoteService(RemoteService(kConfiguredInstance)), CommandResult::kApplied);
+        ASSERT_EQ(handler_.AddLocalSubscription(Instance(kConfiguredInstance), kEvent), CommandResult::kApplied);
+        subscriber_.emplace(kConfiguredInstance, kEvent);
+    }
+
+    void TearDown() override
+    {
+        subscriber_.reset();
+    }
+
+    std::optional<LolaSubscriber> subscriber_{};
+};
+
+TEST_F(NotificationHandlerReceiveTest, ForwardsTheNotificationMetadataAndPayloadIntoLola)
+{
+    Trace(
+        "RoutingModule.CR_RoutingModule_ReceiveMetadata,RoutingModule.CR_RoutingModule_PayloadPreservation,"
+        "RoutingModule.CR_RoutingModule_DirectReceiveCopy,RoutingModule.CR_RoutingModule_LolaMapping",
+        "a locally subscribed SOME/IP event of a remote service offered in LoLa",
+        "a UDP datagram with a notification of the event is received",
+        "a LoLa sample carries payload length, session ID, interface version, message type and the unchanged "
+        "payload, copied once from the received packet");
+    const std::vector<std::uint8_t> datagram = Datagram(Notification{Service(), kEvent, Payload(5U), 0x0042U, 0x07U});
+
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(datagram));
+
+    const auto samples = subscriber_->Receive();
+    ASSERT_EQ(samples.size(), 1U);
+    EXPECT_EQ(samples.front().size, 5U);
+    EXPECT_EQ(samples.front().session, 0x0042U);
+    EXPECT_EQ(samples.front().interface_version, 0x07U);
+    EXPECT_EQ(samples.front().message_type, 0x02U);
+    EXPECT_EQ(PayloadOf(samples.front()), Payload(5U));
+    // One header copy by the parser and one payload copy into the LoLa sample.
+    EXPECT_EQ(UdpTransport().packet_copies, 2U);
+}
+
+TEST_F(NotificationHandlerReceiveTest, ForwardsConcatenatedEmptyAndMaximumSizeNotifications)
+{
+    Trace(
+        "RoutingModule.CR_RoutingModule_ConcatenatedMessages,RoutingModule.CR_RoutingModule_EmptyPayload,"
+        "RoutingModule.CR_RoutingModule_PayloadCapacity,RoutingModule.CR_RoutingModule_NotificationOnly",
+        "a locally subscribed SOME/IP event of a remote service offered in LoLa",
+        "a UDP datagram with an empty notification, a response, a 1400-byte notification and a 3-byte notification "
+        "is received",
+        "the three notifications are forwarded into LoLa in order and the response is skipped");
+    std::vector<std::uint8_t> datagram{};
+    Append(datagram, Notification{Service(), kEvent, {}});
+    Append(datagram, Notification{Service(), kEvent, Payload(4U), 0x1234U, 0x03U, 0x80U});
+    Append(datagram, Notification{Service(), kEvent, Payload(kMaxPayloadSize)});
+    Append(datagram, Notification{Service(), kEvent, Payload(3U, 0xA0U)});
+
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(datagram));
+
+    const auto samples = subscriber_->Receive();
+    ASSERT_EQ(samples.size(), 3U);
+    EXPECT_EQ(samples.at(0U).size, 0U);
+    EXPECT_EQ(PayloadOf(samples.at(1U)), Payload(kMaxPayloadSize));
+    EXPECT_EQ(PayloadOf(samples.at(2U)), Payload(3U, 0xA0U));
+}
+
+TEST_F(NotificationHandlerReceiveTest, ForwardsOnlyNotificationsMatchingAnActiveReceivePathAndLocalSubscription)
+{
+    Trace(
+        "RoutingModule.CR_RoutingModule_ReceiveRouteMatch,RoutingModule.CR_RoutingModule_LocalSubscriptions,"
+        "RoutingModule.CR_RoutingModule_RemoveRemoteService",
+        "a locally subscribed SOME/IP event of a remote service offered in LoLa",
+        "notifications arrive on another local UDP port, from another IPv4 address or UDP port, for another service, "
+        "for an event the remote service does not have or a not subscribed event, after the local subscription is "
+        "removed, and after the remote service is removed",
+        "none of them is forwarded into LoLa, while a matching notification is");
+    const auto datagram = Datagram(Notification{Service(), kEvent, Payload(2U)});
+    const Endpoint other_address{routing_control_protocol::Ipv4Address{10U, 0U, 3U, 9U}, kUdpRemotePort};
+    const Endpoint other_port{kUdpSender.address, static_cast<std::uint16_t>(kUdpRemotePort + 1U)};
+
+    handler_.OnUdpDatagram(kUdpLocalPort + 1U, kUdpSender, Reader(datagram));
+    handler_.OnUdpDatagram(kUdpLocalPort, other_address, Reader(datagram));
+    handler_.OnUdpDatagram(kUdpLocalPort, other_port, Reader(datagram));
+    handler_.OnUdpDatagram(kUdpLocalPort,
+                           kUdpSender,
+                           Reader(Datagram(Notification{static_cast<std::uint16_t>(Service() + 1U), kEvent, {}})));
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(Datagram(Notification{Service(), kOtherEvent, {}})));
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(Datagram(Notification{Service(), kUnknownEvent, {}})));
+    EXPECT_TRUE(subscriber_->Receive().empty());
+
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(datagram));
+    EXPECT_EQ(subscriber_->Receive().size(), 1U);
+
+    ASSERT_EQ(handler_.RemoveLocalSubscription(Instance(kConfiguredInstance), kEvent), CommandResult::kApplied);
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(datagram));
+    EXPECT_TRUE(subscriber_->Receive().empty());
+
+    ASSERT_EQ(handler_.AddLocalSubscription(Instance(kConfiguredInstance), kEvent), CommandResult::kApplied);
+    ASSERT_EQ(handler_.RemoveRemoteService(Instance(kConfiguredInstance)), CommandResult::kApplied);
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(datagram));
+    EXPECT_TRUE(subscriber_->Receive().empty());
+}
+
+TEST_F(NotificationHandlerReceiveTest, DropsOversizedPayloadsAndTheRestOfMalformedDatagrams)
+{
+    Trace("RoutingModule.CR_RoutingModule_OversizedPayload,RoutingModule.CR_RoutingModule_InvalidFraming",
+          "a locally subscribed SOME/IP event of a remote service offered in LoLa",
+          "a datagram with a 1401-byte notification followed by a valid one, and a datagram with a valid notification "
+          "followed by a truncated SOME/IP header are received",
+          "the oversized notification and the truncated rest are dropped, the valid notifications are forwarded");
+    std::vector<std::uint8_t> oversized{};
+    Append(oversized, Notification{Service(), kEvent, Payload(kMaxPayloadSize + 1U)});
+    Append(oversized, Notification{Service(), kEvent, Payload(1U)});
+    std::vector<std::uint8_t> malformed = Datagram(Notification{Service(), kEvent, Payload(2U)});
+    malformed.insert(malformed.end(), {0x12U, 0x34U, 0x80U});
+
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(oversized));
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(malformed));
+
+    const auto samples = subscriber_->Receive();
+    ASSERT_EQ(samples.size(), 2U);
+    EXPECT_EQ(samples.at(0U).size, 1U);
+    EXPECT_EQ(samples.at(1U).size, 2U);
+}
+
+TEST_F(NotificationHandlerReceiveTest, DropsNotificationsWhileNoLolaSampleSlotIsFree)
+{
+    Trace("RoutingModule.CR_RoutingModule_ReceiveSlotExhaustion",
+          "a LoLa consumer that holds all sample slots of a locally subscribed event",
+          "another notification of the event is received, then the consumer releases its samples and one more "
+          "notification is received",
+          "the notification without free slot is dropped and the one after the release is forwarded");
+    for (std::uint8_t index = 0U; index < kLolaSampleSlots; ++index)
+    {
+        handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(Datagram(Notification{Service(), kEvent, {index}})));
+    }
+    ASSERT_EQ(subscriber_->Receive().size(), kLolaSampleSlots);
+
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(Datagram(Notification{Service(), kEvent, {0xEEU}})));
+    EXPECT_TRUE(subscriber_->Receive().empty());
+
+    subscriber_->ReleaseSamples();
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(Datagram(Notification{Service(), kEvent, {0xFFU}})));
+    const auto samples = subscriber_->Receive();
+    ASSERT_EQ(samples.size(), 1U);
+    EXPECT_EQ(PayloadOf(samples.front()), (std::vector<std::uint8_t>{0xFFU}));
 }
 
 }  // namespace

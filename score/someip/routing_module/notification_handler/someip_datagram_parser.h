@@ -25,52 +25,47 @@
 namespace score::someip::routing_module
 {
 
-struct SomeipNotificationFrame
+struct SomeipMessageFrame
 {
     SomeipMessageHeader header;
     std::size_t payload_offset;
 };
 
-/// Iterates over notifications, copying only each fixed-size header and leaving payload bytes in the packet.
+/// Iterates over the SOME/IP messages of a datagram, copying only each fixed-size header and leaving payload bytes in
+/// the packet.
 class SomeipDatagramParser final
 {
   public:
     SomeipDatagramParser() noexcept;
 
-  template <typename PacketReader>
-  [[nodiscard]] score::cpp::expected<std::optional<SomeipNotificationFrame>, SomeipHeaderParseError> NextNotification(
-    const PacketReader& datagram) noexcept
-  {
-    const std::size_t datagram_size = datagram.Size();
-    while (offset_ < datagram_size)
+    template <typename PacketReader>
+    [[nodiscard]] score::cpp::expected<std::optional<SomeipMessageFrame>, SomeipHeaderParseError> NextMessage(
+        const PacketReader& datagram) noexcept
     {
-      const std::size_t remaining = datagram_size - offset_;
-      if (remaining < kSomeipHeaderSize)
-      {
-        return score::cpp::make_unexpected(SomeipHeaderParseError::kInvalidHeaderSize);
-      }
-      std::array<std::uint8_t, kSomeipHeaderSize> header_bytes{};
-            if (!datagram.Copy(offset_, header_bytes))
-      {
-        return score::cpp::make_unexpected(SomeipHeaderParseError::kPacketReadFailed);
-      }
-      const auto parsed_header = SomeipMessageHeaderParser::Parse(header_bytes, remaining);
-      if (!parsed_header.has_value())
-      {
-        return score::cpp::make_unexpected(parsed_header.error());
-      }
-      const std::size_t message_offset = offset_;
-      const SomeipMessageHeader header = parsed_header.value();
-      offset_ += header.message_size;
-      if (header.message_type != kSomeipNotificationMessageType)
-      {
-        continue;
-      }
-      return std::optional<SomeipNotificationFrame>{
-        SomeipNotificationFrame{header, message_offset + kSomeipHeaderSize}};
+        const std::size_t datagram_size = datagram.Size();
+        if (offset_ >= datagram_size)
+        {
+            return std::optional<SomeipMessageFrame>{};
+        }
+        const std::size_t remaining = datagram_size - offset_;
+        if (remaining < kSomeipHeaderSize)
+        {
+            return score::cpp::make_unexpected(SomeipHeaderParseError::kInvalidHeaderSize);
+        }
+        std::array<std::uint8_t, kSomeipHeaderSize> header_bytes{};
+        if (!datagram.Copy(offset_, header_bytes))
+        {
+            return score::cpp::make_unexpected(SomeipHeaderParseError::kPacketReadFailed);
+        }
+        const auto parsed_header = SomeipMessageHeaderParser::Parse(header_bytes, remaining);
+        if (!parsed_header.has_value())
+        {
+            return score::cpp::make_unexpected(parsed_header.error());
+        }
+        const std::size_t payload_offset = offset_ + kSomeipHeaderSize;
+        offset_ += parsed_header.value().message_size;
+        return std::optional<SomeipMessageFrame>{SomeipMessageFrame{parsed_header.value(), payload_offset}};
     }
-    return std::optional<SomeipNotificationFrame>{};
-  }
 
   private:
     std::size_t offset_{0U};

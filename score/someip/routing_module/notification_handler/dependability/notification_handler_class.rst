@@ -35,6 +35,18 @@ its LoLa service instance; it is active while the LoLa service instance is offer
 - ``AddLocalSubscription()`` and ``RemoveLocalSubscription()`` switch the forwarding of one SOME/IP event of an active
   receive path; repeating them changes nothing. Subscriptions of unknown instances or events are rejected.
 
+``OnUdpDatagram()`` parses a received UDP datagram with ``SomeipDatagramParser`` and forwards each notification whose
+service ID, local UDP port and sender endpoint match an active receive path and whose event is locally subscribed:
+
+- It allocates a sample of the LoLa event, sets payload length, session ID, interface version and message type, and
+  copies the payload from the io-sock packet directly into the sample. This is the only payload copy of the receive
+  path.
+- Every dropped message is logged. A non-notification message, a missing receive path and an unknown or not locally
+  subscribed event are logged as warning. A payload larger than ``kMaxPayloadSize``, no free LoLa sample slot and a
+  failed payload copy or LoLa send are logged as error; they only happen in a misconfigured or faulty system, e.g. with
+  too few LoLa sample slots.
+- A malformed message stops parsing; the rest of the datagram is dropped and a warning is logged.
+
 Destroying an offered LoLa skeleton does not stop its LoLa offer, so ``NotificationHandler`` stops all LoLa offers on
 destruction.
 

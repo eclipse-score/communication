@@ -25,7 +25,7 @@ namespace score::someip::routing_module
 constexpr std::size_t kSomeipHeaderSize{16U};
 constexpr std::uint8_t kSomeipProtocolVersion{1U};
 constexpr std::uint8_t kSomeipNotificationMessageType{0x02U};
-constexpr std::uint32_t kSomeipMinimumLength{8U}; // header part included in 'length' field of the message
+constexpr std::uint32_t kSomeipMinimumLength{8U};  // header part included in 'length' field of the message
 
 enum class SomeipHeaderParseError : std::uint8_t
 {

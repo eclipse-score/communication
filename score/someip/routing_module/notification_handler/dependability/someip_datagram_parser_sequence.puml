@@ -13,45 +13,54 @@
 
 @startuml someip_datagram_parser_sequence
 
-participant RXCaller as Caller
+participant IoSockModule
+participant NotificationHandler
 participant SomeipDatagramParser as DatagramParser
-participant PacketReader
+participant IoSockPacketReader as PacketReader
 participant SomeipMessageHeaderParser as HeaderParser
-participant IoSockModuleC
-participant LolaSlot
+participant GenericSkeletonEvent as LolaEvent
 
-Caller -> DatagramParser : NextNotification(packet_reader)
-activate DatagramParser
-loop while datagram bytes remain
+IoSockModule -> NotificationHandler : OnUdpDatagram(udp_local_port, udp_sender, datagram)
+activate NotificationHandler
+loop until the datagram is exhausted or malformed
+    NotificationHandler -> DatagramParser : NextMessage(datagram)
+    activate DatagramParser
     DatagramParser -> PacketReader : Size()
-    alt fewer than 16 bytes remain
-        DatagramParser --> Caller : kInvalidHeaderSize
+    alt no bytes remain
+        DatagramParser --> NotificationHandler : empty optional
+    else fewer than 16 bytes remain
+        DatagramParser --> NotificationHandler : kInvalidHeaderSize
     else complete header remains
         DatagramParser -> PacketReader : Copy(offset, 16-byte stack header)
-        PacketReader -> IoSockModuleC : someip_event_copy_packet(packet, offset, 16, header)
-        IoSockModuleC --> PacketReader : m_copydata completes
+        PacketReader -> IoSockModule : someip_iosock_copy_packet(packet, offset, 16, header)
+        IoSockModule --> PacketReader : m_copydata completes
         alt packet read fails
-            DatagramParser --> Caller : kPacketReadFailed
+            DatagramParser --> NotificationHandler : kPacketReadFailed
         else header copied to stack storage
             DatagramParser -> HeaderParser : Parse(header, bytes remaining)
             HeaderParser --> DatagramParser : parsed header or parse error
-            alt malformed header
-                DatagramParser --> Caller : parse error
-            else non-notification message
-                note right of DatagramParser : advance by message size and continue
-            else notification
-                DatagramParser --> Caller : header metadata and payload offset
-            end
+            DatagramParser --> NotificationHandler : header metadata and payload offset, or parse error
+        end
+    end
+    deactivate DatagramParser
+
+    alt not a notification, no active receive path, unknown or not locally subscribed event
+        note right of NotificationHandler : drop, log warning
+    else payload larger than kMaxPayloadSize
+        note right of NotificationHandler : drop, log error
+    else locally subscribed notification fits into the LoLa sample
+        NotificationHandler -> LolaEvent : Allocate()
+        alt no free LoLa sample slot
+            note right of NotificationHandler : drop, log error
+        else EventSample slot allocated
+            NotificationHandler -> PacketReader : Copy(payload offset, EventSample payload)
+            PacketReader -> IoSockModule : someip_iosock_copy_packet(packet, offset, size, payload)
+            IoSockModule --> PacketReader : m_copydata completes
+            NotificationHandler -> LolaEvent : Send(EventSample)
+            note right of NotificationHandler : a failed copy or send drops, log error
         end
     end
 end
-deactivate DatagramParser
-
-opt notification accepted by routing
-    Caller -> PacketReader : Copy(payload offset, LoLa slot span)
-    PacketReader -> IoSockModuleC : someip_event_copy_packet(packet, offset, size, slot)
-    IoSockModuleC --> PacketReader : m_copydata completes
-    PacketReader --> Caller : copy result
-end
+deactivate NotificationHandler
 
 @enduml

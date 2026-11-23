@@ -41,8 +41,10 @@ cc_library(
     hdrs = ["notification_handler.h"],
     visibility = ["//score/someip/routing_module:__subpackages__"],
     deps = [
+        ":someip_message_header_parser",
         "//score/mw/com",
         "//score/someip/routing_control_protocol",
+        "//score/someip/routing_module/iosock_transport:iosock_packet_reader",
         "//score/someip/routing_module/iosock_transport:iosock_transport_api",
         "//score/someip/routing_module/lola_mapping",
         "//score/someip/routing_module/routing_manager:i_routing_command_handler",
@@ -57,6 +59,7 @@ cc_unit_test(
     deps = [
         ":notification_handler",
         "//score/mw/com",
+        "//score/someip/routing_module/iosock_transport:iosock_packet_reader",
         "//score/someip/routing_module/iosock_transport:iosock_transport_api",
         "//score/someip/routing_module/lola_mapping",
         "@score_baselibs//score/filesystem",

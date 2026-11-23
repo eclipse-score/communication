@@ -13,6 +13,8 @@
 #ifndef SCORE_SOMEIP_ROUTING_MODULE_NOTIFICATION_HANDLER_NOTIFICATION_HANDLER_H
 #define SCORE_SOMEIP_ROUTING_MODULE_NOTIFICATION_HANDLER_NOTIFICATION_HANDLER_H
 
+#include "score/someip/routing_module/iosock_transport/iosock_packet_reader.h"
+#include "score/someip/routing_module/notification_handler/someip_datagram_parser.h"
 #include "score/someip/routing_module/routing_manager/i_routing_command_handler.h"
 
 #include "score/mw/com/types.h"
@@ -52,6 +54,11 @@ class NotificationHandler final : public IRoutingCommandHandler
                                            Endpoint subscriber) noexcept override;
     void RemoveAll() noexcept override;
 
+    /// Forwards the locally subscribed notifications of a UDP datagram received on udp_local_port into LoLa.
+    void OnUdpDatagram(std::uint16_t udp_local_port,
+                       const Endpoint& udp_sender,
+                       const IoSockPacketReader& datagram) noexcept;
+
   private:
     /// A SOME/IP event of a remote service and the LoLa event its notifications are forwarded to.
     struct RemoteEvent
@@ -72,14 +79,22 @@ class NotificationHandler final : public IRoutingCommandHandler
     };
 
     using SomeipServiceInstance = std::pair<std::uint16_t, std::uint16_t>;
+    using RemoteServices = std::map<SomeipServiceInstance, RemoteService>;
 
     static std::optional<RemoteService> CreateLolaSkeleton(const routing_control_protocol::Message& command) noexcept;
-    bool UdpRouteUsedByOtherInstance(const routing_control_protocol::Message& command) const noexcept;
+    bool UdpRouteUsedByOtherInstance(const routing_control_protocol::Message& command) noexcept;
+    RemoteServices::iterator FindReceivePath(std::uint16_t someip_service,
+                                             std::uint16_t udp_local_port,
+                                             const Endpoint& udp_sender) noexcept;
     RemoteEvent* FindLolaOfferedEvent(ServiceInstance service_instance, std::uint16_t event) noexcept;
+    void ForwardToLola(std::uint16_t udp_local_port,
+                       const Endpoint& udp_sender,
+                       const SomeipMessageFrame& notification,
+                       const IoSockPacketReader& datagram) noexcept;
     static void StopReceivePath(RemoteService& remote_service) noexcept;
     void StopAllReceivePaths() noexcept;
 
-    std::map<SomeipServiceInstance, RemoteService> remote_services_;
+    RemoteServices remote_services_;
 };
 
 }  // namespace score::someip::routing_module

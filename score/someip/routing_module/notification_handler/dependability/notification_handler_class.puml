@@ -27,6 +27,7 @@ namespace score.someip.routing_module {
         + AddRemoteSubscription(service_instance : ServiceInstance, event : uint16_t, subscriber : Endpoint) noexcept override : score::someip::routing_module::CommandResult
         + RemoveRemoteSubscription(service_instance : ServiceInstance, event : uint16_t, subscriber : Endpoint) noexcept override : score::someip::routing_module::CommandResult
         + RemoveAll() noexcept override : void
+        + OnUdpDatagram(udp_local_port : uint16_t, udp_sender : const Endpoint&, datagram : const IoSockPacketReader&) noexcept : void
     }
 
     IRoutingCommandHandler <|-- NotificationHandler
