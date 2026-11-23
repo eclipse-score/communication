@@ -202,3 +202,4 @@ bool SetWorkerCredentials(const std::string& worker_name,
 }
 
 }  // namespace score::mw::com::test
+

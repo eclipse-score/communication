@@ -84,3 +84,4 @@ inline bool operator==(const LolaMethodInstanceDeployment& lhs, const LolaMethod
 }  // namespace score::mw::com::impl
 
 #endif  // SCORE_MW_COM_IMPL_CONFIGURATION_LOLA_METHOD_INSTANCE_DEPLOYMENT_H
+

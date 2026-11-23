@@ -835,3 +835,4 @@ EventControl& SkeletonMemoryManager::EmplaceEventControl(const QualityType asil_
 }
 
 }  // namespace score::mw::com::impl::lola
+
