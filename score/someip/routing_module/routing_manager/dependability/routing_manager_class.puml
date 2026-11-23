@@ -1,0 +1,24 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml routing_manager_class
+
+class RoutingManager {
+    + RoutingManager(server_factory : score::message_passing::IServerFactory&, handler : IRoutingCommandHandler&, wakeup : WakeupCallback) noexcept
+    + Start() noexcept : score::cpp::expected<score::os::Error>
+    + Stop() noexcept : void
+    + ProcessPendingCommands() noexcept : void
+    - OnDisconnect(connection : score::message_passing::IServerConnection&) noexcept : void
+}
+
+@enduml
