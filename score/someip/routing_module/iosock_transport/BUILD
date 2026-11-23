@@ -27,6 +27,7 @@ config_setting(
         "@platforms//cpu:x86_64",
         "@platforms//os:qnx",
     ],
+    visibility = ["//visibility:private"],
 )
 
 config_setting(
@@ -35,6 +36,7 @@ config_setting(
         "@platforms//cpu:aarch64",
         "@platforms//os:qnx",
     ],
+    visibility = ["//visibility:private"],
 )
 
 cc_library(

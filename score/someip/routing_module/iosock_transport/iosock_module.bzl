@@ -12,6 +12,8 @@
 # *******************************************************************************
 """Compiler flags for io-sock kernel modules, see the SDP's usr/include/devs/{mods.mk,opt_global.mk}."""
 
+visibility("private")
+
 _SDP_TARGET_DIRS = {
     "aarch64": "@score_qcc_aarch64_toolchain_pkg//:target_dir",
     "x86_64": "@score_qcc_x86_64_toolchain_pkg//:target_dir",
