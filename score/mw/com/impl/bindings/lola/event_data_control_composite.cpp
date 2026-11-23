@@ -16,6 +16,8 @@
 
 #include "score/language/safecpp/safe_math/safe_math.h"
 
+#include <score/utility.hpp>
+
 #include <algorithm>
 #include <optional>
 
@@ -43,7 +45,7 @@ EventDataControlComposite<AtomicIndirectorType>::EventDataControlComposite(Event
 {
     if (asil_b_control != nullptr)
     {
-        asil_b_control_local_.emplace(*asil_b_control);
+        score::cpp::ignore = asil_b_control_local_.emplace(*asil_b_control);
     }
 }
 

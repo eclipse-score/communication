@@ -158,7 +158,8 @@ Result<void> SkeletonEvent::PrepareOffer(const std::optional<InitializeSampleCal
     // All methods that require event_data_storage_local_view_ (e.g. GetLatestSample) rely on this invariant.
     const auto registration_result =
         parent_.Register(element_fq_id_, event_properties_, event_sample_size_info_, initialize_sample_callback);
-    event_data_storage_local_view_.emplace(registration_result.event_data_storage, event_sample_size_info_);
+    score::cpp::ignore =
+        event_data_storage_local_view_.emplace(registration_result.event_data_storage, event_sample_size_info_);
 
     score::cpp::ignore = consumer_control_local_view_qm_.emplace(registration_result.event_control_qm.data_control);
 
