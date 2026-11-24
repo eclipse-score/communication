@@ -49,8 +49,8 @@ with `if_<name>_enabled([...])`, both from [flags/flags.bzl](flags/flags.bzl).
 What a flag gates, and what happens if it is disabled:
 
 - **FlatBuffers configuration:** gates parsing of `.bfbs`/`.bin` configuration files, the generated FlatBuffers schema
-  code and its tests. If disabled, these files are not recognized (every configuration is parsed as JSON) and no
-  FlatBuffers dependency is linked.
+  code and its tests. If disabled, no FlatBuffers dependency is linked and passing a `.bfbs`/`.bin` configuration file
+  terminates the application with a fatal log message.
 - **SOME/IP binding:** gates the SOME/IP configuration types, the SOME/IP binding variants in the plumbing and the
   SOME/IP targets and their tests. If disabled, none of this is compiled and a configuration containing a SOME/IP
   binding terminates the application with a fatal log message.

@@ -21,6 +21,8 @@
 #include "gmock/gmock.h"
 #include <gtest/gtest.h>
 
+#include <score/assert_support.hpp>
+
 #include <cstdlib>
 #include <fstream>
 #include <string>
@@ -135,6 +137,25 @@ TEST_F(ConfigParserFixture, ParseBinFileWithFlatbufferStrategy)
     EXPECT_FALSE(config_from_selection.IsServiceInstancesEmpty());
     EXPECT_EQ(config_from_selection.GetNumberOfServiceInstances(), config_from_strategy.GetNumberOfServiceInstances());
     EXPECT_EQ(config_from_selection.GetNumberOfServiceTypes(), config_from_strategy.GetNumberOfServiceTypes());
+}
+
+#else
+
+TEST_F(ConfigParserFixture, ParseBinFileWithoutFlatbuffersSupportWillDie)
+{
+    RecordProperty("Description",
+                   "Checks that Parse() terminates for a .bin file instead of parsing it as JSON when the FlatBuffers "
+                   "configuration flag is disabled.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a valid JSON configuration, which has the extension of a FlatBuffer
+    const auto path = get_configuration_path("json_content_with_bin_extension.bin");
+
+    // When parsing it
+    // That the application will terminate
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(configuration::Parse(path));
 }
 
 #endif

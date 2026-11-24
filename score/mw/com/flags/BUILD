@@ -18,8 +18,9 @@ load("@rules_python//python:defs.bzl", "py_test")
 # Gates the (experimental) FlatBuffers configuration path. When set, the runtime
 # parses configuration files ending in .bfbs/.bin with the FlatBuffers config
 # parsing strategy (all others as JSON), and the generated flatbuffer_cc_library
-# and related targets are compiled. When unset, configurations are always parsed
-# as JSON. Enable with --config=flatbuffers (see .bazelrc).
+# and related targets are compiled. When unset, only JSON configurations are
+# supported and a .bfbs/.bin file terminates the application.
+# Enable with --config=flatbuffers (see .bazelrc).
 # Experimental feature flag: must be part of --config=activate_all_experimental_features
 # in .bazelrc (see CI.md#feature-flags).
 bool_flag(
@@ -48,7 +49,8 @@ cc_library(
 )
 
 # Gates the (experimental) SOME/IP binding: its configuration types, the binding implementation and the
-# SOME/IP specific code paths in the plumbing/runtime. Enable with --config=someip (see .bazelrc).
+# SOME/IP specific code paths in the plumbing/runtime. When unset, a configuration containing a SOME/IP binding
+# terminates the application. Enable with --config=someip (see .bazelrc).
 # Experimental feature flag: must be part of --config=activate_all_experimental_features
 # in .bazelrc (see CI.md#feature-flags).
 bool_flag(
@@ -78,7 +80,8 @@ cc_library(
 )
 
 # Gates the (experimental) E2E protection: the E2E result carried by SamplePtr, its public API, the E2E event deployment
-# configuration and the E2E building blocks in //score/mw/com/impl/e2e. Enable with --config=e2e (see .bazelrc).
+# configuration and the E2E building blocks in //score/mw/com/impl/e2e. When unset, a configuration containing an E2E
+# event deployment terminates the application. Enable with --config=e2e (see .bazelrc).
 # Experimental feature flag: must be part of --config=activate_all_experimental_features
 # in .bazelrc (see CI.md#feature-flags).
 bool_flag(

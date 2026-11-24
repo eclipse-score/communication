@@ -266,6 +266,7 @@ cc_library(
     hdrs = ["config_parser.h"],
     implementation_deps = [
         ":configuration_json_parsing_strategy",
+        "@score_baselibs//score/mw/log",
     ] + if_flatbuffers_enabled([":configuration_flatbuffer_parsing_strategy"]),
     tags = ["FFI"],
     visibility = [
@@ -736,10 +737,22 @@ cc_library(
     ],
 )
 
+# A valid JSON configuration with the extension of a FlatBuffer. Without the FlatBuffers configuration flag, the
+# extension must be rejected by config_parser instead of falling back to the JSON parser, which would accept it.
+expand_template(
+    name = "json_content_with_bin_extension",
+    testonly = True,
+    out = "json_content_with_bin_extension.bin",
+    template = "example/mw_com_config.json",
+)
+
 cc_unit_test(
     name = "config_parser_test",
     srcs = ["config_parser_test.cpp"],
-    data = ["example/mw_com_config.json"] + if_flatbuffers_enabled([
+    data = [
+        "example/mw_com_config.json",
+        ":json_content_with_bin_extension",
+    ] + if_flatbuffers_enabled([
         "//score/mw/com/impl/configuration/converter:mw_com_config",
     ]),
     features = [

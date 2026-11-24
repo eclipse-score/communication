@@ -15,12 +15,14 @@
 
 #if defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
 #include "score/mw/com/impl/configuration/configuration_flatbuffer_parsing_strategy.h"
+#else
+#include "score/mw/log/logging.h"
+
+#include <score/assert.hpp>
 #endif
 
 namespace score::mw::com::impl::configuration
 {
-
-#if defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
 
 namespace
 {
@@ -37,17 +39,21 @@ bool HasFlatbufferExtension(const std::string_view path)
 
 }  // namespace
 
-#endif
-
 auto Parse(const std::string_view path) -> Configuration
 {
-#if defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
     if (HasFlatbufferExtension(path))
     {
+#if defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
         ConfigurationFlatbufferParsingStrategy strategy{};
         return strategy.Parse(path);
-    }
+#else
+        score::mw::log::LogFatal("lola")
+            << "Configuration file" << path
+            << "is a FlatBuffer, but FlatBuffers configuration support is disabled. Enable it with "
+               "--config=flatbuffers (//score/mw/com/flags:experimental_enable_flatbuffers_configuration).";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
 #endif
+    }
     ConfigurationJsonParsingStrategy strategy{};
     return strategy.Parse(path);
 }
