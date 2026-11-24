@@ -35,6 +35,17 @@ config_setting(
     visibility = ["//score/mw/com:__subpackages__"],
 )
 
+# Propagates SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED to every target which (transitively) depends on it.
+# Targets that contain `#if defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)` must depend on this library.
+cc_library(
+    name = "flatbuffers_feature",
+    defines = select({
+        ":flatbuffers_enabled": ["SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED"],
+        "//conditions:default": [],
+    }),
+    visibility = ["//score/mw/com:__subpackages__"],
+)
+
 # Gates the (experimental) SOME/IP binding: its configuration types, the binding implementation and the
 # SOME/IP specific code paths in the plumbing/runtime. Enable with --config=someip (see .bazelrc).
 # Experimental feature flag: must be part of --config=activate_all_experimental_features
