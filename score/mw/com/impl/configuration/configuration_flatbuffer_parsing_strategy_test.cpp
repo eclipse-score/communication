@@ -33,9 +33,12 @@ namespace score::mw::com::impl::configuration
 namespace
 {
 
+using ::score::mw::com::impl::E2EEventTypeDeployment;
+using ::score::mw::com::impl::E2EProfile;
 using ::score::mw::com::impl::InstanceSpecifier;
 using ::score::mw::com::impl::LolaServiceInstanceDeployment;
 using ::score::mw::com::impl::LolaServiceInstanceId;
+using ::score::mw::com::impl::LolaServiceTypeDeployment;
 using ::score::mw::com::impl::QualityType;
 
 const std::string kExampleBin{"converter/mw_com_config.bin"};
@@ -112,6 +115,9 @@ TEST_F(ConfigurationFlatbufferParsingStrategyFixture, OptionalScalarsDistinguish
     EXPECT_EQ(config.GetGlobalConfiguration().GetApplicationId().value(), 0U);
 }
 
+constexpr std::uint32_t kExpectedE2EDataId{58U};
+constexpr std::uint8_t kExpectedE2EMaxDeltaCounter{2U};
+
 // Required scalars of mw_com_config.fbs. FlatBuffers cannot mark scalars as required, so they are declared
 // "= null": an omitted one must terminate (like the JSON parser does) instead of silently reading back as the
 // type's default (0 for ids/versions, the first enum value for asil-level/binding).
@@ -123,6 +129,9 @@ enum class RequiredScalar : std::uint8_t
     kServiceTypeBinding,
     kServiceId,
     kEventId,
+    kE2EProfile,
+    kE2EDataId,
+    kE2EMaxDeltaCounter,
     kFieldId,
     kMethodId,
     kServiceInstanceVersionMajor,
@@ -131,8 +140,8 @@ enum class RequiredScalar : std::uint8_t
     kServiceInstanceBinding,
 };
 
-// Builds a minimal valid configuration (one service type with an event, a field and a method, and one service
-// instance of it), leaving out only the given required scalar.
+// Builds a minimal valid configuration (one service type with an E2E protected event, a field and a method, and one
+// service instance of it), leaving out only the given required scalar.
 std::vector<std::uint8_t> BuildConfigurationWithout(const RequiredScalar omitted)
 {
     ::flatbuffers::FlatBufferBuilder fbb{};
@@ -151,12 +160,27 @@ std::vector<std::uint8_t> BuildConfigurationWithout(const RequiredScalar omitted
     };
 
     const auto event_name = fbb.CreateString("Event");
+    fbs::E2EEventConfigBuilder e2e{fbb};
+    if (omitted != RequiredScalar::kE2EProfile)
+    {
+        e2e.add_profile(fbs::E2EProfile::P04);
+    }
+    if (omitted != RequiredScalar::kE2EDataId)
+    {
+        e2e.add_dataId(kExpectedE2EDataId);
+    }
+    if (omitted != RequiredScalar::kE2EMaxDeltaCounter)
+    {
+        e2e.add_maxDeltaCounter(kExpectedE2EMaxDeltaCounter);
+    }
+    const auto e2e_config = e2e.Finish();
     fbs::ServiceTypeEventBuilder event{fbb};
     event.add_eventName(event_name);
     if (omitted != RequiredScalar::kEventId)
     {
         event.add_eventId(1U);
     }
+    event.add_e2e(e2e_config);
     const auto events = fbb.CreateVector(std::vector<::flatbuffers::Offset<fbs::ServiceTypeEvent>>{event.Finish()});
 
     const auto field_name = fbb.CreateString("Field");
@@ -246,6 +270,15 @@ TEST_F(ConfigurationFlatbufferParsingStrategyFixture, ConfigurationWithAllRequir
     const auto& deployment = config.GetServiceInstanceDeployment(instance_specifier).value().get();
     EXPECT_EQ(deployment.asilLevel_, QualityType::kASIL_QM);
     EXPECT_EQ(deployment.service_, make_ServiceIdentifierType("/test/Service", 1U, 0U));
+
+    const auto& service_type_deployment =
+        config.GetServiceTypeDeployment(make_ServiceIdentifierType("/test/Service", 1U, 0U)).value().get();
+    const auto* const lola_service_type_deployment =
+        std::get_if<LolaServiceTypeDeployment>(&service_type_deployment.binding_info_);
+    ASSERT_NE(lola_service_type_deployment, nullptr);
+    ASSERT_EQ(lola_service_type_deployment->e2e_events_.size(), 1U);
+    EXPECT_EQ(lola_service_type_deployment->e2e_events_.at("Event"),
+              (E2EEventTypeDeployment{E2EProfile::kP4, kExpectedE2EDataId, kExpectedE2EMaxDeltaCounter}));
 }
 
 class RequiredScalarTest : public ::testing::TestWithParam<RequiredScalar>
@@ -267,6 +300,9 @@ INSTANTIATE_TEST_SUITE_P(ConfigurationFlatbufferParsingStrategy,
                                            RequiredScalar::kServiceTypeBinding,
                                            RequiredScalar::kServiceId,
                                            RequiredScalar::kEventId,
+                                           RequiredScalar::kE2EProfile,
+                                           RequiredScalar::kE2EDataId,
+                                           RequiredScalar::kE2EMaxDeltaCounter,
                                            RequiredScalar::kFieldId,
                                            RequiredScalar::kMethodId,
                                            RequiredScalar::kServiceInstanceVersionMajor,

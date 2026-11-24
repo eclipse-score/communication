@@ -202,6 +202,20 @@ auto ParseStrictPermissions(fbs::PermissionChecks permission_checks) -> bool
     }
 }
 
+auto ParseE2EProfile(fbs::E2EProfile profile) -> E2EProfile
+{
+    switch (profile)
+    {
+        case fbs::E2EProfile::P04:
+            return E2EProfile::kP4;
+        default:
+            score::mw::log::LogFatal("lola") << "Unsupported E2E profile in POC configuration. Terminating.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+            return E2EProfile::kP4;  // LCOV_EXCL_LINE defensive programming: SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD never
+                                     // returns
+    }
+}
+
 auto ParseAllowedUser(const ::flatbuffers::Vector<std::uint32_t>* qm_ids,
                       const ::flatbuffers::Vector<std::uint32_t>* b_ids)
     -> std::unordered_map<QualityType, std::vector<uid_t>>
@@ -575,6 +589,18 @@ auto ParseServiceInstances(const fbs::Configuration& configuration, TracingConfi
     return service_instance_deployments;
 }
 
+auto ParseE2EEventTypeDeployment(const fbs::ServiceTypeEvent& event) -> std::optional<E2EEventTypeDeployment>
+{
+    const auto* e2e = event.e2e();
+    if (e2e == nullptr)
+    {
+        return std::nullopt;
+    }
+    return E2EEventTypeDeployment{ParseE2EProfile(RequireValue(e2e->profile(), "e2e.profile")),
+                                  RequireValue(e2e->dataId(), "e2e.dataId"),
+                                  RequireValue(e2e->maxDeltaCounter(), "e2e.maxDeltaCounter")};
+}
+
 template <typename BindingServiceTypeDeployment>
 void ParseEventTypeDeployments(const fbs::ServiceTypeBinding& binding, BindingServiceTypeDeployment& service)
 {
@@ -589,6 +615,11 @@ void ParseEventTypeDeployments(const fbs::ServiceTypeBinding& binding, BindingSe
         auto event_name = CopyString(event->eventName(), "eventName");
         const auto event_id = NarrowOrFatal<typename BindingServiceTypeDeployment::EventIdMapping::mapped_type>(
             RequireValue(event->eventId(), "eventId"), "eventId");
+        const auto e2e_event_deployment = ParseE2EEventTypeDeployment(*event);
+        if (e2e_event_deployment.has_value())
+        {
+            EmplaceOrFatal(service.e2e_events_, event_name, e2e_event_deployment.value(), "An E2E event deployment");
+        }
         EmplaceOrFatal(service.events_, std::move(event_name), event_id, "An event");
     }
 }
