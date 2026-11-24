@@ -13,8 +13,9 @@
 
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include <score/utility.hpp>
+#include <unistd.h>
 #include <csignal>
-#include <iostream>
+#include <string_view>
 
 namespace score::mw::com
 {
@@ -28,7 +29,8 @@ void SigTermHandlerFunction(int signal)
 {
     if (signal == SIGTERM || signal == SIGINT)
     {
-        std::cout << "Stop requested\n";
+        constexpr std::string_view kMessage{"Stop requested\n"};
+        score::cpp::ignore = ::write(STDOUT_FILENO, kMessage.data(), kMessage.size());
         score::cpp::ignore = k_stop_test.request_stop();
     }
 }
