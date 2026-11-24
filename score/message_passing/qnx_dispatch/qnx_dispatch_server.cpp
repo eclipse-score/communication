@@ -391,7 +391,8 @@ std::int32_t QnxDispatchServer::ProcessConnect(resmgr_context_t* const ctp, io_o
     }
 
     // from now on, the connection can extract server from its iofunc_ocb_t base class
-    connection->AcceptConnection(std::move(data_expected.value()), std::move(connection));
+    auto* const connection_pointer = connection.get();
+    connection_pointer->AcceptConnection(std::move(data_expected.value()), std::move(connection));
     return EOK;
 }
 

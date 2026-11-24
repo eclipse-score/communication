@@ -71,15 +71,15 @@ class DispatchThreadRunner
 
     void Stop() noexcept;
 
-    dispatch_t* GetDispatchPointer() const noexcept
+    dispatch_t* GetDispatchPointer() const& noexcept
     {
         return dispatch_pointer_;
     }
-    std::int32_t GetSideChannelCoid() const noexcept
+    std::int32_t GetSideChannelCoid() const& noexcept
     {
         return side_channel_coid_;
     }
-    std::mutex& GetMutex() noexcept
+    std::mutex& GetMutex() & noexcept
     {
         return thread_mutex_;
     }
