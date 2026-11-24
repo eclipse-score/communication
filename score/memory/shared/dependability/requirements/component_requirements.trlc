@@ -135,6 +135,14 @@ ScoreReq.CompReq NoFixedMappingAddress {
     version = 1
 }
 
+ScoreReq.CompReq SharedMemoryResourceUsesMemMappedAddress {
+    description = """Any SharedMemoryResource returned by the shared memory library shall return the address at which the
+    shared memory object has been mapped via mmap() in a call to getBaseAddress()."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_CreateSharedMemoryObject@1, MemoryShared.FEAT_OpenSharedMemoryObject@1]
+    version = 1
+}
+
 ScoreReq.CompReq OffsetPtrIsRelative {
     description = """The shared memory library shall provide an OffsetPtr that stores the distance between its own address and its target, so that it refers
     to the same target at any address at which the shared memory object is mapped."""

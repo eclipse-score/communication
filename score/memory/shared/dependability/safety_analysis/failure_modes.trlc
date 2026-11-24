@@ -14,5 +14,68 @@ package MemoryShared
 
 import ScoreReq
 
-// Intentionally empty: no FailureMode records yet. Wiring this
-// empty source is sufficient to activate the Public API coverage check.
+section "factory_resources" {
+
+    section "SharedMemoryFactory" {
+
+        section "Create" {
+
+            ScoreReq.FailureMode CreateAppliesWrongPermissions {
+                guidewords = [ ScoreReq.Guideword.Corrupted ]
+                description = "The shared memory object is created with wrong permissions."
+                failureeffect = "This can lead to untrusted/unsafe processes opening the shared memory object and corrupting the data in it."
+                version = 1
+                // interface = [dependable_element_memory_shared.memory_shared.SharedMemoryFactory.Create]
+                safety = ScoreReq.Asil.B
+            }
+
+            ScoreReq.FailureMode CreateOverwritesExistingShmObject {
+                guidewords = [ ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.LossOfFunction ]
+                description = "The shared memory object is not newly created under the given name, but a previously existing shared memory object with this name is overwritten."
+                failureeffect = "This can lead to other processes, which already had opened the shared memory with the given name, to lose existing data and now access unexpected/corrupted data."
+                version = 1
+                safety = ScoreReq.Asil.B
+            }
+
+            ScoreReq.FailureMode CreateWithWrongPath {
+                guidewords = [ ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.UnintendedFunction ]
+                description = "The shared memory object is created under a wrong path."
+                failureeffect = "This can lead to other processes opening and accessing the shared memory object under false assumptions about its content. This can lead to unexpected/corrupted data being read and written."
+                version = 1
+                safety = ScoreReq.Asil.B
+            }
+
+            ScoreReq.FailureMode CreateWithWrongCreatorUid {
+                guidewords = [ ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.UnintendedFunction ]
+                description = "The shared memory object is created under a wrong owner uid."
+                failureeffect = "This can lead to other processes opening either falsely rejecting or accepting the shared memory object. The latter can lead to unexpected/corrupted data being read."
+                version = 1
+                safety = ScoreReq.Asil.B
+            }
+
+            ScoreReq.FailureMode CreateReturnedSharedMemoryResourceDoesNotPointToTheExpectedRegion {
+                guidewords = [ ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.LossOfFunction ]
+                description = "The SharedMemoryResource being returned is not pointing to the expected region (address plus size)"
+                failureeffect = "This can lead to the creator process to write to/read from the wrong memory address, which can lead to unexpected/corrupted data being read and written."
+                version = 1
+                safety = ScoreReq.Asil.B
+            }
+
+            ScoreReq.FailureMode CreateShmObjectIncorrectlyInitialized {
+                 guidewords = [ ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.LossOfFunction ]
+                 description = "The SharedMemoryResource being returned has not been correctly initialized."
+                 failureeffect = "This can lead to the creator and consumer processes to write to/read from the wrong memory address, which can lead to unexpected/corrupted data being read and written."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
+
+            ScoreReq.FailureMode CreateShmObjectDoesNotHandleLockFileMechanismCorrectly {
+                 guidewords = [ ScoreReq.Guideword.Corrupted ]
+                 description = "Creation of the shared memory object does not use the lock file mechanism correctly for synchronization between creating/opening shared memory."
+                 failureeffect = "This can lead to consumer processes accessing invalid/uninitialized data."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
+        }
+    }
+}
