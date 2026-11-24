@@ -15,25 +15,36 @@
 ' ---------------------------------------------------------------------------
 ' Modelling conventions
 ' ---------------------------------------------------------------------------
-' * Scope: user facing public API of mw::com; reference for the FMEA
+' * Scope: user facing public API of the mw_com SEooC; reference for the FMEA
 '   (failure_modes.trlc).
 ' * Abstract model: only semantic operations. Special members, operators and
 '   base classes (*Base, Interface<Trait>) are folded in; copy / move /
 '   ownership is stated in the class note.
-' * Lifecycle: Create() constructs, Release() destroys (only where destruction
-'   has an effect). Service elements live and die with their owning Proxy /
-'   Skeleton (composition).
+' * Lifecycle: Create() constructs a Proxy / Skeleton. Destruction (C++
+'   destructor) is behaviour, not an operation, and is not modelled here; what
+'   happens on destruction (e.g. a Skeleton stops offering its service) belongs
+'   in sequence diagrams. Service elements live and die with their owning
+'   Proxy / Skeleton (composition).
+'   Provisional: not modelling destruction is not final and may change, e.g.
+'   if the FMEA needs a destructor operation to anchor its destruction
+'   failure modes.
+'   Release() on sample management pointers hands the sample slot / memory
+'   back to mw::com (C++ destructor / reset).
 ' * Only the InstanceSpecifier variant of Create / FindService is modelled.
 ' * One class per variant with a distinct API (ProxyMethod per
 '   specialization, field per tag; identical APIs merged).
 ' * Template parameters are in the quoted label; a parameter pack is one name
 '   (ArgTypes).
-' * The commented line above an operation is its strict UML signature
-'   (in / out / inout, multiplicity, {query} = const); the tooling cannot
-'   parse it yet.
 ' * Stereotypes: <<datatype>> value type described by its note, <<struct>>
 '   plain aggregate, <<callback>> user callable, <<tag>> field tag,
-'   <<free_functions>> namespace functions.
+'   <<free_functions>> namespace functions, <<type-erased>> C++ void
+'   instantiation of a template modelled as its own class (type-erased
+'   callbacks keep <<callback>> and are named TypeErased<Template>).
+' * Type erasure: UML has no void / pointer types; untyped sample memory is the
+'   <<datatype>> UntypedSampleMemory. C++ void instantiation (e.g.
+'   SampleAllocateePtr<void>) is modelled as a distinctly named
+'   class (TypeErased<Template>) with a
+'   <<bind>> <SampleType -> UntypedSampleMemory> dependency to its template.
 ' ---------------------------------------------------------------------------
 
 namespace score::mw::com {
@@ -44,8 +55,7 @@ namespace score::mw::com {
     namespace mw_com::binding_independent::runtime <<unit>> {
 
         class "runtime" as mw_com_binding_independent_runtime_runtime <<free_functions>> {
-            '+InitializeRuntime(in configuration : RuntimeConfiguration)
-            +InitializeRuntime(configuration : const RuntimeConfiguration&)
+            +InitializeRuntime(in configuration : RuntimeConfiguration)
         }
 
         class "RuntimeConfiguration" as mw_com_binding_independent_runtime_RuntimeConfiguration <<datatype>>
@@ -73,8 +83,7 @@ namespace score::mw::com {
         end note
 
         class "FindServiceHandler<ServiceHandleType>" as mw_com_binding_independent_service_discovery_FindServiceHandler <<callback>> {
-            '+Invoke(in handles : ServiceHandleContainer, in handle : FindServiceHandle)
-            +Invoke(handles : ServiceHandleContainer, handle : FindServiceHandle)
+            +Invoke(in handles : ServiceHandleContainer, in handle : FindServiceHandle)
         }
 
         class "ServiceHandleContainer<ServiceHandleType>" as mw_com_binding_independent_service_discovery_ServiceHandleContainer <<datatype>>
@@ -95,10 +104,7 @@ namespace score::mw::com {
     namespace mw_com::binding_independent::sample_management_pointers <<unit>> {
 
         class "SamplePtr<SampleType>" as mw_com_binding_independent_sample_management_pointers_SamplePtr {
-            '+ReadAccess() : SampleType[0..1] {query}
-            +ReadAccess() const : const SampleType
-            '+GetE2EResult() : E2EResult {query}
-            +GetE2EResult() const : E2EResult
+            +ReadSample() : SampleType[0..1]
             +Release()
         }
 
@@ -107,8 +113,7 @@ namespace score::mw::com {
         end note
 
         class "SampleAllocateePtr<SampleType>" as mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr {
-            '+WriteAccess() : SampleType[0..1] {query}
-            +WriteAccess() const : SampleType
+            +WriteSample(in sample : SampleType[1])
             +Release()
         }
 
@@ -116,9 +121,32 @@ namespace score::mw::com {
           * Ownership: moveable only and not copyable.
         end note
 
+        class "UntypedSampleMemory" as mw_com_binding_independent_sample_management_pointers_UntypedSampleMemory <<datatype>>
+
+        note bottom of mw_com_binding_independent_sample_management_pointers_UntypedSampleMemory
+          Untyped memory region of one sample slot (C++: void* / const void*).
+        end note
+
+        class "TypeErasedSamplePtr" as mw_com_binding_independent_sample_management_pointers_TypeErasedSamplePtr <<type-erased>> {
+            +ReadSample() : UntypedSampleMemory[0..1]
+            +Release()
+        }
+
+        note bottom of mw_com_binding_independent_sample_management_pointers_TypeErasedSamplePtr
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "TypeErasedSampleAllocateePtr" as mw_com_binding_independent_sample_management_pointers_TypeErasedSampleAllocateePtr <<type-erased>> {
+            +WriteSample(in sample : UntypedSampleMemory[1])
+            +Release()
+        }
+
+        note bottom of mw_com_binding_independent_sample_management_pointers_TypeErasedSampleAllocateePtr
+          * Ownership: moveable only and not copyable.
+        end note
+
         class "MethodReturnTypePtr<SignatureElement>" as mw_com_binding_independent_sample_management_pointers_MethodReturnTypePtr {
-            '+WriteAccess() : SignatureElement[0..1] {query}
-            +WriteAccess() const : SignatureElement
+            +WriteSample(in sample : SignatureElement[1])
             +Release()
         }
 
@@ -127,21 +155,12 @@ namespace score::mw::com {
         end note
 
         class "MethodInArgTypePtr<SignatureElement>" as mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtr {
-            '+WriteAccess() : SignatureElement[0..1] {query}
-            +WriteAccess() const : SignatureElement
+            +WriteSample(in sample : SignatureElement[1])
             +Release()
         }
 
         note bottom of mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtr
           * Ownership: moveable only and not copyable.
-        end note
-
-        class "E2EResult" as mw_com_binding_independent_sample_management_pointers_E2EResult <<datatype>>
-
-        note bottom of mw_com_binding_independent_sample_management_pointers_E2EResult
-          Abstracts score::mw::com::impl::e2e::E2EResult.
-          Verdict of the end to end protection checks of one received sample:
-          tells the receiver whether it can trust the sample data.
         end note
 
         class "MethodInArgTypePtrs" as mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtrs <<datatype>>
@@ -155,7 +174,10 @@ namespace score::mw::com {
 
         ' --- relationships inside sample_management_pointers ---
         mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtrs o-- "1..* {ordered}" mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtr
-        mw_com_binding_independent_sample_management_pointers_SamplePtr ..> mw_com_binding_independent_sample_management_pointers_E2EResult : <<use>>
+        mw_com_binding_independent_sample_management_pointers_TypeErasedSamplePtr ..> mw_com_binding_independent_sample_management_pointers_SamplePtr : <<bind>> <SampleType -> UntypedSampleMemory>
+        mw_com_binding_independent_sample_management_pointers_TypeErasedSampleAllocateePtr ..> mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr : <<bind>> <SampleType -> UntypedSampleMemory>
+        mw_com_binding_independent_sample_management_pointers_TypeErasedSamplePtr ..> mw_com_binding_independent_sample_management_pointers_UntypedSampleMemory : <<use>>
+        mw_com_binding_independent_sample_management_pointers_TypeErasedSampleAllocateePtr ..> mw_com_binding_independent_sample_management_pointers_UntypedSampleMemory : <<use>>
     }
 
     ' =======================================================================
@@ -163,35 +185,26 @@ namespace score::mw::com {
     ' =======================================================================
     namespace mw_com::binding_independent::proxy_and_service_elements <<unit>> {
 
-        ' TBC return: ProxyWrapperClass<Interface> in proxy_create_seq.puml. Align on naming.
         class "Proxy<Interface>" as mw_com_binding_independent_proxy_and_service_elements_Proxy {
-            '+Create(in handle : HandleType) : Result<Proxy>
-            +Create(handle : const HandleType&) : Result<Proxy>
-            '+FindService(in specifier : InstanceSpecifier) : Result<ServiceHandleContainer<HandleType>>
-            +FindService(specifier : InstanceSpecifier) : Result<ServiceHandleContainer<HandleType>>
-            '+StartFindService(in handler : FindServiceHandler, in specifier : InstanceSpecifier) : Result<FindServiceHandle>
-            +StartFindService(handler : FindServiceHandler, specifier : InstanceSpecifier) : Result<FindServiceHandle>
-            '+StopFindService(in handle : FindServiceHandle) : Result
-            +StopFindService(handle : FindServiceHandle) : Result
-            +Release()
+            +Create(in handle : HandleType) : Result<Proxy>
+            +FindService(in specifier : InstanceSpecifier) : Result<ServiceHandleContainer<HandleType>>
+            +StartFindService(in handler : FindServiceHandler, in specifier : InstanceSpecifier) : Result<FindServiceHandle>
+            +StopFindService(in handle : FindServiceHandle) : Result
         }
 
         note bottom of mw_com_binding_independent_proxy_and_service_elements_Proxy
           Bound by the user as AsProxy<TheInterface>, where TheInterface is the
           service interface class template written by the user. Proxy derives from
           TheInterface<ProxyTrait>, which declares the service elements shown below.
-          * Ownership: movable only, not copyable.
+          * Ownership: moveable only and not copyable.
         end note
 
         class "ProxyEvent<SampleType>" as mw_com_binding_independent_proxy_and_service_elements_ProxyEvent {
-            '+Subscribe(in max_sample_count : Integer) : Result
-            +Subscribe(max_sample_count : Integer) : Result
+            +Subscribe(in max_sample_count : Integer) : Result
             +Unsubscribe()
-            '+SetReceiveHandler(in handler : EventReceiveHandler) : Result
-            +SetReceiveHandler(handler : EventReceiveHandler) : Result
+            +SetReceiveHandler(in handler : EventReceiveHandler) : Result
             +UnsetReceiveHandler() : Result
-            '+GetNewSamples(in receiver : SampleReceiver, in max_num_samples : Integer) : Result<Integer>
-            +GetNewSamples(receiver : SampleReceiver, max_num_samples : Integer) : Result<Integer>
+            +GetNewSamples(in receiver : SampleReceiver, in max_num_samples : Integer) : Result<Integer>
         }
 
         note bottom of mw_com_binding_independent_proxy_and_service_elements_ProxyEvent
@@ -199,14 +212,11 @@ namespace score::mw::com {
         end note
 
         class "ProxyFieldWithNotifier<FieldType>" as mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier {
-            '+Subscribe(in max_sample_count : Integer) : Result
-            +Subscribe(max_sample_count : Integer) : Result
+            +Subscribe(in max_sample_count : Integer) : Result
             +Unsubscribe()
-            '+SetReceiveHandler(in handler : EventReceiveHandler) : Result
-            +SetReceiveHandler(handler : EventReceiveHandler) : Result
+            +SetReceiveHandler(in handler : EventReceiveHandler) : Result
             +UnsetReceiveHandler() : Result
-            '+GetNewSamples(in receiver : SampleReceiver, in max_num_samples : Integer) : Result<Integer>
-            +GetNewSamples(receiver : SampleReceiver, max_num_samples : Integer) : Result<Integer>
+            +GetNewSamples(in receiver : SampleReceiver, in max_num_samples : Integer) : Result<Integer>
         }
 
         note bottom of mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier
@@ -222,8 +232,7 @@ namespace score::mw::com {
         end note
 
         class "ProxyFieldWithSetter<FieldType>" as mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithSetter {
-            '+Set(in new_field_value : FieldType) : Result<MethodReturnTypePtr>
-            +Set(new_field_value : const FieldType&) : Result<MethodReturnTypePtr>
+            +Set(in new_field_value : FieldType) : Result<MethodReturnTypePtr>
         }
 
         note bottom of mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithSetter
@@ -232,8 +241,7 @@ namespace score::mw::com {
 
         class "ProxyMethodWithInArgs<ArgTypes>" as mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgs {
             +Allocate() : Result<MethodInArgTypePtrs>
-            '+Invoke(in args : MethodInArgTypePtr[1..*]) : Result
-            +Invoke(args : MethodInArgTypePtr...) : Result
+            +Invoke(in args : MethodInArgTypePtr[1..*]) : Result
         }
 
         note bottom of mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgs
@@ -242,8 +250,7 @@ namespace score::mw::com {
 
         class "ProxyMethodWithInArgsAndReturn<ReturnType, ArgTypes>" as mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgsAndReturn {
             +Allocate() : Result<MethodInArgTypePtrs>
-            '+Invoke(in args : MethodInArgTypePtr[1..*]) : Result<MethodReturnTypePtr>
-            +Invoke(args : MethodInArgTypePtr...) : Result<MethodReturnTypePtr>
+            +Invoke(in args : MethodInArgTypePtr[1..*]) : Result<MethodReturnTypePtr>
         }
 
         note bottom of mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgsAndReturn
@@ -271,8 +278,7 @@ namespace score::mw::com {
         }
 
         class "SampleReceiver<SampleType>" as mw_com_binding_independent_proxy_and_service_elements_SampleReceiver <<callback>> {
-            '+Invoke(in sample : SamplePtr)
-            +Invoke(sample : SamplePtr)
+            +Invoke(in sample : SamplePtr)
         }
 
         class "WithGetter" as mw_com_binding_independent_proxy_and_service_elements_WithGetter <<tag>>
@@ -307,11 +313,9 @@ namespace score::mw::com {
     namespace mw_com::binding_independent::skeleton_and_service_elements <<unit>> {
 
         class "Skeleton<Interface>" as mw_com_binding_independent_skeleton_and_service_elements_Skeleton {
-            '+Create(in specifier : InstanceSpecifier) : Result<Skeleton>
-            +Create(specifier : const InstanceSpecifier&) : Result<Skeleton>
+            +Create(in specifier : InstanceSpecifier) : Result<Skeleton>
             +OfferService() : Result
             +StopOfferService()
-            +Release()
         }
 
         note bottom of mw_com_binding_independent_skeleton_and_service_elements_Skeleton
@@ -323,8 +327,7 @@ namespace score::mw::com {
 
         class "SkeletonEvent<SampleType>" as mw_com_binding_independent_skeleton_and_service_elements_SkeletonEvent {
             +Allocate() : Result<SampleAllocateePtr>
-            '+Send(in sample : SampleAllocateePtr[1]) : Result
-            +Send(sample : SampleAllocateePtr) : Result
+            +Send(in sample : SampleAllocateePtr) : Result
         }
 
         note bottom of mw_com_binding_independent_skeleton_and_service_elements_SkeletonEvent
@@ -333,8 +336,7 @@ namespace score::mw::com {
 
         class "SkeletonFieldWithNotifierOrGetter<FieldType>" as mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter {
             +Allocate() : Result<SampleAllocateePtr>
-            '+Update(in sample : SampleAllocateePtr) : Result
-            +Update(sample : SampleAllocateePtr) : Result
+            +Update(in sample : SampleAllocateePtr) : Result
         }
 
         note bottom of mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter
@@ -345,10 +347,8 @@ namespace score::mw::com {
 
         class "SkeletonFieldWithSetter<FieldType>" as mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithSetter {
             +Allocate() : Result<SampleAllocateePtr>
-            '+Update(in sample : SampleAllocateePtr) : Result
-            +Update(sample : SampleAllocateePtr) : Result
-            '+RegisterSetHandler(in handler : SetHandler) : Result
-            +RegisterSetHandler(handler : SetHandler) : Result
+            +Update(in sample : SampleAllocateePtr) : Result
+            +RegisterSetHandler(in handler : SetHandler) : Result
         }
 
         note bottom of mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithSetter
@@ -356,8 +356,7 @@ namespace score::mw::com {
         end note
 
         class "SkeletonMethod<ReturnType, ArgTypes>" as mw_com_binding_independent_skeleton_and_service_elements_SkeletonMethod {
-            '+RegisterHandler(in handler : MethodHandler) : Result
-            +RegisterHandler(handler : MethodHandler) : Result
+            +RegisterHandler(in handler : MethodHandler) : Result
         }
 
         note bottom of mw_com_binding_independent_skeleton_and_service_elements_SkeletonMethod
@@ -365,19 +364,17 @@ namespace score::mw::com {
         end note
 
         class "SetHandler<FieldType>" as mw_com_binding_independent_skeleton_and_service_elements_SetHandler <<callback>> {
-            '+Invoke(inout new_value : FieldType)
-            +Invoke(new_value : FieldType&)
+            +Invoke(inout new_value : FieldType)
         }
 
         class "MethodHandler<ReturnType, ArgTypes>" as mw_com_binding_independent_skeleton_and_service_elements_MethodHandler <<callback>> {
-            '+Invoke(out return_value : ReturnType, in args : ArgTypes[1..*])
-            +Invoke(return_value : ReturnType&, args : const ArgTypes&...)
+            +Invoke(out return_value : ReturnType, in args : ArgTypes[1..*])
         }
 
         note bottom of mw_com_binding_independent_skeleton_and_service_elements_MethodHandler
           MethodHandler callable passed to SkeletonMethod::RegisterHandler().
           Its signature follows the method
-          signature category, mirroring the ProxyMethod* classes below:
+          signature category, mirroring the ProxyMethod* classes above:
             ReturnType(ArgTypes...)  ->  Invoke(out return_value, in args)
             ReturnType()             ->  Invoke(out return_value)
             void(ArgTypes...)        ->  Invoke(in args)
@@ -400,15 +397,10 @@ namespace score::mw::com {
     namespace mw_com::binding_independent::generic_proxy_and_service_elements <<unit>> {
 
         class "GenericProxy" as mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy {
-            '+Create(in handle : HandleType) : Result<GenericProxy>
-            +Create(handle : HandleType) : Result<GenericProxy>
-            '+FindService(in specifier : InstanceSpecifier) : Result<ServiceHandleContainer<HandleType>>
-            +FindService(specifier : InstanceSpecifier) : Result<ServiceHandleContainer<HandleType>>
-            '+StartFindService(in handler : FindServiceHandler, in specifier : InstanceSpecifier) : Result<FindServiceHandle>
-            +StartFindService(handler : FindServiceHandler, specifier : InstanceSpecifier) : Result<FindServiceHandle>
-            '+StopFindService(in handle : FindServiceHandle) : Result
-            +StopFindService(handle : FindServiceHandle) : Result
-            +Release()
+            +Create(in handle : HandleType) : Result<GenericProxy>
+            +FindService(in specifier : InstanceSpecifier) : Result<ServiceHandleContainer<HandleType>>
+            +StartFindService(in handler : FindServiceHandler, in specifier : InstanceSpecifier) : Result<FindServiceHandle>
+            +StopFindService(in handle : FindServiceHandle) : Result
         }
 
         note bottom of mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy
@@ -416,22 +408,24 @@ namespace score::mw::com {
         end note
 
         class "GenericProxyEvent" as mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent {
-            '+Subscribe(in max_sample_count : Integer) : Result
-            +Subscribe(max_sample_count : Integer) : Result
+            +Subscribe(in max_sample_count : Integer) : Result
             +Unsubscribe()
-            '+SetReceiveHandler(in handler : EventReceiveHandler) : Result
-            +SetReceiveHandler(handler : EventReceiveHandler) : Result
+            +SetReceiveHandler(in handler : EventReceiveHandler) : Result
             +UnsetReceiveHandler() : Result
-            '+GetNewSamples(in receiver : SampleReceiver, in max_num_samples : Integer) : Result<Integer>
-            +GetNewSamples(receiver : SampleReceiver, max_num_samples : Integer) : Result<Integer>
+            +GetNewSamples(in receiver : TypeErasedSampleReceiver, in max_num_samples : Integer) : Result<Integer>
         }
 
         note bottom of mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent
           * Ownership: created and owned by GenericProxy; neither copyable nor movable.
         end note
 
+        class "TypeErasedSampleReceiver" as mw_com_binding_independent_generic_proxy_and_service_elements_TypeErasedSampleReceiver <<callback>> {
+            +Invoke(in sample : TypeErasedSamplePtr)
+        }
+
         ' --- relationships inside generic_proxy_and_service_elements ---
         mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy *-- mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent
+        mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent ..> mw_com_binding_independent_generic_proxy_and_service_elements_TypeErasedSampleReceiver : <<use>>
     }
 
     ' =======================================================================
@@ -440,11 +434,9 @@ namespace score::mw::com {
     namespace mw_com::binding_independent::generic_skeleton_and_service_elements <<unit>> {
 
         class "GenericSkeleton" as mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeleton {
-            '+Create(in specifier : InstanceSpecifier, in service_elements : GenericSkeletonServiceElementInfo) : Result<GenericSkeleton>
-            +Create(specifier : const InstanceSpecifier&, service_elements : const GenericSkeletonServiceElementInfo&) : Result<GenericSkeleton>
+            +Create(in specifier : InstanceSpecifier, in service_elements : GenericSkeletonServiceElementInfo) : Result<GenericSkeleton>
             +OfferService() : Result
             +StopOfferService()
-            +Release()
         }
 
         note bottom of mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeleton
@@ -452,9 +444,8 @@ namespace score::mw::com {
         end note
 
         class "GenericSkeletonEvent" as mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonEvent {
-            +Allocate() : Result<SampleAllocateePtr>
-            '+Send(in sample : SampleAllocateePtr) : Result
-            +Send(sample : SampleAllocateePtr) : Result
+            +Allocate() : Result<TypeErasedSampleAllocateePtr>
+            +Send(in sample : TypeErasedSampleAllocateePtr) : Result
         }
 
         note bottom of mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonEvent
@@ -494,8 +485,7 @@ namespace score::mw::com {
     namespace mw_com::service_instance_identifiers <<unit>> {
 
         class "InstanceSpecifier" as mw_com_service_instance_identifiers_InstanceSpecifier {
-            '+Create(in specifier : String) : Result<InstanceSpecifier>
-            +Create(specifier : String) : Result<InstanceSpecifier>
+            +Create(in specifier : String) : Result<InstanceSpecifier>
         }
 
         note bottom of mw_com_service_instance_identifiers_InstanceSpecifier
@@ -572,13 +562,14 @@ mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgsAndRe
 mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithReturnType ..> mw_com_binding_independent_sample_management_pointers_MethodReturnTypePtr : <<use>>
 mw_com_binding_independent_skeleton_and_service_elements_SkeletonEvent ..> mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr : <<use>>
 mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter ..> mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr : <<use>>
+mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithSetter ..> mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr : <<use>>
 mw_com_binding_independent_proxy_and_service_elements_SampleReceiver ..> mw_com_binding_independent_sample_management_pointers_SamplePtr : <<use>>
 
 ' Typed API -> field tags: a variant can only be used when its tag is declared.
 ' The proxy side tags live in the proxy unit, so only the skeleton side crosses
 ' a unit boundary.
-mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter ..> mw_com_binding_independent_proxy_and_service_elements_WithNotifier : <<use>> {one of}
-mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter ..> mw_com_binding_independent_proxy_and_service_elements_WithGetter : <<use>> {one of}
+mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter ..> mw_com_binding_independent_proxy_and_service_elements_WithNotifier : <<use>> {or}
+mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter ..> mw_com_binding_independent_proxy_and_service_elements_WithGetter : <<use>> {or}
 mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithSetter ..> mw_com_binding_independent_proxy_and_service_elements_WithSetter : <<use>>
 
 ' Generic API -> service instance identification and service discovery
@@ -590,12 +581,10 @@ mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy ..> m
 mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeleton ..> mw_com_service_instance_identifiers_InstanceSpecifier : <<use>>
 
 ' Generic API -> sample pointers, handlers and type erased data types
-mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent ..> mw_com_binding_independent_sample_management_pointers_SamplePtr : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent ..> mw_com_binding_independent_sample_management_pointers_TypeErasedSamplePtr : <<use>>
 mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent ..> mw_com_binding_independent_proxy_and_service_elements_EventReceiveHandler : <<use>>
-mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent ..> mw_com_binding_independent_proxy_and_service_elements_SampleReceiver : <<use>>
-mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonEvent ..> mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr : <<use>>
-
-' Service instance identification -> configuration datatypes exposed by the getters
-' of HandleType
+mw_com_binding_independent_generic_proxy_and_service_elements_TypeErasedSampleReceiver ..> mw_com_binding_independent_sample_management_pointers_TypeErasedSamplePtr : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_TypeErasedSampleReceiver ..> mw_com_binding_independent_proxy_and_service_elements_SampleReceiver : <<bind>> <SampleType -> UntypedSampleMemory>
+mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonEvent ..> mw_com_binding_independent_sample_management_pointers_TypeErasedSampleAllocateePtr : <<use>>
 
 @enduml
