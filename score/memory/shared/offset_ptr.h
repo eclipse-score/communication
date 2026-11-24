@@ -765,7 +765,7 @@ template <typename T>
 // coverity[autosar_cpp14_a13_5_5_violation] See rationale for autosar_cpp14_a13_5_5_violation above
 inline bool operator==(const OffsetPtr<T>& offset_ptr1, const std::nullptr_t /*null_ptr2*/) noexcept
 {
-    return !static_cast<bool>(offset_ptr1);
+    return !offset_ptr1.operator bool();
 }
 
 template <typename T>
@@ -773,7 +773,7 @@ template <typename T>
 // coverity[autosar_cpp14_a7_1_8_violation : FALSE] See rationale for autosar_cpp14_a7_1_8_violation above
 inline bool operator==(const std::nullptr_t /*null_ptr1*/, const OffsetPtr<T>& offset_ptr2) noexcept
 {
-    return !static_cast<bool>(offset_ptr2);
+    return !offset_ptr2.operator bool();
 }
 
 template <typename T1,
