@@ -37,7 +37,8 @@ QnxDispatchServer::ServerConnection::ServerConnection(ClientIdentity client_iden
       send_mutex_{},
       reply_message_{server.engine_->GetMemoryResource()},
       max_notify_size_{static_cast<std::size_t>(server.max_notify_size_)},
-      notify_storage_{server.server_config_.max_queued_notifies, server.engine_->GetMemoryResource()},
+      notify_storage_{static_cast<std::size_t>(server.server_config_.max_queued_notifies),
+                      server.engine_->GetMemoryResource()},
       notify_pool_{},
       send_queue_{}
 {
@@ -154,9 +155,9 @@ bool QnxDispatchServer::ServerConnection::ProcessInput(const std::uint8_t code,
     using HandlerPointerT = score::cpp::pmr::unique_ptr<IConnectionHandler>;
     bool result = false;
 
-    switch (code)
+    switch (static_cast<std::uint32_t>(code))
     {
-        case score::cpp::to_underlying(ClientToServer::REQUEST):
+        case static_cast<std::uint32_t>(score::cpp::to_underlying(ClientToServer::REQUEST)):
         {
             score::cpp::expected_blank<score::os::Error> response_result;
             if (std::holds_alternative<HandlerPointerT>(user_data))
@@ -171,7 +172,7 @@ bool QnxDispatchServer::ServerConnection::ProcessInput(const std::uint8_t code,
             break;
         }
 
-        case score::cpp::to_underlying(ClientToServer::SEND):
+        case static_cast<std::uint32_t>(score::cpp::to_underlying(ClientToServer::SEND)):
         {
             score::cpp::expected_blank<score::os::Error> send_result;
             if (std::holds_alternative<HandlerPointerT>(user_data))
@@ -254,7 +255,8 @@ std::int32_t QnxDispatchServer::ServerConnection::ProcessReadRequest(resmgr_cont
     // could also be dispatch->resmgr_msgreplyv(), if we decide to introduce that
     score::cpp::ignore = os_resources.channel->MsgReplyv(ctp->rcvid, ctp->status, io.data(), io.size());
     send_queue_.pop_front();
-    if (send_message.code == score::cpp::to_underlying(ServerToClient::NOTIFY))
+    if (static_cast<std::uint32_t>(send_message.code) ==
+        static_cast<std::uint32_t>(score::cpp::to_underlying(ServerToClient::NOTIFY)))
     {
         // if a NOTIFY message instance, return it to notify pool
         notify_pool_.push_front(send_message);
