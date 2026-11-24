@@ -17,18 +17,12 @@ skinparam ranksep 200
 
 ' Public API provided/required by unit "factory_resources" (see
 ' score/memory/shared/dependability/public_api.puml for the full class diagram).
-interface ManagedMemoryResource
-interface ISharedMemoryResource
-interface "ISharedMemoryResource::AccessControl" as AccessControl
-interface ISharedMemoryFactory
+interface SharedMemoryResource
 interface SharedMemoryFactory
-interface MemoryResourceProxy
-interface TypedMemory
-interface InitializeCallback
-interface UserPermissions
-interface PermissionMap
-interface FileDescriptor <<external>>
-note right of FileDescriptor : Defined outside memory_shared (score::os::Acl);\nrequired, not provided, by factory_resources.
+interface LockFile <<external>>
+note right of LockFile : File provided by OS used as a sync-mechanism.
+
+interface PosixNamedSharedMemory
 
 ' Public API provided by unit "allocator_pointer" (see
 ' score/memory/shared/dependability/public_api.puml for the full class diagram).
@@ -44,62 +38,71 @@ interface PointerArithmeticUtil
 component dependable_element_memory_shared <<SEooC>>  {
 
    component memory_shared <<component>> {
-      component pointer_arithmetic <<unit>>
-      pointer_arithmetic -r- PointerArithmeticUtil
-
+      ' "together" keeps factory_resources and allocator_pointer rendered as direct neighbors
+      ' (they share the internal MemoryResourceRegistry API), independent of pointer_arithmetic,
+      ' which is only loosely coupled to both via PointerArithmeticUtil.
+      together {
       component factory_resources <<unit>>
-      factory_resources )-u- ManagedMemoryResource
-      factory_resources )-u- ISharedMemoryResource
-      factory_resources )-u- AccessControl
-      factory_resources )-u- ISharedMemoryFactory
+      factory_resources )-u- SharedMemoryResource
       factory_resources )-u- SharedMemoryFactory
-      factory_resources )-d- MemoryResourceProxy
-      factory_resources )-u- UserPermissions
-      factory_resources )-u- PermissionMap
-      factory_resources -d-( TypedMemory
-      factory_resources -d-( InitializeCallback
-      factory_resources -d-( FileDescriptor
+      factory_resources -d-( LockFile
+      factory_resources -d-( PosixNamedSharedMemory
       factory_resources -r-( PointerArithmeticUtil
-      PointerArithmeticUtil -[hidden]r- TypedMemory
+
 
       ' Internal API: provided by "factory_resources", used only by "allocator_pointer" within
       ' memory_shared (see score/memory/shared/BUILD, target "memory_resource_registry"); not
       ' part of the public API (not in public_api.puml), so it is nested here rather than
       ' declared top-level and is not connected to the SEooC boundary below.
       interface MemoryResourceRegistry
-      factory_resources )-r- MemoryResourceRegistry
-
-      ' Internal API: provided by "factory_resources", used only by "allocator_pointer" within
-      ' memory_shared (see score/memory/shared/BUILD, target "memory_region_bounds"); not part
-      ' of the public API (not in public_api.puml), so it is nested here rather than declared
-      ' top-level and is not connected to the SEooC boundary below.
-      interface MemoryRegionBounds
-      factory_resources )-r- MemoryRegionBounds
+      factory_resources )-d- MemoryResourceRegistry
 
       component allocator_pointer <<unit>>
       allocator_pointer -u- OffsetPtr
       allocator_pointer -u- PolymorphicOffsetPtrAllocator
       allocator_pointer -r-( PointerArithmeticUtil
-      allocator_pointer -r-( MemoryResourceProxy
-      allocator_pointer -r-( MemoryResourceRegistry
-      allocator_pointer -r-( MemoryRegionBounds
+      allocator_pointer -d-( MemoryResourceRegistry
+      }
+
+      component pointer_arithmetic <<unit>>
+      pointer_arithmetic -r- PointerArithmeticUtil
   }
 }
 
+' Layout hints only (no semantic meaning): force PosixNamedSharedMemory/LockFile
+' one rank below MemoryResourceRegistry (the box's lowest internal element), so
+' they render strictly below dependable_element_memory_shared instead of level
+' with its bottom edge, and anchor OS directly below them in turn.
+MemoryResourceRegistry -[hidden]d- PosixNamedSharedMemory
+MemoryResourceRegistry -[hidden]d- LockFile
+PosixNamedSharedMemory -[hidden]r- LockFile
+PosixNamedSharedMemory -[hidden]d- OS
+LockFile -[hidden]d- OS
+allocator_pointer -[hidden]d- OS
+allocator_pointer -[hidden]d- OS
+
+component OS {
+   component SharedMemory <<external>>
+   SharedMemory )-u- PosixNamedSharedMemory
+
+
+   component File <<external>>
+   File )-u- LockFile
+}
+
+component TypedMemDaemon {
+}
+
+note bottom of TypedMemDaemon
+TypedMemDaemon is a separate process that manages typed memory regions.
+Interface/sequences/FTA needs to be provided by maintainers.
+end note
 ' SEooC boundary relations (not drawn; the interfaces/classes above cross the boundary, see
 ' score-architecture skill / component_public_api validator: a public API interface must be
 ' both declared top-level here and connected (any relation) from the SEooC itself).
-dependable_element_memory_shared -[hidden]- ManagedMemoryResource
-dependable_element_memory_shared -[hidden]- ISharedMemoryResource
-dependable_element_memory_shared -[hidden]- AccessControl
-dependable_element_memory_shared -[hidden]- ISharedMemoryFactory
+dependable_element_memory_shared -[hidden]- SharedMemoryResource
 dependable_element_memory_shared -[hidden]- SharedMemoryFactory
-dependable_element_memory_shared -[hidden]- MemoryResourceProxy
-dependable_element_memory_shared -[hidden]- TypedMemory
-dependable_element_memory_shared -[hidden]- InitializeCallback
-dependable_element_memory_shared -[hidden]- UserPermissions
-dependable_element_memory_shared -[hidden]- PermissionMap
-dependable_element_memory_shared -[hidden]- FileDescriptor
+dependable_element_memory_shared -[hidden]- LockFile
 dependable_element_memory_shared -[hidden]- OffsetPtr
 dependable_element_memory_shared -[hidden]- PolymorphicOffsetPtrAllocator
 dependable_element_memory_shared -[hidden]- PointerArithmeticUtil

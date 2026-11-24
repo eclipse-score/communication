@@ -48,186 +48,45 @@ namespace score::memory::shared {
 
   package "public API of unit factory_resources" {
 
-    interface ManagedMemoryResource {
-      + getBaseAddress() : Pointer
-      + getUsableBaseAddress() : Pointer
-      + GetUserAllocatedBytes() : UnsignedInteger
-      + IsOffsetPtrBoundsCheckBypassingEnabled() : Boolean
-      + getMemoryResourceProxy() : MemoryResourceProxy
-      + construct<T>(arguments : ArgumentList) : T
-      + destruct<T>(instance : T)
-    }
-
-    note right of ManagedMemoryResource
-      Allocation beyond the available memory terminates the process.
-    end note
-
-    interface ISharedMemoryResource {
-      + getPath() : String [0..1]
-      + UnlinkFilesystemEntry()
-      + GetFileDescriptor() : FileDescriptor
-      + IsShmInTypedMemory() : Boolean
-      + GetIdentifier() : String
-    }
-
-    ISharedMemoryResource --|> ManagedMemoryResource
-
-    class "ISharedMemoryResource::AccessControl" as AccessControl {
-      + permissions : UserPermissions
-      + allowedProviders : UserId [0..*]
-    }
-
-    ISharedMemoryResource +-- AccessControl
-
-    note right of AccessControl
-      allowedProviders (also in Open): absent = no provider check;
-      present = the creator UID of the resource must be the own UID or in the list
-      (empty list = only the own UID is accepted).
-    end note
-
-    interface ISharedMemoryFactory {
+    interface SharedMemoryFactory {
       + Open(path : String, isReadWrite : Boolean, allowedProviders : UserId [0..*]) : ISharedMemoryResource [0..1]
       + Create(path : String, initializer : InitializeCallback, reservedSize : UnsignedInteger, permissions : UserPermissions, preferTypedMemory : Boolean) : ISharedMemoryResource [0..1]
-      + CreateAnonymous(resourceId : UnsignedInteger, initializer : InitializeCallback, reservedSize : UnsignedInteger, permissions : UserPermissions, preferTypedMemory : Boolean) : ISharedMemoryResource [0..1]
       + CreateOrOpen(path : String, initializer : InitializeCallback, reservedSize : UnsignedInteger, accessControl : AccessControl, preferTypedMemory : Boolean) : ISharedMemoryResource [0..1]
       + Remove(path : String)
-      + RemoveStaleArtefacts(path : String)
-      + SetTypedMemoryProvider(provider : TypedMemory)
-      + SetInterVMMemoryProvider(provider : TypedMemory)
-      + GetControlBlockSize() : UnsignedInteger
-      + Clear()
     }
 
-    note right of ISharedMemoryFactory
-      Failure reaction of Open/Create/CreateAnonymous/CreateOrOpen: expected errors
-      (e.g. object missing or already existing, provider not allowed) return no resource;
-      unexpected OS errors (e.g. sizing, mapping, lock-file timeout) terminate the process.
-    end note
-
-    class SharedMemoryFactory {
-      + {static} Open(path : String, isReadWrite : Boolean, allowedProviders : UserId [0..*]) : ISharedMemoryResource [0..1]
-      + {static} Create(path : String, initializer : InitializeCallback, reservedSize : UnsignedInteger, permissions : UserPermissions, preferTypedMemory : Boolean) : ISharedMemoryResource [0..1]
-      + {static} CreateAnonymous(resourceId : UnsignedInteger, initializer : InitializeCallback, reservedSize : UnsignedInteger, permissions : UserPermissions, preferTypedMemory : Boolean) : ISharedMemoryResource [0..1]
-      + {static} CreateOrOpen(path : String, initializer : InitializeCallback, reservedSize : UnsignedInteger, accessControl : AccessControl, preferTypedMemory : Boolean) : ISharedMemoryResource [0..1]
-      + {static} Remove(path : String)
-      + {static} RemoveStaleArtefacts(path : String)
-      + {static} SetTypedMemoryProvider(provider : TypedMemory)
-      + {static} SetInterVMMemoryProvider(provider : TypedMemory)
-      + {static} GetControlBlockSize() : UnsignedInteger
-      + {static} Clear()
-      + {static} InjectMock(mock : ISharedMemoryFactory)
-      .. InjectMock is a test-support seam allowing all of the above to be redirected to a mock ..
+    interface SharedMemoryResource {
+      + allocate(bytes: Integer , alignment: Integer) : Pointer
+      + deallocate(pointer: Pointer, bytes: Integer, alignment: Integer) : void
+      + getPath() : String [0..1]
+      + getOwnerUid() : UserId
+      + getMemoryResourceProxy() : MemoryResourceProxy
+      + UnlinkFilesystemEntry()
+      + IsInTypedMemory() : Boolean
     }
 
-    SharedMemoryFactory ..> ISharedMemoryFactory : delegates to
-
-    ' Note: the concrete SharedMemoryResource class is intentionally NOT modeled here. Its
-    ' constructors are protected and its static factory methods (Create/CreateAnonymous/
-    ' CreateOrOpen/Open) are private (only accessible to the friend class SharedMemoryFactoryImpl).
-    ' A user of ":shared" can therefore never name or obtain a SharedMemoryResource instance
-    ' directly; they always receive an ISharedMemoryResource handle.
-
-    class MemoryResourceProxy {
-      + MemoryResourceProxy(identifier : UnsignedInteger)
-      + allocate(size : UnsignedInteger, alignment : UnsignedInteger) : Pointer
-      + deallocate(pointer : Pointer, size : UnsignedInteger)
-      + {static} EnableBoundsChecking(enable : Boolean) : Boolean
-    }
-
-    ManagedMemoryResource ..> MemoryResourceProxy : returns
-
-    interface TypedMemory {
-      + {static} Default() : TypedMemory
-      + AllocateNamedTypedMemory(size : UnsignedInteger, name : String, permissions : UserPermissions) : Result
-      + AllocateAndOpenAnonymousTypedMemory(size : UnsignedInteger) : Result<Integer>
-      + Unlink(name : String) : Result
-      + GetCreatorUid(name : String) : Result<UserId>
-    }
-
-    class "Result<T>" as Result <<datatype>>
-
-    note bottom of Result
-      Abstracts score::cpp::expected<T, score::os::Error> (success value of type T)
-      resp. score::cpp::expected_blank<score::os::Error> (no success value, shown as "Result").
-      Marks an operation as fallible: it may report an score::os::Error to the caller
-      instead of / in addition to its nominal result.
-    end note
-
-    TypedMemory ..> Result : reports
-
-    ISharedMemoryFactory ..> TypedMemory : uses
-    SharedMemoryFactory ..> TypedMemory : uses
-    TypedMemory ..> UserPermissions : uses
-
-    class InitializeCallback <<callback>> {
-      .. invoked only for a newly created resource, once it is ready for use ..
-    }
-
-    ISharedMemoryFactory ..> InitializeCallback : uses
-    SharedMemoryFactory ..> InitializeCallback : uses
-
-    interface UserPermissions <<choice>>
-
-    note bottom of UserPermissions
-      {complete, disjoint}
-      A resource is either world-readable, world-writable,
-      or restricted to an explicit set of per-user permissions.
-    end note
-
-    class PermissionMap <<datatype>> {
-      .. maps an access permission (e.g. read/write) to the list of user IDs granted it ..
-    }
-
-    PermissionMap --|> UserPermissions
-
-    namespace permission {
-        class WorldReadable
-        class WorldWritable
-    }
-
-    permission.WorldReadable --|> UserPermissions
-    permission.WorldWritable --|> UserPermissions
-
-    AccessControl --> "1" UserPermissions : permissions
-    ISharedMemoryFactory ..> UserPermissions : uses
-    SharedMemoryFactory ..> UserPermissions : uses
-
+    SharedMemoryFactory *-- "n" SharedMemoryResource : creates
   }
 
   package "public API of unit allocator_pointer" {
 
     class "OffsetPtr<T>" as OffsetPtr {
-      + OffsetPtr(pointer : T [0..1])
-      + OffsetPtr<U>(other : OffsetPtr<U>)
-      + {static} pointer_to(reference : T) : OffsetPtr<T>
-      + operator*() : T
-      + operator[](index : Integer) : T
-      + operator+=(offset : Integer) : OffsetPtr<T>
-      + operator-=(offset : Integer) : OffsetPtr<T>
-      + operator++() : OffsetPtr<T>
-      + operator--() : OffsetPtr<T>
-      + get() : T [0..1]
-      + operator pointer() : T [0..1]
-      + operator->() : T [0..1]
-      + {query} operator bool() : Boolean
-      + {query} operator!() : Boolean
+      + DoPointerArithmetic(incrementOrDecrement : Integer) : OffsetPtr<T>
+      + DoPointerTargetAccess(offset : Integer) : T
+      + IsValid() : Boolean
       + {static} EnableOffsetPtrBoundsChecking(enable : Boolean) : Boolean
     }
 
     note bottom of OffsetPtr
-      OffsetPtr<T> is a smart, offset-based pointer usable across process boundaries (e.g. in
-      shared memory) that otherwise behaves like a raw T*; it participates in pointer bounds
-      checking. When T = void, additional type-erasure overloads of get() exist to
-      reinterpret the pointed-to memory as an explicit type; omitted here for brevity. See
-      class_diagram_allocator_pointer.puml for the full, non-abstracted signature set.
-      EnableOffsetPtrBoundsChecking is a free function in offset_ptr.h, shown here as {static}.
-      Bounds-check violations terminate the process.
+      OffsetPtr<T> is an offset-based pointer usable across process boundaries (e.g. in
+      shared memory) that otherwise behaves like a raw T*.
+      It provides dereferencing capabilities to access the pointed to target, where boundschecking
+      might be applied.
+      It provides pointer arithmetic capabilities to increment/decrement the pointer.
+      It provides a static function to enable/disable bounds checking and a check for validity of the pointer.
     end note
 
     class "PolymorphicOffsetPtrAllocator<T>" as PolymorphicOffsetPtrAllocator {
-      + PolymorphicOffsetPtrAllocator()
-      + PolymorphicOffsetPtrAllocator(resource : ManagedMemoryResource) : PolymorphicOffsetPtrAllocator<T>
-      + PolymorphicOffsetPtrAllocator<U>(other : PolymorphicOffsetPtrAllocator<U>)
       + allocate(size : UnsignedInteger) : OffsetPtr<T>
       + deallocate(pointer : OffsetPtr<T>, size : UnsignedInteger)
       + getMemoryResourceProxy() : OffsetPtr<MemoryResourceProxy>

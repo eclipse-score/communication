@@ -1,0 +1,62 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor "User" as Process
+participant "factory_resources" as factory_resources
+participant OS
+participant LockFile
+participant ShmObject
+
+
+activate Process
+
+Process -> factory_resources : SharedMemoryFactory::Create(path, initializer, reservedSize, permissions, preferTypedMemory)
+activate factory_resources
+factory_resources -> factory_resources : Check if path already opened in process
+
+alt path already opened in process
+    factory_resources -> Process : Return nullptr
+else path not opened in process
+    factory_resources -> OS : Create LockFile
+    activate OS
+    create LockFile
+    OS -> LockFile : Create
+    alt LockFile creation failed
+        OS --> factory_resources : return : failure
+        deactivate OS
+        factory_resources -> Process : Return nullptr
+    else LockFile creation succeeded
+        OS --> factory_resources : return : success
+        activate LockFile
+        deactivate OS
+        factory_resources -> OS : Create ShmObject (shm_open))
+        activate OS
+        create ShmObject
+        OS -> ShmObject : Create
+        OS --> factory_resources : return : file descriptor ShmObject
+        deactivate OS
+
+        factory_resources -> ShmObject : Apply permissions (fchmod/ACL)
+        activate ShmObject
+        factory_resources <-- ShmObject : return : success
+        deactivate ShmObject
+        factory_resources -> ShmObject : ftruncate(fd, reservedSize)
+        activate ShmObject
+        ShmObject --> factory_resources : return : success
+        deactivate ShmObject
+
+        factory_resources -> ShmObject : mmap(fd, reservedSize, PROT_READ | PROT_WRITE, MAP_SHARED)
+        activate ShmObject
+        ShmObject --> factory_resources : return : baseAddress
+        deactivate ShmObject
+        factory_resources -> Process : Call initializer
+        factory_resources <-- Process : return
+        Process <-- factory_resources : return : SharedMemoryResource
+        destroy LockFile
+        deactivate factory_resources
+    end
+end
+
+@enduml

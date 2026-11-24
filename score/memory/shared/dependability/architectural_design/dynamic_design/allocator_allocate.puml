@@ -1,0 +1,40 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor "User" as Process
+participant "PolymorphicOffsetPtrAllocator" as allocator
+participant "MemoryResourceProxy" as proxy
+participant "SharedMemoryResource" as resource
+participant "MemoryResourceRegistry" as registry
+
+activate Process
+create allocator
+Process -> allocator: Create(SharedMemoryResource)
+activate allocator
+allocator -> resource: getMemoryResourceProxy()
+activate resource
+allocator <-- resource: return : MemoryResourceProxy
+deactivate resource
+deactivate allocator
+Process -> allocator: Allocate(size)
+activate allocator
+allocator -> proxy: allocate(size, alignment)
+activate proxy
+proxy -> registry: GetBoundsFromIdentifier(proxy identifier)
+activate registry
+proxy <-- registry: return : MemoryRegionBounds [0..1]
+deactivate registry
+alt Bounds check fails
+    proxy -> proxy : terminate()
+    == Bounds check failed - Terminate ==
+else Bounds check passes
+    proxy -> resource : allocate(size, alignment)
+    proxy <-- resource : return : Pointer
+    allocator <-- proxy : return : Pointer
+    deactivate proxy
+    Process <-- allocator : return : OffsetPtr<T>
+    deactivate allocator
+end
+@enduml
