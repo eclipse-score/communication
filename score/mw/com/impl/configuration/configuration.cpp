@@ -327,9 +327,11 @@ score::Result<bool> Configuration::HasLolaServiceDeployment() const
         [](const LolaServiceTypeDeployment&) {
             return true;
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         [](const SomeIpServiceTypeDeployment&) noexcept {
             return false;
         },
+#endif
         [](const score::cpp::blank&) noexcept {
             return false;
         });
@@ -344,6 +346,7 @@ score::Result<bool> Configuration::HasLolaServiceDeployment() const
     return false;
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 score::Result<bool> Configuration::HasSomeIpServiceDeployment() const noexcept
 {
     auto deployment_info_visitor = score::cpp::overload(
@@ -366,6 +369,7 @@ score::Result<bool> Configuration::HasSomeIpServiceDeployment() const noexcept
     }
     return false;
 }
+#endif
 
 std::set<std::string_view> Configuration::GetServiceTypeNames() const noexcept
 {
@@ -385,9 +389,11 @@ std::set<std::string_view> Configuration::GetElementNamesOfServiceType(const std
         [&result, element_type](const LolaServiceTypeDeployment& lola_service_deployment) {
             InsertServiceElementNames(lola_service_deployment, element_type, result);
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         [&result, element_type](const SomeIpServiceTypeDeployment& someip_service_deployment) {
             InsertServiceElementNames(someip_service_deployment, element_type, result);
         },
+#endif
         // LCOV_EXCL_START (Unreachable Code: GetElementNamesOfServiceType can only be called on an existing service
         // type. I.e. The ServiceTypeDeployment can never be score::cpp::blank. This code is there because std::visit
         // must handle all std::variant alternatives.

@@ -12,10 +12,12 @@
 # *******************************************************************************
 
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
+load("//score/mw/com/flags:flags.bzl", "SOMEIP_ENABLED_ONLY")
 
 cc_unit_test(
     name = "e2e_event_protection_test",
     srcs = ["e2e_event_protection_test.cpp"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [
         "//score/mw/com/impl/bindings/someip:e2e_event_protection",
         "//score/mw/com/impl/configuration",
@@ -25,6 +27,7 @@ cc_unit_test(
 cc_unit_test(
     name = "event_data_storage_test",
     srcs = ["event_data_storage_test.cpp"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [
         "//score/mw/com/impl/bindings/someip:event_data_storage",
         "@score_baselibs//score/memory:data_type_size_info",
@@ -34,12 +37,14 @@ cc_unit_test(
 cc_unit_test(
     name = "slot_allocation_control_test",
     srcs = ["slot_allocation_control_test.cpp"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = ["//score/mw/com/impl/bindings/someip:slot_allocation_control"],
 )
 
 cc_unit_test(
     name = "skeleton_event_test",
     srcs = ["skeleton_event_stub_test.cpp"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl/bindings/someip:sample_allocatee_ptr",

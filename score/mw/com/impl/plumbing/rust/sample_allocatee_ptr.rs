@@ -108,14 +108,15 @@ unsafe impl<T> Send for SampleAllocateePtr<T> {}
 impl<T> Debug for SampleAllocateePtr<T> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         // Must match the alternative order of
-        // std::variant<score::cpp::blank, lola::SampleAllocateePtr, someip::SampleAllocateePtr,
-        //              mock_binding::SampleAllocateePtr>
-        // in score/mw/com/impl/plumbing/sample_allocatee_ptr.h.
+        // std::variant<score::cpp::blank, lola::SampleAllocateePtr, mock_binding::SampleAllocateePtr
+        //              [, someip::SampleAllocateePtr]>
+        // in score/mw/com/impl/plumbing/sample_allocatee_ptr.h. The SOME/IP alternative only exists if the
+        // SOME/IP binding is enabled (feature flag experimental_enable_someip_binding).
         let state = match self._internal._index {
             0 => "Blank",
             1 => "LolaSampleAllocateePtr",
-            2 => "SomeIpSampleAllocateePtr",
-            3 => "UniquePtr",
+            2 => "UniquePtr",
+            3 => "SomeIpSampleAllocateePtr",
             _ => "Unknown",
         };
 

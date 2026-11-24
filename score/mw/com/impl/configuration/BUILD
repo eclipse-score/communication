@@ -19,6 +19,7 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//bazel/rules:expand_template.bzl", "expand_template")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
+load("//score/mw/com/flags:flags.bzl", "SOMEIP_ENABLED_ONLY", "if_someip_enabled")
 load("//score/mw/com/impl/configuration/converter:json_to_flatbuffer_rule.bzl", "json_to_flatbuffer")
 
 # Compile-time switch for the (experimental) FlatBuffers configuration path, see //score/mw/com/flags.
@@ -190,10 +191,9 @@ cc_library(
         ":lola_service_instance_deployment",
         ":quality_type",
         ":service_type_deployment",
-        ":someip_service_instance_deployment",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/quality/compiler_warnings",
-    ],
+    ] + if_someip_enabled([":someip_service_instance_deployment"]),
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -201,6 +201,7 @@ cc_library(
     deps = [
         ":configuration_local",
         ":i_configuration_parsing_strategy",
+        "//score/mw/com/flags:someip_feature",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -222,8 +223,6 @@ cc_library(
         ":lola_service_instance_deployment",
         ":quality_type",
         ":service_type_deployment",
-        ":someip_service_instance_deployment",
-        ":someip_service_type_deployment",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/quality/compiler_warnings",
     ] + select({
@@ -233,7 +232,10 @@ cc_library(
             "@score_baselibs//score/flatbuffers:flatbufferutils",
         ],
         "//conditions:default": [],
-    }),
+    }) + if_someip_enabled([
+        ":someip_service_instance_deployment",
+        ":someip_service_type_deployment",
+    ]),
     local_defines = _FLATBUFFERS_LOCAL_DEFINES,
     tags = ["FFI"],
     visibility = [
@@ -242,6 +244,7 @@ cc_library(
     deps = [
         ":configuration_local",
         ":i_configuration_parsing_strategy",
+        "//score/mw/com/flags:someip_feature",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -471,6 +474,7 @@ cc_library(
     srcs = ["someip_service_element_id.cpp"],
     hdrs = ["someip_service_element_id.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
 )
 
 cc_library(
@@ -478,6 +482,7 @@ cc_library(
     srcs = ["someip_service_id.cpp"],
     hdrs = ["someip_service_id.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
 )
 
 cc_library(
@@ -485,6 +490,7 @@ cc_library(
     srcs = ["someip_event_id.cpp"],
     hdrs = ["someip_event_id.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [":someip_service_element_id"],
 )
 
@@ -493,6 +499,7 @@ cc_library(
     srcs = ["someip_field_id.cpp"],
     hdrs = ["someip_field_id.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [":someip_service_element_id"],
 )
 
@@ -501,6 +508,7 @@ cc_library(
     srcs = ["someip_method_id.cpp"],
     hdrs = ["someip_method_id.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [":someip_service_element_id"],
 )
 
@@ -509,6 +517,7 @@ cc_library(
     srcs = ["someip_service_type_deployment.cpp"],
     hdrs = ["someip_service_type_deployment.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [
         ":binding_service_type_deployment",
         ":someip_event_id",
@@ -527,6 +536,7 @@ cc_library(
         "@score_baselibs//score/language/safecpp/safe_math",
     ],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = ["//score/mw/com/impl/bindings/someip:__pkg__"],
     deps = ["@score_baselibs//score/json"],
 )
@@ -540,6 +550,7 @@ cc_library(
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         "@score_baselibs//score/json",
@@ -552,6 +563,7 @@ cc_library(
     srcs = ["someip_field_instance_deployment.cpp"],
     hdrs = ["someip_field_instance_deployment.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [
         ":configuration_common_resources",
         ":someip_event_instance_deployment",
@@ -563,6 +575,7 @@ cc_library(
     srcs = ["someip_service_instance_deployment.cpp"],
     hdrs = ["someip_service_instance_deployment.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [
         ":configuration_common_resources",
         ":someip_event_instance_deployment",
@@ -611,12 +624,12 @@ cc_library(
         ":lola_service_instance_deployment",
         ":quality_type",
         ":service_identifier_type",
-        ":someip_service_instance_deployment",
+        "//score/mw/com/flags:someip_feature",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:instance_specifier",
         "@score_baselibs//score/language/futurecpp",
-    ],
+    ] + if_someip_enabled([":someip_service_instance_deployment"]),
 )
 
 cc_library(
@@ -628,10 +641,10 @@ cc_library(
     deps = [
         ":configuration_common_resources",
         ":lola_service_instance_id",
-        ":someip_service_instance_id",
+        "//score/mw/com/flags:someip_feature",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/futurecpp",
-    ],
+    ] + if_someip_enabled([":someip_service_instance_id"]),
 )
 
 cc_library(
@@ -645,9 +658,9 @@ cc_library(
     deps = [
         ":configuration_common_resources",
         ":lola_service_type_deployment",
-        ":someip_service_type_deployment",
+        "//score/mw/com/flags:someip_feature",
         "@score_baselibs//score/json",
-    ],
+    ] + if_someip_enabled([":someip_service_type_deployment"]),
 )
 
 cc_library(
@@ -968,6 +981,7 @@ cc_unit_test(
 cc_unit_test(
     name = "someip_service_instance_deployment_test",
     srcs = ["someip_service_instance_deployment_test.cpp"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [
         ":someip_service_instance_deployment",
     ],

@@ -132,9 +132,13 @@ build --host_per_file_copt=external/.*rules_cc_autoconf.*@-Wno-error=conversion
 # Enable the experimental FlatBuffers configuration path.
 build:flatbuffers --//score/mw/com/flags:experimental_enable_flatbuffers_configuration=True
 
+# Enable the (experimental) SOME/IP binding.
+build:someip --//score/mw/com/flags:experimental_enable_someip_binding=True
+
 # Activates all experimental feature flags at once, see CI.md#feature-flags.
 # Every experimental feature flag must be added here.
 build:activate_all_experimental_features --config=flatbuffers
+build:activate_all_experimental_features --config=someip
 
 common:linux_x86_64_score_gcc_12_2_0_posix --platforms=@score_bazel_platforms//:x86_64-linux-gcc_12.2.0-posix
 common:linux_x86_64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_x86_64_toolchain//:x86_64-linux

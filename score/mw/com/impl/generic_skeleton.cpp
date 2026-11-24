@@ -46,6 +46,7 @@ std::string_view GetEventName(const InstanceIdentifier& identifier, std::string_
             }
             return {};
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         [&](const SomeIpServiceTypeDeployment& deployment) -> std::string_view {
             const auto it = deployment.events_.find(std::string{search_name});
             if (it != deployment.events_.end())
@@ -54,6 +55,7 @@ std::string_view GetEventName(const InstanceIdentifier& identifier, std::string_
             }
             return {};
         },
+#endif
         [](const score::cpp::blank&) noexcept -> std::string_view {
             return {};
         });

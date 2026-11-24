@@ -17,13 +17,18 @@
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/bindings/someip/element_fq_id.h"
 #include "score/mw/com/impl/bindings/someip/skeleton.h"
+#include "score/mw/com/impl/bindings/someip/skeleton_event.h"
 #include "score/mw/com/impl/bindings/someip/skeleton_event_properties.h"
+#endif
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
+#endif
 #include "score/mw/com/impl/field_tags_store.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
@@ -50,6 +55,13 @@ namespace score::mw::com::impl
 
 namespace detail
 {
+
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
+using SomeIpSkeletonEventBinding = someip::SkeletonEvent;
+#else
+// Placeholder for the (then unused) SOME/IP template argument of CreateSkeletonEventOrField.
+using SomeIpSkeletonEventBinding = void;
+#endif
 
 /// \brief Creates a SkeletonEventProperties object from the configuration and field tags (for a field)
 ///
@@ -118,6 +130,7 @@ inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
                                          field_tags_store);
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 /// \brief Creates SkeletonEventProperties for the SOME/IP binding from the configuration and field tags.
 ///
 /// \details Mirrors the LoLa overload above. It is simpler because the SOME/IP binding has neither IPC tracing slots
@@ -174,6 +187,7 @@ inline someip::SkeletonEventProperties CreateSomeIpSkeletonEventProperties(
     return CreateSomeIpSkeletonEventProperties(someip_field_instance_deployment.someip_event_instance_deployment_,
                                                field_tags_store);
 }
+#endif
 
 }  // namespace detail
 
@@ -250,6 +264,7 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
                                                                 skeleton_event_properties,
                                                                 impl::tracing::SkeletonEventTracingData{});
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         [identifier_view, &parent_binding, &service_element_name, &sample_type_size_info, field_tags_store](
             const SomeIpServiceTypeDeployment& someip_service_type_deployment) -> ReturnType {
             auto* const someip_parent = dynamic_cast<someip::Skeleton*>(&parent_binding);
@@ -286,6 +301,7 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
                                                                   skeleton_event_properties,
                                                                   impl::tracing::SkeletonEventTracingData{});
         },
+#endif
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return nullptr;
         });
@@ -343,12 +359,14 @@ auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
                                                             size_info,
                                                             tracing::SkeletonEventTracingData{});
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         // TODO(someip-generic-skeleton-event-field): Create the generic SOME/IP skeleton event or field binding.
         // This arm is listed explicitly instead of being served by the score::cpp::blank arm because
         // std::visit requires an arm for every variant alternative.
         [](const SomeIpServiceTypeDeployment&) noexcept -> ReturnType {
             return nullptr;
         },
+#endif
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return nullptr;
         });

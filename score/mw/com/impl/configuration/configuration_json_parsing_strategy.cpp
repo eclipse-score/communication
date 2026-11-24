@@ -18,8 +18,10 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
+#endif
 #include "score/mw/com/impl/configuration/tracing_configuration.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/service_element_type.h"
@@ -602,6 +604,7 @@ auto ParsePermissionChecks(const score::json::Object& deployment_map) -> std::st
     return kFilePermissionsOnEmpty;
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseSomeIpEventInstanceDeployment(const score::json::Object& json_map, SomeIpServiceInstanceDeployment& service)
@@ -708,6 +711,7 @@ auto ParseSomeIpServiceInstanceDeployment(const score::json::Object& json_map) -
 
     return service;
 }
+#endif
 
 auto ParseLolaServiceInstanceDeployment(const score::json::Object& json_map) -> LolaServiceInstanceDeployment
 {
@@ -830,11 +834,18 @@ auto ParseServiceInstanceDeployments(const score::json::Object& json_map,
             }
             else if (bindingValue == kSomeIpBinding)
             {
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
                 // Return Value not needed in this context
                 score::cpp::ignore = deployments.emplace_back(service,
                                                               ParseSomeIpServiceInstanceDeployment(deployment_map),
                                                               asil_level.value(),
                                                               instance_specifier);
+#else
+                score::mw::log::LogFatal("lola")
+                    << "SOME/IP binding configured, but SOME/IP support is disabled. Enable it with "
+                       "--config=someip (//score/mw/com/flags:experimental_enable_someip_binding).";
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+#endif
             }
             else
             {
@@ -1081,6 +1092,7 @@ auto ParseLoLaServiceTypeDeployments(const score::json::Object& json_map) -> Lol
     return lola;
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseSomeIpServiceTypeDeployments(const score::json::Object& json_map) -> SomeIpServiceTypeDeployment
@@ -1099,6 +1111,7 @@ auto ParseSomeIpServiceTypeDeployments(const score::json::Object& json_map) -> S
     ValidateUniqueServiceElementIds(someip);
     return someip;
 }
+#endif
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
@@ -1133,8 +1146,15 @@ auto ParseServiceTypeDeployment(const score::json::Object& json_map) -> ServiceT
         }
         else if (value == kSomeIpBinding)
         {
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
             SomeIpServiceTypeDeployment someip_deployment = ParseSomeIpServiceTypeDeployments(binding_map);
             return ServiceTypeDeployment{someip_deployment};
+#else
+            score::mw::log::LogFatal("lola")
+                << "SOME/IP binding configured, but SOME/IP support is disabled. Enable it with "
+                   "--config=someip (//score/mw/com/flags:experimental_enable_someip_binding).";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+#endif
         }
         else
         {

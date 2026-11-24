@@ -12,6 +12,7 @@
 # *******************************************************************************
 
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 # Gates the (experimental) FlatBuffers configuration path. When set, the runtime
 # parses configuration files ending in .bfbs/.bin with the FlatBuffers config
@@ -31,5 +32,35 @@ config_setting(
     flag_values = {
         ":experimental_enable_flatbuffers_configuration": "True",
     },
+    visibility = ["//score/mw/com:__subpackages__"],
+)
+
+# Gates the (experimental) SOME/IP binding: its configuration types, the binding implementation and the
+# SOME/IP specific code paths in the plumbing/runtime. Enable with --config=someip (see .bazelrc).
+# Experimental feature flag: must be part of --config=activate_all_experimental_features
+# in .bazelrc (see CI.md#feature-flags).
+bool_flag(
+    name = "experimental_enable_someip_binding",
+    build_setting_default = False,
+    visibility = ["//score/mw/com:__subpackages__"],
+)
+
+config_setting(
+    name = "someip_enabled",
+    flag_values = {
+        ":experimental_enable_someip_binding": "True",
+    },
+    visibility = ["//score/mw/com:__subpackages__"],
+)
+
+# Propagates SCORE_MW_COM_SOMEIP_BINDING_ENABLED to every target which (transitively) depends on it. Targets that
+# contain `#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)` must depend on this library, so that all translation units
+# agree on the layout of types such as the binding variants.
+cc_library(
+    name = "someip_feature",
+    defines = select({
+        ":someip_enabled": ["SCORE_MW_COM_SOMEIP_BINDING_ENABLED"],
+        "//conditions:default": [],
+    }),
     visibility = ["//score/mw/com:__subpackages__"],
 )

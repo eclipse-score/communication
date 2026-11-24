@@ -12,12 +12,14 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//score/mw/com/flags:flags.bzl", "SOMEIP_ENABLED_ONLY")
 
 cc_library(
     name = "e2e_event_protection",
     srcs = ["e2e_event_protection.cpp"],
     hdrs = ["e2e_event_protection.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         "//score/mw/com/impl/configuration",
@@ -35,6 +37,7 @@ cc_library(
         "@score_baselibs//score/language/safecpp/safe_math",
     ],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -52,6 +55,7 @@ cc_library(
         "@score_baselibs//score/language/safecpp/safe_math",
     ],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -67,6 +71,7 @@ cc_library(
     srcs = ["slot_allocation_control.cpp"],
     hdrs = ["slot_allocation_control.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -77,6 +82,7 @@ cc_library(
     name = "skeleton_event_properties",
     hdrs = ["skeleton_event_properties.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -90,6 +96,7 @@ cc_library(
         "@score_baselibs//score/language/safecpp/safe_math",
     ],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -105,6 +112,7 @@ cc_library(
     srcs = ["skeleton.cpp"],
     hdrs = ["skeleton.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -130,6 +138,7 @@ cc_library(
     srcs = ["skeleton_event.cpp"],
     hdrs = ["skeleton_event.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -163,6 +172,7 @@ cc_library(
         "service_discovery_client.h",
     ],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -181,6 +191,7 @@ cc_library(
     srcs = ["proxy.cpp"],
     hdrs = ["proxy.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -194,6 +205,7 @@ cc_library(
     srcs = ["proxy_event.cpp"],
     hdrs = ["proxy_event.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -209,6 +221,7 @@ cc_library(
 cc_library(
     name = "someip",
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],

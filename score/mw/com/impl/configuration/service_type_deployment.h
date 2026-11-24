@@ -14,7 +14,9 @@
 #define SCORE_MW_COM_IMPL_CONFIGURATION_SERVICE_TYPE_DEPLOYMENT_H
 
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
+#endif
 
 #include "score/json/json_parser.h"
 #include "score/mw/log/logging.h"
@@ -32,7 +34,11 @@ namespace score::mw::com::impl
 class ServiceTypeDeployment
 {
   public:
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
     using BindingInformation = std::variant<LolaServiceTypeDeployment, SomeIpServiceTypeDeployment, score::cpp::blank>;
+#else
+    using BindingInformation = std::variant<LolaServiceTypeDeployment, score::cpp::blank>;
+#endif
 
     explicit ServiceTypeDeployment(const score::json::Object& json_object);
 
@@ -56,8 +62,12 @@ class ServiceTypeDeployment
      */
     // Variable is used in a test case -> so this line is tested and prepared for easier reuse
     // coverity[autosar_cpp14_a0_1_1_violation]
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
     constexpr static std::size_t hashStringSize{
         std::max(LolaServiceTypeDeployment::hashStringSize, SomeIpServiceTypeDeployment::hashStringSize) + 1U};
+#else
+    constexpr static std::size_t hashStringSize{LolaServiceTypeDeployment::hashStringSize + 1U};
+#endif
 
     /// \brief Bumped to 2 when SomeIpServiceTypeDeployment was inserted into BindingInformation before
     /// score::cpp::blank: that shifted the alternative indices which Serialize() writes as bindingInfoIndex, so

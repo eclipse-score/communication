@@ -15,7 +15,9 @@
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/bindings/someip/skeleton.h"
+#endif
 
 #include "score/filesystem/filesystem.h"
 
@@ -70,10 +72,12 @@ auto SkeletonBindingFactoryImpl::Create(const InstanceIdentifier& identifier) no
             return lola::Skeleton::Create(
                 identifier, filesystem, std::move(shm_path_builder), std::move(partial_restart_path_builder));
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         // coverity[autosar_cpp14_a7_1_7_violation]
         [&identifier](const SomeIpServiceInstanceDeployment&) noexcept -> std::unique_ptr<SkeletonBinding> {
             return someip::Skeleton::Create(identifier);
         },
+#endif
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> std::unique_ptr<SkeletonBinding> {
             return nullptr;

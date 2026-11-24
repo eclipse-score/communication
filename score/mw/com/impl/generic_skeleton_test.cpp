@@ -17,8 +17,10 @@
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
+#endif
 #include "score/mw/com/impl/i_binding_runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/service_discovery_client_mock.h"
@@ -323,6 +325,7 @@ TEST_F(GenericSkeletonTest, CreateWithBlankBindingTypeMissingEventInConfiguratio
     EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 TEST_F(GenericSkeletonTest, CreateWithSomeIpBindingResolvesEventNameFromConfiguration)
 {
     // Given an instance identifier whose service type deployment is a SOME/IP deployment containing the event
@@ -386,6 +389,7 @@ TEST_F(GenericSkeletonTest, CreateWithSomeIpBindingMissingEventInConfigurationFa
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
 }
+#endif
 
 TEST_F(GenericSkeletonTest, CreateFailsIfMainBindingCannotBeCreated)
 {

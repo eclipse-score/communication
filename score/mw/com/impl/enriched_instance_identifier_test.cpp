@@ -155,6 +155,7 @@ TEST(EnrichedInstanceIdentifierBindingSpecificInstanceIdTest, CannotRetrieveInst
     EXPECT_FALSE(unit.GetBindingSpecificInstanceId<LolaServiceInstanceId>().has_value());
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 TEST(EnrichedInstanceIdentifierBindingSpecificInstanceIdTest, CannotRetrieveInstanceIdWhenVariantHoldsDifferentBinding)
 {
     // Given an EnrichedInstanceIdentifier whose instance id is present and holds a SomeIp binding
@@ -166,6 +167,7 @@ TEST(EnrichedInstanceIdentifierBindingSpecificInstanceIdTest, CannotRetrieveInst
     // Then no value is returned, since the instance id holds a SomeIp (not Lola) binding
     EXPECT_FALSE(unit.GetBindingSpecificInstanceId<LolaServiceInstanceId>().has_value());
 }
+#endif
 
 TEST(EnrichedInstanceIdentifierComparison, ComparesEqual)
 {

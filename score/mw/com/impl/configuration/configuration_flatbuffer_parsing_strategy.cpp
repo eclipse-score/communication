@@ -26,8 +26,10 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
+#endif
 #include "score/mw/com/impl/configuration/tracing_configuration.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/service_element_type.h"
@@ -451,6 +453,7 @@ auto ParseLolaServiceInstanceDeployment(const fbs::ServiceInstanceBinding& deplo
     return service;
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 auto ParseSomeIpEventInstanceDeployment(const fbs::ServiceInstanceBinding& deployment,
                                         SomeIpServiceInstanceDeployment& service) -> void
 {
@@ -517,6 +520,7 @@ auto ParseSomeIpServiceInstanceDeployment(const fbs::ServiceInstanceBinding& dep
 
     return service;
 }
+#endif
 
 auto ParseServiceInstanceDeployments(const fbs::ServiceInstance& service_instance,
                                      TracingConfiguration& tracing_configuration,
@@ -539,8 +543,15 @@ auto ParseServiceInstanceDeployments(const fbs::ServiceInstance& service_instanc
                     service, ParseLolaServiceInstanceDeployment(*deployment), asil_level, instance_specifier);
                 break;
             case fbs::Binding::SOMEIP:
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
                 score::cpp::ignore = deployments.emplace_back(
                     service, ParseSomeIpServiceInstanceDeployment(*deployment), asil_level, instance_specifier);
+#else
+                score::mw::log::LogFatal("lola")
+                    << "SOME/IP binding configured, but SOME/IP support is disabled. Enable it with "
+                       "--config=someip (//score/mw/com/flags:experimental_enable_someip_binding).";
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+#endif
                 break;
             default:  // LCOV_EXCL_LINE defensive programming
                 score::mw::log::LogFatal("lola") << "Unknown binding provided. Required argument.";  // LCOV_EXCL_LINE
@@ -671,6 +682,7 @@ auto ParseLoLaServiceTypeDeployments(const fbs::ServiceTypeBinding& binding) -> 
     return lola;
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 auto ParseSomeIpServiceTypeDeployments(const fbs::ServiceTypeBinding& binding) -> SomeIpServiceTypeDeployment
 {
     SomeIpServiceTypeDeployment someip{
@@ -681,6 +693,7 @@ auto ParseSomeIpServiceTypeDeployments(const fbs::ServiceTypeBinding& binding) -
     ValidateUniqueServiceElementIds(someip);
     return someip;
 }
+#endif
 
 auto ParseServiceTypeDeployment(const fbs::ServiceType& service_type) -> ServiceTypeDeployment
 {
@@ -693,7 +706,15 @@ auto ParseServiceTypeDeployment(const fbs::ServiceType& service_type) -> Service
             case fbs::Binding::SHM:
                 return ServiceTypeDeployment{ParseLoLaServiceTypeDeployments(*binding)};
             case fbs::Binding::SOMEIP:
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
                 return ServiceTypeDeployment{ParseSomeIpServiceTypeDeployments(*binding)};
+#else
+                score::mw::log::LogFatal("lola")
+                    << "SOME/IP binding configured, but SOME/IP support is disabled. Enable it with "
+                       "--config=someip (//score/mw/com/flags:experimental_enable_someip_binding).";
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+                break;
+#endif
             default:  // LCOV_EXCL_LINE defensive programming
                 score::mw::log::LogFatal("lola")
                     << "No unknown binding provided. Required argument.";  // LCOV_EXCL_LINE

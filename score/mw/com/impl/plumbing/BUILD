@@ -14,6 +14,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
+load("//score/mw/com/flags:flags.bzl", "SOMEIP_ENABLED_ONLY", "if_someip_enabled")
 
 unit(
     name = "mw_com_binding_factories",
@@ -91,8 +92,7 @@ cc_library(
     hdrs = ["skeleton_method_binding_factory_impl.h"],
     implementation_deps = [
         "//score/mw/com/impl/bindings/lola",
-        "//score/mw/com/impl/bindings/someip",
-    ],
+    ] + if_someip_enabled(["//score/mw/com/impl/bindings/someip"]),
     tags = ["FFI"],
     deps = [
         ":i_skeleton_method_binding_factory",
@@ -148,10 +148,9 @@ cc_library(
     deps = [
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl/bindings/lola",
-        "//score/mw/com/impl/bindings/someip",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/concurrency:executor",
-    ],
+    ] + if_someip_enabled(["//score/mw/com/impl/bindings/someip"]),
 )
 
 cc_library(
@@ -317,8 +316,7 @@ cc_library(
     hdrs = ["proxy_binding_factory_impl.h"],
     implementation_deps = [
         "//score/mw/com/impl/bindings/lola",
-        "//score/mw/com/impl/bindings/someip",
-    ],
+    ] + if_someip_enabled(["//score/mw/com/impl/bindings/someip"]),
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/plumbing:__subpackages__",
@@ -361,6 +359,7 @@ cc_library(
         "@score_baselibs//score/language/futurecpp",
     ],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = [
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
@@ -379,8 +378,7 @@ cc_library(
     hdrs = ["proxy_event_binding_factory_impl.h"],
     implementation_deps = [
         "//score/mw/com/impl/bindings/lola",
-        "//score/mw/com/impl/bindings/someip",
-    ],
+    ] + if_someip_enabled(["//score/mw/com/impl/bindings/someip"]),
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/plumbing:__subpackages__",
@@ -390,9 +388,8 @@ cc_library(
         ":i_generic_proxy_event_binding_factory",
         ":i_proxy_event_binding_factory",
         ":lola_proxy_element_building_blocks",
-        ":someip_proxy_element_building_blocks",
         "@score_baselibs//score/language/futurecpp",
-    ],
+    ] + if_someip_enabled([":someip_proxy_element_building_blocks"]),
 )
 
 cc_library(
@@ -401,8 +398,7 @@ cc_library(
     hdrs = ["proxy_field_binding_factory_impl.h"],
     implementation_deps = [
         "//score/mw/com/impl/bindings/lola",
-        "//score/mw/com/impl/bindings/someip",
-    ],
+    ] + if_someip_enabled(["//score/mw/com/impl/bindings/someip"]),
     tags = ["FFI"],
     deps = [
         ":i_proxy_field_binding_factory",
@@ -421,8 +417,7 @@ cc_library(
     hdrs = ["proxy_method_binding_factory_impl.h"],
     implementation_deps = [
         "//score/mw/com/impl/bindings/lola",
-        "//score/mw/com/impl/bindings/someip",
-    ],
+    ] + if_someip_enabled(["//score/mw/com/impl/bindings/someip"]),
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/plumbing:__subpackages__",
@@ -443,9 +438,8 @@ cc_library(
         "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/bindings/lola:partial_restart_path_builder",
         "//score/mw/com/impl/bindings/lola:shm_path_builder",
-        "//score/mw/com/impl/bindings/someip",
         "@score_baselibs//score/mw/log",
-    ],
+    ] + if_someip_enabled(["//score/mw/com/impl/bindings/someip"]),
     tags = ["FFI"],
     deps = [
         ":i_skeleton_binding_factory",
@@ -459,13 +453,13 @@ cc_library(
     hdrs = ["skeleton_service_element_binding_factory_impl.h"],
     tags = ["FFI"],
     deps = [
+        "//score/mw/com/flags:someip_feature",
         "//score/mw/com/impl:field_tags_store",
         "//score/mw/com/impl:skeleton_base",
         "//score/mw/com/impl/bindings/lola",
-        "//score/mw/com/impl/bindings/someip",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/language/futurecpp",
-    ],
+    ] + if_someip_enabled(["//score/mw/com/impl/bindings/someip"]),
 )
 
 cc_library(
@@ -474,8 +468,7 @@ cc_library(
     hdrs = ["skeleton_event_binding_factory_impl.h"],
     implementation_deps = [
         "//score/mw/com/impl/bindings/lola",
-        "//score/mw/com/impl/bindings/someip",
-    ],
+    ] + if_someip_enabled(["//score/mw/com/impl/bindings/someip"]),
     tags = ["FFI"],
     deps = [
         ":i_skeleton_event_binding_factory",
@@ -490,8 +483,7 @@ cc_library(
     hdrs = ["skeleton_field_binding_factory_impl.h"],
     implementation_deps = [
         "//score/mw/com/impl/bindings/lola",
-        "//score/mw/com/impl/bindings/someip",
-    ],
+    ] + if_someip_enabled(["//score/mw/com/impl/bindings/someip"]),
     tags = ["FFI"],
     deps = [
         ":i_skeleton_field_binding_factory",
@@ -721,11 +713,10 @@ cc_library(
     deps = [
         "//score/mw/com/impl:runtime_interfaces",
         "//score/mw/com/impl/bindings/lola:runtime",
-        "//score/mw/com/impl/bindings/someip:runtime",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config",
         "@score_baselibs//score/language/futurecpp",
-    ],
+    ] + if_someip_enabled(["//score/mw/com/impl/bindings/someip:runtime"]),
 )
 
 cc_library(
@@ -782,11 +773,11 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
+        "//score/mw/com/flags:someip_feature",
         "//score/mw/com/impl:sample_allocatee_tracker",
         "//score/mw/com/impl/bindings/lola:event",
         "//score/mw/com/impl/bindings/mock_binding:sample_allocatee_ptr",
-        "//score/mw/com/impl/bindings/someip:sample_allocatee_ptr",
-    ],
+    ] + if_someip_enabled(["//score/mw/com/impl/bindings/someip:sample_allocatee_ptr"]),
 )
 
 cc_library(
@@ -841,11 +832,10 @@ cc_unit_test(
         ":proxy_field_binding_factory",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "//score/mw/com/impl/bindings/mock_binding",
-        "//score/mw/com/impl/bindings/someip",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "//score/mw/com/impl/util:type_erased_storage",
-    ],
+    ] + if_someip_enabled(["//score/mw/com/impl/bindings/someip"]),
 )
 
 cc_unit_test(

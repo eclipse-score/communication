@@ -172,6 +172,7 @@ TracingData ExtractBindingTracingData(const impl::SampleAllocateePtr<void>& samp
 
             return {trace_point_data_id, {lola_ptr.get(), sample_type_size_info.Size()}};
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
         // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
         // the function replaces the managed object".
@@ -182,6 +183,7 @@ TracingData ExtractBindingTracingData(const impl::SampleAllocateePtr<void>& samp
         [](const someip::SampleAllocateePtr&) -> TracingData {
             std::terminate();
         },
+#endif
         // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
         // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
         // the function replaces the managed object".

@@ -14,8 +14,10 @@
 #include "score/mw/com/impl/configuration/configuration_json_parsing_strategy.h"
 
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
+#endif
 #include "score/quality/compiler_warnings/warnings.h"
 
 #include <score/assert_support.hpp>
@@ -279,6 +281,7 @@ TEST_P(ConfigurationParsingStrategyTest, NoServiceTypesWillDie)
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_service_types"));
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 TEST_P(ConfigurationParsingStrategyTest, ParseSomeIpBinding)
 {
     // Given a JSON which configures a service type and a service instance with a SOME/IP binding
@@ -319,6 +322,7 @@ TEST_P(ConfigurationParsingStrategyTest, ParseSomeIpBinding)
     EXPECT_EQ(event_instance_deployment.GetNumberOfSampleSlots().value(), 50U);
     EXPECT_EQ(event_instance_deployment.max_subscribers_.value(), 5U);
 }
+#endif
 
 TEST_P(ConfigurationParsingStrategyTest, NoServiceNameForServiceType)
 {
@@ -1688,6 +1692,7 @@ TEST_P(ConfigurationParsingStrategyTest, MultipleDeploymentsPerServiceInstanceWi
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "multiple_deployments_per_instance"));
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 TEST_P(ConfigurationParsingStrategyTest, MaximumNestingParsesEveryLevel)
 {
     // Given a JSON which populates every level of the configuration with more than one entry: two service types
@@ -1776,5 +1781,6 @@ TEST_P(ConfigurationParsingStrategyTest, MaximumNestingParsesEveryLevel)
     EXPECT_TRUE(tracing_config.IsServiceElementTracingEnabled(traced_event, pressure_instance_specifier.ToString()));
     EXPECT_FALSE(tracing_config.IsServiceElementTracingEnabled(untraced_event, pressure_instance_specifier.ToString()));
 }
+#endif
 }  // namespace
 }  // namespace score::mw::com::impl

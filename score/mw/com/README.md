@@ -28,6 +28,19 @@ shared-memory based communication.
 (`technical binding`) is independent of the API itself.
 Thus, `mw::com` can support several different `technical binding`s (e.g. one for local and one for network communication).
 
+## Feature flags
+
+Optional features are hidden behind Bazel feature flags defined in [flags/BUILD](flags/BUILD). Each flag is a
+`bool_flag` that defaults to `False` and has a corresponding `--config=<name>` in the repository's `.bazelrc`.
+If a flag is disabled, the sources of the feature are not compiled and linked, and the preprocessor define is not set.
+`--config=activate_all_experimental_features` enables all of them at once. The CI tests the defaults and this config,
+see [CI.md](../../../CI.md#feature-flags).
+
+| Feature                       | Flag                                                       | Config                  | Preprocessor define                         |
+|-------------------------------|------------------------------------------------------------|-------------------------|---------------------------------------------|
+| FlatBuffers configuration     | `//score/mw/com/flags:experimental_enable_flatbuffers_configuration` | `--config=flatbuffers` | `SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED` |
+| SOME/IP binding               | `//score/mw/com/flags:experimental_enable_someip_binding`  | `--config=someip`       | `SCORE_MW_COM_SOMEIP_BINDING_ENABLED`       |
+
 ## Documentation for users
 
 If you are an adaptive application developer, and you want to use `mw::com` to do local

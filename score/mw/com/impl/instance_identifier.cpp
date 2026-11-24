@@ -171,6 +171,7 @@ auto InstanceIdentifierView::GetServiceInstanceId() const -> std::optional<Servi
             }
             return ServiceInstanceId{*deployment.instance_id_};
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         [](const SomeIpServiceInstanceDeployment& deployment) -> std::optional<ServiceInstanceId> {
             if (!deployment.instance_id_.has_value())
             {
@@ -178,6 +179,7 @@ auto InstanceIdentifierView::GetServiceInstanceId() const -> std::optional<Servi
             }
             return ServiceInstanceId{*deployment.instance_id_};
         },
+#endif
         [](const score::cpp::blank&) noexcept -> std::optional<ServiceInstanceId> {
             return std::optional<ServiceInstanceId>{};
         });
