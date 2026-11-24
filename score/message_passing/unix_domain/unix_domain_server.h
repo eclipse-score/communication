@@ -75,11 +75,12 @@ class UnixDomainServer final : public IServer
     UnixDomainServer(UnixDomainServer&&) = delete;
     UnixDomainServer& operator=(UnixDomainServer&&) = delete;
 
+    // NOLINTNEXTLINE(google-default-arguments) MISRA RULE-13-3-2 requires defaults to match IServer::StartListening
     score::cpp::expected_blank<score::os::Error> StartListening(
         ConnectCallback connect_callback,
-        DisconnectCallback disconnect_callback,
-        MessageCallback sent_callback,
-        MessageCallback sent_with_reply_callback) noexcept override;
+        DisconnectCallback disconnect_callback = DisconnectCallback{},
+        MessageCallback sent_callback = MessageCallback{},
+        MessageCallback sent_with_reply_callback = MessageCallback{}) noexcept override;
 
     void StopListening() noexcept override;
 
