@@ -41,7 +41,7 @@ class SkeletonEventProperties
     /// / Setter fuctionality (in case a SkeletonField has WithGetter / WithSetter enabled).
     [[nodiscard]] std::size_t GetTotalNumberOfSlots() const
     {
-        const std::size_t number_of_field_setter_slots = is_setter_enabled_ ? 1 : 0;
+        const std::size_t number_of_field_setter_slots = is_setter_enabled_ ? std::size_t{1U} : std::size_t{0U};
         return number_of_slots_ + number_of_tracing_slots_ + number_of_field_getter_slots_ +
                number_of_field_setter_slots;
     }
