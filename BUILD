@@ -68,6 +68,7 @@ copyright_checker(
 )
 
 exports_files([
+    ".bazelrc",
     ".clang-tidy",
     ".ruff.toml",
 ])

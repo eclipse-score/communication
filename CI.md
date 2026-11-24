@@ -80,7 +80,11 @@ Rules for feature flags:
 - Every feature flag must be added to `activate_all_experimental_features` in [`.bazelrc`](./.bazelrc) with the value that activates the feature.
 - When removing a flag, remove it from `activate_all_experimental_features` as well.
 
-Note: This is only checked in code review.
+Note: The flags of [`//score/mw/com/flags`](./score/mw/com/flags/BUILD) are checked by the test
+`//score/mw/com/flags:experimental_flags_test`, which runs as part of the unit tests. It fails if an `experimental_enable_*` flag
+defaults to a value that activates the feature, has no config in [`.bazelrc`](./.bazelrc), is missing in
+`activate_all_experimental_features` or is still set in `.bazelrc` after it was removed. Feature flags defined in other
+packages are only checked in code review.
 
 The jobs [Build everything and run unit tests (x86-64 linux)](#build-everything-and-run-unit-tests-x86-64-linux) and
 [Run C++ unit tests under address, UB, and leak sanitizers (x86-64 linux)](#run-c-unit-tests-under-address-ub-and-leak-sanitizers-x86-64-linux)

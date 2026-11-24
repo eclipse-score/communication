@@ -13,6 +13,7 @@
 
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_python//python:defs.bzl", "py_test")
 
 # Gates the (experimental) FlatBuffers configuration path. When set, the runtime
 # parses configuration files ending in .bfbs/.bin with the FlatBuffers config
@@ -104,4 +105,20 @@ cc_library(
         "//conditions:default": [],
     }),
     visibility = ["//score/mw/com:__subpackages__"],
+)
+
+# Checks the rules for feature flags of CI.md#feature-flags: every experimental_enable_* flag of this package defaults to
+# False, has a config in .bazelrc and is activated by --config=activate_all_experimental_features.
+py_test(
+    name = "experimental_flags_test",
+    srcs = ["experimental_flags_test.py"],
+    data = [
+        "BUILD",
+        "//:.bazelrc",
+    ],
+    env = {
+        "BAZELRC_FILE": "$(rootpath //:.bazelrc)",
+        "FLAGS_BUILD_FILE": "$(rootpath :BUILD)",
+    },
+    target_compatible_with = ["@platforms//os:linux"],
 )
