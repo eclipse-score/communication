@@ -61,7 +61,7 @@ auto SealedShm::OpenAnonymous(const mode_t mode) noexcept -> score::cpp::expecte
 #endif
 }
 
-auto SealedShm::Seal(int fd, std::uint64_t size) noexcept -> score::cpp::expected_blank<score::os::Error>
+auto SealedShm::Seal(std::int32_t fd, std::uint64_t size) noexcept -> score::cpp::expected_blank<score::os::Error>
 {
 // coverity[autosar_cpp14_a16_0_1_violation] Need to limit this functionality to QNX only
 #if defined __QNX__
