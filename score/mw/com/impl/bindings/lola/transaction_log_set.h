@@ -92,7 +92,7 @@ class TransactionLogSet
 
         bool NeedsRollback() const
         {
-            return needs_rollback_;
+            return needs_rollback_.GetUnderlying().load();
         }
 
         /// \brief tries to acquire a given TransactionLogNode for the given transaction_log_id
@@ -117,7 +117,7 @@ class TransactionLogSet
 
         TransactionLogId GetTransactionLogId() const
         {
-            return transaction_log_id_;
+            return transaction_log_id_.GetUnderlying().load();
         }
 
         // Suppress "AUTOSAR C++14 A9-3-1" rule finding: "Member functions shall not return non-const “raw” pointers or

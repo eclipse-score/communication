@@ -25,23 +25,23 @@ TEST(CopyableAtomicTest, Construction)
     bool value{true};
 
     auto unit = CopyableAtomic<bool>(value);
-    EXPECT_EQ(unit, value);
+    EXPECT_EQ(static_cast<bool>(unit), value);
 }
 
 TEST(CopyableAtomicTest, CopyConstruct)
 {
     auto unit = CopyableAtomic<bool>(true);
     CopyableAtomic<bool> unit2{unit};
-    EXPECT_EQ(unit2, true);
+    EXPECT_EQ(static_cast<bool>(unit2), true);
 }
 
 TEST(CopyableAtomicTest, CopyAssign)
 {
     auto unit = CopyableAtomic<bool>(true);
     auto unit2 = CopyableAtomic<bool>(false);
-    EXPECT_EQ(unit2, false);
+    EXPECT_EQ(static_cast<bool>(unit2), false);
     unit2 = unit;
-    EXPECT_EQ(unit2, true);
+    EXPECT_EQ(static_cast<bool>(unit2), true);
 }
 
 DISABLE_WARNING_PUSH
@@ -56,7 +56,7 @@ TEST(CopyableAtomicTest, SelfAssigningCopyableAtomicWillNotModifyStoredValue)
     unit = unit;
 
     // Then the CopyableAtomic will still store the same value
-    EXPECT_EQ(unit, initial_value);
+    EXPECT_EQ(static_cast<bool>(unit), initial_value);
 }
 DISABLE_WARNING_POP
 

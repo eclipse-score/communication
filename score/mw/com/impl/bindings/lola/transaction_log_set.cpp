@@ -39,7 +39,7 @@ bool TransactionLogSet::TransactionLogNode::TryAcquireForRead(TransactionLogId t
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         transaction_log_id != kInvalidTransactionLogId,
         "Called TransactionLogNode::TryAcquireForRead with kInvalidTransactionLogId");
-    return (transaction_log_id_ == transaction_log_id);
+    return (transaction_log_id_.GetUnderlying().load() == transaction_log_id);
 }
 
 void TransactionLogSet::TransactionLogNode::Reset()
