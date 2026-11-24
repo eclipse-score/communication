@@ -31,6 +31,7 @@
 
 #include <score/span.hpp>
 
+#include <atomic>
 #include <cstddef>
 #include <optional>
 
@@ -66,6 +67,20 @@ class ServiceDataStorage
           resource_proxy_{*resource.getMemoryResourceProxy()}
     {
     }
+
+    ServiceDataStorage(ServiceDataStorage&& other) noexcept
+        : events_{std::move(other.events_)},
+          events_metainfo_{std::move(other.events_metainfo_)},
+          skeleton_pid_{other.skeleton_pid_.load(std::memory_order_relaxed)},
+          skeleton_uid_{other.skeleton_uid_.load(std::memory_order_relaxed)},
+          allocator_{std::move(other.allocator_)},
+          resource_proxy_{other.resource_proxy_}
+    {
+    }
+
+    ServiceDataStorage(const ServiceDataStorage&) = delete;
+    ServiceDataStorage& operator=(const ServiceDataStorage&) = delete;
+    ServiceDataStorage& operator=(ServiceDataStorage&&) = delete;
 
     /// \brief Constructs a new (type-erased) EventDataStorage for the given service-element (event/field) on the
     ///        very same memory-resource this ServiceDataStorage was constructed on, and registers it (together with
@@ -113,10 +128,13 @@ class ServiceDataStorage
     void UpdateSkeletonUid(const uid_t uid);
 
   private:
+    static_assert(std::atomic<pid_t>::is_always_lock_free, "std::atomic<pid_t> must be lock-free for shared memory");
+    static_assert(std::atomic<uid_t>::is_always_lock_free, "std::atomic<uid_t> must be lock-free for shared memory");
+
     EventDataStorageMap events_;
     EventMetaInfoMap events_metainfo_;
-    pid_t skeleton_pid_;
-    uid_t skeleton_uid_;
+    std::atomic<pid_t> skeleton_pid_;
+    std::atomic<uid_t> skeleton_uid_;
 
     memory::shared::PolymorphicOffsetPtrAllocator<EventDataStorage> allocator_;
     const memory::shared::MemoryResourceProxy& resource_proxy_;

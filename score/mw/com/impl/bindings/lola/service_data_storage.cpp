@@ -94,22 +94,22 @@ const EventMetaInfo& ServiceDataStorage::GetEventMetaInfo(const ElementFqId elem
 
 pid_t ServiceDataStorage::GetSkeletonPid() const
 {
-    return skeleton_pid_;
+    return skeleton_pid_.load(std::memory_order_acquire);
 }
 
 void ServiceDataStorage::UpdateSkeletonPid(const pid_t pid)
 {
-    skeleton_pid_ = pid;
+    skeleton_pid_.store(pid, std::memory_order_release);
 }
 
 uid_t ServiceDataStorage::GetSkeletonUid() const
 {
-    return skeleton_uid_;
+    return skeleton_uid_.load(std::memory_order_acquire);
 }
 
 void ServiceDataStorage::UpdateSkeletonUid(const uid_t uid)
 {
-    skeleton_uid_ = uid;
+    skeleton_uid_.store(uid, std::memory_order_release);
 }
 
 std::size_t CalculateServiceDataStorageShmSize(

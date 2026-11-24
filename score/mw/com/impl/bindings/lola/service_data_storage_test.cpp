@@ -112,6 +112,32 @@ TEST_F(ServiceDataStorageFixture, GetsUidFromRuntimAndStoresItOnConstruction)
     EXPECT_EQ(unit.GetSkeletonUid(), uid);
 }
 
+TEST_F(ServiceDataStorageFixture, UpdateSkeletonPidUpdatesStoredPid)
+{
+    // Given a ServiceDataStorage instance
+    ServiceDataStorage unit{kNumberOfServiceElements, GetMemoryResource()};
+
+    // When updating the skeleton PID
+    const pid_t new_pid{789};
+    unit.UpdateSkeletonPid(new_pid);
+
+    // Then the updated PID is returned
+    EXPECT_EQ(unit.GetSkeletonPid(), new_pid);
+}
+
+TEST_F(ServiceDataStorageFixture, UpdateSkeletonUidUpdatesStoredUid)
+{
+    // Given a ServiceDataStorage instance
+    ServiceDataStorage unit{kNumberOfServiceElements, GetMemoryResource()};
+
+    // When updating the skeleton UID
+    const uid_t new_uid{987};
+    unit.UpdateSkeletonUid(new_uid);
+
+    // Then the updated UID is returned
+    EXPECT_EQ(unit.GetSkeletonUid(), new_uid);
+}
+
 TEST_F(ServiceDataStorageFixture, GenericProxyEventMetaInfoIsStoredInServiceDataStorage)
 {
     RecordProperty("Verifies", "SCR-32391303");

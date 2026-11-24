@@ -28,7 +28,7 @@ class "lola::Skeleton" {
 class "lola::ServiceDataStorage" <<Shared Memory>> {
   +events_ : lola::LinearSearchMap<ElementFqId, score::memory::shared::OffsetPtr<void>>
   +events_metainfo_ : lola::LinearSearchMap<ElementFqId, EventMetaInfo>
-  +skeleton_pid_ : pid_t
+  +skeleton_pid_ : std::atomic<pid_t>
 }
 
 class "lola::EventMetaInfo" <<Shared Memory>> {
