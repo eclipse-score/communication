@@ -42,19 +42,12 @@ int ExecuteWithRegularConnection()
     auto config = CreateConfiguration();
 
     BidirectionalTransport transport{std::move(config)};
-    const auto setup_result = transport.Setup();
-    if (!setup_result)
-    {
-        std::cerr << "Transport setup failed: " << setup_result.error() << std::endl;
-        return 1;
-    }
-
-    int received_message_count = 0;
+    std::atomic<int> received_message_count{0};
 
     transport.SetMessageHandler([&](std::unique_ptr<score::mw::com::gateway::TransportMessage> message) {
         std::cout << "Received message of type: " << static_cast<int>(message->GetHeader().type) << "\n";
-        ++received_message_count;
-        if (received_message_count == expected_amount_received_messages)
+        const int count = ++received_message_count;
+        if (count == expected_amount_received_messages)
         {
             auto ack_response = score::mw::com::gateway::UpdateNotification{
                 score::mw::com::impl::InstanceSpecifier::Create(std::string{"TestService/Instance1"}).value(),
@@ -69,9 +62,16 @@ int ExecuteWithRegularConnection()
         }
     });
 
+    const auto setup_result = transport.Setup();
+    if (!setup_result)
+    {
+        std::cerr << "Transport setup failed: " << setup_result.error() << std::endl;
+        return 1;
+    }
+
     int sleep_counter = 0;
     // Sleep until all expected messages are received or a timeout occurs (whichever comes first)
-    while (received_message_count < expected_amount_received_messages || sleep_counter < 200)
+    while (received_message_count < expected_amount_received_messages && sleep_counter < 200)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         sleep_counter++;
@@ -96,12 +96,6 @@ int ExecuteWithReconnect()
 
     auto config = CreateConfiguration();
     BidirectionalTransport transport{std::move(config)};
-    const auto setup_result = transport.Setup();
-    if (!setup_result)
-    {
-        std::cerr << "Reconnect: Transport setup failed: " << setup_result.error() << std::endl;
-        return 1;
-    }
 
     std::atomic<int> received_message_count{0};
     std::atomic<int> sent_message_count{0};
@@ -124,6 +118,13 @@ int ExecuteWithReconnect()
             sent_message_count++;
         }
     });
+
+    const auto setup_result = transport.Setup();
+    if (!setup_result)
+    {
+        std::cerr << "Reconnect: Transport setup failed: " << setup_result.error() << std::endl;
+        return 1;
+    }
 
     // Wait for all expected messages to be sent. Between receiving message 1 and message 2 there will be a
     // disconnect application's transport layer should reconnect automatically.
