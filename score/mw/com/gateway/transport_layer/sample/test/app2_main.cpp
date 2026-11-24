@@ -64,14 +64,7 @@ int ExecuteWithRegularConnection()
     auto config = CreateConfiguration();
 
     BidirectionalTransport transport{std::move(config)};
-    const auto setup_result = transport.Setup();
-    if (!setup_result)
-    {
-        std::cerr << "Transport setup failed: " << setup_result.error() << std::endl;
-        return 1;
-    }
-
-    int received_message_count = 0;
+    std::atomic<int> received_message_count{0};
 
     transport.SetMessageHandler([&](std::unique_ptr<score::mw::com::gateway::TransportMessage> message) {
         std::cout << "Sender App: Received message of type " << static_cast<int>(message->GetHeader().type)
@@ -79,12 +72,19 @@ int ExecuteWithRegularConnection()
         received_message_count++;
     });
 
+    const auto setup_result = transport.Setup();
+    if (!setup_result)
+    {
+        std::cerr << "Transport setup failed: " << setup_result.error() << std::endl;
+        return 1;
+    }
+
     SendMessages(transport);
 
     int expected_amount_received_messages = 1;
     int sleep_counter = 0;
     // Sleep until all expected messages are received or a timeout occurs (whichever comes first)
-    while (received_message_count < expected_amount_received_messages || sleep_counter < 100)
+    while (received_message_count < expected_amount_received_messages && sleep_counter < 100)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         sleep_counter++;
@@ -140,18 +140,19 @@ int ExecuteWithReconnect()
     {
         auto config = CreateConfiguration();
         BidirectionalTransport transport{std::move(config)};
-        const auto setup_result = transport.Setup();
-        if (!setup_result)
-        {
-            std::cerr << "App2: Transport setup failed when trying to reconnect: " << setup_result.error() << std::endl;
-            return 1;
-        }
 
         std::atomic<int> received_message_count{0};
         transport.SetMessageHandler([&](std::unique_ptr<score::mw::com::gateway::TransportMessage> message) {
             std::cout << "App2: Received message of type " << static_cast<int>(message->GetHeader().type) << std::endl;
             received_message_count++;
         });
+
+        const auto setup_result = transport.Setup();
+        if (!setup_result)
+        {
+            std::cerr << "App2: Transport setup failed when trying to reconnect: " << setup_result.error() << std::endl;
+            return 1;
+        }
 
         auto request = score::mw::com::gateway::ProvideServiceRequest{
             score::mw::com::impl::InstanceSpecifier::Create(std::string{"TestService/Instance1"}).value(),

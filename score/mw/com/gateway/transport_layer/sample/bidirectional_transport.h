@@ -109,7 +109,7 @@ class BidirectionalTransport : public IBidirectionalTransport
     std::atomic<bool> is_connected_{false};
 
     MessageHandler message_handler_;
-    bool has_message_handler_{false};
+    std::atomic<bool> has_message_handler_{false};
 
     // Dispatch queue: incoming non-ACK messages are pushed here by the receive loop and
     // processed by a dedicated dispatch thread. This decouples the receive loop from the

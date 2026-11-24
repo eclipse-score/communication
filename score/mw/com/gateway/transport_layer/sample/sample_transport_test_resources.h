@@ -38,7 +38,7 @@ class BidirectionalTransportAttorney
 
     bool IsMessageHandlerSet() const noexcept
     {
-        return transport_->has_message_handler_;
+        return transport_->has_message_handler_.load();
     }
 
     bool HasPendingRequest(std::uint32_t sequence) const

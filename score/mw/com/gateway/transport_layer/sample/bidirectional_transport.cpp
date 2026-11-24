@@ -312,7 +312,7 @@ void BidirectionalTransport::HandleIncomingMessage(std::unique_ptr<TransportMess
         return;
     }
 
-    if (!has_message_handler_)
+    if (!has_message_handler_.load(std::memory_order_acquire))
     {
         ::score::mw::log::LogWarn() << "BidirectionalTransport: received message but no handler registered to handle "
                                        "it: messages are dropped. Message type: "
@@ -472,7 +472,7 @@ score::Result<void> BidirectionalTransport::SendNotification(TransportMessage& m
 void BidirectionalTransport::SetMessageHandler(MessageHandler handler)
 {
     message_handler_ = std::move(handler);
-    has_message_handler_ = true;
+    has_message_handler_.store(true, std::memory_order_release);
 }
 
 bool BidirectionalTransport::IsConnected() const
