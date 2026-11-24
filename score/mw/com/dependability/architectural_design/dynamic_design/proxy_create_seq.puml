@@ -1,8 +1,20 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
 @startuml proxy_create_offer_seq
 title "Lola Proxy Creation"
 hide footbox
 
-participant "ExternalEndpoint" as Process
+actor "ExternalEndpoint" as Process
 participant "mw_com::binding_independent::proxy_and_service_elements" as proxy_and_service_elements
 participant "mw_com::mw_com_binding_factories" as mw_com_binding_factories
 participant "mw_com::lola_binding::proxy_and_service_elements" as lola_proxy_and_service_elements
@@ -33,7 +45,7 @@ proxy_and_service_elements -> mw_com_binding_factories: CreateProxyBinding(Handl
 activate mw_com_binding_factories
 
 ' Create Lola Proxy binding
-!include score/mw/com/dependability/architectural_design/dynamic_design/subdiagrams/lola_proxy_creation.puml
+!include subdiagrams/lola_proxy_creation.iuml
 
 mw_com_binding_factories --> proxy_and_service_elements: return: unique_ptr<ProxyBinding>
 deactivate mw_com_binding_factories
@@ -45,7 +57,7 @@ proxy_and_service_elements -> mw_com_binding_factories: CreateProxyEventBinding(
 activate mw_com_binding_factories
 
 ' Create Lola ProxyEvent binding
-!include score/mw/com/dependability/architectural_design/dynamic_design/subdiagrams/lola_proxy_event_creation.puml
+!include subdiagrams/lola_proxy_event_creation.iuml
 
 mw_com_binding_factories --> proxy_and_service_elements: return: unique_ptr<ProxyEventBinding>
 deactivate mw_com_binding_factories
@@ -59,7 +71,7 @@ proxy_and_service_elements -> mw_com_binding_factories: CreateProxyFieldBinding(
 activate mw_com_binding_factories
 
 ' Create Lola ProxyEvent binding
-!include_many score/mw/com/dependability/architectural_design/dynamic_design/subdiagrams/lola_proxy_event_creation.puml
+!include_many subdiagrams/lola_proxy_event_creation.iuml
 
 mw_com_binding_factories --> proxy_and_service_elements: return: unique_ptr<ProxyEventBinding>
 deactivate mw_com_binding_factories

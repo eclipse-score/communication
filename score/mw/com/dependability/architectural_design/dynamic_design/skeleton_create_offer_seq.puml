@@ -1,8 +1,21 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
 @startuml skeleton_create_offer_seq
 title "Lola Skeleton Creation and Offer Sequence"
 hide footbox
 
-participant "ExternalEndpoint" as Process
+actor "ExternalEndpoint" as Process
 participant "mw_com::binding_independent::skeleton_and_service_elements" as skeleton_and_service_elements
 participant "mw_com::binding_independent::runtime" as runtime
 participant "mw_com::mw_com_binding_factories" as mw_com_binding_factories
@@ -13,13 +26,6 @@ participant "memory::shared::memory_shared" as memory_shared
 participant "mw_com::lola_binding::message_passing_service" as message_passing_service
 
 activate Process
-
-' Start message passing thread
-Process -> message_passing_service: Construct
-activate message_passing_service
-
-message_passing_service -> message_passing_service: Start message reception thread
-note right of message_passing_service: We currently have no official way of representing a thread. \nFor now, this is represented by the lifetime of the \nMessage Passing Service.
 
 ' Create Skeleton and binding
 Process -> skeleton_and_service_elements: Create(InstanceSpecifier)
@@ -105,6 +111,8 @@ deactivate mw_com_binding_factories
 
 end
 
+end
+
 ' Create methods
 loop for all methods
 
@@ -124,6 +132,13 @@ end
 
 skeleton_and_service_elements --> Process: return: SkeletonWrapperClass<Interface>
 deactivate skeleton_and_service_elements
+
+' Start message passing thread
+Process -> message_passing_service: Construct
+activate message_passing_service
+
+message_passing_service -> message_passing_service: Start message reception thread
+note right of message_passing_service: We currently have no official way of representing a thread. \nFor now, this is represented by the lifetime of the \nMessage Passing Service.
 
 ' Register method handlers
 loop for all methods
@@ -155,7 +170,7 @@ skeleton_and_service_elements -> lola_skeleton_and_service_elements: PrepareOffe
 activate lola_skeleton_and_service_elements
 
 ' Lola Skeleton Binding Offer
-!include score/mw/com/dependability/architectural_design/dynamic_design/subdiagrams/lola_skeleton_binding_offer.puml
+!include subdiagrams/lola_skeleton_binding_offer.iuml
 
 lola_skeleton_and_service_elements --> skeleton_and_service_elements
 deactivate lola_skeleton_and_service_elements
@@ -167,7 +182,7 @@ skeleton_and_service_elements -> lola_skeleton_and_service_elements: PrepareOffe
 activate lola_skeleton_and_service_elements
 
 ' Offer lola SkeletonEvent binding
-!include score/mw/com/dependability/architectural_design/dynamic_design/subdiagrams/lola_skeleton_event_binding_offer.puml
+!include subdiagrams/lola_skeleton_event_binding_offer.iuml
 
 lola_skeleton_and_service_elements --> skeleton_and_service_elements
 deactivate lola_skeleton_and_service_elements
