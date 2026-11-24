@@ -37,8 +37,8 @@ struct select_msg_t
 constexpr std::uint16_t kIomgrStickySelect = _IOMGR_PRIVATE_BASE;
 
 // Pulse signals from server to client that we have...
-constexpr std::uint16_t kSignalNewData = 0U;  // new protocol message to read
-constexpr std::uint16_t kSignalPing = 1U;     // ping to react on
+constexpr std::uint32_t kSignalNewData = 0U;  // new protocol message to read
+constexpr std::uint32_t kSignalPing = 1U;     // ping to react on
 
 template <typename T>
 // Suppress "AUTOSAR C++14 A9-5-1" rule finding: "Unions shall not be used.".
@@ -81,9 +81,9 @@ void IfUnexpectedTerminate(const score::cpp::expected<T, score::os::Error> expec
 
 struct SelectPulseValue
 {
-    std::uint32_t index;
-    std::uint16_t signal;
-    std::uint16_t nonce;
+    std::size_t index;
+    std::uint32_t signal;
+    std::uint32_t nonce;
 };
 
 inline std::uintptr_t PackSelectPulseValue(const SelectPulseValue value)
@@ -94,9 +94,9 @@ inline std::uintptr_t PackSelectPulseValue(const SelectPulseValue value)
 inline SelectPulseValue UnpackSelectPulseValue(const std::uintptr_t pulse_value)
 {
     SelectPulseValue value{};
-    value.index = static_cast<std::uint32_t>(pulse_value & UINT32_MAX);
-    value.signal = static_cast<std::uint16_t>((pulse_value >> 32U) & UINT16_MAX);
-    value.nonce = static_cast<std::uint16_t>(pulse_value >> 48U);
+    value.index = static_cast<std::size_t>(pulse_value & UINT32_MAX);
+    value.signal = static_cast<std::uint32_t>((pulse_value >> 32U) & std::numeric_limits<std::uint16_t>::max());
+    value.nonce = static_cast<std::uint32_t>(pulse_value >> 48U);
     return value;
 }
 
@@ -212,7 +212,8 @@ int QnxDispatchEngine::SelectPulseCallback(message_context_t* ctp,
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) C API
     const auto pulse_value = reinterpret_cast<std::uintptr_t>(ctp->msg->pulse.value.sival_ptr);
     const auto value = UnpackSelectPulseValue(pulse_value);
-    if ((value.index >= self.poll_endpoints_.size()) || (self.poll_endpoints_[value.index].nonce != value.nonce) ||
+    if ((value.index >= self.poll_endpoints_.size()) ||
+        (static_cast<std::uint32_t>(self.poll_endpoints_[value.index].nonce) != value.nonce) ||
         (self.poll_endpoints_[value.index].endpoint == nullptr))
     {
         // invalid or obsolete pulse; return without doing anything
@@ -353,7 +354,7 @@ void QnxDispatchEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noex
           std::make_tuple(kSignalPing, &select_msg.ping_event, &registered_events[1U])})
     {
         SelectPulseValue value{};
-        value.index = static_cast<std::uint32_t>(index);
+        value.index = index;
         value.signal = signal;
         value.nonce = nonce;
         const uintptr_t pulse_value = PackSelectPulseValue(value);
@@ -552,9 +553,12 @@ void QnxDispatchEngine::ProcessTimerQueue() noexcept
         // no future event to wait for (yet); no need to re-arm timer
         return;
     }
-    const auto distance = std::chrono::duration_cast<std::chrono::nanoseconds>(then - Clock::now()).count() + 1;
+    // +1 avoids a zero value, which would disarm the timer; unsigned arithmetic wraps without overflow UB
+    const auto distance =
+        static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(then - Clock::now()).count()) +
+        1U;
     struct _itimer itimer{};
-    itimer.nsec = static_cast<std::uint64_t>(distance);
+    itimer.nsec = distance;
     itimer.interval_nsec = 0U;
     score::cpp::ignore = os_resources_.timer->TimerSettime(timer_id_, 0, &itimer, nullptr);
 }
@@ -607,7 +611,9 @@ score::cpp::expected_blank<score::os::Error> QnxDispatchEngine::StartServer(Reso
     // The bitwise OR operation is performed exclusively on unsigned values,
     // and the result is assigned to an auto-deduced unsigned type
     // coverity[autosar_cpp14_m5_0_21_violation]
-    constexpr auto perm_0666 = static_cast<std::uint32_t>(S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+    constexpr auto perm_0666 = static_cast<std::uint32_t>(S_IRUSR) | static_cast<std::uint32_t>(S_IWUSR) |
+                               static_cast<std::uint32_t>(S_IRGRP) | static_cast<std::uint32_t>(S_IWGRP) |
+                               static_cast<std::uint32_t>(S_IROTH) | static_cast<std::uint32_t>(S_IWOTH);
     constexpr mode_t attrMode{static_cast<std::uint32_t>(S_IFNAM) | perm_0666};
     os_resources_.iofunc->iofunc_attr_init(&server.attr, attrMode, nullptr, nullptr);
 
@@ -819,7 +825,7 @@ std::int32_t QnxDispatchEngine::io_msg(resmgr_context_t* const ctp,
                  read_expected.error().ToString());
         return read_expected.error().GetOsDependentErrorCode();
     }
-    if (read_expected.value() < static_cast<std::int64_t>(sizeof(select_msg)))
+    if (read_expected.value() < sizeof(select_msg))
     {
         LogError(self.logger_, "QnxDispatchEngine::io_msg ", &self, " message size too small");
         return EBADMSG;
