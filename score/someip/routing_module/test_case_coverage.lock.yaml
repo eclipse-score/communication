@@ -70,6 +70,10 @@ requirements:
     version: '1'
     description: The routing module shall apply queued routing updates in arrival order before forwarding subsequent samples.
     test_cases:
+      - uid: //score/someip/routing_module/IoSockBridgeTest:AppliesRoutingCommandsOnPollAndForwardsReceivedNotificationsIntoLola
+        given: a started io-sock bridge with a connected SD daemon
+        when: the SD daemon adds a remote service and a local subscription of one of its events, the module's kernel thread polls, and a UDP datagram with a notification of the event is received
+        then: each routing command wakes the kernel thread, the commands take effect with the poll only, and the notification is published in LoLa
       - uid: //score/someip/routing_module/RoutingManagerMessagePassingTest:AppliesCommandsReceivedOverMessagePassing
         given: a started routing manager and an SD daemon client using score::message_passing
         when: the client sends two routing commands, the commands are processed, and the client then disconnects
@@ -221,11 +225,19 @@ requirements:
   - id: RoutingModule.CR_RoutingModule_IoSockModule
     version: '1'
     description: The routing module shall execute notification transport inside a QNX io-sock module.
-    test_cases: []
+    test_cases:
+      - uid: //score/someip/routing_module/ModuleConfigDirectoryTest:IsTheEtcDirectoryNextToTheModuleDirectory
+        given: an io-sock module installed as <prefix>/bin/mods-someip-routing.so
+        when: its configuration directory is determined
+        then: it is <prefix>/etc, also for a module path relative to the working directory
   - id: RoutingModule.CR_RoutingModule_LocalSubscriptions
     version: '2'
     description: The routing module shall publish a received event notification to LoLa only while a local subscription for that event is active.
     test_cases:
+      - uid: //score/someip/routing_module/IoSockBridgeTest:AppliesRoutingCommandsOnPollAndForwardsReceivedNotificationsIntoLola
+        given: a started io-sock bridge with a connected SD daemon
+        when: the SD daemon adds a remote service and a local subscription of one of its events, the module's kernel thread polls, and a UDP datagram with a notification of the event is received
+        then: each routing command wakes the kernel thread, the commands take effect with the poll only, and the notification is published in LoLa
       - uid: //score/someip/routing_module/NotificationHandlerReceiveTest:ForwardsOnlyNotificationsMatchingAnActiveReceivePathAndLocalSubscription
         given: a locally subscribed SOME/IP event of a remote service offered in LoLa
         when: notifications arrive on another local UDP port, from another IPv4 address or UDP port, for another service, for an event the remote service does not have or a not subscribed event, after the local subscription is removed, and after the remote service is removed

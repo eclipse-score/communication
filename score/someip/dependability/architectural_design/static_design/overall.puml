@@ -47,6 +47,7 @@ package someip <<SEooC>> {
     component NotificationHandler <<unit>>
     component RoutingManager <<unit>>
     component IoSockTransport <<unit>>
+    component IoSockBridge <<unit>>
     component LolaMapping <<unit>>
 
     interface RoutingCommands

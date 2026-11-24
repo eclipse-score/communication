@@ -16,6 +16,7 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component")
 component(
     name = "routing_module",
     components = [
+        "//score/someip/routing_module/iosock_bridge:iosock_bridge_unit",
         "//score/someip/routing_module/notification_handler:notification_handler_unit",
         "//score/someip/routing_module/iosock_transport:iosock_transport",
         "//score/someip/routing_module/lola_mapping:lola_mapping_unit",

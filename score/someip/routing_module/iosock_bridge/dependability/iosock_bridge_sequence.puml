@@ -1,0 +1,45 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml iosock_bridge_sequence
+
+participant IoSockModule
+participant IoSockBridge
+participant RoutingManager
+participant NotificationHandler
+participant SdDaemon
+
+== Module load ==
+IoSockModule -> IoSockBridge : someip_routing_start()
+activate IoSockBridge
+note right of IoSockBridge : MW_LOG_CONFIG_FILE and LoLa configuration from <prefix>/etc
+IoSockBridge -> RoutingManager : Start()
+IoSockBridge --> IoSockModule : 0 or errno
+deactivate IoSockBridge
+
+== Routing command ==
+SdDaemon -> RoutingManager : routing command (message_passing thread)
+RoutingManager -> IoSockModule : someip_iosock_wakeup()
+
+== Module kernel thread ==
+IoSockModule -> IoSockBridge : someip_routing_poll()
+activate IoSockBridge
+IoSockBridge -> RoutingManager : ProcessPendingCommands()
+RoutingManager -> NotificationHandler : queued routing commands
+deactivate IoSockBridge
+IoSockModule -> IoSockBridge : someip_routing_datagram(local_port, sender_ip, sender_port, packet, size)
+activate IoSockBridge
+IoSockBridge -> NotificationHandler : OnUdpDatagram(udp_local_port, udp_sender, IoSockPacketReader)
+deactivate IoSockBridge
+
+@enduml
