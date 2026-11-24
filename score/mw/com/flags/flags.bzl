@@ -14,6 +14,24 @@
 
 visibility(["//..."])
 
+# Use as `target_compatible_with` of targets that must only be built when the FlatBuffers configuration is enabled
+# (--config=flatbuffers). Targets depending on such a target have to select() it away themselves.
+FLATBUFFERS_ENABLED_ONLY = select({
+    "//score/mw/com/flags:flatbuffers_enabled": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
+def if_flatbuffers_enabled(labels):
+    """Returns `labels` only if the FlatBuffers configuration is enabled (--config=flatbuffers), else an empty list.
+
+    Use it to add dependencies on FlatBuffers targets (which are incompatible if the flag is off) to a target that is
+    built regardless of the flag, e.g. `deps = [":json"] + if_flatbuffers_enabled([":flatbuffers"])`.
+    """
+    return select({
+        "//score/mw/com/flags:flatbuffers_enabled": labels,
+        "//conditions:default": [],
+    })
+
 # Use as `target_compatible_with` of targets that must only be built when SOME/IP support is enabled
 # (--config=someip). Targets depending on such a target have to select() it away themselves.
 SOMEIP_ENABLED_ONLY = select({
