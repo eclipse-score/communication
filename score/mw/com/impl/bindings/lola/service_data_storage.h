@@ -33,7 +33,9 @@
 
 #include <atomic>
 #include <cstddef>
+#include <functional>
 #include <optional>
+#include <utility>
 
 namespace score::mw::com::impl::lola
 {
@@ -45,9 +47,18 @@ class ServiceDataStorage
     /// \details The value-type of the map is a pointer to the storage of the type-erased event-data slots.
     ///          The OffsetPtr points to a EventDataStorage, which gets created by events/fields, when calling
     ///          Skeleton::Register()!
-    using EventDataStorageMap = LinearSearchMap<ElementFqId, memory::shared::OffsetPtr<EventDataStorage>>;
+    using EventDataStorageMap =
+        LinearSearchMap<ElementFqId,
+                        memory::shared::OffsetPtr<EventDataStorage>,
+                        std::equal_to<ElementFqId>,
+                        memory::shared::PolymorphicOffsetPtrAllocator<
+                            std::pair<ElementFqId, memory::shared::OffsetPtr<EventDataStorage>>>>;
     /// \brief associative container mapping a service-element (event/field) to its (type-erased) meta-information.
-    using EventMetaInfoMap = LinearSearchMap<ElementFqId, EventMetaInfo>;
+    using EventMetaInfoMap =
+        LinearSearchMap<ElementFqId,
+                        EventMetaInfo,
+                        std::equal_to<ElementFqId>,
+                        memory::shared::PolymorphicOffsetPtrAllocator<std::pair<ElementFqId, EventMetaInfo>>>;
 
     /// \brief Ctor for the ServiceDataStorage with a given memory resource to be used for internal storage allocation.
     /// \details ServiceDataStorage no longer uses dynamically allocating map-types. Instead, it uses fixed-capacity
@@ -59,8 +70,8 @@ class ServiceDataStorage
     ///        events_metainfo_.
     /// \param resource memory-resource to be used for the (single, up-front) allocation of the containers.
     ServiceDataStorage(const std::size_t number_of_events_and_fields, memory::shared::ManagedMemoryResource& resource)
-        : events_(number_of_events_and_fields, resource),
-          events_metainfo_(number_of_events_and_fields, resource),
+        : events_(number_of_events_and_fields, {}, EventDataStorageMap::allocator_type{resource}),
+          events_metainfo_(number_of_events_and_fields, {}, EventMetaInfoMap::allocator_type{resource}),
           skeleton_pid_{impl::GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetPid()},
           skeleton_uid_{os::Unistd::instance().getuid()},
           allocator_{resource},

@@ -14,14 +14,12 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_LINEAR_SEARCH_MAP_H
 
 #include "score/containers/non_relocatable_vector.h"
-#include "score/memory/shared/managed_memory_resource.h"
-#include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
 #include <score/assert.hpp>
 
 #include <cstddef>
 #include <functional>
-#include <scoped_allocator>
+#include <memory>
 #include <tuple>
 #include <utility>
 
@@ -59,19 +57,18 @@ namespace score::mw::com::impl::lola
 ///         equality semantics (analogous to the KeyEqual parameter of std::unordered_map). Be careful: When placing
 ///         the LinearSearchMap in shared-memory, the KeyEqual predicate must be stateless and trivially copyable
 ///         (i.e. it must not contain any non-offset pointers or references).
-/// \tparam Allocator allocator used for the underlying storage. Defaults to the shared-memory capable
-///         PolymorphicOffsetPtrAllocator.
+/// \tparam Allocator allocator used for the underlying storage.
 template <typename Key,
           typename MappedType,
           typename KeyEqual = std::equal_to<Key>,
-          typename Allocator =
-              std::scoped_allocator_adaptor<memory::shared::PolymorphicOffsetPtrAllocator<std::pair<Key, MappedType>>>>
+          typename Allocator = std::allocator<std::pair<Key, MappedType>>>
 class LinearSearchMap
 {
   public:
     using key_type = Key;
     using mapped_type = MappedType;
     using value_type = std::pair<Key, MappedType>;
+    using allocator_type = Allocator;
     using size_type = std::size_t;
     using key_compare = KeyEqual;
     using iterator = value_type*;
@@ -79,11 +76,15 @@ class LinearSearchMap
 
     /// \brief Constructs an empty LinearSearchMap which can hold up to max_number_of_elements elements.
     /// \param max_number_of_elements maximum number of elements the map can hold (its fixed capacity).
-    /// \param resource memory resource used to allocate the underlying storage.
     /// \param key_equal binary predicate used to compare keys for equality.
-    LinearSearchMap(const size_type max_number_of_elements,
-                    memory::shared::ManagedMemoryResource& resource,
-                    const KeyEqual& key_equal = KeyEqual{});
+    /// \param allocator allocator instance used to allocate the underlying storage, defaults to a default-constructed
+    ///        Allocator. Note: When the LinearSearchMap is meant to be placed in shared-memory, pass an instance
+    ///        of a shared-memory capable allocator (e.g. a memory::shared::PolymorphicOffsetPtrAllocator,
+    ///        optionally wrapped in a std::scoped_allocator_adaptor if Key/MappedType themselves are allocator
+    ///        aware and should receive the very same allocator).
+    explicit LinearSearchMap(const size_type max_number_of_elements,
+                             const KeyEqual& key_equal = KeyEqual{},
+                             Allocator allocator = Allocator());
 
     iterator begin();
     const_iterator begin() const;
@@ -133,9 +134,9 @@ class LinearSearchMap
 
 template <typename Key, typename MappedType, typename KeyEqual, typename Allocator>
 LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::LinearSearchMap(const size_type max_number_of_elements,
-                                                                       memory::shared::ManagedMemoryResource& resource,
-                                                                       const KeyEqual& key_equal)
-    : storage_{max_number_of_elements, Allocator{resource}}, key_equal_{key_equal}
+                                                                       const KeyEqual& key_equal,
+                                                                       Allocator allocator)
+    : storage_{max_number_of_elements, std::move(allocator)}, key_equal_{key_equal}
 {
 }
 
