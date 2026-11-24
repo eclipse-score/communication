@@ -30,6 +30,8 @@ void someip_iosock_wakeup(void);
 
 /* Implemented by the routing module and called on the module's kernel thread. */
 
+void someip_routing_prepare_logging(void);
+
 /* Returns 0 or an errno, which fails loading the module. */
 int someip_routing_start(void);
 

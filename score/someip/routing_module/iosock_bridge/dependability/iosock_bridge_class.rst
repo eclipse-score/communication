@@ -24,12 +24,15 @@ threads and only wake the module's kernel thread through ``someip_iosock_wakeup(
 ``OnUdpDatagram()`` passes received datagrams to ``NotificationHandler``, both on the kernel thread, so routing state
 needs no locking.
 
-``someip_routing_start()`` runs when io-sock loads the module:
+When io-sock loads the module:
 
 - The configuration directory is ``<prefix>/etc`` for a module installed as ``<prefix>/bin/<module>``
   (``ModuleConfigDirectory()``); the module finds its own path with ``dladdr()``.
 - ``MW_LOG_CONFIG_FILE`` is set to ``logging.json`` in that directory unless already set, since mw::log otherwise
-  looks next to the io-sock binary.
+  looks next to the io-sock binary. The module initializes mw::log before starting the transport; the provided
+  configuration selects the linked QNX slog2 backend with ``kSystem``. Logging configuration is process-wide and must
+  be set before mw::log is first initialized.
+- The C transport formats messages in a fixed-size buffer and forwards them to mw::log with their corresponding severity.
 - mw::com is initialized with ``mw_com_config.json`` from that directory. A missing or unreadable file fails the
   module load with ``ENOENT`` instead of terminating io-sock.
 - ``IoSockBridge`` starts receiving routing commands; a failure fails the module load with its errno.

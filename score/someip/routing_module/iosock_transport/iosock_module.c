@@ -228,6 +228,7 @@ static int module_handler(module_t module __unused, int what, void* arg __unused
     {
         case MOD_LOAD:
         {
+            someip_routing_prepare_logging();
             int error = someip_wakeup_init();
             if (error != 0)
             {

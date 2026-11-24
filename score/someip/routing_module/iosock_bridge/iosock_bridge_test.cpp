@@ -13,6 +13,7 @@
 #include "score/someip/routing_module/iosock_bridge/iosock_bridge.h"
 
 #include "score/someip/routing_module/iosock_transport/iosock_transport.h"
+#include "score/someip/routing_module/iosock_transport/log.h"
 #include "score/someip/routing_module/lola_mapping/lola_mapping.h"
 
 #include "score/filesystem/path.h"
@@ -21,6 +22,8 @@
 #include "score/message_passing/mock/server_mock.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
+#include "score/mw/log/logging.h"
+#include "score/mw/log/recorder_mock.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -327,6 +330,32 @@ TEST(ModuleConfigDirectoryTest, IsTheEtcDirectoryNextToTheModuleDirectory)
 
     EXPECT_EQ(ModuleConfigDirectory("/opt/someip/bin/mods-someip-routing.so"), "/opt/someip/bin/../etc");
     EXPECT_EQ(ModuleConfigDirectory("mods-someip-routing.so"), "./../etc");
+}
+
+TEST(IoSockLoggingTest, FormatsAndMapsCLogSeveritiesToMwLog)
+{
+    ::testing::StrictMock<score::mw::log::RecorderMock> recorder{};
+    score::mw::log::SetLogRecorder(&recorder);
+    const score::mw::log::SlotHandle handle{42};
+    const std::array<std::pair<someip_log_severity, score::mw::log::LogLevel>, 4U> levels{{
+        {SOMEIP_LOG_ERROR, score::mw::log::LogLevel::kError},
+        {SOMEIP_LOG_WARNING, score::mw::log::LogLevel::kWarn},
+        {SOMEIP_LOG_INFO, score::mw::log::LogLevel::kInfo},
+        {SOMEIP_LOG_DEBUG, score::mw::log::LogLevel::kDebug},
+    }};
+    for (const auto& level : levels)
+    {
+        EXPECT_CALL(recorder, StartRecord("SRTM", level.second)).WillOnce(Return(handle));
+        EXPECT_CALL(recorder, LogStringView(handle, "port 42")).Times(1);
+        EXPECT_CALL(recorder, StopRecord(handle)).Times(1);
+        someip_log(level.first, "port %u", 42U);
+    }
+    const std::string long_message(300U, 'x');
+    EXPECT_CALL(recorder, StartRecord("SRTM", score::mw::log::LogLevel::kError)).WillOnce(Return(handle));
+    EXPECT_CALL(recorder, LogStringView(handle, std::string(255U, 'x'))).Times(1);
+    EXPECT_CALL(recorder, StopRecord(handle)).Times(1);
+    someip_log(SOMEIP_LOG_ERROR, "%s", long_message.c_str());
+    score::mw::log::SetLogRecorder(nullptr);
 }
 
 }  // namespace

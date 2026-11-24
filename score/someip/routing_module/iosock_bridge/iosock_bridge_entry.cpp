@@ -54,12 +54,18 @@ std::string ModulePath()
 
 }  // namespace
 
-extern "C" int someip_routing_start(void)
+extern "C" void someip_routing_prepare_logging(void)
 {
     const std::string config_directory = score::someip::routing_module::ModuleConfigDirectory(ModulePath());
     // mw::log reads its configuration on the first log, by default relative to the io-sock binary.
     // TODO: check the way on how the config paths are detected once this is deployed on an actual target.
     static_cast<void>(::setenv("MW_LOG_CONFIG_FILE", (config_directory + "/logging.json").c_str(), 0));
+    score::mw::log::LogInfo(kLogContext) << "Initializing io-sock routing module logging";
+}
+
+extern "C" int someip_routing_start(void)
+{
+    const std::string config_directory = score::someip::routing_module::ModuleConfigDirectory(ModulePath());
     const std::string lola_config = config_directory + "/mw_com_config.json";
     // mw::com terminates the process, i.e. io-sock, if its configuration cannot be read.
     // Avoid aborting the io.sock process and handle the error gracefully.

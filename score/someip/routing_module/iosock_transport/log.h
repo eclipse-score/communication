@@ -25,8 +25,10 @@ typedef enum
     SOMEIP_LOG_DEBUG
 } someip_log_severity;
 
-/* Logs to slog with the prefix "[someip]"; messages longer than 255 characters are truncated. */
+/* Messages longer than 255 characters are truncated. */
 void someip_log(someip_log_severity severity, const char* format, ...) __attribute__((format(printf, 2, 3)));
+
+void someip_routing_log(someip_log_severity severity, const char* message);
 
 /* Thread id of the caller, to attribute CPU time to the module's kernel thread. */
 int someip_thread_id(void);

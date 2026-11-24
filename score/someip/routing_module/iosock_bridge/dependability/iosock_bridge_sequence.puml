@@ -20,9 +20,11 @@ participant NotificationHandler
 participant SdDaemon
 
 == Module load ==
+IoSockModule -> IoSockBridge : someip_routing_prepare_logging()
+note right of IoSockBridge : initialize mw::log with the configured backend
 IoSockModule -> IoSockBridge : someip_routing_start()
 activate IoSockBridge
-note right of IoSockBridge : MW_LOG_CONFIG_FILE and LoLa configuration from <prefix>/etc
+note right of IoSockBridge : LoLa configuration from <prefix>/etc
 IoSockBridge -> RoutingManager : Start()
 IoSockBridge --> IoSockModule : 0 or errno
 deactivate IoSockBridge

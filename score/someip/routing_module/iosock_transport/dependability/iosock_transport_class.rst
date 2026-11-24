@@ -31,6 +31,7 @@ routing module, which implements the ``someip_routing_*`` functions.
   when the call returns. Truncated and short datagrams are logged and dropped.
 - ``someip_iosock_wakeup()`` wakes the kernel thread from any thread through a POSIX semaphore. Wakeups while the
   thread is awake coalesce.
+- C transport messages use mw::log through the io-sock bridge, with messages limited to 255 bytes.
 
 ``IoSockPacketReader`` gives the routing module in-place access to a received datagram, e.g. for
 ``SomeipDatagramParser``. ``Copy()`` copies a byte range with ``m_copydata()`` directly from the mbuf chain into the

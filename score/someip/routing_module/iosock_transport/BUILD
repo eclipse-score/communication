@@ -50,7 +50,7 @@ cc_library(
     srcs = ["log.c"],
     hdrs = ["log.h"],
     local_defines = ["_QNX_SOURCE"],
-    target_compatible_with = _QNX_ONLY,
+    visibility = ["//score/someip/routing_module:__subpackages__"],
 )
 
 cc_library(

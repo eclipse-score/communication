@@ -11,9 +11,24 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
+
+exports_files(
+    ["logging.json"],
+    visibility = ["//score/someip/routing_module/iosock_bridge:__subpackages__"],
+)
+
+cc_library(
+    name = "iosock_log_adapter",
+    srcs = ["iosock_log_adapter.cpp"],
+    deps = [
+        "//score/someip/routing_module/iosock_transport:log",
+        "@score_baselibs//score/mw/log",
+    ],
+    alwayslink = True,
+)
 
 cc_library(
     name = "iosock_bridge",
@@ -38,6 +53,7 @@ cc_library(
     visibility = ["//score/someip/routing_module:__subpackages__"],
     deps = [
         ":iosock_bridge",
+        ":iosock_log_adapter",
         "//score/message_passing",
         "//score/mw/com",
         "//score/someip/routing_module/iosock_transport:iosock_transport_api",
@@ -46,16 +62,31 @@ cc_library(
     ],
 )
 
+cc_shared_library(
+    name = "mods_someip_routing",
+    shared_lib_name = "mods-someip-routing.so",
+    target_compatible_with = ["@platforms//os:qnx"],
+    user_link_flags = ["-lfsnotify"],
+    visibility = ["//score/someip/routing_module:__subpackages__"],
+    deps = [
+        ":iosock_bridge_entry",
+        "//score/someip/routing_module/iosock_transport:iosock_module",
+        "@score_logging//score/mw/log/backend:slog",
+    ],
+)
+
 cc_unit_test(
     name = "iosock_bridge_test",
     srcs = ["iosock_bridge_test.cpp"],
     deps = [
         ":iosock_bridge",
+        ":iosock_log_adapter",
         "//score/message_passing:mock",
         "//score/mw/com",
         "//score/someip/routing_module/iosock_transport:iosock_transport_api",
         "//score/someip/routing_module/lola_mapping",
         "@score_baselibs//score/filesystem",
+        "@score_baselibs//score/mw/log:recorder_mock",
     ],
 )
 
@@ -74,5 +105,6 @@ unit(
     implementation = [
         ":iosock_bridge",
         ":iosock_bridge_entry",
+        ":iosock_log_adapter",
     ],
 )
