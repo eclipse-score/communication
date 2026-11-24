@@ -29,12 +29,10 @@ class TrackerGuardFactory final
 {
 
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
-    // The following friend function is only visible in this translation unit and is completely hidden from the
-    // user. This use of the friend keyword allows us to hide the constructor function from the end user, thus
-    // making this class better encapsulated. Therefore, we find this use of the friend keyword acceptable.
+    // The friend class is only used to access private members that are hidden from the user, thus making this
+    // class better encapsulated. Therefore, we find this use of the friend keyword acceptable.
     // coverity[autosar_cpp14_a11_3_1_violation]
-    friend TrackerGuardFactory makeTrakerGuardFactory(SampleReferenceTracker& tracker,
-                                                      const std::size_t num_available_guards) noexcept;
+    friend class SampleReferenceTracker;
 
   public:
     TrackerGuardFactory(TrackerGuardFactory&&) noexcept;
@@ -70,12 +68,15 @@ class SampleReferenceTracker final
 {
 
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
-    // The following friend function is only visible in this translation unit and is completely hidden from the
-    // user. This use of the friend keyword allows us to hide the constructor function from the end user, thus
-    // making this class better encapsulated. Therefore, we find this use of the friend keyword acceptable.
+    // The friend class is only used to access private members that are hidden from the user, thus making this
+    // class better encapsulated. Therefore, we find this use of the friend keyword acceptable.
     // coverity[autosar_cpp14_a11_3_1_violation]
-    friend void deallocateSampleReferenceTracker(SampleReferenceTracker& instance,
-                                                 const std::size_t num_deallocations) noexcept;
+    friend class SampleReferenceGuard;
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // The friend class is only used to access private members that are hidden from the user, thus making this
+    // class better encapsulated. Therefore, we find this use of the friend keyword acceptable.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend class TrackerGuardFactory;
 
   public:
     /// Creates an uninitialized instance of the class. In this state, the only valid operation is calling Reset().
@@ -133,11 +134,10 @@ class SampleReferenceTracker final
 class SampleReferenceGuard final
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
-    // The following friend function is only visible in this translation unit and is completely hidden from the
-    // user. This use of the friend keyword allows us to hide the constructor function from the end user, thus
-    // making this class better encapsulated. Therefore, we find this use of the friend keyword acceptable.
+    // The friend class is only used to access private members that are hidden from the user, thus making this
+    // class better encapsulated. Therefore, we find this use of the friend keyword acceptable.
     // coverity[autosar_cpp14_a11_3_1_violation]
-    friend SampleReferenceGuard makeSampleReferenceGuard(SampleReferenceTracker& tracker) noexcept;
+    friend class TrackerGuardFactory;
 
   public:
     SampleReferenceGuard() = default;

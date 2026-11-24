@@ -21,24 +21,6 @@
 namespace score::mw::com::impl
 {
 
-TrackerGuardFactory makeTrakerGuardFactory(SampleReferenceTracker& tracker,
-                                           const std::size_t num_available_guards) noexcept
-{
-    // NOLINTNEXTLINE(score-no-unnamed-temporary-objects): By returning the unnammed object, we allow for copy-elision.
-    return {tracker, num_available_guards};
-}
-
-void deallocateSampleReferenceTracker(SampleReferenceTracker& instance,
-                                      const std::size_t num_deallocations = 1U) noexcept
-{
-    instance.Deallocate(num_deallocations);
-}
-
-SampleReferenceGuard makeSampleReferenceGuard(SampleReferenceTracker& tracker) noexcept
-{
-    return SampleReferenceGuard(tracker);
-}
-
 SampleReferenceGuard::SampleReferenceGuard(SampleReferenceTracker& tracker) noexcept : tracker_{&tracker} {}
 
 SampleReferenceGuard::SampleReferenceGuard(SampleReferenceGuard&& other) noexcept : tracker_{other.tracker_}
@@ -70,7 +52,7 @@ void SampleReferenceGuard::Deallocate() noexcept
 {
     if (tracker_ != nullptr)
     {
-        deallocateSampleReferenceTracker(*tracker_);
+        tracker_->Deallocate(1U);
         tracker_ = nullptr;
     }
 }
@@ -91,7 +73,7 @@ TrackerGuardFactory::~TrackerGuardFactory() noexcept
 {
     if (num_available_guards_ > 0U)
     {
-        deallocateSampleReferenceTracker(tracker_, num_available_guards_);
+        tracker_.Deallocate(num_available_guards_);
     }
 }
 
@@ -109,7 +91,7 @@ std::optional<SampleReferenceGuard> TrackerGuardFactory::TakeGuard() noexcept
     {
         // LCOV_EXCL_BR_STOP
         --num_available_guards_;
-        return makeSampleReferenceGuard(tracker_);
+        return SampleReferenceGuard{tracker_};
     }
     else
     {
@@ -168,7 +150,7 @@ TrackerGuardFactory SampleReferenceTracker::Allocate(std::size_t num_samples) no
         }
     }
 
-    return makeTrakerGuardFactory(*this, num_allocated_samples);
+    return TrackerGuardFactory{*this, num_allocated_samples};
 }
 
 void SampleReferenceTracker::Reset(const std::size_t max_num_samples) noexcept
