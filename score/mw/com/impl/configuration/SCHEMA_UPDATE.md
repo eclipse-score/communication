@@ -126,7 +126,7 @@ The FlatBuffer configuration path is experimental and gated by
 
 | Without the flag (default)                                                       | With `--config=flatbuffers`                                       |
 |----------------------------------------------------------------------------------|-------------------------------------------------------------------|
-| No FlatBuffers dependency is linked; `ConfigurationFlatbufferParsingStrategy::Parse()` logs a fatal error and terminates | `SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED` is defined and the strategy is implemented |
+| `configuration_flatbuffer_parsing_strategy` is incompatible and skipped; no FlatBuffers dependency is linked and `ConfigParser::Parse()` aborts on a `.bfbs`/`.bin` file | `SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED` is defined and the strategy is built |
 | `configuration_parsing_strategy_test` runs the JSON strategy only                | It runs every parametrised test for JSON **and** FlatBuffer       |
 | FlatBuffer-only targets (`mw_com_config_fbs`, `configuration_flatbuffer_parsing_strategy_test`, ...) are incompatible and skipped | They are built and run |
 

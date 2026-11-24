@@ -10,7 +10,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#if defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
 #include "score/mw/com/impl/configuration/configuration_flatbuffer_parsing_strategy.h"
+#endif
 #include "score/mw/com/impl/configuration/configuration_json_parsing_strategy.h"
 
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
@@ -91,13 +93,15 @@ std::string GetPath(const std::string& relative_path)
     }
 }
 
-Configuration ParseFile(const Strategy strategy, const std::string& relative_path_without_extension)
+Configuration ParseFile([[maybe_unused]] const Strategy strategy, const std::string& relative_path_without_extension)
 {
+#if defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
     if (strategy == Strategy::kFlatbuffer)
     {
         return configuration::ConfigurationFlatbufferParsingStrategy{}.Parse(
             GetPath(relative_path_without_extension + ".bin"));
     }
+#endif
     return configuration::ConfigurationJsonParsingStrategy{}.Parse(GetPath(relative_path_without_extension + ".json"));
 }
 

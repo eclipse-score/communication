@@ -12,14 +12,6 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/configuration_flatbuffer_parsing_strategy.h"
 
-#include "score/mw/log/logging.h"
-
-#include <score/assert.hpp>
-
-#include <exception>
-
-#if defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
-
 #include "score/mw/com/impl/configuration/config_validate.h"
 
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
@@ -40,6 +32,7 @@
 
 #include "score/filesystem/path.h"
 #include "score/flatbuffers/load_buffer.hpp"
+#include "score/mw/log/logging.h"
 
 #include "flatbuffers/verifier.h"
 
@@ -862,38 +855,3 @@ Configuration ConfigurationFlatbufferParsingStrategy::Parse(score::cpp::span<con
 }
 
 }  // namespace score::mw::com::impl::configuration
-
-#else  // !defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
-
-namespace score::mw::com::impl::configuration
-{
-namespace
-{
-
-[[noreturn]] auto FlatbuffersConfigurationDisabled() -> void
-{
-    ::score::mw::log::LogFatal("lola")
-        << "mw::com was built without FlatBuffers configuration support "
-           "(--config=flatbuffers / //score/mw/com/flags:experimental_enable_flatbuffers_configuration). "
-           "Terminating.";
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-    // LCOV_EXCL_START defensive programming: SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD above never returns.
-    std::terminate();
-    // LCOV_EXCL_STOP
-}
-
-}  // namespace
-
-Configuration ConfigurationFlatbufferParsingStrategy::Parse(const std::string_view /* path */) const
-{
-    FlatbuffersConfigurationDisabled();
-}
-
-Configuration ConfigurationFlatbufferParsingStrategy::Parse(score::cpp::span<const std::uint8_t> /* buffer */) const
-{
-    FlatbuffersConfigurationDisabled();
-}
-
-}  // namespace score::mw::com::impl::configuration
-
-#endif  // defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)

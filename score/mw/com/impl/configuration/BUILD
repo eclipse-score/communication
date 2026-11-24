@@ -204,29 +204,32 @@ cc_library(
 )
 
 # ConfigurationFlatbufferParsingStrategy parses FlatBuffer-encoded (see mw_com_config.fbs) configuration files.
-# It is unconditionally buildable, but only functional when the (experimental) FlatBuffers configuration flag is
-# enabled: with the flag off, its Parse() overloads log a fatal error and terminate, and no FlatBuffers dependency
-# is linked in (see the two selects below).
+# It is only buildable when the (experimental) FlatBuffers configuration flag is enabled; without the flag the
+# target is incompatible and skipped, so no FlatBuffers dependency is ever linked in. Dependents must therefore
+# reference it via if_flatbuffers_enabled().
 cc_library(
     name = "configuration_flatbuffer_parsing_strategy",
-    srcs = ["configuration_flatbuffer_parsing_strategy.cpp"] + if_flatbuffers_enabled([":mw_com_config_generated_h"]),
+    srcs = [
+        "configuration_flatbuffer_parsing_strategy.cpp",
+        ":mw_com_config_generated_h",
+    ],
     hdrs = ["configuration_flatbuffer_parsing_strategy.h"],
     implementation_deps = [
         ":config_validate",
         ":lola_service_instance_deployment",
         ":quality_type",
         ":service_type_deployment",
-        "@score_baselibs//score/mw/log",
-        "@score_baselibs//score/quality/compiler_warnings",
-    ] + if_flatbuffers_enabled([
         "@score_baselibs//score/filesystem",
         "@score_baselibs//score/flatbuffers:flatbufferscpp",
         "@score_baselibs//score/flatbuffers:flatbufferutils",
-    ]) + if_someip_enabled([
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/quality/compiler_warnings",
+    ] + if_someip_enabled([
         ":someip_service_instance_deployment",
         ":someip_service_type_deployment",
     ]),
     tags = ["FFI"],
+    target_compatible_with = FLATBUFFERS_ENABLED_ONLY,
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
     ],
@@ -234,7 +237,6 @@ cc_library(
         ":configuration_local",
         ":i_configuration_parsing_strategy",
         "//score/mw/com/flags:e2e_feature",
-        "//score/mw/com/flags:flatbuffers_feature",
         "//score/mw/com/flags:someip_feature",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -746,11 +748,10 @@ cc_unit_test(
     ],
     deps = [
         ":config_parser",
-        ":configuration_flatbuffer_parsing_strategy",
         ":configuration_json_parsing_strategy",
         "//score/mw/com/flags:flatbuffers_feature",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-    ],
+    ] + if_flatbuffers_enabled([":configuration_flatbuffer_parsing_strategy"]),
 )
 
 # Runs the shared tests with ConfigurationJsonParsingStrategy and, if the FlatBuffers configuration flag is enabled,
@@ -770,15 +771,13 @@ cc_unit_test(
         "-aborts_upon_exception",
     ],
     deps = [
-        ":configuration_flatbuffer_parsing_strategy",
         ":configuration_json_parsing_strategy",
         "//score/mw/com/flags:flatbuffers_feature",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-    ],
+    ] + if_flatbuffers_enabled([":configuration_flatbuffer_parsing_strategy"]),
 )
 
-# Only buildable when the FlatBuffers configuration flag is enabled: ConfigurationFlatbufferParsingStrategy is
-# unimplemented (LogFatal-and-abort) otherwise, so there is nothing meaningful to test.
+# Only buildable when the FlatBuffers configuration flag is enabled, as is the strategy under test.
 cc_unit_test(
     name = "configuration_flatbuffer_parsing_strategy_test",
     srcs = [
