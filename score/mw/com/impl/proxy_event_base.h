@@ -190,7 +190,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     }
 
   protected:
-    void InjectMock(IProxyEventBase& proxy_event_base_mock)
+    void InjectBaseMock(IProxyEventBase& proxy_event_base_mock)
     {
         proxy_event_base_mock_ = &proxy_event_base_mock;
     }
