@@ -355,6 +355,15 @@ TEST_P(ConfigurationParsingStrategyTest, ParseSomeIpBinding)
     EXPECT_EQ(event_instance_deployment.GetNumberOfSampleSlots().value(), 50U);
     EXPECT_EQ(event_instance_deployment.max_subscribers_.value(), 5U);
 }
+#else
+TEST_P(ConfigurationParsingStrategyTest, SomeIpBindingWithoutSomeIpSupportWillDie)
+{
+    // Given a JSON which configures a SOME/IP binding, but SOME/IP support is disabled in this build
+
+    // When parsing the JSON
+    // That the application will terminate instead of silently running without the configured binding
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "someip_binding"));
+}
 #endif
 
 TEST_P(ConfigurationParsingStrategyTest, NoServiceNameForServiceType)
