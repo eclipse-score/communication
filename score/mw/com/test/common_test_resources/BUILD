@@ -234,6 +234,16 @@ cc_unit_test(
     ],
 )
 
+cc_unit_test(
+    name = "stop_token_sig_term_handler_test",
+    srcs = [
+        "stop_token_sig_term_handler_test.cpp",
+    ],
+    deps = [
+        ":stop_token_sig_term_handler",
+    ],
+)
+
 cc_library(
     name = "service_instance_manifest_parser",
     srcs = [
