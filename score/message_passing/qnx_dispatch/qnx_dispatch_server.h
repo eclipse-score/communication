@@ -61,7 +61,7 @@ class QnxDispatchServer final : public IServer, private QnxDispatchEngine::Resou
         // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
         void AcceptConnection(UserData&& data, score::cpp::pmr::unique_ptr<ServerConnection>&& self) noexcept;
 
-        virtual ~ServerConnection() noexcept;
+        ~ServerConnection() noexcept override;
 
         ServerConnection(const ServerConnection&) noexcept = delete;
         ServerConnection(ServerConnection&&) noexcept = delete;
