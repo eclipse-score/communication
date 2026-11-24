@@ -34,7 +34,7 @@ Use the `create-release-notes` skill (see [`.github/skills/create-release-notes`
 The skill:
 - determines the range from the previous release tag to the release commit,
 - collects PRs, open issues, compatibility restrictions and local patches,
-- reviews the public API surface lock (`score/mw/com/api_surface.lock.json`) and documents API changes in the upgrade instructions,
+- reviews the public API surface lock (`score/mw/com/api_surface.lock.json`, verified by `api_surface_test` from `@score_tooling//api_surface`; regenerate with `bazel run //score/mw/com:api_surface_test.update`) and documents API changes in the upgrade instructions,
 - fills in [`.github/RELEASE_TEMPLATE.md`](.github/RELEASE_TEMPLATE.md) and asks you to review the result.
 
 Review the generated notes carefully and request changes until they are correct. After your confirmation, the skill writes them into the draft release. If no draft release exists, it saves the notes to `docs/release-notes/<release-tag>.md` instead.
