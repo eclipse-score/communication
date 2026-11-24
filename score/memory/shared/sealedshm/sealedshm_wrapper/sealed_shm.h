@@ -51,7 +51,7 @@ class SealedShm : public ISealedShm
      * @param size The fixed size for the sealed shared memory object.
      * @return score::cpp::blank on success, score::os::Error on error.
      */
-    score::cpp::expected_blank<score::os::Error> Seal(int fd, std::uint64_t size) noexcept override;
+    score::cpp::expected_blank<score::os::Error> Seal(std::int32_t fd, std::uint64_t size) noexcept override;
 
     /**
      * @brief Injects mock.

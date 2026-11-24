@@ -31,7 +31,10 @@ class SealedShmMock : public score::memory::shared::ISealedShm
                 (const mode_t mode),
                 (noexcept, override));
 
-    MOCK_METHOD(score::cpp::expected_blank<score::os::Error>, Seal, (int fd, std::uint64_t size), (noexcept, override));
+    MOCK_METHOD(score::cpp::expected_blank<score::os::Error>,
+                Seal,
+                (std::int32_t fd, std::uint64_t size),
+                (noexcept, override));
 };
 
 }  // namespace score::memory::shared

@@ -59,14 +59,11 @@ class CopyableAtomic
 
     ~CopyableAtomic() = default;
 
-    // NOLINTBEGIN(google-explicit-constructor): Explanation provided below.
-    // We want to have implicit conversions exactly as std::atomic allows as this is just a wrapper around std::atomic.
     // coverity[autosar_cpp14_a13_5_2_violation]
-    operator T() const noexcept
+    explicit operator T() const noexcept
     {
-        return atomic_.operator T();
+        return atomic_.load();
     }
-    // NOLINTEND(google-explicit-constructor): see above for detailed explanation
     std::atomic<T>& GetUnderlying() &
     {
         // Suppress "AUTOSAR C++14 A9-3-1" rule finding: "Member functions shall not return non-const “raw” pointers or
