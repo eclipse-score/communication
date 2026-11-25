@@ -15,6 +15,10 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
+package(default_visibility = [
+    "//score/mw/com/impl/bindings/lola/service_discovery:__subpackages__",
+])
+
 unit(
     name = "service_discovery_unit",
     design_name = "service_discovery",
@@ -26,10 +30,6 @@ unit(
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     implementation = [],
 )
-
-package(default_visibility = [
-    "//score/mw/com/impl/bindings/lola/service_discovery:__subpackages__",
-])
 
 cc_library(
     name = "flag_file",

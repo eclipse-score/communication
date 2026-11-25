@@ -17,10 +17,10 @@ py_binary(
     name = "codeql_lint",
     srcs = ["codeql_lint.py"],
     args = [
-        "--codeql_path=$(location @codeql_bundle//:codeql_cli)",
-        "--config_path=$(location :config)",
-        "--analysis_report_path=$(location @codeql_coding_standards//:analysis_report)",
-        "--guideline_recategorize_path=$(location @codeql_coding_standards//:guideline_recategorize)",
+        "--codeql_path=$(rootpath @codeql_bundle//:codeql_cli)",
+        "--config_path=$(rootpath :config)",
+        "--analysis_report_path=$(rootpath @codeql_coding_standards//:analysis_report)",
+        "--guideline_recategorize_path=$(rootpath @codeql_coding_standards//:guideline_recategorize)",
     ],
     data = [
         ":config",

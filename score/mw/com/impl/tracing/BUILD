@@ -15,6 +15,12 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
+package(
+    default_visibility = [
+        "//score/mw/com/impl/tracing:__subpackages__",
+    ],
+)
+
 unit(
     name = "mw_com_tracing",
     scope = [],
@@ -24,12 +30,6 @@ unit(
     ],
     visibility = ["//score/mw/com/dependability:__pkg__"],
     implementation = [],
-)
-
-package(
-    default_visibility = [
-        "//score/mw/com/impl/tracing:__subpackages__",
-    ],
 )
 
 cc_library(

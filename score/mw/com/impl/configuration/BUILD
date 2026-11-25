@@ -93,7 +93,7 @@ py_binary(
     srcs = ["generate_schema.py"],
     args = [
         "--in",
-        "$(location :mw_com_config_postproc_schema)",
+        "$(rootpath :mw_com_config_postproc_schema)",
         "--output",
         "$(rootpath mw_com_config_schema.json)",
     ],
@@ -114,7 +114,7 @@ py_test(
     ],
     args = [
         "--in",
-        "$(location :mw_com_config_postproc_schema)",
+        "$(rootpath :mw_com_config_postproc_schema)",
     ],
     data = [
         "mw_com_config_schema.json",
