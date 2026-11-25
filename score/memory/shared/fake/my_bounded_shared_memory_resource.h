@@ -24,13 +24,17 @@ class MyBoundedSharedMemoryResource final : public ISharedMemoryResource
   public:
     /// \brief Construct MyBoundedSharedMemoryResource which owns the underlying memory region (i.e. will create and
     /// free it within the lifecyle of this class)
-    MyBoundedSharedMemoryResource(const std::size_t memory_resource_size = 200U,
-                                  const bool register_resource_with_registry = true);
+    MyBoundedSharedMemoryResource(
+        const std::size_t memory_resource_size = 200U,
+        const bool register_resource_with_registry = true,
+        const std::optional<MemoryResourceRegistry::MemoryResourceIdentifier> memory_resource_id = std::nullopt);
 
     /// \brief Construct MyBoundedSharedMemoryResource using an underlying memory region owned by the caller (i.e. will
     /// not be created or freed within the lifecyle of this class)
-    MyBoundedSharedMemoryResource(const std::pair<void*, void*> memory_range,
-                                  const bool register_resource_with_registry = true);
+    MyBoundedSharedMemoryResource(
+        const std::pair<void*, void*> memory_range,
+        const bool register_resource_with_registry = true,
+        const std::optional<MemoryResourceRegistry::MemoryResourceIdentifier> memory_resource_id = std::nullopt);
 
     const std::string* getPath() const noexcept override
     {
