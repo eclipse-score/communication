@@ -16,8 +16,10 @@
 Every `bool_flag` named `experimental_enable_*` in //score/mw/com/flags must
   * default to False,
   * be switched to True by a `build:<name>` config in .bazelrc, and
-  * be reachable from `build:activate_all_experimental_features`, which is the configuration the CI tests.
-Vice versa, .bazelrc must not set flags of this package which do not exist (anymore).
+  * be reachable from `build:activate_all_experimental_features`, which is the configuration the CI tests, and
+  * be listed (as "False") in the `no_experimental_features_enabled` config_setting, which matches the default
+    configuration in select().
+Vice versa, .bazelrc and the config_setting must not refer to flags of this package which do not exist (anymore).
 """
 
 import os
@@ -27,8 +29,11 @@ import unittest
 _FLAG_PREFIX = "experimental_enable_"
 _FLAGS_PACKAGE = "//score/mw/com/flags"
 _ALL_FEATURES_CONFIG = "activate_all_experimental_features"
+_NO_FEATURES_SETTING = "no_experimental_features_enabled"
 
 _BOOL_FLAG_CALL = re.compile(r"^bool_flag\((.*?)^\)", re.DOTALL | re.MULTILINE)
+_CONFIG_SETTING_CALL = re.compile(r"^config_setting\((.*?)^\)", re.DOTALL | re.MULTILINE)
+_FLAG_VALUE = re.compile(r'":(' + _FLAG_PREFIX + r'\w+)":\s*"(\w+)"')
 _NAME = re.compile(r'\bname\s*=\s*"([^"]+)"')
 _DEFAULT = re.compile(r"\bbuild_setting_default\s*=\s*(\w+)")
 _RC_FLAG = re.compile(r"^build:(\S+)\s+--" + re.escape(_FLAGS_PACKAGE) + r":(\S+)=(\S+)$")
@@ -44,6 +49,15 @@ def _parse_experimental_flags(build_text):
         if name and name.group(1).startswith(_FLAG_PREFIX):
             flags[name.group(1)] = default.group(1) if default else None
     return flags
+
+
+def _parse_no_features_setting(build_text):
+    """Returns {flag name: value} of the flag_values of config_setting _NO_FEATURES_SETTING, None if it is missing."""
+    for call in _CONFIG_SETTING_CALL.finditer(build_text):
+        name = _NAME.search(call.group(1))
+        if name and name.group(1) == _NO_FEATURES_SETTING:
+            return {flag.group(1): flag.group(2) for flag in _FLAG_VALUE.finditer(call.group(1))}
+    return None
 
 
 def _parse_bazelrc(bazelrc_text):
@@ -74,6 +88,7 @@ def _expand(config, config_refs):
 def check_experimental_flags(build_text, bazelrc_text):
     """Returns a list of rule violations, empty if all rules are met."""
     flags = _parse_experimental_flags(build_text)
+    no_features_setting = _parse_no_features_setting(build_text)
     config_flags, config_refs = _parse_bazelrc(bazelrc_text)
     activated = {}
     for config in _expand(_ALL_FEATURES_CONFIG, config_refs):
@@ -83,13 +98,21 @@ def check_experimental_flags(build_text, bazelrc_text):
     errors = []
     if not flags:
         errors.append(f"No flag named {_FLAG_PREFIX}* found in {_FLAGS_PACKAGE}, is the BUILD file parsed correctly?")
+    if no_features_setting is None:
+        errors.append(f"config_setting {_NO_FEATURES_SETTING} not found in {_FLAGS_PACKAGE}.")
     for flag, default in sorted(flags.items()):
+        if no_features_setting is not None and no_features_setting.get(flag) != "False":
+            errors.append(f'{flag}: not set to "False" in the config_setting {_NO_FEATURES_SETTING}.')
         if default != "False":
             errors.append(f"{flag}: build_setting_default must be False, but is {default}.")
         if not any(values.get(flag) == "True" for values in config_flags.values()):
             errors.append(f"{flag}: no 'build:<name> --{_FLAGS_PACKAGE}:{flag}=True' config found in .bazelrc.")
         elif activated.get(flag) != "True":
             errors.append(f"{flag}: not set to True by build:{_ALL_FEATURES_CONFIG} in .bazelrc.")
+    for flag in sorted(set(no_features_setting or {}) - set(flags)):
+        errors.append(
+            f"config_setting {_NO_FEATURES_SETTING} refers to {flag}, which is not defined in {_FLAGS_PACKAGE}."
+        )
     for config, values in sorted(config_flags.items()):
         for flag in sorted(set(values) - set(flags)):
             if flag.startswith(_FLAG_PREFIX):
@@ -116,6 +139,13 @@ bool_flag(
 bool_flag(
     name = "not_an_experimental_flag",
     build_setting_default = True,
+)
+
+config_setting(
+    name = "no_experimental_features_enabled",
+    flag_values = {
+        ":experimental_enable_foo": "False",
+    },
 )
 """
 
@@ -161,6 +191,41 @@ class CheckExperimentalFlagsTest(unittest.TestCase):
         bazelrc = _BAZELRC + f"build:old --{_FLAGS_PACKAGE}:experimental_enable_removed=True\n"
 
         errors = check_experimental_flags(_BUILD, bazelrc)
+
+        self.assertEqual(1, len(errors))
+        self.assertIn("experimental_enable_removed, which is not defined", errors[0])
+
+    def test_rejects_flag_missing_in_the_no_features_config_setting(self):
+        build = _BUILD.replace('":experimental_enable_foo": "False"', "")
+
+        errors = check_experimental_flags(build, _BAZELRC)
+
+        self.assertEqual(1, len(errors))
+        self.assertIn("experimental_enable_foo: not set to", errors[0])
+
+    def test_rejects_flag_that_is_enabled_in_the_no_features_config_setting(self):
+        build = _BUILD.replace('":experimental_enable_foo": "False"', '":experimental_enable_foo": "True"')
+
+        errors = check_experimental_flags(build, _BAZELRC)
+
+        self.assertEqual(1, len(errors))
+        self.assertIn('experimental_enable_foo: not set to "False"', errors[0])
+
+    def test_rejects_missing_no_features_config_setting(self):
+        build = _BUILD.replace("no_experimental_features_enabled", "something_else")
+
+        errors = check_experimental_flags(build, _BAZELRC)
+
+        self.assertEqual(1, len(errors))
+        self.assertIn("config_setting no_experimental_features_enabled not found", errors[0])
+
+    def test_rejects_removed_flag_that_is_still_in_the_no_features_config_setting(self):
+        build = _BUILD.replace(
+            '":experimental_enable_foo": "False"',
+            '":experimental_enable_foo": "False", ":experimental_enable_removed": "False"',
+        )
+
+        errors = check_experimental_flags(build, _BAZELRC)
 
         self.assertEqual(1, len(errors))
         self.assertIn("experimental_enable_removed, which is not defined", errors[0])

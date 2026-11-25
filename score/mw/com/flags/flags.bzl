@@ -67,3 +67,11 @@ def if_e2e_enabled(labels):
         "//score/mw/com/flags:e2e_enabled": labels,
         "//conditions:default": [],
     })
+
+# Use as `target_compatible_with` of targets that must only be built when no experimental feature is enabled, i.e. in
+# the default configuration, e.g. the check of the public API, which is only stable without experimental features.
+# Targets depending on such a target are incompatible as well.
+NO_EXPERIMENTAL_FEATURES_ONLY = select({
+    "//score/mw/com/flags:no_experimental_features_enabled": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})

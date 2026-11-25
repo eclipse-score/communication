@@ -110,8 +110,22 @@ cc_library(
     visibility = ["//score/mw/com:__subpackages__"],
 )
 
-# Checks the rules for feature flags of CI.md#feature-flags: every experimental_enable_* flag of this package defaults to
-# False, has a config in .bazelrc and is activated by --config=activate_all_experimental_features.
+# Matches if no experimental feature flag is enabled, i.e. in the default configuration (see
+# NO_EXPERIMENTAL_FEATURES_ONLY in flags.bzl). Every experimental feature flag must be listed here (checked by
+# experimental_flags_test).
+config_setting(
+    name = "no_experimental_features_enabled",
+    flag_values = {
+        ":experimental_enable_flatbuffers_configuration": "False",
+        ":experimental_enable_someip_binding": "False",
+        ":experimental_enable_e2e_protection": "False",
+    },
+    visibility = ["//score/mw/com:__subpackages__"],
+)
+
+# Checks the rules for feature flags of CI.md#feature-flags: every experimental_enable_* flag of this package defaults
+# to False, has a config in .bazelrc, is activated by --config=activate_all_experimental_features and is listed in the
+# config_setting no_experimental_features_enabled.
 py_test(
     name = "experimental_flags_test",
     srcs = ["experimental_flags_test.py"],
