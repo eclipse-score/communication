@@ -1282,22 +1282,10 @@
       "signature": "InjectMock : void (ISkeletonBase &)"
     },
     {
-      "name": "OfferService",
-      "qualified_name": "score::mw::com::GenericSkeleton::OfferService",
-      "kind": "method",
-      "signature": "OfferService : Result<void> () [[nodiscard]]"
-    },
-    {
       "name": "SkeletonBase",
       "qualified_name": "score::mw::com::GenericSkeleton::SkeletonBase",
       "kind": "constructor",
       "signature": "SkeletonBase : void (std::unique_ptr<SkeletonBinding>, InstanceIdentifier)"
-    },
-    {
-      "name": "StopOfferService",
-      "qualified_name": "score::mw::com::GenericSkeleton::StopOfferService",
-      "kind": "method",
-      "signature": "StopOfferService : void ()"
     },
     {
       "name": "~SkeletonBase",
