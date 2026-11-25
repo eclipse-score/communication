@@ -14,7 +14,19 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "architectural_d
 
 architectural_design(
     name = "software_architectural_design",
-    dynamic = [],
+    dynamic = [
+        "dynamic_design/skeleton_create_offer_seq.puml",
+        "dynamic_design/proxy_create_seq.puml",
+        "dynamic_design/generic_skeleton_create_offer_seq.puml",
+        "dynamic_design/generic_proxy_create_seq.puml",
+        "dynamic_design/skeleton_create_overview_seq.puml",
+        "dynamic_design/proxy_find_service_overview_seq.puml",
+        "dynamic_design/subdiagrams/lola_proxy_creation.iuml",
+        "dynamic_design/subdiagrams/lola_proxy_event_creation.iuml",
+        "dynamic_design/subdiagrams/lola_skeleton_binding_offer.iuml",
+        "dynamic_design/subdiagrams/lola_skeleton_event_binding_offer.iuml",
+    ],
+    maturity = "development",
     static = [
         "static_design/overall.puml",
         "static_design/binding_independent.puml",

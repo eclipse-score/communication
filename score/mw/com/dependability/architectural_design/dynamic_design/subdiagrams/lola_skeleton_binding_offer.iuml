@@ -1,0 +1,68 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+lola_skeleton_and_service_elements -> event_data_control: CreateQmServiceDataControlInShm()
+activate event_data_control
+
+event_data_control -> memory_shared: CreateShm()
+activate memory_shared
+
+memory_shared -> event_data_control: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+event_data_control --> lola_skeleton_and_service_elements
+deactivate event_data_control
+
+lola_skeleton_and_service_elements -> message_passing_service: RegisterQmOnServiceMethodSubscribedHandler()
+activate message_passing_service
+
+lola_skeleton_and_service_elements <-- message_passing_service
+deactivate message_passing_service
+
+alt Process is AsilB
+
+lola_skeleton_and_service_elements -> message_passing_service: RegisterAsilBOnServiceMethodSubscribedHandler()
+activate message_passing_service
+
+lola_skeleton_and_service_elements <-- message_passing_service
+deactivate message_passing_service
+
+end
+
+alt Process is AsilB
+
+lola_skeleton_and_service_elements -> event_data_control: CreateAsilBServiceDataControlInShm()
+activate event_data_control
+
+event_data_control -> memory_shared: CreateShm()
+activate memory_shared
+
+memory_shared --> event_data_control: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+event_data_control -> lola_skeleton_and_service_elements
+deactivate event_data_control
+
+end
+
+lola_skeleton_and_service_elements -> event_data_control: CreateServiceDataStorageInShm()
+activate event_data_control
+
+event_data_control -> memory_shared: CreateShm()
+activate memory_shared
+
+memory_shared -> event_data_control: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+event_data_control -> lola_skeleton_and_service_elements
+deactivate event_data_control

@@ -55,6 +55,13 @@ download_archive(
 
 bazel_dep(name = "score_tooling", version = "3.1.0")
 
+# Zoom refinement of sequence diagrams (eclipse-score/tooling#598); drop once released.
+git_override(
+    module_name = "score_tooling",
+    commit = "2901d81f2732ac4bf4b3a77a1ed45e97e5b70d13",
+    remote = "https://github.com/eclipse-score/tooling.git",
+)
+
 # TRLC dependency for requirements traceability
 bazel_dep(name = "trlc", version = "3.1.2")
 
