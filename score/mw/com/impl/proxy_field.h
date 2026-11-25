@@ -184,7 +184,7 @@ class ProxyFieldImpl : public ProxyFieldBase
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
     Result<void> Subscribe(const std::size_t max_sample_count) noexcept
     {
-        return ProxyFieldBase::Subscribe(max_sample_count);
+        return ProxyFieldBase::SubscribeBase(max_sample_count);
     }
 
     /**
@@ -198,7 +198,7 @@ class ProxyFieldImpl : public ProxyFieldBase
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
     void Unsubscribe()
     {
-        ProxyFieldBase::Unsubscribe();
+        ProxyFieldBase::UnsubscribeBase();
     }
 
     /**
@@ -211,7 +211,7 @@ class ProxyFieldImpl : public ProxyFieldBase
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
     SubscriptionState GetSubscriptionState() noexcept
     {
-        return ProxyFieldBase::GetSubscriptionState();
+        return ProxyFieldBase::GetSubscriptionStateBase();
     }
 
     /**
@@ -226,7 +226,7 @@ class ProxyFieldImpl : public ProxyFieldBase
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
     std::size_t GetFreeSampleCount() noexcept
     {
-        return ProxyFieldBase::GetFreeSampleCount();
+        return ProxyFieldBase::GetFreeSampleCountBase();
     }
 
     /**
@@ -244,7 +244,7 @@ class ProxyFieldImpl : public ProxyFieldBase
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
     Result<std::size_t> GetNumNewSamplesAvailable() noexcept
     {
-        return ProxyFieldBase::GetNumNewSamplesAvailable();
+        return ProxyFieldBase::GetNumNewSamplesAvailableBase();
     }
 
     /**
@@ -263,7 +263,7 @@ class ProxyFieldImpl : public ProxyFieldBase
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
     Result<void> SetReceiveHandler(EventReceiveHandler handler)
     {
-        return ProxyFieldBase::SetReceiveHandler(std::move(handler));
+        return ProxyFieldBase::SetReceiveHandlerBase(std::move(handler));
     }
 
     /**
@@ -275,7 +275,7 @@ class ProxyFieldImpl : public ProxyFieldBase
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
     Result<void> UnsetSubscriptionStateChangeHandler() noexcept
     {
-        return ProxyFieldBase::UnsetSubscriptionStateChangeHandler();
+        return ProxyFieldBase::UnsetSubscriptionStateChangeHandlerBase();
     }
 
     /**
@@ -289,7 +289,7 @@ class ProxyFieldImpl : public ProxyFieldBase
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
     Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept
     {
-        return ProxyFieldBase::SetSubscriptionStateChangeHandler(std::move(handler));
+        return ProxyFieldBase::SetSubscriptionStateChangeHandlerBase(std::move(handler));
     }
 
     /**
@@ -300,7 +300,7 @@ class ProxyFieldImpl : public ProxyFieldBase
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
     Result<void> UnsetReceiveHandler()
     {
-        return ProxyFieldBase::UnsetReceiveHandler();
+        return ProxyFieldBase::UnsetReceiveHandlerBase();
     }
 
     /**

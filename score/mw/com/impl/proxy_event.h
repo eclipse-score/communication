@@ -127,7 +127,7 @@ class ProxyEvent final : public ProxyEventBase
     void InjectMock(IProxyEvent<SampleType>& proxy_event_mock)
     {
         proxy_event_mock_ = &proxy_event_mock;
-        ProxyEventBase::InjectMock(proxy_event_mock);
+        ProxyEventBase::InjectBaseMock(proxy_event_mock);
     }
 
   private:

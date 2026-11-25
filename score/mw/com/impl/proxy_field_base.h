@@ -75,55 +75,55 @@ class ProxyFieldBase : public EnableReferenceToMoveableFromThis<ProxyFieldBase>
      */
     /// \{
   protected:
-    Result<void> Subscribe(const std::size_t max_sample_count)
+    Result<void> SubscribeBase(const std::size_t max_sample_count)
     {
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(proxy_event_base_dispatch_ != nullptr);
         return proxy_event_base_dispatch_->Subscribe(max_sample_count);
     }
 
-    SubscriptionState GetSubscriptionState() noexcept
+    SubscriptionState GetSubscriptionStateBase() noexcept
     {
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(proxy_event_base_dispatch_ != nullptr);
         return proxy_event_base_dispatch_->GetSubscriptionState();
     }
 
-    void Unsubscribe()
+    void UnsubscribeBase()
     {
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(proxy_event_base_dispatch_ != nullptr);
         proxy_event_base_dispatch_->Unsubscribe();
     }
 
-    Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept
+    Result<void> SetSubscriptionStateChangeHandlerBase(SubscriptionStateChangeHandler handler) noexcept
     {
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(proxy_event_base_dispatch_ != nullptr);
         return proxy_event_base_dispatch_->SetSubscriptionStateChangeHandler(std::move(handler));
     }
 
-    Result<void> UnsetSubscriptionStateChangeHandler() noexcept
+    Result<void> UnsetSubscriptionStateChangeHandlerBase() noexcept
     {
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(proxy_event_base_dispatch_ != nullptr);
         return proxy_event_base_dispatch_->UnsetSubscriptionStateChangeHandler();
     }
 
-    std::size_t GetFreeSampleCount() noexcept
+    std::size_t GetFreeSampleCountBase() noexcept
     {
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(proxy_event_base_dispatch_ != nullptr);
         return proxy_event_base_dispatch_->GetFreeSampleCount();
     }
 
-    Result<std::size_t> GetNumNewSamplesAvailable() noexcept
+    Result<std::size_t> GetNumNewSamplesAvailableBase() noexcept
     {
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(proxy_event_base_dispatch_ != nullptr);
         return proxy_event_base_dispatch_->GetNumNewSamplesAvailable();
     }
 
-    Result<void> SetReceiveHandler(EventReceiveHandler handler)
+    Result<void> SetReceiveHandlerBase(EventReceiveHandler handler)
     {
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(proxy_event_base_dispatch_ != nullptr);
         return proxy_event_base_dispatch_->SetReceiveHandler(std::move(handler));
     }
 
-    Result<void> UnsetReceiveHandler()
+    Result<void> UnsetReceiveHandlerBase()
     {
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(proxy_event_base_dispatch_ != nullptr);
         return proxy_event_base_dispatch_->UnsetReceiveHandler();
@@ -154,7 +154,7 @@ class ProxyFieldBaseView
         // if the WithNotifier tag is not set, proxy_event_base_dispatch_ will be nullptr.
         if (proxy_field_base_.proxy_event_base_dispatch_ != nullptr)
         {
-            proxy_field_base_.Unsubscribe();
+            proxy_field_base_.UnsubscribeBase();
         }
     }
 
