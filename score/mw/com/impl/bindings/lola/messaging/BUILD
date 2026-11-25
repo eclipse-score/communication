@@ -294,6 +294,8 @@ cc_unit_test(
         ":message_passing_service",
         ":message_passing_service_instance_factory_mock",
         ":message_passing_service_instance_mock",
+        "@score_baselibs//score/concurrency:executor",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 

@@ -53,13 +53,13 @@ MessagePassingService::MessagePassingService(
       client_factory_{score::cpp::pmr::make_shared<Engine>(score::cpp::pmr::get_default_resource(),
                                                            score::cpp::pmr::get_default_resource(),
                                                            GetMwLogLogger())},
+      qm_{},
+      asil_b_{},
       // Suppress "AUTOSAR C++14 A15-4-2" rule findings. This rule states: "Throwing an exception in a
       // "noexcept" function." In this case it is ok, because the system anyways forces the process to
       // terminate if an exception is thrown.
       // coverity[autosar_cpp14_a15_4_2_violation]
-      local_event_thread_pool_{kNumberOfLocalThreads, kLocalThreadPoolName},
-      qm_{},
-      asil_b_{}
+      local_event_thread_pool_{kNumberOfLocalThreads, kLocalThreadPoolName}
 {
     ServerFactory server_factory{client_factory_.GetEngine()};
 

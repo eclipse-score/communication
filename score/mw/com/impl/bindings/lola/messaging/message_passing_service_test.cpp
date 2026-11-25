@@ -20,7 +20,12 @@
 #include <gtest/gtest-death-test.h>
 #include <gtest/gtest.h>
 
+#include <score/stop_token.hpp>
+
+#include <atomic>
+#include <chrono>
 #include <memory>
+#include <thread>
 
 namespace score::mw::com::impl::lola::test
 {
@@ -635,6 +640,61 @@ TEST_F(MessagePassingServiceQMDelegationTest, UnregisterOnServiceMethodUnsubscri
             QualityType::kASIL_B, kSkeletonInstanceId, {});
         ASSERT_TRUE(guard.has_value());
     }  // guard destroyed here — triggers unregister
+}
+
+class InstanceMockSettingFlagOnDestruction final : public MessagePassingServiceInstanceMock
+{
+  public:
+    explicit InstanceMockSettingFlagOnDestruction(std::atomic<bool>& destroyed) : destroyed_{destroyed} {}
+    ~InstanceMockSettingFlagOnDestruction() override
+    {
+        destroyed_.store(true);
+    }
+
+  private:
+    std::atomic<bool>& destroyed_;
+};
+
+TEST_F(MessagePassingServiceTest, LocalEventTaskIsFinishedBeforeInstanceIsDestroyed)
+{
+    // Given a service whose instance posts a long running task to the executor, which is only left on stop request
+    std::atomic<bool> instance_destroyed{false};
+    std::atomic<bool> task_started{false};
+    std::atomic<bool> task_finished{false};
+    std::atomic<bool> instance_destroyed_when_task_finished{false};
+
+    ON_CALL(*factory_, Create(ClientQualityType::kASIL_QM, _, _, _, _))
+        .WillByDefault([&](const ClientQualityType,
+                           const AsilSpecificCfg,
+                           score::message_passing::IServerFactory&,
+                           score::message_passing::IClientFactory&,
+                           score::concurrency::Executor& executor) -> std::unique_ptr<IMessagePassingServiceInstance> {
+            executor.Post([&](const score::cpp::stop_token& token) noexcept {
+                task_started.store(true);
+                while (!token.stop_requested() && !instance_destroyed.load())
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds{1});
+                }
+                instance_destroyed_when_task_finished.store(instance_destroyed.load());
+                task_finished.store(true);
+            });
+            return std::make_unique<InstanceMockSettingFlagOnDestruction>(instance_destroyed);
+        });
+    auto unit = std::make_unique<MessagePassingService>(asil_qm_cfg_, std::nullopt, std::move(factory_));
+    const auto start_deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
+    while (!task_started.load() && std::chrono::steady_clock::now() < start_deadline)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds{1});
+    }
+    ASSERT_TRUE(task_started.load());
+
+    // When destroying the service
+    unit.reset();
+
+    // Then the task has finished while the instance still existed
+    EXPECT_TRUE(task_finished.load());
+    EXPECT_FALSE(instance_destroyed_when_task_finished.load());
+    EXPECT_TRUE(instance_destroyed.load());
 }
 
 }  // namespace score::mw::com::impl::lola::test

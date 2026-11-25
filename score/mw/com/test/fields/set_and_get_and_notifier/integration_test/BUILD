@@ -57,8 +57,6 @@ integration_test(
         "test_notifier_same_process.py",
     ],
     filesystem = ":same_process_filesystem",
-    # FIXME: Disabled for thread sanitizer because of detected race (https://github.com/eclipse-score/communication/issues/1638)
-    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )
 
 integration_test(
@@ -69,8 +67,6 @@ integration_test(
         "test_set_and_notifier_same_process.py",
     ],
     filesystem = ":same_process_filesystem",
-    # FIXME: Disabled for thread sanitizer because of detected race (https://github.com/eclipse-score/communication/issues/1638)
-    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )
 
 integration_test(
@@ -111,8 +107,6 @@ integration_test(
         "test_get_and_notifier_same_process.py",
     ],
     filesystem = ":same_process_filesystem",
-    # FIXME: Disabled for thread sanitizer because of detected race (https://github.com/eclipse-score/communication/issues/1638)
-    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )
 
 integration_test(
@@ -153,6 +147,4 @@ integration_test(
         "test_set_get_and_notifier_same_process.py",
     ],
     filesystem = ":same_process_filesystem",
-    # FIXME: Disabled for thread sanitizer because of detected race (https://github.com/eclipse-score/communication/issues/1638)
-    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )

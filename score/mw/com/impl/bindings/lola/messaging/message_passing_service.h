@@ -186,12 +186,16 @@ class MessagePassingService final : public IMessagePassingService
 
     ClientFactory client_factory_;
 
+    /// \note Must be declared before local_event_thread_pool_, which has to be destroyed first.
+    std::unique_ptr<IMessagePassingServiceInstance> qm_;
+    std::unique_ptr<IMessagePassingServiceInstance> asil_b_;
+
     /// \brief thread pool for processing local event update notification.
     /// \detail local update notification leads to a user provided receive handler callout, whose
     ///         runtime is unknown, so we decouple with worker threads.
+    /// \note Declared after the instances so that it is destroyed (and its workers joined) before them, as tasks
+    ///       posted by the instances access the instances.
     score::concurrency::ThreadPool local_event_thread_pool_;
-    std::unique_ptr<IMessagePassingServiceInstance> qm_;
-    std::unique_ptr<IMessagePassingServiceInstance> asil_b_;
 
     IMessagePassingServiceInstance& GetMessagePassingServiceInstance(const QualityType asil_level) const;
 
