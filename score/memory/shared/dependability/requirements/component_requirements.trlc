@@ -45,6 +45,14 @@ ScoreReq.CompReq OpenFailsIfAccessIsDenied {
     version = 1
 }
 
+ScoreReq.CompReq OpenObjectOfRequestedName {
+    description = """When Open is called for a name that is not contained in the process-local registry, the shared memory library shall open
+    the shared memory object of exactly that name."""
+    safety = ScoreReq.Asil.B
+    derived_from = [MemoryShared.FEAT_OpenSharedMemoryObject@1]
+    version = 1
+}
+
 ScoreReq.CompReq OpenMapsObjectWithItsActualSize {
     description = """When opening an existing shared memory object, the shared memory library shall map it with the size
     reported by the operating system for that object."""
@@ -252,6 +260,13 @@ ScoreReq.CompReq OpenReadWrite {
     the shared memory library shall open and map the object with read and write access."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.FEAT_AccessModeOnOpening@1]
+    version = 1
+}
+
+ScoreReq.CompReq OpenReturnsResourceOnSuccess {
+    description = """When the requested shared memory object has been successfully opened and mapped and all requested checks have succeeded, SharedMemoryFactory::Open shall return the corresponding SharedMemoryResource."""
+    safety = ScoreReq.Asil.QM
+    derived_from = [MemoryShared.FEAT_OpenSharedMemoryObject@1]
     version = 1
 }
 

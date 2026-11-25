@@ -18,6 +18,22 @@ section "factory_resources" {
 
     section "SharedMemoryFactory" {
 
+        ScoreReq.FailureMode SharedMemoryResourceIncorrectlyInitialized {
+            guidewords = [ ScoreReq.Guideword.Corrupted ]
+            description = "The SharedMemoryResource returned by Create or Open is not correctly initialized."
+            failureeffect = "This can cause creator or consumer processes to access incorrect memory and read or write unexpected or corrupted data."
+            version = 1
+            safety = ScoreReq.Asil.B
+        }
+
+        ScoreReq.FailureMode SharedMemoryLockFileMechanismHandledIncorrectly {
+            guidewords = [ ScoreReq.Guideword.Corrupted ]
+            description = "Create or Open does not use the lock-file mechanism correctly."
+            failureeffect = "This can cause a consumer to access the shared memory object before its initialization is complete."
+            version = 1
+            safety = ScoreReq.Asil.B
+        }
+
         section "Create" {
 
             ScoreReq.FailureMode CreateAppliesWrongPermissions {
@@ -53,33 +69,42 @@ section "factory_resources" {
                 safety = ScoreReq.Asil.B
             }
 
-            ScoreReq.FailureMode CreateReturnedSharedMemoryResourceDoesNotPointToTheExpectedRegion {
-                guidewords = [ ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.LossOfFunction ]
-                description = "The SharedMemoryResource being returned is not pointing to the expected region (address plus size)"
-                failureeffect = "This can lead to the creator process to write to/read from the wrong memory address, which can lead to unexpected/corrupted data being read and written."
+            // ToDo: CreateReturnedSharedMemoryResourceDoesNotPointToTheExpectedRegion is to be removed as a separate failure mode and modeled as a root cause of SharedMemoryResourceIncorrectlyInitialized.
+        }
+
+        section "Open" {
+            ScoreReq.FailureMode OpenShmObjectOfNotAllowedProvider {
+                guidewords = [ ScoreReq.Guideword.Wrong ]
+                description = "SharedMemoryFactory::Open returns a SharedMemoryResource although the provider of the shared memory object is not one of the allowed providers specified by the caller."
+                failureeffect = "The caller processes data supplied by a provider outside the specified set as if it had been supplied by an expected provider. This can result in unexpected or corrupted data being processed as valid by the ASIL-B function."
                 version = 1
                 safety = ScoreReq.Asil.B
             }
 
-            ScoreReq.FailureMode CreateShmObjectIncorrectlyInitialized {
-                 guidewords = [ ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.LossOfFunction ]
-                 description = "The SharedMemoryResource being returned has not been correctly initialized."
-                 failureeffect = "This can lead to the creator and consumer processes to write to/read from the wrong memory address, which can lead to unexpected/corrupted data being read and written."
-                 version = 1
-                 safety = ScoreReq.Asil.B
+            ScoreReq.FailureMode OpenShmObjectWithWrongPath {
+                guidewords = [ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.UnintendedFunction]
+                description = "A different shared memory object than the one identified by the requested path is opened."
+                failureeffect = "This can lead to the caller accessing another shared memory object under false assumptions about its content and layout. This can lead to unexpected or corrupted data being read and written."
+                version = 1
+                safety = ScoreReq.Asil.B
             }
 
-            ScoreReq.FailureMode CreateShmObjectDoesNotHandleLockFileMechanismCorrectly {
-                 guidewords = [ ScoreReq.Guideword.Corrupted ]
-                 description = "Creation of the shared memory object does not use the lock file mechanism correctly for synchronization between creating/opening shared memory."
-                 failureeffect = "This can lead to consumer processes accessing invalid/uninitialized data."
-                 version = 1
-                 safety = ScoreReq.Asil.B
+            ScoreReq.FailureMode OpenShmObjectWithWrongPermission {
+                guidewords = [ ScoreReq.Guideword.TooEarly ]
+                description = "SharedMemoryFactory::Open opens a shared memory object before its creator has completed its initialization."
+                failureeffect = "The caller reads and writes data and management data of the object that are not yet initialized, and processes them as valid or is led to access memory outside the object."
+                version = 1
+                safety = ScoreReq.Asil.B
             }
-        }
 
-        section "Open" {
-            // ToDo
+            ScoreReq.FailureMode OpenShmObjectLossOfFunction {
+                guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+                description = "SharedMemoryFactory::Open does not return a SharedMemoryResource although the requested shared memory object can be opened correctly."
+                failureeffect = "The caller cannot access the shared memory object and takes the safe-silent path according to ASR_SafeState."
+                version = 1
+                safety = ScoreReq.Asil.QM
+            }
+
         }
 
         section "CreateOrOpen" {

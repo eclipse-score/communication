@@ -45,3 +45,85 @@ ScoreReq.RootCauseAssessment SharedMemoryResourcePointsToAddressReturnedFromMmap
     rationale   = "Component req. assures, that a SharedMemoryResource always points to the address returned by mmap()"
     version     = 1
 }
+
+ScoreReq.RootCauseAssessment ProviderIdentityDetermined {
+    root_causes = [MemoryShared.ShmObjectOpenAllowedProviderCheckWrongInput]
+    measures    = [MemoryShared.DetermineCreatorFromObjectOwner, MemoryShared.DetermineCreatorOfTypedMemoryObjectViaProvider, ASR_QnxAsilBQualifiedImplementation]
+    safety      = ScoreReq.Asil.B
+    rationale   = """The identity compared against the list is wrong if the library takes a wrong user ID as the provider
+    or if the operating system reports a wrong owner."""
+    version     = 1
+}
+
+ScoreReq.RootCauseAssessment ProviderIdentifiedByUserId {
+    root_causes = [MemoryShared.ShmObjectOpenUnexpectedProviderUnderUid]
+    measures    = []
+    safety      = ScoreReq.Asil.B
+    rationale   = """A provider is identified by its user ID, which is assigned by the platform. A software element running under the user ID of an allowed provider
+    cannot be distinguished from it by the library, so this is outside the library."""
+    version     = 1
+}
+
+ScoreReq.RootCauseAssessment AllowedProviderCheckImplemented {
+    root_causes = [MemoryShared.ShmObjectOpenAllowedProviderCheckFails]
+    measures    = [MemoryShared.RejectObjectOfUnexpectedCreator]
+    safety      = ScoreReq.Asil.B
+    rationale   = "The rejection of a provider that is not in the list is specified as an ASIL-B component requirement and verified by its tests."
+    version     = 1
+}
+
+ScoreReq.RootCauseAssessment RequestedObjectProvided {
+    root_causes = [MemoryShared.ShmObjectOpenWrongPathUsed]
+    measures    = [MemoryShared.ReuseAlreadyOpenedObject, MemoryShared.OpenObjectOfRequestedName]
+    safety      = ScoreReq.Asil.B
+    rationale = "ASIL-B component requirements and tests ensure that the library retrieves or opens the object identified by the requested name."
+    version     = 1
+}
+
+ScoreReq.RootCauseAssessment OperatingSystemOpensRequestedObject {
+    root_causes = [MemoryShared.ShmObjectOpenOsOpensOtherObject]
+    measures    = [ASR_QnxAsilBQualifiedImplementation]
+    safety      = ScoreReq.Asil.B
+    rationale   = "The operating system call that opens the object by name is part of the qualified operating system."
+    version     = 1
+}
+
+ScoreReq.RootCauseAssessment OpenHonoursCreationLock {
+    root_causes = [MemoryShared.ShmObjectOpenCreationLockNotHonoured]
+    measures    = [MemoryShared.OpenHoldsCreationLock, MemoryShared.TerminateIfCreationLockIsNotReleased]
+    safety      = ScoreReq.Asil.B
+    rationale   = "ASIL-B component requirements and tests ensure that Open waits for initialization or terminates on timeout."
+    version     = 1
+}
+
+ScoreReq.RootCauseAssessment CreatorHoldsLockUntilInitialized {
+    root_causes = [MemoryShared.ShmObjectOpenCreatorReleasesLockEarly]
+    measures    = [MemoryShared.CreatorHoldsCreationLock, MemoryShared.InitializeBeforeCreateReturns]
+    safety      = ScoreReq.Asil.B
+    rationale   = "ASIL-B component requirements and tests ensure that the creator releases the lock only after initialization is complete."
+    version     = 1
+}
+
+ScoreReq.RootCauseAssessment CreationLockOnlyHandledByLibrary {
+    root_causes = [MemoryShared.ShmObjectOpenCreationLockRemovedBySomeoneElse]
+    measures    = [MemoryShared.AccessToSharedMemoryObjectsAlwaysViaLibrary]
+    safety      = ScoreReq.Asil.B
+    rationale   = "The creation lock is part of the library's synchronization mechanism; the AoU requires all access to shared memory objects to go through the library."
+    version     = 1
+}
+
+ScoreReq.RootCauseAssessment ValidShmObjectCanBeOpened {
+    root_causes = [ MemoryShared.ShmObjectOpenValidObjectRejected, MemoryShared.ShmObjectOpenAllowedProviderRejected ]
+    measures = [ MemoryShared.OpenReturnsResourceOnSuccess ]
+    safety = ScoreReq.Asil.QM
+    rationale = "A component requirement and its tests ensure that Open returns the SharedMemoryResource when the object has been opened and mapped and all requested checks have succeeded."
+    version = 1
+}
+
+ScoreReq.RootCauseAssessment OperatingSystemOpensValidObject {
+    root_causes = [ MemoryShared.ShmObjectOpenOsFailure ]
+    measures = [ ASR_QnxAsilBQualifiedImplementation ]
+    safety = ScoreReq.Asil.QM
+    rationale = "The operating system calls that open and map the object are part of the qualified operating system."
+    version = 1
+}
