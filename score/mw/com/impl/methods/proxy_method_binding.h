@@ -34,11 +34,6 @@ class ProxyMethodBinding
     ProxyMethodBinding() = default;
     virtual ~ProxyMethodBinding() = default;
 
-    ProxyMethodBinding(const ProxyMethodBinding&) = default;
-    ProxyMethodBinding& operator=(const ProxyMethodBinding&) = default;
-    ProxyMethodBinding(ProxyMethodBinding&&) noexcept = default;
-    ProxyMethodBinding& operator=(ProxyMethodBinding&&) noexcept = default;
-
     /// \brief Allocates storage for the in-arguments of a method call at the given queue position.
     /// \param queue_position The call-queue position for which to allocate the in-arguments storage.
     /// \return span of bytes representing the allocated storage or an error.
@@ -59,6 +54,12 @@ class ProxyMethodBinding
     /// \param queue_position The call-queue position at which to perform the method call.
     /// \return Result<void> indicating success or failure of the method call.
     virtual score::Result<void> DoCall(std::size_t queue_position) = 0;
+
+  protected:
+    ProxyMethodBinding(const ProxyMethodBinding&) = default;
+    ProxyMethodBinding& operator=(const ProxyMethodBinding&) = default;
+    ProxyMethodBinding(ProxyMethodBinding&&) noexcept = default;
+    ProxyMethodBinding& operator=(ProxyMethodBinding&&) noexcept = default;
 };
 
 }  // namespace score::mw::com::impl

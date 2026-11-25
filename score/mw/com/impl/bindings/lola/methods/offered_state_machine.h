@@ -75,12 +75,14 @@ class IOfferedState
     IOfferedState() = default;
     virtual ~IOfferedState() = default;
 
+    virtual OfferedStateMachine::State Offer() = 0;
+    virtual OfferedStateMachine::State StopOffer() = 0;
+
+  protected:
     IOfferedState(const IOfferedState&) = default;
     IOfferedState& operator=(const IOfferedState&) = default;
     IOfferedState(IOfferedState&&) noexcept = default;
     IOfferedState& operator=(IOfferedState&&) noexcept = default;
-    virtual OfferedStateMachine::State Offer() = 0;
-    virtual OfferedStateMachine::State StopOffer() = 0;
 };
 
 class OfferedState : public IOfferedState
