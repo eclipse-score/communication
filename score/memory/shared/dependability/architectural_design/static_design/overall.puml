@@ -26,8 +26,8 @@ interface PosixNamedSharedMemory
 
 ' Public API provided by unit "allocator_pointer" (see
 ' score/memory/shared/dependability/public_api.puml for the full class diagram).
-interface "OffsetPtr<T>" as OffsetPtr
-interface "PolymorphicOffsetPtrAllocator<T>" as PolymorphicOffsetPtrAllocator
+interface OffsetPtr
+interface PolymorphicOffsetPtrAllocator
 
 ' Public API provided by unit "pointer_arithmetic" (see
 ' score/memory/shared/dependability/public_api.puml for the full class diagram). On C++ level
@@ -43,8 +43,8 @@ component dependable_element_memory_shared <<SEooC>>  {
       ' which is only loosely coupled to both via PointerArithmeticUtil.
       together {
       component factory_resources <<unit>>
-      factory_resources )-u- SharedMemoryResource
-      factory_resources )-u- SharedMemoryFactory
+      factory_resources -u- SharedMemoryResource
+      factory_resources -u- SharedMemoryFactory
       factory_resources -d-( LockFile
       factory_resources -d-( PosixNamedSharedMemory
       factory_resources -r-( PointerArithmeticUtil
@@ -55,7 +55,7 @@ component dependable_element_memory_shared <<SEooC>>  {
       ' part of the public API (not in public_api.puml), so it is nested here rather than
       ' declared top-level and is not connected to the SEooC boundary below.
       interface MemoryResourceRegistry
-      factory_resources )-d- MemoryResourceRegistry
+      factory_resources -d- MemoryResourceRegistry
 
       component allocator_pointer <<unit>>
       allocator_pointer -u- OffsetPtr
@@ -69,25 +69,20 @@ component dependable_element_memory_shared <<SEooC>>  {
   }
 }
 
-' Layout hints only (no semantic meaning): force PosixNamedSharedMemory/LockFile
-' one rank below MemoryResourceRegistry (the box's lowest internal element), so
-' they render strictly below dependable_element_memory_shared instead of level
-' with its bottom edge, and anchor OS directly below them in turn.
-MemoryResourceRegistry -[hidden]d- PosixNamedSharedMemory
-MemoryResourceRegistry -[hidden]d- LockFile
-PosixNamedSharedMemory -[hidden]r- LockFile
+' Layout hints only (no semantic meaning): PosixNamedSharedMemory/LockFile are placed below the
+' SEooC box (see the hidden links at the end of this file) and OS directly below them in turn.
+' The parser rejects links between two interfaces, so the hints are anchored on components.
 PosixNamedSharedMemory -[hidden]d- OS
 LockFile -[hidden]d- OS
-allocator_pointer -[hidden]d- OS
 allocator_pointer -[hidden]d- OS
 
 component OS {
    component SharedMemory <<external>>
-   SharedMemory )-u- PosixNamedSharedMemory
+   SharedMemory -u- PosixNamedSharedMemory
 
 
    component File <<external>>
-   File )-u- LockFile
+   File -u- LockFile
 }
 
 component TypedMemDaemon {
@@ -102,7 +97,8 @@ end note
 ' both declared top-level here and connected (any relation) from the SEooC itself).
 dependable_element_memory_shared -[hidden]- SharedMemoryResource
 dependable_element_memory_shared -[hidden]- SharedMemoryFactory
-dependable_element_memory_shared -[hidden]- LockFile
+dependable_element_memory_shared -[hidden]d- LockFile
+dependable_element_memory_shared -[hidden]d- PosixNamedSharedMemory
 dependable_element_memory_shared -[hidden]- OffsetPtr
 dependable_element_memory_shared -[hidden]- PolymorphicOffsetPtrAllocator
 dependable_element_memory_shared -[hidden]- PointerArithmeticUtil
